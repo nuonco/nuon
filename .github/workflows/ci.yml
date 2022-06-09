@@ -43,14 +43,14 @@ jobs:
 
       - name: Setup env
         if: github.event_name != 'pull_request'
-        run: echo "EARTHLY_PULL=--pull" >> "$GITHUB_ENV"
+        run: echo "EARTHLY_EXTRA_ARGS=--push" >> "$GITHUB_ENV"
 
       - id: earthly-ci
         name: Run earthly
         run: |
           earthly \
             --ci \
-            ${{ env.EARTHLY_PULL }} \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
             --remote-cache=ghcr.io/powertoolsdev/go-common:gha \
             +ci
 
