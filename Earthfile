@@ -14,7 +14,7 @@ RUN apk add --update --no-cache \
     openssl \
     openssh-client
 
-WORKDIR pkg
+WORKDIR /pkg
 
 ARG GOCACHE=/go-cache
 ENV CGO_ENABLED=0
@@ -30,13 +30,15 @@ artifact:
     COPY --dir . .
     RUN --ssh go mod download
     SAVE ARTIFACT .
+    SAVE IMAGE --cache-hint
 
 lint:
     FROM golangci/golangci-lint
-    COPY +artifact/* /pkg/go-common
-    COPY  ../../+lintcfg/cfg /pkg/go-common/.golangci.yml
+    COPY +artifact/* .
+    COPY .golangci.yml .
     RUN golangci-lint run
 
+# remove when golangci-lint works again
 vet:
     FROM +artifact
     RUN go vet ./...
@@ -44,3 +46,13 @@ vet:
 test:
     FROM +artifact
     RUN go test ./...
+
+ci:
+    BUILD +vet
+    BUILD +test
+
+
+# for other go repos to consume
+lintcfg:
+    COPY .golangci.yml .
+    SAVE ARTIFACT .golangci.yml /cfg

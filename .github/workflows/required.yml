@@ -1,0 +1,54 @@
+---
+name: Required PR Checks
+"on":
+  pull_request:
+
+env:
+  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+permissions:
+  contents: read
+  issues: read
+  packages: write
+  pull-requests: read
+  statuses: write
+
+jobs:
+  go-pr-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup SSH keys
+        run: |
+          ssh-agent -a "$SSH_AUTH_SOCK" > /dev/null
+          ssh-add - <<< "${{ secrets.NUON_SSH_PRIV_KEY }}"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup earthly
+        uses: earthly/actions-setup@v1.0.1
+        with:
+          version: "latest"
+
+      - id: earthly-ci
+        name: Run earthly
+        run: |
+          earthly \
+            --ci \
+            --push \
+            --remote-cache=ghcr.io/powertoolsdev/go-common:gha \
+            +ci
+
+      - name: Update status
+        if: ${{ always() }}
+        uses: ouzi-dev/commit-status-updater@v1.1.0
+        with:
+          name: Required Go PR Checks
+          status: "${{ steps.earthly-ci.outcome }}"
