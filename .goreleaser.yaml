@@ -1,0 +1,18 @@
+---
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - skip: true
+archives:
+  - meta: true
+    name_template: '{{ .ProjectName }}_{{ .Version }}'
+    files:
+      - src: README*
+      - src: CHANGELOG*
+      - src: config/*
+      - src: go*
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
