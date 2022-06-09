@@ -8,7 +8,7 @@ import (
 )
 
 var validTests = []struct {
-	s shortid
+	s string
 	u uuid.UUID
 }{
 	{s: "00000000000000000000000000", u: uuid.MustParse("00000000-0000-0000-0000-000000000000")},
@@ -48,7 +48,7 @@ func TestParseUUID(t *testing.T) {
 func TestUUID(t *testing.T) {
 	for _, test := range validTests {
 		t.Run(string(test.s), func(t *testing.T) {
-			u, err := test.s.UUID()
+			u, err := ToUUID(test.s)
 			assert.NoError(t, err)
 			assert.Equal(t, test.u, u)
 
@@ -80,7 +80,7 @@ func TestParseString_error(t *testing.T) {
 
 func TestUUID_error(t *testing.T) {
 	var errorTests = []struct {
-		s   shortid
+		s   string
 		err string
 	}{
 		{s: "0", err: "invalid shortid length"},
@@ -90,7 +90,7 @@ func TestUUID_error(t *testing.T) {
 	}
 	for _, test := range errorTests {
 		t.Run(string(test.s), func(t *testing.T) {
-			_, err := test.s.UUID()
+			_, err := ToUUID(test.s)
 			assert.ErrorContains(t, err, test.err)
 		})
 	}

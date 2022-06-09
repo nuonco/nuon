@@ -13,25 +13,18 @@ const (
 	intBytes = 8
 )
 
-type shortid string
-
-func (s shortid) String() string {
-	return string(s)
-}
-
-func (s shortid) UUID() (uuid.UUID, error) {
-	str := s.String()
+func ToUUID(s string) (uuid.UUID, error) {
 	var u uuid.UUID
-	if len(str) < 26 {
+	if len(s) < 26 {
 		return u, fmt.Errorf("invalid shortid length")
 	}
 
-	i1, err := strconv.ParseUint(str[:13], base, 64)
+	i1, err := strconv.ParseUint(s[:13], base, 64)
 	if err != nil {
 		return u, err
 	}
 
-	i2, err := strconv.ParseUint(str[13:], base, 64)
+	i2, err := strconv.ParseUint(s[13:], base, 64)
 	if err != nil {
 		return u, err
 	}
@@ -45,17 +38,17 @@ func (s shortid) UUID() (uuid.UUID, error) {
 	return u, nil
 }
 
-func ParseUUID(u uuid.UUID) (shortid, error) {
+func ParseUUID(u uuid.UUID) (string, error) {
 	msi := binary.BigEndian.Uint64(u[:intBytes])
 	lsi := binary.BigEndian.Uint64(u[intBytes:])
 
 	mss := strconv.FormatUint(msi, base)
 	lss := strconv.FormatUint(lsi, base)
 
-	return shortid(fmt.Sprintf("%026s", mss+lss)), nil
+	return fmt.Sprintf("%026s", mss+lss), nil
 }
 
-func ParseString(s string) (shortid, error) {
+func ParseString(s string) (string, error) {
 	u, err := uuid.Parse(s)
 	if err != nil {
 		return "", err
