@@ -28,16 +28,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Run lints
+        uses: powertoolsdev/action-reviewdog@main
+        with:
+          terraform: 'false'
+
       - name: Setup earthly
+        if: always()
         uses: earthly/actions-setup@v1.0.1
         with:
           version: "latest"
 
       - name: Setup env
-        if: github.event_name != 'pull_request'
+        if: always() && github.event_name != 'pull_request'
         run: echo "EARTHLY_EXTRA_ARGS=--push" >> "$GITHUB_ENV"
 
       - id: earthly-ci
+        if: always()
         name: Run earthly
         run: |
           earthly \
@@ -47,7 +54,7 @@ jobs:
             +ci
 
       - name: Update status
-        if: ${{ always() }} and github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request'
         uses: ouzi-dev/commit-status-updater@v1.1.0
         with:
           name: Required PR Checks
