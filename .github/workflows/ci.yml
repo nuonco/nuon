@@ -7,9 +7,6 @@ name: CI
     branches:
       - main
 
-env:
-  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-
 permissions:
   contents: write
   issues: read
@@ -23,11 +20,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-
-      - name: Setup SSH keys
-        run: |
-          ssh-agent -a "$SSH_AUTH_SOCK" > /dev/null
-          ssh-add - <<< "${{ secrets.NUON_SSH_PRIV_KEY }}"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1

@@ -28,7 +28,7 @@ deps:
 artifact:
     FROM +deps
     COPY --dir config .
-    RUN --ssh go mod download
+    RUN go mod download
     SAVE ARTIFACT .
     SAVE IMAGE --cache-hint
 
