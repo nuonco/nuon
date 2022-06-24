@@ -55,7 +55,7 @@ jobs:
 
       - name: Update status
         if: always() && github.event_name == 'pull_request'
-        uses: ouzi-dev/commit-status-updater@v1.1.0
+        uses: ouzi-dev/commit-status-updater@v1.1.2
         with:
           name: Required PR Checks
           status: "${{ steps.earthly-ci.outcome }}"
