@@ -3,6 +3,9 @@ name: Label PR
 "on":
   pull_request:
     types: [opened, synchronize]
+permissions:
+  contents: read
+  pull-requests: write
 concurrency:
   group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
