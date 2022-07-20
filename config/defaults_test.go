@@ -26,6 +26,7 @@ func TestEnv(t *testing.T) {
 		var cfg TestEnvConfig
 		require.NoError(t, LoadInto(nil, &cfg))
 		assert.Equal(t, Demo, cfg.Env)
+		assert.Equal(t, "demo", cfg.Env.String())
 
 		os.Clearenv()
 	})

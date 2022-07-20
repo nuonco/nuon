@@ -14,8 +14,8 @@ const (
 	Production Env = "production"
 	// Development is a development environment not local
 	Development Env = "development"
-	// Staging is a staging environment
-	Staging Env = "staging"
+	// Stage is a staging environment
+	Stage Env = "stage"
 )
 
 // UnmarshalConfig unmarshals a config value string to the associated interface
@@ -31,25 +31,14 @@ func (e *Env) UnmarshalConfig(value string) {
 	case "production", "prod":
 		*e = Production
 	case "stage", "staging":
-		*e = Staging
+		*e = Stage
 	default:
 		*e = Local
 	}
 }
 
-func (e Env) String() string {
-	switch e {
-	case Demo:
-		return "demo"
-	case Development:
-		return "development"
-	case Staging:
-		return "stage"
-	case QA:
-		return "qa"
-	default:
-		return "local"
-	}
+func (e *Env) String() string {
+	return string(*e)
 }
 
 // init registers the defaults
