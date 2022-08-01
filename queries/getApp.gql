@@ -1,0 +1,11 @@
+query GetApp($slug: String!) {
+  app(slug: $slug) {
+    id
+    slug
+    name
+  }
+}
+
+## variables
+
+slug: ${APP_SLUG}

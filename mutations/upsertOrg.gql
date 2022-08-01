@@ -1,0 +1,13 @@
+mutation UpsertOrg($input: OrgInput!) {
+  upsertOrg(input: $input) {
+    name
+    slug
+    id
+  }
+}
+
+## variables
+
+input_envelope: true
+name: test-org
+ownerId: ${USER_ID}

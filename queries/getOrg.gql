@@ -1,5 +1,5 @@
-query GetOrg($id: ID!) {
-  org(id: $id) {
+query GetOrg($slug: String!) {
+  org(slug: $slug) {
     id
     slug
     name
@@ -8,4 +8,4 @@ query GetOrg($id: ID!) {
 
 ## variables
 
-id: ${ORG_ID}
+slug: ${ORG_SLUG}

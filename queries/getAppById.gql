@@ -1,0 +1,11 @@
+query GetApp($id: ID!) {
+  app(id: $id) {
+    id
+    slug
+    name
+  }
+}
+
+## variables
+
+id: ${APP_ID}
