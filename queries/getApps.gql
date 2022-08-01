@@ -1,0 +1,22 @@
+query GetApps($id: ID!) {
+  apps(orgId: $id, options: {}) {
+    totalCount
+
+    pageInfo {
+      endCursor
+      startCursor
+    }
+
+    edges {
+      cursor
+      node {
+	name
+	slug
+     }
+    }
+  }
+}
+
+## variables
+
+id: ${ORG_ID}

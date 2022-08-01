@@ -1,0 +1,24 @@
+query GetAllApps() {
+  apps(options: {}) {
+    totalCount
+
+    pageInfo {
+      endCursor
+      startCursor
+    }
+
+    edges {
+      cursor
+      node {
+        id
+        org {
+          id
+        }
+	name
+	slug
+     }
+    }
+  }
+}
+
+## variables
