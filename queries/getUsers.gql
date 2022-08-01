@@ -1,0 +1,20 @@
+{
+ users(options: {}) {
+    totalCount
+
+    pageInfo {
+      endCursor
+      startCursor
+    }
+    edges {
+      cursor
+      node {
+	firstName
+	lastName
+	email
+      }
+    }
+  }
+}
+
+## variables
