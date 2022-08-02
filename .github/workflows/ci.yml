@@ -1,0 +1,44 @@
+---
+name: CI
+"on":
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Lint
+        uses: powertoolsdev/action-reviewdog@main
+        with:
+          terraform: 'false'
+
+      - name: Check out source repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: flake8 Lint
+        uses: py-actions/flake8@v2
+
+  update-status:
+    name: Update status
+    needs:
+      - ci
+    if: ${{ always() }} and github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v1.1.2
+        with:
+          name: Required PR Checks
+          status: "${{ needs.ci.result }}"

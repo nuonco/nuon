@@ -3,6 +3,7 @@ import os
 import os.path
 import pathlib
 import time
+import logging
 
 import requests
 
@@ -152,7 +153,7 @@ def exec_request(typ, name, env, edit=False, uservars={}, envvars=True):
     resp = do_request(env, typ, body)
     try:
         resp.status_code
-    except:
+    except Exception:
         log.stderr('unable to determine status code of response')
         return
 

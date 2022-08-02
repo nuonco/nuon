@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 
-import os
-
 from lib import log
 
 import click
-import pytz
 import api
-
 
 
 @click.group()
 def cli():
-   pass
+    pass
 
 
 @cli.command(name='query')
@@ -55,6 +51,7 @@ def list(**kwargs):
 
     for mutation in api.all_mutations_by_name():
         log.stderr('- {} (mutation)'.format(mutation))
+
 
 if __name__ == '__main__':
     log.set_option('prefix', False)
