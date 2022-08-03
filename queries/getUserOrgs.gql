@@ -1,0 +1,18 @@
+query GetUserOrgs($id: ID!) {
+  user(id: $id) {
+    id
+    orgs(options:{}) {
+      edges {
+        cursor
+        node {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+## variables
+
+id: ${USER_ID}
