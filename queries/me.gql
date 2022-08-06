@@ -1,0 +1,20 @@
+query Me {
+  me {
+    firstName
+    id
+    lastName
+    email
+
+    orgs(options:{}) {
+      edges {
+        cursor
+        node {
+        id
+        name
+      }
+     }
+    }
+  }
+}
+
+## variables

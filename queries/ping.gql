@@ -1,0 +1,6 @@
+query ping {
+  ping
+}
+
+## variables
+

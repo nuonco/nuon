@@ -1,0 +1,7 @@
+mutation echo($word: String!) {
+  echo(word: $word)
+}
+
+## variables
+
+word: hello world
