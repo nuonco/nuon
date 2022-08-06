@@ -115,6 +115,9 @@ def do_request(env, typ, body):
         resp = requests.post(url, data=json_body, headers=headers)
     except requests.exceptions.ConnectionError:
         log.stderr('unable to connect to {}'.format(url))
+        return
+    except Exception as e:
+        logging.exception('unable to finish request', e)
 
     return resp
 
