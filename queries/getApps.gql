@@ -10,8 +10,9 @@ query GetApps($id: ID!) {
     edges {
       cursor
       node {
-	name
-	slug
+        id
+        name
+        slug
      }
     }
   }

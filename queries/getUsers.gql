@@ -12,6 +12,7 @@
 	firstName
 	lastName
 	email
+	id
       }
     }
   }
