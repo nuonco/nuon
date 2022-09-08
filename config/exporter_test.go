@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:bodyclose,gosec,noctx // NOTE(jdt): these issues were inherited. ignore for now.
 func TestMetricsExporter(t *testing.T) {
-
 	var cfg Base
 	cfg.ServiceName = "test"
 	cfg.ServiceOwner = "owner"
@@ -24,7 +24,7 @@ func TestMetricsExporter(t *testing.T) {
 		require.NotNil(t, exporter)
 
 		t.Run("start", func(t *testing.T) {
-			if err := exporter.Start(); err != http.ErrServerClosed {
+			if err = exporter.Start(); err != http.ErrServerClosed {
 				require.NoError(t, err)
 			}
 			<-time.After(50 * time.Millisecond)
@@ -33,6 +33,7 @@ func TestMetricsExporter(t *testing.T) {
 		resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/%s", cfg.SystemPort, ConfigPath))
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		defer resp.Body.Close()
 
 		t.Run("stop", func(t *testing.T) {
 			exporter.Stop()
@@ -44,7 +45,6 @@ func TestMetricsExporter(t *testing.T) {
 	})
 
 	t.Run("with server", func(t *testing.T) {
-
 		t.Run("no routes", func(t *testing.T) {
 			server := &http.Server{
 				Addr: fmt.Sprintf(":%d", cfg.SystemPort),

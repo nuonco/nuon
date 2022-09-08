@@ -13,7 +13,6 @@ type TestEnvConfig struct {
 }
 
 func TestEnv(t *testing.T) {
-
 	t.Run("not set", func(t *testing.T) {
 		var cfg TestEnvConfig
 		require.NoError(t, LoadInto(nil, &cfg))
@@ -32,7 +31,6 @@ func TestEnv(t *testing.T) {
 	})
 
 	t.Run("invalid", func(t *testing.T) {
-
 		os.Setenv("ENV", "bogus")
 
 		var cfg TestEnvConfig

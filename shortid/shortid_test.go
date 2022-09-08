@@ -27,7 +27,7 @@ var validTests = []struct {
 
 func TestParseString(t *testing.T) {
 	for _, test := range validTests {
-		t.Run(string(test.s), func(t *testing.T) {
+		t.Run(test.s, func(t *testing.T) {
 			s, err := ParseString(test.u.String())
 			assert.NoError(t, err)
 			assert.Equal(t, test.s, s)
@@ -37,7 +37,7 @@ func TestParseString(t *testing.T) {
 
 func TestParseUUID(t *testing.T) {
 	for _, test := range validTests {
-		t.Run(string(test.s), func(t *testing.T) {
+		t.Run(test.s, func(t *testing.T) {
 			s, err := ParseUUID(test.u)
 			assert.NoError(t, err)
 			assert.Equal(t, test.s, s)
@@ -47,7 +47,7 @@ func TestParseUUID(t *testing.T) {
 
 func TestUUID(t *testing.T) {
 	for _, test := range validTests {
-		t.Run(string(test.s), func(t *testing.T) {
+		t.Run(test.s, func(t *testing.T) {
 			u, err := ToUUID(test.s)
 			assert.NoError(t, err)
 			assert.Equal(t, test.u, u)
@@ -70,12 +70,11 @@ func TestParseString_error(t *testing.T) {
 		{s: "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", err: "invalid UUID length"},
 	}
 	for _, test := range errorTests {
-		t.Run(string(test.s), func(t *testing.T) {
+		t.Run(test.s, func(t *testing.T) {
 			_, err := ParseString(test.s)
 			assert.ErrorContains(t, err, test.err)
 		})
 	}
-
 }
 
 func TestUUID_error(t *testing.T) {
@@ -89,10 +88,9 @@ func TestUUID_error(t *testing.T) {
 		{s: "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", err: "value out of range"},
 	}
 	for _, test := range errorTests {
-		t.Run(string(test.s), func(t *testing.T) {
+		t.Run(test.s, func(t *testing.T) {
 			_, err := ToUUID(test.s)
 			assert.ErrorContains(t, err, test.err)
 		})
 	}
-
 }

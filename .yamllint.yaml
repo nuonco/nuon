@@ -1,0 +1,9 @@
+---
+extends: default
+
+ignore:
+  infra/.terraform
+
+rules:
+  line-length:
+    max: 140

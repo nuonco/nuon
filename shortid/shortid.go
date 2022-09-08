@@ -9,22 +9,25 @@ import (
 )
 
 const (
-	base     = 36
-	intBytes = 8
+	base       = 36
+	intBytes   = 8
+	shortIDLen = 26
+	uuidBytes  = 64
 )
 
 func ToUUID(s string) (uuid.UUID, error) {
 	var u uuid.UUID
-	if len(s) < 26 {
+	if len(s) < shortIDLen {
 		return u, fmt.Errorf("invalid shortid length")
 	}
 
-	i1, err := strconv.ParseUint(s[:13], base, 64)
+	middle := shortIDLen / 2
+	i1, err := strconv.ParseUint(s[:middle], base, uuidBytes)
 	if err != nil {
 		return u, err
 	}
 
-	i2, err := strconv.ParseUint(s[13:], base, 64)
+	i2, err := strconv.ParseUint(s[middle:], base, uuidBytes)
 	if err != nil {
 		return u, err
 	}

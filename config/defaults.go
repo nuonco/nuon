@@ -16,6 +16,10 @@ const (
 	Development Env = "development"
 	// Stage is a staging environment
 	Stage Env = "stage"
+
+	defaultPort          = 9102
+	defaultSampleRate    = 1.0
+	defaultMaxBatchCount = 256
 )
 
 // UnmarshalConfig unmarshals a config value string to the associated interface
@@ -42,12 +46,14 @@ func (e *Env) String() string {
 }
 
 // init registers the defaults
+//
+//nolint:gochecknoinits
 func init() {
 	RegisterDefault("env", Local)
-	RegisterDefault("system_port", 9102)
+	RegisterDefault("system_port", defaultPort)
 	RegisterDefault("export_runtime_metrics", true)
-	RegisterDefault("trace_sample_rate", 1.0)
-	RegisterDefault("trace_max_batch_count", 256)
+	RegisterDefault("trace_sample_rate", defaultSampleRate)
+	RegisterDefault("trace_max_batch_count", defaultMaxBatchCount)
 }
 
 // Base is the base configuration for all services

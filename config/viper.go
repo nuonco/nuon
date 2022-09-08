@@ -20,6 +20,8 @@ const (
 	ConfigTagName = "config"
 	// TagValueSquash is the tag value used when squashing embedded structs
 	TagValueSquash = ",squash"
+
+	loaderDefaultSize = 10
 )
 
 var (
@@ -48,7 +50,7 @@ type config struct {
 // NewLoader creates a new config Loader instance
 func NewLoader(paths ...string) Loader {
 	loader := new(loader)
-	loader.defaults = make(map[string]interface{}, 10)
+	loader.defaults = make(map[string]interface{}, loaderDefaultSize)
 	loader.additionalPaths = paths
 	return loader
 }
@@ -57,7 +59,7 @@ func NewLoader(paths ...string) Loader {
 // file
 func NewFileLoader(file string) Loader {
 	loader := new(loader)
-	loader.defaults = make(map[string]interface{}, 10)
+	loader.defaults = make(map[string]interface{}, loaderDefaultSize)
 	loader.file = file
 	return loader
 }
@@ -85,11 +87,12 @@ func (l *loader) SetEnvPrefix(prefix string) {
 }
 
 // newConfig will initalize and return a new Config object backed by Viper
+//
+//nolint:unparam // NOTE(jdt): this is inherited.
 func (l *loader) newConfig(flags *pflag.FlagSet) (*config, error) {
-
 	c := new(config)
 	c.Viper = viper.New()
-	c.secure = make(map[string]struct{}, 10)
+	c.secure = make(map[string]struct{}, loaderDefaultSize)
 
 	// Set up ENV loading
 	c.Viper.SetEnvPrefix(l.envVarPrefix)
@@ -129,11 +132,10 @@ func (l *loader) newConfig(flags *pflag.FlagSet) (*config, error) {
 // arguments, environment, and any configuration file in the specified search
 // paths together applying the following precedence:
 //
-//		flag
-//		env
-//		config
-//		default
-//
+// -flag
+// -env
+// -config
+// -default
 func (l *loader) Load(flags *pflag.FlagSet) (Config, error) {
 	config, err := l.newConfig(flags)
 	if err != nil {
@@ -146,7 +148,6 @@ func (l *loader) Load(flags *pflag.FlagSet) (Config, error) {
 // LoadInfo will load the specified configuration via the Load function and
 // Bind it into the specified struct.
 func (l *loader) LoadInto(flags *pflag.FlagSet, to interface{}) error {
-
 	// Load the Config
 	config, err := l.Load(flags)
 	if err != nil {
@@ -166,7 +167,6 @@ func (l *loader) LoadedConfig() Config {
 // fields. Fields can be tagged with `config` to specify what configuration
 // value should be used
 func (c *config) Bind(to interface{}) error {
-
 	// Bind the possible ENV vars
 	err := c.bindEnvVars(reflect.TypeOf(to), "")
 	if err != nil {
@@ -200,7 +200,6 @@ func (c *config) Bind(to interface{}) error {
 // parseMap parses the map out of the string. The expected format is:
 //
 // key:value,key:value
-//
 func (c *config) parseMap(str string) map[string]string {
 	pairs := strings.Split(str, ",")
 	value := make(map[string]string, len(pairs))
@@ -228,7 +227,6 @@ func (c *config) unmarshal(to reflect.Type, str string) interface{} {
 // bindEnvVars will introspect the supplied type and bind the equivalent ENV
 // vars so they are available when binding the struct
 func (c *config) bindEnvVars(to reflect.Type, prefix string) error {
-
 	// If we were passed nil there is nothing to do
 	if to == nil {
 		return nil
@@ -242,7 +240,6 @@ func (c *config) bindEnvVars(to reflect.Type, prefix string) error {
 
 	// Iterate over all available fields and read the tag value
 	for i := 0; i < to.NumField(); i++ {
-
 		// Get the field, returns https://golang.org/pkg/reflect/#StructField
 		field := to.Field(i)
 		if field.PkgPath != "" {
@@ -309,7 +306,6 @@ func (c *config) GetStringMapString(key string) map[string]string {
 
 // WriteTo dumps the config to the supplied writer
 func (c *config) WriteTo(w io.Writer) (int64, error) {
-
 	// Get all the settings, masking those that are secure
 	settings := c.Viper.AllSettings()
 	c.maskSecure(settings, "")
@@ -350,8 +346,9 @@ func (c *config) maskSecure(settings map[string]interface{}, prefix string) {
 
 // mask masks the supplied value at the given path
 func (c *config) mask(v interface{}, path string) interface{} {
+	l := 10
 	if c.Secure(path) {
-		return strings.Repeat("*", 10)
+		return strings.Repeat("*", l)
 	}
 	switch obj := v.(type) {
 	case map[string]interface{}:

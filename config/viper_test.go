@@ -65,7 +65,6 @@ type TestNestedConfig struct {
 }
 
 func TestViper(t *testing.T) {
-
 	t.Run("load", func(t *testing.T) {
 		t.Run("file", func(t *testing.T) {
 			t.Run("json", func(t *testing.T) {
@@ -169,11 +168,9 @@ func TestViper(t *testing.T) {
 
 			os.Clearenv()
 		})
-
 	})
 
 	t.Run("load into", func(t *testing.T) {
-
 		t.Run("nil", func(t *testing.T) {
 			loader := NewLoader("./testdata/json")
 			err := loader.LoadInto(nil, nil)
@@ -304,7 +301,6 @@ func TestViper(t *testing.T) {
 	})
 
 	t.Run("secure", func(t *testing.T) {
-
 		os.Setenv("NESTED_FOO", "bar")
 		expected := []byte(`{"custom":"two","duration":"10s","float":10.5,"int":10,"map":"**********","nested":{"foo":"**********"},"password":"**********","slice":"**********","string":"test"}`)
 

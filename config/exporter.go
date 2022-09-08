@@ -43,7 +43,6 @@ func (e *Exporter) Stop() {
 
 // RegisterExporter registers the config exporter
 func RegisterExporter(cfg Base, opts ...Option) (*Exporter, error) {
-
 	// Bind the supplied options
 	var options options
 	for _, opt := range opts {

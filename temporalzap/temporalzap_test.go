@@ -53,7 +53,8 @@ func TestDebug(t *testing.T) {
 			l := NewLogger(testableZapLogger(buf))
 
 			l.Debug(test.msg, test.vals...)
-			json.Unmarshal(buf.Bytes(), &out)
+			err := json.Unmarshal(buf.Bytes(), &out)
+			assert.NoError(t, err)
 			assert.Equal(t, test.msg, out["msg"])
 			assert.Equal(t, "debug", out["level"])
 
@@ -75,7 +76,8 @@ func TestInfo(t *testing.T) {
 			l := NewLogger(testableZapLogger(buf))
 
 			l.Info(test.msg, test.vals...)
-			json.Unmarshal(buf.Bytes(), &out)
+			err := json.Unmarshal(buf.Bytes(), &out)
+			assert.NoError(t, err)
 			assert.Equal(t, test.msg, out["msg"])
 			assert.Equal(t, "info", out["level"])
 
@@ -97,7 +99,8 @@ func TestWarn(t *testing.T) {
 			l := NewLogger(testableZapLogger(buf))
 
 			l.Warn(test.msg, test.vals...)
-			json.Unmarshal(buf.Bytes(), &out)
+			err := json.Unmarshal(buf.Bytes(), &out)
+			assert.NoError(t, err)
 			assert.Equal(t, test.msg, out["msg"])
 			assert.Equal(t, "warn", out["level"])
 
@@ -119,7 +122,8 @@ func TestError(t *testing.T) {
 			l := NewLogger(testableZapLogger(buf))
 
 			l.Error(test.msg, test.vals...)
-			json.Unmarshal(buf.Bytes(), &out)
+			err := json.Unmarshal(buf.Bytes(), &out)
+			assert.NoError(t, err)
 			assert.Equal(t, test.msg, out["msg"])
 			assert.Equal(t, "error", out["level"])
 
@@ -140,7 +144,8 @@ func TestWith(t *testing.T) {
 
 	l = l.With("a", "b", "c", "d")
 	l.Debug(t.Name())
-	json.Unmarshal(buf.Bytes(), &out)
+	err := json.Unmarshal(buf.Bytes(), &out)
+	assert.NoError(t, err)
 	assert.Equal(t, t.Name(), out["msg"])
 
 	assert.Equal(t, "b", out["a"])
