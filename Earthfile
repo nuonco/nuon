@@ -1,5 +1,5 @@
 VERSION --shell-out-anywhere 0.6
-FROM golang:1.18.3-alpine3.16
+FROM golang:1.19.1-alpine3.16
 
 
 RUN apk add --update --no-cache \
