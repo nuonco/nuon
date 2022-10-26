@@ -10,7 +10,11 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+      time: "07:30"
+      timezone: "America/New_York"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
+      time: "07:40"
+      timezone: "America/New_York"
