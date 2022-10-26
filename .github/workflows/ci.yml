@@ -53,6 +53,6 @@ jobs:
           status: ${{ steps.earthly-ci.outcome }}
       - name: Bump version and push tag
         if: github.event_name != 'pull_request'
-        uses: mathieudutour/github-tag-action@v6.0
+        uses: mathieudutour/github-tag-action@v6.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
