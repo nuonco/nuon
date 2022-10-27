@@ -1,58 +1,58 @@
-VERSION --shell-out-anywhere 0.6
-FROM golang:1.19.1-alpine3.16
+VERSION --use-cache-command 0.6
 
+FROM ghcr.io/powertoolsdev/ci-go-builder
 
-RUN apk add --update --no-cache \
-    bash \
-    binutils \
-    ca-certificates \
-    coreutils \
-    curl \
-    git \
-    grep \
-    less \
-    openssl \
-    openssh-client
 
 WORKDIR /pkg
 
 ARG GOCACHE=/go-cache
-ENV CGO_ENABLED=0
+ARG GOMODCACHE=/go-mod-cache
+ARG CGO_ENABLED=0
+ARG GOPRIVATE=github.com/powertoolsdev/*
+
+ARG GITHUB_ACTIONS=
+
+ARG GHCR_IMAGE=ghcr.io/powertoolsdev/go-common
 
 deps:
-    FROM +base
-    RUN git config --global url."git@github.com:".insteadOf "https://github.com/"
-    RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-    COPY go.mod go.sum ./
-
-artifact:
-    FROM +deps
-    COPY --dir config .
-    RUN go mod download
-    SAVE ARTIFACT .
-    SAVE IMAGE --cache-hint
-
-lint:
-    FROM golangci/golangci-lint
-    COPY +artifact/* .
-    COPY .golangci.yml .
-    RUN golangci-lint run
-
-# remove when golangci-lint works again
-vet:
-    FROM +artifact
-    RUN go vet ./...
+    ARG from=+base
+    FROM $from
+    WORKDIR /app
+    CACHE $GOCACHE
+    CACHE $GOMODCACHE
+    COPY go.mod go.sum .
+    COPY --dir config shortid temporalzap .
+    IF [ -z "$GITHUB_ACTIONS" ]     # local
+        RUN git config --global \
+                url."git@github.com:powertoolsdev/".insteadOf \
+                "https://github.com/powertoolsdev/" \
+            && ssh-keyscan github.com 2> /dev/null >> ~/.ssh/known_hosts
+    ELSE
+        RUN --secret clone_token \
+            git config --global \
+                url."https://x-access-token:$clone_token@github.com/".insteadOf \
+                https://github.com/
+    END
+    RUN --ssh git config --global --add safe.directory /work \
+        && go mod download
 
 test:
-    FROM +artifact
+    FROM +deps
     RUN go test ./...
+    SAVE IMAGE --push $GHCR_IMAGE:test
 
-ci:
-    BUILD +vet
-    BUILD +test
+test-integration:
+    FROM +deps
+    RUN go test -tags=integration ./...
+    SAVE IMAGE --push $GHCR_IMAGE:test-integration
 
-
-# for other go repos to consume
-lintcfg:
-    COPY .golangci.yml .
-    SAVE ARTIFACT .golangci.yml /cfg
+lint:
+    FROM --platform=linux/amd64 +deps --from=ghcr.io/powertoolsdev/ci-reviewdog
+    WORKDIR /work
+    COPY --dir . .
+    CACHE /root/.cache
+    DO github.com/powertoolsdev/shared-configs+LINT \
+        --GITHUB_ACTIONS=$GITHUB_ACTIONS \
+        --GOCACHE=$GOCACHE \
+        --GOMODCACHE=$GOMODCACHE
+    SAVE IMAGE --push $GHCR_IMAGE:lint
