@@ -47,7 +47,7 @@ test-integration:
     SAVE IMAGE --push $GHCR_IMAGE:test-integration
 
 lint:
-    FROM --platform=linux/amd64 +deps --from=ghcr.io/powertoolsdev/ci-reviewdog
+    FROM +deps --from=ghcr.io/powertoolsdev/ci-reviewdog
     WORKDIR /work
     COPY --dir . .
     CACHE /root/.cache
