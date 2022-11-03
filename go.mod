@@ -1,4 +1,4 @@
-module github.com/powertoolsdev/kube
+module github.com/powertoolsdev/go-kube
 
 go 1.19
 
