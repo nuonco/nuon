@@ -1,4 +1,4 @@
-module github.com/powertoolsdev/sender
+module github.com/powertoolsdev/go-sender
 
 go 1.19
 
