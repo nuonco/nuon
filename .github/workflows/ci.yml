@@ -36,7 +36,6 @@ jobs:
           app_id: ${{ secrets.CROSS_REPO_APP_ID }}
           installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
           private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
-          repositories: ${{ env.REPO_NAME }},shared-configs
 
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -50,9 +49,7 @@ jobs:
       - name: Lint
         run: |
           earthly \
-            --ci \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --build-arg GHCR_IMAGE=${{ env.GHCR_IMAGE }} \
             --remote-cache=ghcr.io/${{ github.repository }}:lint \
             +lint
 
@@ -81,9 +78,7 @@ jobs:
       - name: Test
         run: |
           earthly \
-            --ci \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --build-arg GHCR_IMAGE=${{ env.GHCR_IMAGE }} \
             --remote-cache=ghcr.io/${{ github.repository }}:test-integration \
             +test-integration
 
