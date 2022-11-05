@@ -1,2 +1,2 @@
-# workers-installs
-temporal workers for installs
+# template-go-workers
+Template for creating a workers repository.
