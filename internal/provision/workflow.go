@@ -59,6 +59,7 @@ func execDo(
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		l.Error("error executing do: %s", err)
+		return resp, err
 	}
 
 	return resp, nil
