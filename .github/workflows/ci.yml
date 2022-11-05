@@ -1,0 +1,323 @@
+---
+name: CI
+"on":
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  id-token: write
+  issues: read
+  packages: write
+  pull-requests: write
+  statuses: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  REPO_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  template-lint:
+    if: github.repository == 'powertoolsdev/template-go-workers'
+    name: Template terraform test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform init
+        run: |
+          terraform -chdir=infra init -backend=false
+
+  terraform:
+    if: github.repository != 'powertoolsdev/template-go-workers'
+    name: Get Terraform outputs
+    runs-on: ubuntu-latest
+    env:
+      TF_OUT: ${{ github.workspace }}/tf-out.json
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_KEY }}
+
+      - name: Init terraform
+        shell: bash
+        working-directory: infra
+        env:
+          TF_WORKSPACE: stage
+        run: |
+          terraform init
+
+      - name: Get terraform outputs
+        working-directory: infra
+        env:
+          TF_WORKSPACE: stage
+        run: |
+          terraform-bin output -json > ${{ env.TF_OUT }}
+
+      - name: Parse terraform outputs
+        uses: powertoolsdev/action-tf-output@main
+        with:
+          file: ${{ env.TF_OUT }}
+
+      - name: Save terraform outputs
+        run: |
+          printenv | grep "TFO_" > .tfenv
+
+      - name: Save outputs
+        uses: actions/upload-artifact@v3
+        with:
+          name: env-${{ github.run_id }}
+          path: .tfenv
+          if-no-files-found: error
+          retention-days: 1
+
+  lint:
+    name: Lint
+    needs: terraform
+    runs-on: ubuntu-latest
+    if: github.repository != 'powertoolsdev/template-go-workers'
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+          repositories: go-common,go-helm,go-terraform,go-kube,go-sender,go-uploader,go-waypoint
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Download terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: env-${{ github.run_id }}
+
+      - name: Setup environment
+        run: |
+          cat .tfenv >> "$GITHUB_ENV"
+
+      - name: Setup for CI
+        uses: powertoolsdev/action-setup-ci@main
+        with:
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ steps.generate_token.outputs.token }}
+          aws_role: ${{ env.TFO_GH_ROLE_ARN }}
+          aws_region: ${{ env.TFO_REGION }}
+
+      # TODO(jdt): move to earthly and remove this
+      - name: Terraform init
+        if: github.repository != 'powertoolsdev/template-go-workers'
+        env:
+          TF_WORKSPACE: stage
+        run: |
+          terraform -chdir=infra init -backend=false
+
+      - name: Lint
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --remote-cache=ghcr.io/${{ github.repository }}:lint \
+            +lint
+
+      - name: Run helm lint
+        shell: bash
+        working-directory: k8s
+        run: |
+          helm lint .
+
+  test:
+    if: github.repository != 'powertoolsdev/template-go-workers'
+    name: Test
+    needs: terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+          repositories: go-common,go-helm,go-terraform,go-kube,go-sender,go-uploader,go-waypoint
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Download terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: env-${{ github.run_id }}
+
+      - name: Setup for CI
+        uses: powertoolsdev/action-setup-ci@main
+        with:
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Setup terraform environment
+        run: |
+          cat .tfenv >> "$GITHUB_ENV"
+
+      - name: Run earthly
+        if: always()
+        run: |
+          earthly \
+            --allow-privileged \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --remote-cache=ghcr.io/${{ github.repository }}:test-integration \
+            +test-integration
+
+  update-status-template:
+    name: Update status template
+    if: github.event_name == 'pull_request' && github.repository == 'powertoolsdev/template-go-workers'
+    needs:
+      - template-lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: Required CI Checks
+          status: success
+
+  update_status:
+    name: Update status
+    # TODO(jm): reenable after first terraform apply
+    #needs:
+      #- lint
+      #- test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: Required CI Checks
+          status: success
+
+  release:
+    name: Release
+    needs:
+      - terraform
+    if: github.event_name != 'pull_request' && github.repository != 'powertoolsdev/template-go-workers'
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.semver.outputs.next }}
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+          repositories: go-common,go-helm,go-terraform,go-kube,go-sender,go-uploader,go-waypoint
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Determine next version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          patchAll: true
+
+      - name: Download terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: env-${{ github.run_id }}
+
+      - name: Setup environment
+        run: |
+          cat .tfenv >> "$GITHUB_ENV"
+          {
+            echo IMAGE_TAG=${{ steps.semver.outputs.next }}
+            echo HELM_CHART_VERSION=${{ steps.semver.outputs.nextStrict }}
+          } >> "$GITHUB_ENV"
+
+      - name: Setup for CI
+        uses: powertoolsdev/action-setup-ci@main
+        with:
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ steps.generate_token.outputs.token }}
+          aws_role: ${{ env.TFO_GH_ROLE_ARN }}
+          aws_region: ${{ env.TFO_REGION }}
+          ecr_registries: ${{ env.TFO_ECR_REGISTRY_ID }}
+          helm_repos: nuon=${{ env.TFO_NUON_CHARTS }}
+
+      - name: Build and push container
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --remote-cache=ghcr.io/${{ github.repository }}:build \
+            +docker \
+            --repo=${{ env.TFO_ECR_REPOSITORY_URL }} \
+            --image_tag=${{ env.IMAGE_TAG }}
+
+      - name: Bump and publish chart
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --remote-cache=ghcr.io/${{ github.repository }}:helm \
+            +helm-bump-and-publish \
+            --repos=nuon=${{ env.TFO_NUON_CHARTS }} \
+            --chart_version=${{ env.HELM_CHART_VERSION }}
+
+      - name: Push tag
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: ${{ env.HELM_CHART_VERSION }}
+
+      - name: Handle failures
+        if: failure()
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            github.com/powertoolsdev/shared-configs+helm-unrelease \
+            --registry_id=${{ env.TFO_ECR_REGISTRY_ID }} \
+            --chart_version=${{ env.HELM_CHART_VERSION }} \
+            --image_tag=${{ env.IMAGE_TAG }} \
+          || true
+
+  deploy-stage:
+    name: Deploy (stage)
+    needs:
+      - release
+    if: github.event_name != 'pull_request' && github.repository != 'powertoolsdev/template-go-workers'
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      env: stage
+      tag: ${{ needs.release.outputs.image_tag }}
