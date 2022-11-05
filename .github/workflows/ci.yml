@@ -208,10 +208,9 @@ jobs:
 
   update_status:
     name: Update status
-    # TODO(jm): reenable once terraform has been applied
-    #needs:
-      #- lint
-      #- test
+    needs:
+      - lint
+      - test
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
