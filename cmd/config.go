@@ -9,7 +9,6 @@ import (
 func init() {
 	config.RegisterDefault("temporal_host", "localhost:7233")
 	config.RegisterDefault("temporal_namespace", "default")
-
 }
 
 type Config struct {
