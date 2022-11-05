@@ -1,2 +1,2 @@
-# workers-apps
-temporal workers for apps
+# template-go-workers
+Template for creating a workers repository.
