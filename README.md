@@ -1,2 +1,2 @@
-# workers-deployments
-temporal workers for deployments
+# template-go-workers
+Template for creating a workers repository.
