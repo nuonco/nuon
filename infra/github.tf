@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
       "ecr:PutImage",
       "ecr:UploadLayerPart",
     ]
-    resources = [data.aws_ecr_repository.temporal_workers.arn]
+    resources = [data.aws_ecr_repository.ecr_repository.arn]
   }
 }
 

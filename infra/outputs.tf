@@ -15,7 +15,7 @@ output "nuon_charts" {
 }
 
 output "ecr_repository_url" {
-  value = data.aws_ecr_repository.temporal_workers.repository_url
+  value = data.aws_ecr_repository.ecr_repository.repository_url
 }
 
 output "ecr_registry_id" {

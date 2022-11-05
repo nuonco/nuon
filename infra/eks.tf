@@ -1,4 +1,4 @@
-data "aws_iam_policy_document" "temporal_workers" {
+data "aws_iam_policy_document" "workers" {
   statement {
     effect = "Allow"
     actions = [
@@ -35,9 +35,9 @@ data "aws_iam_policy_document" "temporal_workers" {
 
 }
 
-resource "aws_iam_policy" "temporal_workers_policy" {
+resource "aws_iam_policy" "workers_policy" {
   name   = "eks-policy-${local.name}"
-  policy = data.aws_iam_policy_document.temporal_workers.json
+  policy = data.aws_iam_policy_document.workers.json
 }
 
 module "iam_eks_role" {
@@ -53,6 +53,6 @@ module "iam_eks_role" {
   }
 
   role_policy_arns = {
-    custom = aws_iam_policy.temporal_workers_policy.arn
+    custom = aws_iam_policy.workers_policy.arn
   }
 }
