@@ -1,0 +1,135 @@
+package provision
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/mitchellh/mapstructure"
+	"github.com/powertoolsdev/go-helm"
+	"github.com/powertoolsdev/go-helm/waypoint"
+	"github.com/powertoolsdev/go-kube"
+	"go.temporal.io/sdk/activity"
+	"helm.sh/helm/v3/pkg/release"
+)
+
+type RunnerConfig struct {
+	ID         string
+	Cookie     string
+	ServerAddr string
+}
+
+type InstallWaypointRequest struct {
+	Namespace   string
+	ReleaseName string
+	Chart       *helm.Chart
+	Atomic      bool
+
+	ClusterInfo  kube.ClusterInfo
+	RunnerConfig RunnerConfig
+
+	// These are exposed for testing. Do not use otherwise
+	CreateNamespace bool
+}
+
+type InstallWaypointResponse struct{}
+
+type installer interface {
+	Install(context.Context, *helm.InstallConfig) (*release.Release, error)
+}
+
+// getWaypointRunnerValues returns the set of values needed to configure the request
+func getWaypointRunnerValues(req InstallWaypointRequest) (map[string]interface{}, error) {
+	if err := validateInstallWaypointRequest(req); err != nil {
+		return nil, err
+	}
+
+	values := waypoint.NewDefaultInstallValues()
+	values.Runner.Enabled = true
+	values.Runner.ID = req.RunnerConfig.ID
+	values.Runner.Server.Addr = req.RunnerConfig.ServerAddr
+	values.Runner.Server.TLS = true
+	values.Runner.Server.TLSSkipVerify = true
+	values.Runner.Server.Cookie = req.RunnerConfig.Cookie
+
+	values.Server.Enabled = false
+	values.UI.Service.Enabled = false
+	values.Bootstrap.ServiceAccount.Create = false
+
+	var vals map[string]interface{}
+	err := mapstructure.Decode(values, &vals)
+	return vals, err
+}
+
+// TODO(jdt): make this idempotent
+func (a *ProvisionActivities) InstallWaypoint(ctx context.Context, req InstallWaypointRequest) (InstallWaypointResponse, error) {
+	resp := InstallWaypointResponse{}
+
+	if err := validateInstallWaypointRequest(req); err != nil {
+		return resp, fmt.Errorf("invalid request: %w", err)
+	}
+
+	l := activity.GetLogger(ctx)
+
+	var err error
+	kCfg := a.Kubeconfig
+	if kCfg == nil {
+		req.ClusterInfo.TrustedRoleARN = a.config.NuonAccessRoleArn
+		kCfg, err = kube.ConfigForCluster(&req.ClusterInfo)
+		if err != nil {
+			return resp, fmt.Errorf("failed to get config for cluster: %w", err)
+		}
+	}
+
+	vals, err := getWaypointRunnerValues(req)
+	if err != nil {
+		return resp, fmt.Errorf("failed to create helm values: %w", err)
+	}
+
+	cfg := &helm.InstallConfig{
+		Namespace:       req.Namespace,
+		ReleaseName:     req.ReleaseName,
+		Chart:           req.Chart,
+		Atomic:          req.Atomic,
+		Values:          vals,
+		CreateNamespace: req.CreateNamespace,
+		Kubeconfig:      kCfg,
+		Logger:          l,
+	}
+	_, err = a.helmInstaller.Install(ctx, cfg)
+	if err != nil {
+		return resp, fmt.Errorf("failed to install: %w", err)
+	}
+
+	l.Debug("finished installing waypoint", "response", resp)
+	return resp, nil
+}
+
+var (
+	ErrInvalidReleaseName   = errors.New("invalid release name")
+	ErrInvalidChart         = errors.New("invalid chart")
+	ErrInvalidNamespaceName = errors.New("invalid namespace")
+)
+
+func validateInstallWaypointRequest(req InstallWaypointRequest) error {
+	if req.Namespace == "" {
+		return fmt.Errorf("%w: namespace must be specified", ErrInvalidNamespaceName)
+	}
+	if req.ReleaseName == "" {
+		return fmt.Errorf("%w: release name must be specified", ErrInvalidReleaseName)
+	}
+	if req.Chart == nil {
+		return fmt.Errorf("%w: chart must be specified", ErrInvalidChart)
+	}
+	if req.Chart.Name == "" {
+		return fmt.Errorf("%w: chart name must be specified", ErrInvalidChart)
+	}
+	if req.Chart.URL == "" {
+		return fmt.Errorf("%w: chart repo URL must be specified", ErrInvalidChart)
+	}
+	if req.Chart.Version == "" {
+		return fmt.Errorf("%w: chart version must be specified", ErrInvalidChart)
+	}
+
+	return nil
+}

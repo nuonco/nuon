@@ -1,0 +1,120 @@
+//go:build integration
+
+package provision_test
+
+import (
+	"context"
+
+	"github.com/powertoolsdev/go-helm/waypoint"
+	"github.com/powertoolsdev/go-sender"
+	workers "github.com/powertoolsdev/workers-installs/internal"
+	"github.com/powertoolsdev/workers-installs/internal/provision"
+	"go.temporal.io/sdk/testsuite"
+
+	"testing"
+
+	"github.com/google/uuid"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	corev1 "k8s.io/api/core/v1"
+	apimetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+)
+
+// These tests use Ginkgo (BDD-style Go testing framework). Refer to
+// http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+
+var (
+	cfg       *rest.Config
+	k8sClient client.Client // You'll be using this client in your tests.
+	testEnv   *envtest.Environment
+	ctx       context.Context
+	cancel    context.CancelFunc
+)
+
+func TestAPIs(t *testing.T) {
+	RegisterFailHandler(Fail)
+
+	RunSpecsWithDefaultAndCustomReporters(t,
+		"Controller Suite",
+		[]Reporter{printer.NewlineReporter{}})
+}
+
+var _ = BeforeSuite(func() {
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	ctx, cancel = context.WithCancel(context.TODO())
+
+	By("bootstrapping test environment")
+	testEnv = &envtest.Environment{}
+
+	var err error
+	cfg, err = testEnv.Start()
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cfg).NotTo(BeNil())
+
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(k8sClient).NotTo(BeNil())
+}, 60)
+
+var _ = AfterSuite(func() {
+	cancel()
+
+	By("tearing down the test environment")
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
+})
+
+var _ = Describe("InstallWaypoint", func() {
+	var (
+		namespace string = "default"
+		a         *provision.ProvisionActivities
+		req       provision.InstallWaypointRequest
+		e         *testsuite.TestActivityEnvironment
+	)
+
+	BeforeEach(func() {
+		namespace = uuid.New().String()
+		a = provision.NewProvisionActivities(workers.Config{}, sender.NewNoopSender())
+		a.Kubeconfig = cfg
+		testSuite := &testsuite.WorkflowTestSuite{}
+		e = testSuite.NewTestActivityEnvironment()
+		e.RegisterActivity(a)
+
+		req = provision.InstallWaypointRequest{
+			Namespace:       namespace,
+			ReleaseName:     "test",
+			Chart:           &waypoint.DefaultChart,
+			CreateNamespace: true,
+		}
+	})
+
+	Context("When installing waypoint", func() {
+		It("Should install waypoint", func() {
+			resp, err := e.ExecuteActivity(a.InstallWaypoint, req)
+			Expect(err).NotTo(HaveOccurred())
+			// TODO(jdt): this assertion is pretty weak
+			Expect(resp).NotTo(BeNil())
+		})
+
+		It("Should fail with invalid version", func() {
+			req.Chart.Version = "doesnotexist"
+			_, err := e.ExecuteActivity(a.InstallWaypoint, req)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("version %q not found", req.Chart.Version))
+		})
+	})
+
+	AfterEach(func() {
+		ns := &corev1.Namespace{ObjectMeta: apimetav1.ObjectMeta{Name: namespace}}
+		k8sClient.Delete(ctx, ns)
+	})
+})
