@@ -56,8 +56,9 @@ docker:
     LABEL org.opencontainers.image.source=$EARTHLY_GIT_ORIGIN_URL
     LABEL org.opencontainers.image.authors=nuon
     LABEL org.opencontainers.image.vendor=nuon
-    SAVE IMAGE --push --cache-from=$repo:$cache_tag $repo:$image_tag
-
+    #SAVE IMAGE --push --cache-from=$repo:$cache_tag $repo:$image_tag
+    # NOTE(jm): this is failing, so we remove the caching step to see if it's related.
+    SAVE IMAGE --push $repo:$image_tag
 
 helm-bump-and-publish:
     FROM ghcr.io/powertoolsdev/ci-helm-releaser
