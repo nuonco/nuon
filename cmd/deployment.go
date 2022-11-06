@@ -5,25 +5,26 @@ import (
 
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
-	"github.com/powertoolsdev/template-go-workers/internal/provision"
+	start "github.com/powertoolsdev/workers-deployments/internal/start"
+	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	"go.uber.org/zap"
 )
 
-var domainCmd = &cobra.Command{
-	Use:   "domain",
-	Short: "Run the domain workers",
-	Run:   domainRun,
+var deploymentCmd = &cobra.Command{
+	Use:   "deployment",
+	Short: "Run the deployment workers",
+	Run:   deploymentRun,
 }
 
 //nolint:gochecknoinits
 func init() {
-	rootCmd.AddCommand(domainCmd)
+	rootCmd.AddCommand(deploymentCmd)
 }
 
-func domainRun(cmd *cobra.Command, args []string) {
+func deploymentRun(cmd *cobra.Command, args []string) {
 	var cfg Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
@@ -56,27 +57,33 @@ func domainRun(cmd *cobra.Command, args []string) {
 	}
 	defer c.Close()
 
-	l.Debug("starting domain workers", zap.Any("config", cfg))
-	if err := runDomainWorkers(c, cfg, worker.InterruptCh()); err != nil {
+	l.Debug("starting deployment workers", zap.Any("config", cfg))
+	if err := runDeploymentWorkers(c, cfg, worker.InterruptCh()); err != nil {
 		l.Error("error running worker", zap.Error(err))
 	}
 }
 
-func runDomainWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) error {
-	w := worker.New(c, "domain", worker.Options{
+func runDeploymentWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) error {
+	w := worker.New(c, "deployment", worker.Options{
 		MaxConcurrentActivityExecutionSize: 1,
 	})
 
-	if err := cfg.Cfg.Validate(); err != nil {
-		return fmt.Errorf("invalid domain config: %w", err)
+	if err := cfg.DeploymentCfg.Validate(); err != nil {
+		return fmt.Errorf("invalid deployment config: %w", err)
 	}
 
-	wkflow := provision.NewWorkflow(cfg.Cfg)
-	w.RegisterWorkflow(wkflow.Provision)
-	w.RegisterActivity(provision.NewActivities())
+	wkflow := start.NewWorkflow(cfg.DeploymentCfg)
+	w.RegisterWorkflow(wkflow.Start)
+	w.RegisterActivity(start.NewActivities(cfg.DeploymentCfg))
+
+	bldWkflow := build.NewWorkflow(cfg.DeploymentCfg)
+	w.RegisterWorkflow(bldWkflow.Build)
+	bldActs := build.NewActivities(cfg.DeploymentCfg)
+	w.RegisterActivity(bldActs)
 
 	if err := w.Run(interruptCh); err != nil {
 		return err
 	}
+
 	return nil
 }

@@ -1,0 +1,157 @@
+package start
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/go-playground/validator/v10"
+	"go.temporal.io/sdk/workflow"
+
+	"github.com/powertoolsdev/go-common/shortid"
+	"github.com/powertoolsdev/go-waypoint"
+	workers "github.com/powertoolsdev/workers-deployments/internal"
+	"github.com/powertoolsdev/workers-deployments/internal/start/build"
+)
+
+const (
+	defaultActivityTimeout = time.Second * 5
+)
+
+type StartRequest struct {
+	OrgID        string `json:"org_id" validate:"required"`
+	AppID        string `json:"app_id" validate:"required"`
+	DeploymentID string `json:"deployment_id" validate:"required"`
+
+	InstallIDs []string           `json:"install_ids" validate:"required,min=1"`
+	Component  waypoint.Component `json:"component" validate:"required"`
+}
+
+func (s StartRequest) validate() error {
+	validate := validator.New()
+	return validate.Struct(s)
+}
+
+type StartResponse struct {
+	WorkflowIDs []string `json:"workflow_ids"`
+}
+
+func configureActivityOptions(ctx workflow.Context) workflow.Context {
+	activityOpts := workflow.ActivityOptions{
+		ScheduleToCloseTimeout: defaultActivityTimeout,
+	}
+	return workflow.WithActivityOptions(ctx, activityOpts)
+}
+
+type wkflow struct {
+	cfg workers.Config
+}
+
+func NewWorkflow(cfg workers.Config) *wkflow {
+	return &wkflow{
+		cfg: cfg,
+	}
+}
+
+func (w *wkflow) Start(ctx workflow.Context, req StartRequest) (StartResponse, error) {
+	resp := StartResponse{}
+	l := workflow.GetLogger(ctx)
+	ctx = configureActivityOptions(ctx)
+	act := NewActivities(workers.Config{})
+
+	if err := req.validate(); err != nil {
+		return resp, err
+	}
+
+	orgID, err := shortid.ParseString(req.OrgID)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get short org ID: %w", err)
+	}
+	appID, err := shortid.ParseString(req.AppID)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get short app ID: %w", err)
+	}
+
+	deploymentID, err := shortid.ParseString(req.DeploymentID)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get short deployment ID: %w", err)
+	}
+
+	// run the build workflow
+	bReq := build.BuildRequest{
+		OrgID:        orgID,
+		AppID:        appID,
+		DeploymentID: deploymentID,
+		Component:    req.Component,
+	}
+	bResp, err := execBuild(ctx, w.cfg, bReq)
+	if err != nil {
+		return resp, fmt.Errorf("unable to perform build: %w", err)
+	}
+	l.Debug(fmt.Sprintf("finished build %v", bResp))
+
+	// start instance workflows
+	for _, installID := range req.InstallIDs {
+		installShortID, err := shortid.ParseString(installID)
+		if err != nil {
+			return resp, err
+		}
+
+		actReq := ProvisionInstanceRequest{
+			OrgID:        orgID,
+			AppID:        appID,
+			DeploymentID: deploymentID,
+			InstallID:    installShortID,
+			Component:    req.Component,
+		}
+
+		actResp, err := execProvisionInstanceActivity(ctx, act, actReq)
+		if err != nil {
+			return resp, err
+		}
+		resp.WorkflowIDs = append(resp.WorkflowIDs, actResp.WorkflowID)
+	}
+
+	l.Debug(fmt.Sprintf("starting %d child workflows", len(req.InstallIDs)))
+	return resp, nil
+}
+
+func execBuild(
+	ctx workflow.Context,
+	cfg workers.Config,
+	req build.BuildRequest,
+) (build.BuildResponse, error) {
+	var resp build.BuildResponse
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing build workflow")
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	wkflow := build.NewWorkflow(cfg)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.Build, req)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func execProvisionInstanceActivity(
+	ctx workflow.Context,
+	act *Activities,
+	req ProvisionInstanceRequest,
+) (ProvisionInstanceResponse, error) {
+	l := workflow.GetLogger(ctx)
+	resp := ProvisionInstanceResponse{}
+
+	l.Debug("executing provision instance activity", "request", req)
+	fut := workflow.ExecuteActivity(ctx, act.ProvisionInstance, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
