@@ -1,0 +1,67 @@
+package signup
+
+import (
+	"context"
+	"testing"
+
+	"github.com/powertoolsdev/go-common/shortid"
+	workers "github.com/powertoolsdev/workers-orgs/internal"
+	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
+	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/workflow"
+)
+
+func Test_Workflow(t *testing.T) {
+	testSuite := &testsuite.WorkflowTestSuite{}
+	env := testSuite.NewTestWorkflowEnvironment()
+	cfg := workers.Config{
+		WaypointBootstrapTokenNamespace: "default",
+		WaypointServerRootDomain:        "testing.nuon.co",
+	}
+	srv := server.NewWorkflow(cfg)
+	run := runner.NewWorkflow(cfg)
+	env.RegisterWorkflow(srv.Provision)
+	env.RegisterWorkflow(run.Install)
+
+	wf := NewWorkflow(cfg)
+	a := NewActivities(nil)
+
+	req := SignupRequest{OrgID: "00000000-0000-0000-0000-000000000000", Region: "us-east-2"}
+
+	id, err := shortid.ParseString(req.OrgID)
+	require.NoError(t, err)
+
+	// Mock activity implementations
+
+	env.OnActivity(a.SendNotification, mock.Anything, mock.Anything).
+		Return(func(ctx context.Context, snr SendNotificationRequest) (SendNotificationResponse, error) {
+			return SendNotificationResponse{}, nil
+		})
+
+	env.OnWorkflow(srv.Provision, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r server.ProvisionRequest) (server.ProvisionResponse, error) {
+			var resp server.ProvisionResponse
+			assert.Nil(t, r.Validate())
+			assert.Equal(t, id, r.OrgID)
+			return resp, nil
+		})
+
+	env.OnWorkflow(run.Install, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r runner.InstallRunnerRequest) (runner.InstallRunnerResponse, error) {
+			var resp runner.InstallRunnerResponse
+			assert.Nil(t, r.Validate())
+			assert.Equal(t, id, r.OrgID)
+			return resp, nil
+		})
+
+	env.ExecuteWorkflow(wf.Signup, req)
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	var resp SignupResponse
+	require.NoError(t, env.GetWorkflowResult(&resp))
+	require.NotNil(t, resp)
+}

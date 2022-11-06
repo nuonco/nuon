@@ -1,0 +1,254 @@
+package server
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-helm/waypoint"
+	"github.com/powertoolsdev/go-kube"
+	workers "github.com/powertoolsdev/workers-orgs/internal"
+	"go.temporal.io/sdk/log"
+	"go.temporal.io/sdk/workflow"
+)
+
+const (
+	defaultWaypointServerPort int32 = 9701
+)
+
+type BootstrapError struct{}
+
+func (b BootstrapError) Error() string {
+	return "client already bootstrapped"
+}
+
+type ProvisionRequest struct {
+	OrgID  string `json:"org_id" validate:"required"`
+	Region string `json:"region" validate:"required"`
+}
+
+func (p ProvisionRequest) Validate() error {
+	validate := validator.New()
+	return validate.Struct(p)
+}
+
+type ProvisionResponse struct{}
+
+type wkflow struct {
+	cfg workers.Config
+}
+
+func NewWorkflow(cfg workers.Config) wkflow {
+	return wkflow{
+		cfg: cfg,
+	}
+}
+
+func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (ProvisionResponse, error) {
+	resp := ProvisionResponse{}
+
+	l := log.With(workflow.GetLogger(ctx))
+	ao := workflow.ActivityOptions{
+		ScheduleToCloseTimeout: 15 * time.Minute,
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
+
+	waypointServerAddr := fmt.Sprintf("%s.%s:%d", req.OrgID, w.cfg.WaypointServerRootDomain, defaultWaypointServerPort)
+	clusterInfo := kube.ClusterInfo{
+		ID:             w.cfg.OrgsK8sClusterID,
+		Endpoint:       w.cfg.OrgsK8sPublicEndpoint,
+		CAData:         w.cfg.OrgsK8sCAData,
+		TrustedRoleARN: w.cfg.OrgsK8sRoleArn,
+	}
+
+	act := NewActivities()
+
+	cnReq := CreateNamespaceRequest{
+		NamespaceName: req.OrgID,
+		ClusterInfo:   clusterInfo,
+	}
+	_, err := createNamespace(ctx, act, cnReq)
+	if err != nil {
+		return resp, fmt.Errorf("failed to create namespace: %w", err)
+	}
+
+	l.Debug("installing waypoint server")
+	_, err = installWaypointServer(ctx, act, InstallWaypointServerRequest{
+		Namespace:   req.OrgID,
+		ReleaseName: fmt.Sprintf("wp-%s", req.OrgID),
+		Chart:       &waypoint.DefaultChart,
+		Atomic:      false,
+		ClusterInfo: clusterInfo,
+	})
+	if err != nil {
+		return resp, fmt.Errorf("failed to install waypoint: %w", err)
+	}
+
+	l.Debug("exposing waypoint server publicly")
+	_, err = exposeWaypointServer(ctx, act, ExposeWaypointServerRequest{
+		NamespaceName: req.OrgID,
+		RootDomain:    w.cfg.WaypointServerRootDomain,
+		ShortID:       req.OrgID,
+		ClusterInfo:   clusterInfo,
+	})
+	if err != nil {
+		return resp, fmt.Errorf("failed to expose waypoint: %w", err)
+	}
+
+	l.Debug("pinging waypoint server until it responds")
+	_, err = pingWaypointServer(ctx, act, PingWaypointServerRequest{
+		Addr:    waypointServerAddr,
+		Timeout: time.Minute * 5,
+	})
+	if err != nil {
+		return resp, fmt.Errorf("failed to ping waypoint: %w", err)
+	}
+
+	l.Debug("bootstrapping waypoint server")
+	_, err = bootstrapWaypointServer(ctx, act, BootstrapWaypointServerRequest{
+		ServerAddr:     waypointServerAddr,
+		TokenNamespace: w.cfg.WaypointBootstrapTokenNamespace,
+		OrgID:          req.OrgID,
+	})
+	if err != nil {
+		return resp, fmt.Errorf("failed to bootstrap waypoint: %w", err)
+	}
+
+	l.Debug("creating waypoint project")
+	_, err = createWaypointProject(ctx, act, CreateWaypointProjectRequest{
+		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
+		OrgServerAddr:        waypointServerAddr,
+		OrgID:                req.OrgID,
+	})
+	if err != nil {
+		return resp, fmt.Errorf("failed to create waypoint project: %w", err)
+	}
+
+	l.Debug("finished signup", "response", resp)
+	return resp, nil
+}
+
+// createWaypointProject executes an activity to create the waypoint project on the org's server
+func createWaypointProject(
+	ctx workflow.Context,
+	act *Activities,
+	req CreateWaypointProjectRequest,
+) (CreateWaypointProjectResponse, error) {
+	var resp CreateWaypointProjectResponse
+	l := workflow.GetLogger(ctx)
+
+	if err := req.validate(); err != nil {
+		return resp, err
+	}
+
+	l.Debug("executing create waypoint project activity")
+	fut := workflow.ExecuteActivity(ctx, act.CreateWaypointProject, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func createNamespace(ctx workflow.Context, act *Activities, cnr CreateNamespaceRequest) (CreateNamespaceResponse, error) {
+	var resp CreateNamespaceResponse
+
+	l := workflow.GetLogger(ctx)
+
+	if err := cnr.validate(); err != nil {
+		return resp, err
+	}
+	l.Debug("executing create namespace activity")
+	fut := workflow.ExecuteActivity(ctx, act.CreateNamespace, cnr)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func installWaypointServer(
+	ctx workflow.Context,
+	act *Activities,
+	iwr InstallWaypointServerRequest,
+) (InstallWaypointServerResponse, error) {
+	var resp InstallWaypointServerResponse
+
+	l := workflow.GetLogger(ctx)
+
+	if err := iwr.validate(); err != nil {
+		return resp, err
+	}
+	l.Debug("executing install waypoint activity")
+	fut := workflow.ExecuteActivity(ctx, act.InstallWaypointServer, iwr)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func exposeWaypointServer(
+	ctx workflow.Context,
+	act *Activities,
+	ewsr ExposeWaypointServerRequest,
+) (ExposeWaypointServerResponse, error) {
+	var resp ExposeWaypointServerResponse
+
+	l := workflow.GetLogger(ctx)
+
+	if err := ewsr.validate(); err != nil {
+		return resp, err
+	}
+	l.Debug("executing expose waypoint server activity")
+	fut := workflow.ExecuteActivity(ctx, act.ExposeWaypointServer, ewsr)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func bootstrapWaypointServer(
+	ctx workflow.Context,
+	act *Activities,
+	bwsr BootstrapWaypointServerRequest,
+) (BootstrapWaypointServerResponse, error) {
+	var resp BootstrapWaypointServerResponse
+
+	l := workflow.GetLogger(ctx)
+
+	if err := bwsr.validate(); err != nil {
+		return resp, err
+	}
+	l.Debug("bootstrapping install waypoint server activity")
+	fut := workflow.ExecuteActivity(ctx, act.BootstrapWaypointServer, bwsr)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func pingWaypointServer(
+	ctx workflow.Context,
+	act *Activities,
+	pwsr PingWaypointServerRequest,
+) (PingWaypointServerResponse, error) {
+	var resp PingWaypointServerResponse
+
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing ping waypoint server activity")
+	fut := workflow.ExecuteActivity(ctx, act.PingWaypointServer, pwsr)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
