@@ -1,6 +1,6 @@
 package main
 
-import "github.com/powertoolsdev/template-go-workers/cmd"
+import "github.com/powertoolsdev/workers-installs/cmd"
 
 func main() {
 	cmd.Execute()
