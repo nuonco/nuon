@@ -64,8 +64,7 @@ func runAll(cmd *cobra.Command, args []string) {
 	wg := new(sync.WaitGroup)
 
 	workflows := []workerFn{
-		// TODO: change this to the workers you want to run here
-		runDomainWorkers,
+		runInstanceWorkers,
 	}
 
 	wg.Add(len(workflows))

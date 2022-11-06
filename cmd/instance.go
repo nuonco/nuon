@@ -5,25 +5,25 @@ import (
 
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
-	"github.com/powertoolsdev/template-go-workers/internal/provision"
+	"github.com/powertoolsdev/workers-instances/internal/provision"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	"go.uber.org/zap"
 )
 
-var domainCmd = &cobra.Command{
-	Use:   "domain",
-	Short: "Run the domain workers",
-	Run:   domainRun,
+var instanceCmd = &cobra.Command{
+	Use:   "instance",
+	Short: "Run the instance workers",
+	Run:   instanceRun,
 }
 
 //nolint:gochecknoinits
 func init() {
-	rootCmd.AddCommand(domainCmd)
+	rootCmd.AddCommand(instanceCmd)
 }
 
-func domainRun(cmd *cobra.Command, args []string) {
+func instanceRun(cmd *cobra.Command, args []string) {
 	var cfg Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
@@ -56,19 +56,19 @@ func domainRun(cmd *cobra.Command, args []string) {
 	}
 	defer c.Close()
 
-	l.Debug("starting domain workers", zap.Any("config", cfg))
-	if err := runDomainWorkers(c, cfg, worker.InterruptCh()); err != nil {
+	l.Debug("starting instance workers", zap.Any("config", cfg))
+	if err := runInstanceWorkers(c, cfg, worker.InterruptCh()); err != nil {
 		l.Error("error running worker", zap.Error(err))
 	}
 }
 
-func runDomainWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) error {
-	w := worker.New(c, "domain", worker.Options{
+func runInstanceWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) error {
+	w := worker.New(c, "instance", worker.Options{
 		MaxConcurrentActivityExecutionSize: 1,
 	})
 
 	if err := cfg.Cfg.Validate(); err != nil {
-		return fmt.Errorf("invalid domain config: %w", err)
+		return fmt.Errorf("invalid instance config: %w", err)
 	}
 
 	wkflow := provision.NewWorkflow(cfg.Cfg)
