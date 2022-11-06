@@ -281,6 +281,8 @@ jobs:
             ${{ env.EARTHLY_EXTRA_ARGS }} \
             --remote-cache=ghcr.io/${{ github.repository }}:build \
             +docker \
+            --push \
+            --verbose \
             --repo=${{ env.TFO_ECR_REPOSITORY_URL }} \
             --image_tag=${{ env.IMAGE_TAG }}
 
