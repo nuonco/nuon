@@ -14,7 +14,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	flags := rootCmd.Flags()
 
-	flags.String("service_name", "temporal-workers", "the name of the service")
+	flags.String("service_name", "workers-installs", "the name of the service")
 	flags.String("temporal_host", "", "the temporal host and port")
 	flags.String("temporal_namespace", "", "the temporal namespace")
 }
