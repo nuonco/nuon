@@ -1,21 +1,74 @@
-# template-go-library
+# go-components
 
-This is a template for creating a new go library.
+Centralized go library for generating json representations of HCL files for
+waypoint clients.
+
+The main utility needed here is the ability to name the key for a json nested
+block by it's value, which cannot be done OOB with `json.Marshal`. This library
+also aims to synchronize component needs from `graphql-api` with
+`workers-*` microservices so we're not copoying structs between the repos, and
+`graphql` is setting some of the values for the HCL generation in `workers-*`
+from the UI inputs.
 
 ## Usage
 
-When you create a new repository in `infra-github` set the `template` field to `template-go-library`:
 
-```terraform
-module "my-go-library" {
-  source = "./modules/repository"
+```go
+HCL{
+  Project: "0ezv19lly186a2iazihwf6ms3s",
+	App: &App{
+			Name: "mario",
+			Build: &UseBlock{
+				Use: &DockerRef{
+					Image: "kennethreitz/httpbin",
+					Tag:   "latest",
+				},
+			},
+			Deploy: &UseBlock{
+  			Use: &Kubernetes{
+				Name: "kubernetes",
+			},
+		},
+	},
+}
 
-  name          = "my-go-library"
-  description   = "Go library"
-  topics        = ["go-lib", ]
-  from_template = "template-go-library"
+hclJSON, err := hcl.ToJSON()
+if err != nil {
+	return "", err
+}
+wpReq := &gen.QueueJobRequest{
+	Job: &gen.Job{
+   // ...
+	WaypointHcl: &gen.Hcl{
+			Contents: hclJSON,
+			Format:   gen.Hcl_JSON,
+		},
+	},
+   // ...
 }
 ```
+which will compile into the following json:
+```json
+{
+	"project": "0ezv19lly186a2iazihwf6ms3s",
 
-Once you have created your repository, be sure to make an initial release and tag, named `v0.0.1`. This is required because each release of a library will look up the previous tag and use it to create the _next_ tag.
+	"app": {
+		"mario": {
+			"build": {
+				"use": {
+					"docker-ref": {
+						"image": "kennethreitz/httpbin",
+						"tag": "latest"
+					}
+				}
+			},
 
+			"deploy": {
+				"use": {
+					"kubernetes": {}
+				}
+			}
+		}
+	}
+}
+```
