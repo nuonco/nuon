@@ -15,7 +15,7 @@ require (
 	github.com/powertoolsdev/go-helm v0.0.1
 	github.com/powertoolsdev/go-kube v0.1.2
 	github.com/powertoolsdev/go-sender v0.0.3
-	github.com/powertoolsdev/go-waypoint v0.1.0
+	github.com/powertoolsdev/go-waypoint v0.2.0
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.17.0
