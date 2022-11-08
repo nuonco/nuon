@@ -1,4 +1,4 @@
-package provision
+package runner
 
 import (
 	"context"
@@ -16,16 +16,16 @@ type CreateWaypointProjectRequest struct {
 	InstallID            string `json:"install_id" validate:"required"`
 }
 
-func validateCreateWaypointProjectRequest(req CreateWaypointProjectRequest) error {
+func (c CreateWaypointProjectRequest) validate() error {
 	validate := validator.New()
-	return validate.Struct(req)
+	return validate.Struct(c)
 }
 
 type CreateWaypointProjectResponse struct{}
 
-func (a *ProvisionActivities) CreateWaypointProject(ctx context.Context, req CreateWaypointProjectRequest) (CreateWaypointProjectResponse, error) {
+func (a *Activities) CreateWaypointProject(ctx context.Context, req CreateWaypointProjectRequest) (CreateWaypointProjectResponse, error) {
 	var resp CreateWaypointProjectResponse
-	if err := validateCreateWaypointProjectRequest(req); err != nil {
+	if err := req.validate(); err != nil {
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 

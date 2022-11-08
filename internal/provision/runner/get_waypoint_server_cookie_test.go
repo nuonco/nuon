@@ -1,4 +1,4 @@
-package provision
+package runner
 
 import (
 	"context"
@@ -71,7 +71,7 @@ func TestGetWaypointServerCookie_validateRequest(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			req := test.reqFn()
-			err := validateGetWaypointServerCookieRequest(req)
+			err := req.validate()
 			if test.errExpected == nil {
 				assert.Nil(t, err)
 			} else {

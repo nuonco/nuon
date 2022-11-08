@@ -1,4 +1,4 @@
-package provision
+package runner
 
 import (
 	"context"
@@ -28,7 +28,7 @@ func (c CreateWaypointRunnerProfileRequest) validate() error {
 
 type CreateWaypointRunnerProfileResponse struct{}
 
-func (a *ProvisionActivities) CreateWaypointRunnerProfile(ctx context.Context, req CreateWaypointRunnerProfileRequest) (CreateWaypointRunnerProfileResponse, error) {
+func (a *Activities) CreateWaypointRunnerProfile(ctx context.Context, req CreateWaypointRunnerProfileRequest) (CreateWaypointRunnerProfileResponse, error) {
 	var resp CreateWaypointRunnerProfileResponse
 	if err := req.validate(); err != nil {
 		return resp, fmt.Errorf("failed to validate request: %w", err)

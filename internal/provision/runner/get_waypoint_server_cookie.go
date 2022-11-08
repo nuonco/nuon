@@ -1,4 +1,4 @@
-package provision
+package runner
 
 import (
 	"context"
@@ -16,18 +16,18 @@ type GetWaypointServerCookieRequest struct {
 	OrgID                string `json:"org_id" validate:"required"`
 }
 
-func validateGetWaypointServerCookieRequest(req GetWaypointServerCookieRequest) error {
+func (g GetWaypointServerCookieRequest) validate() error {
 	validate := validator.New()
-	return validate.Struct(req)
+	return validate.Struct(g)
 }
 
 type GetWaypointServerCookieResponse struct {
 	Cookie string `json:"cookie"`
 }
 
-func (a *ProvisionActivities) GetWaypointServerCookie(ctx context.Context, req GetWaypointServerCookieRequest) (GetWaypointServerCookieResponse, error) {
+func (a *Activities) GetWaypointServerCookie(ctx context.Context, req GetWaypointServerCookieRequest) (GetWaypointServerCookieResponse, error) {
 	var resp GetWaypointServerCookieResponse
-	if err := validateGetWaypointServerCookieRequest(req); err != nil {
+	if err := req.validate(); err != nil {
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 

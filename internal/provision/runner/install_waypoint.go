@@ -1,10 +1,10 @@
-package provision
+package runner
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
 	"github.com/powertoolsdev/go-helm"
 	"github.com/powertoolsdev/go-helm/waypoint"
@@ -14,22 +14,26 @@ import (
 )
 
 type RunnerConfig struct {
-	ID         string
-	Cookie     string
-	ServerAddr string
+	ID         string `validate:"required" json:"id"`
+	Cookie     string `validate:"required" json:"cookie"`
+	ServerAddr string `validate:"required" json:"server_addr"`
 }
 
 type InstallWaypointRequest struct {
-	Namespace   string
-	ReleaseName string
-	Chart       *helm.Chart
-	Atomic      bool
-
-	ClusterInfo  kube.ClusterInfo
-	RunnerConfig RunnerConfig
+	Namespace    string           `validate:"required" json:"namespace"`
+	ReleaseName  string           `validate:"required" json:"release_name"`
+	Chart        *helm.Chart      `validate:"required" json:"chart"`
+	Atomic       bool             `json:"atomic"`
+	ClusterInfo  kube.ClusterInfo `validate:"required" json:"cluster_info"`
+	RunnerConfig RunnerConfig     `validate:"required" json:"runner_config"`
 
 	// These are exposed for testing. Do not use otherwise
-	CreateNamespace bool
+	CreateNamespace bool `json:"create_namespace"`
+}
+
+func (i InstallWaypointRequest) validate() error {
+	validate := validator.New()
+	return validate.Struct(i)
 }
 
 type InstallWaypointResponse struct{}
@@ -40,7 +44,7 @@ type installer interface {
 
 // getWaypointRunnerValues returns the set of values needed to configure the request
 func getWaypointRunnerValues(req InstallWaypointRequest) (map[string]interface{}, error) {
-	if err := validateInstallWaypointRequest(req); err != nil {
+	if err := req.validate(); err != nil {
 		return nil, err
 	}
 
@@ -62,10 +66,10 @@ func getWaypointRunnerValues(req InstallWaypointRequest) (map[string]interface{}
 }
 
 // TODO(jdt): make this idempotent
-func (a *ProvisionActivities) InstallWaypoint(ctx context.Context, req InstallWaypointRequest) (InstallWaypointResponse, error) {
+func (a *Activities) InstallWaypoint(ctx context.Context, req InstallWaypointRequest) (InstallWaypointResponse, error) {
 	resp := InstallWaypointResponse{}
 
-	if err := validateInstallWaypointRequest(req); err != nil {
+	if err := req.validate(); err != nil {
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
@@ -103,33 +107,4 @@ func (a *ProvisionActivities) InstallWaypoint(ctx context.Context, req InstallWa
 
 	l.Debug("finished installing waypoint", "response", resp)
 	return resp, nil
-}
-
-var (
-	ErrInvalidReleaseName   = errors.New("invalid release name")
-	ErrInvalidChart         = errors.New("invalid chart")
-	ErrInvalidNamespaceName = errors.New("invalid namespace")
-)
-
-func validateInstallWaypointRequest(req InstallWaypointRequest) error {
-	if req.Namespace == "" {
-		return fmt.Errorf("%w: namespace must be specified", ErrInvalidNamespaceName)
-	}
-	if req.ReleaseName == "" {
-		return fmt.Errorf("%w: release name must be specified", ErrInvalidReleaseName)
-	}
-	if req.Chart == nil {
-		return fmt.Errorf("%w: chart must be specified", ErrInvalidChart)
-	}
-	if req.Chart.Name == "" {
-		return fmt.Errorf("%w: chart name must be specified", ErrInvalidChart)
-	}
-	if req.Chart.URL == "" {
-		return fmt.Errorf("%w: chart repo URL must be specified", ErrInvalidChart)
-	}
-	if req.Chart.Version == "" {
-		return fmt.Errorf("%w: chart version must be specified", ErrInvalidChart)
-	}
-
-	return nil
 }
