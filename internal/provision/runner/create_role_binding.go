@@ -1,4 +1,4 @@
-package provision
+package runner
 
 import (
 	"context"
@@ -37,7 +37,7 @@ type CreateRoleBindingResponse struct{}
 
 var _ roleBindingCreator = (*roleBindingCreatorImpl)(nil)
 
-func (a *ProvisionActivities) CreateRoleBinding(
+func (a *Activities) CreateRoleBinding(
 	ctx context.Context,
 	req CreateRoleBindingRequest,
 ) (CreateRoleBindingResponse, error) {

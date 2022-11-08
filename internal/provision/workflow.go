@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/powertoolsdev/go-common/shortid"
+	"github.com/powertoolsdev/go-kube"
 	"go.temporal.io/sdk/workflow"
 	"golang.org/x/exp/slices"
 
-	"github.com/powertoolsdev/go-helm/waypoint"
-	"github.com/powertoolsdev/go-kube"
 	workers "github.com/powertoolsdev/workers-installs/internal"
+	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
 )
 
 // validInstallRegions are the list of regions allowed for an install to be run in
@@ -62,8 +62,6 @@ type wkflow struct {
 }
 
 // Provision is a workflow that creates an app install sandbox using terraform
-//
-//nolint:funlen,gocyclo
 func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (ProvisionResponse, error) {
 	resp := ProvisionResponse{}
 	l := workflow.GetLogger(ctx)
@@ -88,7 +86,6 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 		return resp, fmt.Errorf("unable to get short install ID: %w", err)
 	}
 	req.InstallID = installID
-	orgServerAddr := fmt.Sprintf("%s.%s:9701", orgID, w.cfg.OrgServerRootDomain)
 
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 60 * time.Minute,
@@ -138,116 +135,19 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 		return resp, err
 	}
 
-	// create waypoint project
-	cwpReq := CreateWaypointProjectRequest{
-		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
-		OrgServerAddr:        orgServerAddr,
-		OrgID:                orgID,
-		InstallID:            installID,
-	}
-	_, err = createWaypointProject(ctx, act, cwpReq)
-	if err != nil {
-		err = fmt.Errorf("failed to create waypoint project: %w", err)
-		w.finishWithErr(ctx, req, act, "create_waypoint_project", err)
-		return resp, err
-	}
-
-	// create waypoint workspace
-	cwwReq := CreateWaypointWorkspaceRequest{
-		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
-		OrgServerAddr:        orgServerAddr,
-		OrgID:                orgID,
-		InstallID:            installID,
-	}
-	_, err = createWaypointWorkspace(ctx, act, cwwReq)
-	if err != nil {
-		err = fmt.Errorf("failed to create waypoint workspace: %w", err)
-		w.finishWithErr(ctx, req, act, "create_waypoint_workspace", err)
-		return resp, err
-	}
-
-	// get waypoint server cookie
-	gwscReq := GetWaypointServerCookieRequest{
-		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
-		OrgServerAddr:        orgServerAddr,
-		OrgID:                orgID,
-	}
-	gwscResp, err := getWaypointServerCookie(ctx, act, gwscReq)
-	if err != nil {
-		err = fmt.Errorf("failed to get waypoint server cookie: %w", err)
-		w.finishWithErr(ctx, req, act, "get_waypoint_server_cookie", err)
-		return resp, err
-	}
-
-	// install waypoint
-	iwReq := InstallWaypointRequest{
-		Namespace:       installID,
-		ReleaseName:     fmt.Sprintf("wp-%s", installID),
-		Chart:           &waypoint.DefaultChart,
-		Atomic:          false,
-		CreateNamespace: true,
-
+	prReq := runner.ProvisionRequest{
+		OrgID:     orgID,
+		AppID:     appID,
+		InstallID: installID,
 		ClusterInfo: kube.ClusterInfo{
 			ID:       psr.Outputs[clusterIDKey],
 			Endpoint: psr.Outputs[clusterEndpointKey],
 			CAData:   psr.Outputs[clusterCAKey],
 		},
-
-		RunnerConfig: RunnerConfig{
-			Cookie:     gwscResp.Cookie,
-			ID:         installID,
-			ServerAddr: orgServerAddr,
-		},
 	}
-	_, err = installWaypoint(ctx, act, iwReq)
-	if err != nil {
-		err = fmt.Errorf("failed to install waypoint: %w", err)
-		w.finishWithErr(ctx, req, act, "install_waypoint", err)
-		return resp, err
-	}
-
-	awrReq := AdoptWaypointRunnerRequest{
-		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
-		OrgServerAddr:        orgServerAddr,
-		OrgID:                orgID,
-		InstallID:            installID,
-	}
-	_, err = adoptWaypointRunner(ctx, act, awrReq)
-	if err != nil {
-		err = fmt.Errorf("failed to adopt waypoint runner: %w", err)
-		w.finishWithErr(ctx, req, act, "adopt_waypoint_runner", err)
-		return resp, err
-	}
-
-	crbReq := CreateRoleBindingRequest{
-		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
-		OrgServerAddr:        orgServerAddr,
-		InstallID:            installID,
-		NamespaceName:        installID,
-		ClusterInfo: kube.ClusterInfo{
-			ID:             psr.Outputs[clusterIDKey],
-			Endpoint:       psr.Outputs[clusterEndpointKey],
-			CAData:         psr.Outputs[clusterCAKey],
-			TrustedRoleARN: w.cfg.NuonAccessRoleArn,
-		},
-	}
-	_, err = createRoleBinding(ctx, act, crbReq)
-	if err != nil {
-		err = fmt.Errorf("failed to create role_binding for runner: %w", err)
-		w.finishWithErr(ctx, req, act, "create_role_binding", err)
-		return resp, err
-	}
-
-	cwrpReq := CreateWaypointRunnerProfileRequest{
-		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
-		OrgServerAddr:        orgServerAddr,
-		InstallID:            installID,
-		OrgID:                orgID,
-	}
-	_, err = createWaypointRunnerProfile(ctx, act, cwrpReq)
-	if err != nil {
-		err = fmt.Errorf("failed to create waypoint runner profile: %w", err)
-		w.finishWithErr(ctx, req, act, "create_waypoint_runner_profile", err)
+	if _, err = execProvisionRunner(ctx, w.cfg, prReq); err != nil {
+		err = fmt.Errorf("unable to provision install runner: %w", err)
+		w.finishWithErr(ctx, req, act, "provision_install_runner", err)
 		return resp, err
 	}
 
@@ -274,96 +174,6 @@ func provisionSandbox(ctx workflow.Context, act *ProvisionActivities, req Provis
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
-	return resp, nil
-}
-
-// createWaypointProject executes an activity to create the waypoint project on the org's server
-func createWaypointProject(ctx workflow.Context, act *ProvisionActivities, req CreateWaypointProjectRequest) (CreateWaypointProjectResponse, error) {
-	var resp CreateWaypointProjectResponse
-	l := workflow.GetLogger(ctx)
-
-	if err := validateCreateWaypointProjectRequest(req); err != nil {
-		return resp, err
-	}
-
-	l.Debug("executing create waypoint project activity")
-	fut := workflow.ExecuteActivity(ctx, act.CreateWaypointProject, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-// getWaypointServerCookie executes an activity to get the the waypoint server
-func getWaypointServerCookie(ctx workflow.Context, act *ProvisionActivities, req GetWaypointServerCookieRequest) (GetWaypointServerCookieResponse, error) {
-	var resp GetWaypointServerCookieResponse
-	l := workflow.GetLogger(ctx)
-
-	if err := validateGetWaypointServerCookieRequest(req); err != nil {
-		return resp, err
-	}
-
-	l.Debug("executing get waypoint server cookie")
-	fut := workflow.ExecuteActivity(ctx, act.GetWaypointServerCookie, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-// installWaypoint executes an activity to install waypoint into the sandbox
-func installWaypoint(ctx workflow.Context, act *ProvisionActivities, req InstallWaypointRequest) (InstallWaypointResponse, error) {
-	var resp InstallWaypointResponse
-	l := workflow.GetLogger(ctx)
-
-	if err := validateInstallWaypointRequest(req); err != nil {
-		return resp, err
-	}
-
-	l.Debug("executing install waypoint activity")
-	fut := workflow.ExecuteActivity(ctx, act.InstallWaypoint, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-// adoptWaypointRunner adopts the waypoint runner
-func adoptWaypointRunner(ctx workflow.Context, act *ProvisionActivities, req AdoptWaypointRunnerRequest) (AdoptWaypointRunnerResponse, error) {
-	var resp AdoptWaypointRunnerResponse
-	l := workflow.GetLogger(ctx)
-
-	if err := validateAdoptWaypointRunnerRequest(req); err != nil {
-		return resp, err
-	}
-
-	l.Debug("executing adopt waypoint runner activity")
-	fut := workflow.ExecuteActivity(ctx, act.AdoptWaypointRunner, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-// createWaypointWorkspace creates a waypoint workspace
-func createWaypointWorkspace(ctx workflow.Context, act *ProvisionActivities, req CreateWaypointWorkspaceRequest) (CreateWaypointWorkspaceResponse, error) {
-	var resp CreateWaypointWorkspaceResponse
-	l := workflow.GetLogger(ctx)
-
-	if err := validateCreateWaypointWorkspaceRequest(req); err != nil {
-		return resp, err
-	}
-
-	l.Debug("executing create waypoint workspace activity")
-	fut := workflow.ExecuteActivity(ctx, act.CreateWaypointWorkspace, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
 	return resp, nil
 }
 
@@ -396,6 +206,29 @@ func execStartWorkflow(ctx workflow.Context, act *ProvisionActivities, req Start
 	return resp, nil
 }
 
+func execProvisionRunner(
+	ctx workflow.Context,
+	cfg workers.Config,
+	iwrr runner.ProvisionRequest,
+) (runner.ProvisionResponse, error) {
+	var resp runner.ProvisionResponse
+
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 10,
+		WorkflowTaskTimeout:      time.Minute * 5,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	wkflow := runner.NewWorkflow(cfg)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionRunner, iwrr)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
 // exec finish executes the finish activity
 func execFinish(ctx workflow.Context, act *ProvisionActivities, req FinishRequest) (FinishResponse, error) {
 	var resp FinishResponse
@@ -403,50 +236,6 @@ func execFinish(ctx workflow.Context, act *ProvisionActivities, req FinishReques
 
 	l.Debug("executing finish workflow activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.Finish, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-// createRoleBinding: creates the rolebinding in the correct namespace
-func createRoleBinding(
-	ctx workflow.Context,
-	act *ProvisionActivities,
-	req CreateRoleBindingRequest,
-) (CreateRoleBindingResponse, error) {
-	var resp CreateRoleBindingResponse
-	l := workflow.GetLogger(ctx)
-
-	if err := req.validate(); err != nil {
-		return resp, err
-	}
-
-	l.Debug("executing create role binding activity")
-	fut := workflow.ExecuteActivity(ctx, act.CreateRoleBinding, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-// createWaypointRunnerProfile: creates the runner profile for this install
-func createWaypointRunnerProfile(
-	ctx workflow.Context,
-	act *ProvisionActivities,
-	req CreateWaypointRunnerProfileRequest,
-) (CreateWaypointRunnerProfileResponse, error) {
-	var resp CreateWaypointRunnerProfileResponse
-	l := workflow.GetLogger(ctx)
-
-	if err := req.validate(); err != nil {
-		return resp, err
-	}
-
-	l.Debug("executing create waypoint runner profile activity")
-	fut := workflow.ExecuteActivity(ctx, act.CreateWaypointRunnerProfile, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}

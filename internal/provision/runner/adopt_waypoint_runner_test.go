@@ -1,4 +1,4 @@
-package provision
+package runner
 
 import (
 	"context"
@@ -80,7 +80,7 @@ func TestAdoptWaypointRunner_validateRequest(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			req := test.reqFn()
-			err := validateAdoptWaypointRunnerRequest(req)
+			err := req.validate()
 			if test.errExpected == nil {
 				assert.Nil(t, err)
 			} else {

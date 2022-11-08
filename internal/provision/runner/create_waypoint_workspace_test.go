@@ -1,4 +1,4 @@
-package provision
+package runner
 
 import (
 	"context"
@@ -47,7 +47,7 @@ func Test_validateCreateWaypointWorkspaceRequest(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			req := tt.reqFn()
-			err := validateCreateWaypointWorkspaceRequest(req)
+			err := req.validate()
 
 			if tt.errExpected != nil {
 				assert.ErrorContains(t, err, tt.errExpected.Error())

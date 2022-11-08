@@ -1,4 +1,4 @@
-package provision
+package runner
 
 import (
 	"context"
@@ -16,16 +16,16 @@ type CreateWaypointWorkspaceRequest struct {
 	InstallID            string `json:"install_id" validate:"required"`
 }
 
-func validateCreateWaypointWorkspaceRequest(req CreateWaypointWorkspaceRequest) error {
+func (c CreateWaypointWorkspaceRequest) validate() error {
 	validate := validator.New()
-	return validate.Struct(req)
+	return validate.Struct(c)
 }
 
 type CreateWaypointWorkspaceResponse struct{}
 
-func (a *ProvisionActivities) CreateWaypointWorkspace(ctx context.Context, req CreateWaypointWorkspaceRequest) (CreateWaypointWorkspaceResponse, error) {
+func (a *Activities) CreateWaypointWorkspace(ctx context.Context, req CreateWaypointWorkspaceRequest) (CreateWaypointWorkspaceResponse, error) {
 	var resp CreateWaypointWorkspaceResponse
-	if err := validateCreateWaypointWorkspaceRequest(req); err != nil {
+	if err := req.validate(); err != nil {
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 

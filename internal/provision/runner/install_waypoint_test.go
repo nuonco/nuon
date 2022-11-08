@@ -1,4 +1,4 @@
-package provision
+package runner
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jaswdr/faker"
 	"github.com/mitchellh/mapstructure"
 	"github.com/powertoolsdev/go-helm"
 	"github.com/powertoolsdev/go-helm/waypoint"
@@ -16,6 +17,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+func getFakeInstallWaypointRequest() InstallWaypointRequest {
+	fkr := faker.New()
+	var req InstallWaypointRequest
+	fkr.Struct().Fill(&req)
+
+	return req
+}
+
 type testHelmInstaller struct {
 	fn func(context.Context, *helm.InstallConfig) (*release.Release, error)
 }
@@ -25,64 +34,74 @@ func (t testHelmInstaller) Install(ctx context.Context, cfg *helm.InstallConfig)
 }
 
 func TestInstallWaypoint(t *testing.T) {
+	errInstallWaypoint := fmt.Errorf("error installing waypoint")
+
 	tests := map[string]struct {
 		kubeconfig    *rest.Config
-		request       InstallWaypointRequest
+		reqFn         func() InstallWaypointRequest
 		errExpected   error
 		helmInstallFn func(*testing.T) testHelmInstaller
 	}{
 		"errors without namespace": {
-			request:     InstallWaypointRequest{},
-			errExpected: ErrInvalidNamespaceName,
+			reqFn: func() InstallWaypointRequest {
+				req := getFakeInstallWaypointRequest()
+				req.Namespace = ""
+				return req
+			},
+			errExpected: fmt.Errorf("Namespace"),
 		},
 
 		"errors without release name": {
-			request: InstallWaypointRequest{
-				Namespace: "test",
+			reqFn: func() InstallWaypointRequest {
+				req := getFakeInstallWaypointRequest()
+				req.ReleaseName = ""
+				return req
 			},
-			errExpected: ErrInvalidReleaseName,
+			errExpected: fmt.Errorf("ReleaseName"),
 		},
 
 		"errors without chart": {
-			request: InstallWaypointRequest{
-				Namespace:   "test",
-				ReleaseName: "test-release",
+			reqFn: func() InstallWaypointRequest {
+				req := getFakeInstallWaypointRequest()
+				req.Chart = nil
+				return req
 			},
-			errExpected: ErrInvalidChart,
+			errExpected: fmt.Errorf("Chart"),
 		},
 
 		"errors without chart name": {
-			request: InstallWaypointRequest{
-				Namespace:   "test",
-				ReleaseName: "test-release",
-				Chart:       &helm.Chart{},
+			reqFn: func() InstallWaypointRequest {
+				req := getFakeInstallWaypointRequest()
+				req.Chart.Name = ""
+				return req
 			},
-			errExpected: ErrInvalidChart,
+			errExpected: fmt.Errorf("Name"),
 		},
 
 		"errors without chart url": {
-			request: InstallWaypointRequest{
-				Namespace:   "test",
-				ReleaseName: "test-release",
-				Chart:       &helm.Chart{Name: "test-chart"},
+			reqFn: func() InstallWaypointRequest {
+				req := getFakeInstallWaypointRequest()
+				req.Chart.URL = ""
+				return req
 			},
-			errExpected: ErrInvalidChart,
+			errExpected: fmt.Errorf("URL"),
 		},
 
 		"errors without chart version": {
-			request: InstallWaypointRequest{
-				Namespace:   "test",
-				ReleaseName: "test-release",
-				Chart:       &helm.Chart{Name: "waypoint", URL: "https://helm.releases.hashicorp.com"},
+			reqFn: func() InstallWaypointRequest {
+				req := getFakeInstallWaypointRequest()
+				req.Chart.Version = ""
+				return req
 			},
-			errExpected: ErrInvalidChart,
+			errExpected: fmt.Errorf("Version"),
 		},
 
 		"uses api": {
-			request: InstallWaypointRequest{
-				Namespace:   "test",
-				ReleaseName: "test-release",
-				Chart:       &waypoint.DefaultChart,
+			reqFn: func() InstallWaypointRequest {
+				req := getFakeInstallWaypointRequest()
+				req.Chart = &waypoint.DefaultChart
+				req.ReleaseName = "test-release"
+				return req
 			},
 			helmInstallFn: func(t *testing.T) testHelmInstaller {
 				return testHelmInstaller{
@@ -97,10 +116,10 @@ func TestInstallWaypoint(t *testing.T) {
 		},
 
 		"configures values correctly": {
-			request: InstallWaypointRequest{
-				Namespace:   "test",
-				ReleaseName: "test-release",
-				Chart:       &waypoint.DefaultChart,
+			reqFn: func() InstallWaypointRequest {
+				req := getFakeInstallWaypointRequest()
+				req.Chart = &waypoint.DefaultChart
+				return req
 			},
 			helmInstallFn: func(t *testing.T) testHelmInstaller {
 				return testHelmInstaller{
@@ -118,16 +137,15 @@ func TestInstallWaypoint(t *testing.T) {
 		},
 
 		"wraps errors": {
-			request: InstallWaypointRequest{
-				Namespace:   "test",
-				ReleaseName: "test-release",
-				Chart:       &waypoint.DefaultChart,
+			reqFn: func() InstallWaypointRequest {
+				req := getFakeInstallWaypointRequest()
+				return req
 			},
-			errExpected: ErrInvalidNamespaceName,
+			errExpected: errInstallWaypoint,
 			helmInstallFn: func(t *testing.T) testHelmInstaller {
 				return testHelmInstaller{
 					fn: func(ctx context.Context, cfg *helm.InstallConfig) (*release.Release, error) {
-						return nil, ErrInvalidNamespaceName
+						return nil, errInstallWaypoint
 					},
 				}
 			},
@@ -138,14 +156,14 @@ func TestInstallWaypoint(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			testSuite := &testsuite.WorkflowTestSuite{}
 			env := testSuite.NewTestActivityEnvironment()
-			a := &ProvisionActivities{}
+			a := &Activities{}
 			a.Kubeconfig = &rest.Config{}
 			env.RegisterActivity(a)
 
 			if test.helmInstallFn != nil {
 				a.helmInstaller = test.helmInstallFn(t)
 			}
-			enc, err := env.ExecuteActivity(a.InstallWaypoint, test.request)
+			enc, err := env.ExecuteActivity(a.InstallWaypoint, test.reqFn())
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
@@ -161,25 +179,20 @@ func TestInstallWaypoint(t *testing.T) {
 }
 
 func Test_waypointRunnerValues(t *testing.T) {
-	installID := uuid.NewString()
 	cookie := uuid.NewString()
 	addr := fmt.Sprintf("%s.stage.nuon.co", uuid.NewString())
 
 	tests := map[string]struct {
-		req         InstallWaypointRequest
+		reqFn       func() InstallWaypointRequest
 		errExpected error
 		assertFn    func(*testing.T, map[string]interface{})
 	}{
 		"happy path": {
-			req: InstallWaypointRequest{
-				Namespace:   installID,
-				ReleaseName: "v10.0.1",
-				Chart:       &waypoint.DefaultChart,
-				RunnerConfig: RunnerConfig{
-					ID:         installID,
-					Cookie:     cookie,
-					ServerAddr: addr,
-				},
+			reqFn: func() InstallWaypointRequest {
+				req := getFakeInstallWaypointRequest()
+				req.RunnerConfig.Cookie = cookie
+				req.RunnerConfig.ServerAddr = addr
+				return req
 			},
 			assertFn: func(t *testing.T, v map[string]interface{}) {
 				var vals waypoint.Values
@@ -190,6 +203,7 @@ func Test_waypointRunnerValues(t *testing.T) {
 				assert.True(t, vals.Runner.Server.TLS)
 				assert.True(t, vals.Runner.Server.TLSSkipVerify)
 				assert.Equal(t, cookie, vals.Runner.Server.Cookie)
+
 				assert.Equal(t, addr, vals.Runner.Server.Addr)
 
 				assert.False(t, vals.Server.Enabled)
@@ -198,14 +212,17 @@ func Test_waypointRunnerValues(t *testing.T) {
 			},
 		},
 		"errors with invalid request": {
-			req:         InstallWaypointRequest{},
-			errExpected: ErrInvalidNamespaceName,
+			reqFn: func() InstallWaypointRequest {
+				return InstallWaypointRequest{}
+			},
+
+			errExpected: fmt.Errorf("Namespace"),
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			vals, err := getWaypointRunnerValues(test.req)
+			vals, err := getWaypointRunnerValues(test.reqFn())
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

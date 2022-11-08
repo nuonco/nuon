@@ -1,14 +1,15 @@
 //go:build integration
 
-package provision_test
+package runner_test
 
 import (
 	"context"
 
 	"github.com/powertoolsdev/go-helm/waypoint"
+	"github.com/powertoolsdev/go-kube"
 	"github.com/powertoolsdev/go-sender"
 	workers "github.com/powertoolsdev/workers-installs/internal"
-	"github.com/powertoolsdev/workers-installs/internal/provision"
+	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
 	"go.temporal.io/sdk/testsuite"
 
 	"testing"
@@ -76,23 +77,35 @@ var _ = AfterSuite(func() {
 var _ = Describe("InstallWaypoint", func() {
 	var (
 		namespace string = "default"
-		a         *provision.ProvisionActivities
-		req       provision.InstallWaypointRequest
+		a         *runner.Activities
+		req       runner.InstallWaypointRequest
 		e         *testsuite.TestActivityEnvironment
 	)
 
 	BeforeEach(func() {
 		namespace = uuid.New().String()
-		a = provision.NewProvisionActivities(workers.Config{}, sender.NewNoopSender())
+		a = runner.NewActivities(workers.Config{}, sender.NewNoopSender())
 		a.Kubeconfig = cfg
 		testSuite := &testsuite.WorkflowTestSuite{}
 		e = testSuite.NewTestActivityEnvironment()
 		e.RegisterActivity(a)
 
-		req = provision.InstallWaypointRequest{
-			Namespace:       namespace,
-			ReleaseName:     "test",
-			Chart:           &waypoint.DefaultChart,
+		req = runner.InstallWaypointRequest{
+			Namespace:   namespace,
+			ReleaseName: "test",
+			Chart:       &waypoint.DefaultChart,
+			Atomic:      false,
+			ClusterInfo: kube.ClusterInfo{
+				ID:             "cluster-id",
+				Endpoint:       "endpoint",
+				CAData:         "ca-data",
+				TrustedRoleARN: "arn",
+			},
+			RunnerConfig: runner.RunnerConfig{
+				ID:         namespace,
+				Cookie:     "cookie",
+				ServerAddr: "addr",
+			},
 			CreateNamespace: true,
 		}
 	})
