@@ -713,8 +713,8 @@ github.com/powertoolsdev/go-terraform v0.0.2 h1:56IcnP4ENAV8yYb0iJw7/gRV2xtQDCgY
 github.com/powertoolsdev/go-terraform v0.0.2/go.mod h1:0dNNMqHTbJnVaAru6gNCMfK8zvFTd4TzjDPZ3pvsvqw=
 github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91 h1:OG2oNfhcIaFNn313KgvmbI/KdFwyqGhy5zLOXVwtgVg=
 github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91/go.mod h1:3QmdHAzmyd0JyT+jguiZlJC/H4aFL/I0/e8FiS16h/0=
-github.com/powertoolsdev/go-waypoint v0.1.0 h1:06nHwPtoj3QuvvEYhDtZo2uI0UA/czt0NYw7qhFRhR0=
-github.com/powertoolsdev/go-waypoint v0.1.0/go.mod h1:eEP8g9seI6WsQkv7Of9J+5BQHnYOiI2EZ32+MfnmvGQ=
+github.com/powertoolsdev/go-waypoint v0.2.0 h1:nl2TpHs6RPebqcrhiGzRh/q0IbEsPexVOdZzGsN7pmU=
+github.com/powertoolsdev/go-waypoint v0.2.0/go.mod h1:eEP8g9seI6WsQkv7Of9J+5BQHnYOiI2EZ32+MfnmvGQ=
 github.com/poy/onpar v0.0.0-20190519213022-ee068f8ea4d1/go.mod h1:nSbFQvMj97ZyhFRSJYtut+msi4sOY6zJDGCdSc+/rZU=
 github.com/poy/onpar v1.1.2 h1:QaNrNiZx0+Nar5dLgTVp5mXkyoVFIbepjyEoGSnhbAY=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
