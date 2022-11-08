@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/waypoint v0.10.2
 	github.com/powertoolsdev/go-common v1.1.17
 	github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91
-	github.com/powertoolsdev/go-waypoint v0.1.0
+	github.com/powertoolsdev/go-waypoint v0.2.0
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.17.0
