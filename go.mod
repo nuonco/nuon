@@ -11,7 +11,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.24.0
 	github.com/powertoolsdev/go-common v1.1.17
-	github.com/powertoolsdev/go-helm v0.0.1
+	github.com/powertoolsdev/go-helm v0.0.3
 	github.com/powertoolsdev/go-kube v0.1.2
 	github.com/powertoolsdev/go-sender v0.0.3
 	github.com/powertoolsdev/go-terraform v0.0.2
