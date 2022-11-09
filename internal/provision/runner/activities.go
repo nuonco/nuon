@@ -2,7 +2,6 @@ package runner
 
 import (
 	"github.com/powertoolsdev/go-helm"
-	"github.com/powertoolsdev/go-sender"
 	"github.com/powertoolsdev/go-waypoint"
 	"k8s.io/client-go/rest"
 
@@ -16,7 +15,6 @@ type waypointProvider = waypoint.Provider
 // workflow. It should only be a few activities, such as running terraform and installing the agent
 type Activities struct {
 	helmInstaller installer
-	sender        sender.NotificationSender
 
 	config workers.Config
 
@@ -33,11 +31,10 @@ type Activities struct {
 	waypointRunnerProfileCreator
 }
 
-func NewActivities(cfg workers.Config, sender sender.NotificationSender) *Activities {
+func NewActivities(cfg workers.Config) *Activities {
 	return &Activities{
 		helmInstaller: helm.NewInstaller(),
 		config:        cfg,
-		sender:        sender,
 
 		waypointProvider:             waypoint.NewProvider(),
 		waypointProjectCreator:       &wpProjectCreator{},
