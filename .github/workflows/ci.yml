@@ -305,9 +305,11 @@ jobs:
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
             github.com/powertoolsdev/shared-configs+helm-unrelease \
+            --repo_name=${{ env.REPO_NAME }} \
             --registry_id=${{ env.TFO_ECR_REGISTRY_ID }} \
             --chart_version=${{ env.HELM_CHART_VERSION }} \
             --image_tag=${{ env.IMAGE_TAG }} \
+            --helm_repos="nuon=${{ env.TFO_NUON_CHARTS }}" \
           || true
 
   deploy-stage:
