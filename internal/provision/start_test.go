@@ -203,7 +203,7 @@ func Test_writeRequestFile(t *testing.T) {
 			assertFn: func(t *testing.T, client s3BlobUploader) {
 				obj := client.(*tests3BlobUploader)
 				obj.AssertNumberOfCalls(t, "UploadBlob", 1)
-				assertReq := obj.Calls[0].Arguments[1].(ProvisionSandboxRequest)
+				assertReq := obj.Calls[0].Arguments[1].(ProvisionRequest)
 				assertFilename := obj.Calls[0].Arguments[2].(string)
 				assert.Equal(t, assertReq, req)
 				assert.Equal(t, assertFilename, "request.json")

@@ -12,18 +12,12 @@ import (
 
 	workers "github.com/powertoolsdev/workers-installs/internal"
 	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
+	"github.com/powertoolsdev/workers-installs/internal/provision/sandbox"
 )
 
 // validInstallRegions are the list of regions allowed for an install to be run in
 func validInstallRegions() []string {
 	return []string{"us-east-1", "us-east-2", "us-west-1", "us-west-2"}
-}
-
-// TODO(jdt): why is this AWS specific?
-type AccountSettings struct {
-	AwsRegion    string `json:"aws_region"`
-	AwsAccountID string `json:"aws_account_id"`
-	AwsRoleArn   string `json:"aws_role_arn"`
 }
 
 // ProvisionRequest includes the set of arguments needed to provision a sandbox
@@ -32,7 +26,7 @@ type ProvisionRequest struct {
 	AppID     string `json:"app_id" validate:"required"`
 	InstallID string `json:"install_id" validate:"required"`
 
-	AccountSettings *AccountSettings `json:"account_settings" validate:"required"`
+	AccountSettings *sandbox.AccountSettings `json:"account_settings" validate:"required"`
 
 	SandboxSettings struct {
 		Name    string `json:"name" validate:"required"`
@@ -110,26 +104,22 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 		return resp, err
 	}
 
-	psReq := ProvisionSandboxRequest{
-		AppID:               appID,
-		OrgID:               orgID,
-		InstallID:           installID,
-		BackendBucketName:   w.cfg.InstallationStateBucket,
-		BackendBucketRegion: w.cfg.InstallationStateBucketRegion,
-		AccountSettings:     req.AccountSettings,
-		SandboxSettings:     req.SandboxSettings,
-		SandboxBucketName:   w.cfg.SandboxBucket,
-		NuonAccessRoleArn:   w.cfg.NuonAccessRoleArn,
+	psReq := sandbox.ProvisionRequest{
+		AppID:           appID,
+		OrgID:           orgID,
+		InstallID:       installID,
+		AccountSettings: req.AccountSettings,
+		SandboxSettings: req.SandboxSettings,
 	}
-	psr, err := provisionSandbox(ctx, act, psReq)
+	psr, err := execProvisionSandbox(ctx, w.cfg, psReq)
 	if err != nil {
 		err = fmt.Errorf("unable to provision sandbox: %w", err)
 		w.finishWithErr(ctx, req, act, "provision_sandbox", err)
 		return resp, err
 	}
-	resp.TerraformOutputs = psr.Outputs
+	resp.TerraformOutputs = psr.TerraformOutputs
 
-	if err = checkKeys(psr.Outputs, []string{clusterIDKey, clusterEndpointKey, clusterCAKey}); err != nil {
+	if err = checkKeys(psr.TerraformOutputs, []string{clusterIDKey, clusterEndpointKey, clusterCAKey}); err != nil {
 		err = fmt.Errorf("missing necessary TF output to continue: %w", err)
 		w.finishWithErr(ctx, req, act, "check_terraform_outputs", err)
 		return resp, err
@@ -140,9 +130,9 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 		AppID:     appID,
 		InstallID: installID,
 		ClusterInfo: kube.ClusterInfo{
-			ID:       psr.Outputs[clusterIDKey],
-			Endpoint: psr.Outputs[clusterEndpointKey],
-			CAData:   psr.Outputs[clusterCAKey],
+			ID:       psr.TerraformOutputs[clusterIDKey],
+			Endpoint: psr.TerraformOutputs[clusterEndpointKey],
+			CAData:   psr.TerraformOutputs[clusterCAKey],
 		},
 	}
 	if _, err = execProvisionRunner(ctx, w.cfg, prReq); err != nil {
@@ -161,19 +151,6 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 		return resp, fmt.Errorf("unable to execute finish activity: %w", err)
 	}
 	l.Debug("finished provisioning", "response", resp)
-	return resp, nil
-}
-
-// provisionSandbox executes a provision sandbox activity
-func provisionSandbox(ctx workflow.Context, act *ProvisionActivities, req ProvisionSandboxRequest) (ProvisionSandboxResponse, error) {
-	var resp ProvisionSandboxResponse
-	l := workflow.GetLogger(ctx)
-
-	l.Debug("executing provision sandbox activity", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.ProvisionSandbox, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
 	return resp, nil
 }
 
@@ -199,6 +176,29 @@ func execStartWorkflow(ctx workflow.Context, act *ProvisionActivities, req Start
 
 	l.Debug("executing start workflow activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.StartWorkflow, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func execProvisionSandbox(
+	ctx workflow.Context,
+	cfg workers.Config,
+	iwrr sandbox.ProvisionRequest,
+) (sandbox.ProvisionResponse, error) {
+	var resp sandbox.ProvisionResponse
+
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 30,
+		WorkflowTaskTimeout:      time.Minute * 15,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	wkflow := sandbox.NewWorkflow(cfg)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionSandbox, iwrr)
+
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
