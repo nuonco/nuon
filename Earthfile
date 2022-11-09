@@ -143,11 +143,13 @@ DEPS:
 ################################### LOCAL #####################################
 bin:
    ARG BUILD_SIGNATURE=local
-   RUN go build \
+   ARG EARTHLY_GIT_SHORT_HASH
+   LOCALLY
+   RUN unset GOCACHE GOMODCACHE \
+        && go build \
            -v \
            -o bin/workers \
            .
-   SAVE ARTIFACT bin/workers AS LOCAL bin/workers
 
 get-envtest-versions:
     FROM alpine:3.16
