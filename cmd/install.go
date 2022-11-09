@@ -8,6 +8,8 @@ import (
 	"github.com/powertoolsdev/go-sender"
 	"github.com/powertoolsdev/workers-installs/internal/deprovision"
 	"github.com/powertoolsdev/workers-installs/internal/provision"
+	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
+	"github.com/powertoolsdev/workers-installs/internal/provision/sandbox"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
@@ -93,12 +95,21 @@ func runInstallWorkers(c client.Client, cfg Config, interruptCh <-chan interface
 		return fmt.Errorf("invalid install config: %w", err)
 	}
 
+	// register provision
 	prWorkflow := provision.NewWorkflow(cfg.WorkersCfg)
-	dprWorkflow := deprovision.NewWorkflow(cfg.WorkersCfg)
+	prRWorkflow := runner.NewWorkflow(cfg.WorkersCfg)
+	prSWorkflow := sandbox.NewWorkflow(cfg.WorkersCfg)
 
 	w.RegisterWorkflow(prWorkflow.Provision)
-	w.RegisterWorkflow(dprWorkflow.Deprovision)
+	w.RegisterWorkflow(prRWorkflow.ProvisionRunner)
+	w.RegisterWorkflow(prSWorkflow.ProvisionSandbox)
 	w.RegisterActivity(provision.NewProvisionActivities(cfg.WorkersCfg, n))
+	w.RegisterActivity(sandbox.NewActivities(cfg.WorkersCfg))
+	w.RegisterActivity(runner.NewActivities(cfg.WorkersCfg))
+
+	// register deprovision
+	dprWorkflow := deprovision.NewWorkflow(cfg.WorkersCfg)
+	w.RegisterWorkflow(dprWorkflow.Deprovision)
 	w.RegisterActivity(deprovision.NewActivities(n))
 
 	if err := w.Run(interruptCh); err != nil {

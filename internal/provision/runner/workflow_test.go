@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 
-	"github.com/powertoolsdev/go-sender"
 	workers "github.com/powertoolsdev/workers-installs/internal"
 )
 
@@ -36,7 +35,7 @@ func TestProvisionRunner(t *testing.T) {
 	cfg := newFakeConfig()
 	assert.Nil(t, cfg.Validate())
 
-	a := NewActivities(cfg, sender.NewNoopSender())
+	a := NewActivities(cfg)
 
 	req := getFakeProvisionRequest()
 

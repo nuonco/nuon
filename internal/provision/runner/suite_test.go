@@ -7,7 +7,6 @@ import (
 
 	"github.com/powertoolsdev/go-helm/waypoint"
 	"github.com/powertoolsdev/go-kube"
-	"github.com/powertoolsdev/go-sender"
 	workers "github.com/powertoolsdev/workers-installs/internal"
 	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
 	"go.temporal.io/sdk/testsuite"
@@ -84,7 +83,7 @@ var _ = Describe("InstallWaypoint", func() {
 
 	BeforeEach(func() {
 		namespace = uuid.New().String()
-		a = runner.NewActivities(workers.Config{}, sender.NewNoopSender())
+		a = runner.NewActivities(workers.Config{})
 		a.Kubeconfig = cfg
 		testSuite := &testsuite.WorkflowTestSuite{}
 		e = testSuite.NewTestActivityEnvironment()
