@@ -36,7 +36,7 @@ func getFakeDeprovisionRequest() DeprovisionRequest {
 			Version string `json:"version" validate:"required"`
 		}{
 			Name:    "aws-eks",
-			Version: "v0.0.1",
+			Version: "v0.1.1",
 		},
 
 		AwsRegion:     "us-west-2",
