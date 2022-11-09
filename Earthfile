@@ -13,7 +13,7 @@ ARG GOPRIVATE=github.com/powertoolsdev/*
 
 ARG GITHUB_ACTIONS=
 
-ARG GHCR_IMAGE=ghcr.io/powertoolsdev/temporal-workers
+ARG GHCR_IMAGE=ghcr.io/powertoolsdev/workers-apps
 
 build:
     DO +DEPS
