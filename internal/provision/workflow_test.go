@@ -17,6 +17,7 @@ import (
 	"github.com/powertoolsdev/go-sender"
 	workers "github.com/powertoolsdev/workers-installs/internal"
 	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
+	"github.com/powertoolsdev/workers-installs/internal/provision/sandbox"
 )
 
 func newFakeConfig() workers.Config {
@@ -35,7 +36,7 @@ func getFakeProvisionRequest() ProvisionRequest {
 		InstallID: uuid.New().String(),
 		OrgID:     uuid.New().String(),
 		AppID:     uuid.New().String(),
-		AccountSettings: &AccountSettings{
+		AccountSettings: &sandbox.AccountSettings{
 			AwsAccountID: uuid.New().String(),
 			AwsRegion:    validInstallRegions()[0],
 			AwsRoleArn:   uuid.New().String(),
@@ -57,7 +58,7 @@ func TestProvision_finishWithErr(t *testing.T) {
 	req := getFakeProvisionRequest()
 	act := NewProvisionActivities(workers.Config{}, nil)
 
-	errActivity := fmt.Errorf("unable to complete activity")
+	errChildWorkflow := fmt.Errorf("unable to complete workflow")
 
 	env.OnActivity(act.StartWorkflow, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, _ StartWorkflowRequest) (StartWorkflowResponse, error) {
@@ -65,15 +66,17 @@ func TestProvision_finishWithErr(t *testing.T) {
 			return resp, nil
 		})
 
-	env.OnActivity(act.ProvisionSandbox, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, pr ProvisionSandboxRequest) (ProvisionSandboxResponse, error) {
-			return ProvisionSandboxResponse{}, errActivity
+	sWkflow := sandbox.NewWorkflow(cfg)
+	env.RegisterWorkflow(sWkflow.ProvisionSandbox)
+	env.OnWorkflow(sWkflow.ProvisionSandbox, mock.Anything, mock.Anything).
+		Return(func(_ workflow.Context, pr sandbox.ProvisionRequest) (sandbox.ProvisionResponse, error) {
+			return sandbox.ProvisionResponse{}, errChildWorkflow
 		})
 
 	env.OnActivity(act.Finish, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, fr FinishRequest) (FinishResponse, error) {
 			assert.Equal(t, fr.ErrorStep, "provision_sandbox")
-			assert.Contains(t, fr.ErrorMessage, errActivity.Error())
+			assert.Contains(t, fr.ErrorMessage, errChildWorkflow.Error())
 			assert.False(t, fr.Success)
 			return FinishResponse{}, nil
 		})
@@ -166,6 +169,8 @@ func TestProvision(t *testing.T) {
 	a := NewProvisionActivities(cfg, sender.NewNoopSender())
 	rWkflow := runner.NewWorkflow(cfg)
 	env.RegisterWorkflow(rWkflow.ProvisionRunner)
+	sWkflow := sandbox.NewWorkflow(cfg)
+	env.RegisterWorkflow(sWkflow.ProvisionSandbox)
 
 	req := getFakeProvisionRequest()
 
@@ -182,16 +187,16 @@ func TestProvision(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Mock activity implementation
-	env.OnActivity(a.ProvisionSandbox, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, pr ProvisionSandboxRequest) (ProvisionSandboxResponse, error) {
-			assert.Nil(t, pr.validate())
+	env.OnWorkflow(sWkflow.ProvisionSandbox, mock.Anything, mock.Anything).
+		Return(func(_ workflow.Context, pr sandbox.ProvisionRequest) (sandbox.ProvisionResponse, error) {
+			assert.Nil(t, pr.Validate())
 
 			assert.Equal(t, orgShortID, pr.OrgID)
 			assert.Equal(t, appShortID, pr.AppID)
 			assert.Equal(t, installShortID, pr.InstallID)
 			assert.Equal(t, req.AccountSettings, pr.AccountSettings)
 			assert.Equal(t, req.SandboxSettings, pr.SandboxSettings)
-			return ProvisionSandboxResponse{Outputs: validProvisionOutput}, nil
+			return sandbox.ProvisionResponse{TerraformOutputs: validProvisionOutput}, nil
 		})
 
 	env.OnActivity(a.StartWorkflow, mock.Anything, mock.Anything).
