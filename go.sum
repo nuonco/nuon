@@ -601,8 +601,8 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
 github.com/powertoolsdev/go-common v1.1.17 h1:xTVPf7kiezNH09fIINiWSHHzqhQ517GQjcSSprF9EbU=
 github.com/powertoolsdev/go-common v1.1.17/go.mod h1:mhY1HkgLn4iPkxnGy2ownap+hxJosifCfE7qwXmpyUE=
-github.com/powertoolsdev/go-helm v0.0.1 h1:T671wg9FvVM3jAbJKwviw17MNPbweLaPE44dYzI3Rhk=
-github.com/powertoolsdev/go-helm v0.0.1/go.mod h1:2nGi0nMrtyOWJHy/98RCBulwnX0GUV1jx88PGhPQto0=
+github.com/powertoolsdev/go-helm v0.0.3 h1:gcDPD4iFg8H9pdbQReMRWmYVHDnS98HAmLNRDG9aVrw=
+github.com/powertoolsdev/go-helm v0.0.3/go.mod h1:ku7zE4ktCN2s2oHgeT5ZJBab1b327YNIo0uu+IZgPN8=
 github.com/powertoolsdev/go-kube v0.1.2 h1:NJgQTvtLSB+SMcJjBZlsaz+yJF/1iWN1WVsp7E/2+y8=
 github.com/powertoolsdev/go-kube v0.1.2/go.mod h1:EBoFFkN3tZ5cvI1cZzl+dX2kRWY7em69w7g1AMMKIyQ=
 github.com/powertoolsdev/go-sender v0.0.3 h1:HJ5g23ITe3n63sDw5cP51tn3sLKUZD211arBj40cb7I=
