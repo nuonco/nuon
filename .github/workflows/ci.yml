@@ -26,23 +26,7 @@ env:
   REPO_NAME: ${{ github.event.repository.name }}
 
 jobs:
-  template-lint:
-    if: github.repository == 'powertoolsdev/template-go-workers'
-    name: Template terraform test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Setup terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Terraform init
-        run: |
-          terraform -chdir=infra init -backend=false
-
   terraform:
-    if: github.repository != 'powertoolsdev/template-go-workers'
     name: Get Terraform outputs
     runs-on: ubuntu-latest
     env:
@@ -92,7 +76,6 @@ jobs:
     name: Lint
     needs: terraform
     runs-on: ubuntu-latest
-    if: github.repository != 'powertoolsdev/template-go-workers'
     steps:
       - name: Generate token
         id: generate_token
@@ -147,7 +130,6 @@ jobs:
           helm lint .
 
   test:
-    if: github.repository != 'powertoolsdev/template-go-workers'
     name: Test
     needs: terraform
     runs-on: ubuntu-latest
@@ -190,22 +172,6 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}:test-integration \
             +test-integration
 
-  update-status-template:
-    name: Update status template
-    if: github.event_name == 'pull_request' && github.repository == 'powertoolsdev/template-go-workers'
-    needs:
-      - template-lint
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      statuses: write
-    steps:
-      - name: Update status
-        uses: ouzi-dev/commit-status-updater@v2.0.1
-        with:
-          name: Required CI Checks
-          status: success
-
   update_status:
     name: Update status
     needs:
@@ -227,7 +193,7 @@ jobs:
     name: Release
     needs:
       - terraform
-    if: github.event_name != 'pull_request' && github.repository != 'powertoolsdev/template-go-workers'
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.semver.outputs.next }}
@@ -316,7 +282,7 @@ jobs:
     name: Deploy (stage)
     needs:
       - release
-    if: github.event_name != 'pull_request' && github.repository != 'powertoolsdev/template-go-workers'
+    if: github.event_name != 'pull_request'
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
     with:

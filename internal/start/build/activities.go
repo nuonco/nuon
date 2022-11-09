@@ -5,7 +5,7 @@ import (
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 )
 
-// NOTE: we alias this type so it doesn't conflict
+// NOTE(jm): we alias this type so it doesn't conflict
 type waypointProvider = waypoint.Provider
 
 type Activities struct {
