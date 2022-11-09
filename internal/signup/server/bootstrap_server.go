@@ -24,6 +24,8 @@ type BootstrapWaypointServerRequest struct {
 	ServerAddr     string `json:"server_addr"     validate:"required"`
 	TokenNamespace string `json:"token_namespace" validate:"required"`
 	OrgID          string `json:"org_id" validate:"required"`
+
+	ClusterInfo kube.ClusterInfo `json:"cluster_info" validate:"required"`
 }
 
 func (b BootstrapWaypointServerRequest) validate() error {
@@ -51,6 +53,9 @@ func (a *Activities) BootstrapWaypointServer(
 	} else if err != nil {
 		return resp, err
 	}
+
+	// NOTE: read/writing of tokens in the service clusters is being deprecated, and we will soon _only_ store
+	// tokens in the orgs clusters.
 	cfg := a.Kubeconfig
 	if cfg == nil {
 		cfg, err = kube.GetKubeConfig()
@@ -60,6 +65,21 @@ func (a *Activities) BootstrapWaypointServer(
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return resp, fmt.Errorf("failed to create kube client: %w", err)
+	}
+
+	err = a.storeBootstrapToken(ctx, clientset.CoreV1().Secrets(req.TokenNamespace), req.OrgID, bootstrapToken)
+	if err != nil {
+		return resp, fmt.Errorf("failed to create namespace: %w", err)
+	}
+
+	// write token to orgs cluster
+	cfg, err = kube.ConfigForCluster(&req.ClusterInfo)
+	if err != nil {
+		return resp, fmt.Errorf("failed to get config for cluster: %w", err)
+	}
+	clientset, err = kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return resp, fmt.Errorf("failed to create kube client: %w", err)
 	}

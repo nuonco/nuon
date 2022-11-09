@@ -109,6 +109,7 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 		ServerAddr:     waypointServerAddr,
 		TokenNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgID:          req.OrgID,
+		ClusterInfo:    clusterInfo,
 	})
 	if err != nil {
 		return resp, fmt.Errorf("failed to bootstrap waypoint: %w", err)
