@@ -13,12 +13,13 @@ ARG GOPRIVATE=github.com/powertoolsdev/*
 
 ARG GITHUB_ACTIONS=
 
-ARG GHCR_IMAGE=ghcr.io/powertoolsdev/workers-instances
+ARG EARTHLY_GIT_PROJECT_NAME
+ARG GHCR_IMAGE=ghcr.io/$EARTHLY_GIT_PROJECT_NAME
 
 build:
     DO +DEPS
-    RUN go build -o bin/workers .
-    SAVE ARTIFACT bin/workers /workers
+    RUN go build -o bin/service .
+    SAVE ARTIFACT bin/service /service
 
 # TODO(jdt): do something better and platform specific
 iamauthenticator:
@@ -44,12 +45,12 @@ docker:
     ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
     BUILD +iamauthenticator
-    COPY +build/workers /bin/workers
+    COPY +build/service /bin/service
     COPY +iamauthenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
     RUN apk add --update --no-cache \
         git \
         zip
-    ENTRYPOINT ["/bin/workers", "all"]
+    ENTRYPOINT ["/bin/service", "all"]
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
     LABEL org.opencontainers.image.version=$image_tag
@@ -149,7 +150,7 @@ bin:
    RUN unset GOCACHE GOMODCACHE \
         && go build \
            -v \
-           -o bin/workers \
+           -o bin/service \
            .
 
 get-envtest-versions:

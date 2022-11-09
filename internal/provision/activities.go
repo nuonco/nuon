@@ -4,7 +4,7 @@ import (
 	"github.com/powertoolsdev/go-waypoint"
 )
 
-// NOTE: we alias this type so it doesn't conflict
+// NOTE(jm): we alias this type so it doesn't conflict
 type waypointProvider = waypoint.Provider
 
 type Activities struct {
