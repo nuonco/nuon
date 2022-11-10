@@ -19,7 +19,7 @@ require (
 	github.com/powertoolsdev/go-waypoint v0.2.0
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
-	go.temporal.io/sdk v1.17.0
+	go.temporal.io/sdk v1.18.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/exp v0.0.0-20220916125017-b168a2c6b86b
 	google.golang.org/grpc v1.50.1
@@ -32,7 +32,7 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.7.0 // indirect
+	cloud.google.com/go/compute v1.10.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.2.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
@@ -191,19 +191,19 @@ require (
 	github.com/zclconf/go-cty v1.12.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.4 // indirect
 	go.starlark.net v0.0.0-20220817180228-f738f5508c12 // indirect
-	go.temporal.io/api v1.12.0 // indirect
+	go.temporal.io/api v1.13.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
 	golang.org/x/net v0.1.0 // indirect
-	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1 // indirect
-	golang.org/x/sync v0.0.0-20220907140024-f12130a52804 // indirect
+	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
+	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0 // indirect
 	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/term v0.1.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220919141832-68c03719ef51 // indirect
+	google.golang.org/genproto v0.0.0-20221027153422-115e99e71e1c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
