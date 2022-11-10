@@ -8,9 +8,12 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-uploader"
 	"github.com/powertoolsdev/go-waypoint/job"
 	"go.temporal.io/sdk/activity"
 )
+
+const eventFilename = "events.json"
 
 type PollWaypointDeploymentJobRequest struct {
 	OrgID                string `json:"org_id" validate:"required"`
@@ -58,9 +61,10 @@ func (a *Activities) PollWaypointDeploymentJob(
 		return resp, fmt.Errorf("unable to finish waypoint deployment job: %w", err)
 	}
 
-	// TODO: read tmp file and upload it to S3
-	if err := os.Remove(fileWriter.fileLoc); err != nil {
-		return resp, fmt.Errorf("unable to remove local tmp file: %w", err)
+	// upload tmp file to S3 + cleanup
+	uploadClient := uploader.NewS3Uploader(req.BucketName, req.BucketPrefix)
+	if err := a.uploadEventFile(ctx, uploadClient, fileWriter); err != nil {
+		return resp, fmt.Errorf("unable to upload events file to s3: %w", err)
 	}
 
 	return resp, nil
@@ -97,6 +101,37 @@ func (f fileEventWriter) Write(ev job.WaypointJobEvent) error {
 	_, err = f.fh.Write(append(byts, []byte("\n")...))
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+type waypointDeploymentJobPollerImpl struct{}
+
+type waypointDeploymentJobPoller interface {
+	uploadEventFile(context.Context, s3BlobUploader, *fileEventWriter) error
+}
+
+var _ waypointDeploymentJobPoller = (*waypointDeploymentJobPollerImpl)(nil)
+
+func (waypointDeploymentJobPollerImpl) uploadEventFile(ctx context.Context, client s3BlobUploader, fileWriter *fileEventWriter) error {
+	contents, err := os.ReadFile(fileWriter.fileLoc)
+	if err != nil {
+		return fmt.Errorf("unable to read temp file: %s", err)
+	}
+	byts, err := json.Marshal(contents)
+	if err != nil {
+		return err
+	}
+
+	// upload file
+	if err := client.UploadBlob(ctx, byts, eventFilename); err != nil {
+		return fmt.Errorf("unable to upload events file to s3: %s", err)
+	}
+
+	// remove tmp file
+	if err := os.Remove(fileWriter.fileLoc); err != nil {
+		return fmt.Errorf("unable to remove temp file: %s", err)
 	}
 
 	return nil

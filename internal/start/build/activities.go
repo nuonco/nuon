@@ -13,6 +13,7 @@ type Activities struct {
 	waypointProvider
 	waypointWorkspaceUpserter
 	waypointApplicationUpserter
+	waypointDeploymentJobPoller
 	waypointDeploymentJobQueuer
 	waypointDeploymentJobValidator
 	artifactUploader
@@ -24,6 +25,7 @@ func NewActivities(cfg workers.Config) *Activities {
 		waypointWorkspaceUpserter:      &wpWorkspaceUpserter{},
 		waypointProvider:               waypoint.NewProvider(),
 		waypointApplicationUpserter:    &wpApplicationUpserter{},
+		waypointDeploymentJobPoller:    &waypointDeploymentJobPollerImpl{},
 		waypointDeploymentJobQueuer:    &waypointDeploymentJobQueuerImpl{},
 		waypointDeploymentJobValidator: &waypointDeploymentJobValidatorImpl{},
 		artifactUploader:               &artifactUploaderImpl{},
