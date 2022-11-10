@@ -11,6 +11,7 @@ type Activities struct {
 	waypointCfgGenerator
 	waypointApplicationUpserter
 	waypointProvider
+	waypointDeploymentJobPoller
 	waypointDeploymentJobQueuer
 	metadataUploader
 }
@@ -20,6 +21,7 @@ func NewActivities() *Activities {
 		waypointCfgGenerator:        &waypointCfgGeneratorImpl{},
 		waypointApplicationUpserter: &wpApplicationUpserter{},
 		waypointProvider:            waypoint.NewProvider(),
+		waypointDeploymentJobPoller: &waypointDeploymentJobPollerImpl{},
 		waypointDeploymentJobQueuer: &waypointDeploymentJobQueuerImpl{},
 		metadataUploader:            &metadataUploaderImpl{},
 	}
