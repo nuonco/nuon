@@ -6,7 +6,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/powertoolsdev/go-common v1.1.17
 	github.com/spf13/cobra v1.6.1
-	go.temporal.io/sdk v1.18.0
+	go.temporal.io/sdk v1.18.1
 	go.uber.org/zap v1.23.0
 )
 
