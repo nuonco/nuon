@@ -4,13 +4,18 @@ import (
 	"fmt"
 	"time"
 
-	workers "github.com/powertoolsdev/template-go-workers/internal"
+	"github.com/powertoolsdev/go-common/shortid"
+	workers "github.com/powertoolsdev/workers-apps/internal"
+	"github.com/powertoolsdev/workers-apps/internal/provision/repository"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
 
 type ProvisionRequest struct {
+	DryRun bool `json:"dry_run"`
+
 	OrgID string `json:"org_id" validate:"required"`
+	AppID string `json:"app_id" validate:"required"`
 }
 
 type ProvisionResponse struct{}
@@ -34,31 +39,48 @@ func (w Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provisi
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	act := NewActivities()
-	dReq := DoRequest{}
-	dResp, err := execDo(ctx, act, dReq)
+	orgShortID, err := shortid.ParseString(req.OrgID)
 	if err != nil {
-		return resp, fmt.Errorf("failed to execute do: %w", err)
+		return resp, fmt.Errorf("failed to parse orgID to shortID: %w", err)
 	}
-	l.Debug("finished do: %s", dResp)
+	appShortID, err := shortid.ParseString(req.AppID)
+	if err != nil {
+		return resp, fmt.Errorf("failed to parse appID to shortID: %w", err)
+	}
 
-	l.Debug("finished signup", "response", resp)
+	prRequest := repository.ProvisionRepositoryRequest{
+		OrgID: orgShortID,
+		AppID: appShortID,
+	}
+	prResp, err := execProvisionRepository(ctx, w.cfg, prRequest)
+	if err != nil {
+		return resp, fmt.Errorf("failed to provision repository: %w", err)
+	}
+	l.Debug("successfully provisioned repository: %w", prResp)
+
+	l.Debug("finished provisioning app", "response", resp)
 	return resp, nil
 }
 
-func execDo(
+func execProvisionRepository(
 	ctx workflow.Context,
-	act *Activities,
-	req DoRequest,
-) (DoResponse, error) {
-	var resp DoResponse
+	cfg workers.Config,
+	req repository.ProvisionRepositoryRequest,
+) (repository.ProvisionRepositoryResponse, error) {
+	var resp repository.ProvisionRepositoryResponse
 	l := workflow.GetLogger(ctx)
 
-	l.Debug("executing do request activity")
-	fut := workflow.ExecuteActivity(ctx, act.Do, req)
+	l.Debug("executing provision repository child workflow")
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	wkflow := repository.NewWorkflow(cfg)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionRepository, req)
 
 	if err := fut.Get(ctx, &resp); err != nil {
-		l.Error("error executing do: %s", err)
 		return resp, err
 	}
 
