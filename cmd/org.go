@@ -5,7 +5,7 @@ import (
 
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
-	"github.com/powertoolsdev/template-go-workers/internal/provision"
+	"github.com/powertoolsdev/workers-apps/internal/provision"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"

@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/powertoolsdev/go-common/config"
-	domain "github.com/powertoolsdev/template-go-workers/internal"
+	domain "github.com/powertoolsdev/workers-apps/internal"
 )
 
 //nolint:gochecknoinits
