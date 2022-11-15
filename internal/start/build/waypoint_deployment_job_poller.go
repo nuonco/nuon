@@ -15,6 +15,12 @@ import (
 
 const eventFilename = "events.json"
 
+// for mocking purposes
+var (
+	osReadFile   = os.ReadFile
+	osRemoveFile = os.Remove
+)
+
 type PollWaypointDeploymentJobRequest struct {
 	OrgID                string `json:"org_id" validate:"required"`
 	TokenSecretNamespace string `json:"token_secret_namespace" validate:"required"`
@@ -115,7 +121,7 @@ type waypointDeploymentJobPoller interface {
 var _ waypointDeploymentJobPoller = (*waypointDeploymentJobPollerImpl)(nil)
 
 func (waypointDeploymentJobPollerImpl) uploadEventFile(ctx context.Context, client s3BlobUploader, fileWriter *fileEventWriter) error {
-	contents, err := os.ReadFile(fileWriter.fileLoc)
+	contents, err := osReadFile(fileWriter.fileLoc)
 	if err != nil {
 		return fmt.Errorf("unable to read temp file: %s", err)
 	}
@@ -130,7 +136,7 @@ func (waypointDeploymentJobPollerImpl) uploadEventFile(ctx context.Context, clie
 	}
 
 	// remove tmp file
-	if err := os.Remove(fileWriter.fileLoc); err != nil {
+	if err := osRemoveFile(fileWriter.fileLoc); err != nil {
 		return fmt.Errorf("unable to remove temp file: %s", err)
 	}
 
