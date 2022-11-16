@@ -1,0 +1,61 @@
+data "aws_iam_policy_document" "orgs_account_access" {
+  provider = aws.orgs
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:*",
+    ]
+    resources = ["*", ]
+  }
+}
+
+data "aws_iam_policy_document" "orgs_account_access_trust" {
+  provider = aws.orgs
+
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole", ]
+
+    principals {
+      type = "AWS"
+      identifiers = [
+        module.iam_eks_role.iam_role_arn,
+      ]
+    }
+  }
+}
+
+resource "aws_iam_policy" "orgs_account_access_policy" {
+  provider = aws.orgs
+
+  name   = "${local.name}-orgs-account-access"
+  policy = data.aws_iam_policy_document.orgs_account_access.json
+}
+
+resource "aws_iam_policy" "orgs_account_access_trust_policy" {
+  provider = aws.orgs
+
+  name   = "${local.name}-orgs-account-access-trust"
+  policy = data.aws_iam_policy_document.orgs_account_access_trust.json
+}
+
+# NOTE(jm): this is throwing an error saying it can not be determined until apply time, because the trust policy doesn't
+# exist yet. Reenable once that's been applied.
+#
+#module "orgs_account_access_role" {
+#providers = {
+#aws = aws.orgs
+#}
+
+
+#source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
+#version = ">= 5.1.0"
+
+#create_role = true
+#role_requires_mfa = false
+
+#role_name                = "${local.name}-orgs-account-access"
+#custom_role_trust_policy = aws_iam_policy.orgs_account_access_trust_policy.arn
+#custom_role_policy_arns  = [aws_iam_policy.orgs_account_access_policy.arn, ]
+#}

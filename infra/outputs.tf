@@ -53,3 +53,7 @@ output "orgs_k8s_ca_data" {
 output "orgs_k8s_public_endpoint" {
   value = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_endpoint)
 }
+
+#output "orgs_account_access_role_arn" {
+#value = module.orgs_account_access_role.iam_role_arn
+#}
