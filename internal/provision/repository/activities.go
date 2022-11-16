@@ -1,7 +1,11 @@
 package repository
 
-type Activities struct{}
+type Activities struct {
+	repositoryCreator
+}
 
 func NewActivities() *Activities {
-	return &Activities{}
+	return &Activities{
+		repositoryCreator: &repositoryCreatorImpl{},
+	}
 }

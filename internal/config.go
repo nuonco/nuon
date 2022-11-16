@@ -3,7 +3,7 @@ package workers
 import "github.com/go-playground/validator/v10"
 
 type Config struct {
-	Value string `config:"value" validate:"required"`
+	OrgsIamRoleArn string `config:"orgs_account_iam_role_arn" validate:"required"`
 }
 
 func (c Config) Validate() error {
