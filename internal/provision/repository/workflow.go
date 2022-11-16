@@ -45,7 +45,11 @@ func (w Workflow) ProvisionRepository(ctx workflow.Context, req ProvisionReposit
 	act := NewActivities()
 
 	l.Debug("creating ecr repository")
-	crReq := CreateRepositoryRequest{}
+	crReq := CreateRepositoryRequest{
+		OrgID:          req.OrgID,
+		AppID:          req.AppID,
+		OrgsIamRoleArn: w.cfg.OrgsIamRoleArn,
+	}
 	_, err := execCreateRepository(ctx, act, crReq)
 	if err != nil {
 		return resp, fmt.Errorf("failed to create repository: %w", err)
