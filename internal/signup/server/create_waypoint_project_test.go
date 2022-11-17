@@ -106,6 +106,12 @@ func TestCreateWaypointProject_createWaypointProject(t *testing.T) {
 				assert.True(t, req.Project.RemoteEnabled)
 				assert.NotNil(t, req.Project.DataSource.Source)
 				assert.False(t, req.Project.DataSourcePoll.Enabled)
+
+				// assert that the waypoint project config was set
+				byts, err := getProjectWaypointConfig(orgID)
+				assert.NoError(t, err)
+				assert.Equal(t, byts, req.Project.WaypointHcl)
+				assert.Equal(t, gen.Hcl_JSON, req.Project.WaypointHclFormat)
 			},
 		},
 		"error": {
@@ -123,10 +129,13 @@ func TestCreateWaypointProject_createWaypointProject(t *testing.T) {
 			projectCreator := wpProjectCreator{}
 			client := test.clientFn()
 			err := projectCreator.createWaypointProject(context.Background(), client, orgID)
+
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
+
+			test.assertFn(t, client)
 		})
 	}
 }
