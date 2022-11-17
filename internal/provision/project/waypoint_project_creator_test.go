@@ -51,6 +51,11 @@ func TestCreateWaypointProject_createWaypointProject(t *testing.T) {
 				assert.True(t, req.Project.RemoteEnabled)
 				assert.NotNil(t, req.Project.DataSource.Source)
 				assert.False(t, req.Project.DataSourcePoll.Enabled)
+
+				byts, err := getProjectWaypointConfig(appID)
+				assert.NoError(t, err)
+				assert.Equal(t, byts, req.Project.WaypointHcl)
+				assert.Equal(t, gen.Hcl_JSON, req.Project.WaypointHclFormat)
 			},
 		},
 		"error": {
