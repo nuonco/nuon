@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-waypoint"
 	workers "github.com/powertoolsdev/workers-apps/internal"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
@@ -44,7 +45,12 @@ func (w Workflow) ProvisionProject(ctx workflow.Context, req ProvisionProjectReq
 	ctx = workflow.WithActivityOptions(ctx, ao)
 	act := NewActivities()
 
-	cwpRequest := CreateWaypointProjectRequest{}
+	cwpRequest := CreateWaypointProjectRequest{
+		TokenSecretNamespace: w.cfg.WaypointTokenNamespace,
+		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgID),
+		OrgID:                req.OrgID,
+		AppID:                req.AppID,
+	}
 	cwpResp, err := execCreateWaypointProject(ctx, act, cwpRequest)
 	if err != nil {
 		return resp, fmt.Errorf("failed to create waypoint project: %w", err)
