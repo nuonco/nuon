@@ -6,6 +6,7 @@ import (
 
 	"github.com/powertoolsdev/go-common/shortid"
 	workers "github.com/powertoolsdev/workers-apps/internal"
+	"github.com/powertoolsdev/workers-apps/internal/provision/project"
 	"github.com/powertoolsdev/workers-apps/internal/provision/repository"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
@@ -58,6 +59,16 @@ func (w Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provisi
 	}
 	l.Debug("successfully provisioned repository: %w", prResp)
 
+	ppReq := project.ProvisionProjectRequest{
+		OrgID: orgShortID,
+		AppID: appShortID,
+	}
+	ppResp, err := execProvisionProject(ctx, w.cfg, ppReq)
+	if err != nil {
+		return resp, fmt.Errorf("failed to provision project: %w", err)
+	}
+	l.Debug("successfully provisioned project: %w", ppResp)
+
 	l.Debug("finished provisioning app", "response", resp)
 	return resp, nil
 }
@@ -79,6 +90,31 @@ func execProvisionRepository(
 
 	wkflow := repository.NewWorkflow(cfg)
 	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionRepository, req)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func execProvisionProject(
+	ctx workflow.Context,
+	cfg workers.Config,
+	req project.ProvisionProjectRequest,
+) (project.ProvisionProjectResponse, error) {
+	var resp project.ProvisionProjectResponse
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing provision project child workflow")
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	wkflow := project.NewWorkflow(cfg)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionProject, req)
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err

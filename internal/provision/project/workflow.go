@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	workers "github.com/powertoolsdev/workers-apps/internal"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
@@ -14,6 +15,11 @@ type ProvisionProjectRequest struct {
 
 	OrgID string `json:"org_id" validate:"required"`
 	AppID string `json:"app_id" validate:"required"`
+}
+
+func (r ProvisionProjectRequest) Validate() error {
+	validate := validator.New()
+	return validate.Struct(r)
 }
 
 type ProvisionProjectResponse struct{}

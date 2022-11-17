@@ -7,6 +7,7 @@ import (
 	"github.com/jaswdr/faker"
 	"github.com/powertoolsdev/go-common/shortid"
 	workers "github.com/powertoolsdev/workers-apps/internal"
+	"github.com/powertoolsdev/workers-apps/internal/provision/project"
 	"github.com/powertoolsdev/workers-apps/internal/provision/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -41,6 +42,9 @@ func Test_Workflow(t *testing.T) {
 	repoWkflow := repository.NewWorkflow(cfg)
 	env.RegisterWorkflow(repoWkflow.ProvisionRepository)
 
+	projectWkflow := project.NewWorkflow(cfg)
+	env.RegisterWorkflow(projectWkflow.ProvisionProject)
+
 	wf := NewWorkflow(cfg)
 
 	orgShortID, err := shortid.ParseString(req.OrgID)
@@ -52,6 +56,15 @@ func Test_Workflow(t *testing.T) {
 	env.OnWorkflow(repoWkflow.ProvisionRepository, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r repository.ProvisionRepositoryRequest) (repository.ProvisionRepositoryResponse, error) {
 			var resp repository.ProvisionRepositoryResponse
+			assert.Nil(t, r.Validate())
+			assert.Equal(t, orgShortID, r.OrgID)
+			assert.Equal(t, appShortID, r.AppID)
+			return resp, nil
+		})
+
+	env.OnWorkflow(projectWkflow.ProvisionProject, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r project.ProvisionProjectRequest) (project.ProvisionProjectResponse, error) {
+			var resp project.ProvisionProjectResponse
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, orgShortID, r.OrgID)
 			assert.Equal(t, appShortID, r.AppID)
