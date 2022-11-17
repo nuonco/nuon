@@ -43,6 +43,14 @@ func TestWorkflow(t *testing.T) {
 			return resp, nil
 		})
 
+	env.OnActivity(act.UpsertWaypointWorkspace, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, uwwReq UpsertWaypointWorkspaceRequest) (UpsertWaypointWorkspaceResponse, error) {
+			var resp UpsertWaypointWorkspaceResponse
+			assert.Nil(t, uwwReq.validate())
+
+			return resp, nil
+		})
+
 	wkflow := NewWorkflow(cfg)
 	env.ExecuteWorkflow(wkflow.ProvisionProject, req)
 	require.True(t, env.IsWorkflowCompleted())
