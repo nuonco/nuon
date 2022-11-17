@@ -55,6 +55,11 @@ type waypointClientProjectUpserter interface {
 }
 
 func (w *wpProjectCreator) createWaypointProject(ctx context.Context, client waypointClientProjectUpserter, appID string) error {
+	waypointHcl, err := getProjectWaypointConfig(appID)
+	if err != nil {
+		return fmt.Errorf("unable to create project waypoint config: %w", err)
+	}
+
 	req := &gen.UpsertProjectRequest{
 		Project: &gen.Project{
 			Name:          appID,
@@ -72,9 +77,11 @@ func (w *wpProjectCreator) createWaypointProject(ctx context.Context, client way
 			DataSourcePoll: &gen.Project_Poll{
 				Enabled: false,
 			},
+			WaypointHcl:       waypointHcl,
+			WaypointHclFormat: gen.Hcl_JSON,
 		},
 	}
 
-	_, err := client.UpsertProject(ctx, req)
+	_, err = client.UpsertProject(ctx, req)
 	return err
 }
