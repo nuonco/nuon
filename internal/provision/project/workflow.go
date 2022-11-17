@@ -57,6 +57,18 @@ func (w Workflow) ProvisionProject(ctx workflow.Context, req ProvisionProjectReq
 	}
 	l.Debug("successfully created waypoint project: %w", cwpResp)
 
+	uwwRequest := UpsertWaypointWorkspaceRequest{
+		TokenSecretNamespace: w.cfg.WaypointTokenNamespace,
+		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgID),
+		OrgID:                req.OrgID,
+		AppID:                req.AppID,
+	}
+	uwwResp, err := execUpsertWaypointWorkspace(ctx, act, uwwRequest)
+	if err != nil {
+		return resp, fmt.Errorf("failed to upsert waypoint workspace: %w", err)
+	}
+	l.Debug("successfully upserted waypoint workspace: %w", uwwResp)
+
 	l.Debug("finished provisioning app", "response", resp)
 	return resp, nil
 }
@@ -71,6 +83,25 @@ func execCreateWaypointProject(
 
 	l.Debug("executing create waypoint project activity")
 	fut := workflow.ExecuteActivity(ctx, act.CreateWaypointProject, req)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		l.Error("error executing do: %s", err)
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func execUpsertWaypointWorkspace(
+	ctx workflow.Context,
+	act *Activities,
+	req UpsertWaypointWorkspaceRequest,
+) (UpsertWaypointWorkspaceResponse, error) {
+	var resp UpsertWaypointWorkspaceResponse
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing upsert uwaypoint workspace activity")
+	fut := workflow.ExecuteActivity(ctx, act.UpsertWaypointWorkspace, req)
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		l.Error("error executing do: %s", err)
