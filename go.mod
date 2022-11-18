@@ -7,12 +7,12 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.29.3
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/google/uuid v1.3.0
-	github.com/hashicorp/waypoint v0.10.2
+	github.com/hashicorp/waypoint v0.10.3
 	github.com/jaswdr/faker v1.15.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/powertoolsdev/go-common v1.1.17
 	github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91
-	github.com/powertoolsdev/go-waypoint v0.2.0
+	github.com/powertoolsdev/go-waypoint v0.2.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.18.1
@@ -97,7 +97,7 @@ require (
 	github.com/spf13/viper v1.13.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
-	github.com/zclconf/go-cty v1.12.0 // indirect
+	github.com/zclconf/go-cty v1.12.1 // indirect
 	go.temporal.io/api v1.13.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
@@ -116,9 +116,9 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.25.3 // indirect
-	k8s.io/apimachinery v0.25.3 // indirect
-	k8s.io/client-go v0.25.3 // indirect
+	k8s.io/api v0.25.4 // indirect
+	k8s.io/apimachinery v0.25.4 // indirect
+	k8s.io/client-go v0.25.4 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea // indirect
 	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73 // indirect
