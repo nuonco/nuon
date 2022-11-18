@@ -918,8 +918,8 @@ github.com/powertoolsdev/go-helm v0.0.3 h1:gcDPD4iFg8H9pdbQReMRWmYVHDnS98HAmLNRD
 github.com/powertoolsdev/go-helm v0.0.3/go.mod h1:ku7zE4ktCN2s2oHgeT5ZJBab1b327YNIo0uu+IZgPN8=
 github.com/powertoolsdev/go-kube v0.1.2 h1:NJgQTvtLSB+SMcJjBZlsaz+yJF/1iWN1WVsp7E/2+y8=
 github.com/powertoolsdev/go-kube v0.1.2/go.mod h1:EBoFFkN3tZ5cvI1cZzl+dX2kRWY7em69w7g1AMMKIyQ=
-github.com/powertoolsdev/go-sender v0.0.3 h1:HJ5g23ITe3n63sDw5cP51tn3sLKUZD211arBj40cb7I=
-github.com/powertoolsdev/go-sender v0.0.3/go.mod h1:4AIEgsJ10agK73Mm0hHwtKDat6f4hyRdea29Nlva7dY=
+github.com/powertoolsdev/go-sender v0.0.4 h1:glDPmPBT8wi1L/1bTrgxZWOcAyU5/lYieykLy77ek+c=
+github.com/powertoolsdev/go-sender v0.0.4/go.mod h1:4AIEgsJ10agK73Mm0hHwtKDat6f4hyRdea29Nlva7dY=
 github.com/powertoolsdev/go-terraform v0.0.2 h1:56IcnP4ENAV8yYb0iJw7/gRV2xtQDCgYl8G4p3/+JBc=
 github.com/powertoolsdev/go-terraform v0.0.2/go.mod h1:0dNNMqHTbJnVaAru6gNCMfK8zvFTd4TzjDPZ3pvsvqw=
 github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91 h1:OG2oNfhcIaFNn313KgvmbI/KdFwyqGhy5zLOXVwtgVg=
