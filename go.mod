@@ -12,7 +12,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.24.1
 	github.com/powertoolsdev/go-common v1.1.17
-	github.com/powertoolsdev/go-helm v0.0.3
+	github.com/powertoolsdev/go-helm v0.0.4
 	github.com/powertoolsdev/go-kube v0.1.2
 	github.com/powertoolsdev/go-sender v0.0.3
 	github.com/powertoolsdev/go-waypoint v0.2.0
@@ -175,7 +175,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.25.2 // indirect
 	k8s.io/apiserver v0.25.2 // indirect
-	k8s.io/cli-runtime v0.25.3 // indirect
+	k8s.io/cli-runtime v0.25.4 // indirect
 	k8s.io/component-base v0.25.2 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea // indirect
