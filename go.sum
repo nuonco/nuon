@@ -924,8 +924,8 @@ github.com/powertoolsdev/go-terraform v0.0.2 h1:56IcnP4ENAV8yYb0iJw7/gRV2xtQDCgY
 github.com/powertoolsdev/go-terraform v0.0.2/go.mod h1:0dNNMqHTbJnVaAru6gNCMfK8zvFTd4TzjDPZ3pvsvqw=
 github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91 h1:OG2oNfhcIaFNn313KgvmbI/KdFwyqGhy5zLOXVwtgVg=
 github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91/go.mod h1:3QmdHAzmyd0JyT+jguiZlJC/H4aFL/I0/e8FiS16h/0=
-github.com/powertoolsdev/go-waypoint v0.2.0 h1:nl2TpHs6RPebqcrhiGzRh/q0IbEsPexVOdZzGsN7pmU=
-github.com/powertoolsdev/go-waypoint v0.2.0/go.mod h1:eEP8g9seI6WsQkv7Of9J+5BQHnYOiI2EZ32+MfnmvGQ=
+github.com/powertoolsdev/go-waypoint v0.2.1 h1:wEKsP5whsMltptXzil8FLyQAzNPNkv3GdNrueS47xag=
+github.com/powertoolsdev/go-waypoint v0.2.1/go.mod h1:Ot2gQbZNhaV+jIuQ0vDYiz7MyU4aQBw4jaCHtAU6+Jo=
 github.com/poy/onpar v0.0.0-20190519213022-ee068f8ea4d1/go.mod h1:nSbFQvMj97ZyhFRSJYtut+msi4sOY6zJDGCdSc+/rZU=
 github.com/poy/onpar v1.1.2 h1:QaNrNiZx0+Nar5dLgTVp5mXkyoVFIbepjyEoGSnhbAY=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
@@ -1064,8 +1064,8 @@ github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f h1
 github.com/zclconf/go-cty v1.2.0/go.mod h1:hOPWgoHbaTUnI5k4D2ld+GRpFJSCe6bCM7m1q/N4PQ8=
 github.com/zclconf/go-cty v1.8.0/go.mod h1:vVKLxnk3puL4qRAv72AO+W99LUD4da90g3uUAzyuvAk=
 github.com/zclconf/go-cty v1.10.0/go.mod h1:vVKLxnk3puL4qRAv72AO+W99LUD4da90g3uUAzyuvAk=
-github.com/zclconf/go-cty v1.12.0 h1:F5E/vbilcrCtat9sYcEjlwwg1mDqbRTjyXR57nnx5sc=
-github.com/zclconf/go-cty v1.12.0/go.mod h1:s9IfD1LK5ccNMSWCVFCE2rJfHiZgi7JijgeWIMfhLvA=
+github.com/zclconf/go-cty v1.12.1 h1:PcupnljUm9EIvbgSHQnHhUr3fO6oFmkOrvs2BAFNXXY=
+github.com/zclconf/go-cty v1.12.1/go.mod h1:s9IfD1LK5ccNMSWCVFCE2rJfHiZgi7JijgeWIMfhLvA=
 github.com/zclconf/go-cty-debug v0.0.0-20191215020915-b22d67c1ba0b/go.mod h1:ZRKQfBXbGkpdV6QMzT3rU1kSTAnfu1dO8dPKjYprgj8=
 github.com/ziutek/mymysql v1.5.4/go.mod h1:LMSpPZ6DbqWFxNCHW77HeMg9I646SAhApZ/wKdgO/C0=
 go.etcd.io/etcd/api/v3 v3.5.0/go.mod h1:cbVKeC6lCfl7j/8jBhAK6aIYO9XOjdptoxU/nLQcPvs=
