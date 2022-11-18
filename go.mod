@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.10.1-0.20210621220818-327f3ce2570e
 	github.com/hashicorp/waypoint v0.10.3
 	github.com/pkg/errors v0.9.1
-	github.com/powertoolsdev/go-kube v0.1.2
+	github.com/powertoolsdev/go-kube v0.1.3
 	github.com/stretchr/testify v1.8.1
 	github.com/zclconf/go-cty v1.12.1
 	google.golang.org/genproto v0.0.0-20220919141832-68c03719ef51
