@@ -13,7 +13,7 @@ require (
 	github.com/onsi/gomega v1.24.1
 	github.com/powertoolsdev/go-common v1.1.17
 	github.com/powertoolsdev/go-helm v0.0.4
-	github.com/powertoolsdev/go-kube v0.1.2
+	github.com/powertoolsdev/go-kube v0.1.3
 	github.com/powertoolsdev/go-sender v0.0.3
 	github.com/powertoolsdev/go-waypoint v0.2.0
 	github.com/spf13/cobra v1.6.1

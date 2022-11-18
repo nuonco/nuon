@@ -814,8 +814,8 @@ github.com/powertoolsdev/go-common v1.1.17 h1:xTVPf7kiezNH09fIINiWSHHzqhQ517GQjc
 github.com/powertoolsdev/go-common v1.1.17/go.mod h1:mhY1HkgLn4iPkxnGy2ownap+hxJosifCfE7qwXmpyUE=
 github.com/powertoolsdev/go-helm v0.0.4 h1:Cv7LAhKSMhtcrTuX1s+ibt1IapqQEhZIpjcWHct0KhQ=
 github.com/powertoolsdev/go-helm v0.0.4/go.mod h1:D8u8C8OGHyc9Bx127Wi3bN2CVV/dAuVAm1anryYQhkg=
-github.com/powertoolsdev/go-kube v0.1.2 h1:NJgQTvtLSB+SMcJjBZlsaz+yJF/1iWN1WVsp7E/2+y8=
-github.com/powertoolsdev/go-kube v0.1.2/go.mod h1:EBoFFkN3tZ5cvI1cZzl+dX2kRWY7em69w7g1AMMKIyQ=
+github.com/powertoolsdev/go-kube v0.1.3 h1:5qRDn3yOv4SMUCl5Nk+EJdPeyZwPR85nQOzbesbfpRY=
+github.com/powertoolsdev/go-kube v0.1.3/go.mod h1:N+Te5MGOwJez2TXcNcj2VWHwue7926wykgti4mXB8c0=
 github.com/powertoolsdev/go-sender v0.0.3 h1:HJ5g23ITe3n63sDw5cP51tn3sLKUZD211arBj40cb7I=
 github.com/powertoolsdev/go-sender v0.0.3/go.mod h1:4AIEgsJ10agK73Mm0hHwtKDat6f4hyRdea29Nlva7dY=
 github.com/powertoolsdev/go-waypoint v0.2.0 h1:nl2TpHs6RPebqcrhiGzRh/q0IbEsPexVOdZzGsN7pmU=
