@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/waypoint v0.10.3
 	github.com/jaswdr/faker v1.15.0
 	github.com/powertoolsdev/go-common v1.1.17
-	github.com/powertoolsdev/go-waypoint v0.2.0
+	github.com/powertoolsdev/go-waypoint v0.2.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.18.1
@@ -80,7 +80,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/powertoolsdev/go-kube v0.1.1 // indirect
+	github.com/powertoolsdev/go-kube v0.1.2 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
@@ -90,7 +90,7 @@ require (
 	github.com/spf13/viper v1.13.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
-	github.com/zclconf/go-cty v1.12.0 // indirect
+	github.com/zclconf/go-cty v1.12.1 // indirect
 	go.temporal.io/api v1.13.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/goleak v1.1.12 // indirect
@@ -109,9 +109,9 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.25.3 // indirect
-	k8s.io/apimachinery v0.25.3 // indirect
-	k8s.io/client-go v0.25.3 // indirect
+	k8s.io/api v0.25.4 // indirect
+	k8s.io/apimachinery v0.25.4 // indirect
+	k8s.io/client-go v0.25.4 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea // indirect
 	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73 // indirect
