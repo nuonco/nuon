@@ -14,7 +14,7 @@ require (
 	github.com/powertoolsdev/go-common v1.1.17
 	github.com/powertoolsdev/go-helm v0.0.4
 	github.com/powertoolsdev/go-kube v0.1.3
-	github.com/powertoolsdev/go-sender v0.0.3
+	github.com/powertoolsdev/go-sender v0.0.4
 	github.com/powertoolsdev/go-waypoint v0.2.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
