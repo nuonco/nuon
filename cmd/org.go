@@ -63,7 +63,7 @@ func domainRun(cmd *cobra.Command, args []string) {
 }
 
 func runDomainWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) error {
-	w := worker.New(c, "domain", worker.Options{
+	w := worker.New(c, "apps", worker.Options{
 		MaxConcurrentActivityExecutionSize: 1,
 	})
 
