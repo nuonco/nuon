@@ -109,6 +109,13 @@ func TestRunner(t *testing.T) {
 			return CreateRoleBindingResponse{}, nil
 		})
 
+	env.OnActivity(a.CreateOdrIAMRole, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, coirReq CreateOdrIAMRoleRequest) (CreateOdrIAMRoleResponse, error) {
+			assert.Nil(t, coirReq.validate())
+			require.Equal(t, orgShortID, coirReq.OrgID)
+			return CreateOdrIAMRoleResponse{}, nil
+		})
+
 	wkflow := NewWorkflow(cfg)
 	env.ExecuteWorkflow(wkflow.Install, req)
 	require.True(t, env.IsWorkflowCompleted())

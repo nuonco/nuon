@@ -17,6 +17,7 @@ type Activities struct {
 	waypointServerCookieGetter
 	waypointRunnerAdopter
 	roleBindingCreator
+	odrIAMRoleCreator
 
 	config     workers.Config
 	Kubeconfig *rest.Config
@@ -30,5 +31,6 @@ func NewActivities(cfg workers.Config) *Activities {
 		config:                     cfg,
 		helmInstaller:              helm.NewInstaller(),
 		roleBindingCreator:         &roleBindingCreatorImpl{},
+		odrIAMRoleCreator:          &odrIAMRoleCreatorImpl{},
 	}
 }
