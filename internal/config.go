@@ -12,8 +12,12 @@ type Config struct {
 	// RoleArn is the role that we add to the sandbox EKS allowed roles so we can do other operations against it
 	RoleArn string `config:"role_arn" validate:"required" json:"role_arn"`
 
-	//WaypointRunnerODRIamRole string `config:"waypoint_runner_odr_iam_role" validate:"required"`
+	// configs needed to create an IAM role / ODR runner
+	OrgsIAMAccessRoleArn   string `config:"orgs_iam_access_role_arn" validate:"required" json:"orgs_iam_access_role_arn"`
+	OrgsIAMOidcProviderURL string `config:"orgs_iam_oidc_provider_url" validate:"required" json:"orgs_iam_oidc_provider_url"`
+	OrgsECRRegistryID      string `config:"orgs_ecr_registry_id" validate:"required" json:"orgs_ecr_registry_id"`
 
+	// configs needed to access the orgs cluster, which runs all org runner/servers
 	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id" json:"orgs_k8s_cluster_id"`
 	OrgsK8sRoleArn        string `config:"orgs_k8s_role_arn" json:"orgs_k8s_role_arn"`
 	OrgsK8sCAData         string `config:"orgs_k8s_ca_data" json:"orgs_k8s_ca_data"`

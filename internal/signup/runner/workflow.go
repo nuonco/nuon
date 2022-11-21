@@ -164,6 +164,21 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 	}
 	l.Debug("successfully created rolebinding for runner")
 
+	coirRequest := CreateOdrIAMRoleRequest{
+		OrgID: req.OrgID,
+
+		OrgsIAMOidcProviderURL: w.cfg.OrgsIAMOidcProviderURL,
+		OrgsIAMAccessRoleArn:   w.cfg.OrgsIAMAccessRoleArn,
+		ECRRegistryID:          w.cfg.OrgsECRRegistryID,
+	}
+	_, err = execCreateOdrIAMRole(ctx, act, coirRequest)
+	if err != nil {
+		err = fmt.Errorf("failed to create odr IAM role: %w", err)
+		l.Debug(err.Error())
+		return resp, err
+	}
+	l.Debug("successfully created odr IAM role")
+
 	return resp, nil
 }
 
@@ -292,6 +307,28 @@ func createRoleBinding(
 
 	l.Debug("executing create role binding activity")
 	fut := workflow.ExecuteActivity(ctx, act.CreateRoleBinding, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+// createOdrIAMRole: creates the odr IAM role
+func execCreateOdrIAMRole(
+	ctx workflow.Context,
+	act *Activities,
+	req CreateOdrIAMRoleRequest,
+) (CreateOdrIAMRoleResponse, error) {
+	var resp CreateOdrIAMRoleResponse
+	l := workflow.GetLogger(ctx)
+
+	if err := req.validate(); err != nil {
+		return resp, err
+	}
+
+	l.Debug("executing create odr IAM role")
+	fut := workflow.ExecuteActivity(ctx, act.CreateOdrIAMRole, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
