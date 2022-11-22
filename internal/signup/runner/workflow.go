@@ -167,9 +167,10 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 	coirRequest := CreateOdrIAMRoleRequest{
 		OrgID: req.OrgID,
 
-		OrgsIAMOidcProviderURL: w.cfg.OrgsIAMOidcProviderURL,
-		OrgsIAMAccessRoleArn:   w.cfg.OrgsIAMAccessRoleArn,
-		ECRRegistryID:          w.cfg.OrgsECRRegistryID,
+		OrgsIAMOidcProviderURL:       w.cfg.OrgsIAMOidcProviderURL,
+		OrgsIAMAccessRoleArn:         w.cfg.OrgsIAMAccessRoleArn,
+		OrgsIAMOidcFederationRoleArn: w.cfg.OrgsIAMOidcFederationRoleArn,
+		ECRRegistryID:                w.cfg.OrgsECRRegistryID,
 	}
 	_, err = execCreateOdrIAMRole(ctx, act, coirRequest)
 	if err != nil {
