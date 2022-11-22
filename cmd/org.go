@@ -6,6 +6,7 @@ import (
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
 	"github.com/powertoolsdev/go-sender"
+	shared "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/powertoolsdev/workers-orgs/internal/signup"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
@@ -28,7 +29,7 @@ func init() {
 }
 
 func orgRun(cmd *cobra.Command, args []string) {
-	var cfg Config
+	var cfg shared.Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
 		panic(fmt.Sprintf("failed to load config: %s", err))
@@ -66,7 +67,7 @@ func orgRun(cmd *cobra.Command, args []string) {
 	}
 }
 
-func runOrgWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) error {
+func runOrgWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interface{}) error {
 	w := worker.New(c, "org", worker.Options{})
 
 	var (
@@ -82,7 +83,7 @@ func runOrgWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) 
 		l.Info("using noop notification sender")
 		n = sender.NewNoopSender()
 	default:
-		n, err = sender.NewSlackSender(cfg.OrgBotsSlackWebhookURL, l)
+		n, err = sender.NewSlackSender(cfg.BotsSlackWebhookURL, l)
 		if err != nil {
 			l.Warn("failed to create slack notifier, using noop", zap.Error(err))
 			n = sender.NewNoopSender()
@@ -94,18 +95,18 @@ func runOrgWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) 
 	//return fmt.Errorf("org config is invalid: %w", err)
 	//}
 
-	wkflow := signup.NewWorkflow(cfg.OrgCfg)
+	wkflow := signup.NewWorkflow(cfg)
 	w.RegisterWorkflow(wkflow.Signup)
 	w.RegisterActivity(signup.NewActivities(n))
 
 	w.RegisterWorkflow(teardown.Teardown)
 	w.RegisterActivity(teardown.NewActivities())
 
-	runiFlow := runner.NewWorkflow(cfg.OrgCfg)
+	runiFlow := runner.NewWorkflow(cfg)
 	w.RegisterWorkflow(runiFlow.Install)
-	w.RegisterActivity(runner.NewActivities(cfg.OrgCfg))
+	w.RegisterActivity(runner.NewActivities(cfg))
 
-	srvWkflow := server.NewWorkflow(cfg.OrgCfg)
+	srvWkflow := server.NewWorkflow(cfg)
 	w.RegisterWorkflow(srvWkflow.Provision)
 	w.RegisterActivity(server.NewActivities())
 

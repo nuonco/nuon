@@ -7,6 +7,7 @@ import (
 
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
+	shared "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
@@ -24,13 +25,17 @@ func init() {
 	rootCmd.AddCommand(allCmd)
 }
 
-type workerFn func(client.Client, Config, <-chan interface{}) error
+type workerFn func(client.Client, shared.Config, <-chan interface{}) error
 
 func runAll(cmd *cobra.Command, args []string) {
-	var cfg Config
+	var cfg shared.Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
 		panic(fmt.Sprintf("failed to load config: %s", err))
+	}
+
+	if err := cfg.Validate(); err != nil {
+		panic(fmt.Sprintf("failed to validate config: %s", err))
 	}
 
 	var (
