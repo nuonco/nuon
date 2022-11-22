@@ -97,7 +97,7 @@ func (r *repositoryCreatorImpl) assumeIamRole(ctx context.Context, roleArn strin
 
 func (r *repositoryCreatorImpl) createECRRepo(ctx context.Context, req CreateRepositoryRequest, client awsClientEcrRepoCreator) error {
 	params := &ecr.CreateRepositoryInput{
-		RepositoryName:     toPtr(req.AppID),
+		RepositoryName:     toPtr(req.OrgID + "/" + req.AppID),
 		ImageTagMutability: ecr_types.ImageTagMutabilityImmutable,
 		Tags: []ecr_types.Tag{
 			{
