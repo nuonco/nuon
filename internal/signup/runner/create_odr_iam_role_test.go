@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func getFakeCreateOdrIAMRoleRequest() *CreateOdrIAMRoleRequest {
+func getFakeCreateOdrIAMRoleRequest() CreateOdrIAMRoleRequest {
 	fkr := faker.New()
 	var req CreateOdrIAMRoleRequest
 	fkr.Struct().Fill(&req)
-	return &req
+	return req
 }
 
 type testAwsClientIAM struct {
@@ -26,7 +26,7 @@ type testAwsClientIAM struct {
 
 var _ awsClientIAM = (*testAwsClientIAM)(nil)
 
-func (t *testAwsClientIAM) CreatePolicy(ctx context.Context, req *iam.CreatePolicyInput, opts ...func(iam.Options)) (*iam.CreatePolicyOutput, error) {
+func (t *testAwsClientIAM) CreatePolicy(ctx context.Context, req *iam.CreatePolicyInput, opts ...func(*iam.Options)) (*iam.CreatePolicyOutput, error) {
 	args := t.Called(ctx, req, opts)
 	if args.Get(0) != nil {
 		return args.Get(0).(*iam.CreatePolicyOutput), args.Error(1)
@@ -35,7 +35,7 @@ func (t *testAwsClientIAM) CreatePolicy(ctx context.Context, req *iam.CreatePoli
 	return nil, args.Error(1)
 }
 
-func (t *testAwsClientIAM) CreateRole(ctx context.Context, req *iam.CreateRoleInput, opts ...func(iam.Options)) (*iam.CreateRoleOutput, error) {
+func (t *testAwsClientIAM) CreateRole(ctx context.Context, req *iam.CreateRoleInput, opts ...func(*iam.Options)) (*iam.CreateRoleOutput, error) {
 	args := t.Called(ctx, req, opts)
 	if args.Get(0) != nil {
 		return args.Get(0).(*iam.CreateRoleOutput), args.Error(1)
@@ -44,7 +44,7 @@ func (t *testAwsClientIAM) CreateRole(ctx context.Context, req *iam.CreateRoleIn
 	return nil, args.Error(1)
 }
 
-func (t *testAwsClientIAM) AttachRolePolicy(ctx context.Context, req *iam.AttachRolePolicyInput, opts ...func(iam.Options)) (*iam.AttachRolePolicyOutput, error) {
+func (t *testAwsClientIAM) AttachRolePolicy(ctx context.Context, req *iam.AttachRolePolicyInput, opts ...func(*iam.Options)) (*iam.AttachRolePolicyOutput, error) {
 	args := t.Called(ctx, req, opts)
 	if args.Get(0) != nil {
 		return args.Get(0).(*iam.AttachRolePolicyOutput), args.Error(1)
