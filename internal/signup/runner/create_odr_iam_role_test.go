@@ -218,3 +218,10 @@ func Test_odrIAMRoleCreatorImpl_createOdrIAMRolePolicyAttachment(t *testing.T) {
 		})
 	}
 }
+
+func Test_odrIAMPolicyName(t *testing.T) {
+	orgID := uuid.NewString()
+	roleName := odrIAMPolicyName(orgID)
+	assert.Contains(t, roleName, orgID)
+	assert.Contains(t, roleName, "org-odr-policy")
+}
