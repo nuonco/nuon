@@ -55,13 +55,9 @@ output "orgs_k8s_public_endpoint" {
   value = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_endpoint)
 }
 
-output "orgs_account_role_arn" {
-  value = module.orgs_account_access_role.iam_role_arn
-}
-
-output "orgs_iam_access_role_arn" {
+output "orgs_account_iam_access_role_arn" {
   description = "IAM role for managing IAM resources in the orgs account"
-  value = module.orgs_account_access_role.iam_role_arn
+  value = module.orgs_account_iam_access_role.iam_role_arn
 }
 
 output "orgs_iam_oidc_provider_url" {
