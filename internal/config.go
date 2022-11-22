@@ -13,9 +13,10 @@ type Config struct {
 	RoleArn string `config:"role_arn" validate:"required" json:"role_arn"`
 
 	// configs needed to create an IAM role / ODR runner
-	OrgsIAMAccessRoleArn   string `config:"orgs_iam_access_role_arn" validate:"required" json:"orgs_iam_access_role_arn"`
-	OrgsIAMOidcProviderURL string `config:"orgs_iam_oidc_provider_url" validate:"required" json:"orgs_iam_oidc_provider_url"`
-	OrgsECRRegistryID      string `config:"orgs_ecr_registry_id" validate:"required" json:"orgs_ecr_registry_id"`
+	OrgsIAMAccessRoleArn         string `config:"orgs_iam_access_role_arn" validate:"required"`
+	OrgsIAMOidcProviderURL       string `config:"orgs_iam_oidc_provider_url" validate:"required"`
+	OrgsECRRegistryID            string `config:"orgs_ecr_registry_id" validate:"required"`
+	OrgsIAMOidcFederationRoleArn string `config:"orgs_iam_oidc_federation_role_arn" validate:"required"`
 
 	// configs needed to access the orgs cluster, which runs all org runner/servers
 	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id" json:"orgs_k8s_cluster_id"`
