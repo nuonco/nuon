@@ -74,4 +74,7 @@ output "orgs_iam_oidc_provider_arn" {
   value = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider_arn)
 }
 
-#output "orgs_ecr_registry_id" {}
+output "orgs_ecr_registry_id" {
+  description = "Registry id for orgs - this is where org repos will live."
+  value = "https://${local.accounts["orgs-${var.env}"].id}.dkr.ecr.region.amazonaws.com"
+}
