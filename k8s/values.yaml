@@ -8,14 +8,9 @@ configmap:
     TEMPORAL_HOST: temporal-frontend-headless.temporal.svc.cluster.local:7233
 
 envSecrets:
-  - name: "ORG_BOTS_SLACK_WEBHOOK_URL"
+  - name: "BOTS_SLACK_WEBHOOK_URL"
     valueFrom:
       name: org-bots-slack-webhook-url
-      key: slack_webhook_url
-
-  - name: "INSTALLATION_BOTS_SLACK_WEBHOOK_URL"
-    valueFrom:
-      name: installation-bots-slack-webhook-url
       key: slack_webhook_url
 
 controller:
