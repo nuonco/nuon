@@ -12,7 +12,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/zclconf/go-cty v1.12.1
 	google.golang.org/genproto v0.0.0-20220919141832-68c03719ef51
-	google.golang.org/grpc v1.50.1
+	google.golang.org/grpc v1.51.0
 	k8s.io/api v0.25.4
 	k8s.io/apimachinery v0.25.4
 	k8s.io/client-go v0.25.4
