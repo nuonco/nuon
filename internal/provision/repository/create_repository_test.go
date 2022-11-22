@@ -134,7 +134,7 @@ func TestCreateRepository_createRepository(t *testing.T) {
 				obj.AssertNumberOfCalls(t, "CreateRepository", 1)
 				rReq := obj.Calls[0].Arguments[1].(*ecr.CreateRepositoryInput)
 
-				assert.Equal(t, req.AppID, *rReq.RepositoryName)
+				assert.Equal(t, req.OrgID+"/"+req.AppID, *rReq.RepositoryName)
 
 				assert.Equal(t, req.AppID, *rReq.Tags[0].Value)
 				assert.Equal(t, "app-id", *rReq.Tags[0].Key)
