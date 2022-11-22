@@ -20,6 +20,10 @@ func odrIAMRoleName(orgID string) string {
 	return fmt.Sprintf("org-odr-role-%s", orgID)
 }
 
+func odrIAMPolicyName(orgID string) string {
+	return fmt.Sprintf("org-odr-policy-%s", orgID)
+}
+
 type CreateOdrIAMRoleRequest struct {
 	OrgID string `validate:"required" json:"org_id"`
 
@@ -102,6 +106,8 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMPolicy(ctx context.Context, client a
 
 	params := &iam.CreatePolicyInput{
 		PolicyDocument: toPtr(string(byts)),
+		PolicyName:     toPtr(odrIAMPolicyName(req.OrgID)),
+		Path:           toPtr("/orgs/"),
 	}
 
 	output, err := client.CreatePolicy(ctx, params)
