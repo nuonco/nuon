@@ -23,9 +23,11 @@ func odrIAMRoleName(orgID string) string {
 type CreateOdrIAMRoleRequest struct {
 	OrgID string `validate:"required" json:"org_id"`
 
+	OrgsIAMAccessRoleArn string `validate:"required" json:"orgs_iam_access_role_arn"`
+
+	// the following fields are used to configure the IAM role
 	OrgsIAMOidcFederationRoleArn string `validate:"required" json:"orgs_iam_oidc_federation_role_arn"`
 	OrgsIAMOidcProviderURL       string `validate:"required" json:"orgs_iam_oidc_provider_url"`
-	OrgsIAMAccessRoleArn         string `validate:"required" json:"orgs_iam_access_role_arn"`
 	ECRRegistryID                string `validate:"required" json:"ecr_registry_id"`
 }
 
@@ -37,6 +39,25 @@ func (a *Activities) CreateOdrIAMRole(ctx context.Context, req CreateOdrIAMRoleR
 		return resp, fmt.Errorf("unable to validate request: %w", err)
 	}
 
+	cfg, err := a.loadConfigWithAssumeRole(ctx, req.OrgsIAMAccessRoleArn)
+	if err != nil {
+		return resp, fmt.Errorf("unable to assume role: %w", err)
+	}
+
+	client := iam.NewFromConfig(cfg)
+	policyArn, err := a.createOdrIAMPolicy(ctx, client, req)
+	if err != nil {
+		return resp, fmt.Errorf("unable to create odr IAM policy: %w", err)
+	}
+
+	if err := a.createOdrIAMRole(ctx, client, req); err != nil {
+		return resp, fmt.Errorf("unable to create odr IAM role: %w", err)
+	}
+
+	if err := a.createOdrIAMRolePolicyAttachment(ctx, client, policyArn, req); err != nil {
+		return resp, fmt.Errorf("unable to create odr IAM role attachment: %w", err)
+	}
+
 	return resp, nil
 }
 
@@ -46,9 +67,9 @@ func (r CreateOdrIAMRoleRequest) validate() error {
 }
 
 type odrIAMRoleCreator interface {
-	createOdrIAMPolicy(context.Context, awsClientIAM, *CreateOdrIAMRoleRequest) (string, error)
-	createOdrIAMRole(context.Context, awsClientIAM, *CreateOdrIAMRoleRequest) error
-	createOdrIAMRolePolicyAttachment(context.Context, awsClientIAM, string, *CreateOdrIAMRoleRequest) error
+	createOdrIAMPolicy(context.Context, awsClientIAM, CreateOdrIAMRoleRequest) (string, error)
+	createOdrIAMRole(context.Context, awsClientIAM, CreateOdrIAMRoleRequest) error
+	createOdrIAMRolePolicyAttachment(context.Context, awsClientIAM, string, CreateOdrIAMRoleRequest) error
 }
 
 var _ odrIAMRoleCreator = (*odrIAMRoleCreatorImpl)(nil)
@@ -56,12 +77,12 @@ var _ odrIAMRoleCreator = (*odrIAMRoleCreatorImpl)(nil)
 type odrIAMRoleCreatorImpl struct{}
 
 type awsClientIAM interface {
-	CreatePolicy(context.Context, *iam.CreatePolicyInput, ...func(iam.Options)) (*iam.CreatePolicyOutput, error)
-	CreateRole(context.Context, *iam.CreateRoleInput, ...func(iam.Options)) (*iam.CreateRoleOutput, error)
-	AttachRolePolicy(context.Context, *iam.AttachRolePolicyInput, ...func(iam.Options)) (*iam.AttachRolePolicyOutput, error)
+	CreatePolicy(context.Context, *iam.CreatePolicyInput, ...func(*iam.Options)) (*iam.CreatePolicyOutput, error)
+	CreateRole(context.Context, *iam.CreateRoleInput, ...func(*iam.Options)) (*iam.CreateRoleOutput, error)
+	AttachRolePolicy(context.Context, *iam.AttachRolePolicyInput, ...func(*iam.Options)) (*iam.AttachRolePolicyOutput, error)
 }
 
-func (o *odrIAMRoleCreatorImpl) createOdrIAMPolicy(ctx context.Context, client awsClientIAM, req *CreateOdrIAMRoleRequest) (string, error) {
+func (o *odrIAMRoleCreatorImpl) createOdrIAMPolicy(ctx context.Context, client awsClientIAM, req CreateOdrIAMRoleRequest) (string, error) {
 	policy := odrIAMRolePolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []IAMRoleStatement{
@@ -90,7 +111,7 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMPolicy(ctx context.Context, client a
 	return *output.Policy.Arn, nil
 }
 
-func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client awsClientIAM, req *CreateOdrIAMRoleRequest) error {
+func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client awsClientIAM, req CreateOdrIAMRoleRequest) error {
 	trustPolicy := odrIAMRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []IAMRoleStatement{
@@ -146,7 +167,7 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client aws
 	return nil
 }
 
-func (o *odrIAMRoleCreatorImpl) createOdrIAMRolePolicyAttachment(ctx context.Context, client awsClientIAM, policyArn string, req *CreateOdrIAMRoleRequest) error {
+func (o *odrIAMRoleCreatorImpl) createOdrIAMRolePolicyAttachment(ctx context.Context, client awsClientIAM, policyArn string, req CreateOdrIAMRoleRequest) error {
 	params := &iam.AttachRolePolicyInput{
 		PolicyArn: toPtr(policyArn),
 		RoleName:  toPtr(odrIAMRoleName(req.OrgID)),
