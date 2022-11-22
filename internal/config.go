@@ -31,10 +31,10 @@ type Config struct {
 	WaypointBootstrapTokenNamespace string `config:"waypoint_bootstrap_token_namespace" validate:"required" json:"waypoint_bootstrap_token_namespace"`
 
 	// configs needed to create an IAM role for the ODR runner in the orgs account
-	OrgsIAMAccessRoleArn         string `config:"orgs_iam_access_role_arn" validate:"required"`
-	OrgsIAMOidcProviderURL       string `config:"orgs_iam_oidc_provider_url" validate:"required"`
-	OrgsECRRegistryID            string `config:"orgs_ecr_registry_id" validate:"required"`
-	OrgsIAMOidcFederationRoleArn string `config:"orgs_iam_oidc_federation_role_arn" validate:"required"`
+	OrgsIAMAccessRoleArn   string `config:"orgs_iam_access_role_arn" validate:"required"`
+	OrgsIAMOidcProviderURL string `config:"orgs_iam_oidc_provider_url" validate:"required"`
+	OrgsIAMOidcProviderArn string `config:"orgs_iam_oidc_provider_arn" validate:"required"`
+	OrgsECRRegistryID      string `config:"orgs_ecr_registry_id" validate:"required"`
 
 	// configs needed to access the orgs cluster, which runs all org runner/servers
 	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id" json:"orgs_k8s_cluster_id" validate:"required"`
