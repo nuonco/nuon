@@ -26,9 +26,9 @@ type CreateOdrIAMRoleRequest struct {
 	OrgsIAMAccessRoleArn string `validate:"required" json:"orgs_iam_access_role_arn"`
 
 	// the following fields are used to configure the IAM role
-	OrgsIAMOidcFederationRoleArn string `validate:"required" json:"orgs_iam_oidc_federation_role_arn"`
-	OrgsIAMOidcProviderURL       string `validate:"required" json:"orgs_iam_oidc_provider_url"`
-	ECRRegistryID                string `validate:"required" json:"ecr_registry_id"`
+	OrgsIAMOidcProviderArn string `validate:"required" json:"orgs_iam_oidc_provider_arn"`
+	OrgsIAMOidcProviderURL string `validate:"required" json:"orgs_iam_oidc_provider_url"`
+	ECRRegistryID          string `validate:"required" json:"ecr_registry_id"`
 }
 
 type CreateOdrIAMRoleResponse struct{}
@@ -124,7 +124,7 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client aws
 				Principal: struct {
 					Federated string `json:"Federated,omitempty"`
 				}{
-					Federated: req.OrgsIAMOidcFederationRoleArn,
+					Federated: req.OrgsIAMOidcProviderArn,
 				},
 				Condition: struct {
 					StringEquals map[string]string `json:"StringEquals"`
