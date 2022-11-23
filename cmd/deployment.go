@@ -5,6 +5,7 @@ import (
 
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
+	shared "github.com/powertoolsdev/workers-deployments/internal"
 	start "github.com/powertoolsdev/workers-deployments/internal/start"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 	"github.com/spf13/cobra"
@@ -25,7 +26,7 @@ func init() {
 }
 
 func deploymentRun(cmd *cobra.Command, args []string) {
-	var cfg Config
+	var cfg shared.Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
 		panic(fmt.Sprintf("failed to load config: %s", err))
@@ -63,22 +64,22 @@ func deploymentRun(cmd *cobra.Command, args []string) {
 	}
 }
 
-func runDeploymentWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) error {
+func runDeploymentWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interface{}) error {
 	w := worker.New(c, "deployment", worker.Options{
 		MaxConcurrentActivityExecutionSize: 1,
 	})
 
-	if err := cfg.DeploymentCfg.Validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return fmt.Errorf("invalid deployment config: %w", err)
 	}
 
-	wkflow := start.NewWorkflow(cfg.DeploymentCfg)
+	wkflow := start.NewWorkflow(cfg)
 	w.RegisterWorkflow(wkflow.Start)
-	w.RegisterActivity(start.NewActivities(cfg.DeploymentCfg))
+	w.RegisterActivity(start.NewActivities(cfg))
 
-	bldWkflow := build.NewWorkflow(cfg.DeploymentCfg)
+	bldWkflow := build.NewWorkflow(cfg)
 	w.RegisterWorkflow(bldWkflow.Build)
-	bldActs := build.NewActivities(cfg.DeploymentCfg)
+	bldActs := build.NewActivities(cfg)
 	w.RegisterActivity(bldActs)
 
 	if err := w.Run(interruptCh); err != nil {
