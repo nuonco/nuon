@@ -14,9 +14,9 @@ import (
 )
 
 type CreateRepositoryRequest struct {
-	OrgID                   string `validate:"required" json:"org_id"`
-	AppID                   string `validate:"required" json:"app_id"`
-	OrgsEcrAccessIamRoleArn string `validate:"required" json:"orgs_iam_role_arn"`
+	OrgID                string `validate:"required" json:"org_id"`
+	AppID                string `validate:"required" json:"app_id"`
+	OrgsEcrAccessRoleArn string `validate:"required" json:"orgs_ecr_access_role_arn"`
 }
 
 func (r CreateRepositoryRequest) validate() error {
@@ -38,7 +38,7 @@ func (a *Activities) CreateRepository(ctx context.Context, req CreateRepositoryR
 	}
 
 	stsClient := sts.NewFromConfig(cfg)
-	creds, err := a.assumeIamRole(ctx, req.OrgsEcrAccessIamRoleArn, stsClient)
+	creds, err := a.assumeIamRole(ctx, req.OrgsEcrAccessRoleArn, stsClient)
 	if err != nil {
 		return resp, fmt.Errorf("failed to assume role: %w", err)
 	}
