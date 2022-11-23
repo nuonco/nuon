@@ -7,24 +7,26 @@ import (
 	"github.com/powertoolsdev/go-common/temporalzap"
 	shared "github.com/powertoolsdev/workers-apps/internal"
 	"github.com/powertoolsdev/workers-apps/internal/provision"
+	"github.com/powertoolsdev/workers-apps/internal/provision/project"
+	"github.com/powertoolsdev/workers-apps/internal/provision/repository"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	"go.uber.org/zap"
 )
 
-var domainCmd = &cobra.Command{
+var appsCmd = &cobra.Command{
 	Use:   "domain",
-	Short: "Run the domain workers",
-	Run:   domainRun,
+	Short: "Run the app workers",
+	Run:   appRun,
 }
 
 //nolint:gochecknoinits
 func init() {
-	rootCmd.AddCommand(domainCmd)
+	rootCmd.AddCommand(appsCmd)
 }
 
-func domainRun(cmd *cobra.Command, args []string) {
+func appRun(cmd *cobra.Command, _ []string) {
 	var cfg shared.Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
@@ -58,12 +60,12 @@ func domainRun(cmd *cobra.Command, args []string) {
 	defer c.Close()
 
 	l.Debug("starting domain workers", zap.Any("config", cfg))
-	if err := runDomainWorkers(c, cfg, worker.InterruptCh()); err != nil {
+	if err := runAppWorkers(c, cfg, worker.InterruptCh()); err != nil {
 		l.Error("error running worker", zap.Error(err))
 	}
 }
 
-func runDomainWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interface{}) error {
+func runAppWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interface{}) error {
 	w := worker.New(c, "apps", worker.Options{
 		MaxConcurrentActivityExecutionSize: 1,
 	})
@@ -74,7 +76,18 @@ func runDomainWorkers(c client.Client, cfg shared.Config, interruptCh <-chan int
 
 	wkflow := provision.NewWorkflow(cfg)
 	w.RegisterWorkflow(wkflow.Provision)
-	w.RegisterActivity(provision.NewActivities())
+
+	// register provision/project workflow
+	pwkflow := project.NewWorkflow(cfg)
+	w.RegisterWorkflow(pwkflow.ProvisionProject)
+	pacts := project.NewActivities()
+	w.RegisterActivity(pacts)
+
+	// register provision/project workflow
+	rwkflow := repository.NewWorkflow(cfg)
+	w.RegisterWorkflow(rwkflow.ProvisionRepository)
+	racts := repository.NewActivities()
+	w.RegisterActivity(racts)
 
 	if err := w.Run(interruptCh); err != nil {
 		return err
