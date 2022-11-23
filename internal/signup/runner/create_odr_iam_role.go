@@ -32,7 +32,7 @@ type CreateOdrIAMRoleRequest struct {
 	// the following fields are used to configure the IAM role
 	OrgsIAMOidcProviderArn string `validate:"required" json:"orgs_iam_oidc_provider_arn"`
 	OrgsIAMOidcProviderURL string `validate:"required" json:"orgs_iam_oidc_provider_url"`
-	ECRRegistryID          string `validate:"required" json:"ecr_registry_id"`
+	ECRRegistryArn         string `validate:"required" json:"ecr_registry_arn"`
 }
 
 type CreateOdrIAMRoleResponse struct{}
@@ -95,7 +95,7 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMPolicy(ctx context.Context, client a
 				Action: []string{
 					"ecr:*",
 				},
-				Resource: fmt.Sprintf("%s/%s/*", req.ECRRegistryID, req.OrgID),
+				Resource: fmt.Sprintf("%s/%s/*", req.ECRRegistryArn, req.OrgID),
 			},
 		},
 	}
