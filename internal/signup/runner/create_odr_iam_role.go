@@ -81,9 +81,7 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client aws
 		Version: defaultIAMPolicyVersion,
 		Statement: []IAMRoleTrustStatement{
 			{
-				Action: []string{
-					"sts:AssumeRoleWithWebIdentity",
-				},
+				Action: "sts:AssumeRoleWithWebIdentity",
 				Effect: "Allow",
 				Sid:    "",
 				Principal: struct {
@@ -95,7 +93,7 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client aws
 					StringEquals map[string]string `json:"StringEquals"`
 				}{
 					StringEquals: map[string]string{
-						req.OrgsIAMOidcProviderURL: runnerOdrServiceAccountName(req.OrgID),
+						fmt.Sprintf("%s:sub", req.OrgsIAMOidcProviderURL): fmt.Sprintf("system:serviceaccount:default:%s", runnerOdrServiceAccountName(req.OrgID)),
 					},
 				},
 			},
@@ -146,10 +144,10 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRolePolicyAttachment(ctx context.Con
 }
 
 type IAMRoleTrustStatement struct {
-	Action    []string `json:"Action,omitempty"`
-	Effect    string   `json:"Effect,omitempty"`
-	Resource  string   `json:"Resource,omitempty"`
-	Sid       string   `json:"Sid"`
+	Action    string `json:"Action,omitempty"`
+	Effect    string `json:"Effect,omitempty"`
+	Resource  string `json:"Resource,omitempty"`
+	Sid       string `json:"Sid"`
 	Principal struct {
 		Federated string `json:"Federated,omitempty"`
 	} `json:"Principal,omitempty"`
