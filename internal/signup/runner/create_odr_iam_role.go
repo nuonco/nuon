@@ -208,7 +208,7 @@ type IAMRoleStatement struct {
 
 type odrIAMRoleTrustPolicy struct {
 	Version   string                  `json:"Version"`
-	Statement []IAMRoleTrustStatement `json:"statement"`
+	Statement []IAMRoleTrustStatement `json:"Statement"`
 }
 
 type odrIAMRolePolicy struct {
