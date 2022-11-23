@@ -1,4 +1,4 @@
-data "aws_iam_policy_document" "orgs_account_access" {
+data "aws_iam_policy_document" "orgs_ecr_access" {
   provider = aws.orgs
 
   statement {
@@ -10,7 +10,7 @@ data "aws_iam_policy_document" "orgs_account_access" {
   }
 }
 
-data "aws_iam_policy_document" "orgs_account_access_trust" {
+data "aws_iam_policy_document" "orgs_ecr_access_trust" {
   provider = aws.orgs
 
   statement {
@@ -26,14 +26,14 @@ data "aws_iam_policy_document" "orgs_account_access_trust" {
   }
 }
 
-resource "aws_iam_policy" "orgs_account_access_policy" {
+resource "aws_iam_policy" "orgs_ecr_access_policy" {
   provider = aws.orgs
 
-  name   = "${local.name}-orgs-account-access"
-  policy = data.aws_iam_policy_document.orgs_account_access.json
+  name   = "${local.name}-orgs-ecr-access"
+  policy = data.aws_iam_policy_document.orgs_ecr_access.json
 }
 
-module "orgs_account_access_role" {
+module "orgs_ecr_access_role" {
   providers = {
     aws = aws.orgs
   }
@@ -46,6 +46,6 @@ module "orgs_account_access_role" {
   role_requires_mfa = false
 
   role_name                = "${local.name}-orgs-account-access"
-  custom_role_trust_policy = data.aws_iam_policy_document.orgs_account_access_trust.json
-  custom_role_policy_arns  = [aws_iam_policy.orgs_account_access_policy.arn, ]
+  custom_role_trust_policy = data.aws_iam_policy_document.orgs_ecr_access_trust.json
+  custom_role_policy_arns  = [aws_iam_policy.orgs_ecr_access_policy.arn, ]
 }
