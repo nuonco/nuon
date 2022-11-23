@@ -3,7 +3,7 @@ module github.com/powertoolsdev/workers-deployments
 go 1.19
 
 require (
-	github.com/aws/aws-sdk-go-v2/config v1.18.2
+	github.com/aws/aws-sdk-go-v2/config v1.18.3
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.29.3
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/google/uuid v1.3.0
@@ -26,7 +26,7 @@ require (
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.17.1 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.9 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.13.2 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.13.3 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.19 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.37 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.25 // indirect
@@ -39,7 +39,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.13.19 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.11.25 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.13.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.17.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.17.5 // indirect
 	github.com/aws/smithy-go v1.13.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
