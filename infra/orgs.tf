@@ -7,6 +7,7 @@ data "aws_iam_policy_document" "orgs_account_iam_access" {
       "iam:CreatePolicy",
       "iam:CreateRole",
       "iam:GetRole",
+      "iam:TagRole",
     ]
     resources = ["*", ]
   }
