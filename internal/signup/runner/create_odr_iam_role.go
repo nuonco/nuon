@@ -120,7 +120,7 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMPolicy(ctx context.Context, client a
 func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client awsClientIAM, req CreateOdrIAMRoleRequest) error {
 	trustPolicy := odrIAMRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
-		Statement: []IAMRoleStatement{
+		Statement: []IAMRoleTrustStatement{
 			{
 				Action: []string{
 					"sts:AssumeRoleWithWebIdentity",
@@ -186,7 +186,7 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRolePolicyAttachment(ctx context.Con
 	return nil
 }
 
-type IAMRoleStatement struct {
+type IAMRoleTrustStatement struct {
 	Action    []string `json:"Action,omitempty"`
 	Effect    string   `json:"Effect,omitempty"`
 	Resource  string   `json:"Resource,omitempty"`
@@ -199,9 +199,16 @@ type IAMRoleStatement struct {
 	} `json:"Condition,omitempty"`
 }
 
+type IAMRoleStatement struct {
+	Action   []string `json:"Action,omitempty"`
+	Effect   string   `json:"Effect,omitempty"`
+	Resource string   `json:"Resource,omitempty"`
+	Sid      string   `json:"Sid"`
+}
+
 type odrIAMRoleTrustPolicy struct {
-	Version   string             `json:"Version"`
-	Statement []IAMRoleStatement `json:"statement"`
+	Version   string                  `json:"Version"`
+	Statement []IAMRoleTrustStatement `json:"statement"`
 }
 
 type odrIAMRolePolicy struct {
