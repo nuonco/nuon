@@ -66,7 +66,7 @@ func runAll(cmd *cobra.Command, args []string) {
 
 	workflows := []workerFn{
 		// TODO: change this to the workers you want to run here
-		runDomainWorkers,
+		runAppWorkers,
 	}
 
 	wg.Add(len(workflows))
