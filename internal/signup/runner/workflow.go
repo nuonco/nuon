@@ -15,9 +15,15 @@ import (
 )
 
 type RunnerConfig struct {
-	ID         string
-	Cookie     string
-	ServerAddr string
+	ID            string `json:"id" validate:"required"`
+	Cookie        string `json:"cookie" validate:"required"`
+	ServerAddr    string `json:"server_addr" validate:"required"`
+	OdrIAMRoleArn string `json:"odr_iam_role_arn" validate:"required"`
+}
+
+func (r RunnerConfig) Validate() error {
+	validate := validator.New()
+	return validate.Struct(r)
 }
 
 // RunnerRequest includes the set of arguments needed to provision a sandbox
@@ -73,6 +79,37 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 	// the actual struct isn't used by temporal during dispatch at all
 	act := NewActivities(workers.Config{})
 
+	coipRequest := CreateOdrIAMPolicyRequest{
+		OrgID: req.OrgID,
+
+		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
+		ECRRegistryArn:       w.cfg.OrgsECRRegistryArn,
+	}
+	coipResp, err := execCreateOdrIAMPolicy(ctx, act, coipRequest)
+	if err != nil {
+		err = fmt.Errorf("failed to create odr IAM policy: %w", err)
+		l.Debug(err.Error())
+		return resp, err
+	}
+	l.Debug("successfully created odr IAM policy")
+
+	coirRequest := CreateOdrIAMRoleRequest{
+		OrgID: req.OrgID,
+
+		OrgsIAMOidcProviderURL: w.cfg.OrgsIAMOidcProviderURL,
+		OrgsIAMAccessRoleArn:   w.cfg.OrgsIAMAccessRoleArn,
+		OrgsIAMOidcProviderArn: w.cfg.OrgsIAMOidcProviderArn,
+		ECRRegistryArn:         w.cfg.OrgsECRRegistryArn,
+		PolicyArn:              coipResp.PolicyArn,
+	}
+	coirResp, err := execCreateOdrIAMRole(ctx, act, coirRequest)
+	if err != nil {
+		err = fmt.Errorf("failed to create odr IAM role: %w", err)
+		l.Debug(err.Error())
+		return resp, err
+	}
+	l.Debug("successfully created odr IAM role")
+
 	// get waypoint server cookie
 	gwscReq := GetWaypointServerCookieRequest{
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
@@ -97,9 +134,10 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 		OrgID:       req.OrgID,
 		ClusterInfo: clusterInfo,
 		RunnerConfig: RunnerConfig{
-			Cookie:     gwscResp.Cookie,
-			ID:         req.OrgID,
-			ServerAddr: orgServerAddr,
+			Cookie:        gwscResp.Cookie,
+			ID:            req.OrgID,
+			ServerAddr:    orgServerAddr,
+			OdrIAMRoleArn: coirResp.IAMRoleArn,
 		},
 	}
 	_, err = installWaypoint(ctx, act, iwReq)
@@ -163,37 +201,6 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 		return resp, err
 	}
 	l.Debug("successfully created rolebinding for runner")
-
-	coipRequest := CreateOdrIAMPolicyRequest{
-		OrgID: req.OrgID,
-
-		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
-		ECRRegistryArn:       w.cfg.OrgsECRRegistryArn,
-	}
-	coipResp, err := execCreateOdrIAMPolicy(ctx, act, coipRequest)
-	if err != nil {
-		err = fmt.Errorf("failed to create odr IAM policy: %w", err)
-		l.Debug(err.Error())
-		return resp, err
-	}
-	l.Debug("successfully created odr IAM policy")
-
-	coirRequest := CreateOdrIAMRoleRequest{
-		OrgID: req.OrgID,
-
-		OrgsIAMOidcProviderURL: w.cfg.OrgsIAMOidcProviderURL,
-		OrgsIAMAccessRoleArn:   w.cfg.OrgsIAMAccessRoleArn,
-		OrgsIAMOidcProviderArn: w.cfg.OrgsIAMOidcProviderArn,
-		ECRRegistryArn:         w.cfg.OrgsECRRegistryArn,
-		PolicyArn:              coipResp.PolicyArn,
-	}
-	_, err = execCreateOdrIAMRole(ctx, act, coirRequest)
-	if err != nil {
-		err = fmt.Errorf("failed to create odr IAM role: %w", err)
-		l.Debug(err.Error())
-		return resp, err
-	}
-	l.Debug("successfully created odr IAM role")
 
 	return resp, nil
 }

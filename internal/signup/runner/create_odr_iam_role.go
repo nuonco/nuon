@@ -32,7 +32,9 @@ type CreateOdrIAMRoleRequest struct {
 	PolicyArn              string `validate:"required" json:"policy_arn"`
 }
 
-type CreateOdrIAMRoleResponse struct{}
+type CreateOdrIAMRoleResponse struct {
+	IAMRoleArn string `json:"iam_role_arn" validate:"required"`
+}
 
 func (a *Activities) CreateOdrIAMRole(ctx context.Context, req CreateOdrIAMRoleRequest) (CreateOdrIAMRoleResponse, error) {
 	var resp CreateOdrIAMRoleResponse
