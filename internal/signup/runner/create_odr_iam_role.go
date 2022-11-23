@@ -48,9 +48,11 @@ func (a *Activities) CreateOdrIAMRole(ctx context.Context, req CreateOdrIAMRoleR
 	}
 
 	client := iam.NewFromConfig(cfg)
-	if err := a.createOdrIAMRole(ctx, client, req); err != nil {
+	roleArn, err := a.createOdrIAMRole(ctx, client, req)
+	if err != nil {
 		return resp, fmt.Errorf("unable to create odr IAM role: %w", err)
 	}
+	resp.IAMRoleArn = roleArn
 
 	if err := a.createOdrIAMRolePolicyAttachment(ctx, client, req.PolicyArn, req); err != nil {
 		return resp, fmt.Errorf("unable to create odr IAM role attachment: %w", err)
@@ -65,7 +67,7 @@ func (r CreateOdrIAMRoleRequest) validate() error {
 }
 
 type odrIAMRoleCreator interface {
-	createOdrIAMRole(context.Context, awsClientIAMRole, CreateOdrIAMRoleRequest) error
+	createOdrIAMRole(context.Context, awsClientIAMRole, CreateOdrIAMRoleRequest) (string, error)
 	createOdrIAMRolePolicyAttachment(context.Context, awsClientIAMRole, string, CreateOdrIAMRoleRequest) error
 }
 
@@ -78,7 +80,7 @@ type awsClientIAMRole interface {
 	AttachRolePolicy(context.Context, *iam.AttachRolePolicyInput, ...func(*iam.Options)) (*iam.AttachRolePolicyOutput, error)
 }
 
-func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client awsClientIAMRole, req CreateOdrIAMRoleRequest) error {
+func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client awsClientIAMRole, req CreateOdrIAMRoleRequest) (string, error) {
 	trustPolicy := odrIAMRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []IAMRoleTrustStatement{
@@ -104,7 +106,7 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client aws
 
 	trustPolicyDoc, err := json.Marshal(trustPolicy)
 	if err != nil {
-		return fmt.Errorf("unable to create IAM trust policy: %w", err)
+		return "", fmt.Errorf("unable to create IAM trust policy: %w", err)
 	}
 
 	params := &iam.CreateRoleInput{
@@ -124,12 +126,12 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client aws
 		},
 	}
 
-	_, err = client.CreateRole(ctx, params)
+	resp, err := client.CreateRole(ctx, params)
 	if err != nil {
-		return fmt.Errorf("unable to create IAM role: %w", err)
+		return "", fmt.Errorf("unable to create IAM role: %w", err)
 	}
 
-	return nil
+	return *resp.Role.Arn, nil
 }
 
 func (o *odrIAMRoleCreatorImpl) createOdrIAMRolePolicyAttachment(ctx context.Context, client awsClientIAMRole, policyArn string, req CreateOdrIAMRoleRequest) error {

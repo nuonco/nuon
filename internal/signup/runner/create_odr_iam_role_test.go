@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/google/uuid"
 	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
@@ -56,23 +57,26 @@ func Test_odrIAMRoleCreatorImpl_createOdrIAMRole(t *testing.T) {
 
 	tests := map[string]struct {
 		clientFn    func(*testing.T) awsClientIAMRole
-		assertFn    func(*testing.T, awsClientIAMRole)
+		assertFn    func(*testing.T, awsClientIAMRole, string)
 		errExpected error
 	}{
 		"happy path": {
 			clientFn: func(t *testing.T) awsClientIAMRole {
 				client := &testAwsClientIAM{}
-				resp := &iam.CreateRoleOutput{}
+				resp := &iam.CreateRoleOutput{
+					Role: &iam_types.Role{
+						Arn: toPtr("output-role-arn"),
+					},
+				}
 				client.On("CreateRole", mock.Anything, mock.Anything, mock.Anything).Return(resp, nil)
 				return client
 			},
-			assertFn: func(t *testing.T, client awsClientIAMRole) {
+			assertFn: func(t *testing.T, client awsClientIAMRole, roleArn string) {
 				obj := client.(*testAwsClientIAM)
 				obj.AssertNumberOfCalls(t, "CreateRole", 1)
+				assert.Equal(t, "output-role-arn", roleArn)
 
 				req := obj.Calls[0].Arguments[1].(*iam.CreateRoleInput)
-
-				// TODO(jm): add actual assertions here
 				assert.NotNil(t, req)
 			},
 		},
@@ -90,13 +94,13 @@ func Test_odrIAMRoleCreatorImpl_createOdrIAMRole(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			roleCreator := odrIAMRoleCreatorImpl{}
 			client := test.clientFn(t)
-			err := roleCreator.createOdrIAMRole(context.Background(), client, req)
+			roleArn, err := roleCreator.createOdrIAMRole(context.Background(), client, req)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
 			assert.NoError(t, err)
-			test.assertFn(t, client)
+			test.assertFn(t, client, roleArn)
 		})
 	}
 }
