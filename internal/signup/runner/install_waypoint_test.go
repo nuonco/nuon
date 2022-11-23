@@ -127,6 +127,7 @@ func TestInstallWaypoint(t *testing.T) {
 						assert.Nil(t, err)
 						assert.True(t, vals.Runner.Enabled)
 						assert.False(t, vals.Server.Enabled)
+
 						return &release.Release{Name: cfg.ReleaseName}, nil
 					},
 				}
@@ -200,6 +201,11 @@ func Test_waypointRunnerValues(t *testing.T) {
 				assert.False(t, vals.Server.Enabled)
 				assert.False(t, vals.UI.Service.Enabled)
 				assert.False(t, vals.Bootstrap.ServiceAccount.Create)
+
+				odrAnnots := vals.Runner.Odr.ServiceAccount.Annotations
+				expectedKey := "eks.amazonaws.com/role-arn"
+				assert.NotEmpty(t, odrAnnots)
+				assert.Equal(t, req.RunnerConfig.OdrIAMRoleArn, odrAnnots[expectedKey])
 			},
 		},
 		"errors with invalid request": {

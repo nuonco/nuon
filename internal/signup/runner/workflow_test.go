@@ -58,15 +58,36 @@ func TestRunner(t *testing.T) {
 			return GetWaypointServerCookieResponse{Cookie: serverCookie}, nil
 		})
 
+	env.OnActivity(a.CreateOdrIAMPolicy, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, coipReq CreateOdrIAMPolicyRequest) (CreateOdrIAMPolicyResponse, error) {
+			assert.Nil(t, coipReq.validate())
+			require.Equal(t, orgShortID, coipReq.OrgID)
+			return CreateOdrIAMPolicyResponse{
+				PolicyArn: "org-policy-arn",
+			}, nil
+		})
+
+	env.OnActivity(a.CreateOdrIAMRole, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, coirReq CreateOdrIAMRoleRequest) (CreateOdrIAMRoleResponse, error) {
+			assert.Nil(t, coirReq.validate())
+			require.Equal(t, orgShortID, coirReq.OrgID)
+			assert.Equal(t, "org-policy-arn", coirReq.PolicyArn)
+			return CreateOdrIAMRoleResponse{
+				IAMRoleArn: "org-iam-role-arn",
+			}, nil
+		})
+
 	env.OnActivity(a.InstallWaypoint, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, iwr InstallWaypointRequest) (InstallWaypointResponse, error) {
 			assert.Nil(t, iwr.validate())
+			assert.Nil(t, iwr.RunnerConfig.Validate())
 
 			require.Equal(t, orgShortID, iwr.Namespace)
 			require.Equal(t, fmt.Sprintf("wp-%s-runner", orgShortID), iwr.ReleaseName)
 			require.Equal(t, orgShortID, iwr.RunnerConfig.ID)
 			require.Equal(t, serverCookie, iwr.RunnerConfig.Cookie)
 			require.Equal(t, orgServerAddr, iwr.RunnerConfig.ServerAddr)
+			require.Equal(t, "org-iam-role-arn", iwr.RunnerConfig.OdrIAMRoleArn)
 			return InstallWaypointResponse{}, nil
 		})
 
@@ -107,23 +128,6 @@ func TestRunner(t *testing.T) {
 			require.Equal(t, cfg.WaypointBootstrapTokenNamespace, crbReq.TokenSecretNamespace)
 			require.Equal(t, orgShortID, crbReq.NamespaceName)
 			return CreateRoleBindingResponse{}, nil
-		})
-
-	env.OnActivity(a.CreateOdrIAMPolicy, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, coipReq CreateOdrIAMPolicyRequest) (CreateOdrIAMPolicyResponse, error) {
-			assert.Nil(t, coipReq.validate())
-			require.Equal(t, orgShortID, coipReq.OrgID)
-			return CreateOdrIAMPolicyResponse{
-				PolicyArn: "org-policy-arn",
-			}, nil
-		})
-
-	env.OnActivity(a.CreateOdrIAMRole, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, coirReq CreateOdrIAMRoleRequest) (CreateOdrIAMRoleResponse, error) {
-			assert.Nil(t, coirReq.validate())
-			require.Equal(t, orgShortID, coirReq.OrgID)
-			assert.Equal(t, "org-policy-arn", coirReq.PolicyArn)
-			return CreateOdrIAMRoleResponse{}, nil
 		})
 
 	wkflow := NewWorkflow(cfg)

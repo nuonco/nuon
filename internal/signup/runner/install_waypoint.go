@@ -60,11 +60,10 @@ func getWaypointRunnerValues(req InstallWaypointRequest) (map[string]interface{}
 	values.Runner.Server.Cookie = req.RunnerConfig.Cookie
 	values.Runner.Odr.ServiceAccount.Create = true
 	values.Runner.Odr.ServiceAccount.Name = runnerOdrServiceAccountName(req.OrgID)
+	values.Runner.Odr.ServiceAccount.Annotations = map[string]string{
+		"eks.amazonaws.com/role-arn": req.RunnerConfig.OdrIAMRoleArn,
+	}
 
-	// TODO(jm): add a role ARN here once we create a role / org
-	//values.Runner.Odr.ServiceAccount.Annotations = map[string]string{
-	//req.OdrRunnerIamRole: "",
-	//}
 	values.Runner.ServiceAccount.Create = true
 	values.Runner.ServiceAccount.Name = runnerServiceAccountName(req.OrgID)
 	values.Bootstrap.ServiceAccount.Create = false
