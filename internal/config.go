@@ -34,7 +34,7 @@ type Config struct {
 	OrgsIAMAccessRoleArn   string `config:"orgs_iam_access_role_arn" validate:"required"`
 	OrgsIAMOidcProviderURL string `config:"orgs_iam_oidc_provider_url" validate:"required"`
 	OrgsIAMOidcProviderArn string `config:"orgs_iam_oidc_provider_arn" validate:"required"`
-	OrgsECRRegistryID      string `config:"orgs_ecr_registry_id" validate:"required"`
+	OrgsECRRegistryArn     string `config:"orgs_ecr_registry_arn" validate:"required"`
 
 	// configs needed to access the orgs cluster, which runs all org runner/servers
 	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id" json:"orgs_k8s_cluster_id" validate:"required"`
