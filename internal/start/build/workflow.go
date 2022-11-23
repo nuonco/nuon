@@ -49,7 +49,6 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-//nolint:funlen // NOTE(jdt): refactor to remove this ignore
 func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, error) {
 	resp := BuildResponse{}
 	l := workflow.GetLogger(ctx)
@@ -59,19 +58,6 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 	if err := req.Validate(); err != nil {
 		return resp, err
 	}
-
-	uwwReq := UpsertWaypointWorkspaceRequest{
-		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgID),
-		OrgID:                req.OrgID,
-		AppID:                req.AppID,
-	}
-	uwwResp, err := execUpsertWaypointWorkspaceRequest(ctx, act, uwwReq)
-	if err != nil {
-		l.Error(err.Error())
-		return resp, fmt.Errorf("unable to upsert waypoint workspace for org: %w", err)
-	}
-	l.Debug("successfully upserted waypoint workspace:", "response", uwwResp)
 
 	bucketPrefix := getS3Prefix(req)
 
@@ -173,22 +159,6 @@ func execGenerateWaypointConfig(
 
 	l.Debug("executing generate waypoint config activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.GenerateWaypointConfig, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-	return resp, nil
-}
-
-func execUpsertWaypointWorkspaceRequest(
-	ctx workflow.Context,
-	act *Activities,
-	req UpsertWaypointWorkspaceRequest,
-) (UpsertWaypointWorkspaceResponse, error) {
-	l := workflow.GetLogger(ctx)
-	resp := UpsertWaypointWorkspaceResponse{}
-
-	l.Debug("executing upsert waypoint workspace activity", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.UpsertWaypointWorkspace, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
