@@ -5,6 +5,7 @@ import (
 
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
+	shared "github.com/powertoolsdev/workers-apps/internal"
 	"github.com/powertoolsdev/workers-apps/internal/provision"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
@@ -24,7 +25,7 @@ func init() {
 }
 
 func domainRun(cmd *cobra.Command, args []string) {
-	var cfg Config
+	var cfg shared.Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
 		panic(fmt.Sprintf("failed to load config: %s", err))
@@ -62,16 +63,16 @@ func domainRun(cmd *cobra.Command, args []string) {
 	}
 }
 
-func runDomainWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) error {
+func runDomainWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interface{}) error {
 	w := worker.New(c, "apps", worker.Options{
 		MaxConcurrentActivityExecutionSize: 1,
 	})
 
-	if err := cfg.Cfg.Validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return fmt.Errorf("invalid domain config: %w", err)
 	}
 
-	wkflow := provision.NewWorkflow(cfg.Cfg)
+	wkflow := provision.NewWorkflow(cfg)
 	w.RegisterWorkflow(wkflow.Provision)
 	w.RegisterActivity(provision.NewActivities())
 
