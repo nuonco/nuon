@@ -93,7 +93,7 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client aws
 					StringEquals map[string]string `json:"StringEquals"`
 				}{
 					StringEquals: map[string]string{
-						fmt.Sprintf("%s:sub", req.OrgsIAMOidcProviderURL): fmt.Sprintf("system:serviceaccount:default:%s", runnerOdrServiceAccountName(req.OrgID)),
+						fmt.Sprintf("%s:sub", req.OrgsIAMOidcProviderURL): fmt.Sprintf("system:serviceaccount:%s:%s", req.OrgID, runnerOdrServiceAccountName(req.OrgID)),
 					},
 				},
 			},
