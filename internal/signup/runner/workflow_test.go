@@ -109,10 +109,20 @@ func TestRunner(t *testing.T) {
 			return CreateRoleBindingResponse{}, nil
 		})
 
+	env.OnActivity(a.CreateOdrIAMPolicy, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, coipReq CreateOdrIAMPolicyRequest) (CreateOdrIAMPolicyResponse, error) {
+			assert.Nil(t, coipReq.validate())
+			require.Equal(t, orgShortID, coipReq.OrgID)
+			return CreateOdrIAMPolicyResponse{
+				PolicyArn: "org-policy-arn",
+			}, nil
+		})
+
 	env.OnActivity(a.CreateOdrIAMRole, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, coirReq CreateOdrIAMRoleRequest) (CreateOdrIAMRoleResponse, error) {
 			assert.Nil(t, coirReq.validate())
 			require.Equal(t, orgShortID, coirReq.OrgID)
+			assert.Equal(t, "org-policy-arn", coirReq.PolicyArn)
 			return CreateOdrIAMRoleResponse{}, nil
 		})
 

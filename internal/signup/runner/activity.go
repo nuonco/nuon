@@ -18,6 +18,7 @@ type Activities struct {
 	waypointRunnerAdopter
 	roleBindingCreator
 	odrIAMRoleCreator
+	odrIAMPolicyCreator
 	iamRoleAssumer
 
 	config     workers.Config
@@ -33,6 +34,7 @@ func NewActivities(cfg workers.Config) *Activities {
 		helmInstaller:              helm.NewInstaller(),
 		roleBindingCreator:         &roleBindingCreatorImpl{},
 		odrIAMRoleCreator:          &odrIAMRoleCreatorImpl{},
+		odrIAMPolicyCreator:        &odrIAMPolicyCreatorImpl{},
 		iamRoleAssumer:             &iamRoleAssumerImpl{},
 	}
 }
