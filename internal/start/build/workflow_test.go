@@ -117,15 +117,6 @@ func TestProvision(t *testing.T) {
 			return resp, nil
 		})
 
-	env.OnActivity(a.UpsertWaypointWorkspace, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, uwwReq UpsertWaypointWorkspaceRequest) (UpsertWaypointWorkspaceResponse, error) {
-			var resp UpsertWaypointWorkspaceResponse
-			assert.Nil(t, uwwReq.validate())
-			assert.Equal(t, req.OrgID, uwwReq.OrgID)
-			assert.Contains(t, uwwReq.OrgServerAddr, req.OrgID)
-			return resp, nil
-		})
-
 	env.OnActivity(a.GenerateWaypointConfig, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, pr GenerateWaypointConfigRequest) (GenerateWaypointConfigResponse, error) {
 			assert.Nil(t, pr.validate())
