@@ -5,24 +5,18 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
-
-	"github.com/powertoolsdev/go-waypoint"
 )
 
 func getFakeUpsertWaypointWorkspaceRequest() UpsertWaypointWorkspaceRequest {
-	orgID := uuid.NewString()
-
-	return UpsertWaypointWorkspaceRequest{
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress("stage.nuon.co", orgID),
-		TokenSecretNamespace: "default",
-		OrgID:                orgID,
-		AppID:                uuid.NewString(),
-	}
+	fkr := faker.New()
+	var req UpsertWaypointWorkspaceRequest
+	fkr.Struct().Fill(&req)
+	return req
 }
 
 type testWaypointClientWorkspaceUpserter struct {
