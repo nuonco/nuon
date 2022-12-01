@@ -77,6 +77,8 @@ func TestCreateWaypointProject_createWaypointProject(t *testing.T) {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
+
+			test.assertFn(t, client)
 		})
 	}
 }
