@@ -117,12 +117,6 @@ func TestProvision(t *testing.T) {
 			return resp, nil
 		})
 
-	env.OnActivity(a.GenerateWaypointConfig, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, pr GenerateWaypointConfigRequest) (GenerateWaypointConfigResponse, error) {
-			assert.Nil(t, pr.validate())
-			return GenerateWaypointConfigResponse{}, nil
-		})
-
 	env.OnActivity(a.UploadArtifact, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, ua UploadArtifactRequest) (UploadArtifactResponse, error) {
 			assert.Nil(t, ua.validate())

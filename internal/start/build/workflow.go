@@ -61,19 +61,6 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 
 	bucketPrefix := getS3Prefix(req)
 
-	l.Debug("pre-config-generate")
-	genReq := GenerateWaypointConfigRequest{
-		BuildRequest: req,
-		BucketName:   w.cfg.Bucket,
-		BucketPrefix: bucketPrefix,
-	}
-
-	genResp, err := execGenerateWaypointConfig(ctx, act, genReq)
-	if err != nil {
-		return resp, err
-	}
-	l.Debug("generated config", "config", genResp)
-
 	uwaReq := UpsertWaypointApplicationRequest{
 		OrgID:     req.OrgID,
 		Component: req.Component,
@@ -146,22 +133,6 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 	}
 	l.Debug("successfully polled deployment job:", uaResp)
 
-	return resp, nil
-}
-
-func execGenerateWaypointConfig(
-	ctx workflow.Context,
-	act *Activities,
-	req GenerateWaypointConfigRequest,
-) (GenerateWaypointConfigResponse, error) {
-	l := workflow.GetLogger(ctx)
-	resp := GenerateWaypointConfigResponse{}
-
-	l.Debug("executing generate waypoint config activity", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.GenerateWaypointConfig, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
 	return resp, nil
 }
 
