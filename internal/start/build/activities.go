@@ -9,7 +9,6 @@ import (
 type waypointProvider = waypoint.Provider
 
 type Activities struct {
-	waypointCfgGenerator
 	waypointProvider
 	waypointApplicationUpserter
 	waypointDeploymentJobPoller
@@ -20,7 +19,6 @@ type Activities struct {
 
 func NewActivities(cfg workers.Config) *Activities {
 	return &Activities{
-		waypointCfgGenerator:           &waypointCfgGeneratorImpl{},
 		waypointProvider:               waypoint.NewProvider(),
 		waypointApplicationUpserter:    &wpApplicationUpserter{},
 		waypointDeploymentJobPoller:    &waypointDeploymentJobPollerImpl{},
