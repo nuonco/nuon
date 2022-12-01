@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/google/uuid"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -33,19 +32,10 @@ func (t *testWaypointClientJobQueuer) QueueJob(
 	return nil, args.Error(1)
 }
 
-func newFakeWaypointDeploymentRequest() QueueWaypointDeploymentJobRequest {
-	return QueueWaypointDeploymentJobRequest{
-		OrgID:         uuid.NewString(),
-		AppID:         uuid.NewString(),
-		DeploymentID:  uuid.NewString(),
-		ComponentName: "Blurg-blarg",
-	}
-}
-
 // Test_waypointDeployerImpl_upsertWaypointDeployment tests integrating with the waypoint deployment api
 func Test_waypointDeployerImpl_upsertWaypointDeployment(t *testing.T) {
 	errDeployment := fmt.Errorf("error upserting deployment")
-	req := newFakeWaypointDeploymentRequest()
+	req := getFakeObj[QueueWaypointDeploymentJobRequest]()
 
 	tests := map[string]struct {
 		waypointHcl []byte
@@ -73,9 +63,6 @@ func Test_waypointDeployerImpl_upsertWaypointDeployment(t *testing.T) {
 				assert.Equal(t, wpReq.Job.Labels["component-name"], req.ComponentName)
 				assert.Equal(t, wpReq.Job.Labels["component-type"], req.ComponentType)
 
-				// in order to run on an ODR runner we need to make sure we set the runner to "any" and
-				// that we target the org's ODR runner profile.
-				//assert.NotNil(t, wpReq.Job.TargetRunner.Target.Any)
 				assert.Equal(t, req.OrgID, wpReq.Job.OndemandRunner.Name)
 			},
 		},
@@ -134,7 +121,7 @@ func (t *testS3ClientObjectGetter) GetObject(
 
 func Test_waypointDeploymentJobQueuerImpl_getWaypointHcl(t *testing.T) {
 	errGetObject := fmt.Errorf("error getting object")
-	req := newFakeWaypointDeploymentRequest()
+	req := getFakeObj[QueueWaypointDeploymentJobRequest]()
 
 	tests := map[string]struct {
 		clientFn    func() s3ClientObjectGetter
