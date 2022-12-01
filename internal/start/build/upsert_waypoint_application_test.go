@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
-
-	"github.com/powertoolsdev/go-waypoint"
 )
 
 type testWaypointClientApplicationUpserter struct {
@@ -26,33 +23,17 @@ func (t *testWaypointClientApplicationUpserter) UpsertApplication(ctx context.Co
 
 	return nil, args.Error(1)
 }
-
-func getFakeUpsertWaypointApplicationRequest() UpsertWaypointApplicationRequest {
-	orgID := uuid.NewString()
-	return UpsertWaypointApplicationRequest{
-		OrgID:                orgID,
-		TokenSecretNamespace: "default",
-		OrgServerAddr:        fmt.Sprintf("%s.stage.nuon.co:9701", orgID),
-
-		Component: waypoint.Component{
-			Name:              "foo",
-			Type:              "public_container",
-			ContainerImageURL: "dockerhub.io/httpbin:latest",
-		},
-	}
-}
-
 func TestUpsertWaypointApplication_validation(t *testing.T) {
 	tests := map[string]struct {
 		reqFn       func() UpsertWaypointApplicationRequest
 		errExpected error
 	}{
 		"happy path": {
-			reqFn: getFakeUpsertWaypointApplicationRequest,
+			reqFn: getFakeObj[UpsertWaypointApplicationRequest],
 		},
 		"missing-org-id": {
 			reqFn: func() UpsertWaypointApplicationRequest {
-				req := getFakeUpsertWaypointApplicationRequest()
+				req := getFakeObj[UpsertWaypointApplicationRequest]()
 				req.OrgID = ""
 				return req
 			},
@@ -74,7 +55,7 @@ func TestUpsertWaypointApplication_validation(t *testing.T) {
 }
 
 func TestUpsertWaypointApplication_upsertApplication(t *testing.T) {
-	req := getFakeUpsertWaypointApplicationRequest()
+	req := getFakeObj[UpsertWaypointApplicationRequest]()
 	testErr := fmt.Errorf("test-error")
 
 	tests := map[string]struct {

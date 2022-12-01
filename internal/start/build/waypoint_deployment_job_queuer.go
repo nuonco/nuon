@@ -1,9 +1,11 @@
 package build
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"text/template"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -39,14 +41,22 @@ type QueueWaypointDeploymentJobResponse struct {
 	JobID string `json:"job_id" validate:"required"`
 }
 
-var testWaypointHcl string = `
-project = "0ezv19lly186a2iazihwf6ms3s"
+var waypointBuildTmpl string = `
+project = "{{.Project}}"
 
 app "mario" {
   build {
-    use "docker-ref" {
-      image = "kennethreitz/httpbin"
-      tag   = "latest"
+    use "docker-pull" {
+      image = "{{.InputImage}}"
+      tag   = "{{.InputVersion}}"
+    }
+
+    registry {
+      use "aws-ecr" {
+	repository = "{{.OutputRepository}}"
+	tag	 = "{{.OutputVersion}}"
+	region = "us-west-2"
+      }
     }
   }
 
@@ -55,6 +65,37 @@ app "mario" {
   }
 }
 `
+
+type buildTmplArgs struct {
+	Project          string
+	InputImage       string
+	InputVersion     string
+	OutputRepository string
+	OutputVersion    string
+}
+
+func getWaypointHcl(req QueueWaypointDeploymentJobRequest) ([]byte, error) {
+	tmpl, err := template.New("build-config").Parse(waypointBuildTmpl)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse template: %w", err)
+	}
+
+	buf := new(bytes.Buffer)
+
+	args := buildTmplArgs{
+		Project:          req.AppID,
+		InputImage:       "kennethreitz/httpbin",
+		InputVersion:     "latest",
+		OutputRepository: fmt.Sprintf("%s/%s", req.OrgID, req.AppID),
+		OutputVersion:    req.DeploymentID,
+	}
+
+	if err := tmpl.Execute(buf, args); err != nil {
+		return nil, fmt.Errorf("unable to execute template: %w", err)
+	}
+
+	return buf.Bytes(), nil
+}
 
 func (a *Activities) QueueWaypointDeploymentJob(
 	ctx context.Context,
@@ -141,6 +182,11 @@ func (w *waypointDeploymentJobQueuerImpl) queueWaypointDeploymentJob(
 	req QueueWaypointDeploymentJobRequest,
 	waypointHcl []byte,
 ) (string, error) {
+	waypointCfg, err := getWaypointHcl(req)
+	if err != nil {
+		return "", fmt.Errorf("unable to get waypoint config: %w", err)
+	}
+
 	wpReq := &gen.QueueJobRequest{
 		Job: &gen.Job{
 			Operation: &gen.Job_Build{
@@ -159,6 +205,7 @@ func (w *waypointDeploymentJobQueuerImpl) queueWaypointDeploymentJob(
 				"deployment-id":    req.DeploymentID,
 				"app-id":           req.AppID,
 				"component-name":   req.ComponentName,
+				"component-type":   req.ComponentType,
 			},
 			DataSource: &gen.Job_DataSource{
 				Source: &gen.Job_DataSource_Git{
@@ -168,7 +215,7 @@ func (w *waypointDeploymentJobQueuerImpl) queueWaypointDeploymentJob(
 				},
 			},
 			WaypointHcl: &gen.Hcl{
-				Contents: []byte(testWaypointHcl),
+				Contents: waypointCfg,
 			},
 			TargetRunner: &gen.Ref_Runner{
 				Target: &gen.Ref_Runner_Any{
