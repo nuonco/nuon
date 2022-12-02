@@ -12,6 +12,7 @@ import (
 
 const (
 	defaultActivityTimeout = time.Second * 5
+	defaultDeployTimeout   = time.Minute * 15
 )
 
 type ProvisionRequest struct {
@@ -192,6 +193,11 @@ func execPollWaypointDeploymentJob(
 ) (PollWaypointDeploymentJobResponse, error) {
 	l := workflow.GetLogger(ctx)
 	var resp PollWaypointDeploymentJobResponse
+
+	ao := workflow.ActivityOptions{
+		ScheduleToCloseTimeout: defaultDeployTimeout,
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
 
 	l.Debug("executing poll waypoint deployment job", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.PollWaypointDeploymentJob, req)
