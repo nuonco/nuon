@@ -205,8 +205,10 @@ func (w *waypointDeploymentJobQueuerImpl) queueWaypointDeploymentJob(
 				Contents: waypointHcl,
 			},
 			TargetRunner: &gen.Ref_Runner{
-				Target: &gen.Ref_Runner_Any{
-					Any: &gen.Ref_RunnerAny{},
+				Target: &gen.Ref_Runner_Id{
+					Id: &gen.Ref_RunnerId{
+						Id: req.OrgID,
+					},
 				},
 			},
 			OndemandRunner: &gen.Ref_OnDemandRunnerConfig{
