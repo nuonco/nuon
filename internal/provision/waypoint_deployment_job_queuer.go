@@ -1,11 +1,12 @@
 package provision
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"text/template"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
@@ -39,14 +40,22 @@ type QueueWaypointDeploymentJobResponse struct {
 	JobID string `json:"job_id" validate:"required"`
 }
 
-var testWaypointHcl string = `
-project = "0ezv19lly186a2iazihwf6ms3s"
+var waypointDeployTmpl string = `
+project = "{{.Project}}"
 
 app "mario" {
   build {
-    use "docker-ref" {
-      image = "kennethreitz/httpbin"
-      tag   = "latest"
+    use "docker-pull" {
+      image = "{{.InputImage}}"
+      tag   = "{{.InputVersion}}"
+    }
+
+    registry {
+      use "aws-ecr" {
+	repository = "{{.OutputRepository}}"
+	tag	 = "{{.OutputVersion}}"
+	region = "us-west-2"
+      }
     }
   }
 
@@ -55,6 +64,37 @@ app "mario" {
   }
 }
 `
+
+type deployTmplArgs struct {
+	Project          string
+	InputImage       string
+	InputVersion     string
+	OutputRepository string
+	OutputVersion    string
+}
+
+func getWaypointHcl(req QueueWaypointDeploymentJobRequest) ([]byte, error) {
+	tmpl, err := template.New("build-config").Parse(waypointDeployTmpl)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse template: %w", err)
+	}
+
+	buf := new(bytes.Buffer)
+
+	args := deployTmplArgs{
+		Project:          req.AppID,
+		InputImage:       "kennethreitz/httpbin",
+		InputVersion:     "latest",
+		OutputRepository: fmt.Sprintf("%s/%s", req.OrgID, req.AppID),
+		OutputVersion:    req.DeploymentID,
+	}
+
+	if err := tmpl.Execute(buf, args); err != nil {
+		return nil, fmt.Errorf("unable to execute template: %w", err)
+	}
+
+	return buf.Bytes(), nil
+}
 
 func (a *Activities) QueueWaypointDeploymentJob(
 	ctx context.Context,
@@ -65,14 +105,7 @@ func (a *Activities) QueueWaypointDeploymentJob(
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		return resp, err
-	}
-
-	s3Client := s3.NewFromConfig(cfg)
-
-	waypointHcl, err := a.getWaypointHcl(ctx, s3Client, req)
+	waypointHcl, err := getWaypointHcl(req)
 	if err != nil {
 		return resp, err
 	}
@@ -201,7 +234,7 @@ func (w *waypointDeploymentJobQueuerImpl) queueWaypointDeploymentJob(
 				},
 			},
 			WaypointHcl: &gen.Hcl{
-				Contents: []byte(testWaypointHcl),
+				Contents: waypointHcl,
 			},
 			Variables: []*gen.Variable{},
 		},
