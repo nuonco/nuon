@@ -7,7 +7,6 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
@@ -106,16 +105,9 @@ func (a *Activities) QueueWaypointDeploymentJob(
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	cfg, err := config.LoadDefaultConfig(ctx)
+	waypointCfg, err := getWaypointHcl(req)
 	if err != nil {
-		return resp, err
-	}
-
-	s3Client := s3.NewFromConfig(cfg)
-
-	waypointHcl, err := a.getWaypointHcl(ctx, s3Client, req)
-	if err != nil {
-		return resp, err
+		return resp, fmt.Errorf("unable to get waypoint config: %w", err)
 	}
 
 	client, err := a.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
@@ -123,7 +115,7 @@ func (a *Activities) QueueWaypointDeploymentJob(
 		return resp, fmt.Errorf("unable to get org waypoint client: %w", err)
 	}
 
-	jobID, err := a.queueWaypointDeploymentJob(ctx, client, req, waypointHcl)
+	jobID, err := a.queueWaypointDeploymentJob(ctx, client, req, waypointCfg)
 	if err != nil {
 		return resp, fmt.Errorf("failed to create waypoint application: %w", err)
 	}
@@ -182,11 +174,6 @@ func (w *waypointDeploymentJobQueuerImpl) queueWaypointDeploymentJob(
 	req QueueWaypointDeploymentJobRequest,
 	waypointHcl []byte,
 ) (string, error) {
-	waypointCfg, err := getWaypointHcl(req)
-	if err != nil {
-		return "", fmt.Errorf("unable to get waypoint config: %w", err)
-	}
-
 	wpReq := &gen.QueueJobRequest{
 		Job: &gen.Job{
 			Operation: &gen.Job_Build{
@@ -215,7 +202,7 @@ func (w *waypointDeploymentJobQueuerImpl) queueWaypointDeploymentJob(
 				},
 			},
 			WaypointHcl: &gen.Hcl{
-				Contents: waypointCfg,
+				Contents: waypointHcl,
 			},
 			TargetRunner: &gen.Ref_Runner{
 				Target: &gen.Ref_Runner_Any{
