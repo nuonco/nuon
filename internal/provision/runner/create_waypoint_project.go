@@ -53,10 +53,15 @@ type waypointClientProjectUpserter interface {
 	UpsertProject(ctx context.Context, in *gen.UpsertProjectRequest, opts ...grpc.CallOption) (*gen.UpsertProjectResponse, error)
 }
 
-func (w *wpProjectCreator) createWaypointProject(ctx context.Context, client waypointClientProjectUpserter, orgID string) error {
+func (w *wpProjectCreator) createWaypointProject(ctx context.Context, client waypointClientProjectUpserter, installID string) error {
+	waypointHcl, err := getProjectWaypointConfig(installID)
+	if err != nil {
+		return fmt.Errorf("unable to create project waypoint config: %w", err)
+	}
+
 	req := &gen.UpsertProjectRequest{
 		Project: &gen.Project{
-			Name:          orgID,
+			Name:          installID,
 			RemoteEnabled: true,
 			DataSource: &gen.Job_DataSource{
 				Source: &gen.Job_DataSource_Git{
@@ -71,9 +76,11 @@ func (w *wpProjectCreator) createWaypointProject(ctx context.Context, client way
 			DataSourcePoll: &gen.Project_Poll{
 				Enabled: false,
 			},
+			WaypointHcl:       waypointHcl,
+			WaypointHclFormat: gen.Hcl_JSON,
 		},
 	}
 
-	_, err := client.UpsertProject(ctx, req)
+	_, err = client.UpsertProject(ctx, req)
 	return err
 }

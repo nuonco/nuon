@@ -100,7 +100,7 @@ func TestCreateWaypointProject_validateRequest(t *testing.T) {
 }
 
 func TestCreateWaypointProject_createWaypointProject(t *testing.T) {
-	orgID := uuid.NewString()
+	installID := uuid.NewString()
 	testErr := fmt.Errorf("test-error")
 
 	tests := map[string]struct {
@@ -118,11 +118,16 @@ func TestCreateWaypointProject_createWaypointProject(t *testing.T) {
 				obj := client.(*testWaypointClientProjectUpserter)
 				obj.AssertNumberOfCalls(t, "UpsertProject", 1)
 				req := obj.Calls[0].Arguments[1].(*gen.UpsertProjectRequest)
-				assert.Equal(t, req.Project.Name, orgID)
+				assert.Equal(t, req.Project.Name, installID)
 
 				assert.True(t, req.Project.RemoteEnabled)
 				assert.NotNil(t, req.Project.DataSource.Source)
 				assert.False(t, req.Project.DataSourcePoll.Enabled)
+
+				byts, err := getProjectWaypointConfig(installID)
+				assert.NoError(t, err)
+				assert.Equal(t, byts, req.Project.WaypointHcl)
+				assert.Equal(t, gen.Hcl_JSON, req.Project.WaypointHclFormat)
 			},
 		},
 		"error": {
@@ -139,11 +144,13 @@ func TestCreateWaypointProject_createWaypointProject(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			projectCreator := wpProjectCreator{}
 			client := test.clientFn()
-			err := projectCreator.createWaypointProject(context.Background(), client, orgID)
+			err := projectCreator.createWaypointProject(context.Background(), client, installID)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
+
+			test.assertFn(t, client)
 		})
 	}
 }
