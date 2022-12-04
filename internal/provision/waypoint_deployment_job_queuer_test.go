@@ -82,6 +82,21 @@ func Test_waypointDeployerImpl_upsertWaypointDeployment(t *testing.T) {
 				// TODO(jm): test artifacts, waypointhcl and variables once implemented
 			},
 		},
+		"returns job id": {
+			clientFn: func() waypointClientJobQueuer {
+				client := &testWaypointClientJobQueuer{}
+				client.On("QueueJob", mock.Anything, mock.Anything, mock.Anything).Return(&gen.QueueJobResponse{
+					JobId: "expected-job-id",
+				}, nil)
+				return client
+			},
+			expectedErr: nil,
+			assertFn: func(t *testing.T, client waypointClientJobQueuer, jobID string) {
+				obj := client.(*testWaypointClientJobQueuer)
+				obj.AssertNumberOfCalls(t, "QueueJob", 1)
+				assert.Equal(t, "expected-job-id", jobID)
+			},
+		},
 		"client err": {
 			clientFn: func() waypointClientJobQueuer {
 				client := &testWaypointClientJobQueuer{}
