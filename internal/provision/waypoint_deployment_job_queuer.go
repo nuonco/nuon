@@ -210,8 +210,10 @@ func (w *waypointDeploymentJobQueuerImpl) queueWaypointDeploymentJob(
 				Workspace: req.InstallID,
 			},
 			TargetRunner: &gen.Ref_Runner{
-				Target: &gen.Ref_Runner_Any{
-					Any: &gen.Ref_RunnerAny{},
+				Target: &gen.Ref_Runner_Id{
+					Id: &gen.Ref_RunnerId{
+						Id: req.InstallID,
+					},
 				},
 			},
 			OndemandRunner: &gen.Ref_OnDemandRunnerConfig{
@@ -240,10 +242,10 @@ func (w *waypointDeploymentJobQueuerImpl) queueWaypointDeploymentJob(
 		},
 		ExpiresIn: defaultJobTimeout,
 	}
-	_, err := client.QueueJob(ctx, wpReq)
+	jResp, err := client.QueueJob(ctx, wpReq)
 	if err != nil {
 		return "", fmt.Errorf("unable to queue deployment job: %w", err)
 	}
 
-	return "", nil
+	return jResp.JobId, nil
 }
