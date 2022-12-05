@@ -61,8 +61,15 @@ func createRunnerProfile(ctx context.Context, client clientODRConfigUpserter, re
 
 	_, err := client.UpsertOnDemandRunnerConfig(ctx, &gen.UpsertOnDemandRunnerConfigRequest{
 		Config: &gen.OnDemandRunnerConfig{
-			Name:       req.OrgID,
-			OciUrl:     defaultODRImageURL,
+			Name:   req.OrgID,
+			OciUrl: defaultODRImageURL,
+			TargetRunner: &gen.Ref_Runner{
+				Target: &gen.Ref_Runner_Id{
+					Id: &gen.Ref_RunnerId{
+						Id: req.OrgID,
+					},
+				},
+			},
 			PluginType: "kubernetes",
 			PluginConfig: []byte(fmt.Sprintf(`{
 	"service_account": "%s",
