@@ -79,6 +79,7 @@ func TestProvisionRunner(t *testing.T) {
 		Return(func(_ context.Context, iwr InstallWaypointRequest) (InstallWaypointResponse, error) {
 			assert.Nil(t, iwr.validate())
 
+			require.Equal(t, req.InstallID, iwr.InstallID)
 			require.Equal(t, req.InstallID, iwr.Namespace)
 			require.Equal(t, fmt.Sprintf("wp-%s", req.InstallID), iwr.ReleaseName)
 			require.Equal(t, req.InstallID, iwr.RunnerConfig.ID)

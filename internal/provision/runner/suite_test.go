@@ -90,6 +90,7 @@ var _ = Describe("InstallWaypoint", func() {
 		e.RegisterActivity(a)
 
 		req = runner.InstallWaypointRequest{
+			InstallID:   uuid.NewString(),
 			Namespace:   namespace,
 			ReleaseName: "test",
 			Chart:       &waypoint.DefaultChart,

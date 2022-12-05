@@ -185,7 +185,7 @@ func Test_waypointRunnerValues(t *testing.T) {
 	tests := map[string]struct {
 		reqFn       func() InstallWaypointRequest
 		errExpected error
-		assertFn    func(*testing.T, map[string]interface{})
+		assertFn    func(*testing.T, InstallWaypointRequest, map[string]interface{})
 	}{
 		"happy path": {
 			reqFn: func() InstallWaypointRequest {
@@ -194,35 +194,43 @@ func Test_waypointRunnerValues(t *testing.T) {
 				req.RunnerConfig.ServerAddr = addr
 				return req
 			},
-			assertFn: func(t *testing.T, v map[string]interface{}) {
+			assertFn: func(t *testing.T, req InstallWaypointRequest, v map[string]interface{}) {
 				var vals waypoint.Values
 				err := mapstructure.Decode(v, &vals)
 				assert.Nil(t, err)
 
-				assert.True(t, vals.Runner.Enabled)
+				// assert runner server ocnnection
 				assert.True(t, vals.Runner.Server.TLS)
 				assert.True(t, vals.Runner.Server.TLSSkipVerify)
 				assert.Equal(t, cookie, vals.Runner.Server.Cookie)
-
 				assert.Equal(t, addr, vals.Runner.Server.Addr)
 
 				assert.False(t, vals.Server.Enabled)
 				assert.False(t, vals.UI.Service.Enabled)
 				assert.False(t, vals.Bootstrap.ServiceAccount.Create)
+
+				// assert odr setup
+				assert.True(t, vals.Runner.Odr.ServiceAccount.Create)
+				assert.Equal(t, runnerOdrServiceAccountName(req.InstallID), vals.Runner.Odr.ServiceAccount.Name)
+
+				// assert runner setup
+				assert.True(t, vals.Runner.Enabled)
+				assert.True(t, vals.Runner.ServiceAccount.Create)
+				assert.Equal(t, runnerServiceAccountName(req.InstallID), vals.Runner.ServiceAccount.Name)
 			},
 		},
 		"errors with invalid request": {
 			reqFn: func() InstallWaypointRequest {
 				return InstallWaypointRequest{}
 			},
-
 			errExpected: fmt.Errorf("Namespace"),
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			vals, err := getWaypointRunnerValues(test.reqFn())
+			req := test.reqFn()
+			vals, err := getWaypointRunnerValues(req)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
@@ -230,7 +238,7 @@ func Test_waypointRunnerValues(t *testing.T) {
 
 			assert.Nil(t, err)
 			assert.NotNil(t, vals)
-			test.assertFn(t, vals)
+			test.assertFn(t, req, vals)
 		})
 	}
 }
