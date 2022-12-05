@@ -63,8 +63,15 @@ func (w *wpRunnerProfileCreator) createWaypointRunnerProfile(ctx context.Context
 
 	_, err := client.UpsertOnDemandRunnerConfig(ctx, &gen.UpsertOnDemandRunnerConfigRequest{
 		Config: &gen.OnDemandRunnerConfig{
-			Name:       req.InstallID,
-			OciUrl:     defaultODRImageURL,
+			Name:   req.InstallID,
+			OciUrl: defaultODRImageURL,
+			TargetRunner: &gen.Ref_Runner{
+				Target: &gen.Ref_Runner_Id{
+					Id: &gen.Ref_RunnerId{
+						Id: req.InstallID,
+					},
+				},
+			},
 			PluginType: "kubernetes",
 			PluginConfig: []byte(fmt.Sprintf(`{
 "service_account": "%s",
