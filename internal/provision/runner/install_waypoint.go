@@ -20,6 +20,7 @@ type RunnerConfig struct {
 }
 
 type InstallWaypointRequest struct {
+	InstallID    string           `validate:"required" json:"install_id"`
 	Namespace    string           `validate:"required" json:"namespace"`
 	ReleaseName  string           `validate:"required" json:"release_name"`
 	Chart        *helm.Chart      `validate:"required" json:"chart"`
@@ -59,6 +60,11 @@ func getWaypointRunnerValues(req InstallWaypointRequest) (map[string]interface{}
 	values.Server.Enabled = false
 	values.UI.Service.Enabled = false
 	values.Bootstrap.ServiceAccount.Create = false
+
+	values.Runner.Odr.ServiceAccount.Create = true
+	values.Runner.Odr.ServiceAccount.Name = runnerOdrServiceAccountName(req.InstallID)
+	values.Runner.ServiceAccount.Create = true
+	values.Runner.ServiceAccount.Name = runnerServiceAccountName(req.InstallID)
 
 	var vals map[string]interface{}
 	err := mapstructure.Decode(values, &vals)

@@ -101,6 +101,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req ProvisionRequest) (Pro
 
 	// install waypoint
 	iwReq := InstallWaypointRequest{
+		InstallID:       req.InstallID,
 		Namespace:       req.InstallID,
 		ReleaseName:     fmt.Sprintf("wp-%s", req.InstallID),
 		Chart:           &waypoint.DefaultChart,
