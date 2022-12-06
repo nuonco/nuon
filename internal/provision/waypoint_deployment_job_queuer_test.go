@@ -76,8 +76,8 @@ func Test_waypointDeployerImpl_upsertWaypointDeployment(t *testing.T) {
 				assert.Equal(t, req.ComponentName, wpReq.Job.Application.Application)
 
 				// assert labels
-				assert.Equal(t, req.InstallID, wpReq.Job.Labels["install_id"])
-				assert.Equal(t, req.DeploymentID, wpReq.Job.Labels["deployment_id"])
+				assert.Equal(t, req.InstallID, wpReq.Job.Labels["nuon/install-id"])
+				assert.Equal(t, req.DeploymentID, wpReq.Job.Labels["nuon/deployment-id"])
 
 				// TODO(jm): test artifacts, waypointhcl and variables once implemented
 			},
