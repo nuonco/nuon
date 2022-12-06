@@ -66,6 +66,7 @@ require (
 	github.com/hashicorp/opaqueany v0.0.0-20220321170339-a5c6ff5bb0ec // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/jaswdr/faker v1.15.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -87,6 +88,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/powertoolsdev/go-kube v0.1.2 // indirect
+	github.com/powertoolsdev/go-sender v0.0.4 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/spf13/afero v1.9.2 // indirect

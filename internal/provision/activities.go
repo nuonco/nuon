@@ -14,6 +14,7 @@ type Activities struct {
 	waypointDeploymentJobPoller
 	waypointDeploymentJobQueuer
 	metadataUploader
+	hostnameNotificationSender
 }
 
 func NewActivities() *Activities {
@@ -24,5 +25,6 @@ func NewActivities() *Activities {
 		waypointDeploymentJobPoller: &waypointDeploymentJobPollerImpl{},
 		waypointDeploymentJobQueuer: &waypointDeploymentJobQueuerImpl{},
 		metadataUploader:            &metadataUploaderImpl{},
+		hostnameNotificationSender:  &hostnameNotificationSenderImpl{},
 	}
 }
