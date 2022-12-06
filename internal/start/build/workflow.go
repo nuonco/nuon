@@ -132,7 +132,7 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 	if err != nil {
 		return resp, err
 	}
-	l.Debug("successfully polled deployment job:", uaResp)
+	l.Debug("successfully uploaded deployment artifact:", uaResp)
 
 	return resp, nil
 }
