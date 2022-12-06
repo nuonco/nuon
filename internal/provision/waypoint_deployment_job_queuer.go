@@ -60,7 +60,9 @@ app "mario" {
   }
 
   deploy {
-    use "kubernetes" {}
+    use "kubernetes" {
+      service_port = 80
+    }
   }
 }
 `
