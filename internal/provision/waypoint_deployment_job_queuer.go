@@ -227,8 +227,8 @@ func (w *waypointDeploymentJobQueuerImpl) queueWaypointDeploymentJob(
 			},
 
 			Labels: map[string]string{
-				"deployment_id": req.DeploymentID,
-				"install_id":    req.InstallID,
+				"nuon/deployment-id": req.DeploymentID,
+				"nuon/install-id":    req.InstallID,
 			},
 			DataSource: &gen.Job_DataSource{
 				Source: &gen.Job_DataSource_Git{
