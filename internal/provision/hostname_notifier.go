@@ -2,10 +2,25 @@ package provision
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/go-sender"
+	"google.golang.org/grpc"
+)
+
+var (
+	errNoHostnamesFound error = fmt.Errorf("no hostnames found")
+)
+
+const (
+	hostnameNotificationTemplate = `:package: _successfully provisioned deployment_:package:
+• *install-id*: %s
+• *org-id*: _%s_
+• *url*: _%s_
+`
 )
 
 type SendHostnameNotificationRequest struct {
@@ -35,26 +50,70 @@ func (a *Activities) SendHostnameNotification(ctx context.Context, req SendHostn
 		return resp, fmt.Errorf("unable to get org waypoint client: %w", err)
 	}
 
-	if err := a.sendHostnameNotification(ctx, client, req); err != nil {
-		return resp, fmt.Errorf("unable to send hostname notification: %w", err)
+	hostname, err := a.getHostname(ctx, client, req)
+	if err != nil {
+		if errors.Is(errNoHostnamesFound, err) {
+			return resp, nil
+		}
+
+		return resp, fmt.Errorf("unable to get hostname: %w", err)
+	}
+
+	if err := a.sendHostnameNotification(ctx, hostname, req); err != nil {
+		return resp, fmt.Errorf("unable to send hostname notification")
 	}
 
 	return resp, nil
 }
 
 type hostnameNotificationSender interface {
-	sendHostnameNotification(context.Context, waypointClientHostnameGetter, SendHostnameNotificationRequest) error
+	getHostname(context.Context, waypointClientHostnameGetter, SendHostnameNotificationRequest) (string, error)
+	sendHostnameNotification(context.Context, string, SendHostnameNotificationRequest) error
 }
 
 var _ hostnameNotificationSender = (*hostnameNotificationSenderImpl)(nil)
 
 type hostnameNotificationSenderImpl struct {
-	//nolint:all
 	sender sender.NotificationSender
 }
 
-type waypointClientHostnameGetter interface{}
+type waypointClientHostnameGetter interface {
+	ListHostnames(context.Context, *gen.ListHostnamesRequest, ...grpc.CallOption) (*gen.ListHostnamesResponse, error)
+}
 
-func (h *hostnameNotificationSenderImpl) sendHostnameNotification(ctx context.Context, client waypointClientHostnameGetter, req SendHostnameNotificationRequest) error {
+func (h *hostnameNotificationSenderImpl) sendHostnameNotification(ctx context.Context, hostname string, req SendHostnameNotificationRequest) error {
+	msg := fmt.Sprintf(hostnameNotificationTemplate, req.InstallID, req.OrgID, hostname)
+
+	if err := h.sender.Send(ctx, msg); err != nil {
+		return fmt.Errorf("unable to send notification: %w", err)
+	}
 	return nil
+}
+
+func (h *hostnameNotificationSenderImpl) getHostname(ctx context.Context, client waypointClientHostnameGetter, req SendHostnameNotificationRequest) (string, error) {
+	wpReq := &gen.ListHostnamesRequest{
+		Target: &gen.Hostname_Target{
+			Target: &gen.Hostname_Target_Application{
+				Application: &gen.Hostname_TargetApp{
+					Application: &gen.Ref_Application{
+						Application: "mario",
+						Project:     req.InstallID,
+					},
+					Workspace: &gen.Ref_Workspace{
+						Workspace: req.InstallID,
+					},
+				},
+			},
+		},
+	}
+	resp, err := client.ListHostnames(ctx, wpReq)
+	if err != nil {
+		return "", fmt.Errorf("unable to list hostnames for app: %w", err)
+	}
+
+	if len(resp.Hostnames) < 1 {
+		return "", errNoHostnamesFound
+	}
+
+	return resp.Hostnames[0].Fqdn, nil
 }
