@@ -4,28 +4,20 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 
-	"github.com/powertoolsdev/go-waypoint"
 	workers "github.com/powertoolsdev/workers-instances/internal"
 )
 
 func getFakeProvisionRequest() ProvisionRequest {
-	return ProvisionRequest{
-		OrgID:        uuid.New().String(),
-		AppID:        uuid.New().String(),
-		DeploymentID: uuid.New().String(),
-		InstallID:    uuid.New().String(),
-		Component: waypoint.Component{
-			Name:              "foobar",
-			Type:              "foobar",
-			ContainerImageURL: "foobar",
-		},
-	}
+	fkr := faker.New()
+	var req ProvisionRequest
+	fkr.Struct().Fill(&req)
+	return req
 }
 
 func Test_validateProvisionRequest(t *testing.T) {
@@ -142,6 +134,15 @@ func TestProvision(t *testing.T) {
 
 			assert.Equal(t, req.OrgID, pwdjReq.OrgID)
 			assert.Equal(t, "waypoint-job-id-abc", pwdjReq.JobID)
+
+			return resp, nil
+		})
+
+	env.OnActivity(a.SendHostnameNotification, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, shnReq SendHostnameNotificationRequest) (SendHostnameNotificationResponse, error) {
+			var resp SendHostnameNotificationResponse
+			assert.Nil(t, shnReq.validate())
+			assert.Equal(t, req.OrgID, shnReq.OrgID)
 
 			return resp, nil
 		})

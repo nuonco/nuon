@@ -531,6 +531,8 @@ github.com/imdario/mergo v0.3.13 h1:lFzP57bqS/wsqKssCGmtLAb8A0wKjLGrve2q3PPVcBk=
 github.com/imdario/mergo v0.3.13/go.mod h1:4lJ1jqUDcsbIECGy0RUJAXNIhg+6ocWgb1ALK2O4oXg=
 github.com/inconshreveable/mousetrap v1.0.1 h1:U3uMjPSQEBMNp1lFxmllqCPM6P5u/Xq7Pgzkat/bFNc=
 github.com/inconshreveable/mousetrap v1.0.1/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
+github.com/jaswdr/faker v1.15.0 h1:wcEVaPKFE53NvdT4fl+w3b0IXdefp1Yk0BdBs0APCoA=
+github.com/jaswdr/faker v1.15.0/go.mod h1:x7ZlyB1AZqwqKZgyQlnqEG8FDptmHlncA5u2zY/yi6w=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1 h1:shLQSRRSCCPj3f2gpwzGwWFoC7ycTf1rcQZHOlsJ6N8=
@@ -610,6 +612,8 @@ github.com/powertoolsdev/go-common v1.1.17 h1:xTVPf7kiezNH09fIINiWSHHzqhQ517GQjc
 github.com/powertoolsdev/go-common v1.1.17/go.mod h1:mhY1HkgLn4iPkxnGy2ownap+hxJosifCfE7qwXmpyUE=
 github.com/powertoolsdev/go-kube v0.1.2 h1:NJgQTvtLSB+SMcJjBZlsaz+yJF/1iWN1WVsp7E/2+y8=
 github.com/powertoolsdev/go-kube v0.1.2/go.mod h1:EBoFFkN3tZ5cvI1cZzl+dX2kRWY7em69w7g1AMMKIyQ=
+github.com/powertoolsdev/go-sender v0.0.4 h1:glDPmPBT8wi1L/1bTrgxZWOcAyU5/lYieykLy77ek+c=
+github.com/powertoolsdev/go-sender v0.0.4/go.mod h1:4AIEgsJ10agK73Mm0hHwtKDat6f4hyRdea29Nlva7dY=
 github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91 h1:OG2oNfhcIaFNn313KgvmbI/KdFwyqGhy5zLOXVwtgVg=
 github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91/go.mod h1:3QmdHAzmyd0JyT+jguiZlJC/H4aFL/I0/e8FiS16h/0=
 github.com/powertoolsdev/go-waypoint v0.2.1 h1:wEKsP5whsMltptXzil8FLyQAzNPNkv3GdNrueS47xag=

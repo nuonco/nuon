@@ -120,6 +120,19 @@ func (w *Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provis
 	}
 	l.Debug("successfully polled deployment job: ", qwjResp.JobID, pwjResp)
 
+	shnReq := SendHostnameNotificationRequest{
+		OrgID:                req.OrgID,
+		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
+		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgID),
+		InstallID:            req.InstallID,
+		AppID:                req.AppID,
+	}
+	shnResp, err := execSendHostnameNotification(ctx, act, shnReq)
+	if err != nil {
+		return resp, err
+	}
+	l.Debug("successfully sent hostname notification: ", shnResp)
+
 	l.Debug("successfully provisioned instance of deployment ", req.DeploymentID, " on installation ", req.InstallID)
 	return resp, nil
 }
@@ -189,6 +202,23 @@ func execUploadMetadata(
 
 	l.Debug("executing upload metadata job", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.UploadMetadata, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func execSendHostnameNotification(
+	ctx workflow.Context,
+	act *Activities,
+	req SendHostnameNotificationRequest,
+) (SendHostnameNotificationResponse, error) {
+	l := workflow.GetLogger(ctx)
+	var resp SendHostnameNotificationResponse
+
+	l.Debug("executing send hostname notification", "request", req)
+	fut := workflow.ExecuteActivity(ctx, act.SendHostnameNotification, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
