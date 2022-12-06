@@ -5,6 +5,7 @@ import (
 
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
+	"github.com/powertoolsdev/go-sender"
 	shared "github.com/powertoolsdev/workers-instances/internal"
 	"github.com/powertoolsdev/workers-instances/internal/provision"
 	"github.com/spf13/cobra"
@@ -72,9 +73,28 @@ func runInstanceWorkers(c client.Client, cfg shared.Config, interruptCh <-chan i
 		return fmt.Errorf("invalid instance config: %w", err)
 	}
 
+	var (
+		n   sender.NotificationSender
+		err error
+	)
+
+	l := zap.L()
+
+	switch cfg.Env {
+	case config.Local, config.Development:
+		l.Info("using noop notification sender")
+		n = sender.NewNoopSender()
+	default:
+		n, err = sender.NewSlackSender(cfg.DeploymentBotsSlackWebhookURL, l)
+		if err != nil {
+			l.Warn("failed to create slack notifier, using noop", zap.Error(err))
+			n = sender.NewNoopSender()
+		}
+	}
+
 	wkflow := provision.NewWorkflow(cfg)
 	w.RegisterWorkflow(wkflow.Provision)
-	w.RegisterActivity(provision.NewActivities())
+	w.RegisterActivity(provision.NewActivities(n))
 
 	if err := w.Run(interruptCh); err != nil {
 		return err
