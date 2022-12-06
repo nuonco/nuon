@@ -61,19 +61,6 @@ func (w *Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provis
 
 	bucketPrefix := getS3Prefix(req)
 
-	l.Debug("pre-config-generate")
-	genReq := GenerateWaypointConfigRequest{
-		ProvisionRequest: req,
-		BucketName:       w.cfg.Bucket,
-		BucketPrefix:     bucketPrefix,
-	}
-
-	genResp, err := execGenerateWaypointConfig(ctx, act, genReq)
-	if err != nil {
-		return resp, err
-	}
-	l.Debug("generated config", "config", genResp)
-
 	uploadReq := UploadMetadataRequest{
 		Info:         *workflow.GetInfo(ctx),
 		BucketName:   w.cfg.Bucket,
@@ -117,7 +104,7 @@ func (w *Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provis
 	if err != nil {
 		return resp, err
 	}
-	l.Debug("successfully upserted job for deployment: jobID = %s", qwjResp.JobID)
+	l.Debug("successfully upserted job for deployment: jobID", qwjResp.JobID)
 
 	pwjReq := PollWaypointDeploymentJobRequest{
 		OrgID:                req.OrgID,
@@ -134,22 +121,6 @@ func (w *Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provis
 	l.Debug("successfully polled deployment job: ", qwjResp.JobID, pwjResp)
 
 	l.Debug("successfully provisioned instance of deployment ", req.DeploymentID, " on installation ", req.InstallID)
-	return resp, nil
-}
-
-func execGenerateWaypointConfig(
-	ctx workflow.Context,
-	act *Activities,
-	req GenerateWaypointConfigRequest,
-) (GenerateWaypointConfigResponse, error) {
-	l := workflow.GetLogger(ctx)
-	resp := GenerateWaypointConfigResponse{}
-
-	l.Debug("executing generate waypoint config activity", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.GenerateWaypointConfig, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
 	return resp, nil
 }
 
