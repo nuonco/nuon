@@ -29,6 +29,8 @@ type Config struct {
 
 	WaypointTokenSecretNamespace string `config:"waypoint_token_secret_namespace" validate:"required"`
 	WaypointServerRootDomain     string `config:"waypoint_server_root_domain" validate:"required"`
+
+	DeploymentBotsSlackWebhookURL string `config:"deployment_bots_slack_webhook_url" validate:"required"`
 }
 
 func (c Config) Validate() error {

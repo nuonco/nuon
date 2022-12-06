@@ -1,6 +1,7 @@
 package provision
 
 import (
+	"github.com/powertoolsdev/go-sender"
 	"github.com/powertoolsdev/go-waypoint"
 )
 
@@ -17,7 +18,7 @@ type Activities struct {
 	hostnameNotificationSender
 }
 
-func NewActivities() *Activities {
+func NewActivities(sender sender.NotificationSender) *Activities {
 	return &Activities{
 		waypointCfgGenerator:        &waypointCfgGeneratorImpl{},
 		waypointApplicationUpserter: &wpApplicationUpserter{},
@@ -25,6 +26,8 @@ func NewActivities() *Activities {
 		waypointDeploymentJobPoller: &waypointDeploymentJobPollerImpl{},
 		waypointDeploymentJobQueuer: &waypointDeploymentJobQueuerImpl{},
 		metadataUploader:            &metadataUploaderImpl{},
-		hostnameNotificationSender:  &hostnameNotificationSenderImpl{},
+		hostnameNotificationSender: &hostnameNotificationSenderImpl{
+			sender: sender,
+		},
 	}
 }

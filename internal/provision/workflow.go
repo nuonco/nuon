@@ -51,7 +51,7 @@ func (w *Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provis
 	resp := ProvisionResponse{}
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
-	act := NewActivities()
+	act := NewActivities(nil)
 
 	l.Debug("pre-validate request")
 	if err := req.validate(); err != nil {

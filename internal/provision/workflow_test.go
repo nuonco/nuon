@@ -86,7 +86,7 @@ func TestProvision(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
-	a := NewActivities()
+	a := NewActivities(nil)
 
 	req := getFakeProvisionRequest()
 
