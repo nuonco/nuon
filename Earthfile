@@ -12,6 +12,10 @@ ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/$EARTHLY_GIT_PROJECT_NAME
 
 lint:
+    BUILD +lint-standard
+    BUILD +lint-proto
+
+lint-standard:
     FROM ghcr.io/powertoolsdev/ci-reviewdog
     WORKDIR /work
     COPY --dir . .
@@ -21,7 +25,13 @@ lint:
         --GOMODCACHE=$GOMODCACHE
     SAVE IMAGE --push $GHCR_IMAGE:lint
 
+lint-proto:
+    FROM bufbuild/buf
+    WORKDIR /work
+    COPY --dir protos/ .
+    COPY buf.gen.yaml .
+    COPY buf.work.yaml .
+    RUN buf lint
 
 ################################### UDCs ######################################
-
 ################################### LOCAL #####################################
