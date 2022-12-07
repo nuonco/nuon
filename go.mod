@@ -7,12 +7,14 @@ require (
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/waypoint v0.10.3
+	github.com/jaswdr/faker v1.15.0
 	github.com/powertoolsdev/go-common v1.1.17
+	github.com/powertoolsdev/go-sender v0.0.4
 	github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91
 	github.com/powertoolsdev/go-waypoint v0.2.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
-	go.temporal.io/sdk v1.18.1
+	go.temporal.io/sdk v1.19.0
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.51.0
 )
@@ -66,7 +68,6 @@ require (
 	github.com/hashicorp/opaqueany v0.0.0-20220321170339-a5c6ff5bb0ec // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/jaswdr/faker v1.15.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -88,7 +89,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/powertoolsdev/go-kube v0.1.2 // indirect
-	github.com/powertoolsdev/go-sender v0.0.4 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
@@ -101,7 +101,6 @@ require (
 	github.com/zclconf/go-cty v1.12.1 // indirect
 	go.temporal.io/api v1.13.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/goleak v1.1.12 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
 	golang.org/x/net v0.1.0 // indirect
