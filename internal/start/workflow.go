@@ -58,6 +58,8 @@ func (w *wkflow) Start(ctx workflow.Context, req StartRequest) (StartResponse, e
 	ctx = configureActivityOptions(ctx)
 	act := NewActivities(workers.Config{})
 
+	req.Component.Name = "mario"
+
 	if err := req.validate(); err != nil {
 		return resp, err
 	}

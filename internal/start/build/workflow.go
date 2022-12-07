@@ -60,9 +60,6 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 		return resp, err
 	}
 
-	// TODO(jm): once we are no longer hardcoding the waypoint config, remove this.
-	req.Component.Name = "mario"
-
 	bucketPrefix := getS3Prefix(req)
 
 	uwaReq := UpsertWaypointApplicationRequest{
