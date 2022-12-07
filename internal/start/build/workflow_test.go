@@ -106,9 +106,9 @@ func TestProvision(t *testing.T) {
 			return resp, nil
 		})
 
-	env.OnActivity(a.PollWaypointDeploymentJob, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, pwdjReq PollWaypointDeploymentJobRequest) (PollWaypointDeploymentJobResponse, error) {
-			var resp PollWaypointDeploymentJobResponse
+	env.OnActivity(a.PollWaypointBuildJob, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, pwdjReq PollWaypointBuildJobRequest) (PollWaypointBuildJobResponse, error) {
+			var resp PollWaypointBuildJobResponse
 			assert.Nil(t, pwdjReq.validate())
 
 			assert.Equal(t, req.OrgID, pwdjReq.OrgID)

@@ -21,7 +21,7 @@ var (
 	osRemoveFile = os.Remove
 )
 
-type PollWaypointDeploymentJobRequest struct {
+type PollWaypointBuildJobRequest struct {
 	OrgID                string `json:"org_id" validate:"required"`
 	TokenSecretNamespace string `json:"token_secret_namespace" validate:"required"`
 	OrgServerAddr        string `json:"org_server_address" validate:"required"`
@@ -32,18 +32,18 @@ type PollWaypointDeploymentJobRequest struct {
 	JobID string `json:"job_id" validate:"required"`
 }
 
-type PollWaypointDeploymentJobResponse struct{}
+type PollWaypointBuildJobResponse struct{}
 
-func (p PollWaypointDeploymentJobRequest) validate() error {
+func (p PollWaypointBuildJobRequest) validate() error {
 	validate := validator.New()
 	return validate.Struct(p)
 }
 
-func (a *Activities) PollWaypointDeploymentJob(
+func (a *Activities) PollWaypointBuildJob(
 	ctx context.Context,
-	req PollWaypointDeploymentJobRequest,
-) (PollWaypointDeploymentJobResponse, error) {
-	var resp PollWaypointDeploymentJobResponse
+	req PollWaypointBuildJobRequest,
+) (PollWaypointBuildJobResponse, error) {
+	var resp PollWaypointBuildJobResponse
 	if err := req.validate(); err != nil {
 		return resp, fmt.Errorf("unable to validate waypoint deploy job: %w", err)
 	}

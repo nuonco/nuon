@@ -60,6 +60,9 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 		return resp, err
 	}
 
+	// TODO(jm): once we are no longer hardcoding the waypoint config, remove this.
+	req.Component.Name = "mario"
+
 	bucketPrefix := getS3Prefix(req)
 
 	uwaReq := UpsertWaypointApplicationRequest{
@@ -104,7 +107,7 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 	}
 	l.Debug(fmt.Sprintf("successfully validated job for deployment: %v", vwjResp))
 
-	pwjReq := PollWaypointDeploymentJobRequest{
+	pwjReq := PollWaypointBuildJobRequest{
 		OrgID:                req.OrgID,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
 		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgID),
@@ -112,7 +115,7 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 		BucketPrefix:         bucketPrefix,
 		JobID:                qwjResp.JobID,
 	}
-	pwjResp, err := execPollWaypointDeploymentJob(ctx, act, pwjReq)
+	pwjResp, err := execPollWaypointBuildJob(ctx, act, pwjReq)
 	if err != nil {
 		return resp, err
 	}
@@ -170,13 +173,13 @@ func execQueueWaypointDeploymentJob(
 	return resp, nil
 }
 
-func execPollWaypointDeploymentJob(
+func execPollWaypointBuildJob(
 	ctx workflow.Context,
 	act *Activities,
-	req PollWaypointDeploymentJobRequest,
-) (PollWaypointDeploymentJobResponse, error) {
+	req PollWaypointBuildJobRequest,
+) (PollWaypointBuildJobResponse, error) {
 	l := workflow.GetLogger(ctx)
-	var resp PollWaypointDeploymentJobResponse
+	var resp PollWaypointBuildJobResponse
 
 	ao := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: defaultBuildTimeout,
@@ -184,7 +187,7 @@ func execPollWaypointDeploymentJob(
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
 	l.Debug("executing poll waypoint deployment job", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.PollWaypointDeploymentJob, req)
+	fut := workflow.ExecuteActivity(ctx, act.PollWaypointBuildJob, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
