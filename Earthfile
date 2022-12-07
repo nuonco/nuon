@@ -30,9 +30,11 @@ lint-proto:
     FROM bufbuild/buf
     WORKDIR /work
     COPY --dir protos/ .
+    COPY --dir .git/ .
     COPY buf.gen.yaml .
     COPY buf.work.yaml .
     RUN buf lint
+    RUN buf format -d --exit-code || (printf '%s\n' "Buf Format changes exist in current branch">&2 && exit 1)
 
 breaking-proto:
     FROM bufbuild/buf
