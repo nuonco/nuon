@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package org.v1;
+
+import "google/type/datetime.proto";
+
+message Org {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+
+  string owner_id = 4;
+  bool is_new = 5;
+  google.type.DateTime updated_at = 6;
+  google.type.DateTime created_at = 7;
+}
+
+message GetOrgsByUserRequest {
+  string user_id = 1;
+}
+
+message GetOrgsByUserResponse {
+  repeated Org orgs = 1;
+}
+
+message GetOrgRequest {
+  string org_id = 1;
+}
+
+message GetOrgResponse {
+  Org org = 1;
+}
+
+message UpsertOrgRequest {
+  string id = 1;
+  string name = 2;
+  string owner_id = 3;
+}
+
+message UpsertOrgResponse {
+  Org org = 1;
+}
+
+message DeleteOrgRequest {
+  string org_id = 1;
+}
+
+message DeleteOrgResponse {
+  bool deleted = 1;
+}
+
+service OrgsService {
+  rpc GetOrg(GetOrgRequest) returns (GetOrgResponse) {}
+  rpc GetOrgsByUser(GetOrgsByUserRequest) returns (GetOrgsByUserResponse) {}
+  rpc UpsertOrg(UpsertOrgRequest) returns (UpsertOrgResponse) {}
+  rpc DeleteOrg(DeleteOrgRequest) returns (DeleteOrgResponse) {}
+}

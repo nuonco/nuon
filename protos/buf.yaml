@@ -1,6 +1,6 @@
 ---
 version: v1
-name: buf.build/powertoolsdev/nuonapis
+name: buf.build/nuon/apis
 deps:
   - buf.build/googleapis/googleapis
 lint:

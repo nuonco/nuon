@@ -10,6 +10,8 @@ ARG GITHUB_ACTIONS=
 
 ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/$EARTHLY_GIT_PROJECT_NAME
+ARG BUF_USER=jonmorehouse
+ARG BUF_API_TOKEN=4c51e8481ed34404b7ab6a0c62dc7b2db82757d8f86e4caa853750973e2c5083
 
 lint:
     BUILD +lint-standard
@@ -25,6 +27,16 @@ lint-standard:
         --GOCACHE=$GOCACHE \
         --GOMODCACHE=$GOMODCACHE
     SAVE IMAGE --push $GHCR_IMAGE:lint
+
+push-proto:
+    FROM bufbuild/buf
+    WORKDIR /work
+    COPY --dir protos/ .
+    COPY --dir .git/ .
+    COPY buf.gen.yaml .
+    COPY buf.work.yaml .
+    RUN echo $BUF_API_TOKEN | buf registry login --username $BUF_USER --token-stdin
+    RUN cd protos; buf push
 
 lint-proto:
     FROM bufbuild/buf
