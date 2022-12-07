@@ -64,7 +64,7 @@ func (a *Activities) PollWaypointBuildJob(
 
 	multiWriter := job.NewMultiWriter(logWriter, fileWriter)
 	if err := job.Poll(ctx, client, req.JobID, multiWriter); err != nil {
-		return resp, fmt.Errorf("unable to finish waypoint deployment job: %w", err)
+		return resp, fmt.Errorf("unable to finish waypoint build job: %w", err)
 	}
 
 	// upload tmp file to S3 + cleanup
