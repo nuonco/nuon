@@ -1086,8 +1086,8 @@ go.starlark.net v0.0.0-20220817180228-f738f5508c12 h1:xOBJXWGEDwU5xSDxH6macxO11U
 go.starlark.net v0.0.0-20220817180228-f738f5508c12/go.mod h1:VZcBMdr3cT3PnBoWunTabuSEXwVAH+ZJ5zxfs3AdASk=
 go.temporal.io/api v1.13.0 h1:sEXYjPSJZ4CiKXVrsn9PmokFf1xac5tKb96ri155Xbs=
 go.temporal.io/api v1.13.0/go.mod h1:egkGgTG/L4wDvVsv9jK2aLWzg18oCs5ycQViN0G/jiE=
-go.temporal.io/sdk v1.18.1 h1:B0E2qIey9sR+L3qVIO6n7OmMKeWN1ziSZ3YjNUpVpjA=
-go.temporal.io/sdk v1.18.1/go.mod h1:d+iTyxAZzRdhemExMVJ/9GyHv93eHO0vYeaAqcLchss=
+go.temporal.io/sdk v1.19.0 h1:qGSU8SRbwWoJy0XJpDFtEu/PUpU7Q9oE+5OhT11je3U=
+go.temporal.io/sdk v1.19.0/go.mod h1:d+iTyxAZzRdhemExMVJ/9GyHv93eHO0vYeaAqcLchss=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 go.uber.org/atomic v1.9.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=

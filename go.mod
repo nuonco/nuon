@@ -19,7 +19,7 @@ require (
 	github.com/powertoolsdev/go-waypoint v0.2.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
-	go.temporal.io/sdk v1.18.1
+	go.temporal.io/sdk v1.19.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/exp v0.0.0-20220916125017-b168a2c6b86b
 	google.golang.org/grpc v1.51.0
