@@ -80,6 +80,13 @@ func (o *odrIAMPolicyCreatorImpl) createOdrIAMPolicy(ctx context.Context, client
 				},
 				Resource: fmt.Sprintf("%s/%s/*", req.ECRRegistryArn, req.OrgID),
 			},
+			{
+				Effect: "Allow",
+				Action: []string{
+					"ecr:GetAuthorizationToken",
+				},
+				Resource: "*",
+			},
 		},
 	}
 	byts, err := json.Marshal(policy)
