@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package component.v1;
+
+import "google/type/datetime.proto";
+
+message Component {
+  string id = 1;
+  string build_image = 2;
+  ComponentType type = 3;
+  string name = 4;
+
+  google.type.DateTime created_at = 5;
+  google.type.DateTime updated_at = 6;
+}
+
+enum ComponentType {
+  COMPONENT_TYPE_UNSPECIFIED = 0;
+  COMPONENT_TYPE_PUBLIC_IMAGE = 1;
+  COMPONENT_TYPE_HELM = 2;
+  COMPONENT_TYPE_TERRAFORM = 3;
+}
+
+message GetComponentRequest {
+  string id = 1;
+}
+
+message GetComponentResponse {
+  Component component = 1;
+}
+
+message GetComponentsRequest {
+  string app_id = 1;
+}
+
+message GetComponentsResponse {
+  repeated Component component = 1;
+}
+
+message UpsertComponentRequest {
+  string app_id = 1;
+  string id = 2;
+  string name = 3;
+  string build_image = 4;
+  ComponentType component_type = 5;
+}
+
+message UpsertComponentResponse {
+  Component component = 1;
+}
+
+message DeleteComponentRequest {
+  string id = 1;
+}
+
+message DeleteComponentResponse {
+  bool deleted = 1;
+}
+
+service ComponentsService {
+  rpc GetComponent(GetComponentRequest) returns (GetComponentResponse) {}
+  rpc GetComponents(GetComponentsRequest) returns (GetComponentsResponse) {}
+  rpc DeleteComponent(DeleteComponentRequest) returns (DeleteComponentResponse) {}
+  rpc UpsertComponent(UpsertComponentRequest) returns (UpsertComponentResponse) {}
+}
