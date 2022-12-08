@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package deployment.v1;
+
+import "google/type/datetime.proto";
+
+message Deployment {
+  string id = 1;
+  string component_id = 2;
+  repeated string install_ids = 3;
+  string job_id = 4;
+  google.type.DateTime updated_at = 5;
+  google.type.DateTime created_at = 6;
+}
+
+message GetDeploymentRequest {
+  string id = 1;
+}
+
+message GetDeploymentResponse {
+  Deployment deployment = 1;
+}
+
+message GetDeploymentsRequest {
+  repeated string component_ids = 1;
+}
+
+message GetDeploymentsResponse {
+  repeated Deployment deployment = 1;
+}
+
+message CreateDeploymentRequest {
+  string component_id = 1;
+}
+
+message CreateDeploymentResponse {
+  Deployment deployment = 1;
+}
+
+service DeploymentsService {
+  rpc GetDeployment(GetDeploymentRequest) returns (GetDeploymentResponse) {}
+  rpc GetDeployments(GetDeploymentsRequest) returns (GetDeploymentsResponse) {}
+  rpc CreateDeployment(CreateDeploymentRequest) returns (CreateDeploymentResponse) {}
+}
