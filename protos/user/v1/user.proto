@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package user.v1;
+
+import "google/type/datetime.proto";
+
+message User {
+  string id = 1;
+  string first_name = 2;
+  string last_name = 3;
+  bool is_admin = 4;
+  string email = 5;
+  google.type.DateTime created_at = 6;
+  google.type.DateTime updated_at = 7;
+}
+
+message UserOrg {
+  string user_id = 1;
+  string org_id = 2;
+}
+
+message GetCurrentUserRequest {}
+
+message GetCurrentUserResponse {
+  User user = 1;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message GetUsersRequest {}
+
+message GetUsersResponse {
+  repeated User users = 1;
+}
+
+message GetOrgUsersRequest {
+  string org_id = 1;
+}
+
+message GetOrgUsersResponse {
+  repeated User users = 1;
+}
+
+message DeleteUserRequest {
+  string id = 1;
+}
+
+message DeleteUserResponse {
+  bool deleted = 1;
+}
+
+message UpsertUserRequest {
+  string id = 1;
+  string external_id = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string email = 5;
+}
+
+message UpsertUserResponse {
+  User user = 1;
+}
+
+message UpsertUserOrgRequest {
+  string user_id = 1;
+  string org_id = 2;
+}
+
+message UpsertUserOrgResponse {
+  UserOrg user_org = 1;
+}
+
+service UsersService {
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse) {}
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
+  rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {}
+  rpc GetOrgUsers(GetOrgUsersRequest) returns (GetOrgUsersResponse) {}
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {}
+  rpc UpsertUser(UpsertUserRequest) returns (UpsertUserResponse) {}
+  rpc UpsertUserOrg(UpsertUserOrgRequest) returns (UpsertUserOrgResponse) {}
+}
