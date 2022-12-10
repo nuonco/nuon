@@ -6,7 +6,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-hclog v1.4.0
 	github.com/hashicorp/hcl/v2 v2.10.1-0.20210621220818-327f3ce2570e
-	github.com/hashicorp/waypoint v0.10.3
+	github.com/hashicorp/waypoint v0.10.4
 	github.com/pkg/errors v0.9.1
 	github.com/powertoolsdev/go-kube v0.1.3
 	github.com/stretchr/testify v1.8.1

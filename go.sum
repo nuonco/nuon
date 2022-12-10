@@ -220,8 +220,8 @@ github.com/hashicorp/hcl/v2 v2.10.1-0.20210621220818-327f3ce2570e h1:ZloftGcVtVB
 github.com/hashicorp/hcl/v2 v2.10.1-0.20210621220818-327f3ce2570e/go.mod h1:FwWsfWEjyV/CMj8s/gqAuiviY72rJ1/oayI9WftqcKg=
 github.com/hashicorp/opaqueany v0.0.0-20220321170339-a5c6ff5bb0ec h1:WfdoyL0vJ+mQWaUdzNMkk+o1ACVa6aO2i9AzGPboF5k=
 github.com/hashicorp/opaqueany v0.0.0-20220321170339-a5c6ff5bb0ec/go.mod h1:adXen43rUDlxaaEpSsu3lcG4bfteZNptunpxPvx0sW8=
-github.com/hashicorp/waypoint v0.10.3 h1:0/UC2ZPvU+ilwxv7pLoMMfrp9OwtsuwhrTIuZeWpcQI=
-github.com/hashicorp/waypoint v0.10.3/go.mod h1:aPXnReT6Pk6LHK2ulmdALo2pWnvyuJLmPVBUW3ZOf+8=
+github.com/hashicorp/waypoint v0.10.4 h1:dAQ+0NB3KWqSkru8x/GrleaHlOYmAU6TCvVZFRdRi+M=
+github.com/hashicorp/waypoint v0.10.4/go.mod h1:J47e2gJXRZxqHQMawOpFIF6ZewASiIeOUfJDTQJYVeU=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/imdario/mergo v0.3.13 h1:lFzP57bqS/wsqKssCGmtLAb8A0wKjLGrve2q3PPVcBk=
