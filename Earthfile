@@ -1,4 +1,4 @@
-VERSION --use-cache-command 0.6
+VERSION --use-cache-command --use-copy-link 0.6
 
 IMPORT github.com/powertoolsdev/shared-configs:main
 
@@ -10,6 +10,7 @@ ARG GITHUB_ACTIONS=
 
 ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/$EARTHLY_GIT_PROJECT_NAME
+
 ARG BUF_USER=jonmorehouse
 ARG BUF_API_TOKEN=4c51e8481ed34404b7ab6a0c62dc7b2db82757d8f86e4caa853750973e2c5083
 
@@ -33,28 +34,45 @@ push-proto:
     WORKDIR /work
     COPY --dir api/ .
     COPY --dir components/ .
-    COPY --dir .git/ .
     RUN echo $BUF_API_TOKEN | buf registry login --username $BUF_USER --token-stdin
-    RUN cd api && buf push
-    RUN cd components && buf push
+    DO +PUSH --dir=api
+    DO +PUSH --dir=components
 
 lint-proto:
     FROM bufbuild/buf
     WORKDIR /work
     COPY --dir api/ .
     COPY --dir components/ .
-    RUN cd api && buf lint
-    RUN cd api && buf format -d --exit-code || (printf '%s\n' "Buf Format changes exist in current branch">&2 && exit 1)
-    RUN cd components && buf lint
-    RUN cd components && buf format -d --exit-code || (printf '%s\n' "Buf Format changes exist in current branch">&2 && exit 1)
+    DO +LINT --dir=api
+    DO +LINT --dir=components
 
 breaking-proto:
     FROM bufbuild/buf
     WORKDIR /work
     GIT CLONE https://github.com/powertoolsdev/protos ./old
     COPY --dir protos/ .
-    COPY buf.gen.yaml .
-    COPY buf.work.yaml .
+    COPY buf.*.yaml .
     RUN buf breaking --against "./old"
+
 ################################### UDCs ######################################
+
+PUSH:
+    COMMAND
+    ARG dir=./
+    ARG oldworkdir=$(pwd)
+    WORKDIR $dir
+    RUN buf push
+    WORKDIR $oldworkdir
+
+LINT:
+    COMMAND
+    ARG dir=./
+    ARG oldworkdir=$(pwd)
+    WORKDIR $dir
+    RUN \
+        sh -c "buf lint && buf format -d --exit-code" \
+            || sh -c "printf '%s\n' 'Buf Format changes exist in current branch' >&2 && exit 1"
+    WORKDIR $oldworkdir
+
+
 ################################### LOCAL #####################################
