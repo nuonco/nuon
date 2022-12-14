@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package vcs.v1;
+
+message PrivateGithubConfig {
+  // repo is the org/repo path of the repository
+  string repo = 1;
+  string directory = 2;
+
+  // commitRef is determined by the api, based on the user adding a commit or a branch and then we decipher the commit
+  string commit_ref = 3;
+
+  // github app key and secret file are used by the worker to create a clone token for the provided install id.
+  string github_app_key_id = 4;
+  string github_app_key_secret_name = 5;
+  string github_install_id = 6;
+}

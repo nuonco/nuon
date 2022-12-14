@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package component.v1;
+
+import "build/v1/build.proto";
+import "deploy/v1/config.proto";
+
+// Docker config uses the waypoint build
+message Component {
+  string name = 1;
+  string id = 2;
+
+  build.v1.Config build_cfg = 3;
+  deploy.v1.Config deploy_cfg = 4;
+}

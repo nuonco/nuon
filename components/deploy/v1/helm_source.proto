@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package deploy.v1;
+
+import "vcs/v1/config.proto";
+
+// HelmSourceConfig represents a public helm chart
+message HelmSourceConfig {
+  vcs.v1.Config vcs_cfg = 1;
+}

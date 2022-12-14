@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package build.v1;
+
+import "vcs/v1/config.proto";
+
+// Docker config uses the waypoint build
+message DockerConfig {
+  // dockerfile path, should default to Dockerfile but eventually be customizable
+  string dockerfile = 2;
+
+  // buildArgs represent additional arguments to the docker build command
+  repeated DockerBuildArg build_args = 3;
+
+  // docker target, should default to empty unless the customer has a multi stage build
+  string target = 4;
+
+  vcs.v1.Config vcs_cfg = 5;
+}
+
+message DockerBuildArg {
+  string key = 1;
+  string value = 2;
+}

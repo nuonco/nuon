@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package build.v1;
+
+// ecr image config represents an image that lives in a customer's ECR repository. The vendor will have to manually
+// grant us access to `docker pull` it by setting up a cross account IAM role that grants access to our `orgs-stage` and
+// `orgs-prod` account (or we could have vendors grant external and then allow the ODRs to assume roles in that
+// account?)
+message ExternalImageConfig {
+  // repository URL represents the full repository URL, such as:
+  // 766121324316.dkr.ecr.us-west-2.amazonaws.com/0dmv2b6m9d7fg2n2nt65q6di30/2nka2e2pmku5i26o6vhjmp7dgm
+  string oci_image_url = 2;
+  string tag = 3;
+
+  ExternalImageAuthConfig auth_cfg = 4;
+}
+
+message ExternalImageAuthConfig {
+  oneof cfg {
+    AWSIAMAuthCfg aws_iam_auth_cfg = 4;
+    PublicAuthCfg public_auth_cfg = 5;
+  }
+}
+
+message AWSIAMAuthCfg {
+  // vendor provided iamRoleARN that we must be able to assume from ODRs for an org
+  string iam_role_arn = 1;
+
+  // NOTE: we might not need this
+  string aws_region = 2;
+}
+
+message PublicAuthCfg {}

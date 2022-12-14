@@ -32,21 +32,21 @@ push-proto:
     FROM bufbuild/buf
     WORKDIR /work
     COPY --dir api/ .
+    COPY --dir components/ .
     COPY --dir .git/ .
-    COPY buf.gen.yaml .
-    COPY buf.work.yaml .
     RUN echo $BUF_API_TOKEN | buf registry login --username $BUF_USER --token-stdin
-    RUN buf push api
+    RUN cd api && buf push
+    RUN cd components && buf push
 
 lint-proto:
     FROM bufbuild/buf
     WORKDIR /work
     COPY --dir api/ .
-    COPY --dir .git/ .
-    COPY buf.gen.yaml .
-    COPY buf.work.yaml .
-    RUN buf lint
-    RUN buf format -d --exit-code || (printf '%s\n' "Buf Format changes exist in current branch">&2 && exit 1)
+    COPY --dir components/ .
+    RUN cd api && buf lint
+    RUN cd api && buf format -d --exit-code || (printf '%s\n' "Buf Format changes exist in current branch">&2 && exit 1)
+    RUN cd components && buf lint
+    RUN cd components && buf format -d --exit-code || (printf '%s\n' "Buf Format changes exist in current branch">&2 && exit 1)
 
 breaking-proto:
     FROM bufbuild/buf

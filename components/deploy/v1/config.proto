@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package deploy.v1;
+
+import "deploy/v1/basic.proto";
+import "deploy/v1/external_helm.proto";
+import "deploy/v1/helm_source.proto";
+
+message Config {
+  // name maps to the waypoint application in the customer install
+  string name = 1;
+
+  oneof cfg {
+    BasicConfig basic = 2;
+    ExternalHelmConfig external_helm = 3;
+    HelmSourceConfig helm_source = 4;
+  }
+}

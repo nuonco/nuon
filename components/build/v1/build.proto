@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package build.v1;
+
+import "build/v1/docker.proto";
+import "build/v1/external_image.proto";
+import "build/v1/noop.proto";
+
+message Config {
+  string timeout = 1;
+  oneof cfg {
+    build.v1.DockerConfig docker_cfg = 2;
+    build.v1.ExternalImageConfig external_image_cfg = 3;
+    build.v1.NoopConfig noop = 4;
+  }
+}

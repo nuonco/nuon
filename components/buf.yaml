@@ -1,0 +1,11 @@
+---
+version: v1
+name: buf.build/nuon/components
+deps:
+  - buf.build/googleapis/googleapis
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE
