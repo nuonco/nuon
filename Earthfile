@@ -31,17 +31,17 @@ lint-standard:
 push-proto:
     FROM bufbuild/buf
     WORKDIR /work
-    COPY --dir protos/ .
+    COPY --dir api/ .
     COPY --dir .git/ .
     COPY buf.gen.yaml .
     COPY buf.work.yaml .
     RUN echo $BUF_API_TOKEN | buf registry login --username $BUF_USER --token-stdin
-    RUN cd protos; buf push
+    RUN buf push api
 
 lint-proto:
     FROM bufbuild/buf
     WORKDIR /work
-    COPY --dir protos/ .
+    COPY --dir api/ .
     COPY --dir .git/ .
     COPY buf.gen.yaml .
     COPY buf.work.yaml .
