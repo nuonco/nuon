@@ -35,6 +35,9 @@ var (
 	_ = sort.Sort
 )
 
+// define the regex for a UUID once up-front
+var _start_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
 // Validate checks the field values on StartRequest with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -57,21 +60,10 @@ func (m *StartRequest) validate(all bool) error {
 
 	var errors []error
 
-	if val := m.GetLimit(); val <= 0 || val > 1000 {
-		err := StartRequestValidationError{
-			field:  "Limit",
-			reason: "value must be inside range (0, 1000]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if err := m._validateEmail(m.GetEmail()); err != nil {
+	if err := m._validateUuid(m.GetOrgId()); err != nil {
 		err = StartRequestValidationError{
-			field:  "Email",
-			reason: "value must be a valid email address",
+			field:  "OrgId",
+			reason: "value must be a valid UUID",
 			cause:  err,
 		}
 		if !all {
@@ -80,10 +72,34 @@ func (m *StartRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetId()) < 3 {
+	if err := m._validateUuid(m.GetAppId()); err != nil {
+		err = StartRequestValidationError{
+			field:  "AppId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if err := m._validateUuid(m.GetDeploymentId()); err != nil {
+		err = StartRequestValidationError{
+			field:  "DeploymentId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(m.GetInstallIds()) < 1 {
 		err := StartRequestValidationError{
-			field:  "Id",
-			reason: "value length must be at least 3 runes",
+			field:  "InstallIds",
+			reason: "value must contain at least 1 item(s)",
 		}
 		if !all {
 			return err
@@ -98,54 +114,12 @@ func (m *StartRequest) validate(all bool) error {
 	return nil
 }
 
-func (m *StartRequest) _validateHostname(host string) error {
-	s := strings.ToLower(strings.TrimSuffix(host, "."))
-
-	if len(host) > 253 {
-		return errors.New("hostname cannot exceed 253 characters")
-	}
-
-	for _, part := range strings.Split(s, ".") {
-		if l := len(part); l == 0 || l > 63 {
-			return errors.New("hostname part must be non-empty and cannot exceed 63 characters")
-		}
-
-		if part[0] == '-' {
-			return errors.New("hostname parts cannot begin with hyphens")
-		}
-
-		if part[len(part)-1] == '-' {
-			return errors.New("hostname parts cannot end with hyphens")
-		}
-
-		for _, r := range part {
-			if (r < 'a' || r > 'z') && (r < '0' || r > '9') && r != '-' {
-				return fmt.Errorf("hostname parts can only contain alphanumeric characters or hyphens, got %q", string(r))
-			}
-		}
+func (m *StartRequest) _validateUuid(uuid string) error {
+	if matched := _start_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
-}
-
-func (m *StartRequest) _validateEmail(addr string) error {
-	a, err := mail.ParseAddress(addr)
-	if err != nil {
-		return err
-	}
-	addr = a.Address
-
-	if len(addr) > 254 {
-		return errors.New("email addresses cannot exceed 254 characters")
-	}
-
-	parts := strings.SplitN(addr, "@", 2)
-
-	if len(parts[0]) > 64 {
-		return errors.New("email address local phrase cannot exceed 64 characters")
-	}
-
-	return m._validateHostname(parts[1])
 }
 
 // StartRequestMultiError is an error wrapping multiple validation errors
