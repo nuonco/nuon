@@ -1,6 +1,6 @@
 package main
 
-import "github.com/powertoolsdev/api/cmd"
+import cmd "github.com/powertoolsdev/api/cmd/api"
 
 func main() {
 	cmd.Execute()

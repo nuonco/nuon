@@ -1,0 +1,33 @@
+---
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:13.4-alpine
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: api
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      PGDATA: /data/postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres:/data/postgres
+    networks:
+      - default
+
+  temporal:
+    image: ghcr.io/powertoolsdev/ci-temporalite:latest
+    ports:
+      - 7233:7233
+    networks:
+      - default
+
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  postgres:
