@@ -2,8 +2,13 @@ syntax = "proto3";
 
 package deployments.v1;
 
-import "tagger/tagger.proto";
+import "validate/validate.proto";
 
 message StartRequest {
-  string id = 1 [(tagger.tags) = "validate:\"required\""];
+  int32 limit = 2 [(validate.rules).int32 = {
+    gt: 0,
+    lte: 1000
+  }];
+  string email = 3 [(validate.rules).string.email = true];
+  string id = 1 [(validate.rules).string.min_len = 3];
 }
