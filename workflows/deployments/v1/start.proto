@@ -2,12 +2,22 @@ syntax = "proto3";
 
 package deployments.v1;
 
+import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 // StartRequest represents a workflow input for creating a deployment
 message StartRequest {
-  string org_id = 1 [(validate.rules).string.uuid = true];
-  string app_id = 2 [(validate.rules).string.uuid = true];
-  string deployment_id = 3 [(validate.rules).string.uuid = true];
+  string org_id = 1 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string app_id = 2 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string deployment_id = 3 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
   repeated string install_ids = 4 [(validate.rules).repeated.min_items = 1];
 }
