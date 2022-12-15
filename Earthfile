@@ -15,7 +15,8 @@ ARG BUF_USER=jonmorehouse
 ARG BUF_API_TOKEN=4c51e8481ed34404b7ab6a0c62dc7b2db82757d8f86e4caa853750973e2c5083
 
 lint:
-    BUILD +lint-standard
+    # NOTE(jm): enable linting once we can disable the golinter for a specific project
+    # BUILD +lint-standard
     BUILD +lint-proto
 
 lint-standard:
