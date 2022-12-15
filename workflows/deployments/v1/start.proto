@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package deployments.v1;
 
-import "validate/validate.proto";
+import "tagger/tagger.proto";
 
 message StartRequest {
-  string id = 1 [(validate.rules).message.required = true];
+  string id = 1 [(tagger.tags) = "validate:\"required\""];
 }

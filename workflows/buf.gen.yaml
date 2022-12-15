@@ -11,6 +11,6 @@ plugins:
     out: internal/types
     opt: paths=source_relative
 
-  - plugin: buf.build/bufbuild/validate-go
+  - plugin: buf.build/srikrsna/protoc-gen-gotag
     out: internal/types
     opt: paths=source_relative
