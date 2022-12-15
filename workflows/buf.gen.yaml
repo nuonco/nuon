@@ -1,0 +1,16 @@
+---
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/powertoolsdev/grpc-api/internal/types
+    except:
+      - buf.build/googleapis/googleapis
+plugins:
+  - plugin: buf.build/protocolbuffers/go
+    out: internal/types
+    opt: paths=source_relative
+
+  - plugin: buf.build/bufbuild/validate-go
+    out: internal/types
+    opt: paths=source_relative

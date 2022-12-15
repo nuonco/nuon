@@ -1,0 +1,12 @@
+---
+version: v1
+name: buf.build/nuon/workflows
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/envoyproxy/protoc-gen-validate
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE

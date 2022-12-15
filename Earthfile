@@ -34,17 +34,21 @@ push-proto:
     WORKDIR /work
     COPY --dir api/ .
     COPY --dir components/ .
+    COPY --dir workflows/ .
     RUN echo $BUF_API_TOKEN | buf registry login --username $BUF_USER --token-stdin
     DO +PUSH --dir=api
     DO +PUSH --dir=components
+    DO +PUSH --dir=workflows
 
 lint-proto:
     FROM bufbuild/buf
     WORKDIR /work
     COPY --dir api/ .
     COPY --dir components/ .
+    COPY --dir workflows/ .
     DO +LINT --dir=api
     DO +LINT --dir=components
+    DO +LINT --dir=workflows
 
 breaking-proto:
     FROM bufbuild/buf

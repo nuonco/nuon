@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package deployments.v1;
+
+import "validate/validate.proto";
+
+message StartRequest {
+  string id = 1 [(validate.rules).message.required = true];
+}
