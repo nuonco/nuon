@@ -3,15 +3,15 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/powertoolsdev/protos/workflows/internal/types
+    default: github.com/powertoolsdev/protos/workflows/generated/types
     except:
       - buf.build/googleapis/googleapis
       - buf.build/envoyproxy/protoc-gen-validate
 plugins:
   - plugin: buf.build/protocolbuffers/go
-    out: internal/types
+    out: generated/types
     opt: paths=source_relative
 
   - plugin: buf.build/bufbuild/validate-go
-    out: internal/types
+    out: generated/types
     opt: paths=source_relative

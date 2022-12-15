@@ -25,4 +25,3 @@ bin/
 
 k8s/charts/
 infra/.terraform
-workflows/internal/

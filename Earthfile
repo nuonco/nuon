@@ -17,7 +17,6 @@ ARG BUF_API_TOKEN=4c51e8481ed34404b7ab6a0c62dc7b2db82757d8f86e4caa853750973e2c50
 lint:
     BUILD +lint-standard
     BUILD +lint-proto
-    # BUILD +breaking-proto
 
 lint-standard:
     FROM ghcr.io/powertoolsdev/ci-reviewdog
@@ -39,6 +38,16 @@ push-proto:
     DO +PUSH --dir=api
     DO +PUSH --dir=components
     DO +PUSH --dir=workflows
+
+gen-proto:
+    FROM bufbuild/buf
+    WORKDIR /work
+    COPY --dir api/ .
+    COPY --dir components/ .
+    COPY --dir workflows/ .
+    DO +GEN --dir=api
+    DO +GEN --dir=components
+    DO +GEN --dir=workflows
 
 lint-proto:
     FROM bufbuild/buf
@@ -67,6 +76,16 @@ PUSH:
     WORKDIR $dir
     RUN buf push
     WORKDIR $oldworkdir
+
+GEN:
+    COMMAND
+    ARG dir=./
+    ARG oldworkdir=$(pwd)
+    WORKDIR $dir
+    RUN \
+        sh -c "buf generate"
+    WORKDIR $oldworkdir
+
 
 LINT:
     COMMAND
