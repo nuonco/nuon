@@ -9,10 +9,8 @@ managed:
       - buf.build/envoyproxy/protoc-gen-validate
       - buf.build/srikrsna/protoc-gen-gotag
 plugins:
-  - plugin: buf.build/protocolbuffers/go
-    out: generated/types
-    opt: paths=source_relative
-
-  - plugin: buf.build/bufbuild/validate-go
-    out: generated/types
-    opt: paths=source_relative
+  - plugin: gotag
+    out: .
+    opt:
+      - paths=source_relative
+      - outdir=generated/types/
