@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -27,10 +26,7 @@ func (t *testK8sRoleBindingCreator) Apply(ctx context.Context, req *rbacapplyv1.
 }
 
 func getFakeCreateRoleBindingRequest() CreateRoleBindingRequest {
-	fkr := faker.New()
-	var req CreateRoleBindingRequest
-	fkr.Struct().Fill(&req)
-	return req
+	return getFakeObj[CreateRoleBindingRequest]()
 }
 
 func Test_roleBindingCreatorImpl_createRoleBinding(t *testing.T) {

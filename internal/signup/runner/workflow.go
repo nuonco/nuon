@@ -11,6 +11,7 @@ import (
 	waypointhelm "github.com/powertoolsdev/go-helm/waypoint"
 	"github.com/powertoolsdev/go-kube"
 	"github.com/powertoolsdev/go-waypoint"
+	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 )
 
@@ -24,20 +25,6 @@ type RunnerConfig struct {
 func (r RunnerConfig) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
-}
-
-// RunnerRequest includes the set of arguments needed to provision a sandbox
-type InstallRunnerRequest struct {
-	OrgID string `json:"org_id" validate:"required"`
-}
-
-func (i InstallRunnerRequest) Validate() error {
-	validate := validator.New()
-	return validate.Struct(i)
-}
-
-type InstallRunnerResponse struct {
-	TerraformOutputs map[string]string
 }
 
 // NewWorkflow returns a new workflow executor
@@ -54,14 +41,18 @@ type wkflow struct {
 // Runner is a workflow that creates an app install sandbox using terraform
 //
 //nolint:funlen
-func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (InstallRunnerResponse, error) {
-	resp := InstallRunnerResponse{}
+func (w wkflow) Install(ctx workflow.Context, req *runnerv1.InstallRunnerRequest) (*runnerv1.InstallRunnerResponse, error) {
+	resp := &runnerv1.InstallRunnerResponse{}
+
+	if err := req.Validate(); err != nil {
+		return resp, fmt.Errorf("unable to validate request: %w", err)
+	}
 
 	// get waypoint server cookie
 	l := log.With(workflow.GetLogger(ctx))
 
 	// parse IDs into short IDs, and use them for all subsequent requests
-	orgServerAddr := waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgID)
+	orgServerAddr := waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId)
 	clusterInfo := kube.ClusterInfo{
 		ID:             w.cfg.OrgsK8sClusterID,
 		Endpoint:       w.cfg.OrgsK8sPublicEndpoint,
@@ -80,7 +71,7 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 	act := NewActivities(workers.Config{})
 
 	coipRequest := CreateOdrIAMPolicyRequest{
-		OrgID: req.OrgID,
+		OrgID: req.OrgId,
 
 		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
 		ECRRegistryArn:       w.cfg.OrgsECRRegistryArn,
@@ -94,7 +85,7 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 	l.Debug("successfully created odr IAM policy")
 
 	coirRequest := CreateOdrIAMRoleRequest{
-		OrgID: req.OrgID,
+		OrgID: req.OrgId,
 
 		OrgsIAMOidcProviderURL: w.cfg.OrgsIAMOidcProviderURL,
 		OrgsIAMAccessRoleArn:   w.cfg.OrgsIAMAccessRoleArn,
@@ -114,7 +105,7 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 	gwscReq := GetWaypointServerCookieRequest{
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        orgServerAddr,
-		OrgID:                req.OrgID,
+		OrgID:                req.OrgId,
 	}
 
 	gwscResp, err := getWaypointServerCookie(ctx, act, gwscReq)
@@ -127,15 +118,15 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 
 	// install waypoint
 	iwReq := InstallWaypointRequest{
-		Namespace:   req.OrgID,
-		ReleaseName: fmt.Sprintf("wp-%s-runner", req.OrgID),
+		Namespace:   req.OrgId,
+		ReleaseName: fmt.Sprintf("wp-%s-runner", req.OrgId),
 		Chart:       &waypointhelm.DefaultChart,
 		Atomic:      false,
-		OrgID:       req.OrgID,
+		OrgID:       req.OrgId,
 		ClusterInfo: clusterInfo,
 		RunnerConfig: RunnerConfig{
 			Cookie:        gwscResp.Cookie,
-			ID:            req.OrgID,
+			ID:            req.OrgId,
 			ServerAddr:    orgServerAddr,
 			OdrIAMRoleArn: coirResp.IAMRoleArn,
 		},
@@ -151,7 +142,7 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 	awrReq := AdoptWaypointRunnerRequest{
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        orgServerAddr,
-		OrgID:                req.OrgID,
+		OrgID:                req.OrgId,
 	}
 	_, err = adoptWaypointRunner(ctx, act, awrReq)
 	if err != nil {
@@ -164,7 +155,7 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 	cscReq := CreateServerConfigRequest{
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        orgServerAddr,
-		OrgID:                req.OrgID,
+		OrgID:                req.OrgId,
 	}
 	_, err = createServerConfigActivity(ctx, act, cscReq)
 	if err != nil {
@@ -177,7 +168,7 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 	crpReq := CreateRunnerProfileRequest{
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        orgServerAddr,
-		OrgID:                req.OrgID,
+		OrgID:                req.OrgId,
 	}
 	_, err = createRunnerProfileActivity(ctx, act, crpReq)
 	if err != nil {
@@ -190,8 +181,8 @@ func (w wkflow) Install(ctx workflow.Context, req InstallRunnerRequest) (Install
 	crbReq := CreateRoleBindingRequest{
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        orgServerAddr,
-		OrgID:                req.OrgID,
-		NamespaceName:        req.OrgID,
+		OrgID:                req.OrgId,
+		NamespaceName:        req.OrgId,
 		ClusterInfo:          clusterInfo,
 	}
 	_, err = createRoleBinding(ctx, act, crbReq)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jaswdr/faker"
 	"github.com/mitchellh/mapstructure"
 	"github.com/powertoolsdev/go-helm"
 	"github.com/powertoolsdev/go-helm/waypoint"
@@ -25,10 +24,7 @@ func (t testHelmInstaller) Install(ctx context.Context, cfg *helm.InstallConfig)
 }
 
 func getFakeInstallWaypointRequest() InstallWaypointRequest {
-	fkr := faker.New()
-	var req InstallWaypointRequest
-	fkr.Struct().Fill(&req)
-	return req
+	return getFakeObj[InstallWaypointRequest]()
 }
 
 func TestInstallWaypoint(t *testing.T) {

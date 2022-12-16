@@ -7,6 +7,7 @@ import (
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-waypoint"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
+	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
@@ -60,8 +61,8 @@ func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgs
 	}
 
 	l.Debug("installing waypoint org runner")
-	_, err = installWaypointRunner(ctx, w.cfg, runner.InstallRunnerRequest{
-		OrgID: id,
+	_, err = installWaypointRunner(ctx, w.cfg, &runnerv1.InstallRunnerRequest{
+		OrgId: id,
 	})
 	if err != nil {
 		return resp, fmt.Errorf("failed to install runner: %w", err)
@@ -118,9 +119,9 @@ func sendNotification(ctx workflow.Context, act *Activities, snr SendNotificatio
 func installWaypointRunner(
 	ctx workflow.Context,
 	cfg workers.Config,
-	iwrr runner.InstallRunnerRequest,
-) (runner.InstallRunnerResponse, error) {
-	var resp runner.InstallRunnerResponse
+	iwrr *runnerv1.InstallRunnerRequest,
+) (*runnerv1.InstallRunnerResponse, error) {
+	var resp runnerv1.InstallRunnerResponse
 
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 10,
@@ -132,8 +133,8 @@ func installWaypointRunner(
 	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.Install, iwrr)
 
 	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
+		return &resp, err
 	}
 
-	return resp, nil
+	return &resp, nil
 }

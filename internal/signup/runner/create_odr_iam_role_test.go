@@ -8,16 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/google/uuid"
-	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func getFakeCreateOdrIAMRoleRequest() CreateOdrIAMRoleRequest {
-	fkr := faker.New()
-	var req CreateOdrIAMRoleRequest
-	fkr.Struct().Fill(&req)
-	return req
+	return getFakeObj[CreateOdrIAMRoleRequest]()
 }
 
 type testAwsClientIAM struct {
