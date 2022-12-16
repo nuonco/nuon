@@ -18,9 +18,9 @@ data "terraform_remote_state" "chart_common" {
   }
 }
 
-data "tfe_outputs" "infra-installations" {
+data "tfe_outputs" "infra-orgs" {
   organization = local.terraform_organization
-  workspace    = "infra-installations-${var.env}"
+  workspace    = "infra-orgs-${var.env}"
 }
 
 data "tfe_outputs" "infra-eks-orgs" {
