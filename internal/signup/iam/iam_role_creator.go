@@ -55,18 +55,18 @@ func (r CreateIAMRoleRequest) validate() error {
 }
 
 type iamRoleCreator interface {
-	createIAMRole(context.Context, awsClientIAMRole, CreateIAMRoleRequest) (string, error)
+	createIAMRole(context.Context, awsClientIAMRoleCreator, CreateIAMRoleRequest) (string, error)
 }
 
 var _ iamRoleCreator = (*iamRoleCreatorImpl)(nil)
 
 type iamRoleCreatorImpl struct{}
 
-type awsClientIAMRole interface {
+type awsClientIAMRoleCreator interface {
 	CreateRole(context.Context, *iam.CreateRoleInput, ...func(*iam.Options)) (*iam.CreateRoleOutput, error)
 }
 
-func (o *iamRoleCreatorImpl) createIAMRole(ctx context.Context, client awsClientIAMRole, req CreateIAMRoleRequest) (string, error) {
+func (o *iamRoleCreatorImpl) createIAMRole(ctx context.Context, client awsClientIAMRoleCreator, req CreateIAMRoleRequest) (string, error) {
 	tags := make([]iam_types.Tag, 0, len(req.RoleTags)+1)
 	for _, pair := range req.RoleTags {
 		tags = append(tags, iam_types.Tag{
