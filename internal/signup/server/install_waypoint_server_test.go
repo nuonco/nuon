@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jaswdr/faker"
 	"github.com/mitchellh/mapstructure"
 	"github.com/powertoolsdev/go-helm"
 	"github.com/powertoolsdev/go-helm/waypoint"
@@ -24,13 +23,6 @@ func (t testHelmInstaller) Install(ctx context.Context, cfg *helm.InstallConfig)
 	return t.fn(ctx, cfg)
 }
 
-func getFakeInstallWaypointServerRequest() InstallWaypointServerRequest {
-	fkr := faker.New()
-	var req InstallWaypointServerRequest
-	fkr.Struct().Fill(&req)
-	return req
-}
-
 func TestInstallWaypointServer(t *testing.T) {
 	tests := map[string]struct {
 		kubeconfig    *rest.Config
@@ -40,7 +32,7 @@ func TestInstallWaypointServer(t *testing.T) {
 	}{
 		"errors without namespace": {
 			requestFn: func() InstallWaypointServerRequest {
-				req := getFakeInstallWaypointServerRequest()
+				req := getFakeObj[InstallWaypointServerRequest]()
 				req.Namespace = ""
 				return req
 			},
@@ -49,7 +41,7 @@ func TestInstallWaypointServer(t *testing.T) {
 
 		"errors without release name": {
 			requestFn: func() InstallWaypointServerRequest {
-				req := getFakeInstallWaypointServerRequest()
+				req := getFakeObj[InstallWaypointServerRequest]()
 				req.ReleaseName = ""
 				return req
 			},
@@ -58,7 +50,7 @@ func TestInstallWaypointServer(t *testing.T) {
 
 		"errors without chart": {
 			requestFn: func() InstallWaypointServerRequest {
-				req := getFakeInstallWaypointServerRequest()
+				req := getFakeObj[InstallWaypointServerRequest]()
 				req.Chart = nil
 				return req
 			},
@@ -67,7 +59,7 @@ func TestInstallWaypointServer(t *testing.T) {
 
 		"errors without chart name": {
 			requestFn: func() InstallWaypointServerRequest {
-				req := getFakeInstallWaypointServerRequest()
+				req := getFakeObj[InstallWaypointServerRequest]()
 				req.Chart.Name = ""
 				return req
 			},
@@ -76,7 +68,7 @@ func TestInstallWaypointServer(t *testing.T) {
 
 		"errors without chart url": {
 			requestFn: func() InstallWaypointServerRequest {
-				req := getFakeInstallWaypointServerRequest()
+				req := getFakeObj[InstallWaypointServerRequest]()
 				req.Chart.URL = ""
 				return req
 			},
@@ -85,7 +77,7 @@ func TestInstallWaypointServer(t *testing.T) {
 
 		"errors without chart version": {
 			requestFn: func() InstallWaypointServerRequest {
-				req := getFakeInstallWaypointServerRequest()
+				req := getFakeObj[InstallWaypointServerRequest]()
 				req.Chart.Version = ""
 				return req
 			},
@@ -94,7 +86,7 @@ func TestInstallWaypointServer(t *testing.T) {
 
 		"uses api": {
 			requestFn: func() InstallWaypointServerRequest {
-				req := getFakeInstallWaypointServerRequest()
+				req := getFakeObj[InstallWaypointServerRequest]()
 				req.Chart = &waypoint.DefaultChart
 				req.ReleaseName = "test-release"
 				return req
@@ -113,7 +105,7 @@ func TestInstallWaypointServer(t *testing.T) {
 
 		"uses the correct values": {
 			requestFn: func() InstallWaypointServerRequest {
-				req := getFakeInstallWaypointServerRequest()
+				req := getFakeObj[InstallWaypointServerRequest]()
 				req.Chart = &waypoint.DefaultChart
 				return req
 			},
@@ -136,7 +128,7 @@ func TestInstallWaypointServer(t *testing.T) {
 
 		"wraps errors": {
 			requestFn: func() InstallWaypointServerRequest {
-				req := getFakeInstallWaypointServerRequest()
+				req := getFakeObj[InstallWaypointServerRequest]()
 				return req
 			},
 			errExpected: errOops,

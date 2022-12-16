@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"go.temporal.io/sdk/testsuite"
 	corev1 "k8s.io/api/core/v1"
@@ -70,13 +69,6 @@ func (t testNamespaceCreator) createNamespace(ctx context.Context, cna createNam
 	return t.fn(ctx, cna, s)
 }
 
-func getFakeCreateNamespaceRequest() CreateNamespaceRequest {
-	fkr := faker.New()
-	var req CreateNamespaceRequest
-	fkr.Struct().Fill(&req)
-	return req
-}
-
 func TestCreateNamespace(t *testing.T) {
 	tests := map[string]struct {
 		requestFn   func() CreateNamespaceRequest
@@ -86,7 +78,7 @@ func TestCreateNamespace(t *testing.T) {
 	}{
 		"errors if no namespace name": {
 			requestFn: func() CreateNamespaceRequest {
-				req := getFakeCreateNamespaceRequest()
+				req := getFakeObj[CreateNamespaceRequest]()
 				req.NamespaceName = ""
 				return req
 			},
@@ -96,7 +88,7 @@ func TestCreateNamespace(t *testing.T) {
 
 		"wraps client error": {
 			requestFn: func() CreateNamespaceRequest {
-				req := getFakeCreateNamespaceRequest()
+				req := getFakeObj[CreateNamespaceRequest]()
 				req.NamespaceName = "test"
 				return req
 			},
@@ -115,7 +107,7 @@ func TestCreateNamespace(t *testing.T) {
 
 		"does not error with valid request": {
 			requestFn: func() CreateNamespaceRequest {
-				req := getFakeCreateNamespaceRequest()
+				req := getFakeObj[CreateNamespaceRequest]()
 				req.NamespaceName = "test"
 				return req
 			},

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-helm/waypoint"
 	"github.com/powertoolsdev/go-kube"
+	serverv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
@@ -22,18 +22,6 @@ func (b BootstrapError) Error() string {
 	return "client already bootstrapped"
 }
 
-type ProvisionRequest struct {
-	OrgID  string `json:"org_id" validate:"required"`
-	Region string `json:"region" validate:"required"`
-}
-
-func (p ProvisionRequest) Validate() error {
-	validate := validator.New()
-	return validate.Struct(p)
-}
-
-type ProvisionResponse struct{}
-
 type wkflow struct {
 	cfg workers.Config
 }
@@ -44,8 +32,8 @@ func NewWorkflow(cfg workers.Config) wkflow {
 	}
 }
 
-func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (ProvisionResponse, error) {
-	resp := ProvisionResponse{}
+func (w wkflow) Provision(ctx workflow.Context, req *serverv1.ProvisionRequest) (*serverv1.ProvisionResponse, error) {
+	resp := &serverv1.ProvisionResponse{}
 
 	l := log.With(workflow.GetLogger(ctx))
 	ao := workflow.ActivityOptions{
@@ -53,7 +41,7 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	waypointServerAddr := fmt.Sprintf("%s.%s:%d", req.OrgID, w.cfg.WaypointServerRootDomain, defaultWaypointServerPort)
+	waypointServerAddr := fmt.Sprintf("%s.%s:%d", req.OrgId, w.cfg.WaypointServerRootDomain, defaultWaypointServerPort)
 	clusterInfo := kube.ClusterInfo{
 		ID:             w.cfg.OrgsK8sClusterID,
 		Endpoint:       w.cfg.OrgsK8sPublicEndpoint,
@@ -64,7 +52,7 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 	act := NewActivities()
 
 	cnReq := CreateNamespaceRequest{
-		NamespaceName: req.OrgID,
+		NamespaceName: req.OrgId,
 		ClusterInfo:   clusterInfo,
 	}
 	_, err := createNamespace(ctx, act, cnReq)
@@ -74,8 +62,8 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 
 	l.Debug("installing waypoint server")
 	_, err = installWaypointServer(ctx, act, InstallWaypointServerRequest{
-		Namespace:   req.OrgID,
-		ReleaseName: fmt.Sprintf("wp-%s", req.OrgID),
+		Namespace:   req.OrgId,
+		ReleaseName: fmt.Sprintf("wp-%s", req.OrgId),
 		Chart:       &waypoint.DefaultChart,
 		Atomic:      false,
 		ClusterInfo: clusterInfo,
@@ -86,9 +74,9 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 
 	l.Debug("exposing waypoint server publicly")
 	_, err = exposeWaypointServer(ctx, act, ExposeWaypointServerRequest{
-		NamespaceName: req.OrgID,
+		NamespaceName: req.OrgId,
 		RootDomain:    w.cfg.WaypointServerRootDomain,
-		ShortID:       req.OrgID,
+		ShortID:       req.OrgId,
 		ClusterInfo:   clusterInfo,
 	})
 	if err != nil {
@@ -108,7 +96,7 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 	_, err = bootstrapWaypointServer(ctx, act, BootstrapWaypointServerRequest{
 		ServerAddr:     waypointServerAddr,
 		TokenNamespace: w.cfg.WaypointBootstrapTokenNamespace,
-		OrgID:          req.OrgID,
+		OrgID:          req.OrgId,
 		ClusterInfo:    clusterInfo,
 	})
 	if err != nil {
@@ -119,7 +107,7 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 	_, err = createWaypointProject(ctx, act, CreateWaypointProjectRequest{
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        waypointServerAddr,
-		OrgID:                req.OrgID,
+		OrgID:                req.OrgId,
 	})
 	if err != nil {
 		return resp, fmt.Errorf("failed to create waypoint project: %w", err)
