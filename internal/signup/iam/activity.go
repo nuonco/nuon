@@ -1,7 +1,13 @@
 package iam
 
-type Activities struct{}
+type Activities struct {
+	iamPolicyCreator
+	iamRoleAssumer
+}
 
 func NewActivities() *Activities {
-	return &Activities{}
+	return &Activities{
+		iamPolicyCreator: &iamPolicyCreatorImpl{},
+		iamRoleAssumer:   &iamRoleAssumerImpl{},
+	}
 }
