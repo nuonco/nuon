@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/go-common/shortid"
+	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
@@ -17,9 +18,9 @@ func Test_Workflow(t *testing.T) {
 
 	a := NewActivities()
 
-	req := TeardownRequest{OrgID: "00000000-0000-0000-0000-000000000000", Region: "us-east-2"}
+	req := &orgsv1.TeardownRequest{OrgId: "00000000-0000-0000-0000-000000000000", Region: "us-west-2"}
 
-	id, err := shortid.ParseString(req.OrgID)
+	id, err := shortid.ParseString(req.OrgId)
 	require.NoError(t, err)
 
 	// Mock activity implementation
@@ -38,7 +39,7 @@ func Test_Workflow(t *testing.T) {
 	env.ExecuteWorkflow(Teardown, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	var resp TeardownResponse
+	var resp *orgsv1.TeardownResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
 }
