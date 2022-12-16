@@ -73,7 +73,7 @@ func TestProvision(t *testing.T) {
 	env.ExecuteWorkflow(wkflow.Start, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	var resp StartResponse
+	var resp *deploymentsv1.StartResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
 }
