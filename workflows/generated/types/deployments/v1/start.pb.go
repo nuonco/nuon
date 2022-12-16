@@ -28,9 +28,9 @@ type StartRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	OrgId        string   `protobuf:"bytes,1,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
-	AppId        string   `protobuf:"bytes,2,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
-	DeploymentId string   `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	OrgId        string   `protobuf:"bytes,1,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty" faker:"uuid_hyphenated"`
+	AppId        string   `protobuf:"bytes,2,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty" faker:"uuid_hyphenated"`
+	DeploymentId string   `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" faker:"uuid_hyphenated"`
 	InstallIds   []string `protobuf:"bytes,4,rep,name=install_ids,json=installIds,proto3" json:"install_ids,omitempty"`
 }
 
