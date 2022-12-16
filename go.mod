@@ -6,7 +6,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.17.3
 	github.com/aws/aws-sdk-go-v2/config v1.18.5
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.5
-	github.com/aws/aws-sdk-go-v2/service/iam v1.18.24
+	github.com/aws/aws-sdk-go-v2/service/iam v1.18.25
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.7
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/gogo/status v1.1.1
