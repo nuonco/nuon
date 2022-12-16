@@ -2,11 +2,13 @@ package start
 
 import (
 	"context"
+	"log"
 	"testing"
 
+	faker "github.com/go-faker/faker/v4"
 	"github.com/google/uuid"
-	"github.com/jaswdr/faker"
 	"github.com/powertoolsdev/go-common/shortid"
+	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 	"github.com/stretchr/testify/assert"
@@ -16,79 +18,23 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func getFakeStartRequest() StartRequest {
-	fkr := faker.New()
-	var req StartRequest
-	fkr.Struct().Fill(&req)
-	return req
+func getFakeObj[T any]() T {
+	var obj T
+	err := faker.FakeData(&obj)
+	if err != nil {
+		log.Fatalf("unable to create fake obj: %s", err)
+	}
+	return obj
 }
 
-func Test_validateStartRequest(t *testing.T) {
-	tests := map[string]struct {
-		errExpectedMsg string
-		buildReq       func() StartRequest
-	}{
-		"should error when org id is empty": {
-			errExpectedMsg: "StartRequest.OrgID",
-			buildReq: func() StartRequest {
-				req := getFakeStartRequest()
-				req.OrgID = ""
-				return req
-			},
-		},
-		"should error when app id is empty": {
-			errExpectedMsg: "StartRequest.AppID",
-			buildReq: func() StartRequest {
-				req := getFakeStartRequest()
-				req.AppID = ""
-				return req
-			},
-		},
-		"should error when deployment id is empty": {
-			errExpectedMsg: "StartRequest.DeploymentID",
-			buildReq: func() StartRequest {
-				req := getFakeStartRequest()
-				req.DeploymentID = ""
-				return req
-			},
-		},
-		"should error when no installs provided": {
-			errExpectedMsg: "StartRequest.InstallIDs",
-			buildReq: func() StartRequest {
-				req := getFakeStartRequest()
-				req.InstallIDs = []string(nil)
-				return req
-			},
-		},
-		"should not error when properly set": {
-			buildReq: func() StartRequest {
-				req := getFakeStartRequest()
-				return req
-			},
-		},
-	}
-
-	for desc, test := range tests {
-		t.Run(desc, func(t *testing.T) {
-			req := test.buildReq()
-			err := req.validate()
-
-			if test.errExpectedMsg != "" {
-				assert.ErrorContains(t, err, test.errExpectedMsg)
-			}
-		})
-	}
-}
-
-func getFakeConfig() workers.Config {
-	fkr := faker.New()
-	var cfg workers.Config
-	fkr.Struct().Fill(&cfg)
-	return cfg
+func getFakeStartRequest() *deploymentsv1.StartRequest {
+	obj := getFakeObj[*deploymentsv1.StartRequest]()
+	obj.InstallIds = []string{uuid.NewString()}
+	return obj
 }
 
 func TestProvision(t *testing.T) {
-	cfg := getFakeConfig()
+	cfg := getFakeObj[workers.Config]()
 	wkflow := NewWorkflow(cfg)
 
 	testSuite := &testsuite.WorkflowTestSuite{}
@@ -99,10 +45,12 @@ func TestProvision(t *testing.T) {
 	env.RegisterWorkflow(bld.Build)
 
 	req := getFakeStartRequest()
-
-	orgShortID, err := shortid.ParseString(req.OrgID)
+	err := req.Validate()
 	assert.NoError(t, err)
-	appShortID, err := shortid.ParseString(req.AppID)
+
+	orgShortID, err := shortid.ParseString(req.OrgId)
+	assert.NoError(t, err)
+	appShortID, err := shortid.ParseString(req.AppId)
 	assert.NoError(t, err)
 
 	// Mock activity implementation
