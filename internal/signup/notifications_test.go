@@ -3,19 +3,22 @@ package signup
 import (
 	"context"
 	"fmt"
+	"log"
 	"testing"
 
-	"github.com/jaswdr/faker"
+	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/exp/slices"
 )
 
 func getFakeSendNotificationRequest() SendNotificationRequest {
-	fkr := faker.New()
-	var req SendNotificationRequest
-	fkr.Struct().Fill(&req)
-	return req
+	var obj SendNotificationRequest
+	err := faker.FakeData(&obj)
+	if err != nil {
+		log.Fatalf("unable to create fake obj: %s", err)
+	}
+	return obj
 }
 
 type mockSender struct {

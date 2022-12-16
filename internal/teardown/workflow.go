@@ -5,18 +5,13 @@ import (
 	"time"
 
 	"github.com/powertoolsdev/go-common/shortid"
+	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
 
-type TeardownRequest struct {
-	OrgID  string
-	Region string
-}
-type TeardownResponse struct{}
-
-func Teardown(ctx workflow.Context, req TeardownRequest) (TeardownResponse, error) {
-	resp := TeardownResponse{}
+func Teardown(ctx workflow.Context, req *orgsv1.TeardownRequest) (*orgsv1.TeardownResponse, error) {
+	resp := &orgsv1.TeardownResponse{}
 
 	l := log.With(workflow.GetLogger(ctx))
 	ao := workflow.ActivityOptions{
@@ -24,7 +19,7 @@ func Teardown(ctx workflow.Context, req TeardownRequest) (TeardownResponse, erro
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	id, err := shortid.ParseString(req.OrgID)
+	id, err := shortid.ParseString(req.OrgId)
 	if err != nil {
 		return resp, fmt.Errorf("failed to generate short ID: %w", err)
 	}

@@ -8,11 +8,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.5
 	github.com/aws/aws-sdk-go-v2/service/iam v1.18.25
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.7
+	github.com/go-faker/faker/v4 v4.0.0-beta.4
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/gogo/status v1.1.1
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/waypoint v0.10.3
-	github.com/jaswdr/faker v1.15.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.24.2
@@ -21,6 +21,7 @@ require (
 	github.com/powertoolsdev/go-kube v0.1.3
 	github.com/powertoolsdev/go-sender v0.0.4
 	github.com/powertoolsdev/go-waypoint v0.2.1
+	github.com/powertoolsdev/protos v0.0.0-20221216205825-51580a26418e
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.19.0
@@ -77,7 +78,6 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
-	github.com/go-faker/faker/v4 v4.0.0-beta.4 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
@@ -108,6 +108,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/jaswdr/faker v1.15.0 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -145,7 +146,6 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/powertoolsdev/protos v0.0.0-20221216203218-d8c83a3342bf // indirect
 	github.com/prometheus/client_golang v1.13.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
