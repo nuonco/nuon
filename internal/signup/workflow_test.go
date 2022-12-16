@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/go-common/shortid"
+	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
@@ -30,9 +31,9 @@ func Test_Workflow(t *testing.T) {
 	wf := NewWorkflow(cfg)
 	a := NewActivities(nil)
 
-	req := SignupRequest{OrgID: "00000000-0000-0000-0000-000000000000", Region: "us-east-2"}
+	req := &orgsv1.SignupRequest{OrgId: "00000000-0000-0000-0000-000000000000", Region: "us-west-2"}
 
-	id, err := shortid.ParseString(req.OrgID)
+	id, err := shortid.ParseString(req.OrgId)
 	require.NoError(t, err)
 
 	// Mock activity implementations
@@ -61,7 +62,6 @@ func Test_Workflow(t *testing.T) {
 	env.ExecuteWorkflow(wf.Signup, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	var resp SignupResponse
+	var resp orgsv1.SignupResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
-	require.NotNil(t, resp)
 }

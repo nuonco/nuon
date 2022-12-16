@@ -6,18 +6,13 @@ import (
 
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-waypoint"
+	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
-
-type SignupRequest struct {
-	OrgID  string
-	Region string
-}
-type SignupResponse struct{}
 
 type Workflow struct {
 	cfg workers.Config
@@ -29,8 +24,12 @@ func NewWorkflow(cfg workers.Config) Workflow {
 	}
 }
 
-func (w Workflow) Signup(ctx workflow.Context, req SignupRequest) (SignupResponse, error) {
-	resp := SignupResponse{}
+func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error) {
+	resp := &orgsv1.SignupResponse{}
+
+	if err := req.Validate(); err != nil {
+		return resp, fmt.Errorf("unable to validate request: %w", err)
+	}
 
 	l := log.With(workflow.GetLogger(ctx))
 	ao := workflow.ActivityOptions{
@@ -38,7 +37,7 @@ func (w Workflow) Signup(ctx workflow.Context, req SignupRequest) (SignupRespons
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	id, err := shortid.ParseString(req.OrgID)
+	id, err := shortid.ParseString(req.OrgId)
 	if err != nil {
 		return resp, fmt.Errorf("failed to generate short ID: %w", err)
 	}
