@@ -10,7 +10,7 @@ require (
 	github.com/jackc/pgconn v1.13.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/jaswdr/faker v1.15.0
-	github.com/lib/pq v1.10.2
+	github.com/lib/pq v1.10.7
 	github.com/powertoolsdev/go-common v1.1.17
 	github.com/raphaelvigee/go-paginate v1.0.6
 	github.com/spf13/cobra v1.6.1
