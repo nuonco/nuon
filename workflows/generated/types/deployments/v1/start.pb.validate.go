@@ -191,3 +191,114 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = StartRequestValidationError{}
+
+// Validate checks the field values on StartResponse with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *StartResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on StartResponse with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in StartResponseMultiError, or
+// nil if none found.
+func (m *StartResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *StartResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(m.GetWorkflowIds()) < 1 {
+		err := StartResponseValidationError{
+			field:  "WorkflowIds",
+			reason: "value must contain at least 1 item(s)",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return StartResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// StartResponseMultiError is an error wrapping multiple validation errors
+// returned by StartResponse.ValidateAll() if the designated constraints
+// aren't met.
+type StartResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m StartResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m StartResponseMultiError) AllErrors() []error { return m }
+
+// StartResponseValidationError is the validation error returned by
+// StartResponse.Validate if the designated constraints aren't met.
+type StartResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StartResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StartResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StartResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StartResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StartResponseValidationError) ErrorName() string { return "StartResponseValidationError" }
+
+// Error satisfies the builtin error interface
+func (e StartResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStartResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StartResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StartResponseValidationError{}

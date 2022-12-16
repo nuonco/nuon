@@ -21,3 +21,8 @@ message StartRequest {
   ];
   repeated string install_ids = 4 [(validate.rules).repeated.min_items = 1];
 }
+
+// StartResponse returns the response from a deployment workflow
+message StartResponse {
+  repeated string workflow_ids = 1 [(validate.rules).repeated.min_items = 1];
+}
