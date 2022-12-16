@@ -7,17 +7,13 @@ import (
 	"testing"
 
 	"github.com/hashicorp/waypoint/pkg/server/gen"
-	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 )
 
 func getFakeCreateRunnerProfileRequest() CreateRunnerProfileRequest {
-	fkr := faker.New()
-	var req CreateRunnerProfileRequest
-	fkr.Struct().Fill(&req)
-	return req
+	return getFakeObj[CreateRunnerProfileRequest]()
 }
 
 func TestCreateRunnerProfile_validateRequest(t *testing.T) {

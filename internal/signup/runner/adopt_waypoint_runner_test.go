@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
-	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -32,10 +31,7 @@ func (t *testWaypointClientRunnerAdopter) AdoptRunner(
 }
 
 func getFakeAdoptWaypointRunnerRequest() AdoptWaypointRunnerRequest {
-	fkr := faker.New()
-	var req AdoptWaypointRunnerRequest
-	fkr.Struct().Fill(&req)
-	return req
+	return getFakeObj[AdoptWaypointRunnerRequest]()
 }
 
 func TestAdoptWaypointRunner_validateRequest(t *testing.T) {

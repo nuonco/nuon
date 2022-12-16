@@ -4,15 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 )
 
 func getFakeCreateServerConfigRequest() CreateServerConfigRequest {
-	fkr := faker.New()
-	var req CreateServerConfigRequest
-	fkr.Struct().Fill(&req)
-	return req
+	return getFakeObj[CreateServerConfigRequest]()
 }
 
 func TestCreateServerConfig_validateRequest(t *testing.T) {

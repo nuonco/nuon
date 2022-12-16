@@ -3,10 +3,12 @@ package runner
 import (
 	"context"
 	"fmt"
+	"log"
 	"testing"
 
+	faker "github.com/go-faker/faker/v4"
 	"github.com/google/uuid"
-	"github.com/jaswdr/faker"
+	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -14,28 +16,23 @@ import (
 	"go.temporal.io/sdk/testsuite"
 )
 
-func newFakeConfig() workers.Config {
-	fkr := faker.New()
-	var cfg workers.Config
-	fkr.Struct().Fill(&cfg)
-	return cfg
-}
-
-func getFakeRunnerRequest() InstallRunnerRequest {
-	fkr := faker.New()
-	var req InstallRunnerRequest
-	fkr.Struct().Fill(&req)
-	return req
+func getFakeObj[T any]() T {
+	var obj T
+	err := faker.FakeData(&obj)
+	if err != nil {
+		log.Fatalf("unable to create fake obj: %s", err)
+	}
+	return obj
 }
 
 func TestRunner(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	cfg := newFakeConfig()
+	cfg := getFakeObj[workers.Config]()
 
 	a := NewActivities(workers.Config{})
 
-	req := getFakeRunnerRequest()
+	req := getFakeObj[*runnerv1.InstallRunnerRequest]()
 
 	/*
 		validProvisionOutput := map[string]string{
@@ -44,7 +41,7 @@ func TestRunner(t *testing.T) {
 			clusterCAKey:	    "b64 encoded ca",
 		}*/
 
-	orgShortID := req.OrgID
+	orgShortID := req.OrgId
 	serverCookie := uuid.NewString()
 	orgServerAddr := fmt.Sprintf("%s.%s:9701", orgShortID, cfg.WaypointServerRootDomain)
 
@@ -134,9 +131,8 @@ func TestRunner(t *testing.T) {
 	env.ExecuteWorkflow(wkflow.Install, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	var resp InstallRunnerResponse
+	var resp runnerv1.InstallRunnerResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
-	require.NotNil(t, resp)
 	// idk why this is returning incorrect, i can't figure out where it's set
 	// require.Equal(t, validProvisionOutput, resp.TerraformOutputs)
 }

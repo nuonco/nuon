@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/waypoint/pkg/server/gen"
-	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -31,10 +30,7 @@ func (t *testWaypointClientServerConfigGetter) GetServerConfig(
 }
 
 func getFakeWaypointServerCookieRequest() GetWaypointServerCookieRequest {
-	fkr := faker.New()
-	var req GetWaypointServerCookieRequest
-	fkr.Struct().Fill(&req)
-	return req
+	return getFakeObj[GetWaypointServerCookieRequest]()
 }
 
 func TestGetWaypointServerCookie_validateRequest(t *testing.T) {
