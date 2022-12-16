@@ -2,10 +2,8 @@ package iam
 
 import (
 	"context"
-	"log"
 	"testing"
 
-	"github.com/go-faker/faker/v4"
 	iamv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/iam/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
@@ -14,15 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 )
-
-func getFakeObj[T any]() T {
-	var obj T
-	err := faker.FakeData(&obj)
-	if err != nil {
-		log.Fatalf("unable to create fake obj: %s", err)
-	}
-	return obj
-}
 
 func Test_Workflow(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
