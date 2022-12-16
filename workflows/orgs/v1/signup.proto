@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package orgs.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message SignupRequest {
+  string org_id = 1 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string region = 2 [
+    (validate.rules).string = {
+      in: ["us-west-2"]
+    },
+    (tagger.tags) = "faker:\"oneof: us-west-2\""
+  ];
+}
+
+message SignupResponse {}

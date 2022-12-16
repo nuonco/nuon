@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package orgs.v1.server.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message ProvisionRequest {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+
+  string region = 2 [
+    (validate.rules).string = {
+      in: ["us-west-2"]
+    },
+    (tagger.tags) = "faker:\"oneof: us-west-2\""
+  ];
+}
