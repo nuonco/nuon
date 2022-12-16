@@ -31,11 +31,11 @@ output "cluster_gh_role_arn" {
 }
 
 output "installations_bucket_name" {
-  value = nonsensitive(data.tfe_outputs.infra-installations.values.bucket_name)
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.bucket_name)
 }
 
 output "installations_k8s_role_arn" {
-  value = nonsensitive(data.tfe_outputs.infra-installations.values.install_k8s_role_arn)
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.install_k8s_role_arn)
 }
 
 output "orgs_k8s_role_arn" {
