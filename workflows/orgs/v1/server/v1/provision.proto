@@ -18,3 +18,5 @@ message ProvisionRequest {
     (tagger.tags) = "faker:\"oneof: us-west-2\""
   ];
 }
+
+message ProvisionResponse {}
