@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-waypoint"
+	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 )
@@ -16,20 +16,6 @@ import (
 const (
 	defaultActivityTimeout = time.Second * 5
 )
-
-type StartRequest struct {
-	OrgID        string `json:"org_id" validate:"required"`
-	AppID        string `json:"app_id" validate:"required"`
-	DeploymentID string `json:"deployment_id" validate:"required"`
-
-	InstallIDs []string           `json:"install_ids" validate:"required,min=1"`
-	Component  waypoint.Component `json:"component" validate:"required"`
-}
-
-func (s StartRequest) validate() error {
-	validate := validator.New()
-	return validate.Struct(s)
-}
 
 type StartResponse struct {
 	WorkflowIDs []string `json:"workflow_ids"`
@@ -52,28 +38,26 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Start(ctx workflow.Context, req StartRequest) (StartResponse, error) {
+func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (StartResponse, error) {
 	resp := StartResponse{}
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
 	act := NewActivities(workers.Config{})
 
-	req.Component.Name = "mario"
-
-	if err := req.validate(); err != nil {
+	if err := req.Validate(); err != nil {
 		return resp, err
 	}
 
-	orgID, err := shortid.ParseString(req.OrgID)
+	orgID, err := shortid.ParseString(req.OrgId)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get short org ID: %w", err)
 	}
-	appID, err := shortid.ParseString(req.AppID)
+	appID, err := shortid.ParseString(req.AppId)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get short app ID: %w", err)
 	}
 
-	deploymentID, err := shortid.ParseString(req.DeploymentID)
+	deploymentID, err := shortid.ParseString(req.DeploymentId)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get short deployment ID: %w", err)
 	}
@@ -83,7 +67,12 @@ func (w *wkflow) Start(ctx workflow.Context, req StartRequest) (StartResponse, e
 		OrgID:        orgID,
 		AppID:        appID,
 		DeploymentID: deploymentID,
-		Component:    req.Component,
+		Component: waypoint.Component{
+			Name:              "mario",
+			ID:                "mario",
+			ContainerImageURL: "kennethreitz/httpbin",
+			Type:              "public",
+		},
 	}
 	bResp, err := execBuild(ctx, w.cfg, bReq)
 	if err != nil {
@@ -92,7 +81,7 @@ func (w *wkflow) Start(ctx workflow.Context, req StartRequest) (StartResponse, e
 	l.Debug(fmt.Sprintf("finished build %v", bResp))
 
 	// start instance workflows
-	for _, installID := range req.InstallIDs {
+	for _, installID := range req.InstallIds {
 		installShortID, err := shortid.ParseString(installID)
 		if err != nil {
 			return resp, err
@@ -103,7 +92,12 @@ func (w *wkflow) Start(ctx workflow.Context, req StartRequest) (StartResponse, e
 			AppID:        appID,
 			DeploymentID: deploymentID,
 			InstallID:    installShortID,
-			Component:    req.Component,
+			Component: waypoint.Component{
+				Name:              "mario",
+				ID:                "mario",
+				ContainerImageURL: "kennethreitz/httpbin",
+				Type:              "public",
+			},
 		}
 
 		actResp, err := execProvisionInstanceActivity(ctx, act, actReq)
@@ -113,7 +107,7 @@ func (w *wkflow) Start(ctx workflow.Context, req StartRequest) (StartResponse, e
 		resp.WorkflowIDs = append(resp.WorkflowIDs, actResp.WorkflowID)
 	}
 
-	l.Debug(fmt.Sprintf("starting %d child workflows", len(req.InstallIDs)))
+	l.Debug(fmt.Sprintf("starting %d child workflows", len(req.InstallIds)))
 	return resp, nil
 }
 

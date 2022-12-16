@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/go-waypoint"
+	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	tclient "go.temporal.io/sdk/client"
@@ -14,13 +16,13 @@ import (
 func TestInstanceProvisioner_startWorkflow(t *testing.T) {
 	tc := &tmock.Client{}
 	ip := instanceProvisioner{}
-	req := getFakeStartRequest()
+	req := getFakeObj[*deploymentsv1.StartRequest]()
 	pReq := ProvisionInstanceRequest{
-		AppID:        req.AppID,
-		OrgID:        req.OrgID,
+		AppID:        req.AppId,
+		OrgID:        req.OrgId,
 		InstallID:    uuid.NewString(),
-		DeploymentID: req.DeploymentID,
-		Component:    req.Component,
+		DeploymentID: req.DeploymentId,
+		Component:    waypoint.Component{},
 	}
 
 	expectedOpts := tclient.StartWorkflowOptions{TaskQueue: "instance"}
