@@ -7,6 +7,7 @@ import (
 	"github.com/powertoolsdev/go-common/shortid"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
+	serverv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
@@ -45,10 +46,10 @@ func Test_Workflow(t *testing.T) {
 		})
 
 	env.OnWorkflow(srv.Provision, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r server.ProvisionRequest) (server.ProvisionResponse, error) {
-			var resp server.ProvisionResponse
+		Return(func(ctx workflow.Context, r *serverv1.ProvisionRequest) (*serverv1.ProvisionResponse, error) {
+			var resp *serverv1.ProvisionResponse
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, id, r.OrgID)
+			assert.Equal(t, id, r.OrgId)
 			return resp, nil
 		})
 

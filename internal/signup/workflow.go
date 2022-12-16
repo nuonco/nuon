@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/go-waypoint"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
+	serverv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
@@ -52,8 +53,8 @@ func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgs
 	})
 
 	l.Debug("provisioning waypoint org server")
-	_, err = provisionWaypointServer(ctx, w.cfg, server.ProvisionRequest{
-		OrgID:  id,
+	_, err = provisionWaypointServer(ctx, w.cfg, &serverv1.ProvisionRequest{
+		OrgId:  id,
 		Region: req.Region,
 	})
 	if err != nil {
@@ -82,9 +83,9 @@ func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgs
 func provisionWaypointServer(
 	ctx workflow.Context,
 	cfg workers.Config,
-	req server.ProvisionRequest,
-) (server.ProvisionResponse, error) {
-	var resp server.ProvisionResponse
+	req *serverv1.ProvisionRequest,
+) (*serverv1.ProvisionResponse, error) {
+	var resp *serverv1.ProvisionResponse
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("executing install waypoint workflow")

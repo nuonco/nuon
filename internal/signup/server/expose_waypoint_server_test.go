@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"go.temporal.io/sdk/testsuite"
 	corev1 "k8s.io/api/core/v1"
@@ -88,13 +87,6 @@ func (t testServiceCreator) createService(ctx context.Context, api k8sServiceCre
 	return t.fn(ctx, api, req)
 }
 
-func getFakeExposeWaypointServerRequest() ExposeWaypointServerRequest {
-	fkr := faker.New()
-	var req ExposeWaypointServerRequest
-	fkr.Struct().Fill(&req)
-	return req
-}
-
 func TestCreateService(t *testing.T) {
 	tests := map[string]struct {
 		requestFn      func() ExposeWaypointServerRequest
@@ -103,7 +95,7 @@ func TestCreateService(t *testing.T) {
 	}{
 		"errors if no root domain": {
 			requestFn: func() ExposeWaypointServerRequest {
-				req := getFakeExposeWaypointServerRequest()
+				req := getFakeObj[ExposeWaypointServerRequest]()
 				req.RootDomain = ""
 				return req
 			},
@@ -111,7 +103,7 @@ func TestCreateService(t *testing.T) {
 		},
 		"errors if no Short ID": {
 			requestFn: func() ExposeWaypointServerRequest {
-				req := getFakeExposeWaypointServerRequest()
+				req := getFakeObj[ExposeWaypointServerRequest]()
 				req.ShortID = ""
 				return req
 			},
@@ -119,7 +111,7 @@ func TestCreateService(t *testing.T) {
 		},
 		"errors if no namespace name": {
 			requestFn: func() ExposeWaypointServerRequest {
-				req := getFakeExposeWaypointServerRequest()
+				req := getFakeObj[ExposeWaypointServerRequest]()
 				req.NamespaceName = ""
 				return req
 			},
@@ -128,7 +120,8 @@ func TestCreateService(t *testing.T) {
 
 		"wraps client error": {
 			requestFn: func() ExposeWaypointServerRequest {
-				return getFakeExposeWaypointServerRequest()
+				req := getFakeObj[ExposeWaypointServerRequest]()
+				return req
 			},
 			errExpectedMsg: errOops.Error(),
 			svcCreator: func(t *testing.T) testServiceCreator {
@@ -143,7 +136,8 @@ func TestCreateService(t *testing.T) {
 
 		"does not error with valid request": {
 			requestFn: func() ExposeWaypointServerRequest {
-				return getFakeExposeWaypointServerRequest()
+				req := getFakeObj[ExposeWaypointServerRequest]()
+				return req
 			},
 			svcCreator: func(t *testing.T) testServiceCreator {
 				return testServiceCreator{
