@@ -17,10 +17,6 @@ const (
 	defaultActivityTimeout = time.Second * 5
 )
 
-type StartResponse struct {
-	WorkflowIDs []string `json:"workflow_ids"`
-}
-
 func configureActivityOptions(ctx workflow.Context) workflow.Context {
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: defaultActivityTimeout,
@@ -38,8 +34,8 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (StartResponse, error) {
-	resp := StartResponse{}
+func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*deploymentsv1.StartResponse, error) {
+	resp := &deploymentsv1.StartResponse{}
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
 	act := NewActivities(workers.Config{})
@@ -104,7 +100,7 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (S
 		if err != nil {
 			return resp, err
 		}
-		resp.WorkflowIDs = append(resp.WorkflowIDs, actResp.WorkflowID)
+		resp.WorkflowIds = append(resp.WorkflowIds, actResp.WorkflowID)
 	}
 
 	l.Debug(fmt.Sprintf("starting %d child workflows", len(req.InstallIds)))
