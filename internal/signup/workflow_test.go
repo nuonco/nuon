@@ -6,9 +6,11 @@ import (
 
 	"github.com/powertoolsdev/go-common/shortid"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
+	iamv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/iam/v1"
 	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
 	serverv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
+	"github.com/powertoolsdev/workers-orgs/internal/signup/iam"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
 	"github.com/stretchr/testify/assert"
@@ -26,8 +28,10 @@ func Test_Workflow(t *testing.T) {
 		WaypointServerRootDomain:        "testing.nuon.co",
 	}
 	srv := server.NewWorkflow(cfg)
+	iamer := iam.NewWorkflow(cfg)
 	run := runner.NewWorkflow(cfg)
 	env.RegisterWorkflow(srv.Provision)
+	env.RegisterWorkflow(iamer.ProvisionIAM)
 	env.RegisterWorkflow(run.Install)
 
 	wf := NewWorkflow(cfg)
@@ -43,6 +47,13 @@ func Test_Workflow(t *testing.T) {
 	env.OnActivity(a.SendNotification, mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, snr SendNotificationRequest) (SendNotificationResponse, error) {
 			return SendNotificationResponse{}, nil
+		})
+
+	env.OnWorkflow(iamer.ProvisionIAM, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r *iamv1.ProvisionIAMRequest) (*iamv1.ProvisionIAMResponse, error) {
+			var resp *iamv1.ProvisionIAMResponse
+			assert.Nil(t, r.Validate())
+			return resp, nil
 		})
 
 	env.OnWorkflow(srv.Provision, mock.Anything, mock.Anything).
