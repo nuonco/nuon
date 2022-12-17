@@ -7,9 +7,11 @@ import (
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-waypoint"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
+	iamv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/iam/v1"
 	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
 	serverv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
+	"github.com/powertoolsdev/workers-orgs/internal/signup/iam"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
 	"go.temporal.io/sdk/log"
@@ -52,8 +54,16 @@ func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgs
 		Started: true,
 	})
 
+	l.Debug("provisioning iam for org")
+	_, err = execProvisionIAMWorkflow(ctx, w.cfg, &iamv1.ProvisionIAMRequest{
+		OrgId: id,
+	})
+	if err != nil {
+		return resp, fmt.Errorf("failed to provision iam: %w", err)
+	}
+
 	l.Debug("provisioning waypoint org server")
-	_, err = provisionWaypointServer(ctx, w.cfg, &serverv1.ProvisionRequest{
+	_, err = execProvisionWaypointServerWorkflow(ctx, w.cfg, &serverv1.ProvisionRequest{
 		OrgId:  id,
 		Region: req.Region,
 	})
@@ -62,7 +72,7 @@ func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgs
 	}
 
 	l.Debug("installing waypoint org runner")
-	_, err = installWaypointRunner(ctx, w.cfg, &runnerv1.InstallRunnerRequest{
+	_, err = execInstallWaypointRunnerWorkflow(ctx, w.cfg, &runnerv1.InstallRunnerRequest{
 		OrgId: id,
 	})
 	if err != nil {
@@ -80,7 +90,7 @@ func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgs
 	return resp, nil
 }
 
-func provisionWaypointServer(
+func execProvisionWaypointServerWorkflow(
 	ctx workflow.Context,
 	cfg workers.Config,
 	req *serverv1.ProvisionRequest,
@@ -117,7 +127,7 @@ func sendNotification(ctx workflow.Context, act *Activities, snr SendNotificatio
 	}
 }
 
-func installWaypointRunner(
+func execInstallWaypointRunnerWorkflow(
 	ctx workflow.Context,
 	cfg workers.Config,
 	iwrr *runnerv1.InstallRunnerRequest,
@@ -132,6 +142,29 @@ func installWaypointRunner(
 
 	wkflow := runner.NewWorkflow(cfg)
 	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.Install, iwrr)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return &resp, err
+	}
+
+	return &resp, nil
+}
+
+func execProvisionIAMWorkflow(
+	ctx workflow.Context,
+	cfg workers.Config,
+	req *iamv1.ProvisionIAMRequest,
+) (*iamv1.ProvisionIAMResponse, error) {
+	var resp iamv1.ProvisionIAMResponse
+
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 10,
+		WorkflowTaskTimeout:      time.Minute * 5,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	wkflow := iam.NewWorkflow(cfg)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionIAM, req)
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		return &resp, err
