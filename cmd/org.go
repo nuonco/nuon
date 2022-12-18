@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/go-sender"
 	shared "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/powertoolsdev/workers-orgs/internal/signup"
+	"github.com/powertoolsdev/workers-orgs/internal/signup/iam"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
 	"github.com/powertoolsdev/workers-orgs/internal/teardown"
@@ -107,6 +108,10 @@ func runOrgWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interf
 	srvWkflow := server.NewWorkflow(cfg)
 	w.RegisterWorkflow(srvWkflow.Provision)
 	w.RegisterActivity(server.NewActivities())
+
+	iamWkflow := iam.NewWorkflow(cfg)
+	w.RegisterWorkflow(iamWkflow.ProvisionIAM)
+	w.RegisterActivity(iam.NewActivities())
 
 	if err := w.Run(interruptCh); err != nil {
 		return err
