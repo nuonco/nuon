@@ -34,6 +34,9 @@ func orgRun(cmd *cobra.Command, args []string) {
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
 		panic(fmt.Sprintf("failed to load config: %s", err))
 	}
+	if err := cfg.Validate(); err != nil {
+		panic(fmt.Sprintf("invalid config: %s", err))
+	}
 
 	var (
 		l   *zap.Logger
@@ -89,11 +92,6 @@ func runOrgWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interf
 			n = sender.NewNoopSender()
 		}
 	}
-
-	// TODO(jm): reenable these once we fix env issue
-	//if err := cfg.OrgCfg.Validate(); err != nil {
-	//return fmt.Errorf("org config is invalid: %w", err)
-	//}
 
 	wkflow := signup.NewWorkflow(cfg)
 	w.RegisterWorkflow(wkflow.Signup)
