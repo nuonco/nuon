@@ -9,11 +9,10 @@ import (
 )
 
 type CreateIAMRolePolicyAttachmentRequest struct {
-	OrgID string `validate:"required" json:"org_id"`
-
 	OrgsIAMAccessRoleArn string `validate:"required" json:"orgs_iam_access_role_arn"`
-	PolicyArn            string `validate:"required" json:"policy_arn"`
-	RoleArn              string `validate:"required" json:"role_arn"`
+
+	PolicyArn string `validate:"required" json:"policy_arn"`
+	RoleArn   string `validate:"required" json:"role_arn"`
 }
 
 func (r CreateIAMRolePolicyAttachmentRequest) validate() error {

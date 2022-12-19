@@ -35,6 +35,37 @@ func Test_Workflow(t *testing.T) {
 			return resp, nil
 		})
 
+	// Mock activity implementations
+	env.OnActivity(a.CreateIAMPolicy, mock.Anything, mock.Anything).
+		Return(func(ctx context.Context, r CreateIAMPolicyRequest) (CreateIAMPolicyResponse, error) {
+			resp := CreateIAMPolicyResponse{
+				PolicyArn: "test-policy-arn",
+			}
+			assert.NoError(t, r.validate())
+
+			return resp, nil
+		})
+
+	env.OnActivity(a.CreateIAMRole, mock.Anything, mock.Anything).
+		Return(func(ctx context.Context, r CreateIAMRoleRequest) (CreateIAMRoleResponse, error) {
+			resp := CreateIAMRoleResponse{
+				RoleArn: "test-role-arn",
+			}
+			assert.NoError(t, r.validate())
+
+			return resp, nil
+		})
+
+	env.OnActivity(a.CreateIAMRolePolicyAttachment, mock.Anything, mock.Anything).
+		Return(func(ctx context.Context, r CreateIAMRolePolicyAttachmentRequest) (CreateIAMRolePolicyAttachmentResponse, error) {
+			resp := CreateIAMRolePolicyAttachmentResponse{}
+			assert.NoError(t, r.validate())
+			assert.Equal(t, "test-role-arn", r.RoleArn)
+			assert.Equal(t, "test-policy-arn", r.PolicyArn)
+
+			return resp, nil
+		})
+
 	env.ExecuteWorkflow(wf.ProvisionIAM, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())

@@ -21,11 +21,11 @@ type CreateIAMRoleRequest struct {
 	RoleName            string      `validate:"required" json:"role_name"`
 	RolePath            string      `validate:"required" json:"role_path"`
 	TrustPolicyDocument string      `validate:"required" json:"trust_policy_document"`
-	RoleTags            [][2]string `validate:"role_tags" json:"role_tags"`
+	RoleTags            [][2]string `validate:"required" json:"role_tags"`
 }
 
 type CreateIAMRoleResponse struct {
-	IAMRoleArn string `json:"iam_role_arn" validate:"required"`
+	RoleArn string `json:"role_arn" validate:"required"`
 }
 
 func (a *Activities) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest) (CreateIAMRoleResponse, error) {
@@ -44,7 +44,7 @@ func (a *Activities) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest
 	if err != nil {
 		return resp, fmt.Errorf("unable to create odr IAM role: %w", err)
 	}
-	resp.IAMRoleArn = roleArn
+	resp.RoleArn = roleArn
 
 	return resp, nil
 }
