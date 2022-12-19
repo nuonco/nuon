@@ -1,0 +1,4 @@
+github.com/go-faker/faker/v4 v4.0.0-beta.4 h1:57126Ac1OvFkDBwuUaeIaVBpisOHPb2PiBEaGy3rjSY=
+github.com/go-faker/faker/v4 v4.0.0-beta.4/go.mod h1:uuNc0PSRxF8nMgjGrrrU4Nw5cF30Jc6Kd0/FUTTYbhg=
+golang.org/x/text v0.3.7 h1:olpwvP2KacW1ZWvsR7uQhoyTYvKAupfQrRGBFM352Gk=
+golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
