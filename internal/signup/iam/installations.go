@@ -43,13 +43,13 @@ func installationsIAMTrustPolicy(cfg workers.Config) ([]byte, error) {
 				Principal: struct {
 					Federated string `json:"Federated,omitempty"`
 				}{
-					Federated: cfg.OrgsIAMOidcProviderArn,
+					Federated: cfg.WorkersIAMOidcProviderArn,
 				},
 				Condition: struct {
 					StringEquals map[string]string `json:"StringEquals"`
 				}{
 					StringEquals: map[string]string{
-						fmt.Sprintf("%s:sub", cfg.OrgsIAMOidcProviderURL): "system:serviceaccount:default:*",
+						fmt.Sprintf("%s:sub", cfg.WorkersIAMOidcProviderURL): "system:serviceaccount:default:*",
 					},
 				},
 			},
