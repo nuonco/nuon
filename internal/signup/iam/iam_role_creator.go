@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/go-playground/validator/v10"
+	assumerole "github.com/powertoolsdev/go-aws-assume-role"
 	"github.com/powertoolsdev/go-generics"
 )
 
@@ -35,9 +36,13 @@ func (a *Activities) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest
 		return resp, fmt.Errorf("unable to validate request: %w", err)
 	}
 
-	cfg, err := a.loadConfigWithAssumeRole(ctx, req.AssumeRoleARN)
+	assumer, err := assumerole.New(a.validator, assumerole.WithRoleARN(req.AssumeRoleARN), assumerole.WithRoleSessionName("workers-orgs-iam-policy-creator"))
 	if err != nil {
-		return resp, fmt.Errorf("unable to assume role: %w", err)
+		return resp, fmt.Errorf("unable to create role assumer: %w", err)
+	}
+	cfg, err := assumer.LoadConfigWithAssumedRole(ctx)
+	if err != nil {
+		return resp, fmt.Errorf("unable to load config with assumed role: %w", err)
 	}
 
 	client := iam.NewFromConfig(cfg)
