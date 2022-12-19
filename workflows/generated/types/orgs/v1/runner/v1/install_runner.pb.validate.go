@@ -69,6 +69,17 @@ func (m *InstallRunnerRequest) validate(all bool) error {
 
 	}
 
+	if utf8.RuneCountInString(m.GetOdrIamRoleArn()) < 20 {
+		err := InstallRunnerRequestValidationError{
+			field:  "OdrIamRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return InstallRunnerRequestMultiError(errors)
 	}
