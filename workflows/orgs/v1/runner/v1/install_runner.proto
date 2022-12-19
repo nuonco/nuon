@@ -10,7 +10,10 @@ message InstallRunnerRequest {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
-  string odr_iam_role_arn = 2 [(validate.rules).string.min_len = 20];
+  string odr_iam_role_arn = 2 [
+    (validate.rules).string.min_len = 20,
+    (tagger.tags) = "faker:\"len=20\""
+  ];
 }
 
 message InstallRunnerResponse {}
