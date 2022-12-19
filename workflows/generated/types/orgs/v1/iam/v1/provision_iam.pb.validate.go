@@ -171,6 +171,39 @@ func (m *ProvisionIAMResponse) validate(all bool) error {
 
 	var errors []error
 
+	if utf8.RuneCountInString(m.GetDeploymentsRoleArn()) < 20 {
+		err := ProvisionIAMResponseValidationError{
+			field:  "DeploymentsRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetInstallationsRoleArn()) < 20 {
+		err := ProvisionIAMResponseValidationError{
+			field:  "InstallationsRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetOdrRoleArn()) < 20 {
+		err := ProvisionIAMResponseValidationError{
+			field:  "OdrRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return ProvisionIAMResponseMultiError(errors)
 	}

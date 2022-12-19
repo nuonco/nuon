@@ -12,4 +12,10 @@ message ProvisionIAMRequest {
   ];
 }
 
-message ProvisionIAMResponse {}
+message ProvisionIAMResponse {
+  string deployments_role_arn = 1 [(validate.rules).string.min_len = 20];
+
+  string installations_role_arn = 2 [(validate.rules).string.min_len = 20];
+
+  string odr_role_arn = 3 [(validate.rules).string.min_len = 20];
+}
