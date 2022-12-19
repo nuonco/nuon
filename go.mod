@@ -22,7 +22,7 @@ require (
 	github.com/powertoolsdev/go-kube v0.1.3
 	github.com/powertoolsdev/go-sender v0.0.4
 	github.com/powertoolsdev/go-waypoint v0.2.1
-	github.com/powertoolsdev/protos v0.0.0-20221216205825-51580a26418e
+	github.com/powertoolsdev/protos v0.0.0-20221219023227-c3ddea9b9912
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.19.0
