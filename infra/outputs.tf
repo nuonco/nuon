@@ -61,6 +61,7 @@ output "orgs_iam_oidc_provider_url" {
   value = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider)
 }
 
+
 output "orgs_iam_oidc_provider_arn" {
   description = "OIDC provider ARN in the orgs cluster"
   value = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider_arn)
@@ -78,4 +79,14 @@ output "org_installations_bucket_name" {
 
 output "org_deployments_bucket_name" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets["deployments"])
+}
+
+output "workers_iam_oidc_provider_url" {
+  description = "OIDC provider url (without leading https) in the cluster where workers are run"
+  value = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.oidc_provider)
+}
+
+output "workers_iam_oidc_provider_arn" {
+  description = "OIDC provider url (without leading https) in the cluster where workers are run"
+  value = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.oidc_provider_arn)
 }
