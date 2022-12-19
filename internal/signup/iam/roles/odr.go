@@ -3,8 +3,6 @@ package roles
 import (
 	"encoding/json"
 	"fmt"
-
-	workers "github.com/powertoolsdev/workers-orgs/internal"
 )
 
 func OdrIAMName(orgID string) string {
@@ -15,7 +13,7 @@ func runnerOdrServiceAccountName(orgID string) string {
 	return fmt.Sprintf("waypoint-odr-%s", orgID)
 }
 
-func OdrIAMPolicy(cfg workers.Config, orgID string) ([]byte, error) {
+func OdrIAMPolicy(ecrRegistryARN, orgID string) ([]byte, error) {
 	policy := iamRolePolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleStatement{
@@ -24,7 +22,7 @@ func OdrIAMPolicy(cfg workers.Config, orgID string) ([]byte, error) {
 				Action: []string{
 					"ecr:*",
 				},
-				Resource: fmt.Sprintf("%s/%s/*", cfg.OrgsECRRegistryArn, orgID),
+				Resource: fmt.Sprintf("%s/%s/*", ecrRegistryARN, orgID),
 			},
 			{
 				Effect: "Allow",
@@ -43,8 +41,8 @@ func OdrIAMPolicy(cfg workers.Config, orgID string) ([]byte, error) {
 	return byts, nil
 }
 
-func OdrIAMTrustPolicy(cfg workers.Config, orgID string) ([]byte, error) {
-	conditionKey := fmt.Sprintf("%s:sub", cfg.OrgsIAMOidcProviderURL)
+func OdrIAMTrustPolicy(oidcProviderARN, oidcProviderURL, orgID string) ([]byte, error) {
+	conditionKey := fmt.Sprintf("%s:sub", oidcProviderURL)
 	conditionValue := fmt.Sprintf("system:serviceaccount:%s:%s", orgID, runnerOdrServiceAccountName(orgID))
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
@@ -56,7 +54,7 @@ func OdrIAMTrustPolicy(cfg workers.Config, orgID string) ([]byte, error) {
 				Principal: struct {
 					Federated string `json:"Federated,omitempty"`
 				}{
-					Federated: cfg.OrgsIAMOidcProviderArn,
+					Federated: oidcProviderARN,
 				},
 				Condition: struct {
 					StringEquals map[string]string `json:"StringEquals"`
