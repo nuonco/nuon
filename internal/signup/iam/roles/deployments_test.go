@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/powertoolsdev/go-generics"
-	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,8 +36,7 @@ func TestDeploymentsIAMName(t *testing.T) {
 }
 
 func TestDeploymentsIAMTrustPolicy(t *testing.T) {
-	cfg := generics.GetFakeObj[workers.Config]()
-	doc, err := DeploymentsIAMTrustPolicy(cfg)
+	doc, err := DeploymentsIAMTrustPolicy("valid:aws:arn", "oidc.provider.url")
 	assert.NoError(t, err)
 
 	var policy iamRoleTrustPolicy

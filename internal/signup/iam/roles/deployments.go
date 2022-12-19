@@ -3,8 +3,6 @@ package roles
 import (
 	"encoding/json"
 	"fmt"
-
-	workers "github.com/powertoolsdev/workers-orgs/internal"
 )
 
 const defaultIAMPolicyVersion string = "2012-10-17"
@@ -34,7 +32,7 @@ func DeploymentsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 	return byts, nil
 }
 
-func DeploymentsIAMTrustPolicy(cfg workers.Config) ([]byte, error) {
+func DeploymentsIAMTrustPolicy(oidcProviderARN, oidcProviderURL string) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -45,13 +43,13 @@ func DeploymentsIAMTrustPolicy(cfg workers.Config) ([]byte, error) {
 				Principal: struct {
 					Federated string `json:"Federated,omitempty"`
 				}{
-					Federated: cfg.WorkersIAMOidcProviderArn,
+					Federated: oidcProviderARN,
 				},
 				Condition: struct {
 					StringEquals map[string]string `json:"StringEquals"`
 				}{
 					StringEquals: map[string]string{
-						fmt.Sprintf("%s:sub", cfg.WorkersIAMOidcProviderURL): "system:serviceaccount:default:*",
+						fmt.Sprintf("%s:sub", oidcProviderURL): "system:serviceaccount:default:*",
 					},
 				},
 			},
