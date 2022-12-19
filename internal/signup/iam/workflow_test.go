@@ -70,7 +70,10 @@ func Test_Workflow(t *testing.T) {
 	env.ExecuteWorkflow(wf.ProvisionIAM, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
+
 	var resp *iamv1.ProvisionIAMResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
+	assert.Equal(t, "test-role-arn", resp.DeploymentsRoleArn)
+	assert.Equal(t, "test-role-arn", resp.InstallationsRoleArn)
 }
