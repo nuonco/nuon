@@ -27,28 +27,67 @@ type wkflow struct {
 	cfg workers.Config
 }
 
-// ProvisionIAM is a workflow that creates org specific IAM roles in the designated orgs IAM account
-func (w wkflow) ProvisionIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (*iamv1.ProvisionIAMResponse, error) {
-	resp := &iamv1.ProvisionIAMResponse{}
-
-	if err := req.Validate(); err != nil {
-		return resp, fmt.Errorf("unable to validate request: %w", err)
-	}
-
-	// get waypoint server cookie
+func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) error {
 	l := log.With(workflow.GetLogger(ctx))
 	act := NewActivities()
 
-	activityOpts := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: defaultActivityTimeout,
-	}
-	ctx = workflow.WithActivityOptions(ctx, activityOpts)
-
 	// create deployments
 	l.Debug("creating deployments iam policy for org %s", req.OrgId)
+	installationsPolicy, err := installationsIAMPolicy(w.cfg.OrgInstallationsBucketName, req.OrgId)
+	if err != nil {
+		return fmt.Errorf("unable to create IAM policy document: %w", err)
+	}
+	cdpReq := CreateIAMPolicyRequest{
+		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
+		PolicyName:           installationsIAMName(req.OrgId),
+		PolicyPath:           defaultIAMPolicyPath,
+		PolicyDocument:       string(installationsPolicy),
+	}
+	cdpResp, err := execCreateIAMPolicy(ctx, act, cdpReq)
+	if err != nil {
+		return fmt.Errorf("unable to create IAM policy: %w", err)
+	}
+
+	l.Debug("creating iam role for org %s", req.OrgId)
+	installationsTrustPolicy, err := installationsIAMTrustPolicy(w.cfg)
+	if err != nil {
+		return fmt.Errorf("unable to create IAM trust policy document: %w", err)
+	}
+	cdrReq := CreateIAMRoleRequest{
+		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
+		RoleName:             installationsIAMName(req.OrgId),
+		RolePath:             defaultIAMRolePath,
+		TrustPolicyDocument:  string(installationsTrustPolicy),
+		RoleTags:             defaultTags(req.OrgId),
+	}
+	cdrResp, err := execCreateIAMRole(ctx, act, cdrReq)
+	if err != nil {
+		return fmt.Errorf("unable to create IAM role: %w", err)
+	}
+
+	l.Debug("creating iam policy attachment for org %s", req.OrgId)
+	cdpaReq := CreateIAMRolePolicyAttachmentRequest{
+		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
+		PolicyArn:            cdpResp.PolicyArn,
+		RoleArn:              cdrResp.RoleArn,
+	}
+	err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
+	if err != nil {
+		return fmt.Errorf("unable to create IAM role policy attachment: %w", err)
+	}
+
+	return nil
+}
+
+func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) error {
+	l := log.With(workflow.GetLogger(ctx))
+	act := NewActivities()
+
+	// create deployments
+	l.Debug("creating iam policy for org %s", req.OrgId)
 	deploymentsPolicy, err := deploymentsIAMPolicy(w.cfg.OrgDeploymentsBucketName, req.OrgId)
 	if err != nil {
-		return resp, fmt.Errorf("unable to create deployments IAM policy document: %w", err)
+		return fmt.Errorf("unable to create IAM policy document: %w", err)
 	}
 	cdpReq := CreateIAMPolicyRequest{
 		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
@@ -58,13 +97,13 @@ func (w wkflow) ProvisionIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReques
 	}
 	cdpResp, err := execCreateIAMPolicy(ctx, act, cdpReq)
 	if err != nil {
-		return resp, fmt.Errorf("unable to create deployments IAM policy: %w", err)
+		return fmt.Errorf("unable to create IAM policy: %w", err)
 	}
 
-	l.Debug("creating deployments iam rol for org %s", req.OrgId)
+	l.Debug("creating iam role for org %s", req.OrgId)
 	deploymentsTrustPolicy, err := deploymentsIAMTrustPolicy(w.cfg)
 	if err != nil {
-		return resp, fmt.Errorf("unable to create deployments IAM trust policy document: %w", err)
+		return fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
 	cdrReq := CreateIAMRoleRequest{
 		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
@@ -75,18 +114,42 @@ func (w wkflow) ProvisionIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReques
 	}
 	cdrResp, err := execCreateIAMRole(ctx, act, cdrReq)
 	if err != nil {
-		return resp, fmt.Errorf("unable to create deployments IAM role: %w", err)
+		return fmt.Errorf("unable to create IAM role: %w", err)
 	}
 
-	l.Debug("creating deployments iam policy attachment for org %s", req.OrgId)
+	l.Debug("creating iam policy attachment for org %s", req.OrgId)
 	cdpaReq := CreateIAMRolePolicyAttachmentRequest{
 		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
 		PolicyArn:            cdpResp.PolicyArn,
 		RoleArn:              cdrResp.RoleArn,
 	}
-	_, err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
+	err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
 	if err != nil {
-		return resp, fmt.Errorf("unable to create deployments IAM role policy attachment: %w", err)
+		return fmt.Errorf("unable to create IAM role policy attachment: %w", err)
+	}
+
+	return nil
+}
+
+// ProvisionIAM is a workflow that creates org specific IAM roles in the designated orgs IAM account
+func (w wkflow) ProvisionIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (*iamv1.ProvisionIAMResponse, error) {
+	resp := &iamv1.ProvisionIAMResponse{}
+
+	if err := req.Validate(); err != nil {
+		return resp, fmt.Errorf("unable to validate request: %w", err)
+	}
+
+	activityOpts := workflow.ActivityOptions{
+		ScheduleToCloseTimeout: defaultActivityTimeout,
+	}
+	ctx = workflow.WithActivityOptions(ctx, activityOpts)
+
+	if err := w.provisionDeploymentsIAM(ctx, req); err != nil {
+		return resp, fmt.Errorf("unable to provision deployments IAM role: %w", err)
+	}
+
+	if err := w.provisionInstallationsIAM(ctx, req); err != nil {
+		return resp, fmt.Errorf("unable to provision installations IAM role: %w", err)
 	}
 
 	return resp, nil
@@ -134,17 +197,16 @@ func execCreateIAMRolePolicyAttachment(
 	ctx workflow.Context,
 	act *Activities,
 	req CreateIAMRolePolicyAttachmentRequest,
-) (CreateIAMRolePolicyAttachmentResponse, error) {
-	var resp CreateIAMRolePolicyAttachmentResponse
-
+) error {
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("executing create iam role policy attachment activity")
 	fut := workflow.ExecuteActivity(ctx, act.CreateIAMRolePolicyAttachment, req)
 
+	var resp CreateDeploymentsBucketRoleResponse
 	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
+		return err
 	}
 
-	return resp, nil
+	return nil
 }
