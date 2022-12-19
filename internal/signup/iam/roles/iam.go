@@ -1,6 +1,6 @@
-package iam
+package roles
 
-func defaultTags(orgID string) [][2]string {
+func DefaultTags(orgID string) [][2]string {
 	return [][2]string{{"managed-by", "workers-orgs"}, {"org-id", orgID}}
 }
 

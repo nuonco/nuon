@@ -6,6 +6,7 @@ import (
 
 	iamv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/iam/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
+	"github.com/powertoolsdev/workers-orgs/internal/signup/iam/roles"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
@@ -32,13 +33,13 @@ func (w wkflow) provisionOdrIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReq
 	act := NewActivities()
 
 	l.Debug("creating odr iam policy for org %s", req.OrgId)
-	odrPolicy, err := odrIAMPolicy(w.cfg, req.OrgId)
+	odrPolicy, err := roles.OdrIAMPolicy(w.cfg, req.OrgId)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM policy document: %w", err)
 	}
 	cdpReq := CreateIAMPolicyRequest{
 		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
-		PolicyName:     odrIAMName(req.OrgId),
+		PolicyName:     roles.OdrIAMName(req.OrgId),
 		PolicyPath:     defaultIAMPolicyPath,
 		PolicyDocument: string(odrPolicy),
 	}
@@ -48,16 +49,16 @@ func (w wkflow) provisionOdrIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReq
 	}
 
 	l.Debug("creating iam role for org %s", req.OrgId)
-	odrTrustPolicy, err := odrIAMTrustPolicy(w.cfg, req.OrgId)
+	odrTrustPolicy, err := roles.OdrIAMTrustPolicy(w.cfg, req.OrgId)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
 	cdrReq := CreateIAMRoleRequest{
 		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
-		RoleName:            odrIAMName(req.OrgId),
+		RoleName:            roles.OdrIAMName(req.OrgId),
 		RolePath:            defaultIAMRolePath,
 		TrustPolicyDocument: string(odrTrustPolicy),
-		RoleTags:            defaultTags(req.OrgId),
+		RoleTags:            roles.DefaultTags(req.OrgId),
 	}
 	cdrResp, err := execCreateIAMRole(ctx, act, cdrReq)
 	if err != nil {
@@ -84,13 +85,13 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 
 	// create deployments
 	l.Debug("creating deployments iam policy for org %s", req.OrgId)
-	installationsPolicy, err := installationsIAMPolicy(w.cfg.OrgInstallationsBucketName, req.OrgId)
+	installationsPolicy, err := roles.InstallationsIAMPolicy(w.cfg.OrgInstallationsBucketName, req.OrgId)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM policy document: %w", err)
 	}
 	cdpReq := CreateIAMPolicyRequest{
 		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
-		PolicyName:     installationsIAMName(req.OrgId),
+		PolicyName:     roles.InstallationsIAMName(req.OrgId),
 		PolicyPath:     defaultIAMPolicyPath,
 		PolicyDocument: string(installationsPolicy),
 	}
@@ -100,16 +101,16 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 	}
 
 	l.Debug("creating iam role for org %s", req.OrgId)
-	installationsTrustPolicy, err := installationsIAMTrustPolicy(w.cfg)
+	installationsTrustPolicy, err := roles.InstallationsIAMTrustPolicy(w.cfg)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
 	cdrReq := CreateIAMRoleRequest{
 		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
-		RoleName:            installationsIAMName(req.OrgId),
+		RoleName:            roles.InstallationsIAMName(req.OrgId),
 		RolePath:            defaultIAMRolePath,
 		TrustPolicyDocument: string(installationsTrustPolicy),
-		RoleTags:            defaultTags(req.OrgId),
+		RoleTags:            roles.DefaultTags(req.OrgId),
 	}
 	cdrResp, err := execCreateIAMRole(ctx, act, cdrReq)
 	if err != nil {
@@ -136,13 +137,13 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 
 	// create deployments
 	l.Debug("creating iam policy for org %s", req.OrgId)
-	deploymentsPolicy, err := deploymentsIAMPolicy(w.cfg.OrgDeploymentsBucketName, req.OrgId)
+	deploymentsPolicy, err := roles.DeploymentsIAMPolicy(w.cfg.OrgDeploymentsBucketName, req.OrgId)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM policy document: %w", err)
 	}
 	cdpReq := CreateIAMPolicyRequest{
 		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
-		PolicyName:     deploymentsIAMName(req.OrgId),
+		PolicyName:     roles.DeploymentsIAMName(req.OrgId),
 		PolicyPath:     defaultIAMPolicyPath,
 		PolicyDocument: string(deploymentsPolicy),
 	}
@@ -152,16 +153,16 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 	}
 
 	l.Debug("creating iam role for org %s", req.OrgId)
-	deploymentsTrustPolicy, err := deploymentsIAMTrustPolicy(w.cfg)
+	deploymentsTrustPolicy, err := roles.DeploymentsIAMTrustPolicy(w.cfg)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
 	cdrReq := CreateIAMRoleRequest{
 		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
-		RoleName:            deploymentsIAMName(req.OrgId),
+		RoleName:            roles.DeploymentsIAMName(req.OrgId),
 		RolePath:            defaultIAMRolePath,
 		TrustPolicyDocument: string(deploymentsTrustPolicy),
-		RoleTags:            defaultTags(req.OrgId),
+		RoleTags:            roles.DefaultTags(req.OrgId),
 	}
 	cdrResp, err := execCreateIAMRole(ctx, act, cdrReq)
 	if err != nil {
@@ -264,7 +265,7 @@ func execCreateIAMRolePolicyAttachment(
 	l.Debug("executing create iam role policy attachment activity")
 	fut := workflow.ExecuteActivity(ctx, act.CreateIAMRolePolicyAttachment, req)
 
-	var resp CreateDeploymentsBucketRoleResponse
+	var resp CreateIAMRolePolicyAttachmentResponse
 	if err := fut.Get(ctx, &resp); err != nil {
 		return err
 	}

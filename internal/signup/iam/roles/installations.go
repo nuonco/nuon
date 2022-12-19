@@ -1,4 +1,4 @@
-package iam
+package roles
 
 import (
 	"encoding/json"
@@ -7,11 +7,11 @@ import (
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 )
 
-func installationsIAMName(orgID string) string {
+func InstallationsIAMName(orgID string) string {
 	return fmt.Sprintf("org-installations-access-%s", orgID)
 }
 
-func installationsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
+func InstallationsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 	policy := iamRolePolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleStatement{
@@ -32,7 +32,7 @@ func installationsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 	return byts, nil
 }
 
-func installationsIAMTrustPolicy(cfg workers.Config) ([]byte, error) {
+func InstallationsIAMTrustPolicy(cfg workers.Config) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{

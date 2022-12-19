@@ -1,4 +1,4 @@
-package iam
+package roles
 
 import (
 	"encoding/json"
@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_deploymentsIAMPolicy(t *testing.T) {
+func TestDeploymentsIAMPolicy(t *testing.T) {
 	bucketName := "nuon-org-deployments-test"
 	orgID := uuid.NewString()
 
-	doc, err := deploymentsIAMPolicy(bucketName, orgID)
+	doc, err := DeploymentsIAMPolicy(bucketName, orgID)
 	assert.NoError(t, err)
 
 	var policy iamRolePolicy
@@ -28,18 +28,18 @@ func Test_deploymentsIAMPolicy(t *testing.T) {
 	assert.Contains(t, policy.Statement[0].Resource, bucketName)
 }
 
-func Test_deploymentsIAMName(t *testing.T) {
+func TestDeploymentsIAMName(t *testing.T) {
 	orgID := uuid.NewString()
-	iamName := deploymentsIAMName(orgID)
+	iamName := DeploymentsIAMName(orgID)
 
 	assert.Contains(t, iamName, orgID)
 	assert.Contains(t, iamName, "org-")
 	assert.Contains(t, iamName, "deployments-")
 }
 
-func Test_deploymentsIAMTrustPolicy(t *testing.T) {
+func TestDeploymentsIAMTrustPolicy(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
-	doc, err := deploymentsIAMTrustPolicy(cfg)
+	doc, err := DeploymentsIAMTrustPolicy(cfg)
 	assert.NoError(t, err)
 
 	var policy iamRoleTrustPolicy
