@@ -7,11 +7,77 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func TestNew(t *testing.T) {
+	t.Parallel()
+
+	v := validator.New()
+	tests := map[string]struct {
+		v           *validator.Validate
+		opts        []assumerOptions
+		errExpected error
+		expected    *assumer
+	}{
+		"happy path": {
+			v: v,
+			opts: []assumerOptions{
+				WithRoleARN("valid:aws:role:arn"),
+				WithRoleSessionName("valid-session-name"),
+			},
+			expected: &assumer{RoleARN: "valid:aws:role:arn", RoleSessionName: "valid-session-name"},
+		},
+		"missing validator": {
+			opts: []assumerOptions{
+				WithRoleARN("valid:aws:role:arn"),
+				WithRoleSessionName("valid-session-name"),
+			},
+			errExpected: fmt.Errorf("validator is nil"),
+		},
+
+		"no options": {
+			v:           v,
+			opts:        []assumerOptions{},
+			errExpected: fmt.Errorf("Field validation"),
+		},
+		"missing arn": {
+			v: v,
+			opts: []assumerOptions{
+				WithRoleSessionName("valid-session-name"),
+			},
+			errExpected: fmt.Errorf("Field validation for 'RoleARN'"),
+		},
+		"missing role session name": {
+			v: v,
+			opts: []assumerOptions{
+				WithRoleARN("valid:aws:role:arn"),
+			},
+			errExpected: fmt.Errorf("Field validation for 'RoleSessionName'"),
+		},
+	}
+
+	for name, test := range tests {
+		name := name
+		test := test
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			a, err := New(test.v, test.opts...)
+			if test.errExpected != nil {
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, test.expected.RoleARN, a.RoleARN)
+			assert.Equal(t, test.expected.RoleSessionName, a.RoleSessionName)
+		})
+	}
+}
 
 type testAwsClientIamRoleAssumer struct {
 	mock.Mock
@@ -31,8 +97,9 @@ func (t *testAwsClientIamRoleAssumer) AssumeRole(
 	return nil, args.Error(1)
 }
 
-func TestIamRoleAssumer_assumeIamRole(t *testing.T) {
+func TestAssumer_assumeIamRole(t *testing.T) {
 	iamRoleArn := uuid.NewString()
+	sessionName := "test-session"
 	assumeIamRoleErr := fmt.Errorf("test-assume-iam-role-err")
 
 	tests := map[string]struct {
@@ -75,9 +142,12 @@ func TestIamRoleAssumer_assumeIamRole(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			assumer := iamRoleAssumerImpl{}
+			a := assumer{
+				RoleARN:         iamRoleArn,
+				RoleSessionName: sessionName,
+			}
 			client := test.clientFn(t)
-			creds, err := assumer.assumeIamRole(context.Background(), iamRoleArn, client)
+			creds, err := a.assumeIamRole(context.Background(), client)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

@@ -9,47 +9,65 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
-	"github.com/powertoolsdev/go-generics"
+	"github.com/go-playground/validator/v10"
 )
 
-type iamRoleAssumer interface {
-	loadConfigWithAssumeRole(context.Context, string) (aws.Config, error)
-	assumeIamRole(context.Context, string, awsClientIamRoleAssumer) (*sts_types.Credentials, error)
+type assumer struct {
+	RoleARN         string `validate:"required"`
+	RoleSessionName string `validate:"required"`
+
+	// internal state
+	validator *validator.Validate
 }
 
-type iamRoleAssumerImpl struct{}
+type assumerOptions func(*assumer) error
 
-var _ iamRoleAssumer = (*iamRoleAssumerImpl)(nil)
+// New creates a new, validated assumer with the given options
+func New(v *validator.Validate, opts ...assumerOptions) (*assumer, error) {
+	a := &assumer{}
 
-type awsClientIamRoleAssumer interface {
-	AssumeRole(ctx context.Context,
-		params *sts.AssumeRoleInput,
-		optFns ...func(*sts.Options)) (*sts.AssumeRoleOutput, error)
-}
-
-func (r *iamRoleAssumerImpl) assumeIamRole(ctx context.Context, roleArn string, client awsClientIamRoleAssumer) (*sts_types.Credentials, error) {
-	params := &sts.AssumeRoleInput{
-		RoleArn:         &roleArn,
-		RoleSessionName: generics.ToPtr("workers-orgs"),
+	if v == nil {
+		return nil, fmt.Errorf("error instantiating assumer: validator is nil")
 	}
-	resp, err := client.AssumeRole(ctx, params)
-	if err != nil {
+	a.validator = v
+
+	for _, opt := range opts {
+		if err := opt(a); err != nil {
+			return nil, err
+		}
+	}
+	if err := a.validator.Struct(a); err != nil {
 		return nil, err
 	}
-
-	return resp.Credentials, nil
+	return a, nil
 }
 
-// TODO(jm): break this down and test. This code was mainly imported from various other activities that did
-// this manually and probably needs to be redesigned into a more testable fashion.
-func (r *iamRoleAssumerImpl) loadConfigWithAssumeRole(ctx context.Context, roleArn string) (aws.Config, error) {
+// WithRoleARN sets the ARN of the role to assume
+func WithRoleARN(s string) assumerOptions {
+	return func(a *assumer) error {
+		a.RoleARN = s
+		return nil
+	}
+}
+
+// WithRoleSessionName specifies the session name to use when assuming the role
+func WithRoleSessionName(s string) assumerOptions {
+	return func(a *assumer) error {
+		a.RoleSessionName = s
+		return nil
+	}
+}
+
+// LoadConfigWithAssumedRole loads an AWS config using the default credential provider chain
+// to assume the provided role with the provided session name
+func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, error) {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("failed to get default config: %w", err)
 	}
 
 	stsClient := sts.NewFromConfig(cfg)
-	creds, err := r.assumeIamRole(ctx, roleArn, stsClient)
+	creds, err := a.assumeIamRole(ctx, stsClient)
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("failed to assume role: %w", err)
 	}
@@ -61,4 +79,24 @@ func (r *iamRoleAssumerImpl) loadConfigWithAssumeRole(ctx context.Context, roleA
 	}
 
 	return cfg, nil
+}
+
+type awsClientIamRoleAssumer interface {
+	AssumeRole(ctx context.Context,
+		params *sts.AssumeRoleInput,
+		optFns ...func(*sts.Options)) (*sts.AssumeRoleOutput, error)
+}
+
+func (a *assumer) assumeIamRole(ctx context.Context, client awsClientIamRoleAssumer) (*sts_types.Credentials, error) {
+	// TODO(jdt): expose and/or set some of the additional fields - external ID, source identity, tags, duration, etc...
+	params := &sts.AssumeRoleInput{
+		RoleArn:         &a.RoleARN,
+		RoleSessionName: &a.RoleSessionName,
+	}
+	resp, err := client.AssumeRole(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Credentials, nil
 }
