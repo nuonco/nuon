@@ -42,7 +42,7 @@ func (a *Activities) CreateIAMPolicy(ctx context.Context, req CreateIAMPolicyReq
 	}
 
 	client := iam.NewFromConfig(cfg)
-	policyArn, err := a.createIAMPolicy(ctx, client, req)
+	policyArn, err := a.iamPolicyCreator.createIAMPolicy(ctx, client, req)
 	if err != nil {
 		return resp, fmt.Errorf("unable to create odr IAM policy: %w", err)
 	}

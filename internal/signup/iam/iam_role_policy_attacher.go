@@ -39,7 +39,7 @@ func (a *Activities) CreateIAMRolePolicyAttachment(ctx context.Context, req Crea
 	}
 
 	client := iam.NewFromConfig(cfg)
-	if err := a.createIAMRolePolicyAttachment(ctx, client, req.PolicyArn, req.RoleArn); err != nil {
+	if err := a.iamRolePolicyAttachmentCreator.createIAMRolePolicyAttachment(ctx, client, req.PolicyArn, req.RoleArn); err != nil {
 		return resp, fmt.Errorf("unable to create IAM role policy attachment: %w", err)
 	}
 

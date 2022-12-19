@@ -45,7 +45,7 @@ func (a *Activities) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest
 	}
 
 	client := iam.NewFromConfig(cfg)
-	roleArn, err := a.createIAMRole(ctx, client, req)
+	roleArn, err := a.iamRoleCreator.createIAMRole(ctx, client, req)
 	if err != nil {
 		return resp, fmt.Errorf("unable to create odr IAM role: %w", err)
 	}

@@ -9,9 +9,14 @@ func InstallationsIAMName(orgID string) string {
 	return fmt.Sprintf("org-installations-access-%s", orgID)
 }
 
+// InstallationsIAMPolicy generates the policy for the installations role
+// bucketName is expected to be the install bucket in the orgs account(?)
+// orgID is expected to be the shortID of the org for this role
 func InstallationsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 	policy := iamRolePolicy{
 		Version: defaultIAMPolicyVersion,
+
+		// allow the role to read/write the orgID prefix of the bucketName bucket
 		Statement: []iamRoleStatement{
 			{
 				Effect: "Allow",
@@ -30,6 +35,10 @@ func InstallationsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 	return byts, nil
 }
 
+// TODO(jdt): figure out how to restrict this to specific service accounts
+// InstallationsIAMTrustPolicy generates the trust policy for the installations role
+// The trust policy gives access to any service account in the default namespace of the cluster
+// that the oidcProviderARN and oidcProviderURL belong to
 func InstallationsIAMTrustPolicy(oidcProviderARN, oidcProviderURL string) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
