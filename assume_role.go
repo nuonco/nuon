@@ -9,11 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
+	"github.com/powertoolsdev/go-generics"
 )
-
-func toPtr[T any](t T) *T {
-	return &t
-}
 
 type iamRoleAssumer interface {
 	loadConfigWithAssumeRole(context.Context, string) (aws.Config, error)
@@ -32,8 +29,8 @@ type awsClientIamRoleAssumer interface {
 
 func (r *iamRoleAssumerImpl) assumeIamRole(ctx context.Context, roleArn string, client awsClientIamRoleAssumer) (*sts_types.Credentials, error) {
 	params := &sts.AssumeRoleInput{
-		RoleArn:         toPtr(roleArn),
-		RoleSessionName: toPtr("workers-orgs"),
+		RoleArn:         &roleArn,
+		RoleSessionName: generics.ToPtr("workers-orgs"),
 	}
 	resp, err := client.AssumeRole(ctx, params)
 	if err != nil {
