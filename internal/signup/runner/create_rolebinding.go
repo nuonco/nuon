@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-kube"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apimetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,10 +61,6 @@ func (a *Activities) CreateRoleBinding(
 	return resp, nil
 }
 
-func toPtr[T any](t T) *T {
-	return &t
-}
-
 // k8sRoleBindingCreator is the interface to kubernetes that we use to actually create the service
 type k8sRoleBindingCreator interface {
 	Apply(context.Context, *rbacapplyv1.RoleBindingApplyConfiguration, apimetav1.ApplyOptions) (*rbacv1.RoleBinding, error)
@@ -85,15 +82,15 @@ func (roleBindingCreatorImpl) createRoleBinding(ctx context.Context, client k8sR
 	})
 	rb.Subjects = []rbacapplyv1.SubjectApplyConfiguration{
 		{
-			Kind:      toPtr("ServiceAccount"),
-			Name:      toPtr(svcAccountName),
-			Namespace: toPtr(req.NamespaceName),
+			Kind:      generics.ToPtr("ServiceAccount"),
+			Name:      &svcAccountName,
+			Namespace: &req.NamespaceName,
 		},
 	}
 	rb.RoleRef = &rbacapplyv1.RoleRefApplyConfiguration{
-		APIGroup: toPtr("rbac.authorization.k8s.io"),
-		Kind:     toPtr("ClusterRole"),
-		Name:     toPtr("edit"),
+		APIGroup: generics.ToPtr("rbac.authorization.k8s.io"),
+		Kind:     generics.ToPtr("ClusterRole"),
+		Name:     generics.ToPtr("edit"),
 	}
 
 	_, err := client.Apply(ctx, rb, apimetav1.ApplyOptions{

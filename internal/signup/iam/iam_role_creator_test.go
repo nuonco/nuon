@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -28,7 +29,7 @@ func (t *testAwsClientIAMRoleCreator) CreateRole(ctx context.Context, req *iam.C
 
 func Test_iamRoleCreatorImpl_createIAMRole(t *testing.T) {
 	testIAMRoleErr := fmt.Errorf("test-iam-role-err")
-	req := getFakeObj[CreateIAMRoleRequest]()
+	req := generics.GetFakeObj[CreateIAMRoleRequest]()
 
 	tests := map[string]struct {
 		clientFn    func(*testing.T) awsClientIAMRoleCreator
@@ -40,7 +41,7 @@ func Test_iamRoleCreatorImpl_createIAMRole(t *testing.T) {
 				client := &testAwsClientIAMRoleCreator{}
 				resp := &iam.CreateRoleOutput{
 					Role: &iam_types.Role{
-						Arn: toPtr("output-role-arn"),
+						Arn: generics.ToPtr("output-role-arn"),
 					},
 				}
 				client.On("CreateRole", mock.Anything, mock.Anything, mock.Anything).Return(resp, nil)

@@ -9,7 +9,7 @@ import (
 )
 
 type CreateIAMRolePolicyAttachmentRequest struct {
-	OrgsIAMAccessRoleArn string `validate:"required" json:"orgs_iam_access_role_arn"`
+	AssumeRoleARN string `validate:"required" json:"assume_role_arn"`
 
 	PolicyArn string `validate:"required" json:"policy_arn"`
 	RoleArn   string `validate:"required" json:"role_arn"`
@@ -28,7 +28,7 @@ func (a *Activities) CreateIAMRolePolicyAttachment(ctx context.Context, req Crea
 		return resp, fmt.Errorf("unable to validate request: %w", err)
 	}
 
-	cfg, err := a.loadConfigWithAssumeRole(ctx, req.OrgsIAMAccessRoleArn)
+	cfg, err := a.loadConfigWithAssumeRole(ctx, req.AssumeRoleARN)
 	if err != nil {
 		return resp, fmt.Errorf("unable to assume role: %w", err)
 	}
@@ -55,8 +55,8 @@ type awsClientIAMRolePolicyAttacher interface {
 
 func (o *iamRolePolicyAttachmentCreatorImpl) createIAMRolePolicyAttachment(ctx context.Context, client awsClientIAMRolePolicyAttacher, policyArn, roleArn string) error {
 	params := &iam.AttachRolePolicyInput{
-		PolicyArn: toPtr(policyArn),
-		RoleName:  toPtr(roleArn),
+		PolicyArn: &policyArn,
+		RoleName:  &roleArn,
 	}
 	_, err := client.AttachRolePolicy(ctx, params)
 	if err != nil {

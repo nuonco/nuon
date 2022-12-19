@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -28,7 +29,7 @@ func (t *testAwsClientIAMPolicy) CreatePolicy(ctx context.Context, req *iam.Crea
 
 func Test_odrIAMPolicyCreatorImpl_createOdrIAMPolicy(t *testing.T) {
 	testIAMPolicyErr := fmt.Errorf("test-iam-policy-err")
-	req := getFakeObj[CreateIAMPolicyRequest]()
+	req := generics.GetFakeObj[CreateIAMPolicyRequest]()
 
 	tests := map[string]struct {
 		clientFn    func(*testing.T) awsClientIAMPolicy
@@ -40,7 +41,7 @@ func Test_odrIAMPolicyCreatorImpl_createOdrIAMPolicy(t *testing.T) {
 				client := &testAwsClientIAMPolicy{}
 				resp := &iam.CreatePolicyOutput{
 					Policy: &iam_types.Policy{
-						Arn: toPtr("policy-arn-test"),
+						Arn: generics.ToPtr("policy-arn-test"),
 					},
 				}
 				client.On("CreatePolicy", mock.Anything, mock.Anything, mock.Anything).Return(resp, nil)

@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-generics"
 )
 
 const (
@@ -16,7 +17,7 @@ const (
 )
 
 type CreateIAMRoleRequest struct {
-	OrgsIAMAccessRoleArn string `validate:"required" json:"orgs_iam_access_role_arn"`
+	AssumeRoleARN string `validate:"required" json:"assume_role_arn"`
 
 	RoleName            string      `validate:"required" json:"role_name"`
 	RolePath            string      `validate:"required" json:"role_path"`
@@ -34,7 +35,7 @@ func (a *Activities) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest
 		return resp, fmt.Errorf("unable to validate request: %w", err)
 	}
 
-	cfg, err := a.loadConfigWithAssumeRole(ctx, req.OrgsIAMAccessRoleArn)
+	cfg, err := a.loadConfigWithAssumeRole(ctx, req.AssumeRoleARN)
 	if err != nil {
 		return resp, fmt.Errorf("unable to assume role: %w", err)
 	}
@@ -70,16 +71,16 @@ func (o *iamRoleCreatorImpl) createIAMRole(ctx context.Context, client awsClient
 	tags := make([]iam_types.Tag, 0, len(req.RoleTags)+1)
 	for _, pair := range req.RoleTags {
 		tags = append(tags, iam_types.Tag{
-			Key:   toPtr(pair[0]),
-			Value: toPtr(pair[1]),
+			Key:   &pair[0],
+			Value: &pair[1],
 		})
 	}
 
 	params := &iam.CreateRoleInput{
-		AssumeRolePolicyDocument: toPtr(req.TrustPolicyDocument),
-		RoleName:                 toPtr(req.RoleName),
-		MaxSessionDuration:       toPtr(int32(defaultIAMRoleSessionDuration.Seconds())),
-		Path:                     toPtr(req.RolePath),
+		AssumeRolePolicyDocument: &req.TrustPolicyDocument,
+		RoleName:                 &req.RoleName,
+		MaxSessionDuration:       generics.ToPtr(int32(defaultIAMRoleSessionDuration.Seconds())),
+		Path:                     &req.RolePath,
 		Tags:                     tags,
 	}
 
