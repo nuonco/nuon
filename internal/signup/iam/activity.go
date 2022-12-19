@@ -3,9 +3,9 @@ package iam
 import "github.com/go-playground/validator/v10"
 
 type Activities struct {
-	iamPolicyCreator
-	iamRoleCreator
-	iamRolePolicyAttachmentCreator
+	iamPolicyCreator               iamPolicyCreator
+	iamRoleCreator                 iamRoleCreator
+	iamRolePolicyAttachmentCreator iamRolePolicyAttachmentCreator
 
 	validator *validator.Validate
 }

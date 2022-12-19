@@ -13,6 +13,9 @@ func runnerOdrServiceAccountName(orgID string) string {
 	return fmt.Sprintf("waypoint-odr-%s", orgID)
 }
 
+// OdrIAMPolicy generates the policy for the deployment role
+// bucketName is expected to be the deployments bucket in the orgs account
+// orgID is expected to be the shortID of the org for this role
 func OdrIAMPolicy(ecrRegistryARN, orgID string) ([]byte, error) {
 	policy := iamRolePolicy{
 		Version: defaultIAMPolicyVersion,
@@ -41,6 +44,9 @@ func OdrIAMPolicy(ecrRegistryARN, orgID string) ([]byte, error) {
 	return byts, nil
 }
 
+// OdrIAMTrustPolicy generates the trust policy for the ODR role
+// The trust policy gives access to the runner service account of the cluster
+// that the oidcProviderARN and oidcProviderURL belong to
 func OdrIAMTrustPolicy(oidcProviderARN, oidcProviderURL, orgID string) ([]byte, error) {
 	conditionKey := fmt.Sprintf("%s:sub", oidcProviderURL)
 	conditionValue := fmt.Sprintf("system:serviceaccount:%s:%s", orgID, runnerOdrServiceAccountName(orgID))
