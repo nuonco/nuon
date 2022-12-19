@@ -859,6 +859,10 @@ github.com/powertoolsdev/protos v0.0.0-20221216205825-51580a26418e h1:PqNJy8j1gX
 github.com/powertoolsdev/protos v0.0.0-20221216205825-51580a26418e/go.mod h1:/fT3M1Kbm9h8u/Hp0XsgSCDpOeUo1iZ//x67KXbfYLc=
 github.com/powertoolsdev/protos v0.0.0-20221219023227-c3ddea9b9912 h1:a4P0e3yXobwxdOI0uATbNjTQw2Z2fBjLuhIIK50I//U=
 github.com/powertoolsdev/protos v0.0.0-20221219023227-c3ddea9b9912/go.mod h1:/fT3M1Kbm9h8u/Hp0XsgSCDpOeUo1iZ//x67KXbfYLc=
+github.com/powertoolsdev/protos v0.0.0-20221219184636-c7de9bdcc93c h1:IcT5/emmZ3DTfcIDgKyrgLcKHvee6HDepkhhe/3PtuA=
+github.com/powertoolsdev/protos v0.0.0-20221219184636-c7de9bdcc93c/go.mod h1:/fT3M1Kbm9h8u/Hp0XsgSCDpOeUo1iZ//x67KXbfYLc=
+github.com/powertoolsdev/protos v0.0.0-20221219190310-aa26dc8b7dd4 h1:D2IaYbAhY/wsje4e2bzu/nxmnRKXIboR8CVC/td+aoI=
+github.com/powertoolsdev/protos v0.0.0-20221219190310-aa26dc8b7dd4/go.mod h1:/fT3M1Kbm9h8u/Hp0XsgSCDpOeUo1iZ//x67KXbfYLc=
 github.com/poy/onpar v0.0.0-20190519213022-ee068f8ea4d1/go.mod h1:nSbFQvMj97ZyhFRSJYtut+msi4sOY6zJDGCdSc+/rZU=
 github.com/poy/onpar v1.1.2 h1:QaNrNiZx0+Nar5dLgTVp5mXkyoVFIbepjyEoGSnhbAY=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=

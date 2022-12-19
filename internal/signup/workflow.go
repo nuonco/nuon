@@ -55,7 +55,7 @@ func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgs
 	})
 
 	l.Debug("provisioning iam for org")
-	_, err = execProvisionIAMWorkflow(ctx, w.cfg, &iamv1.ProvisionIAMRequest{
+	iamResp, err := execProvisionIAMWorkflow(ctx, w.cfg, &iamv1.ProvisionIAMRequest{
 		OrgId: id,
 	})
 	if err != nil {
@@ -73,7 +73,8 @@ func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgs
 
 	l.Debug("installing waypoint org runner")
 	_, err = execInstallWaypointRunnerWorkflow(ctx, w.cfg, &runnerv1.InstallRunnerRequest{
-		OrgId: id,
+		OrgId:         id,
+		OdrIamRoleArn: iamResp.OdrRoleArn,
 	})
 	if err != nil {
 		return resp, fmt.Errorf("failed to install runner: %w", err)

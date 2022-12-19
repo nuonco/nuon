@@ -70,37 +70,6 @@ func (w wkflow) Install(ctx workflow.Context, req *runnerv1.InstallRunnerRequest
 	// the actual struct isn't used by temporal during dispatch at all
 	act := NewActivities(workers.Config{})
 
-	coipRequest := CreateOdrIAMPolicyRequest{
-		OrgID: req.OrgId,
-
-		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
-		ECRRegistryArn:       w.cfg.OrgsECRRegistryArn,
-	}
-	coipResp, err := execCreateOdrIAMPolicy(ctx, act, coipRequest)
-	if err != nil {
-		err = fmt.Errorf("failed to create odr IAM policy: %w", err)
-		l.Debug(err.Error())
-		return resp, err
-	}
-	l.Debug("successfully created odr IAM policy")
-
-	coirRequest := CreateOdrIAMRoleRequest{
-		OrgID: req.OrgId,
-
-		OrgsIAMOidcProviderURL: w.cfg.OrgsIAMOidcProviderURL,
-		OrgsIAMAccessRoleArn:   w.cfg.OrgsIAMAccessRoleArn,
-		OrgsIAMOidcProviderArn: w.cfg.OrgsIAMOidcProviderArn,
-		ECRRegistryArn:         w.cfg.OrgsECRRegistryArn,
-		PolicyArn:              coipResp.PolicyArn,
-	}
-	coirResp, err := execCreateOdrIAMRole(ctx, act, coirRequest)
-	if err != nil {
-		err = fmt.Errorf("failed to create odr IAM role: %w", err)
-		l.Debug(err.Error())
-		return resp, err
-	}
-	l.Debug("successfully created odr IAM role")
-
 	// get waypoint server cookie
 	gwscReq := GetWaypointServerCookieRequest{
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
@@ -128,7 +97,7 @@ func (w wkflow) Install(ctx workflow.Context, req *runnerv1.InstallRunnerRequest
 			Cookie:        gwscResp.Cookie,
 			ID:            req.OrgId,
 			ServerAddr:    orgServerAddr,
-			OdrIAMRoleArn: coirResp.IAMRoleArn,
+			OdrIAMRoleArn: req.OdrIamRoleArn,
 		},
 	}
 	_, err = installWaypoint(ctx, act, iwReq)
@@ -321,50 +290,6 @@ func createRoleBinding(
 
 	l.Debug("executing create role binding activity")
 	fut := workflow.ExecuteActivity(ctx, act.CreateRoleBinding, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-// createOdrIAMRole: creates the odr IAM role
-func execCreateOdrIAMRole(
-	ctx workflow.Context,
-	act *Activities,
-	req CreateOdrIAMRoleRequest,
-) (CreateOdrIAMRoleResponse, error) {
-	var resp CreateOdrIAMRoleResponse
-	l := workflow.GetLogger(ctx)
-
-	if err := req.validate(); err != nil {
-		return resp, err
-	}
-
-	l.Debug("executing create odr IAM role")
-	fut := workflow.ExecuteActivity(ctx, act.CreateOdrIAMRole, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-// execCreateOdrIAMPolicy: creates the odr IAM policy
-func execCreateOdrIAMPolicy(
-	ctx workflow.Context,
-	act *Activities,
-	req CreateOdrIAMPolicyRequest,
-) (CreateOdrIAMPolicyResponse, error) {
-	var resp CreateOdrIAMPolicyResponse
-	l := workflow.GetLogger(ctx)
-
-	if err := req.validate(); err != nil {
-		return resp, err
-	}
-
-	l.Debug("executing create odr IAM role")
-	fut := workflow.ExecuteActivity(ctx, act.CreateOdrIAMPolicy, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}

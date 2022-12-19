@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/go-common/shortid"
+	"github.com/powertoolsdev/go-generics"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	iamv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/iam/v1"
 	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
@@ -51,7 +52,7 @@ func Test_Workflow(t *testing.T) {
 
 	env.OnWorkflow(iamer.ProvisionIAM, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *iamv1.ProvisionIAMRequest) (*iamv1.ProvisionIAMResponse, error) {
-			var resp *iamv1.ProvisionIAMResponse
+			resp := generics.GetFakeObj[*iamv1.ProvisionIAMResponse]()
 			assert.Nil(t, r.Validate())
 			return resp, nil
 		})
