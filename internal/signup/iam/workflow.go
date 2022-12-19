@@ -12,6 +12,8 @@ import (
 
 const (
 	defaultActivityTimeout time.Duration = time.Second * 10
+	defaultIAMPolicyPath   string        = "/orgs/"
+	defaultIAMRolePath     string        = "/orgs/"
 )
 
 // NewWorkflow returns a new workflow executor
@@ -42,29 +44,103 @@ func (w wkflow) ProvisionIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReques
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
-	l.Debug("creating deployments bucket IAM role")
-	dbrRequest := CreateDeploymentsBucketRoleRequest{}
-	_, err := execCreateDeploymentsBucketRoleRequest(ctx, act, dbrRequest)
+	// create deployments
+	l.Debug("creating deployments iam policy for org %s", req.OrgId)
+	deploymentsPolicy, err := deploymentsIAMPolicy(w.cfg.OrgDeploymentsBucketName, req.OrgId)
 	if err != nil {
-		err = fmt.Errorf("failed to create deployments bucket role: %w", err)
-		l.Debug(err.Error())
+		return resp, fmt.Errorf("unable to create deployments IAM policy document: %w", err)
+	}
+	cdpReq := CreateIAMPolicyRequest{
+		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
+		PolicyName:           deploymentsIAMName(req.OrgId),
+		PolicyPath:           defaultIAMPolicyPath,
+		PolicyDocument:       string(deploymentsPolicy),
+	}
+	cdpResp, err := execCreateIAMPolicy(ctx, act, cdpReq)
+	if err != nil {
+		return resp, fmt.Errorf("unable to create deployments IAM policy: %w", err)
+	}
+
+	l.Debug("creating deployments iam rol for org %s", req.OrgId)
+	deploymentsTrustPolicy, err := deploymentsIAMTrustPolicy(w.cfg)
+	if err != nil {
+		return resp, fmt.Errorf("unable to create deployments IAM trust policy document: %w", err)
+	}
+	cdrReq := CreateIAMRoleRequest{
+		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
+		RoleName:             deploymentsIAMName(req.OrgId),
+		RolePath:             defaultIAMRolePath,
+		TrustPolicyDocument:  string(deploymentsTrustPolicy),
+		RoleTags:             defaultTags(req.OrgId),
+	}
+	cdrResp, err := execCreateIAMRole(ctx, act, cdrReq)
+	if err != nil {
+		return resp, fmt.Errorf("unable to create deployments IAM role: %w", err)
+	}
+
+	l.Debug("creating deployments iam policy attachment for org %s", req.OrgId)
+	cdpaReq := CreateIAMRolePolicyAttachmentRequest{
+		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
+		PolicyArn:            cdpResp.PolicyArn,
+		RoleArn:              cdrResp.RoleArn,
+	}
+	_, err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
+	if err != nil {
+		return resp, fmt.Errorf("unable to create deployments IAM role policy attachment: %w", err)
+	}
+
+	return resp, nil
+}
+
+func execCreateIAMPolicy(
+	ctx workflow.Context,
+	act *Activities,
+	req CreateIAMPolicyRequest,
+) (CreateIAMPolicyResponse, error) {
+	var resp CreateIAMPolicyResponse
+
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing create iam policy activity")
+	fut := workflow.ExecuteActivity(ctx, act.CreateIAMPolicy, req)
+
+	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
 
 	return resp, nil
 }
 
-func execCreateDeploymentsBucketRoleRequest(
+func execCreateIAMRole(
 	ctx workflow.Context,
 	act *Activities,
-	req CreateDeploymentsBucketRoleRequest,
-) (CreateDeploymentsBucketRoleResponse, error) {
-	var resp CreateDeploymentsBucketRoleResponse
+	req CreateIAMRoleRequest,
+) (CreateIAMRoleResponse, error) {
+	var resp CreateIAMRoleResponse
 
 	l := workflow.GetLogger(ctx)
 
-	l.Debug("executing ping waypoint server activity")
-	fut := workflow.ExecuteActivity(ctx, act.CreateDeploymentsBucketRole, req)
+	l.Debug("executing create iam role activity")
+	fut := workflow.ExecuteActivity(ctx, act.CreateIAMRole, req)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func execCreateIAMRolePolicyAttachment(
+	ctx workflow.Context,
+	act *Activities,
+	req CreateIAMRolePolicyAttachmentRequest,
+) (CreateIAMRolePolicyAttachmentResponse, error) {
+	var resp CreateIAMRolePolicyAttachmentResponse
+
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing create iam role policy attachment activity")
+	fut := workflow.ExecuteActivity(ctx, act.CreateIAMRolePolicyAttachment, req)
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
