@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/go-generics"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,7 +38,7 @@ func Test_installationsIAMName(t *testing.T) {
 }
 
 func Test_installationsIAMTrustPolicy(t *testing.T) {
-	cfg := getFakeObj[workers.Config]()
+	cfg := generics.GetFakeObj[workers.Config]()
 	doc, err := installationsIAMTrustPolicy(cfg)
 	assert.NoError(t, err)
 

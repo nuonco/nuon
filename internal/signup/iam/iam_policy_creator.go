@@ -9,7 +9,7 @@ import (
 )
 
 type CreateIAMPolicyRequest struct {
-	OrgsIAMAccessRoleArn string `validate:"required" json:"orgs_iam_access_role_arn"`
+	AssumeRoleARN string `validate:"required" json:"assume_role_arn"`
 
 	PolicyName     string `validate:"required" json:"policy_name"`
 	PolicyPath     string `validate:"required" json:"policy_path"`
@@ -31,7 +31,7 @@ func (a *Activities) CreateIAMPolicy(ctx context.Context, req CreateIAMPolicyReq
 		return resp, fmt.Errorf("unable to validate request: %w", err)
 	}
 
-	cfg, err := a.loadConfigWithAssumeRole(ctx, req.OrgsIAMAccessRoleArn)
+	cfg, err := a.loadConfigWithAssumeRole(ctx, req.AssumeRoleARN)
 	if err != nil {
 		return resp, fmt.Errorf("unable to assume role: %w", err)
 	}
@@ -60,9 +60,9 @@ type awsClientIAMPolicy interface {
 
 func (o *iamPolicyCreatorImpl) createIAMPolicy(ctx context.Context, client awsClientIAMPolicy, req CreateIAMPolicyRequest) (string, error) {
 	params := &iam.CreatePolicyInput{
-		PolicyDocument: toPtr(req.PolicyDocument),
-		PolicyName:     toPtr(req.PolicyName),
-		Path:           toPtr(req.PolicyPath),
+		PolicyDocument: &req.PolicyDocument,
+		PolicyName:     &req.PolicyName,
+		Path:           &req.PolicyPath,
 	}
 
 	output, err := client.CreatePolicy(ctx, params)

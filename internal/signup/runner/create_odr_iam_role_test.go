@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -61,7 +62,7 @@ func Test_odrIAMRoleCreatorImpl_createOdrIAMRole(t *testing.T) {
 				client := &testAwsClientIAM{}
 				resp := &iam.CreateRoleOutput{
 					Role: &iam_types.Role{
-						Arn: toPtr("output-role-arn"),
+						Arn: generics.ToPtr("output-role-arn"),
 					},
 				}
 				client.On("CreateRole", mock.Anything, mock.Anything, mock.Anything).Return(resp, nil)

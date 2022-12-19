@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-kube"
 	"go.temporal.io/sdk/activity"
 	corev1 "k8s.io/api/core/v1"
@@ -73,11 +74,6 @@ type svcCreator struct{}
 
 var _ serviceCreator = (*svcCreator)(nil)
 
-// TODO(jm): move this into the kube package
-func toPtr[T any](t T) *T {
-	return &t
-}
-
 func (s *svcCreator) createService(ctx context.Context, api k8sServiceCreator, req ExposeWaypointServerRequest) (*corev1.Service, error) {
 	name := fmt.Sprintf("wp-%s-waypoint-server-public", req.ShortID)
 	hostname := fmt.Sprintf("%s.%s", req.ShortID, req.RootDomain)
@@ -98,11 +94,11 @@ func (s *svcCreator) createService(ctx context.Context, api k8sServiceCreator, r
 	}
 
 	cfg.Spec = &coreapplyv1.ServiceSpecApplyConfiguration{
-		Type:                          toPtr[corev1.ServiceType](corev1.ServiceTypeLoadBalancer),
-		LoadBalancerClass:             toPtr[string]("service.k8s.aws/nlb"),
-		AllocateLoadBalancerNodePorts: toPtr[bool](false),
-		ExternalTrafficPolicy:         toPtr[corev1.ServiceExternalTrafficPolicyType](corev1.ServiceExternalTrafficPolicyTypeLocal),
-		InternalTrafficPolicy:         toPtr[corev1.ServiceInternalTrafficPolicyType](corev1.ServiceInternalTrafficPolicyLocal),
+		Type:                          generics.ToPtr(corev1.ServiceTypeLoadBalancer),
+		LoadBalancerClass:             generics.ToPtr("service.k8s.aws/nlb"),
+		AllocateLoadBalancerNodePorts: generics.ToPtr(false),
+		ExternalTrafficPolicy:         generics.ToPtr(corev1.ServiceExternalTrafficPolicyTypeLocal),
+		InternalTrafficPolicy:         generics.ToPtr(corev1.ServiceInternalTrafficPolicyLocal),
 		Selector: map[string]string{
 			"app.kubernetes.io/instance": fmt.Sprintf("wp-%s", req.ShortID),
 			"app.kubernetes.io/name":     "waypoint",
@@ -110,9 +106,9 @@ func (s *svcCreator) createService(ctx context.Context, api k8sServiceCreator, r
 		},
 		Ports: []coreapplyv1.ServicePortApplyConfiguration{
 			{
-				Name:       toPtr[string]("grpc"),
-				TargetPort: toPtr[intstr.IntOrString](intstr.FromString("grpc")),
-				Port:       toPtr[int32](defaultWaypointServerPort),
+				Name:       generics.ToPtr("grpc"),
+				TargetPort: generics.ToPtr(intstr.FromString("grpc")),
+				Port:       generics.ToPtr(defaultWaypointServerPort),
 			},
 		},
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/powertoolsdev/go-generics"
 	iamv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/iam/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
@@ -16,7 +17,7 @@ import (
 func Test_Workflow(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	cfg := getFakeObj[workers.Config]()
+	cfg := generics.GetFakeObj[workers.Config]()
 
 	wkfl := runner.NewWorkflow(cfg)
 	env.RegisterWorkflow(wkfl.Install)
@@ -24,7 +25,7 @@ func Test_Workflow(t *testing.T) {
 	wf := NewWorkflow(cfg)
 	a := NewActivities()
 
-	req := getFakeObj[*iamv1.ProvisionIAMRequest]()
+	req := generics.GetFakeObj[*iamv1.ProvisionIAMRequest]()
 
 	// Mock activity implementations
 	env.OnActivity(a.CreateDeploymentsBucketRole, mock.Anything, mock.Anything).

@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gogo/status"
 	pb "github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-kube"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -125,11 +126,11 @@ func (w *wpServerBootstrapper) storeBootstrapToken(ctx context.Context, client k
 	secretName := fmt.Sprintf("waypoint-bootstrap-token-%v", id)
 	secret := &coreapplyv1.SecretApplyConfiguration{
 		TypeMetaApplyConfiguration: metaapplyv1.TypeMetaApplyConfiguration{
-			Kind:       toPtr[string]("Secret"),
-			APIVersion: toPtr[string]("v1"),
+			Kind:       generics.ToPtr("Secret"),
+			APIVersion: generics.ToPtr("v1"),
 		},
 		ObjectMetaApplyConfiguration: &metaapplyv1.ObjectMetaApplyConfiguration{
-			Name: toPtr[string](secretName),
+			Name: generics.ToPtr(secretName),
 			Labels: map[string]string{
 				"app.kubernetes.io/managed-by": "nuon",
 			},
@@ -137,7 +138,7 @@ func (w *wpServerBootstrapper) storeBootstrapToken(ctx context.Context, client k
 		StringData: map[string]string{
 			"token": token,
 		},
-		Type: toPtr[corev1.SecretType](corev1.SecretTypeOpaque),
+		Type: generics.ToPtr(corev1.SecretTypeOpaque),
 	}
 	applyOpts := metav1.ApplyOptions{
 		FieldManager: "nuon-store-bootstrap-token-activity",

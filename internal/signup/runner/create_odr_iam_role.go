@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-generics"
 )
 
 const (
@@ -110,18 +111,18 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client aws
 	}
 
 	params := &iam.CreateRoleInput{
-		AssumeRolePolicyDocument: toPtr(string(trustPolicyDoc)),
-		RoleName:                 toPtr(odrIAMRoleName(req.OrgID)),
-		MaxSessionDuration:       toPtr(int32(defaultIAMRoleSessionDuration.Seconds())),
-		Path:                     toPtr("/orgs/"),
+		AssumeRolePolicyDocument: generics.ToPtr(string(trustPolicyDoc)),
+		RoleName:                 generics.ToPtr(odrIAMRoleName(req.OrgID)),
+		MaxSessionDuration:       generics.ToPtr(int32(defaultIAMRoleSessionDuration.Seconds())),
+		Path:                     generics.ToPtr("/orgs/"),
 		Tags: []iam_types.Tag{
 			{
-				Key:   toPtr("org-id"),
-				Value: toPtr(req.OrgID),
+				Key:   generics.ToPtr("org-id"),
+				Value: &req.OrgID,
 			},
 			{
-				Key:   toPtr("managed-by"),
-				Value: toPtr("workers-orgs"),
+				Key:   generics.ToPtr("managed-by"),
+				Value: generics.ToPtr("workers-orgs"),
 			},
 		},
 	}
@@ -136,8 +137,8 @@ func (o *odrIAMRoleCreatorImpl) createOdrIAMRole(ctx context.Context, client aws
 
 func (o *odrIAMRoleCreatorImpl) createOdrIAMRolePolicyAttachment(ctx context.Context, client awsClientIAMRole, policyArn string, req CreateOdrIAMRoleRequest) error {
 	params := &iam.AttachRolePolicyInput{
-		PolicyArn: toPtr(policyArn),
-		RoleName:  toPtr(odrIAMRoleName(req.OrgID)),
+		PolicyArn: &policyArn,
+		RoleName:  generics.ToPtr(odrIAMRoleName(req.OrgID)),
 	}
 	_, err := client.AttachRolePolicy(ctx, params)
 	if err != nil {

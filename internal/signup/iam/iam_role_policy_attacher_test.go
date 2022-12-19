@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -27,7 +28,7 @@ func (t *testAwsClientIAMRolePolicyAttacher) AttachRolePolicy(ctx context.Contex
 
 func Test_iamRoleCreatorImpl_createIAMRolePolicyAttachment(t *testing.T) {
 	testIAMRolePolicyAttachErr := fmt.Errorf("test-iam-role-policy-attach-err")
-	req := getFakeObj[CreateIAMRolePolicyAttachmentRequest]()
+	req := generics.GetFakeObj[CreateIAMRolePolicyAttachmentRequest]()
 
 	tests := map[string]struct {
 		clientFn    func(*testing.T) awsClientIAMRolePolicyAttacher

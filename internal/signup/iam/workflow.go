@@ -38,10 +38,10 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 		return fmt.Errorf("unable to create IAM policy document: %w", err)
 	}
 	cdpReq := CreateIAMPolicyRequest{
-		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
-		PolicyName:           installationsIAMName(req.OrgId),
-		PolicyPath:           defaultIAMPolicyPath,
-		PolicyDocument:       string(installationsPolicy),
+		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
+		PolicyName:     installationsIAMName(req.OrgId),
+		PolicyPath:     defaultIAMPolicyPath,
+		PolicyDocument: string(installationsPolicy),
 	}
 	cdpResp, err := execCreateIAMPolicy(ctx, act, cdpReq)
 	if err != nil {
@@ -54,11 +54,11 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 		return fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
 	cdrReq := CreateIAMRoleRequest{
-		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
-		RoleName:             installationsIAMName(req.OrgId),
-		RolePath:             defaultIAMRolePath,
-		TrustPolicyDocument:  string(installationsTrustPolicy),
-		RoleTags:             defaultTags(req.OrgId),
+		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
+		RoleName:            installationsIAMName(req.OrgId),
+		RolePath:            defaultIAMRolePath,
+		TrustPolicyDocument: string(installationsTrustPolicy),
+		RoleTags:            defaultTags(req.OrgId),
 	}
 	cdrResp, err := execCreateIAMRole(ctx, act, cdrReq)
 	if err != nil {
@@ -67,9 +67,9 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 
 	l.Debug("creating iam policy attachment for org %s", req.OrgId)
 	cdpaReq := CreateIAMRolePolicyAttachmentRequest{
-		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
-		PolicyArn:            cdpResp.PolicyArn,
-		RoleArn:              cdrResp.RoleArn,
+		AssumeRoleARN: w.cfg.OrgsIAMAccessRoleArn,
+		PolicyArn:     cdpResp.PolicyArn,
+		RoleArn:       cdrResp.RoleArn,
 	}
 	err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
 	if err != nil {
@@ -90,10 +90,10 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 		return fmt.Errorf("unable to create IAM policy document: %w", err)
 	}
 	cdpReq := CreateIAMPolicyRequest{
-		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
-		PolicyName:           deploymentsIAMName(req.OrgId),
-		PolicyPath:           defaultIAMPolicyPath,
-		PolicyDocument:       string(deploymentsPolicy),
+		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
+		PolicyName:     deploymentsIAMName(req.OrgId),
+		PolicyPath:     defaultIAMPolicyPath,
+		PolicyDocument: string(deploymentsPolicy),
 	}
 	cdpResp, err := execCreateIAMPolicy(ctx, act, cdpReq)
 	if err != nil {
@@ -106,11 +106,11 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 		return fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
 	cdrReq := CreateIAMRoleRequest{
-		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
-		RoleName:             deploymentsIAMName(req.OrgId),
-		RolePath:             defaultIAMRolePath,
-		TrustPolicyDocument:  string(deploymentsTrustPolicy),
-		RoleTags:             defaultTags(req.OrgId),
+		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
+		RoleName:            deploymentsIAMName(req.OrgId),
+		RolePath:            defaultIAMRolePath,
+		TrustPolicyDocument: string(deploymentsTrustPolicy),
+		RoleTags:            defaultTags(req.OrgId),
 	}
 	cdrResp, err := execCreateIAMRole(ctx, act, cdrReq)
 	if err != nil {
@@ -119,9 +119,9 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 
 	l.Debug("creating iam policy attachment for org %s", req.OrgId)
 	cdpaReq := CreateIAMRolePolicyAttachmentRequest{
-		OrgsIAMAccessRoleArn: w.cfg.OrgsIAMAccessRoleArn,
-		PolicyArn:            cdpResp.PolicyArn,
-		RoleArn:              cdrResp.RoleArn,
+		AssumeRoleARN: w.cfg.OrgsIAMAccessRoleArn,
+		PolicyArn:     cdpResp.PolicyArn,
+		RoleArn:       cdrResp.RoleArn,
 	}
 	err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
 	if err != nil {

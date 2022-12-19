@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-generics"
 )
 
 func odrIAMPolicyName(orgID string) string {
@@ -95,9 +96,9 @@ func (o *odrIAMPolicyCreatorImpl) createOdrIAMPolicy(ctx context.Context, client
 	}
 
 	params := &iam.CreatePolicyInput{
-		PolicyDocument: toPtr(string(byts)),
-		PolicyName:     toPtr(odrIAMPolicyName(req.OrgID)),
-		Path:           toPtr("/orgs/"),
+		PolicyDocument: generics.ToPtr(string(byts)),
+		PolicyName:     generics.ToPtr(odrIAMPolicyName(req.OrgID)),
+		Path:           generics.ToPtr("/orgs/"),
 	}
 
 	output, err := client.CreatePolicy(ctx, params)
