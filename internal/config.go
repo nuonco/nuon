@@ -51,6 +51,10 @@ type Config struct {
 	// configs needed for setting up permissions to org resources
 	OrgInstallationsBucketName string `config:"org_installations_bucket_name" json:"org_installations_bucket_name" validate:"required"`
 	OrgDeploymentsBucketName   string `config:"org_deployments_bucket_name" json:"org_deployments_bucket_name" validate:"required"`
+
+	// configs needed to grant the workers ability to assume org iam roles
+	WorkersIAMOidcProviderURL string `config:"workers_iam_oidc_provider_url" validate:"required"`
+	WorkersIAMOidcProviderArn string `config:"workers_iam_oidc_provider_arn" validate:"required"`
 }
 
 func (c Config) Validate() error {
