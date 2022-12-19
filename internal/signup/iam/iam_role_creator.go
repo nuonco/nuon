@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	defaultIAMPolicyVersion       string        = "2012-10-17"
 	defaultIAMRoleSessionDuration time.Duration = time.Minute * 60
 )
 

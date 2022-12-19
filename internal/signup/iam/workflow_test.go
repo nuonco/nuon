@@ -28,15 +28,6 @@ func Test_Workflow(t *testing.T) {
 	req := generics.GetFakeObj[*iamv1.ProvisionIAMRequest]()
 
 	// Mock activity implementations
-	env.OnActivity(a.CreateDeploymentsBucketRole, mock.Anything, mock.Anything).
-		Return(func(ctx context.Context, r CreateDeploymentsBucketRoleRequest) (CreateDeploymentsBucketRoleResponse, error) {
-			resp := CreateDeploymentsBucketRoleResponse{}
-			err := r.validate()
-			assert.Nil(t, err)
-			return resp, nil
-		})
-
-	// Mock activity implementations
 	env.OnActivity(a.CreateIAMPolicy, mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, r CreateIAMPolicyRequest) (CreateIAMPolicyResponse, error) {
 			resp := CreateIAMPolicyResponse{

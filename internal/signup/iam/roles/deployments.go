@@ -1,4 +1,4 @@
-package iam
+package roles
 
 import (
 	"encoding/json"
@@ -7,31 +7,22 @@ import (
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 )
 
-func odrIAMName(orgID string) string {
-	return fmt.Sprintf("org-odr-%s", orgID)
+const defaultIAMPolicyVersion string = "2012-10-17"
+
+func DeploymentsIAMName(orgID string) string {
+	return fmt.Sprintf("org-deployments-access-%s", orgID)
 }
 
-func runnerOdrServiceAccountName(orgID string) string {
-	return fmt.Sprintf("waypoint-odr-%s", orgID)
-}
-
-func odrIAMPolicy(cfg workers.Config, orgID string) ([]byte, error) {
+func DeploymentsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 	policy := iamRolePolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleStatement{
 			{
 				Effect: "Allow",
 				Action: []string{
-					"ecr:*",
+					"s3:*",
 				},
-				Resource: fmt.Sprintf("%s/%s/*", cfg.OrgsECRRegistryArn, orgID),
-			},
-			{
-				Effect: "Allow",
-				Action: []string{
-					"ecr:GetAuthorizationToken",
-				},
-				Resource: "*",
+				Resource: fmt.Sprintf("arn:aws:s3:::%s/orgID=%s/*", bucketName, orgID),
 			},
 		},
 	}
@@ -43,7 +34,7 @@ func odrIAMPolicy(cfg workers.Config, orgID string) ([]byte, error) {
 	return byts, nil
 }
 
-func odrIAMTrustPolicy(cfg workers.Config, orgID string) ([]byte, error) {
+func DeploymentsIAMTrustPolicy(cfg workers.Config) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -54,13 +45,13 @@ func odrIAMTrustPolicy(cfg workers.Config, orgID string) ([]byte, error) {
 				Principal: struct {
 					Federated string `json:"Federated,omitempty"`
 				}{
-					Federated: cfg.OrgsIAMOidcProviderArn,
+					Federated: cfg.WorkersIAMOidcProviderArn,
 				},
 				Condition: struct {
 					StringEquals map[string]string `json:"StringEquals"`
 				}{
 					StringEquals: map[string]string{
-						fmt.Sprintf("%s:sub", cfg.OrgsIAMOidcProviderURL): fmt.Sprintf("system:serviceaccount:%s:%s", orgID, runnerOdrServiceAccountName(orgID)),
+						fmt.Sprintf("%s:sub", cfg.WorkersIAMOidcProviderURL): "system:serviceaccount:default:*",
 					},
 				},
 			},
