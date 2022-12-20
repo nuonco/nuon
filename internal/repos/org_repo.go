@@ -30,6 +30,8 @@ func NewOrgRepo(db *gorm.DB) orgRepo {
 	}
 }
 
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_org_repo.go -source=org_repo.go -package=repos
 type orgRepo struct {
 	db *gorm.DB
 }
