@@ -66,7 +66,7 @@ func Test_iamRoleCreatorImpl_createIAMRolePolicyAttachment(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			roleCreator := iamRolePolicyAttachmentCreatorImpl{}
 			client := test.clientFn(t)
-			err := roleCreator.createIAMRolePolicyAttachment(context.Background(), client, req.RoleArn, req.PolicyArn)
+			err := roleCreator.createIAMRolePolicyAttachment(context.Background(), client, req.RoleName, req.PolicyArn)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

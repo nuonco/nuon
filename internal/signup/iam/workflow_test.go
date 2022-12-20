@@ -52,7 +52,6 @@ func Test_Workflow(t *testing.T) {
 		Return(func(ctx context.Context, r CreateIAMRolePolicyAttachmentRequest) (CreateIAMRolePolicyAttachmentResponse, error) {
 			resp := CreateIAMRolePolicyAttachmentResponse{}
 			assert.NoError(t, r.validate())
-			assert.Equal(t, "test-role-arn", r.RoleArn)
 			assert.Equal(t, "test-policy-arn", r.PolicyArn)
 
 			return resp, nil

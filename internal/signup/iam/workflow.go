@@ -70,7 +70,7 @@ func (w wkflow) provisionOdrIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReq
 	cdpaReq := CreateIAMRolePolicyAttachmentRequest{
 		AssumeRoleARN: w.cfg.OrgsIAMAccessRoleArn,
 		PolicyArn:     cdpResp.PolicyArn,
-		RoleArn:       cdrResp.RoleArn,
+		RoleName:      roles.OdrIAMName(req.OrgId),
 	}
 	err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
 	if err != nil {
@@ -123,7 +123,7 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 	cdpaReq := CreateIAMRolePolicyAttachmentRequest{
 		AssumeRoleARN: w.cfg.OrgsIAMAccessRoleArn,
 		PolicyArn:     cdpResp.PolicyArn,
-		RoleArn:       cdrResp.RoleArn,
+		RoleName:      roles.InstallationsIAMName(req.OrgId),
 	}
 	err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
 	if err != nil {
@@ -176,7 +176,7 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 	cdpaReq := CreateIAMRolePolicyAttachmentRequest{
 		AssumeRoleARN: w.cfg.OrgsIAMAccessRoleArn,
 		PolicyArn:     cdpResp.PolicyArn,
-		RoleArn:       cdrResp.RoleArn,
+		RoleName:      roles.DeploymentsIAMName(req.OrgId),
 	}
 	err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
 	if err != nil {
