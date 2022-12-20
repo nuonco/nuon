@@ -12,6 +12,7 @@ require (
 	github.com/hashicorp/waypoint v0.10.3
 	github.com/jaswdr/faker v1.15.0
 	github.com/powertoolsdev/go-common v1.1.17
+	github.com/powertoolsdev/go-generics v0.0.1
 	github.com/powertoolsdev/go-waypoint v0.2.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
@@ -38,6 +39,7 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/go-faker/faker/v4 v4.0.0-beta.4 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect

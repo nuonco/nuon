@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-generics"
 )
 
 type CreateRepositoryRequest struct {
@@ -72,10 +73,6 @@ type awsClientIamRoleAssumer interface {
 		optFns ...func(*sts.Options)) (*sts.AssumeRoleOutput, error)
 }
 
-func toPtr[T any](t T) *T {
-	return &t
-}
-
 type awsClientEcrRepoCreator interface {
 	CreateRepository(context.Context,
 		*ecr.CreateRepositoryInput,
@@ -84,8 +81,8 @@ type awsClientEcrRepoCreator interface {
 
 func (r *repositoryCreatorImpl) assumeIamRole(ctx context.Context, roleArn string, client awsClientIamRoleAssumer) (*sts_types.Credentials, error) {
 	params := &sts.AssumeRoleInput{
-		RoleArn:         toPtr(roleArn),
-		RoleSessionName: toPtr("workers-apps-create-repo"),
+		RoleArn:         &roleArn,
+		RoleSessionName: generics.ToPtr("workers-apps-create-repo"),
 	}
 	resp, err := client.AssumeRole(ctx, params)
 	if err != nil {
@@ -97,20 +94,20 @@ func (r *repositoryCreatorImpl) assumeIamRole(ctx context.Context, roleArn strin
 
 func (r *repositoryCreatorImpl) createECRRepo(ctx context.Context, req CreateRepositoryRequest, client awsClientEcrRepoCreator) error {
 	params := &ecr.CreateRepositoryInput{
-		RepositoryName:     toPtr(req.OrgID + "/" + req.AppID),
+		RepositoryName:     generics.ToPtr(req.OrgID + "/" + req.AppID),
 		ImageTagMutability: ecr_types.ImageTagMutabilityImmutable,
 		Tags: []ecr_types.Tag{
 			{
-				Key:   toPtr("app-id"),
-				Value: toPtr(req.AppID),
+				Key:   generics.ToPtr("app-id"),
+				Value: &req.AppID,
 			},
 			{
-				Key:   toPtr("org-id"),
-				Value: toPtr(req.OrgID),
+				Key:   generics.ToPtr("org-id"),
+				Value: &req.OrgID,
 			},
 			{
-				Key:   toPtr("managed-by"),
-				Value: toPtr("workers-apps"),
+				Key:   generics.ToPtr("managed-by"),
+				Value: generics.ToPtr("workers-apps"),
 			},
 		},
 	}
