@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/go-playground/validator/v10"
 	assumerole "github.com/powertoolsdev/go-aws-assume-role"
+	"github.com/powertoolsdev/go-generics"
 )
 
 type CreateIAMPolicyRequest struct {
@@ -15,6 +17,8 @@ type CreateIAMPolicyRequest struct {
 	PolicyName     string `validate:"required" json:"policy_name"`
 	PolicyPath     string `validate:"required" json:"policy_path"`
 	PolicyDocument string `validate:"required" json:"policy_document"`
+
+	PolicyTags [][2]string `validate:"required" json:"policy_tags"`
 }
 
 func (r CreateIAMPolicyRequest) validate() error {
@@ -64,10 +68,19 @@ type awsClientIAMPolicy interface {
 }
 
 func (o *iamPolicyCreatorImpl) createIAMPolicy(ctx context.Context, client awsClientIAMPolicy, req CreateIAMPolicyRequest) (string, error) {
+	tags := make([]iam_types.Tag, 0, len(req.PolicyTags)+1)
+	for _, pair := range req.PolicyTags {
+		tags = append(tags, iam_types.Tag{
+			Key:   generics.ToPtr(pair[0]),
+			Value: generics.ToPtr(pair[1]),
+		})
+	}
+
 	params := &iam.CreatePolicyInput{
 		PolicyDocument: &req.PolicyDocument,
 		PolicyName:     &req.PolicyName,
 		Path:           &req.PolicyPath,
+		Tags:           tags,
 	}
 
 	output, err := client.CreatePolicy(ctx, params)
