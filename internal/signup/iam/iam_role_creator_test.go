@@ -54,6 +54,13 @@ func Test_iamRoleCreatorImpl_createIAMRole(t *testing.T) {
 
 				inp := obj.Calls[0].Arguments[1].(*iam.CreateRoleInput)
 				assert.NotNil(t, inp)
+
+				assert.Equal(t, req.TrustPolicyDocument, *inp.AssumeRolePolicyDocument)
+				assert.Equal(t, len(req.RoleTags), len(inp.Tags))
+				for idx, pair := range req.RoleTags {
+					assert.Equal(t, pair[0], *inp.Tags[idx].Key)
+					assert.Equal(t, pair[1], *inp.Tags[idx].Value)
+				}
 			},
 		},
 		"error": {
