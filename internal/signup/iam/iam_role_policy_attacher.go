@@ -13,7 +13,7 @@ type CreateIAMRolePolicyAttachmentRequest struct {
 	AssumeRoleARN string `validate:"required" json:"assume_role_arn"`
 
 	PolicyArn string `validate:"required" json:"policy_arn"`
-	RoleArn   string `validate:"required" json:"role_arn"`
+	RoleName  string `validate:"required" json:"role_name"`
 }
 
 func (r CreateIAMRolePolicyAttachmentRequest) validate() error {
@@ -39,7 +39,7 @@ func (a *Activities) CreateIAMRolePolicyAttachment(ctx context.Context, req Crea
 	}
 
 	client := iam.NewFromConfig(cfg)
-	if err := a.iamRolePolicyAttachmentCreator.createIAMRolePolicyAttachment(ctx, client, req.PolicyArn, req.RoleArn); err != nil {
+	if err := a.iamRolePolicyAttachmentCreator.createIAMRolePolicyAttachment(ctx, client, req.PolicyArn, req.RoleName); err != nil {
 		return resp, fmt.Errorf("unable to create IAM role policy attachment: %w", err)
 	}
 
@@ -58,10 +58,10 @@ type awsClientIAMRolePolicyAttacher interface {
 	AttachRolePolicy(context.Context, *iam.AttachRolePolicyInput, ...func(*iam.Options)) (*iam.AttachRolePolicyOutput, error)
 }
 
-func (o *iamRolePolicyAttachmentCreatorImpl) createIAMRolePolicyAttachment(ctx context.Context, client awsClientIAMRolePolicyAttacher, policyArn, roleArn string) error {
+func (o *iamRolePolicyAttachmentCreatorImpl) createIAMRolePolicyAttachment(ctx context.Context, client awsClientIAMRolePolicyAttacher, policyArn, roleName string) error {
 	params := &iam.AttachRolePolicyInput{
 		PolicyArn: &policyArn,
-		RoleName:  &roleArn,
+		RoleName:  &roleName,
 	}
 	_, err := client.AttachRolePolicy(ctx, params)
 	if err != nil {
