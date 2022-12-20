@@ -30,7 +30,7 @@ jobs:
     strategy:
       matrix:
         repo: [api, components, workflows]
-    name: Lint
+    name: Lint protos
     runs-on: ubuntu-latest
     steps:
       - name: Generate token
@@ -59,8 +59,9 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}:lint \
             +lint-proto \
             --REPO=${{matrix.repo}} \
-  release:
-    name: Release
+
+  release-protos:
+    name: Release protos
     if: github.event_name != 'pull_request'
     strategy:
       matrix:
@@ -93,6 +94,26 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}:protos \
             +push-proto \
             --REPO=${{matrix.repo}} \
+
+  release:
+    name: Release
+    needs:
+      - release-protos
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine next version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          patchAll: true
+      - name: Push tag
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: ${{ steps.semver.outputs.nextStrict }}
 
   update_status:
     name: Update status
