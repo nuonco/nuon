@@ -101,7 +101,7 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 	}
 
 	l.Debug("creating iam role for org %s", req.OrgId)
-	installationsTrustPolicy, err := roles.InstallationsIAMTrustPolicy(w.cfg.WorkersIAMOidcProviderArn, w.cfg.WorkersIAMOidcProviderURL)
+	installationsTrustPolicy, err := roles.InstallationsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
@@ -153,7 +153,7 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 	}
 
 	l.Debug("creating iam role for org %s", req.OrgId)
-	deploymentsTrustPolicy, err := roles.DeploymentsIAMTrustPolicy(w.cfg.WorkersIAMOidcProviderArn, w.cfg.WorkersIAMOidcProviderURL)
+	deploymentsTrustPolicy, err := roles.DeploymentsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}

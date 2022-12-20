@@ -57,14 +57,10 @@ func OdrIAMTrustPolicy(oidcProviderARN, oidcProviderURL, orgID string) ([]byte, 
 				Action: "sts:AssumeRoleWithWebIdentity",
 				Effect: "Allow",
 				Sid:    "",
-				Principal: struct {
-					Federated string `json:"Federated,omitempty"`
-				}{
+				Principal: iamPrincipal{
 					Federated: oidcProviderARN,
 				},
-				Condition: struct {
-					StringEquals map[string]string `json:"StringEquals"`
-				}{
+				Condition: iamCondition{
 					StringEquals: map[string]string{
 						conditionKey: conditionValue,
 					},

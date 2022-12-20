@@ -21,15 +21,21 @@ type iamRoleTrustPolicy struct {
 	Statement []iamRoleTrustStatement `json:"Statement"`
 }
 
+type iamPrincipal struct {
+	Federated string `json:"Federated,omitempty"`
+	AWS       string `json:"AWS,omitempty"`
+}
+
+type iamCondition struct {
+	StringEquals map[string]string `json:"StringEquals,omitempty"`
+	StringLike   map[string]string `json:"StringLike,omitempty"`
+}
+
 type iamRoleTrustStatement struct {
-	Action    string `json:"Action,omitempty"`
-	Effect    string `json:"Effect,omitempty"`
-	Resource  string `json:"Resource,omitempty"`
-	Sid       string `json:"Sid"`
-	Principal struct {
-		Federated string `json:"Federated,omitempty"`
-	} `json:"Principal,omitempty"`
-	Condition struct {
-		StringEquals map[string]string `json:"StringEquals"`
-	} `json:"Condition,omitempty"`
+	Action    string       `json:"Action,omitempty"`
+	Effect    string       `json:"Effect,omitempty"`
+	Resource  string       `json:"Resource,omitempty"`
+	Sid       string       `json:"Sid"`
+	Principal iamPrincipal `json:"Principal,omitempty"`
+	Condition iamCondition `json:"Condition,omitempty"`
 }
