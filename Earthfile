@@ -43,9 +43,6 @@ push-proto:
 gen-proto:
     FROM bufbuild/buf
     WORKDIR /work
-    COPY --dir api/ .
-    COPY --dir components/ .
-    COPY --dir workflows/ .
     DO +GEN --dir=api
     DO +GEN --dir=components
     DO +GEN --dir=workflows
@@ -53,20 +50,17 @@ gen-proto:
 lint-proto:
     FROM bufbuild/buf
     WORKDIR /work
-    COPY --dir api/ .
-    COPY --dir components/ .
-    COPY --dir workflows/ .
     DO +LINT --dir=api
     DO +LINT --dir=components
     DO +LINT --dir=workflows
 
+# NOTE(jdt): this still doesn't work. we should avoid cloning...
 breaking-proto:
     FROM bufbuild/buf
+    RUN mkdir -p /root/.ssh/
+    DO shared-configs+SETUP_SSH
     WORKDIR /work
-    GIT CLONE https://github.com/powertoolsdev/protos ./old
-    COPY --dir protos/ .
-    COPY buf.*.yaml .
-    RUN buf breaking --against "./old"
+    DO +BREAKING --dir=api
 
 ################################### UDCs ######################################
 
@@ -81,6 +75,7 @@ PUSH:
 GEN:
     COMMAND
     ARG dir=./
+    COPY --dir $dir .
     ARG oldworkdir=$(pwd)
     WORKDIR $dir
     RUN \
@@ -91,11 +86,24 @@ GEN:
 LINT:
     COMMAND
     ARG dir=./
+    COPY --dir $dir .
     ARG oldworkdir=$(pwd)
     WORKDIR $dir
     RUN \
         sh -c "buf lint && buf format -d --exit-code" \
             || sh -c "printf '%s\n' 'Buf Format changes exist in current branch' >&2 && exit 1"
+    WORKDIR $oldworkdir
+
+# NOTE(jdt): this still doesn't work. we should avoid cloning...
+BREAKING:
+    COMMAND
+    ARG dir=./
+    COPY --dir $dir .
+    ARG oldworkdir=$(pwd)
+    WORKDIR $dir
+    RUN \
+        git clone git@github.com:powertoolsdev/protos ./old \
+        && buf breaking --against "./old"
     WORKDIR $oldworkdir
 
 
