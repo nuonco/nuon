@@ -26,7 +26,10 @@ env:
   REPO_NAME: ${{ github.event.repository.name }}
 
 jobs:
-  lint:
+  lint-protos:
+    strategy:
+      matrix:
+        repo: [api, components, workflows]
     name: Lint
     runs-on: ubuntu-latest
     steps:
@@ -54,7 +57,8 @@ jobs:
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
             --remote-cache=ghcr.io/${{ github.repository }}:lint \
-            +lint
+            +lint-proto \
+            --REPO=${{matrix.repo}} \
   release:
     name: Release
     if: github.event_name != 'pull_request'
@@ -84,12 +88,13 @@ jobs:
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
             --remote-cache=ghcr.io/${{ github.repository }}:protos \
-            +push-proto
+            +push-proto \
+            --REPO=${{matrix.repo}} \
 
   update_status:
     name: Update status
     needs:
-      - lint
+      - lint-protos
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
