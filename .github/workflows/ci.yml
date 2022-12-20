@@ -62,6 +62,9 @@ jobs:
   release:
     name: Release
     if: github.event_name != 'pull_request'
+    strategy:
+      matrix:
+        repo: [api, components, workflows]
     runs-on: ubuntu-latest
     steps:
       - name: Generate token
