@@ -38,9 +38,9 @@ func DeploymentsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 
 // TODO(jdt): figure out how to restrict this to specific service accounts
 // DeploymentsIAMTrustPolicy generates the trust policy for the deployments role
-// The trust policy gives access to any service account in the default namespace of the cluster
-// that the oidcProviderARN and oidcProviderURL belong to
-func DeploymentsIAMTrustPolicy(oidcProviderARN, oidcProviderURL string) ([]byte, error) {
+// The trust policy gives access to any role arn with the provided prefix, in this case the EKS roles for our workers
+// running in the main accounts.
+func DeploymentsIAMTrustPolicy(workerRoleArnPrefix string) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -48,16 +48,12 @@ func DeploymentsIAMTrustPolicy(oidcProviderARN, oidcProviderURL string) ([]byte,
 				Action: "sts:AssumeRoleWithWebIdentity",
 				Effect: "Allow",
 				Sid:    "",
-				Principal: struct {
-					Federated string `json:"Federated,omitempty"`
-				}{
-					Federated: oidcProviderARN,
+				Principal: iamPrincipal{
+					AWS: "*",
 				},
-				Condition: struct {
-					StringEquals map[string]string `json:"StringEquals"`
-				}{
-					StringEquals: map[string]string{
-						fmt.Sprintf("%s:sub", oidcProviderURL): "system:serviceaccount:default:*",
+				Condition: iamCondition{
+					StringLike: map[string]string{
+						"aws:PrincipalArn": workerRoleArnPrefix,
 					},
 				},
 			},
