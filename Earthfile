@@ -54,14 +54,6 @@ lint-proto:
     DO +LINT --dir=components
     DO +LINT --dir=workflows
 
-# NOTE(jdt): this still doesn't work. we should avoid cloning...
-breaking-proto:
-    FROM bufbuild/buf
-    RUN mkdir -p /root/.ssh/
-    DO shared-configs+SETUP_SSH
-    WORKDIR /work
-    DO +BREAKING --dir=api
-
 ################################### UDCs ######################################
 
 PUSH:
