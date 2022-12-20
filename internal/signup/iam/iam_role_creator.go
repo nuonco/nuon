@@ -75,8 +75,8 @@ func (o *iamRoleCreatorImpl) createIAMRole(ctx context.Context, client awsClient
 	tags := make([]iam_types.Tag, 0, len(req.RoleTags)+1)
 	for _, pair := range req.RoleTags {
 		tags = append(tags, iam_types.Tag{
-			Key:   &pair[0],
-			Value: &pair[1],
+			Key:   generics.ToPtr(pair[0]),
+			Value: generics.ToPtr(pair[1]),
 		})
 	}
 
