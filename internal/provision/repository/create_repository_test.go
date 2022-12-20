@@ -10,6 +10,7 @@ import (
 	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/google/uuid"
 	"github.com/jaswdr/faker"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -53,9 +54,9 @@ func TestCreateRepository_assumeIamRole(t *testing.T) {
 				client := &testAwsClientIamRoleAssumer{}
 				client.On("AssumeRole", mock.Anything, mock.Anything, mock.Anything).Return(&sts.AssumeRoleOutput{
 					Credentials: &sts_types.Credentials{
-						AccessKeyId:     toPtr("aws_access_key_id"),
-						SecretAccessKey: toPtr("aws_secret_access_key"),
-						SessionToken:    toPtr("aws_session_token"),
+						AccessKeyId:     generics.ToPtr("aws_access_key_id"),
+						SecretAccessKey: generics.ToPtr("aws_secret_access_key"),
+						SessionToken:    generics.ToPtr("aws_session_token"),
 					},
 				}, nil)
 				return client

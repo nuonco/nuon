@@ -351,6 +351,8 @@ github.com/frankban/quicktest v1.14.3 h1:FJKSZTDHjyhriyC81FLQ0LY93eSai0ZyR/ZIkd3
 github.com/fsnotify/fsnotify v1.5.4 h1:jRbGcIw6P2Meqdwuo0H1p6JVLbL5DHKAKlYndzMwVZI=
 github.com/fsnotify/fsnotify v1.5.4/go.mod h1:OVB6XrOHzAwXMpEM7uPOzcehqUV2UqJxmVXmkdnm1bU=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
+github.com/go-faker/faker/v4 v4.0.0-beta.4 h1:57126Ac1OvFkDBwuUaeIaVBpisOHPb2PiBEaGy3rjSY=
+github.com/go-faker/faker/v4 v4.0.0-beta.4/go.mod h1:uuNc0PSRxF8nMgjGrrrU4Nw5cF30Jc6Kd0/FUTTYbhg=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200222043503-6f7a984d4dc4/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
@@ -584,6 +586,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/powertoolsdev/go-common v1.1.17 h1:xTVPf7kiezNH09fIINiWSHHzqhQ517GQjcSSprF9EbU=
 github.com/powertoolsdev/go-common v1.1.17/go.mod h1:mhY1HkgLn4iPkxnGy2ownap+hxJosifCfE7qwXmpyUE=
+github.com/powertoolsdev/go-generics v0.0.1 h1:We48KVDTRRDm4TeKe0BFJUghzgjpcyaX364797GYxbU=
+github.com/powertoolsdev/go-generics v0.0.1/go.mod h1:ZfpJeyS0qdYRV7CAJhxq1CxjED+PhR/Y+yMc5A4Rjsg=
 github.com/powertoolsdev/go-kube v0.1.2 h1:NJgQTvtLSB+SMcJjBZlsaz+yJF/1iWN1WVsp7E/2+y8=
 github.com/powertoolsdev/go-kube v0.1.2/go.mod h1:EBoFFkN3tZ5cvI1cZzl+dX2kRWY7em69w7g1AMMKIyQ=
 github.com/powertoolsdev/go-waypoint v0.2.1 h1:wEKsP5whsMltptXzil8FLyQAzNPNkv3GdNrueS47xag=
