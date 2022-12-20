@@ -57,7 +57,11 @@ func Test_odrIAMPolicyCreatorImpl_createOdrIAMPolicy(t *testing.T) {
 				assert.Equal(t, req.PolicyName, *inp.PolicyName)
 				assert.Equal(t, req.PolicyPath, *inp.Path)
 
-				assert.NotNil(t, req)
+				assert.Equal(t, len(req.PolicyTags), len(inp.Tags))
+				for idx, pair := range req.PolicyTags {
+					assert.Equal(t, pair[0], *inp.Tags[idx].Key)
+					assert.Equal(t, pair[1], *inp.Tags[idx].Value)
+				}
 			},
 		},
 		"error": {

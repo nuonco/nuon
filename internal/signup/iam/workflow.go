@@ -42,6 +42,7 @@ func (w wkflow) provisionOdrIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReq
 		PolicyName:     roles.OdrIAMName(req.OrgId),
 		PolicyPath:     defaultIAMPolicyPath,
 		PolicyDocument: string(odrPolicy),
+		PolicyTags:     roles.DefaultTags(req.OrgId),
 	}
 	cdpResp, err := execCreateIAMPolicy(ctx, act, cdpReq)
 	if err != nil {
@@ -94,6 +95,7 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 		PolicyName:     roles.InstallationsIAMName(req.OrgId),
 		PolicyPath:     defaultIAMPolicyPath,
 		PolicyDocument: string(installationsPolicy),
+		PolicyTags:     roles.DefaultTags(req.OrgId),
 	}
 	cdpResp, err := execCreateIAMPolicy(ctx, act, cdpReq)
 	if err != nil {
@@ -146,6 +148,7 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 		PolicyName:     roles.DeploymentsIAMName(req.OrgId),
 		PolicyPath:     defaultIAMPolicyPath,
 		PolicyDocument: string(deploymentsPolicy),
+		PolicyTags:     roles.DefaultTags(req.OrgId),
 	}
 	cdpResp, err := execCreateIAMPolicy(ctx, act, cdpReq)
 	if err != nil {
