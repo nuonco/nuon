@@ -27,6 +27,7 @@ type ApplySandboxRequest struct {
 	BackendBucketName   string `json:"bucket" validate:"required"`
 	BackendBucketRegion string `json:"bucket_region" validate:"required"`
 	NuonAccessRoleArn   string `json:"nuon_access_role_arn" validate:"required"`
+	OrgAccountID        string `json:"org_account_id" validate:"required"`
 
 	AccountSettings *AccountSettings `json:"account_settings" validate:"required"`
 
@@ -83,10 +84,11 @@ func (t *tfApplyer) provisionSandbox(ctx context.Context, fn terraformRunnerFn, 
 			"AWS_REGION": req.AccountSettings.AwsRegion,
 		},
 		TfVars: map[string]interface{}{
-			"nuon_id":          req.InstallID,
-			"region":           req.AccountSettings.AwsRegion,
-			"assume_role_arn":  req.AccountSettings.AwsRoleArn,
-			"install_role_arn": req.NuonAccessRoleArn,
+			"nuon_id":             req.InstallID,
+			"region":              req.AccountSettings.AwsRegion,
+			"assume_role_arn":     req.AccountSettings.AwsRoleArn,
+			"install_role_arn":    req.NuonAccessRoleArn,
+			"image_sync_role_arn": fmt.Sprintf("arn:aws:iam::%s:role/orgs/org-instances-access-%s", req.OrgAccountID, req.OrgID),
 			"tags": map[string]string{
 				"nuon_sandbox_name":    req.SandboxSettings.Name,
 				"nuon_sandbox_version": req.SandboxSettings.Version,

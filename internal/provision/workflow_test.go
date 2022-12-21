@@ -28,6 +28,7 @@ func newFakeConfig() workers.Config {
 		InstallationStateBucketRegion: "us-west-2",
 		SandboxBucket:                 "s3://nuon-sandboxes",
 		NuonAccessRoleArn:             "arn:124355/role",
+		OrgAccountID:                  "123456789",
 	}
 }
 

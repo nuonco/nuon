@@ -78,6 +78,7 @@ func (w wkflow) ProvisionSandbox(ctx workflow.Context, req ProvisionRequest) (Pr
 		SandboxSettings:     req.SandboxSettings,
 		SandboxBucketName:   w.cfg.SandboxBucket,
 		NuonAccessRoleArn:   w.cfg.NuonAccessRoleArn,
+		OrgAccountID:        w.cfg.OrgAccountID,
 	}
 	psr, err := provisionSandbox(ctx, act, psReq)
 	if err != nil {

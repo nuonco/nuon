@@ -13,6 +13,7 @@ type Config struct {
 
 	TokenSecretNamespace string `config:"token_secret_namespace" validate:"required"`
 	OrgServerRootDomain  string `config:"org_server_root_domain" validate:"required"`
+	OrgAccountID         string `config:"org_account_id" validate:"required"`
 
 	InstallationStateBucket       string `config:"installation_state_bucket" validate:"required"`
 	InstallationStateBucketRegion string `config:"installation_state_bucket_region" validate:"required"`
