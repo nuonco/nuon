@@ -33,6 +33,7 @@ func Test_Workflow(t *testing.T) {
 			resp := CreateIAMPolicyResponse{
 				PolicyArn: "test-policy-arn",
 			}
+			assert.Equal(t, defaultIAMPath(req.OrgId), r.PolicyPath)
 			assert.NoError(t, r.validate())
 
 			return resp, nil
@@ -43,6 +44,7 @@ func Test_Workflow(t *testing.T) {
 			resp := CreateIAMRoleResponse{
 				RoleArn: "test-role-arn",
 			}
+			assert.Equal(t, defaultIAMPath(req.OrgId), r.RolePath)
 			assert.NoError(t, r.validate())
 
 			return resp, nil

@@ -13,9 +13,11 @@ import (
 
 const (
 	defaultActivityTimeout time.Duration = time.Second * 10
-	defaultIAMPolicyPath   string        = "/orgs/"
-	defaultIAMRolePath     string        = "/orgs/"
 )
+
+func defaultIAMPath(orgID string) string {
+	return fmt.Sprintf("/orgs/%s/", orgID)
+}
 
 // NewWorkflow returns a new workflow executor
 func NewWorkflow(cfg workers.Config) wkflow {
@@ -40,7 +42,7 @@ func (w wkflow) provisionOdrIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReq
 	cdpReq := CreateIAMPolicyRequest{
 		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
 		PolicyName:     roles.OdrIAMName(req.OrgId),
-		PolicyPath:     defaultIAMPolicyPath,
+		PolicyPath:     defaultIAMPath(req.OrgId),
 		PolicyDocument: string(odrPolicy),
 		PolicyTags:     roles.DefaultTags(req.OrgId),
 	}
@@ -57,7 +59,7 @@ func (w wkflow) provisionOdrIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReq
 	cdrReq := CreateIAMRoleRequest{
 		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
 		RoleName:            roles.OdrIAMName(req.OrgId),
-		RolePath:            defaultIAMRolePath,
+		RolePath:            defaultIAMPath(req.OrgId),
 		TrustPolicyDocument: string(odrTrustPolicy),
 		RoleTags:            roles.DefaultTags(req.OrgId),
 	}
@@ -93,7 +95,7 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 	cdpReq := CreateIAMPolicyRequest{
 		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
 		PolicyName:     roles.InstallationsIAMName(req.OrgId),
-		PolicyPath:     defaultIAMPolicyPath,
+		PolicyPath:     defaultIAMPath(req.OrgId),
 		PolicyDocument: string(installationsPolicy),
 		PolicyTags:     roles.DefaultTags(req.OrgId),
 	}
@@ -110,7 +112,7 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 	cdrReq := CreateIAMRoleRequest{
 		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
 		RoleName:            roles.InstallationsIAMName(req.OrgId),
-		RolePath:            defaultIAMRolePath,
+		RolePath:            defaultIAMPath(req.OrgId),
 		TrustPolicyDocument: string(installationsTrustPolicy),
 		RoleTags:            roles.DefaultTags(req.OrgId),
 	}
@@ -146,7 +148,7 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 	cdpReq := CreateIAMPolicyRequest{
 		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
 		PolicyName:     roles.DeploymentsIAMName(req.OrgId),
-		PolicyPath:     defaultIAMPolicyPath,
+		PolicyPath:     defaultIAMPath(req.OrgId),
 		PolicyDocument: string(deploymentsPolicy),
 		PolicyTags:     roles.DefaultTags(req.OrgId),
 	}
@@ -163,7 +165,7 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 	cdrReq := CreateIAMRoleRequest{
 		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
 		RoleName:            roles.DeploymentsIAMName(req.OrgId),
-		RolePath:            defaultIAMRolePath,
+		RolePath:            defaultIAMPath(req.OrgId),
 		TrustPolicyDocument: string(deploymentsTrustPolicy),
 		RoleTags:            roles.DefaultTags(req.OrgId),
 	}
@@ -199,7 +201,7 @@ func (w wkflow) provisionInstancesIAM(ctx workflow.Context, req *iamv1.Provision
 	cdpReq := CreateIAMPolicyRequest{
 		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
 		PolicyName:     roles.InstancesIAMName(req.OrgId),
-		PolicyPath:     defaultIAMPolicyPath,
+		PolicyPath:     defaultIAMPath(req.OrgId),
 		PolicyDocument: string(installationsPolicy),
 		PolicyTags:     roles.DefaultTags(req.OrgId),
 	}
@@ -216,7 +218,7 @@ func (w wkflow) provisionInstancesIAM(ctx workflow.Context, req *iamv1.Provision
 	cdrReq := CreateIAMRoleRequest{
 		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
 		RoleName:            roles.InstancesIAMName(req.OrgId),
-		RolePath:            defaultIAMRolePath,
+		RolePath:            defaultIAMPath(req.OrgId),
 		TrustPolicyDocument: string(installationsTrustPolicy),
 		RoleTags:            roles.DefaultTags(req.OrgId),
 	}
