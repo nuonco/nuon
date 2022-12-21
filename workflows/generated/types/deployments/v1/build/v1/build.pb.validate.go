@@ -35,9 +35,6 @@ var (
 	_ = sort.Sort
 )
 
-// define the regex for a UUID once up-front
-var _build_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-
 // Validate checks the field values on BuildRequest with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -60,52 +57,44 @@ func (m *BuildRequest) validate(all bool) error {
 
 	var errors []error
 
-	if err := m._validateUuid(m.GetOrgId()); err != nil {
-		err = BuildRequestValidationError{
+	if utf8.RuneCountInString(m.GetOrgId()) != 26 {
+		err := BuildRequestValidationError{
 			field:  "OrgId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+			reason: "value length must be 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
+
 	}
 
-	if err := m._validateUuid(m.GetAppId()); err != nil {
-		err = BuildRequestValidationError{
+	if utf8.RuneCountInString(m.GetAppId()) != 26 {
+		err := BuildRequestValidationError{
 			field:  "AppId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+			reason: "value length must be 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
+
 	}
 
-	if err := m._validateUuid(m.GetDeploymentId()); err != nil {
-		err = BuildRequestValidationError{
+	if utf8.RuneCountInString(m.GetDeploymentId()) != 26 {
+		err := BuildRequestValidationError{
 			field:  "DeploymentId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+			reason: "value length must be 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
+
 	}
 
 	if len(errors) > 0 {
 		return BuildRequestMultiError(errors)
-	}
-
-	return nil
-}
-
-func (m *BuildRequest) _validateUuid(uuid string) error {
-	if matched := _build_uuidPattern.MatchString(uuid); !matched {
-		return errors.New("invalid uuid format")
 	}
 
 	return nil
