@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package deployments.v1.build.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// BuildRequest is a child workflow request for the plan phase
+message BuildRequest {
+  string org_id = 1 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string app_id = 2 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string deployment_id = 3 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+}
+
+// BuildResponse is a child workflow response for the plan phase
+message BuildResponse {}
