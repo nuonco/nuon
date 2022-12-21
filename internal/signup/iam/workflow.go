@@ -6,7 +6,7 @@ import (
 
 	iamv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/iam/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
-	"github.com/powertoolsdev/workers-orgs/internal/signup/iam/roles"
+	"github.com/powertoolsdev/workers-orgs/internal/roles"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
