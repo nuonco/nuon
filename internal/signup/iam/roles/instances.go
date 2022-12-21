@@ -5,28 +5,30 @@ import (
 	"fmt"
 )
 
-func OdrIAMName(orgID string) string {
-	return fmt.Sprintf("org-odr-%s", orgID)
+func InstancesIAMName(orgID string) string {
+	return fmt.Sprintf("org-instances-access-%s", orgID)
 }
 
-func runnerOdrServiceAccountName(orgID string) string {
-	return fmt.Sprintf("waypoint-odr-%s", orgID)
-}
-
-// OdrIAMPolicy generates the policy for the deployment role
-// bucketName is expected to be the deployments bucket in the orgs account
+// InstancesIAMPolicy generates the policy for the instance role
 // orgID is expected to be the shortID of the org for this role
-func OdrIAMPolicy(ecrRegistryARN, orgID string) ([]byte, error) {
+func InstancesIAMPolicy(orgID string) ([]byte, error) {
 	policy := iamRolePolicy{
 		Version: defaultIAMPolicyVersion,
+
 		Statement: []iamRoleStatement{
-			// allow the role to read/write any of the orgs' repos
+			// allow the role to read/write the ecr repositories for the org
+			// predicated on tagging the repositories with the orgID
 			{
 				Effect: "Allow",
 				Action: []string{
 					"ecr:*",
 				},
-				Resource: fmt.Sprintf("%s/%s/*", ecrRegistryARN, orgID),
+				Resource: "*",
+				Condition: iamCondition{
+					StringEquals: map[string]string{
+						"ecr:ResourceTag/org-id": orgID,
+					},
+				},
 			},
 			// allow the role to generate an token for any registry
 			// this is relatively safe as it doesn't inherently give them permission for anything else
@@ -47,12 +49,11 @@ func OdrIAMPolicy(ecrRegistryARN, orgID string) ([]byte, error) {
 	return byts, nil
 }
 
-// OdrIAMTrustPolicy generates the trust policy for the ODR role
-// The trust policy gives access to the runner service account of the cluster
-// that the oidcProviderARN and oidcProviderURL belong to
-func OdrIAMTrustPolicy(oidcProviderARN, oidcProviderURL, orgID string) ([]byte, error) {
-	conditionKey := fmt.Sprintf("%s:sub", oidcProviderURL)
-	conditionValue := fmt.Sprintf("system:serviceaccount:%s:%s", orgID, runnerOdrServiceAccountName(orgID))
+// TODO(jdt): is there a way we can restrict this to fewer services / roles?
+// InstancesIAMTrustPolicy generates the trust policy for the instance role
+// The trust policy gives access to any role arn with the provided prefix, in this case the EKS roles for our workers
+// running in the main accounts.
+func InstancesIAMTrustPolicy(workerRoleArnPrefix string) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -61,11 +62,11 @@ func OdrIAMTrustPolicy(oidcProviderARN, oidcProviderURL, orgID string) ([]byte, 
 				Effect: "Allow",
 				Sid:    "",
 				Principal: iamPrincipal{
-					Federated: oidcProviderARN,
+					AWS: "*",
 				},
 				Condition: iamCondition{
-					StringEquals: map[string]string{
-						conditionKey: conditionValue,
+					StringLike: map[string]string{
+						"aws:PrincipalArn": workerRoleArnPrefix,
 					},
 				},
 			},

@@ -16,8 +16,8 @@ func InstallationsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 	policy := iamRolePolicy{
 		Version: defaultIAMPolicyVersion,
 
-		// allow the role to read/write the orgID prefix of the bucketName bucket
 		Statement: []iamRoleStatement{
+			// allow the role to read/write the orgID prefix of the bucketName bucket
 			{
 				Effect: "Allow",
 				Action: []string{
@@ -35,7 +35,7 @@ func InstallationsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 	return byts, nil
 }
 
-// TODO(jdt): figure out how to restrict this to specific service accounts
+// TODO(jdt): is there a way we can restrict this to fewer services / roles?
 // InstallationsIAMTrustPolicy generates the trust policy for the installations role
 // The trust policy gives access to any role arn with the provided prefix, in this case the EKS roles for our workers
 // running in the main accounts.
