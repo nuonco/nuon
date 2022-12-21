@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package build.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// Plan represents a build plan that is stored in the deployments bucket.
+message Plan {
+  string org_id = 1 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string app_id = 2 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string deployment_id = 3 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+}
