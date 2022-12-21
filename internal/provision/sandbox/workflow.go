@@ -34,7 +34,7 @@ type ProvisionResponse struct {
 }
 
 const (
-	clusterIDKey       = "cluster_id"
+	clusterIDKey       = "cluster_name"
 	clusterEndpointKey = "cluster_endpoint"
 	clusterCAKey       = "cluster_certificate_authority_data"
 )
