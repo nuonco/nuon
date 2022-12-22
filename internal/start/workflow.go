@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-waypoint"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
+	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 )
@@ -59,16 +60,10 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 	}
 
 	// run the build workflow
-	bReq := build.BuildRequest{
-		OrgID:        orgID,
-		AppID:        appID,
-		DeploymentID: deploymentID,
-		Component: waypoint.Component{
-			Name:              "mario",
-			ID:                "mario",
-			ContainerImageURL: "kennethreitz/httpbin",
-			Type:              "public",
-		},
+	bReq := &buildv1.BuildRequest{
+		OrgId:        orgID,
+		AppId:        appID,
+		DeploymentId: deploymentID,
 	}
 	bResp, err := execBuild(ctx, w.cfg, bReq)
 	if err != nil {
@@ -110,9 +105,9 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 func execBuild(
 	ctx workflow.Context,
 	cfg workers.Config,
-	req build.BuildRequest,
-) (build.BuildResponse, error) {
-	var resp build.BuildResponse
+	req *buildv1.BuildRequest,
+) (*buildv1.BuildResponse, error) {
+	resp := &buildv1.BuildResponse{}
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("executing build workflow")

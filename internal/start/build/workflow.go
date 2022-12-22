@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/go-waypoint"
+	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 )
 
@@ -15,23 +15,6 @@ const (
 	defaultActivityTimeout = time.Second * 5
 	defaultBuildTimeout    = time.Minute * 60
 )
-
-type BuildRequest struct {
-	OrgID        string `json:"org_id" validate:"required"`
-	AppID        string `json:"app_id" validate:"required"`
-	DeploymentID string `json:"deployment_id" validate:"required"`
-
-	Component waypoint.Component `json:"component" validate:"required"`
-}
-
-func (s BuildRequest) Validate() error {
-	validate := validator.New()
-	return validate.Struct(s)
-}
-
-type BuildResponse struct {
-	WorkflowIDs []string `json:"workflow_ids"`
-}
 
 func configureActivityOptions(ctx workflow.Context) workflow.Context {
 	activityOpts := workflow.ActivityOptions{
@@ -50,11 +33,19 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, error) {
-	resp := BuildResponse{}
+func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
+	resp := &buildv1.BuildResponse{}
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
 	act := NewActivities(workers.Config{})
+
+	// TODO(jm): this will go away once this workflow leverages using an actual plan, it's just hardcoded cruft for
+	// now to keep things working until that world "exists".
+	component := waypoint.Component{
+		Type:              "public",
+		ContainerImageURL: "kennethreitz/httpbin",
+		Name:              "httpbin",
+	}
 
 	if err := req.Validate(); err != nil {
 		return resp, err
@@ -63,11 +54,10 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 	bucketPrefix := getS3Prefix(req)
 
 	uwaReq := UpsertWaypointApplicationRequest{
-		OrgID:     req.OrgID,
-		Component: req.Component,
-
+		OrgID:                req.OrgId,
+		Component:            component,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgID),
+		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
 	}
 	uwaResp, err := execUpsertWaypointApplication(ctx, act, uwaReq)
 	l.Debug("upserted waypoint app", "response", uwaResp)
@@ -76,15 +66,15 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 	}
 
 	qwjReq := QueueWaypointDeploymentJobRequest{
-		OrgID:                req.OrgID,
+		OrgID:                req.OrgId,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgID),
+		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
 		BucketName:           w.cfg.Bucket,
 		BucketPrefix:         bucketPrefix,
-		AppID:                req.AppID,
-		DeploymentID:         req.DeploymentID,
-		ComponentName:        req.Component.Name,
-		ComponentType:        req.Component.Type,
+		AppID:                req.AppId,
+		DeploymentID:         req.DeploymentId,
+		ComponentName:        component.Name,
+		ComponentType:        component.Type,
 	}
 	qwjResp, err := execQueueWaypointDeploymentJob(ctx, act, qwjReq)
 	if err != nil {
@@ -93,9 +83,9 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 	l.Debug(fmt.Sprintf("successfully upserted job for deployment: jobID = %s", qwjResp.JobID))
 
 	vwjReq := ValidateWaypointDeploymentJobRequest{
-		OrgID:                req.OrgID,
+		OrgID:                req.OrgId,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgID),
+		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
 		JobID:                qwjResp.JobID,
 	}
 	vwjResp, err := execValidateWaypointDeploymentJob(ctx, act, vwjReq)
@@ -105,9 +95,9 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 	l.Debug(fmt.Sprintf("successfully validated job for deployment: %v", vwjResp))
 
 	pwjReq := PollWaypointBuildJobRequest{
-		OrgID:                req.OrgID,
+		OrgID:                req.OrgId,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgID),
+		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
 		BucketName:           w.cfg.Bucket,
 		BucketPrefix:         bucketPrefix,
 		JobID:                qwjResp.JobID,
@@ -119,14 +109,14 @@ func (w *wkflow) Build(ctx workflow.Context, req BuildRequest) (BuildResponse, e
 	l.Debug("successfully polled deployment job: %s", qwjResp.JobID, pwjResp)
 
 	uaReq := UploadArtifactRequest{
-		OrgID:                req.OrgID,
-		AppID:                req.AppID,
-		ComponentName:        req.Component.Name,
+		OrgID:                req.OrgId,
+		AppID:                req.AppId,
+		ComponentName:        component.Name,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgID),
+		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
 		BucketName:           w.cfg.Bucket,
 		BucketPrefix:         bucketPrefix,
-		DeploymentID:         req.DeploymentID,
+		DeploymentID:         req.DeploymentId,
 	}
 	uaResp, err := execUploadArtifact(ctx, act, uaReq)
 	if err != nil {

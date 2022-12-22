@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/go-common/shortid"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
+	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 	"github.com/stretchr/testify/assert"
@@ -63,10 +64,10 @@ func TestProvision(t *testing.T) {
 		})
 
 	env.OnWorkflow(bld.Build, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, br build.BuildRequest) (build.BuildResponse, error) {
-			var resp build.BuildResponse
+		Return(func(ctx workflow.Context, br *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
+			resp := &buildv1.BuildResponse{}
 			assert.Nil(t, br.Validate())
-			assert.Equal(t, orgShortID, br.OrgID)
+			assert.Equal(t, orgShortID, br.OrgId)
 			return resp, nil
 		})
 
