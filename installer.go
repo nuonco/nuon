@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultTerraformVersion = "v1.2.9"
+	defaultTerraformVersion = "v1.3.6"
 )
 
 type terraformInstaller interface {
