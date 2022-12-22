@@ -24,6 +24,6 @@ func TestInstallationPrefix(t *testing.T) {
 
 	prefix := getInstallationPrefix(orgShortID, appShortID, installShortID)
 
-	expected := fmt.Sprintf("installations/org=%s/app=%s/install=%s", orgShortID, appShortID, installShortID)
+	expected := fmt.Sprintf("org=%s/app=%s/install=%s", orgShortID, appShortID, installShortID)
 	assert.Equal(t, expected, prefix)
 }

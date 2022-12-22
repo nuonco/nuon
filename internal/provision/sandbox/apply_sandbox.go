@@ -60,7 +60,7 @@ func getSandboxBucketKey(name, version string) string {
 }
 
 func getStateBucketKey(orgID, appID, installID string) string {
-	return fmt.Sprintf("installations/org=%s/app=%s/install=%s/%s", orgID, appID, installID, defaultStateFilename)
+	return fmt.Sprintf("org=%s/app=%s/install=%s/%s", orgID, appID, installID, defaultStateFilename)
 }
 
 func (t *tfApplyer) provisionSandbox(ctx context.Context, fn terraformRunnerFn, req ApplySandboxRequest) (map[string]string, error) {
