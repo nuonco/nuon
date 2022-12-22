@@ -632,6 +632,8 @@ github.com/powertoolsdev/protos v0.6.1 h1:q2612xm/tY2Dzs5D0Ivod6RhJDuEJ6DCBhHFIE
 github.com/powertoolsdev/protos v0.6.1/go.mod h1:ISBezV0HGdE+O4y5MjGNdWq2w1YNBeBpvC7CTbA/34A=
 github.com/powertoolsdev/protos v0.6.2 h1:8WbaqclwCEBa95KPbvUGU9oWGyK3nMeKK3x81KyJcEM=
 github.com/powertoolsdev/protos v0.6.2/go.mod h1:ISBezV0HGdE+O4y5MjGNdWq2w1YNBeBpvC7CTbA/34A=
+github.com/powertoolsdev/protos v0.7.0 h1:oSMezxNVdVY39zUxk12EIvgejX6nxY0GaMv0c6Xr0B8=
+github.com/powertoolsdev/protos v0.7.0/go.mod h1:ISBezV0HGdE+O4y5MjGNdWq2w1YNBeBpvC7CTbA/34A=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/robfig/cron v1.2.0 h1:ZjScXvvxeQ63Dbyxy76Fj3AT3Ut0aKsyd2/tl3DTMuQ=
 github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
