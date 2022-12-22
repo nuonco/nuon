@@ -10,8 +10,10 @@ import (
 	"github.com/powertoolsdev/go-waypoint"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/plan/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
+	"github.com/powertoolsdev/workers-deployments/internal/start/plan"
 )
 
 const (
@@ -59,6 +61,18 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 		return resp, fmt.Errorf("unable to get short deployment ID: %w", err)
 	}
 
+	// run the plan workflow
+	planReq := &planv1.PlanRequest{
+		OrgId:        orgID,
+		AppId:        appID,
+		DeploymentId: deploymentID,
+	}
+	planResp, err := execPlan(ctx, w.cfg, planReq)
+	if err != nil {
+		return resp, fmt.Errorf("unable to perform build: %w", err)
+	}
+	l.Debug(fmt.Sprintf("finished planning %v", planResp))
+
 	// run the build workflow
 	bReq := &buildv1.BuildRequest{
 		OrgId:        orgID,
@@ -99,6 +113,31 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 	}
 
 	l.Debug(fmt.Sprintf("starting %d child workflows", len(req.InstallIds)))
+	return resp, nil
+}
+
+func execPlan(
+	ctx workflow.Context,
+	cfg workers.Config,
+	req *planv1.PlanRequest,
+) (*planv1.PlanResponse, error) {
+	resp := &planv1.PlanResponse{}
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing build workflow")
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	wkflow := plan.NewWorkflow(cfg)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.Plan, req)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
 	return resp, nil
 }
 

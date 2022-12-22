@@ -10,8 +10,10 @@ import (
 	"github.com/powertoolsdev/go-common/shortid"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/plan/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
+	"github.com/powertoolsdev/workers-deployments/internal/start/plan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -43,7 +45,9 @@ func TestProvision(t *testing.T) {
 
 	act := NewActivities(cfg)
 	bld := build.NewWorkflow(cfg)
+	pln := plan.NewWorkflow(cfg)
 	env.RegisterWorkflow(bld.Build)
+	env.RegisterWorkflow(pln.Plan)
 
 	req := getFakeStartRequest()
 	err := req.Validate()
@@ -68,6 +72,14 @@ func TestProvision(t *testing.T) {
 			resp := &buildv1.BuildResponse{}
 			assert.Nil(t, br.Validate())
 			assert.Equal(t, orgShortID, br.OrgId)
+			return resp, nil
+		})
+
+	env.OnWorkflow(pln.Plan, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r *planv1.PlanRequest) (*planv1.PlanResponse, error) {
+			resp := &planv1.PlanResponse{}
+			assert.Nil(t, r.Validate())
+			assert.Equal(t, orgShortID, r.OrgId)
 			return resp, nil
 		})
 
