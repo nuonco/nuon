@@ -13,7 +13,7 @@ require (
 	github.com/powertoolsdev/go-common v1.1.17
 	github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91
 	github.com/powertoolsdev/go-waypoint v0.2.1
-	github.com/powertoolsdev/protos v0.0.0-20221216001340-24b6a05631b9
+	github.com/powertoolsdev/protos v0.6.2
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.19.0
@@ -22,7 +22,8 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.10.0 // indirect
+	cloud.google.com/go/compute v1.13.0 // indirect
+	cloud.google.com/go/compute/metadata v0.2.1 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.17.2 // indirect
@@ -90,6 +91,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/powertoolsdev/go-generics v0.0.1 // indirect
 	github.com/powertoolsdev/go-kube v0.1.2 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
@@ -114,7 +116,7 @@ require (
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20221027153422-115e99e71e1c // indirect
+	google.golang.org/genproto v0.0.0-20221207170731-23e4bf6bdc37 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
