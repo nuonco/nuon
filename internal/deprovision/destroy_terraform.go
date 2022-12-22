@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultTerraformVersion string = "v1.2.9"
+	defaultTerraformVersion string = "v1.3.6"
 	defaultStateFilename    string = "state.tf"
 )
 
