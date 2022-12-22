@@ -22,3 +22,7 @@ output "orgs_k8s_ca_data" {
 output "orgs_k8s_public_endpoint" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.k8s.public_endpoint)
 }
+
+output "orgs_instance_role_template" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.org_iam_role_name_templates.instances_access)
+}

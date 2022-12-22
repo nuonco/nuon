@@ -69,16 +69,16 @@ func (w wkflow) ProvisionSandbox(ctx workflow.Context, req ProvisionRequest) (Pr
 	act := NewActivities(workers.Config{})
 
 	psReq := ApplySandboxRequest{
-		AppID:               req.AppID,
-		OrgID:               req.OrgID,
-		InstallID:           req.InstallID,
-		BackendBucketName:   w.cfg.InstallationStateBucket,
-		BackendBucketRegion: w.cfg.InstallationStateBucketRegion,
-		AccountSettings:     req.AccountSettings,
-		SandboxSettings:     req.SandboxSettings,
-		SandboxBucketName:   w.cfg.SandboxBucket,
-		NuonAccessRoleArn:   w.cfg.NuonAccessRoleArn,
-		OrgAccountID:        w.cfg.OrgAccountID,
+		AppID:                   req.AppID,
+		OrgID:                   req.OrgID,
+		InstallID:               req.InstallID,
+		BackendBucketName:       w.cfg.InstallationStateBucket,
+		BackendBucketRegion:     w.cfg.InstallationStateBucketRegion,
+		AccountSettings:         req.AccountSettings,
+		SandboxSettings:         req.SandboxSettings,
+		SandboxBucketName:       w.cfg.SandboxBucket,
+		NuonAccessRoleArn:       w.cfg.NuonAccessRoleArn,
+		OrgInstanceRoleTemplate: w.cfg.OrgInstanceRoleTemplate,
 	}
 	psr, err := provisionSandbox(ctx, act, psReq)
 	if err != nil {

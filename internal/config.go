@@ -11,9 +11,9 @@ type Config struct {
 	// against it
 	NuonAccessRoleArn string `config:"nuon_access_role_arn" validate:"required"`
 
-	TokenSecretNamespace string `config:"token_secret_namespace" validate:"required"`
-	OrgServerRootDomain  string `config:"org_server_root_domain" validate:"required"`
-	OrgAccountID         string `config:"org_account_id" validate:"required"`
+	TokenSecretNamespace    string `config:"token_secret_namespace" validate:"required"`
+	OrgServerRootDomain     string `config:"org_server_root_domain" validate:"required"`
+	OrgInstanceRoleTemplate string `config:"org_instance_role_template" validate:"required"`
 
 	InstallationStateBucket       string `config:"installation_state_bucket" validate:"required"`
 	InstallationStateBucketRegion string `config:"installation_state_bucket_region" validate:"required"`
