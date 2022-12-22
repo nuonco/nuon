@@ -6,6 +6,7 @@ import (
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
 	"github.com/powertoolsdev/go-sender"
+	shared "github.com/powertoolsdev/workers-installs/internal"
 	"github.com/powertoolsdev/workers-installs/internal/deprovision"
 	"github.com/powertoolsdev/workers-installs/internal/provision"
 	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
@@ -28,7 +29,7 @@ func init() {
 }
 
 func installRun(cmd *cobra.Command, args []string) {
-	var cfg Config
+	var cfg shared.Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
 		panic(fmt.Sprintf("failed to load config: %s", err))
@@ -66,7 +67,7 @@ func installRun(cmd *cobra.Command, args []string) {
 	}
 }
 
-func runInstallWorkers(c client.Client, cfg Config, interruptCh <-chan interface{}) error {
+func runInstallWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interface{}) error {
 	w := worker.New(c, "install", worker.Options{
 		MaxConcurrentActivityExecutionSize: 1,
 	})
@@ -91,24 +92,24 @@ func runInstallWorkers(c client.Client, cfg Config, interruptCh <-chan interface
 		}
 	}
 
-	if err := cfg.WorkersCfg.Validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return fmt.Errorf("invalid install config: %w", err)
 	}
 
 	// register provision
-	prWorkflow := provision.NewWorkflow(cfg.WorkersCfg)
-	prRWorkflow := runner.NewWorkflow(cfg.WorkersCfg)
-	prSWorkflow := sandbox.NewWorkflow(cfg.WorkersCfg)
+	prWorkflow := provision.NewWorkflow(cfg)
+	prRWorkflow := runner.NewWorkflow(cfg)
+	prSWorkflow := sandbox.NewWorkflow(cfg)
 
 	w.RegisterWorkflow(prWorkflow.Provision)
 	w.RegisterWorkflow(prRWorkflow.ProvisionRunner)
 	w.RegisterWorkflow(prSWorkflow.ProvisionSandbox)
-	w.RegisterActivity(provision.NewProvisionActivities(cfg.WorkersCfg, n))
-	w.RegisterActivity(sandbox.NewActivities(cfg.WorkersCfg))
-	w.RegisterActivity(runner.NewActivities(cfg.WorkersCfg))
+	w.RegisterActivity(provision.NewProvisionActivities(cfg, n))
+	w.RegisterActivity(sandbox.NewActivities(cfg))
+	w.RegisterActivity(runner.NewActivities(cfg))
 
 	// register deprovision
-	dprWorkflow := deprovision.NewWorkflow(cfg.WorkersCfg)
+	dprWorkflow := deprovision.NewWorkflow(cfg)
 	w.RegisterWorkflow(dprWorkflow.Deprovision)
 	w.RegisterActivity(deprovision.NewActivities(n))
 
