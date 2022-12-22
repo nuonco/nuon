@@ -35,9 +35,6 @@ var (
 	_ = sort.Sort
 )
 
-// define the regex for a UUID once up-front
-var _plan_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-
 // Validate checks the field values on PlanRequest with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -60,52 +57,44 @@ func (m *PlanRequest) validate(all bool) error {
 
 	var errors []error
 
-	if err := m._validateUuid(m.GetOrgId()); err != nil {
-		err = PlanRequestValidationError{
+	if utf8.RuneCountInString(m.GetOrgId()) != 26 {
+		err := PlanRequestValidationError{
 			field:  "OrgId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+			reason: "value length must be 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
+
 	}
 
-	if err := m._validateUuid(m.GetAppId()); err != nil {
-		err = PlanRequestValidationError{
+	if utf8.RuneCountInString(m.GetAppId()) != 26 {
+		err := PlanRequestValidationError{
 			field:  "AppId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+			reason: "value length must be 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
+
 	}
 
-	if err := m._validateUuid(m.GetDeploymentId()); err != nil {
-		err = PlanRequestValidationError{
+	if utf8.RuneCountInString(m.GetDeploymentId()) != 26 {
+		err := PlanRequestValidationError{
 			field:  "DeploymentId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+			reason: "value length must be 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
+
 	}
 
 	if len(errors) > 0 {
 		return PlanRequestMultiError(errors)
-	}
-
-	return nil
-}
-
-func (m *PlanRequest) _validateUuid(uuid string) error {
-	if matched := _plan_uuidPattern.MatchString(uuid); !matched {
-		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -202,29 +191,6 @@ func (m *PlanResponse) validate(all bool) error {
 	}
 
 	var errors []error
-
-	if utf8.RuneCountInString(m.GetPlanBucket()) < 1 {
-		err := PlanResponseValidationError{
-			field:  "PlanBucket",
-			reason: "value length must be at least 1 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if _, err := url.Parse(m.GetPlanBucketKey()); err != nil {
-		err = PlanResponseValidationError{
-			field:  "PlanBucketKey",
-			reason: "value must be a valid URI",
-			cause:  err,
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
 
 	if len(errors) > 0 {
 		return PlanResponseMultiError(errors)

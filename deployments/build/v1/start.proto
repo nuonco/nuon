@@ -2,21 +2,16 @@ syntax = "proto3";
 
 package build.v1;
 
-import "tagger/tagger.proto";
-import "validate/validate.proto";
+//import "tagger/tagger.proto";
+//import "validate/validate.proto";
 
 // Plan represents a build plan that is stored in the deployments bucket.
 message Plan {
-  string org_id = 1 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
-  ];
-  string app_id = 2 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
-  ];
-  string deployment_id = 3 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
-  ];
+  // TODO(jm): add Waypoint server ref (what server, key etc)
+  // TODO(jm): add s3 output ref (where to push logs etc)
+  // TODO(jm): add waypoint build info
+  // TODO(jm): add ecr repository information for looking up artifact etc
 }
+
+// TODO(jm): add
+message PlanRef {}

@@ -35,9 +35,6 @@ var (
 	_ = sort.Sort
 )
 
-// define the regex for a UUID once up-front
-var _start_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-
 // Validate checks the field values on Plan with the rules defined in the proto
 // definition for this message. If any rules are violated, the first error
 // encountered is returned, or nil if there are no violations.
@@ -59,52 +56,8 @@ func (m *Plan) validate(all bool) error {
 
 	var errors []error
 
-	if err := m._validateUuid(m.GetOrgId()); err != nil {
-		err = PlanValidationError{
-			field:  "OrgId",
-			reason: "value must be a valid UUID",
-			cause:  err,
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if err := m._validateUuid(m.GetAppId()); err != nil {
-		err = PlanValidationError{
-			field:  "AppId",
-			reason: "value must be a valid UUID",
-			cause:  err,
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if err := m._validateUuid(m.GetDeploymentId()); err != nil {
-		err = PlanValidationError{
-			field:  "DeploymentId",
-			reason: "value must be a valid UUID",
-			cause:  err,
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if len(errors) > 0 {
 		return PlanMultiError(errors)
-	}
-
-	return nil
-}
-
-func (m *Plan) _validateUuid(uuid string) error {
-	if matched := _start_uuidPattern.MatchString(uuid); !matched {
-		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -179,3 +132,101 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = PlanValidationError{}
+
+// Validate checks the field values on PlanRef with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *PlanRef) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on PlanRef with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in PlanRefMultiError, or nil if none found.
+func (m *PlanRef) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *PlanRef) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return PlanRefMultiError(errors)
+	}
+
+	return nil
+}
+
+// PlanRefMultiError is an error wrapping multiple validation errors returned
+// by PlanRef.ValidateAll() if the designated constraints aren't met.
+type PlanRefMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m PlanRefMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m PlanRefMultiError) AllErrors() []error { return m }
+
+// PlanRefValidationError is the validation error returned by PlanRef.Validate
+// if the designated constraints aren't met.
+type PlanRefValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e PlanRefValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e PlanRefValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e PlanRefValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e PlanRefValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e PlanRefValidationError) ErrorName() string { return "PlanRefValidationError" }
+
+// Error satisfies the builtin error interface
+func (e PlanRefValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sPlanRef.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = PlanRefValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = PlanRefValidationError{}
