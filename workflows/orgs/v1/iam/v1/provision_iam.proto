@@ -21,4 +21,6 @@ message ProvisionIAMResponse {
   string odr_role_arn = 3 [(validate.rules).string.min_len = 20];
 
   string instances_role_arn = 4 [(validate.rules).string.min_len = 20];
+
+  string installer_role_arn = 5 [(validate.rules).string.min_len = 20];
 }
