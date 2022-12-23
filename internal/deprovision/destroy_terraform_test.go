@@ -28,11 +28,11 @@ func (f *fakeTerraformRunnerFn) Run(ctx context.Context, req terraform.RunReques
 func Test_tfDestroyer_destroyTerraform(t *testing.T) {
 	errUnableToRun := fmt.Errorf("unable to run")
 	req := DestroyTerraformRequest{
-		DeprovisionRequest:            generics.GetFakeObj[*installsv1.DeprovisionRequest](),
-		InstallationStateBucketName:   "s3://nuon-installations",
-		InstallationStateBucketRegion: "aws-west-2",
-		SandboxBucketName:             "s3://nuon-sandboxes",
-		NuonAssumeRoleArn:             "arn:abc/installer",
+		DeprovisionRequest:        generics.GetFakeObj[*installsv1.DeprovisionRequest](),
+		InstallationsBucketName:   "s3://nuon-installations",
+		InstallationsBucketRegion: "aws-west-2",
+		SandboxBucketName:         "s3://nuon-sandboxes",
+		NuonAssumeRoleArn:         "arn:abc/installer",
 	}
 
 	tests := map[string]struct {
@@ -61,8 +61,8 @@ func Test_tfDestroyer_destroyTerraform(t *testing.T) {
 				assert.Equal(t, expectedSandboxKey, actualReq.Module.BucketKey)
 
 				// backend config
-				assert.Equal(t, req.InstallationStateBucketName, actualReq.BackendConfig.BucketName)
-				assert.Equal(t, req.InstallationStateBucketRegion, actualReq.BackendConfig.BucketRegion)
+				assert.Equal(t, req.InstallationsBucketName, actualReq.BackendConfig.BucketName)
+				assert.Equal(t, req.InstallationsBucketRegion, actualReq.BackendConfig.BucketRegion)
 				expectedBackendKey := getStateBucketKey(depReq.OrgId, depReq.AppId, depReq.InstallId)
 				assert.Equal(t, expectedBackendKey, actualReq.BackendConfig.BucketKey)
 

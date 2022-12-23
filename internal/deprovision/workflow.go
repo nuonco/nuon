@@ -25,7 +25,7 @@ func (w wkflow) finishWithErr(ctx workflow.Context, req *installsv1.DeprovisionR
 	l := workflow.GetLogger(ctx)
 	finishReq := FinishRequest{
 		DeprovisionRequest:  req,
-		InstallationsBucket: w.cfg.InstallationStateBucket,
+		InstallationsBucket: w.cfg.InstallationsBucket,
 		Success:             false,
 		ErrorStep:           step,
 		ErrorMessage:        fmt.Sprintf("%s", err),
@@ -75,7 +75,7 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 
 	stReq := StartRequest{
 		DeprovisionRequest:  req,
-		InstallationsBucket: w.cfg.InstallationStateBucket,
+		InstallationsBucket: w.cfg.InstallationsBucket,
 	}
 	_, err = execStart(ctx, act, stReq)
 	if err != nil {
@@ -86,10 +86,10 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 	dtReq := DestroyTerraformRequest{
 		DeprovisionRequest: req,
 
-		InstallationStateBucketName:   w.cfg.InstallationStateBucket,
-		InstallationStateBucketRegion: w.cfg.InstallationStateBucketRegion,
-		SandboxBucketName:             w.cfg.SandboxBucket,
-		NuonAssumeRoleArn:             w.cfg.NuonAccessRoleArn,
+		InstallationsBucketName:   w.cfg.InstallationsBucket,
+		InstallationsBucketRegion: w.cfg.InstallationsBucketRegion,
+		SandboxBucketName:         w.cfg.SandboxBucket,
+		NuonAssumeRoleArn:         w.cfg.NuonAccessRoleArn,
 	}
 
 	_, err = execDestroyTerraform(ctx, act, dtReq)
@@ -102,7 +102,7 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 
 	finishReq := FinishRequest{
 		DeprovisionRequest:  req,
-		InstallationsBucket: w.cfg.InstallationStateBucket,
+		InstallationsBucket: w.cfg.InstallationsBucket,
 		Success:             true,
 	}
 	if _, err = execFinish(ctx, act, finishReq); err != nil {
