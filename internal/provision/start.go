@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-sender"
 	"github.com/powertoolsdev/go-uploader"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 )
 
 const (
@@ -34,7 +35,7 @@ type StartWorkflowRequest struct {
 	InstallID           string `json:"install_id" validate:"required"`
 	InstallationsBucket string `json:"installations_bucket" validate:"required"`
 
-	ProvisionRequest ProvisionRequest `json:"provision_request" validate:"required"`
+	ProvisionRequest *installsv1.ProvisionRequest `json:"provision_request" validate:"required"`
 }
 
 func (p StartWorkflowRequest) validate() error {
@@ -64,7 +65,7 @@ func (n *starterImpl) sendStartNotification(ctx context.Context, req StartWorkfl
 	return n.sender.Send(ctx, msg)
 }
 
-func (n *starterImpl) writeRequestFile(ctx context.Context, client s3BlobUploader, req ProvisionRequest) error {
+func (n *starterImpl) writeRequestFile(ctx context.Context, client s3BlobUploader, req *installsv1.ProvisionRequest) error {
 	byts, err := json.Marshal(req)
 	if err != nil {
 		return err
@@ -106,9 +107,9 @@ func (a *ProvisionActivities) StartWorkflow(ctx context.Context, req StartWorkfl
 
 	// write request file to S3
 	s3Prefix := getInstallationPrefix(
-		req.ProvisionRequest.OrgID,
-		req.ProvisionRequest.AppID,
-		req.ProvisionRequest.InstallID)
+		req.ProvisionRequest.OrgId,
+		req.ProvisionRequest.AppId,
+		req.ProvisionRequest.InstallId)
 	uploadClient := uploader.NewS3Uploader(req.InstallationsBucket, s3Prefix)
 	if err := a.writeRequestFile(ctx, uploadClient, req.ProvisionRequest); err != nil {
 		return resp, fmt.Errorf("unable to upload request file to s3: %w", err)
@@ -125,7 +126,7 @@ func (a *ProvisionActivities) StartWorkflow(ctx context.Context, req StartWorkfl
 
 type starter interface {
 	sendStartNotification(context.Context, StartWorkflowRequest) error
-	writeRequestFile(context.Context, s3BlobUploader, ProvisionRequest) error
+	writeRequestFile(context.Context, s3BlobUploader, *installsv1.ProvisionRequest) error
 	writeStatusFile(context.Context, s3BlobUploader, StatusFileContents) error
 }
 

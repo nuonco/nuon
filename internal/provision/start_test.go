@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jaswdr/faker"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-sender"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/exp/slices"
@@ -24,13 +25,6 @@ func (m *mockSender) Send(ctx context.Context, msg string) error {
 
 var _ sender.NotificationSender = (*mockSender)(nil)
 
-func getFakeStartRequest() StartWorkflowRequest {
-	fkr := faker.New()
-	var req StartWorkflowRequest
-	fkr.Struct().Fill(&req)
-	return req
-}
-
 func Test_sendStartNotification(t *testing.T) {
 	tests := map[string]struct {
 		fn          func(*testing.T, func(string) bool) sender.NotificationSender
@@ -38,7 +32,7 @@ func Test_sendStartNotification(t *testing.T) {
 		errExpected error
 	}{
 		"happy path": {
-			req: getFakeStartRequest(),
+			req: generics.GetFakeObj[StartWorkflowRequest](),
 			fn: func(t *testing.T, matcher func(string) bool) sender.NotificationSender {
 				ms := &mockSender{}
 				ms.On("Send", mock.Anything, mock.MatchedBy(matcher)).Return(nil).Once()
@@ -48,7 +42,7 @@ func Test_sendStartNotification(t *testing.T) {
 		},
 
 		"error on send": {
-			req:         getFakeStartRequest(),
+			req:         generics.GetFakeObj[StartWorkflowRequest](),
 			errExpected: fmt.Errorf("send error"),
 			fn: func(t *testing.T, matcher func(string) bool) sender.NotificationSender {
 				ms := &mockSender{}
@@ -59,7 +53,7 @@ func Test_sendStartNotification(t *testing.T) {
 		},
 
 		"error without sender": {
-			req:         getFakeStartRequest(),
+			req:         generics.GetFakeObj[StartWorkflowRequest](),
 			errExpected: errNoValidSender,
 			fn: func(t *testing.T, matcher func(string) bool) sender.NotificationSender {
 				return nil
@@ -187,7 +181,7 @@ func Test_writeStatusFile(t *testing.T) {
 
 func Test_writeRequestFile(t *testing.T) {
 	uploadErr := fmt.Errorf("unable to upload request file to s3: upload error")
-	req := getFakeStartRequest()
+	req := generics.GetFakeObj[StartWorkflowRequest]()
 
 	tests := map[string]struct {
 		clientFn    func(*testing.T) s3BlobUploader
@@ -203,7 +197,7 @@ func Test_writeRequestFile(t *testing.T) {
 			assertFn: func(t *testing.T, client s3BlobUploader) {
 				obj := client.(*tests3BlobUploader)
 				obj.AssertNumberOfCalls(t, "UploadBlob", 1)
-				assertReq := obj.Calls[0].Arguments[1].(ProvisionRequest)
+				assertReq := obj.Calls[0].Arguments[1].(*installsv1.ProvisionRequest)
 				assertFilename := obj.Calls[0].Arguments[2].(string)
 				assert.Equal(t, assertReq, req)
 				assert.Equal(t, assertFilename, "request.json")

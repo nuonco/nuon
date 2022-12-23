@@ -2,12 +2,14 @@ package provision
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/go-common/shortid"
+	"github.com/powertoolsdev/go-generics"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
+	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1/runner/v1"
+	sandboxv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1/sandbox/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -34,31 +36,14 @@ func newFakeConfig() workers.Config {
 	}
 }
 
-func getFakeProvisionRequest() ProvisionRequest {
-	return ProvisionRequest{
-		InstallID: uuid.New().String(),
-		OrgID:     uuid.New().String(),
-		AppID:     uuid.New().String(),
-		AccountSettings: &sandbox.AccountSettings{
-			AwsAccountID: uuid.New().String(),
-			AwsRegion:    validInstallRegions()[0],
-			AwsRoleArn:   uuid.New().String(),
-		},
-		SandboxSettings: struct {
-			Name    string `json:"name" validate:"required"`
-			Version string `json:"version" validate:"required"`
-		}{
-			Name:    "aws-eks",
-			Version: "v0.0.1",
-		},
-	}
-}
-
 func TestProvision_finishWithErr(t *testing.T) {
+	cfg := newFakeConfig()
+	assert.NoError(t, cfg.Validate())
+	req := generics.GetFakeObj[*installsv1.ProvisionRequest]()
+	assert.NoError(t, req.Validate())
+
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	cfg := newFakeConfig()
-	req := getFakeProvisionRequest()
 	act := NewProvisionActivities(workers.Config{}, nil)
 
 	errChildWorkflow := fmt.Errorf("unable to complete workflow")
@@ -72,8 +57,8 @@ func TestProvision_finishWithErr(t *testing.T) {
 	sWkflow := sandbox.NewWorkflow(cfg)
 	env.RegisterWorkflow(sWkflow.ProvisionSandbox)
 	env.OnWorkflow(sWkflow.ProvisionSandbox, mock.Anything, mock.Anything).
-		Return(func(_ workflow.Context, pr sandbox.ProvisionRequest) (sandbox.ProvisionResponse, error) {
-			return sandbox.ProvisionResponse{}, errChildWorkflow
+		Return(func(_ workflow.Context, pr *sandboxv1.ProvisionSandboxRequest) (*sandboxv1.ProvisionSandboxResponse, error) {
+			return &sandboxv1.ProvisionSandboxResponse{}, errChildWorkflow
 		})
 
 	env.OnActivity(act.Finish, mock.Anything, mock.Anything).
@@ -87,87 +72,18 @@ func TestProvision_finishWithErr(t *testing.T) {
 	wkflow := NewWorkflow(cfg)
 	env.ExecuteWorkflow(wkflow.Provision, req)
 
-	var resp ProvisionResponse
+	var resp *installsv1.ProvisionResponse
 	require.Error(t, env.GetWorkflowResult(&resp))
 }
 
-func Test_validateProvisionRequest(t *testing.T) {
-	tests := map[string]struct {
-		errExpected error
-		buildReq    func() ProvisionRequest
-	}{
-		"should error when install id is empty": {
-			errExpected: ErrInvalidInstall,
-			buildReq: func() ProvisionRequest {
-				req := getFakeProvisionRequest()
-				req.InstallID = ""
-				return req
-			},
-		},
-		"should error when account id is empty": {
-			errExpected: ErrInvalidAccountSettings,
-			buildReq: func() ProvisionRequest {
-				req := getFakeProvisionRequest()
-				req.AccountSettings.AwsAccountID = ""
-				return req
-			},
-		},
-		"should error when account region is empty or invalid": {
-			errExpected: ErrInvalidAccountSettings,
-			buildReq: func() ProvisionRequest {
-				req := getFakeProvisionRequest()
-				req.AccountSettings.AwsRegion = "invalid"
-				return req
-			},
-		},
-		"should error when account role arn is empty or invalid": {
-			errExpected: ErrInvalidAccountSettings,
-			buildReq: func() ProvisionRequest {
-				req := getFakeProvisionRequest()
-				req.AccountSettings.AwsRoleArn = ""
-				return req
-			},
-		},
-		"should error when sandbox version is empty": {
-			errExpected: ErrInvalidSandboxSettings,
-			buildReq: func() ProvisionRequest {
-				req := getFakeProvisionRequest()
-				req.SandboxSettings.Version = ""
-				return req
-			},
-		},
-		"should error when sandbox name is empty": {
-			errExpected: ErrInvalidSandboxSettings,
-			buildReq: func() ProvisionRequest {
-				req := getFakeProvisionRequest()
-				req.SandboxSettings.Name = ""
-				return req
-			},
-		},
-		"should not error when properly set": {
-			buildReq: func() ProvisionRequest {
-				req := getFakeProvisionRequest()
-				return req
-			},
-		},
-	}
-
-	for desc, test := range tests {
-		t.Run(desc, func(t *testing.T) {
-			err := validateProvisionRequest(test.buildReq())
-
-			if test.errExpected != nil {
-				assert.True(t, errors.Is(err, test.errExpected))
-			}
-		})
-	}
-}
-
 func TestProvision(t *testing.T) {
+	cfg := newFakeConfig()
+	assert.NoError(t, cfg.Validate())
+	req := generics.GetFakeObj[*installsv1.ProvisionRequest]()
+	assert.NoError(t, req.Validate())
+
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	cfg := newFakeConfig()
-	assert.Nil(t, cfg.Validate())
 
 	a := NewProvisionActivities(cfg, sender.NewNoopSender())
 	rWkflow := runner.NewWorkflow(cfg)
@@ -175,31 +91,29 @@ func TestProvision(t *testing.T) {
 	sWkflow := sandbox.NewWorkflow(cfg)
 	env.RegisterWorkflow(sWkflow.ProvisionSandbox)
 
-	req := getFakeProvisionRequest()
-
 	validProvisionOutput := map[string]string{
 		clusterIDKey:       "clusterid",
 		clusterEndpointKey: "https://k8s.endpoint",
-		clusterCAKey:       "b64 encoded ca",
+		clusterCAKey:       "b64 encoded ca data key that must be at least 20 chars long",
 	}
-	appShortID, err := shortid.ParseString(req.AppID)
+	appShortID, err := shortid.ParseString(req.AppId)
 	assert.NoError(t, err)
-	orgShortID, err := shortid.ParseString(req.OrgID)
+	orgShortID, err := shortid.ParseString(req.OrgId)
 	assert.NoError(t, err)
-	installShortID, err := shortid.ParseString(req.InstallID)
+	installShortID, err := shortid.ParseString(req.InstallId)
 	assert.NoError(t, err)
 
 	// Mock activity implementation
 	env.OnWorkflow(sWkflow.ProvisionSandbox, mock.Anything, mock.Anything).
-		Return(func(_ workflow.Context, pr sandbox.ProvisionRequest) (sandbox.ProvisionResponse, error) {
+		Return(func(_ workflow.Context, pr *sandboxv1.ProvisionSandboxRequest) (*sandboxv1.ProvisionSandboxResponse, error) {
 			assert.Nil(t, pr.Validate())
 
-			assert.Equal(t, orgShortID, pr.OrgID)
-			assert.Equal(t, appShortID, pr.AppID)
-			assert.Equal(t, installShortID, pr.InstallID)
+			assert.Equal(t, orgShortID, pr.OrgId)
+			assert.Equal(t, appShortID, pr.AppId)
+			assert.Equal(t, installShortID, pr.InstallId)
 			assert.Equal(t, req.AccountSettings, pr.AccountSettings)
 			assert.Equal(t, req.SandboxSettings, pr.SandboxSettings)
-			return sandbox.ProvisionResponse{TerraformOutputs: validProvisionOutput}, nil
+			return &sandboxv1.ProvisionSandboxResponse{TerraformOutputs: validProvisionOutput}, nil
 		})
 
 	env.OnActivity(a.StartWorkflow, mock.Anything, mock.Anything).
@@ -210,12 +124,12 @@ func TestProvision(t *testing.T) {
 		})
 
 	env.OnWorkflow(rWkflow.ProvisionRunner, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r runner.ProvisionRequest) (runner.ProvisionResponse, error) {
-			var resp runner.ProvisionResponse
+		Return(func(ctx workflow.Context, r *runnerv1.ProvisionRunnerRequest) (*runnerv1.ProvisionRunnerResponse, error) {
+			resp := &runnerv1.ProvisionRunnerResponse{}
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, orgShortID, r.OrgID)
-			assert.Equal(t, appShortID, r.AppID)
-			assert.Equal(t, installShortID, r.InstallID)
+			assert.Equal(t, orgShortID, r.OrgId)
+			assert.Equal(t, appShortID, r.AppId)
+			assert.Equal(t, installShortID, r.InstallId)
 			return resp, nil
 		})
 
@@ -223,9 +137,9 @@ func TestProvision(t *testing.T) {
 		Return(func(_ context.Context, fReq FinishRequest) (FinishResponse, error) {
 			var resp FinishResponse
 			assert.Nil(t, fReq.validate())
-			assert.Equal(t, orgShortID, fReq.OrgID)
-			assert.Equal(t, appShortID, fReq.AppID)
-			assert.Equal(t, installShortID, fReq.InstallID)
+			assert.Equal(t, orgShortID, fReq.ProvisionRequest.OrgId)
+			assert.Equal(t, appShortID, fReq.ProvisionRequest.AppId)
+			assert.Equal(t, installShortID, fReq.ProvisionRequest.InstallId)
 			return resp, nil
 		})
 
@@ -233,7 +147,8 @@ func TestProvision(t *testing.T) {
 	env.ExecuteWorkflow(wkflow.Provision, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	var resp ProvisionResponse
+
+	resp := &installsv1.ProvisionResponse{}
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
 	require.Equal(t, validProvisionOutput, resp.TerraformOutputs)

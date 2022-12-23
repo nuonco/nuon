@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-sender"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -13,7 +15,7 @@ import (
 func Test_finisherImpl_sendSuccessNotification(t *testing.T) {
 	errUnableToSend := fmt.Errorf("unableToSend")
 	req := FinishRequest{
-		ProvisionRequest:    getFakeProvisionRequest(),
+		ProvisionRequest:    generics.GetFakeObj[*installsv1.ProvisionRequest](),
 		InstallationsBucket: "nuon-installations-stage",
 		Success:             true,
 	}
@@ -74,7 +76,7 @@ func Test_finisherImpl_sendSuccessNotification(t *testing.T) {
 func Test_finisherImpl_sendErrorNotification(t *testing.T) {
 	errUnableToSend := fmt.Errorf("unableToSend")
 	req := FinishRequest{
-		ProvisionRequest:    getFakeProvisionRequest(),
+		ProvisionRequest:    generics.GetFakeObj[*installsv1.ProvisionRequest](),
 		InstallationsBucket: "nuon-installations-stage",
 		Success:             true,
 		ErrorStep:           "destroy_step",
