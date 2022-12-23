@@ -7,8 +7,8 @@ import "installs/v1/sandbox_settings.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-// ProvisionRequest: provision a nuon sandbox and runner
-message ProvisionRequest {
+// DeprovisionRequest: provision a nuon sandbox and runner
+message DeprovisionRequest {
   string org_id = 1 [
     (validate.rules).string.uuid = true,
     (tagger.tags) = "faker:\"uuid_hyphenated\""
@@ -27,6 +27,4 @@ message ProvisionRequest {
 }
 
 // StartResponse returns the response from a deployment workflow
-message ProvisionResponse {
-  map<string, string> terraform_outputs = 1;
-}
+message DeprovisionResponse {}

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package installs.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message AccountSettings {
+  string region = 1 [
+    (validate.rules).string = {
+      in: [
+        "us-west-2",
+        "us-west-1",
+        "us-east-2",
+        "us-east-1"
+      ]
+    },
+    (tagger.tags) = "faker:\"oneof: us-west-2\""
+  ];
+
+  string aws_account_id = 2 [
+    (validate.rules).string.min_len = 12,
+    (tagger.tags) = "faker:\"len=12\""
+  ];
+
+  string aws_role_arn = 3 [
+    (validate.rules).string.min_len = 20,
+    (tagger.tags) = "faker:\"len=20\""
+  ];
+}
