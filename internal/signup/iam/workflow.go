@@ -82,6 +82,59 @@ func (w wkflow) provisionOdrIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReq
 	return cdrResp.RoleArn, nil
 }
 
+func (w wkflow) provisionInstallerIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
+	l := log.With(workflow.GetLogger(ctx))
+	act := NewActivities()
+
+	// create installer role policy
+	l.Debug("creating installer iam policy for org %s", req.OrgId)
+	installerPolicy, err := roles.InstallerIAMPolicy(w.cfg.OrgInstallationsBucketName, req.OrgId)
+	if err != nil {
+		return "", fmt.Errorf("unable to create IAM policy document: %w", err)
+	}
+	cdpReq := CreateIAMPolicyRequest{
+		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
+		PolicyName:     roles.InstallerIAMName(req.OrgId),
+		PolicyPath:     defaultIAMPath(req.OrgId),
+		PolicyDocument: string(installerPolicy),
+		PolicyTags:     roles.DefaultTags(req.OrgId),
+	}
+	cdpResp, err := execCreateIAMPolicy(ctx, act, cdpReq)
+	if err != nil {
+		return "", fmt.Errorf("unable to create IAM policy: %w", err)
+	}
+
+	l.Debug("creating installer iam role for org %s", req.OrgId)
+	installerTrustPolicy, err := roles.InstallerIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix)
+	if err != nil {
+		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
+	}
+	cdrReq := CreateIAMRoleRequest{
+		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
+		RoleName:            roles.InstallerIAMName(req.OrgId),
+		RolePath:            defaultIAMPath(req.OrgId),
+		TrustPolicyDocument: string(installerTrustPolicy),
+		RoleTags:            roles.DefaultTags(req.OrgId),
+	}
+	cdrResp, err := execCreateIAMRole(ctx, act, cdrReq)
+	if err != nil {
+		return "", fmt.Errorf("unable to create IAM role: %w", err)
+	}
+
+	l.Debug("creating installer iam policy attachment for org %s", req.OrgId)
+	cdpaReq := CreateIAMRolePolicyAttachmentRequest{
+		AssumeRoleARN: w.cfg.OrgsIAMAccessRoleArn,
+		PolicyArn:     cdpResp.PolicyArn,
+		RoleName:      roles.InstallerIAMName(req.OrgId),
+	}
+	err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
+	if err != nil {
+		return "", fmt.Errorf("unable to create IAM role policy attachment: %w", err)
+	}
+
+	return cdrResp.RoleArn, nil
+}
+
 func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
 	l := log.With(workflow.GetLogger(ctx))
 	act := NewActivities()
@@ -265,6 +318,12 @@ func (w wkflow) ProvisionIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReques
 		return resp, fmt.Errorf("unable to provision installations IAM role: %w", err)
 	}
 	resp.InstallationsRoleArn = installationsRoleArn
+
+	installerRoleArn, err := w.provisionInstallerIAM(ctx, req)
+	if err != nil {
+		return resp, fmt.Errorf("unable to provision installer IAM role: %w", err)
+	}
+	resp.InstallerRoleArn = installerRoleArn
 
 	odrRoleArn, err := w.provisionOdrIAM(ctx, req)
 	if err != nil {
