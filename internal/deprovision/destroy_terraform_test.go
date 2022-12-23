@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-terraform"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -26,7 +28,7 @@ func (f *fakeTerraformRunnerFn) Run(ctx context.Context, req terraform.RunReques
 func Test_tfDestroyer_destroyTerraform(t *testing.T) {
 	errUnableToRun := fmt.Errorf("unable to run")
 	req := DestroyTerraformRequest{
-		DeprovisionRequest:            getFakeDeprovisionRequest(),
+		DeprovisionRequest:            generics.GetFakeObj[*installsv1.DeprovisionRequest](),
 		InstallationStateBucketName:   "s3://nuon-installations",
 		InstallationStateBucketRegion: "aws-west-2",
 		SandboxBucketName:             "s3://nuon-sandboxes",
@@ -47,29 +49,30 @@ func Test_tfDestroyer_destroyTerraform(t *testing.T) {
 			assertFn: func(t *testing.T, obj *fakeTerraformRunnerFn) {
 				obj.AssertNumberOfCalls(t, "Run", 1)
 				actualReq := obj.Calls[0].Arguments[1].(terraform.RunRequest)
+				depReq := req.DeprovisionRequest
 				assert.NotEmpty(t, actualReq)
 
-				assert.Equal(t, req.InstallID, actualReq.ID)
+				assert.Equal(t, depReq.InstallId, actualReq.ID)
 				assert.Equal(t, terraform.RunTypeDestroy, actualReq.RunType)
 
 				// module
 				assert.Equal(t, req.SandboxBucketName, actualReq.Module.BucketName)
-				expectedSandboxKey := getSandboxBucketKey(req.SandboxSettings.Name, req.SandboxSettings.Version)
+				expectedSandboxKey := getSandboxBucketKey(depReq.SandboxSettings.Name, depReq.SandboxSettings.Version)
 				assert.Equal(t, expectedSandboxKey, actualReq.Module.BucketKey)
 
 				// backend config
 				assert.Equal(t, req.InstallationStateBucketName, actualReq.BackendConfig.BucketName)
 				assert.Equal(t, req.InstallationStateBucketRegion, actualReq.BackendConfig.BucketRegion)
-				expectedBackendKey := getStateBucketKey(req.OrgID, req.AppID, req.InstallID)
+				expectedBackendKey := getStateBucketKey(depReq.OrgId, depReq.AppId, depReq.InstallId)
 				assert.Equal(t, expectedBackendKey, actualReq.BackendConfig.BucketKey)
 
 				// env vars
-				assert.Equal(t, req.AwsRegion, actualReq.EnvVars["AWS_REGION"])
+				assert.Equal(t, depReq.AccountSettings.Region, actualReq.EnvVars["AWS_REGION"])
 
 				// tf vars
-				assert.Equal(t, req.InstallID, actualReq.TfVars["nuon_id"])
-				assert.Equal(t, req.AwsRegion, actualReq.TfVars["region"])
-				assert.Equal(t, req.AssumeRoleArn, actualReq.TfVars["assume_role_arn"])
+				assert.Equal(t, depReq.InstallId, actualReq.TfVars["nuon_id"])
+				assert.Equal(t, depReq.AccountSettings.Region, actualReq.TfVars["region"])
+				assert.Equal(t, depReq.AccountSettings.AwsRoleArn, actualReq.TfVars["assume_role_arn"])
 				assert.Equal(t, req.NuonAssumeRoleArn, actualReq.TfVars["install_role_arn"])
 			},
 			errExpected: nil,

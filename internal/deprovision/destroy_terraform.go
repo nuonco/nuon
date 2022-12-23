@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-terraform"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 )
 
 type DestroyTerraformRequest struct {
-	DeprovisionRequest `json:"deprovision_request" validate:"required"`
+	DeprovisionRequest *installsv1.DeprovisionRequest `json:"deprovision_request" validate:"required"`
 
 	InstallationStateBucketName   string `json:"installation_state_bucket_name" validate:"required"`
 	InstallationStateBucketRegion string `json:"installation_state_bucket_region" validate:"required"`
@@ -41,12 +42,14 @@ var _ terraformDestroyer = (*tfDestroyer)(nil)
 type tfDestroyer struct{}
 
 func (t *tfDestroyer) destroyTerraform(ctx context.Context, fn terraformRunnerFn, req DestroyTerraformRequest) error {
+	dr := req.DeprovisionRequest
+
 	runReq := terraform.RunRequest{
-		ID:      req.InstallID,
+		ID:      dr.InstallId,
 		RunType: terraform.RunTypeDestroy,
 		Module: terraform.Module{
 			BucketName:       req.SandboxBucketName,
-			BucketKey:        getSandboxBucketKey(req.SandboxSettings.Name, req.SandboxSettings.Version),
+			BucketKey:        getSandboxBucketKey(dr.SandboxSettings.Name, dr.SandboxSettings.Version),
 			TerraformVersion: defaultTerraformVersion,
 		},
 		// TODO(jm): use an s3 logger here, once this works
@@ -55,21 +58,21 @@ func (t *tfDestroyer) destroyTerraform(ctx context.Context, fn terraformRunnerFn
 		BackendConfig: terraform.BackendConfig{
 			BucketRegion: req.InstallationStateBucketRegion,
 			BucketName:   req.InstallationStateBucketName,
-			BucketKey:    getStateBucketKey(req.OrgID, req.AppID, req.InstallID),
+			BucketKey:    getStateBucketKey(dr.OrgId, dr.AppId, dr.InstallId),
 		},
 		EnvVars: map[string]string{
-			"AWS_REGION": req.AwsRegion,
+			"AWS_REGION": dr.AccountSettings.Region,
 		},
 		TfVars: map[string]interface{}{
-			"nuon_id":          req.InstallID,
-			"region":           req.AwsRegion,
-			"assume_role_arn":  req.AssumeRoleArn,
+			"nuon_id":          dr.InstallId,
+			"region":           dr.AccountSettings.Region,
+			"assume_role_arn":  dr.AccountSettings.AwsRoleArn,
 			"install_role_arn": req.NuonAssumeRoleArn,
 			"tags": map[string]string{
-				"nuon_sandbox_name":    req.SandboxSettings.Name,
-				"nuon_sandbox_version": req.SandboxSettings.Version,
-				"nuon_install_id":      req.InstallID,
-				"nuon_app_id":          req.AppID,
+				"nuon_sandbox_name":    dr.SandboxSettings.Name,
+				"nuon_sandbox_version": dr.SandboxSettings.Version,
+				"nuon_install_id":      dr.InstallId,
+				"nuon_app_id":          dr.AppId,
 			},
 		},
 	}
