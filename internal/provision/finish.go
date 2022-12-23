@@ -7,10 +7,11 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-sender"
 	"github.com/powertoolsdev/go-uploader"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 )
 
 type FinishRequest struct {
-	ProvisionRequest
+	ProvisionRequest *installsv1.ProvisionRequest `json:"provision_request" validate:"required"`
 
 	Success      bool   `json:"success"`
 	ErrorMessage string `json:"error_message"`
@@ -44,9 +45,9 @@ func (a *ProvisionActivities) Finish(ctx context.Context, req FinishRequest) (Fi
 
 	// write status file to S3
 	s3Prefix := getInstallationPrefix(
-		req.ProvisionRequest.OrgID,
-		req.ProvisionRequest.AppID,
-		req.ProvisionRequest.InstallID)
+		req.ProvisionRequest.OrgId,
+		req.ProvisionRequest.AppId,
+		req.ProvisionRequest.InstallId)
 	statusFileContents := StatusFileContents{
 		Status:       "Finished",
 		ErrorStep:    req.ErrorStep,
@@ -80,12 +81,13 @@ const errorNotificationTemplate string = `:rotating_light: _error provisioning s
 `
 
 func (s *finisherImpl) sendErrorNotification(ctx context.Context, req FinishRequest, sender sender.NotificationSender) error {
-	s3Prefix := getS3Prefix(req.InstallationsBucket, req.OrgID, req.AppID, req.InstallID)
+	pr := req.ProvisionRequest
+	s3Prefix := getS3Prefix(req.InstallationsBucket, pr.OrgId, pr.AppId, pr.InstallId)
 	notif := fmt.Sprintf(errorNotificationTemplate,
 		s3Prefix,
-		req.SandboxSettings.Name,
-		req.SandboxSettings.Version,
-		req.InstallID,
+		pr.SandboxSettings.Name,
+		pr.SandboxSettings.Version,
+		pr.InstallId,
 		req.ErrorStep,
 		req.ErrorMessage)
 
@@ -102,14 +104,15 @@ const successNotificationTemplate string = `:white_check_mark: _successfully pro
 `
 
 func (s *finisherImpl) sendSuccessNotification(ctx context.Context, req FinishRequest, sender sender.NotificationSender) error {
-	s3Prefix := getS3Prefix(req.InstallationsBucket, req.OrgID, req.AppID, req.InstallID)
+	pr := req.ProvisionRequest
+	s3Prefix := getS3Prefix(req.InstallationsBucket, pr.OrgId, pr.AppId, pr.InstallId)
 	notif := fmt.Sprintf(successNotificationTemplate,
 		s3Prefix,
-		req.SandboxSettings.Name,
-		req.SandboxSettings.Version,
-		req.InstallID,
-		req.InstallID,
-		req.OrgID)
+		pr.SandboxSettings.Name,
+		pr.SandboxSettings.Version,
+		pr.InstallId,
+		pr.InstallId,
+		pr.OrgId)
 
 	return sender.Send(ctx, notif)
 }

@@ -6,37 +6,15 @@ import (
 	"time"
 
 	"github.com/powertoolsdev/go-common/shortid"
-	"github.com/powertoolsdev/go-kube"
 	"go.temporal.io/sdk/workflow"
-	"golang.org/x/exp/slices"
 
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
+	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1/runner/v1"
+	sandboxv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1/sandbox/v1"
 	workers "github.com/powertoolsdev/workers-installs/internal"
 	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
 	"github.com/powertoolsdev/workers-installs/internal/provision/sandbox"
 )
-
-// validInstallRegions are the list of regions allowed for an install to be run in
-func validInstallRegions() []string {
-	return []string{"us-east-1", "us-east-2", "us-west-1", "us-west-2"}
-}
-
-// ProvisionRequest includes the set of arguments needed to provision a sandbox
-type ProvisionRequest struct {
-	OrgID     string `json:"org_id" validate:"required"`
-	AppID     string `json:"app_id" validate:"required"`
-	InstallID string `json:"install_id" validate:"required"`
-
-	AccountSettings *sandbox.AccountSettings `json:"account_settings" validate:"required"`
-
-	SandboxSettings struct {
-		Name    string `json:"name" validate:"required"`
-		Version string `json:"version" validate:"required"`
-	} `json:"sandbox_settings" validate:"required"`
-}
-
-type ProvisionResponse struct {
-	TerraformOutputs map[string]string
-}
 
 const (
 	clusterIDKey       = "cluster_name"
@@ -56,30 +34,30 @@ type wkflow struct {
 }
 
 // Provision is a workflow that creates an app install sandbox using terraform
-func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (ProvisionResponse, error) {
-	resp := ProvisionResponse{}
+func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest) (*installsv1.ProvisionResponse, error) {
+	resp := &installsv1.ProvisionResponse{}
 	l := workflow.GetLogger(ctx)
 
-	if err := validateProvisionRequest(req); err != nil {
+	if err := req.Validate(); err != nil {
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
 	// parse IDs into short IDs, and use them for all subsequent requests
-	orgID, err := shortid.ParseString(req.OrgID)
+	orgID, err := shortid.ParseString(req.OrgId)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get short org ID: %w", err)
 	}
-	req.OrgID = orgID
-	appID, err := shortid.ParseString(req.AppID)
+	req.OrgId = orgID
+	appID, err := shortid.ParseString(req.AppId)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get short org ID: %w", err)
 	}
-	req.AppID = appID
-	installID, err := shortid.ParseString(req.InstallID)
+	req.AppId = appID
+	installID, err := shortid.ParseString(req.InstallId)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get short install ID: %w", err)
 	}
-	req.InstallID = installID
+	req.InstallId = installID
 
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 60 * time.Minute,
@@ -104,10 +82,10 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 		return resp, err
 	}
 
-	psReq := sandbox.ProvisionRequest{
-		AppID:           appID,
-		OrgID:           orgID,
-		InstallID:       installID,
+	psReq := &sandboxv1.ProvisionSandboxRequest{
+		AppId:           appID,
+		OrgId:           orgID,
+		InstallId:       installID,
 		AccountSettings: req.AccountSettings,
 		SandboxSettings: req.SandboxSettings,
 	}
@@ -125,14 +103,14 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 		return resp, err
 	}
 
-	prReq := runner.ProvisionRequest{
-		OrgID:     orgID,
-		AppID:     appID,
-		InstallID: installID,
-		ClusterInfo: kube.ClusterInfo{
-			ID:       psr.TerraformOutputs[clusterIDKey],
+	prReq := &runnerv1.ProvisionRunnerRequest{
+		OrgId:     orgID,
+		AppId:     appID,
+		InstallId: installID,
+		ClusterInfo: &runnerv1.KubeClusterInfo{
+			Id:       psr.TerraformOutputs[clusterIDKey],
 			Endpoint: psr.TerraformOutputs[clusterEndpointKey],
-			CAData:   psr.TerraformOutputs[clusterCAKey],
+			CaData:   psr.TerraformOutputs[clusterCAKey],
 		},
 	}
 	if _, err = execProvisionRunner(ctx, w.cfg, prReq); err != nil {
@@ -154,7 +132,7 @@ func (w wkflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provision
 	return resp, nil
 }
 
-func (w wkflow) finishWithErr(ctx workflow.Context, req ProvisionRequest, act *ProvisionActivities, step string, err error) {
+func (w wkflow) finishWithErr(ctx workflow.Context, req *installsv1.ProvisionRequest, act *ProvisionActivities, step string, err error) {
 	l := workflow.GetLogger(ctx)
 	finishReq := FinishRequest{
 		ProvisionRequest:    req,
@@ -186,9 +164,9 @@ func execStartWorkflow(ctx workflow.Context, act *ProvisionActivities, req Start
 func execProvisionSandbox(
 	ctx workflow.Context,
 	cfg workers.Config,
-	iwrr sandbox.ProvisionRequest,
-) (sandbox.ProvisionResponse, error) {
-	var resp sandbox.ProvisionResponse
+	iwrr *sandboxv1.ProvisionSandboxRequest,
+) (*sandboxv1.ProvisionSandboxResponse, error) {
+	resp := &sandboxv1.ProvisionSandboxResponse{}
 
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 30,
@@ -209,9 +187,9 @@ func execProvisionSandbox(
 func execProvisionRunner(
 	ctx workflow.Context,
 	cfg workers.Config,
-	iwrr runner.ProvisionRequest,
-) (runner.ProvisionResponse, error) {
-	var resp runner.ProvisionResponse
+	iwrr *runnerv1.ProvisionRunnerRequest,
+) (*runnerv1.ProvisionRunnerResponse, error) {
+	resp := &runnerv1.ProvisionRunnerResponse{}
 
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 10,
@@ -250,40 +228,6 @@ var (
 	ErrInvalidBucketName      = errors.New("invalid bucket name")
 	ErrInvalidBucketRegion    = errors.New("invalid bucket region")
 )
-
-func validateProvisionRequest(req ProvisionRequest) error {
-	if req.InstallID == "" {
-		return fmt.Errorf("%w: install ID must be set", ErrInvalidInstall)
-	}
-
-	// validate account settings
-	if req.AccountSettings == nil {
-		return fmt.Errorf("%w: account settings must be specified", ErrInvalidAccountSettings)
-	}
-	if req.AccountSettings.AwsRegion == "" {
-		return fmt.Errorf("%w: account region must be set", ErrInvalidAccountSettings)
-	}
-	if !slices.Contains(validInstallRegions(), req.AccountSettings.AwsRegion) {
-		return fmt.Errorf("%w: account region not supported", ErrInvalidAccountSettings)
-	}
-
-	if req.AccountSettings.AwsAccountID == "" {
-		return fmt.Errorf("%w: account ID must be set", ErrInvalidAccountSettings)
-	}
-	if req.AccountSettings.AwsRoleArn == "" {
-		return fmt.Errorf("%w: account role arn must be set", ErrInvalidAccountSettings)
-	}
-
-	// validate sandbox settings
-	if req.SandboxSettings.Name == "" {
-		return fmt.Errorf("%w: sandbox name must be set", ErrInvalidSandboxSettings)
-	}
-	if req.SandboxSettings.Version == "" {
-		return fmt.Errorf("%w: sandbox version must be set", ErrInvalidSandboxSettings)
-	}
-
-	return nil
-}
 
 func checkKeys(m map[string]string, keys []string) error {
 	for _, k := range keys {

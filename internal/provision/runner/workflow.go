@@ -6,27 +6,11 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-helm/waypoint"
 	"github.com/powertoolsdev/go-kube"
+	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1/runner/v1"
 	workers "github.com/powertoolsdev/workers-installs/internal"
 )
-
-// ProvisionRequest includes the set of arguments needed to provision a runner in an install
-type ProvisionRequest struct {
-	OrgID     string `json:"org_id" validate:"required"`
-	AppID     string `json:"app_id" validate:"required"`
-	InstallID string `json:"install_id" validate:"required"`
-
-	ClusterInfo kube.ClusterInfo `json:"cluster_info" validate:"required"`
-}
-
-func (p ProvisionRequest) Validate() error {
-	validate := validator.New()
-	return validate.Struct(p)
-}
-
-type ProvisionResponse struct{}
 
 // NewWorkflow returns a new workflow executor
 func NewWorkflow(cfg workers.Config) wkflow {
@@ -42,15 +26,15 @@ type wkflow struct {
 // Provision is a workflow that creates an app install sandbox using terraform
 //
 //nolint:funlen
-func (w wkflow) ProvisionRunner(ctx workflow.Context, req ProvisionRequest) (ProvisionResponse, error) {
-	resp := ProvisionResponse{}
+func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRunnerRequest) (*runnerv1.ProvisionRunnerResponse, error) {
+	resp := &runnerv1.ProvisionRunnerResponse{}
 	l := workflow.GetLogger(ctx)
 
 	if err := req.Validate(); err != nil {
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	orgServerAddr := fmt.Sprintf("%s.%s:9701", req.OrgID, w.cfg.OrgServerRootDomain)
+	orgServerAddr := fmt.Sprintf("%s.%s:9701", req.OrgId, w.cfg.OrgServerRootDomain)
 
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 60 * time.Minute,
@@ -65,8 +49,8 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req ProvisionRequest) (Pro
 	cwpReq := CreateWaypointProjectRequest{
 		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
 		OrgServerAddr:        orgServerAddr,
-		OrgID:                req.OrgID,
-		InstallID:            req.InstallID,
+		OrgID:                req.OrgId,
+		InstallID:            req.InstallId,
 	}
 	_, err := createWaypointProject(ctx, act, cwpReq)
 	if err != nil {
@@ -78,8 +62,8 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req ProvisionRequest) (Pro
 	cwwReq := CreateWaypointWorkspaceRequest{
 		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
 		OrgServerAddr:        orgServerAddr,
-		OrgID:                req.OrgID,
-		InstallID:            req.InstallID,
+		OrgID:                req.OrgId,
+		InstallID:            req.InstallId,
 	}
 	_, err = createWaypointWorkspace(ctx, act, cwwReq)
 	if err != nil {
@@ -91,7 +75,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req ProvisionRequest) (Pro
 	gwscReq := GetWaypointServerCookieRequest{
 		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
 		OrgServerAddr:        orgServerAddr,
-		OrgID:                req.OrgID,
+		OrgID:                req.OrgId,
 	}
 	gwscResp, err := getWaypointServerCookie(ctx, act, gwscReq)
 	if err != nil {
@@ -101,18 +85,23 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req ProvisionRequest) (Pro
 
 	// install waypoint
 	iwReq := InstallWaypointRequest{
-		InstallID:       req.InstallID,
-		Namespace:       req.InstallID,
-		ReleaseName:     fmt.Sprintf("wp-%s", req.InstallID),
+		InstallID:       req.InstallId,
+		Namespace:       req.InstallId,
+		ReleaseName:     fmt.Sprintf("wp-%s", req.InstallId),
 		Chart:           &waypoint.DefaultChart,
 		Atomic:          false,
 		CreateNamespace: true,
 
-		ClusterInfo: req.ClusterInfo,
+		ClusterInfo: kube.ClusterInfo{
+			ID:             req.ClusterInfo.Id,
+			Endpoint:       req.ClusterInfo.Endpoint,
+			CAData:         req.ClusterInfo.CaData,
+			TrustedRoleARN: req.ClusterInfo.TrustedRoleArn,
+		},
 
 		RunnerConfig: RunnerConfig{
 			Cookie:     gwscResp.Cookie,
-			ID:         req.InstallID,
+			ID:         req.InstallId,
 			ServerAddr: orgServerAddr,
 		},
 	}
@@ -125,8 +114,8 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req ProvisionRequest) (Pro
 	awrReq := AdoptWaypointRunnerRequest{
 		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
 		OrgServerAddr:        orgServerAddr,
-		OrgID:                req.OrgID,
-		InstallID:            req.InstallID,
+		OrgID:                req.OrgId,
+		InstallID:            req.InstallId,
 	}
 	_, err = adoptWaypointRunner(ctx, act, awrReq)
 	if err != nil {
@@ -137,9 +126,14 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req ProvisionRequest) (Pro
 	crbReq := CreateRoleBindingRequest{
 		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
 		OrgServerAddr:        orgServerAddr,
-		InstallID:            req.InstallID,
-		NamespaceName:        req.InstallID,
-		ClusterInfo:          req.ClusterInfo,
+		InstallID:            req.InstallId,
+		NamespaceName:        req.InstallId,
+		ClusterInfo: kube.ClusterInfo{
+			ID:             req.ClusterInfo.Id,
+			Endpoint:       req.ClusterInfo.Endpoint,
+			CAData:         req.ClusterInfo.CaData,
+			TrustedRoleARN: req.ClusterInfo.TrustedRoleArn,
+		},
 	}
 	_, err = createRoleBinding(ctx, act, crbReq)
 	if err != nil {
@@ -150,8 +144,8 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req ProvisionRequest) (Pro
 	cwrpReq := CreateWaypointRunnerProfileRequest{
 		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
 		OrgServerAddr:        orgServerAddr,
-		InstallID:            req.InstallID,
-		OrgID:                req.OrgID,
+		InstallID:            req.InstallId,
+		OrgID:                req.OrgId,
 	}
 	_, err = createWaypointRunnerProfile(ctx, act, cwrpReq)
 	if err != nil {

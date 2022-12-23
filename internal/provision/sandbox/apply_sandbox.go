@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/go-terraform"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 )
 
 const (
@@ -29,12 +31,9 @@ type ApplySandboxRequest struct {
 	NuonAccessRoleArn       string `json:"nuon_access_role_arn" validate:"required"`
 	OrgInstanceRoleTemplate string `json:"org_instance_role_template" validate:"required"`
 
-	AccountSettings *AccountSettings `json:"account_settings" validate:"required"`
+	AccountSettings *installsv1.AccountSettings `json:"account_settings" validate:"required"`
+	SandboxSettings *installsv1.SandboxSettings `json:"sandbox_settings" validate:"required"`
 
-	SandboxSettings struct {
-		Name    string `json:"name" validate:"required"`
-		Version string `json:"version" validate:"required"`
-	} `json:"sandbox_settings"`
 	SandboxBucketName string `json:"sandbox_bucket_name" validate:"required"`
 }
 
@@ -81,11 +80,11 @@ func (t *tfApplyer) provisionSandbox(ctx context.Context, fn terraformRunnerFn, 
 			BucketKey:    getStateBucketKey(req.OrgID, req.AppID, req.InstallID),
 		},
 		EnvVars: map[string]string{
-			"AWS_REGION": req.AccountSettings.AwsRegion,
+			"AWS_REGION": req.AccountSettings.Region,
 		},
 		TfVars: map[string]interface{}{
 			"nuon_id":             req.InstallID,
-			"region":              req.AccountSettings.AwsRegion,
+			"region":              req.AccountSettings.Region,
 			"assume_role_arn":     req.AccountSettings.AwsRoleArn,
 			"install_role_arn":    req.NuonAccessRoleArn,
 			"image_sync_role_arn": fmt.Sprintf(req.OrgInstanceRoleTemplate, req.OrgID),

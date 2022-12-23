@@ -4,34 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/workflow"
 
+	sandboxv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1/sandbox/v1"
 	workers "github.com/powertoolsdev/workers-installs/internal"
 )
-
-// ProvisionRequest includes the set of arguments needed to provision a sandbox
-type ProvisionRequest struct {
-	OrgID     string `json:"org_id" validate:"required"`
-	AppID     string `json:"app_id" validate:"required"`
-	InstallID string `json:"install_id" validate:"required"`
-
-	AccountSettings *AccountSettings `json:"account_settings" validate:"required"`
-
-	SandboxSettings struct {
-		Name    string `json:"name" validate:"required"`
-		Version string `json:"version" validate:"required"`
-	} `json:"sandbox_settings" validate:"required"`
-}
-
-func (p ProvisionRequest) Validate() error {
-	validate := validator.New()
-	return validate.Struct(p)
-}
-
-type ProvisionResponse struct {
-	TerraformOutputs map[string]string
-}
 
 const (
 	clusterIDKey       = "cluster_name"
@@ -51,8 +28,8 @@ type wkflow struct {
 }
 
 // ProvisionSandbox is a workflow that creates an app install sandbox using terraform
-func (w wkflow) ProvisionSandbox(ctx workflow.Context, req ProvisionRequest) (ProvisionResponse, error) {
-	resp := ProvisionResponse{}
+func (w wkflow) ProvisionSandbox(ctx workflow.Context, req *sandboxv1.ProvisionSandboxRequest) (*sandboxv1.ProvisionSandboxResponse, error) {
+	resp := &sandboxv1.ProvisionSandboxResponse{}
 	l := workflow.GetLogger(ctx)
 
 	if err := req.Validate(); err != nil {
@@ -69,9 +46,9 @@ func (w wkflow) ProvisionSandbox(ctx workflow.Context, req ProvisionRequest) (Pr
 	act := NewActivities(workers.Config{})
 
 	psReq := ApplySandboxRequest{
-		AppID:                   req.AppID,
-		OrgID:                   req.OrgID,
-		InstallID:               req.InstallID,
+		AppID:                   req.AppId,
+		OrgID:                   req.OrgId,
+		InstallID:               req.InstallId,
 		BackendBucketName:       w.cfg.InstallationStateBucket,
 		BackendBucketRegion:     w.cfg.InstallationStateBucketRegion,
 		AccountSettings:         req.AccountSettings,
