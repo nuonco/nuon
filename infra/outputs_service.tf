@@ -26,3 +26,11 @@ output "orgs_k8s_public_endpoint" {
 output "orgs_instance_role_template" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.org_iam_role_name_templates.instances_access)
 }
+
+output "orgs_installations_role_template" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.org_iam_role_name_templates.installations_access)
+}
+
+output "orgs_installer_role_template" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.org_iam_role_name_templates.installer)
+}
