@@ -257,16 +257,7 @@ func (m *KubeClusterInfo) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetTrustedRoleArn()) < 20 {
-		err := KubeClusterInfoValidationError{
-			field:  "TrustedRoleArn",
-			reason: "value length must be at least 20 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for TrustedRoleArn
 
 	if len(errors) > 0 {
 		return KubeClusterInfoMultiError(errors)

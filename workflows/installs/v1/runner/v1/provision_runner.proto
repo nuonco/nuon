@@ -36,10 +36,7 @@ message KubeClusterInfo {
     (validate.rules).string.min_len = 20,
     (tagger.tags) = "faker:\"len=20\""
   ];
-  string trusted_role_arn = 4 [
-    (validate.rules).string.min_len = 20,
-    (tagger.tags) = "faker:\"len=20\""
-  ];
+  string trusted_role_arn = 4;
 }
 
 // StartResponse returns the response from a deployment workflow
