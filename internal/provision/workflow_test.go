@@ -29,6 +29,8 @@ func newFakeConfig() workers.Config {
 		SandboxBucket:                 "s3://nuon-sandboxes",
 		NuonAccessRoleArn:             "arn:124355/role",
 		OrgInstanceRoleTemplate:       "arn:aws:123456789:iam:role/org/%[1]s/org-instance-role-%[1]s",
+		OrgInstallerRoleTemplate:      "arn:aws:123456789:iam:role/org/%[1]s/org-installer-role-%[1]s",
+		OrgInstallationsRoleTemplate:  "arn:aws:123456789:iam:role/org/%[1]s/org-installations-role-%[1]s",
 	}
 }
 
