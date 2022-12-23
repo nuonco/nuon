@@ -84,7 +84,6 @@ func (a *Activities) InstallWaypoint(ctx context.Context, req InstallWaypointReq
 	var err error
 	kCfg := a.Kubeconfig
 	if kCfg == nil {
-		req.ClusterInfo.TrustedRoleARN = a.config.NuonAccessRoleArn
 		kCfg, err = kube.ConfigForCluster(&req.ClusterInfo)
 		if err != nil {
 			return resp, fmt.Errorf("failed to get config for cluster: %w", err)

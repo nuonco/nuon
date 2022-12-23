@@ -72,7 +72,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		AppID:               appID,
 		OrgID:               orgID,
 		InstallID:           installID,
-		InstallationsBucket: w.cfg.InstallationStateBucket,
+		InstallationsBucket: w.cfg.InstallationsBucket,
 		ProvisionRequest:    req,
 	}
 	_, err = execStartWorkflow(ctx, act, sReq)
@@ -108,9 +108,10 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		AppId:     appID,
 		InstallId: installID,
 		ClusterInfo: &runnerv1.KubeClusterInfo{
-			Id:       psr.TerraformOutputs[clusterIDKey],
-			Endpoint: psr.TerraformOutputs[clusterEndpointKey],
-			CaData:   psr.TerraformOutputs[clusterCAKey],
+			Id:             psr.TerraformOutputs[clusterIDKey],
+			Endpoint:       psr.TerraformOutputs[clusterEndpointKey],
+			CaData:         psr.TerraformOutputs[clusterCAKey],
+			TrustedRoleArn: w.cfg.NuonAccessRoleArn,
 		},
 	}
 	if _, err = execProvisionRunner(ctx, w.cfg, prReq); err != nil {
@@ -121,7 +122,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 
 	finishReq := FinishRequest{
 		ProvisionRequest:    req,
-		InstallationsBucket: w.cfg.InstallationStateBucket,
+		InstallationsBucket: w.cfg.InstallationsBucket,
 		Success:             true,
 	}
 	if _, err = execFinish(ctx, act, finishReq); err != nil {
@@ -136,7 +137,7 @@ func (w wkflow) finishWithErr(ctx workflow.Context, req *installsv1.ProvisionReq
 	l := workflow.GetLogger(ctx)
 	finishReq := FinishRequest{
 		ProvisionRequest:    req,
-		InstallationsBucket: w.cfg.InstallationStateBucket,
+		InstallationsBucket: w.cfg.InstallationsBucket,
 		Success:             false,
 		ErrorStep:           step,
 		ErrorMessage:        fmt.Sprintf("%s", err),

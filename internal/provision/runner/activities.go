@@ -16,8 +16,6 @@ type waypointProvider = waypoint.Provider
 type Activities struct {
 	helmInstaller installer
 
-	config workers.Config
-
 	// this is exposed for testing and should not otherwise be used
 	Kubeconfig *rest.Config
 
@@ -34,7 +32,6 @@ type Activities struct {
 func NewActivities(cfg workers.Config) *Activities {
 	return &Activities{
 		helmInstaller: helm.NewInstaller(),
-		config:        cfg,
 
 		waypointProvider:             waypoint.NewProvider(),
 		waypointProjectCreator:       &wpProjectCreator{},

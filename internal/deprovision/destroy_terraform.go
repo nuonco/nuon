@@ -18,9 +18,9 @@ const (
 type DestroyTerraformRequest struct {
 	DeprovisionRequest *installsv1.DeprovisionRequest `json:"deprovision_request" validate:"required"`
 
-	InstallationStateBucketName   string `json:"installation_state_bucket_name" validate:"required"`
-	InstallationStateBucketRegion string `json:"installation_state_bucket_region" validate:"required"`
-	SandboxBucketName             string `json:"sandbox_bucket_name" validate:"required"`
+	InstallationsBucketName   string `json:"installations_bucket_name" validate:"required"`
+	InstallationsBucketRegion string `json:"installations_bucket_region" validate:"required"`
+	SandboxBucketName         string `json:"sandbox_bucket_name" validate:"required"`
 
 	// NuonAssumeRoleArn is the role we add to the k8s cluster to give us access after provisioning
 	NuonAssumeRoleArn string `json:"nuon_assume_role_arn" validate:"required"`
@@ -56,8 +56,8 @@ func (t *tfDestroyer) destroyTerraform(ctx context.Context, fn terraformRunnerFn
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 		BackendConfig: terraform.BackendConfig{
-			BucketRegion: req.InstallationStateBucketRegion,
-			BucketName:   req.InstallationStateBucketName,
+			BucketRegion: req.InstallationsBucketRegion,
+			BucketName:   req.InstallationsBucketName,
 			BucketKey:    getStateBucketKey(dr.OrgId, dr.AppId, dr.InstallId),
 		},
 		EnvVars: map[string]string{
