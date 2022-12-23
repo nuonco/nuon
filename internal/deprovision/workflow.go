@@ -4,34 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-common/shortid"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	workers "github.com/powertoolsdev/workers-installs/internal"
 	"go.temporal.io/sdk/workflow"
 )
-
-// DeprovisionRequest includes the set of arguments needed to deprovision a sandbox
-type DeprovisionRequest struct {
-	OrgID     string `json:"org_id" validate:"required"`
-	AppID     string `json:"app_id" validate:"required"`
-	InstallID string `json:"install_id" validate:"required"`
-
-	SandboxSettings struct {
-		Name    string `json:"name" validate:"required"`
-		Version string `json:"version" validate:"required"`
-	} `json:"sandbox_settings" validate:"required"`
-
-	// NOTE(jm): the following are customer provided values, consider adding a customer or external prefix?
-	AwsRegion     string `json:"aws_region" validate:"required"`
-	AssumeRoleArn string `json:"assume_role_arn" validate:"required"`
-}
-
-func (d DeprovisionRequest) validate() error {
-	validate := validator.New()
-	return validate.Struct(d)
-}
-
-type DeprovisionResponse struct{}
 
 // NewWorkflow returns a new workflow executor
 func NewWorkflow(cfg workers.Config) wkflow {
@@ -44,7 +21,7 @@ type wkflow struct {
 	cfg workers.Config
 }
 
-func (w wkflow) finishWithErr(ctx workflow.Context, req DeprovisionRequest, act *Activities, step string, err error) {
+func (w wkflow) finishWithErr(ctx workflow.Context, req *installsv1.DeprovisionRequest, act *Activities, step string, err error) {
 	l := workflow.GetLogger(ctx)
 	finishReq := FinishRequest{
 		DeprovisionRequest:  req,
@@ -60,34 +37,34 @@ func (w wkflow) finishWithErr(ctx workflow.Context, req DeprovisionRequest, act 
 }
 
 // Deprovision method destroys the infrastructure for an installation
-func (w wkflow) Deprovision(ctx workflow.Context, req DeprovisionRequest) (DeprovisionResponse, error) {
-	var resp DeprovisionResponse
+func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionRequest) (*installsv1.DeprovisionResponse, error) {
+	resp := &installsv1.DeprovisionResponse{}
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("validating deprovision request")
-	if err := req.validate(); err != nil {
+	if err := req.Validate(); err != nil {
 		l.Debug("unable to validate terraform destroy request: %w", err)
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
 	// parse IDs into short IDs, and use them for all subsequent requests
-	orgID, err := shortid.ParseString(req.OrgID)
+	orgID, err := shortid.ParseString(req.OrgId)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get short org ID: %w", err)
 	}
-	appID, err := shortid.ParseString(req.AppID)
+	appID, err := shortid.ParseString(req.AppId)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get short org ID: %w", err)
 	}
-	installID, err := shortid.ParseString(req.InstallID)
+	installID, err := shortid.ParseString(req.InstallId)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get short install ID: %w", err)
 	}
 
 	// NOTE(jm): set the ids to short ids on the request, so every other part of this workflow uses shortids
-	req.AppID = appID
-	req.OrgID = orgID
-	req.InstallID = installID
+	req.AppId = appID
+	req.OrgId = orgID
+	req.InstallId = installID
 
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 60 * time.Minute,

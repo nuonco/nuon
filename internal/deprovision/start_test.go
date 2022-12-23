@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/powertoolsdev/go-generics"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -21,7 +23,7 @@ func (t *testNotificationSender) Send(ctx context.Context, notif string) error {
 func Test_starterImpl_sendStartNotification(t *testing.T) {
 	errUnableToSend := fmt.Errorf("unableToSend")
 	req := StartRequest{
-		DeprovisionRequest:  getFakeDeprovisionRequest(),
+		DeprovisionRequest:  generics.GetFakeObj[*installsv1.DeprovisionRequest](),
 		InstallationsBucket: "nuon-installations-stage",
 	}
 	assert.Nil(t, req.validate())

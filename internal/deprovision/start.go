@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 )
 
 const startNotificationTemplate string = `:construction: _started deprovisioning sandbox_ :construction:
@@ -15,7 +16,7 @@ const startNotificationTemplate string = `:construction: _started deprovisioning
 `
 
 type StartRequest struct {
-	DeprovisionRequest
+	DeprovisionRequest *installsv1.DeprovisionRequest
 
 	InstallationsBucket string `json:"installations_bucket" validate:"required"`
 }
@@ -47,12 +48,13 @@ var _ starter = (*starterImpl)(nil)
 type starterImpl struct{}
 
 func (s *starterImpl) sendStartNotification(ctx context.Context, req StartRequest, sender notificationSender) error {
-	s3Prefix := getS3Prefix(req.InstallationsBucket, req.OrgID, req.AppID, req.InstallID)
+	dr := req.DeprovisionRequest
+	s3Prefix := getS3Prefix(req.InstallationsBucket, dr.OrgId, dr.AppId, dr.InstallId)
 	notif := fmt.Sprintf(startNotificationTemplate,
 		s3Prefix,
-		req.SandboxSettings.Name,
-		req.SandboxSettings.Version,
-		req.InstallID)
+		dr.SandboxSettings.Name,
+		dr.SandboxSettings.Version,
+		dr.InstallId)
 
 	return sender.Send(ctx, notif)
 }

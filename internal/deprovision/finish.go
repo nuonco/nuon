@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 )
 
 const successNotificationTemplate string = `:white_check_mark: _successfully deprovisioned sandbox_ :white_check_mark:
@@ -25,7 +26,7 @@ const errorNotificationTemplate string = `:rotating_light: _error deprovisioning
 `
 
 type FinishRequest struct {
-	DeprovisionRequest
+	DeprovisionRequest *installsv1.DeprovisionRequest
 
 	Success      bool   `json:"success"`
 	ErrorMessage string `json:"error_message"`
@@ -66,12 +67,13 @@ var _ finisher = (*finisherImpl)(nil)
 type finisherImpl struct{}
 
 func (s *finisherImpl) sendErrorNotification(ctx context.Context, req FinishRequest, sender notificationSender) error {
-	s3Prefix := getS3Prefix(req.InstallationsBucket, req.OrgID, req.AppID, req.InstallID)
+	dr := req.DeprovisionRequest
+	s3Prefix := getS3Prefix(req.InstallationsBucket, dr.OrgId, dr.AppId, dr.InstallId)
 	notif := fmt.Sprintf(errorNotificationTemplate,
 		s3Prefix,
-		req.SandboxSettings.Name,
-		req.SandboxSettings.Version,
-		req.InstallID,
+		dr.SandboxSettings.Name,
+		dr.SandboxSettings.Version,
+		dr.InstallId,
 		req.ErrorStep,
 		req.ErrorMessage)
 
@@ -79,12 +81,13 @@ func (s *finisherImpl) sendErrorNotification(ctx context.Context, req FinishRequ
 }
 
 func (s *finisherImpl) sendSuccessNotification(ctx context.Context, req FinishRequest, sender notificationSender) error {
-	s3Prefix := getS3Prefix(req.InstallationsBucket, req.OrgID, req.AppID, req.InstallID)
+	dr := req.DeprovisionRequest
+	s3Prefix := getS3Prefix(req.InstallationsBucket, dr.OrgId, dr.AppId, dr.InstallId)
 	notif := fmt.Sprintf(successNotificationTemplate,
 		s3Prefix,
-		req.SandboxSettings.Name,
-		req.SandboxSettings.Version,
-		req.InstallID)
+		dr.SandboxSettings.Name,
+		dr.SandboxSettings.Version,
+		dr.InstallId)
 
 	return sender.Send(ctx, notif)
 }
