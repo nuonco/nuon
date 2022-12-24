@@ -50,7 +50,7 @@ func (w wkflow) ProvisionSandbox(ctx workflow.Context, req *sandboxv1.ProvisionS
 		OrgID:                   req.OrgId,
 		InstallID:               req.InstallId,
 		BackendBucketName:       w.cfg.InstallationsBucket,
-		BackendBucketRegion:     w.cfg.InstallationsBucket,
+		BackendBucketRegion:     w.cfg.InstallationsBucketRegion,
 		AccountSettings:         req.AccountSettings,
 		SandboxSettings:         req.SandboxSettings,
 		SandboxBucketName:       w.cfg.SandboxBucket,

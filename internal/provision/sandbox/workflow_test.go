@@ -37,6 +37,11 @@ func TestWorkflow_Provision(t *testing.T) {
 			assert.Equal(t, req.OrgId, pr.OrgID)
 			assert.Equal(t, req.AppId, pr.AppID)
 			assert.Equal(t, req.InstallId, pr.InstallID)
+			assert.Equal(t, cfg.InstallationsBucket, pr.BackendBucketName)
+			assert.Equal(t, cfg.InstallationsBucketRegion, pr.BackendBucketRegion)
+			assert.Equal(t, cfg.NuonAccessRoleArn, pr.NuonAccessRoleArn)
+			assert.Equal(t, cfg.OrgInstanceRoleTemplate, pr.OrgInstanceRoleTemplate)
+
 			return ApplySandboxResponse{Outputs: validProvisionOutput}, nil
 		})
 
