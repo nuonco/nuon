@@ -6,6 +6,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/mitchellh/mapstructure"
 	sandboxv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1/sandbox/v1"
 	workers "github.com/powertoolsdev/workers-installs/internal"
 )
@@ -62,12 +63,17 @@ func (w wkflow) ProvisionSandbox(ctx workflow.Context, req *sandboxv1.ProvisionS
 		err = fmt.Errorf("unable to provision sandbox: %w", err)
 		return resp, err
 	}
-	resp.TerraformOutputs = psr.Outputs
-
-	if err = checkKeys(psr.Outputs, []string{clusterIDKey, clusterEndpointKey, clusterCAKey}); err != nil {
-		err = fmt.Errorf("missing necessary TF output to continue: %w", err)
+	tfOutputs, err := parseTerraformOutputs(psr.Outputs)
+	if err != nil {
+		err = fmt.Errorf("unable to parse terraform outputs: %w", err)
 		return resp, err
 	}
+	var respTfOutputs map[string]string
+	if err := mapstructure.Decode(tfOutputs, &respTfOutputs); err != nil {
+		err = fmt.Errorf("unable to parse tf outputs to proto output: %w", err)
+		return resp, err
+	}
+	resp.TerraformOutputs = respTfOutputs
 
 	l.Debug("finished provisioning", "response", resp)
 	return resp, nil
@@ -86,11 +92,17 @@ func provisionSandbox(ctx workflow.Context, act *Activities, req ApplySandboxReq
 	return resp, nil
 }
 
-func checkKeys(m map[string]string, keys []string) error {
-	for _, k := range keys {
-		if _, ok := m[k]; !ok {
-			return fmt.Errorf("missing key: %s", k)
-		}
+type terraformOutputs struct {
+	ClusterID       string `mapstructure:"cluster_name"`
+	ClusterEndpoint string `mapstructure:"cluster_endpoint"`
+	ClusterCA       string `mapstructure:"cluster_certificate_authority_data"`
+}
+
+func parseTerraformOutputs(m map[string]interface{}) (terraformOutputs, error) {
+	var tfOutputs terraformOutputs
+	if err := mapstructure.Decode(m, &tfOutputs); err != nil {
+		return tfOutputs, fmt.Errorf("invalid terraform outputs: %w", err)
 	}
-	return nil
+
+	return tfOutputs, nil
 }

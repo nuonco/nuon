@@ -38,7 +38,7 @@ type ApplySandboxRequest struct {
 }
 
 type ApplySandboxResponse struct {
-	Outputs map[string]string
+	Outputs map[string]interface{}
 }
 
 func (d ApplySandboxRequest) validate() error {
@@ -47,7 +47,7 @@ func (d ApplySandboxRequest) validate() error {
 }
 
 type terraformApplyer interface {
-	provisionSandbox(context.Context, terraformRunnerFn, ApplySandboxRequest) (map[string]string, error)
+	provisionSandbox(context.Context, terraformRunnerFn, ApplySandboxRequest) (map[string]interface{}, error)
 }
 
 var _ terraformApplyer = (*tfApplyer)(nil)
@@ -62,7 +62,7 @@ func getStateBucketKey(orgID, appID, installID string) string {
 	return fmt.Sprintf("org=%s/app=%s/install=%s/%s", orgID, appID, installID, defaultStateFilename)
 }
 
-func (t *tfApplyer) provisionSandbox(ctx context.Context, fn terraformRunnerFn, req ApplySandboxRequest) (map[string]string, error) {
+func (t *tfApplyer) provisionSandbox(ctx context.Context, fn terraformRunnerFn, req ApplySandboxRequest) (map[string]interface{}, error) {
 	runReq := terraform.RunRequest{
 		ID:      req.InstallID,
 		RunType: terraform.RunTypePlanAndApply,
