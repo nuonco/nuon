@@ -58,9 +58,9 @@ func (t *mockTerraformExecutor) destroyModule(context.Context) error {
 	return args.Error(0)
 }
 
-func (t *mockTerraformExecutor) outputs(context.Context) (map[string]string, error) {
+func (t *mockTerraformExecutor) outputs(context.Context) (map[string]interface{}, error) {
 	args := t.Called()
-	return args.Get(0).(map[string]string), args.Error(1)
+	return args.Get(0).(map[string]interface{}), args.Error(1)
 }
 
 var _ terraformExecutor = (*mockTerraformExecutor)(nil)
@@ -194,10 +194,25 @@ func Test_plan(t *testing.T) {
 	assert.Equal(t, err, testErr)
 }
 
+const outputObjectType string = `
+      "object",
+      {
+	"number": "number",
+	"string": "string"
+      }
+`
+
+const outputObjectValue string = `
+{
+  "number": 1,
+  "string": "a"
+}
+`
+
 func Test_outputs(t *testing.T) {
 	tests := map[string]struct {
 		fn          func(t *testing.T) outputter
-		expected    map[string]string
+		expected    map[string]interface{}
 		errExpected error
 	}{
 		"happy path - no outputs": {
@@ -208,7 +223,7 @@ func Test_outputs(t *testing.T) {
 
 				return mo
 			},
-			expected: map[string]string{},
+			expected: map[string]interface{}{},
 		},
 
 		"happy path - with outputs": {
@@ -226,7 +241,25 @@ func Test_outputs(t *testing.T) {
 				return mo
 			},
 
-			expected: map[string]string{"myoutput": "string value"},
+			expected: map[string]interface{}{"myoutput": "string value"},
+		},
+
+		"happy path - map outputs": {
+			fn: func(t *testing.T) outputter {
+				mo := &mockOutputter{}
+				mo.On("Output", mock.Anything, []tfexec.OutputOption(nil)).
+					Return(map[string]tfexec.OutputMeta{
+						"myoutput": {
+							Sensitive: false,
+							Type:      []byte(outputObjectType),
+							Value:     []byte(outputObjectValue),
+						},
+					}, nil).Once()
+
+				return mo
+			},
+
+			expected: map[string]interface{}{"myoutput": map[string]interface{}{"number": float64(1), "string": "a"}},
 		},
 
 		"errors on invalid json output": {

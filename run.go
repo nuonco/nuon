@@ -38,7 +38,7 @@ func (r RunRequest) validate() error {
 
 type RunResponse struct {
 	RunType RunType
-	Output  map[string]string
+	Output  map[string]interface{}
 }
 
 type run struct {

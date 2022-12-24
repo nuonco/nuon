@@ -29,7 +29,7 @@ type terraformExecutor interface {
 	planModule(context.Context) error
 	applyModule(context.Context) error
 	destroyModule(context.Context) error
-	outputs(context.Context) (map[string]string, error)
+	outputs(context.Context) (map[string]interface{}, error)
 }
 
 type localTerraformExecutor struct {
@@ -129,11 +129,11 @@ type outputter interface {
 
 var _ outputter = (*tfexec.Terraform)(nil)
 
-func (t *localTerraformExecutor) outputs(ctx context.Context) (map[string]string, error) {
+func (t *localTerraformExecutor) outputs(ctx context.Context) (map[string]interface{}, error) {
 	if t.outputter == nil {
 		return nil, fmt.Errorf("missing outputter implementation")
 	}
-	m := map[string]string{}
+	m := map[string]interface{}{}
 
 	out, err := t.outputter.Output(ctx)
 	if err != nil {
@@ -141,12 +141,12 @@ func (t *localTerraformExecutor) outputs(ctx context.Context) (map[string]string
 	}
 
 	for k, v := range out {
-		var s string
-		err = json.Unmarshal(v.Value, &s)
+		var val interface{}
+		err = json.Unmarshal(v.Value, &val)
 		if err != nil {
 			return m, err
 		}
-		m[k] = s
+		m[k] = val
 	}
 
 	return m, err
