@@ -14,7 +14,7 @@ require (
 	github.com/powertoolsdev/go-helm v0.0.4
 	github.com/powertoolsdev/go-kube v0.1.3
 	github.com/powertoolsdev/go-sender v0.0.4
-	github.com/powertoolsdev/go-terraform v0.0.4
+	github.com/powertoolsdev/go-terraform v0.1.0
 	github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91
 	github.com/powertoolsdev/go-waypoint v0.2.1
 	github.com/powertoolsdev/protos v0.11.0

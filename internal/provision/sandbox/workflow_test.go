@@ -23,7 +23,7 @@ func TestWorkflow_Provision(t *testing.T) {
 	env := testSuite.NewTestWorkflowEnvironment()
 	a := NewActivities(cfg)
 
-	validProvisionOutput := map[string]string{
+	validProvisionOutput := map[string]interface{}{
 		clusterIDKey:       "clusterid",
 		clusterEndpointKey: "https://k8s.endpoint",
 		clusterCAKey:       "b64 encoded ca",
@@ -51,6 +51,8 @@ func TestWorkflow_Provision(t *testing.T) {
 	require.NoError(t, env.GetWorkflowError())
 	var resp *sandboxv1.ProvisionSandboxResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
-	require.Equal(t, validProvisionOutput, resp.TerraformOutputs)
+	require.Equal(t, validProvisionOutput[clusterIDKey], resp.TerraformOutputs[clusterIDKey])
+	require.Equal(t, validProvisionOutput[clusterEndpointKey], resp.TerraformOutputs[clusterEndpointKey])
+	require.Equal(t, validProvisionOutput[clusterCAKey], resp.TerraformOutputs[clusterCAKey])
 	require.NotNil(t, resp)
 }
