@@ -126,3 +126,44 @@ func Test_upload(t *testing.T) {
 		})
 	}
 }
+
+func TestNewS3Uploader(t *testing.T) {
+	bucketName := "test-nuon-uploads"
+	bucketPrefix := "test-nuon-bucket-prefix"
+	tests := map[string]struct {
+		initFn   func() Uploader
+		assertFn func(*testing.T, Uploader)
+	}{
+		"sets prefix and path correctly": {
+			initFn: func() Uploader {
+				return NewS3Uploader(bucketName, bucketPrefix)
+			},
+			assertFn: func(t *testing.T, obj Uploader) {
+				s3Obj, ok := obj.(*s3Uploader)
+				assert.True(t, ok)
+				assert.Equal(t, bucketName, s3Obj.installBucket)
+				assert.Equal(t, bucketPrefix, s3Obj.prefix)
+			},
+		},
+
+		"sets assume role correctly": {
+			initFn: func() Uploader {
+				return NewS3Uploader(bucketName, bucketPrefix, WithAssumeRoleARN("test-role-arn"))
+			},
+			assertFn: func(t *testing.T, obj Uploader) {
+				s3Obj, ok := obj.(*s3Uploader)
+				assert.True(t, ok)
+				assert.Equal(t, bucketName, s3Obj.installBucket)
+				assert.Equal(t, bucketPrefix, s3Obj.prefix)
+				assert.Equal(t, "test-role-arn", s3Obj.assumeRoleARN)
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			uploader := test.initFn()
+			test.assertFn(t, uploader)
+		})
+	}
+}
