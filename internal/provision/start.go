@@ -30,10 +30,11 @@ type StatusFileContents struct {
 }
 
 type StartWorkflowRequest struct {
-	OrgID               string `json:"org_id" validate:"required"`
-	AppID               string `json:"app_id" validate:"required"`
-	InstallID           string `json:"install_id" validate:"required"`
-	InstallationsBucket string `json:"installations_bucket" validate:"required"`
+	OrgID                         string `json:"org_id" validate:"required"`
+	AppID                         string `json:"app_id" validate:"required"`
+	InstallID                     string `json:"install_id" validate:"required"`
+	InstallationsBucket           string `json:"installations_bucket" validate:"required"`
+	InstallationsAccessIAMRoleARN string `json:"installations_access_iam_role_arn" validate:"required"`
 
 	ProvisionRequest *installsv1.ProvisionRequest `json:"provision_request" validate:"required"`
 }
@@ -110,7 +111,8 @@ func (a *ProvisionActivities) StartWorkflow(ctx context.Context, req StartWorkfl
 		req.ProvisionRequest.OrgId,
 		req.ProvisionRequest.AppId,
 		req.ProvisionRequest.InstallId)
-	uploadClient := uploader.NewS3Uploader(req.InstallationsBucket, s3Prefix)
+
+	uploadClient := uploader.NewS3Uploader(req.InstallationsBucket, s3Prefix, uploader.WithAssumeRoleARN(req.InstallationsAccessIAMRoleARN), uploader.WithAssumeSessionName("workers-installs"))
 	if err := a.writeRequestFile(ctx, uploadClient, req.ProvisionRequest); err != nil {
 		return resp, fmt.Errorf("unable to upload request file to s3: %w", err)
 	}

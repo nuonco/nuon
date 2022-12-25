@@ -14,11 +14,8 @@ import (
 
 func Test_finisherImpl_sendSuccessNotification(t *testing.T) {
 	errUnableToSend := fmt.Errorf("unableToSend")
-	req := FinishRequest{
-		ProvisionRequest:    generics.GetFakeObj[*installsv1.ProvisionRequest](),
-		InstallationsBucket: "nuon-installations-stage",
-		Success:             true,
-	}
+	req := generics.GetFakeObj[FinishRequest]()
+	req.Success = true
 	assert.Nil(t, req.validate())
 
 	tests := map[string]struct {
@@ -76,11 +73,12 @@ func Test_finisherImpl_sendSuccessNotification(t *testing.T) {
 func Test_finisherImpl_sendErrorNotification(t *testing.T) {
 	errUnableToSend := fmt.Errorf("unableToSend")
 	req := FinishRequest{
-		ProvisionRequest:    generics.GetFakeObj[*installsv1.ProvisionRequest](),
-		InstallationsBucket: "nuon-installations-stage",
-		Success:             true,
-		ErrorStep:           "destroy_step",
-		ErrorMessage:        "failed to destroy",
+		ProvisionRequest:              generics.GetFakeObj[*installsv1.ProvisionRequest](),
+		InstallationsBucket:           "nuon-installations-stage",
+		Success:                       false,
+		ErrorStep:                     "destroy_step",
+		ErrorMessage:                  "failed to destroy",
+		InstallationsAccessIAMRoleARN: "role-arn",
 	}
 	assert.Nil(t, req.validate())
 

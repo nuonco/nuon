@@ -17,7 +17,8 @@ type FinishRequest struct {
 	ErrorMessage string `json:"error_message"`
 	ErrorStep    string `json:"error_step"`
 
-	InstallationsBucket string `json:"installations_bucket" validate:"required"`
+	InstallationsBucket           string `json:"installations_bucket" validate:"required"`
+	InstallationsAccessIAMRoleARN string `json:"installations_access_iam_role_arn" validate:"required"`
 }
 
 func (f FinishRequest) validate() error {
@@ -53,7 +54,7 @@ func (a *ProvisionActivities) Finish(ctx context.Context, req FinishRequest) (Fi
 		ErrorStep:    req.ErrorStep,
 		ErrorMessage: req.ErrorMessage,
 	}
-	uploadClient := uploader.NewS3Uploader(req.InstallationsBucket, s3Prefix)
+	uploadClient := uploader.NewS3Uploader(req.InstallationsBucket, s3Prefix, uploader.WithAssumeRoleARN(req.InstallationsAccessIAMRoleARN), uploader.WithAssumeSessionName("workers-installs"))
 	if err := a.writeStatusFile(ctx, uploadClient, statusFileContents); err != nil {
 		return resp, fmt.Errorf("unable to upload status file to s3: %w", err)
 	}

@@ -69,11 +69,12 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	act := NewProvisionActivities(workers.Config{}, nil)
 
 	sReq := StartWorkflowRequest{
-		AppID:               appID,
-		OrgID:               orgID,
-		InstallID:           installID,
-		InstallationsBucket: w.cfg.InstallationsBucket,
-		ProvisionRequest:    req,
+		AppID:                         appID,
+		OrgID:                         orgID,
+		InstallID:                     installID,
+		InstallationsBucket:           w.cfg.InstallationsBucket,
+		InstallationsAccessIAMRoleARN: fmt.Sprintf(w.cfg.OrgInstallationsRoleTemplate, orgID),
+		ProvisionRequest:              req,
 	}
 	_, err = execStartWorkflow(ctx, act, sReq)
 	if err != nil {
@@ -121,9 +122,10 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	}
 
 	finishReq := FinishRequest{
-		ProvisionRequest:    req,
-		InstallationsBucket: w.cfg.InstallationsBucket,
-		Success:             true,
+		ProvisionRequest:              req,
+		InstallationsBucket:           w.cfg.InstallationsBucket,
+		InstallationsAccessIAMRoleARN: fmt.Sprintf(w.cfg.OrgInstallationsRoleTemplate, orgID),
+		Success:                       true,
 	}
 	if _, err = execFinish(ctx, act, finishReq); err != nil {
 		l.Debug("unable to execute finish step: %w", err)
