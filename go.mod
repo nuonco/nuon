@@ -15,7 +15,7 @@ require (
 	github.com/powertoolsdev/go-kube v0.1.3
 	github.com/powertoolsdev/go-sender v0.0.4
 	github.com/powertoolsdev/go-terraform v0.1.0
-	github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91
+	github.com/powertoolsdev/go-uploader v0.1.0
 	github.com/powertoolsdev/go-waypoint v0.2.1
 	github.com/powertoolsdev/protos v0.11.0
 	github.com/spf13/cobra v1.6.1
@@ -169,6 +169,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.16 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/powertoolsdev/go-aws-assume-role v0.0.3 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect

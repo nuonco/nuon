@@ -920,6 +920,8 @@ github.com/pkg/sftp v1.13.1/go.mod h1:3HaPG6Dq1ILlpPZRO0HVMrsydcdLt6HRDccSgb87qR
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
+github.com/powertoolsdev/go-aws-assume-role v0.0.3 h1:JBIzJ0aGwrcM3gfnou2zSiZ+gwV8PcPXRGDG77gulf0=
+github.com/powertoolsdev/go-aws-assume-role v0.0.3/go.mod h1:5lWSzj7dwPRBFEa6Ch7wqz8lThFFnu+5yu1jQwpFRnw=
 github.com/powertoolsdev/go-common v1.1.17 h1:xTVPf7kiezNH09fIINiWSHHzqhQ517GQjcSSprF9EbU=
 github.com/powertoolsdev/go-common v1.1.17/go.mod h1:mhY1HkgLn4iPkxnGy2ownap+hxJosifCfE7qwXmpyUE=
 github.com/powertoolsdev/go-generics v0.0.1 h1:We48KVDTRRDm4TeKe0BFJUghzgjpcyaX364797GYxbU=
@@ -936,6 +938,8 @@ github.com/powertoolsdev/go-terraform v0.1.0 h1:IDNlfG3WnZ3QHK6Beprm9GoqOePcJKDy
 github.com/powertoolsdev/go-terraform v0.1.0/go.mod h1:ZjTO71MPKRKYvJRaNrdMcTKqCh5u7UzsEEoSZddMhdE=
 github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91 h1:OG2oNfhcIaFNn313KgvmbI/KdFwyqGhy5zLOXVwtgVg=
 github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91/go.mod h1:3QmdHAzmyd0JyT+jguiZlJC/H4aFL/I0/e8FiS16h/0=
+github.com/powertoolsdev/go-uploader v0.1.0 h1:QEhL08BAX3PM8PpeMAwA9eiZfZEfkZ8DROecLsFo0YE=
+github.com/powertoolsdev/go-uploader v0.1.0/go.mod h1:PwA4fSwVHcYvJ45uPRUqE5UkwK3W7oisFYERXcSbfTY=
 github.com/powertoolsdev/go-waypoint v0.2.1 h1:wEKsP5whsMltptXzil8FLyQAzNPNkv3GdNrueS47xag=
 github.com/powertoolsdev/go-waypoint v0.2.1/go.mod h1:Ot2gQbZNhaV+jIuQ0vDYiz7MyU4aQBw4jaCHtAU6+Jo=
 github.com/powertoolsdev/protos v0.11.0 h1:i0h1Y8BxGWzAcYvutcWguUUOsvB3d7bl9Qq+eBww0Fo=
