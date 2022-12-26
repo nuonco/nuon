@@ -3,7 +3,7 @@ module github.com/powertoolsdev/go-helm
 go 1.19
 
 require (
-	github.com/jaswdr/faker v1.15.0
+	github.com/jaswdr/faker v1.16.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/powertoolsdev/go-kube v0.1.3
 	github.com/stretchr/testify v1.8.1
