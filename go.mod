@@ -10,7 +10,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/waypoint v0.10.3
-	github.com/jaswdr/faker v1.15.0
+	github.com/jaswdr/faker v1.16.0
 	github.com/powertoolsdev/go-common v1.1.17
 	github.com/powertoolsdev/go-generics v0.0.1
 	github.com/powertoolsdev/go-waypoint v0.2.1
