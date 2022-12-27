@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package deployments.v1;
 
+import "component/v1/component.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -20,6 +21,7 @@ message StartRequest {
     (tagger.tags) = "faker:\"uuid_hyphenated\""
   ];
   repeated string install_ids = 4 [(validate.rules).repeated.min_items = 1];
+  component.v1.Component component = 5;
 }
 
 // StartResponse returns the response from a deployment workflow

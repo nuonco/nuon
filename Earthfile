@@ -41,6 +41,8 @@ lint-proto:
     WORKDIR /work
     COPY --dir $REPO/ .
     WORKDIR $REPO
+    # TODO(jm): abstract this into it's own target
+    RUN echo $BUF_API_TOKEN | buf registry login --username $BUF_USER --token-stdin
     RUN \
         sh -c "buf lint && buf format -d --exit-code" \
             || sh -c "printf '%s\n' 'Buf Format changes exist in current branch' >&2 && exit 1"
