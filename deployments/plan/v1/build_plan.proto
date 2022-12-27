@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package plan.v1;
+
+import "plan/v1/plan.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1";
+
+// BuildPlan represents a build plan that is stored in the deployments bucket.
+message BuildPlan {
+  Metadata metadata = 1;
+  WaypointServerRef waypoint_server = 2;
+  ECRRepositoryRef ecr_repository_ref = 3;
+  WaypointBuild waypoint_build = 4;
+  BuildOutputs outputs = 5;
+}
+
+// ECRRepositoryRef contains all of the information for referencing the app's ECR repo. Note, that all ECR repos are
+// created with the format `orgShortID/appShortID` so we can use prefix based IAM roles to limit them.
+message ECRRepositoryRef {
+  // 12 digit aws account id
+  string registry_id = 1 [
+    (validate.rules).string.len = 12,
+    (tagger.tags) = "faker:\"len=12\""
+  ];
+
+  // format is: <org_short_id>/<app_short_id>
+  string repository_name = 2 [
+    (validate.rules).string.len = 53,
+    (tagger.tags) = "faker:\"len=53\""
+  ];
+
+  // format is: arn:aws:ecr:<region>:<account_id>:repository/<org_short_id>/<app_short_id>.
+  string repository_arn = 3 [
+    (validate.rules).string.len = 99,
+    (tagger.tags) = "faker:\"len=99\""
+  ];
+
+  // format: <account_id>.dkr.ecr.<region>.amazonaws.com/<org_short_id>/<app_short_id>
+  string repository_uri = 4 [
+    (validate.rules).string.len = 98,
+    (tagger.tags) = "faker:\"len=98\""
+  ];
+
+  string tag = 5 [
+    (validate.rules).string.min_len = 1,
+    (tagger.tags) = "faker:\"len=10\""
+  ];
+
+  string region = 6 [
+    (validate.rules).string = {
+      in: ["us-west-2"]
+    },
+    (tagger.tags) = "faker:\"oneof: us-west-2\""
+  ];
+}
+
+// Outputs represent the outputs of the actual plan, such as where different files will be stored etc.
+message BuildOutputs {
+  string bucket = 1 [
+    (validate.rules).string.min_len = 1,
+    (tagger.tags) = "faker:\"len=10\""
+  ];
+
+  string bucket_key = 2 [(validate.rules).string.min_bytes = 1];
+
+  string bucket_assume_role_arn = 3 [
+    (validate.rules).string.min_len = 20,
+    (tagger.tags) = "faker:\"len=25\""
+  ];
+
+  string logs_key = 4 [(validate.rules).string.min_bytes = 1];
+  string events_key = 5 [(validate.rules).string.min_bytes = 1];
+  string artifact_key = 6 [(validate.rules).string.min_bytes = 1];
+}
+
+// WaypointBuild represents all of the information required for the build
+message WaypointBuild {
+  // project corresponds to the short id of the app
+  string project = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+  // workspace corresponds to the short id of the
+  string workspace = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+
+  string app = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+
+  // singleton id is an identifier that maps to the job, ensuring it's only attempted once
+  string singleton_id = 4 [
+    (validate.rules).string.min_len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+
+  map<string, string> labels = 5 [(validate.rules).map = {min_pairs: 1}];
+
+  string runner_id = 6 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+
+  string on_demand_runner_config = 7 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+
+  uint64 job_timeout_seconds = 8 [(validate.rules).uint64.gt = 60];
+
+  string hcl_config = 9 [(validate.rules).string.min_bytes = 1];
+}
