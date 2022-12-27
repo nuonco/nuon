@@ -214,7 +214,8 @@ func (x *HelmUserValue) GetValue() string {
 
 // NOTE: we may have more "builtin" values in the future, but for starters let's just support the bare minimum which is
 // the image being passed in, eg:
-//       value = artifact.name
+//
+//	value = artifact.name
 type HelmImageValue struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -6,15 +6,11 @@ managed:
     default: github.com/powertoolsdev/protos/components/generated/types
     except:
       - buf.build/googleapis/googleapis
-      - buf.build/srikrsna/protoc-gen-gotag
       - buf.build/envoyproxy/protoc-gen-validate
+      - buf.build/srikrsna/protoc-gen-gotag
 plugins:
-  - name: go
-    out: generated/types
-    opt: paths=source_relative
-
-  - name: go-grpc
-    out: generated/types
+  - plugin: gotag
+    out: .
     opt:
       - paths=source_relative
-      - require_unimplemented_servers=false
+      - outdir=generated/types/
