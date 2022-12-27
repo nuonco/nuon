@@ -12,12 +12,7 @@ func init() {
 
 	// deployment defaults
 	config.RegisterDefault("waypoint_token_secret_namespace", "default")
-	config.RegisterDefault("bucket", "nuon-installations-stage")
-	config.RegisterDefault("bucket_region", "us-west-2")
-	config.RegisterDefault("role_arn", "arn:aws:iam::618886478608:role/install-k8s-admin-stage")
 	config.RegisterDefault("waypoint_org_server_root_domain", "orgs-stage.nuon.co")
-	config.RegisterDefault("temporal_host", "localhost:7233")
-	config.RegisterDefault("temporal_namespace", "default")
 }
 
 type Config struct {
@@ -25,12 +20,15 @@ type Config struct {
 	TemporalHost      string `config:"temporal_host"`
 	TemporalNamespace string `config:"temporal_namespace"`
 
-	Bucket       string `config:"bucket" validate:"required"`
-	BucketRegion string `config:"bucket_region" validate:"required"`
-	RoleArn      string `config:"role_arn" validate:"required"`
+	DeploymentsBucket string `config:"bucket" validate:"required"`
 
 	WaypointTokenSecretNamespace string `config:"waypoint_token_secret_namespace" validate:"required"`
 	WaypointOrgServerRootDomain  string `config:"waypoint_org_server_root_domain" validate:"required"`
+
+	// org IAM role template names
+	OrgInstanceRoleTemplate      string `config:"orgs_instance_role_template" validate:"required"`
+	OrgInstallationsRoleTemplate string `config:"orgs_installations_role_template" validate:"required"`
+	OrgInstallerRoleTemplate     string `config:"orgs_installer_role_template" validate:"required"`
 }
 
 func (c Config) Validate() error {
