@@ -8,7 +8,7 @@ package deploymentsv1
 
 import (
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
-	v1 "github.com/powertoolsdev/protos/workflows/generated/types/component/v1"
+	v1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	_ "github.com/srikrsna/protoc-gen-gotag/tagger"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"

@@ -6,6 +6,8 @@ import "build/v1/docker.proto";
 import "build/v1/external_image.proto";
 import "build/v1/noop.proto";
 
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/build/v1";
+
 message Config {
   string timeout = 1;
   oneof cfg {

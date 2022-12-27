@@ -5,6 +5,8 @@ package vcs.v1;
 import "vcs/v1/private_github.proto";
 import "vcs/v1/public_github.proto";
 
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/vcs/v1";
+
 message Config {
   oneof cfg {
     PrivateGithubConfig private_github_config = 1;

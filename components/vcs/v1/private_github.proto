@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package vcs.v1;
 
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/vcs/v1";
+
 message PrivateGithubConfig {
   // repo is the org/repo path of the repository
   string repo = 1;

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package vcs.v1;
 
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/vcs/v1";
+
 // Github public config is for public repos configuration. This VCS config can be used either for helm charts or docker
 // builds
 message PublicGithubConfig {

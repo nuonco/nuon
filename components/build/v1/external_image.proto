@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package build.v1;
 
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/build/v1";
+
 // ecr image config represents an image that lives in a customer's ECR repository. The vendor will have to manually
 // grant us access to `docker pull` it by setting up a cross account IAM role that grants access to our `orgs-stage` and
 // `orgs-prod` account (or we could have vendors grant external and then allow the ODRs to assume roles in that

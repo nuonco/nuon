@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package configs.v1;
 
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/configs/v1";
+
 message EnvVarsConfig {
   repeated EnvVar vars = 1;
 }

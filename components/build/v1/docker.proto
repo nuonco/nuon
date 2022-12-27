@@ -4,6 +4,8 @@ package build.v1;
 
 import "vcs/v1/config.proto";
 
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/build/v1";
+
 // Docker config uses the waypoint build
 message DockerConfig {
   // dockerfile path, should default to Dockerfile but eventually be customizable

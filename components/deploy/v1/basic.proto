@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package deploy.v1;
 
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/deploy/v1";
+
 // ContainerConfig is a first pass at exposing how we'd like to be able to run a container for a user. It leverages the
 // yaml-less config from waypoint https://developer.hashicorp.com/waypoint/docs/kubernetes/kubectl-deploy
 //

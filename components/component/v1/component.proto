@@ -5,6 +5,8 @@ package component.v1;
 import "build/v1/build.proto";
 import "deploy/v1/config.proto";
 
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/component/v1";
+
 // Docker config uses the waypoint build
 message Component {
   string name = 1;
