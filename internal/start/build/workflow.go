@@ -52,12 +52,13 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 	}
 
 	bucketPrefix := getS3Prefix(req)
+	orgServerAddr := waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId)
 
 	uwaReq := UpsertWaypointApplicationRequest{
 		OrgID:                req.OrgId,
 		Component:            component,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
+		OrgServerAddr:        orgServerAddr,
 	}
 	uwaResp, err := execUpsertWaypointApplication(ctx, act, uwaReq)
 	l.Debug("upserted waypoint app", "response", uwaResp)
@@ -68,7 +69,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 	qwjReq := QueueWaypointDeploymentJobRequest{
 		OrgID:                req.OrgId,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
+		OrgServerAddr:        orgServerAddr,
 		BucketName:           w.cfg.DeploymentsBucket,
 		BucketPrefix:         bucketPrefix,
 		AppID:                req.AppId,
@@ -85,7 +86,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 	vwjReq := ValidateWaypointDeploymentJobRequest{
 		OrgID:                req.OrgId,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
+		OrgServerAddr:        orgServerAddr,
 		JobID:                qwjResp.JobID,
 	}
 	vwjResp, err := execValidateWaypointDeploymentJob(ctx, act, vwjReq)
@@ -97,7 +98,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 	pwjReq := PollWaypointBuildJobRequest{
 		OrgID:                req.OrgId,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
+		OrgServerAddr:        orgServerAddr,
 		BucketName:           w.cfg.DeploymentsBucket,
 		BucketPrefix:         bucketPrefix,
 		JobID:                qwjResp.JobID,
@@ -113,7 +114,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 		AppID:                req.AppId,
 		ComponentName:        component.Name,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
+		OrgServerAddr:        orgServerAddr,
 		BucketName:           w.cfg.DeploymentsBucket,
 		BucketPrefix:         bucketPrefix,
 		DeploymentID:         req.DeploymentId,

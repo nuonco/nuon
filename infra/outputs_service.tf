@@ -24,3 +24,29 @@ output "orgs_k8s_ca_data" {
 output "orgs_k8s_public_endpoint" {
   value = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_endpoint)
 }
+
+# the following values are for the plan child workflow
+output "orgs_ecr_registry_id" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.ecr.registry_id)
+}
+
+output "orgs_ecr_registry_arn" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.ecr.registry_arn)
+}
+
+output "orgs_ecr_region" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.ecr.region)
+}
+
+# the following are for accessing waypoint
+output "waypoint_server_root_domain" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.waypoint.root_domain)
+}
+
+output "waypoint_token_secret_namespace" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.waypoint.token_secret_namespace)
+}
+
+output "waypoint_token_secret_template" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.waypoint.token_secret_template)
+}
