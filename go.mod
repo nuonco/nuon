@@ -11,6 +11,7 @@ require (
 	github.com/jaswdr/faker v1.15.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/powertoolsdev/go-common v1.1.17
+	github.com/powertoolsdev/go-generics v0.0.1
 	github.com/powertoolsdev/go-uploader v0.0.0-20221103225109-80d1a7fe9b91
 	github.com/powertoolsdev/go-waypoint v0.2.1
 	github.com/powertoolsdev/protos v0.7.0
@@ -91,7 +92,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/powertoolsdev/go-generics v0.0.1 // indirect
 	github.com/powertoolsdev/go-kube v0.1.2 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect

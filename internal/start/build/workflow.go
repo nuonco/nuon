@@ -69,7 +69,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 		OrgID:                req.OrgId,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
 		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
-		BucketName:           w.cfg.Bucket,
+		BucketName:           w.cfg.DeploymentsBucket,
 		BucketPrefix:         bucketPrefix,
 		AppID:                req.AppId,
 		DeploymentID:         req.DeploymentId,
@@ -98,7 +98,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 		OrgID:                req.OrgId,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
 		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
-		BucketName:           w.cfg.Bucket,
+		BucketName:           w.cfg.DeploymentsBucket,
 		BucketPrefix:         bucketPrefix,
 		JobID:                qwjResp.JobID,
 	}
@@ -114,7 +114,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 		ComponentName:        component.Name,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
 		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointOrgServerRootDomain, req.OrgId),
-		BucketName:           w.cfg.Bucket,
+		BucketName:           w.cfg.DeploymentsBucket,
 		BucketPrefix:         bucketPrefix,
 		DeploymentID:         req.DeploymentId,
 	}
