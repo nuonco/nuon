@@ -17,18 +17,23 @@ func init() {
 
 type Config struct {
 	config.Base       `config:",squash"`
-	TemporalHost      string `config:"temporal_host"`
-	TemporalNamespace string `config:"temporal_namespace"`
+	TemporalHost      string `config:"temporal_host" validate:"required"`
+	TemporalNamespace string `config:"temporal_namespace" validate:"required"`
 
 	DeploymentsBucket string `config:"bucket" validate:"required"`
 
+	// waypoint configuration
 	WaypointTokenSecretNamespace string `config:"waypoint_token_secret_namespace" validate:"required"`
-	WaypointOrgServerRootDomain  string `config:"waypoint_org_server_root_domain" validate:"required"`
+	WaypointTokenSecretTemplate  string `config:"waypoint_token_secret_template" validate:"required"`
+	WaypointServerRootDomain     string `config:"waypoint_server_root_domain" validate:"required"`
 
 	// org IAM role template names
-	OrgInstanceRoleTemplate      string `config:"orgs_instance_role_template" validate:"required"`
-	OrgInstallationsRoleTemplate string `config:"orgs_installations_role_template" validate:"required"`
-	OrgInstallerRoleTemplate     string `config:"orgs_installer_role_template" validate:"required"`
+	OrgsDeploymentsRoleTemplate string `config:"orgs_deployments_role_template" validate:"required"`
+
+	// configuration for plans
+	OrgsECRRegistryID  string `config:"orgs_ecr_registry_id" validate:"required"`
+	OrgsECRRegistryARN string `config:"orgs_ecr_registry_arn" validate:"required"`
+	OrgsECRRegion      string `config:"orgs_ecr_region" validate:"required"`
 }
 
 func (c Config) Validate() error {
