@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package deployments.v1.build.v1;
 
+import "plan/v1/plan.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -19,6 +20,8 @@ message BuildRequest {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
+
+  plan.v1.PlanRef plan = 4;
 }
 
 // BuildResponse is a child workflow response for the plan phase
