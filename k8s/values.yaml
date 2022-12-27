@@ -85,11 +85,11 @@ probes:
 
 resources:
   limits:
+    cpu: 800m
+    memory: 1024Mi
+  requests:
     cpu: 400m
     memory: 512Mi
-  requests:
-    cpu: 200m
-    memory: 256Mi
 
 autoscaling:
   enabled: true
