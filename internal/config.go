@@ -20,7 +20,7 @@ type Config struct {
 	TemporalHost      string `config:"temporal_host" validate:"required"`
 	TemporalNamespace string `config:"temporal_namespace" validate:"required"`
 
-	DeploymentsBucket string `config:"bucket" validate:"required"`
+	DeploymentsBucket string `config:"deployments_bucket" validate:"required"`
 
 	// waypoint configuration
 	WaypointTokenSecretNamespace string `config:"waypoint_token_secret_namespace" validate:"required"`
