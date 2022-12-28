@@ -622,6 +622,12 @@ github.com/powertoolsdev/protos v0.20.0 h1:UMmUdHWLalaEdn4gF9mcX+eHyfLF97rvuBmye
 github.com/powertoolsdev/protos v0.20.0/go.mod h1:ISBezV0HGdE+O4y5MjGNdWq2w1YNBeBpvC7CTbA/34A=
 github.com/powertoolsdev/protos v0.21.0 h1:SZ4nTq9X1PssZn91LTlRn+bXbEakeu/Wld2gsCdIkrE=
 github.com/powertoolsdev/protos v0.21.0/go.mod h1:ISBezV0HGdE+O4y5MjGNdWq2w1YNBeBpvC7CTbA/34A=
+github.com/powertoolsdev/protos v0.22.0 h1:lGnbkyP3HV6GMw50fzOKwcOlHNINW8brqbqDWP0Q+cI=
+github.com/powertoolsdev/protos v0.22.0/go.mod h1:ISBezV0HGdE+O4y5MjGNdWq2w1YNBeBpvC7CTbA/34A=
+github.com/powertoolsdev/protos v0.22.1 h1:NaxizOprMzIDGbioHP12EGzBWDZ9MJ52wz03o+osHTg=
+github.com/powertoolsdev/protos v0.22.1/go.mod h1:ISBezV0HGdE+O4y5MjGNdWq2w1YNBeBpvC7CTbA/34A=
+github.com/powertoolsdev/protos v0.23.0 h1:yiQeIPPmGxDlRvkjn6z8KjBta2Px4LzsRwUdLCA8mvY=
+github.com/powertoolsdev/protos v0.23.0/go.mod h1:ISBezV0HGdE+O4y5MjGNdWq2w1YNBeBpvC7CTbA/34A=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/robfig/cron v1.2.0 h1:ZjScXvvxeQ63Dbyxy76Fj3AT3Ut0aKsyd2/tl3DTMuQ=
 github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
