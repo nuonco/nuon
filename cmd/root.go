@@ -12,7 +12,7 @@ var rootCmd = &cobra.Command{}
 func init() {
 	flags := rootCmd.Flags()
 
-	flags.String("service_name", "template-go-service", "the name of the service")
+	flags.String("service_name", "orgs-api", "the name of the service")
 }
 
 func Execute() {
