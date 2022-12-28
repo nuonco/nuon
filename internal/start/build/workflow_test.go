@@ -20,7 +20,7 @@ func TestProvision(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
-	a := NewActivities(workers.Config{})
+	a := NewActivities()
 
 	env.OnActivity(a.UpsertWaypointApplication, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, uwaReq UpsertWaypointApplicationRequest) (UpsertWaypointApplicationResponse, error) {

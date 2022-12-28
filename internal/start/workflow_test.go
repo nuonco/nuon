@@ -10,10 +10,12 @@ import (
 	"github.com/powertoolsdev/go-generics"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
+	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/instances/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/plan/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/meta"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
+	"github.com/powertoolsdev/workers-deployments/internal/start/instances"
 	"github.com/powertoolsdev/workers-deployments/internal/start/plan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -35,11 +37,15 @@ func TestProvision_planOnly(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
-	act := NewActivities(cfg)
+	act := NewActivities()
+
+	// initialize child workflows
 	bld := build.NewWorkflow(cfg)
 	pln := plan.NewWorkflow(cfg)
+	ins := instances.NewWorkflow(cfg)
 	env.RegisterWorkflow(bld.Build)
 	env.RegisterWorkflow(pln.Plan)
+	env.RegisterWorkflow(ins.ProvisionInstances)
 
 	req := getFakeStartRequest()
 	req.PlanOnly = true
@@ -48,13 +54,12 @@ func TestProvision_planOnly(t *testing.T) {
 	assert.True(t, req.PlanOnly)
 
 	// Mock activity implementation
-	env.OnActivity(act.ProvisionInstance, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, pr ProvisionInstanceRequest) (ProvisionInstanceResponse, error) {
-			assert.Falsef(t, true, "ProvisionInstance was executed during plan only")
-			return ProvisionInstanceResponse{}, nil
-		})
-
 	env.OnWorkflow(bld.Build, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, br *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
+			assert.Falsef(t, true, "Build was executed during plan only")
+			return &buildv1.BuildResponse{}, nil
+		})
+	env.OnWorkflow(ins.ProvisionInstances, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, br *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
 			assert.Falsef(t, true, "Build was executed during plan only")
 			return &buildv1.BuildResponse{}, nil
@@ -86,31 +91,23 @@ func TestStart(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
-	act := NewActivities(cfg)
+	act := NewActivities()
 	bld := build.NewWorkflow(cfg)
 	pln := plan.NewWorkflow(cfg)
+	ins := instances.NewWorkflow(cfg)
 	env.RegisterWorkflow(bld.Build)
 	env.RegisterWorkflow(pln.Plan)
+	env.RegisterWorkflow(ins.ProvisionInstances)
 
 	req := getFakeStartRequest()
 	err := req.Validate()
 	assert.NoError(t, err)
 
-	orgShortID, err := shortid.ParseString(req.OrgId)
+	shortIDs, err := shortid.ParseStrings(req.OrgId, req.AppId, req.DeploymentId)
 	assert.NoError(t, err)
-	appShortID, err := shortid.ParseString(req.AppId)
-	assert.NoError(t, err)
-	deploymentShortID, err := shortid.ParseString(req.DeploymentId)
-	assert.NoError(t, err)
+	orgID, appID, deploymentID := shortIDs[0], shortIDs[1], shortIDs[2]
 
 	// Mock activity implementation
-	env.OnActivity(act.ProvisionInstance, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, pr ProvisionInstanceRequest) (ProvisionInstanceResponse, error) {
-			assert.Nil(t, pr.validate())
-			assert.Equal(t, orgShortID, pr.OrgID)
-			assert.Equal(t, appShortID, pr.AppID)
-			return ProvisionInstanceResponse{WorkflowID: uuid.NewString()}, nil
-		})
 
 	env.OnActivity(act.StartStartRequest, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, r meta.StartRequest) (meta.StartResponse, error) {
@@ -118,9 +115,9 @@ func TestStart(t *testing.T) {
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, cfg.DeploymentsBucket, r.MetadataBucket)
 
-			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgShortID)
+			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgID)
 			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleARN)
-			expectedPrefix := getS3Prefix(orgShortID, appShortID, req.Component.Name, deploymentShortID)
+			expectedPrefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
@@ -131,9 +128,9 @@ func TestStart(t *testing.T) {
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, cfg.DeploymentsBucket, r.MetadataBucket)
 
-			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgShortID)
+			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgID)
 			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleARN)
-			expectedPrefix := getS3Prefix(orgShortID, appShortID, req.Component.Name, deploymentShortID)
+			expectedPrefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
@@ -142,7 +139,17 @@ func TestStart(t *testing.T) {
 		Return(func(ctx workflow.Context, br *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
 			resp := &buildv1.BuildResponse{}
 			assert.Nil(t, br.Validate())
-			assert.Equal(t, orgShortID, br.OrgId)
+			assert.Equal(t, orgID, br.OrgId)
+			return resp, nil
+		})
+
+	env.OnWorkflow(ins.ProvisionInstances, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r *instancesv1.ProvisionRequest) (*instancesv1.ProvisionResponse, error) {
+			resp := &instancesv1.ProvisionResponse{}
+			assert.Nil(t, r.Validate())
+			assert.Equal(t, orgID, r.OrgId)
+			assert.Equal(t, appID, r.AppId)
+			assert.Equal(t, deploymentID, r.DeploymentId)
 			return resp, nil
 		})
 
@@ -150,7 +157,7 @@ func TestStart(t *testing.T) {
 		Return(func(ctx workflow.Context, r *planv1.PlanRequest) (*planv1.PlanResponse, error) {
 			resp := &planv1.PlanResponse{}
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, orgShortID, r.OrgId)
+			assert.Equal(t, orgID, r.OrgId)
 			return resp, nil
 		})
 

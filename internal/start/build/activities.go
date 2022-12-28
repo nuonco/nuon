@@ -2,7 +2,6 @@ package build
 
 import (
 	"github.com/powertoolsdev/go-waypoint"
-	workers "github.com/powertoolsdev/workers-deployments/internal"
 )
 
 // NOTE(jm): we alias this type so it doesn't conflict
@@ -17,7 +16,7 @@ type Activities struct {
 	artifactUploader
 }
 
-func NewActivities(cfg workers.Config) *Activities {
+func NewActivities() *Activities {
 	return &Activities{
 		waypointProvider:               waypoint.NewProvider(),
 		waypointApplicationUpserter:    &wpApplicationUpserter{},

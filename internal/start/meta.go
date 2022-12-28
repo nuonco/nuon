@@ -7,7 +7,6 @@ import (
 	"github.com/powertoolsdev/go-common/shortid"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
-	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/meta"
 	"go.temporal.io/sdk/workflow"
 )
@@ -45,7 +44,7 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, req *deploymentsv1.StartReq
 		},
 	}
 
-	act := NewActivities(workers.Config{})
+	act := NewActivities()
 	if _, err = execStart(ctx, act, startReq); err != nil {
 		return fmt.Errorf("unable to start workflow: %w", err)
 	}
@@ -94,7 +93,7 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *deploymentsv1.StartRe
 	}
 
 	// exec activity
-	act := NewActivities(workers.Config{})
+	act := NewActivities()
 	_, err = execFinish(ctx, act, finishReq)
 	if err != nil {
 		err = fmt.Errorf("unable to execute finish activity: %w", err)

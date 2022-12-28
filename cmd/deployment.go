@@ -8,6 +8,8 @@ import (
 	shared "github.com/powertoolsdev/workers-deployments/internal"
 	start "github.com/powertoolsdev/workers-deployments/internal/start"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
+	"github.com/powertoolsdev/workers-deployments/internal/start/instances"
+	"github.com/powertoolsdev/workers-deployments/internal/start/plan"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
@@ -75,12 +77,22 @@ func runDeploymentWorkers(c client.Client, cfg shared.Config, interruptCh <-chan
 
 	wkflow := start.NewWorkflow(cfg)
 	w.RegisterWorkflow(wkflow.Start)
-	w.RegisterActivity(start.NewActivities(cfg))
+	w.RegisterActivity(start.NewActivities())
 
 	bldWkflow := build.NewWorkflow(cfg)
 	w.RegisterWorkflow(bldWkflow.Build)
-	bldActs := build.NewActivities(cfg)
+	bldActs := build.NewActivities()
 	w.RegisterActivity(bldActs)
+
+	planWkflow := plan.NewWorkflow(cfg)
+	w.RegisterWorkflow(planWkflow.Plan)
+	planActs := plan.NewActivities()
+	w.RegisterActivity(planActs)
+
+	instancesWkflow := instances.NewWorkflow(cfg)
+	w.RegisterWorkflow(instancesWkflow.ProvisionInstances)
+	instancesActs := instances.NewActivities(cfg)
+	w.RegisterActivity(instancesActs)
 
 	if err := w.Run(interruptCh); err != nil {
 		return err
