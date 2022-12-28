@@ -1,4 +1,4 @@
-package start
+package meta
 
 import (
 	"context"
@@ -21,36 +21,46 @@ type WorkflowInfo struct {
 }
 
 type StartRequest struct {
-	DeploymentsBucket              string `validate:"required"`
-	DeploymentsBucketAssumeRoleARN string `validate:"required"`
-	DeploymentsBucketPrefix        string `validate:"required"`
+	MetadataBucket              string `validate:"required"`
+	MetadataBucketAssumeRoleARN string `validate:"required"`
+	MetadataBucketPrefix        string `validate:"required"`
 
 	Request      *deploymentsv1.StartRequest `validate:"required"`
 	WorkflowInfo WorkflowInfo                `validate:"required"`
 }
 
-func (s StartRequest) validate() error {
+type StartResponse struct{}
+
+func (s StartRequest) Validate() error {
 	validate := validator.New()
 	return validate.Struct(s)
 }
 
-type StartResponse struct{}
+func NewStartActivity() *startActivity {
+	return &startActivity{
+		starter: &starterImpl{},
+	}
+}
 
-func (a *Activities) StartRequest(ctx context.Context, req StartRequest) (StartResponse, error) {
+type startActivity struct {
+	starter starter
+}
+
+func (s *startActivity) StartRequest(ctx context.Context, req StartRequest) (StartResponse, error) {
 	var resp StartResponse
 
-	if err := req.validate(); err != nil {
+	if err := req.Validate(); err != nil {
 		return resp, fmt.Errorf("unable to validate request: %w", err)
 	}
 
 	// create upload client
-	assumeRoleOpt := uploader.WithAssumeRoleARN(req.DeploymentsBucketAssumeRoleARN)
+	assumeRoleOpt := uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleARN)
 	assumeRoleSessionOpt := uploader.WithAssumeSessionName(startAssumeRoleSessionName)
-	uploadClient := uploader.NewS3Uploader(req.DeploymentsBucket, req.DeploymentsBucketPrefix,
+	uploadClient := uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix,
 		assumeRoleOpt, assumeRoleSessionOpt)
 
-	obj := a.starter.getRequest(req)
-	if err := a.starter.writeRequestFile(ctx, uploadClient, obj); err != nil {
+	obj := s.starter.getRequest(req)
+	if err := s.starter.writeRequestFile(ctx, uploadClient, obj); err != nil {
 		return resp, fmt.Errorf("unable to write request: %w", err)
 	}
 
