@@ -7,12 +7,13 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/go-common/shortid"
-	"github.com/powertoolsdev/go-waypoint"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
+	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/instances/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/plan/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
+	"github.com/powertoolsdev/workers-deployments/internal/start/instances"
 	"github.com/powertoolsdev/workers-deployments/internal/start/plan"
 )
 
@@ -41,7 +42,6 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 	resp := &deploymentsv1.StartResponse{}
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
-	act := NewActivities(workers.Config{})
 
 	if err := req.Validate(); err != nil {
 		return resp, err
@@ -91,39 +91,21 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 	}
 	l.Debug(fmt.Sprintf("finished build %v", bResp))
 
-	// start instance workflows
-	for _, installID := range req.InstallIds {
-		var installShortID string
-		installShortID, err = shortid.ParseString(installID)
-		if err != nil {
-			err = fmt.Errorf("unable to parse short ID for install: %w", err)
-			w.finishWorkflow(ctx, req, resp, err)
-			return resp, err
-		}
-
-		actReq := ProvisionInstanceRequest{
-			OrgID:        orgID,
-			AppID:        appID,
-			DeploymentID: deploymentID,
-			InstallID:    installShortID,
-			Component: waypoint.Component{
-				Name:              "mario",
-				ID:                "mario",
-				ContainerImageURL: "kennethreitz/httpbin",
-				Type:              "public",
-			},
-		}
-
-		actResp, err := execProvisionInstanceActivity(ctx, act, actReq)
-		if err != nil {
-			err = fmt.Errorf("unable to execute provision instance activity: %w", err)
-			w.finishWorkflow(ctx, req, resp, err)
-			return resp, err
-		}
-		resp.WorkflowIds = append(resp.WorkflowIds, actResp.WorkflowID)
+	ipReq := &instancesv1.ProvisionRequest{
+		OrgId:        orgID,
+		AppId:        appID,
+		DeploymentId: deploymentID,
+		Plan:         planResp.Plan,
+		InstallIds:   req.InstallIds,
 	}
+	ipResp, err := execProvisionInstances(ctx, w.cfg, ipReq)
+	if err != nil {
+		err = fmt.Errorf("unable to provision instances: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, err
+	}
+	resp.WorkflowIds = ipResp.WorkflowIds
 
-	l.Debug(fmt.Sprintf("starting %d child workflows", len(req.InstallIds)))
 	w.finishWorkflow(ctx, req, resp, nil)
 	return resp, nil
 }
@@ -178,18 +160,27 @@ func execBuild(
 	return resp, nil
 }
 
-func execProvisionInstanceActivity(
+func execProvisionInstances(
 	ctx workflow.Context,
-	act *Activities,
-	req ProvisionInstanceRequest,
-) (ProvisionInstanceResponse, error) {
+	cfg workers.Config,
+	req *instancesv1.ProvisionRequest,
+) (*instancesv1.ProvisionResponse, error) {
+	resp := &instancesv1.ProvisionResponse{}
 	l := workflow.GetLogger(ctx)
-	resp := ProvisionInstanceResponse{}
 
-	l.Debug("executing provision instance activity", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.ProvisionInstance, req)
+	l.Debug("executing build workflow")
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	wkflow := instances.NewWorkflow(cfg)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionInstances, req)
+
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
+
 	return resp, nil
 }

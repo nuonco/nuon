@@ -1,19 +1,19 @@
-package start
+package instances
 
 import (
 	"context"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/go-waypoint"
+	planv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
 	tclient "go.temporal.io/sdk/client"
 )
 
 type ProvisionInstanceRequest struct {
-	OrgID        string             `json:"org_id" validate:"required"`
-	AppID        string             `json:"app_id" validate:"required"`
-	DeploymentID string             `json:"deployment_id" validate:"required"`
-	InstallID    string             `json:"install_id" validate:"required"`
-	Component    waypoint.Component `json:"component" validate:"required"`
+	OrgID        string          `json:"org_id" validate:"required"`
+	AppID        string          `json:"app_id" validate:"required"`
+	DeploymentID string          `json:"deployment_id" validate:"required"`
+	InstallID    string          `json:"install_id" validate:"required"`
+	Plan         *planv1.PlanRef `json:"plan" validate:"required"`
 }
 
 func (p ProvisionInstanceRequest) validate() error {

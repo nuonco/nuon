@@ -1,18 +1,7 @@
 package start
 
-import (
-	workers "github.com/powertoolsdev/workers-deployments/internal"
-)
+type Activities struct{}
 
-type Activities struct {
-	provisioner
-}
-
-func NewActivities(cfg workers.Config) *Activities {
-	return &Activities{
-		provisioner: &instanceProvisioner{
-			TemporalHost:      cfg.TemporalHost,
-			TemporalNamespace: cfg.TemporalNamespace,
-		},
-	}
+func NewActivities() *Activities {
+	return &Activities{}
 }

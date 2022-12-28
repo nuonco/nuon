@@ -1,4 +1,4 @@
-package start
+package instances
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/go-generics"
-	"github.com/powertoolsdev/go-waypoint"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -23,7 +22,6 @@ func TestInstanceProvisioner_startWorkflow(t *testing.T) {
 		OrgID:        req.OrgId,
 		InstallID:    uuid.NewString(),
 		DeploymentID: req.DeploymentId,
-		Component:    waypoint.Component{},
 	}
 
 	expectedOpts := tclient.StartWorkflowOptions{TaskQueue: "instance"}
