@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-waypoint"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +17,7 @@ import (
 func TestInstanceProvisioner_startWorkflow(t *testing.T) {
 	tc := &tmock.Client{}
 	ip := instanceProvisioner{}
-	req := getFakeObj[*deploymentsv1.StartRequest]()
+	req := generics.GetFakeObj[*deploymentsv1.StartRequest]()
 	pReq := ProvisionInstanceRequest{
 		AppID:        req.AppId,
 		OrgID:        req.OrgId,

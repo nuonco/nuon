@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -29,11 +30,11 @@ func TestUpsertWaypointApplication_validation(t *testing.T) {
 		errExpected error
 	}{
 		"happy path": {
-			reqFn: getFakeObj[UpsertWaypointApplicationRequest],
+			reqFn: generics.GetFakeObj[UpsertWaypointApplicationRequest],
 		},
 		"missing-org-id": {
 			reqFn: func() UpsertWaypointApplicationRequest {
-				req := getFakeObj[UpsertWaypointApplicationRequest]()
+				req := generics.GetFakeObj[UpsertWaypointApplicationRequest]()
 				req.OrgID = ""
 				return req
 			},
@@ -55,7 +56,7 @@ func TestUpsertWaypointApplication_validation(t *testing.T) {
 }
 
 func TestUpsertWaypointApplication_upsertApplication(t *testing.T) {
-	req := getFakeObj[UpsertWaypointApplicationRequest]()
+	req := generics.GetFakeObj[UpsertWaypointApplicationRequest]()
 	testErr := fmt.Errorf("test-error")
 
 	tests := map[string]struct {
