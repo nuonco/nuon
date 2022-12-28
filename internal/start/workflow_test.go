@@ -78,7 +78,7 @@ func TestProvision_planOnly(t *testing.T) {
 	require.NotNil(t, resp)
 }
 
-func TestProvision(t *testing.T) {
+func TestStart(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
 	wkflow := NewWorkflow(cfg)
 
@@ -124,6 +124,19 @@ func TestProvision(t *testing.T) {
 			return resp, nil
 		})
 
+	env.OnActivity(act.FinishRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r FinishRequest) (FinishResponse, error) {
+			var resp FinishResponse
+			assert.Nil(t, r.validate())
+			assert.Equal(t, cfg.DeploymentsBucket, r.DeploymentsBucket)
+
+			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgShortID)
+			assert.Equal(t, expectedRoleARN, r.DeploymentsBucketAssumeRoleARN)
+			expectedPrefix := getS3Prefix(orgShortID, appShortID, req.Component.Name, deploymentShortID)
+			assert.Equal(t, expectedPrefix, r.DeploymentsBucketPrefix)
+			return resp, nil
+		})
+
 	env.OnWorkflow(bld.Build, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, br *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
 			resp := &buildv1.BuildResponse{}
@@ -146,4 +159,45 @@ func TestProvision(t *testing.T) {
 	var resp *deploymentsv1.StartResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
+}
+
+func Test_parseShortIDs(t *testing.T) {
+	validUUID := uuid.NewString()
+
+	tests := map[string]struct {
+		idsFn       func() []string
+		assertFn    func(*testing.T, []string)
+		errExpected error
+	}{
+		"happy path": {
+			idsFn: func() []string {
+				return []string{validUUID}
+			},
+			assertFn: func(t *testing.T, ids []string) {
+				assert.Equal(t, 1, len(ids))
+				longID, err := shortid.ToUUID(ids[0])
+				assert.NoError(t, err)
+				assert.Equal(t, validUUID, longID.String())
+			},
+			errExpected: nil,
+		},
+		"error": {
+			idsFn: func() []string {
+				return []string{"invalid"}
+			},
+			errExpected: fmt.Errorf("invalid"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			ids := test.idsFn()
+			results, err := parseShortIDs(ids...)
+			if test.errExpected != nil {
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+			test.assertFn(t, results)
+		})
+	}
 }
