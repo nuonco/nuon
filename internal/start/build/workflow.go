@@ -37,7 +37,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 	resp := &buildv1.BuildResponse{}
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
-	act := NewActivities(workers.Config{})
+	act := NewActivities()
 
 	// TODO(jm): this will go away once this workflow leverages using an actual plan, it's just hardcoded cruft for
 	// now to keep things working until that world "exists".
