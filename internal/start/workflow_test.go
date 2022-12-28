@@ -2,12 +2,11 @@ package start
 
 import (
 	"context"
-	"log"
 	"testing"
 
-	faker "github.com/go-faker/faker/v4"
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/go-common/shortid"
+	"github.com/powertoolsdev/go-generics"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/plan/v1"
@@ -21,23 +20,60 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func getFakeObj[T any]() T {
-	var obj T
-	err := faker.FakeData(&obj)
-	if err != nil {
-		log.Fatalf("unable to create fake obj: %s", err)
-	}
-	return obj
-}
-
 func getFakeStartRequest() *deploymentsv1.StartRequest {
-	obj := getFakeObj[*deploymentsv1.StartRequest]()
+	obj := generics.GetFakeObj[*deploymentsv1.StartRequest]()
 	obj.InstallIds = []string{uuid.NewString()}
 	return obj
 }
 
+func TestProvision_planOnly(t *testing.T) {
+	cfg := generics.GetFakeObj[workers.Config]()
+
+	wkflow := NewWorkflow(cfg)
+	testSuite := &testsuite.WorkflowTestSuite{}
+	env := testSuite.NewTestWorkflowEnvironment()
+
+	act := NewActivities(cfg)
+	bld := build.NewWorkflow(cfg)
+	pln := plan.NewWorkflow(cfg)
+	env.RegisterWorkflow(bld.Build)
+	env.RegisterWorkflow(pln.Plan)
+
+	req := getFakeStartRequest()
+	req.PlanOnly = true
+	err := req.Validate()
+	assert.NoError(t, err)
+	assert.True(t, req.PlanOnly)
+
+	// Mock activity implementation
+	env.OnActivity(act.ProvisionInstance, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, pr ProvisionInstanceRequest) (ProvisionInstanceResponse, error) {
+			assert.Falsef(t, true, "ProvisionInstance was executed during plan only")
+			return ProvisionInstanceResponse{}, nil
+		})
+
+	env.OnWorkflow(bld.Build, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, br *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
+			assert.Falsef(t, true, "Build was executed during plan only")
+			return &buildv1.BuildResponse{}, nil
+		})
+
+	env.OnWorkflow(pln.Plan, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r *planv1.PlanRequest) (*planv1.PlanResponse, error) {
+			resp := &planv1.PlanResponse{}
+			return resp, nil
+		})
+
+	env.ExecuteWorkflow(wkflow.Start, req)
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	var resp *deploymentsv1.StartResponse
+	require.NoError(t, env.GetWorkflowResult(&resp))
+	require.NotNil(t, resp)
+}
+
 func TestProvision(t *testing.T) {
-	cfg := getFakeObj[workers.Config]()
+	cfg := generics.GetFakeObj[workers.Config]()
 	wkflow := NewWorkflow(cfg)
 
 	testSuite := &testsuite.WorkflowTestSuite{}
