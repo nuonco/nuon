@@ -3,7 +3,7 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/powertoolsdev/protos/orgsapi/generated/types
+    default: github.com/powertoolsdev/protos/orgs-api/generated/types
     except:
       - buf.build/googleapis/googleapis
       - buf.build/envoyproxy/protoc-gen-validate
@@ -16,5 +16,9 @@ plugins:
     opt: paths=source_relative
 
   - plugin: buf.build/bufbuild/validate-go
+    out: generated/types
+    opt: paths=source_relative
+
+  - plugin: buf.build/bufbuild/connect-go
     out: generated/types
     opt: paths=source_relative
