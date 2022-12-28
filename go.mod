@@ -13,7 +13,7 @@ require (
 	github.com/powertoolsdev/go-generics v0.0.1
 	github.com/powertoolsdev/go-uploader v0.1.0
 	github.com/powertoolsdev/go-waypoint v0.2.1
-	github.com/powertoolsdev/protos v0.18.0
+	github.com/powertoolsdev/protos v0.20.0
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.19.0

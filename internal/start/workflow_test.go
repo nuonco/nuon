@@ -2,6 +2,7 @@ package start
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -58,6 +59,11 @@ func TestProvision_planOnly(t *testing.T) {
 			return &buildv1.BuildResponse{}, nil
 		})
 
+	env.OnActivity(act.StartRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r StartRequest) (StartResponse, error) {
+			return StartResponse{}, nil
+		})
+
 	env.OnWorkflow(pln.Plan, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *planv1.PlanRequest) (*planv1.PlanResponse, error) {
 			resp := &planv1.PlanResponse{}
@@ -93,6 +99,8 @@ func TestProvision(t *testing.T) {
 	assert.NoError(t, err)
 	appShortID, err := shortid.ParseString(req.AppId)
 	assert.NoError(t, err)
+	deploymentShortID, err := shortid.ParseString(req.DeploymentId)
+	assert.NoError(t, err)
 
 	// Mock activity implementation
 	env.OnActivity(act.ProvisionInstance, mock.Anything, mock.Anything).
@@ -101,6 +109,19 @@ func TestProvision(t *testing.T) {
 			assert.Equal(t, orgShortID, pr.OrgID)
 			assert.Equal(t, appShortID, pr.AppID)
 			return ProvisionInstanceResponse{WorkflowID: uuid.NewString()}, nil
+		})
+
+	env.OnActivity(act.StartRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r StartRequest) (StartResponse, error) {
+			var resp StartResponse
+			assert.Nil(t, r.validate())
+			assert.Equal(t, cfg.DeploymentsBucket, r.DeploymentsBucket)
+
+			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgShortID)
+			assert.Equal(t, expectedRoleARN, r.DeploymentsBucketAssumeRoleARN)
+			expectedPrefix := getS3Prefix(orgShortID, appShortID, req.Component.Name, deploymentShortID)
+			assert.Equal(t, expectedPrefix, r.DeploymentsBucketPrefix)
+			return resp, nil
 		})
 
 	env.OnWorkflow(bld.Build, mock.Anything, mock.Anything).
