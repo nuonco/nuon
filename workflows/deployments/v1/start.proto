@@ -20,8 +20,12 @@ message StartRequest {
     (validate.rules).string.uuid = true,
     (tagger.tags) = "faker:\"uuid_hyphenated\""
   ];
+
   repeated string install_ids = 4 [(validate.rules).repeated.min_items = 1];
+
   component.v1.Component component = 5;
+
+  bool plan_only = 6 [(tagger.tags) = "faker:\"-\""];
 }
 
 // StartResponse returns the response from a deployment workflow
