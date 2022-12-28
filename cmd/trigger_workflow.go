@@ -142,11 +142,11 @@ func triggerInstallDeploymentWorkflow(ctx context.Context, tc tclient.Client, ar
 		AppId:        ids[1],
 		DeploymentId: uuid.NewString(),
 		InstallIds:   []string{ids[2]},
-
 		Component: &componentv1.Component{
 			Id:   uuid.NewString(),
 			Name: "basic-component",
 		},
+		PlanOnly: true,
 	}
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: "deployment",
