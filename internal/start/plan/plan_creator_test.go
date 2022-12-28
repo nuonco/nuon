@@ -7,11 +7,16 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/google/uuid"
+	waypointv1 "github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
+	"github.com/powertoolsdev/go-waypoint"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	planv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"google.golang.org/protobuf/proto"
 )
 
 type mockS3BlobUploader struct {
@@ -102,4 +107,183 @@ func Test_planCreatorImpl_getConfigBuilder(t *testing.T) {
 	builder, err := planCreator.getConfigBuilder(comp)
 	assert.NoError(t, err)
 	assert.NotNil(t, builder)
+}
+
+type mockBuilder struct {
+	mock.Mock
+}
+
+func (m *mockBuilder) WithComponent(comp *componentv1.Component) {
+	m.Called(comp)
+}
+
+func (m *mockBuilder) WithMetadata(meta *planv1.Metadata) {
+	m.Called(meta)
+}
+
+func (m *mockBuilder) WithECRRef(ecr *planv1.ECRRepositoryRef) {
+	m.Called(ecr)
+}
+
+func (m *mockBuilder) Render() ([]byte, waypointv1.Hcl_Format, error) {
+	args := m.Called()
+	if args.Error(2) != nil {
+		return nil, waypointv1.Hcl_HCL, args.Error(2)
+	}
+
+	return args.Get(0).([]byte), args.Get(1).(waypointv1.Hcl_Format), nil
+}
+
+var _ s3BlobUploader = (*mockS3BlobUploader)(nil)
+
+func newDefaultMockBuilder() *mockBuilder {
+	obj := &mockBuilder{}
+	obj.On("Render").Return([]byte("waypoint-hcl"), waypointv1.Hcl_HCL, nil)
+	obj.On("WithComponent", mock.Anything).Return()
+	obj.On("WithMetadata", mock.Anything).Return()
+	obj.On("WithECRRef", mock.Anything).Return()
+	return obj
+}
+
+func Test_planCreatorImpl_createPlan(t *testing.T) {
+	req := generics.GetFakeObj[CreatePlanRequest]()
+	longIDs := []string{uuid.NewString(), uuid.NewString(), uuid.NewString()}
+	shortIDs, err := shortid.ParseStrings(longIDs...)
+	assert.NoError(t, err)
+	req.OrgID = shortIDs[0]
+	req.AppID = shortIDs[1]
+	req.DeploymentID = shortIDs[2]
+	req.Config.WaypointTokenSecretTemplate = "token-%s"
+	assert.NoError(t, req.validate())
+
+	errCreatePlan := fmt.Errorf("err creating plan")
+	tests := map[string]struct {
+		builderFn   func() *mockBuilder
+		assertFn    func(*testing.T, *planv1.BuildPlan)
+		errExpected error
+	}{
+		"happy path - metadata": {
+			builderFn: newDefaultMockBuilder,
+			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+				meta := plan.Metadata
+				assert.NotNil(t, meta)
+				assert.Equal(t, longIDs[0], meta.OrgId)
+				assert.Equal(t, shortIDs[0], meta.OrgShortId)
+
+				assert.Equal(t, longIDs[1], meta.AppId)
+				assert.Equal(t, shortIDs[1], meta.AppShortId)
+
+				assert.Equal(t, longIDs[2], meta.DeploymentId)
+				assert.Equal(t, shortIDs[2], meta.DeploymentShortId)
+			},
+		},
+		"happy path - waypoint server": {
+			builderFn: newDefaultMockBuilder,
+			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+				wpPlan := plan.WaypointServer
+				cfg := req.Config
+
+				expectedAddr := waypoint.DefaultOrgServerAddress(cfg.WaypointServerRootDomain, req.OrgID)
+				assert.Equal(t, expectedAddr, wpPlan.Address)
+
+				expectedTokenSecretName := fmt.Sprintf(cfg.WaypointTokenSecretTemplate, req.OrgID)
+				assert.Equal(t, expectedTokenSecretName, wpPlan.TokenSecretName)
+				assert.Equal(t, cfg.WaypointTokenSecretNamespace, wpPlan.TokenSecretNamespace)
+			},
+		},
+		"happy path - ecr repository": {
+			builderFn: newDefaultMockBuilder,
+			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+				ecrPlan := plan.EcrRepositoryRef
+				cfg := req.Config
+
+				expectedRepoName := fmt.Sprintf("%s/%s", req.OrgID, req.AppID)
+				expectedRepoURI := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s", cfg.OrgsECRRegistryID,
+					cfg.OrgsECRRegion, expectedRepoName)
+				expectedRepoArn := fmt.Sprintf("%s/%s", cfg.OrgsECRRegistryARN, expectedRepoName)
+
+				assert.Equal(t, cfg.OrgsECRRegistryID, ecrPlan.RegistryId)
+				assert.Equal(t, expectedRepoName, ecrPlan.RepositoryName)
+				assert.Equal(t, expectedRepoArn, ecrPlan.RepositoryArn)
+				assert.Equal(t, expectedRepoURI, ecrPlan.RepositoryUri)
+				assert.Equal(t, req.DeploymentID, ecrPlan.Tag)
+				assert.Equal(t, cfg.OrgsECRRegion, ecrPlan.Region)
+			},
+		},
+		"happy path - waypoint build": {
+			builderFn: newDefaultMockBuilder,
+			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+				wpPlan := plan.WaypointBuild
+
+				assert.Equal(t, req.OrgID, wpPlan.Project)
+				assert.Equal(t, req.AppID, wpPlan.Workspace)
+				assert.Equal(t, req.Component.Name, wpPlan.App)
+				assert.Contains(t, wpPlan.SingletonId, req.Component.Name)
+				assert.Contains(t, wpPlan.SingletonId, req.DeploymentID)
+				assert.Equal(t, req.OrgID, wpPlan.RunnerId)
+				assert.Equal(t, req.OrgID, wpPlan.OnDemandRunnerConfig)
+				assert.Equal(t, defaultJobTimeoutSeconds, wpPlan.JobTimeoutSeconds)
+
+				assert.Equal(t, req.OrgID, wpPlan.Labels["org-id"])
+				assert.Equal(t, req.DeploymentID, wpPlan.Labels["deployment-id"])
+				assert.Equal(t, req.AppID, wpPlan.Labels["app-id"])
+				assert.Equal(t, req.Component.Name, wpPlan.Labels["component-name"])
+
+				assert.Equal(t, "waypoint-hcl", wpPlan.HclConfig)
+				assert.Equal(t, waypointv1.Hcl_HCL.String(), wpPlan.HclConfigFormat)
+			},
+		},
+		"happy path - outputs": {
+			builderFn: newDefaultMockBuilder,
+			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+				oPlan := plan.Outputs
+				cfg := req.Config
+
+				assert.Equal(t, cfg.DeploymentsBucket, oPlan.Bucket)
+				assert.Equal(t, req.DeploymentsBucketPrefix, oPlan.BucketPrefix)
+				assert.Equal(t, req.DeploymentsBucketAssumeRoleARN, oPlan.BucketAssumeRoleArn)
+
+				assert.Contains(t, oPlan.LogsKey, req.DeploymentsBucketPrefix)
+				assert.Contains(t, oPlan.LogsKey, "logs.txt")
+
+				assert.Contains(t, oPlan.EventsKey, req.DeploymentsBucketPrefix)
+				assert.Contains(t, oPlan.EventsKey, "events.json")
+
+				assert.Contains(t, oPlan.ArtifactKey, req.DeploymentsBucketPrefix)
+				assert.Contains(t, oPlan.ArtifactKey, "artifacts.json")
+			},
+		},
+		"happy path - component": {
+			builderFn: newDefaultMockBuilder,
+			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+				assert.True(t, proto.Equal(req.Component, plan.Component))
+			},
+		},
+		"error - builder": {
+			builderFn: func() *mockBuilder {
+				obj := &mockBuilder{}
+				obj.On("Render").Return(nil, waypointv1.Hcl_HCL, errCreatePlan)
+				obj.On("WithComponent", mock.Anything).Return()
+				obj.On("WithMetadata", mock.Anything).Return()
+				obj.On("WithECRRef", mock.Anything).Return()
+				return obj
+			},
+			errExpected: errCreatePlan,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			pc := planCreatorImpl{}
+			builder := test.builderFn()
+
+			buildPlan, err := pc.createPlan(req, builder)
+			if test.errExpected != nil {
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+			assert.NoError(t, err)
+			test.assertFn(t, buildPlan)
+		})
+	}
 }
