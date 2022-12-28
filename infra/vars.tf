@@ -3,7 +3,7 @@ locals {
     for acct in data.aws_organizations_organization.orgs.accounts : acct.name => { id : acct.id }
   }
 
-  name                   = "template-go-service"
+  name                   = "orgs-api"
   github_repository      = local.name
   github_organization    = "powertoolsdev"
   terraform_organization = "launchpaddev"

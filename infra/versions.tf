@@ -5,7 +5,7 @@ terraform {
     organization = "launchpaddev"
 
     workspaces {
-      prefix = "template-go-service-"
+      prefix = "orgs-api-"
     }
   }
 
