@@ -1,4 +1,4 @@
-package start
+package meta
 
 import (
 	"context"
@@ -17,33 +17,43 @@ const (
 )
 
 type FinishRequest struct {
-	DeploymentsBucket              string `validate:"required"`
-	DeploymentsBucketAssumeRoleARN string `validate:"required"`
-	DeploymentsBucketPrefix        string `validate:"required"`
+	MetadataBucket              string `validate:"required"`
+	MetadataBucketAssumeRoleARN string `validate:"required"`
+	MetadataBucketPrefix        string `validate:"required"`
 
 	Response       *deploymentsv1.StartResponse
 	ResponseStatus sharedv1.ResponseStatus
 	ErrorMessage   string
 }
 
-func (s FinishRequest) validate() error {
+func (s FinishRequest) Validate() error {
 	validate := validator.New()
 	return validate.Struct(s)
 }
 
 type FinishResponse struct{}
 
-func (a *Activities) FinishRequest(ctx context.Context, req FinishRequest) (FinishResponse, error) {
+func NewFinishActivity() *finishActivity {
+	return &finishActivity{
+		finisher: &finisherImpl{},
+	}
+}
+
+type finishActivity struct {
+	finisher finisher
+}
+
+func (a *finishActivity) FinishRequest(ctx context.Context, req FinishRequest) (FinishResponse, error) {
 	var resp FinishResponse
 
-	if err := req.validate(); err != nil {
+	if err := req.Validate(); err != nil {
 		return resp, fmt.Errorf("unable to validate request: %w", err)
 	}
 
 	// create upload client
-	assumeRoleOpt := uploader.WithAssumeRoleARN(req.DeploymentsBucketAssumeRoleARN)
+	assumeRoleOpt := uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleARN)
 	assumeRoleSessionOpt := uploader.WithAssumeSessionName(startAssumeRoleSessionName)
-	uploadClient := uploader.NewS3Uploader(req.DeploymentsBucket, req.DeploymentsBucketPrefix,
+	uploadClient := uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix,
 		assumeRoleOpt, assumeRoleSessionOpt)
 
 	obj := a.finisher.getRequest(req)
