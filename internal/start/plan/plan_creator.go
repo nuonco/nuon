@@ -91,7 +91,7 @@ func (planCreatorImpl) getConfigBuilder(component *componentv1.Component) (confi
 }
 
 func (planCreatorImpl) createPlan(req CreatePlanRequest, builder config.Builder) (*planv1.BuildPlan, error) {
-	panic("not implemented") // TODO: Implement
+	return nil, nil
 }
 
 func (planCreatorImpl) uploadPlan(ctx context.Context, uploader s3BlobUploader, req CreatePlanRequest, plan *planv1.BuildPlan) (*planv1.PlanRef, error) {
