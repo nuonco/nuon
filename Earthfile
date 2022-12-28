@@ -51,7 +51,6 @@ docker:
 
     COPY +build/service /bin/service
     COPY +certs/cert.pem "$ETCSSL"
-    COPY certs/github-app-key.pem certs/github-app-key.pem
     ENTRYPOINT ["/bin/service"]
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
