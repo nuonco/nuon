@@ -11,7 +11,6 @@ import (
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/plan/v1"
-	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 	"github.com/powertoolsdev/workers-deployments/internal/start/plan"
@@ -38,57 +37,6 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-// parseShortIDs: parse the ids and return any error if found
-func parseShortIDs(ids ...string) ([]string, error) {
-	shortIDs := make([]string, len(ids))
-
-	for idx, id := range ids {
-		parsedID, err := shortid.ParseString(id)
-		if err != nil {
-			return nil, fmt.Errorf("unable to parse short id: %v: %w", idx, err)
-		}
-		shortIDs[idx] = parsedID
-	}
-
-	return shortIDs, nil
-}
-
-// finishWorkflow is a "best effort" finisher for the workflow by executing an activity to emit a response into s3
-func (w *wkflow) finishWorkflow(ctx workflow.Context, req *deploymentsv1.StartRequest, resp *deploymentsv1.StartResponse, workflowErr error) {
-	l := workflow.GetLogger(ctx)
-	status := sharedv1.ResponseStatus_RESPONSE_STATUS_OK
-	errMessage := ""
-	if workflowErr != nil {
-		status = sharedv1.ResponseStatus_RESPONSE_STATUS_ERROR
-		errMessage = workflowErr.Error()
-	}
-
-	shortIDs, err := parseShortIDs(req.OrgId, req.AppId, req.DeploymentId)
-	if err != nil {
-		l.Debug("error parsing shortIDs: %w", err)
-		return
-	}
-
-	prefix := getS3Prefix(shortIDs[0], shortIDs[1], req.Component.Name, shortIDs[2])
-	finishReq := FinishRequest{
-		DeploymentsBucket:              w.cfg.DeploymentsBucket,
-		DeploymentsBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, shortIDs[0]),
-		DeploymentsBucketPrefix:        prefix,
-		Response:                       resp,
-		ResponseStatus:                 status,
-		ErrorMessage:                   errMessage,
-	}
-
-	// exec activity
-	act := NewActivities(workers.Config{})
-	_, err = execFinish(ctx, act, finishReq)
-	if err != nil {
-		l.Debug("unable to execute finish activity: %w", err)
-		return
-	}
-}
-
-//nolint:funlen
 func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*deploymentsv1.StartResponse, error) {
 	resp := &deploymentsv1.StartResponse{}
 	l := workflow.GetLogger(ctx)
@@ -99,27 +47,15 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 		return resp, err
 	}
 
-	shortIDs, err := parseShortIDs(req.OrgId, req.AppId, req.DeploymentId)
+	shortIDs, err := shortid.ParseStrings(req.OrgId, req.AppId, req.DeploymentId)
 	if err != nil {
 		return resp, fmt.Errorf("unable to parse short IDs: %w", err)
 	}
 	orgID, appID, deploymentID := shortIDs[0], shortIDs[1], shortIDs[2]
 
-	prefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
-	info := workflow.GetInfo(ctx)
-	startReq := StartRequest{
-		DeploymentsBucket:              w.cfg.DeploymentsBucket,
-		DeploymentsBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
-		DeploymentsBucketPrefix:        prefix,
-		Request:                        req,
-		WorkflowInfo: WorkflowInfo{
-			ID: info.WorkflowExecution.ID,
-		},
-	}
-	if _, err = execStart(ctx, act, startReq); err != nil {
+	if err = w.startWorkflow(ctx, req); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
-		w.finishWorkflow(ctx, req, resp, err)
-		return resp, nil
+		return resp, err
 	}
 
 	// run the plan workflow
@@ -252,38 +188,6 @@ func execProvisionInstanceActivity(
 
 	l.Debug("executing provision instance activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.ProvisionInstance, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-	return resp, nil
-}
-
-func execStart(
-	ctx workflow.Context,
-	act *Activities,
-	req StartRequest,
-) (StartResponse, error) {
-	l := workflow.GetLogger(ctx)
-	resp := StartResponse{}
-
-	l.Debug("executing start activity", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.StartRequest, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-	return resp, nil
-}
-
-func execFinish(
-	ctx workflow.Context,
-	act *Activities,
-	req FinishRequest,
-) (FinishResponse, error) {
-	l := workflow.GetLogger(ctx)
-	resp := FinishResponse{}
-
-	l.Debug("executing finish activity", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.FinishRequest, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}

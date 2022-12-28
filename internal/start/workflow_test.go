@@ -12,6 +12,7 @@ import (
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/plan/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
+	"github.com/powertoolsdev/workers-deployments/internal/meta"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 	"github.com/powertoolsdev/workers-deployments/internal/start/plan"
 	"github.com/stretchr/testify/assert"
@@ -59,9 +60,9 @@ func TestProvision_planOnly(t *testing.T) {
 			return &buildv1.BuildResponse{}, nil
 		})
 
-	env.OnActivity(act.StartRequest, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r StartRequest) (StartResponse, error) {
-			return StartResponse{}, nil
+	env.OnActivity(act.StartStartRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r meta.StartRequest) (meta.StartResponse, error) {
+			return meta.StartResponse{}, nil
 		})
 
 	env.OnWorkflow(pln.Plan, mock.Anything, mock.Anything).
@@ -111,29 +112,29 @@ func TestStart(t *testing.T) {
 			return ProvisionInstanceResponse{WorkflowID: uuid.NewString()}, nil
 		})
 
-	env.OnActivity(act.StartRequest, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r StartRequest) (StartResponse, error) {
-			var resp StartResponse
-			assert.Nil(t, r.validate())
-			assert.Equal(t, cfg.DeploymentsBucket, r.DeploymentsBucket)
+	env.OnActivity(act.StartStartRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r meta.StartRequest) (meta.StartResponse, error) {
+			var resp meta.StartResponse
+			assert.Nil(t, r.Validate())
+			assert.Equal(t, cfg.DeploymentsBucket, r.MetadataBucket)
 
 			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgShortID)
-			assert.Equal(t, expectedRoleARN, r.DeploymentsBucketAssumeRoleARN)
+			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleARN)
 			expectedPrefix := getS3Prefix(orgShortID, appShortID, req.Component.Name, deploymentShortID)
-			assert.Equal(t, expectedPrefix, r.DeploymentsBucketPrefix)
+			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
 
-	env.OnActivity(act.FinishRequest, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r FinishRequest) (FinishResponse, error) {
-			var resp FinishResponse
-			assert.Nil(t, r.validate())
-			assert.Equal(t, cfg.DeploymentsBucket, r.DeploymentsBucket)
+	env.OnActivity(act.FinishStartRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r meta.FinishRequest) (meta.FinishResponse, error) {
+			var resp meta.FinishResponse
+			assert.Nil(t, r.Validate())
+			assert.Equal(t, cfg.DeploymentsBucket, r.MetadataBucket)
 
 			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgShortID)
-			assert.Equal(t, expectedRoleARN, r.DeploymentsBucketAssumeRoleARN)
+			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleARN)
 			expectedPrefix := getS3Prefix(orgShortID, appShortID, req.Component.Name, deploymentShortID)
-			assert.Equal(t, expectedPrefix, r.DeploymentsBucketPrefix)
+			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
 
@@ -159,45 +160,4 @@ func TestStart(t *testing.T) {
 	var resp *deploymentsv1.StartResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
-}
-
-func Test_parseShortIDs(t *testing.T) {
-	validUUID := uuid.NewString()
-
-	tests := map[string]struct {
-		idsFn       func() []string
-		assertFn    func(*testing.T, []string)
-		errExpected error
-	}{
-		"happy path": {
-			idsFn: func() []string {
-				return []string{validUUID}
-			},
-			assertFn: func(t *testing.T, ids []string) {
-				assert.Equal(t, 1, len(ids))
-				longID, err := shortid.ToUUID(ids[0])
-				assert.NoError(t, err)
-				assert.Equal(t, validUUID, longID.String())
-			},
-			errExpected: nil,
-		},
-		"error": {
-			idsFn: func() []string {
-				return []string{"invalid"}
-			},
-			errExpected: fmt.Errorf("invalid"),
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			ids := test.idsFn()
-			results, err := parseShortIDs(ids...)
-			if test.errExpected != nil {
-				assert.ErrorContains(t, err, test.errExpected.Error())
-				return
-			}
-			test.assertFn(t, results)
-		})
-	}
 }
