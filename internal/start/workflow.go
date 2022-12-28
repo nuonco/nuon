@@ -61,6 +61,22 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 		return resp, fmt.Errorf("unable to get short deployment ID: %w", err)
 	}
 
+	prefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
+
+	info := workflow.GetInfo(ctx)
+	startReq := StartRequest{
+		DeploymentsBucket:              w.cfg.DeploymentsBucket,
+		DeploymentsBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
+		DeploymentsBucketPrefix:        prefix,
+		Request:                        req,
+		WorkflowInfo: WorkflowInfo{
+			ID: info.WorkflowExecution.ID,
+		},
+	}
+	if _, err = execStart(ctx, act, startReq); err != nil {
+		return resp, nil
+	}
+
 	// run the plan workflow
 	planReq := &planv1.PlanRequest{
 		OrgId:        orgID,
@@ -180,6 +196,22 @@ func execProvisionInstanceActivity(
 
 	l.Debug("executing provision instance activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.ProvisionInstance, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+func execStart(
+	ctx workflow.Context,
+	act *Activities,
+	req StartRequest,
+) (StartResponse, error) {
+	l := workflow.GetLogger(ctx)
+	resp := StartResponse{}
+
+	l.Debug("executing start activity", "request", req)
+	fut := workflow.ExecuteActivity(ctx, act.StartRequest, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
