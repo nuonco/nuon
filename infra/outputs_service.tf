@@ -10,7 +10,7 @@ output "orgs_deployments_role_template" {
 # be migrated too when possible.
 output "orgs_k8s_role_arn" {
   # NOTE: you need to update `infra-eks` to add your service into the auth map
-  value = nonsensitive(data.tfe_outputs.infra-orgs.values.k8s.access_role_arns["eks-orgs-api"])
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.k8s.access_role_arns["eks-workers-deployments"])
 }
 
 output "orgs_k8s_cluster_id" {
