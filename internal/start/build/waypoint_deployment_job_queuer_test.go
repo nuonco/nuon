@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -35,7 +36,7 @@ func (t *testWaypointClientJobQueuer) QueueJob(
 // Test_waypointDeployerImpl_upsertWaypointDeployment tests integrating with the waypoint deployment api
 func Test_waypointDeployerImpl_upsertWaypointDeployment(t *testing.T) {
 	errDeployment := fmt.Errorf("error upserting deployment")
-	req := getFakeObj[QueueWaypointDeploymentJobRequest]()
+	req := generics.GetFakeObj[QueueWaypointDeploymentJobRequest]()
 
 	tests := map[string]struct {
 		waypointHcl []byte
@@ -121,7 +122,7 @@ func (t *testS3ClientObjectGetter) GetObject(
 
 func Test_waypointDeploymentJobQueuerImpl_getWaypointHcl(t *testing.T) {
 	errGetObject := fmt.Errorf("error getting object")
-	req := getFakeObj[QueueWaypointDeploymentJobRequest]()
+	req := generics.GetFakeObj[QueueWaypointDeploymentJobRequest]()
 
 	tests := map[string]struct {
 		clientFn    func() s3ClientObjectGetter

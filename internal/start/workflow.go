@@ -73,6 +73,10 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 	}
 	l.Debug(fmt.Sprintf("finished planning %v", planResp))
 
+	if req.PlanOnly {
+		return resp, nil
+	}
+
 	// run the build workflow
 	bReq := &buildv1.BuildRequest{
 		OrgId:        orgID,
