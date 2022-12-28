@@ -117,4 +117,5 @@ message WaypointBuild {
   uint64 job_timeout_seconds = 8 [(validate.rules).uint64.gt = 60];
 
   string hcl_config = 9 [(validate.rules).string.min_bytes = 1];
+  string hcl_config_format = 10 [(validate.rules).string.min_bytes = 1];
 }

@@ -773,6 +773,17 @@ func (m *WaypointBuild) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if len(m.GetHclConfigFormat()) < 1 {
+		err := WaypointBuildValidationError{
+			field:  "HclConfigFormat",
+			reason: "value length must be at least 1 bytes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return WaypointBuildMultiError(errors)
 	}
