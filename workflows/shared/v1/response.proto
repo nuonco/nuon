@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package shared.v1;
+
+import "deployments/v1/start.proto";
+import "installs/v1/deprovision.proto";
+import "installs/v1/provision.proto";
+import "orgs/v1/signup.proto";
+import "orgs/v1/teardown.proto";
+import "tagger/tagger.proto";
+
+// Response represents a workflow execution
+message Response {
+  ResponseStatus status = 1;
+  ResponseRef response = 2 [(tagger.tags) = "faker:\"-\""];
+}
+
+enum ResponseStatus {
+  RESPONSE_STATUS_UNSPECIFIED = 0;
+  RESPONSE_STATUS_OK = 1;
+  RESPONSE_STATUS_ERROR = 2;
+}
+
+// ResponseRef represents the request that was passed in
+message ResponseRef {
+  oneof response {
+    deployments.v1.StartResponse deployment_start = 1;
+
+    installs.v1.ProvisionResponse install_provision = 2;
+    installs.v1.DeprovisionResponse install_deprovision = 3;
+
+    orgs.v1.SignupResponse org_signup = 4;
+    orgs.v1.TeardownResponse org_teardown = 5;
+  }
+}

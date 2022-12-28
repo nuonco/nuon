@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package shared.v1;
+
+import "deployments/v1/start.proto";
+import "installs/v1/deprovision.proto";
+import "installs/v1/provision.proto";
+import "orgs/v1/signup.proto";
+import "orgs/v1/teardown.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// Request represents a workflow execution
+message Request {
+  string workflow_id = 1 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+
+  map<string, string> workflow_memo = 2;
+
+  RequestRef request = 3;
+}
+
+// RequestRef represents the request that was passed in
+message RequestRef {
+  oneof request {
+    deployments.v1.StartRequest deployment_start = 1;
+
+    installs.v1.ProvisionRequest install_provision = 2;
+    installs.v1.DeprovisionRequest install_deprovision = 3;
+
+    orgs.v1.SignupRequest org_signup = 4;
+    orgs.v1.TeardownRequest org_teardown = 5;
+  }
+}
