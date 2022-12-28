@@ -5,7 +5,8 @@ import (
 )
 
 type Activities struct {
-	starter starter
+	starter  starter
+	finisher finisher
 
 	provisioner
 }
