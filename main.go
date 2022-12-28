@@ -1,6 +1,6 @@
 package main
 
-import "github.com/powertoolsdev/template-go-service/cmd"
+import "github.com/powertoolsdev/orgs-api/cmd"
 
 func main() {
 	cmd.Execute()
