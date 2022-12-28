@@ -71,8 +71,6 @@ func (m *Request) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	// no validation rules for WorkflowMemo
-
 	if all {
 		switch v := interface{}(m.GetRequest()).(type) {
 		case interface{ ValidateAll() error }:

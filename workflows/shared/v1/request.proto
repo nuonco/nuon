@@ -17,9 +17,7 @@ message Request {
     (tagger.tags) = "faker:\"uuid_hyphenated\""
   ];
 
-  map<string, string> workflow_memo = 2;
-
-  RequestRef request = 3;
+  RequestRef request = 2 [(tagger.tags) = "faker:\"-\""];
 }
 
 // RequestRef represents the request that was passed in
