@@ -5,6 +5,7 @@ deps:
   - buf.build/googleapis/googleapis
   - buf.build/envoyproxy/protoc-gen-validate
   - buf.build/srikrsna/protoc-gen-gotag
+  - buf.build/nuon/components
 lint:
   use:
     - DEFAULT

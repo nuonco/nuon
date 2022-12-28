@@ -202,6 +202,35 @@ func (m *BuildPlan) validate(all bool) error {
 		}
 	}
 
+	if all {
+		switch v := interface{}(m.GetComponent()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, BuildPlanValidationError{
+					field:  "Component",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, BuildPlanValidationError{
+					field:  "Component",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetComponent()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return BuildPlanValidationError{
+				field:  "Component",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return BuildPlanMultiError(errors)
 	}
@@ -486,9 +515,9 @@ func (m *BuildOutputs) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if len(m.GetBucketKey()) < 1 {
+	if len(m.GetBucketPrefix()) < 1 {
 		err := BuildOutputsValidationError{
-			field:  "BucketKey",
+			field:  "BucketPrefix",
 			reason: "value length must be at least 1 bytes",
 		}
 		if !all {

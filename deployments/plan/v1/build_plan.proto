@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package plan.v1;
 
+import "component/v1/component.proto";
 import "plan/v1/plan.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
@@ -15,6 +16,7 @@ message BuildPlan {
   ECRRepositoryRef ecr_repository_ref = 3;
   WaypointBuild waypoint_build = 4;
   BuildOutputs outputs = 5;
+  component.v1.Component component = 6;
 }
 
 // ECRRepositoryRef contains all of the information for referencing the app's ECR repo. Note, that all ECR repos are
@@ -64,7 +66,7 @@ message BuildOutputs {
     (tagger.tags) = "faker:\"len=10\""
   ];
 
-  string bucket_key = 2 [(validate.rules).string.min_bytes = 1];
+  string bucket_prefix = 2 [(validate.rules).string.min_bytes = 1];
 
   string bucket_assume_role_arn = 3 [
     (validate.rules).string.min_len = 20,
