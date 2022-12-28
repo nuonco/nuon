@@ -63,6 +63,7 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 		OrgId:        orgID,
 		AppId:        appID,
 		DeploymentId: deploymentID,
+		Component:    req.Component,
 	}
 	planResp, err := execPlan(ctx, w.cfg, planReq)
 	if err != nil {

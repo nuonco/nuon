@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/workflow"
+	"google.golang.org/protobuf/proto"
 )
 
 func getFakeStartRequest() *deploymentsv1.StartRequest {
@@ -158,6 +159,9 @@ func TestStart(t *testing.T) {
 			resp := &planv1.PlanResponse{}
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, orgID, r.OrgId)
+			assert.Equal(t, appID, r.AppId)
+			assert.Equal(t, deploymentID, r.DeploymentId)
+			assert.True(t, proto.Equal(req.Component, r.Component))
 			return resp, nil
 		})
 
