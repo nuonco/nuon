@@ -5,11 +5,14 @@ import (
 )
 
 type Activities struct {
+	starter starter
+
 	provisioner
 }
 
 func NewActivities(cfg workers.Config) *Activities {
 	return &Activities{
+		starter: &starterImpl{},
 		provisioner: &instanceProvisioner{
 			TemporalHost:      cfg.TemporalHost,
 			TemporalNamespace: cfg.TemporalNamespace,
