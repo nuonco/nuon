@@ -108,6 +108,30 @@ func (m *Metadata) validate(all bool) error {
 
 	}
 
+	if err := m._validateUuid(m.GetDeploymentId()); err != nil {
+		err = MetadataValidationError{
+			field:  "DeploymentId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetDeploymentShortId()) != 26 {
+		err := MetadataValidationError{
+			field:  "DeploymentShortId",
+			reason: "value length must be 26 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+
+	}
+
 	if len(errors) > 0 {
 		return MetadataMultiError(errors)
 	}
