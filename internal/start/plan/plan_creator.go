@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-uploader"
+	"github.com/powertoolsdev/go-waypoint"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	planv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
 	shared "github.com/powertoolsdev/workers-deployments/internal"
@@ -15,13 +17,14 @@ import (
 )
 
 const (
-	planFilename string = "plan.json"
+	planFilename             string = "plan.json"
+	defaultJobTimeoutSeconds uint64 = 3600
 )
 
 type CreatePlanRequest struct {
-	OrgID        string `json:"org_id" validate:"required"`
-	AppID        string `json:"app_id" validate:"required"`
-	DeploymentID string `json:"deployment_id" validate:"required"`
+	OrgID        string `json:"org_id" validate:"required" faker:"len=26"`
+	AppID        string `json:"app_id" validate:"required" faker:"len=26"`
+	DeploymentID string `json:"deployment_id" validate:"required" faker:"len=26"`
 
 	DeploymentsBucketPrefix        string `json:"deployments_bucket_prefix" validate:"required"`
 	DeploymentsBucketAssumeRoleARN string `json:"deployments_bucket_assume_role_arn" validate:"required"`
@@ -91,7 +94,87 @@ func (planCreatorImpl) getConfigBuilder(component *componentv1.Component) (confi
 }
 
 func (planCreatorImpl) createPlan(req CreatePlanRequest, builder config.Builder) (*planv1.BuildPlan, error) {
-	return nil, nil
+	orgUUID, err := shortid.ToUUID(req.OrgID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid org ID: %w", err)
+	}
+
+	appUUID, err := shortid.ToUUID(req.AppID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid app ID: %w", err)
+	}
+
+	deploymentUUID, err := shortid.ToUUID(req.DeploymentID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid deployment ID: %w", err)
+	}
+
+	ecrRepoName := fmt.Sprintf("%s/%s", req.OrgID, req.AppID)
+	ecrRepoURI := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s", req.Config.OrgsECRRegistryID,
+		req.Config.OrgsECRRegion, ecrRepoName)
+
+	plan := &planv1.BuildPlan{
+		Metadata: &planv1.Metadata{
+			OrgId:             orgUUID.String(),
+			OrgShortId:        req.OrgID,
+			AppId:             appUUID.String(),
+			AppShortId:        req.AppID,
+			DeploymentId:      deploymentUUID.String(),
+			DeploymentShortId: req.DeploymentID,
+		},
+		WaypointServer: &planv1.WaypointServerRef{
+			Address:              waypoint.DefaultOrgServerAddress(req.Config.WaypointServerRootDomain, req.OrgID),
+			TokenSecretName:      fmt.Sprintf(req.Config.WaypointTokenSecretTemplate, req.OrgID),
+			TokenSecretNamespace: req.Config.WaypointTokenSecretNamespace,
+		},
+		EcrRepositoryRef: &planv1.ECRRepositoryRef{
+			RegistryId:     req.Config.OrgsECRRegistryID,
+			RepositoryName: ecrRepoName,
+			RepositoryArn:  fmt.Sprintf("%s/%s", req.Config.OrgsECRRegistryARN, ecrRepoName),
+			RepositoryUri:  ecrRepoURI,
+			Tag:            req.DeploymentID,
+			Region:         req.Config.OrgsECRRegion,
+		},
+		WaypointBuild: &planv1.WaypointBuild{
+			Project:     req.OrgID,
+			Workspace:   req.AppID,
+			App:         req.Component.Name,
+			SingletonId: fmt.Sprintf("%s-%s", req.DeploymentID, req.Component.Name),
+			Labels: map[string]string{
+				"deployment-id":  req.DeploymentID,
+				"app-id":         req.AppID,
+				"org-id":         req.OrgID,
+				"component-name": req.Component.Name,
+			},
+			RunnerId:             req.OrgID,
+			OnDemandRunnerConfig: req.OrgID,
+			JobTimeoutSeconds:    defaultJobTimeoutSeconds,
+		},
+		Outputs: &planv1.BuildOutputs{
+			Bucket:              req.Config.DeploymentsBucket,
+			BucketPrefix:        req.DeploymentsBucketPrefix,
+			BucketAssumeRoleArn: req.DeploymentsBucketAssumeRoleARN,
+
+			// TODO(jm): these aren't being used until we've fully implemented the executor
+			LogsKey:     filepath.Join(req.DeploymentsBucketPrefix, "logs.txt"),
+			EventsKey:   filepath.Join(req.DeploymentsBucketPrefix, "events.json"),
+			ArtifactKey: filepath.Join(req.DeploymentsBucketPrefix, "artifacts.json"),
+		},
+		Component: req.Component,
+	}
+
+	// configure builder
+	builder.WithComponent(req.Component)
+	builder.WithMetadata(plan.Metadata)
+	builder.WithECRRef(plan.EcrRepositoryRef)
+	cfg, cfgFmt, err := builder.Render()
+	if err != nil {
+		return nil, fmt.Errorf("unable to render config: %w", err)
+	}
+	plan.WaypointBuild.HclConfig = string(cfg)
+	plan.WaypointBuild.HclConfigFormat = cfgFmt.String()
+
+	return plan, nil
 }
 
 func (planCreatorImpl) uploadPlan(ctx context.Context, uploader s3BlobUploader, req CreatePlanRequest, plan *planv1.BuildPlan) (*planv1.PlanRef, error) {
