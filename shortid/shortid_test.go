@@ -1,6 +1,7 @@
 package shortid
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -91,6 +92,51 @@ func TestUUID_error(t *testing.T) {
 		t.Run(test.s, func(t *testing.T) {
 			_, err := ToUUID(test.s)
 			assert.ErrorContains(t, err, test.err)
+		})
+	}
+}
+
+func Test_parseStrings(t *testing.T) {
+	tests := map[string]struct {
+		idsFn       func() []string
+		assertFn    func(*testing.T, []string)
+		errExpected error
+	}{
+		"happy path": {
+			idsFn: func() []string {
+				ids := make([]string, len(validTests))
+				for idx, testID := range validTests {
+					ids[idx] = testID.u.String()
+				}
+				return ids
+			},
+			assertFn: func(t *testing.T, ids []string) {
+				assert.Equal(t, len(validTests), len(ids))
+
+				for idx, testID := range validTests {
+					assert.Equal(t, testID.s, ids[idx])
+				}
+			},
+			errExpected: nil,
+		},
+		"error": {
+			idsFn: func() []string {
+				return []string{"invalid"}
+			},
+			errExpected: fmt.Errorf("invalid"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			ids := test.idsFn()
+			results, err := ParseStrings(ids...)
+			if test.errExpected != nil {
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+			assert.NoError(t, err)
+			test.assertFn(t, results)
 		})
 	}
 }
