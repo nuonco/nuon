@@ -14,6 +14,14 @@ output "installations_bucket_name" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.installations.name)
 }
 
+output "orgs_bucket_name" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.orgs.name)
+}
+
+output "orgs_orgs_role_template" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.org_iam_role_name_templates.orgs_access)
+}
+
 # the following values are for interacting with the orgs k8s cluster, and while they currently are not being used should
 # be migrated too when possible.
 output "orgs_k8s_role_arn" {

@@ -29,10 +29,14 @@ type Config struct {
 	WaypointServerRootDomain     string `config:"waypoint_server_root_domain" validate:"required"`
 
 	// org IAM role template names and buckets for accessing state
-	DeploymentsBucket             string `config:"deployments_bucket" validate:"required"`
-	OrgsDeploymentsRoleTemplate   string `config:"orgs_deployments_role_template" validate:"required"`
+	DeploymentsBucket           string `config:"deployments_bucket" validate:"required"`
+	OrgsDeploymentsRoleTemplate string `config:"orgs_deployments_role_template" validate:"required"`
+
 	OrgsInstallationsRoleTemplate string `config:"orgs_installations_role_template" validate:"required"`
 	InstallationsBucket           string `config:"installations_bucket" validate:"required"`
+
+	OrgsBucket                 string `config:"orgs_bucket" validate:"required"`
+	OrgsOrgsBucketRoleTemplate string `config:"orgs_orgs_role_template" validate:"required"`
 
 	// configs needed to access the orgs cluster, which runs all org runner/servers
 	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id" json:"orgs_k8s_cluster_id" validate:"required"`
