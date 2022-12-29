@@ -186,40 +186,37 @@ func (m *ProvisionServerResponse) validate(all bool) error {
 
 	var errors []error
 
-	if utf8.RuneCountInString(m.GetServerAddress()) != 26 {
+	if utf8.RuneCountInString(m.GetServerAddress()) < 26 {
 		err := ProvisionServerResponseValidationError{
 			field:  "ServerAddress",
-			reason: "value length must be 26 runes",
+			reason: "value length must be at least 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
-
 	}
 
-	if utf8.RuneCountInString(m.GetSecretNamespace()) != 26 {
+	if utf8.RuneCountInString(m.GetSecretNamespace()) < 5 {
 		err := ProvisionServerResponseValidationError{
 			field:  "SecretNamespace",
-			reason: "value length must be 26 runes",
+			reason: "value length must be at least 5 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
-
 	}
 
-	if utf8.RuneCountInString(m.GetSecretName()) != 26 {
+	if utf8.RuneCountInString(m.GetSecretName()) < 26 {
 		err := ProvisionServerResponseValidationError{
 			field:  "SecretName",
-			reason: "value length must be 26 runes",
+			reason: "value length must be at least 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
-
 	}
 
 	if all {

@@ -21,15 +21,15 @@ message ProvisionServerRequest {
 
 message ProvisionServerResponse {
   string server_address = 1 [
-    (validate.rules).string.len = 26,
+    (validate.rules).string.min_len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
   string secret_namespace = 2 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (validate.rules).string.min_len = 5,
+    (tagger.tags) = "faker:\"len=10\""
   ];
   string secret_name = 3 [
-    (validate.rules).string.len = 26,
+    (validate.rules).string.min_len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
 
