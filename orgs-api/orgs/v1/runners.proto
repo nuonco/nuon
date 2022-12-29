@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package orgs.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// GetRunnersResponse returns a ref of each installation
+message GetRunnersResponse {}
+
+message GetRunnersRequest {
+  string org_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+}

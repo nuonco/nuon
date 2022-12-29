@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package orgs.v1;
+
+import "orgs/v1/types.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// GetInfoResponse returns infrastructure information about the org
+message GetInfoResponse {
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+  string long_id = 2 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+
+  ServerInfo server_info = 3;
+
+  RunnerInfo runner_info = 4;
+
+  IAMInfo iam_info = 5;
+}
+
+message GetInfoRequest {
+  string org_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+}
