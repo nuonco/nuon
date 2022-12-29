@@ -34,6 +34,10 @@ output "org_installations_bucket_name" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.installations.name)
 }
 
+output "org_orgs_bucket_name" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.orgs.name)
+}
+
 output "org_deployments_bucket_name" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.deployments.name)
 }

@@ -23,6 +23,7 @@ func init() {
 	// orgs buckets defaults
 	config.RegisterDefault("org_deployments_bucket_name", "nuon-org-deployments-stage")
 	config.RegisterDefault("org_installations_bucket_name", "nuon-org-installations-stage")
+	config.RegisterDefault("org_orgs_bucket_name", "nuon-orgs-stage")
 }
 
 type Config struct {
@@ -51,6 +52,8 @@ type Config struct {
 	// configs needed for setting up permissions to org resources
 	OrgInstallationsBucketName string `config:"org_installations_bucket_name" json:"org_installations_bucket_name" validate:"required"`
 	OrgDeploymentsBucketName   string `config:"org_deployments_bucket_name" json:"org_deployments_bucket_name" validate:"required"`
+	// NOTE(jm): this has the double orgs prefix, because we use the Org suffix to denote it's the org account.
+	OrgOrgsBucketName string `config:"org_orgs_bucket_name" json:"org_orgs_bucket_name" validate:"required"`
 
 	// configs needed to grant the workers ability to assume org iam roles
 	WorkersIAMRoleARNPrefix string `config:"workers_iam_role_arn_prefix" validate:"required"`
