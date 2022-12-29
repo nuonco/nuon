@@ -99,7 +99,10 @@ func Test_Workflow(t *testing.T) {
 	env.ExecuteWorkflow(wf.ProvisionServer, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
+
+	// test out the response
 	var resp *serverv1.ProvisionServerResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
+	assert.NoError(t, resp.Validate())
 }

@@ -113,6 +113,15 @@ func (w wkflow) ProvisionServer(ctx workflow.Context, req *serverv1.ProvisionSer
 		return resp, fmt.Errorf("failed to create waypoint project: %w", err)
 	}
 
+	resp.ServerAddress = waypointServerAddr
+	resp.SecretNamespace = w.cfg.WaypointBootstrapTokenNamespace
+	resp.SecretName = getTokenSecretName(req.OrgId)
+	resp.KubeClusterInfo = &serverv1.KubeClusterInfo{
+		Id:             w.cfg.OrgsK8sClusterID,
+		Endpoint:       w.cfg.OrgsK8sPublicEndpoint,
+		CaData:         w.cfg.OrgsK8sCAData,
+		TrustedRoleArn: w.cfg.OrgsK8sRoleArn,
+	}
 	l.Debug("finished signup", "response", resp)
 	return resp, nil
 }

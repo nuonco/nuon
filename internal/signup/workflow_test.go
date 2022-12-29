@@ -42,6 +42,7 @@ func Test_Workflow(t *testing.T) {
 
 	req := &orgsv1.SignupRequest{OrgId: "00000000-0000-0000-0000-000000000000", Region: "us-west-2"}
 	iamResp := generics.GetFakeObj[*iamv1.ProvisionIAMResponse]()
+	serverResp := generics.GetFakeObj[*serverv1.ProvisionServerResponse]()
 
 	id, err := shortid.ParseString(req.OrgId)
 	require.NoError(t, err)
@@ -71,10 +72,9 @@ func Test_Workflow(t *testing.T) {
 
 	env.OnWorkflow(srv.ProvisionServer, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *serverv1.ProvisionServerRequest) (*serverv1.ProvisionServerResponse, error) {
-			var resp *serverv1.ProvisionServerResponse
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, id, r.OrgId)
-			return resp, nil
+			return serverResp, nil
 		})
 
 	env.OnWorkflow(run.Install, mock.Anything, mock.Anything).
@@ -88,7 +88,10 @@ func Test_Workflow(t *testing.T) {
 	env.ExecuteWorkflow(wf.Signup, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
+
+	// assert response
 	var resp orgsv1.SignupResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	assert.True(t, proto.Equal(resp.IamRoles, iamResp))
+	assert.True(t, proto.Equal(resp.Server, serverResp))
 }
