@@ -37,11 +37,9 @@ type Config struct {
 	WaypointServerRootDomain        string `config:"waypoint_server_root_domain" validate:"required" json:"waypoint_server_root_domain"`
 	WaypointBootstrapTokenNamespace string `config:"waypoint_bootstrap_token_namespace" validate:"required" json:"waypoint_bootstrap_token_namespace"`
 
-	// configs needed to create an IAM role for the ODR runner in the orgs account
-	OrgsIAMAccessRoleArn   string `config:"orgs_iam_access_role_arn" validate:"required"`
-	OrgsIAMOidcProviderURL string `config:"orgs_iam_oidc_provider_url" validate:"required"`
-	OrgsIAMOidcProviderArn string `config:"orgs_iam_oidc_provider_arn" validate:"required"`
-	OrgsECRRegistryArn     string `config:"orgs_ecr_registry_arn" validate:"required"`
+	// IAM roles used to manage things in orgs account
+	OrgsIAMAccessRoleArn    string `config:"orgs_iam_access_role_arn" validate:"required"`
+	OrgsBucketAccessRoleArn string `config:"orgs_bucket_access_role_arn" validate:"required"`
 
 	// configs needed to access the orgs cluster, which runs all org runner/servers
 	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id" json:"orgs_k8s_cluster_id" validate:"required"`
@@ -52,11 +50,14 @@ type Config struct {
 	// configs needed for setting up permissions to org resources
 	OrgInstallationsBucketName string `config:"org_installations_bucket_name" json:"org_installations_bucket_name" validate:"required"`
 	OrgDeploymentsBucketName   string `config:"org_deployments_bucket_name" json:"org_deployments_bucket_name" validate:"required"`
-	// NOTE(jm): this has the double orgs prefix, because we use the Org suffix to denote it's the org account.
-	OrgOrgsBucketName string `config:"org_orgs_bucket_name" json:"org_orgs_bucket_name" validate:"required"`
+	OrgsBucketName             string `config:"org_orgs_bucket_name" json:"org_orgs_bucket_name" validate:"required"`
 
 	// configs needed to grant the workers ability to assume org iam roles
 	WorkersIAMRoleARNPrefix string `config:"workers_iam_role_arn_prefix" validate:"required"`
+	// configs needed to create an IAM role for the ODR runner in the orgs account
+	OrgsIAMOidcProviderURL string `config:"orgs_iam_oidc_provider_url" validate:"required"`
+	OrgsIAMOidcProviderArn string `config:"orgs_iam_oidc_provider_arn" validate:"required"`
+	OrgsECRRegistryArn     string `config:"orgs_ecr_registry_arn" validate:"required"`
 }
 
 func (c Config) Validate() error {

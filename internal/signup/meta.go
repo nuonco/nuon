@@ -40,9 +40,10 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, req *orgsv1.SignupRequest) 
 	}
 
 	startReq := meta.StartRequest{
-		MetadataBucket:       w.cfg.OrgOrgsBucketName,
-		MetadataBucketPrefix: prefix,
-		Request:              req,
+		MetadataBucket:              w.cfg.OrgsBucketName,
+		MetadataBucketAssumeRoleARN: w.cfg.OrgsBucketAccessRoleArn,
+		MetadataBucketPrefix:        prefix,
+		Request:                     req,
 		WorkflowInfo: meta.WorkflowInfo{
 			ID: info.WorkflowExecution.ID,
 		},
@@ -82,11 +83,12 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *orgsv1.SignupRequest,
 	}
 
 	finishReq := meta.FinishRequest{
-		MetadataBucket:       w.cfg.OrgOrgsBucketName,
-		MetadataBucketPrefix: prefix,
-		Response:             resp,
-		ResponseStatus:       status,
-		ErrorMessage:         errMessage,
+		MetadataBucket:              w.cfg.OrgsBucketName,
+		MetadataBucketAssumeRoleARN: w.cfg.OrgsBucketAccessRoleArn,
+		MetadataBucketPrefix:        prefix,
+		Response:                    resp,
+		ResponseStatus:              status,
+		ErrorMessage:                errMessage,
 	}
 
 	// exec activity

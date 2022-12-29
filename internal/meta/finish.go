@@ -18,7 +18,7 @@ const (
 
 type FinishRequest struct {
 	MetadataBucket              string `validate:"required"`
-	MetadataBucketAssumeRoleARN string
+	MetadataBucketAssumeRoleARN string `validate:"required"`
 	MetadataBucketPrefix        string `validate:"required"`
 
 	Response       *orgsv1.SignupResponse
@@ -51,15 +51,10 @@ func (a *finishActivity) FinishRequest(ctx context.Context, req FinishRequest) (
 	}
 
 	// create upload client
-	var uploadClient finisherUploadClient
-	if req.MetadataBucketAssumeRoleARN != "" {
-		assumeRoleOpt := uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleARN)
-		assumeRoleSessionOpt := uploader.WithAssumeSessionName(startAssumeRoleSessionName)
-		uploadClient = uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix,
-			assumeRoleOpt, assumeRoleSessionOpt)
-	} else {
-		uploadClient = uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix)
-	}
+	assumeRoleOpt := uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleARN)
+	assumeRoleSessionOpt := uploader.WithAssumeSessionName(startAssumeRoleSessionName)
+	uploadClient := uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix,
+		assumeRoleOpt, assumeRoleSessionOpt)
 
 	obj := a.finisher.getRequest(req)
 	if err := a.finisher.writeRequestFile(ctx, uploadClient, obj); err != nil {
