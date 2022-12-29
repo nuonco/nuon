@@ -11,6 +11,7 @@ import (
 	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
 	serverv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
+	"github.com/powertoolsdev/workers-orgs/internal/meta"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/iam"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
@@ -50,6 +51,16 @@ func Test_Workflow(t *testing.T) {
 	env.OnActivity(a.SendNotification, mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, snr SendNotificationRequest) (SendNotificationResponse, error) {
 			return SendNotificationResponse{}, nil
+		})
+
+	env.OnActivity(a.StartSignupRequest, mock.Anything, mock.Anything).
+		Return(func(ctx context.Context, r meta.StartRequest) (meta.StartResponse, error) {
+			return meta.StartResponse{}, nil
+		})
+
+	env.OnActivity(a.FinishSignupRequest, mock.Anything, mock.Anything).
+		Return(func(ctx context.Context, r meta.FinishRequest) (meta.FinishResponse, error) {
+			return meta.FinishResponse{}, nil
 		})
 
 	env.OnWorkflow(iamer.ProvisionIAM, mock.Anything, mock.Anything).

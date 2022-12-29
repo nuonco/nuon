@@ -11,7 +11,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-//nolint:all
 func getS3PrefixFromRequest(req *orgsv1.SignupRequest) (string, error) {
 	shortID, err := shortid.ParseString(req.OrgId)
 	if err != nil {
@@ -32,7 +31,6 @@ func (a *Activities) StartSignupRequest(ctx context.Context, req meta.StartReque
 	return act.StartRequest(ctx, req)
 }
 
-//nolint:all
 func (w *wkflow) startWorkflow(ctx workflow.Context, req *orgsv1.SignupRequest) error {
 	info := workflow.GetInfo(ctx)
 
@@ -59,8 +57,6 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, req *orgsv1.SignupRequest) 
 }
 
 // finishWorkflow calls the finish step
-//
-//nolint:all
 func (w *wkflow) finishWorkflow(ctx workflow.Context, req *orgsv1.SignupRequest, resp *orgsv1.SignupResponse, workflowErr error) {
 	var err error
 	defer func() {
@@ -101,7 +97,6 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *orgsv1.SignupRequest,
 	}
 }
 
-//nolint:all
 func execStart(
 	ctx workflow.Context,
 	act *Activities,
@@ -118,7 +113,6 @@ func execStart(
 	return resp, nil
 }
 
-//nolint:all
 func execFinish(
 	ctx workflow.Context,
 	act *Activities,

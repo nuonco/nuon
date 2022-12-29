@@ -49,6 +49,11 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 
 	act := NewActivities(nil)
 
+	if err = w.startWorkflow(ctx, req); err != nil {
+		err = fmt.Errorf("unable to start workflow: %w", err)
+		return resp, err
+	}
+
 	sendNotification(ctx, act, SendNotificationRequest{
 		ID:      id,
 		Started: true,
@@ -59,7 +64,9 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 		OrgId: id,
 	})
 	if err != nil {
-		return resp, fmt.Errorf("failed to provision iam: %w", err)
+		err = fmt.Errorf("failed to provision iam: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, err
 	}
 	resp.IamRoles = iamResp
 
@@ -69,7 +76,9 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 		Region: req.Region,
 	})
 	if err != nil {
-		return resp, fmt.Errorf("failed to install runner: %w", err)
+		err = fmt.Errorf("failed to install runner: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, err
 	}
 
 	l.Debug("installing waypoint org runner")
@@ -78,7 +87,9 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 		OdrIamRoleArn: iamResp.OdrRoleArn,
 	})
 	if err != nil {
-		return resp, fmt.Errorf("failed to install runner: %w", err)
+		err = fmt.Errorf("failed to install runner: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, err
 	}
 
 	l.Debug("sending success notification")
@@ -88,6 +99,7 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 		WaypointServerAddress: waypointServerAddr,
 	})
 
+	w.finishWorkflow(ctx, req, resp, err)
 	l.Debug("finished signup", "response", resp)
 	return resp, nil
 }
