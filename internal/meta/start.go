@@ -22,7 +22,7 @@ type WorkflowInfo struct {
 
 type StartRequest struct {
 	MetadataBucket              string `validate:"required"`
-	MetadataBucketAssumeRoleARN string `validate:"required"`
+	MetadataBucketAssumeRoleARN string
 	MetadataBucketPrefix        string `validate:"required"`
 
 	Request      *orgsv1.SignupRequest `validate:"required"`
@@ -54,10 +54,15 @@ func (s *startActivity) StartRequest(ctx context.Context, req StartRequest) (Sta
 	}
 
 	// create upload client
-	assumeRoleOpt := uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleARN)
-	assumeRoleSessionOpt := uploader.WithAssumeSessionName(startAssumeRoleSessionName)
-	uploadClient := uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix,
-		assumeRoleOpt, assumeRoleSessionOpt)
+	var uploadClient finisherUploadClient
+	if req.MetadataBucketAssumeRoleARN != "" {
+		assumeRoleOpt := uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleARN)
+		assumeRoleSessionOpt := uploader.WithAssumeSessionName(startAssumeRoleSessionName)
+		uploadClient = uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix,
+			assumeRoleOpt, assumeRoleSessionOpt)
+	} else {
+		uploadClient = uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix)
+	}
 
 	obj := s.starter.getRequest(req)
 	if err := s.starter.writeRequestFile(ctx, uploadClient, obj); err != nil {
