@@ -18,17 +18,17 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type Workflow struct {
+type wkflow struct {
 	cfg workers.Config
 }
 
-func NewWorkflow(cfg workers.Config) Workflow {
-	return Workflow{
+func NewWorkflow(cfg workers.Config) *wkflow {
+	return &wkflow{
 		cfg: cfg,
 	}
 }
 
-func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error) {
+func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error) {
 	resp := &orgsv1.SignupResponse{}
 
 	if err := req.Validate(); err != nil {
