@@ -26,6 +26,16 @@ func init() {
 	rootCmd.AddCommand(runServerCmd)
 }
 
+func registerLoadbalancerHealthCheck(mux *http.ServeMux) {
+	mux.Handle("/_ping", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.WriteHeader(http.StatusOK)
+
+		if _, err := rw.Write([]byte("{\"status\": \"ok\"}")); err != nil {
+			log.Fatal("unable to write load balancer health check response", err.Error())
+		}
+	}))
+}
+
 // registerStatusServer registers the status service handler on the provided mux
 func registerStatusServer(mux *http.ServeMux, cfg *internal.Config) error {
 	srv, err := statusserver.New(statusserver.WithConfig(cfg))
@@ -65,6 +75,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	if err := registerStatusServer(mux, &cfg); err != nil {
 		l.Fatal("unable to register status server:", zap.Error(err))
 	}
+	registerLoadbalancerHealthCheck(mux)
 
 	l.Info("server starting: ",
 		zap.String("host", cfg.HTTPAddress),
