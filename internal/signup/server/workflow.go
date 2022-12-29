@@ -32,8 +32,8 @@ func NewWorkflow(cfg workers.Config) wkflow {
 	}
 }
 
-func (w wkflow) Provision(ctx workflow.Context, req *serverv1.ProvisionRequest) (*serverv1.ProvisionResponse, error) {
-	resp := &serverv1.ProvisionResponse{}
+func (w wkflow) ProvisionServer(ctx workflow.Context, req *serverv1.ProvisionServerRequest) (*serverv1.ProvisionServerResponse, error) {
+	resp := &serverv1.ProvisionServerResponse{}
 
 	l := log.With(workflow.GetLogger(ctx))
 	ao := workflow.ActivityOptions{

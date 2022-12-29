@@ -33,7 +33,7 @@ func Test_Workflow(t *testing.T) {
 	srv := server.NewWorkflow(cfg)
 	iamer := iam.NewWorkflow(cfg)
 	run := runner.NewWorkflow(cfg)
-	env.RegisterWorkflow(srv.Provision)
+	env.RegisterWorkflow(srv.ProvisionServer)
 	env.RegisterWorkflow(iamer.ProvisionIAM)
 	env.RegisterWorkflow(run.Install)
 
@@ -69,9 +69,9 @@ func Test_Workflow(t *testing.T) {
 			return iamResp, nil
 		})
 
-	env.OnWorkflow(srv.Provision, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r *serverv1.ProvisionRequest) (*serverv1.ProvisionResponse, error) {
-			var resp *serverv1.ProvisionResponse
+	env.OnWorkflow(srv.ProvisionServer, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r *serverv1.ProvisionServerRequest) (*serverv1.ProvisionServerResponse, error) {
+			var resp *serverv1.ProvisionServerResponse
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, id, r.OrgId)
 			return resp, nil
