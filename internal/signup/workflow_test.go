@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/workflow"
+	"google.golang.org/protobuf/proto"
 )
 
 func Test_Workflow(t *testing.T) {
@@ -39,6 +40,7 @@ func Test_Workflow(t *testing.T) {
 	a := NewActivities(nil)
 
 	req := &orgsv1.SignupRequest{OrgId: "00000000-0000-0000-0000-000000000000", Region: "us-west-2"}
+	iamResp := generics.GetFakeObj[*iamv1.ProvisionIAMResponse]()
 
 	id, err := shortid.ParseString(req.OrgId)
 	require.NoError(t, err)
@@ -52,9 +54,8 @@ func Test_Workflow(t *testing.T) {
 
 	env.OnWorkflow(iamer.ProvisionIAM, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *iamv1.ProvisionIAMRequest) (*iamv1.ProvisionIAMResponse, error) {
-			resp := generics.GetFakeObj[*iamv1.ProvisionIAMResponse]()
 			assert.Nil(t, r.Validate())
-			return resp, nil
+			return iamResp, nil
 		})
 
 	env.OnWorkflow(srv.Provision, mock.Anything, mock.Anything).
@@ -78,4 +79,5 @@ func Test_Workflow(t *testing.T) {
 	require.NoError(t, env.GetWorkflowError())
 	var resp orgsv1.SignupResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
+	assert.True(t, proto.Equal(resp.IamRoles, iamResp))
 }
