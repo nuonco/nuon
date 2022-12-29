@@ -226,6 +226,17 @@ func (m *ProvisionIAMResponse) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if utf8.RuneCountInString(m.GetOrgsRoleArn()) < 20 {
+		err := ProvisionIAMResponseValidationError{
+			field:  "OrgsRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return ProvisionIAMResponseMultiError(errors)
 	}

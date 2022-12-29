@@ -195,6 +195,72 @@ func (m *SignupResponse) validate(all bool) error {
 
 	var errors []error
 
+	if utf8.RuneCountInString(m.GetDeploymentsRoleArn()) < 20 {
+		err := SignupResponseValidationError{
+			field:  "DeploymentsRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetInstallationsRoleArn()) < 20 {
+		err := SignupResponseValidationError{
+			field:  "InstallationsRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetOdrRoleArn()) < 20 {
+		err := SignupResponseValidationError{
+			field:  "OdrRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetInstancesRoleArn()) < 20 {
+		err := SignupResponseValidationError{
+			field:  "InstancesRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetInstallerRoleArn()) < 20 {
+		err := SignupResponseValidationError{
+			field:  "InstallerRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetOrgsRoleArn()) < 20 {
+		err := SignupResponseValidationError{
+			field:  "OrgsRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return SignupResponseMultiError(errors)
 	}
