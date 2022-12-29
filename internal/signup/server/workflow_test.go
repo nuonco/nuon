@@ -36,7 +36,7 @@ func Test_Workflow(t *testing.T) {
 	wf := NewWorkflow(cfg)
 	a := NewActivities()
 
-	req := &serverv1.ProvisionRequest{OrgId: "0hihjnf1znsaa2j7w5hz1jx7te", Region: "us-west-2"}
+	req := &serverv1.ProvisionServerRequest{OrgId: "0hihjnf1znsaa2j7w5hz1jx7te", Region: "us-west-2"}
 
 	// Mock activity implementations
 	env.OnActivity(a.CreateNamespace, mock.Anything, mock.Anything).
@@ -96,10 +96,10 @@ func Test_Workflow(t *testing.T) {
 			return CreateWaypointProjectResponse{}, nil
 		})
 
-	env.ExecuteWorkflow(wf.Provision, req)
+	env.ExecuteWorkflow(wf.ProvisionServer, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	var resp *serverv1.ProvisionResponse
+	var resp *serverv1.ProvisionServerResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
 }

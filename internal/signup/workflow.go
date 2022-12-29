@@ -71,7 +71,7 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 	resp.IamRoles = iamResp
 
 	l.Debug("provisioning waypoint org server")
-	_, err = execProvisionWaypointServerWorkflow(ctx, w.cfg, &serverv1.ProvisionRequest{
+	_, err = execProvisionWaypointServerWorkflow(ctx, w.cfg, &serverv1.ProvisionServerRequest{
 		OrgId:  id,
 		Region: req.Region,
 	})
@@ -107,9 +107,9 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 func execProvisionWaypointServerWorkflow(
 	ctx workflow.Context,
 	cfg workers.Config,
-	req *serverv1.ProvisionRequest,
-) (*serverv1.ProvisionResponse, error) {
-	var resp *serverv1.ProvisionResponse
+	req *serverv1.ProvisionServerRequest,
+) (*serverv1.ProvisionServerResponse, error) {
+	var resp *serverv1.ProvisionServerResponse
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("executing install waypoint workflow")
@@ -120,7 +120,7 @@ func execProvisionWaypointServerWorkflow(
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
 	wkflow := server.NewWorkflow(cfg)
-	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.Provision, req)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionServer, req)
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err

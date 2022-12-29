@@ -106,7 +106,7 @@ func runOrgWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interf
 	w.RegisterActivity(runner.NewActivities(cfg))
 
 	srvWkflow := server.NewWorkflow(cfg)
-	w.RegisterWorkflow(srvWkflow.Provision)
+	w.RegisterWorkflow(srvWkflow.ProvisionServer)
 	w.RegisterActivity(server.NewActivities())
 
 	iamWkflow := iam.NewWorkflow(cfg)
