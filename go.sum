@@ -859,8 +859,8 @@ github.com/powertoolsdev/go-sender v0.0.4 h1:glDPmPBT8wi1L/1bTrgxZWOcAyU5/lYieyk
 github.com/powertoolsdev/go-sender v0.0.4/go.mod h1:4AIEgsJ10agK73Mm0hHwtKDat6f4hyRdea29Nlva7dY=
 github.com/powertoolsdev/go-waypoint v0.2.1 h1:wEKsP5whsMltptXzil8FLyQAzNPNkv3GdNrueS47xag=
 github.com/powertoolsdev/go-waypoint v0.2.1/go.mod h1:Ot2gQbZNhaV+jIuQ0vDYiz7MyU4aQBw4jaCHtAU6+Jo=
-github.com/powertoolsdev/protos v0.26.0 h1:yA3wFv+ouZQMSh/dSIKY87NkW75RVFBTtCly/waDmr0=
-github.com/powertoolsdev/protos v0.26.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.27.0 h1:CAPYkP32IcTMOFc7+jHNKng8pzGhQauycp3R1aCZj2s=
+github.com/powertoolsdev/protos v0.27.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/poy/onpar v0.0.0-20190519213022-ee068f8ea4d1/go.mod h1:nSbFQvMj97ZyhFRSJYtut+msi4sOY6zJDGCdSc+/rZU=
 github.com/poy/onpar v1.1.2 h1:QaNrNiZx0+Nar5dLgTVp5mXkyoVFIbepjyEoGSnhbAY=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=

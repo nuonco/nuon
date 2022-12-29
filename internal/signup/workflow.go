@@ -61,6 +61,7 @@ func (w Workflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgs
 	if err != nil {
 		return resp, fmt.Errorf("failed to provision iam: %w", err)
 	}
+	resp.IamRoles = iamResp
 
 	l.Debug("provisioning waypoint org server")
 	_, err = execProvisionWaypointServerWorkflow(ctx, w.cfg, &serverv1.ProvisionRequest{
