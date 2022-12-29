@@ -41,7 +41,10 @@ service:
 
 nlb:
   healthcheck: /_ping
-  # TODO(jm): make this a templated value from terraform
+  # NOTE(jm): there isn't really a good way at all to query this root domain using terraform, without hardcoding a bunch
+  # of unrelated information from `infra-eks-nuon` (like we do in graphql-api/infra).
+  #
+  # For now, we just set this here, and override in values.prod.tmpl
   hostname: orgs-api.nuon.us-west-2.stage.nuon.cloud
 
 probes:
