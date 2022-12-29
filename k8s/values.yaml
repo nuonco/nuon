@@ -32,12 +32,17 @@ serviceAccount:
   # a name is generated using the fullname template
   name:
 
-
 service:
   main:
     type: ClusterIP
     primary: true
     enabled: false
+
+
+nlb:
+  healthcheck: /_ping
+  # TODO(jm): make this a templated value from terraform
+  hostname: orgs-api.nuon.us-west-2.stage.nuon.cloud
 
 probes:
   # Liveness probe configuration
