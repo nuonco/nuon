@@ -122,8 +122,12 @@ type kubeClientSecretStorer interface {
 	Apply(context.Context, *coreapplyv1.SecretApplyConfiguration, metav1.ApplyOptions) (*corev1.Secret, error)
 }
 
+func getTokenSecretName(orgID string) string {
+	return fmt.Sprintf("waypoint-bootstrap-token-%v", orgID)
+}
+
 func (w *wpServerBootstrapper) storeBootstrapToken(ctx context.Context, client kubeClientSecretStorer, id, token string) error {
-	secretName := fmt.Sprintf("waypoint-bootstrap-token-%v", id)
+	secretName := getTokenSecretName(id)
 	secret := &coreapplyv1.SecretApplyConfiguration{
 		TypeMetaApplyConfiguration: metaapplyv1.TypeMetaApplyConfiguration{
 			Kind:       generics.ToPtr("Secret"),

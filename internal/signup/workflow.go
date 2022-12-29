@@ -71,7 +71,7 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 	resp.IamRoles = iamResp
 
 	l.Debug("provisioning waypoint org server")
-	_, err = execProvisionWaypointServerWorkflow(ctx, w.cfg, &serverv1.ProvisionServerRequest{
+	serverResp, err := execProvisionWaypointServerWorkflow(ctx, w.cfg, &serverv1.ProvisionServerRequest{
 		OrgId:  id,
 		Region: req.Region,
 	})
@@ -80,6 +80,7 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
+	resp.Server = serverResp
 
 	l.Debug("installing waypoint org runner")
 	_, err = execInstallWaypointRunnerWorkflow(ctx, w.cfg, &runnerv1.InstallRunnerRequest{

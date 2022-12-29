@@ -142,3 +142,10 @@ func TestBootstrapServer_storeToken(t *testing.T) {
 		})
 	}
 }
+
+func Test_defaultTokenSecretName(t *testing.T) {
+	orgID := uuid.NewString()
+	secretName := getTokenSecretName(orgID)
+	assert.Contains(t, secretName, "waypoint-bootstrap-token-")
+	assert.Contains(t, secretName, orgID)
+}
