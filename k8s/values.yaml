@@ -1,5 +1,7 @@
 ---
 replicaCount: 2
+args:
+  - server
 
 configmap:
   enabled: true
