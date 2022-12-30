@@ -7,7 +7,10 @@ import (
 
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/orgs-api/internal"
+	"github.com/powertoolsdev/orgs-api/internal/orgcontext"
+	orgsserver "github.com/powertoolsdev/orgs-api/internal/servers/orgs"
 	statusserver "github.com/powertoolsdev/orgs-api/internal/servers/status"
+	"github.com/powertoolsdev/protos/orgs-api/generated/types/orgs/v1/orgsv1connect"
 	"github.com/powertoolsdev/protos/orgs-api/generated/types/status/v1/statusv1connect"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -48,6 +51,23 @@ func registerStatusServer(mux *http.ServeMux, cfg *internal.Config) error {
 	return nil
 }
 
+// registerOrgsServer registers the orgs service handler on the provided mux
+func registerOrgsServer(mux *http.ServeMux, cfg *internal.Config) error {
+	ctxProvider, err := orgcontext.NewStaticProvider(orgcontext.WithConfig(cfg))
+	if err != nil {
+		return fmt.Errorf("unable to create orgcontext provider: %w", err)
+	}
+
+	srv, err := orgsserver.New(orgsserver.WithContextProvider(ctxProvider))
+	if err != nil {
+		return fmt.Errorf("unable to initialize status server: %w", err)
+	}
+
+	path, handler := orgsv1connect.NewOrgsServiceHandler(srv)
+	mux.Handle(path, handler)
+	return nil
+}
+
 //nolint:all
 func runServer(cmd *cobra.Command, args []string) {
 	var cfg internal.Config
@@ -74,6 +94,9 @@ func runServer(cmd *cobra.Command, args []string) {
 	mux := http.NewServeMux()
 	if err := registerStatusServer(mux, &cfg); err != nil {
 		l.Fatal("unable to register status server:", zap.Error(err))
+	}
+	if err := registerOrgsServer(mux, &cfg); err != nil {
+		l.Fatal("unable to register orgs server:", zap.Error(err))
 	}
 	registerLoadbalancerHealthCheck(mux)
 

@@ -10,7 +10,7 @@ require (
 	github.com/powertoolsdev/go-common v1.2.0
 	github.com/powertoolsdev/go-generics v0.0.1
 	github.com/powertoolsdev/go-waypoint v0.2.1
-	github.com/powertoolsdev/protos v0.25.0
+	github.com/powertoolsdev/protos v0.29.0
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/zap v1.24.0
@@ -93,6 +93,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/api v0.25.4 // indirect
 	k8s.io/apimachinery v0.25.4 // indirect
 	k8s.io/client-go v0.25.4 // indirect

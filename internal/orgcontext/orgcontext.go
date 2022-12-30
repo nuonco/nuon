@@ -2,9 +2,20 @@ package orgcontext
 
 import "context"
 
+//
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=orgcontext_mocks.go -source=orgcontext.go -package=orgcontext
+
 // This entire api is designed to work in a single tenant fashion, where every request is scoped to a single org. The
 // org context is designed so we can easily inject all of the information needed for an org into the context and use it
 // throughout the request lifecycle.
+
+// Provider exposes an interface for setting a context which can be used by this package
+type Provider interface {
+	SetContext(context.Context, string) (context.Context, error)
+}
+
+type provider = Provider
 
 // Bucket contains the information needed to access a specific bucket
 type Bucket struct {
@@ -32,8 +43,3 @@ type Context struct {
 }
 
 type orgContextKey struct{}
-
-// provider is the interface we expose outside of this package
-type provider interface {
-	SetContext(context.Context, string) (context.Context, error)
-}

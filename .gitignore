@@ -25,4 +25,4 @@ bin/
 
 k8s/charts/
 infra/.terraform
-mock*
+*mock*go
