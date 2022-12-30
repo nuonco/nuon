@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/orgs-api/internal/orgcontext"
 	"github.com/powertoolsdev/orgs-api/internal/repos/s3"
 	"github.com/powertoolsdev/orgs-api/internal/repos/waypoint"
+	"github.com/powertoolsdev/orgs-api/internal/repos/workflows"
 	orgsv1 "github.com/powertoolsdev/protos/orgs-api/generated/types/orgs/v1"
 )
 
@@ -17,7 +19,9 @@ type Service interface {
 }
 
 func New(opts ...serviceOption) (*service, error) {
-	srv := &service{}
+	srv := &service{
+		ctxGetter: orgcontext.Get,
+	}
 	for _, opt := range opts {
 		if err := opt(srv); err != nil {
 			return nil, err
@@ -33,8 +37,12 @@ func New(opts ...serviceOption) (*service, error) {
 }
 
 type service struct {
-	S3Repo       s3.Repo       `validate:"required"`
-	WaypointRepo waypoint.Repo `validate:"required"`
+	S3Repo        s3.Repo        `validate:"required"`
+	WaypointRepo  waypoint.Repo  `validate:"required"`
+	WorkflowsRepo workflows.Repo `validate:"required"`
+
+	// this is only settable for internal testing purposes
+	ctxGetter func(context.Context) (*orgcontext.Context, error)
 }
 
 var _ Service = (*service)(nil)
@@ -44,6 +52,13 @@ type serviceOption func(*service) error
 func WithS3Repo(repo s3.Repo) serviceOption {
 	return func(s *service) error {
 		s.S3Repo = repo
+		return nil
+	}
+}
+
+func WithWorkflowsRepo(repo workflows.Repo) serviceOption {
+	return func(s *service) error {
+		s.WorkflowsRepo = repo
 		return nil
 	}
 }

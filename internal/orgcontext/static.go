@@ -28,20 +28,25 @@ type staticProvider struct {
 
 func (s *staticProvider) createContext(orgID string) *Context {
 	return &Context{
-		OrgsBucket: Bucket{
-			Name:          s.OrgsBucketName,
-			Prefix:        fmt.Sprintf("org=%s/", orgID),
-			AssumeRoleARN: fmt.Sprintf(s.OrgsBucketAssumeRoleTemplate, orgID),
-		},
-		DeploymentsBucket: Bucket{
-			Name:          s.DeploymentsBucketName,
-			Prefix:        fmt.Sprintf("org=%s/", orgID),
-			AssumeRoleARN: fmt.Sprintf(s.DeploymentsBucketAssumeRoleTemplate, orgID),
-		},
-		InstallationsBucket: Bucket{
-			Name:          s.InstallationsBucketName,
-			Prefix:        fmt.Sprintf("org=%s/", orgID),
-			AssumeRoleARN: fmt.Sprintf(s.InstallationsBucketAssumeRoleTemplate, orgID),
+		Buckets: map[BucketType]Bucket{
+			BucketTypeDeployments: {
+				Prefix:         fmt.Sprintf("org=%s/", orgID),
+				Name:           s.DeploymentsBucketName,
+				AssumeRoleARN:  fmt.Sprintf(s.DeploymentsBucketAssumeRoleTemplate, orgID),
+				AssumeRoleName: defaultAssumeRoleName,
+			},
+			BucketTypeOrgs: {
+				Prefix:         fmt.Sprintf("org=%s/", orgID),
+				Name:           s.OrgsBucketName,
+				AssumeRoleARN:  fmt.Sprintf(s.OrgsBucketAssumeRoleTemplate, orgID),
+				AssumeRoleName: defaultAssumeRoleName,
+			},
+			BucketTypeInstallations: {
+				Name:           s.InstallationsBucketName,
+				Prefix:         fmt.Sprintf("org=%s/", orgID),
+				AssumeRoleARN:  fmt.Sprintf(s.InstallationsBucketAssumeRoleTemplate, orgID),
+				AssumeRoleName: defaultAssumeRoleName,
+			},
 		},
 		WaypointServer: WaypointServer{
 			Address:         waypoint.DefaultOrgServerAddress(s.WaypointServerRootDomain, orgID),
@@ -55,6 +60,12 @@ func (s *staticProvider) SetContext(ctx context.Context, orgID string) (context.
 	orgCtx := s.createContext(orgID)
 	if err := s.validate.Struct(orgCtx); err != nil {
 		return nil, fmt.Errorf("invalid context: %w", err)
+	}
+
+	for bktType, bkt := range orgCtx.Buckets {
+		if err := s.validate.Struct(bkt); err != nil {
+			return nil, fmt.Errorf("invalid %s bucket: %w", bktType, err)
+		}
 	}
 
 	return context.WithValue(ctx, orgContextKey{}, orgCtx), nil
