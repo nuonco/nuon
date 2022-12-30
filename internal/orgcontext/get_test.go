@@ -4,12 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetContext(t *testing.T) {
-	orgCtx := generics.GetFakeObj[*Context]()
+	orgCtx := getFakeContext()
 
 	tests := map[string]struct {
 		ctxFn       func() context.Context

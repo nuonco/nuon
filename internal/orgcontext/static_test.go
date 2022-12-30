@@ -106,7 +106,7 @@ func Test_staticProvider_SetAndGetContext(t *testing.T) {
 				provider.DeploymentsBucketName = ""
 				return provider
 			},
-			errExpected: fmt.Errorf("Context.DeploymentsBucket.Name"),
+			errExpected: fmt.Errorf("Bucket.Name"),
 		},
 	}
 
@@ -133,18 +133,24 @@ func Test_staticProvider_createContext(t *testing.T) {
 	ctx := s.createContext(orgID)
 	assert.NoError(t, s.validate.Struct(ctx))
 
+	orgsBucket, ok := ctx.Buckets[BucketTypeOrgs]
 	expectedPrefix := fmt.Sprintf("org=%s/", orgID)
-	assert.Equal(t, s.OrgsBucketName, ctx.OrgsBucket.Name)
-	assert.Equal(t, expectedPrefix, ctx.OrgsBucket.Prefix)
-	assert.Contains(t, ctx.OrgsBucket.AssumeRoleARN, orgID)
+	assert.True(t, ok)
+	assert.Equal(t, s.OrgsBucketName, orgsBucket.Name)
+	assert.Equal(t, expectedPrefix, orgsBucket.Prefix)
+	assert.Contains(t, orgsBucket.AssumeRoleARN, orgID)
 
-	assert.Equal(t, s.DeploymentsBucketName, ctx.DeploymentsBucket.Name)
-	assert.Equal(t, expectedPrefix, ctx.DeploymentsBucket.Prefix)
-	assert.Contains(t, ctx.DeploymentsBucket.AssumeRoleARN, orgID)
+	deploymentsBucket, ok := ctx.Buckets[BucketTypeDeployments]
+	assert.True(t, ok)
+	assert.Equal(t, s.DeploymentsBucketName, deploymentsBucket.Name)
+	assert.Equal(t, expectedPrefix, deploymentsBucket.Prefix)
+	assert.Contains(t, deploymentsBucket.AssumeRoleARN, orgID)
 
-	assert.Equal(t, s.InstallationsBucketName, ctx.InstallationsBucket.Name)
-	assert.Equal(t, expectedPrefix, ctx.InstallationsBucket.Prefix)
-	assert.Contains(t, ctx.InstallationsBucket.AssumeRoleARN, orgID)
+	installationsBucket, ok := ctx.Buckets[BucketTypeInstallations]
+	assert.True(t, ok)
+	assert.Equal(t, s.InstallationsBucketName, installationsBucket.Name)
+	assert.Equal(t, expectedPrefix, installationsBucket.Prefix)
+	assert.Contains(t, installationsBucket.AssumeRoleARN, orgID)
 
 	assert.Equal(t, s.WaypointTokenSecretNamespace, ctx.WaypointServer.SecretNamespace)
 	assert.Contains(t, ctx.WaypointServer.SecretName, orgID)

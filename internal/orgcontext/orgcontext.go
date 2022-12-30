@@ -17,11 +17,24 @@ type Provider interface {
 
 type provider = Provider
 
-// Bucket contains the information needed to access a specific bucket
+type BucketType string
+
+const (
+	BucketTypeUnknown       BucketType = ""
+	BucketTypeDeployments   BucketType = "deployments"
+	BucketTypeOrgs          BucketType = "orgs"
+	BucketTypeInstallations BucketType = "installations"
+)
+
+const (
+	defaultAssumeRoleName string = "orgs-api"
+)
+
 type Bucket struct {
-	Name          string `json:"name" validate:"required"`
-	Prefix        string `json:"prefix" validate:"required"`
-	AssumeRoleARN string `json:"assume_role_arn" validate:"required"`
+	Name           string `json:"name" validate:"required"`
+	Prefix         string `json:"prefix" validate:"required"`
+	AssumeRoleARN  string `json:"assume_role_arn" validate:"required"`
+	AssumeRoleName string `json:"assume_role_name" validate:"required"`
 }
 
 // WaypointServer contains all of the information needed to access the waypoint server
@@ -35,11 +48,8 @@ type WaypointServer struct {
 
 // Context is injected into each "request"
 type Context struct {
-	OrgsBucket          Bucket `json:"orgs_bucket" validate:"required"`
-	InstallationsBucket Bucket `json:"installations_bucket" validate:"required"`
-	DeploymentsBucket   Bucket `json:"deployments_bucket" validate:"required"`
-
-	WaypointServer WaypointServer `json:"waypoint_server" validate:"required"`
+	Buckets        map[BucketType]Bucket `json:"bucket_access" validate:"required" faker:"-"`
+	WaypointServer WaypointServer        `json:"waypoint_server" validate:"required"`
 }
 
 type orgContextKey struct{}
