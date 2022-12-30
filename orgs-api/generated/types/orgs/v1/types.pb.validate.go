@@ -57,11 +57,71 @@ func (m *ServerInfo) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Version
+	if utf8.RuneCountInString(m.GetVersion()) < 1 {
+		err := ServerInfoValidationError{
+			field:  "Version",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for ProtocolVersion
+	if utf8.RuneCountInString(m.GetProtocolVersion()) < 1 {
+		err := ServerInfoValidationError{
+			field:  "ProtocolVersion",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for MinimumProtocolVersion
+	if utf8.RuneCountInString(m.GetMinimumProtocolVersion()) < 5 {
+		err := ServerInfoValidationError{
+			field:  "MinimumProtocolVersion",
+			reason: "value length must be at least 5 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetAddress()) < 26 {
+		err := ServerInfoValidationError{
+			field:  "Address",
+			reason: "value length must be at least 26 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetSecretNamespace()) < 5 {
+		err := ServerInfoValidationError{
+			field:  "SecretNamespace",
+			reason: "value length must be at least 5 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetSecretName()) < 5 {
+		err := ServerInfoValidationError{
+			field:  "SecretName",
+			reason: "value length must be at least 5 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return ServerInfoMultiError(errors)
@@ -162,15 +222,42 @@ func (m *RunnerInfo) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if utf8.RuneCountInString(m.GetId()) < 26 {
+		err := RunnerInfoValidationError{
+			field:  "Id",
+			reason: "value length must be at least 26 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Kind
+	if utf8.RuneCountInString(m.GetKind()) < 1 {
+		err := RunnerInfoValidationError{
+			field:  "Kind",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for Labels
 
 	// no validation rules for Online
 
-	// no validation rules for AdoptionState
+	if utf8.RuneCountInString(m.GetAdoptionState()) < 1 {
+		err := RunnerInfoValidationError{
+			field:  "AdoptionState",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if all {
 		switch v := interface{}(m.GetFirstSeen()).(type) {
