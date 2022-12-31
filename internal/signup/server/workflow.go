@@ -37,7 +37,7 @@ func (w wkflow) ProvisionServer(ctx workflow.Context, req *serverv1.ProvisionSer
 
 	l := log.With(workflow.GetLogger(ctx))
 	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 15 * time.Minute,
+		ScheduleToCloseTimeout: 30 * time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
@@ -86,7 +86,7 @@ func (w wkflow) ProvisionServer(ctx workflow.Context, req *serverv1.ProvisionSer
 	l.Debug("pinging waypoint server until it responds")
 	_, err = pingWaypointServer(ctx, act, PingWaypointServerRequest{
 		Addr:    waypointServerAddr,
-		Timeout: time.Minute * 5,
+		Timeout: time.Minute * 10,
 	})
 	if err != nil {
 		return resp, fmt.Errorf("failed to ping waypoint: %w", err)
@@ -240,6 +240,11 @@ func pingWaypointServer(
 	var resp PingWaypointServerResponse
 
 	l := workflow.GetLogger(ctx)
+	ao := workflow.ActivityOptions{
+		StartToCloseTimeout: time.Minute * 10,
+		HeartbeatTimeout:    time.Second * 10,
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
 
 	l.Debug("executing ping waypoint server activity")
 	fut := workflow.ExecuteActivity(ctx, act.PingWaypointServer, pwsr)
