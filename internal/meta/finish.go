@@ -2,13 +2,13 @@ package meta
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-uploader"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -89,7 +89,7 @@ type finisherUploadClient interface {
 }
 
 func (s *finisherImpl) writeRequestFile(ctx context.Context, client finisherUploadClient, req *sharedv1.Response) error {
-	byts, err := json.Marshal(req)
+	byts, err := proto.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("unable to convert request to json: %w", err)
 	}
