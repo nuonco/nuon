@@ -18,7 +18,7 @@ func TestGetContext(t *testing.T) {
 		"happy path": {
 			ctxFn: func() context.Context {
 				ctx := context.Background()
-				return context.WithValue(ctx, orgContextKey{}, orgCtx)
+				return context.WithValue(ctx, Key{}, orgCtx)
 			},
 			assertFn: func(t *testing.T, res *Context) {
 				assert.Equal(t, orgCtx, res)
@@ -33,7 +33,7 @@ func TestGetContext(t *testing.T) {
 		"invalid context set": {
 			ctxFn: func() context.Context {
 				ctx := context.Background()
-				return context.WithValue(ctx, orgContextKey{}, "abc")
+				return context.WithValue(ctx, Key{}, "abc")
 			},
 			errExpected: errInvalid,
 		},

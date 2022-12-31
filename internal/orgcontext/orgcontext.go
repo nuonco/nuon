@@ -48,8 +48,10 @@ type WaypointServer struct {
 
 // Context is injected into each "request"
 type Context struct {
+	OrgID string `json:"org_id" validate:"required"`
+
 	Buckets        map[BucketType]Bucket `json:"bucket_access" validate:"required" faker:"-"`
 	WaypointServer WaypointServer        `json:"waypoint_server" validate:"required"`
 }
 
-type orgContextKey struct{}
+type Key struct{}

@@ -28,6 +28,7 @@ type staticProvider struct {
 
 func (s *staticProvider) createContext(orgID string) *Context {
 	return &Context{
+		OrgID: orgID,
 		Buckets: map[BucketType]Bucket{
 			BucketTypeDeployments: {
 				Prefix:         fmt.Sprintf("org=%s/", orgID),
@@ -68,7 +69,7 @@ func (s *staticProvider) SetContext(ctx context.Context, orgID string) (context.
 		}
 	}
 
-	return context.WithValue(ctx, orgContextKey{}, orgCtx), nil
+	return context.WithValue(ctx, Key{}, orgCtx), nil
 }
 
 var _ provider = (*staticProvider)(nil)
