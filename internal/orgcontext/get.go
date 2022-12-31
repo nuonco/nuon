@@ -11,7 +11,7 @@ var (
 )
 
 func Get(ctx context.Context) (*Context, error) {
-	val := ctx.Value(orgContextKey{})
+	val := ctx.Value(Key{})
 	if val == nil {
 		return nil, errNotFound
 	}

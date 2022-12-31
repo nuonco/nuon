@@ -16,3 +16,7 @@ type Repo interface {
 type repo struct{}
 
 var _ Repo = (*repo)(nil)
+
+func New() *repo {
+	return &repo{}
+}
