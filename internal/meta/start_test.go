@@ -2,7 +2,6 @@ package meta
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -46,9 +45,26 @@ func Test_starterImpl_writeRequestFile(t *testing.T) {
 				args := obj.Calls[0].Arguments
 				assert.Equal(t, startRequestFilename, args[2].(string))
 
-				expectedByts, err := json.Marshal(req)
+				expectedByts, err := proto.Marshal(req)
 				assert.NoError(t, err)
 				assert.Equal(t, expectedByts, args[1].([]byte))
+			},
+		},
+		"can be unmarshaled": {
+			clientFn: func(t *testing.T) starterUploadClient {
+				client := &mockStarterUploadClient{}
+				client.On("UploadBlob", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+				return client
+			},
+			assertFn: func(t *testing.T, client starterUploadClient) {
+				obj := client.(*mockStarterUploadClient)
+				obj.AssertNumberOfCalls(t, "UploadBlob", 1)
+				args := obj.Calls[0].Arguments
+
+				byts := args[1].([]byte)
+				responseObj := &sharedv1.Response{}
+				err := proto.Unmarshal(byts, responseObj)
+				assert.NoError(t, err)
 			},
 		},
 		"error uploading file": {
