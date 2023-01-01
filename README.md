@@ -1,21 +1,7 @@
-# template-go-library
+# go-workflows-meta
 
-This is a template for creating a new go library.
+This package contains common tooling for pushing metadata from workflows into s3. Right now, it supports writing both a `request.json` and `response.json` into the correct bucket. This code should still be called from activities in the parent workflow, but implements the activity request and response types.
 
 ## Usage
 
-When you create a new repository in `infra-github` set the `template` field to `template-go-library`:
-
-```terraform
-module "my-go-library" {
-  source = "./modules/repository"
-
-  name          = "my-go-library"
-  description   = "Go library"
-  topics        = ["go-lib", ]
-  from_template = "template-go-library"
-}
-```
-
-Once you have created your repository, be sure to make an initial release and tag, named `v0.0.1`. This is required because each release of a library will look up the previous tag and use it to create the _next_ tag.
-
+Coming soon.
