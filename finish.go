@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-uploader"
-	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	"google.golang.org/protobuf/proto"
 )
@@ -21,7 +20,7 @@ type FinishRequest struct {
 	MetadataBucketAssumeRoleARN string `validate:"required"`
 	MetadataBucketPrefix        string `validate:"required"`
 
-	Response       *orgsv1.SignupResponse
+	Response       *sharedv1.ResponseRef `faker:"-"`
 	ResponseStatus sharedv1.ResponseStatus
 	ErrorMessage   string
 }
@@ -56,7 +55,7 @@ func (a *finishActivity) FinishRequest(ctx context.Context, req FinishRequest) (
 	uploadClient := uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix,
 		assumeRoleOpt, assumeRoleSessionOpt)
 
-	obj := a.finisher.getRequest(req)
+	obj := a.finisher.getResponse(req)
 	if err := a.finisher.writeRequestFile(ctx, uploadClient, obj); err != nil {
 		return resp, fmt.Errorf("unable to write request: %w", err)
 	}
@@ -65,7 +64,7 @@ func (a *finishActivity) FinishRequest(ctx context.Context, req FinishRequest) (
 }
 
 type finisher interface {
-	getRequest(FinishRequest) *sharedv1.Response
+	getResponse(FinishRequest) *sharedv1.Response
 	writeRequestFile(context.Context, finisherUploadClient, *sharedv1.Response) error
 }
 
@@ -73,14 +72,10 @@ type finisherImpl struct{}
 
 var _ finisher = (*finisherImpl)(nil)
 
-func (s *finisherImpl) getRequest(req FinishRequest) *sharedv1.Response {
+func (s *finisherImpl) getResponse(req FinishRequest) *sharedv1.Response {
 	return &sharedv1.Response{
-		Status: req.ResponseStatus,
-		Response: &sharedv1.ResponseRef{
-			Response: &sharedv1.ResponseRef_OrgSignup{
-				OrgSignup: req.Response,
-			},
-		},
+		Status:   req.ResponseStatus,
+		Response: req.Response,
 	}
 }
 

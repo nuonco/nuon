@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-uploader"
-	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	"google.golang.org/protobuf/proto"
 )
@@ -25,8 +24,8 @@ type StartRequest struct {
 	MetadataBucketAssumeRoleARN string `validate:"required"`
 	MetadataBucketPrefix        string `validate:"required"`
 
-	Request      *orgsv1.SignupRequest `validate:"required"`
-	WorkflowInfo WorkflowInfo          `validate:"required"`
+	Request      *sharedv1.RequestRef `validate:"required" faker:"-"`
+	WorkflowInfo WorkflowInfo         `validate:"required"`
 }
 
 type StartResponse struct{}
@@ -80,11 +79,7 @@ func (s *starterImpl) getRequest(req StartRequest) *sharedv1.Request {
 	return &sharedv1.Request{
 		WorkflowId: req.WorkflowInfo.ID,
 		// TODO: parse temporal memo and map to our own types
-		Request: &sharedv1.RequestRef{
-			Request: &sharedv1.RequestRef_OrgSignup{
-				OrgSignup: req.Request,
-			},
-		},
+		Request: req.Request,
 	}
 }
 

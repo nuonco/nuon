@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/go-generics"
+	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,6 +27,11 @@ var _ finisherUploadClient = (*mockFinisherUploadClient)(nil)
 func Test_finisherImpl_writeRequestFile(t *testing.T) {
 	errStartUpload := fmt.Errorf("error uploading start request")
 	req := generics.GetFakeObj[*sharedv1.Response]()
+	req.Response = &sharedv1.ResponseRef{
+		Response: &sharedv1.ResponseRef_OrgSignup{
+			OrgSignup: generics.GetFakeObj[*orgsv1.SignupResponse](),
+		},
+	}
 
 	tests := map[string]struct {
 		clientFn    func(*testing.T) finisherUploadClient
@@ -93,12 +99,16 @@ func Test_finisherImpl_writeRequestFile(t *testing.T) {
 }
 
 func Test_finisherImpl_getRequest(t *testing.T) {
-	finishReq := generics.GetFakeObj[FinishRequest]()
-	finisher := &finisherImpl{}
-	req := finisher.getRequest(finishReq)
+	inputResp := generics.GetFakeObj[FinishRequest]()
+	inputResp.Response = &sharedv1.ResponseRef{
+		Response: &sharedv1.ResponseRef_OrgSignup{
+			OrgSignup: generics.GetFakeObj[*orgsv1.SignupResponse](),
+		},
+	}
 
-	assert.Equal(t, finishReq.ResponseStatus, req.Status)
-	reqFinishReq, ok := req.Response.Response.(*sharedv1.ResponseRef_OrgSignup)
-	assert.True(t, ok)
-	assert.True(t, proto.Equal(reqFinishReq.OrgSignup, finishReq.Response))
+	finisher := &finisherImpl{}
+	resp := finisher.getResponse(inputResp)
+
+	assert.Equal(t, inputResp.ResponseStatus, resp.Status)
+	assert.True(t, proto.Equal(inputResp.Response, inputResp.Response))
 }

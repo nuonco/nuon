@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/go-generics"
+	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,6 +27,11 @@ var _ starterUploadClient = (*mockStarterUploadClient)(nil)
 func Test_starterImpl_writeRequestFile(t *testing.T) {
 	errStartUpload := fmt.Errorf("error uploading start request")
 	req := generics.GetFakeObj[*sharedv1.Request]()
+	req.Request = &sharedv1.RequestRef{
+		Request: &sharedv1.RequestRef_OrgSignup{
+			OrgSignup: generics.GetFakeObj[*orgsv1.SignupRequest](),
+		},
+	}
 
 	tests := map[string]struct {
 		clientFn    func(*testing.T) starterUploadClient
@@ -62,8 +68,8 @@ func Test_starterImpl_writeRequestFile(t *testing.T) {
 				args := obj.Calls[0].Arguments
 
 				byts := args[1].([]byte)
-				responseObj := &sharedv1.Response{}
-				err := proto.Unmarshal(byts, responseObj)
+				requestObj := &sharedv1.Request{}
+				err := proto.Unmarshal(byts, requestObj)
 				assert.NoError(t, err)
 			},
 		},
@@ -94,11 +100,15 @@ func Test_starterImpl_writeRequestFile(t *testing.T) {
 
 func Test_starterImpl_getRequest(t *testing.T) {
 	startReq := generics.GetFakeObj[StartRequest]()
+	startReq.Request = &sharedv1.RequestRef{
+		Request: &sharedv1.RequestRef_OrgSignup{
+			OrgSignup: generics.GetFakeObj[*orgsv1.SignupRequest](),
+		},
+	}
+
 	starter := &starterImpl{}
 	req := starter.getRequest(startReq)
 
 	assert.Equal(t, startReq.WorkflowInfo.ID, req.WorkflowId)
-	reqStartReq, ok := req.Request.Request.(*sharedv1.RequestRef_OrgSignup)
-	assert.True(t, ok)
-	assert.True(t, proto.Equal(reqStartReq.OrgSignup, startReq.Request))
+	assert.True(t, proto.Equal(startReq.Request, req.Request))
 }
