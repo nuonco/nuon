@@ -57,7 +57,7 @@ jobs:
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
             --remote-cache=ghcr.io/${{ github.repository }}:lint \
-            +lint-proto \
+            +lint \
             --REPO=${{matrix.repo}} \
 
   release-protos:
