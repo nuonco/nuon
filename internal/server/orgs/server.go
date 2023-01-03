@@ -28,6 +28,3 @@ func (s *server) GetOrgsByUser(context.Context, *orgv1.GetOrgsByUserRequest) (*o
 func (s *server) UpsertOrg(context.Context, *orgv1.UpsertOrgRequest) (*orgv1.UpsertOrgResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertOrg not implemented")
 }
-func (s *server) DeleteOrg(context.Context, *orgv1.DeleteOrgRequest) (*orgv1.DeleteOrgResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteOrg not implemented")
-}
