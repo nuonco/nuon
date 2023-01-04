@@ -1,5 +1,7 @@
 ---
 replicaCount: 2
+args:
+  - server
 
 configmap:
   enabled: true
@@ -30,12 +32,20 @@ serviceAccount:
   # a name is generated using the fullname template
   name:
 
-
 service:
   main:
     type: ClusterIP
     primary: true
     enabled: false
+
+
+nlb:
+  healthcheck: /_ping
+  # NOTE(jm): there isn't really a good way at all to query this root domain using terraform, without hardcoding a bunch
+  # of unrelated information from `infra-eks-nuon` (like we do in graphql-api/infra).
+  #
+  # For now, we just set this here, and override in values.prod.tmpl
+  hostname: api.nuon.us-west-2.stage.nuon.cloud
 
 probes:
   # Liveness probe configuration
