@@ -6,13 +6,19 @@ managed:
     default: github.com/powertoolsdev/protos/api/generated/types
     except:
       - buf.build/googleapis/googleapis
+      - buf.build/envoyproxy/protoc-gen-validate
+      - buf.build/srikrsna/protoc-gen-gotag
+      - buf.build/nuon/components
+      - buf.build/nuon/deployments
 plugins:
-  - name: go
+  - plugin: buf.build/protocolbuffers/go
     out: generated/types
     opt: paths=source_relative
 
-  - name: go-grpc
+  - plugin: buf.build/bufbuild/validate-go
     out: generated/types
-    opt:
-      - paths=source_relative
-      - require_unimplemented_servers=false
+    opt: paths=source_relative
+
+  - plugin: buf.build/bufbuild/connect-go
+    out: generated/types
+    opt: paths=source_relative
