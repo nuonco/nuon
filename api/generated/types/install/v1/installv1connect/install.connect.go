@@ -28,7 +28,7 @@ const (
 // InstallsServiceClient is a client for the install.v1.InstallsService service.
 type InstallsServiceClient interface {
 	GetInstall(context.Context, *connect_go.Request[v1.GetInstallRequest]) (*connect_go.Response[v1.GetInstallResponse], error)
-	GetInstalls(context.Context, *connect_go.Request[v1.GetInstallsRequest]) (*connect_go.Response[v1.GetInstallsResponse], error)
+	GetInstallsByApp(context.Context, *connect_go.Request[v1.GetInstallsByAppRequest]) (*connect_go.Response[v1.GetInstallsByAppResponse], error)
 	DeleteInstall(context.Context, *connect_go.Request[v1.DeleteInstallRequest]) (*connect_go.Response[v1.DeleteInstallResponse], error)
 	UpsertInstall(context.Context, *connect_go.Request[v1.UpsertInstallRequest]) (*connect_go.Response[v1.UpsertInstallResponse], error)
 }
@@ -48,9 +48,9 @@ func NewInstallsServiceClient(httpClient connect_go.HTTPClient, baseURL string, 
 			baseURL+"/install.v1.InstallsService/GetInstall",
 			opts...,
 		),
-		getInstalls: connect_go.NewClient[v1.GetInstallsRequest, v1.GetInstallsResponse](
+		getInstallsByApp: connect_go.NewClient[v1.GetInstallsByAppRequest, v1.GetInstallsByAppResponse](
 			httpClient,
-			baseURL+"/install.v1.InstallsService/GetInstalls",
+			baseURL+"/install.v1.InstallsService/GetInstallsByApp",
 			opts...,
 		),
 		deleteInstall: connect_go.NewClient[v1.DeleteInstallRequest, v1.DeleteInstallResponse](
@@ -68,10 +68,10 @@ func NewInstallsServiceClient(httpClient connect_go.HTTPClient, baseURL string, 
 
 // installsServiceClient implements InstallsServiceClient.
 type installsServiceClient struct {
-	getInstall    *connect_go.Client[v1.GetInstallRequest, v1.GetInstallResponse]
-	getInstalls   *connect_go.Client[v1.GetInstallsRequest, v1.GetInstallsResponse]
-	deleteInstall *connect_go.Client[v1.DeleteInstallRequest, v1.DeleteInstallResponse]
-	upsertInstall *connect_go.Client[v1.UpsertInstallRequest, v1.UpsertInstallResponse]
+	getInstall       *connect_go.Client[v1.GetInstallRequest, v1.GetInstallResponse]
+	getInstallsByApp *connect_go.Client[v1.GetInstallsByAppRequest, v1.GetInstallsByAppResponse]
+	deleteInstall    *connect_go.Client[v1.DeleteInstallRequest, v1.DeleteInstallResponse]
+	upsertInstall    *connect_go.Client[v1.UpsertInstallRequest, v1.UpsertInstallResponse]
 }
 
 // GetInstall calls install.v1.InstallsService.GetInstall.
@@ -79,9 +79,9 @@ func (c *installsServiceClient) GetInstall(ctx context.Context, req *connect_go.
 	return c.getInstall.CallUnary(ctx, req)
 }
 
-// GetInstalls calls install.v1.InstallsService.GetInstalls.
-func (c *installsServiceClient) GetInstalls(ctx context.Context, req *connect_go.Request[v1.GetInstallsRequest]) (*connect_go.Response[v1.GetInstallsResponse], error) {
-	return c.getInstalls.CallUnary(ctx, req)
+// GetInstallsByApp calls install.v1.InstallsService.GetInstallsByApp.
+func (c *installsServiceClient) GetInstallsByApp(ctx context.Context, req *connect_go.Request[v1.GetInstallsByAppRequest]) (*connect_go.Response[v1.GetInstallsByAppResponse], error) {
+	return c.getInstallsByApp.CallUnary(ctx, req)
 }
 
 // DeleteInstall calls install.v1.InstallsService.DeleteInstall.
@@ -97,7 +97,7 @@ func (c *installsServiceClient) UpsertInstall(ctx context.Context, req *connect_
 // InstallsServiceHandler is an implementation of the install.v1.InstallsService service.
 type InstallsServiceHandler interface {
 	GetInstall(context.Context, *connect_go.Request[v1.GetInstallRequest]) (*connect_go.Response[v1.GetInstallResponse], error)
-	GetInstalls(context.Context, *connect_go.Request[v1.GetInstallsRequest]) (*connect_go.Response[v1.GetInstallsResponse], error)
+	GetInstallsByApp(context.Context, *connect_go.Request[v1.GetInstallsByAppRequest]) (*connect_go.Response[v1.GetInstallsByAppResponse], error)
 	DeleteInstall(context.Context, *connect_go.Request[v1.DeleteInstallRequest]) (*connect_go.Response[v1.DeleteInstallResponse], error)
 	UpsertInstall(context.Context, *connect_go.Request[v1.UpsertInstallRequest]) (*connect_go.Response[v1.UpsertInstallResponse], error)
 }
@@ -114,9 +114,9 @@ func NewInstallsServiceHandler(svc InstallsServiceHandler, opts ...connect_go.Ha
 		svc.GetInstall,
 		opts...,
 	))
-	mux.Handle("/install.v1.InstallsService/GetInstalls", connect_go.NewUnaryHandler(
-		"/install.v1.InstallsService/GetInstalls",
-		svc.GetInstalls,
+	mux.Handle("/install.v1.InstallsService/GetInstallsByApp", connect_go.NewUnaryHandler(
+		"/install.v1.InstallsService/GetInstallsByApp",
+		svc.GetInstallsByApp,
 		opts...,
 	))
 	mux.Handle("/install.v1.InstallsService/DeleteInstall", connect_go.NewUnaryHandler(
@@ -139,8 +139,8 @@ func (UnimplementedInstallsServiceHandler) GetInstall(context.Context, *connect_
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("install.v1.InstallsService.GetInstall is not implemented"))
 }
 
-func (UnimplementedInstallsServiceHandler) GetInstalls(context.Context, *connect_go.Request[v1.GetInstallsRequest]) (*connect_go.Response[v1.GetInstallsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("install.v1.InstallsService.GetInstalls is not implemented"))
+func (UnimplementedInstallsServiceHandler) GetInstallsByApp(context.Context, *connect_go.Request[v1.GetInstallsByAppRequest]) (*connect_go.Response[v1.GetInstallsByAppResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("install.v1.InstallsService.GetInstallsByApp is not implemented"))
 }
 
 func (UnimplementedInstallsServiceHandler) DeleteInstall(context.Context, *connect_go.Request[v1.DeleteInstallRequest]) (*connect_go.Response[v1.DeleteInstallResponse], error) {

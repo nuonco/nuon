@@ -28,7 +28,7 @@ const (
 // DeploymentsServiceClient is a client for the deployment.v1.DeploymentsService service.
 type DeploymentsServiceClient interface {
 	GetDeployment(context.Context, *connect_go.Request[v1.GetDeploymentRequest]) (*connect_go.Response[v1.GetDeploymentResponse], error)
-	GetDeployments(context.Context, *connect_go.Request[v1.GetDeploymentsRequest]) (*connect_go.Response[v1.GetDeploymentsResponse], error)
+	GetDeploymentsByComponents(context.Context, *connect_go.Request[v1.GetDeploymentsByComponentsRequest]) (*connect_go.Response[v1.GetDeploymentsByComponentsResponse], error)
 	CreateDeployment(context.Context, *connect_go.Request[v1.CreateDeploymentRequest]) (*connect_go.Response[v1.CreateDeploymentResponse], error)
 }
 
@@ -47,9 +47,9 @@ func NewDeploymentsServiceClient(httpClient connect_go.HTTPClient, baseURL strin
 			baseURL+"/deployment.v1.DeploymentsService/GetDeployment",
 			opts...,
 		),
-		getDeployments: connect_go.NewClient[v1.GetDeploymentsRequest, v1.GetDeploymentsResponse](
+		getDeploymentsByComponents: connect_go.NewClient[v1.GetDeploymentsByComponentsRequest, v1.GetDeploymentsByComponentsResponse](
 			httpClient,
-			baseURL+"/deployment.v1.DeploymentsService/GetDeployments",
+			baseURL+"/deployment.v1.DeploymentsService/GetDeploymentsByComponents",
 			opts...,
 		),
 		createDeployment: connect_go.NewClient[v1.CreateDeploymentRequest, v1.CreateDeploymentResponse](
@@ -62,9 +62,9 @@ func NewDeploymentsServiceClient(httpClient connect_go.HTTPClient, baseURL strin
 
 // deploymentsServiceClient implements DeploymentsServiceClient.
 type deploymentsServiceClient struct {
-	getDeployment    *connect_go.Client[v1.GetDeploymentRequest, v1.GetDeploymentResponse]
-	getDeployments   *connect_go.Client[v1.GetDeploymentsRequest, v1.GetDeploymentsResponse]
-	createDeployment *connect_go.Client[v1.CreateDeploymentRequest, v1.CreateDeploymentResponse]
+	getDeployment              *connect_go.Client[v1.GetDeploymentRequest, v1.GetDeploymentResponse]
+	getDeploymentsByComponents *connect_go.Client[v1.GetDeploymentsByComponentsRequest, v1.GetDeploymentsByComponentsResponse]
+	createDeployment           *connect_go.Client[v1.CreateDeploymentRequest, v1.CreateDeploymentResponse]
 }
 
 // GetDeployment calls deployment.v1.DeploymentsService.GetDeployment.
@@ -72,9 +72,9 @@ func (c *deploymentsServiceClient) GetDeployment(ctx context.Context, req *conne
 	return c.getDeployment.CallUnary(ctx, req)
 }
 
-// GetDeployments calls deployment.v1.DeploymentsService.GetDeployments.
-func (c *deploymentsServiceClient) GetDeployments(ctx context.Context, req *connect_go.Request[v1.GetDeploymentsRequest]) (*connect_go.Response[v1.GetDeploymentsResponse], error) {
-	return c.getDeployments.CallUnary(ctx, req)
+// GetDeploymentsByComponents calls deployment.v1.DeploymentsService.GetDeploymentsByComponents.
+func (c *deploymentsServiceClient) GetDeploymentsByComponents(ctx context.Context, req *connect_go.Request[v1.GetDeploymentsByComponentsRequest]) (*connect_go.Response[v1.GetDeploymentsByComponentsResponse], error) {
+	return c.getDeploymentsByComponents.CallUnary(ctx, req)
 }
 
 // CreateDeployment calls deployment.v1.DeploymentsService.CreateDeployment.
@@ -85,7 +85,7 @@ func (c *deploymentsServiceClient) CreateDeployment(ctx context.Context, req *co
 // DeploymentsServiceHandler is an implementation of the deployment.v1.DeploymentsService service.
 type DeploymentsServiceHandler interface {
 	GetDeployment(context.Context, *connect_go.Request[v1.GetDeploymentRequest]) (*connect_go.Response[v1.GetDeploymentResponse], error)
-	GetDeployments(context.Context, *connect_go.Request[v1.GetDeploymentsRequest]) (*connect_go.Response[v1.GetDeploymentsResponse], error)
+	GetDeploymentsByComponents(context.Context, *connect_go.Request[v1.GetDeploymentsByComponentsRequest]) (*connect_go.Response[v1.GetDeploymentsByComponentsResponse], error)
 	CreateDeployment(context.Context, *connect_go.Request[v1.CreateDeploymentRequest]) (*connect_go.Response[v1.CreateDeploymentResponse], error)
 }
 
@@ -101,9 +101,9 @@ func NewDeploymentsServiceHandler(svc DeploymentsServiceHandler, opts ...connect
 		svc.GetDeployment,
 		opts...,
 	))
-	mux.Handle("/deployment.v1.DeploymentsService/GetDeployments", connect_go.NewUnaryHandler(
-		"/deployment.v1.DeploymentsService/GetDeployments",
-		svc.GetDeployments,
+	mux.Handle("/deployment.v1.DeploymentsService/GetDeploymentsByComponents", connect_go.NewUnaryHandler(
+		"/deployment.v1.DeploymentsService/GetDeploymentsByComponents",
+		svc.GetDeploymentsByComponents,
 		opts...,
 	))
 	mux.Handle("/deployment.v1.DeploymentsService/CreateDeployment", connect_go.NewUnaryHandler(
@@ -121,8 +121,8 @@ func (UnimplementedDeploymentsServiceHandler) GetDeployment(context.Context, *co
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("deployment.v1.DeploymentsService.GetDeployment is not implemented"))
 }
 
-func (UnimplementedDeploymentsServiceHandler) GetDeployments(context.Context, *connect_go.Request[v1.GetDeploymentsRequest]) (*connect_go.Response[v1.GetDeploymentsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("deployment.v1.DeploymentsService.GetDeployments is not implemented"))
+func (UnimplementedDeploymentsServiceHandler) GetDeploymentsByComponents(context.Context, *connect_go.Request[v1.GetDeploymentsByComponentsRequest]) (*connect_go.Response[v1.GetDeploymentsByComponentsResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("deployment.v1.DeploymentsService.GetDeploymentsByComponents is not implemented"))
 }
 
 func (UnimplementedDeploymentsServiceHandler) CreateDeployment(context.Context, *connect_go.Request[v1.CreateDeploymentRequest]) (*connect_go.Response[v1.CreateDeploymentResponse], error) {

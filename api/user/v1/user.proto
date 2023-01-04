@@ -6,12 +6,8 @@ import "google/type/datetime.proto";
 
 message User {
   string id = 1;
-  string first_name = 2;
-  string last_name = 3;
-  bool is_admin = 4;
-  string email = 5;
-  google.type.DateTime created_at = 6;
-  google.type.DateTime updated_at = 7;
+  google.type.DateTime created_at = 2;
+  google.type.DateTime updated_at = 3;
 }
 
 message UserOrg {
@@ -33,17 +29,11 @@ message GetUserResponse {
   User user = 1;
 }
 
-message GetUsersRequest {}
-
-message GetUsersResponse {
-  repeated User users = 1;
-}
-
-message GetOrgUsersRequest {
+message GetUsersByOrgRequest {
   string org_id = 1;
 }
 
-message GetOrgUsersResponse {
+message GetUsersByOrgResponse {
   repeated User users = 1;
 }
 
@@ -58,9 +48,7 @@ message DeleteUserResponse {
 message UpsertUserRequest {
   string id = 1;
   string external_id = 2;
-  string first_name = 3;
-  string last_name = 4;
-  string email = 5;
+  string email = 3;
 }
 
 message UpsertUserResponse {
@@ -79,8 +67,7 @@ message UpsertUserOrgResponse {
 service UsersService {
   rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse) {}
   rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
-  rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {}
-  rpc GetOrgUsers(GetOrgUsersRequest) returns (GetOrgUsersResponse) {}
+  rpc GetUsersByOrg(GetUsersByOrgRequest) returns (GetUsersByOrgResponse) {}
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {}
   rpc UpsertUser(UpsertUserRequest) returns (UpsertUserResponse) {}
   rpc UpsertUserOrg(UpsertUserOrgRequest) returns (UpsertUserOrgResponse) {}

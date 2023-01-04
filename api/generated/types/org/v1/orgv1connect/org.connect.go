@@ -28,7 +28,7 @@ const (
 // OrgsServiceClient is a client for the org.v1.OrgsService service.
 type OrgsServiceClient interface {
 	GetOrg(context.Context, *connect_go.Request[v1.GetOrgRequest]) (*connect_go.Response[v1.GetOrgResponse], error)
-	GetOrgsByUser(context.Context, *connect_go.Request[v1.GetOrgsByUserRequest]) (*connect_go.Response[v1.GetOrgsByUserResponse], error)
+	GetOrgsByMember(context.Context, *connect_go.Request[v1.GetOrgsByMemberRequest]) (*connect_go.Response[v1.GetOrgsByMemberResponse], error)
 	UpsertOrg(context.Context, *connect_go.Request[v1.UpsertOrgRequest]) (*connect_go.Response[v1.UpsertOrgResponse], error)
 	DeleteOrg(context.Context, *connect_go.Request[v1.DeleteOrgRequest]) (*connect_go.Response[v1.DeleteOrgResponse], error)
 }
@@ -48,9 +48,9 @@ func NewOrgsServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+"/org.v1.OrgsService/GetOrg",
 			opts...,
 		),
-		getOrgsByUser: connect_go.NewClient[v1.GetOrgsByUserRequest, v1.GetOrgsByUserResponse](
+		getOrgsByMember: connect_go.NewClient[v1.GetOrgsByMemberRequest, v1.GetOrgsByMemberResponse](
 			httpClient,
-			baseURL+"/org.v1.OrgsService/GetOrgsByUser",
+			baseURL+"/org.v1.OrgsService/GetOrgsByMember",
 			opts...,
 		),
 		upsertOrg: connect_go.NewClient[v1.UpsertOrgRequest, v1.UpsertOrgResponse](
@@ -68,10 +68,10 @@ func NewOrgsServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 
 // orgsServiceClient implements OrgsServiceClient.
 type orgsServiceClient struct {
-	getOrg        *connect_go.Client[v1.GetOrgRequest, v1.GetOrgResponse]
-	getOrgsByUser *connect_go.Client[v1.GetOrgsByUserRequest, v1.GetOrgsByUserResponse]
-	upsertOrg     *connect_go.Client[v1.UpsertOrgRequest, v1.UpsertOrgResponse]
-	deleteOrg     *connect_go.Client[v1.DeleteOrgRequest, v1.DeleteOrgResponse]
+	getOrg          *connect_go.Client[v1.GetOrgRequest, v1.GetOrgResponse]
+	getOrgsByMember *connect_go.Client[v1.GetOrgsByMemberRequest, v1.GetOrgsByMemberResponse]
+	upsertOrg       *connect_go.Client[v1.UpsertOrgRequest, v1.UpsertOrgResponse]
+	deleteOrg       *connect_go.Client[v1.DeleteOrgRequest, v1.DeleteOrgResponse]
 }
 
 // GetOrg calls org.v1.OrgsService.GetOrg.
@@ -79,9 +79,9 @@ func (c *orgsServiceClient) GetOrg(ctx context.Context, req *connect_go.Request[
 	return c.getOrg.CallUnary(ctx, req)
 }
 
-// GetOrgsByUser calls org.v1.OrgsService.GetOrgsByUser.
-func (c *orgsServiceClient) GetOrgsByUser(ctx context.Context, req *connect_go.Request[v1.GetOrgsByUserRequest]) (*connect_go.Response[v1.GetOrgsByUserResponse], error) {
-	return c.getOrgsByUser.CallUnary(ctx, req)
+// GetOrgsByMember calls org.v1.OrgsService.GetOrgsByMember.
+func (c *orgsServiceClient) GetOrgsByMember(ctx context.Context, req *connect_go.Request[v1.GetOrgsByMemberRequest]) (*connect_go.Response[v1.GetOrgsByMemberResponse], error) {
+	return c.getOrgsByMember.CallUnary(ctx, req)
 }
 
 // UpsertOrg calls org.v1.OrgsService.UpsertOrg.
@@ -97,7 +97,7 @@ func (c *orgsServiceClient) DeleteOrg(ctx context.Context, req *connect_go.Reque
 // OrgsServiceHandler is an implementation of the org.v1.OrgsService service.
 type OrgsServiceHandler interface {
 	GetOrg(context.Context, *connect_go.Request[v1.GetOrgRequest]) (*connect_go.Response[v1.GetOrgResponse], error)
-	GetOrgsByUser(context.Context, *connect_go.Request[v1.GetOrgsByUserRequest]) (*connect_go.Response[v1.GetOrgsByUserResponse], error)
+	GetOrgsByMember(context.Context, *connect_go.Request[v1.GetOrgsByMemberRequest]) (*connect_go.Response[v1.GetOrgsByMemberResponse], error)
 	UpsertOrg(context.Context, *connect_go.Request[v1.UpsertOrgRequest]) (*connect_go.Response[v1.UpsertOrgResponse], error)
 	DeleteOrg(context.Context, *connect_go.Request[v1.DeleteOrgRequest]) (*connect_go.Response[v1.DeleteOrgResponse], error)
 }
@@ -114,9 +114,9 @@ func NewOrgsServiceHandler(svc OrgsServiceHandler, opts ...connect_go.HandlerOpt
 		svc.GetOrg,
 		opts...,
 	))
-	mux.Handle("/org.v1.OrgsService/GetOrgsByUser", connect_go.NewUnaryHandler(
-		"/org.v1.OrgsService/GetOrgsByUser",
-		svc.GetOrgsByUser,
+	mux.Handle("/org.v1.OrgsService/GetOrgsByMember", connect_go.NewUnaryHandler(
+		"/org.v1.OrgsService/GetOrgsByMember",
+		svc.GetOrgsByMember,
 		opts...,
 	))
 	mux.Handle("/org.v1.OrgsService/UpsertOrg", connect_go.NewUnaryHandler(
@@ -139,8 +139,8 @@ func (UnimplementedOrgsServiceHandler) GetOrg(context.Context, *connect_go.Reque
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("org.v1.OrgsService.GetOrg is not implemented"))
 }
 
-func (UnimplementedOrgsServiceHandler) GetOrgsByUser(context.Context, *connect_go.Request[v1.GetOrgsByUserRequest]) (*connect_go.Response[v1.GetOrgsByUserResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("org.v1.OrgsService.GetOrgsByUser is not implemented"))
+func (UnimplementedOrgsServiceHandler) GetOrgsByMember(context.Context, *connect_go.Request[v1.GetOrgsByMemberRequest]) (*connect_go.Response[v1.GetOrgsByMemberResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("org.v1.OrgsService.GetOrgsByMember is not implemented"))
 }
 
 func (UnimplementedOrgsServiceHandler) UpsertOrg(context.Context, *connect_go.Request[v1.UpsertOrgRequest]) (*connect_go.Response[v1.UpsertOrgResponse], error) {

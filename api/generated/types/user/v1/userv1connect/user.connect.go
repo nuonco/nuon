@@ -29,8 +29,7 @@ const (
 type UsersServiceClient interface {
 	GetCurrentUser(context.Context, *connect_go.Request[v1.GetCurrentUserRequest]) (*connect_go.Response[v1.GetCurrentUserResponse], error)
 	GetUser(context.Context, *connect_go.Request[v1.GetUserRequest]) (*connect_go.Response[v1.GetUserResponse], error)
-	GetUsers(context.Context, *connect_go.Request[v1.GetUsersRequest]) (*connect_go.Response[v1.GetUsersResponse], error)
-	GetOrgUsers(context.Context, *connect_go.Request[v1.GetOrgUsersRequest]) (*connect_go.Response[v1.GetOrgUsersResponse], error)
+	GetUsersByOrg(context.Context, *connect_go.Request[v1.GetUsersByOrgRequest]) (*connect_go.Response[v1.GetUsersByOrgResponse], error)
 	DeleteUser(context.Context, *connect_go.Request[v1.DeleteUserRequest]) (*connect_go.Response[v1.DeleteUserResponse], error)
 	UpsertUser(context.Context, *connect_go.Request[v1.UpsertUserRequest]) (*connect_go.Response[v1.UpsertUserResponse], error)
 	UpsertUserOrg(context.Context, *connect_go.Request[v1.UpsertUserOrgRequest]) (*connect_go.Response[v1.UpsertUserOrgResponse], error)
@@ -56,14 +55,9 @@ func NewUsersServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 			baseURL+"/user.v1.UsersService/GetUser",
 			opts...,
 		),
-		getUsers: connect_go.NewClient[v1.GetUsersRequest, v1.GetUsersResponse](
+		getUsersByOrg: connect_go.NewClient[v1.GetUsersByOrgRequest, v1.GetUsersByOrgResponse](
 			httpClient,
-			baseURL+"/user.v1.UsersService/GetUsers",
-			opts...,
-		),
-		getOrgUsers: connect_go.NewClient[v1.GetOrgUsersRequest, v1.GetOrgUsersResponse](
-			httpClient,
-			baseURL+"/user.v1.UsersService/GetOrgUsers",
+			baseURL+"/user.v1.UsersService/GetUsersByOrg",
 			opts...,
 		),
 		deleteUser: connect_go.NewClient[v1.DeleteUserRequest, v1.DeleteUserResponse](
@@ -88,8 +82,7 @@ func NewUsersServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 type usersServiceClient struct {
 	getCurrentUser *connect_go.Client[v1.GetCurrentUserRequest, v1.GetCurrentUserResponse]
 	getUser        *connect_go.Client[v1.GetUserRequest, v1.GetUserResponse]
-	getUsers       *connect_go.Client[v1.GetUsersRequest, v1.GetUsersResponse]
-	getOrgUsers    *connect_go.Client[v1.GetOrgUsersRequest, v1.GetOrgUsersResponse]
+	getUsersByOrg  *connect_go.Client[v1.GetUsersByOrgRequest, v1.GetUsersByOrgResponse]
 	deleteUser     *connect_go.Client[v1.DeleteUserRequest, v1.DeleteUserResponse]
 	upsertUser     *connect_go.Client[v1.UpsertUserRequest, v1.UpsertUserResponse]
 	upsertUserOrg  *connect_go.Client[v1.UpsertUserOrgRequest, v1.UpsertUserOrgResponse]
@@ -105,14 +98,9 @@ func (c *usersServiceClient) GetUser(ctx context.Context, req *connect_go.Reques
 	return c.getUser.CallUnary(ctx, req)
 }
 
-// GetUsers calls user.v1.UsersService.GetUsers.
-func (c *usersServiceClient) GetUsers(ctx context.Context, req *connect_go.Request[v1.GetUsersRequest]) (*connect_go.Response[v1.GetUsersResponse], error) {
-	return c.getUsers.CallUnary(ctx, req)
-}
-
-// GetOrgUsers calls user.v1.UsersService.GetOrgUsers.
-func (c *usersServiceClient) GetOrgUsers(ctx context.Context, req *connect_go.Request[v1.GetOrgUsersRequest]) (*connect_go.Response[v1.GetOrgUsersResponse], error) {
-	return c.getOrgUsers.CallUnary(ctx, req)
+// GetUsersByOrg calls user.v1.UsersService.GetUsersByOrg.
+func (c *usersServiceClient) GetUsersByOrg(ctx context.Context, req *connect_go.Request[v1.GetUsersByOrgRequest]) (*connect_go.Response[v1.GetUsersByOrgResponse], error) {
+	return c.getUsersByOrg.CallUnary(ctx, req)
 }
 
 // DeleteUser calls user.v1.UsersService.DeleteUser.
@@ -134,8 +122,7 @@ func (c *usersServiceClient) UpsertUserOrg(ctx context.Context, req *connect_go.
 type UsersServiceHandler interface {
 	GetCurrentUser(context.Context, *connect_go.Request[v1.GetCurrentUserRequest]) (*connect_go.Response[v1.GetCurrentUserResponse], error)
 	GetUser(context.Context, *connect_go.Request[v1.GetUserRequest]) (*connect_go.Response[v1.GetUserResponse], error)
-	GetUsers(context.Context, *connect_go.Request[v1.GetUsersRequest]) (*connect_go.Response[v1.GetUsersResponse], error)
-	GetOrgUsers(context.Context, *connect_go.Request[v1.GetOrgUsersRequest]) (*connect_go.Response[v1.GetOrgUsersResponse], error)
+	GetUsersByOrg(context.Context, *connect_go.Request[v1.GetUsersByOrgRequest]) (*connect_go.Response[v1.GetUsersByOrgResponse], error)
 	DeleteUser(context.Context, *connect_go.Request[v1.DeleteUserRequest]) (*connect_go.Response[v1.DeleteUserResponse], error)
 	UpsertUser(context.Context, *connect_go.Request[v1.UpsertUserRequest]) (*connect_go.Response[v1.UpsertUserResponse], error)
 	UpsertUserOrg(context.Context, *connect_go.Request[v1.UpsertUserOrgRequest]) (*connect_go.Response[v1.UpsertUserOrgResponse], error)
@@ -158,14 +145,9 @@ func NewUsersServiceHandler(svc UsersServiceHandler, opts ...connect_go.HandlerO
 		svc.GetUser,
 		opts...,
 	))
-	mux.Handle("/user.v1.UsersService/GetUsers", connect_go.NewUnaryHandler(
-		"/user.v1.UsersService/GetUsers",
-		svc.GetUsers,
-		opts...,
-	))
-	mux.Handle("/user.v1.UsersService/GetOrgUsers", connect_go.NewUnaryHandler(
-		"/user.v1.UsersService/GetOrgUsers",
-		svc.GetOrgUsers,
+	mux.Handle("/user.v1.UsersService/GetUsersByOrg", connect_go.NewUnaryHandler(
+		"/user.v1.UsersService/GetUsersByOrg",
+		svc.GetUsersByOrg,
 		opts...,
 	))
 	mux.Handle("/user.v1.UsersService/DeleteUser", connect_go.NewUnaryHandler(
@@ -197,12 +179,8 @@ func (UnimplementedUsersServiceHandler) GetUser(context.Context, *connect_go.Req
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.GetUser is not implemented"))
 }
 
-func (UnimplementedUsersServiceHandler) GetUsers(context.Context, *connect_go.Request[v1.GetUsersRequest]) (*connect_go.Response[v1.GetUsersResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.GetUsers is not implemented"))
-}
-
-func (UnimplementedUsersServiceHandler) GetOrgUsers(context.Context, *connect_go.Request[v1.GetOrgUsersRequest]) (*connect_go.Response[v1.GetOrgUsersResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.GetOrgUsers is not implemented"))
+func (UnimplementedUsersServiceHandler) GetUsersByOrg(context.Context, *connect_go.Request[v1.GetUsersByOrgRequest]) (*connect_go.Response[v1.GetUsersByOrgResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.GetUsersByOrg is not implemented"))
 }
 
 func (UnimplementedUsersServiceHandler) DeleteUser(context.Context, *connect_go.Request[v1.DeleteUserRequest]) (*connect_go.Response[v1.DeleteUserResponse], error) {

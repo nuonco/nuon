@@ -7,19 +7,16 @@ import "google/type/datetime.proto";
 message Org {
   string id = 1;
   string name = 2;
-  string slug = 3;
-
-  string owner_id = 4;
-  bool is_new = 5;
-  google.type.DateTime updated_at = 6;
-  google.type.DateTime created_at = 7;
+  string owner_id = 3;
+  google.type.DateTime updated_at = 4;
+  google.type.DateTime created_at = 5;
 }
 
-message GetOrgsByUserRequest {
-  string user_id = 1;
+message GetOrgsByMemberRequest {
+  string member_id = 1;
 }
 
-message GetOrgsByUserResponse {
+message GetOrgsByMemberResponse {
   repeated Org orgs = 1;
 }
 
@@ -51,7 +48,7 @@ message DeleteOrgResponse {
 
 service OrgsService {
   rpc GetOrg(GetOrgRequest) returns (GetOrgResponse) {}
-  rpc GetOrgsByUser(GetOrgsByUserRequest) returns (GetOrgsByUserResponse) {}
+  rpc GetOrgsByMember(GetOrgsByMemberRequest) returns (GetOrgsByMemberResponse) {}
   rpc UpsertOrg(UpsertOrgRequest) returns (UpsertOrgResponse) {}
   rpc DeleteOrg(DeleteOrgRequest) returns (DeleteOrgResponse) {}
 }

@@ -59,9 +59,11 @@ func (m *Deployment) validate(all bool) error {
 
 	// no validation rules for Id
 
-	// no validation rules for ComponentId
+	// no validation rules for CommitHash
 
-	// no validation rules for JobId
+	// no validation rules for CommitAuthor
+
+	// no validation rules for ComponentId
 
 	if all {
 		switch v := interface{}(m.GetUpdatedAt()).(type) {
@@ -433,22 +435,23 @@ var _ interface {
 	ErrorName() string
 } = GetDeploymentResponseValidationError{}
 
-// Validate checks the field values on GetDeploymentsRequest with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, the first error encountered is returned, or nil if there are no violations.
-func (m *GetDeploymentsRequest) Validate() error {
+// Validate checks the field values on GetDeploymentsByComponentsRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *GetDeploymentsByComponentsRequest) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on GetDeploymentsRequest with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, the result is a list of violation errors wrapped in
-// GetDeploymentsRequestMultiError, or nil if none found.
-func (m *GetDeploymentsRequest) ValidateAll() error {
+// ValidateAll checks the field values on GetDeploymentsByComponentsRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// GetDeploymentsByComponentsRequestMultiError, or nil if none found.
+func (m *GetDeploymentsByComponentsRequest) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *GetDeploymentsRequest) validate(all bool) error {
+func (m *GetDeploymentsByComponentsRequest) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -456,19 +459,20 @@ func (m *GetDeploymentsRequest) validate(all bool) error {
 	var errors []error
 
 	if len(errors) > 0 {
-		return GetDeploymentsRequestMultiError(errors)
+		return GetDeploymentsByComponentsRequestMultiError(errors)
 	}
 
 	return nil
 }
 
-// GetDeploymentsRequestMultiError is an error wrapping multiple validation
-// errors returned by GetDeploymentsRequest.ValidateAll() if the designated
+// GetDeploymentsByComponentsRequestMultiError is an error wrapping multiple
+// validation errors returned by
+// GetDeploymentsByComponentsRequest.ValidateAll() if the designated
 // constraints aren't met.
-type GetDeploymentsRequestMultiError []error
+type GetDeploymentsByComponentsRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m GetDeploymentsRequestMultiError) Error() string {
+func (m GetDeploymentsByComponentsRequestMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -477,11 +481,12 @@ func (m GetDeploymentsRequestMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m GetDeploymentsRequestMultiError) AllErrors() []error { return m }
+func (m GetDeploymentsByComponentsRequestMultiError) AllErrors() []error { return m }
 
-// GetDeploymentsRequestValidationError is the validation error returned by
-// GetDeploymentsRequest.Validate if the designated constraints aren't met.
-type GetDeploymentsRequestValidationError struct {
+// GetDeploymentsByComponentsRequestValidationError is the validation error
+// returned by GetDeploymentsByComponentsRequest.Validate if the designated
+// constraints aren't met.
+type GetDeploymentsByComponentsRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -489,24 +494,24 @@ type GetDeploymentsRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e GetDeploymentsRequestValidationError) Field() string { return e.field }
+func (e GetDeploymentsByComponentsRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e GetDeploymentsRequestValidationError) Reason() string { return e.reason }
+func (e GetDeploymentsByComponentsRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e GetDeploymentsRequestValidationError) Cause() error { return e.cause }
+func (e GetDeploymentsByComponentsRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e GetDeploymentsRequestValidationError) Key() bool { return e.key }
+func (e GetDeploymentsByComponentsRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e GetDeploymentsRequestValidationError) ErrorName() string {
-	return "GetDeploymentsRequestValidationError"
+func (e GetDeploymentsByComponentsRequestValidationError) ErrorName() string {
+	return "GetDeploymentsByComponentsRequestValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e GetDeploymentsRequestValidationError) Error() string {
+func (e GetDeploymentsByComponentsRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -518,14 +523,14 @@ func (e GetDeploymentsRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sGetDeploymentsRequest.%s: %s%s",
+		"invalid %sGetDeploymentsByComponentsRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = GetDeploymentsRequestValidationError{}
+var _ error = GetDeploymentsByComponentsRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -533,24 +538,25 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = GetDeploymentsRequestValidationError{}
+} = GetDeploymentsByComponentsRequestValidationError{}
 
-// Validate checks the field values on GetDeploymentsResponse with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, the first error encountered is returned, or nil if there are no violations.
-func (m *GetDeploymentsResponse) Validate() error {
+// Validate checks the field values on GetDeploymentsByComponentsResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *GetDeploymentsByComponentsResponse) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on GetDeploymentsResponse with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, the result is a list of violation errors wrapped in
-// GetDeploymentsResponseMultiError, or nil if none found.
-func (m *GetDeploymentsResponse) ValidateAll() error {
+// ValidateAll checks the field values on GetDeploymentsByComponentsResponse
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// GetDeploymentsByComponentsResponseMultiError, or nil if none found.
+func (m *GetDeploymentsByComponentsResponse) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *GetDeploymentsResponse) validate(all bool) error {
+func (m *GetDeploymentsByComponentsResponse) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -564,7 +570,7 @@ func (m *GetDeploymentsResponse) validate(all bool) error {
 			switch v := interface{}(item).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, GetDeploymentsResponseValidationError{
+					errors = append(errors, GetDeploymentsByComponentsResponseValidationError{
 						field:  fmt.Sprintf("Deployment[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -572,7 +578,7 @@ func (m *GetDeploymentsResponse) validate(all bool) error {
 				}
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
-					errors = append(errors, GetDeploymentsResponseValidationError{
+					errors = append(errors, GetDeploymentsByComponentsResponseValidationError{
 						field:  fmt.Sprintf("Deployment[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -581,7 +587,7 @@ func (m *GetDeploymentsResponse) validate(all bool) error {
 			}
 		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
-				return GetDeploymentsResponseValidationError{
+				return GetDeploymentsByComponentsResponseValidationError{
 					field:  fmt.Sprintf("Deployment[%v]", idx),
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -592,19 +598,20 @@ func (m *GetDeploymentsResponse) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return GetDeploymentsResponseMultiError(errors)
+		return GetDeploymentsByComponentsResponseMultiError(errors)
 	}
 
 	return nil
 }
 
-// GetDeploymentsResponseMultiError is an error wrapping multiple validation
-// errors returned by GetDeploymentsResponse.ValidateAll() if the designated
+// GetDeploymentsByComponentsResponseMultiError is an error wrapping multiple
+// validation errors returned by
+// GetDeploymentsByComponentsResponse.ValidateAll() if the designated
 // constraints aren't met.
-type GetDeploymentsResponseMultiError []error
+type GetDeploymentsByComponentsResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m GetDeploymentsResponseMultiError) Error() string {
+func (m GetDeploymentsByComponentsResponseMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -613,11 +620,12 @@ func (m GetDeploymentsResponseMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m GetDeploymentsResponseMultiError) AllErrors() []error { return m }
+func (m GetDeploymentsByComponentsResponseMultiError) AllErrors() []error { return m }
 
-// GetDeploymentsResponseValidationError is the validation error returned by
-// GetDeploymentsResponse.Validate if the designated constraints aren't met.
-type GetDeploymentsResponseValidationError struct {
+// GetDeploymentsByComponentsResponseValidationError is the validation error
+// returned by GetDeploymentsByComponentsResponse.Validate if the designated
+// constraints aren't met.
+type GetDeploymentsByComponentsResponseValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -625,24 +633,24 @@ type GetDeploymentsResponseValidationError struct {
 }
 
 // Field function returns field value.
-func (e GetDeploymentsResponseValidationError) Field() string { return e.field }
+func (e GetDeploymentsByComponentsResponseValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e GetDeploymentsResponseValidationError) Reason() string { return e.reason }
+func (e GetDeploymentsByComponentsResponseValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e GetDeploymentsResponseValidationError) Cause() error { return e.cause }
+func (e GetDeploymentsByComponentsResponseValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e GetDeploymentsResponseValidationError) Key() bool { return e.key }
+func (e GetDeploymentsByComponentsResponseValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e GetDeploymentsResponseValidationError) ErrorName() string {
-	return "GetDeploymentsResponseValidationError"
+func (e GetDeploymentsByComponentsResponseValidationError) ErrorName() string {
+	return "GetDeploymentsByComponentsResponseValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e GetDeploymentsResponseValidationError) Error() string {
+func (e GetDeploymentsByComponentsResponseValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -654,14 +662,14 @@ func (e GetDeploymentsResponseValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sGetDeploymentsResponse.%s: %s%s",
+		"invalid %sGetDeploymentsByComponentsResponse.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = GetDeploymentsResponseValidationError{}
+var _ error = GetDeploymentsByComponentsResponseValidationError{}
 
 var _ interface {
 	Field() string
@@ -669,7 +677,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = GetDeploymentsResponseValidationError{}
+} = GetDeploymentsByComponentsResponseValidationError{}
 
 // Validate checks the field values on CreateDeploymentRequest with the rules
 // defined in the proto definition for this message. If any rules are

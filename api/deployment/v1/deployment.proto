@@ -6,11 +6,12 @@ import "google/type/datetime.proto";
 
 message Deployment {
   string id = 1;
-  string component_id = 2;
-  repeated string install_ids = 3;
-  string job_id = 4;
-  google.type.DateTime updated_at = 5;
-  google.type.DateTime created_at = 6;
+  string commit_hash = 2;
+  string commit_author = 3;
+  string component_id = 4;
+  repeated string install_ids = 5;
+  google.type.DateTime updated_at = 6;
+  google.type.DateTime created_at = 7;
 }
 
 message GetDeploymentRequest {
@@ -21,11 +22,11 @@ message GetDeploymentResponse {
   Deployment deployment = 1;
 }
 
-message GetDeploymentsRequest {
+message GetDeploymentsByComponentsRequest {
   repeated string component_ids = 1;
 }
 
-message GetDeploymentsResponse {
+message GetDeploymentsByComponentsResponse {
   repeated Deployment deployment = 1;
 }
 
@@ -39,6 +40,6 @@ message CreateDeploymentResponse {
 
 service DeploymentsService {
   rpc GetDeployment(GetDeploymentRequest) returns (GetDeploymentResponse) {}
-  rpc GetDeployments(GetDeploymentsRequest) returns (GetDeploymentsResponse) {}
+  rpc GetDeploymentsByComponents(GetDeploymentsByComponentsRequest) returns (GetDeploymentsByComponentsResponse) {}
   rpc CreateDeployment(CreateDeploymentRequest) returns (CreateDeploymentResponse) {}
 }

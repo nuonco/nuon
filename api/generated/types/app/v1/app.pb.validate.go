@@ -60,8 +60,6 @@ func (m *App) validate(all bool) error {
 
 	// no validation rules for Name
 
-	// no validation rules for Slug
-
 	// no validation rules for GithubInstallId
 
 	// no validation rules for OrgId
@@ -432,22 +430,22 @@ var _ interface {
 	ErrorName() string
 } = GetAppResponseValidationError{}
 
-// Validate checks the field values on GetAppsRequest with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *GetAppsRequest) Validate() error {
+// Validate checks the field values on GetAppsByOrgRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetAppsByOrgRequest) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on GetAppsRequest with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in GetAppsRequestMultiError,
-// or nil if none found.
-func (m *GetAppsRequest) ValidateAll() error {
+// ValidateAll checks the field values on GetAppsByOrgRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetAppsByOrgRequestMultiError, or nil if none found.
+func (m *GetAppsByOrgRequest) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *GetAppsRequest) validate(all bool) error {
+func (m *GetAppsByOrgRequest) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -457,19 +455,19 @@ func (m *GetAppsRequest) validate(all bool) error {
 	// no validation rules for OrgId
 
 	if len(errors) > 0 {
-		return GetAppsRequestMultiError(errors)
+		return GetAppsByOrgRequestMultiError(errors)
 	}
 
 	return nil
 }
 
-// GetAppsRequestMultiError is an error wrapping multiple validation errors
-// returned by GetAppsRequest.ValidateAll() if the designated constraints
-// aren't met.
-type GetAppsRequestMultiError []error
+// GetAppsByOrgRequestMultiError is an error wrapping multiple validation
+// errors returned by GetAppsByOrgRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetAppsByOrgRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m GetAppsRequestMultiError) Error() string {
+func (m GetAppsByOrgRequestMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -478,11 +476,11 @@ func (m GetAppsRequestMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m GetAppsRequestMultiError) AllErrors() []error { return m }
+func (m GetAppsByOrgRequestMultiError) AllErrors() []error { return m }
 
-// GetAppsRequestValidationError is the validation error returned by
-// GetAppsRequest.Validate if the designated constraints aren't met.
-type GetAppsRequestValidationError struct {
+// GetAppsByOrgRequestValidationError is the validation error returned by
+// GetAppsByOrgRequest.Validate if the designated constraints aren't met.
+type GetAppsByOrgRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -490,22 +488,24 @@ type GetAppsRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e GetAppsRequestValidationError) Field() string { return e.field }
+func (e GetAppsByOrgRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e GetAppsRequestValidationError) Reason() string { return e.reason }
+func (e GetAppsByOrgRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e GetAppsRequestValidationError) Cause() error { return e.cause }
+func (e GetAppsByOrgRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e GetAppsRequestValidationError) Key() bool { return e.key }
+func (e GetAppsByOrgRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e GetAppsRequestValidationError) ErrorName() string { return "GetAppsRequestValidationError" }
+func (e GetAppsByOrgRequestValidationError) ErrorName() string {
+	return "GetAppsByOrgRequestValidationError"
+}
 
 // Error satisfies the builtin error interface
-func (e GetAppsRequestValidationError) Error() string {
+func (e GetAppsByOrgRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -517,14 +517,14 @@ func (e GetAppsRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sGetAppsRequest.%s: %s%s",
+		"invalid %sGetAppsByOrgRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = GetAppsRequestValidationError{}
+var _ error = GetAppsByOrgRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -532,24 +532,24 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = GetAppsRequestValidationError{}
+} = GetAppsByOrgRequestValidationError{}
 
-// Validate checks the field values on GetAppsResponse with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// first error encountered is returned, or nil if there are no violations.
-func (m *GetAppsResponse) Validate() error {
+// Validate checks the field values on GetAppsByOrgResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetAppsByOrgResponse) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on GetAppsResponse with the rules
+// ValidateAll checks the field values on GetAppsByOrgResponse with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// GetAppsResponseMultiError, or nil if none found.
-func (m *GetAppsResponse) ValidateAll() error {
+// GetAppsByOrgResponseMultiError, or nil if none found.
+func (m *GetAppsByOrgResponse) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *GetAppsResponse) validate(all bool) error {
+func (m *GetAppsByOrgResponse) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -563,7 +563,7 @@ func (m *GetAppsResponse) validate(all bool) error {
 			switch v := interface{}(item).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, GetAppsResponseValidationError{
+					errors = append(errors, GetAppsByOrgResponseValidationError{
 						field:  fmt.Sprintf("Apps[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -571,7 +571,7 @@ func (m *GetAppsResponse) validate(all bool) error {
 				}
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
-					errors = append(errors, GetAppsResponseValidationError{
+					errors = append(errors, GetAppsByOrgResponseValidationError{
 						field:  fmt.Sprintf("Apps[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -580,7 +580,7 @@ func (m *GetAppsResponse) validate(all bool) error {
 			}
 		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
-				return GetAppsResponseValidationError{
+				return GetAppsByOrgResponseValidationError{
 					field:  fmt.Sprintf("Apps[%v]", idx),
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -591,19 +591,19 @@ func (m *GetAppsResponse) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return GetAppsResponseMultiError(errors)
+		return GetAppsByOrgResponseMultiError(errors)
 	}
 
 	return nil
 }
 
-// GetAppsResponseMultiError is an error wrapping multiple validation errors
-// returned by GetAppsResponse.ValidateAll() if the designated constraints
-// aren't met.
-type GetAppsResponseMultiError []error
+// GetAppsByOrgResponseMultiError is an error wrapping multiple validation
+// errors returned by GetAppsByOrgResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetAppsByOrgResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m GetAppsResponseMultiError) Error() string {
+func (m GetAppsByOrgResponseMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -612,11 +612,11 @@ func (m GetAppsResponseMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m GetAppsResponseMultiError) AllErrors() []error { return m }
+func (m GetAppsByOrgResponseMultiError) AllErrors() []error { return m }
 
-// GetAppsResponseValidationError is the validation error returned by
-// GetAppsResponse.Validate if the designated constraints aren't met.
-type GetAppsResponseValidationError struct {
+// GetAppsByOrgResponseValidationError is the validation error returned by
+// GetAppsByOrgResponse.Validate if the designated constraints aren't met.
+type GetAppsByOrgResponseValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -624,22 +624,24 @@ type GetAppsResponseValidationError struct {
 }
 
 // Field function returns field value.
-func (e GetAppsResponseValidationError) Field() string { return e.field }
+func (e GetAppsByOrgResponseValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e GetAppsResponseValidationError) Reason() string { return e.reason }
+func (e GetAppsByOrgResponseValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e GetAppsResponseValidationError) Cause() error { return e.cause }
+func (e GetAppsByOrgResponseValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e GetAppsResponseValidationError) Key() bool { return e.key }
+func (e GetAppsByOrgResponseValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e GetAppsResponseValidationError) ErrorName() string { return "GetAppsResponseValidationError" }
+func (e GetAppsByOrgResponseValidationError) ErrorName() string {
+	return "GetAppsByOrgResponseValidationError"
+}
 
 // Error satisfies the builtin error interface
-func (e GetAppsResponseValidationError) Error() string {
+func (e GetAppsByOrgResponseValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -651,14 +653,14 @@ func (e GetAppsResponseValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sGetAppsResponse.%s: %s%s",
+		"invalid %sGetAppsByOrgResponse.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = GetAppsResponseValidationError{}
+var _ error = GetAppsByOrgResponseValidationError{}
 
 var _ interface {
 	Field() string
@@ -666,7 +668,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = GetAppsResponseValidationError{}
+} = GetAppsByOrgResponseValidationError{}
 
 // Validate checks the field values on DeleteAppRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the
@@ -690,7 +692,7 @@ func (m *DeleteAppRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for OrgId
+	// no validation rules for AppId
 
 	if len(errors) > 0 {
 		return DeleteAppRequestMultiError(errors)
@@ -1032,8 +1034,6 @@ func (m *UpsertAppResponse) validate(all bool) error {
 			}
 		}
 	}
-
-	// no validation rules for IsNew
 
 	if len(errors) > 0 {
 		return UpsertAppResponseMultiError(errors)

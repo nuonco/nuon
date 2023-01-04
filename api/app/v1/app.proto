@@ -7,11 +7,10 @@ import "google/type/datetime.proto";
 message App {
   string id = 1;
   string name = 2;
-  string slug = 3;
-  string github_install_id = 4;
-  string org_id = 5;
-  google.type.DateTime created_at = 6;
-  google.type.DateTime updated_at = 7;
+  string github_install_id = 3;
+  string org_id = 4;
+  google.type.DateTime created_at = 5;
+  google.type.DateTime updated_at = 6;
 }
 
 message GetAppRequest {
@@ -22,16 +21,16 @@ message GetAppResponse {
   App app = 1;
 }
 
-message GetAppsRequest {
+message GetAppsByOrgRequest {
   string org_id = 1;
 }
 
-message GetAppsResponse {
+message GetAppsByOrgResponse {
   repeated App apps = 1;
 }
 
 message DeleteAppRequest {
-  string org_id = 1;
+  string app_id = 1;
 }
 
 message DeleteAppResponse {
@@ -47,12 +46,11 @@ message UpsertAppRequest {
 
 message UpsertAppResponse {
   App app = 1;
-  bool is_new = 2;
 }
 
 service AppsService {
   rpc GetApp(GetAppRequest) returns (GetAppResponse) {}
-  rpc GetApps(GetAppsRequest) returns (GetAppsResponse) {}
+  rpc GetAppsByOrg(GetAppsByOrgRequest) returns (GetAppsByOrgResponse) {}
   rpc DeleteApp(DeleteAppRequest) returns (DeleteAppResponse) {}
   rpc UpsertApp(UpsertAppRequest) returns (UpsertAppResponse) {}
 }

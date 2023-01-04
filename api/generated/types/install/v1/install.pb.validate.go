@@ -306,10 +306,6 @@ func (m *AwsSettings) validate(all bool) error {
 
 	// no validation rules for Region
 
-	// no validation rules for AccountId
-
-	// no validation rules for NotificationsUrl
-
 	// no validation rules for Role
 
 	if len(errors) > 0 {
@@ -725,22 +721,22 @@ var _ interface {
 	ErrorName() string
 } = GetInstallResponseValidationError{}
 
-// Validate checks the field values on GetInstallsRequest with the rules
+// Validate checks the field values on GetInstallsByAppRequest with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
-func (m *GetInstallsRequest) Validate() error {
+func (m *GetInstallsByAppRequest) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on GetInstallsRequest with the rules
-// defined in the proto definition for this message. If any rules are
+// ValidateAll checks the field values on GetInstallsByAppRequest with the
+// rules defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// GetInstallsRequestMultiError, or nil if none found.
-func (m *GetInstallsRequest) ValidateAll() error {
+// GetInstallsByAppRequestMultiError, or nil if none found.
+func (m *GetInstallsByAppRequest) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *GetInstallsRequest) validate(all bool) error {
+func (m *GetInstallsByAppRequest) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -750,19 +746,19 @@ func (m *GetInstallsRequest) validate(all bool) error {
 	// no validation rules for AppId
 
 	if len(errors) > 0 {
-		return GetInstallsRequestMultiError(errors)
+		return GetInstallsByAppRequestMultiError(errors)
 	}
 
 	return nil
 }
 
-// GetInstallsRequestMultiError is an error wrapping multiple validation errors
-// returned by GetInstallsRequest.ValidateAll() if the designated constraints
-// aren't met.
-type GetInstallsRequestMultiError []error
+// GetInstallsByAppRequestMultiError is an error wrapping multiple validation
+// errors returned by GetInstallsByAppRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetInstallsByAppRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m GetInstallsRequestMultiError) Error() string {
+func (m GetInstallsByAppRequestMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -771,11 +767,11 @@ func (m GetInstallsRequestMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m GetInstallsRequestMultiError) AllErrors() []error { return m }
+func (m GetInstallsByAppRequestMultiError) AllErrors() []error { return m }
 
-// GetInstallsRequestValidationError is the validation error returned by
-// GetInstallsRequest.Validate if the designated constraints aren't met.
-type GetInstallsRequestValidationError struct {
+// GetInstallsByAppRequestValidationError is the validation error returned by
+// GetInstallsByAppRequest.Validate if the designated constraints aren't met.
+type GetInstallsByAppRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -783,24 +779,24 @@ type GetInstallsRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e GetInstallsRequestValidationError) Field() string { return e.field }
+func (e GetInstallsByAppRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e GetInstallsRequestValidationError) Reason() string { return e.reason }
+func (e GetInstallsByAppRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e GetInstallsRequestValidationError) Cause() error { return e.cause }
+func (e GetInstallsByAppRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e GetInstallsRequestValidationError) Key() bool { return e.key }
+func (e GetInstallsByAppRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e GetInstallsRequestValidationError) ErrorName() string {
-	return "GetInstallsRequestValidationError"
+func (e GetInstallsByAppRequestValidationError) ErrorName() string {
+	return "GetInstallsByAppRequestValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e GetInstallsRequestValidationError) Error() string {
+func (e GetInstallsByAppRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -812,14 +808,14 @@ func (e GetInstallsRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sGetInstallsRequest.%s: %s%s",
+		"invalid %sGetInstallsByAppRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = GetInstallsRequestValidationError{}
+var _ error = GetInstallsByAppRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -827,24 +823,24 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = GetInstallsRequestValidationError{}
+} = GetInstallsByAppRequestValidationError{}
 
-// Validate checks the field values on GetInstallsResponse with the rules
+// Validate checks the field values on GetInstallsByAppResponse with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
-func (m *GetInstallsResponse) Validate() error {
+func (m *GetInstallsByAppResponse) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on GetInstallsResponse with the rules
-// defined in the proto definition for this message. If any rules are
+// ValidateAll checks the field values on GetInstallsByAppResponse with the
+// rules defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// GetInstallsResponseMultiError, or nil if none found.
-func (m *GetInstallsResponse) ValidateAll() error {
+// GetInstallsByAppResponseMultiError, or nil if none found.
+func (m *GetInstallsByAppResponse) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *GetInstallsResponse) validate(all bool) error {
+func (m *GetInstallsByAppResponse) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -858,7 +854,7 @@ func (m *GetInstallsResponse) validate(all bool) error {
 			switch v := interface{}(item).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, GetInstallsResponseValidationError{
+					errors = append(errors, GetInstallsByAppResponseValidationError{
 						field:  fmt.Sprintf("Installs[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -866,7 +862,7 @@ func (m *GetInstallsResponse) validate(all bool) error {
 				}
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
-					errors = append(errors, GetInstallsResponseValidationError{
+					errors = append(errors, GetInstallsByAppResponseValidationError{
 						field:  fmt.Sprintf("Installs[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -875,7 +871,7 @@ func (m *GetInstallsResponse) validate(all bool) error {
 			}
 		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
-				return GetInstallsResponseValidationError{
+				return GetInstallsByAppResponseValidationError{
 					field:  fmt.Sprintf("Installs[%v]", idx),
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -886,19 +882,19 @@ func (m *GetInstallsResponse) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return GetInstallsResponseMultiError(errors)
+		return GetInstallsByAppResponseMultiError(errors)
 	}
 
 	return nil
 }
 
-// GetInstallsResponseMultiError is an error wrapping multiple validation
-// errors returned by GetInstallsResponse.ValidateAll() if the designated
+// GetInstallsByAppResponseMultiError is an error wrapping multiple validation
+// errors returned by GetInstallsByAppResponse.ValidateAll() if the designated
 // constraints aren't met.
-type GetInstallsResponseMultiError []error
+type GetInstallsByAppResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m GetInstallsResponseMultiError) Error() string {
+func (m GetInstallsByAppResponseMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -907,11 +903,11 @@ func (m GetInstallsResponseMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m GetInstallsResponseMultiError) AllErrors() []error { return m }
+func (m GetInstallsByAppResponseMultiError) AllErrors() []error { return m }
 
-// GetInstallsResponseValidationError is the validation error returned by
-// GetInstallsResponse.Validate if the designated constraints aren't met.
-type GetInstallsResponseValidationError struct {
+// GetInstallsByAppResponseValidationError is the validation error returned by
+// GetInstallsByAppResponse.Validate if the designated constraints aren't met.
+type GetInstallsByAppResponseValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -919,24 +915,24 @@ type GetInstallsResponseValidationError struct {
 }
 
 // Field function returns field value.
-func (e GetInstallsResponseValidationError) Field() string { return e.field }
+func (e GetInstallsByAppResponseValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e GetInstallsResponseValidationError) Reason() string { return e.reason }
+func (e GetInstallsByAppResponseValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e GetInstallsResponseValidationError) Cause() error { return e.cause }
+func (e GetInstallsByAppResponseValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e GetInstallsResponseValidationError) Key() bool { return e.key }
+func (e GetInstallsByAppResponseValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e GetInstallsResponseValidationError) ErrorName() string {
-	return "GetInstallsResponseValidationError"
+func (e GetInstallsByAppResponseValidationError) ErrorName() string {
+	return "GetInstallsByAppResponseValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e GetInstallsResponseValidationError) Error() string {
+func (e GetInstallsByAppResponseValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -948,14 +944,14 @@ func (e GetInstallsResponseValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sGetInstallsResponse.%s: %s%s",
+		"invalid %sGetInstallsByAppResponse.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = GetInstallsResponseValidationError{}
+var _ error = GetInstallsByAppResponseValidationError{}
 
 var _ interface {
 	Field() string
@@ -963,7 +959,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = GetInstallsResponseValidationError{}
+} = GetInstallsByAppResponseValidationError{}
 
 // Validate checks the field values on DeleteInstallRequest with the rules
 // defined in the proto definition for this message. If any rules are

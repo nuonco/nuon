@@ -27,9 +27,7 @@ enum AwsRegion {
 
 message AwsSettings {
   AwsRegion region = 1;
-  string account_id = 2;
-  string notifications_url = 3;
-  string role = 4;
+  string role = 2;
 }
 
 message GcpSettings {
@@ -44,11 +42,11 @@ message GetInstallResponse {
   Install install = 1;
 }
 
-message GetInstallsRequest {
+message GetInstallsByAppRequest {
   string app_id = 1;
 }
 
-message GetInstallsResponse {
+message GetInstallsByAppResponse {
   repeated Install installs = 1;
 }
 
@@ -77,7 +75,7 @@ message UpsertInstallResponse {
 
 service InstallsService {
   rpc GetInstall(GetInstallRequest) returns (GetInstallResponse) {}
-  rpc GetInstalls(GetInstallsRequest) returns (GetInstallsResponse) {}
+  rpc GetInstallsByApp(GetInstallsByAppRequest) returns (GetInstallsByAppResponse) {}
   rpc DeleteInstall(DeleteInstallRequest) returns (DeleteInstallResponse) {}
   rpc UpsertInstall(UpsertInstallRequest) returns (UpsertInstallResponse) {}
 }

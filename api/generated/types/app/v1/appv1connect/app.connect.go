@@ -28,7 +28,7 @@ const (
 // AppsServiceClient is a client for the app.v1.AppsService service.
 type AppsServiceClient interface {
 	GetApp(context.Context, *connect_go.Request[v1.GetAppRequest]) (*connect_go.Response[v1.GetAppResponse], error)
-	GetApps(context.Context, *connect_go.Request[v1.GetAppsRequest]) (*connect_go.Response[v1.GetAppsResponse], error)
+	GetAppsByOrg(context.Context, *connect_go.Request[v1.GetAppsByOrgRequest]) (*connect_go.Response[v1.GetAppsByOrgResponse], error)
 	DeleteApp(context.Context, *connect_go.Request[v1.DeleteAppRequest]) (*connect_go.Response[v1.DeleteAppResponse], error)
 	UpsertApp(context.Context, *connect_go.Request[v1.UpsertAppRequest]) (*connect_go.Response[v1.UpsertAppResponse], error)
 }
@@ -48,9 +48,9 @@ func NewAppsServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+"/app.v1.AppsService/GetApp",
 			opts...,
 		),
-		getApps: connect_go.NewClient[v1.GetAppsRequest, v1.GetAppsResponse](
+		getAppsByOrg: connect_go.NewClient[v1.GetAppsByOrgRequest, v1.GetAppsByOrgResponse](
 			httpClient,
-			baseURL+"/app.v1.AppsService/GetApps",
+			baseURL+"/app.v1.AppsService/GetAppsByOrg",
 			opts...,
 		),
 		deleteApp: connect_go.NewClient[v1.DeleteAppRequest, v1.DeleteAppResponse](
@@ -68,10 +68,10 @@ func NewAppsServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 
 // appsServiceClient implements AppsServiceClient.
 type appsServiceClient struct {
-	getApp    *connect_go.Client[v1.GetAppRequest, v1.GetAppResponse]
-	getApps   *connect_go.Client[v1.GetAppsRequest, v1.GetAppsResponse]
-	deleteApp *connect_go.Client[v1.DeleteAppRequest, v1.DeleteAppResponse]
-	upsertApp *connect_go.Client[v1.UpsertAppRequest, v1.UpsertAppResponse]
+	getApp       *connect_go.Client[v1.GetAppRequest, v1.GetAppResponse]
+	getAppsByOrg *connect_go.Client[v1.GetAppsByOrgRequest, v1.GetAppsByOrgResponse]
+	deleteApp    *connect_go.Client[v1.DeleteAppRequest, v1.DeleteAppResponse]
+	upsertApp    *connect_go.Client[v1.UpsertAppRequest, v1.UpsertAppResponse]
 }
 
 // GetApp calls app.v1.AppsService.GetApp.
@@ -79,9 +79,9 @@ func (c *appsServiceClient) GetApp(ctx context.Context, req *connect_go.Request[
 	return c.getApp.CallUnary(ctx, req)
 }
 
-// GetApps calls app.v1.AppsService.GetApps.
-func (c *appsServiceClient) GetApps(ctx context.Context, req *connect_go.Request[v1.GetAppsRequest]) (*connect_go.Response[v1.GetAppsResponse], error) {
-	return c.getApps.CallUnary(ctx, req)
+// GetAppsByOrg calls app.v1.AppsService.GetAppsByOrg.
+func (c *appsServiceClient) GetAppsByOrg(ctx context.Context, req *connect_go.Request[v1.GetAppsByOrgRequest]) (*connect_go.Response[v1.GetAppsByOrgResponse], error) {
+	return c.getAppsByOrg.CallUnary(ctx, req)
 }
 
 // DeleteApp calls app.v1.AppsService.DeleteApp.
@@ -97,7 +97,7 @@ func (c *appsServiceClient) UpsertApp(ctx context.Context, req *connect_go.Reque
 // AppsServiceHandler is an implementation of the app.v1.AppsService service.
 type AppsServiceHandler interface {
 	GetApp(context.Context, *connect_go.Request[v1.GetAppRequest]) (*connect_go.Response[v1.GetAppResponse], error)
-	GetApps(context.Context, *connect_go.Request[v1.GetAppsRequest]) (*connect_go.Response[v1.GetAppsResponse], error)
+	GetAppsByOrg(context.Context, *connect_go.Request[v1.GetAppsByOrgRequest]) (*connect_go.Response[v1.GetAppsByOrgResponse], error)
 	DeleteApp(context.Context, *connect_go.Request[v1.DeleteAppRequest]) (*connect_go.Response[v1.DeleteAppResponse], error)
 	UpsertApp(context.Context, *connect_go.Request[v1.UpsertAppRequest]) (*connect_go.Response[v1.UpsertAppResponse], error)
 }
@@ -114,9 +114,9 @@ func NewAppsServiceHandler(svc AppsServiceHandler, opts ...connect_go.HandlerOpt
 		svc.GetApp,
 		opts...,
 	))
-	mux.Handle("/app.v1.AppsService/GetApps", connect_go.NewUnaryHandler(
-		"/app.v1.AppsService/GetApps",
-		svc.GetApps,
+	mux.Handle("/app.v1.AppsService/GetAppsByOrg", connect_go.NewUnaryHandler(
+		"/app.v1.AppsService/GetAppsByOrg",
+		svc.GetAppsByOrg,
 		opts...,
 	))
 	mux.Handle("/app.v1.AppsService/DeleteApp", connect_go.NewUnaryHandler(
@@ -139,8 +139,8 @@ func (UnimplementedAppsServiceHandler) GetApp(context.Context, *connect_go.Reque
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("app.v1.AppsService.GetApp is not implemented"))
 }
 
-func (UnimplementedAppsServiceHandler) GetApps(context.Context, *connect_go.Request[v1.GetAppsRequest]) (*connect_go.Response[v1.GetAppsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("app.v1.AppsService.GetApps is not implemented"))
+func (UnimplementedAppsServiceHandler) GetAppsByOrg(context.Context, *connect_go.Request[v1.GetAppsByOrgRequest]) (*connect_go.Response[v1.GetAppsByOrgResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("app.v1.AppsService.GetAppsByOrg is not implemented"))
 }
 
 func (UnimplementedAppsServiceHandler) DeleteApp(context.Context, *connect_go.Request[v1.DeleteAppRequest]) (*connect_go.Response[v1.DeleteAppResponse], error) {
