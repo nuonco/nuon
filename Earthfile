@@ -49,7 +49,7 @@ docker:
     ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
     COPY +build/service /bin/service
-    ENTRYPOINT ["/bin/service", "work"]
+    ENTRYPOINT ["/bin/service"]
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
     LABEL org.opencontainers.image.version=$image_tag
