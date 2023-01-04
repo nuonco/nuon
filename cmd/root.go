@@ -4,14 +4,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
 
 var rootCmd = &cobra.Command{}
-
-var (
-	logger, _ = zap.NewProduction(zap.Fields(zap.String("type", "api")))
-)
 
 //nolint:gochecknoinits
 func init() {
