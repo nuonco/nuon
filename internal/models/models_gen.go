@@ -31,6 +31,11 @@ type Node interface {
 	GetUpdatedAt() time.Time
 }
 
+// Represents version control settings for the component
+type VcsConfig interface {
+	IsVcsConfig()
+}
+
 type AWSSettingsInput struct {
 	Region           AWSRegion `json:"region"`
 	AccountID        string    `json:"accountId"`
@@ -105,6 +110,15 @@ type ComponentInput struct {
 	Name       string        `json:"name"`
 	BuildImage string        `json:"buildImage"`
 	Type       ComponentType `json:"type"`
+	// Github repository is for this component
+	GithubRepo *string `json:"githubRepo"`
+	// Directory path to the container file
+	GithubDir *string `json:"githubDir"`
+	// The Github repository branch for this component
+	GithubBranch *string `json:"githubBranch"`
+	// The owner of the Github repository for this component
+	GithubRepoOwner *string            `json:"githubRepoOwner"`
+	GithubConfig    *GithubConfigInput `json:"githubConfig"`
 }
 
 // Filters returned Connection results
@@ -176,6 +190,13 @@ type DeploymentEdge struct {
 
 type GCPSettingsInput struct {
 	Bogus string `json:"bogus"`
+}
+
+type GithubConfigInput struct {
+	Repo      string  `json:"repo"`
+	Directory *string `json:"directory"`
+	RepoOwner *string `json:"repoOwner"`
+	Branch    *string `json:"branch"`
 }
 
 // An auto-generated type for paginating through multiple Installs
@@ -250,6 +271,27 @@ type PageInfo struct {
 	HasPreviousPage bool `json:"hasPreviousPage"`
 	// The cursor corresponding to the first node in edges
 	StartCursor *string `json:"startCursor"`
+}
+
+type Repo struct {
+	DefaultBranch *string `json:"defaultBranch"`
+	FullName      *string `json:"fullName"`
+	Name          *string `json:"name"`
+	Owner         *string `json:"owner"`
+	URL           *string `json:"url"`
+}
+
+// An auto-generated type for paginating through multiple Installs
+type RepoConnection struct {
+	TotalCount int `json:"totalCount"`
+	// A list of edges
+	Edges []*RepoEdge `json:"edges"`
+}
+
+// An auto-generated type which holds one Install and a cursor during pagination
+type RepoEdge struct {
+	// The item at the end of RepoEdge
+	Node *Repo `json:"node"`
 }
 
 // Operator to filter on String field
@@ -352,17 +394,19 @@ const (
 	ComponentTypePublicImage ComponentType = "PUBLIC_IMAGE"
 	ComponentTypeHelm        ComponentType = "HELM"
 	ComponentTypeTerraform   ComponentType = "TERRAFORM"
+	ComponentTypeGithubRepo  ComponentType = "GITHUB_REPO"
 )
 
 var AllComponentType = []ComponentType{
 	ComponentTypePublicImage,
 	ComponentTypeHelm,
 	ComponentTypeTerraform,
+	ComponentTypeGithubRepo,
 }
 
 func (e ComponentType) IsValid() bool {
 	switch e {
-	case ComponentTypePublicImage, ComponentTypeHelm, ComponentTypeTerraform:
+	case ComponentTypePublicImage, ComponentTypeHelm, ComponentTypeTerraform, ComponentTypeGithubRepo:
 		return true
 	}
 	return false

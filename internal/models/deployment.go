@@ -12,6 +12,9 @@ type Deployment struct {
 
 	ComponentID uuid.UUID
 	Component   Component `fake:"skip"`
+
+	CommitHash   string `json:"commit_hash"`
+	CommitAuthor string `json:"commit_author"`
 }
 
 func (Deployment) IsNode() {}
