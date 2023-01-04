@@ -14,10 +14,16 @@ type Component struct {
 	AppID uuid.UUID
 	App   App `fake:"skip"`
 
-	BuildImage string `json:"container_image_url"`
-	Type       string `json:"type"`
+	BuildImage      string `json:"container_image_url"`
+	Type            string `json:"type"`
+	GithubRepo      string `json:"github_repo"`
+	GithubDir       string `json:"github_dir"`
+	GithubRepoOwner string `json:"github_repo_owner"`
+	GithubBranch    string `json:"github_branch"`
 
-	Deployments []Deployment `fake:"skip"`
+	Deployments  []Deployment  `fake:"skip"`
+	VcsConfig    VcsConfig     `gorm:"-" fake:"skip"`
+	GithubConfig *GithubConfig `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" fake:"skip"`
 }
 
 func (Component) IsNode() {}

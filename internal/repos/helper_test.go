@@ -128,7 +128,12 @@ func testDB(testName string) (*gorm.DB, func()) { //nolint:gocritic //unnamedRes
 }
 
 type repoTestState struct {
-	orgRepo orgRepo
+	appRepo        appRepo
+	installRepo    installRepo
+	userRepo       userRepo
+	orgRepo        orgRepo
+	componentRepo  componentRepo
+	deploymentRepo deploymentRepo
 
 	db         *gorm.DB
 	ctxCloseFn func()
@@ -155,9 +160,14 @@ func execRepoTest(t *testing.T, test repoTest) {
 	defer ctxCloseFn()
 
 	state := repoTestState{
-		db:         db,
-		orgRepo:    NewOrgRepo(db),
-		ctxCloseFn: ctxCloseFn,
+		db:             db,
+		appRepo:        NewAppRepo(db),
+		orgRepo:        NewOrgRepo(db),
+		userRepo:       NewUserRepo(db),
+		installRepo:    NewInstallRepo(db),
+		componentRepo:  NewComponentRepo(db),
+		deploymentRepo: NewDeploymentRepo(db),
+		ctxCloseFn:     ctxCloseFn,
 	}
 
 	test.fn(ctx, state)
