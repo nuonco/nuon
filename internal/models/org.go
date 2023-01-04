@@ -8,14 +8,14 @@ import (
 
 type Org struct {
 	Model
-	CreatedByID uuid.UUID `gorm:"type:uuid" json:"owner_id"`
+	CreatedByID uuid.UUID `gorm:"type:uuid"`
 
 	Slug       string `gorm:"uniqueIndex"`
 	Name       string `gorm:"uniqueIndex"`
-	Users      []User `gorm:"many2many:user_orgs" fake:"skip" json:"-"`
-	Apps       []App  `fake:"skip" json:"-"`
-	WorkflowID string `json:"-"`
-	IsNew      bool   `gorm:"-:all"`
+	Users      []User `gorm:"many2many:user_orgs" fake:"skip"`
+	Apps       []App  `fake:"skip"`
+	WorkflowID string
+	IsNew      bool `gorm:"-:all"`
 }
 
 func (Org) IsNode() {}
