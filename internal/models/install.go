@@ -16,10 +16,10 @@ type Install struct {
 	App   App
 
 	Domain   Domain          // all the domain stuff
-	Settings InstallSettings `gorm:"-" fake:"skip"`
+	Settings InstallSettings `gorm:"-" faker:"-"`
 
-	AWSSettings *AWSSettings `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" fake:"skip"`
-	GCPSettings *GCPSettings `fake:"skip"`
+	AWSSettings *AWSSettings `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" faker:"-"`
+	GCPSettings *GCPSettings `faker:"-"`
 }
 
 func (Install) IsNode() {}

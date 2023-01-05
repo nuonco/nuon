@@ -10,13 +10,14 @@ import (
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/workflows"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAppService_GetApp(t *testing.T) {
 	errGetApp := fmt.Errorf("error getting app")
 	appID := uuid.New()
-	app := getFakeObj[*models.App]()
+	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
 		appID       string
@@ -72,7 +73,7 @@ func TestAppService_GetApp(t *testing.T) {
 func TestAppService_GetAppBySlug(t *testing.T) {
 	errGetApp := fmt.Errorf("error getting app")
 	slug := uuid.NewString()
-	app := getFakeObj[*models.App]()
+	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
 		slug        string
@@ -119,7 +120,7 @@ func TestAppService_GetAppBySlug(t *testing.T) {
 
 func TestAppService_UpsertApp(t *testing.T) {
 	errUpsertApp := fmt.Errorf("error upserting app")
-	app := getFakeObj[*models.App]()
+	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
 		inputFn     func() models.AppInput
@@ -129,7 +130,7 @@ func TestAppService_UpsertApp(t *testing.T) {
 	}{
 		"create a new app": {
 			inputFn: func() models.AppInput {
-				inp := getFakeObj[models.AppInput]()
+				inp := generics.GetFakeObj[models.AppInput]()
 				inp.ID = nil
 				return inp
 			},
@@ -146,8 +147,8 @@ func TestAppService_UpsertApp(t *testing.T) {
 		},
 		"invalid id": {
 			inputFn: func() models.AppInput {
-				inp := getFakeObj[models.AppInput]()
-				inp.ID = toPtr("abc")
+				inp := generics.GetFakeObj[models.AppInput]()
+				inp.ID = generics.ToPtr("abc")
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -160,7 +161,7 @@ func TestAppService_UpsertApp(t *testing.T) {
 		},
 		"upsert error": {
 			inputFn: func() models.AppInput {
-				inp := getFakeObj[models.AppInput]()
+				inp := generics.GetFakeObj[models.AppInput]()
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -175,7 +176,7 @@ func TestAppService_UpsertApp(t *testing.T) {
 		},
 		"error provisioning": {
 			inputFn: func() models.AppInput {
-				inp := getFakeObj[models.AppInput]()
+				inp := generics.GetFakeObj[models.AppInput]()
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -270,7 +271,7 @@ func TestAppService_DeleteApp(t *testing.T) {
 
 func TestAppService_GetAllApps(t *testing.T) {
 	errGetAllApps := fmt.Errorf("error getting all apps")
-	apps := []*models.App{getFakeObj[*models.App]()}
+	apps := []*models.App{generics.GetFakeObj[*models.App]()}
 	opts := &models.ConnectionOptions{}
 
 	tests := map[string]struct {

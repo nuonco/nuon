@@ -7,10 +7,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	appcontext "github.com/powertoolsdev/api/internal/context"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
-	"github.com/powertoolsdev/api/internal/request/middleware"
 	"github.com/powertoolsdev/api/internal/workflows"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -101,7 +102,7 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 func TestOrgService_GetOrg(t *testing.T) {
 	errGetOrg := fmt.Errorf("error getting org")
 	orgID := uuid.New()
-	org := getFakeObj[*models.Org]()
+	org := generics.GetFakeObj[*models.Org]()
 
 	tests := map[string]struct {
 		orgID       string
@@ -157,7 +158,7 @@ func TestOrgService_GetOrg(t *testing.T) {
 func TestOrgService_GetOrgBySlug(t *testing.T) {
 	errGetOrg := fmt.Errorf("error getting org by slug")
 	slug := uuid.New().String()
-	org := getFakeObj[*models.Org]()
+	org := generics.GetFakeObj[*models.Org]()
 
 	tests := map[string]struct {
 		slug        string
@@ -204,9 +205,9 @@ func TestOrgService_GetOrgBySlug(t *testing.T) {
 
 func TestOrgService_UpsertOrg(t *testing.T) {
 	errUpsertOrg := fmt.Errorf("error upserting app")
-	org := getFakeObj[*models.Org]()
+	org := generics.GetFakeObj[*models.Org]()
 	org.IsNew = false
-	user := getFakeObj[*models.User]()
+	user := generics.GetFakeObj[*models.User]()
 
 	tests := map[string]struct {
 		ctxFn       func() context.Context
@@ -219,17 +220,17 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 		"create happy path": {
 			ctxFn: func() context.Context {
 				ctx := context.Background()
-				ctx = context.WithValue(ctx, middleware.UserContext{}, user)
+				ctx = appcontext.WithUser(ctx, user)
 				return ctx
 			},
 			inputFn: func() models.OrgInput {
-				inp := getFakeObj[models.OrgInput]()
+				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = nil
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
 				repo := repos.NewMockOrgRepo(ctl)
-				returnedOrg := getFakeObj[*models.Org]()
+				returnedOrg := generics.GetFakeObj[*models.Org]()
 				returnedOrg.IsNew = true
 				returnedOrg.ID = org.ID
 				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(returnedOrg, nil)
@@ -246,39 +247,15 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 				return mgr
 			},
 		},
-		"no user context": {
-			ctxFn: func() context.Context {
-				ctx := context.Background()
-				return ctx
-			},
-			inputFn: func() models.OrgInput {
-				inp := getFakeObj[models.OrgInput]()
-				inp.ID = nil
-				return inp
-			},
-			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
-				repo := repos.NewMockOrgRepo(ctl)
-				return repo
-			},
-			userRepoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
-				repo := repos.NewMockUserRepo(ctl)
-				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				return mgr
-			},
-			errExpected: errInvalidContext,
-		},
 		"invalid id": {
 			ctxFn: func() context.Context {
 				ctx := context.Background()
-				ctx = context.WithValue(ctx, middleware.UserContext{}, user)
+				ctx = appcontext.WithUser(ctx, user)
 				return ctx
 			},
 			inputFn: func() models.OrgInput {
-				inp := getFakeObj[models.OrgInput]()
-				inp.ID = toPtr("foo")
+				inp := generics.GetFakeObj[models.OrgInput]()
+				inp.ID = generics.ToPtr("foo")
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
@@ -298,17 +275,17 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 		"upsert happy path": {
 			ctxFn: func() context.Context {
 				ctx := context.Background()
-				ctx = context.WithValue(ctx, middleware.UserContext{}, user)
+				ctx = appcontext.WithUser(ctx, user)
 				return ctx
 			},
 			inputFn: func() models.OrgInput {
-				inp := getFakeObj[models.OrgInput]()
-				inp.ID = toPtr(org.ID.String())
+				inp := generics.GetFakeObj[models.OrgInput]()
+				inp.ID = generics.ToPtr(org.ID.String())
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
 				repo := repos.NewMockOrgRepo(ctl)
-				returnedOrg := getFakeObj[*models.Org]()
+				returnedOrg := generics.GetFakeObj[*models.Org]()
 				returnedOrg.IsNew = false
 				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(returnedOrg, nil)
 				return repo
@@ -325,11 +302,11 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 		"repo error": {
 			ctxFn: func() context.Context {
 				ctx := context.Background()
-				ctx = context.WithValue(ctx, middleware.UserContext{}, user)
+				ctx = appcontext.WithUser(ctx, user)
 				return ctx
 			},
 			inputFn: func() models.OrgInput {
-				inp := getFakeObj[models.OrgInput]()
+				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = nil
 				return inp
 			},
@@ -351,17 +328,17 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 		"workflow error": {
 			ctxFn: func() context.Context {
 				ctx := context.Background()
-				ctx = context.WithValue(ctx, middleware.UserContext{}, user)
+				ctx = appcontext.WithUser(ctx, user)
 				return ctx
 			},
 			inputFn: func() models.OrgInput {
-				inp := getFakeObj[models.OrgInput]()
+				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = nil
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
 				repo := repos.NewMockOrgRepo(ctl)
-				returnedOrg := getFakeObj[*models.Org]()
+				returnedOrg := generics.GetFakeObj[*models.Org]()
 				returnedOrg.IsNew = true
 				returnedOrg.ID = org.ID
 				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(returnedOrg, nil)
@@ -385,7 +362,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 		//return ctx
 		//},
 		//inputFn: func() models.OrgInput {
-		//inp := getFakeObj[models.OrgInput]()
+		//inp := generics.GetFakeObj[models.OrgInput]()
 		//inp.ID = nil
 		//return inp
 		//},
@@ -433,7 +410,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 func TestOrgService_UserOrgs(t *testing.T) {
 	errGetUserOrgs := fmt.Errorf("error getting user orgs")
 	userID := uuid.New()
-	org := getFakeObj[*models.Org]()
+	org := generics.GetFakeObj[*models.Org]()
 
 	tests := map[string]struct {
 		userID      string

@@ -12,9 +12,9 @@ import (
 // createUser
 func createUser(ctx context.Context, t *testing.T, state repoTestState, createOrg bool) *models.User {
 	user, err := state.userRepo.Upsert(ctx, &models.User{
-		Email:     fkr.Internet().Email(),
-		FirstName: fkr.Person().FirstName(),
-		LastName:  fkr.Person().LastName(),
+		Email:     uuid.NewString(),
+		FirstName: uuid.NewString(),
+		LastName:  uuid.NewString(),
 	})
 	assert.Nil(t, err)
 	assert.NotNil(t, user)
@@ -39,9 +39,9 @@ func TestUpsertUser(t *testing.T) {
 			desc: "should create a user successfully",
 			fn: func(ctx context.Context, state repoTestState) {
 				userInput := &models.User{
-					Email:     fkr.Internet().Email(),
-					FirstName: fkr.Person().FirstName(),
-					LastName:  fkr.Person().LastName(),
+					Email:     uuid.NewString(),
+					FirstName: uuid.NewString(),
+					LastName:  uuid.NewString(),
 				}
 				user, err := state.userRepo.Upsert(ctx, userInput)
 				assert.Nil(t, err)
@@ -56,8 +56,8 @@ func TestUpsertUser(t *testing.T) {
 
 				user, err := state.userRepo.Upsert(ctx, &models.User{
 					Email:     origUser.Email,
-					FirstName: fkr.Person().FirstName(),
-					LastName:  fkr.Person().LastName(),
+					FirstName: uuid.NewString(),
+					LastName:  uuid.NewString(),
 				})
 				assert.NotNil(t, user)
 				assert.Nil(t, err)
@@ -70,7 +70,7 @@ func TestUpsertUser(t *testing.T) {
 				origUser := createUser(ctx, t, state, false)
 
 				user, err := state.userRepo.Upsert(ctx, &models.User{
-					Email:     fkr.Internet().Email(),
+					Email:     uuid.NewString(),
 					FirstName: origUser.FirstName,
 					LastName:  origUser.LastName,
 				})
@@ -84,9 +84,9 @@ func TestUpsertUser(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
 				_, err := state.userRepo.Upsert(ctx, &models.User{
-					Email:     fkr.Internet().Email(),
-					FirstName: fkr.Person().FirstName(),
-					LastName:  fkr.Person().LastName(),
+					Email:     uuid.NewString(),
+					FirstName: uuid.NewString(),
+					LastName:  uuid.NewString(),
 				})
 				assert.NotNil(t, err)
 			},
@@ -168,7 +168,7 @@ func TestGetUser(t *testing.T) {
 				assert.Nil(t, fetchedUser)
 				assert.NotNil(t, err)
 
-				fetchedUser, err = state.userRepo.GetByEmail(ctx, fkr.Internet().Email())
+				fetchedUser, err = state.userRepo.GetByEmail(ctx, uuid.NewString())
 				assert.Nil(t, fetchedUser)
 				assert.NotNil(t, err)
 			},

@@ -24,8 +24,8 @@ func TestCreateOrg(t *testing.T) {
 			desc: "should create org successfully",
 			fn: func(ctx context.Context, state repoTestState) {
 				orgInput := models.Org{
-					Name: fkr.Company().Name(),
-					Slug: fkr.Internet().Slug(),
+					Name: uuid.NewString(),
+					Slug: uuid.NewString(),
 				}
 
 				org, err := state.orgRepo.Create(ctx, &orgInput)
@@ -38,8 +38,8 @@ func TestCreateOrg(t *testing.T) {
 			desc: "should set isNew properly",
 			fn: func(ctx context.Context, state repoTestState) {
 				orgInput := models.Org{
-					Name: fkr.Company().Name(),
-					Slug: fkr.Internet().Slug(),
+					Name: uuid.NewString(),
+					Slug: uuid.NewString(),
 				}
 				org, err := state.orgRepo.Create(ctx, &orgInput)
 				assert.Nil(t, err)
@@ -55,11 +55,11 @@ func TestCreateOrg(t *testing.T) {
 		{
 			desc: "should error when creating dupe name",
 			fn: func(ctx context.Context, state repoTestState) {
-				name := fkr.Company().Name()
+				name := uuid.NewString()
 
 				_, err := state.orgRepo.Create(ctx, &models.Org{
 					Name: name,
-					Slug: fkr.Internet().Slug(),
+					Slug: uuid.NewString(),
 				})
 				assert.Nil(t, err)
 				org, err := state.orgRepo.Create(ctx, &models.Org{
@@ -74,7 +74,7 @@ func TestCreateOrg(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
 				_, err := state.orgRepo.Create(ctx, &models.Org{
-					Name: fkr.Company().Name(),
+					Name: uuid.NewString(),
 				})
 				assert.NotNil(t, err)
 			},
