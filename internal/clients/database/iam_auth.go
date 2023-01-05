@@ -9,7 +9,7 @@ import (
 )
 
 // FetchIamTokenPassword fetches an iam token which can be used as a password using the default aws credentials provider
-func FetchIamTokenPassword(ctx context.Context, cfg Config) (string, error) {
+func FetchIamTokenPassword(ctx context.Context, cfg database) (string, error) {
 	awsCfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return "", err
