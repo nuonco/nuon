@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/api/internal"
 	connectv1 "github.com/powertoolsdev/protos/api/generated/types/deployment/v1/deploymentv1connect"
 )
 
@@ -37,10 +36,10 @@ func New(opts ...serverOption) (*server, error) {
 
 type serverOption func(*server) error
 
-// WithConfig is a helper which allows us to encapsulate what fields are needed from the config here, while also not
-// _just_ attaching it to the server struct.
-func WithConfig(cfg *internal.Config) serverOption {
+func WithHTTPMux(mux *http.ServeMux) serverOption {
 	return func(s *server) error {
+		path, handler := connectv1.NewDeploymentsServiceHandler(s)
+		mux.Handle(path, handler)
 		return nil
 	}
 }

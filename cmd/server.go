@@ -14,13 +14,6 @@ import (
 	statusserver "github.com/powertoolsdev/api/internal/servers/status"
 	usersserver "github.com/powertoolsdev/api/internal/servers/users"
 	"github.com/powertoolsdev/go-common/config"
-	"github.com/powertoolsdev/protos/api/generated/types/app/v1/appv1connect"
-	"github.com/powertoolsdev/protos/api/generated/types/component/v1/componentv1connect"
-	"github.com/powertoolsdev/protos/api/generated/types/deployment/v1/deploymentv1connect"
-	"github.com/powertoolsdev/protos/api/generated/types/install/v1/installv1connect"
-	"github.com/powertoolsdev/protos/api/generated/types/org/v1/orgv1connect"
-	"github.com/powertoolsdev/protos/api/generated/types/status/v1/statusv1connect"
-	"github.com/powertoolsdev/protos/api/generated/types/user/v1/userv1connect"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
@@ -50,59 +43,45 @@ func registerLoadbalancerHealthCheck(mux *http.ServeMux) {
 
 // registerStatusServer registers the status service handler on the provided mux
 func registerStatusServer(mux *http.ServeMux, cfg *internal.Config) error {
-	srv, err := statusserver.New(statusserver.WithConfig(cfg))
+	_, err := statusserver.New(statusserver.WithConfig(cfg), statusserver.WithHTTPMux(mux))
 	if err != nil {
 		return fmt.Errorf("unable to initialize status server: %w", err)
 	}
 
-	path, handler := statusv1connect.NewStatusServiceHandler(srv)
-	mux.Handle(path, handler)
 	return nil
 }
 
 // registerPrimaryServers registers each domain's server
-func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config) error {
-	appSrv, err := appsserver.New(appsserver.WithConfig(cfg))
+func registerPrimaryServers(mux *http.ServeMux, _ *internal.Config) error {
+	_, err := appsserver.New(appsserver.WithHTTPMux(mux))
 	if err != nil {
 		return fmt.Errorf("unable to initialize apps server: %w", err)
 	}
-	path, handler := appv1connect.NewAppsServiceHandler(appSrv)
-	mux.Handle(path, handler)
 
-	componentsSrv, err := componentsserver.New(componentsserver.WithConfig(cfg))
+	_, err = componentsserver.New(componentsserver.WithHTTPMux(mux))
 	if err != nil {
 		return fmt.Errorf("unable to initialize components server: %w", err)
 	}
-	path, handler = componentv1connect.NewComponentsServiceHandler(componentsSrv)
-	mux.Handle(path, handler)
 
-	deploymentsSrv, err := deploymentsserver.New(deploymentsserver.WithConfig(cfg))
+	_, err = deploymentsserver.New(deploymentsserver.WithHTTPMux(mux))
 	if err != nil {
 		return fmt.Errorf("unable to initialize deployments server: %w", err)
 	}
-	path, handler = deploymentv1connect.NewDeploymentsServiceHandler(deploymentsSrv)
-	mux.Handle(path, handler)
 
-	installsSrv, err := installsserver.New(installsserver.WithConfig(cfg))
+	_, err = installsserver.New(installsserver.WithHTTPMux(mux))
 	if err != nil {
 		return fmt.Errorf("unable to initialize installs server: %w", err)
 	}
-	path, handler = installv1connect.NewInstallsServiceHandler(installsSrv)
-	mux.Handle(path, handler)
 
-	orgsSrv, err := orgsserver.New(orgsserver.WithConfig(cfg))
+	_, err = orgsserver.New(orgsserver.WithHTTPMux(mux))
 	if err != nil {
 		return fmt.Errorf("unable to initialize orgs server: %w", err)
 	}
-	path, handler = orgv1connect.NewOrgsServiceHandler(orgsSrv)
-	mux.Handle(path, handler)
 
-	usersSrv, err := usersserver.New(usersserver.WithConfig(cfg))
+	_, err = usersserver.New(usersserver.WithHTTPMux(mux))
 	if err != nil {
 		return fmt.Errorf("unable to initialize orgs server: %w", err)
 	}
-	path, handler = userv1connect.NewUsersServiceHandler(usersSrv)
-	mux.Handle(path, handler)
 
 	return nil
 }
