@@ -5,10 +5,12 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/api/internal/services"
 	connectv1 "github.com/powertoolsdev/protos/api/generated/types/component/v1/componentv1connect"
 )
 
 type server struct {
+	Svc services.ComponentService `validate:"required"`
 }
 
 var _ connectv1.ComponentsServiceHandler = (*server)(nil)
@@ -40,6 +42,13 @@ func WithHTTPMux(mux *http.ServeMux) serverOption {
 	return func(s *server) error {
 		path, handler := connectv1.NewComponentsServiceHandler(s)
 		mux.Handle(path, handler)
+		return nil
+	}
+}
+
+func WithService(svc services.ComponentService) serverOption {
+	return func(s *server) error {
+		s.Svc = svc
 		return nil
 	}
 }
