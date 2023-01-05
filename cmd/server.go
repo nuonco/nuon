@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/powertoolsdev/api/internal"
+	databaseclient "github.com/powertoolsdev/api/internal/clients/database"
+	temporalclient "github.com/powertoolsdev/api/internal/clients/temporal"
 	appsserver "github.com/powertoolsdev/api/internal/servers/apps"
 	componentsserver "github.com/powertoolsdev/api/internal/servers/components"
 	deploymentsserver "github.com/powertoolsdev/api/internal/servers/deployments"
@@ -13,6 +15,7 @@ import (
 	orgsserver "github.com/powertoolsdev/api/internal/servers/orgs"
 	statusserver "github.com/powertoolsdev/api/internal/servers/status"
 	usersserver "github.com/powertoolsdev/api/internal/servers/users"
+	"github.com/powertoolsdev/api/internal/services"
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -52,8 +55,20 @@ func registerStatusServer(mux *http.ServeMux, cfg *internal.Config) error {
 }
 
 // registerPrimaryServers registers each domain's server
-func registerPrimaryServers(mux *http.ServeMux, _ *internal.Config) error {
-	_, err := appsserver.New(appsserver.WithHTTPMux(mux))
+func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config) error {
+	db, err := databaseclient.New(databaseclient.WithConfig(cfg))
+	if err != nil {
+		return fmt.Errorf("unable to create database client: %w", err)
+	}
+
+	tc, err := temporalclient.New(temporalclient.WithConfig(cfg))
+	if err != nil {
+		return fmt.Errorf("unable to create temporal client: %w", err)
+	}
+
+	// TODO(jm): update this once we've changed the exposed interfaces from `services`
+	appSvc := services.NewAppService(db, tc)
+	_, err = appsserver.New(appsserver.WithHTTPMux(mux), appsserver.WithService(*appSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize apps server: %w", err)
 	}

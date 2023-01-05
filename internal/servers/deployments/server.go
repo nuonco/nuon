@@ -5,10 +5,12 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/api/internal/services"
 	connectv1 "github.com/powertoolsdev/protos/api/generated/types/deployment/v1/deploymentv1connect"
 )
 
 type server struct {
+	Svc services.DeploymentService `validate:"required"`
 }
 
 var _ connectv1.DeploymentsServiceHandler = (*server)(nil)
@@ -40,6 +42,13 @@ func WithHTTPMux(mux *http.ServeMux) serverOption {
 	return func(s *server) error {
 		path, handler := connectv1.NewDeploymentsServiceHandler(s)
 		mux.Handle(path, handler)
+		return nil
+	}
+}
+
+func WithService(svc services.DeploymentService) serverOption {
+	return func(s *server) error {
+		s.Svc = svc
 		return nil
 	}
 }

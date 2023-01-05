@@ -5,18 +5,15 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/api/internal/services"
 	connectv1 "github.com/powertoolsdev/protos/api/generated/types/org/v1/orgv1connect"
 )
 
 type server struct {
+	Svc services.OrgService
 }
 
 var _ connectv1.OrgsServiceHandler = (*server)(nil)
-
-func NewHandler() (string, http.Handler) {
-	srv := &server{}
-	return connectv1.NewOrgsServiceHandler(srv)
-}
 
 func New(opts ...serverOption) (*server, error) {
 	srv := &server{}
@@ -40,6 +37,13 @@ func WithHTTPMux(mux *http.ServeMux) serverOption {
 	return func(s *server) error {
 		path, handler := connectv1.NewOrgsServiceHandler(s)
 		mux.Handle(path, handler)
+		return nil
+	}
+}
+
+func WithService(svc services.OrgService) serverOption {
+	return func(s *server) error {
+		s.Svc = svc
 		return nil
 	}
 }
