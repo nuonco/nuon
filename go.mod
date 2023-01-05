@@ -23,7 +23,7 @@ require (
 	github.com/migueleliasweb/go-github-mock v0.0.13
 	github.com/pkg/errors v0.9.1
 	github.com/powertoolsdev/go-common v1.1.17
-	github.com/powertoolsdev/protos v0.31.0
+	github.com/powertoolsdev/protos v0.32.0
 	github.com/raphaelvigee/go-paginate v1.0.6
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
