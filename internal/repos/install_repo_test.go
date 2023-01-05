@@ -16,7 +16,7 @@ func createInstall(ctx context.Context, t *testing.T, state repoTestState) *mode
 	assert.Nil(t, err)
 
 	install, err := state.installRepo.Create(ctx, &models.Install{
-		Name:        fkr.App().Name(),
+		Name:        uuid.NewString(),
 		CreatedByID: users[0].ID,
 		AppID:       app.ID,
 		AWSSettings: &models.AWSSettings{
@@ -38,7 +38,7 @@ func TestUpsertInstall(t *testing.T) {
 				assert.Nil(t, err)
 
 				installInput := &models.Install{
-					Name:        fkr.App().Name(),
+					Name:        uuid.NewString(),
 					CreatedByID: users[0].ID,
 					AppID:       app.ID,
 				}

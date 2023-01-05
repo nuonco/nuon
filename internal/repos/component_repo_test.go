@@ -15,7 +15,7 @@ func createComponent(ctx context.Context, t *testing.T, state repoTestState) *mo
 	app := createApp(ctx, t, state)
 
 	component, err := state.componentRepo.Create(ctx, &models.Component{
-		Name:       fkr.App().Name(),
+		Name:       uuid.NewString(),
 		AppID:      app.ID,
 		BuildImage: "this-is-the-build-image",
 	})
@@ -32,7 +32,7 @@ func TestUpsertComponent(t *testing.T) {
 				app := createApp(ctx, t, state)
 
 				component, err := state.componentRepo.Create(ctx, &models.Component{
-					Name:       fkr.App().Name(),
+					Name:       uuid.NewString(),
 					AppID:      app.ID,
 					BuildImage: "this-is-the-build-image",
 				})

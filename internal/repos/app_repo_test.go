@@ -14,7 +14,7 @@ func createApp(ctx context.Context, t *testing.T, state repoTestState) *models.A
 	user := createUser(ctx, t, state, true)
 
 	app, err := state.appRepo.Upsert(ctx, &models.App{
-		Name:        fkr.App().Name(),
+		Name:        uuid.NewString(),
 		CreatedByID: user.ID,
 		OrgID:       user.Orgs[0].ID,
 	})
@@ -31,7 +31,7 @@ func TestUpsertApp(t *testing.T) {
 				user := createUser(ctx, t, state, true)
 
 				appInput := &models.App{
-					Name:        fkr.App().Name(),
+					Name:        uuid.NewString(),
 					CreatedByID: user.ID,
 					OrgID:       user.Orgs[0].ID,
 				}

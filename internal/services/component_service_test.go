@@ -10,12 +10,13 @@ import (
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/utils"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestComponentService_UpsertComponent(t *testing.T) {
 	errUpsertComponent := fmt.Errorf("error upserting component")
-	component := getFakeObj[*models.Component]()
+	component := generics.GetFakeObj[*models.Component]()
 
 	tests := map[string]struct {
 		inputFn     func() models.ComponentInput
@@ -24,7 +25,7 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 	}{
 		"create a new component": {
 			inputFn: func() models.ComponentInput {
-				inp := getFakeObj[models.ComponentInput]()
+				inp := generics.GetFakeObj[models.ComponentInput]()
 				inp.ID = nil
 				return inp
 			},
@@ -36,8 +37,8 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 		},
 		"upsert invalid id": {
 			inputFn: func() models.ComponentInput {
-				inp := getFakeObj[models.ComponentInput]()
-				inp.ID = toPtr("abc")
+				inp := generics.GetFakeObj[models.ComponentInput]()
+				inp.ID = generics.ToPtr("abc")
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
@@ -47,8 +48,8 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 		},
 		"upsert not found": {
 			inputFn: func() models.ComponentInput {
-				inp := getFakeObj[models.ComponentInput]()
-				inp.ID = toPtr(component.ID.String())
+				inp := generics.GetFakeObj[models.ComponentInput]()
+				inp.ID = generics.ToPtr(component.ID.String())
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
@@ -60,8 +61,8 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 		},
 		"upsert happy path": {
 			inputFn: func() models.ComponentInput {
-				inp := getFakeObj[models.ComponentInput]()
-				inp.ID = toPtr(component.ID.String())
+				inp := generics.GetFakeObj[models.ComponentInput]()
+				inp.ID = generics.ToPtr(component.ID.String())
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
@@ -97,7 +98,7 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 func TestComponentService_GetAppComponents(t *testing.T) {
 	errGetAppComponents := fmt.Errorf("error getting app components")
 	componentID := uuid.New()
-	component := getFakeObj[*models.Component]()
+	component := generics.GetFakeObj[*models.Component]()
 
 	tests := map[string]struct {
 		componentID string
@@ -154,7 +155,7 @@ func TestComponentService_GetAppComponents(t *testing.T) {
 func TestComponentService_GetComponent(t *testing.T) {
 	errGetComponent := fmt.Errorf("error getting component")
 	componentID := uuid.New()
-	component := getFakeObj[*models.Component]()
+	component := generics.GetFakeObj[*models.Component]()
 
 	tests := map[string]struct {
 		componentID string

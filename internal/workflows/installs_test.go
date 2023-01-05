@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/go-generics"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -14,8 +15,8 @@ import (
 
 func Test_installWorkflowManager_Provision(t *testing.T) {
 	errInstallProvisionTest := fmt.Errorf("error")
-	install := getFakeObj[*models.Install]()
-	install.AWSSettings = getFakeObj[*models.AWSSettings]()
+	install := generics.GetFakeObj[*models.Install]()
+	install.AWSSettings = generics.GetFakeObj[*models.AWSSettings]()
 
 	orgID := uuid.NewString()
 
@@ -78,8 +79,8 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 
 func Test_installWorkflowManager_Deprovision(t *testing.T) {
 	errInstallProvisionTest := fmt.Errorf("error")
-	install := getFakeObj[*models.Install]()
-	install.AWSSettings = getFakeObj[*models.AWSSettings]()
+	install := generics.GetFakeObj[*models.Install]()
+	install.AWSSettings = generics.GetFakeObj[*models.AWSSettings]()
 
 	orgID := uuid.NewString()
 

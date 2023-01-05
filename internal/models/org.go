@@ -12,8 +12,8 @@ type Org struct {
 
 	Slug       string `gorm:"uniqueIndex"`
 	Name       string `gorm:"uniqueIndex"`
-	Users      []User `gorm:"many2many:user_orgs" fake:"skip"`
-	Apps       []App  `fake:"skip"`
+	Users      []User `gorm:"many2many:user_orgs" faker:"-"`
+	Apps       []App  `faker:"-"`
 	WorkflowID string
 	IsNew      bool `gorm:"-:all"`
 }

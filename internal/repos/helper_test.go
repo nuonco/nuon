@@ -6,13 +6,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 
-	"github.com/jaswdr/faker"
 	"github.com/powertoolsdev/api/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -20,28 +17,11 @@ import (
 )
 
 var (
-	_db       *gorm.DB
-	fakerSeed string
-	fkr       faker.Faker
+	_db *gorm.DB
 )
-
-func init() { //nolint: gochecknoinits // removing this function will break testing suite currently
-	flag.StringVar(&fakerSeed, "faker_seed", "0", "the seed timestamp for faker")
-}
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	seed, err := strconv.ParseInt(fakerSeed, 10, 64)
-	if err != nil {
-		panic(err)
-	}
-	if seed == 0 {
-		seed = time.Now().Unix()
-	}
-
-	fmt.Printf("Creating faker with seed: %d\n", seed)
-	fkr = faker.NewWithSeed(rand.NewSource(seed))
-
 	exitCode := m.Run()
 	os.Exit(exitCode)
 }

@@ -9,13 +9,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDeploymentService_GetComponentDeployments(t *testing.T) {
 	errGetComponentDeployments := fmt.Errorf("error getting component deployments")
 	componentID := uuid.New()
-	deployment := getFakeObj[*models.Deployment]()
+	deployment := generics.GetFakeObj[*models.Deployment]()
 
 	tests := map[string]struct {
 		componentIDs []string
@@ -72,7 +73,7 @@ func TestDeploymentService_GetComponentDeployments(t *testing.T) {
 func TestDeploymentService_GetDeployment(t *testing.T) {
 	errGetDeployment := fmt.Errorf("error getting app")
 	deploymentID := uuid.New()
-	app := getFakeObj[*models.Deployment]()
+	app := generics.GetFakeObj[*models.Deployment]()
 
 	tests := map[string]struct {
 		deploymentID string

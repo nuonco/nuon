@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/go-generics"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -13,8 +14,8 @@ import (
 
 func Test_deploymentWorkflowManager_Start(t *testing.T) {
 	errDeploymentProvisionTest := fmt.Errorf("error")
-	deployment := getFakeObj[*models.Deployment]()
-	install := getFakeObj[models.Install]()
+	deployment := generics.GetFakeObj[*models.Deployment]()
+	install := generics.GetFakeObj[models.Install]()
 	deployment.Component.App.Installs = []models.Install{install}
 
 	tests := map[string]struct {
