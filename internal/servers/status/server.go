@@ -46,3 +46,11 @@ func WithConfig(cfg *internal.Config) serverOption {
 		return nil
 	}
 }
+
+func WithHTTPMux(mux *http.ServeMux) serverOption {
+	return func(s *server) error {
+		path, handler := connectv1.NewStatusServiceHandler(s)
+		mux.Handle(path, handler)
+		return nil
+	}
+}
