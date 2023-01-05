@@ -12,7 +12,7 @@ type Component struct {
 
 	Name  string
 	AppID uuid.UUID
-	App   App `fake:"skip"`
+	App   App `faker:"-"`
 
 	BuildImage      string `json:"container_image_url"`
 	Type            string `json:"type"`
@@ -21,9 +21,9 @@ type Component struct {
 	GithubRepoOwner string `json:"github_repo_owner"`
 	GithubBranch    string `json:"github_branch"`
 
-	Deployments  []Deployment  `fake:"skip"`
-	VcsConfig    VcsConfig     `gorm:"-" fake:"skip"`
-	GithubConfig *GithubConfig `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" fake:"skip"`
+	Deployments  []Deployment  `faker:"-"`
+	VcsConfig    VcsConfig     `gorm:"-" faker:"-"`
+	GithubConfig *GithubConfig `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" faker:"-"`
 }
 
 func (Component) IsNode() {}

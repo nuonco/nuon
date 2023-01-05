@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/utils"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -105,7 +106,7 @@ func TestUserService_UpsertUser(t *testing.T) {
 
 func TestUserService_UpsertUserOrg(t *testing.T) {
 	errUpsertUser := fmt.Errorf("error upserting user")
-	user := getFakeObj[*models.User]()
+	user := generics.GetFakeObj[*models.User]()
 
 	tests := map[string]struct {
 		inputFn     func() models.UserInput
@@ -114,7 +115,7 @@ func TestUserService_UpsertUserOrg(t *testing.T) {
 	}{
 		"create a new app": {
 			inputFn: func() models.UserInput {
-				inp := getFakeObj[models.UserInput]()
+				inp := generics.GetFakeObj[models.UserInput]()
 				inp.ID = nil
 				return inp
 			},
@@ -126,8 +127,8 @@ func TestUserService_UpsertUserOrg(t *testing.T) {
 		},
 		"invalid id": {
 			inputFn: func() models.UserInput {
-				inp := getFakeObj[models.UserInput]()
-				inp.ID = toPtr("abc")
+				inp := generics.GetFakeObj[models.UserInput]()
+				inp.ID = generics.ToPtr("abc")
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
@@ -137,7 +138,7 @@ func TestUserService_UpsertUserOrg(t *testing.T) {
 		},
 		"upsert error": {
 			inputFn: func() models.UserInput {
-				inp := getFakeObj[models.UserInput]()
+				inp := generics.GetFakeObj[models.UserInput]()
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
@@ -171,7 +172,7 @@ func TestUserService_UpsertUserOrg(t *testing.T) {
 func TestUserService_GetOrgUsers(t *testing.T) {
 	errGetOrgUsers := fmt.Errorf("error getting org users")
 	orgID := uuid.New()
-	user := getFakeObj[*models.User]()
+	user := generics.GetFakeObj[*models.User]()
 
 	tests := map[string]struct {
 		orgID       string
@@ -227,7 +228,7 @@ func TestUserService_GetOrgUsers(t *testing.T) {
 func TestUserService_GetUserByEmail(t *testing.T) {
 	errGetUser := fmt.Errorf("error getting user")
 	email := "test@nuon.co"
-	user := getFakeObj[*models.User]()
+	user := generics.GetFakeObj[*models.User]()
 
 	tests := map[string]struct {
 		email       string
@@ -275,7 +276,7 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 func TestUserService_GetUserByExternalID(t *testing.T) {
 	errGetUser := fmt.Errorf("error getting user")
 	externalID := uuid.NewString()
-	user := getFakeObj[*models.User]()
+	user := generics.GetFakeObj[*models.User]()
 
 	tests := map[string]struct {
 		externalID  string
@@ -323,7 +324,7 @@ func TestUserService_GetUserByExternalID(t *testing.T) {
 func TestUserService_GetAllUsers(t *testing.T) {
 	errGetAllUsers := fmt.Errorf("error getting all users")
 	userID := uuid.New()
-	user := getFakeObj[*models.User]()
+	user := generics.GetFakeObj[*models.User]()
 
 	tests := map[string]struct {
 		userID      string
@@ -371,7 +372,7 @@ func TestUserService_GetAllUsers(t *testing.T) {
 func TestUserService_GetUser(t *testing.T) {
 	errGetUser := fmt.Errorf("error getting user")
 	userID := uuid.New()
-	user := getFakeObj[*models.User]()
+	user := generics.GetFakeObj[*models.User]()
 
 	tests := map[string]struct {
 		userID      string

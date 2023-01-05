@@ -15,8 +15,8 @@ type App struct {
 	OrgID           uuid.UUID
 	GithubInstallID string
 
-	Components []Component `fake:"skip"`
-	Installs   []Install   `fake:"skip"`
+	Components []Component `faker:"-"`
+	Installs   []Install   `faker:"-"`
 }
 
 func (App) IsNode() {}

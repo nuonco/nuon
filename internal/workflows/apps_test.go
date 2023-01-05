@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func Test_appWorkflowManager_Provision(t *testing.T) {
 	errAppProvisionTest := fmt.Errorf("error")
-	app := getFakeObj[*models.App]()
+	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
 		clientFn    func() temporalClient

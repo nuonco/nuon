@@ -13,7 +13,7 @@ type User struct {
 	IsAdmin    bool
 	IsNew      bool `gorm:"-:all"`
 
-	Orgs []Org `gorm:"many2many:user_orgs" fake:"skip"`
+	Orgs []Org `gorm:"many2many:user_orgs" faker:"-"`
 }
 
 func (User) IsNode() {}

@@ -21,7 +21,7 @@ type AWSSettings struct {
 
 	InstallID uuid.UUID
 
-	Region           AWSRegion `fake:"skip"`
+	Region           AWSRegion `faker:"-"`
 	IamRoleArn       string
 	AccountID        string
 	NotificationsURL string

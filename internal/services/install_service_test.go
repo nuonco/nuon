@@ -10,13 +10,14 @@ import (
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/workflows"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInstallService_UpsertInstall(t *testing.T) {
 	errUpsertInstall := fmt.Errorf("error upserting install")
-	install := getFakeObj[*models.Install]()
-	app := getFakeObj[*models.App]()
+	install := generics.GetFakeObj[*models.Install]()
+	app := generics.GetFakeObj[*models.App]()
 	fmt.Println(errUpsertInstall)
 
 	tests := map[string]struct {
@@ -28,7 +29,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 	}{
 		"create a new app": {
 			inputFn: func() models.InstallInput {
-				inp := getFakeObj[models.InstallInput]()
+				inp := generics.GetFakeObj[models.InstallInput]()
 				inp.ID = nil
 				return inp
 			},
@@ -50,7 +51,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 		},
 		"update an app": {
 			inputFn: func() models.InstallInput {
-				inp := getFakeObj[models.InstallInput]()
+				inp := generics.GetFakeObj[models.InstallInput]()
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
@@ -72,8 +73,8 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 		},
 		"update with invalid id": {
 			inputFn: func() models.InstallInput {
-				inp := getFakeObj[models.InstallInput]()
-				inp.ID = toPtr("abc")
+				inp := generics.GetFakeObj[models.InstallInput]()
+				inp.ID = generics.ToPtr("abc")
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
@@ -90,7 +91,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 		},
 		"create error": {
 			inputFn: func() models.InstallInput {
-				inp := getFakeObj[models.InstallInput]()
+				inp := generics.GetFakeObj[models.InstallInput]()
 				inp.ID = nil
 				return inp
 			},
@@ -110,7 +111,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 		},
 		"update error": {
 			inputFn: func() models.InstallInput {
-				inp := getFakeObj[models.InstallInput]()
+				inp := generics.GetFakeObj[models.InstallInput]()
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
@@ -130,7 +131,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 		},
 		"error provisioning on create": {
 			inputFn: func() models.InstallInput {
-				inp := getFakeObj[models.InstallInput]()
+				inp := generics.GetFakeObj[models.InstallInput]()
 				inp.ID = nil
 				return inp
 			},
@@ -153,7 +154,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 		},
 		"error provisioning on update": {
 			inputFn: func() models.InstallInput {
-				inp := getFakeObj[models.InstallInput]()
+				inp := generics.GetFakeObj[models.InstallInput]()
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
@@ -200,7 +201,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 func TestInstallService_GetAppInstalls(t *testing.T) {
 	errGetAppInstalls := fmt.Errorf("error getting app installs")
 	appID := uuid.New()
-	install := getFakeObj[*models.Install]()
+	install := generics.GetFakeObj[*models.Install]()
 
 	tests := map[string]struct {
 		appID       string
@@ -256,7 +257,7 @@ func TestInstallService_GetAppInstalls(t *testing.T) {
 func TestInstallService_GetInstall(t *testing.T) {
 	errGetInstall := fmt.Errorf("error getting install")
 	installID := uuid.New()
-	app := getFakeObj[*models.Install]()
+	app := generics.GetFakeObj[*models.Install]()
 
 	tests := map[string]struct {
 		installID   string
@@ -312,8 +313,8 @@ func TestInstallService_GetInstall(t *testing.T) {
 func TestInstallService_DeleteInstall(t *testing.T) {
 	errDeleteInstall := fmt.Errorf("error deleting install")
 	installID := uuid.New()
-	install := getFakeObj[*models.Install]()
-	app := getFakeObj[*models.App]()
+	install := generics.GetFakeObj[*models.Install]()
+	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
 		installID   string

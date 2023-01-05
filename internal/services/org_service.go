@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gosimple/slug"
+	apicontext "github.com/powertoolsdev/api/internal/context"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/utils"
@@ -63,7 +64,7 @@ func (o OrgService) GetOrgBySlug(ctx context.Context, slug string) (*models.Org,
 }
 
 func (o OrgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*models.Org, error) {
-	user, err := getCurrentUser(ctx)
+	user, err := apicontext.GetUser(ctx)
 	if err != nil {
 		return nil, err
 	}
