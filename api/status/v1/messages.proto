@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package status.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// PingResponse simply returns a status of ok
+message PingResponse {
+  string status = 1 [
+    (validate.rules).string.min_bytes = 1,
+    (tagger.tags) = "faker:\"oneof: ok\""
+  ];
+}
+
+message PingRequest {}
+
+// VersionRequest returns the running version of the service
+message VersionResponse {
+  string git_ref = 1 [(validate.rules).string.min_bytes = 1];
+}
+
+message VersionRequest {}

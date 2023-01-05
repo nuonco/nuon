@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package component.v1;
+
+import "google/type/datetime.proto";
+
+enum ComponentType {
+  COMPONENT_TYPE_UNSPECIFIED = 0;
+  COMPONENT_TYPE_PUBLIC_IMAGE = 1;
+  COMPONENT_TYPE_HELM = 2;
+  COMPONENT_TYPE_TERRAFORM = 3;
+  COMPONENT_TYPE_GITHUB_REPO = 4;
+}
+
+message GithubConfig {
+  string branch = 1;
+  string directory = 2;
+  string repo = 3;
+  string repo_owner = 4;
+}
+
+message Component {
+  string id = 1;
+  string build_image = 2;
+  ComponentType type = 3;
+  string name = 4;
+
+  oneof vcs_config {
+    GithubConfig github_config = 5;
+  }
+
+  google.type.DateTime created_at = 6;
+  google.type.DateTime updated_at = 7;
+}
+
+message GetComponentRequest {
+  string id = 1;
+}
+
+message GetComponentResponse {
+  Component component = 1;
+}
+
+message GetComponentsByAppRequest {
+  string app_id = 1;
+}
+
+message GetComponentsByAppResponse {
+  repeated Component component = 1;
+}
+
+message UpsertComponentRequest {
+  string app_id = 1;
+  string id = 2;
+  string name = 3;
+  string build_image = 4;
+  ComponentType component_type = 5;
+
+  oneof vcs_config {
+    GithubConfig github_config = 6;
+  }
+}
+
+message UpsertComponentResponse {
+  Component component = 1;
+}
+
+message DeleteComponentRequest {
+  string id = 1;
+}
+
+message DeleteComponentResponse {
+  bool deleted = 1;
+}

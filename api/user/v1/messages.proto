@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package user.v1;
+
+import "google/type/datetime.proto";
+
+message User {
+  string id = 1;
+  google.type.DateTime created_at = 2;
+  google.type.DateTime updated_at = 3;
+}
+
+message UserOrg {
+  string user_id = 1;
+  string org_id = 2;
+}
+
+message GetCurrentUserRequest {}
+
+message GetCurrentUserResponse {
+  User user = 1;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message GetUsersByOrgRequest {
+  string org_id = 1;
+}
+
+message GetUsersByOrgResponse {
+  repeated User users = 1;
+}
+
+message DeleteUserRequest {
+  string id = 1;
+}
+
+message DeleteUserResponse {
+  bool deleted = 1;
+}
+
+message UpsertUserRequest {
+  string id = 1;
+  string external_id = 2;
+  string email = 3;
+}
+
+message UpsertUserResponse {
+  User user = 1;
+}
+
+message UpsertUserOrgRequest {
+  string user_id = 1;
+  string org_id = 2;
+}
+
+message UpsertUserOrgResponse {
+  UserOrg user_org = 1;
+}
