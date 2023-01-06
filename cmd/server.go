@@ -106,27 +106,35 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config) error {
 	return nil
 }
 
-//nolint:all
-func runServer(cmd *cobra.Command, args []string) {
-	var cfg internal.Config
-
-	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
-		log.Fatalf("failed to load config: %s", err)
-	}
-
+func initializeLogger(cfg *internal.Config) (*zap.Logger, error) {
 	var (
 		l   *zap.Logger
 		err error
 	)
+
 	switch cfg.Env {
 	case config.Development:
 		l, err = zap.NewDevelopment()
 	default:
 		l, err = zap.NewProduction()
 	}
-	zap.ReplaceGlobals(l)
 	if err != nil {
-		fmt.Printf("failed to instantiate logger: %v\n", err)
+		return nil, fmt.Errorf("unable to initialize logger: %w", err)
+	}
+	zap.ReplaceGlobals(l)
+	return l, nil
+}
+
+//nolint:all
+func runServer(cmd *cobra.Command, args []string) {
+	var cfg internal.Config
+
+	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
+		log.Fatalf("unable to load config: %s", err)
+	}
+	l, err := initializeLogger(&cfg)
+	if err != nil {
+		log.Fatalf(err.Error())
 	}
 
 	mux := http.NewServeMux()
