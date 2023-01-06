@@ -459,7 +459,7 @@ func (m *GetOrgRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for OrgId
+	// no validation rules for Id
 
 	if len(errors) > 0 {
 		return GetOrgRequestMultiError(errors)

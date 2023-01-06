@@ -21,7 +21,7 @@ message GetOrgsByMemberResponse {
 }
 
 message GetOrgRequest {
-  string org_id = 1;
+  string id = 1;
 }
 
 message GetOrgResponse {
