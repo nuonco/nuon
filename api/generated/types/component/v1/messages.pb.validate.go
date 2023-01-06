@@ -142,22 +142,22 @@ var _ interface {
 	ErrorName() string
 } = GithubConfigValidationError{}
 
-// Validate checks the field values on Component with the rules defined in the
-// proto definition for this message. If any rules are violated, the first
+// Validate checks the field values on ComponentRef with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
-func (m *Component) Validate() error {
+func (m *ComponentRef) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on Component with the rules defined in
-// the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in ComponentMultiError, or nil
-// if none found.
-func (m *Component) ValidateAll() error {
+// ValidateAll checks the field values on ComponentRef with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ComponentRefMultiError, or
+// nil if none found.
+func (m *ComponentRef) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *Component) validate(all bool) error {
+func (m *ComponentRef) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -176,7 +176,7 @@ func (m *Component) validate(all bool) error {
 		switch v := interface{}(m.GetCreatedAt()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, ComponentValidationError{
+				errors = append(errors, ComponentRefValidationError{
 					field:  "CreatedAt",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -184,7 +184,7 @@ func (m *Component) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, ComponentValidationError{
+				errors = append(errors, ComponentRefValidationError{
 					field:  "CreatedAt",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -193,7 +193,7 @@ func (m *Component) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetCreatedAt()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return ComponentValidationError{
+			return ComponentRefValidationError{
 				field:  "CreatedAt",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -205,7 +205,7 @@ func (m *Component) validate(all bool) error {
 		switch v := interface{}(m.GetUpdatedAt()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, ComponentValidationError{
+				errors = append(errors, ComponentRefValidationError{
 					field:  "UpdatedAt",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -213,7 +213,7 @@ func (m *Component) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, ComponentValidationError{
+				errors = append(errors, ComponentRefValidationError{
 					field:  "UpdatedAt",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -222,7 +222,7 @@ func (m *Component) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetUpdatedAt()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return ComponentValidationError{
+			return ComponentRefValidationError{
 				field:  "UpdatedAt",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -231,9 +231,9 @@ func (m *Component) validate(all bool) error {
 	}
 
 	switch v := m.VcsConfig.(type) {
-	case *Component_GithubConfig:
+	case *ComponentRef_GithubConfig:
 		if v == nil {
-			err := ComponentValidationError{
+			err := ComponentRefValidationError{
 				field:  "VcsConfig",
 				reason: "oneof value cannot be a typed-nil",
 			}
@@ -247,7 +247,7 @@ func (m *Component) validate(all bool) error {
 			switch v := interface{}(m.GetGithubConfig()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, ComponentValidationError{
+					errors = append(errors, ComponentRefValidationError{
 						field:  "GithubConfig",
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -255,7 +255,7 @@ func (m *Component) validate(all bool) error {
 				}
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
-					errors = append(errors, ComponentValidationError{
+					errors = append(errors, ComponentRefValidationError{
 						field:  "GithubConfig",
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -264,7 +264,7 @@ func (m *Component) validate(all bool) error {
 			}
 		} else if v, ok := interface{}(m.GetGithubConfig()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
-				return ComponentValidationError{
+				return ComponentRefValidationError{
 					field:  "GithubConfig",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -277,18 +277,18 @@ func (m *Component) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return ComponentMultiError(errors)
+		return ComponentRefMultiError(errors)
 	}
 
 	return nil
 }
 
-// ComponentMultiError is an error wrapping multiple validation errors returned
-// by Component.ValidateAll() if the designated constraints aren't met.
-type ComponentMultiError []error
+// ComponentRefMultiError is an error wrapping multiple validation errors
+// returned by ComponentRef.ValidateAll() if the designated constraints aren't met.
+type ComponentRefMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m ComponentMultiError) Error() string {
+func (m ComponentRefMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -297,11 +297,11 @@ func (m ComponentMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m ComponentMultiError) AllErrors() []error { return m }
+func (m ComponentRefMultiError) AllErrors() []error { return m }
 
-// ComponentValidationError is the validation error returned by
-// Component.Validate if the designated constraints aren't met.
-type ComponentValidationError struct {
+// ComponentRefValidationError is the validation error returned by
+// ComponentRef.Validate if the designated constraints aren't met.
+type ComponentRefValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -309,22 +309,22 @@ type ComponentValidationError struct {
 }
 
 // Field function returns field value.
-func (e ComponentValidationError) Field() string { return e.field }
+func (e ComponentRefValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e ComponentValidationError) Reason() string { return e.reason }
+func (e ComponentRefValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e ComponentValidationError) Cause() error { return e.cause }
+func (e ComponentRefValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e ComponentValidationError) Key() bool { return e.key }
+func (e ComponentRefValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e ComponentValidationError) ErrorName() string { return "ComponentValidationError" }
+func (e ComponentRefValidationError) ErrorName() string { return "ComponentRefValidationError" }
 
 // Error satisfies the builtin error interface
-func (e ComponentValidationError) Error() string {
+func (e ComponentRefValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -336,14 +336,14 @@ func (e ComponentValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sComponent.%s: %s%s",
+		"invalid %sComponentRef.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = ComponentValidationError{}
+var _ error = ComponentRefValidationError{}
 
 var _ interface {
 	Field() string
@@ -351,7 +351,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = ComponentValidationError{}
+} = ComponentRefValidationError{}
 
 // Validate checks the field values on GetComponentRequest with the rules
 // defined in the proto definition for this message. If any rules are

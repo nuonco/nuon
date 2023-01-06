@@ -19,7 +19,7 @@ message GithubConfig {
   string repo_owner = 4;
 }
 
-message Component {
+message ComponentRef {
   string id = 1;
   string build_image = 2;
   ComponentType type = 3;
@@ -38,7 +38,7 @@ message GetComponentRequest {
 }
 
 message GetComponentResponse {
-  Component component = 1;
+  ComponentRef component = 1;
 }
 
 message GetComponentsByAppRequest {
@@ -46,7 +46,7 @@ message GetComponentsByAppRequest {
 }
 
 message GetComponentsByAppResponse {
-  repeated Component component = 1;
+  repeated ComponentRef component = 1;
 }
 
 message UpsertComponentRequest {
@@ -62,7 +62,7 @@ message UpsertComponentRequest {
 }
 
 message UpsertComponentResponse {
-  Component component = 1;
+  ComponentRef component = 1;
 }
 
 message DeleteComponentRequest {
