@@ -14,23 +14,36 @@ import (
 	"gorm.io/gorm"
 )
 
-type OrgService struct {
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_org_service.go -source=org_service.go -package=services
+type OrgService interface {
+	DeleteOrg(context.Context, string) (bool, error)
+	GetOrg(context.Context, string) (*models.Org, error)
+	GetOrgBySlug(context.Context, string) (*models.Org, error)
+	UpsertOrg(context.Context, models.OrgInput) (*models.Org, error)
+	UserOrgs(context.Context, string, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
+	Orgs(context.Context, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
+}
+
+var _ OrgService = (*orgService)(nil)
+
+type orgService struct {
 	wkflowMgr      workflows.OrgWorkflowManager
 	repo           repos.OrgRepo
 	userOrgUpdater repos.UserRepo
 }
 
-func NewOrgService(db *gorm.DB, tc tclient.Client) *OrgService {
+func NewOrgService(db *gorm.DB, tc tclient.Client) *orgService {
 	orgRepo := repos.NewOrgRepo(db)
 	userRepo := repos.NewUserRepo(db)
-	return &OrgService{
+	return &orgService{
 		repo:           orgRepo,
 		userOrgUpdater: userRepo,
 		wkflowMgr:      workflows.NewOrgWorkflowManager(tc),
 	}
 }
 
-func (o OrgService) DeleteOrg(ctx context.Context, inputID string) (bool, error) {
+func (o orgService) DeleteOrg(ctx context.Context, inputID string) (bool, error) {
 	orgID, err := parseID(inputID)
 	if err != nil {
 		return false, err
@@ -50,7 +63,7 @@ func (o OrgService) DeleteOrg(ctx context.Context, inputID string) (bool, error)
 	return true, nil
 }
 
-func (o OrgService) GetOrg(ctx context.Context, id string) (*models.Org, error) {
+func (o *orgService) GetOrg(ctx context.Context, id string) (*models.Org, error) {
 	orgID, err := parseID(id)
 	if err != nil {
 		return nil, err
@@ -59,11 +72,11 @@ func (o OrgService) GetOrg(ctx context.Context, id string) (*models.Org, error) 
 	return o.repo.Get(ctx, orgID)
 }
 
-func (o OrgService) GetOrgBySlug(ctx context.Context, slug string) (*models.Org, error) {
+func (o *orgService) GetOrgBySlug(ctx context.Context, slug string) (*models.Org, error) {
 	return o.repo.GetBySlug(ctx, slug)
 }
 
-func (o OrgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*models.Org, error) {
+func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*models.Org, error) {
 	user, err := apicontext.GetUser(ctx)
 	if err != nil {
 		return nil, err
@@ -105,7 +118,7 @@ func (o OrgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mode
 	return org, err
 }
 
-func (o OrgService) UserOrgs(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
+func (o *orgService) UserOrgs(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
 	userID, err := parseID(inputID)
 	if err != nil {
 		return nil, nil, err
@@ -114,7 +127,7 @@ func (o OrgService) UserOrgs(ctx context.Context, inputID string, options *model
 	return o.repo.GetPageByUser(ctx, userID, options)
 }
 
-func (o OrgService) Orgs(ctx context.Context, options *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
+func (o *orgService) Orgs(ctx context.Context, options *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
 	var orgs []*models.Org
 
 	pg, c, err := utils.NewPaginator(options)

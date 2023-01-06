@@ -6,7 +6,17 @@ args:
 configmap:
   enabled: true
   values:
-    GIT_REF: main
+    TEMPORAL_HOST: temporal-frontend-headless.temporal.svc.cluster.local:7233
+    DB_USE_SSL: 'true'
+    DB_SSL_MODE: verify-full
+    DB_USE_ZAP: 'true'
+    DB_USE_IAM: 'true'
+
+envSecrets:
+  - name: "GITHUB_APP_KEY"
+    valueFrom:
+      name: graphql-api-github-app-key
+      key: github_app_key
 
 controller:
   enabled: true

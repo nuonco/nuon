@@ -80,7 +80,7 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			componentInput := test.inputFn()
 			repo := test.repoFn(mockCtl)
-			svc := &ComponentService{
+			svc := &componentService{
 				repo: repo,
 			}
 
@@ -137,7 +137,7 @@ func TestComponentService_GetAppComponents(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &ComponentService{
+			svc := &componentService{
 				repo: repo,
 			}
 
@@ -194,7 +194,7 @@ func TestComponentService_GetComponent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &ComponentService{
+			svc := &componentService{
 				repo: repo,
 			}
 			returnedComponent, err := svc.GetComponent(context.Background(), test.componentID)
@@ -247,7 +247,7 @@ func TestComponentService_DeleteComponent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &ComponentService{
+			svc := &componentService{
 				repo: repo,
 			}
 

@@ -68,7 +68,7 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config) error {
 
 	// TODO(jm): update this once we've changed the exposed interfaces from `services`
 	appSvc := services.NewAppService(db, tc)
-	_, err = appsserver.New(appsserver.WithHTTPMux(mux), appsserver.WithService(*appSvc))
+	_, err = appsserver.New(appsserver.WithHTTPMux(mux), appsserver.WithService(appSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize apps server: %w", err)
 	}

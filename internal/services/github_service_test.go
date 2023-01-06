@@ -67,7 +67,7 @@ func TestServiceRepos(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			service := GithubService{
+			service := githubService{
 				repoGetter: test.mockRepoGetter,
 			}
 
