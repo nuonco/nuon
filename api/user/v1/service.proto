@@ -5,10 +5,5 @@ package user.v1;
 import "user/v1/messages.proto";
 
 service UsersService {
-  rpc GetCurrentUser(user.v1.GetCurrentUserRequest) returns (user.v1.GetCurrentUserResponse) {}
-  rpc GetUser(user.v1.GetUserRequest) returns (user.v1.GetUserResponse) {}
-  rpc GetUsersByOrg(user.v1.GetUsersByOrgRequest) returns (user.v1.GetUsersByOrgResponse) {}
-  rpc DeleteUser(user.v1.DeleteUserRequest) returns (user.v1.DeleteUserResponse) {}
-  rpc UpsertUser(user.v1.UpsertUserRequest) returns (user.v1.UpsertUserResponse) {}
-  rpc UpsertUserOrg(user.v1.UpsertUserOrgRequest) returns (user.v1.UpsertUserOrgResponse) {}
+  rpc UpsertOrgMember(user.v1.UpsertOrgMemberRequest) returns (user.v1.UpsertOrgMemberResponse) {}
 }

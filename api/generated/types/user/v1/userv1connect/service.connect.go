@@ -27,12 +27,7 @@ const (
 
 // UsersServiceClient is a client for the user.v1.UsersService service.
 type UsersServiceClient interface {
-	GetCurrentUser(context.Context, *connect_go.Request[v1.GetCurrentUserRequest]) (*connect_go.Response[v1.GetCurrentUserResponse], error)
-	GetUser(context.Context, *connect_go.Request[v1.GetUserRequest]) (*connect_go.Response[v1.GetUserResponse], error)
-	GetUsersByOrg(context.Context, *connect_go.Request[v1.GetUsersByOrgRequest]) (*connect_go.Response[v1.GetUsersByOrgResponse], error)
-	DeleteUser(context.Context, *connect_go.Request[v1.DeleteUserRequest]) (*connect_go.Response[v1.DeleteUserResponse], error)
-	UpsertUser(context.Context, *connect_go.Request[v1.UpsertUserRequest]) (*connect_go.Response[v1.UpsertUserResponse], error)
-	UpsertUserOrg(context.Context, *connect_go.Request[v1.UpsertUserOrgRequest]) (*connect_go.Response[v1.UpsertUserOrgResponse], error)
+	UpsertOrgMember(context.Context, *connect_go.Request[v1.UpsertOrgMemberRequest]) (*connect_go.Response[v1.UpsertOrgMemberResponse], error)
 }
 
 // NewUsersServiceClient constructs a client for the user.v1.UsersService service. By default, it
@@ -45,34 +40,9 @@ type UsersServiceClient interface {
 func NewUsersServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) UsersServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &usersServiceClient{
-		getCurrentUser: connect_go.NewClient[v1.GetCurrentUserRequest, v1.GetCurrentUserResponse](
+		upsertOrgMember: connect_go.NewClient[v1.UpsertOrgMemberRequest, v1.UpsertOrgMemberResponse](
 			httpClient,
-			baseURL+"/user.v1.UsersService/GetCurrentUser",
-			opts...,
-		),
-		getUser: connect_go.NewClient[v1.GetUserRequest, v1.GetUserResponse](
-			httpClient,
-			baseURL+"/user.v1.UsersService/GetUser",
-			opts...,
-		),
-		getUsersByOrg: connect_go.NewClient[v1.GetUsersByOrgRequest, v1.GetUsersByOrgResponse](
-			httpClient,
-			baseURL+"/user.v1.UsersService/GetUsersByOrg",
-			opts...,
-		),
-		deleteUser: connect_go.NewClient[v1.DeleteUserRequest, v1.DeleteUserResponse](
-			httpClient,
-			baseURL+"/user.v1.UsersService/DeleteUser",
-			opts...,
-		),
-		upsertUser: connect_go.NewClient[v1.UpsertUserRequest, v1.UpsertUserResponse](
-			httpClient,
-			baseURL+"/user.v1.UsersService/UpsertUser",
-			opts...,
-		),
-		upsertUserOrg: connect_go.NewClient[v1.UpsertUserOrgRequest, v1.UpsertUserOrgResponse](
-			httpClient,
-			baseURL+"/user.v1.UsersService/UpsertUserOrg",
+			baseURL+"/user.v1.UsersService/UpsertOrgMember",
 			opts...,
 		),
 	}
@@ -80,52 +50,17 @@ func NewUsersServiceClient(httpClient connect_go.HTTPClient, baseURL string, opt
 
 // usersServiceClient implements UsersServiceClient.
 type usersServiceClient struct {
-	getCurrentUser *connect_go.Client[v1.GetCurrentUserRequest, v1.GetCurrentUserResponse]
-	getUser        *connect_go.Client[v1.GetUserRequest, v1.GetUserResponse]
-	getUsersByOrg  *connect_go.Client[v1.GetUsersByOrgRequest, v1.GetUsersByOrgResponse]
-	deleteUser     *connect_go.Client[v1.DeleteUserRequest, v1.DeleteUserResponse]
-	upsertUser     *connect_go.Client[v1.UpsertUserRequest, v1.UpsertUserResponse]
-	upsertUserOrg  *connect_go.Client[v1.UpsertUserOrgRequest, v1.UpsertUserOrgResponse]
+	upsertOrgMember *connect_go.Client[v1.UpsertOrgMemberRequest, v1.UpsertOrgMemberResponse]
 }
 
-// GetCurrentUser calls user.v1.UsersService.GetCurrentUser.
-func (c *usersServiceClient) GetCurrentUser(ctx context.Context, req *connect_go.Request[v1.GetCurrentUserRequest]) (*connect_go.Response[v1.GetCurrentUserResponse], error) {
-	return c.getCurrentUser.CallUnary(ctx, req)
-}
-
-// GetUser calls user.v1.UsersService.GetUser.
-func (c *usersServiceClient) GetUser(ctx context.Context, req *connect_go.Request[v1.GetUserRequest]) (*connect_go.Response[v1.GetUserResponse], error) {
-	return c.getUser.CallUnary(ctx, req)
-}
-
-// GetUsersByOrg calls user.v1.UsersService.GetUsersByOrg.
-func (c *usersServiceClient) GetUsersByOrg(ctx context.Context, req *connect_go.Request[v1.GetUsersByOrgRequest]) (*connect_go.Response[v1.GetUsersByOrgResponse], error) {
-	return c.getUsersByOrg.CallUnary(ctx, req)
-}
-
-// DeleteUser calls user.v1.UsersService.DeleteUser.
-func (c *usersServiceClient) DeleteUser(ctx context.Context, req *connect_go.Request[v1.DeleteUserRequest]) (*connect_go.Response[v1.DeleteUserResponse], error) {
-	return c.deleteUser.CallUnary(ctx, req)
-}
-
-// UpsertUser calls user.v1.UsersService.UpsertUser.
-func (c *usersServiceClient) UpsertUser(ctx context.Context, req *connect_go.Request[v1.UpsertUserRequest]) (*connect_go.Response[v1.UpsertUserResponse], error) {
-	return c.upsertUser.CallUnary(ctx, req)
-}
-
-// UpsertUserOrg calls user.v1.UsersService.UpsertUserOrg.
-func (c *usersServiceClient) UpsertUserOrg(ctx context.Context, req *connect_go.Request[v1.UpsertUserOrgRequest]) (*connect_go.Response[v1.UpsertUserOrgResponse], error) {
-	return c.upsertUserOrg.CallUnary(ctx, req)
+// UpsertOrgMember calls user.v1.UsersService.UpsertOrgMember.
+func (c *usersServiceClient) UpsertOrgMember(ctx context.Context, req *connect_go.Request[v1.UpsertOrgMemberRequest]) (*connect_go.Response[v1.UpsertOrgMemberResponse], error) {
+	return c.upsertOrgMember.CallUnary(ctx, req)
 }
 
 // UsersServiceHandler is an implementation of the user.v1.UsersService service.
 type UsersServiceHandler interface {
-	GetCurrentUser(context.Context, *connect_go.Request[v1.GetCurrentUserRequest]) (*connect_go.Response[v1.GetCurrentUserResponse], error)
-	GetUser(context.Context, *connect_go.Request[v1.GetUserRequest]) (*connect_go.Response[v1.GetUserResponse], error)
-	GetUsersByOrg(context.Context, *connect_go.Request[v1.GetUsersByOrgRequest]) (*connect_go.Response[v1.GetUsersByOrgResponse], error)
-	DeleteUser(context.Context, *connect_go.Request[v1.DeleteUserRequest]) (*connect_go.Response[v1.DeleteUserResponse], error)
-	UpsertUser(context.Context, *connect_go.Request[v1.UpsertUserRequest]) (*connect_go.Response[v1.UpsertUserResponse], error)
-	UpsertUserOrg(context.Context, *connect_go.Request[v1.UpsertUserOrgRequest]) (*connect_go.Response[v1.UpsertUserOrgResponse], error)
+	UpsertOrgMember(context.Context, *connect_go.Request[v1.UpsertOrgMemberRequest]) (*connect_go.Response[v1.UpsertOrgMemberResponse], error)
 }
 
 // NewUsersServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -135,34 +70,9 @@ type UsersServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewUsersServiceHandler(svc UsersServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/user.v1.UsersService/GetCurrentUser", connect_go.NewUnaryHandler(
-		"/user.v1.UsersService/GetCurrentUser",
-		svc.GetCurrentUser,
-		opts...,
-	))
-	mux.Handle("/user.v1.UsersService/GetUser", connect_go.NewUnaryHandler(
-		"/user.v1.UsersService/GetUser",
-		svc.GetUser,
-		opts...,
-	))
-	mux.Handle("/user.v1.UsersService/GetUsersByOrg", connect_go.NewUnaryHandler(
-		"/user.v1.UsersService/GetUsersByOrg",
-		svc.GetUsersByOrg,
-		opts...,
-	))
-	mux.Handle("/user.v1.UsersService/DeleteUser", connect_go.NewUnaryHandler(
-		"/user.v1.UsersService/DeleteUser",
-		svc.DeleteUser,
-		opts...,
-	))
-	mux.Handle("/user.v1.UsersService/UpsertUser", connect_go.NewUnaryHandler(
-		"/user.v1.UsersService/UpsertUser",
-		svc.UpsertUser,
-		opts...,
-	))
-	mux.Handle("/user.v1.UsersService/UpsertUserOrg", connect_go.NewUnaryHandler(
-		"/user.v1.UsersService/UpsertUserOrg",
-		svc.UpsertUserOrg,
+	mux.Handle("/user.v1.UsersService/UpsertOrgMember", connect_go.NewUnaryHandler(
+		"/user.v1.UsersService/UpsertOrgMember",
+		svc.UpsertOrgMember,
 		opts...,
 	))
 	return "/user.v1.UsersService/", mux
@@ -171,26 +81,6 @@ func NewUsersServiceHandler(svc UsersServiceHandler, opts ...connect_go.HandlerO
 // UnimplementedUsersServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedUsersServiceHandler struct{}
 
-func (UnimplementedUsersServiceHandler) GetCurrentUser(context.Context, *connect_go.Request[v1.GetCurrentUserRequest]) (*connect_go.Response[v1.GetCurrentUserResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.GetCurrentUser is not implemented"))
-}
-
-func (UnimplementedUsersServiceHandler) GetUser(context.Context, *connect_go.Request[v1.GetUserRequest]) (*connect_go.Response[v1.GetUserResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.GetUser is not implemented"))
-}
-
-func (UnimplementedUsersServiceHandler) GetUsersByOrg(context.Context, *connect_go.Request[v1.GetUsersByOrgRequest]) (*connect_go.Response[v1.GetUsersByOrgResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.GetUsersByOrg is not implemented"))
-}
-
-func (UnimplementedUsersServiceHandler) DeleteUser(context.Context, *connect_go.Request[v1.DeleteUserRequest]) (*connect_go.Response[v1.DeleteUserResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.DeleteUser is not implemented"))
-}
-
-func (UnimplementedUsersServiceHandler) UpsertUser(context.Context, *connect_go.Request[v1.UpsertUserRequest]) (*connect_go.Response[v1.UpsertUserResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.UpsertUser is not implemented"))
-}
-
-func (UnimplementedUsersServiceHandler) UpsertUserOrg(context.Context, *connect_go.Request[v1.UpsertUserOrgRequest]) (*connect_go.Response[v1.UpsertUserOrgResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.UpsertUserOrg is not implemented"))
+func (UnimplementedUsersServiceHandler) UpsertOrgMember(context.Context, *connect_go.Request[v1.UpsertOrgMemberRequest]) (*connect_go.Response[v1.UpsertOrgMemberResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("user.v1.UsersService.UpsertOrgMember is not implemented"))
 }
