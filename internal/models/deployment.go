@@ -12,6 +12,7 @@ type Deployment struct {
 
 	ComponentID uuid.UUID
 	Component   Component `fake:"skip"`
+	CreatedByID string
 
 	CommitHash   string `json:"commit_hash"`
 	CommitAuthor string `json:"commit_author"`
