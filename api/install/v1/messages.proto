@@ -51,7 +51,7 @@ message GetInstallsByAppResponse {
 }
 
 message DeleteInstallRequest {
-  string install_id = 1;
+  string id = 1;
 }
 
 message DeleteInstallResponse {

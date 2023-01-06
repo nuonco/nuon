@@ -39,7 +39,7 @@ message UpsertOrgResponse {
 }
 
 message DeleteOrgRequest {
-  string org_id = 1;
+  string id = 1;
 }
 
 message DeleteOrgResponse {

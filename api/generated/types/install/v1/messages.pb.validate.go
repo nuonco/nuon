@@ -983,7 +983,7 @@ func (m *DeleteInstallRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for InstallId
+	// no validation rules for Id
 
 	if len(errors) > 0 {
 		return DeleteInstallRequestMultiError(errors)

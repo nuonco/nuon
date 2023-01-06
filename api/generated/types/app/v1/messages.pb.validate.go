@@ -221,7 +221,7 @@ func (m *GetAppRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for AppId
+	// no validation rules for Id
 
 	if len(errors) > 0 {
 		return GetAppRequestMultiError(errors)
@@ -692,7 +692,7 @@ func (m *DeleteAppRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for AppId
+	// no validation rules for Id
 
 	if len(errors) > 0 {
 		return DeleteAppRequestMultiError(errors)

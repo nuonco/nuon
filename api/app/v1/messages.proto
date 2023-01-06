@@ -14,7 +14,7 @@ message App {
 }
 
 message GetAppRequest {
-  string app_id = 1;
+  string id = 1;
 }
 
 message GetAppResponse {
@@ -30,7 +30,7 @@ message GetAppsByOrgResponse {
 }
 
 message DeleteAppRequest {
-  string app_id = 1;
+  string id = 1;
 }
 
 message DeleteAppResponse {
