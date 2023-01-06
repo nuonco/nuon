@@ -10,9 +10,10 @@ import (
 type Component struct {
 	Model
 
-	Name  string
-	AppID uuid.UUID
-	App   App `faker:"-"`
+	Name        string
+	AppID       uuid.UUID
+	App         App `faker:"-"`
+	CreatedByID string
 
 	BuildImage      string `json:"container_image_url"`
 	Type            string `json:"type"`
