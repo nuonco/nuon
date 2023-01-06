@@ -61,7 +61,6 @@ func migrate(cfg *internal.Config, l *zap.Logger) error {
 		&models.GithubConfig{},
 		&models.Install{},
 		&models.Org{},
-		&models.User{},
 		&models.UserOrg{},
 	}
 

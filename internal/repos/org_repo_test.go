@@ -11,8 +11,9 @@ import (
 
 func createOrg(ctx context.Context, t *testing.T, orgRepo OrgRepo) *models.Org {
 	org, err := orgRepo.Create(ctx, &models.Org{
-		Name: uuid.NewString(),
-		Slug: uuid.NewString(),
+		Name:        uuid.NewString(),
+		Slug:        uuid.NewString(),
+		CreatedByID: uuid.NewString(),
 	})
 	assert.Nil(t, err)
 	return org

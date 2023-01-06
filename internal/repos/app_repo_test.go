@@ -11,12 +11,12 @@ import (
 
 // createApp
 func createApp(ctx context.Context, t *testing.T, state repoTestState) *models.App {
-	user := createUser(ctx, t, state, true)
-
+	userID := uuid.NewString()
+	org := createOrg(ctx, t, state.orgRepo)
 	app, err := state.appRepo.Upsert(ctx, &models.App{
 		Name:        uuid.NewString(),
-		CreatedByID: user.ID,
-		OrgID:       user.Orgs[0].ID,
+		CreatedByID: userID,
+		OrgID:       org.ID,
 	})
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
@@ -28,12 +28,13 @@ func TestUpsertApp(t *testing.T) {
 		{
 			desc: "should create an app successfully",
 			fn: func(ctx context.Context, state repoTestState) {
-				user := createUser(ctx, t, state, true)
+				userID := uuid.NewString()
+				org := createOrg(ctx, t, state.orgRepo)
 
 				appInput := &models.App{
 					Name:        uuid.NewString(),
-					CreatedByID: user.ID,
-					OrgID:       user.Orgs[0].ID,
+					CreatedByID: userID,
+					OrgID:       org.ID,
 				}
 				app, err := state.appRepo.Upsert(ctx, appInput)
 				assert.Nil(t, err)

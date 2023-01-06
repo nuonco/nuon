@@ -7,7 +7,7 @@ import (
 type UserOrg struct {
 	Model
 
-	UserID uuid.UUID `gorm:"type:uuid;primaryKey"`
+	UserID string
 	OrgID  uuid.UUID `gorm:"type:uuid;primaryKey"`
 	IsNew  bool      `gorm:"-:all"`
 }

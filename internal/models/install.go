@@ -9,7 +9,7 @@ import (
 
 type Install struct {
 	Model
-	CreatedByID uuid.UUID
+	CreatedByID string
 
 	Name  string
 	AppID uuid.UUID

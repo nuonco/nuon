@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/gosimple/slug"
-	apicontext "github.com/powertoolsdev/api/internal/context"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/utils"
@@ -77,11 +76,6 @@ func (o *orgService) GetOrgBySlug(ctx context.Context, slug string) (*models.Org
 }
 
 func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*models.Org, error) {
-	user, err := apicontext.GetUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	org := &models.Org{
 		Name: input.Name,
 		Slug: slug.Make(input.Name),
@@ -93,10 +87,10 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 		}
 		org.ID = orgID
 	} else {
-		org.CreatedByID = user.ID
+		org.CreatedByID = input.OwnerID
 	}
 
-	org, err = o.repo.Create(ctx, org)
+	org, err := o.repo.Create(ctx, org)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +104,7 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 		return nil, fmt.Errorf("unable to provision org: %w", err)
 	}
 
-	_, err = o.userOrgUpdater.UpsertUserOrg(ctx, user.ID, org.ID)
+	_, err = o.userOrgUpdater.UpsertUserOrg(ctx, input.OwnerID, org.ID)
 	if err != nil {
 		return org, err
 	}
