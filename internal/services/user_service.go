@@ -9,18 +9,33 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserService struct {
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_user_service.go -source=user_service.go -package=services
+type UserService interface {
+	UpsertUser(context.Context, models.UserInput) (*models.User, error)
+	DeleteUser(context.Context, string) (bool, error)
+	GetOrgUsers(context.Context, string, *models.ConnectionOptions) ([]*models.User, *utils.Page, error)
+	GetUserByEmail(context.Context, string) (*models.User, error)
+	GetUserByExternalID(context.Context, string) (*models.User, error)
+	GetAllUsers(context.Context, *models.ConnectionOptions) ([]*models.User, *utils.Page, error)
+	GetUser(context.Context, string) (*models.User, error)
+	UpsertUserOrg(context.Context, models.UserOrgInput) (*models.UserOrg, error)
+}
+
+var _ UserService = (*userService)(nil)
+
+type userService struct {
 	repo repos.UserRepo
 }
 
-func NewUserService(db *gorm.DB) *UserService {
+func NewUserService(db *gorm.DB) *userService {
 	userRepo := repos.NewUserRepo(db)
-	return &UserService{
+	return &userService{
 		repo: userRepo,
 	}
 }
 
-func (u UserService) DeleteUser(ctx context.Context, inputID string) (bool, error) {
+func (u userService) DeleteUser(ctx context.Context, inputID string) (bool, error) {
 	userID, err := parseID(inputID)
 	if err != nil {
 		return false, err
@@ -30,7 +45,7 @@ func (u UserService) DeleteUser(ctx context.Context, inputID string) (bool, erro
 }
 
 // UpsertUser: upsert a single user
-func (u *UserService) UpsertUser(ctx context.Context, input models.UserInput) (*models.User, error) {
+func (u *userService) UpsertUser(ctx context.Context, input models.UserInput) (*models.User, error) {
 	var user models.User
 	user.FirstName = input.FirstName
 	user.LastName = input.LastName
@@ -48,7 +63,7 @@ func (u *UserService) UpsertUser(ctx context.Context, input models.UserInput) (*
 }
 
 // GetOrgUsers: return all users for an org
-func (u *UserService) GetOrgUsers(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.User, *utils.Page, error) {
+func (u *userService) GetOrgUsers(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.User, *utils.Page, error) {
 	orgID, err := parseID(inputID)
 	if err != nil {
 		return nil, nil, err
@@ -56,19 +71,19 @@ func (u *UserService) GetOrgUsers(ctx context.Context, inputID string, options *
 	return u.repo.GetPageByOrg(ctx, orgID, options)
 }
 
-func (u UserService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (u userService) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	return u.repo.GetByEmail(ctx, email)
 }
 
-func (u UserService) GetUserByExternalID(ctx context.Context, externalID string) (*models.User, error) {
+func (u userService) GetUserByExternalID(ctx context.Context, externalID string) (*models.User, error) {
 	return u.repo.GetByExternalID(ctx, externalID)
 }
 
-func (u UserService) GetAllUsers(ctx context.Context, options *models.ConnectionOptions) ([]*models.User, *utils.Page, error) {
+func (u userService) GetAllUsers(ctx context.Context, options *models.ConnectionOptions) ([]*models.User, *utils.Page, error) {
 	return u.repo.GetPageAll(ctx, options)
 }
 
-func (u UserService) GetUser(ctx context.Context, id string) (*models.User, error) {
+func (u userService) GetUser(ctx context.Context, id string) (*models.User, error) {
 	userID, err := parseID(id)
 	if err != nil {
 		return nil, err
@@ -76,7 +91,7 @@ func (u UserService) GetUser(ctx context.Context, id string) (*models.User, erro
 	return u.repo.Get(ctx, userID)
 }
 
-func (u UserService) UpsertUserOrg(ctx context.Context, input models.UserOrgInput) (*models.UserOrg, error) {
+func (u userService) UpsertUserOrg(ctx context.Context, input models.UserOrgInput) (*models.UserOrg, error) {
 	userID, err := parseID(input.UserID)
 	if err != nil {
 		return nil, err

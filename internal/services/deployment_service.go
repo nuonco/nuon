@@ -19,15 +19,25 @@ import (
 	"gorm.io/gorm"
 )
 
-type DeploymentService struct {
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_deployment_service.go -source=deployment_service.go -package=services
+type DeploymentService interface {
+	GetDeployment(context.Context, string) (*models.Deployment, error)
+	GetComponentDeployments(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
+	CreateDeployment(context.Context, string) (*models.Deployment, error)
+}
+
+type deploymentService struct {
 	repo          repos.DeploymentRepo
 	componentRepo repos.ComponentRepo
 	githubRepo    repos.GithubRepo
 	wkflowMgr     workflows.DeploymentWorkflowManager
 }
 
-func NewDeploymentService(db *gorm.DB, temporalClient tclient.Client, tsprt *gh.AppsTransport) *DeploymentService {
-	return &DeploymentService{
+var _ DeploymentService = (*deploymentService)(nil)
+
+func NewDeploymentService(db *gorm.DB, temporalClient tclient.Client, tsprt *gh.AppsTransport) *deploymentService {
+	return &deploymentService{
 		repo:          repos.NewDeploymentRepo(db),
 		wkflowMgr:     workflows.NewDeploymentWorkflowManager(temporalClient),
 		componentRepo: repos.NewComponentRepo(db),
@@ -35,7 +45,7 @@ func NewDeploymentService(db *gorm.DB, temporalClient tclient.Client, tsprt *gh.
 	}
 }
 
-func (i *DeploymentService) GetDeployment(ctx context.Context, inputID string) (*models.Deployment, error) {
+func (i *deploymentService) GetDeployment(ctx context.Context, inputID string) (*models.Deployment, error) {
 	deploymentID, err := parseID(inputID)
 	if err != nil {
 		return nil, err
@@ -44,7 +54,7 @@ func (i *DeploymentService) GetDeployment(ctx context.Context, inputID string) (
 	return i.repo.Get(ctx, deploymentID)
 }
 
-func (i *DeploymentService) GetComponentDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+func (i *deploymentService) GetComponentDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
 	uuids := make([]uuid.UUID, 0)
 	for _, v := range ids {
 		componentID, err := parseID(v)
@@ -57,7 +67,7 @@ func (i *DeploymentService) GetComponentDeployments(ctx context.Context, ids []s
 	return i.repo.ListByComponents(ctx, uuids, options)
 }
 
-func (i *DeploymentService) startDeployment(ctx context.Context, deployment *models.Deployment) error {
+func (i *deploymentService) startDeployment(ctx context.Context, deployment *models.Deployment) error {
 	err := i.wkflowMgr.Start(ctx, deployment)
 	if err != nil {
 		return fmt.Errorf("unable to start deployment: %w", err)
@@ -66,7 +76,7 @@ func (i *DeploymentService) startDeployment(ctx context.Context, deployment *mod
 	return nil
 }
 
-func (i *DeploymentService) CreateDeployment(ctx context.Context, componentID string) (*models.Deployment, error) {
+func (i *deploymentService) CreateDeployment(ctx context.Context, componentID string) (*models.Deployment, error) {
 	id, err := parseID(componentID)
 	if err != nil {
 		return nil, err

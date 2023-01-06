@@ -12,22 +12,28 @@ import (
 	"go.uber.org/zap"
 )
 
-type GithubService struct {
+type githubService struct {
 	repoGetter RepoGetter
+}
+
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_github_service.go -source=github_service.go -package=services
+type GithubService interface {
+	Repos(context.Context, string) ([]*models.Repo, *utils.Page, error)
 }
 
 type RepoGetter interface {
 	Repos(context.Context, int64) ([]*models.Repo, error)
 }
 
-func NewGithubService(tsprt *gh.AppsTransport, l *zap.Logger) *GithubService {
+func NewGithubService(tsprt *gh.AppsTransport, l *zap.Logger) *githubService {
 	githubRepo := repos.NewGithubRepo(tsprt, l, &http.Client{})
-	return &GithubService{
+	return &githubService{
 		repoGetter: githubRepo,
 	}
 }
 
-func (ghs *GithubService) Repos(ctx context.Context, githubInstallationID int64, options *models.ConnectionOptions) ([]*models.Repo, *utils.Page, error) {
+func (ghs *githubService) Repos(ctx context.Context, githubInstallationID int64, options *models.ConnectionOptions) ([]*models.Repo, *utils.Page, error) {
 	repos, err := ghs.repoGetter.Repos(ctx, githubInstallationID)
 	if err != nil {
 		return nil, nil, err

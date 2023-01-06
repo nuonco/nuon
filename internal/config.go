@@ -9,6 +9,24 @@ import (
 func init() {
 	config.RegisterDefault("http_port", "8080")
 	config.RegisterDefault("http_address", "0.0.0.0")
+
+	// defaults for database
+	config.RegisterDefault("db_user", "postgres")
+	config.RegisterDefault("db_password", "postgres")
+	config.RegisterDefault("db_port", "5432")
+	config.RegisterDefault("db_name", "api")
+	config.RegisterDefault("db_ssl_mode", "disable")
+	config.RegisterDefault("db_host", "localhost")
+	config.RegisterDefault("db_use_zap", false)
+	config.RegisterDefault("db_use_iam", false)
+	config.RegisterDefault("db_region", "us-west-2")
+
+	// defaults for temporal
+	config.RegisterDefault("temporal_host", "localhost:7233")
+	config.RegisterDefault("temporal_namespace", "default")
+
+	// default for github
+	config.RegisterDefault("github_app_id", "261597")
 }
 
 type Config struct {
