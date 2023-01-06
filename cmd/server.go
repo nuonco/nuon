@@ -66,34 +66,39 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config) error {
 		return fmt.Errorf("unable to create temporal client: %w", err)
 	}
 
-	// TODO(jm): update this once we've changed the exposed interfaces from `services`
 	appSvc := services.NewAppService(db, tc)
 	_, err = appsserver.New(appsserver.WithHTTPMux(mux), appsserver.WithService(appSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize apps server: %w", err)
 	}
 
-	_, err = componentsserver.New(componentsserver.WithHTTPMux(mux))
+	componentsSvc := services.NewComponentService(db)
+	_, err = componentsserver.New(componentsserver.WithHTTPMux(mux), componentsserver.WithService(componentsSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize components server: %w", err)
 	}
 
-	_, err = deploymentsserver.New(deploymentsserver.WithHTTPMux(mux))
+	// TODO(jm): add gh transport
+	deploymentsSvc := services.NewDeploymentService(db, tc, nil)
+	_, err = deploymentsserver.New(deploymentsserver.WithHTTPMux(mux), deploymentsserver.WithService(deploymentsSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize deployments server: %w", err)
 	}
 
-	_, err = installsserver.New(installsserver.WithHTTPMux(mux))
+	installSvc := services.NewInstallService(db, tc)
+	_, err = installsserver.New(installsserver.WithHTTPMux(mux), installsserver.WithService(installSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize installs server: %w", err)
 	}
 
-	_, err = orgsserver.New(orgsserver.WithHTTPMux(mux))
+	orgSvc := services.NewOrgService(db, tc)
+	_, err = orgsserver.New(orgsserver.WithHTTPMux(mux), orgsserver.WithService(orgSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize orgs server: %w", err)
 	}
 
-	_, err = usersserver.New(usersserver.WithHTTPMux(mux))
+	userSvc := services.NewUserService(db)
+	_, err = usersserver.New(usersserver.WithHTTPMux(mux), usersserver.WithService(userSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize orgs server: %w", err)
 	}
