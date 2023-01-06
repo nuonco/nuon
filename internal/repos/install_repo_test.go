@@ -12,12 +12,11 @@ import (
 // createInstall
 func createInstall(ctx context.Context, t *testing.T, state repoTestState) *models.Install {
 	app := createApp(ctx, t, state)
-	users, err := state.userRepo.GetByOrg(ctx, app.OrgID)
-	assert.Nil(t, err)
+	userID := uuid.NewString()
 
 	install, err := state.installRepo.Create(ctx, &models.Install{
 		Name:        uuid.NewString(),
-		CreatedByID: users[0].ID,
+		CreatedByID: userID,
 		AppID:       app.ID,
 		AWSSettings: &models.AWSSettings{
 			Region: models.AWSRegionUsEast1,
@@ -34,12 +33,11 @@ func TestUpsertInstall(t *testing.T) {
 			desc: "should create an install successfully",
 			fn: func(ctx context.Context, state repoTestState) {
 				app := createApp(ctx, t, state)
-				users, err := state.userRepo.GetByOrg(ctx, app.OrgID)
-				assert.Nil(t, err)
+				userID := uuid.NewString()
 
 				installInput := &models.Install{
 					Name:        uuid.NewString(),
-					CreatedByID: users[0].ID,
+					CreatedByID: userID,
 					AppID:       app.ID,
 				}
 				install, err := state.installRepo.Create(ctx, installInput)

@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	appcontext "github.com/powertoolsdev/api/internal/context"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/workflows"
@@ -207,10 +206,9 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 	errUpsertOrg := fmt.Errorf("error upserting app")
 	org := generics.GetFakeObj[*models.Org]()
 	org.IsNew = false
-	user := generics.GetFakeObj[*models.User]()
+	userID := uuid.NewString()
 
 	tests := map[string]struct {
-		ctxFn       func() context.Context
 		inputFn     func() models.OrgInput
 		repoFn      func(*gomock.Controller) *repos.MockOrgRepo
 		userRepoFn  func(*gomock.Controller) *repos.MockUserRepo
@@ -218,14 +216,10 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 		errExpected error
 	}{
 		"create happy path": {
-			ctxFn: func() context.Context {
-				ctx := context.Background()
-				ctx = appcontext.WithUser(ctx, user)
-				return ctx
-			},
 			inputFn: func() models.OrgInput {
 				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = nil
+				inp.OwnerID = userID
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
@@ -238,7 +232,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			},
 			userRepoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
 				repo := repos.NewMockUserRepo(ctl)
-				repo.EXPECT().UpsertUserOrg(gomock.Any(), user.ID, org.ID).Return(&models.UserOrg{}, nil)
+				repo.EXPECT().UpsertUserOrg(gomock.Any(), userID, org.ID).Return(&models.UserOrg{}, nil)
 				return repo
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
@@ -248,11 +242,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			},
 		},
 		"invalid id": {
-			ctxFn: func() context.Context {
-				ctx := context.Background()
-				ctx = appcontext.WithUser(ctx, user)
-				return ctx
-			},
 			inputFn: func() models.OrgInput {
 				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = generics.ToPtr("foo")
@@ -273,11 +262,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			errExpected: InvalidIDErr{},
 		},
 		"upsert happy path": {
-			ctxFn: func() context.Context {
-				ctx := context.Background()
-				ctx = appcontext.WithUser(ctx, user)
-				return ctx
-			},
 			inputFn: func() models.OrgInput {
 				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = generics.ToPtr(org.ID.String())
@@ -300,11 +284,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			},
 		},
 		"repo error": {
-			ctxFn: func() context.Context {
-				ctx := context.Background()
-				ctx = appcontext.WithUser(ctx, user)
-				return ctx
-			},
 			inputFn: func() models.OrgInput {
 				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = nil
@@ -326,11 +305,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			errExpected: errUpsertOrg,
 		},
 		"workflow error": {
-			ctxFn: func() context.Context {
-				ctx := context.Background()
-				ctx = appcontext.WithUser(ctx, user)
-				return ctx
-			},
 			inputFn: func() models.OrgInput {
 				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = nil
@@ -389,13 +363,13 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			orgInput := test.inputFn()
-			ctx := test.ctxFn()
 			svc := &orgService{
 				repo:           test.repoFn(mockCtl),
 				userOrgUpdater: test.userRepoFn(mockCtl),
 				wkflowMgr:      test.wkflowFn(mockCtl),
 			}
 
+			ctx := context.Background()
 			returnedOrg, err := svc.UpsertOrg(ctx, orgInput)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())

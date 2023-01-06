@@ -4,21 +4,26 @@ import (
 	"context"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/powertoolsdev/api/internal/models"
 	userv1 "github.com/powertoolsdev/protos/api/generated/types/user/v1"
 )
 
-func (s *server) UpsertUser(
+func (s *server) UpsertOrgMember(
 	ctx context.Context,
-	req *connect.Request[userv1.UpsertUserRequest],
-) (*connect.Response[userv1.UpsertUserResponse], error) {
-	res := connect.NewResponse(&userv1.UpsertUserResponse{})
-	return res, nil
-}
+	req *connect.Request[userv1.UpsertOrgMemberRequest],
+) (*connect.Response[userv1.UpsertOrgMemberResponse], error) {
+	userOrg, err := s.Svc.UpsertUserOrg(ctx, models.UserOrgInput{
+		UserID: req.Msg.UserId,
+		OrgID:  req.Msg.OrgId,
+	})
+	if err != nil {
+		return nil, err
+	}
 
-func (s *server) UpsertUserOrg(
-	ctx context.Context,
-	req *connect.Request[userv1.UpsertUserOrgRequest],
-) (*connect.Response[userv1.UpsertUserOrgResponse], error) {
-	res := connect.NewResponse(&userv1.UpsertUserOrgResponse{})
-	return res, nil
+	return connect.NewResponse(&userv1.UpsertOrgMemberResponse{
+		OrgMember: &userv1.OrgMember{
+			UserId: userOrg.UserID,
+			OrgId:  userOrg.OrgID.String(),
+		},
+	}), nil
 }
