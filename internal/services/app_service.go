@@ -13,21 +13,34 @@ import (
 	"gorm.io/gorm"
 )
 
-type AppService struct {
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_app_service.go -source=app_service.go -package=services
+type AppService interface {
+	GetApp(context.Context, string) (*models.App, error)
+	GetAppBySlug(context.Context, string) (*models.App, error)
+	UpsertApp(context.Context, models.AppInput) (*models.App, error)
+	DeleteApp(context.Context, string) (bool, error)
+	GetAllApps(context.Context, *models.ConnectionOptions) ([]*models.App, *utils.Page, error)
+	GetOrgApps(context.Context, string, *models.ConnectionOptions) ([]*models.App, *utils.Page, error)
+}
+
+var _ AppService = (*appService)(nil)
+
+type appService struct {
 	repo        repos.AppRepo
 	workflowMgr workflows.AppWorkflowManager
 }
 
-func NewAppService(db *gorm.DB, tc tclient.Client) *AppService {
+func NewAppService(db *gorm.DB, tc tclient.Client) *appService {
 	repo := repos.NewAppRepo(db)
-	return &AppService{
+	return &appService{
 		repo:        repo,
 		workflowMgr: workflows.NewAppWorkflowManager(tc),
 	}
 }
 
 // GetApp: return an app by ID
-func (a *AppService) GetApp(ctx context.Context, inputID string) (*models.App, error) {
+func (a *appService) GetApp(ctx context.Context, inputID string) (*models.App, error) {
 	appID, err := parseID(inputID)
 	if err != nil {
 		return nil, err
@@ -37,12 +50,12 @@ func (a *AppService) GetApp(ctx context.Context, inputID string) (*models.App, e
 }
 
 // GetBySlug: return an app by slug
-func (a *AppService) GetAppBySlug(ctx context.Context, slug string) (*models.App, error) {
+func (a *appService) GetAppBySlug(ctx context.Context, slug string) (*models.App, error) {
 	return a.repo.GetBySlug(ctx, slug)
 }
 
 // UpsertApp: upsert an application
-func (a *AppService) UpsertApp(ctx context.Context, input models.AppInput) (*models.App, error) {
+func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*models.App, error) {
 	var app models.App
 	app.Name = input.Name
 	app.Slug = slug.Make(input.Name)
@@ -77,7 +90,7 @@ func (a *AppService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 	return finalApp, nil
 }
 
-func (a *AppService) DeleteApp(ctx context.Context, inputID string) (bool, error) {
+func (a *appService) DeleteApp(ctx context.Context, inputID string) (bool, error) {
 	appID, err := parseID(inputID)
 	if err != nil {
 		return false, err
@@ -85,15 +98,15 @@ func (a *AppService) DeleteApp(ctx context.Context, inputID string) (bool, error
 	return a.repo.Delete(ctx, appID)
 }
 
-func (a AppService) GetUserApps(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
+func (a appService) GetUserApps(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
 	panic("NOT IMPLEMENTED")
 }
 
-func (a AppService) GetAllApps(ctx context.Context, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
+func (a appService) GetAllApps(ctx context.Context, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
 	return a.repo.GetPageAll(ctx, options)
 }
 
-func (a AppService) GetOrgApps(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
+func (a appService) GetOrgApps(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
 	orgID, err := parseID(inputID)
 	if err != nil {
 		return nil, nil, err

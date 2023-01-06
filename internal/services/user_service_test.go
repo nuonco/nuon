@@ -54,7 +54,7 @@ func TestUserService_DeleteUser(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &UserService{
+			svc := &userService{
 				repo: repo,
 			}
 
@@ -89,7 +89,7 @@ func TestUserService_UpsertUser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			u := &UserService{
+			u := &userService{
 				repo: tt.fields.repo,
 			}
 			got, err := u.UpsertUser(tt.args.ctx, tt.args.input)
@@ -154,7 +154,7 @@ func TestUserService_UpsertUserOrg(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			userInput := test.inputFn()
-			svc := &UserService{
+			svc := &userService{
 				repo: test.repoFn(mockCtl),
 			}
 
@@ -211,7 +211,7 @@ func TestUserService_GetOrgUsers(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &UserService{
+			svc := &userService{
 				repo: repo,
 			}
 			users, _, err := svc.GetOrgUsers(context.Background(), test.orgID, &models.ConnectionOptions{})
@@ -259,7 +259,7 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &UserService{
+			svc := &userService{
 				repo: repo,
 			}
 			returnedUser, err := svc.GetUserByEmail(context.Background(), test.email)
@@ -307,7 +307,7 @@ func TestUserService_GetUserByExternalID(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &UserService{
+			svc := &userService{
 				repo: repo,
 			}
 			returnedUser, err := svc.GetUserByExternalID(context.Background(), test.externalID)
@@ -355,7 +355,7 @@ func TestUserService_GetAllUsers(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &UserService{
+			svc := &userService{
 				repo: repo,
 			}
 			users, _, err := svc.GetAllUsers(context.Background(), &models.ConnectionOptions{})
@@ -411,7 +411,7 @@ func TestUserService_GetUser(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &UserService{
+			svc := &userService{
 				repo: repo,
 			}
 			returnedUser, err := svc.GetUser(context.Background(), test.userID)

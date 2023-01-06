@@ -83,7 +83,7 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			wkflow := test.wkflowFn(mockCtl)
-			svc := &OrgService{
+			svc := &orgService{
 				repo:      repo,
 				wkflowMgr: wkflow,
 			}
@@ -141,7 +141,7 @@ func TestOrgService_GetOrg(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &OrgService{
+			svc := &orgService{
 				repo: repo,
 			}
 			returnedOrg, err := svc.GetOrg(context.Background(), test.orgID)
@@ -189,7 +189,7 @@ func TestOrgService_GetOrgBySlug(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &OrgService{
+			svc := &orgService{
 				repo: repo,
 			}
 			returnedOrg, err := svc.GetOrgBySlug(context.Background(), test.slug)
@@ -390,7 +390,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			orgInput := test.inputFn()
 			ctx := test.ctxFn()
-			svc := &OrgService{
+			svc := &orgService{
 				repo:           test.repoFn(mockCtl),
 				userOrgUpdater: test.userRepoFn(mockCtl),
 				wkflowMgr:      test.wkflowFn(mockCtl),
@@ -449,7 +449,7 @@ func TestOrgService_UserOrgs(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &OrgService{
+			svc := &orgService{
 				repo: repo,
 			}
 			orgs, _, err := svc.UserOrgs(context.Background(), test.userID, &models.ConnectionOptions{})

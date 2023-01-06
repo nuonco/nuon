@@ -56,7 +56,7 @@ func TestAppService_GetApp(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &AppService{
+			svc := &appService{
 				repo: repo,
 			}
 			returnedApp, err := svc.GetApp(context.Background(), test.appID)
@@ -104,7 +104,7 @@ func TestAppService_GetAppBySlug(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &AppService{
+			svc := &appService{
 				repo: repo,
 			}
 			returnedApp, err := svc.GetAppBySlug(context.Background(), test.slug)
@@ -199,7 +199,7 @@ func TestAppService_UpsertApp(t *testing.T) {
 			appInput := test.inputFn()
 			repo := test.repoFn(mockCtl)
 			mgr := test.wkflowFn(mockCtl)
-			svc := &AppService{
+			svc := &appService{
 				repo:        repo,
 				workflowMgr: mgr,
 			}
@@ -254,7 +254,7 @@ func TestAppService_DeleteApp(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &AppService{
+			svc := &appService{
 				repo: repo,
 			}
 
@@ -299,7 +299,7 @@ func TestAppService_GetAllApps(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &AppService{
+			svc := &appService{
 				repo: repo,
 			}
 

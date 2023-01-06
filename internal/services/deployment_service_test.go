@@ -56,7 +56,7 @@ func TestDeploymentService_GetComponentDeployments(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &DeploymentService{
+			svc := &deploymentService{
 				repo: repo,
 			}
 			deployments, _, err := svc.GetComponentDeployments(context.Background(), test.componentIDs, &models.ConnectionOptions{})
@@ -112,7 +112,7 @@ func TestDeploymentService_GetDeployment(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &DeploymentService{
+			svc := &deploymentService{
 				repo: repo,
 			}
 			returnedDeployment, err := svc.GetDeployment(context.Background(), test.deploymentID)

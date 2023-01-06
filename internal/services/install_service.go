@@ -11,22 +11,33 @@ import (
 	"gorm.io/gorm"
 )
 
-type InstallService struct {
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_install_service.go -source=install_service.go -package=services
+type InstallService interface {
+	DeleteInstall(context.Context, string) (bool, error)
+	GetInstall(context.Context, string) (*models.Install, error)
+	GetAppInstalls(context.Context, string, *models.ConnectionOptions) ([]*models.Install, *utils.Page, error)
+	UpsertInstall(context.Context, models.InstallInput) (*models.Install, error)
+}
+
+var _ InstallService = (*installService)(nil)
+
+type installService struct {
 	repo      repos.InstallRepo
 	wkflowMgr workflows.InstallWorkflowManager
 	appRepo   repos.AppRepo
 }
 
-func NewInstallService(db *gorm.DB, temporalClient tclient.Client) *InstallService {
+func NewInstallService(db *gorm.DB, temporalClient tclient.Client) *installService {
 	installRepo := repos.NewInstallRepo(db)
-	return &InstallService{
+	return &installService{
 		repo:      installRepo,
 		wkflowMgr: workflows.NewInstallWorkflowManager(temporalClient),
 		appRepo:   repos.NewAppRepo(db),
 	}
 }
 
-func (i *InstallService) deprovisionInstall(ctx context.Context, install *models.Install) error {
+func (i *installService) deprovisionInstall(ctx context.Context, install *models.Install) error {
 	// NOTE(jm): this is a hack, we should figure out how to grab the app id without having to pass the appRepo in
 	// here etc. Maybe a method on the installRepo, called GetAppOrgID?
 	app, err := i.appRepo.Get(ctx, install.AppID)
@@ -37,7 +48,7 @@ func (i *InstallService) deprovisionInstall(ctx context.Context, install *models
 	return i.wkflowMgr.Deprovision(ctx, install, app.OrgID.String())
 }
 
-func (i *InstallService) DeleteInstall(ctx context.Context, inputID string) (bool, error) {
+func (i *installService) DeleteInstall(ctx context.Context, inputID string) (bool, error) {
 	installID, err := parseID(inputID)
 	if err != nil {
 		return false, err
@@ -60,7 +71,7 @@ func (i *InstallService) DeleteInstall(ctx context.Context, inputID string) (boo
 	return success, nil
 }
 
-func (i *InstallService) GetInstall(ctx context.Context, inputID string) (*models.Install, error) {
+func (i *installService) GetInstall(ctx context.Context, inputID string) (*models.Install, error) {
 	installID, err := parseID(inputID)
 	if err != nil {
 		return nil, err
@@ -69,7 +80,7 @@ func (i *InstallService) GetInstall(ctx context.Context, inputID string) (*model
 	return i.repo.Get(ctx, installID)
 }
 
-func (i *InstallService) GetAppInstalls(
+func (i *installService) GetAppInstalls(
 	ctx context.Context,
 	id string,
 	options *models.ConnectionOptions,
@@ -81,7 +92,7 @@ func (i *InstallService) GetAppInstalls(
 	return i.repo.ListByApp(ctx, appID, options)
 }
 
-func (i *InstallService) updateInstall(ctx context.Context, input models.InstallInput) (*models.Install, error) {
+func (i *installService) updateInstall(ctx context.Context, input models.InstallInput) (*models.Install, error) {
 	install, err := i.GetInstall(ctx, *input.ID)
 	if err != nil {
 		return nil, err
@@ -114,7 +125,7 @@ func (i *InstallService) updateInstall(ctx context.Context, input models.Install
 	return updatedInstall, nil
 }
 
-func (i *InstallService) provisionInstall(ctx context.Context, install *models.Install) error {
+func (i *installService) provisionInstall(ctx context.Context, install *models.Install) error {
 	// NOTE(jm): this is a hack, we should figure out how to grab the app id without having to pass the appRepo in
 	// here etc. Maybe a method on the installRepo, called GetAppOrgID?
 	app, err := i.appRepo.Get(ctx, install.AppID)
@@ -125,7 +136,7 @@ func (i *InstallService) provisionInstall(ctx context.Context, install *models.I
 	return i.wkflowMgr.Provision(ctx, install, app.OrgID.String())
 }
 
-func (i *InstallService) UpsertInstall(ctx context.Context, input models.InstallInput) (*models.Install, error) {
+func (i *installService) UpsertInstall(ctx context.Context, input models.InstallInput) (*models.Install, error) {
 	if input.ID != nil {
 		return i.updateInstall(ctx, input)
 	}

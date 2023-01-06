@@ -181,7 +181,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			appInput := test.inputFn()
-			svc := &InstallService{
+			svc := &installService{
 				repo:      test.repoFn(mockCtl),
 				wkflowMgr: test.wkflowFn(mockCtl),
 				appRepo:   test.appRepoFn(mockCtl),
@@ -240,7 +240,7 @@ func TestInstallService_GetAppInstalls(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &InstallService{
+			svc := &installService{
 				repo: repo,
 			}
 			installs, _, err := svc.GetAppInstalls(context.Background(), test.appID, &models.ConnectionOptions{})
@@ -296,7 +296,7 @@ func TestInstallService_GetInstall(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			svc := &InstallService{
+			svc := &installService{
 				repo: repo,
 			}
 			returnedInstall, err := svc.GetInstall(context.Background(), test.installID)
@@ -419,7 +419,7 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
-			svc := &InstallService{
+			svc := &installService{
 				repo:      test.repoFn(mockCtl),
 				appRepo:   test.appRepoFn(mockCtl),
 				wkflowMgr: test.wkflowFn(mockCtl),
