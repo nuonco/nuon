@@ -9,7 +9,7 @@ import (
 type App struct {
 	Model
 
-	CreatedByID     uuid.UUID `gorm:"type:uuid"`
+	CreatedByID     string
 	Name            string
 	Slug            string
 	OrgID           uuid.UUID

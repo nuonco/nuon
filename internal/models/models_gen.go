@@ -323,34 +323,6 @@ type StringOperators struct {
 	Regex       *string  `json:"regex"`
 }
 
-// An auto-generated type for paginating through multiple Users
-type UserConnection struct {
-	TotalCount int       `json:"totalCount"`
-	PageInfo   *PageInfo `json:"pageInfo"`
-	// A list of edges
-	Edges []*UserEdge `json:"edges"`
-}
-
-func (UserConnection) IsConnection() {}
-
-// Total count of items
-//
-//nolint:all
-func (this UserConnection) GetTotalCount() int { return this.TotalCount }
-
-// Information to aid in pagination of list
-//
-//nolint:all
-func (this UserConnection) GetPageInfo() *PageInfo { return this.PageInfo }
-
-// An auto-generated type which holds one User and a cursor during pagination
-type UserEdge struct {
-	// A cursor for use in pagination
-	Cursor string `json:"cursor"`
-	// The item at the end of UserEdge
-	Node *User `json:"node"`
-}
-
 type UserInput struct {
 	ID         *string `json:"id" faker:"uuid_hyphenated"`
 	ExternalID string  `json:"externalId"`
