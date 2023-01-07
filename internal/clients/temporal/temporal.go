@@ -21,7 +21,6 @@ func New(opts ...temporalOption) (tclient.Client, error) {
 	tmp := &temporal{
 		Logger: logger,
 	}
-	validate := validator.New()
 
 	for idx, opt := range opts {
 		if err := opt(tmp); err != nil {
@@ -29,6 +28,7 @@ func New(opts ...temporalOption) (tclient.Client, error) {
 		}
 	}
 
+	validate := validator.New()
 	if err := validate.Struct(tmp); err != nil {
 		return nil, fmt.Errorf("unable to validate temporal: %w", err)
 	}
