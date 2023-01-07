@@ -29,7 +29,7 @@ message GetDeploymentsByComponentsRequest {
 }
 
 message GetDeploymentsByComponentsResponse {
-  repeated Deployment deployment = 1;
+  repeated Deployment deployments = 1;
 }
 
 message CreateDeploymentRequest {
