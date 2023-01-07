@@ -14,7 +14,7 @@ func (s *server) GetOrg(
 	ctx context.Context,
 	req *connect.Request[orgv1.GetOrgRequest],
 ) (*connect.Response[orgv1.GetOrgResponse], error) {
-	org, err := s.Svc.GetOrg(ctx, req.Msg.OrgId)
+	org, err := s.Svc.GetOrg(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get org: %w", err)
 	}
