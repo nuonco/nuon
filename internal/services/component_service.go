@@ -15,6 +15,7 @@ type ComponentService interface {
 	GetComponent(context.Context, string) (*models.Component, error)
 	GetAppComponents(context.Context, string, *models.ConnectionOptions) ([]*models.Component, *utils.Page, error)
 	UpsertComponent(context.Context, models.ComponentInput) (*models.Component, error)
+	DeleteComponent(context.Context, string) (bool, error)
 }
 
 type componentService struct {

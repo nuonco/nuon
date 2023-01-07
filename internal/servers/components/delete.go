@@ -2,6 +2,7 @@ package components
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/connect-go"
 	componentv1 "github.com/powertoolsdev/protos/api/generated/types/component/v1"
@@ -11,6 +12,12 @@ func (s *server) DeleteComponent(
 	ctx context.Context,
 	req *connect.Request[componentv1.DeleteComponentRequest],
 ) (*connect.Response[componentv1.DeleteComponentResponse], error) {
-	res := connect.NewResponse(&componentv1.DeleteComponentResponse{})
-	return res, nil
+	deleted, err := s.Svc.DeleteComponent(ctx, req.Msg.Id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to delete component: %w", err)
+	}
+
+	return connect.NewResponse(&componentv1.DeleteComponentResponse{
+		Deleted: deleted,
+	}), nil
 }
