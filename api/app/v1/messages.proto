@@ -9,8 +9,9 @@ message App {
   string name = 2;
   string github_install_id = 3;
   string org_id = 4;
-  google.type.DateTime created_at = 5;
-  google.type.DateTime updated_at = 6;
+  string created_by_id = 5;
+  google.type.DateTime created_at = 6;
+  google.type.DateTime updated_at = 7;
 }
 
 message GetAppRequest {
@@ -42,6 +43,7 @@ message UpsertAppRequest {
   string name = 2;
   string org_id = 3;
   string github_install_id = 4;
+  string created_by_id = 5;
 }
 
 message UpsertAppResponse {

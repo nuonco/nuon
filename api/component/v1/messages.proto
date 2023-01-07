@@ -24,13 +24,14 @@ message ComponentRef {
   string build_image = 2;
   ComponentType type = 3;
   string name = 4;
+  string created_by_id = 5;
 
   oneof vcs_config {
-    GithubConfig github_config = 5;
+    GithubConfig github_config = 6;
   }
 
-  google.type.DateTime created_at = 6;
-  google.type.DateTime updated_at = 7;
+  google.type.DateTime created_at = 7;
+  google.type.DateTime updated_at = 8;
 }
 
 message GetComponentRequest {
@@ -54,10 +55,11 @@ message UpsertComponentRequest {
   string id = 2;
   string name = 3;
   string build_image = 4;
-  ComponentType component_type = 5;
+  string created_by_id = 5;
+  ComponentType component_type = 6;
 
   oneof vcs_config {
-    GithubConfig github_config = 6;
+    GithubConfig github_config = 7;
   }
 }
 

@@ -172,6 +172,8 @@ func (m *ComponentRef) validate(all bool) error {
 
 	// no validation rules for Name
 
+	// no validation rules for CreatedById
+
 	if all {
 		switch v := interface{}(m.GetCreatedAt()).(type) {
 		case interface{ ValidateAll() error }:
@@ -857,6 +859,8 @@ func (m *UpsertComponentRequest) validate(all bool) error {
 	// no validation rules for Name
 
 	// no validation rules for BuildImage
+
+	// no validation rules for CreatedById
 
 	// no validation rules for ComponentType
 

@@ -13,8 +13,9 @@ message Install {
     GcpSettings gcp_settings = 4;
   }
 
-  google.type.DateTime created_at = 5;
-  google.type.DateTime updated_at = 6;
+  string created_by_id = 5;
+  google.type.DateTime created_at = 6;
+  google.type.DateTime updated_at = 7;
 }
 
 enum AwsRegion {
@@ -62,10 +63,11 @@ message UpsertInstallRequest {
   string id = 1;
   string name = 2;
   string app_id = 3;
+  string created_by_id = 4;
 
   oneof settings {
-    AwsSettings aws_settings = 4;
-    GcpSettings gcp_settings = 5;
+    AwsSettings aws_settings = 5;
+    GcpSettings gcp_settings = 6;
   }
 }
 

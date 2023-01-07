@@ -60,6 +60,8 @@ func (m *Install) validate(all bool) error {
 
 	// no validation rules for Name
 
+	// no validation rules for CreatedById
+
 	if all {
 		switch v := interface{}(m.GetCreatedAt()).(type) {
 		case interface{ ValidateAll() error }:
@@ -1196,6 +1198,8 @@ func (m *UpsertInstallRequest) validate(all bool) error {
 	// no validation rules for Name
 
 	// no validation rules for AppId
+
+	// no validation rules for CreatedById
 
 	switch v := m.Settings.(type) {
 	case *UpsertInstallRequest_AwsSettings:

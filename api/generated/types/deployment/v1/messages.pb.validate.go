@@ -65,6 +65,8 @@ func (m *Deployment) validate(all bool) error {
 
 	// no validation rules for ComponentId
 
+	// no validation rules for CreatedById
+
 	if all {
 		switch v := interface{}(m.GetUpdatedAt()).(type) {
 		case interface{ ValidateAll() error }:
@@ -702,6 +704,8 @@ func (m *CreateDeploymentRequest) validate(all bool) error {
 	var errors []error
 
 	// no validation rules for ComponentId
+
+	// no validation rules for CreatedById
 
 	if len(errors) > 0 {
 		return CreateDeploymentRequestMultiError(errors)

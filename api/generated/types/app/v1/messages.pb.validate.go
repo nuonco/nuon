@@ -64,6 +64,8 @@ func (m *App) validate(all bool) error {
 
 	// no validation rules for OrgId
 
+	// no validation rules for CreatedById
+
 	if all {
 		switch v := interface{}(m.GetCreatedAt()).(type) {
 		case interface{ ValidateAll() error }:
@@ -905,6 +907,8 @@ func (m *UpsertAppRequest) validate(all bool) error {
 	// no validation rules for OrgId
 
 	// no validation rules for GithubInstallId
+
+	// no validation rules for CreatedById
 
 	if len(errors) > 0 {
 		return UpsertAppRequestMultiError(errors)

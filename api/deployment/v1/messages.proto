@@ -9,9 +9,11 @@ message Deployment {
   string commit_hash = 2;
   string commit_author = 3;
   string component_id = 4;
-  repeated string install_ids = 5;
-  google.type.DateTime updated_at = 6;
-  google.type.DateTime created_at = 7;
+  string created_by_id = 5;
+  repeated string install_ids = 6;
+
+  google.type.DateTime updated_at = 7;
+  google.type.DateTime created_at = 8;
 }
 
 message GetDeploymentRequest {
@@ -32,6 +34,7 @@ message GetDeploymentsByComponentsResponse {
 
 message CreateDeploymentRequest {
   string component_id = 1;
+  string created_by_id = 2;
 }
 
 message CreateDeploymentResponse {
