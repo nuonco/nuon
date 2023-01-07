@@ -1,8 +1,8 @@
-package orgs
+package converters
 
 import "github.com/powertoolsdev/go-generics"
 
-func ToOptionalID(val string) *string {
+func ToOptionalStr(val string) *string {
 	if val == "" {
 		return nil
 	}
