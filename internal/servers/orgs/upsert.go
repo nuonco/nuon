@@ -15,7 +15,7 @@ func (s *server) UpsertOrg(
 	req *connect.Request[orgv1.UpsertOrgRequest],
 ) (*connect.Response[orgv1.UpsertOrgResponse], error) {
 	org, err := s.Svc.UpsertOrg(ctx, models.OrgInput{
-		ID:      ToOptionalID(req.Msg.Id),
+		ID:      converters.ToOptionalStr(req.Msg.Id),
 		Name:    req.Msg.Name,
 		OwnerID: req.Msg.OwnerId,
 	})
