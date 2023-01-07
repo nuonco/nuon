@@ -23,8 +23,7 @@ func (s *server) UpsertOrg(
 		return nil, fmt.Errorf("unable to upsert org: %w", err)
 	}
 
-	res := connect.NewResponse(&orgv1.UpsertOrgResponse{
+	return connect.NewResponse(&orgv1.UpsertOrgResponse{
 		Org: converters.OrgModelToProto(org),
-	})
-	return res, nil
+	}), nil
 }
