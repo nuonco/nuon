@@ -2,8 +2,11 @@ package deployments
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/api/internal/servers/converters"
 	deploymentv1 "github.com/powertoolsdev/protos/api/generated/types/deployment/v1"
 )
 
@@ -11,14 +14,26 @@ func (s *server) GetDeployment(
 	ctx context.Context,
 	req *connect.Request[deploymentv1.GetDeploymentRequest],
 ) (*connect.Response[deploymentv1.GetDeploymentResponse], error) {
-	res := connect.NewResponse(&deploymentv1.GetDeploymentResponse{})
-	return res, nil
+	deployment, err := s.Svc.GetDeployment(ctx, req.Msg.Id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get deployment: %w", err)
+	}
+
+	return connect.NewResponse(&deploymentv1.GetDeploymentResponse{
+		Deployment: converters.DeploymentModelToProto(deployment),
+	}), nil
 }
 
 func (s *server) GetDeploymentsByComponents(
 	ctx context.Context,
 	req *connect.Request[deploymentv1.GetDeploymentsByComponentsRequest],
 ) (*connect.Response[deploymentv1.GetDeploymentsByComponentsResponse], error) {
-	res := connect.NewResponse(&deploymentv1.GetDeploymentsByComponentsResponse{})
-	return res, nil
+	deployments, _, err := s.Svc.GetComponentDeployments(ctx, req.Msg.ComponentIds, &models.ConnectionOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get component deployments: %w", err)
+	}
+
+	return connect.NewResponse(&deploymentv1.GetDeploymentsByComponentsResponse{
+		Deployments: converters.DeploymentModelsToProtos(deployments),
+	}), nil
 }

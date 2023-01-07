@@ -22,8 +22,13 @@ import (
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_deployment_service.go -source=deployment_service.go -package=services
 type DeploymentService interface {
+	// GetDeployment returns a deployment by id
 	GetDeployment(context.Context, string) (*models.Deployment, error)
+
+	// GetDeployment returns deployment for any of the provided component
+	// ids
 	GetComponentDeployments(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
+	// CreateDeployment creates a new deployment for the specified component id
 	CreateDeployment(context.Context, string) (*models.Deployment, error)
 }
 
