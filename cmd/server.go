@@ -7,6 +7,7 @@ import (
 
 	"github.com/powertoolsdev/api/internal"
 	databaseclient "github.com/powertoolsdev/api/internal/clients/database"
+	githubclient "github.com/powertoolsdev/api/internal/clients/github"
 	temporalclient "github.com/powertoolsdev/api/internal/clients/temporal"
 	appsserver "github.com/powertoolsdev/api/internal/servers/apps"
 	componentsserver "github.com/powertoolsdev/api/internal/servers/components"
@@ -37,7 +38,6 @@ func init() {
 func registerLoadbalancerHealthCheck(mux *http.ServeMux) {
 	mux.Handle("/_ping", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(http.StatusOK)
-
 		if _, err := rw.Write([]byte("{\"status\": \"ok\"}")); err != nil {
 			log.Fatal("unable to write load balancer health check response", err.Error())
 		}
@@ -66,6 +66,11 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config) error {
 		return fmt.Errorf("unable to create temporal client: %w", err)
 	}
 
+	ghTransport, err := githubclient.New(githubclient.WithConfig(cfg))
+	if err != nil {
+		return fmt.Errorf("unable to github client: %w", err)
+	}
+
 	appSvc := services.NewAppService(db, tc)
 	_, err = appsserver.New(appsserver.WithHTTPMux(mux), appsserver.WithService(appSvc))
 	if err != nil {
@@ -78,8 +83,7 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config) error {
 		return fmt.Errorf("unable to initialize components server: %w", err)
 	}
 
-	// TODO(jm): add gh transport
-	deploymentsSvc := services.NewDeploymentService(db, tc, nil)
+	deploymentsSvc := services.NewDeploymentService(db, tc, ghTransport)
 	_, err = deploymentsserver.New(deploymentsserver.WithHTTPMux(mux), deploymentsserver.WithService(deploymentsSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize deployments server: %w", err)
