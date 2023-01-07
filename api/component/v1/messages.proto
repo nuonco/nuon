@@ -47,7 +47,7 @@ message GetComponentsByAppRequest {
 }
 
 message GetComponentsByAppResponse {
-  repeated ComponentRef component = 1;
+  repeated ComponentRef components = 1;
 }
 
 message UpsertComponentRequest {
