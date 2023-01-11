@@ -1,7 +1,6 @@
-data "aws_iam_policy_document" "service_policy" {
+data "aws_iam_policy_document" "api" {
   statement {
     effect = "Allow"
-    # access to read/write chart bucket
     actions = [
       "s3:ListBucket",
       "s3:*Object",
@@ -11,27 +10,22 @@ data "aws_iam_policy_document" "service_policy" {
   statement {
     effect = "Allow"
     actions = [
-      "kms:Encrypt",
-      "kms:Decrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*",
-      "kms:DescribeKey"
+      "rds-db:connect",
     ]
-    resources = ["*", ]
-  }
-  statement {
-    effect = "Allow"
-    actions = [
-      "sts:AssumeRole"
+    resources = [
+      format("arn:aws:rds-db:%s:%s:dbuser:%s/%s",
+        local.vars.region,
+        local.target_account_id,
+        module.primary.db_instance_resource_id,
+        local.name
+      ),
     ]
-    resources = ["*", ]
   }
-
 }
 
-resource "aws_iam_policy" "service" {
+resource "aws_iam_policy" "api_policy" {
   name   = "eks-policy-${local.name}"
-  policy = data.aws_iam_policy_document.service_policy.json
+  policy = data.aws_iam_policy_document.api.json
 }
 
 module "iam_eks_role" {
@@ -47,6 +41,6 @@ module "iam_eks_role" {
   }
 
   role_policy_arns = {
-    custom = aws_iam_policy.service.arn
+    custom = aws_iam_policy.api_policy.arn
   }
 }

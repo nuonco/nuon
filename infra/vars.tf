@@ -1,9 +1,19 @@
+data "utils_deep_merge_yaml" "vars" {
+  input = [
+    file("vars/defaults.yaml"),
+    file("vars/${var.env}.yaml"),
+  ]
+}
+
 locals {
   accounts = {
     for acct in data.aws_organizations_organization.orgs.accounts : acct.name => { id : acct.id }
   }
 
+  target_account_id = local.accounts[var.env].id
+
   name                   = "api"
+  pool                   = "nuon"
   github_repository      = local.name
   github_organization    = "powertoolsdev"
   terraform_organization = "launchpaddev"
@@ -18,7 +28,7 @@ locals {
     terraform   = "${local.name}-${var.env}"
   }
 
-  vars = yamldecode(file("vars/${var.env}.yaml"))
+  vars = yamldecode(data.utils_deep_merge_yaml.vars.output)
 }
 
 variable "env" {

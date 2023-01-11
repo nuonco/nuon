@@ -23,10 +23,11 @@ provider "aws" {
   region = local.vars.region
 
   assume_role {
-    role_arn = "arn:aws:iam::${local.accounts[var.env].id}:role/terraform"
+    role_arn = "arn:aws:iam::${local.target_account_id}:role/terraform"
   }
 
   default_tags {
     tags = local.tags
   }
 }
+

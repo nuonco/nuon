@@ -23,7 +23,7 @@ output "ecr_registry_id" {
 }
 
 output "cluster_name" {
-  value = local.vars.cluster_name
+  value = "${var.env}-nuon"
 }
 
 output "cluster_gh_role_arn" {

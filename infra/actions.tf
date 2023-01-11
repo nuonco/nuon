@@ -1,3 +1,4 @@
+// this file contains iam policies and infra for github actions
 data "aws_iam_policy_document" "github_actions_policy_doc" {
   statement {
     effect = "Allow"
@@ -20,6 +21,8 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
     ]
     resources = [local.helm_bucket_kms_key_arn, ]
   }
+
+
   statement {
     effect = "Allow"
     actions = [

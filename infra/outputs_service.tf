@@ -1,0 +1,33 @@
+output "db_instance_address" {
+  value = aws_route53_record.primary.name
+}
+
+output "db_instance_host" {
+  value = module.primary.db_instance_address
+}
+
+output "db_instance_name" {
+  value = module.primary.db_instance_name
+}
+
+output "db_instance_port" {
+  value = module.primary.db_instance_port
+}
+
+output "db_instance_username" {
+  sensitive = true
+  value     = module.primary.db_instance_username
+}
+
+output "db_instance_password" {
+  sensitive = true
+  value     = module.primary.db_instance_password
+}
+
+output "certificate_arn" {
+  value = module.certificate.acm_certificate_arn
+}
+
+output "certificate_domains" {
+  value = module.certificate.distinct_domain_names
+}

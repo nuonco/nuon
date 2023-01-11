@@ -19,5 +19,10 @@ terraform {
       source  = "hashicorp/tfe"
       version = ">= 0.36.1"
     }
+
+    utils = {
+      source  = "cloudposse/utils"
+      version = ">= 0.17.23"
+    }
   }
 }
