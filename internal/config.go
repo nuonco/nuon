@@ -11,8 +11,7 @@ func init() {
 	config.RegisterDefault("http_address", "0.0.0.0")
 
 	// defaults for database
-	config.RegisterDefault("db_user", "postgres")
-	config.RegisterDefault("db_password", "api")
+	config.RegisterDefault("db_user", "api")
 	config.RegisterDefault("db_port", "5432")
 	config.RegisterDefault("db_name", "api")
 	config.RegisterDefault("db_ssl_mode", "disable")
