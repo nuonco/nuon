@@ -115,9 +115,9 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, componentID st
 	commit, err := repos.GithubRepo.GetCommit(i.githubRepo,
 		ctx,
 		ghInstallID,
-		deployment.Component.GithubRepoOwner,
-		deployment.Component.GithubRepo,
-		deployment.Component.GithubBranch)
+		deployment.Component.GithubConfig.RepoOwner,
+		deployment.Component.GithubConfig.Repo,
+		deployment.Component.GithubConfig.Branch)
 	if err != nil {
 		return nil, err
 	}
