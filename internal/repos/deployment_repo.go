@@ -33,7 +33,7 @@ type deploymentRepo struct {
 
 func (i deploymentRepo) Get(ctx context.Context, id uuid.UUID) (*models.Deployment, error) {
 	var deployment models.Deployment
-	if err := i.db.WithContext(ctx).Preload("Component.App").Preload("Component.App.Installs").Preload(clause.Associations).First(&deployment, "id = ?", id).Error; err != nil {
+	if err := i.db.WithContext(ctx).Preload("Component.App").Preload("Component.App.Installs").Preload("Component.GithubConfig").Preload(clause.Associations).First(&deployment, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return &deployment, nil
