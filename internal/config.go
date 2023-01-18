@@ -23,14 +23,21 @@ type Config struct {
 	TemporalHost      string `config:"temporal_host"`
 	TemporalNamespace string `config:"temporal_namespace"`
 
-	Bucket       string `config:"bucket" validate:"required"`
-	BucketRegion string `config:"bucket_region" validate:"required"`
-	RoleArn      string `config:"role_arn" validate:"required"`
+	DeploymentBotsSlackWebhookURL string `config:"deployment_bots_slack_webhook_url" validate:"required"`
+	DeploymentsBucket             string `config:"deployments_bucket" validate:"required"`
 
+	// waypoint configuration
 	WaypointTokenSecretNamespace string `config:"waypoint_token_secret_namespace" validate:"required"`
+	WaypointTokenSecretTemplate  string `config:"waypoint_token_secret_template" validate:"required"`
 	WaypointServerRootDomain     string `config:"waypoint_server_root_domain" validate:"required"`
 
-	DeploymentBotsSlackWebhookURL string `config:"deployment_bots_slack_webhook_url" validate:"required"`
+	// org IAM role template names
+	OrgsDeploymentsRoleTemplate string `config:"orgs_deployments_role_template" validate:"required"`
+
+	// configuration for plans
+	OrgsECRRegistryID  string `config:"orgs_ecr_registry_id" validate:"required"`
+	OrgsECRRegistryARN string `config:"orgs_ecr_registry_arn" validate:"required"`
+	OrgsECRRegion      string `config:"orgs_ecr_region" validate:"required"`
 }
 
 func (c Config) Validate() error {
