@@ -234,6 +234,93 @@ func (m *ProvisionResponse) validate(all bool) error {
 
 	var errors []error
 
+	if all {
+		switch v := interface{}(m.GetBuildPlan()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ProvisionResponseValidationError{
+					field:  "BuildPlan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ProvisionResponseValidationError{
+					field:  "BuildPlan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetBuildPlan()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ProvisionResponseValidationError{
+				field:  "BuildPlan",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetImageSyncPlan()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ProvisionResponseValidationError{
+					field:  "ImageSyncPlan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ProvisionResponseValidationError{
+					field:  "ImageSyncPlan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetImageSyncPlan()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ProvisionResponseValidationError{
+				field:  "ImageSyncPlan",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetDeployPlan()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ProvisionResponseValidationError{
+					field:  "DeployPlan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ProvisionResponseValidationError{
+					field:  "DeployPlan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetDeployPlan()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ProvisionResponseValidationError{
+				field:  "DeployPlan",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return ProvisionResponseMultiError(errors)
 	}

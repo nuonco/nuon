@@ -24,4 +24,8 @@ message ProvisionRequest {
 }
 
 // ProvisionResponse returns the response from an instance provision workflow
-message ProvisionResponse {}
+message ProvisionResponse {
+  .plan.v1.PlanRef build_plan = 1;
+  .plan.v1.PlanRef image_sync_plan = 2;
+  .plan.v1.PlanRef deploy_plan = 3;
+}
