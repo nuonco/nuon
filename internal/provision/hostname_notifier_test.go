@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-sender"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,7 +31,7 @@ var _ waypointClientHostnameGetter = (*testWaypointClientHostnameGetter)(nil)
 func Test_hostnameNotificationSenderImpl_getHostname(t *testing.T) {
 	testErr := fmt.Errorf("test-error")
 
-	req := getFakeObj[SendHostnameNotificationRequest]()
+	req := generics.GetFakeObj[SendHostnameNotificationRequest]()
 
 	tests := map[string]struct {
 		clientFn    func() waypointClientHostnameGetter
@@ -112,7 +113,7 @@ var _ sender.NotificationSender = (*testNotificationSender)(nil)
 func Test_hostnameNotificationSenderImpl_sendHostnameNotification(t *testing.T) {
 	testErr := fmt.Errorf("test-error")
 
-	req := getFakeObj[SendHostnameNotificationRequest]()
+	req := generics.GetFakeObj[SendHostnameNotificationRequest]()
 	hostname := "https://initially-central-monkey.waypoint.run"
 
 	tests := map[string]struct {

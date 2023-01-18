@@ -9,23 +9,13 @@ import (
 type waypointProvider = waypoint.Provider
 
 type Activities struct {
-	waypointCfgGenerator
-	waypointApplicationUpserter
 	waypointProvider
-	waypointDeploymentJobPoller
-	waypointDeploymentJobQueuer
-	metadataUploader
 	hostnameNotificationSender
 }
 
 func NewActivities(sender sender.NotificationSender) *Activities {
 	return &Activities{
-		waypointCfgGenerator:        &waypointCfgGeneratorImpl{},
-		waypointApplicationUpserter: &wpApplicationUpserter{},
-		waypointProvider:            waypoint.NewProvider(),
-		waypointDeploymentJobPoller: &waypointDeploymentJobPollerImpl{},
-		waypointDeploymentJobQueuer: &waypointDeploymentJobQueuerImpl{},
-		metadataUploader:            &metadataUploaderImpl{},
+		waypointProvider: waypoint.NewProvider(),
 		hostnameNotificationSender: &hostnameNotificationSenderImpl{
 			sender: sender,
 		},
