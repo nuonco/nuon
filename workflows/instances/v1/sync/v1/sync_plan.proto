@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package instances.v1.sync.v1;
+
+import "plan/v1/plan.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// SyncPlanRequest represents a workflow input for creating a deployment
+message SyncPlanRequest {
+  .plan.v1.PlanRef build_plan = 1;
+
+  string install_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+}
+
+// SyncPlanResponse returns the response from an instance provision workflow
+message SyncPlanResponse {
+  .plan.v1.PlanRef plan = 1;
+}

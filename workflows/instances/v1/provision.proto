@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package instances.v1;
+
+import "plan/v1/plan.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// ProvisionRequest represents a workflow input for creating a deployment
+message ProvisionRequest {
+  string install_id = 1 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+
+  .plan.v1.PlanRef build_plan = 2;
+  bool plan_only = 3 [(tagger.tags) = "faker:\"-\""];
+}
+
+// ProvisionResponse returns the response from an instance provision workflow
+message ProvisionResponse {}
