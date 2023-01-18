@@ -60,11 +60,34 @@ func (m *ProvisionRequest) validate(all bool) error {
 
 	var errors []error
 
+	if err := m._validateUuid(m.GetOrgId()); err != nil {
+		err = ProvisionRequestValidationError{
+			field:  "OrgId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if err := m._validateUuid(m.GetInstallId()); err != nil {
 		err = ProvisionRequestValidationError{
 			field:  "InstallId",
 			reason: "value must be a valid UUID",
 			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetPrefix()) < 1 {
+		err := ProvisionRequestValidationError{
+			field:  "Prefix",
+			reason: "value length must be at least 1 runes",
 		}
 		if !all {
 			return err

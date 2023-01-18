@@ -8,13 +8,19 @@ import "validate/validate.proto";
 
 // ProvisionRequest represents a workflow input for creating a deployment
 message ProvisionRequest {
-  string install_id = 1 [
+  string org_id = 1 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string install_id = 2 [
     (validate.rules).string.uuid = true,
     (tagger.tags) = "faker:\"uuid_hyphenated\""
   ];
 
-  .plan.v1.PlanRef build_plan = 2;
-  bool plan_only = 3 [(tagger.tags) = "faker:\"-\""];
+  string prefix = 3 [(validate.rules).string.min_len = 1];
+
+  .plan.v1.PlanRef build_plan = 4;
+  bool plan_only = 5 [(tagger.tags) = "faker:\"-\""];
 }
 
 // ProvisionResponse returns the response from an instance provision workflow
