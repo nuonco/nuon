@@ -5,6 +5,7 @@ package shared.v1;
 import "deployments/v1/start.proto";
 import "installs/v1/deprovision.proto";
 import "installs/v1/provision.proto";
+import "instances/v1/provision.proto";
 import "orgs/v1/signup.proto";
 import "orgs/v1/teardown.proto";
 import "tagger/tagger.proto";
@@ -31,5 +32,7 @@ message ResponseRef {
 
     orgs.v1.SignupResponse org_signup = 4;
     orgs.v1.TeardownResponse org_teardown = 5;
+
+    instances.v1.ProvisionResponse instance_provision = 6;
   }
 }
