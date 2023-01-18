@@ -15,11 +15,8 @@ import (
 )
 
 func TestProvision(t *testing.T) {
-	wf := NewWorkflow(workers.Config{
-		Bucket:                       "nuon-installations",
-		WaypointTokenSecretNamespace: "default",
-		WaypointServerRootDomain:     "test.nuon.co",
-	})
+	cfg := generics.GetFakeObj[workers.Config]()
+	wf := NewWorkflow(cfg)
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
