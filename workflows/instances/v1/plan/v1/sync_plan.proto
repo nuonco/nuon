@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package instances.v1.plan.v1;
+
+import "plan/v1/plan.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+enum PlanType {
+  PLAN_TYPE_UNSPECIFIED = 0;
+  PLAN_TYPE_SYNC_IMAGE = 1;
+  PLAN_TYPE_SYNC_DEPLOY = 2;
+}
+
+// CreatePlanRequest represents a workflow input for creating a deployment
+message CreatePlanRequest {
+  .plan.v1.PlanRef build_plan = 1;
+
+  string install_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+
+  PlanType type = 3;
+}
+
+// CreatePlanResponse returns the response from an instance provision workflow
+message CreatePlanResponse {
+  .plan.v1.PlanRef plan = 1;
+}
