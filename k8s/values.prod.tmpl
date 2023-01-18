@@ -3,7 +3,9 @@ environment: stage
 
 configmap:
   values:
-    SOME_KEY: SOME_VALUE
+    DB_HOST: $TFO_DB_INSTANCE_HOST
+    DB_NAME: $TFO_DB_INSTANCE_NAME
+    DB_USER: $TFO_DB_INSTANCE_USERNAME
 
 serviceAccount:
   annotations:
