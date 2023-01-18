@@ -10,6 +10,7 @@ ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
 ARG CGO_ENABLED=0
 ARG GOPRIVATE=github.com/powertoolsdev/*
+ARG ETCSSL=/etc/ssl/cert.pem
 
 ARG GITHUB_ACTIONS=
 
@@ -49,6 +50,7 @@ docker:
     ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
     COPY +build/service /bin/service
+    COPY +certs/cert.pem "$ETCSSL"
     ENTRYPOINT ["/bin/service"]
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
