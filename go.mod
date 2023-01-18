@@ -1,4 +1,4 @@
-module github.com/powertoolsdev/workers-orgs
+module github.com/powertoolsdev/go-workflows-meta
 
 go 1.19
 
