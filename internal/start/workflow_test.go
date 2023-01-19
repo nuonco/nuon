@@ -61,9 +61,9 @@ func TestProvision_planOnly(t *testing.T) {
 			return &buildv1.BuildResponse{}, nil
 		})
 	env.OnWorkflow(ins.ProvisionInstances, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, br *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
-			assert.Falsef(t, true, "Build was executed during plan only")
-			return &buildv1.BuildResponse{}, nil
+		Return(func(ctx workflow.Context, ir *instancesv1.ProvisionRequest) (*instancesv1.ProvisionResponse, error) {
+			assert.True(t, ir.PlanOnly)
+			return &instancesv1.ProvisionResponse{}, nil
 		})
 
 	env.OnActivity(act.StartStartRequest, mock.Anything, mock.Anything).
@@ -151,6 +151,8 @@ func TestStart(t *testing.T) {
 			assert.Equal(t, orgID, r.OrgId)
 			assert.Equal(t, appID, r.AppId)
 			assert.Equal(t, deploymentID, r.DeploymentId)
+			expectedPrefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
+			assert.Equal(t, expectedPrefix, r.DeploymentPrefix)
 			return resp, nil
 		})
 
