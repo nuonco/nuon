@@ -29,6 +29,7 @@ message ProvisionRequest {
     (validate.rules).string.min_len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
+  bool plan_only = 7 [(tagger.tags) = "faker:\"-\""];
 }
 
 // ProvisionResponse is a child workflow response for the plan phase
