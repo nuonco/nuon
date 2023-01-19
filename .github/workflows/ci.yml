@@ -24,7 +24,8 @@ defaults:
 
 env:
   REPO_NAME: ${{ github.event.repository.name }}
-  DEPENDENCY_REPOS: go-aws-assume-role,go-common,go-helm,go-generics,go-terraform,go-kube,go-sender,go-uploader,go-waypoint,protos
+  # yamllint disable-line rule:line-length
+  DEPENDENCY_REPOS: go-aws-assume-role,go-common,go-generics,go-terraform,go-kube,go-sender,go-uploader,go-waypoint,go-workflows-meta,protos
 
 jobs:
   terraform:

@@ -50,7 +50,7 @@ type CreatePlanResponse struct {
 	Plan *planv1.PlanRef
 }
 
-func (a *Activities) CreatePlan(ctx context.Context, req CreatePlanRequest) (CreatePlanResponse, error) {
+func (a *Activities) CreatePlanAct(ctx context.Context, req CreatePlanRequest) (CreatePlanResponse, error) {
 	resp := CreatePlanResponse{}
 
 	// create upload client

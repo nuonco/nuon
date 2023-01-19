@@ -1,0 +1,133 @@
+package provision
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/powertoolsdev/go-common/shortid"
+	meta "github.com/powertoolsdev/go-workflows-meta"
+	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1"
+	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
+	"go.temporal.io/sdk/workflow"
+)
+
+func (a *Activities) FinishProvisionRequest(ctx context.Context, req meta.FinishRequest) (meta.FinishResponse, error) {
+	act := meta.NewFinishActivity()
+	return act.FinishRequest(ctx, req)
+}
+
+func (a *Activities) StartProvisionRequest(ctx context.Context, req meta.StartRequest) (meta.StartResponse, error) {
+	act := meta.NewStartActivity()
+	return act.StartRequest(ctx, req)
+}
+
+func (w *wkflow) startWorkflow(ctx workflow.Context, req *instancesv1.ProvisionRequest) error {
+	info := workflow.GetInfo(ctx)
+
+	startReq := meta.StartRequest{
+		MetadataBucket:              w.cfg.DeploymentsBucket,
+		MetadataBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
+		MetadataBucketPrefix:        req.Prefix,
+		Request:                     metaRequestFromReq(req),
+		WorkflowInfo: meta.WorkflowInfo{
+			ID: info.WorkflowExecution.ID,
+		},
+	}
+
+	act := NewActivities(nil)
+	if _, err := execStart(ctx, act, startReq); err != nil {
+		return fmt.Errorf("unable to start workflow: %w", err)
+	}
+
+	return nil
+}
+
+func metaRequestFromReq(req *instancesv1.ProvisionRequest) *sharedv1.RequestRef {
+	return &sharedv1.RequestRef{
+		Request: &sharedv1.RequestRef_InstanceProvision{
+			InstanceProvision: req,
+		},
+	}
+}
+
+func metaResponseFromResponse(resp *instancesv1.ProvisionResponse) *sharedv1.ResponseRef {
+	return &sharedv1.ResponseRef{
+		Response: &sharedv1.ResponseRef_InstanceProvision{
+			InstanceProvision: resp,
+		},
+	}
+}
+
+// finishWorkflow calls the finish step
+func (w *wkflow) finishWorkflow(ctx workflow.Context, req *instancesv1.ProvisionRequest, resp *instancesv1.ProvisionResponse, workflowErr error) {
+	var err error
+	defer func() {
+		if err == nil {
+			return
+		}
+
+		l := workflow.GetLogger(ctx)
+		l.Debug("unable to finish workflow: %w", err)
+	}()
+
+	status := sharedv1.ResponseStatus_RESPONSE_STATUS_OK
+	errMessage := ""
+	if workflowErr != nil {
+		status = sharedv1.ResponseStatus_RESPONSE_STATUS_ERROR
+		errMessage = workflowErr.Error()
+	}
+
+	orgID, err := shortid.ParseString(req.OrgId)
+	if err != nil {
+		err = fmt.Errorf("unable to parse orgID: %w", err)
+		return
+	}
+
+	finishReq := meta.FinishRequest{
+		MetadataBucket:              w.cfg.DeploymentsBucket,
+		MetadataBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
+		MetadataBucketPrefix:        req.Prefix,
+		Response:                    metaResponseFromResponse(resp),
+		ResponseStatus:              status,
+		ErrorMessage:                errMessage,
+	}
+
+	// exec activity
+	act := NewActivities(nil)
+	_, err = execFinish(ctx, act, finishReq)
+	if err != nil {
+		err = fmt.Errorf("unable to execute finish activity: %w", err)
+	}
+}
+
+func execStart(
+	ctx workflow.Context,
+	act *Activities,
+	req meta.StartRequest,
+) (meta.StartResponse, error) {
+	l := workflow.GetLogger(ctx)
+	resp := meta.StartResponse{}
+
+	l.Debug("executing start activity", "request", req)
+	fut := workflow.ExecuteActivity(ctx, act.StartProvisionRequest, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+func execFinish(
+	ctx workflow.Context,
+	act *Activities,
+	req meta.FinishRequest,
+) (meta.FinishResponse, error) {
+	l := workflow.GetLogger(ctx)
+	resp := meta.FinishResponse{}
+
+	l.Debug("executing finish activity", "request", req)
+	fut := workflow.ExecuteActivity(ctx, act.FinishProvisionRequest, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
