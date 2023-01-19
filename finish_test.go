@@ -99,8 +99,8 @@ func Test_finisherImpl_writeRequestFile(t *testing.T) {
 }
 
 func Test_finisherImpl_getRequest(t *testing.T) {
-	inputResp := generics.GetFakeObj[FinishRequest]()
-	inputResp.Response = &sharedv1.ResponseRef{
+	inputResp := generics.GetFakeObj[*sharedv1.FinishActivityRequest]()
+	inputResp.ResponseRef = &sharedv1.ResponseRef{
 		Response: &sharedv1.ResponseRef_OrgSignup{
 			OrgSignup: generics.GetFakeObj[*orgsv1.SignupResponse](),
 		},
@@ -109,6 +109,6 @@ func Test_finisherImpl_getRequest(t *testing.T) {
 	finisher := &finisherImpl{}
 	resp := finisher.getResponse(inputResp)
 
-	assert.Equal(t, inputResp.ResponseStatus, resp.Status)
-	assert.True(t, proto.Equal(inputResp.Response, inputResp.Response))
+	assert.Equal(t, inputResp.Status, resp.Status)
+	assert.True(t, proto.Equal(inputResp.ResponseRef, inputResp.ResponseRef))
 }

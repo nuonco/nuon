@@ -42,15 +42,15 @@ type finishActivity struct {
 	finisher finisher
 }
 
-func (a *finishActivity) FinishRequest(ctx context.Context, req FinishRequest) (FinishResponse, error) {
-	var resp FinishResponse
+func (a *finishActivity) FinishRequest(ctx context.Context, req *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
+	resp := &sharedv1.FinishActivityResponse{}
 
 	if err := req.Validate(); err != nil {
 		return resp, fmt.Errorf("unable to validate request: %w", err)
 	}
 
 	// create upload client
-	assumeRoleOpt := uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleARN)
+	assumeRoleOpt := uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleArn)
 	assumeRoleSessionOpt := uploader.WithAssumeSessionName(startAssumeRoleSessionName)
 	uploadClient := uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix,
 		assumeRoleOpt, assumeRoleSessionOpt)
@@ -64,7 +64,7 @@ func (a *finishActivity) FinishRequest(ctx context.Context, req FinishRequest) (
 }
 
 type finisher interface {
-	getResponse(FinishRequest) *sharedv1.Response
+	getResponse(*sharedv1.FinishActivityRequest) *sharedv1.Response
 	writeRequestFile(context.Context, finisherUploadClient, *sharedv1.Response) error
 }
 
@@ -72,10 +72,10 @@ type finisherImpl struct{}
 
 var _ finisher = (*finisherImpl)(nil)
 
-func (s *finisherImpl) getResponse(req FinishRequest) *sharedv1.Response {
+func (s *finisherImpl) getResponse(req *sharedv1.FinishActivityRequest) *sharedv1.Response {
 	return &sharedv1.Response{
-		Status:   req.ResponseStatus,
-		Response: req.Response,
+		Status:   req.Status,
+		Response: req.ResponseRef,
 	}
 }
 

@@ -99,8 +99,8 @@ func Test_starterImpl_writeRequestFile(t *testing.T) {
 }
 
 func Test_starterImpl_getRequest(t *testing.T) {
-	startReq := generics.GetFakeObj[StartRequest]()
-	startReq.Request = &sharedv1.RequestRef{
+	startReq := generics.GetFakeObj[*sharedv1.StartActivityRequest]()
+	startReq.RequestRef = &sharedv1.RequestRef{
 		Request: &sharedv1.RequestRef_OrgSignup{
 			OrgSignup: generics.GetFakeObj[*orgsv1.SignupRequest](),
 		},
@@ -109,6 +109,6 @@ func Test_starterImpl_getRequest(t *testing.T) {
 	starter := &starterImpl{}
 	req := starter.getRequest(startReq)
 
-	assert.Equal(t, startReq.WorkflowInfo.ID, req.WorkflowId)
-	assert.True(t, proto.Equal(startReq.Request, req.Request))
+	assert.Equal(t, startReq.WorkflowInfo.Id, req.WorkflowId)
+	assert.True(t, proto.Equal(startReq.RequestRef, req.Request))
 }

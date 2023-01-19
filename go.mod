@@ -6,7 +6,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/powertoolsdev/go-generics v0.0.1
 	github.com/powertoolsdev/go-uploader v0.1.0
-	github.com/powertoolsdev/protos v0.28.1
+	github.com/powertoolsdev/protos v0.45.1
 	github.com/stretchr/testify v1.8.1
 	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8
 )

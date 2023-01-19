@@ -88,6 +88,16 @@ github.com/powertoolsdev/go-uploader v0.1.0 h1:QEhL08BAX3PM8PpeMAwA9eiZfZEfkZ8DR
 github.com/powertoolsdev/go-uploader v0.1.0/go.mod h1:PwA4fSwVHcYvJ45uPRUqE5UkwK3W7oisFYERXcSbfTY=
 github.com/powertoolsdev/protos v0.28.1 h1:ekYFQJJIYnusCIeHZWgWE1np4zM3rWOwC5s9s0RFZ8c=
 github.com/powertoolsdev/protos v0.28.1/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.42.0 h1:JktjqksQBefn2YAHlh/ScG062MBdcDke8zq6xaP9Tp8=
+github.com/powertoolsdev/protos v0.42.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.43.0 h1:SfSesdpOLKPm5JnQfKMGc3/97j57wsd3+i+9Ry2d1lQ=
+github.com/powertoolsdev/protos v0.43.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.44.0 h1:rAhs/OdsDpnf1/Hxln8djoMUZDY5RdC4r7Ezgvod2P8=
+github.com/powertoolsdev/protos v0.44.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.45.0 h1:k1581EKGqq+57zMuYlvqSKH6J4Iqu3ojsDXEAFxfnL0=
+github.com/powertoolsdev/protos v0.45.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.45.1 h1:D+21QebCfSfLj5M50bb5jzJPANfIpYJTRFC0+atMcZs=
+github.com/powertoolsdev/protos v0.45.1/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
 github.com/rogpeppe/go-internal v1.8.0/go.mod h1:WmiCO8CzOY8rg0OYDC4/i/2WRWAB6poM+XZ2dLUbcbE=
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=
