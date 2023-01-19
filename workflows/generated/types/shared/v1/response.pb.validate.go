@@ -35,22 +35,22 @@ var (
 	_ = sort.Sort
 )
 
-// Validate checks the field values on FinishActivity with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *FinishActivity) Validate() error {
+// Validate checks the field values on FinishActivityRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *FinishActivityRequest) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on FinishActivity with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in FinishActivityMultiError,
-// or nil if none found.
-func (m *FinishActivity) ValidateAll() error {
+// ValidateAll checks the field values on FinishActivityRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// FinishActivityRequestMultiError, or nil if none found.
+func (m *FinishActivityRequest) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *FinishActivity) validate(all bool) error {
+func (m *FinishActivityRequest) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -58,7 +58,7 @@ func (m *FinishActivity) validate(all bool) error {
 	var errors []error
 
 	if utf8.RuneCountInString(m.GetMetadataBucket()) < 5 {
-		err := FinishActivityValidationError{
+		err := FinishActivityRequestValidationError{
 			field:  "MetadataBucket",
 			reason: "value length must be at least 5 runes",
 		}
@@ -69,7 +69,7 @@ func (m *FinishActivity) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetMetadataBucketAssumeRoleArn()) < 5 {
-		err := FinishActivityValidationError{
+		err := FinishActivityRequestValidationError{
 			field:  "MetadataBucketAssumeRoleArn",
 			reason: "value length must be at least 5 runes",
 		}
@@ -80,7 +80,7 @@ func (m *FinishActivity) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetMetadataBucketPrefix()) < 5 {
-		err := FinishActivityValidationError{
+		err := FinishActivityRequestValidationError{
 			field:  "MetadataBucketPrefix",
 			reason: "value length must be at least 5 runes",
 		}
@@ -94,7 +94,7 @@ func (m *FinishActivity) validate(all bool) error {
 		switch v := interface{}(m.GetResponse()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, FinishActivityValidationError{
+				errors = append(errors, FinishActivityRequestValidationError{
 					field:  "Response",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -102,7 +102,7 @@ func (m *FinishActivity) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, FinishActivityValidationError{
+				errors = append(errors, FinishActivityRequestValidationError{
 					field:  "Response",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -111,7 +111,7 @@ func (m *FinishActivity) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetResponse()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return FinishActivityValidationError{
+			return FinishActivityRequestValidationError{
 				field:  "Response",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -124,19 +124,19 @@ func (m *FinishActivity) validate(all bool) error {
 	// no validation rules for ErrorMessage
 
 	if len(errors) > 0 {
-		return FinishActivityMultiError(errors)
+		return FinishActivityRequestMultiError(errors)
 	}
 
 	return nil
 }
 
-// FinishActivityMultiError is an error wrapping multiple validation errors
-// returned by FinishActivity.ValidateAll() if the designated constraints
-// aren't met.
-type FinishActivityMultiError []error
+// FinishActivityRequestMultiError is an error wrapping multiple validation
+// errors returned by FinishActivityRequest.ValidateAll() if the designated
+// constraints aren't met.
+type FinishActivityRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m FinishActivityMultiError) Error() string {
+func (m FinishActivityRequestMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -145,11 +145,11 @@ func (m FinishActivityMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m FinishActivityMultiError) AllErrors() []error { return m }
+func (m FinishActivityRequestMultiError) AllErrors() []error { return m }
 
-// FinishActivityValidationError is the validation error returned by
-// FinishActivity.Validate if the designated constraints aren't met.
-type FinishActivityValidationError struct {
+// FinishActivityRequestValidationError is the validation error returned by
+// FinishActivityRequest.Validate if the designated constraints aren't met.
+type FinishActivityRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -157,22 +157,24 @@ type FinishActivityValidationError struct {
 }
 
 // Field function returns field value.
-func (e FinishActivityValidationError) Field() string { return e.field }
+func (e FinishActivityRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e FinishActivityValidationError) Reason() string { return e.reason }
+func (e FinishActivityRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e FinishActivityValidationError) Cause() error { return e.cause }
+func (e FinishActivityRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e FinishActivityValidationError) Key() bool { return e.key }
+func (e FinishActivityRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e FinishActivityValidationError) ErrorName() string { return "FinishActivityValidationError" }
+func (e FinishActivityRequestValidationError) ErrorName() string {
+	return "FinishActivityRequestValidationError"
+}
 
 // Error satisfies the builtin error interface
-func (e FinishActivityValidationError) Error() string {
+func (e FinishActivityRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -184,14 +186,14 @@ func (e FinishActivityValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sFinishActivity.%s: %s%s",
+		"invalid %sFinishActivityRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = FinishActivityValidationError{}
+var _ error = FinishActivityRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -199,7 +201,109 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = FinishActivityValidationError{}
+} = FinishActivityRequestValidationError{}
+
+// Validate checks the field values on FinishActivityResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *FinishActivityResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on FinishActivityResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// FinishActivityResponseMultiError, or nil if none found.
+func (m *FinishActivityResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *FinishActivityResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return FinishActivityResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// FinishActivityResponseMultiError is an error wrapping multiple validation
+// errors returned by FinishActivityResponse.ValidateAll() if the designated
+// constraints aren't met.
+type FinishActivityResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m FinishActivityResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m FinishActivityResponseMultiError) AllErrors() []error { return m }
+
+// FinishActivityResponseValidationError is the validation error returned by
+// FinishActivityResponse.Validate if the designated constraints aren't met.
+type FinishActivityResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FinishActivityResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FinishActivityResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FinishActivityResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FinishActivityResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FinishActivityResponseValidationError) ErrorName() string {
+	return "FinishActivityResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e FinishActivityResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFinishActivityResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FinishActivityResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FinishActivityResponseValidationError{}
 
 // Validate checks the field values on Response with the rules defined in the
 // proto definition for this message. If any rules are violated, the first

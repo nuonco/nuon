@@ -26,8 +26,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// StartActivity is used by clients to implement a standard meta start activity
-type StartActivity struct {
+// StartActivityRequest is used by clients to implement a standard meta start activity
+type StartActivityRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -39,8 +39,8 @@ type StartActivity struct {
 	WorkflowInfo                *WorkflowInfo `protobuf:"bytes,5,opt,name=workflow_info,json=workflowInfo,proto3" json:"workflow_info,omitempty"`
 }
 
-func (x *StartActivity) Reset() {
-	*x = StartActivity{}
+func (x *StartActivityRequest) Reset() {
+	*x = StartActivityRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_shared_v1_request_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -48,13 +48,13 @@ func (x *StartActivity) Reset() {
 	}
 }
 
-func (x *StartActivity) String() string {
+func (x *StartActivityRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StartActivity) ProtoMessage() {}
+func (*StartActivityRequest) ProtoMessage() {}
 
-func (x *StartActivity) ProtoReflect() protoreflect.Message {
+func (x *StartActivityRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_shared_v1_request_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -66,44 +66,82 @@ func (x *StartActivity) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StartActivity.ProtoReflect.Descriptor instead.
-func (*StartActivity) Descriptor() ([]byte, []int) {
+// Deprecated: Use StartActivityRequest.ProtoReflect.Descriptor instead.
+func (*StartActivityRequest) Descriptor() ([]byte, []int) {
 	return file_shared_v1_request_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *StartActivity) GetMetadataBucket() string {
+func (x *StartActivityRequest) GetMetadataBucket() string {
 	if x != nil {
 		return x.MetadataBucket
 	}
 	return ""
 }
 
-func (x *StartActivity) GetMetadataBucketAssumeRoleArn() string {
+func (x *StartActivityRequest) GetMetadataBucketAssumeRoleArn() string {
 	if x != nil {
 		return x.MetadataBucketAssumeRoleArn
 	}
 	return ""
 }
 
-func (x *StartActivity) GetMetadataBucketPrefix() string {
+func (x *StartActivityRequest) GetMetadataBucketPrefix() string {
 	if x != nil {
 		return x.MetadataBucketPrefix
 	}
 	return ""
 }
 
-func (x *StartActivity) GetRequest() *Request {
+func (x *StartActivityRequest) GetRequest() *Request {
 	if x != nil {
 		return x.Request
 	}
 	return nil
 }
 
-func (x *StartActivity) GetWorkflowInfo() *WorkflowInfo {
+func (x *StartActivityRequest) GetWorkflowInfo() *WorkflowInfo {
 	if x != nil {
 		return x.WorkflowInfo
 	}
 	return nil
+}
+
+type StartActivityResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *StartActivityResponse) Reset() {
+	*x = StartActivityResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_shared_v1_request_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StartActivityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartActivityResponse) ProtoMessage() {}
+
+func (x *StartActivityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_v1_request_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartActivityResponse.ProtoReflect.Descriptor instead.
+func (*StartActivityResponse) Descriptor() ([]byte, []int) {
+	return file_shared_v1_request_proto_rawDescGZIP(), []int{1}
 }
 
 type WorkflowInfo struct {
@@ -117,7 +155,7 @@ type WorkflowInfo struct {
 func (x *WorkflowInfo) Reset() {
 	*x = WorkflowInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_shared_v1_request_proto_msgTypes[1]
+		mi := &file_shared_v1_request_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -130,7 +168,7 @@ func (x *WorkflowInfo) String() string {
 func (*WorkflowInfo) ProtoMessage() {}
 
 func (x *WorkflowInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_v1_request_proto_msgTypes[1]
+	mi := &file_shared_v1_request_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -143,7 +181,7 @@ func (x *WorkflowInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkflowInfo.ProtoReflect.Descriptor instead.
 func (*WorkflowInfo) Descriptor() ([]byte, []int) {
-	return file_shared_v1_request_proto_rawDescGZIP(), []int{1}
+	return file_shared_v1_request_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *WorkflowInfo) GetId() string {
@@ -166,7 +204,7 @@ type Request struct {
 func (x *Request) Reset() {
 	*x = Request{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_shared_v1_request_proto_msgTypes[2]
+		mi := &file_shared_v1_request_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -179,7 +217,7 @@ func (x *Request) String() string {
 func (*Request) ProtoMessage() {}
 
 func (x *Request) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_v1_request_proto_msgTypes[2]
+	mi := &file_shared_v1_request_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -192,7 +230,7 @@ func (x *Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Request.ProtoReflect.Descriptor instead.
 func (*Request) Descriptor() ([]byte, []int) {
-	return file_shared_v1_request_proto_rawDescGZIP(), []int{2}
+	return file_shared_v1_request_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Request) GetWorkflowId() string {
@@ -229,7 +267,7 @@ type RequestRef struct {
 func (x *RequestRef) Reset() {
 	*x = RequestRef{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_shared_v1_request_proto_msgTypes[3]
+		mi := &file_shared_v1_request_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -242,7 +280,7 @@ func (x *RequestRef) String() string {
 func (*RequestRef) ProtoMessage() {}
 
 func (x *RequestRef) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_v1_request_proto_msgTypes[3]
+	mi := &file_shared_v1_request_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -255,7 +293,7 @@ func (x *RequestRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestRef.ProtoReflect.Descriptor instead.
 func (*RequestRef) Descriptor() ([]byte, []int) {
-	return file_shared_v1_request_proto_rawDescGZIP(), []int{3}
+	return file_shared_v1_request_proto_rawDescGZIP(), []int{4}
 }
 
 func (m *RequestRef) GetRequest() isRequestRef_Request {
@@ -365,27 +403,29 @@ var file_shared_v1_request_proto_rawDesc = []byte{
 	0x77, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x13, 0x74, 0x61, 0x67, 0x67, 0x65, 0x72,
 	0x2f, 0x74, 0x61, 0x67, 0x67, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x17, 0x76,
 	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x2f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x65,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xbb, 0x02, 0x0a, 0x0d, 0x53, 0x74, 0x61, 0x72, 0x74,
-	0x41, 0x63, 0x74, 0x69, 0x76, 0x69, 0x74, 0x79, 0x12, 0x30, 0x0a, 0x0f, 0x6d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0x5f, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x42, 0x07, 0xfa, 0x42, 0x04, 0x72, 0x02, 0x10, 0x05, 0x52, 0x0e, 0x6d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x4d, 0x0a, 0x1f, 0x6d, 0x65,
-	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x5f, 0x61, 0x73,
-	0x73, 0x75, 0x6d, 0x65, 0x5f, 0x72, 0x6f, 0x6c, 0x65, 0x5f, 0x61, 0x72, 0x6e, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x42, 0x07, 0xfa, 0x42, 0x04, 0x72, 0x02, 0x10, 0x05, 0x52, 0x1b, 0x6d, 0x65,
-	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x41, 0x73, 0x73, 0x75,
-	0x6d, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x41, 0x72, 0x6e, 0x12, 0x3d, 0x0a, 0x16, 0x6d, 0x65, 0x74,
-	0x61, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x5f, 0x70, 0x72, 0x65,
-	0x66, 0x69, 0x78, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x07, 0xfa, 0x42, 0x04, 0x72, 0x02,
-	0x10, 0x05, 0x52, 0x14, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x42, 0x75, 0x63, 0x6b,
-	0x65, 0x74, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12, 0x2c, 0x0a, 0x07, 0x72, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x73, 0x68, 0x61, 0x72,
-	0x65, 0x64, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x07, 0x72,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3c, 0x0a, 0x0d, 0x77, 0x6f, 0x72, 0x6b, 0x66, 0x6c,
-	0x6f, 0x77, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e,
-	0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x66, 0x6c,
-	0x6f, 0x77, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x0c, 0x77, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77,
-	0x49, 0x6e, 0x66, 0x6f, 0x22, 0x27, 0x0a, 0x0c, 0x57, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xc2, 0x02, 0x0a, 0x14, 0x53, 0x74, 0x61, 0x72, 0x74,
+	0x41, 0x63, 0x74, 0x69, 0x76, 0x69, 0x74, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x30, 0x0a, 0x0f, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x62, 0x75, 0x63, 0x6b,
+	0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x07, 0xfa, 0x42, 0x04, 0x72, 0x02, 0x10,
+	0x05, 0x52, 0x0e, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x42, 0x75, 0x63, 0x6b, 0x65,
+	0x74, 0x12, 0x4d, 0x0a, 0x1f, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x62, 0x75,
+	0x63, 0x6b, 0x65, 0x74, 0x5f, 0x61, 0x73, 0x73, 0x75, 0x6d, 0x65, 0x5f, 0x72, 0x6f, 0x6c, 0x65,
+	0x5f, 0x61, 0x72, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x07, 0xfa, 0x42, 0x04, 0x72,
+	0x02, 0x10, 0x05, 0x52, 0x1b, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x42, 0x75, 0x63,
+	0x6b, 0x65, 0x74, 0x41, 0x73, 0x73, 0x75, 0x6d, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x41, 0x72, 0x6e,
+	0x12, 0x3d, 0x0a, 0x16, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x62, 0x75, 0x63,
+	0x6b, 0x65, 0x74, 0x5f, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09,
+	0x42, 0x07, 0xfa, 0x42, 0x04, 0x72, 0x02, 0x10, 0x05, 0x52, 0x14, 0x6d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12,
+	0x2c, 0x0a, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x12, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x52, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3c, 0x0a,
+	0x0d, 0x77, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x05,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x76, 0x31,
+	0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x0c, 0x77,
+	0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77, 0x49, 0x6e, 0x66, 0x6f, 0x22, 0x17, 0x0a, 0x15, 0x53,
+	0x74, 0x61, 0x72, 0x74, 0x41, 0x63, 0x74, 0x69, 0x76, 0x69, 0x74, 0x79, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x27, 0x0a, 0x0c, 0x57, 0x6f, 0x72, 0x6b, 0x66, 0x6c, 0x6f, 0x77,
 	0x49, 0x6e, 0x66, 0x6f, 0x12, 0x17, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x42, 0x07, 0xfa, 0x42, 0x04, 0x72, 0x02, 0x10, 0x05, 0x52, 0x02, 0x69, 0x64, 0x22, 0x91, 0x01,
 	0x0a, 0x07, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x45, 0x0a, 0x0b, 0x77, 0x6f, 0x72,
@@ -452,34 +492,35 @@ func file_shared_v1_request_proto_rawDescGZIP() []byte {
 	return file_shared_v1_request_proto_rawDescData
 }
 
-var file_shared_v1_request_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_shared_v1_request_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_shared_v1_request_proto_goTypes = []interface{}{
-	(*StartActivity)(nil),          // 0: shared.v1.StartActivity
-	(*WorkflowInfo)(nil),           // 1: shared.v1.WorkflowInfo
-	(*Request)(nil),                // 2: shared.v1.Request
-	(*RequestRef)(nil),             // 3: shared.v1.RequestRef
-	(*v1.StartRequest)(nil),        // 4: deployments.v1.StartRequest
-	(*v11.ProvisionRequest)(nil),   // 5: installs.v1.ProvisionRequest
-	(*v11.DeprovisionRequest)(nil), // 6: installs.v1.DeprovisionRequest
-	(*v12.SignupRequest)(nil),      // 7: orgs.v1.SignupRequest
-	(*v12.TeardownRequest)(nil),    // 8: orgs.v1.TeardownRequest
-	(*v13.ProvisionRequest)(nil),   // 9: instances.v1.ProvisionRequest
+	(*StartActivityRequest)(nil),   // 0: shared.v1.StartActivityRequest
+	(*StartActivityResponse)(nil),  // 1: shared.v1.StartActivityResponse
+	(*WorkflowInfo)(nil),           // 2: shared.v1.WorkflowInfo
+	(*Request)(nil),                // 3: shared.v1.Request
+	(*RequestRef)(nil),             // 4: shared.v1.RequestRef
+	(*v1.StartRequest)(nil),        // 5: deployments.v1.StartRequest
+	(*v11.ProvisionRequest)(nil),   // 6: installs.v1.ProvisionRequest
+	(*v11.DeprovisionRequest)(nil), // 7: installs.v1.DeprovisionRequest
+	(*v12.SignupRequest)(nil),      // 8: orgs.v1.SignupRequest
+	(*v12.TeardownRequest)(nil),    // 9: orgs.v1.TeardownRequest
+	(*v13.ProvisionRequest)(nil),   // 10: instances.v1.ProvisionRequest
 }
 var file_shared_v1_request_proto_depIdxs = []int32{
-	2, // 0: shared.v1.StartActivity.request:type_name -> shared.v1.Request
-	1, // 1: shared.v1.StartActivity.workflow_info:type_name -> shared.v1.WorkflowInfo
-	3, // 2: shared.v1.Request.request:type_name -> shared.v1.RequestRef
-	4, // 3: shared.v1.RequestRef.deployment_start:type_name -> deployments.v1.StartRequest
-	5, // 4: shared.v1.RequestRef.install_provision:type_name -> installs.v1.ProvisionRequest
-	6, // 5: shared.v1.RequestRef.install_deprovision:type_name -> installs.v1.DeprovisionRequest
-	7, // 6: shared.v1.RequestRef.org_signup:type_name -> orgs.v1.SignupRequest
-	8, // 7: shared.v1.RequestRef.org_teardown:type_name -> orgs.v1.TeardownRequest
-	9, // 8: shared.v1.RequestRef.instance_provision:type_name -> instances.v1.ProvisionRequest
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	3,  // 0: shared.v1.StartActivityRequest.request:type_name -> shared.v1.Request
+	2,  // 1: shared.v1.StartActivityRequest.workflow_info:type_name -> shared.v1.WorkflowInfo
+	4,  // 2: shared.v1.Request.request:type_name -> shared.v1.RequestRef
+	5,  // 3: shared.v1.RequestRef.deployment_start:type_name -> deployments.v1.StartRequest
+	6,  // 4: shared.v1.RequestRef.install_provision:type_name -> installs.v1.ProvisionRequest
+	7,  // 5: shared.v1.RequestRef.install_deprovision:type_name -> installs.v1.DeprovisionRequest
+	8,  // 6: shared.v1.RequestRef.org_signup:type_name -> orgs.v1.SignupRequest
+	9,  // 7: shared.v1.RequestRef.org_teardown:type_name -> orgs.v1.TeardownRequest
+	10, // 8: shared.v1.RequestRef.instance_provision:type_name -> instances.v1.ProvisionRequest
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_shared_v1_request_proto_init() }
@@ -489,7 +530,7 @@ func file_shared_v1_request_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_shared_v1_request_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StartActivity); i {
+			switch v := v.(*StartActivityRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -501,7 +542,7 @@ func file_shared_v1_request_proto_init() {
 			}
 		}
 		file_shared_v1_request_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*WorkflowInfo); i {
+			switch v := v.(*StartActivityResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -513,7 +554,7 @@ func file_shared_v1_request_proto_init() {
 			}
 		}
 		file_shared_v1_request_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Request); i {
+			switch v := v.(*WorkflowInfo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -525,6 +566,18 @@ func file_shared_v1_request_proto_init() {
 			}
 		}
 		file_shared_v1_request_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Request); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_shared_v1_request_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RequestRef); i {
 			case 0:
 				return &v.state
@@ -537,7 +590,7 @@ func file_shared_v1_request_proto_init() {
 			}
 		}
 	}
-	file_shared_v1_request_proto_msgTypes[3].OneofWrappers = []interface{}{
+	file_shared_v1_request_proto_msgTypes[4].OneofWrappers = []interface{}{
 		(*RequestRef_DeploymentStart)(nil),
 		(*RequestRef_InstallProvision)(nil),
 		(*RequestRef_InstallDeprovision)(nil),
@@ -551,7 +604,7 @@ func file_shared_v1_request_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_shared_v1_request_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

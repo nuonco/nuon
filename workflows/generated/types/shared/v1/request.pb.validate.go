@@ -38,22 +38,22 @@ var (
 // define the regex for a UUID once up-front
 var _request_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
-// Validate checks the field values on StartActivity with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *StartActivity) Validate() error {
+// Validate checks the field values on StartActivityRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *StartActivityRequest) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on StartActivity with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in StartActivityMultiError, or
-// nil if none found.
-func (m *StartActivity) ValidateAll() error {
+// ValidateAll checks the field values on StartActivityRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// StartActivityRequestMultiError, or nil if none found.
+func (m *StartActivityRequest) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *StartActivity) validate(all bool) error {
+func (m *StartActivityRequest) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -61,7 +61,7 @@ func (m *StartActivity) validate(all bool) error {
 	var errors []error
 
 	if utf8.RuneCountInString(m.GetMetadataBucket()) < 5 {
-		err := StartActivityValidationError{
+		err := StartActivityRequestValidationError{
 			field:  "MetadataBucket",
 			reason: "value length must be at least 5 runes",
 		}
@@ -72,7 +72,7 @@ func (m *StartActivity) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetMetadataBucketAssumeRoleArn()) < 5 {
-		err := StartActivityValidationError{
+		err := StartActivityRequestValidationError{
 			field:  "MetadataBucketAssumeRoleArn",
 			reason: "value length must be at least 5 runes",
 		}
@@ -83,7 +83,7 @@ func (m *StartActivity) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetMetadataBucketPrefix()) < 5 {
-		err := StartActivityValidationError{
+		err := StartActivityRequestValidationError{
 			field:  "MetadataBucketPrefix",
 			reason: "value length must be at least 5 runes",
 		}
@@ -97,7 +97,7 @@ func (m *StartActivity) validate(all bool) error {
 		switch v := interface{}(m.GetRequest()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, StartActivityValidationError{
+				errors = append(errors, StartActivityRequestValidationError{
 					field:  "Request",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -105,7 +105,7 @@ func (m *StartActivity) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, StartActivityValidationError{
+				errors = append(errors, StartActivityRequestValidationError{
 					field:  "Request",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -114,7 +114,7 @@ func (m *StartActivity) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetRequest()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return StartActivityValidationError{
+			return StartActivityRequestValidationError{
 				field:  "Request",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -126,7 +126,7 @@ func (m *StartActivity) validate(all bool) error {
 		switch v := interface{}(m.GetWorkflowInfo()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, StartActivityValidationError{
+				errors = append(errors, StartActivityRequestValidationError{
 					field:  "WorkflowInfo",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -134,7 +134,7 @@ func (m *StartActivity) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, StartActivityValidationError{
+				errors = append(errors, StartActivityRequestValidationError{
 					field:  "WorkflowInfo",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -143,7 +143,7 @@ func (m *StartActivity) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetWorkflowInfo()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return StartActivityValidationError{
+			return StartActivityRequestValidationError{
 				field:  "WorkflowInfo",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -152,19 +152,19 @@ func (m *StartActivity) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return StartActivityMultiError(errors)
+		return StartActivityRequestMultiError(errors)
 	}
 
 	return nil
 }
 
-// StartActivityMultiError is an error wrapping multiple validation errors
-// returned by StartActivity.ValidateAll() if the designated constraints
-// aren't met.
-type StartActivityMultiError []error
+// StartActivityRequestMultiError is an error wrapping multiple validation
+// errors returned by StartActivityRequest.ValidateAll() if the designated
+// constraints aren't met.
+type StartActivityRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m StartActivityMultiError) Error() string {
+func (m StartActivityRequestMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -173,11 +173,11 @@ func (m StartActivityMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m StartActivityMultiError) AllErrors() []error { return m }
+func (m StartActivityRequestMultiError) AllErrors() []error { return m }
 
-// StartActivityValidationError is the validation error returned by
-// StartActivity.Validate if the designated constraints aren't met.
-type StartActivityValidationError struct {
+// StartActivityRequestValidationError is the validation error returned by
+// StartActivityRequest.Validate if the designated constraints aren't met.
+type StartActivityRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -185,22 +185,24 @@ type StartActivityValidationError struct {
 }
 
 // Field function returns field value.
-func (e StartActivityValidationError) Field() string { return e.field }
+func (e StartActivityRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e StartActivityValidationError) Reason() string { return e.reason }
+func (e StartActivityRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e StartActivityValidationError) Cause() error { return e.cause }
+func (e StartActivityRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e StartActivityValidationError) Key() bool { return e.key }
+func (e StartActivityRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e StartActivityValidationError) ErrorName() string { return "StartActivityValidationError" }
+func (e StartActivityRequestValidationError) ErrorName() string {
+	return "StartActivityRequestValidationError"
+}
 
 // Error satisfies the builtin error interface
-func (e StartActivityValidationError) Error() string {
+func (e StartActivityRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -212,14 +214,14 @@ func (e StartActivityValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sStartActivity.%s: %s%s",
+		"invalid %sStartActivityRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = StartActivityValidationError{}
+var _ error = StartActivityRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -227,7 +229,109 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = StartActivityValidationError{}
+} = StartActivityRequestValidationError{}
+
+// Validate checks the field values on StartActivityResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *StartActivityResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on StartActivityResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// StartActivityResponseMultiError, or nil if none found.
+func (m *StartActivityResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *StartActivityResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return StartActivityResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// StartActivityResponseMultiError is an error wrapping multiple validation
+// errors returned by StartActivityResponse.ValidateAll() if the designated
+// constraints aren't met.
+type StartActivityResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m StartActivityResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m StartActivityResponseMultiError) AllErrors() []error { return m }
+
+// StartActivityResponseValidationError is the validation error returned by
+// StartActivityResponse.Validate if the designated constraints aren't met.
+type StartActivityResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StartActivityResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StartActivityResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StartActivityResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StartActivityResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StartActivityResponseValidationError) ErrorName() string {
+	return "StartActivityResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e StartActivityResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStartActivityResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StartActivityResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StartActivityResponseValidationError{}
 
 // Validate checks the field values on WorkflowInfo with the rules defined in
 // the proto definition for this message. If any rules are violated, the first

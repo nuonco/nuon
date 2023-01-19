@@ -11,14 +11,16 @@ import "orgs/v1/teardown.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-// StartActivity is used by clients to implement a standard meta start activity
-message StartActivity {
+// StartActivityRequest is used by clients to implement a standard meta start activity
+message StartActivityRequest {
   string metadata_bucket = 1 [(validate.rules).string.min_len = 5];
   string metadata_bucket_assume_role_arn = 2 [(validate.rules).string.min_len = 5];
   string metadata_bucket_prefix = 3 [(validate.rules).string.min_len = 5];
   Request request = 4;
   WorkflowInfo workflow_info = 5;
 }
+
+message StartActivityResponse {}
 
 message WorkflowInfo {
   string id = 1 [(validate.rules).string.min_len = 5];
