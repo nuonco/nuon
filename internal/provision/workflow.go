@@ -94,6 +94,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 	resp.DeployPlan = deployPlanRef
 	l.Debug("successfully deployed")
 
+	// TODO(jm): change this from sending the hostname to slack to just writing it into the response
 	shnReq := SendHostnameNotificationRequest{
 		OrgID:                "todo-org-id",
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
@@ -106,6 +107,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 		return resp, err
 	}
 	l.Debug("successfully sent hostname notification: ", shnResp)
+	resp.Hostname = shnResp.Hostname
 
 	return resp, nil
 }

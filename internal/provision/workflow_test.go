@@ -11,21 +11,17 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/go-generics"
-	meta "github.com/powertoolsdev/go-workflows-meta"
 	deploymentplanv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1"
 	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1/plan/v1"
+	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	workers "github.com/powertoolsdev/workers-instances/internal"
 	"github.com/powertoolsdev/workers-instances/internal/provision/execute"
 	"github.com/powertoolsdev/workers-instances/internal/provision/plan"
 )
 
-//nolint:all
 func TestProvision(t *testing.T) {
-	// TODO(jm): fix this once we fix embedding complex types
-	return
-
 	cfg := generics.GetFakeObj[workers.Config]()
 	wf := NewWorkflow(cfg)
 	testSuite := &testsuite.WorkflowTestSuite{}
@@ -54,16 +50,15 @@ func TestProvision(t *testing.T) {
 		Return(func(_ context.Context, shnReq SendHostnameNotificationRequest) (SendHostnameNotificationResponse, error) {
 			var resp SendHostnameNotificationResponse
 			assert.Nil(t, shnReq.validate())
-
 			return resp, nil
 		})
 	env.OnActivity(a.StartProvisionRequest, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r meta.StartRequest) (meta.StartResponse, error) {
-			return meta.StartResponse{}, nil
+		Return(func(_ context.Context, r *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
+			return &sharedv1.StartActivityResponse{}, nil
 		})
 	env.OnActivity(a.FinishProvisionRequest, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r meta.FinishRequest) (meta.FinishResponse, error) {
-			return meta.FinishResponse{}, nil
+		Return(func(_ context.Context, r *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
+			return &sharedv1.FinishActivityResponse{}, nil
 		})
 
 	// exec and assert workflow

@@ -8,6 +8,8 @@ import (
 	"github.com/powertoolsdev/go-sender"
 	shared "github.com/powertoolsdev/workers-instances/internal"
 	"github.com/powertoolsdev/workers-instances/internal/provision"
+	"github.com/powertoolsdev/workers-instances/internal/provision/execute"
+	"github.com/powertoolsdev/workers-instances/internal/provision/plan"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
@@ -95,6 +97,16 @@ func runInstanceWorkers(c client.Client, cfg shared.Config, interruptCh <-chan i
 	wkflow := provision.NewWorkflow(cfg)
 	w.RegisterWorkflow(wkflow.Provision)
 	w.RegisterActivity(provision.NewActivities(n))
+
+	// execute child workflow
+	exec := execute.NewWorkflow(cfg)
+	w.RegisterWorkflow(exec.ExecutePlan)
+	w.RegisterActivity(execute.NewActivities())
+
+	// plan child workflow
+	pln := plan.NewWorkflow(cfg)
+	w.RegisterWorkflow(pln.CreatePlan)
+	w.RegisterActivity(plan.NewActivities())
 
 	if err := w.Run(interruptCh); err != nil {
 		return err

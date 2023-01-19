@@ -37,7 +37,9 @@ func (s SendHostnameNotificationRequest) validate() error {
 	return validate.Struct(s)
 }
 
-type SendHostnameNotificationResponse struct{}
+type SendHostnameNotificationResponse struct {
+	Hostname string `json:"hostname" validate:"required"`
+}
 
 func (a *Activities) SendHostnameNotification(ctx context.Context, req SendHostnameNotificationRequest) (SendHostnameNotificationResponse, error) {
 	var resp SendHostnameNotificationResponse
@@ -58,6 +60,7 @@ func (a *Activities) SendHostnameNotification(ctx context.Context, req SendHostn
 
 		return resp, fmt.Errorf("unable to get hostname: %w", err)
 	}
+	resp.Hostname = hostname
 
 	if err := a.sendHostnameNotification(ctx, hostname, req); err != nil {
 		return resp, fmt.Errorf("unable to send hostname notification")
