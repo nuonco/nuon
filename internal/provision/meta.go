@@ -11,12 +11,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a *Activities) FinishProvisionRequest(ctx context.Context, req meta.FinishRequest) (meta.FinishResponse, error) {
+func (a *Activities) FinishProvisionRequest(ctx context.Context, req *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
 	act := meta.NewFinishActivity()
 	return act.FinishRequest(ctx, req)
 }
 
-func (a *Activities) StartProvisionRequest(ctx context.Context, req meta.StartRequest) (meta.StartResponse, error) {
+func (a *Activities) StartProvisionRequest(ctx context.Context, req *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
 	act := meta.NewStartActivity()
 	return act.StartRequest(ctx, req)
 }
@@ -24,13 +24,13 @@ func (a *Activities) StartProvisionRequest(ctx context.Context, req meta.StartRe
 func (w *wkflow) startWorkflow(ctx workflow.Context, req *instancesv1.ProvisionRequest) error {
 	info := workflow.GetInfo(ctx)
 
-	startReq := meta.StartRequest{
+	startReq := &sharedv1.StartActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
-		MetadataBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
+		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
 		MetadataBucketPrefix:        req.Prefix,
-		Request:                     metaRequestFromReq(req),
-		WorkflowInfo: meta.WorkflowInfo{
-			ID: info.WorkflowExecution.ID,
+		RequestRef:                  metaRequestFromReq(req),
+		WorkflowInfo: &sharedv1.WorkflowInfo{
+			Id: info.WorkflowExecution.ID,
 		},
 	}
 
@@ -103,10 +103,10 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *instancesv1.Provision
 func execStart(
 	ctx workflow.Context,
 	act *Activities,
-	req meta.StartRequest,
-) (meta.StartResponse, error) {
+	req *sharedv1.StartActivityRequest,
+) (*sharedv1.StartActivityResponse, error) {
 	l := workflow.GetLogger(ctx)
-	resp := meta.StartResponse{}
+	resp := &sharedv1.StartActivityResponse{}
 
 	l.Debug("executing start activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.StartProvisionRequest, req)
