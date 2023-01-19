@@ -11,7 +11,8 @@ require (
 	github.com/powertoolsdev/go-sender v0.0.4
 	github.com/powertoolsdev/go-uploader v0.1.0
 	github.com/powertoolsdev/go-waypoint v1.0.0
-	github.com/powertoolsdev/protos v0.35.0
+	github.com/powertoolsdev/go-workflows-meta v0.0.1
+	github.com/powertoolsdev/protos v0.38.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.20.0
@@ -96,7 +97,6 @@ require (
 	github.com/powertoolsdev/go-aws-assume-role v0.0.3 // indirect
 	github.com/powertoolsdev/go-kube v0.1.3 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
-	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -109,7 +109,7 @@ require (
 	go.temporal.io/api v1.14.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
 	golang.org/x/sys v0.3.0 // indirect

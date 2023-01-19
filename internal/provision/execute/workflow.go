@@ -1,4 +1,4 @@
-package plan
+package execute
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1/plan/v1"
+	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1/execute/v1"
 	workers "github.com/powertoolsdev/workers-instances/internal"
 )
 
@@ -31,8 +31,8 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) CreatePlan(ctx workflow.Context, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
-	resp := &planv1.CreatePlanResponse{}
+func (w *wkflow) ExecutePlan(ctx workflow.Context, req *executev1.ExecuteRequest) (*executev1.ExecuteResponse, error) {
+	resp := &executev1.ExecuteResponse{}
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
 	act := NewActivities()
@@ -41,35 +41,26 @@ func (w *wkflow) CreatePlan(ctx workflow.Context, req *planv1.CreatePlanRequest)
 		return resp, err
 	}
 
-	cpReq := CreatePlanRequest{
-		//OrgID:			  req.OrgId,
-		//AppID:			  req.AppId,
-		//DeploymentID:			  req.DeploymentId,
-		//DeploymentsBucketPrefix:	  getS3Prefix(req),
-		//DeploymentsBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
-		//Component:			  req.Component,
-		Config: w.cfg,
-	}
-	cpResp, err := execCreatePlan(ctx, act, cpReq)
+	cpReq := ExecutePlanRequest{}
+	_, err := execExecutePlan(ctx, act, cpReq)
 	if err != nil {
 		return resp, fmt.Errorf("unable to create plan: %w", err)
 	}
-	resp.Plan = cpResp.Plan
 
 	l.Debug("successfully created plan for build")
 	return resp, nil
 }
 
-func execCreatePlan(
+func execExecutePlan(
 	ctx workflow.Context,
 	act *Activities,
-	req CreatePlanRequest,
-) (CreatePlanResponse, error) {
+	req ExecutePlanRequest,
+) (ExecutePlanResponse, error) {
 	l := workflow.GetLogger(ctx)
-	var resp CreatePlanResponse
+	var resp ExecutePlanResponse
 
-	l.Debug("executing create plan activity", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.CreatePlanAct, req)
+	l.Debug("executing execute plan activity", "request", req)
+	fut := workflow.ExecuteActivity(ctx, act.ExecutePlanAct, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
