@@ -14,7 +14,7 @@ type OrgRepo interface {
 	Create(context.Context, *models.Org) (*models.Org, error)
 	Delete(context.Context, uuid.UUID) (bool, error)
 	Get(context.Context, uuid.UUID) (*models.Org, error)
-	GetPageByUser(context.Context, uuid.UUID, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
+	GetPageByUser(context.Context, string, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
 	GetBySlug(context.Context, string) (*models.Org, error)
 
 	SetWorkflowID(context.Context, uuid.UUID, string) error
@@ -67,7 +67,7 @@ func (o orgRepo) GetBySlug(ctx context.Context, slug string) (*models.Org, error
 	return &org, nil
 }
 
-func (o orgRepo) GetPageByUser(ctx context.Context, userID uuid.UUID, opts *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
+func (o orgRepo) GetPageByUser(ctx context.Context, userID string, opts *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
 	var orgs []*models.Org
 	tx := o.db.WithContext(ctx).Where("id IN (?)", o.db.Table("user_orgs").Select("org_id").Where("user_id = ?", userID)).Find(&orgs)
 	pg, c, err := utils.NewPaginator(opts)
