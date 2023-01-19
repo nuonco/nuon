@@ -24,6 +24,11 @@ message ProvisionRequest {
   repeated string install_ids = 4 [(validate.rules).repeated.min_items = 1];
 
   plan.v1.PlanRef plan = 5;
+
+  string deployment_prefix = 6 [
+    (validate.rules).string.min_len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
 }
 
 // ProvisionResponse is a child workflow response for the plan phase

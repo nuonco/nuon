@@ -133,6 +133,17 @@ func (m *ProvisionRequest) validate(all bool) error {
 		}
 	}
 
+	if utf8.RuneCountInString(m.GetDeploymentPrefix()) < 26 {
+		err := ProvisionRequestValidationError{
+			field:  "DeploymentPrefix",
+			reason: "value length must be at least 26 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return ProvisionRequestMultiError(errors)
 	}

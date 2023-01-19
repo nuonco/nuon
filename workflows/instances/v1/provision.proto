@@ -9,12 +9,12 @@ import "validate/validate.proto";
 // ProvisionRequest represents a workflow input for creating a deployment
 message ProvisionRequest {
   string org_id = 1 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
   ];
   string install_id = 2 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
   ];
 
   string prefix = 3 [(validate.rules).string.min_len = 1];
