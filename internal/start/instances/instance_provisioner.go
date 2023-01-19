@@ -3,31 +3,13 @@ package instances
 import (
 	"context"
 
-	"github.com/go-playground/validator/v10"
-	planv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
+	provisionv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1"
 	tclient "go.temporal.io/sdk/client"
 )
 
-type ProvisionInstanceRequest struct {
-	OrgID        string          `json:"org_id" validate:"required"`
-	AppID        string          `json:"app_id" validate:"required"`
-	DeploymentID string          `json:"deployment_id" validate:"required"`
-	InstallID    string          `json:"install_id" validate:"required"`
-	Plan         *planv1.PlanRef `json:"plan" validate:"required"`
-}
-
-func (p ProvisionInstanceRequest) validate() error {
-	validate := validator.New()
-	return validate.Struct(p)
-}
-
-type ProvisionInstanceResponse struct {
-	WorkflowID string `json:"workflow_id"`
-}
-
 // provisioner exposes the methods needed to provision an instance
 type provisioner interface {
-	provisionInstance(context.Context, ProvisionInstanceRequest) (string, error)
+	provisionInstance(context.Context, *provisionv1.ProvisionRequest) (string, error)
 }
 
 var _ provisioner = (*instanceProvisioner)(nil)
@@ -37,21 +19,20 @@ type instanceProvisioner struct {
 	TemporalNamespace string
 }
 
-func (a *Activities) ProvisionInstance(ctx context.Context, req ProvisionInstanceRequest) (ProvisionInstanceResponse, error) {
-	resp := ProvisionInstanceResponse{}
-	if err := req.validate(); err != nil {
+func (a *Activities) ProvisionInstance(ctx context.Context, req *provisionv1.ProvisionRequest) (*provisionv1.ProvisionResponse, error) {
+	resp := &provisionv1.ProvisionResponse{}
+	if err := req.Validate(); err != nil {
 		return resp, err
 	}
 
-	workflowID, err := a.provisionInstance(ctx, req)
+	_, err := a.provisionInstance(ctx, req)
 	if err != nil {
 		return resp, err
 	}
-	resp.WorkflowID = workflowID
 	return resp, nil
 }
 
-func (i *instanceProvisioner) provisionInstance(ctx context.Context, req ProvisionInstanceRequest) (string, error) {
+func (i *instanceProvisioner) provisionInstance(ctx context.Context, req *provisionv1.ProvisionRequest) (string, error) {
 	tc, err := tclient.Dial(tclient.Options{
 		HostPort:  i.TemporalHost,
 		Namespace: i.TemporalNamespace,
@@ -66,7 +47,7 @@ func (i *instanceProvisioner) provisionInstance(ctx context.Context, req Provisi
 func (i *instanceProvisioner) startWorkflow(
 	ctx context.Context,
 	client tclient.Client,
-	req ProvisionInstanceRequest,
+	req *provisionv1.ProvisionRequest,
 ) (string, error) {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: "instance",

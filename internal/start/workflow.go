@@ -73,31 +73,31 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 	}
 	l.Debug(fmt.Sprintf("finished planning %v", planResp))
 
-	if req.PlanOnly {
-		w.finishWorkflow(ctx, req, resp, nil)
-		return resp, nil
-	}
-
 	// run the build workflow
 	bReq := &buildv1.BuildRequest{
 		OrgId:        orgID,
 		AppId:        appID,
 		DeploymentId: deploymentID,
 	}
-	bResp, err := execBuild(ctx, w.cfg, bReq)
-	if err != nil {
-		err = fmt.Errorf("unable to perform build: %w", err)
-		w.finishWorkflow(ctx, req, resp, err)
-		return resp, err
+	if !req.PlanOnly {
+		var bResp *buildv1.BuildResponse
+		bResp, err = execBuild(ctx, w.cfg, bReq)
+		if err != nil {
+			err = fmt.Errorf("unable to perform build: %w", err)
+			w.finishWorkflow(ctx, req, resp, err)
+			return resp, err
+		}
+		l.Debug(fmt.Sprintf("finished build %v", bResp))
 	}
-	l.Debug(fmt.Sprintf("finished build %v", bResp))
 
 	ipReq := &instancesv1.ProvisionRequest{
-		OrgId:        orgID,
-		AppId:        appID,
-		DeploymentId: deploymentID,
-		Plan:         planResp.Plan,
-		InstallIds:   req.InstallIds,
+		OrgId:            orgID,
+		AppId:            appID,
+		DeploymentId:     deploymentID,
+		Plan:             planResp.Plan,
+		InstallIds:       req.InstallIds,
+		DeploymentPrefix: getS3Prefix(orgID, appID, req.Component.Name, deploymentID),
+		PlanOnly:         req.PlanOnly,
 	}
 	ipResp, err := execProvisionInstances(ctx, w.cfg, ipReq)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/go-common/shortid"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/instances/v1"
+	provisionv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 )
 
@@ -50,19 +51,18 @@ func (w *wkflow) ProvisionInstances(ctx workflow.Context, req *instancesv1.Provi
 			return resp, fmt.Errorf("unable to parse short ID for install: %w", err)
 		}
 
-		actReq := ProvisionInstanceRequest{
-			OrgID:        req.OrgId,
-			AppID:        req.AppId,
-			DeploymentID: req.DeploymentId,
-			InstallID:    installShortID,
-			Plan:         req.Plan,
+		actReq := &provisionv1.ProvisionRequest{
+			OrgId:     req.OrgId,
+			InstallId: installShortID,
+			BuildPlan: req.Plan,
+			Prefix:    req.DeploymentPrefix,
+			PlanOnly:  req.PlanOnly,
 		}
 
-		actResp, err := execProvisionInstanceActivity(ctx, act, actReq)
+		_, err = execProvisionInstanceActivity(ctx, act, actReq)
 		if err != nil {
 			return resp, fmt.Errorf("unable to execute provision instance activity: %w", err)
 		}
-		resp.WorkflowIds = append(resp.WorkflowIds, actResp.WorkflowID)
 	}
 
 	l.Debug(fmt.Sprintf("starting %d child workflows", len(req.InstallIds)))
@@ -74,10 +74,10 @@ func (w *wkflow) ProvisionInstances(ctx workflow.Context, req *instancesv1.Provi
 func execProvisionInstanceActivity(
 	ctx workflow.Context,
 	act *Activities,
-	req ProvisionInstanceRequest,
-) (ProvisionInstanceResponse, error) {
+	req *provisionv1.ProvisionRequest,
+) (*provisionv1.ProvisionResponse, error) {
 	l := workflow.GetLogger(ctx)
-	resp := ProvisionInstanceResponse{}
+	resp := &provisionv1.ProvisionResponse{}
 
 	l.Debug("executing provision instance activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.ProvisionInstance, req)
