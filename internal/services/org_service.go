@@ -113,12 +113,7 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 }
 
 func (o *orgService) UserOrgs(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
-	userID, err := parseID(inputID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return o.repo.GetPageByUser(ctx, userID, options)
+	return o.repo.GetPageByUser(ctx, inputID, options)
 }
 
 func (o *orgService) Orgs(ctx context.Context, options *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
