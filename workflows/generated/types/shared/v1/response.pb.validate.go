@@ -91,11 +91,11 @@ func (m *FinishActivityRequest) validate(all bool) error {
 	}
 
 	if all {
-		switch v := interface{}(m.GetResponse()).(type) {
+		switch v := interface{}(m.GetResponseRef()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
 				errors = append(errors, FinishActivityRequestValidationError{
-					field:  "Response",
+					field:  "ResponseRef",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
@@ -103,16 +103,16 @@ func (m *FinishActivityRequest) validate(all bool) error {
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
 				errors = append(errors, FinishActivityRequestValidationError{
-					field:  "Response",
+					field:  "ResponseRef",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
 			}
 		}
-	} else if v, ok := interface{}(m.GetResponse()).(interface{ Validate() error }); ok {
+	} else if v, ok := interface{}(m.GetResponseRef()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return FinishActivityRequestValidationError{
-				field:  "Response",
+				field:  "ResponseRef",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
