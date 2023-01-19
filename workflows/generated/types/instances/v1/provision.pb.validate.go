@@ -310,6 +310,8 @@ func (m *ProvisionResponse) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for Hostname
+
 	if len(errors) > 0 {
 		return ProvisionResponseMultiError(errors)
 	}
