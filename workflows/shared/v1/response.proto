@@ -11,7 +11,8 @@ import "orgs/v1/teardown.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-message ResponseActivity {
+// FinishActivity is used by clients to implement a finish activity
+message FinishActivity {
   string metadata_bucket = 1 [(validate.rules).string.min_len = 5];
   string metadata_bucket_assume_role_arn = 2 [(validate.rules).string.min_len = 5];
   string metadata_bucket_prefix = 3 [(validate.rules).string.min_len = 5];
