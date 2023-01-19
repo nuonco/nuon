@@ -11,6 +11,18 @@ import "orgs/v1/teardown.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
+message RequestActivity {
+  string metadata_bucket = 1 [(validate.rules).string.min_len = 5];
+  string metadata_bucket_assume_role_arn = 2 [(validate.rules).string.min_len = 5];
+  string metadata_bucket_prefix = 3 [(validate.rules).string.min_len = 5];
+  Request request = 4;
+  WorkflowInfo workflow_info = 5;
+}
+
+message WorkflowInfo {
+  string id = 1 [(validate.rules).string.min_len = 5];
+}
+
 // Request represents a workflow execution
 message Request {
   string workflow_id = 1 [

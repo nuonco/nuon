@@ -9,6 +9,16 @@ import "instances/v1/provision.proto";
 import "orgs/v1/signup.proto";
 import "orgs/v1/teardown.proto";
 import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message ResponseActivity {
+  string metadata_bucket = 1 [(validate.rules).string.min_len = 5];
+  string metadata_bucket_assume_role_arn = 2 [(validate.rules).string.min_len = 5];
+  string metadata_bucket_prefix = 3 [(validate.rules).string.min_len = 5];
+  Response response = 4;
+  ResponseStatus status = 5;
+  string error_message = 6;
+}
 
 // Response represents a workflow execution
 message Response {

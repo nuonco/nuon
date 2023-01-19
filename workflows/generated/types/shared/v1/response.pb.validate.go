@@ -35,6 +35,172 @@ var (
 	_ = sort.Sort
 )
 
+// Validate checks the field values on ResponseActivity with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *ResponseActivity) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ResponseActivity with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ResponseActivityMultiError, or nil if none found.
+func (m *ResponseActivity) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ResponseActivity) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetMetadataBucket()) < 5 {
+		err := ResponseActivityValidationError{
+			field:  "MetadataBucket",
+			reason: "value length must be at least 5 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetMetadataBucketAssumeRoleArn()) < 5 {
+		err := ResponseActivityValidationError{
+			field:  "MetadataBucketAssumeRoleArn",
+			reason: "value length must be at least 5 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetMetadataBucketPrefix()) < 5 {
+		err := ResponseActivityValidationError{
+			field:  "MetadataBucketPrefix",
+			reason: "value length must be at least 5 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if all {
+		switch v := interface{}(m.GetResponse()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ResponseActivityValidationError{
+					field:  "Response",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ResponseActivityValidationError{
+					field:  "Response",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetResponse()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ResponseActivityValidationError{
+				field:  "Response",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for Status
+
+	// no validation rules for ErrorMessage
+
+	if len(errors) > 0 {
+		return ResponseActivityMultiError(errors)
+	}
+
+	return nil
+}
+
+// ResponseActivityMultiError is an error wrapping multiple validation errors
+// returned by ResponseActivity.ValidateAll() if the designated constraints
+// aren't met.
+type ResponseActivityMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ResponseActivityMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ResponseActivityMultiError) AllErrors() []error { return m }
+
+// ResponseActivityValidationError is the validation error returned by
+// ResponseActivity.Validate if the designated constraints aren't met.
+type ResponseActivityValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ResponseActivityValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ResponseActivityValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ResponseActivityValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ResponseActivityValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ResponseActivityValidationError) ErrorName() string { return "ResponseActivityValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ResponseActivityValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sResponseActivity.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ResponseActivityValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ResponseActivityValidationError{}
+
 // Validate checks the field values on Response with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
