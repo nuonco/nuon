@@ -383,7 +383,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 
 func TestOrgService_UserOrgs(t *testing.T) {
 	errGetUserOrgs := fmt.Errorf("error getting user orgs")
-	userID := uuid.New()
+	userID := "123"
 	org := generics.GetFakeObj[*models.Org]()
 
 	tests := map[string]struct {
@@ -393,23 +393,15 @@ func TestOrgService_UserOrgs(t *testing.T) {
 		assertFn    func(*testing.T, *models.Org)
 	}{
 		"happy path": {
-			userID: userID.String(),
+			userID: userID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
 				repo := repos.NewMockOrgRepo(ctl)
 				repo.EXPECT().GetPageByUser(gomock.Any(), userID, gomock.Any()).Return([]*models.Org{org}, nil, nil)
 				return repo
 			},
 		},
-		"invalid-id": {
-			userID: "foo",
-			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
-				repo := repos.NewMockOrgRepo(ctl)
-				return repo
-			},
-			errExpected: InvalidIDErr{},
-		},
 		"error": {
-			userID: userID.String(),
+			userID: userID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
 				repo := repos.NewMockOrgRepo(ctl)
 				repo.EXPECT().GetPageByUser(gomock.Any(), userID, gomock.Any()).Return(nil, nil, errGetUserOrgs)
