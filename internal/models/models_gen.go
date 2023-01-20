@@ -35,10 +35,9 @@ type VcsConfig interface {
 }
 
 type AWSSettingsInput struct {
-	Region           AWSRegion `json:"region"`
-	AccountID        string    `json:"accountId" faker:"uuid_hyphenated"`
-	NotificationsURL *string   `json:"notificationsUrl"`
-	IamRoleArn       string    `json:"iamRoleArn"`
+	Region     AWSRegion `json:"region"`
+	AccountID  string    `json:"accountId" faker:"uuid_hyphenated"`
+	IamRoleArn string    `json:"iamRoleArn"`
 }
 
 type AccountConnection struct {

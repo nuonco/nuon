@@ -100,16 +100,11 @@ func (i *installService) updateInstall(ctx context.Context, input models.Install
 
 	// NOTE: we do not support changing region or account ID on an install
 	install.Name = input.Name
-	if input.AwsSettings != nil {
-		if install.AWSSettings != nil {
-			install.AWSSettings.NotificationsURL = *input.AwsSettings.NotificationsURL
-		} else {
-			install.AWSSettings = &models.AWSSettings{
-				Region: input.AwsSettings.Region,
-				// TODO: support accepting cloud account ids from inputs
-				AccountID:        "548377525120",
-				NotificationsURL: *input.AwsSettings.NotificationsURL,
-			}
+	if input.AwsSettings != nil && install.AWSSettings == nil {
+		install.AWSSettings = &models.AWSSettings{
+			Region: input.AwsSettings.Region,
+			// TODO: support accepting cloud account ids from inputs
+			AccountID: "548377525120",
 		}
 		install.Settings = install.AWSSettings
 	}
@@ -158,9 +153,8 @@ func (i *installService) UpsertInstall(ctx context.Context, input models.Install
 		install.AWSSettings = &models.AWSSettings{
 			Region: input.AwsSettings.Region,
 			// TODO: support accepting cloud account ids from inputs
-			AccountID:        "548377525120",
-			NotificationsURL: *input.AwsSettings.NotificationsURL,
-			IamRoleArn:       input.AwsSettings.IamRoleArn,
+			AccountID:  "548377525120",
+			IamRoleArn: input.AwsSettings.IamRoleArn,
 		}
 		install.Settings = install.AWSSettings
 	}
