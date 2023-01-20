@@ -35,6 +35,9 @@ var (
 	_ = sort.Sort
 )
 
+// define the regex for a UUID once up-front
+var _messages_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
 // Validate checks the field values on Org with the rules defined in the proto
 // definition for this message. If any rules are violated, the first error
 // encountered is returned, or nil if there are no violations.
@@ -459,10 +462,28 @@ func (m *GetOrgRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = GetOrgRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return GetOrgRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetOrgRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -690,7 +711,17 @@ func (m *UpsertOrgRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = UpsertOrgRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for Name
 
@@ -698,6 +729,14 @@ func (m *UpsertOrgRequest) validate(all bool) error {
 
 	if len(errors) > 0 {
 		return UpsertOrgRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *UpsertOrgRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -927,10 +966,28 @@ func (m *DeleteOrgRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = DeleteOrgRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return DeleteOrgRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *DeleteOrgRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil

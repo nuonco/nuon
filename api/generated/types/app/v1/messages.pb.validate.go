@@ -35,6 +35,9 @@ var (
 	_ = sort.Sort
 )
 
+// define the regex for a UUID once up-front
+var _messages_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
 // Validate checks the field values on App with the rules defined in the proto
 // definition for this message. If any rules are violated, the first error
 // encountered is returned, or nil if there are no violations.
@@ -223,10 +226,28 @@ func (m *GetAppRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = GetAppRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return GetAppRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetAppRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -454,10 +475,28 @@ func (m *GetAppsByOrgRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for OrgId
+	if err := m._validateUuid(m.GetOrgId()); err != nil {
+		err = GetAppsByOrgRequestValidationError{
+			field:  "OrgId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return GetAppsByOrgRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetAppsByOrgRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -694,10 +733,28 @@ func (m *DeleteAppRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = DeleteAppRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return DeleteAppRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *DeleteAppRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -900,11 +957,31 @@ func (m *UpsertAppRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = UpsertAppRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for Name
 
-	// no validation rules for OrgId
+	if err := m._validateUuid(m.GetOrgId()); err != nil {
+		err = UpsertAppRequestValidationError{
+			field:  "OrgId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for GithubInstallId
 
@@ -912,6 +989,14 @@ func (m *UpsertAppRequest) validate(all bool) error {
 
 	if len(errors) > 0 {
 		return UpsertAppRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *UpsertAppRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil

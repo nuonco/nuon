@@ -35,6 +35,9 @@ var (
 	_ = sort.Sort
 )
 
+// define the regex for a UUID once up-front
+var _messages_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
 // Validate checks the field values on Install with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -510,10 +513,28 @@ func (m *GetInstallRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = GetInstallRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return GetInstallRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetInstallRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -745,10 +766,28 @@ func (m *GetInstallsByAppRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for AppId
+	if err := m._validateUuid(m.GetAppId()); err != nil {
+		err = GetInstallsByAppRequestValidationError{
+			field:  "AppId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return GetInstallsByAppRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetInstallsByAppRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -985,10 +1024,28 @@ func (m *DeleteInstallRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = DeleteInstallRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return DeleteInstallRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *DeleteInstallRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -1193,11 +1250,31 @@ func (m *UpsertInstallRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = UpsertInstallRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for Name
 
-	// no validation rules for AppId
+	if err := m._validateUuid(m.GetAppId()); err != nil {
+		err = UpsertInstallRequestValidationError{
+			field:  "AppId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for CreatedById
 
@@ -1290,6 +1367,14 @@ func (m *UpsertInstallRequest) validate(all bool) error {
 
 	if len(errors) > 0 {
 		return UpsertInstallRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *UpsertInstallRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil

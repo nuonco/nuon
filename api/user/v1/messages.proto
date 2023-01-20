@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package user.v1;
 
+import "validate/validate.proto";
+
 message OrgMember {
   string user_id = 1;
   string org_id = 2;
@@ -9,7 +11,7 @@ message OrgMember {
 
 message UpsertOrgMemberRequest {
   string user_id = 1;
-  string org_id = 2;
+  string org_id = 2 [(validate.rules).string.uuid = true];
 }
 
 message UpsertOrgMemberResponse {

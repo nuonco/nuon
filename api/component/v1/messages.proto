@@ -3,6 +3,7 @@ syntax = "proto3";
 package component.v1;
 
 import "google/type/datetime.proto";
+import "validate/validate.proto";
 
 enum ComponentType {
   COMPONENT_TYPE_UNSPECIFIED = 0;
@@ -35,7 +36,7 @@ message ComponentRef {
 }
 
 message GetComponentRequest {
-  string id = 1;
+  string id = 1 [(validate.rules).string.uuid = true];
 }
 
 message GetComponentResponse {
@@ -43,7 +44,7 @@ message GetComponentResponse {
 }
 
 message GetComponentsByAppRequest {
-  string app_id = 1;
+  string app_id = 1 [(validate.rules).string.uuid = true];
 }
 
 message GetComponentsByAppResponse {
@@ -51,8 +52,8 @@ message GetComponentsByAppResponse {
 }
 
 message UpsertComponentRequest {
-  string app_id = 1;
-  string id = 2;
+  string app_id = 1 [(validate.rules).string.uuid = true];
+  string id = 2 [(validate.rules).string.uuid = true];
   string name = 3;
   string build_image = 4;
   string created_by_id = 5;
@@ -68,7 +69,7 @@ message UpsertComponentResponse {
 }
 
 message DeleteComponentRequest {
-  string id = 1;
+  string id = 1 [(validate.rules).string.uuid = true];
 }
 
 message DeleteComponentResponse {

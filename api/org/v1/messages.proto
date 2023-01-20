@@ -3,6 +3,7 @@ syntax = "proto3";
 package org.v1;
 
 import "google/type/datetime.proto";
+import "validate/validate.proto";
 
 message Org {
   string id = 1;
@@ -21,7 +22,7 @@ message GetOrgsByMemberResponse {
 }
 
 message GetOrgRequest {
-  string id = 1;
+  string id = 1 [(validate.rules).string.uuid = true];
 }
 
 message GetOrgResponse {
@@ -29,7 +30,7 @@ message GetOrgResponse {
 }
 
 message UpsertOrgRequest {
-  string id = 1;
+  string id = 1 [(validate.rules).string.uuid = true];
   string name = 2;
   string owner_id = 3;
 }
@@ -39,7 +40,7 @@ message UpsertOrgResponse {
 }
 
 message DeleteOrgRequest {
-  string id = 1;
+  string id = 1 [(validate.rules).string.uuid = true];
 }
 
 message DeleteOrgResponse {

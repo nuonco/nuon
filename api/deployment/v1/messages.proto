@@ -3,6 +3,7 @@ syntax = "proto3";
 package deployment.v1;
 
 import "google/type/datetime.proto";
+import "validate/validate.proto";
 
 message Deployment {
   string id = 1;
@@ -17,7 +18,7 @@ message Deployment {
 }
 
 message GetDeploymentRequest {
-  string id = 1;
+  string id = 1 [(validate.rules).string.uuid = true];
 }
 
 message GetDeploymentResponse {
@@ -25,7 +26,7 @@ message GetDeploymentResponse {
 }
 
 message GetDeploymentsByComponentsRequest {
-  repeated string component_ids = 1;
+  repeated string component_ids = 1 [(validate.rules).repeated.items.string.uuid = true];
 }
 
 message GetDeploymentsByComponentsResponse {
@@ -33,7 +34,7 @@ message GetDeploymentsByComponentsResponse {
 }
 
 message CreateDeploymentRequest {
-  string component_id = 1;
+  string component_id = 1 [(validate.rules).string.uuid = true];
   string created_by_id = 2;
 }
 

@@ -35,6 +35,9 @@ var (
 	_ = sort.Sort
 )
 
+// define the regex for a UUID once up-front
+var _messages_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
 // Validate checks the field values on Deployment with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -224,10 +227,28 @@ func (m *GetDeploymentRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = GetDeploymentRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return GetDeploymentRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetDeploymentRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -460,8 +481,33 @@ func (m *GetDeploymentsByComponentsRequest) validate(all bool) error {
 
 	var errors []error
 
+	for idx, item := range m.GetComponentIds() {
+		_, _ = idx, item
+
+		if err := m._validateUuid(item); err != nil {
+			err = GetDeploymentsByComponentsRequestValidationError{
+				field:  fmt.Sprintf("ComponentIds[%v]", idx),
+				reason: "value must be a valid UUID",
+				cause:  err,
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return GetDeploymentsByComponentsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetDeploymentsByComponentsRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -703,12 +749,30 @@ func (m *CreateDeploymentRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for ComponentId
+	if err := m._validateUuid(m.GetComponentId()); err != nil {
+		err = CreateDeploymentRequestValidationError{
+			field:  "ComponentId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for CreatedById
 
 	if len(errors) > 0 {
 		return CreateDeploymentRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *CreateDeploymentRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil

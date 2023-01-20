@@ -35,6 +35,9 @@ var (
 	_ = sort.Sort
 )
 
+// define the regex for a UUID once up-front
+var _messages_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
 // Validate checks the field values on GithubConfig with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -377,10 +380,28 @@ func (m *GetComponentRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = GetComponentRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return GetComponentRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetComponentRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -612,10 +633,28 @@ func (m *GetComponentsByAppRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for AppId
+	if err := m._validateUuid(m.GetAppId()); err != nil {
+		err = GetComponentsByAppRequestValidationError{
+			field:  "AppId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return GetComponentsByAppRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetComponentsByAppRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -852,9 +891,29 @@ func (m *UpsertComponentRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for AppId
+	if err := m._validateUuid(m.GetAppId()); err != nil {
+		err = UpsertComponentRequestValidationError{
+			field:  "AppId",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = UpsertComponentRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	// no validation rules for Name
 
@@ -912,6 +971,14 @@ func (m *UpsertComponentRequest) validate(all bool) error {
 
 	if len(errors) > 0 {
 		return UpsertComponentRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *UpsertComponentRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil
@@ -1143,10 +1210,28 @@ func (m *DeleteComponentRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Id
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = DeleteComponentRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return DeleteComponentRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *DeleteComponentRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
 	}
 
 	return nil

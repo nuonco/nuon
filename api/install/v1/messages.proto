@@ -3,6 +3,7 @@ syntax = "proto3";
 package install.v1;
 
 import "google/type/datetime.proto";
+import "validate/validate.proto";
 
 message Install {
   string id = 1;
@@ -36,7 +37,7 @@ message GcpSettings {
 }
 
 message GetInstallRequest {
-  string id = 1;
+  string id = 1 [(validate.rules).string.uuid = true];
 }
 
 message GetInstallResponse {
@@ -44,7 +45,7 @@ message GetInstallResponse {
 }
 
 message GetInstallsByAppRequest {
-  string app_id = 1;
+  string app_id = 1 [(validate.rules).string.uuid = true];
 }
 
 message GetInstallsByAppResponse {
@@ -52,7 +53,7 @@ message GetInstallsByAppResponse {
 }
 
 message DeleteInstallRequest {
-  string id = 1;
+  string id = 1 [(validate.rules).string.uuid = true];
 }
 
 message DeleteInstallResponse {
@@ -60,9 +61,9 @@ message DeleteInstallResponse {
 }
 
 message UpsertInstallRequest {
-  string id = 1;
+  string id = 1 [(validate.rules).string.uuid = true];
   string name = 2;
-  string app_id = 3;
+  string app_id = 3 [(validate.rules).string.uuid = true];
   string created_by_id = 4;
 
   oneof settings {
