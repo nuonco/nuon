@@ -21,10 +21,9 @@ type AWSSettings struct {
 
 	InstallID uuid.UUID
 
-	Region           AWSRegion `faker:"-"`
-	IamRoleArn       string
-	AccountID        string
-	NotificationsURL string
+	Region     AWSRegion `faker:"-"`
+	IamRoleArn string
+	AccountID  string
 }
 
 func (AWSSettings) IsInstallSettings() {}
