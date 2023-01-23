@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+enum PlanType {
+  PLAN_TYPE_UNSPECIFIED = 0;
+  PLAN_TYPE_WAYPOINT_BUILD = 1;
+  PLAN_TYPE_WAYPOINT_SYNC_IMAGE = 2;
+  PLAN_TYPE_WAYPOINT_DEPLOY = 3;
+
+  // TODO(jm): add PLAN_TYPE_HELM_BUILD etc for future components
+}

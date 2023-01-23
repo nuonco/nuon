@@ -122,6 +122,8 @@ func (m *CreatePlanRequest) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for Type
+
 	if len(errors) > 0 {
 		return CreatePlanRequestMultiError(errors)
 	}
