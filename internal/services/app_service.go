@@ -62,6 +62,7 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 	if input.GithubInstallID != nil {
 		app.GithubInstallID = *input.GithubInstallID
 	}
+	app.CreatedByID = *input.CreatedByID
 
 	orgID, err := parseID(input.OrgID)
 	if err != nil {
