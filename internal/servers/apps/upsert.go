@@ -19,6 +19,7 @@ func (s *server) UpsertApp(
 		Name:            req.Msg.Name,
 		OrgID:           req.Msg.OrgId,
 		GithubInstallID: converters.ToOptionalStr(req.Msg.GithubInstallId),
+		CreatedByID:     &req.Msg.CreatedById,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to upsert app: %w", err)

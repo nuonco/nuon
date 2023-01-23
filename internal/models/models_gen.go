@@ -79,6 +79,7 @@ type AppInput struct {
 	Name            string  `json:"name"`
 	OrgID           string  `json:"orgId" faker:"uuid_hyphenated"`
 	GithubInstallID *string `json:"githubInstallID"`
+	CreatedByID     *string `json:"createdById"`
 }
 
 // An auto-generated type for paginating through multiple Components
