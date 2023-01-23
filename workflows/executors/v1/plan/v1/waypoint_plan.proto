@@ -1,21 +1,19 @@
 syntax = "proto3";
 
-package plan.v1;
+package executors.v1.plan.v1;
 
 import "component/v1/component.proto";
-import "plan/v1/plan.proto";
+import "executors/v1/plan/v1/metadata.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1";
-
-// BuildPlan represents a build plan that is stored in the deployments bucket.
-message BuildPlan {
+// WaypointPlan represents a waypoint plan used for builds or deploys.
+message WaypointPlan {
   Metadata metadata = 1;
   WaypointServerRef waypoint_server = 2;
   ECRRepositoryRef ecr_repository_ref = 3;
-  WaypointBuild waypoint_build = 4;
-  BuildOutputs outputs = 5;
+  WaypointRef waypoint_ref = 4;
+  Outputs outputs = 5;
   component.v1.Component component = 6;
 }
 
@@ -60,7 +58,7 @@ message ECRRepositoryRef {
 }
 
 // Outputs represent the outputs of the actual plan, such as where different files will be stored etc.
-message BuildOutputs {
+message Outputs {
   string bucket = 1 [
     (validate.rules).string.min_len = 1,
     (tagger.tags) = "faker:\"len=10\""
@@ -78,8 +76,8 @@ message BuildOutputs {
   string artifact_key = 6 [(validate.rules).string.min_bytes = 1];
 }
 
-// WaypointBuild represents all of the information required for the build
-message WaypointBuild {
+// WaypointRef represents all of the information required for the build
+message WaypointRef {
   // project corresponds to the short id of the app
   string project = 1 [
     (validate.rules).string.len = 26,
@@ -118,4 +116,12 @@ message WaypointBuild {
 
   string hcl_config = 9 [(validate.rules).string.min_bytes = 1];
   string hcl_config_format = 10 [(validate.rules).string.min_bytes = 1];
+}
+
+// WaypointServerRef represents the waypoint server that should be used
+message WaypointServerRef {
+  string address = 1 [(validate.rules).string.min_bytes = 1];
+
+  string token_secret_name = 2 [(validate.rules).string.min_bytes = 1];
+  string token_secret_namespace = 3 [(validate.rules).string.min_bytes = 1];
 }

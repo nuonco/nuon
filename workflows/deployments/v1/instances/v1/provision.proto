@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package deployments.v1.instances.v1;
 
-import "plan/v1/plan.proto";
+import "executors/v1/plan/v1/plan_ref.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -23,7 +23,7 @@ message ProvisionRequest {
 
   repeated string install_ids = 4 [(validate.rules).repeated.min_items = 1];
 
-  plan.v1.PlanRef plan = 5;
+  executors.v1.plan.v1.PlanRef plan = 5;
 
   string deployment_prefix = 6 [
     (validate.rules).string.min_len = 26,

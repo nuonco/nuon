@@ -1,14 +1,14 @@
 syntax = "proto3";
 
-package deployments.v1.plan.v1;
+package executors.v1.plan.v1;
 
 import "component/v1/component.proto";
-import "plan/v1/plan.proto";
+import "executors/v1/plan/v1/plan_ref.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-// PlanRequest is a child workflow request for the plan phase
-message PlanRequest {
+// CreatePlanRequest is a child workflow request for the plan phase
+message CreatePlanRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
@@ -25,7 +25,7 @@ message PlanRequest {
   component.v1.Component component = 4;
 }
 
-// PlanResponse is a child workflow response for the plan phase
-message PlanResponse {
-  .plan.v1.PlanRef plan = 1;
+// CreatePlanResponse is a child workflow response for the plan phase
+message CreatePlanResponse {
+  .executors.v1.plan.v1.PlanRef plan = 1;
 }

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package instances.v1;
 
-import "plan/v1/plan.proto";
+import "executors/v1/plan/v1/plan_ref.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -19,15 +19,15 @@ message ProvisionRequest {
 
   string prefix = 3 [(validate.rules).string.min_len = 1];
 
-  .plan.v1.PlanRef build_plan = 4;
+  .executors.v1.plan.v1.PlanRef build_plan = 4;
   bool plan_only = 5 [(tagger.tags) = "faker:\"-\""];
 }
 
 // ProvisionResponse returns the response from an instance provision workflow
 message ProvisionResponse {
-  .plan.v1.PlanRef build_plan = 1;
-  .plan.v1.PlanRef image_sync_plan = 2;
-  .plan.v1.PlanRef deploy_plan = 3;
+  .executors.v1.plan.v1.PlanRef build_plan = 1;
+  .executors.v1.plan.v1.PlanRef image_sync_plan = 2;
+  .executors.v1.plan.v1.PlanRef deploy_plan = 3;
 
   string hostname = 4;
 }
