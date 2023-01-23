@@ -49,7 +49,7 @@ func (i installRepo) ListByApp(
 	options *models.ConnectionOptions,
 ) ([]*models.Install, *utils.Page, error) {
 	var installs []*models.Install
-	tx := i.db.WithContext(ctx).Where("app_id = ?", appID).Find(&installs)
+	tx := i.db.WithContext(ctx).Preload(clause.Associations).Where("app_id = ?", appID).Find(&installs)
 	pg, c, err := utils.NewPaginator(options)
 	if err != nil {
 		return nil, nil, err
