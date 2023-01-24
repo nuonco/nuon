@@ -18,9 +18,10 @@ func (s *server) UpsertInstall(
 		return nil, fmt.Errorf("only AWS settings are currently supported")
 	}
 	params := models.InstallInput{
-		ID:    converters.ToOptionalStr(req.Msg.Id),
-		Name:  req.Msg.Name,
-		AppID: req.Msg.AppId,
+		ID:          converters.ToOptionalStr(req.Msg.Id),
+		Name:        req.Msg.Name,
+		AppID:       req.Msg.AppId,
+		CreatedByID: &req.Msg.CreatedById,
 		AwsSettings: &models.AWSSettingsInput{
 			Region:     converters.ProtoToAwsRegion(req.Msg.GetAwsSettings().Region),
 			IamRoleArn: req.Msg.GetAwsSettings().Role,
