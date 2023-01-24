@@ -67,18 +67,6 @@ func (i *componentService) updateComponent(ctx context.Context, input models.Com
 	component.Name = input.Name
 	component.BuildImage = input.BuildImage
 	component.Type = string(input.Type)
-	if input.GithubRepo != nil {
-		component.GithubRepo = *input.GithubRepo
-	}
-	if input.GithubDir != nil {
-		component.GithubDir = *input.GithubDir
-	}
-	if input.GithubBranch != nil {
-		component.GithubBranch = *input.GithubBranch
-	}
-	if input.GithubRepoOwner != nil {
-		component.GithubRepoOwner = *input.GithubRepoOwner
-	}
 	if input.GithubConfig != nil {
 		if component.GithubConfig != nil {
 			component.GithubConfig.Repo = input.GithubConfig.Repo
@@ -114,18 +102,6 @@ func (i *componentService) UpsertComponent(ctx context.Context, input models.Com
 	component.BuildImage = input.BuildImage
 	component.Type = string(input.Type)
 	component.CreatedByID = input.CreatedByID
-	if input.GithubRepo != nil {
-		component.GithubRepo = *input.GithubRepo
-	}
-	if input.GithubDir != nil {
-		component.GithubDir = *input.GithubDir
-	}
-	if input.GithubBranch != nil {
-		component.GithubBranch = *input.GithubBranch
-	}
-	if input.GithubRepoOwner != nil {
-		component.GithubRepoOwner = *input.GithubRepoOwner
-	}
 	if input.GithubConfig != nil {
 		component.GithubConfig = &models.GithubConfig{
 			Repo:      input.GithubConfig.Repo,
