@@ -11,7 +11,7 @@ import (
 	waypointv1 "github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
-	"github.com/powertoolsdev/go-waypoint"
+	"github.com/powertoolsdev/go-waypoint/v2/pkg/client"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/stretchr/testify/assert"
@@ -183,7 +183,7 @@ func Test_planCreatorImpl_createPlan(t *testing.T) {
 				wpPlan := plan.WaypointServer
 				cfg := req.Config
 
-				expectedAddr := waypoint.DefaultOrgServerAddress(cfg.WaypointServerRootDomain, req.OrgID)
+				expectedAddr := client.DefaultOrgServerAddress(cfg.WaypointServerRootDomain, req.OrgID)
 				assert.Equal(t, expectedAddr, wpPlan.Address)
 
 				expectedTokenSecretName := fmt.Sprintf(cfg.WaypointTokenSecretTemplate, req.OrgID)
