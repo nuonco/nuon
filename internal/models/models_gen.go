@@ -246,6 +246,7 @@ type InstallInput struct {
 	ID          *string           `json:"id" faker:"uuid_hyphenated"`
 	Name        string            `json:"name"`
 	AppID       string            `json:"appId" faker:"uuid_hyphenated"`
+	CreatedByID *string           `json:"createdById"`
 	AwsSettings *AWSSettingsInput `json:"awsSettings"`
 	GcpSettings *GCPSettingsInput `json:"gcpSettings"`
 }

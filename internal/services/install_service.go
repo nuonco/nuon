@@ -143,6 +143,7 @@ func (i *installService) UpsertInstall(ctx context.Context, input models.Install
 		return nil, err
 	}
 	install.AppID = appID
+	install.CreatedByID = *input.CreatedByID
 	install.Domain = models.Domain{
 		// NOTE: this will need to be passed onto the app install job to set up the root domain once it's
 		// created
