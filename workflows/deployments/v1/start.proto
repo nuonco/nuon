@@ -3,6 +3,7 @@ syntax = "proto3";
 package deployments.v1;
 
 import "component/v1/component.proto";
+import "executors/v1/plan/v1/plan_ref.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -31,4 +32,6 @@ message StartRequest {
 // StartResponse returns the response from a deployment workflow
 message StartResponse {
   repeated string workflow_ids = 1 [(validate.rules).repeated.min_items = 1];
+
+  .executors.v1.plan.v1.PlanRef plan_ref = 2;
 }
