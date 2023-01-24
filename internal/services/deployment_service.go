@@ -81,6 +81,41 @@ func (i *deploymentService) startDeployment(ctx context.Context, deployment *mod
 	return nil
 }
 
+func (i *deploymentService) processGithubDeployment(ctx context.Context, deployment *models.Deployment) (*models.Deployment, error) {
+	ghInstallID, err := strconv.ParseInt(deployment.Component.App.GithubInstallID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	// get installation token from github
+	//TODO: remove since the workers are getting their own tokens?
+	_, err = repos.GithubRepo.GetInstallToken(i.githubRepo, ctx, ghInstallID)
+	if err != nil {
+		return nil, err
+	}
+
+	// get commit info from github
+	commit, err := repos.GithubRepo.GetCommit(i.githubRepo,
+		ctx,
+		ghInstallID,
+		deployment.Component.GithubConfig.RepoOwner,
+		deployment.Component.GithubConfig.Repo,
+		deployment.Component.GithubConfig.Branch)
+	if err != nil {
+		return nil, err
+	}
+
+	// update deployment with commit info
+	deployment.CommitAuthor = *commit.Author.Login
+	deployment.CommitHash = commit.GetSHA()
+	deployment, err = i.repo.Update(ctx, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	return deployment, nil
+}
+
 func (i *deploymentService) CreateDeployment(ctx context.Context, componentID string) (*models.Deployment, error) {
 	id, err := parseID(componentID)
 	if err != nil {
@@ -100,34 +135,12 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, componentID st
 		return nil, err
 	}
 
-	// TODO: distinguish between ComponentType and execute different flows
-	ghInstallID, err := strconv.ParseInt(deployment.Component.App.GithubInstallID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-
-	//TODO: replace _ with token when ready to pass it to the temporal workflow
-	_, err = repos.GithubRepo.GetInstallToken(i.githubRepo, ctx, ghInstallID)
-	if err != nil {
-		return nil, err
-	}
-
-	commit, err := repos.GithubRepo.GetCommit(i.githubRepo,
-		ctx,
-		ghInstallID,
-		deployment.Component.GithubConfig.RepoOwner,
-		deployment.Component.GithubConfig.Repo,
-		deployment.Component.GithubConfig.Branch)
-	if err != nil {
-		return nil, err
-	}
-
-	// update deployment with commit info
-	deployment.CommitAuthor = *commit.Author.Login
-	deployment.CommitHash = commit.GetSHA()
-	deployment, err = i.repo.Update(ctx, deployment)
-	if err != nil {
-		return nil, err
+	// do github stuff only when ComponentType is GITHUB_REPO
+	if deployment.Component.Type == "GITHUB_REPO" {
+		deployment, err = i.processGithubDeployment(ctx, deployment)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// start deployment workflow
