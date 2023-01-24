@@ -9,19 +9,12 @@ import (
 
 type Component struct {
 	Model
-
-	Name        string
-	AppID       uuid.UUID
-	App         App `faker:"-"`
-	CreatedByID string
-
-	BuildImage      string `json:"container_image_url"`
-	Type            string `json:"type"`
-	GithubRepo      string `json:"github_repo"`
-	GithubDir       string `json:"github_dir"`
-	GithubRepoOwner string `json:"github_repo_owner"`
-	GithubBranch    string `json:"github_branch"`
-
+	Name         string
+	AppID        uuid.UUID
+	App          App `faker:"-"`
+	CreatedByID  string
+	BuildImage   string        `json:"build_image"`
+	Type         string        `json:"type"`
 	Deployments  []Deployment  `faker:"-"`
 	VcsConfig    VcsConfig     `gorm:"-" faker:"-"`
 	GithubConfig *GithubConfig `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" faker:"-"`
