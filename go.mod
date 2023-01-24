@@ -1,4 +1,4 @@
-module github.com/powertoolsdev/go-waypoint
+module github.com/powertoolsdev/go-waypoint/v2
 
 go 1.19
 

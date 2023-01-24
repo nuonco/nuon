@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	pb "github.com/hashicorp/waypoint/pkg/server/gen"
-	"github.com/powertoolsdev/go-waypoint/internal/token"
+	"github.com/powertoolsdev/go-waypoint/v2/internal/token"
 	"google.golang.org/grpc"
 )
 
