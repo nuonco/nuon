@@ -1,4 +1,4 @@
-package addr
+package client
 
 import "fmt"
 
