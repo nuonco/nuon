@@ -614,8 +614,8 @@ github.com/powertoolsdev/go-uploader v0.1.0 h1:QEhL08BAX3PM8PpeMAwA9eiZfZEfkZ8DR
 github.com/powertoolsdev/go-uploader v0.1.0/go.mod h1:PwA4fSwVHcYvJ45uPRUqE5UkwK3W7oisFYERXcSbfTY=
 github.com/powertoolsdev/go-waypoint/v2 v2.0.2 h1:WJ1PjWuz2u8UcsFfEyyRBvAAcb3Hcc15G501ZYKDeh8=
 github.com/powertoolsdev/go-waypoint/v2 v2.0.2/go.mod h1:LUSZVLwyW41IufvV+k9YO4Jd0dG5G9rpWXXzH55HhIQ=
-github.com/powertoolsdev/protos v0.48.0 h1:YPJ1vhuaB/ubpjNdUvSAgZnOk1Ib4847fUCp0J4dukE=
-github.com/powertoolsdev/protos v0.48.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.49.0 h1:aU5ietk+K3Kuve7EJibtrtQeODFoV8aobKFUn9Vlai4=
+github.com/powertoolsdev/protos v0.49.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/robfig/cron v1.2.0 h1:ZjScXvvxeQ63Dbyxy76Fj3AT3Ut0aKsyd2/tl3DTMuQ=
 github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
