@@ -198,6 +198,11 @@ type DeploymentEdge struct {
 	Node *Deployment `json:"node"`
 }
 
+type DeploymentInput struct {
+	ComponentID string  `json:"componentId" faker:"uuid_hyphenated"`
+	CreatedByID *string `json:"createdById"`
+}
+
 type GCPSettingsInput struct {
 	Bogus string `json:"bogus"`
 }
