@@ -113,6 +113,7 @@ func (i *componentService) UpsertComponent(ctx context.Context, input models.Com
 	component.AppID = appID
 	component.BuildImage = input.BuildImage
 	component.Type = string(input.Type)
+	component.CreatedByID = input.CreatedByID
 	if input.GithubRepo != nil {
 		component.GithubRepo = *input.GithubRepo
 	}

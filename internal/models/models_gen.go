@@ -111,11 +111,12 @@ type ComponentEdge struct {
 }
 
 type ComponentInput struct {
-	AppID      string        `json:"appId" faker:"uuid_hyphenated"`
-	ID         *string       `json:"id" faker:"uuid_hyphenated"`
-	Name       string        `json:"name"`
-	BuildImage string        `json:"buildImage"`
-	Type       ComponentType `json:"type"`
+	AppID       string        `json:"appId" faker:"uuid_hyphenated"`
+	ID          *string       `json:"id" faker:"uuid_hyphenated"`
+	Name        string        `json:"name"`
+	BuildImage  string        `json:"buildImage"`
+	CreatedByID string        `json:"created_by_id"`
+	Type        ComponentType `json:"type"`
 	// Github repository is for this component
 	GithubRepo *string `json:"githubRepo"`
 	// Directory path to the container file

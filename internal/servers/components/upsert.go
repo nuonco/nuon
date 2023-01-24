@@ -15,9 +15,10 @@ func (s *server) UpsertComponent(
 	req *connect.Request[componentv1.UpsertComponentRequest],
 ) (*connect.Response[componentv1.UpsertComponentResponse], error) {
 	component, err := s.Svc.UpsertComponent(ctx, models.ComponentInput{
-		AppID: req.Msg.AppId,
-		ID:    converters.ToOptionalStr(req.Msg.Id),
-		Name:  req.Msg.Name,
+		AppID:       req.Msg.AppId,
+		ID:          converters.ToOptionalStr(req.Msg.Id),
+		Name:        req.Msg.Name,
+		CreatedByID: req.Msg.CreatedById,
 
 		// NOTE: the following parameters will not be used once we migrate to the new component ref
 		BuildImage: req.Msg.BuildImage,
