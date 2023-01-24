@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-uploader"
-	"github.com/powertoolsdev/go-waypoint"
+	"github.com/powertoolsdev/go-waypoint/v2/pkg/client"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	shared "github.com/powertoolsdev/workers-executors/internal"
@@ -123,7 +123,7 @@ func (planCreatorImpl) createPlan(req CreatePlanRequest, builder config.Builder)
 			DeploymentShortId: req.DeploymentID,
 		},
 		WaypointServer: &planv1.WaypointServerRef{
-			Address:              waypoint.DefaultOrgServerAddress(req.Config.WaypointServerRootDomain, req.OrgID),
+			Address:              client.DefaultOrgServerAddress(req.Config.WaypointServerRootDomain, req.OrgID),
 			TokenSecretName:      fmt.Sprintf(req.Config.WaypointTokenSecretTemplate, req.OrgID),
 			TokenSecretNamespace: req.Config.WaypointTokenSecretNamespace,
 		},
