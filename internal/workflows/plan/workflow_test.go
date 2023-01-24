@@ -14,7 +14,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func TestProvision(t *testing.T) {
+func TestCreatePlan(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
 	req := generics.GetFakeObj[*planv1.CreatePlanRequest]()
 	wkflow := NewWorkflow(cfg)
