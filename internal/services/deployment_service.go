@@ -29,7 +29,7 @@ type DeploymentService interface {
 	// ids
 	GetComponentDeployments(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
 	// CreateDeployment creates a new deployment for the specified component id
-	CreateDeployment(context.Context, string) (*models.Deployment, error)
+	CreateDeployment(context.Context, *models.DeploymentInput) (*models.Deployment, error)
 }
 
 type deploymentService struct {
@@ -116,8 +116,8 @@ func (i *deploymentService) processGithubDeployment(ctx context.Context, deploym
 	return deployment, nil
 }
 
-func (i *deploymentService) CreateDeployment(ctx context.Context, componentID string) (*models.Deployment, error) {
-	id, err := parseID(componentID)
+func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.DeploymentInput) (*models.Deployment, error) {
+	id, err := parseID(input.ComponentID)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +129,7 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, componentID st
 
 	deployment := &models.Deployment{
 		ComponentID: id,
+		CreatedByID: *input.CreatedByID,
 	}
 	deployment, err = i.repo.Create(ctx, deployment)
 	if err != nil {
