@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/go-generics"
-	deploymentplanv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
-	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/plan/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	workers "github.com/powertoolsdev/workers-executors/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -17,10 +16,10 @@ import (
 
 func TestProvision(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
-	req := generics.GetFakeObj[*planv1.PlanRequest]()
+	req := generics.GetFakeObj[*planv1.CreatePlanRequest]()
 	wkflow := NewWorkflow(cfg)
 	testSuite := &testsuite.WorkflowTestSuite{}
-	planRef := generics.GetFakeObj[*deploymentplanv1.PlanRef]()
+	planRef := generics.GetFakeObj[*planv1.PlanRef]()
 
 	// register activities
 	a := NewActivities()
@@ -44,7 +43,7 @@ func TestProvision(t *testing.T) {
 	require.NoError(t, env.GetWorkflowError())
 
 	// verify expected workflow response
-	resp := &planv1.PlanResponse{}
+	resp := &planv1.CreatePlanResponse{}
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
 	assert.True(t, proto.Equal(planRef, resp.Plan))
