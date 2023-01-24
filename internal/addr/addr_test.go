@@ -1,4 +1,4 @@
-package waypoint
+package addr
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 )
 
 func TestDefaultOrgServer(t *testing.T) {
+	t.Parallel()
 	orgID := uuid.NewString()
 	rootDomain := "test.nuon.co"
 

@@ -1,10 +1,11 @@
-package waypoint
+package token
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -27,9 +28,57 @@ func (t *testKubeClientSecretGetter) Get(ctx context.Context, name string, opts 
 	return nil, args.Error(1)
 }
 
-func TestGetToken(t *testing.T) {
+func TestNew(t *testing.T) {
+	t.Parallel()
+
+	v := validator.New()
+	tests := map[string]struct {
+		v           *validator.Validate
+		opts        []k8sTokenGetterOption
+		errExpected error
+	}{
+		"happy path": {
+			v:    v,
+			opts: []k8sTokenGetterOption{WithNamespace("happy-path"), WithName("happy-path")},
+		},
+		"missing validator": {
+			v:           nil,
+			opts:        []k8sTokenGetterOption{WithNamespace("happy-path"), WithName("happy-path")},
+			errExpected: fmt.Errorf("validator is nil"),
+		},
+		"missing namespace": {
+			v:           v,
+			opts:        []k8sTokenGetterOption{WithName("happy-path")},
+			errExpected: fmt.Errorf("Field validation for 'Namespace' failed on the 'required' tag"),
+		},
+		"missing name": {
+			v:           v,
+			opts:        []k8sTokenGetterOption{WithNamespace("happy-path")},
+			errExpected: fmt.Errorf("Field validation for 'Name' failed on the 'required' tag"),
+		},
+	}
+
+	for name, test := range tests {
+		name := name
+		test := test
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			k, err := New(test.v, test.opts...)
+			if test.errExpected != nil {
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.NotNil(t, k)
+		})
+	}
+}
+
+func TestK8sTokenGetter_GetOrgToken(t *testing.T) {
+	t.Parallel()
 	namespace := "default"
-	orgID := uuid.NewString()
+	secretName := uuid.NewString()
 
 	tests := map[string]struct {
 		kubeClientFn  func(*testing.T) kubeClientSecretGetter
@@ -51,7 +100,7 @@ func TestGetToken(t *testing.T) {
 			assertFn: func(t *testing.T, client kubeClientSecretGetter) {
 			},
 		},
-		"unable-to-get-secret": {
+		"unable to get secret": {
 			kubeClientFn: func(t *testing.T) kubeClientSecretGetter {
 				connector := &testKubeClientSecretGetter{}
 				connector.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil, errTokenTest)
@@ -59,7 +108,7 @@ func TestGetToken(t *testing.T) {
 			},
 			errExpected: errTokenTest,
 		},
-		"secret-found-no-token": {
+		"secret found no token": {
 			kubeClientFn: func(t *testing.T) kubeClientSecretGetter {
 				connector := &testKubeClientSecretGetter{}
 				connector.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(&corev1.Secret{
@@ -69,7 +118,7 @@ func TestGetToken(t *testing.T) {
 			},
 			errExpected: fmt.Errorf("token not found"),
 		},
-		"token-is-empty": {
+		"token is empty": {
 			kubeClientFn: func(t *testing.T) kubeClientSecretGetter {
 				connector := &testKubeClientSecretGetter{}
 				connector.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(&corev1.Secret{
@@ -84,13 +133,19 @@ func TestGetToken(t *testing.T) {
 	}
 
 	for name, test := range tests {
+		name := name
+		test := test
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			client := test.kubeClientFn(t)
 			tokenGetter := &k8sTokenGetter{
-				client: client,
+				Namespace: namespace,
+				Name:      secretName,
+				client:    client,
 			}
 
-			token, err := tokenGetter.getOrgToken(context.Background(), namespace, orgID)
+			token, err := tokenGetter.GetOrgToken(context.Background())
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 			} else {

@@ -1,4 +1,4 @@
-package waypoint
+package addr
 
 import "fmt"
 
