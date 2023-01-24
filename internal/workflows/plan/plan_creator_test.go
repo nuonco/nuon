@@ -13,7 +13,7 @@ import (
 	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-waypoint"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
-	planv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/protobuf/proto"
@@ -33,7 +33,7 @@ var _ s3BlobUploader = (*mockS3BlobUploader)(nil)
 func Test_planCreatorImpl_uploadPlan(t *testing.T) {
 	errUploadPlan := fmt.Errorf("error uploading plan")
 	req := generics.GetFakeObj[CreatePlanRequest]()
-	buildPlan := generics.GetFakeObj[*planv1.BuildPlan]()
+	buildPlan := generics.GetFakeObj[*planv1.WaypointPlan]()
 
 	tests := map[string]struct {
 		clientFn    func(*testing.T) s3BlobUploader
@@ -159,12 +159,12 @@ func Test_planCreatorImpl_createPlan(t *testing.T) {
 	errCreatePlan := fmt.Errorf("err creating plan")
 	tests := map[string]struct {
 		builderFn   func() *mockBuilder
-		assertFn    func(*testing.T, *planv1.BuildPlan)
+		assertFn    func(*testing.T, *planv1.WaypointPlan)
 		errExpected error
 	}{
 		"happy path - metadata": {
 			builderFn: newDefaultMockBuilder,
-			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+			assertFn: func(t *testing.T, plan *planv1.WaypointPlan) {
 				meta := plan.Metadata
 				assert.NotNil(t, meta)
 				assert.Equal(t, longIDs[0], meta.OrgId)
@@ -179,7 +179,7 @@ func Test_planCreatorImpl_createPlan(t *testing.T) {
 		},
 		"happy path - waypoint server": {
 			builderFn: newDefaultMockBuilder,
-			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+			assertFn: func(t *testing.T, plan *planv1.WaypointPlan) {
 				wpPlan := plan.WaypointServer
 				cfg := req.Config
 
@@ -193,7 +193,7 @@ func Test_planCreatorImpl_createPlan(t *testing.T) {
 		},
 		"happy path - ecr repository": {
 			builderFn: newDefaultMockBuilder,
-			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+			assertFn: func(t *testing.T, plan *planv1.WaypointPlan) {
 				ecrPlan := plan.EcrRepositoryRef
 				cfg := req.Config
 
@@ -210,10 +210,10 @@ func Test_planCreatorImpl_createPlan(t *testing.T) {
 				assert.Equal(t, cfg.OrgsECRRegion, ecrPlan.Region)
 			},
 		},
-		"happy path - waypoint build": {
+		"happy path - waypoint ref": {
 			builderFn: newDefaultMockBuilder,
-			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
-				wpPlan := plan.WaypointBuild
+			assertFn: func(t *testing.T, plan *planv1.WaypointPlan) {
+				wpPlan := plan.WaypointRef
 
 				assert.Equal(t, req.OrgID, wpPlan.Project)
 				assert.Equal(t, req.AppID, wpPlan.Workspace)
@@ -235,7 +235,7 @@ func Test_planCreatorImpl_createPlan(t *testing.T) {
 		},
 		"happy path - outputs": {
 			builderFn: newDefaultMockBuilder,
-			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+			assertFn: func(t *testing.T, plan *planv1.WaypointPlan) {
 				oPlan := plan.Outputs
 				cfg := req.Config
 
@@ -255,7 +255,7 @@ func Test_planCreatorImpl_createPlan(t *testing.T) {
 		},
 		"happy path - component": {
 			builderFn: newDefaultMockBuilder,
-			assertFn: func(t *testing.T, plan *planv1.BuildPlan) {
+			assertFn: func(t *testing.T, plan *planv1.WaypointPlan) {
 				assert.True(t, proto.Equal(req.Component, plan.Component))
 			},
 		},

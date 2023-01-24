@@ -6,7 +6,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/plan/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	workers "github.com/powertoolsdev/workers-executors/internal"
 )
 
@@ -31,8 +31,8 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Plan(ctx workflow.Context, req *planv1.PlanRequest) (*planv1.PlanResponse, error) {
-	resp := &planv1.PlanResponse{}
+func (w *wkflow) Plan(ctx workflow.Context, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+	resp := &planv1.CreatePlanResponse{}
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
 	act := NewActivities()

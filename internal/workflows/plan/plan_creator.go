@@ -11,7 +11,7 @@ import (
 	"github.com/powertoolsdev/go-uploader"
 	"github.com/powertoolsdev/go-waypoint"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
-	planv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	shared "github.com/powertoolsdev/workers-executors/internal"
 	"github.com/powertoolsdev/workers-executors/internal/workflows/plan/config"
 )
@@ -81,8 +81,8 @@ func (a *Activities) CreatePlan(ctx context.Context, req CreatePlanRequest) (Cre
 
 type planCreator interface {
 	getConfigBuilder(*componentv1.Component) (config.Builder, error)
-	createPlan(CreatePlanRequest, config.Builder) (*planv1.BuildPlan, error)
-	uploadPlan(context.Context, s3BlobUploader, CreatePlanRequest, *planv1.BuildPlan) (*planv1.PlanRef, error)
+	createPlan(CreatePlanRequest, config.Builder) (*planv1.WaypointPlan, error)
+	uploadPlan(context.Context, s3BlobUploader, CreatePlanRequest, *planv1.WaypointPlan) (*planv1.PlanRef, error)
 }
 
 type planCreatorImpl struct{}
@@ -93,7 +93,7 @@ func (planCreatorImpl) getConfigBuilder(component *componentv1.Component) (confi
 	return config.NewStaticBuilder(), nil
 }
 
-func (planCreatorImpl) createPlan(req CreatePlanRequest, builder config.Builder) (*planv1.BuildPlan, error) {
+func (planCreatorImpl) createPlan(req CreatePlanRequest, builder config.Builder) (*planv1.WaypointPlan, error) {
 	orgUUID, err := shortid.ToUUID(req.OrgID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid org ID: %w", err)
@@ -113,7 +113,7 @@ func (planCreatorImpl) createPlan(req CreatePlanRequest, builder config.Builder)
 	ecrRepoURI := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s", req.Config.OrgsECRRegistryID,
 		req.Config.OrgsECRRegion, ecrRepoName)
 
-	plan := &planv1.BuildPlan{
+	plan := &planv1.WaypointPlan{
 		Metadata: &planv1.Metadata{
 			OrgId:             orgUUID.String(),
 			OrgShortId:        req.OrgID,
@@ -135,7 +135,7 @@ func (planCreatorImpl) createPlan(req CreatePlanRequest, builder config.Builder)
 			Tag:            req.DeploymentID,
 			Region:         req.Config.OrgsECRRegion,
 		},
-		WaypointBuild: &planv1.WaypointBuild{
+		WaypointRef: &planv1.WaypointRef{
 			Project:     req.OrgID,
 			Workspace:   req.AppID,
 			App:         req.Component.Name,
@@ -150,7 +150,7 @@ func (planCreatorImpl) createPlan(req CreatePlanRequest, builder config.Builder)
 			OnDemandRunnerConfig: req.OrgID,
 			JobTimeoutSeconds:    defaultJobTimeoutSeconds,
 		},
-		Outputs: &planv1.BuildOutputs{
+		Outputs: &planv1.Outputs{
 			Bucket:              req.Config.DeploymentsBucket,
 			BucketPrefix:        req.DeploymentsBucketPrefix,
 			BucketAssumeRoleArn: req.DeploymentsBucketAssumeRoleARN,
@@ -171,13 +171,13 @@ func (planCreatorImpl) createPlan(req CreatePlanRequest, builder config.Builder)
 	if err != nil {
 		return nil, fmt.Errorf("unable to render config: %w", err)
 	}
-	plan.WaypointBuild.HclConfig = string(cfg)
-	plan.WaypointBuild.HclConfigFormat = cfgFmt.String()
+	plan.WaypointRef.HclConfig = string(cfg)
+	plan.WaypointRef.HclConfigFormat = cfgFmt.String()
 
 	return plan, nil
 }
 
-func (planCreatorImpl) uploadPlan(ctx context.Context, uploader s3BlobUploader, req CreatePlanRequest, plan *planv1.BuildPlan) (*planv1.PlanRef, error) {
+func (planCreatorImpl) uploadPlan(ctx context.Context, uploader s3BlobUploader, req CreatePlanRequest, plan *planv1.WaypointPlan) (*planv1.PlanRef, error) {
 	byts, err := json.Marshal(plan)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert plan to json: %w", err)

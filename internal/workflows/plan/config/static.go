@@ -7,7 +7,7 @@ import (
 
 	waypointv1 "github.com/hashicorp/waypoint/pkg/server/gen"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
-	planv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 )
 
 // NewStaticBuilder returns a builder that renders our hardcoded sample application
