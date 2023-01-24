@@ -6,6 +6,7 @@ import (
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
 	shared "github.com/powertoolsdev/workers-executors/internal"
+	"github.com/powertoolsdev/workers-executors/internal/workflows/execute"
 	"github.com/powertoolsdev/workers-executors/internal/workflows/plan"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
@@ -76,6 +77,11 @@ func runExecutorWorkers(c client.Client, cfg shared.Config, interruptCh <-chan i
 	w.RegisterWorkflow(planWkflow.Plan)
 	planActs := plan.NewActivities()
 	w.RegisterActivity(planActs)
+
+	executeWkflow := execute.NewWorkflow(cfg)
+	w.RegisterWorkflow(executeWkflow.ExecutePlan)
+	executeActs := execute.NewActivities()
+	w.RegisterActivity(executeActs)
 
 	if err := w.Run(interruptCh); err != nil {
 		return err
