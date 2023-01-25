@@ -18,7 +18,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.20.0
 	go.uber.org/zap v1.24.0
-	google.golang.org/grpc v1.52.0
+	google.golang.org/grpc v1.52.1
 )
 
 require (
