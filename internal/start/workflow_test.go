@@ -11,12 +11,11 @@ import (
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/instances/v1"
-	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/plan/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/powertoolsdev/workers-deployments/internal/meta"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 	"github.com/powertoolsdev/workers-deployments/internal/start/instances"
-	"github.com/powertoolsdev/workers-deployments/internal/start/plan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -42,10 +41,8 @@ func TestProvision_planOnly(t *testing.T) {
 
 	// initialize child workflows
 	bld := build.NewWorkflow(cfg)
-	pln := plan.NewWorkflow(cfg)
 	ins := instances.NewWorkflow(cfg)
 	env.RegisterWorkflow(bld.Build)
-	env.RegisterWorkflow(pln.Plan)
 	env.RegisterWorkflow(ins.ProvisionInstances)
 
 	req := getFakeStartRequest()
@@ -57,7 +54,7 @@ func TestProvision_planOnly(t *testing.T) {
 	// Mock activity implementation
 	env.OnWorkflow(bld.Build, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, br *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
-			assert.Falsef(t, true, "Build was executed during plan only")
+			assert.True(t, br.PlanOnly)
 			return &buildv1.BuildResponse{}, nil
 		})
 	env.OnWorkflow(ins.ProvisionInstances, mock.Anything, mock.Anything).
@@ -71,12 +68,6 @@ func TestProvision_planOnly(t *testing.T) {
 			return meta.StartResponse{}, nil
 		})
 
-	env.OnWorkflow(pln.Plan, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r *planv1.PlanRequest) (*planv1.PlanResponse, error) {
-			resp := &planv1.PlanResponse{}
-			return resp, nil
-		})
-
 	env.ExecuteWorkflow(wkflow.Start, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
@@ -88,16 +79,15 @@ func TestProvision_planOnly(t *testing.T) {
 func TestStart(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
 	wkflow := NewWorkflow(cfg)
+	planRef := generics.GetFakeObj[*planv1.PlanRef]()
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
 	act := NewActivities()
 	bld := build.NewWorkflow(cfg)
-	pln := plan.NewWorkflow(cfg)
 	ins := instances.NewWorkflow(cfg)
 	env.RegisterWorkflow(bld.Build)
-	env.RegisterWorkflow(pln.Plan)
 	env.RegisterWorkflow(ins.ProvisionInstances)
 
 	req := getFakeStartRequest()
@@ -109,7 +99,6 @@ func TestStart(t *testing.T) {
 	orgID, appID, deploymentID := shortIDs[0], shortIDs[1], shortIDs[2]
 
 	// Mock activity implementation
-
 	env.OnActivity(act.StartStartRequest, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, r meta.StartRequest) (meta.StartResponse, error) {
 			var resp meta.StartResponse
@@ -138,7 +127,9 @@ func TestStart(t *testing.T) {
 
 	env.OnWorkflow(bld.Build, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, br *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
-			resp := &buildv1.BuildResponse{}
+			resp := &buildv1.BuildResponse{
+				PlanRef: planRef,
+			}
 			assert.Nil(t, br.Validate())
 			assert.Equal(t, orgID, br.OrgId)
 			return resp, nil
@@ -156,21 +147,11 @@ func TestStart(t *testing.T) {
 			return resp, nil
 		})
 
-	env.OnWorkflow(pln.Plan, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r *planv1.PlanRequest) (*planv1.PlanResponse, error) {
-			resp := &planv1.PlanResponse{}
-			assert.Nil(t, r.Validate())
-			assert.Equal(t, orgID, r.OrgId)
-			assert.Equal(t, appID, r.AppId)
-			assert.Equal(t, deploymentID, r.DeploymentId)
-			assert.True(t, proto.Equal(req.Component, r.Component))
-			return resp, nil
-		})
-
 	env.ExecuteWorkflow(wkflow.Start, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
 	var resp *deploymentsv1.StartResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
+	assert.True(t, proto.Equal(planRef, resp.PlanRef))
 	require.NotNil(t, resp)
 }

@@ -1,77 +1,68 @@
 package build
 
 import (
-	"context"
 	"testing"
 
 	"github.com/powertoolsdev/go-generics"
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
+	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/workflow"
+	"google.golang.org/protobuf/proto"
 )
+
+// NOTE(jm): unfortunately, the only way to register these workflows in the test env is to do it using the same exact
+// signature. Given we'll be using these workflows from just about every domain, we should probably make a library to
+// wrap these calls, so we don't have to maintain them everywhere like this.
+func CreatePlan(workflow.Context, *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+	return nil, nil
+}
+
+func ExecutePlan(workflow.Context, *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+	return nil, nil
+}
 
 func TestProvision(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
 	req := generics.GetFakeObj[*buildv1.BuildRequest]()
+	planRef := generics.GetFakeObj[*planv1.PlanRef]()
 	wkflow := NewWorkflow(cfg)
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
+	env.RegisterWorkflow(CreatePlan)
+	env.RegisterWorkflow(ExecutePlan)
 
-	a := NewActivities()
-
-	env.OnActivity(a.UpsertWaypointApplication, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, uwaReq UpsertWaypointApplicationRequest) (UpsertWaypointApplicationResponse, error) {
-			var resp UpsertWaypointApplicationResponse
-			assert.Nil(t, uwaReq.validate())
-			assert.Equal(t, req.OrgId, uwaReq.OrgID)
-			assert.Contains(t, uwaReq.OrgServerAddr, req.OrgId)
-			return resp, nil
-		})
-
-	env.OnActivity(a.QueueWaypointDeploymentJob, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, uwaReq QueueWaypointDeploymentJobRequest) (QueueWaypointDeploymentJobResponse, error) {
-			resp := QueueWaypointDeploymentJobResponse{
-				JobID: "waypoint-job-id-abc",
+	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+			resp := &planv1.CreatePlanResponse{
+				Plan: planRef,
 			}
-
-			assert.NoError(t, uwaReq.validate())
-			assert.Equal(t, req.OrgId, uwaReq.OrgID)
-			assert.Contains(t, uwaReq.OrgServerAddr, req.OrgId)
+			assert.Equal(t, req.OrgId, r.OrgId)
+			assert.Equal(t, req.AppId, r.AppId)
+			assert.Equal(t, req.DeploymentId, r.DeploymentId)
+			assert.True(t, proto.Equal(req.Component, r.Component))
+			assert.Nil(t, r.Validate())
+			return resp, nil
+		})
+	env.OnWorkflow("ExecutePlan", mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+			resp := &executev1.ExecutePlanResponse{}
+			assert.True(t, proto.Equal(planRef, r.Plan))
+			assert.Nil(t, r.Validate())
 			return resp, nil
 		})
 
-	env.OnActivity(a.PollWaypointBuildJob, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, pwdjReq PollWaypointBuildJobRequest) (PollWaypointBuildJobResponse, error) {
-			var resp PollWaypointBuildJobResponse
-			assert.Nil(t, pwdjReq.validate())
-
-			assert.Equal(t, req.OrgId, pwdjReq.OrgID)
-			assert.Equal(t, "waypoint-job-id-abc", pwdjReq.JobID)
-
-			return resp, nil
-		})
-
-	env.OnActivity(a.UploadArtifact, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, ua UploadArtifactRequest) (UploadArtifactResponse, error) {
-			assert.Nil(t, ua.validate())
-			return UploadArtifactResponse{}, nil
-		})
-
-	env.OnActivity(a.ValidateWaypointDeploymentJob, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, vr ValidateWaypointDeploymentJobRequest) (ValidateWaypointDeploymentJobResponse, error) {
-			assert.Nil(t, vr.validate())
-			assert.Equal(t, req.OrgId, vr.OrgID)
-			assert.Equal(t, "waypoint-job-id-abc", vr.JobID)
-			return ValidateWaypointDeploymentJobResponse{}, nil
-		})
-
+	// execute workflow
 	env.ExecuteWorkflow(wkflow.Build, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
 	resp := &buildv1.BuildResponse{}
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
+	assert.True(t, proto.Equal(planRef, resp.PlanRef))
 }
