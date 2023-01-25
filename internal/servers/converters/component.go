@@ -28,14 +28,14 @@ func ComponentModelToProto(component *models.Component) *componentv1.ComponentRe
 		CreatedById: component.CreatedByID,
 		BuildImage:  component.BuildImage,
 		Type:        ComponentTypeToProto(models.ComponentType(component.Type)),
-		VcsConfig: &componentv1.ComponentRef_GithubConfig{
-			GithubConfig: &componentv1.GithubConfig{
-				Branch:    component.GithubConfig.Branch,
-				Directory: component.GithubConfig.Directory,
-				Repo:      component.GithubConfig.Repo,
-				RepoOwner: component.GithubConfig.RepoOwner,
-			},
-		},
+		// VcsConfig: &componentv1.ComponentRef_GithubConfig{
+		// 	GithubConfig: &componentv1.GithubConfig{
+		// 		Branch:    component.GithubConfig.Branch,
+		// 		Directory: component.GithubConfig.Directory,
+		// 		Repo:      component.GithubConfig.Repo,
+		// 		RepoOwner: component.GithubConfig.RepoOwner,
+		// 	},
+		// },
 		UpdatedAt: TimeToDatetime(component.UpdatedAt),
 		CreatedAt: TimeToDatetime(component.CreatedAt),
 	}
