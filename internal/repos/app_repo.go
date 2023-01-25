@@ -93,7 +93,8 @@ func (a appRepo) Delete(ctx context.Context, appID uuid.UUID) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if app.ID == uuid.Nil {
+	// app.ID will be equal to uuid.Nil if the app was found (and soft-deleted) or not found (non existing or already soft-deleted)
+	if app.ID != uuid.Nil {
 		return false, nil
 	}
 
