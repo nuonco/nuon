@@ -14,7 +14,7 @@ func (s *server) UpsertComponent(
 	ctx context.Context,
 	req *connect.Request[componentv1.UpsertComponentRequest],
 ) (*connect.Response[componentv1.UpsertComponentResponse], error) {
-	component, err := s.Svc.UpsertComponent(ctx, models.ComponentInput{
+	params := models.ComponentInput{
 		AppID:       req.Msg.AppId,
 		ID:          converters.ToOptionalStr(req.Msg.Id),
 		Name:        req.Msg.Name,
@@ -23,7 +23,18 @@ func (s *server) UpsertComponent(
 		// NOTE: the following parameters will not be used once we migrate to the new component ref
 		BuildImage: req.Msg.BuildImage,
 		Type:       models.ComponentTypePublicImage,
-	})
+	}
+
+	if req.Msg.GetGithubConfig() != nil {
+		params.GithubConfig = &models.GithubConfigInput{
+			Repo:      req.Msg.GetGithubConfig().Repo,
+			Branch:    &req.Msg.GetGithubConfig().Branch,
+			RepoOwner: &req.Msg.GetGithubConfig().RepoOwner,
+			Directory: &req.Msg.GetGithubConfig().Directory,
+		}
+	}
+
+	component, err := s.Svc.UpsertComponent(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upsert component: %w", err)
 	}
