@@ -12,6 +12,10 @@ import (
 	workers "github.com/powertoolsdev/workers-deployments/internal"
 )
 
+const (
+	defaultExecutorsTaskQueue string = "executors"
+)
+
 type wkflow struct {
 	cfg workers.Config
 }
@@ -68,6 +72,7 @@ func execCreatePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
+		TaskQueue:                defaultExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -90,6 +95,7 @@ func execExecutePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
+		TaskQueue:                defaultExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
