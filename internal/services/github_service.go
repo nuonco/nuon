@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	gh "github.com/bradleyfalzon/ghinstallation/v2"
 
@@ -33,8 +35,12 @@ func NewGithubService(tsprt *gh.AppsTransport, l *zap.Logger) *githubService {
 	}
 }
 
-func (ghs *githubService) Repos(ctx context.Context, githubInstallationID int64, options *models.ConnectionOptions) ([]*models.Repo, *utils.Page, error) {
-	repos, err := ghs.repoGetter.Repos(ctx, githubInstallationID)
+func (ghs *githubService) Repos(ctx context.Context, githubInstallationID string) ([]*models.Repo, *utils.Page, error) {
+	ghInstallID, err := strconv.ParseInt(githubInstallationID, 10, 64)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to convert gh install ID to int: %w", err)
+	}
+	repos, err := ghs.repoGetter.Repos(ctx, ghInstallID)
 	if err != nil {
 		return nil, nil, err
 	}

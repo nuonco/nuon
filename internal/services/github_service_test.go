@@ -26,13 +26,13 @@ func (m *mockRepoGetter) Repos(ctx context.Context, githubInstallationID int64) 
 }
 func TestServiceRepos(t *testing.T) {
 	tests := map[string]struct {
-		input            int64
+		input            string
 		mockRepoGetter   *mockRepoGetter
 		expectedResponse []*models.Repo
 		errExpected      error
 	}{
 		"happy path": {
-			input: 1234567,
+			input: "1234567",
 			mockRepoGetter: &mockRepoGetter{
 				fakeGet: func(i int64) ([]*models.Repo, error) {
 					return []*models.Repo{
@@ -46,7 +46,7 @@ func TestServiceRepos(t *testing.T) {
 			},
 		},
 		"empty results": {
-			input: 1234567,
+			input: "1234567",
 			mockRepoGetter: &mockRepoGetter{
 				fakeGet: func(i int64) ([]*models.Repo, error) {
 					return []*models.Repo{}, nil
@@ -55,7 +55,7 @@ func TestServiceRepos(t *testing.T) {
 			expectedResponse: []*models.Repo{},
 		},
 		"error returns up through service": {
-			input: 1234567,
+			input: "1234567",
 			mockRepoGetter: &mockRepoGetter{
 				fakeGet: func(i int64) ([]*models.Repo, error) {
 					return []*models.Repo{}, errors.New("API error")
@@ -71,7 +71,7 @@ func TestServiceRepos(t *testing.T) {
 				repoGetter: test.mockRepoGetter,
 			}
 
-			success, _, err := service.Repos(context.Background(), test.input, &models.ConnectionOptions{})
+			success, _, err := service.Repos(context.Background(), test.input)
 
 			assert.Equal(t, test.expectedResponse, success)
 			if test.errExpected != nil {
