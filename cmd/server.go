@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
+	ghinstallation "github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/powertoolsdev/api/internal"
 	databaseclient "github.com/powertoolsdev/api/internal/clients/database"
 	githubclient "github.com/powertoolsdev/api/internal/clients/github"
@@ -12,6 +14,7 @@ import (
 	appsserver "github.com/powertoolsdev/api/internal/servers/apps"
 	componentsserver "github.com/powertoolsdev/api/internal/servers/components"
 	deploymentsserver "github.com/powertoolsdev/api/internal/servers/deployments"
+	githubserver "github.com/powertoolsdev/api/internal/servers/github"
 	installsserver "github.com/powertoolsdev/api/internal/servers/installs"
 	orgsserver "github.com/powertoolsdev/api/internal/servers/orgs"
 	statusserver "github.com/powertoolsdev/api/internal/servers/status"
@@ -55,7 +58,7 @@ func registerStatusServer(mux *http.ServeMux, cfg *internal.Config) error {
 }
 
 // registerPrimaryServers registers each domain's server
-func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config) error {
+func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.Logger) error {
 	db, err := databaseclient.New(databaseclient.WithConfig(cfg))
 	if err != nil {
 		return fmt.Errorf("unable to create database client: %w", err)
@@ -87,6 +90,20 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config) error {
 	_, err = deploymentsserver.New(deploymentsserver.WithHTTPMux(mux), deploymentsserver.WithService(deploymentsSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize deployments server: %w", err)
+	}
+
+	githubAppID, err := strconv.ParseInt(cfg.GithubAppID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("unable to parse github app id: %w", err)
+	}
+	appstp, err := ghinstallation.NewAppsTransport(http.DefaultTransport, githubAppID, []byte(cfg.GithubAppKey))
+	if err != nil {
+		return fmt.Errorf("unable to parse github app id: %w", err)
+	}
+	githubSvc := services.NewGithubService(appstp, log)
+	_, err = githubserver.New(githubserver.WithHTTPMux(mux), githubserver.WithService(githubSvc))
+	if err != nil {
+		return fmt.Errorf("unable to initialize github server: %w", err)
 	}
 
 	installSvc := services.NewInstallService(db, tc)
@@ -146,7 +163,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		l.Fatal("unable to register status server:", zap.Error(err))
 	}
 	registerLoadbalancerHealthCheck(mux)
-	if err := registerPrimaryServers(mux, &cfg); err != nil {
+	if err := registerPrimaryServers(mux, &cfg, l); err != nil {
 		l.Fatal("unable to register primary server:", zap.Error(err))
 	}
 
