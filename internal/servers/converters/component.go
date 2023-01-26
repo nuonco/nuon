@@ -20,6 +20,21 @@ func ComponentTypeToProto(input models.ComponentType) componentv1.ComponentType 
 	return componentv1.ComponentType_COMPONENT_TYPE_UNSPECIFIED
 }
 
+func ProtoToComponentType(input componentv1.ComponentType) models.ComponentType {
+	switch input {
+	case componentv1.ComponentType_COMPONENT_TYPE_GITHUB_REPO:
+		return models.ComponentTypeGithubRepo
+	case componentv1.ComponentType_COMPONENT_TYPE_PUBLIC_IMAGE:
+		return models.ComponentTypePublicImage
+	case componentv1.ComponentType_COMPONENT_TYPE_HELM:
+		return models.ComponentTypeHelm
+	case componentv1.ComponentType_COMPONENT_TYPE_TERRAFORM:
+		return models.ComponentTypeTerraform
+	}
+
+	return ""
+}
+
 // Component model to proto converts component domain model into component proto message
 func ComponentModelToProto(component *models.Component) *componentv1.ComponentRef {
 	res := &componentv1.ComponentRef{
