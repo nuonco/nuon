@@ -22,7 +22,7 @@ func (s *server) UpsertComponent(
 
 		// NOTE: the following parameters will not be used once we migrate to the new component ref
 		BuildImage: req.Msg.BuildImage,
-		Type:       models.ComponentTypePublicImage,
+		Type:       converters.ProtoToComponentType(req.Msg.ComponentType),
 	}
 
 	if req.Msg.GetGithubConfig() != nil {
