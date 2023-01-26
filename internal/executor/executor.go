@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/go-playground/validator/v10"
 	pb "github.com/hashicorp/waypoint/pkg/server/gen"
@@ -15,6 +16,7 @@ import (
 	"github.com/powertoolsdev/workers-executors/internal/task/upsert"
 	"github.com/powertoolsdev/workers-executors/internal/task/validate"
 	"github.com/powertoolsdev/workers-executors/internal/writer"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -25,7 +27,8 @@ import (
 
 type executor struct {
 	// Provider clientProvider  `validate:"required"`
-	Plan *planv1.PlanRef `validate:"required:dive"`
+	Plan   *planv1.PlanRef `validate:"required:dive"`
+	Logger *zap.Logger     `validate:"required"`
 
 	// internal state
 	v      *validator.Validate
@@ -68,31 +71,48 @@ func WithPlan(p *planv1.PlanRef) executorOption {
 	}
 }
 
+func WithLogger(l *zap.Logger) executorOption {
+	return func(e *executor) error {
+		e.Logger = l
+		return nil
+	}
+}
+
 func (e *executor) Execute(ctx context.Context) (interface{}, error) {
+	e.Logger = e.Logger.With(zap.Any("plan_ref", e.Plan))
+
+	e.Logger.Debug("fetching waypoint plan")
 	bp, err := e.fetchWaypointPlan(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	e.Logger.Debug("getting waypoint client")
 	cleanup, err := e.getClient(ctx, bp)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = cleanup() }()
 
+	e.Logger.Debug("upserting waypoint project")
 	if err = e.upsert(ctx, bp); err != nil {
 		return nil, err
 	}
 
+	e.Logger.Debug("queuing waypoint job")
 	jobID, err := e.queueJob(ctx, bp)
 	if err != nil {
 		return nil, err
 	}
 
+	e.Logger = e.Logger.With(zap.String("jobID", jobID))
+
+	e.Logger.Debug("validating waypoint job")
 	if err = e.validateJob(ctx, jobID); err != nil {
 		return nil, err
 	}
 
+	e.Logger.Debug("polling waypoint job")
 	if err = e.pollJob(ctx, jobID); err != nil {
 		return nil, err
 	}
@@ -197,16 +217,30 @@ func (e *executor) validateJob(ctx context.Context, jobID string) error {
 }
 
 func (e *executor) pollJob(ctx context.Context, jobID string) error {
-	nopWriter, err := writer.NewNop(e.v)
+	tmpFile, err := os.CreateTemp("", fmt.Sprintf("deployments-job-event-%s", jobID))
 	if err != nil {
 		return err
 	}
+	// NOTE(jdt): this probably won't work if we want to upload the file afterwards
+	defer tmpFile.Close()
+
+	fw, err := writer.NewFile(e.v, writer.WithFile(tmpFile))
+	if err != nil {
+		return err
+	}
+
+	lw, err := writer.NewLog(e.v, writer.WithLog(e.Logger))
+	if err != nil {
+		return err
+	}
+
+	mw := writer.NewMultiWriter(fw, lw)
 
 	poller, err := poll.New(
 		e.v,
 		poll.WithClient(e.client),
 		poll.WithJobID(jobID),
-		poll.WithWriter(nopWriter),
+		poll.WithWriter(mw),
 	)
 	if err != nil {
 		return err
