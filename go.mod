@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/waypoint v0.10.5
 	github.com/powertoolsdev/go-kube v0.1.3
 	github.com/stretchr/testify v1.8.1
-	google.golang.org/grpc v1.52.1
+	google.golang.org/grpc v1.52.3
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.1
