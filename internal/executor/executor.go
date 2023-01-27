@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	pb "github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/go-uploader"
 	"github.com/powertoolsdev/go-waypoint/v2/pkg/client"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/powertoolsdev/workers-executors/internal/fetch"
@@ -20,10 +21,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// type clientProvider interface {
-// 	GetClient(context.Context) (pb.WaypointClient, error)
-// 	Close() error
-// }
+type clientProvider interface {
+	GetClient(context.Context) (pb.WaypointClient, error)
+	Close() error
+}
 
 type executor struct {
 	// Provider clientProvider  `validate:"required"`
@@ -31,9 +32,10 @@ type executor struct {
 	Logger *zap.Logger     `validate:"required"`
 
 	// internal state
-	v      *validator.Validate
-	client pb.WaypointClient
-	f      *os.File
+	v        *validator.Validate
+	client   pb.WaypointClient
+	provider clientProvider
+	f        *os.File
 }
 
 type executorOption func(*executor) error
@@ -80,6 +82,7 @@ func WithLogger(l *zap.Logger) executorOption {
 }
 
 func (e *executor) Execute(ctx context.Context) (interface{}, error) {
+	defer e.cleanup()
 	e.Logger = e.Logger.With(zap.Any("plan_ref", e.Plan))
 
 	e.Logger.Debug("fetching waypoint plan")
@@ -89,11 +92,9 @@ func (e *executor) Execute(ctx context.Context) (interface{}, error) {
 	}
 
 	e.Logger.Debug("getting waypoint client")
-	cleanup, err := e.getClient(ctx, bp)
-	if err != nil {
+	if err = e.getClient(ctx, bp); err != nil {
 		return nil, err
 	}
-	defer func() { _ = cleanup() }()
 
 	e.Logger.Debug("upserting waypoint project")
 	if err = e.upsert(ctx, bp); err != nil {
@@ -118,7 +119,6 @@ func (e *executor) Execute(ctx context.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer tmpFile.Close()
 	e.f = tmpFile
 
 	e.Logger.Debug("polling waypoint job")
@@ -126,7 +126,26 @@ func (e *executor) Execute(ctx context.Context) (interface{}, error) {
 		return nil, err
 	}
 
+	e.Logger.Debug("uploading logs")
+	if err = e.upload(ctx, bp); err != nil {
+		return nil, err
+	}
+
 	return nil, nil
+}
+
+func (e *executor) cleanup() {
+	if e.provider != nil {
+		e.provider.Close()
+	}
+
+	if e.f != nil {
+		name := e.f.Name()
+		e.f.Close()
+		if err := os.Remove(name); err != nil {
+			e.Logger.Warn("failed to remove temp file", zap.String("file", name))
+		}
+	}
 }
 
 func (e *executor) fetchWaypointPlan(ctx context.Context) (*planv1.WaypointPlan, error) {
@@ -159,7 +178,7 @@ func (e *executor) fetchWaypointPlan(ctx context.Context) (*planv1.WaypointPlan,
 	return &bp, nil
 }
 
-func (e *executor) getClient(ctx context.Context, bp *planv1.WaypointPlan) (func() error, error) {
+func (e *executor) getClient(ctx context.Context, bp *planv1.WaypointPlan) error {
 	prov, err := client.NewOrgProvider(e.v, client.WithOrgConfig(client.Config{
 		Address: bp.WaypointServer.Address,
 		Token: client.Token{
@@ -168,16 +187,17 @@ func (e *executor) getClient(ctx context.Context, bp *planv1.WaypointPlan) (func
 		},
 	}))
 	if err != nil {
-		return nil, err
+		return err
 	}
+	e.provider = prov
 
 	c, err := prov.GetClient(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	e.client = c
 
-	return prov.Close, nil
+	return nil
 }
 
 func (e *executor) upsert(ctx context.Context, bp *planv1.WaypointPlan) error {
@@ -249,4 +269,20 @@ func (e *executor) pollJob(ctx context.Context, jobID string) error {
 	}
 
 	return poller.Poll(ctx)
+}
+
+func (e *executor) upload(ctx context.Context, bp *planv1.WaypointPlan) error {
+	uploader := uploader.NewS3Uploader(
+		bp.Outputs.Bucket,
+		bp.Outputs.BucketPrefix,
+		uploader.WithAssumeRoleARN(bp.Outputs.BucketAssumeRoleArn),
+	)
+
+	// NOTE(jdt): this is necessary as we need the real filename (w/o path) of the tmp file for uploading
+	stat, err := e.f.Stat()
+	if err != nil {
+		return err
+	}
+
+	return uploader.UploadFile(ctx, os.TempDir(), stat.Name(), bp.Outputs.EventsKey)
 }
