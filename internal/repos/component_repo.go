@@ -44,7 +44,10 @@ func (i componentRepo) Get(ctx context.Context, componentID uuid.UUID) (*models.
 
 func (i componentRepo) ListByApp(ctx context.Context, appID uuid.UUID, options *models.ConnectionOptions) ([]*models.Component, *utils.Page, error) {
 	var components []*models.Component
-	tx := i.db.WithContext(ctx).Where("app_id = ?", appID).Find(&components)
+	tx := i.db.WithContext(ctx).
+		Preload(clause.Associations).
+		Where("app_id = ?", appID).
+		Find(&components)
 	pg, c, err := utils.NewPaginator(options)
 	if err != nil {
 		return nil, nil, err
