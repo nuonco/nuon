@@ -57,3 +57,7 @@ func (log *Logger) Error(msg string, keyvals ...interface{}) {
 func (log *Logger) With(keyvals ...interface{}) *Logger {
 	return &Logger{zl: log.zl.With(log.fields(keyvals)...)}
 }
+
+func (log *Logger) ZapLogger() *zap.Logger {
+	return log.zl
+}

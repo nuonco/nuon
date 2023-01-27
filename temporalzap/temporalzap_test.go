@@ -152,6 +152,15 @@ func TestWith(t *testing.T) {
 	assert.Equal(t, "d", out["c"])
 }
 
+func TestZapLogger(t *testing.T) {
+	buf := &bytes.Buffer{}
+	l := testableZapLogger(buf)
+
+	log := NewLogger(l)
+	expectedLog := l.WithOptions(zap.AddCallerSkip(1))
+	assert.Equal(t, expectedLog, log.ZapLogger())
+}
+
 func testableZapLogger(w io.Writer) *zap.Logger {
 	ws := zapcore.AddSync(w)
 	core := zapcore.NewCore(
