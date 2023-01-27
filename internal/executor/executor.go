@@ -33,6 +33,7 @@ type executor struct {
 	// internal state
 	v      *validator.Validate
 	client pb.WaypointClient
+	f      *os.File
 }
 
 type executorOption func(*executor) error
@@ -111,6 +112,14 @@ func (e *executor) Execute(ctx context.Context) (interface{}, error) {
 	if err = e.validateJob(ctx, jobID); err != nil {
 		return nil, err
 	}
+
+	e.Logger.Debug("creating temp file")
+	tmpFile, err := os.CreateTemp("", fmt.Sprintf("deployments-job-event-%s", jobID))
+	if err != nil {
+		return nil, err
+	}
+	defer tmpFile.Close()
+	e.f = tmpFile
 
 	e.Logger.Debug("polling waypoint job")
 	if err = e.pollJob(ctx, jobID); err != nil {
@@ -217,14 +226,7 @@ func (e *executor) validateJob(ctx context.Context, jobID string) error {
 }
 
 func (e *executor) pollJob(ctx context.Context, jobID string) error {
-	tmpFile, err := os.CreateTemp("", fmt.Sprintf("deployments-job-event-%s", jobID))
-	if err != nil {
-		return err
-	}
-	// NOTE(jdt): this probably won't work if we want to upload the file afterwards
-	defer tmpFile.Close()
-
-	fw, err := writer.NewFile(e.v, writer.WithFile(tmpFile))
+	fw, err := writer.NewFile(e.v, writer.WithFile(e.f))
 	if err != nil {
 		return err
 	}
