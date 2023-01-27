@@ -10,6 +10,7 @@ import (
 	pb "github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/go-uploader"
 	"github.com/powertoolsdev/go-waypoint/v2/pkg/client"
+	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/powertoolsdev/workers-executors/internal/fetch"
 	"github.com/powertoolsdev/workers-executors/internal/task/poll"
@@ -81,57 +82,58 @@ func WithLogger(l *zap.Logger) executorOption {
 	}
 }
 
-func (e *executor) Execute(ctx context.Context) (interface{}, error) {
+func (e *executor) Execute(ctx context.Context) (*executev1.ExecutePlanResponse, error) {
 	defer e.cleanup()
+	resp := &executev1.ExecutePlanResponse{}
 	e.Logger = e.Logger.With(zap.Any("plan_ref", e.Plan))
 
 	e.Logger.Debug("fetching waypoint plan")
 	bp, err := e.fetchWaypointPlan(ctx)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	e.Logger.Debug("getting waypoint client")
 	if err = e.getClient(ctx, bp); err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	e.Logger.Debug("upserting waypoint project")
 	if err = e.upsert(ctx, bp); err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	e.Logger.Debug("queuing waypoint job")
 	jobID, err := e.queueJob(ctx, bp)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	e.Logger = e.Logger.With(zap.String("jobID", jobID))
 
 	e.Logger.Debug("validating waypoint job")
 	if err = e.validateJob(ctx, jobID); err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	e.Logger.Debug("creating temp file")
 	tmpFile, err := os.CreateTemp("", fmt.Sprintf("deployments-job-event-%s", jobID))
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 	e.f = tmpFile
 
 	e.Logger.Debug("polling waypoint job")
 	if err = e.pollJob(ctx, jobID); err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	e.Logger.Debug("uploading logs")
 	if err = e.upload(ctx, bp); err != nil {
-		return nil, err
+		return resp, err
 	}
 
-	return nil, nil
+	return resp, nil
 }
 
 func (e *executor) cleanup() {
