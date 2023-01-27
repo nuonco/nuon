@@ -52,7 +52,7 @@ func InstallerIAMTrustPolicy(workerRoleArnPrefix string) ([]byte, error) {
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
 			{
-				Action: "sts:AssumeRoleWithWebIdentity",
+				Action: "sts:AssumeRole",
 				Effect: "Allow",
 				Sid:    "",
 				Principal: iamPrincipal{
