@@ -1,6 +1,6 @@
 package writer
 
-import "github.com/powertoolsdev/workers-executors/internal/event"
+import "github.com/powertoolsdev/workers-executors/internal/executors/waypoint/event"
 
 type multiWriter struct {
 	writers []EventWriter

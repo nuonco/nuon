@@ -1,4 +1,4 @@
-package executor
+package waypoint
 
 import (
 	"context"
@@ -12,11 +12,11 @@ import (
 	"github.com/powertoolsdev/go-waypoint/v2/pkg/client"
 	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
+	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/tasks/poll"
+	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/tasks/queue"
+	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/tasks/upsert"
+	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/tasks/validate"
 	"github.com/powertoolsdev/workers-executors/internal/fetch"
-	"github.com/powertoolsdev/workers-executors/internal/task/poll"
-	"github.com/powertoolsdev/workers-executors/internal/task/queue"
-	"github.com/powertoolsdev/workers-executors/internal/task/upsert"
-	"github.com/powertoolsdev/workers-executors/internal/task/validate"
 	"github.com/powertoolsdev/workers-executors/internal/writer"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"

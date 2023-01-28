@@ -1,7 +1,7 @@
 package writer
 
 import (
-	"github.com/powertoolsdev/workers-executors/internal/event"
+	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/event"
 	"github.com/stretchr/testify/mock"
 )
 
