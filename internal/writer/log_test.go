@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/workers-executors/internal/event"
+	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/event"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

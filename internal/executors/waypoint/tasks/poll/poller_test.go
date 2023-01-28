@@ -8,7 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
-	"github.com/powertoolsdev/workers-executors/internal/event"
+	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/event"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	status "google.golang.org/genproto/googleapis/rpc/status"
