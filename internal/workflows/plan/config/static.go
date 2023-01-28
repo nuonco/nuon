@@ -18,7 +18,7 @@ func NewStaticBuilder() *staticBuilder {
 var staticBuildTmpl string = `
 project = "{{.Project}}"
 
-app "main" {
+app "{{.AppName}}" {
   build {
     use "docker-pull" {
       image = "{{.InputImage}}"
@@ -42,6 +42,7 @@ app "main" {
 
 type buildTmplArgs struct {
 	Project          string
+	AppName          string
 	InputImage       string
 	InputVersion     string
 	OutputRepository string
@@ -73,7 +74,8 @@ func (s *staticBuilder) Render() ([]byte, waypointv1.Hcl_Format, error) {
 
 	buf := new(bytes.Buffer)
 	args := buildTmplArgs{
-		Project:          s.metadata.AppId,
+		Project:          s.metadata.AppShortId,
+		AppName:          s.component.Name,
 		InputImage:       "kennethreitz/httpbin",
 		InputVersion:     "latest",
 		OutputRepository: s.ecrRef.RepositoryName,

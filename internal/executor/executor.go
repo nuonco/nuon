@@ -29,7 +29,7 @@ type clientProvider interface {
 
 type executor struct {
 	// Provider clientProvider  `validate:"required"`
-	Plan   *planv1.PlanRef `validate:"required:dive"`
+	Plan   *planv1.PlanRef `validate:"required"`
 	Logger *zap.Logger     `validate:"required"`
 
 	// internal state
@@ -62,10 +62,10 @@ func New(v *validator.Validate, opts ...executorOption) (*executor, error) {
 }
 
 // func WithProvider(p clientProvider) executorOption {
-// 	return func(e *executor) error {
-// 		e.Provider = p
-// 		return nil
-// 	}
+//	return func(e *executor) error {
+//		e.Provider = p
+//		return nil
+//	}
 // }
 
 func WithPlan(p *planv1.PlanRef) executorOption {
@@ -206,10 +206,9 @@ func (e *executor) upsert(ctx context.Context, bp *planv1.WaypointPlan) error {
 	upserter, err := upsert.New(
 		e.v,
 		upsert.WithClient(e.client),
-		upsert.WithName(bp.Component.Name),
+		upsert.WithName(bp.WaypointRef.App),
 		upsert.WithProject(bp.WaypointRef.Project),
 	)
-
 	if err != nil {
 		return err
 	}

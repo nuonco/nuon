@@ -24,7 +24,7 @@ func TestCreatePlan(t *testing.T) {
 	// register activities
 	a := NewActivities()
 	env := testSuite.NewTestWorkflowEnvironment()
-	env.OnActivity(a.CreatePlan, mock.Anything, mock.Anything).
+	env.OnActivity(a.CreatePlanAct, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, r CreatePlanRequest) (CreatePlanResponse, error) {
 			var resp CreatePlanResponse
 			assert.Nil(t, r.validate())
@@ -38,7 +38,7 @@ func TestCreatePlan(t *testing.T) {
 		})
 
 	// execute workflow
-	env.ExecuteWorkflow(wkflow.Plan, req)
+	env.ExecuteWorkflow(wkflow.CreatePlan, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
 
