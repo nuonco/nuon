@@ -1,7 +1,15 @@
 package execute
 
-type Activities struct{}
+import (
+	"github.com/go-playground/validator/v10"
+)
+
+type Activities struct {
+	v *validator.Validate
+}
 
 func NewActivities() *Activities {
-	return &Activities{}
+	return &Activities{
+		v: validator.New(),
+	}
 }

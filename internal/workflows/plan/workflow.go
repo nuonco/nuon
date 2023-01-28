@@ -31,7 +31,7 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Plan(ctx workflow.Context, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+func (w *wkflow) CreatePlan(ctx workflow.Context, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
 	resp := &planv1.CreatePlanResponse{}
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
@@ -69,7 +69,7 @@ func execCreatePlan(
 	var resp CreatePlanResponse
 
 	l.Debug("executing create plan activity", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.CreatePlan, req)
+	fut := workflow.ExecuteActivity(ctx, act.CreatePlanAct, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}

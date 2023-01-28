@@ -2,7 +2,6 @@ package plan
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 
@@ -14,6 +13,7 @@ import (
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	shared "github.com/powertoolsdev/workers-executors/internal"
 	"github.com/powertoolsdev/workers-executors/internal/workflows/plan/config"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -50,7 +50,7 @@ type CreatePlanResponse struct {
 	Plan *planv1.PlanRef
 }
 
-func (a *Activities) CreatePlan(ctx context.Context, req CreatePlanRequest) (CreatePlanResponse, error) {
+func (a *Activities) CreatePlanAct(ctx context.Context, req CreatePlanRequest) (CreatePlanResponse, error) {
 	resp := CreatePlanResponse{}
 
 	// create upload client
@@ -178,7 +178,7 @@ func (planCreatorImpl) createPlan(req CreatePlanRequest, builder config.Builder)
 }
 
 func (planCreatorImpl) uploadPlan(ctx context.Context, uploader s3BlobUploader, req CreatePlanRequest, plan *planv1.WaypointPlan) (*planv1.PlanRef, error) {
-	byts, err := json.Marshal(plan)
+	byts, err := proto.Marshal(plan)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert plan to json: %w", err)
 	}

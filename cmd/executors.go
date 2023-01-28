@@ -15,7 +15,7 @@ import (
 )
 
 var executorsCmd = &cobra.Command{
-	Use:   "deployment",
+	Use:   "executors",
 	Short: "Run the executor workers",
 	Run:   deploymentRun,
 }
@@ -58,23 +58,23 @@ func deploymentRun(cmd *cobra.Command, args []string) {
 	}
 	defer c.Close()
 
-	l.Info("starting deployment workers", zap.Any("config", cfg))
-	if err := runExecutorWorkers(c, cfg, worker.InterruptCh()); err != nil {
+	l.Info("starting executor workers", zap.Any("config", cfg))
+	if err := runExecutorWorkers(c, l, cfg, worker.InterruptCh()); err != nil {
 		l.Error("error running worker", zap.Error(err))
 	}
 }
 
-func runExecutorWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interface{}) error {
-	w := worker.New(c, "deployment", worker.Options{
+func runExecutorWorkers(c client.Client, log *zap.Logger, cfg shared.Config, interruptCh <-chan interface{}) error {
+	w := worker.New(c, "executors", worker.Options{
 		MaxConcurrentActivityExecutionSize: 1,
 	})
 
 	if err := cfg.Validate(); err != nil {
-		return fmt.Errorf("invalid deployment config: %w", err)
+		return fmt.Errorf("invalid executors config: %w", err)
 	}
 
 	planWkflow := plan.NewWorkflow(cfg)
-	w.RegisterWorkflow(planWkflow.Plan)
+	w.RegisterWorkflow(planWkflow.CreatePlan)
 	planActs := plan.NewActivities()
 	w.RegisterActivity(planActs)
 

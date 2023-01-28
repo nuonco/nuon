@@ -25,7 +25,7 @@ func init() {
 	rootCmd.AddCommand(allCmd)
 }
 
-type workerFn func(client.Client, shared.Config, <-chan interface{}) error
+type workerFn func(client.Client, *zap.Logger, shared.Config, <-chan interface{}) error
 
 func runAll(cmd *cobra.Command, args []string) {
 	var cfg shared.Config
@@ -76,7 +76,7 @@ func runAll(cmd *cobra.Command, args []string) {
 	l.Debug("starting all workers", zap.Any("config", cfg))
 	for _, worker := range workflows {
 		go func(fn workerFn) {
-			if err := fn(c, cfg, ch); err != nil {
+			if err := fn(c, l, cfg, ch); err != nil {
 				log.Fatalf("error in worker: %s", err)
 			}
 			wg.Done()
