@@ -14,6 +14,11 @@ func (s *server) UpsertInstall(
 	ctx context.Context,
 	req *connect.Request[installv1.UpsertInstallRequest],
 ) (*connect.Response[installv1.UpsertInstallResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	if req.Msg.GetAwsSettings() == nil {
 		return nil, fmt.Errorf("only AWS settings are currently supported")
 	}
