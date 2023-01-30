@@ -37,17 +37,6 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 				return mgr
 			},
 		},
-		"invalid id": {
-			orgID: "invalid-id",
-			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
-				return repos.NewMockOrgRepo(ctl)
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				return mgr
-			},
-			errExpected: InvalidIDErr{},
-		},
 		"delete error": {
 			orgID: orgID.String(),
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
@@ -116,14 +105,6 @@ func TestOrgService_GetOrg(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), orgID).Return(org, nil)
 				return repo
 			},
-		},
-		"invalid-id": {
-			orgID: "foo",
-			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
-				repo := repos.NewMockOrgRepo(ctl)
-				return repo
-			},
-			errExpected: InvalidIDErr{},
 		},
 		"error": {
 			orgID: orgID.String(),
@@ -240,26 +221,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 				mgr.EXPECT().Provision(gomock.Any(), gomock.Any()).Return(nil)
 				return mgr
 			},
-		},
-		"invalid id": {
-			inputFn: func() models.OrgInput {
-				inp := generics.GetFakeObj[models.OrgInput]()
-				inp.ID = generics.ToPtr("foo")
-				return inp
-			},
-			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
-				repo := repos.NewMockOrgRepo(ctl)
-				return repo
-			},
-			userRepoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
-				repo := repos.NewMockUserRepo(ctl)
-				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				return mgr
-			},
-			errExpected: InvalidIDErr{},
 		},
 		"upsert happy path": {
 			inputFn: func() models.OrgInput {

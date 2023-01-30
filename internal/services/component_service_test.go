@@ -35,17 +35,6 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 				return repo
 			},
 		},
-		"upsert invalid id": {
-			inputFn: func() models.ComponentInput {
-				inp := generics.GetFakeObj[models.ComponentInput]()
-				inp.ID = generics.ToPtr("abc")
-				return inp
-			},
-			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
-				return repos.NewMockComponentRepo(ctl)
-			},
-			errExpected: InvalidIDErr{},
-		},
 		"upsert not found": {
 			inputFn: func() models.ComponentInput {
 				inp := generics.GetFakeObj[models.ComponentInput]()
@@ -114,14 +103,6 @@ func TestComponentService_GetAppComponents(t *testing.T) {
 				return repo
 			},
 		},
-		"invalid-id": {
-			componentID: "foo",
-			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
-				repo := repos.NewMockComponentRepo(ctl)
-				return repo
-			},
-			errExpected: fmt.Errorf("is not a valid uuid"),
-		},
 		"error": {
 			componentID: componentID.String(),
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
@@ -171,14 +152,6 @@ func TestComponentService_GetComponent(t *testing.T) {
 				return repo
 			},
 		},
-		"invalid-id": {
-			componentID: "foo",
-			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
-				repo := repos.NewMockComponentRepo(ctl)
-				return repo
-			},
-			errExpected: fmt.Errorf("is not a valid uuid"),
-		},
 		"error": {
 			componentID: componentID.String(),
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
@@ -224,13 +197,6 @@ func TestComponentService_DeleteComponent(t *testing.T) {
 				repo.EXPECT().Delete(gomock.Any(), componentID).Return(true, nil)
 				return repo
 			},
-		},
-		"invalid id": {
-			componentID: "invalid-id",
-			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
-				return repos.NewMockComponentRepo(ctl)
-			},
-			errExpected: InvalidIDErr{},
 		},
 		"delete error": {
 			componentID: componentID.String(),

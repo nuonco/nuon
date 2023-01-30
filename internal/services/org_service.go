@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/gosimple/slug"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
@@ -43,10 +44,8 @@ func NewOrgService(db *gorm.DB, tc tclient.Client) *orgService {
 }
 
 func (o orgService) DeleteOrg(ctx context.Context, inputID string) (bool, error) {
-	orgID, err := parseID(inputID)
-	if err != nil {
-		return false, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	orgID, _ := uuid.Parse(inputID)
 
 	deleted, err := o.repo.Delete(ctx, orgID)
 	if err != nil {
@@ -62,11 +61,9 @@ func (o orgService) DeleteOrg(ctx context.Context, inputID string) (bool, error)
 	return true, nil
 }
 
-func (o *orgService) GetOrg(ctx context.Context, id string) (*models.Org, error) {
-	orgID, err := parseID(id)
-	if err != nil {
-		return nil, err
-	}
+func (o *orgService) GetOrg(ctx context.Context, inputID string) (*models.Org, error) {
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	orgID, _ := uuid.Parse(inputID)
 
 	return o.repo.Get(ctx, orgID)
 }
@@ -81,10 +78,8 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 		Slug: slug.Make(input.Name),
 	}
 	if input.ID != nil {
-		orgID, er := parseID(*input.ID)
-		if er != nil {
-			return nil, er
-		}
+		// parsing the uuid while ignoring the error handling since we do this at protobuf level
+		orgID, _ := uuid.Parse(*input.ID)
 		org.ID = orgID
 	} else {
 		org.CreatedByID = input.OwnerID

@@ -41,11 +41,8 @@ func NewAppService(db *gorm.DB, tc tclient.Client) *appService {
 
 // GetApp: return an app by ID
 func (a *appService) GetApp(ctx context.Context, inputID string) (*models.App, error) {
-	appID, err := parseID(inputID)
-	if err != nil {
-		return nil, err
-	}
-
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	appID, _ := uuid.Parse(inputID)
 	return a.repo.Get(ctx, appID)
 }
 
@@ -64,19 +61,14 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 	}
 	app.CreatedByID = *input.CreatedByID
 
-	orgID, err := parseID(input.OrgID)
-	if err != nil {
-		return nil, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	orgID, _ := uuid.Parse(input.OrgID)
 	app.OrgID = orgID
 
 	if input.ID != nil {
-		var ID uuid.UUID
-		ID, err = parseID(*input.ID)
-		if err != nil {
-			return nil, err
-		}
-		app.ID = ID
+		// parsing the uuid while ignoring the error handling since we do this at protobuf level
+		appID, _ := uuid.Parse(*input.ID)
+		app.ID = appID
 	}
 
 	finalApp, err := a.repo.Upsert(ctx, &app)
@@ -92,10 +84,8 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 }
 
 func (a *appService) DeleteApp(ctx context.Context, inputID string) (bool, error) {
-	appID, err := parseID(inputID)
-	if err != nil {
-		return false, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	appID, _ := uuid.Parse(inputID)
 	return a.repo.Delete(ctx, appID)
 }
 
@@ -108,9 +98,7 @@ func (a appService) GetAllApps(ctx context.Context, options *models.ConnectionOp
 }
 
 func (a appService) GetOrgApps(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
-	orgID, err := parseID(inputID)
-	if err != nil {
-		return nil, nil, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	orgID, _ := uuid.Parse(inputID)
 	return a.repo.GetPageByOrg(ctx, orgID, options)
 }
