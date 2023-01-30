@@ -14,6 +14,11 @@ func (s *server) CreateDeployment(
 	ctx context.Context,
 	req *connect.Request[deploymentv1.CreateDeploymentRequest],
 ) (*connect.Response[deploymentv1.CreateDeploymentResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	deployment, err := s.Svc.CreateDeployment(ctx, &models.DeploymentInput{
 		ComponentID: req.Msg.ComponentId,
 		CreatedByID: &req.Msg.CreatedById,

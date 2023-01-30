@@ -14,6 +14,11 @@ func (s *server) UpsertApp(
 	ctx context.Context,
 	req *connect.Request[appv1.UpsertAppRequest],
 ) (*connect.Response[appv1.UpsertAppResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	app, err := s.Svc.UpsertApp(ctx, models.AppInput{
 		ID:              converters.ToOptionalStr(req.Msg.Id),
 		Name:            req.Msg.Name,

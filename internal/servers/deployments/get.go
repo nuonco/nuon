@@ -14,6 +14,11 @@ func (s *server) GetDeployment(
 	ctx context.Context,
 	req *connect.Request[deploymentv1.GetDeploymentRequest],
 ) (*connect.Response[deploymentv1.GetDeploymentResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	deployment, err := s.Svc.GetDeployment(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get deployment: %w", err)
@@ -28,6 +33,11 @@ func (s *server) GetDeploymentsByComponents(
 	ctx context.Context,
 	req *connect.Request[deploymentv1.GetDeploymentsByComponentsRequest],
 ) (*connect.Response[deploymentv1.GetDeploymentsByComponentsResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	deployments, _, err := s.Svc.GetComponentDeployments(ctx, req.Msg.ComponentIds, &models.ConnectionOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component deployments: %w", err)

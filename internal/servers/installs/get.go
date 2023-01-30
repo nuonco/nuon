@@ -14,6 +14,11 @@ func (s *server) GetInstall(
 	ctx context.Context,
 	req *connect.Request[installv1.GetInstallRequest],
 ) (*connect.Response[installv1.GetInstallResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	install, err := s.Svc.GetInstall(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
@@ -28,6 +33,11 @@ func (s *server) GetInstallsByApp(
 	ctx context.Context,
 	req *connect.Request[installv1.GetInstallsByAppRequest],
 ) (*connect.Response[installv1.GetInstallsByAppResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	installs, _, err := s.Svc.GetAppInstalls(ctx, req.Msg.AppId, &models.ConnectionOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get installs: %w", err)

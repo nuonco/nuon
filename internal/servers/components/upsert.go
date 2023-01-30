@@ -14,6 +14,11 @@ func (s *server) UpsertComponent(
 	ctx context.Context,
 	req *connect.Request[componentv1.UpsertComponentRequest],
 ) (*connect.Response[componentv1.UpsertComponentResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	params := models.ComponentInput{
 		AppID:       req.Msg.AppId,
 		ID:          converters.ToOptionalStr(req.Msg.Id),

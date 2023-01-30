@@ -12,6 +12,11 @@ func (s *server) DeleteApp(
 	ctx context.Context,
 	req *connect.Request[appv1.DeleteAppRequest],
 ) (*connect.Response[appv1.DeleteAppResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.ValidateAll(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	deleted, err := s.Svc.DeleteApp(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to delete app: %w", err)
