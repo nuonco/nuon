@@ -51,21 +51,16 @@ func NewDeploymentService(db *gorm.DB, temporalClient tclient.Client, tsprt *gh.
 }
 
 func (i *deploymentService) GetDeployment(ctx context.Context, inputID string) (*models.Deployment, error) {
-	deploymentID, err := parseID(inputID)
-	if err != nil {
-		return nil, err
-	}
-
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	deploymentID, _ := uuid.Parse(inputID)
 	return i.repo.Get(ctx, deploymentID)
 }
 
 func (i *deploymentService) GetComponentDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
 	uuids := make([]uuid.UUID, 0)
 	for _, v := range ids {
-		componentID, err := parseID(v)
-		if err != nil {
-			return nil, nil, err
-		}
+		// parsing the uuid while ignoring the error handling since we do this at protobuf level
+		componentID, _ := uuid.Parse(v)
 		uuids = append(uuids, componentID)
 	}
 
@@ -117,18 +112,16 @@ func (i *deploymentService) processGithubDeployment(ctx context.Context, deploym
 }
 
 func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.DeploymentInput) (*models.Deployment, error) {
-	id, err := parseID(input.ComponentID)
-	if err != nil {
-		return nil, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	componentID, _ := uuid.Parse(input.ComponentID)
 
-	_, err = i.componentRepo.Get(ctx, id)
+	_, err := i.componentRepo.Get(ctx, componentID)
 	if err != nil {
 		return nil, errors.New("component not found")
 	}
 
 	deployment := &models.Deployment{
-		ComponentID: id,
+		ComponentID: componentID,
 		CreatedByID: *input.CreatedByID,
 	}
 	deployment, err = i.repo.Create(ctx, deployment)

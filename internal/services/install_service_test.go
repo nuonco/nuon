@@ -71,24 +71,6 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 				return mgr
 			},
 		},
-		"update with invalid id": {
-			inputFn: func() models.InstallInput {
-				inp := generics.GetFakeObj[models.InstallInput]()
-				inp.ID = generics.ToPtr("abc")
-				return inp
-			},
-			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
-				return repos.NewMockInstallRepo(ctl)
-			},
-			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
-				repo := repos.NewMockAppRepo(ctl)
-				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
-				return workflows.NewMockInstallWorkflowManager(ctl)
-			},
-			errExpected: InvalidIDErr{},
-		},
 		"create error": {
 			inputFn: func() models.InstallInput {
 				inp := generics.GetFakeObj[models.InstallInput]()
@@ -217,14 +199,6 @@ func TestInstallService_GetAppInstalls(t *testing.T) {
 				return repo
 			},
 		},
-		"invalid-id": {
-			appID: "foo",
-			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
-				repo := repos.NewMockInstallRepo(ctl)
-				return repo
-			},
-			errExpected: fmt.Errorf("is not a valid uuid"),
-		},
 		"error": {
 			appID: appID.String(),
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
@@ -272,14 +246,6 @@ func TestInstallService_GetInstall(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), installID).Return(app, nil)
 				return repo
 			},
-		},
-		"invalid-id": {
-			installID: "foo",
-			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
-				repo := repos.NewMockInstallRepo(ctl)
-				return repo
-			},
-			errExpected: fmt.Errorf("is not a valid uuid"),
 		},
 		"error": {
 			installID: installID.String(),
@@ -341,21 +307,6 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 				mgr.EXPECT().Deprovision(gomock.Any(), install, app.OrgID.String()).Return(nil)
 				return mgr
 			},
-		},
-		"invalid id": {
-			installID: "invalid-id",
-			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
-				return repos.NewMockInstallRepo(ctl)
-			},
-			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
-				repo := repos.NewMockAppRepo(ctl)
-				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
-				mgr := workflows.NewMockInstallWorkflowManager(ctl)
-				return mgr
-			},
-			errExpected: InvalidIDErr{},
 		},
 		"error fetching app": {
 			installID: installID.String(),

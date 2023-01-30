@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"gorm.io/gorm"
@@ -28,10 +29,8 @@ func NewUserService(db *gorm.DB) *userService {
 }
 
 func (u userService) UpsertUserOrg(ctx context.Context, input models.UserOrgInput) (*models.UserOrg, error) {
-	orgID, err := parseID(input.OrgID)
-	if err != nil {
-		return nil, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	orgID, _ := uuid.Parse(input.OrgID)
 
 	return u.repo.UpsertUserOrg(ctx, input.UserID, orgID)
 }

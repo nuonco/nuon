@@ -33,14 +33,6 @@ func TestDeploymentService_GetComponentDeployments(t *testing.T) {
 				return repo
 			},
 		},
-		"invalid-id": {
-			componentIDs: []string{"foo"},
-			repoFn: func(ctl *gomock.Controller) *repos.MockDeploymentRepo {
-				repo := repos.NewMockDeploymentRepo(ctl)
-				return repo
-			},
-			errExpected: InvalidIDErr{},
-		},
 		"error": {
 			componentIDs: []string{componentID.String()},
 			repoFn: func(ctl *gomock.Controller) *repos.MockDeploymentRepo {
@@ -88,14 +80,6 @@ func TestDeploymentService_GetDeployment(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), deploymentID).Return(app, nil)
 				return repo
 			},
-		},
-		"invalid-id": {
-			deploymentID: "foo",
-			repoFn: func(ctl *gomock.Controller) *repos.MockDeploymentRepo {
-				repo := repos.NewMockDeploymentRepo(ctl)
-				return repo
-			},
-			errExpected: fmt.Errorf("is not a valid uuid"),
 		},
 		"error": {
 			deploymentID: deploymentID.String(),

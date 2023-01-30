@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/utils"
@@ -32,29 +33,20 @@ func NewComponentService(db *gorm.DB) ComponentService {
 }
 
 func (i *componentService) DeleteComponent(ctx context.Context, inputID string) (bool, error) {
-	componentID, err := parseID(inputID)
-	if err != nil {
-		return false, err
-	}
-
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	componentID, _ := uuid.Parse(inputID)
 	return i.repo.Delete(ctx, componentID)
 }
 
 func (i *componentService) GetComponent(ctx context.Context, inputID string) (*models.Component, error) {
-	componentID, err := parseID(inputID)
-	if err != nil {
-		return nil, err
-	}
-
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	componentID, _ := uuid.Parse(inputID)
 	return i.repo.Get(ctx, componentID)
 }
 
 func (i *componentService) GetAppComponents(ctx context.Context, ID string, options *models.ConnectionOptions) ([]*models.Component, *utils.Page, error) {
-	appID, err := parseID(ID)
-	if err != nil {
-		return nil, nil, err
-	}
-
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	appID, _ := uuid.Parse(ID)
 	return i.repo.ListByApp(ctx, appID, options)
 }
 func (i *componentService) updateComponent(ctx context.Context, input models.ComponentInput) (*models.Component, error) {
@@ -94,10 +86,8 @@ func (i *componentService) UpsertComponent(ctx context.Context, input models.Com
 
 	var component models.Component
 	component.Name = input.Name
-	appID, err := parseID(input.AppID)
-	if err != nil {
-		return nil, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	appID, _ := uuid.Parse(input.AppID)
 	component.AppID = appID
 	component.BuildImage = input.BuildImage
 	component.Type = string(input.Type)
