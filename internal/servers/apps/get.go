@@ -14,6 +14,11 @@ func (s *server) GetApp(
 	ctx context.Context,
 	req *connect.Request[appv1.GetAppRequest],
 ) (*connect.Response[appv1.GetAppResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	app, err := s.Svc.GetApp(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get app: %w", err)
@@ -28,6 +33,11 @@ func (s *server) GetAppsByOrg(
 	ctx context.Context,
 	req *connect.Request[appv1.GetAppsByOrgRequest],
 ) (*connect.Response[appv1.GetAppsByOrgResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	apps, _, err := s.Svc.GetOrgApps(ctx, req.Msg.OrgId, &models.ConnectionOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get apps: %w", err)

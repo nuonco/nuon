@@ -12,6 +12,11 @@ func (s *server) DeleteOrg(
 	ctx context.Context,
 	req *connect.Request[orgv1.DeleteOrgRequest],
 ) (*connect.Response[orgv1.DeleteOrgResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	deleted, err := s.Svc.DeleteOrg(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, fmt.Errorf("unable to delete org: %w", err)
