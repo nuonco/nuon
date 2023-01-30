@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/utils"
@@ -49,10 +50,8 @@ func (i *installService) deprovisionInstall(ctx context.Context, install *models
 }
 
 func (i *installService) DeleteInstall(ctx context.Context, inputID string) (bool, error) {
-	installID, err := parseID(inputID)
-	if err != nil {
-		return false, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	installID, _ := uuid.Parse(inputID)
 
 	savedInstall, err := i.repo.Get(ctx, installID)
 	if err != nil {
@@ -72,10 +71,8 @@ func (i *installService) DeleteInstall(ctx context.Context, inputID string) (boo
 }
 
 func (i *installService) GetInstall(ctx context.Context, inputID string) (*models.Install, error) {
-	installID, err := parseID(inputID)
-	if err != nil {
-		return nil, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	installID, _ := uuid.Parse(inputID)
 
 	return i.repo.Get(ctx, installID)
 }
@@ -85,10 +82,8 @@ func (i *installService) GetAppInstalls(
 	id string,
 	options *models.ConnectionOptions,
 ) ([]*models.Install, *utils.Page, error) {
-	appID, err := parseID(id)
-	if err != nil {
-		return nil, nil, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	appID, _ := uuid.Parse(id)
 	return i.repo.ListByApp(ctx, appID, options)
 }
 
@@ -138,10 +133,8 @@ func (i *installService) UpsertInstall(ctx context.Context, input models.Install
 
 	var install models.Install
 	install.Name = input.Name
-	appID, err := parseID(input.AppID)
-	if err != nil {
-		return nil, err
-	}
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	appID, _ := uuid.Parse(input.AppID)
 	install.AppID = appID
 	install.CreatedByID = *input.CreatedByID
 	install.Domain = models.Domain{

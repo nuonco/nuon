@@ -33,14 +33,6 @@ func TestAppService_GetApp(t *testing.T) {
 				return repo
 			},
 		},
-		"invalid-id": {
-			appID: "foo",
-			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
-				repo := repos.NewMockAppRepo(ctl)
-				return repo
-			},
-			errExpected: fmt.Errorf("is not a valid uuid"),
-		},
 		"error": {
 			appID: appID.String(),
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -145,20 +137,6 @@ func TestAppService_UpsertApp(t *testing.T) {
 				return mgr
 			},
 		},
-		"invalid id": {
-			inputFn: func() models.AppInput {
-				inp := generics.GetFakeObj[models.AppInput]()
-				inp.ID = generics.ToPtr("abc")
-				return inp
-			},
-			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
-				return repos.NewMockAppRepo(ctl)
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
-				return workflows.NewMockAppWorkflowManager(ctl)
-			},
-			errExpected: InvalidIDErr{},
-		},
 		"upsert error": {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
@@ -231,13 +209,6 @@ func TestAppService_DeleteApp(t *testing.T) {
 				repo.EXPECT().Delete(gomock.Any(), appID).Return(true, nil)
 				return repo
 			},
-		},
-		"invalid id": {
-			appID: "invalid-id",
-			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
-				return repos.NewMockAppRepo(ctl)
-			},
-			errExpected: InvalidIDErr{},
 		},
 		"delete error": {
 			appID: appID.String(),
