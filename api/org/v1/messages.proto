@@ -30,7 +30,10 @@ message GetOrgResponse {
 }
 
 message UpsertOrgRequest {
-  string id = 1 [(validate.rules).string.uuid = true];
+  string id = 1 [(validate.rules).string = {
+    uuid: true,
+    ignore_empty: true
+  }];
   string name = 2;
   string owner_id = 3;
 }

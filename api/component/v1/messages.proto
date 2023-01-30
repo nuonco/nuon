@@ -53,7 +53,10 @@ message GetComponentsByAppResponse {
 
 message UpsertComponentRequest {
   string app_id = 1 [(validate.rules).string.uuid = true];
-  string id = 2 [(validate.rules).string.uuid = true];
+  string id = 2 [(validate.rules).string = {
+    uuid: true,
+    ignore_empty: true
+  }];
   string name = 3;
   string build_image = 4;
   string created_by_id = 5;

@@ -711,16 +711,20 @@ func (m *UpsertOrgRequest) validate(all bool) error {
 
 	var errors []error
 
-	if err := m._validateUuid(m.GetId()); err != nil {
-		err = UpsertOrgRequestValidationError{
-			field:  "Id",
-			reason: "value must be a valid UUID",
-			cause:  err,
+	if m.GetId() != "" {
+
+		if err := m._validateUuid(m.GetId()); err != nil {
+			err = UpsertOrgRequestValidationError{
+				field:  "Id",
+				reason: "value must be a valid UUID",
+				cause:  err,
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+
 	}
 
 	// no validation rules for Name

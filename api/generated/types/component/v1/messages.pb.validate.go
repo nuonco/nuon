@@ -903,16 +903,20 @@ func (m *UpsertComponentRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if err := m._validateUuid(m.GetId()); err != nil {
-		err = UpsertComponentRequestValidationError{
-			field:  "Id",
-			reason: "value must be a valid UUID",
-			cause:  err,
+	if m.GetId() != "" {
+
+		if err := m._validateUuid(m.GetId()); err != nil {
+			err = UpsertComponentRequestValidationError{
+				field:  "Id",
+				reason: "value must be a valid UUID",
+				cause:  err,
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+
 	}
 
 	// no validation rules for Name
