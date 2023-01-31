@@ -7,12 +7,10 @@ import (
 type Org struct {
 	Model
 	CreatedByID string
-
-	Slug       string `gorm:"uniqueIndex"`
-	Name       string `gorm:"uniqueIndex"`
-	Apps       []App  `faker:"-"`
-	WorkflowID string
-	IsNew      bool `gorm:"-:all"`
+	Name        string `gorm:"uniqueIndex"`
+	Apps        []App  `faker:"-"`
+	WorkflowID  string
+	IsNew       bool `gorm:"-:all"`
 }
 
 func (Org) IsNode() {}

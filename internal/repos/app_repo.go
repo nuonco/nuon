@@ -14,10 +14,8 @@ import (
 //go:generate mockgen -destination=mock_app_repo.go -source=app_repo.go -package=repos
 type AppRepo interface {
 	Get(context.Context, uuid.UUID) (*models.App, error)
-	GetBySlug(context.Context, string) (*models.App, error)
 	GetPageAll(context.Context, *models.ConnectionOptions) ([]*models.App, *utils.Page, error)
 	GetPageByOrg(context.Context, uuid.UUID, *models.ConnectionOptions) ([]*models.App, *utils.Page, error)
-
 	Upsert(context.Context, *models.App) (*models.App, error)
 	Delete(context.Context, uuid.UUID) (bool, error)
 }
@@ -57,14 +55,6 @@ func (a appRepo) GetPageAll(ctx context.Context, options *models.ConnectionOptio
 func (a appRepo) Get(ctx context.Context, appID uuid.UUID) (*models.App, error) {
 	var app models.App
 	if err := a.db.WithContext(ctx).First(&app, "id = ?", appID).Error; err != nil {
-		return nil, err
-	}
-	return &app, nil
-}
-
-func (a appRepo) GetBySlug(ctx context.Context, slug string) (*models.App, error) {
-	var app models.App
-	if err := a.db.WithContext(ctx).First(&app, "slug = ?", slug).Error; err != nil {
 		return nil, err
 	}
 	return &app, nil
