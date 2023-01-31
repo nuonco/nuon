@@ -8,15 +8,12 @@ import (
 
 type App struct {
 	Model
-
 	CreatedByID     string
 	Name            string
-	Slug            string
 	OrgID           uuid.UUID
 	GithubInstallID string
-
-	Components []Component `faker:"-"`
-	Installs   []Install   `faker:"-"`
+	Components      []Component `faker:"-"`
+	Installs        []Install   `faker:"-"`
 }
 
 func (App) IsNode() {}

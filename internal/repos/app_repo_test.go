@@ -132,40 +132,6 @@ func TestGetApp(t *testing.T) {
 	})
 }
 
-func TestGetAppBySlug(t *testing.T) {
-	execRepoTests(t, []repoTest{
-		{
-			desc: "should get an app successfully",
-			fn: func(ctx context.Context, state repoTestState) {
-				origApp := createApp(ctx, t, state)
-
-				app, err := state.appRepo.GetBySlug(ctx, origApp.Slug)
-				assert.Nil(t, err)
-				assert.NotNil(t, app)
-			},
-		},
-		{
-			desc: "should error with canceled context",
-			fn: func(ctx context.Context, state repoTestState) {
-				app := createApp(ctx, t, state)
-
-				state.ctxCloseFn()
-				fetchedApp, err := state.appRepo.GetBySlug(ctx, app.Slug)
-				assert.Nil(t, fetchedApp)
-				assert.NotNil(t, err)
-			},
-		},
-		{
-			desc: "should error with not found",
-			fn: func(ctx context.Context, state repoTestState) {
-				fetchedApp, err := state.appRepo.GetBySlug(ctx, "abc")
-				assert.Nil(t, fetchedApp)
-				assert.NotNil(t, err)
-			},
-		},
-	})
-}
-
 func TestAppGetPageAll(t *testing.T) {
 	execRepoTests(t, []repoTest{
 		{

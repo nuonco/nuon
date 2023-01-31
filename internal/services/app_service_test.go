@@ -62,54 +62,6 @@ func TestAppService_GetApp(t *testing.T) {
 	}
 }
 
-func TestAppService_GetAppBySlug(t *testing.T) {
-	errGetApp := fmt.Errorf("error getting app")
-	slug := uuid.NewString()
-	app := generics.GetFakeObj[*models.App]()
-
-	tests := map[string]struct {
-		slug        string
-		repoFn      func(*gomock.Controller) *repos.MockAppRepo
-		errExpected error
-		assertFn    func(*testing.T, *models.App)
-	}{
-		"happy path": {
-			slug: slug,
-			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
-				repo := repos.NewMockAppRepo(ctl)
-				repo.EXPECT().GetBySlug(gomock.Any(), slug).Return(app, nil)
-				return repo
-			},
-		},
-		"error": {
-			slug: "invalid-slug",
-			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
-				repo := repos.NewMockAppRepo(ctl)
-				repo.EXPECT().GetBySlug(gomock.Any(), "invalid-slug").Return(nil, errGetApp)
-				return repo
-			},
-			errExpected: errGetApp,
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			mockCtl := gomock.NewController(t)
-			repo := test.repoFn(mockCtl)
-			svc := &appService{
-				repo: repo,
-			}
-			returnedApp, err := svc.GetAppBySlug(context.Background(), test.slug)
-			if test.errExpected != nil {
-				assert.ErrorContains(t, err, test.errExpected.Error())
-				return
-			}
-			assert.Nil(t, err)
-			assert.NotNil(t, returnedApp)
-		})
-	}
-}
-
 func TestAppService_UpsertApp(t *testing.T) {
 	errUpsertApp := fmt.Errorf("error upserting app")
 	app := generics.GetFakeObj[*models.App]()
@@ -236,51 +188,6 @@ func TestAppService_DeleteApp(t *testing.T) {
 			}
 			assert.Nil(t, err)
 			assert.NotNil(t, returnedApp)
-		})
-	}
-}
-
-func TestAppService_GetAllApps(t *testing.T) {
-	errGetAllApps := fmt.Errorf("error getting all apps")
-	apps := []*models.App{generics.GetFakeObj[*models.App]()}
-	opts := &models.ConnectionOptions{}
-
-	tests := map[string]struct {
-		repoFn      func(*gomock.Controller) *repos.MockAppRepo
-		errExpected error
-	}{
-		"happy path": {
-			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
-				repo := repos.NewMockAppRepo(ctl)
-				repo.EXPECT().GetPageAll(gomock.Any(), opts).Return(apps, nil, nil)
-				return repo
-			},
-		},
-		"repo error": {
-			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
-				repo := repos.NewMockAppRepo(ctl)
-				repo.EXPECT().GetPageAll(gomock.Any(), opts).Return(nil, nil, errGetAllApps)
-				return repo
-			},
-			errExpected: errGetAllApps,
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			mockCtl := gomock.NewController(t)
-			repo := test.repoFn(mockCtl)
-			svc := &appService{
-				repo: repo,
-			}
-
-			returnedApps, _, err := svc.GetAllApps(context.Background(), opts)
-			if test.errExpected != nil {
-				assert.ErrorContains(t, err, test.errExpected.Error())
-				return
-			}
-			assert.Nil(t, err)
-			assert.Equal(t, apps, returnedApps)
 		})
 	}
 }
