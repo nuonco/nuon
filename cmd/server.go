@@ -80,7 +80,7 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.L
 		return fmt.Errorf("unable to initialize apps server: %w", err)
 	}
 
-	componentsSvc := services.NewComponentService(db)
+	componentsSvc := services.NewComponentService(db, log)
 	_, err = componentsserver.New(componentsserver.WithHTTPMux(mux), componentsserver.WithService(componentsSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize components server: %w", err)

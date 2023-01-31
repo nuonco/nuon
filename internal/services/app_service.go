@@ -94,14 +94,14 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 func (a *appService) DeleteApp(ctx context.Context, inputID string) (bool, error) {
 	// parsing the uuid while ignoring the error handling since we do this at protobuf level
 	appID, _ := uuid.Parse(inputID)
-	app, err := a.repo.Delete(ctx, appID)
+	deleted, err := a.repo.Delete(ctx, appID)
 	if err != nil {
 		a.log.Error("failed to delete app",
 			zap.String("appID", appID.String()),
 			zap.String("error", err.Error()))
 		return false, err
 	}
-	return app, nil
+	return deleted, nil
 }
 
 func (a appService) GetOrgApps(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
@@ -109,7 +109,7 @@ func (a appService) GetOrgApps(ctx context.Context, inputID string, options *mod
 	orgID, _ := uuid.Parse(inputID)
 	app, pg, err := a.repo.GetPageByOrg(ctx, orgID, options)
 	if err != nil {
-		a.log.Error("failed to retrieve all apps by org",
+		a.log.Error("failed to retrieve org's apps",
 			zap.String("orgID", orgID.String()),
 			zap.Any("options", *options),
 			zap.String("error", err.Error()))

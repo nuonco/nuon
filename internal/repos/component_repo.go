@@ -67,7 +67,9 @@ func (i componentRepo) ListByApp(ctx context.Context, appID uuid.UUID, options *
 
 func (i componentRepo) Delete(ctx context.Context, componentID uuid.UUID) (bool, error) {
 	var component models.Component
-	if err := i.db.WithContext(ctx).Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).Delete(&component, "id = ?", componentID).Error; err != nil {
+	if err := i.db.WithContext(ctx).
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).
+		Delete(&component, "id = ?", componentID).Error; err != nil {
 		return false, err
 	}
 	return component.ID != uuid.Nil, nil
@@ -82,7 +84,9 @@ func (i componentRepo) Create(ctx context.Context, component *models.Component) 
 }
 
 func (i componentRepo) Update(ctx context.Context, component *models.Component) (*models.Component, error) {
-	if err := i.db.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Updates(component).Error; err != nil {
+	if err := i.db.WithContext(ctx).
+		Session(&gorm.Session{FullSaveAssociations: true}).
+		Updates(component).Error; err != nil {
 		return nil, err
 	}
 
