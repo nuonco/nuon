@@ -891,16 +891,20 @@ func (m *UpsertComponentRequest) validate(all bool) error {
 
 	var errors []error
 
-	if err := m._validateUuid(m.GetAppId()); err != nil {
-		err = UpsertComponentRequestValidationError{
-			field:  "AppId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+	if m.GetAppId() != "" {
+
+		if err := m._validateUuid(m.GetAppId()); err != nil {
+			err = UpsertComponentRequestValidationError{
+				field:  "AppId",
+				reason: "value must be a valid UUID",
+				cause:  err,
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+
 	}
 
 	if m.GetId() != "" {

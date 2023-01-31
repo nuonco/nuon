@@ -975,16 +975,20 @@ func (m *UpsertAppRequest) validate(all bool) error {
 
 	// no validation rules for Name
 
-	if err := m._validateUuid(m.GetOrgId()); err != nil {
-		err = UpsertAppRequestValidationError{
-			field:  "OrgId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+	if m.GetOrgId() != "" {
+
+		if err := m._validateUuid(m.GetOrgId()); err != nil {
+			err = UpsertAppRequestValidationError{
+				field:  "OrgId",
+				reason: "value must be a valid UUID",
+				cause:  err,
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+
 	}
 
 	// no validation rules for GithubInstallId

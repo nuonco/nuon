@@ -45,7 +45,10 @@ message UpsertAppRequest {
     ignore_empty: true
   }];
   string name = 2;
-  string org_id = 3 [(validate.rules).string.uuid = true];
+  string org_id = 3 [(validate.rules).string = {
+    uuid: true,
+    ignore_empty: true
+  }];
   string github_install_id = 4;
   string created_by_id = 5;
 }

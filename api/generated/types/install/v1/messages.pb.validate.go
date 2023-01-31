@@ -1268,16 +1268,20 @@ func (m *UpsertInstallRequest) validate(all bool) error {
 
 	// no validation rules for Name
 
-	if err := m._validateUuid(m.GetAppId()); err != nil {
-		err = UpsertInstallRequestValidationError{
-			field:  "AppId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+	if m.GetAppId() != "" {
+
+		if err := m._validateUuid(m.GetAppId()); err != nil {
+			err = UpsertInstallRequestValidationError{
+				field:  "AppId",
+				reason: "value must be a valid UUID",
+				cause:  err,
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+
 	}
 
 	// no validation rules for CreatedById
