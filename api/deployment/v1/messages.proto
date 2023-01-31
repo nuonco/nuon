@@ -25,11 +25,27 @@ message GetDeploymentResponse {
   Deployment deployment = 1;
 }
 
+message GetDeploymentsByAppsRequest {
+  repeated string app_ids = 1 [(validate.rules).repeated.items.string.uuid = true];
+}
+
+message GetDeploymentsByAppsResponse {
+  repeated Deployment deployments = 1;
+}
+
 message GetDeploymentsByComponentsRequest {
   repeated string component_ids = 1 [(validate.rules).repeated.items.string.uuid = true];
 }
 
 message GetDeploymentsByComponentsResponse {
+  repeated Deployment deployments = 1;
+}
+
+message GetDeploymentsByInstallsRequest {
+  repeated string install_ids = 1 [(validate.rules).repeated.items.string.uuid = true];
+}
+
+message GetDeploymentsByInstallsResponse {
   repeated Deployment deployments = 1;
 }
 

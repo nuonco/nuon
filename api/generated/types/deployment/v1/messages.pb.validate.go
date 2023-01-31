@@ -458,6 +458,271 @@ var _ interface {
 	ErrorName() string
 } = GetDeploymentResponseValidationError{}
 
+// Validate checks the field values on GetDeploymentsByAppsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetDeploymentsByAppsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetDeploymentsByAppsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetDeploymentsByAppsRequestMultiError, or nil if none found.
+func (m *GetDeploymentsByAppsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetDeploymentsByAppsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetAppIds() {
+		_, _ = idx, item
+
+		if err := m._validateUuid(item); err != nil {
+			err = GetDeploymentsByAppsRequestValidationError{
+				field:  fmt.Sprintf("AppIds[%v]", idx),
+				reason: "value must be a valid UUID",
+				cause:  err,
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetDeploymentsByAppsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetDeploymentsByAppsRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
+	}
+
+	return nil
+}
+
+// GetDeploymentsByAppsRequestMultiError is an error wrapping multiple
+// validation errors returned by GetDeploymentsByAppsRequest.ValidateAll() if
+// the designated constraints aren't met.
+type GetDeploymentsByAppsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetDeploymentsByAppsRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetDeploymentsByAppsRequestMultiError) AllErrors() []error { return m }
+
+// GetDeploymentsByAppsRequestValidationError is the validation error returned
+// by GetDeploymentsByAppsRequest.Validate if the designated constraints
+// aren't met.
+type GetDeploymentsByAppsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetDeploymentsByAppsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetDeploymentsByAppsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetDeploymentsByAppsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetDeploymentsByAppsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetDeploymentsByAppsRequestValidationError) ErrorName() string {
+	return "GetDeploymentsByAppsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetDeploymentsByAppsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetDeploymentsByAppsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetDeploymentsByAppsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetDeploymentsByAppsRequestValidationError{}
+
+// Validate checks the field values on GetDeploymentsByAppsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetDeploymentsByAppsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetDeploymentsByAppsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetDeploymentsByAppsResponseMultiError, or nil if none found.
+func (m *GetDeploymentsByAppsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetDeploymentsByAppsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetDeployments() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetDeploymentsByAppsResponseValidationError{
+						field:  fmt.Sprintf("Deployments[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetDeploymentsByAppsResponseValidationError{
+						field:  fmt.Sprintf("Deployments[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetDeploymentsByAppsResponseValidationError{
+					field:  fmt.Sprintf("Deployments[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetDeploymentsByAppsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetDeploymentsByAppsResponseMultiError is an error wrapping multiple
+// validation errors returned by GetDeploymentsByAppsResponse.ValidateAll() if
+// the designated constraints aren't met.
+type GetDeploymentsByAppsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetDeploymentsByAppsResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetDeploymentsByAppsResponseMultiError) AllErrors() []error { return m }
+
+// GetDeploymentsByAppsResponseValidationError is the validation error returned
+// by GetDeploymentsByAppsResponse.Validate if the designated constraints
+// aren't met.
+type GetDeploymentsByAppsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetDeploymentsByAppsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetDeploymentsByAppsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetDeploymentsByAppsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetDeploymentsByAppsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetDeploymentsByAppsResponseValidationError) ErrorName() string {
+	return "GetDeploymentsByAppsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetDeploymentsByAppsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetDeploymentsByAppsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetDeploymentsByAppsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetDeploymentsByAppsResponseValidationError{}
+
 // Validate checks the field values on GetDeploymentsByComponentsRequest with
 // the rules defined in the proto definition for this message. If any rules
 // are violated, the first error encountered is returned, or nil if there are
@@ -726,6 +991,273 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetDeploymentsByComponentsResponseValidationError{}
+
+// Validate checks the field values on GetDeploymentsByInstallsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetDeploymentsByInstallsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetDeploymentsByInstallsRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// GetDeploymentsByInstallsRequestMultiError, or nil if none found.
+func (m *GetDeploymentsByInstallsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetDeploymentsByInstallsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetInstallIds() {
+		_, _ = idx, item
+
+		if err := m._validateUuid(item); err != nil {
+			err = GetDeploymentsByInstallsRequestValidationError{
+				field:  fmt.Sprintf("InstallIds[%v]", idx),
+				reason: "value must be a valid UUID",
+				cause:  err,
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetDeploymentsByInstallsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *GetDeploymentsByInstallsRequest) _validateUuid(uuid string) error {
+	if matched := _messages_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
+	}
+
+	return nil
+}
+
+// GetDeploymentsByInstallsRequestMultiError is an error wrapping multiple
+// validation errors returned by GetDeploymentsByInstallsRequest.ValidateAll()
+// if the designated constraints aren't met.
+type GetDeploymentsByInstallsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetDeploymentsByInstallsRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetDeploymentsByInstallsRequestMultiError) AllErrors() []error { return m }
+
+// GetDeploymentsByInstallsRequestValidationError is the validation error
+// returned by GetDeploymentsByInstallsRequest.Validate if the designated
+// constraints aren't met.
+type GetDeploymentsByInstallsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetDeploymentsByInstallsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetDeploymentsByInstallsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetDeploymentsByInstallsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetDeploymentsByInstallsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetDeploymentsByInstallsRequestValidationError) ErrorName() string {
+	return "GetDeploymentsByInstallsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetDeploymentsByInstallsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetDeploymentsByInstallsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetDeploymentsByInstallsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetDeploymentsByInstallsRequestValidationError{}
+
+// Validate checks the field values on GetDeploymentsByInstallsResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *GetDeploymentsByInstallsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetDeploymentsByInstallsResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// GetDeploymentsByInstallsResponseMultiError, or nil if none found.
+func (m *GetDeploymentsByInstallsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetDeploymentsByInstallsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetDeployments() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GetDeploymentsByInstallsResponseValidationError{
+						field:  fmt.Sprintf("Deployments[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GetDeploymentsByInstallsResponseValidationError{
+						field:  fmt.Sprintf("Deployments[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GetDeploymentsByInstallsResponseValidationError{
+					field:  fmt.Sprintf("Deployments[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return GetDeploymentsByInstallsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetDeploymentsByInstallsResponseMultiError is an error wrapping multiple
+// validation errors returned by
+// GetDeploymentsByInstallsResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetDeploymentsByInstallsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetDeploymentsByInstallsResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetDeploymentsByInstallsResponseMultiError) AllErrors() []error { return m }
+
+// GetDeploymentsByInstallsResponseValidationError is the validation error
+// returned by GetDeploymentsByInstallsResponse.Validate if the designated
+// constraints aren't met.
+type GetDeploymentsByInstallsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetDeploymentsByInstallsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetDeploymentsByInstallsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetDeploymentsByInstallsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetDeploymentsByInstallsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetDeploymentsByInstallsResponseValidationError) ErrorName() string {
+	return "GetDeploymentsByInstallsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetDeploymentsByInstallsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetDeploymentsByInstallsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetDeploymentsByInstallsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetDeploymentsByInstallsResponseValidationError{}
 
 // Validate checks the field values on CreateDeploymentRequest with the rules
 // defined in the proto definition for this message. If any rules are
