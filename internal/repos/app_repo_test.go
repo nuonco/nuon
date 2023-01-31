@@ -132,45 +132,6 @@ func TestGetApp(t *testing.T) {
 	})
 }
 
-func TestAppGetPageAll(t *testing.T) {
-	execRepoTests(t, []repoTest{
-		{
-			desc: "should get all apps successfully when no limit is set",
-			fn: func(ctx context.Context, state repoTestState) {
-				origApp := createApp(ctx, t, state)
-
-				apps, page, err := state.appRepo.GetPageAll(ctx, &models.ConnectionOptions{})
-				assert.Nil(t, err)
-				assert.NotEmpty(t, page)
-				assert.NotEmpty(t, apps)
-
-				// NOTE(jm): until we've fixed all bugs cleaning up all database objects from previous
-				// runs, we can't guarantee this will be the only app in the list
-				// assert.Equal(t, apps[0].ID, origApp.ID)
-				// assert.Equals(t, len(apps), 1)
-				found := false
-				for _, app := range apps {
-					if app.ID == origApp.ID {
-						found = true
-						break
-					}
-				}
-				assert.True(t, found)
-			},
-		},
-		{
-			desc: "should error with a context canceled",
-			fn: func(ctx context.Context, state repoTestState) {
-				state.ctxCloseFn()
-				apps, page, err := state.appRepo.GetPageAll(ctx, &models.ConnectionOptions{})
-				assert.NotNil(t, err)
-				assert.Nil(t, apps)
-				assert.Nil(t, page)
-			},
-		},
-	})
-}
-
 func TestAppGetPageByOrg(t *testing.T) {
 	execRepoTests(t, []repoTest{
 		{
