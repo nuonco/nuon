@@ -350,8 +350,8 @@ github.com/powertoolsdev/go-common v1.1.17 h1:xTVPf7kiezNH09fIINiWSHHzqhQ517GQjc
 github.com/powertoolsdev/go-common v1.1.17/go.mod h1:mhY1HkgLn4iPkxnGy2ownap+hxJosifCfE7qwXmpyUE=
 github.com/powertoolsdev/go-generics v0.0.1 h1:We48KVDTRRDm4TeKe0BFJUghzgjpcyaX364797GYxbU=
 github.com/powertoolsdev/go-generics v0.0.1/go.mod h1:ZfpJeyS0qdYRV7CAJhxq1CxjED+PhR/Y+yMc5A4Rjsg=
-github.com/powertoolsdev/protos v0.51.1 h1:HqGwyR6vArCaHJrCMxf/WeEXcQ9AyT8n1epFgnUx3bQ=
-github.com/powertoolsdev/protos v0.51.1/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.52.0 h1:q3kDOM/gbQzSXua2eeu1/ChHJZDGpMjoZksyMgwDIyI=
+github.com/powertoolsdev/protos v0.52.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/raphaelvigee/go-paginate v1.0.6 h1:FM04up+dfkUm/sn8QtmCI/rRi9NbQpyauXiNohkh6Rw=
 github.com/raphaelvigee/go-paginate v1.0.6/go.mod h1:HAiS+YGbTRM6JEQQWsmbfi4ckheyQ7gRN5aahS6WmlY=
