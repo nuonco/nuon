@@ -12,7 +12,7 @@ import (
 )
 
 func TestIsDuplicateKeyError(t *testing.T) {
-	gormDB, err := gorm.Open(postgres.New(postgres.Config{DSN: "dbname=api host=localhost user=postgres"}), &gorm.Config{})
+	gormDB, err := gorm.Open(postgres.New(postgres.Config{DSN: "dbname=api host=localhost user=api"}), &gorm.Config{})
 	assert.NoError(t, err)
 	assert.NotNil(t, gormDB)
 

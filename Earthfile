@@ -103,33 +103,33 @@ deploy:
 test:
     DO +DEPS
     COPY docker-compose.yml ./
-    #COPY wait_for_pg.sh /bin
-    #WITH DOCKER \
-        #--compose docker-compose.yml \
-        #--pull ghcr.io/powertoolsdev/ci-temporalite:latest \
-        #--pull postgres:13.4-alpine
-        #RUN  \
-            #wait_for_pg.sh \
-            #&& go run main.go migrate \
-            #&& go test -v ./...
-    #END
+    COPY wait_for_pg.sh /bin
+    WITH DOCKER \
+        --compose docker-compose.yml \
+        --pull ghcr.io/powertoolsdev/ci-temporalite:latest \
+        --pull postgres:13.4-alpine
+        RUN  \
+            wait_for_pg.sh \
+            && go run main.go migrate \
+            && go test -v ./...
+    END
     SAVE IMAGE --push $GHCR_IMAGE:test
 
 test-integration:
     DO +DEPS
-    #COPY docker-compose.yml ./
-    #COPY wait_for_pg.sh /bin
-    #WITH DOCKER \
-        #--compose docker-compose.yml \
-        #--pull ghcr.io/powertoolsdev/ci-temporalite:latest \
-        #--pull postgres:13.4-alpine
-        #RUN \
-            #wait_for_pg.sh \
-            #&& go run main.go migrate \
-            #&& go test \
-                #-tags=integration \
-                #./...
-    #END
+    COPY docker-compose.yml ./
+    COPY wait_for_pg.sh /bin
+    WITH DOCKER \
+        --compose docker-compose.yml \
+        --pull ghcr.io/powertoolsdev/ci-temporalite:latest \
+        --pull postgres:13.4-alpine
+        RUN \
+            wait_for_pg.sh \
+            && go run main.go migrate \
+            && go test \
+                -tags=integration \
+                ./...
+    END
     SAVE IMAGE --push $GHCR_IMAGE:test-integration
 
 lint:

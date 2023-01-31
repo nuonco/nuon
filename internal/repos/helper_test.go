@@ -96,7 +96,7 @@ func testDB(testName string) (*gorm.DB, func()) { //nolint:gocritic //unnamedRes
 		),
 	}
 
-	pg := postgres.New(postgres.Config{DSN: "dbname=api host=localhost user=postgres"})
+	pg := postgres.New(postgres.Config{DSN: "dbname=api host=localhost user=api"})
 
 	gormDB, err := gorm.Open(pg, gcfg)
 	if err != nil {
