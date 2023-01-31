@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/gosimple/slug"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/utils"
@@ -19,7 +18,6 @@ import (
 type OrgService interface {
 	DeleteOrg(context.Context, string) (bool, error)
 	GetOrg(context.Context, string) (*models.Org, error)
-	GetOrgBySlug(context.Context, string) (*models.Org, error)
 	UpsertOrg(context.Context, models.OrgInput) (*models.Org, error)
 	UserOrgs(context.Context, string, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
 	Orgs(context.Context, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
@@ -68,14 +66,9 @@ func (o *orgService) GetOrg(ctx context.Context, inputID string) (*models.Org, e
 	return o.repo.Get(ctx, orgID)
 }
 
-func (o *orgService) GetOrgBySlug(ctx context.Context, slug string) (*models.Org, error) {
-	return o.repo.GetBySlug(ctx, slug)
-}
-
 func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*models.Org, error) {
 	org := &models.Org{
 		Name: input.Name,
-		Slug: slug.Make(input.Name),
 	}
 	if input.ID != nil {
 		// parsing the uuid while ignoring the error handling since we do this at protobuf level

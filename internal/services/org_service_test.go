@@ -135,54 +135,6 @@ func TestOrgService_GetOrg(t *testing.T) {
 	}
 }
 
-func TestOrgService_GetOrgBySlug(t *testing.T) {
-	errGetOrg := fmt.Errorf("error getting org by slug")
-	slug := uuid.New().String()
-	org := generics.GetFakeObj[*models.Org]()
-
-	tests := map[string]struct {
-		slug        string
-		repoFn      func(*gomock.Controller) *repos.MockOrgRepo
-		errExpected error
-		assertFn    func(*testing.T, *models.Org)
-	}{
-		"happy path": {
-			slug: slug,
-			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
-				repo := repos.NewMockOrgRepo(ctl)
-				repo.EXPECT().GetBySlug(gomock.Any(), slug).Return(org, nil)
-				return repo
-			},
-		},
-		"error": {
-			slug: slug,
-			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
-				repo := repos.NewMockOrgRepo(ctl)
-				repo.EXPECT().GetBySlug(gomock.Any(), slug).Return(nil, errGetOrg)
-				return repo
-			},
-			errExpected: errGetOrg,
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			mockCtl := gomock.NewController(t)
-			repo := test.repoFn(mockCtl)
-			svc := &orgService{
-				repo: repo,
-			}
-			returnedOrg, err := svc.GetOrgBySlug(context.Background(), test.slug)
-			if test.errExpected != nil {
-				assert.ErrorContains(t, err, test.errExpected.Error())
-				return
-			}
-			assert.Nil(t, err)
-			assert.Equal(t, org, returnedOrg)
-		})
-	}
-}
-
 func TestOrgService_UpsertOrg(t *testing.T) {
 	errUpsertOrg := fmt.Errorf("error upserting app")
 	org := generics.GetFakeObj[*models.Org]()

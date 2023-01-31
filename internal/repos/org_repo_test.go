@@ -12,7 +12,6 @@ import (
 func createOrg(ctx context.Context, t *testing.T, orgRepo OrgRepo) *models.Org {
 	org, err := orgRepo.Create(ctx, &models.Org{
 		Name:        uuid.NewString(),
-		Slug:        uuid.NewString(),
 		CreatedByID: uuid.NewString(),
 	})
 	assert.Nil(t, err)
@@ -26,7 +25,6 @@ func TestCreateOrg(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				orgInput := models.Org{
 					Name: uuid.NewString(),
-					Slug: uuid.NewString(),
 				}
 
 				org, err := state.orgRepo.Create(ctx, &orgInput)
@@ -40,7 +38,6 @@ func TestCreateOrg(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				orgInput := models.Org{
 					Name: uuid.NewString(),
-					Slug: uuid.NewString(),
 				}
 				org, err := state.orgRepo.Create(ctx, &orgInput)
 				assert.Nil(t, err)
@@ -60,7 +57,6 @@ func TestCreateOrg(t *testing.T) {
 
 				_, err := state.orgRepo.Create(ctx, &models.Org{
 					Name: name,
-					Slug: uuid.NewString(),
 				})
 				assert.Nil(t, err)
 				org, err := state.orgRepo.Create(ctx, &models.Org{
@@ -133,38 +129,6 @@ func TestDeleteOrg(t *testing.T) {
 				deleted, err := state.orgRepo.Delete(ctx, uuid.New())
 				assert.Nil(t, err)
 				assert.False(t, deleted)
-			},
-		},
-	})
-}
-
-func TestGetOrgBySlug(t *testing.T) {
-	execRepoTests(t, []repoTest{
-		{
-			desc: "should get an org successfully",
-			fn: func(ctx context.Context, state repoTestState) {
-				org := createOrg(ctx, t, state.orgRepo)
-				org, err := state.orgRepo.GetBySlug(ctx, org.Slug)
-				assert.Nil(t, err)
-				assert.NotNil(t, org)
-			},
-		},
-		{
-			desc: "should error if context is canceled",
-			fn: func(ctx context.Context, state repoTestState) {
-				org := createOrg(ctx, t, state.orgRepo)
-				state.ctxCloseFn()
-				org, err := state.orgRepo.GetBySlug(ctx, org.Slug)
-				assert.NotNil(t, err)
-				assert.Nil(t, org)
-			},
-		},
-		{
-			desc: "should return an error if not found",
-			fn: func(ctx context.Context, state repoTestState) {
-				org, err := state.orgRepo.GetBySlug(ctx, "unknown")
-				assert.Nil(t, org)
-				assert.NotNil(t, err)
 			},
 		},
 	})

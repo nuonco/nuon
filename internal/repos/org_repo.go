@@ -15,10 +15,7 @@ type OrgRepo interface {
 	Delete(context.Context, uuid.UUID) (bool, error)
 	Get(context.Context, uuid.UUID) (*models.Org, error)
 	GetPageByUser(context.Context, string, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
-	GetBySlug(context.Context, string) (*models.Org, error)
-
 	SetWorkflowID(context.Context, uuid.UUID, string) error
-
 	QueryAll(context.Context) *gorm.DB
 }
 
@@ -52,15 +49,6 @@ func (o orgRepo) Create(ctx context.Context, org *models.Org) (*models.Org, erro
 func (o orgRepo) Get(ctx context.Context, orgID uuid.UUID) (*models.Org, error) {
 	var org models.Org
 	err := o.db.WithContext(ctx).First(&org, "id = ?", orgID).Error
-	if err != nil {
-		return nil, err
-	}
-	return &org, nil
-}
-
-func (o orgRepo) GetBySlug(ctx context.Context, slug string) (*models.Org, error) {
-	var org models.Org
-	err := o.db.WithContext(ctx).First(&org, "slug = ?", slug).Error
 	if err != nil {
 		return nil, err
 	}
