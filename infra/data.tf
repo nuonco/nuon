@@ -18,16 +18,6 @@ data "terraform_remote_state" "chart_common" {
   }
 }
 
-data "tfe_outputs" "infra-orgs" {
-  organization = local.terraform_organization
-  workspace    = "infra-orgs-${var.env}"
-}
-
-data "tfe_outputs" "infra-eks-orgs" {
-  organization = local.terraform_organization
-  workspace    = "infra-eks-orgs-${var.env}-main"
-}
-
 # NOTE(jdt): This isn't ideal but more elegant than hardcoding in CI
 data "tfe_outputs" "infra-eks-nuon" {
   organization = local.terraform_organization
