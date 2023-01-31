@@ -23,6 +23,10 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     name: Deploy
