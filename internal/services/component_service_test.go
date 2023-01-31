@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/api/internal/utils"
 	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestComponentService_UpsertComponent(t *testing.T) {
@@ -70,6 +71,7 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 			componentInput := test.inputFn()
 			repo := test.repoFn(mockCtl)
 			svc := &componentService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 
@@ -119,6 +121,7 @@ func TestComponentService_GetAppComponents(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &componentService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 
@@ -168,6 +171,7 @@ func TestComponentService_GetComponent(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &componentService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 			returnedComponent, err := svc.GetComponent(context.Background(), test.componentID)
@@ -214,6 +218,7 @@ func TestComponentService_DeleteComponent(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &componentService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 
