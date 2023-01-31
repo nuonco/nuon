@@ -20,7 +20,7 @@ proto:
     WORKDIR /work
     COPY --dir $REPO/ .
     WORKDIR $REPO
-    RUN echo $BUF_API_TOKEN | buf registry login --username $BUF_USER --token-stdin
+    DO +BUF_LOGIN
 
 push-proto:
     FROM +proto
