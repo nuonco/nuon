@@ -27,16 +27,6 @@ build:
     SAVE ARTIFACT bin/service /service
     SAVE IMAGE --push $GHCR_IMAGE:build
 
-certs:
-    FROM alpine:3.16
-    # NOTE(jdt): ideally we would wget -a but busybox doesn't support it
-    # or use `update-ca-certificate` but it can't handle a single file w/ multiple certs
-    RUN wget \
-            https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
-        && cat global-bundle.pem >> "$ETCSSL"
-    SAVE ARTIFACT "$ETCSSL" /cert.pem
-    SAVE IMAGE --cache-hint
-
 docker:
     FROM alpine:3.16
     ARG EARTHLY_GIT_ORIGIN_URL
@@ -50,7 +40,6 @@ docker:
     ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
     COPY +build/service /bin/service
-    COPY +certs/cert.pem "$ETCSSL"
     ENTRYPOINT ["/bin/service"]
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
