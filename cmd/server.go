@@ -74,7 +74,7 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.L
 		return fmt.Errorf("unable to github client: %w", err)
 	}
 
-	appSvc := services.NewAppService(db, tc)
+	appSvc := services.NewAppService(db, tc, log)
 	_, err = appsserver.New(appsserver.WithHTTPMux(mux), appsserver.WithService(appSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize apps server: %w", err)

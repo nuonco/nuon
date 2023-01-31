@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/api/internal/workflows"
 	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestAppService_GetApp(t *testing.T) {
@@ -49,6 +50,7 @@ func TestAppService_GetApp(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &appService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 			returnedApp, err := svc.GetApp(context.Background(), test.appID)
@@ -130,6 +132,7 @@ func TestAppService_UpsertApp(t *testing.T) {
 			repo := test.repoFn(mockCtl)
 			mgr := test.wkflowFn(mockCtl)
 			svc := &appService{
+				log:         zaptest.NewLogger(t),
 				repo:        repo,
 				workflowMgr: mgr,
 			}
@@ -178,6 +181,7 @@ func TestAppService_DeleteApp(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &appService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 
