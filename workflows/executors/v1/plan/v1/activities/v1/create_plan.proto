@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1.activities.v1;
+
+import "component/v1/component.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message CreatePlanRequest {
+  string org_id = 1 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string org_short_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+  string app_id = 3 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string app_short_id = 4 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+  string deployment_id = 5 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string deployment_short_id = 6 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+
+  component.v1.Component component = 7;
+}
