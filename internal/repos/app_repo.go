@@ -14,7 +14,6 @@ import (
 //go:generate mockgen -destination=mock_app_repo.go -source=app_repo.go -package=repos
 type AppRepo interface {
 	Get(context.Context, uuid.UUID) (*models.App, error)
-	GetPageAll(context.Context, *models.ConnectionOptions) ([]*models.App, *utils.Page, error)
 	GetPageByOrg(context.Context, uuid.UUID, *models.ConnectionOptions) ([]*models.App, *utils.Page, error)
 	Upsert(context.Context, *models.App) (*models.App, error)
 	Delete(context.Context, uuid.UUID) (bool, error)
@@ -30,26 +29,6 @@ func NewAppRepo(db *gorm.DB) appRepo {
 	return appRepo{
 		db: db,
 	}
-}
-
-func (a appRepo) GetPageAll(ctx context.Context, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
-	var apps []*models.App
-	tx := a.db.WithContext(ctx).Find(&apps)
-	pg, c, err := utils.NewPaginator(options)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	page, err := pg.Paginate(c, tx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if err := page.Query(&apps); err != nil {
-		return nil, nil, err
-	}
-
-	return apps, &page, nil
 }
 
 func (a appRepo) Get(ctx context.Context, appID uuid.UUID) (*models.App, error) {
