@@ -86,7 +86,7 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.L
 		return fmt.Errorf("unable to initialize components server: %w", err)
 	}
 
-	deploymentsSvc := services.NewDeploymentService(db, tc, ghTransport)
+	deploymentsSvc := services.NewDeploymentService(db, tc, ghTransport, log)
 	_, err = deploymentsserver.New(deploymentsserver.WithHTTPMux(mux), deploymentsserver.WithService(deploymentsSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize deployments server: %w", err)
