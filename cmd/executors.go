@@ -72,7 +72,7 @@ func deploymentRun(cmd *cobra.Command, args []string) {
 
 func runExecutorWorkers(c client.Client, log *zap.Logger, cfg shared.Config, interruptCh <-chan interface{}) error {
 	otlpExporter, err := otlptracegrpc.New(context.Background(),
-		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:4317", cfg.NodeIP)))
+		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:4317", cfg.HostIP)))
 	if err != nil {
 		return fmt.Errorf("unable to create otlptrace exporter: %w", err)
 	}
