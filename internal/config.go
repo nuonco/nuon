@@ -20,7 +20,7 @@ type Config struct {
 	TemporalHost      string `config:"temporal_host" validate:"required"`
 	TemporalNamespace string `config:"temporal_namespace" validate:"required"`
 
-	NodeIP string `config:"node_ip" validate:"required"`
+	HostIP string `config:"host_ip" validate:"required"`
 
 	DeploymentsBucket string `config:"deployments_bucket" validate:"required"`
 
