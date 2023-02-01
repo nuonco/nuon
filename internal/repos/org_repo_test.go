@@ -166,32 +166,6 @@ func TestGetOrg(t *testing.T) {
 	})
 }
 
-func TestSetWorkflowID(t *testing.T) {
-	execRepoTests(t, []repoTest{
-		{
-			desc: "should set an org workflow id successfully",
-			fn: func(ctx context.Context, state repoTestState) {
-				org := createOrg(ctx, t, state.orgRepo)
-				err := state.orgRepo.SetWorkflowID(ctx, org.ID, "abc")
-				assert.Nil(t, err)
-
-				org, err = state.orgRepo.Get(ctx, org.ID)
-				assert.Nil(t, err)
-				assert.Equal(t, org.WorkflowID, "abc")
-			},
-		},
-		{
-			desc: "should error if context is canceled",
-			fn: func(ctx context.Context, state repoTestState) {
-				org := createOrg(ctx, t, state.orgRepo)
-				state.ctxCloseFn()
-				err := state.orgRepo.SetWorkflowID(ctx, org.ID, "abc")
-				assert.NotNil(t, err)
-			},
-		},
-	})
-}
-
 /*
 func TestOrgGetPageByUser(t *testing.T) {
 	execRepoTests(t, []repoTest{

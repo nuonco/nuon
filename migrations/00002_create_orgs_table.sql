@@ -15,7 +15,6 @@ CREATE TABLE orgs (
 	created_by_id text NULL,
 	slug text NULL,
 	"name" text NULL,
-	workflow_id text NULL,
 	CONSTRAINT orgs_pkey PRIMARY KEY (id)
 );
 CREATE INDEX idx_orgs_deleted_at ON orgs USING btree (deleted_at);
