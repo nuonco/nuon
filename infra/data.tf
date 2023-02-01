@@ -43,10 +43,6 @@ data "aws_subnets" "private" {
   }
 }
 
-data "aws_route53_zone" "public" {
-  name = "${var.env}.${local.vars.public_root_domain}"
-}
-
 data "aws_route53_zone" "private" {
   # HACK: this sucks. there's not a way to query just by tags or whatever
   name   = "${local.pool}.${local.vars.region}.${var.env}.${local.vars.root_domain}"
