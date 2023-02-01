@@ -8,10 +8,14 @@ import (
 // Deployment model to proto converts deployment domain model into deployment proto message
 func DeploymentModelToProto(deployment *models.Deployment) *deploymentv1.Deployment {
 	return &deploymentv1.Deployment{
-		Id:          deployment.ID.String(),
-		CreatedById: deployment.CreatedByID,
-		UpdatedAt:   TimeToDatetime(deployment.UpdatedAt),
-		CreatedAt:   TimeToDatetime(deployment.CreatedAt),
+		Id:           deployment.ID.String(),
+		CommitAuthor: deployment.CommitAuthor,
+		CommitHash:   deployment.CommitHash,
+		ComponentId:  deployment.ComponentID.String(),
+		CreatedById:  deployment.CreatedByID,
+		// TODO: return []string of InstallIDs
+		UpdatedAt: TimeToDatetime(deployment.UpdatedAt),
+		CreatedAt: TimeToDatetime(deployment.CreatedAt),
 	}
 }
 

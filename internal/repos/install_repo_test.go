@@ -124,7 +124,7 @@ func TestGetInstall(t *testing.T) {
 				install, err := state.installRepo.Get(ctx, origInstall.ID)
 				assert.Nil(t, err)
 				assert.NotNil(t, install)
-				assert.NotNil(t, install.Settings)
+				assert.NotNil(t, install.AWSSettings)
 			},
 		},
 	})

@@ -106,7 +106,7 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.L
 		return fmt.Errorf("unable to initialize github server: %w", err)
 	}
 
-	installSvc := services.NewInstallService(db, tc)
+	installSvc := services.NewInstallService(db, tc, log)
 	_, err = installsserver.New(installsserver.WithHTTPMux(mux), installsserver.WithService(installSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize installs server: %w", err)
