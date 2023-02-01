@@ -34,11 +34,10 @@ type installRepo struct {
 
 func (i installRepo) Get(ctx context.Context, installID uuid.UUID) (*models.Install, error) {
 	var install models.Install
-	if err := i.db.WithContext(ctx).Preload(clause.Associations).First(&install, "installs.id = ?", installID).Error; err != nil {
+	if err := i.db.WithContext(ctx).
+		Preload(clause.Associations).
+		First(&install, "id = ?", installID).Error; err != nil {
 		return nil, err
-	}
-	if install.AWSSettings != nil {
-		install.Settings = install.AWSSettings
 	}
 	return &install, nil
 }
@@ -49,7 +48,10 @@ func (i installRepo) ListByApp(
 	options *models.ConnectionOptions,
 ) ([]*models.Install, *utils.Page, error) {
 	var installs []*models.Install
-	tx := i.db.WithContext(ctx).Preload(clause.Associations).Where("app_id = ?", appID).Find(&installs)
+	tx := i.db.WithContext(ctx).
+		Preload(clause.Associations).
+		Where("app_id = ?", appID).
+		Find(&installs)
 	pg, c, err := utils.NewPaginator(options)
 	if err != nil {
 		return nil, nil, err
@@ -68,20 +70,31 @@ func (i installRepo) ListByApp(
 }
 
 func (i installRepo) Delete(ctx context.Context, installID uuid.UUID) (bool, error) {
-	if err := i.db.WithContext(ctx).Model(&models.Install{Model: models.Model{ID: installID}}).Association("Domain").Delete(); err != nil {
+	if err := i.db.WithContext(ctx).
+		Model(&models.Install{Model: models.Model{ID: installID}}).
+		Association("Domain").
+		Delete(); err != nil {
 		return false, err
 	}
 
-	if err := i.db.WithContext(ctx).Model(&models.Install{Model: models.Model{ID: installID}}).Association("AWSSettings").Delete(); err != nil {
+	if err := i.db.WithContext(ctx).
+		Model(&models.Install{Model: models.Model{ID: installID}}).
+		Association("AWSSettings").
+		Delete(); err != nil {
 		return false, err
 	}
 
-	if err := i.db.WithContext(ctx).Model(&models.Install{Model: models.Model{ID: installID}}).Association("GCPSettings").Delete(); err != nil {
+	if err := i.db.WithContext(ctx).
+		Model(&models.Install{Model: models.Model{ID: installID}}).
+		Association("GCPSettings").
+		Delete(); err != nil {
 		return false, err
 	}
 
 	var install models.Install
-	if err := i.db.WithContext(ctx).Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).Delete(&install, "id = ?", installID).Error; err != nil {
+	if err := i.db.WithContext(ctx).
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).
+		Delete(&install, "id = ?", installID).Error; err != nil {
 		return false, err
 	}
 	return install.ID != uuid.Nil, nil
@@ -96,7 +109,9 @@ func (i installRepo) Create(ctx context.Context, install *models.Install) (*mode
 }
 
 func (i installRepo) Update(ctx context.Context, install *models.Install) (*models.Install, error) {
-	if err := i.db.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Updates(install).Error; err != nil {
+	if err := i.db.WithContext(ctx).
+		Session(&gorm.Session{FullSaveAssociations: true}).
+		Updates(install).Error; err != nil {
 		return nil, err
 	}
 

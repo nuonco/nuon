@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/api/internal/workflows"
 	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestInstallService_UpsertInstall(t *testing.T) {
@@ -164,9 +165,10 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			appInput := test.inputFn()
 			svc := &installService{
+				appRepo:   test.appRepoFn(mockCtl),
+				log:       zaptest.NewLogger(t),
 				repo:      test.repoFn(mockCtl),
 				wkflowMgr: test.wkflowFn(mockCtl),
-				appRepo:   test.appRepoFn(mockCtl),
 			}
 
 			returnedInstall, err := svc.UpsertInstall(context.Background(), appInput)
@@ -215,6 +217,7 @@ func TestInstallService_GetAppInstalls(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &installService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 			installs, _, err := svc.GetAppInstalls(context.Background(), test.appID, &models.ConnectionOptions{})
@@ -263,6 +266,7 @@ func TestInstallService_GetInstall(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &installService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 			returnedInstall, err := svc.GetInstall(context.Background(), test.installID)
@@ -371,8 +375,9 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			svc := &installService{
-				repo:      test.repoFn(mockCtl),
 				appRepo:   test.appRepoFn(mockCtl),
+				log:       zaptest.NewLogger(t),
+				repo:      test.repoFn(mockCtl),
 				wkflowMgr: test.wkflowFn(mockCtl),
 			}
 
