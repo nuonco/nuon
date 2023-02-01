@@ -60,7 +60,7 @@ func migrate(cfg *internal.Config, args []string) error {
 		return err
 	}
 
-	if err := goose.Run(args[0], sqlDB, "./migrations"); err != nil {
+	if err := goose.Run(args[0], sqlDB, cfg.DBMigrationsPath); err != nil {
 		return err
 	}
 
