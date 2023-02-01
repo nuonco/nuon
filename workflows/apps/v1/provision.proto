@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package apps.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message ProvisionRequest {
+  bool dry_run = 1;
+
+  string org_id = 2 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+  string app_id = 3 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid_hyphenated\""
+  ];
+}
+
+message ProvisionResponse {}
