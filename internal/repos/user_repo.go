@@ -31,7 +31,9 @@ func (u userRepo) UpsertUserOrg(ctx context.Context, userID string, orgID uuid.U
 	var uo models.UserOrg
 	uo.UserID = userID
 	uo.OrgID = orgID
-	if err := u.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&uo).Error; err != nil {
+	if err := u.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&uo).Error; err != nil {
 		return nil, err
 	}
 	return &uo, nil

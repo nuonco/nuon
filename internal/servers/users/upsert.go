@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/connect-go"
 	"github.com/powertoolsdev/api/internal/models"
@@ -12,6 +13,11 @@ func (s *server) UpsertOrgMember(
 	ctx context.Context,
 	req *connect.Request[userv1.UpsertOrgMemberRequest],
 ) (*connect.Response[userv1.UpsertOrgMemberResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
 	userOrg, err := s.Svc.UpsertUserOrg(ctx, models.UserOrgInput{
 		UserID: req.Msg.UserId,
 		OrgID:  req.Msg.OrgId,
