@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/api/internal/workflows"
 	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestOrgService_DeleteOrg(t *testing.T) {
@@ -72,6 +73,7 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 			repo := test.repoFn(mockCtl)
 			wkflow := test.wkflowFn(mockCtl)
 			svc := &orgService{
+				log:       zaptest.NewLogger(t),
 				repo:      repo,
 				wkflowMgr: wkflow,
 			}
@@ -122,6 +124,7 @@ func TestOrgService_GetOrg(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &orgService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 			returnedOrg, err := svc.GetOrg(context.Background(), test.orgID)
@@ -277,6 +280,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			orgInput := test.inputFn()
 			svc := &orgService{
+				log:            zaptest.NewLogger(t),
 				repo:           test.repoFn(mockCtl),
 				userOrgUpdater: test.userRepoFn(mockCtl),
 				wkflowMgr:      test.wkflowFn(mockCtl),
@@ -329,6 +333,7 @@ func TestOrgService_UserOrgs(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &orgService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 			orgs, _, err := svc.UserOrgs(context.Background(), test.userID, &models.ConnectionOptions{})

@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/api/internal/utils"
 	"github.com/powertoolsdev/api/internal/workflows"
 	tclient "go.temporal.io/sdk/client"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -20,21 +21,22 @@ type OrgService interface {
 	GetOrg(context.Context, string) (*models.Org, error)
 	UpsertOrg(context.Context, models.OrgInput) (*models.Org, error)
 	UserOrgs(context.Context, string, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
-	Orgs(context.Context, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
 }
 
 var _ OrgService = (*orgService)(nil)
 
 type orgService struct {
-	wkflowMgr      workflows.OrgWorkflowManager
+	log            *zap.Logger
 	repo           repos.OrgRepo
 	userOrgUpdater repos.UserRepo
+	wkflowMgr      workflows.OrgWorkflowManager
 }
 
-func NewOrgService(db *gorm.DB, tc tclient.Client) *orgService {
+func NewOrgService(db *gorm.DB, tc tclient.Client, log *zap.Logger) *orgService {
 	orgRepo := repos.NewOrgRepo(db)
 	userRepo := repos.NewUserRepo(db)
 	return &orgService{
+		log:            log,
 		repo:           orgRepo,
 		userOrgUpdater: userRepo,
 		wkflowMgr:      workflows.NewOrgWorkflowManager(tc),
@@ -47,6 +49,9 @@ func (o orgService) DeleteOrg(ctx context.Context, inputID string) (bool, error)
 
 	deleted, err := o.repo.Delete(ctx, orgID)
 	if err != nil {
+		o.log.Error("failed to delete org",
+			zap.String("orgID", orgID.String()),
+			zap.String("error", err.Error()))
 		return false, err
 	}
 	if !deleted {
@@ -54,6 +59,9 @@ func (o orgService) DeleteOrg(ctx context.Context, inputID string) (bool, error)
 	}
 
 	if err := o.wkflowMgr.Deprovision(ctx, orgID.String()); err != nil {
+		o.log.Error("failed to start deprovision workflow",
+			zap.String("orgID", orgID.String()),
+			zap.String("error", err.Error()))
 		return false, fmt.Errorf("unable to start deprovision workflow: %w", err)
 	}
 	return true, nil
@@ -63,7 +71,15 @@ func (o *orgService) GetOrg(ctx context.Context, inputID string) (*models.Org, e
 	// parsing the uuid while ignoring the error handling since we do this at protobuf level
 	orgID, _ := uuid.Parse(inputID)
 
-	return o.repo.Get(ctx, orgID)
+	org, err := o.repo.Get(ctx, orgID)
+	if err != nil {
+		o.log.Error("failed to retrieve org",
+			zap.String("orgID", orgID.String()),
+			zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	return org, nil
 }
 
 func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*models.Org, error) {
@@ -80,6 +96,9 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 
 	org, err := o.repo.Create(ctx, org)
 	if err != nil {
+		o.log.Error("failed to upsert org",
+			zap.Any("org", org),
+			zap.String("error", err.Error()))
 		return nil, err
 	}
 
@@ -89,11 +108,18 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 
 	err = o.wkflowMgr.Provision(ctx, org.ID.String())
 	if err != nil {
+		o.log.Error("failed to provision org",
+			zap.String("orgID", org.ID.String()),
+			zap.String("error", err.Error()))
 		return nil, fmt.Errorf("unable to provision org: %w", err)
 	}
 
 	_, err = o.userOrgUpdater.UpsertUserOrg(ctx, input.OwnerID, org.ID)
 	if err != nil {
+		o.log.Error("failed to upsert org member",
+			zap.String("userID", input.OwnerID),
+			zap.String("orgID", org.ID.String()),
+			zap.String("error", err.Error()))
 		return org, err
 	}
 
@@ -101,27 +127,13 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 }
 
 func (o *orgService) UserOrgs(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
-	return o.repo.GetPageByUser(ctx, inputID, options)
-}
-
-func (o *orgService) Orgs(ctx context.Context, options *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
-	var orgs []*models.Org
-
-	pg, c, err := utils.NewPaginator(options)
-
+	org, pg, err := o.repo.GetPageByUser(ctx, inputID, options)
 	if err != nil {
+		o.log.Error("failed to get user's orgs",
+			zap.String("userID", inputID),
+			zap.Any("options", *options),
+			zap.String("error", err.Error()))
 		return nil, nil, err
 	}
-
-	tx := o.repo.QueryAll(ctx)
-	page, err := pg.Paginate(c, tx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if err := page.Query(&orgs); err != nil {
-		return nil, nil, err
-	}
-
-	return orgs, &page, nil
+	return org, pg, nil
 }
