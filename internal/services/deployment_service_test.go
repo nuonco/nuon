@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestDeploymentService_GetComponentDeployments(t *testing.T) {
@@ -49,6 +50,7 @@ func TestDeploymentService_GetComponentDeployments(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &deploymentService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 			deployments, _, err := svc.GetComponentDeployments(context.Background(), test.componentIDs, &models.ConnectionOptions{})
@@ -97,6 +99,7 @@ func TestDeploymentService_GetDeployment(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
 			svc := &deploymentService{
+				log:  zaptest.NewLogger(t),
 				repo: repo,
 			}
 			returnedDeployment, err := svc.GetDeployment(context.Background(), test.deploymentID)

@@ -33,7 +33,12 @@ type deploymentRepo struct {
 
 func (i deploymentRepo) Get(ctx context.Context, id uuid.UUID) (*models.Deployment, error) {
 	var deployment models.Deployment
-	if err := i.db.WithContext(ctx).Preload("Component.App").Preload("Component.App.Installs").Preload("Component.GithubConfig").Preload(clause.Associations).First(&deployment, "id = ?", id).Error; err != nil {
+	if err := i.db.WithContext(ctx).
+		Preload("Component.App").
+		Preload("Component.App.Installs").
+		Preload("Component.GithubConfig").
+		Preload(clause.Associations).
+		First(&deployment, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return &deployment, nil
@@ -41,7 +46,9 @@ func (i deploymentRepo) Get(ctx context.Context, id uuid.UUID) (*models.Deployme
 
 func (i deploymentRepo) ListByComponents(ctx context.Context, componentIDs []uuid.UUID, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
 	var deployments []*models.Deployment
-	tx := i.db.WithContext(ctx).Where("component_id IN ?", componentIDs).Find(&deployments)
+	tx := i.db.WithContext(ctx).
+		Where("component_id IN ?", componentIDs).
+		Find(&deployments)
 	pg, c, err := utils.NewPaginator(options)
 	if err != nil {
 		return nil, nil, err
@@ -68,7 +75,9 @@ func (i deploymentRepo) Create(ctx context.Context, deployment *models.Deploymen
 }
 
 func (i deploymentRepo) Update(ctx context.Context, deployment *models.Deployment) (*models.Deployment, error) {
-	if err := i.db.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Updates(deployment).Error; err != nil {
+	if err := i.db.WithContext(ctx).
+		Session(&gorm.Session{FullSaveAssociations: true}).
+		Updates(deployment).Error; err != nil {
 		return nil, err
 	}
 
