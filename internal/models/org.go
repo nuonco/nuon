@@ -9,8 +9,7 @@ type Org struct {
 	CreatedByID string
 	Name        string `gorm:"uniqueIndex"`
 	Apps        []App  `faker:"-"`
-	WorkflowID  string
-	IsNew       bool `gorm:"-:all"`
+	IsNew       bool   `gorm:"-:all"`
 }
 
 func (Org) IsNode() {}
