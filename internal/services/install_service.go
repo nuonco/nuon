@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/api/internal/utils"
 	"github.com/powertoolsdev/api/internal/workflows"
 	tclient "go.temporal.io/sdk/client"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -24,17 +25,19 @@ type InstallService interface {
 var _ InstallService = (*installService)(nil)
 
 type installService struct {
+	appRepo   repos.AppRepo
+	log       *zap.Logger
 	repo      repos.InstallRepo
 	wkflowMgr workflows.InstallWorkflowManager
-	appRepo   repos.AppRepo
 }
 
-func NewInstallService(db *gorm.DB, temporalClient tclient.Client) *installService {
+func NewInstallService(db *gorm.DB, temporalClient tclient.Client, log *zap.Logger) *installService {
 	installRepo := repos.NewInstallRepo(db)
 	return &installService{
+		appRepo:   repos.NewAppRepo(db),
+		log:       log,
 		repo:      installRepo,
 		wkflowMgr: workflows.NewInstallWorkflowManager(temporalClient),
-		appRepo:   repos.NewAppRepo(db),
 	}
 }
 
@@ -43,6 +46,9 @@ func (i *installService) deprovisionInstall(ctx context.Context, install *models
 	// here etc. Maybe a method on the installRepo, called GetAppOrgID?
 	app, err := i.appRepo.Get(ctx, install.AppID)
 	if err != nil {
+		i.log.Error("failed to retrieve app",
+			zap.String("appID", install.AppID.String()),
+			zap.String("error", err.Error()))
 		return err
 	}
 
@@ -55,15 +61,24 @@ func (i *installService) DeleteInstall(ctx context.Context, inputID string) (boo
 
 	savedInstall, err := i.repo.Get(ctx, installID)
 	if err != nil {
+		i.log.Error("failed to retrieve install",
+			zap.String("installID", installID.String()),
+			zap.String("error", err.Error()))
 		return false, err
 	}
 
 	success, err := i.repo.Delete(ctx, installID)
 	if err != nil {
+		i.log.Error("failed to delete install",
+			zap.String("installID", installID.String()),
+			zap.String("error", err.Error()))
 		return false, err
 	}
 
 	if err := i.deprovisionInstall(ctx, savedInstall); err != nil {
+		i.log.Error("failed to deprovision install",
+			zap.Any("savedInstall", savedInstall),
+			zap.String("error", err.Error()))
 		return false, err
 	}
 
@@ -74,22 +89,39 @@ func (i *installService) GetInstall(ctx context.Context, inputID string) (*model
 	// parsing the uuid while ignoring the error handling since we do this at protobuf level
 	installID, _ := uuid.Parse(inputID)
 
-	return i.repo.Get(ctx, installID)
+	install, err := i.repo.Get(ctx, installID)
+	if err != nil {
+		i.log.Error("failed to retrieve install",
+			zap.String("installID", installID.String()),
+			zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	return install, nil
 }
 
-func (i *installService) GetAppInstalls(
-	ctx context.Context,
-	id string,
-	options *models.ConnectionOptions,
-) ([]*models.Install, *utils.Page, error) {
+func (i *installService) GetAppInstalls(ctx context.Context, id string, options *models.ConnectionOptions) ([]*models.Install, *utils.Page, error) {
 	// parsing the uuid while ignoring the error handling since we do this at protobuf level
 	appID, _ := uuid.Parse(id)
-	return i.repo.ListByApp(ctx, appID, options)
+
+	installs, pg, err := i.repo.ListByApp(ctx, appID, options)
+	if err != nil {
+		i.log.Error("failed to retrieve app's installs",
+			zap.String("appID", appID.String()),
+			zap.Any("options", *options),
+			zap.String("error", err.Error()))
+		return nil, nil, err
+	}
+
+	return installs, pg, nil
 }
 
 func (i *installService) updateInstall(ctx context.Context, input models.InstallInput) (*models.Install, error) {
 	install, err := i.GetInstall(ctx, *input.ID)
 	if err != nil {
+		i.log.Error("failed to retrieve install",
+			zap.String("installID", *input.ID),
+			zap.String("error", err.Error()))
 		return nil, err
 	}
 
@@ -106,10 +138,16 @@ func (i *installService) updateInstall(ctx context.Context, input models.Install
 
 	updatedInstall, err := i.repo.Update(ctx, install)
 	if err != nil {
+		i.log.Error("failed to update install",
+			zap.Any("install", install),
+			zap.String("error", err.Error()))
 		return nil, err
 	}
 
 	if err := i.provisionInstall(ctx, install); err != nil {
+		i.log.Error("failed to provision install",
+			zap.Any("install", install),
+			zap.String("error", err.Error()))
 		return nil, err
 	}
 	return updatedInstall, nil
@@ -120,6 +158,9 @@ func (i *installService) provisionInstall(ctx context.Context, install *models.I
 	// here etc. Maybe a method on the installRepo, called GetAppOrgID?
 	app, err := i.appRepo.Get(ctx, install.AppID)
 	if err != nil {
+		i.log.Error("failed to retrieve app",
+			zap.String("appID", install.AppID.String()),
+			zap.String("error", err.Error()))
 		return err
 	}
 
@@ -155,11 +196,18 @@ func (i *installService) UpsertInstall(ctx context.Context, input models.Install
 
 	savedInstall, err := i.repo.Create(ctx, &install)
 	if err != nil {
+		i.log.Error("failed to create install",
+			zap.Any("install", install),
+			zap.String("error", err.Error()))
 		return nil, err
 	}
 
 	if err := i.provisionInstall(ctx, savedInstall); err != nil {
+		i.log.Error("failed to provision install",
+			zap.Any("install", install),
+			zap.String("error", err.Error()))
 		return nil, err
 	}
+
 	return savedInstall, nil
 }
