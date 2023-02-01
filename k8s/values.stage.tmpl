@@ -10,3 +10,8 @@ configmap:
 serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: $TFO_EKS_ROLE_ARN
+
+service:
+  main:
+    annotations:
+      external-dns.alpha.kubernetes.io/internal-hostname: api.nuon.us-west-2.stage.nuon.cloud
