@@ -19,6 +19,7 @@ func init() {
 	config.RegisterDefault("db_use_zap", false)
 	config.RegisterDefault("db_use_iam", false)
 	config.RegisterDefault("db_region", "us-west-2")
+	config.RegisterDefault("db_migrations_path", "./migrations")
 
 	// defaults for temporal
 	config.RegisterDefault("temporal_host", "localhost:7233")
@@ -37,15 +38,16 @@ type Config struct {
 	HTTPAddress string `config:"http_address" validate:"required"`
 
 	// database connection parameters
-	DBName     string `config:"db_name"`
-	DBHost     string `config:"db_host"`
-	DBPort     string `config:"db_port"`
-	DBSSLMode  string `config:"db_ssl_mode"`
-	DBPassword string `config:"db_password"`
-	DBUser     string `config:"db_user"`
-	DBZapLog   bool   `config:"db_use_zap"`
-	DBUseIAM   bool   `config:"db_use_iam"`
-	DBRegion   string `config:"db_region"`
+	DBName           string `config:"db_name"`
+	DBHost           string `config:"db_host"`
+	DBPort           string `config:"db_port"`
+	DBSSLMode        string `config:"db_ssl_mode"`
+	DBPassword       string `config:"db_password"`
+	DBUser           string `config:"db_user"`
+	DBZapLog         bool   `config:"db_use_zap"`
+	DBUseIAM         bool   `config:"db_use_iam"`
+	DBRegion         string `config:"db_region"`
+	DBMigrationsPath string `config:"db_migrations_path"`
 
 	// temporal configuration
 	TemporalHost      string `config:"temporal_host"`

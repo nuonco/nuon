@@ -11,6 +11,7 @@ configmap:
     DB_SSL_MODE: verify-full
     DB_USE_ZAP: 'true'
     DB_USE_IAM: 'true'
+    DB_MIGRATIONS_PATH: /migrations
 
 envSecrets:
   - name: "GITHUB_APP_KEY"
