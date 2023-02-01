@@ -110,7 +110,7 @@ test:
         --pull postgres:13.4-alpine
         RUN  \
             wait_for_pg.sh \
-            && go run main.go migrate \
+            && go run main.go migrate up\
             && go test -v ./...
     END
     SAVE IMAGE --push $GHCR_IMAGE:test
@@ -125,7 +125,7 @@ test-integration:
         --pull postgres:13.4-alpine
         RUN \
             wait_for_pg.sh \
-            && go run main.go migrate \
+            && go run main.go migrate up\
             && go test \
                 -tags=integration \
                 ./...
@@ -151,7 +151,7 @@ lint:
 DEPS:
     COMMAND
     COPY go.mod go.sum .
-    COPY --dir cmd internal .
+    COPY --dir cmd internal migrations .
     COPY *.go .
     DO shared-configs+SETUP_SSH --GITHUB_ACTIONS=$GITHUB_ACTIONS
     RUN --ssh git config --global --add safe.directory "$(pwd)" \
