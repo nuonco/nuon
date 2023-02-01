@@ -1,21 +1,21 @@
 package cmd
 
 import (
-	"fmt"
+	"errors"
 	"log"
 
 	_ "github.com/lib/pq"
 	"github.com/powertoolsdev/api/internal"
 	databaseclient "github.com/powertoolsdev/api/internal/clients/database"
-	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/go-common/config"
+	"github.com/pressly/goose/v3"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 var migrateCmd = &cobra.Command{
-	Use:   "migrate",
-	Short: "migrate the database using gorm auto migrate",
+	Use:   "migrate up|down|status",
+	Short: "migrate the database using goose",
 	Run:   runMigrate,
 }
 
@@ -40,36 +40,28 @@ func runMigrate(cmd *cobra.Command, args []string) {
 		log.Fatalf(err.Error())
 	}
 
-	if err := migrate(&cfg, l); err != nil {
+	if len(args) != 1 {
+		l.Fatal("please provide an arg up|down|status", zap.Error(errors.New("incorrect arguments provided")))
+	}
+
+	if err := migrate(&cfg, args); err != nil {
 		log.Fatal("failed to run migration", zap.Error(err))
 	}
 }
 
-func migrate(cfg *internal.Config, l *zap.Logger) error {
+func migrate(cfg *internal.Config, args []string) error {
 	db, err := databaseclient.New(databaseclient.WithConfig(cfg))
 	if err != nil {
-		return fmt.Errorf("unable to create database client: %w", err)
+		return err
 	}
 
-	objs := []interface{}{
-		&models.App{},
-		&models.AWSSettings{},
-		&models.Component{},
-		&models.Deployment{},
-		&models.Domain{},
-		&models.GCPSettings{},
-		&models.GithubConfig{},
-		&models.Install{},
-		&models.Org{},
-		&models.UserOrg{},
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
 	}
 
-	for idx, o := range objs {
-		l.Info(fmt.Sprintf("executing migration %v", idx))
-		err = db.AutoMigrate(o)
-		if err != nil {
-			return fmt.Errorf("unable to execute migration %v: %w", idx, err)
-		}
+	if err := goose.Run(args[0], sqlDB, "./migrations"); err != nil {
+		return err
 	}
 
 	return nil
