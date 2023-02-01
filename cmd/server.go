@@ -118,7 +118,7 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.L
 		return fmt.Errorf("unable to initialize orgs server: %w", err)
 	}
 
-	userSvc := services.NewUserService(db)
+	userSvc := services.NewUserService(db, log)
 	_, err = usersserver.New(usersserver.WithHTTPMux(mux), usersserver.WithService(userSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize orgs server: %w", err)
