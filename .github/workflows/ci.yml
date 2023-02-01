@@ -32,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TF_OUT: ${{ github.workspace }}/tf-out.json
+    timeout-minutes: 7
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -77,6 +78,7 @@ jobs:
     name: Lint
     needs: terraform
     runs-on: ubuntu-latest
+    timeout-minutes: 7
     steps:
       - name: Generate token
         id: generate_token
@@ -132,6 +134,7 @@ jobs:
     name: Test
     needs: terraform
     runs-on: ubuntu-latest
+    timeout-minutes: 7
     steps:
       - name: Generate token
         id: generate_token
@@ -181,6 +184,7 @@ jobs:
     permissions:
       contents: read
       statuses: write
+    timeout-minutes: 7
     steps:
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
@@ -196,6 +200,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.semver.outputs.next }}
+    timeout-minutes: 7
     steps:
       - name: Generate token
         id: generate_token
@@ -286,4 +291,16 @@ jobs:
     secrets: inherit
     with:
       env: stage
+      tag: ${{ needs.release.outputs.image_tag }}
+
+  deploy-prod:
+    name: Deploy (prod)
+    needs:
+      - release
+      - deploy-stage
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      env: prod
       tag: ${{ needs.release.outputs.image_tag }}
