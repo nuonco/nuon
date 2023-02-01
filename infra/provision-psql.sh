@@ -6,10 +6,10 @@ set -x
 # NOTE: we use the instance host for both this script, and connecting to the DB since aws iam auth doesn't seem to work
 # with any user created host records.
 INSTANCE_ADDR="$(terraform output -raw db_instance_host)"
-INSTANCE_DB="$(terraform output -raw db_instance_name)"
+INSTANCE_DB="$(terraform output -raw db_instance_admin_name)"
 INSTANCE_PORT="$(terraform output -raw db_instance_port)"
-INSTANCE_USER="$(terraform output -raw db_instance_username)"
-INSTANCE_PW="$(terraform output -raw db_instance_password)"
+INSTANCE_USER="$(terraform output -raw db_instance_admin_username)"
+INSTANCE_PW="$(terraform output -raw db_instance_admin_password)"
 
 cat <<EOF | PGPASSWORD="$INSTANCE_PW" psql \
     -h "$INSTANCE_ADDR" \
