@@ -26,7 +26,7 @@ defaults:
 permissions:
   id-token: write
   contents: read
-  packages: read
+  packages: write
 
 jobs:
   deploy:
