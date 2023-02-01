@@ -24,8 +24,17 @@ defaults:
 
 env:
   REPO_NAME: ${{ github.event.repository.name }}
-  # yamllint disable-line rule:line-length
-  DEPENDENCY_REPOS: go-aws-assume-role,go-common,go-generics,go-terraform,go-kube,go-sender,go-uploader,go-waypoint,go-workflows-meta,protos
+  DEPENDENCY_REPOS: >-
+    go-aws-assume-role,
+    go-common,
+    go-generics,
+    go-terraform,
+    go-kube,
+    go-sender,
+    go-uploader,
+    go-waypoint,
+    go-workflows-meta,
+    protos
 
 jobs:
   terraform:
@@ -33,6 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TF_OUT: ${{ github.workspace }}/tf-out.json
+    timeout-minutes: 7
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -78,6 +88,7 @@ jobs:
     name: Lint
     needs: terraform
     runs-on: ubuntu-latest
+    timeout-minutes: 7
     steps:
       - name: Generate token
         id: generate_token
@@ -110,9 +121,7 @@ jobs:
           aws_role: ${{ env.TFO_GH_ROLE_ARN }}
           aws_region: ${{ env.TFO_REGION }}
 
-      # TODO(jdt): move to earthly and remove this
       - name: Terraform init
-        if: github.repository != 'powertoolsdev/template-go-workers'
         env:
           TF_WORKSPACE: stage
         run: |
@@ -135,6 +144,7 @@ jobs:
     name: Test
     needs: terraform
     runs-on: ubuntu-latest
+    timeout-minutes: 7
     steps:
       - name: Generate token
         id: generate_token
@@ -184,6 +194,7 @@ jobs:
     permissions:
       contents: read
       statuses: write
+    timeout-minutes: 7
     steps:
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
@@ -199,6 +210,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.semver.outputs.next }}
+    timeout-minutes: 7
     steps:
       - name: Generate token
         id: generate_token
@@ -289,4 +301,16 @@ jobs:
     secrets: inherit
     with:
       env: stage
+      tag: ${{ needs.release.outputs.image_tag }}
+
+  deploy-prod:
+    name: Deploy (prod)
+    needs:
+      - release
+      - deploy-stage
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      env: prod
       tag: ${{ needs.release.outputs.image_tag }}
