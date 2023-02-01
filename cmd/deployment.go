@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/powertoolsdev/go-common/config"
@@ -10,7 +11,12 @@ import (
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 	"github.com/powertoolsdev/workers-deployments/internal/start/instances"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/contrib/opentelemetry"
+	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
 	"go.uber.org/zap"
 )
@@ -66,8 +72,28 @@ func deploymentRun(cmd *cobra.Command, args []string) {
 }
 
 func runDeploymentWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interface{}) error {
+	otlpExporter, err := otlptracegrpc.New(context.Background(),
+		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:4317", cfg.NodeIP)))
+	if err != nil {
+		return fmt.Errorf("unable to create otlptrace exporter: %w", err)
+	}
+
+	tracerProvider := trace.NewTracerProvider(
+		trace.WithBatcher(otlpExporter),
+	)
+
+	otel.SetTracerProvider(tracerProvider)
+	tracer := tracerProvider.Tracer("nuon.workers-deployments")
+
+	traceIntercepter, err := opentelemetry.NewTracingInterceptor(opentelemetry.TracerOptions{
+		Tracer: tracer,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to get tracing interceptor: %w", err)
+	}
 	w := worker.New(c, "deployment", worker.Options{
 		MaxConcurrentActivityExecutionSize: 1,
+		Interceptors:                       []interceptor.WorkerInterceptor{traceIntercepter},
 	})
 
 	if err := cfg.Validate(); err != nil {
