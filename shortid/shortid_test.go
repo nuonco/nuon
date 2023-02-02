@@ -175,7 +175,7 @@ func Test_ToUUIDs(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			ids := test.idsFn()
-			results, err := ToUUIDS(ids...)
+			results, err := ToUUIDs(ids...)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

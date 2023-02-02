@@ -15,8 +15,8 @@ const (
 	uuidBytes  = 64
 )
 
-// ToUUIDS parses a list of string shortids into a list of uuids, failing all if any fail
-func ToUUIDS(strs ...string) ([]uuid.UUID, error) {
+// ToUUIDs parses a list of string shortids into a list of uuids, failing all if any fail
+func ToUUIDs(strs ...string) ([]uuid.UUID, error) {
 	ids := make([]uuid.UUID, len(strs))
 
 	for idx, s := range strs {
