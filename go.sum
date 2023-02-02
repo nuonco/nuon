@@ -727,6 +727,10 @@ github.com/powertoolsdev/go-aws-assume-role v0.0.3 h1:JBIzJ0aGwrcM3gfnou2zSiZ+gw
 github.com/powertoolsdev/go-aws-assume-role v0.0.3/go.mod h1:5lWSzj7dwPRBFEa6Ch7wqz8lThFFnu+5yu1jQwpFRnw=
 github.com/powertoolsdev/go-common v1.3.0 h1:4uHiZsg4QfNZlWgCoJ3uuJHacwTUAP0KEObAFN8+5RM=
 github.com/powertoolsdev/go-common v1.3.0/go.mod h1:NXL1EfO9ZZZFHA8VLLOYSVIdEZL38WgK+jDzYQPmXIQ=
+github.com/powertoolsdev/go-common v1.4.0 h1:qegXw84YoCinR6NpR9A/egMHTukqSZcXFvryghO8OUo=
+github.com/powertoolsdev/go-common v1.4.0/go.mod h1:NXL1EfO9ZZZFHA8VLLOYSVIdEZL38WgK+jDzYQPmXIQ=
+github.com/powertoolsdev/go-common v1.4.1 h1:VXKzGRdSZ7QMNJz80BoKYr2BXOm7DEhfiqgjqzfqvIM=
+github.com/powertoolsdev/go-common v1.4.1/go.mod h1:NXL1EfO9ZZZFHA8VLLOYSVIdEZL38WgK+jDzYQPmXIQ=
 github.com/powertoolsdev/go-generics v0.0.1 h1:We48KVDTRRDm4TeKe0BFJUghzgjpcyaX364797GYxbU=
 github.com/powertoolsdev/go-generics v0.0.1/go.mod h1:ZfpJeyS0qdYRV7CAJhxq1CxjED+PhR/Y+yMc5A4Rjsg=
 github.com/powertoolsdev/go-kube v0.1.3 h1:5qRDn3yOv4SMUCl5Nk+EJdPeyZwPR85nQOzbesbfpRY=
@@ -737,6 +741,12 @@ github.com/powertoolsdev/go-waypoint/v2 v2.0.2 h1:WJ1PjWuz2u8UcsFfEyyRBvAAcb3Hcc
 github.com/powertoolsdev/go-waypoint/v2 v2.0.2/go.mod h1:LUSZVLwyW41IufvV+k9YO4Jd0dG5G9rpWXXzH55HhIQ=
 github.com/powertoolsdev/protos v0.49.0 h1:aU5ietk+K3Kuve7EJibtrtQeODFoV8aobKFUn9Vlai4=
 github.com/powertoolsdev/protos v0.49.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.56.0 h1:uJJtt+KFTPbXJrtCOKb7+swzMFq+bojoK2xwzWf0znk=
+github.com/powertoolsdev/protos v0.56.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.57.0 h1:UgPqRr2Me/4VKSVfa0uTHg0jnDm18KPq5/T2/fBZqBY=
+github.com/powertoolsdev/protos v0.57.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.57.1 h1:EWB/vrBosWlH9Wb98CuZKoISBdqh7k+TxmOzcslJOEg=
+github.com/powertoolsdev/protos v0.57.1/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/robfig/cron v1.2.0 h1:ZjScXvvxeQ63Dbyxy76Fj3AT3Ut0aKsyd2/tl3DTMuQ=
 github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=

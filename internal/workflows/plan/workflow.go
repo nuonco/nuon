@@ -6,7 +6,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/powertoolsdev/go-common/shortid"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
+	planactivitiesv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1/activities/v1"
 	workers "github.com/powertoolsdev/workers-executors/internal"
 )
 
@@ -41,14 +43,40 @@ func (w *wkflow) CreatePlan(ctx workflow.Context, req *planv1.CreatePlanRequest)
 		return resp, err
 	}
 
-	cpReq := CreatePlanRequest{
-		OrgID:                          req.OrgId,
-		AppID:                          req.AppId,
-		DeploymentID:                   req.DeploymentId,
-		DeploymentsBucketPrefix:        getS3Prefix(req),
-		DeploymentsBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
-		Component:                      req.Component,
-		Config:                         w.cfg,
+	longIDs, err := shortid.ToUUIDs(req.OrgId, req.AppId, req.DeploymentId)
+	if err != nil {
+		return resp, fmt.Errorf("invalid uuids: %w", err)
+	}
+	cpReq := &planactivitiesv1.CreatePlanRequest{
+		Type: req.Type,
+		Metadata: &planv1.Metadata{
+			OrgId:             longIDs[0].String(),
+			OrgShortId:        req.OrgId,
+			AppShortId:        req.AppId,
+			AppId:             longIDs[1].String(),
+			DeploymentShortId: req.DeploymentId,
+			DeploymentId:      longIDs[2].String(),
+		},
+		OrgMetadata: &planv1.OrgMetadata{
+			EcrRegion:      w.cfg.OrgsECRRegion,
+			EcrRegistryId:  w.cfg.OrgsECRRegistryID,
+			EcrRegistryArn: w.cfg.OrgsECRRegistryARN,
+			Buckets: &planv1.OrgBuckets{
+				DeploymentsBucket:   w.cfg.DeploymentsBucket,
+				InstallationsBucket: w.cfg.InstallationsBucket,
+				OrgsBucket:          w.cfg.OrgsBucket,
+				InstancesBucket:     w.cfg.InstancesBucket,
+			},
+			IamRoleArns: &planv1.OrgIAMRoleArns{
+				DeploymentsRoleArn:   fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
+				InstallationsRoleArn: fmt.Sprintf(w.cfg.OrgsInstallationsRoleTemplate, req.OrgId),
+				OdrRoleArn:           fmt.Sprintf(w.cfg.OrgsOdrRoleTemplate, req.OrgId),
+				InstancesRoleArn:     fmt.Sprintf(w.cfg.OrgsInstancesRoleTemplate, req.OrgId),
+				InstallerRoleArn:     fmt.Sprintf(w.cfg.OrgsInstallerRoleTemplate, req.OrgId),
+				OrgsRoleArn:          fmt.Sprintf(w.cfg.OrgsOrgsRoleTemplate, req.OrgId),
+			},
+		},
+		Component: req.Component,
 	}
 	cpResp, err := execCreatePlan(ctx, act, cpReq)
 	if err != nil {
@@ -63,10 +91,10 @@ func (w *wkflow) CreatePlan(ctx workflow.Context, req *planv1.CreatePlanRequest)
 func execCreatePlan(
 	ctx workflow.Context,
 	act *Activities,
-	req CreatePlanRequest,
-) (CreatePlanResponse, error) {
+	req *planactivitiesv1.CreatePlanRequest,
+) (*planactivitiesv1.CreatePlanResponse, error) {
 	l := workflow.GetLogger(ctx)
-	var resp CreatePlanResponse
+	resp := &planactivitiesv1.CreatePlanResponse{}
 
 	l.Debug("executing create plan activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.CreatePlanAct, req)

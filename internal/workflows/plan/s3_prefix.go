@@ -7,6 +7,8 @@ import (
 )
 
 // getS3Prefix returns the prefix to be used for the plan and it's encompassed files
+//
+//nolint:all
 func getS3Prefix(req *planv1.CreatePlanRequest) string {
 	return fmt.Sprintf("org=%s/app=%s/component=%s/deployment=%s",
 		req.OrgId,
