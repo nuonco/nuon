@@ -248,3 +248,134 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = CreatePlanRequestValidationError{}
+
+// Validate checks the field values on CreatePlanResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreatePlanResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreatePlanResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreatePlanResponseMultiError, or nil if none found.
+func (m *CreatePlanResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreatePlanResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetPlan()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreatePlanResponseValidationError{
+					field:  "Plan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreatePlanResponseValidationError{
+					field:  "Plan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetPlan()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreatePlanResponseValidationError{
+				field:  "Plan",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CreatePlanResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreatePlanResponseMultiError is an error wrapping multiple validation errors
+// returned by CreatePlanResponse.ValidateAll() if the designated constraints
+// aren't met.
+type CreatePlanResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreatePlanResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreatePlanResponseMultiError) AllErrors() []error { return m }
+
+// CreatePlanResponseValidationError is the validation error returned by
+// CreatePlanResponse.Validate if the designated constraints aren't met.
+type CreatePlanResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreatePlanResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreatePlanResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreatePlanResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreatePlanResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreatePlanResponseValidationError) ErrorName() string {
+	return "CreatePlanResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreatePlanResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreatePlanResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreatePlanResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreatePlanResponseValidationError{}

@@ -28,8 +28,8 @@ type ProvisionRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	DryRun bool   `protobuf:"varint,1,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
-	OrgId  string `protobuf:"bytes,2,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
-	AppId  string `protobuf:"bytes,3,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	OrgId  string `protobuf:"bytes,2,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty" faker:"uuid_hyphenated"`
+	AppId  string `protobuf:"bytes,3,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty" faker:"uuid_hyphenated"`
 }
 
 func (x *ProvisionRequest) Reset() {
