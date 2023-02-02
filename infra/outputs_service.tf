@@ -46,7 +46,7 @@ output "org_deployments_bucket_name" {
 output "workers_iam_role_arn_prefix" {
   description = "iam role prefix for the worker service roles that should assume org iam roles"
 
-  value = "arn:aws:iam::${local.accounts[var.env].id}:role/eks/eks-workers-*"
+  value = "arn:aws:iam::${local.accounts[var.env].id}:role/eks/eks-*"
 }
 
 output "orgs_account_iam_access_role_arn" {
