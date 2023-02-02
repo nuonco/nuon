@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package executors.v1.plan.v1;
 
+import "executors/v1/plan/v1/waypoint_server.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -30,6 +31,22 @@ message OrgMetadata {
 
   OrgBuckets buckets = 4;
   OrgIAMRoleArns iam_role_arns = 5;
+  WaypointServerRef waypoint_server = 6;
+}
+
+message OrgWaypointServer {
+  string server_address = 1 [
+    (validate.rules).string.min_len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+  string secret_namespace = 2 [
+    (validate.rules).string.min_len = 5,
+    (tagger.tags) = "faker:\"len=10\""
+  ];
+  string secret_name = 3 [
+    (validate.rules).string.min_len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
 }
 
 message OrgBuckets {

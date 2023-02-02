@@ -4,6 +4,7 @@ package executors.v1.plan.v1;
 
 import "component/v1/component.proto";
 import "executors/v1/plan/v1/metadata.proto";
+import "executors/v1/plan/v1/waypoint_server.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -116,12 +117,4 @@ message WaypointRef {
 
   string hcl_config = 9 [(validate.rules).string.min_bytes = 1];
   string hcl_config_format = 10 [(validate.rules).string.min_bytes = 1];
-}
-
-// WaypointServerRef represents the waypoint server that should be used
-message WaypointServerRef {
-  string address = 1 [(validate.rules).string.min_bytes = 1];
-
-  string token_secret_name = 2 [(validate.rules).string.min_bytes = 1];
-  string token_secret_namespace = 3 [(validate.rules).string.min_bytes = 1];
 }
