@@ -90,6 +90,64 @@ func (m *OrgMetadata) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if all {
+		switch v := interface{}(m.GetBuckets()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, OrgMetadataValidationError{
+					field:  "Buckets",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, OrgMetadataValidationError{
+					field:  "Buckets",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetBuckets()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return OrgMetadataValidationError{
+				field:  "Buckets",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetIamRoleArns()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, OrgMetadataValidationError{
+					field:  "IamRoleArns",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, OrgMetadataValidationError{
+					field:  "IamRoleArns",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetIamRoleArns()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return OrgMetadataValidationError{
+				field:  "IamRoleArns",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return OrgMetadataMultiError(errors)
 	}

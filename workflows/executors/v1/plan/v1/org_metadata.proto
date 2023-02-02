@@ -27,6 +27,9 @@ message OrgMetadata {
     (validate.rules).string.min_len = 20,
     (tagger.tags) = "faker:\"len=20\""
   ];
+
+  OrgBuckets buckets = 4;
+  OrgIAMRoleArns iam_role_arns = 5;
 }
 
 message OrgBuckets {
