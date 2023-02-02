@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package shared.v1;
 
+import "apps/v1/provision.proto";
 import "deployments/v1/start.proto";
 import "installs/v1/deprovision.proto";
 import "installs/v1/provision.proto";
@@ -47,5 +48,7 @@ message ResponseRef {
     orgs.v1.TeardownResponse org_teardown = 5;
 
     instances.v1.ProvisionResponse instance_provision = 6;
+
+    apps.v1.ProvisionResponse apps_provision = 7;
   }
 }

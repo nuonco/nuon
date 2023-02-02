@@ -859,6 +859,47 @@ func (m *RequestRef) validate(all bool) error {
 			}
 		}
 
+	case *RequestRef_AppProvision:
+		if v == nil {
+			err := RequestRefValidationError{
+				field:  "Request",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAppProvision()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, RequestRefValidationError{
+						field:  "AppProvision",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, RequestRefValidationError{
+						field:  "AppProvision",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAppProvision()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return RequestRefValidationError{
+					field:  "AppProvision",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
