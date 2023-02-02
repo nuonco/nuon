@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/powertoolsdev/api/internal/models"
+	appsv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
 	tclient "go.temporal.io/sdk/client"
 )
 
@@ -21,11 +22,6 @@ type AppWorkflowManager interface {
 
 var _ AppWorkflowManager = (*appWorkflowManager)(nil)
 
-type appProvisionWorkflowArgs struct {
-	OrgID string `json:"org_id"`
-	AppID string `json:"app_id"`
-}
-
 type appWorkflowManager struct {
 	tc temporalClient
 }
@@ -34,11 +30,11 @@ func (a *appWorkflowManager) Provision(ctx context.Context, app *models.App) err
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: "apps",
 	}
-	args := appProvisionWorkflowArgs{
-		OrgID: app.OrgID.String(),
-		AppID: app.ID.String(),
+	args := appsv1.ProvisionRequest{
+		OrgId: app.OrgID.String(),
+		AppId: app.ID.String(),
 	}
 
-	_, err := a.tc.ExecuteWorkflow(ctx, opts, "Provision", args)
+	_, err := a.tc.ExecuteWorkflow(ctx, opts, "Provision", &args)
 	return err
 }
