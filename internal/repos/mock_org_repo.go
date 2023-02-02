@@ -12,7 +12,6 @@ import (
 	uuid "github.com/google/uuid"
 	models "github.com/powertoolsdev/api/internal/models"
 	utils "github.com/powertoolsdev/api/internal/utils"
-	gorm "gorm.io/gorm"
 )
 
 // MockOrgRepo is a mock of OrgRepo interface.
@@ -83,21 +82,6 @@ func (mr *MockOrgRepoMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockOrgRepo)(nil).Get), arg0, arg1)
 }
 
-// GetBySlug mocks base method.
-func (m *MockOrgRepo) GetBySlug(arg0 context.Context, arg1 string) (*models.Org, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBySlug", arg0, arg1)
-	ret0, _ := ret[0].(*models.Org)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetBySlug indicates an expected call of GetBySlug.
-func (mr *MockOrgRepoMockRecorder) GetBySlug(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBySlug", reflect.TypeOf((*MockOrgRepo)(nil).GetBySlug), arg0, arg1)
-}
-
 // GetPageByUser mocks base method.
 func (m *MockOrgRepo) GetPageByUser(arg0 context.Context, arg1 string, arg2 *models.ConnectionOptions) ([]*models.Org, *utils.Page, error) {
 	m.ctrl.T.Helper()
@@ -112,32 +96,4 @@ func (m *MockOrgRepo) GetPageByUser(arg0 context.Context, arg1 string, arg2 *mod
 func (mr *MockOrgRepoMockRecorder) GetPageByUser(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPageByUser", reflect.TypeOf((*MockOrgRepo)(nil).GetPageByUser), arg0, arg1, arg2)
-}
-
-// QueryAll mocks base method.
-func (m *MockOrgRepo) QueryAll(arg0 context.Context) *gorm.DB {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QueryAll", arg0)
-	ret0, _ := ret[0].(*gorm.DB)
-	return ret0
-}
-
-// QueryAll indicates an expected call of QueryAll.
-func (mr *MockOrgRepoMockRecorder) QueryAll(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryAll", reflect.TypeOf((*MockOrgRepo)(nil).QueryAll), arg0)
-}
-
-// SetWorkflowID mocks base method.
-func (m *MockOrgRepo) SetWorkflowID(arg0 context.Context, arg1 uuid.UUID, arg2 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetWorkflowID", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetWorkflowID indicates an expected call of SetWorkflowID.
-func (mr *MockOrgRepoMockRecorder) SetWorkflowID(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetWorkflowID", reflect.TypeOf((*MockOrgRepo)(nil).SetWorkflowID), arg0, arg1, arg2)
 }

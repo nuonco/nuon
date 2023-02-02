@@ -23,8 +23,12 @@ import (
 type DeploymentService interface {
 	// GetDeployment returns a deployment by id
 	GetDeployment(context.Context, string) (*models.Deployment, error)
+	// GetAppDeployments returns deployment for any of the provided app IDs
+	GetAppDeployments(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
 	// GetComponentDeployments returns deployment for any of the provided component IDs
 	GetComponentDeployments(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
+	// GetInstallDeployments returns deployment for any of the provided install IDs
+	GetInstallDeployments(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
 	// CreateDeployment creates a new deployment for the specified component id
 	CreateDeployment(context.Context, *models.DeploymentInput) (*models.Deployment, error)
 }
@@ -76,6 +80,46 @@ func (i *deploymentService) GetComponentDeployments(ctx context.Context, ids []s
 	if err != nil {
 		i.log.Error("failed to retrieve component's deployments",
 			zap.Any("componentIDs", uuids),
+			zap.Any("options", *options),
+			zap.String("error", err.Error()))
+		return nil, nil, err
+	}
+
+	return deployments, pg, nil
+}
+
+func (i *deploymentService) GetAppDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+	uuids := make([]uuid.UUID, 0)
+	for _, v := range ids {
+		// parsing the uuid while ignoring the error handling since we do this at protobuf level
+		appID, _ := uuid.Parse(v)
+		uuids = append(uuids, appID)
+	}
+
+	deployments, pg, err := i.repo.ListByApps(ctx, uuids, options)
+	if err != nil {
+		i.log.Error("failed to retrieve apps's deployments",
+			zap.Any("appIDs", uuids),
+			zap.Any("options", *options),
+			zap.String("error", err.Error()))
+		return nil, nil, err
+	}
+
+	return deployments, pg, nil
+}
+
+func (i *deploymentService) GetInstallDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+	uuids := make([]uuid.UUID, 0)
+	for _, v := range ids {
+		// parsing the uuid while ignoring the error handling since we do this at protobuf level
+		installID, _ := uuid.Parse(v)
+		uuids = append(uuids, installID)
+	}
+
+	deployments, pg, err := i.repo.ListByInstalls(ctx, uuids, options)
+	if err != nil {
+		i.log.Error("failed to retrieve install's deployments",
+			zap.Any("installIDs", uuids),
 			zap.Any("options", *options),
 			zap.String("error", err.Error()))
 		return nil, nil, err
