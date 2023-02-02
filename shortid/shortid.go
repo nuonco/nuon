@@ -15,6 +15,21 @@ const (
 	uuidBytes  = 64
 )
 
+// ToUUIDS parses a list of string shortids into a list of uuids, failing all if any fail
+func ToUUIDS(strs ...string) ([]uuid.UUID, error) {
+	ids := make([]uuid.UUID, len(strs))
+
+	for idx, s := range strs {
+		id, err := ToUUID(s)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse UUID: %v: %w", idx, err)
+		}
+		ids[idx] = id
+	}
+
+	return ids, nil
+}
+
 // ToUUID converts a short id string back into a uuid
 func ToUUID(s string) (uuid.UUID, error) {
 	var u uuid.UUID

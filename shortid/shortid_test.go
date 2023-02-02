@@ -96,7 +96,7 @@ func TestUUID_error(t *testing.T) {
 	}
 }
 
-func Test_parseStrings(t *testing.T) {
+func Test_ParseStrings(t *testing.T) {
 	tests := map[string]struct {
 		idsFn       func() []string
 		assertFn    func(*testing.T, []string)
@@ -131,6 +131,51 @@ func Test_parseStrings(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			ids := test.idsFn()
 			results, err := ParseStrings(ids...)
+			if test.errExpected != nil {
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+			assert.NoError(t, err)
+			test.assertFn(t, results)
+		})
+	}
+}
+
+func Test_ToUUIDs(t *testing.T) {
+	tests := map[string]struct {
+		idsFn       func() []string
+		assertFn    func(*testing.T, []uuid.UUID)
+		errExpected error
+	}{
+		"happy path": {
+			idsFn: func() []string {
+				ids := make([]string, len(validTests))
+				for idx, testID := range validTests {
+					ids[idx] = testID.s
+				}
+				return ids
+			},
+			assertFn: func(t *testing.T, ids []uuid.UUID) {
+				assert.Equal(t, len(validTests), len(ids))
+
+				for idx, testID := range validTests {
+					assert.Equal(t, testID.u, ids[idx])
+				}
+			},
+			errExpected: nil,
+		},
+		"error": {
+			idsFn: func() []string {
+				return []string{"invalid"}
+			},
+			errExpected: fmt.Errorf("invalid"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			ids := test.idsFn()
+			results, err := ToUUIDS(ids...)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
