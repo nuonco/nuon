@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/aws/aws-sdk-go-v2/config v1.18.11
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.49
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.50
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.1
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/hashicorp/go-version v1.6.0
