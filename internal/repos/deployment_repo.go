@@ -15,7 +15,9 @@ import (
 type DeploymentRepo interface {
 	Update(context.Context, *models.Deployment) (*models.Deployment, error)
 	Get(context.Context, uuid.UUID) (*models.Deployment, error)
+	ListByApps(context.Context, []uuid.UUID, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
 	ListByComponents(context.Context, []uuid.UUID, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
+	ListByInstalls(context.Context, []uuid.UUID, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
 	Create(context.Context, *models.Deployment) (*models.Deployment, error)
 }
 
@@ -49,6 +51,60 @@ func (i deploymentRepo) ListByComponents(ctx context.Context, componentIDs []uui
 	tx := i.db.WithContext(ctx).
 		Where("component_id IN ?", componentIDs).
 		Find(&deployments)
+	pg, c, err := utils.NewPaginator(options)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	page, err := pg.Paginate(c, tx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := page.Query(&deployments); err != nil {
+		return nil, nil, err
+	}
+
+	return deployments, &page, nil
+}
+
+func (i deploymentRepo) ListByApps(ctx context.Context, appIDs []uuid.UUID, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+	var deployments []*models.Deployment
+
+	tx := i.db.WithContext(ctx).
+		Where("component_id IN (?)", i.db.Table("components").
+			Select("id").
+			Where("app_id IN ?", appIDs)).
+		Find(&deployments)
+
+	pg, c, err := utils.NewPaginator(options)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	page, err := pg.Paginate(c, tx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := page.Query(&deployments); err != nil {
+		return nil, nil, err
+	}
+
+	return deployments, &page, nil
+}
+
+func (i deploymentRepo) ListByInstalls(ctx context.Context, installIDs []uuid.UUID, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+	var deployments []*models.Deployment
+
+	tx := i.db.WithContext(ctx).
+		Where("component_id IN (?)", i.db.Table("components").
+			Select("id").
+			Where("app_id IN (?)", i.db.Table("installs").
+				Select("app_id").
+				Where("id IN ?", installIDs))).
+		Find(&deployments)
+
 	pg, c, err := utils.NewPaginator(options)
 	if err != nil {
 		return nil, nil, err

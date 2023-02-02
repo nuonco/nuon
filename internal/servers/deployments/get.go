@@ -39,7 +39,7 @@ func (s *server) GetDeploymentsByInstalls(
 	}
 
 	// TODO: add new service to retrieve deployments by install IDs
-	deployments, _, err := s.Svc.GetComponentDeployments(ctx, req.Msg.InstallIds, &models.ConnectionOptions{})
+	deployments, _, err := s.Svc.GetInstallDeployments(ctx, req.Msg.InstallIds, &models.ConnectionOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install deployments: %w", err)
 	}
@@ -78,7 +78,7 @@ func (s *server) GetDeploymentsByApps(
 	}
 
 	// TODO: add new service to retrieve deployments by app IDs
-	deployments, _, err := s.Svc.GetComponentDeployments(ctx, req.Msg.AppIds, &models.ConnectionOptions{})
+	deployments, _, err := s.Svc.GetAppDeployments(ctx, req.Msg.AppIds, &models.ConnectionOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install deployments: %w", err)
 	}
