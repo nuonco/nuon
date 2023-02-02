@@ -12,7 +12,6 @@ message ProvisionIAMRequest {
   ];
 }
 
-// NOTE(jdt): should these be a map or some other structure instead of this?
 message ProvisionIAMResponse {
   string deployments_role_arn = 1 [(validate.rules).string.min_len = 20];
 

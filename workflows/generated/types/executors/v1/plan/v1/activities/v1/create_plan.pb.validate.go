@@ -17,6 +17,8 @@ import (
 	"unicode/utf8"
 
 	"google.golang.org/protobuf/types/known/anypb"
+
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 )
 
 // ensure the imports are used
@@ -33,10 +35,9 @@ var (
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
 	_ = sort.Sort
-)
 
-// define the regex for a UUID once up-front
-var _create_plan_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+	_ = planv1.PlanType(0)
+)
 
 // Validate checks the field values on CreatePlanRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the
@@ -60,76 +61,64 @@ func (m *CreatePlanRequest) validate(all bool) error {
 
 	var errors []error
 
-	if err := m._validateUuid(m.GetOrgId()); err != nil {
-		err = CreatePlanRequestValidationError{
-			field:  "OrgId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+	// no validation rules for Type
+
+	if all {
+		switch v := interface{}(m.GetMetadata()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreatePlanRequestValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreatePlanRequestValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
 		}
-		if !all {
-			return err
+	} else if v, ok := interface{}(m.GetMetadata()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreatePlanRequestValidationError{
+				field:  "Metadata",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
 		}
-		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetOrgShortId()) != 26 {
-		err := CreatePlanRequestValidationError{
-			field:  "OrgShortId",
-			reason: "value length must be 26 runes",
+	if all {
+		switch v := interface{}(m.GetOrgMetadata()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreatePlanRequestValidationError{
+					field:  "OrgMetadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreatePlanRequestValidationError{
+					field:  "OrgMetadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
 		}
-		if !all {
-			return err
+	} else if v, ok := interface{}(m.GetOrgMetadata()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreatePlanRequestValidationError{
+				field:  "OrgMetadata",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
 		}
-		errors = append(errors, err)
-
-	}
-
-	if err := m._validateUuid(m.GetAppId()); err != nil {
-		err = CreatePlanRequestValidationError{
-			field:  "AppId",
-			reason: "value must be a valid UUID",
-			cause:  err,
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if utf8.RuneCountInString(m.GetAppShortId()) != 26 {
-		err := CreatePlanRequestValidationError{
-			field:  "AppShortId",
-			reason: "value length must be 26 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-
-	}
-
-	if err := m._validateUuid(m.GetDeploymentId()); err != nil {
-		err = CreatePlanRequestValidationError{
-			field:  "DeploymentId",
-			reason: "value must be a valid UUID",
-			cause:  err,
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if utf8.RuneCountInString(m.GetDeploymentShortId()) != 26 {
-		err := CreatePlanRequestValidationError{
-			field:  "DeploymentShortId",
-			reason: "value length must be 26 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-
 	}
 
 	if all {
@@ -163,14 +152,6 @@ func (m *CreatePlanRequest) validate(all bool) error {
 
 	if len(errors) > 0 {
 		return CreatePlanRequestMultiError(errors)
-	}
-
-	return nil
-}
-
-func (m *CreatePlanRequest) _validateUuid(uuid string) error {
-	if matched := _create_plan_uuidPattern.MatchString(uuid); !matched {
-		return errors.New("invalid uuid format")
 	}
 
 	return nil

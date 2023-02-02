@@ -69,7 +69,6 @@ func (x *ProvisionIAMRequest) GetOrgId() string {
 	return ""
 }
 
-// NOTE(jdt): should these be a map or some other structure instead of this?
 type ProvisionIAMResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
