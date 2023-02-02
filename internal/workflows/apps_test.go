@@ -7,6 +7,7 @@ import (
 
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/go-generics"
+	appsv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,12 +33,12 @@ func Test_appWorkflowManager_Provision(t *testing.T) {
 
 				args, ok := obj.Calls[0].Arguments[3].([]interface{})
 				assert.True(t, ok)
-				req, ok := args[0].(appProvisionWorkflowArgs)
+				req, ok := args[0].(*appsv1.ProvisionRequest)
 				assert.True(t, ok)
 
 				assert.True(t, ok)
-				assert.Equal(t, app.ID.String(), req.AppID)
-				assert.Equal(t, app.OrgID.String(), req.OrgID)
+				assert.Equal(t, app.ID.String(), req.AppId)
+				assert.Equal(t, app.OrgID.String(), req.OrgId)
 			},
 		},
 		"error": {
