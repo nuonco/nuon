@@ -5,15 +5,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jaswdr/faker"
-	"github.com/powertoolsdev/go-common/shortid"
-	workers "github.com/powertoolsdev/workers-apps/internal"
-	"github.com/powertoolsdev/workers-apps/internal/provision/project"
-	"github.com/powertoolsdev/workers-apps/internal/provision/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/powertoolsdev/go-common/shortid"
+	appv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
+	workers "github.com/powertoolsdev/workers-apps/internal"
+	"github.com/powertoolsdev/workers-apps/internal/provision/project"
+	"github.com/powertoolsdev/workers-apps/internal/provision/repository"
 )
 
 func getFakeConfig() workers.Config {
@@ -23,14 +25,14 @@ func getFakeConfig() workers.Config {
 	return cfg
 }
 
-func getFakeProvisionRequest() ProvisionRequest {
+func getFakeProvisionRequest() *appv1.ProvisionRequest {
 	fkr := faker.New()
-	var req ProvisionRequest
+	var req appv1.ProvisionRequest
 	fkr.Struct().Fill(&req)
 
-	req.OrgID = uuid.NewString()
-	req.AppID = uuid.NewString()
-	return req
+	req.OrgId = uuid.NewString()
+	req.AppId = uuid.NewString()
+	return &req
 }
 
 func Test_Workflow(t *testing.T) {
@@ -47,10 +49,10 @@ func Test_Workflow(t *testing.T) {
 
 	wf := NewWorkflow(cfg)
 
-	orgShortID, err := shortid.ParseString(req.OrgID)
+	orgShortID, err := shortid.ParseString(req.OrgId)
 	require.NoError(t, err)
 
-	appShortID, err := shortid.ParseString(req.AppID)
+	appShortID, err := shortid.ParseString(req.AppId)
 	require.NoError(t, err)
 
 	env.OnWorkflow(repoWkflow.ProvisionRepository, mock.Anything, mock.Anything).
@@ -74,7 +76,7 @@ func Test_Workflow(t *testing.T) {
 	env.ExecuteWorkflow(wf.Provision, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	var resp ProvisionResponse
+	var resp appv1.ProvisionResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
-	require.NotNil(t, resp)
+	require.NotNil(t, &resp)
 }

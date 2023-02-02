@@ -4,22 +4,15 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/log"
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/go-common/shortid"
+	appv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
 	workers "github.com/powertoolsdev/workers-apps/internal"
 	"github.com/powertoolsdev/workers-apps/internal/provision/project"
 	"github.com/powertoolsdev/workers-apps/internal/provision/repository"
-	"go.temporal.io/sdk/log"
-	"go.temporal.io/sdk/workflow"
 )
-
-type ProvisionRequest struct {
-	DryRun bool `json:"dry_run"`
-
-	OrgID string `json:"org_id" validate:"required"`
-	AppID string `json:"app_id" validate:"required"`
-}
-
-type ProvisionResponse struct{}
 
 type Workflow struct {
 	cfg workers.Config
@@ -31,8 +24,13 @@ func NewWorkflow(cfg workers.Config) Workflow {
 	}
 }
 
-func (w Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (ProvisionResponse, error) {
-	resp := ProvisionResponse{}
+func (w Workflow) Provision(ctx workflow.Context, req *appv1.ProvisionRequest) (*appv1.ProvisionResponse, error) {
+	resp := appv1.ProvisionResponse{}
+
+	if err := req.Validate(); err != nil {
+		//%TODO(cp): add zap logger to workflow
+		return nil, fmt.Errorf("unable to validate request: %w", err)
+	}
 
 	l := log.With(workflow.GetLogger(ctx))
 	ao := workflow.ActivityOptions{
@@ -40,13 +38,13 @@ func (w Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provisi
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	orgShortID, err := shortid.ParseString(req.OrgID)
+	orgShortID, err := shortid.ParseString(req.OrgId)
 	if err != nil {
-		return resp, fmt.Errorf("failed to parse orgID to shortID: %w", err)
+		return nil, fmt.Errorf("failed to parse orgId to shortID: %w", err)
 	}
-	appShortID, err := shortid.ParseString(req.AppID)
+	appShortID, err := shortid.ParseString(req.AppId)
 	if err != nil {
-		return resp, fmt.Errorf("failed to parse appID to shortID: %w", err)
+		return nil, fmt.Errorf("failed to parse appID to shortID: %w", err)
 	}
 
 	prRequest := repository.ProvisionRepositoryRequest{
@@ -55,7 +53,7 @@ func (w Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provisi
 	}
 	prResp, err := execProvisionRepository(ctx, w.cfg, prRequest)
 	if err != nil {
-		return resp, fmt.Errorf("failed to provision repository: %w", err)
+		return nil, fmt.Errorf("failed to provision repository: %w", err)
 	}
 	l.Debug("successfully provisioned repository: %w", prResp)
 
@@ -65,12 +63,12 @@ func (w Workflow) Provision(ctx workflow.Context, req ProvisionRequest) (Provisi
 	}
 	ppResp, err := execProvisionProject(ctx, w.cfg, ppReq)
 	if err != nil {
-		return resp, fmt.Errorf("failed to provision project: %w", err)
+		return nil, fmt.Errorf("failed to provision project: %w", err)
 	}
 	l.Debug("successfully provisioned project: %w", ppResp)
 
-	l.Debug("finished provisioning app", "response", resp)
-	return resp, nil
+	l.Debug("finished provisioning app", "response", &resp)
+	return &resp, nil
 }
 
 func execProvisionRepository(
