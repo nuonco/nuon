@@ -18,9 +18,9 @@ func (a *Activities) ExecutePlanLocally(ctx context.Context, req *executev1.Exec
 		return nil, fmt.Errorf("unable to get executor: %w", err)
 	}
 
-	if _, err := executor.Execute(ctx); err != nil {
-		return nil, fmt.Errorf("unable to execute plan: %w", err)
+	resp, err := executor.Execute(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("executor did not succeed: %w", err)
 	}
-
-	return nil, nil
+	return resp, nil
 }
