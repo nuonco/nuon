@@ -9,7 +9,7 @@ type errorFetcher struct {
 	error
 }
 
-func NewError(e error) *errorFetcher {
+func New(e error) *errorFetcher {
 	return &errorFetcher{error: e}
 }
 

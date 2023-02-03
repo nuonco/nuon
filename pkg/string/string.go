@@ -10,7 +10,7 @@ type stringFetcher struct {
 	io.Reader
 }
 
-func NewString(s string) *stringFetcher {
+func New(s string) *stringFetcher {
 	return &stringFetcher{Reader: strings.NewReader(s)}
 }
 

@@ -30,7 +30,7 @@ line
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			f := NewString(test.s)
+			f := New(test.s)
 			iorc, err := f.Fetch(context.Background())
 			assert.NoError(t, err)
 
@@ -43,7 +43,7 @@ line
 
 func TestStringFetcher_Close(t *testing.T) {
 	t.Parallel()
-	f := NewString(t.Name())
+	f := New(t.Name())
 	iorc, err := f.Fetch(context.Background())
 	assert.NoError(t, err)
 

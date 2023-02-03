@@ -23,8 +23,8 @@ type s3Fetcher struct {
 
 type s3Option func(*s3Fetcher) error
 
-// NewS3Fetcher instantiates a new module fetcher that fetches from S3
-func NewS3(v *validator.Validate, opts ...s3Option) (*s3Fetcher, error) {
+// New instantiates a new module fetcher that fetches from S3
+func New(v *validator.Validate, opts ...s3Option) (*s3Fetcher, error) {
 	s := &s3Fetcher{}
 
 	if v == nil {

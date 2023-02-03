@@ -8,15 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewError(t *testing.T) {
+func TestNew(t *testing.T) {
 	e := fmt.Errorf("an error")
-	ef := NewError(e)
+	ef := New(e)
 	assert.Equal(t, e, ef.error)
 }
 
 func TestErrorFetcher_Fetch(t *testing.T) {
 	e := fmt.Errorf("an error")
-	ef := NewError(e)
+	ef := New(e)
 	assert.Equal(t, e, ef.error)
 
 	iorc, err := ef.Fetch(context.Background())
@@ -26,7 +26,7 @@ func TestErrorFetcher_Fetch(t *testing.T) {
 
 func TestErrorFetcher_Close(t *testing.T) {
 	e := fmt.Errorf("an error")
-	ef := NewError(e)
+	ef := New(e)
 	assert.Equal(t, e, ef.error)
 
 	assert.ErrorContains(t, ef.Close(), e.Error())

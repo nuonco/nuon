@@ -18,7 +18,7 @@ type fileFetcher struct {
 
 type fileOption func(*fileFetcher) error
 
-func NewFile(v *validator.Validate, opts ...fileOption) (*fileFetcher, error) {
+func New(v *validator.Validate, opts ...fileOption) (*fileFetcher, error) {
 	f := &fileFetcher{}
 
 	if v == nil {

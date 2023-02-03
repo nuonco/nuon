@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewFile(t *testing.T) {
+func TestNew(t *testing.T) {
 	t.Parallel()
 	v := validator.New()
 
@@ -48,7 +48,7 @@ func TestNewFile(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			f, err := NewFile(
+			f, err := New(
 				test.v,
 				WithFile(test.f),
 			)

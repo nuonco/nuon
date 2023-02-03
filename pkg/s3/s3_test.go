@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestNewS3(t *testing.T) {
+func TestNew(t *testing.T) {
 	t.Parallel()
 	v := validator.New()
 
@@ -80,7 +80,7 @@ func TestNewS3(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			f, err := NewS3(test.v, test.opts...)
+			f, err := New(test.v, test.opts...)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
