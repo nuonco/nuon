@@ -1,4 +1,4 @@
-package build
+package sync
 
 import (
 	"context"
@@ -15,33 +15,31 @@ const (
 )
 
 func (p *planner) GetPlan(ctx context.Context) (*planv1.WaypointPlan, error) {
-	ecrRepoName := fmt.Sprintf("%s/%s", p.Metadata.OrgShortId, p.Metadata.AppShortId)
-	ecrRepoURI := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s", p.OrgMetadata.EcrRegistryId,
-		p.OrgMetadata.EcrRegion, ecrRepoName)
-
 	plan := &planv1.WaypointPlan{
 		Metadata: p.Metadata,
+		// TODO(jm): we should probably just reuse the waypoint server ref for both of these, as they are
+		// identical
 		WaypointServer: &planv1.WaypointServerRef{
 			Address:              p.OrgMetadata.WaypointServer.Address,
 			TokenSecretNamespace: p.OrgMetadata.WaypointServer.TokenSecretNamespace,
 			TokenSecretName:      p.OrgMetadata.WaypointServer.TokenSecretName,
 		},
 		EcrRepositoryRef: &planv1.ECRRepositoryRef{
-			RegistryId:     p.OrgMetadata.EcrRegistryId,
-			RepositoryName: ecrRepoName,
-			RepositoryArn:  fmt.Sprintf("%s/%s", p.OrgMetadata.EcrRegistryArn, ecrRepoName),
-			RepositoryUri:  ecrRepoURI,
+			RepositoryName: p.Metadata.InstallShortId,
 			Tag:            p.Metadata.DeploymentShortId,
-			Region:         p.OrgMetadata.EcrRegion,
+			// TODO(jm): we don't have a great way of knowing what region the customer install is using this
+			// deep in this stage. Eventually, we would ideally fetch this information from `orgs-api`, but
+			// for now just hard code us-west-2
+			Region: "us-west-2",
 		},
 		WaypointRef: &planv1.WaypointRef{
-			Project:              p.Metadata.AppShortId,
-			Workspace:            p.Metadata.AppShortId,
+			Project:              p.Metadata.InstallShortId,
+			Workspace:            p.Metadata.InstallShortId,
 			App:                  p.Component.Name,
 			SingletonId:          fmt.Sprintf("%s-%s", p.Metadata.DeploymentShortId, p.Component.Name),
 			Labels:               waypoint.DefaultLabels(p.Metadata, p.Component.Name, phaseName),
-			RunnerId:             p.Metadata.OrgShortId,
-			OnDemandRunnerConfig: p.Metadata.OrgShortId,
+			RunnerId:             p.Metadata.InstallShortId,
+			OnDemandRunnerConfig: p.Metadata.InstallShortId,
 			JobTimeoutSeconds:    defaultBuildTimeoutSeconds,
 		},
 		Outputs: &planv1.Outputs{
@@ -57,9 +55,12 @@ func (p *planner) GetPlan(ctx context.Context) (*planv1.WaypointPlan, error) {
 		Component: p.Component,
 	}
 
-	// create builder which will render the waypoint config
-	builder, err := configs.NewHttpbinBuildBuilder(p.V,
-		configs.WithComponent(p.Component),
+	// TODO(jm):pass in correct values to builders
+	//create builder which will render the waypoint config
+	//ecrRepoName := fmt.Sprintf("%s/%s", p.Metadata.OrgShortId, p.Metadata.AppShortId)
+	//ecrRepoURI := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s", p.OrgMetadata.EcrRegistryId,
+	//p.OrgMetadata.EcrRegion, ecrRepoName)
+	builder, err := configs.NewSyncImageBuilder(p.V,
 		configs.WithEcrRef(plan.EcrRepositoryRef),
 		configs.WithWaypointRef(plan.WaypointRef),
 	)

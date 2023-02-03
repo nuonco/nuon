@@ -1,4 +1,4 @@
-package build
+package sync
 
 import (
 	"testing"
@@ -20,8 +20,11 @@ func Test_planner_getPrefix(t *testing.T) {
 	pln, err := New(validator.New(), waypoint.WithComponent(component), waypoint.WithOrgMetadata(orgMeta), waypoint.WithMetadata(meta))
 	assert.NoError(t, err)
 
-	assert.Equal(t, pln.getPrefix(), prefix.DeploymentPhasePath(meta.OrgShortId,
+	assert.Equal(t, pln.getPrefix(), prefix.InstancePhasePath(meta.OrgShortId,
 		meta.AppShortId,
 		component.Name,
-		meta.DeploymentShortId, phaseName))
+		meta.DeploymentShortId,
+		meta.InstallShortId,
+		phaseName,
+	))
 }
