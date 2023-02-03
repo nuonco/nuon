@@ -11,9 +11,6 @@ func init() {
 	config.RegisterDefault("temporal_namespace", "default")
 
 	// instance defaults
-	config.RegisterDefault("bucket", "nuon-installations-stage")
-	config.RegisterDefault("bucket_region", "us-west-2")
-	config.RegisterDefault("role_arn", "arn:aws:iam::618886478608:role/install-k8s-admin-stage")
 	config.RegisterDefault("waypoint_token_secret_namespace", "default")
 	config.RegisterDefault("waypoint_server_root_domain", "orgs-stage.nuon.co")
 }
