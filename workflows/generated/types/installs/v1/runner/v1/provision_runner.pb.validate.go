@@ -122,6 +122,17 @@ func (m *ProvisionRunnerRequest) validate(all bool) error {
 		}
 	}
 
+	if utf8.RuneCountInString(m.GetOdrIamRoleArn()) < 20 {
+		err := ProvisionRunnerRequestValidationError{
+			field:  "OdrIamRoleArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return ProvisionRunnerRequestMultiError(errors)
 	}

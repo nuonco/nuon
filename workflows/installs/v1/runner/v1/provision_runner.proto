@@ -21,6 +21,11 @@ message ProvisionRunnerRequest {
   ];
 
   KubeClusterInfo cluster_info = 4;
+
+  string odr_iam_role_arn = 5 [
+    (validate.rules).string.min_len = 20,
+    (tagger.tags) = "faker:\"len=20\""
+  ];
 }
 
 message KubeClusterInfo {
