@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package instances.v1;
 
+import "component/v1/component.proto";
 import "executors/v1/plan/v1/plan_ref.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
@@ -12,15 +13,24 @@ message ProvisionRequest {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
-  string install_id = 2 [
+  string app_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+  string deployment_id = 3 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
 
-  string prefix = 3 [(validate.rules).string.min_len = 1];
+  string install_id = 4 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
 
-  .executors.v1.plan.v1.PlanRef build_plan = 4;
-  bool plan_only = 5 [(tagger.tags) = "faker:\"-\""];
+  string prefix = 5 [(validate.rules).string.min_len = 1];
+
+  component.v1.Component component = 6;
+  bool plan_only = 7 [(tagger.tags) = "faker:\"-\""];
 }
 
 // ProvisionResponse returns the response from an instance provision workflow

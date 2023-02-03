@@ -93,6 +93,8 @@ func (m *CreatePlanRequest) validate(all bool) error {
 
 	}
 
+	// no validation rules for InstallId
+
 	if all {
 		switch v := interface{}(m.GetComponent()).(type) {
 		case interface{ ValidateAll() error }:

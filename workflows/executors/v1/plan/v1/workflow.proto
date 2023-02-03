@@ -22,9 +22,10 @@ message CreatePlanRequest {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
+  string install_id = 4;
 
-  component.v1.Component component = 4;
-  PlanType type = 5;
+  component.v1.Component component = 5;
+  PlanType type = 6;
 }
 
 // CreatePlanResponse is a child workflow response for the plan phase
