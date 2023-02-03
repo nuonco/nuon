@@ -5,51 +5,67 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/go-common/shortid"
+	meta "github.com/powertoolsdev/go-workflows-meta"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
-	"github.com/powertoolsdev/workers-deployments/internal/meta"
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a *Activities) FinishStartRequest(ctx context.Context, req meta.FinishRequest) (meta.FinishResponse, error) {
-	act := meta.NewFinishActivity()
-	return act.FinishRequest(ctx, req)
-}
-
-// NOTE(jm): this is named StartStart so we don't take up "StartRequest" in the deployments namespace
-func (a *Activities) StartStartRequest(ctx context.Context, req meta.StartRequest) (meta.StartResponse, error) {
-	act := meta.NewStartActivity()
-	return act.StartRequest(ctx, req)
-}
-
 func (w *wkflow) startWorkflow(ctx workflow.Context, req *deploymentsv1.StartRequest) error {
 	info := workflow.GetInfo(ctx)
-
 	prefix, err := getS3PrefixFromRequest(req)
 	if err != nil {
-		return err
-	}
-	orgID, err := shortid.ParseString(req.OrgId)
-	if err != nil {
-		return fmt.Errorf("unable to parse org id into shortid: %w", err)
+		return fmt.Errorf("unable to get s3 prefix: %w", err)
 	}
 
-	startReq := meta.StartRequest{
+	orgID, err := shortid.ParseString(req.OrgId)
+	if err != nil {
+		return fmt.Errorf("unable to parse org id: %w", err)
+	}
+
+	startReq := &sharedv1.StartActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
-		MetadataBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
+		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
 		MetadataBucketPrefix:        prefix,
-		Request:                     req,
-		WorkflowInfo: meta.WorkflowInfo{
-			ID: info.WorkflowExecution.ID,
+		RequestRef:                  metaRequestFromReq(req),
+		WorkflowInfo: &sharedv1.WorkflowInfo{
+			Id: info.WorkflowExecution.ID,
 		},
 	}
 
 	act := NewActivities()
-	if _, err = execStart(ctx, act, startReq); err != nil {
+	if _, err := execStart(ctx, act, startReq); err != nil {
 		return fmt.Errorf("unable to start workflow: %w", err)
 	}
 
 	return nil
+}
+
+func metaRequestFromReq(req *deploymentsv1.StartRequest) *sharedv1.RequestRef {
+	return &sharedv1.RequestRef{
+		Request: &sharedv1.RequestRef_DeploymentStart{
+			DeploymentStart: req,
+		},
+	}
+}
+
+func metaResponseFromResponse(resp *deploymentsv1.StartResponse) *sharedv1.ResponseRef {
+	return &sharedv1.ResponseRef{
+		Response: &sharedv1.ResponseRef_DeploymentStart{
+			DeploymentStart: resp,
+		},
+	}
+}
+
+// NOTE(jm): none of the methods below this file should be modified.
+func (a *Activities) FinishStartRequest(ctx context.Context, req *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
+	act := meta.NewFinishActivity()
+	return act.FinishRequest(ctx, req)
+}
+
+func (a *Activities) StartStartRequest(ctx context.Context, req *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
+	act := meta.NewStartActivity()
+	return act.StartRequest(ctx, req)
 }
 
 // finishWorkflow calls the finish step
@@ -64,17 +80,16 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *deploymentsv1.StartRe
 		l.Debug("unable to finish workflow: %w", err)
 	}()
 
+	prefix, err := getS3PrefixFromRequest(req)
+	if err != nil {
+		return
+	}
+
 	status := sharedv1.ResponseStatus_RESPONSE_STATUS_OK
 	errMessage := ""
 	if workflowErr != nil {
 		status = sharedv1.ResponseStatus_RESPONSE_STATUS_ERROR
 		errMessage = workflowErr.Error()
-	}
-
-	prefix, err := getS3PrefixFromRequest(req)
-	if err != nil {
-		err = fmt.Errorf("unable to get s3 prefix: %w", err)
-		return
 	}
 
 	orgID, err := shortid.ParseString(req.OrgId)
@@ -83,12 +98,12 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *deploymentsv1.StartRe
 		return
 	}
 
-	finishReq := meta.FinishRequest{
+	finishReq := &sharedv1.FinishActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
-		MetadataBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
+		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
 		MetadataBucketPrefix:        prefix,
-		Response:                    resp,
-		ResponseStatus:              status,
+		ResponseRef:                 metaResponseFromResponse(resp),
+		Status:                      status,
 		ErrorMessage:                errMessage,
 	}
 
@@ -103,10 +118,10 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *deploymentsv1.StartRe
 func execStart(
 	ctx workflow.Context,
 	act *Activities,
-	req meta.StartRequest,
-) (meta.StartResponse, error) {
+	req *sharedv1.StartActivityRequest,
+) (*sharedv1.StartActivityResponse, error) {
 	l := workflow.GetLogger(ctx)
-	resp := meta.StartResponse{}
+	resp := &sharedv1.StartActivityResponse{}
 
 	l.Debug("executing start activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.StartStartRequest, req)
@@ -119,10 +134,10 @@ func execStart(
 func execFinish(
 	ctx workflow.Context,
 	act *Activities,
-	req meta.FinishRequest,
-) (meta.FinishResponse, error) {
+	req *sharedv1.FinishActivityRequest,
+) (*sharedv1.FinishActivityResponse, error) {
 	l := workflow.GetLogger(ctx)
-	resp := meta.FinishResponse{}
+	resp := &sharedv1.FinishActivityResponse{}
 
 	l.Debug("executing finish activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.FinishStartRequest, req)
