@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-uploader"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	"google.golang.org/protobuf/proto"
@@ -14,23 +13,6 @@ const (
 	finishRequestFilename       string = "response.json"
 	finishAssumeRoleSessionName string = "workers-orgs-finish"
 )
-
-type FinishRequest struct {
-	MetadataBucket              string `validate:"required"`
-	MetadataBucketAssumeRoleARN string `validate:"required"`
-	MetadataBucketPrefix        string `validate:"required"`
-
-	Response       *sharedv1.ResponseRef `faker:"-"`
-	ResponseStatus sharedv1.ResponseStatus
-	ErrorMessage   string
-}
-
-func (s FinishRequest) Validate() error {
-	validate := validator.New()
-	return validate.Struct(s)
-}
-
-type FinishResponse struct{}
 
 func NewFinishActivity() *finishActivity {
 	return &finishActivity{
