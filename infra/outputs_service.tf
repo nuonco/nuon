@@ -9,7 +9,7 @@ output "installations_bucket_region" {
 
 # this role is added to the sandbox, and grants Nuon access to do things in it
 output "installations_k8s_role_arn" {
-  value = nonsensitive(data.tfe_outputs.infra-orgs.values.iam_roles.install_k8s_access)
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.iam_roles.install_k8s_access.arn)
 }
 
 # the following values are for interacting with the orgs k8s cluster
