@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.1
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/hashicorp/go-version v1.6.0
-	github.com/hashicorp/hc-install v0.4.0
+	github.com/hashicorp/hc-install v0.5.0
 	github.com/hashicorp/terraform-exec v0.17.3
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
 	github.com/stretchr/testify v1.8.1
@@ -38,7 +38,6 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/terraform-json v0.14.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
@@ -55,6 +54,7 @@ require (
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/zclconf/go-cty v1.12.0 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
+	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
