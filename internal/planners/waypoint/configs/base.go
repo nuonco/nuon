@@ -11,9 +11,12 @@ import (
 type baseBuilder struct {
 	v *validator.Validate
 
-	EcrRef    *planv1.ECRRepositoryRef `validate:"required"`
-	Metadata  *planv1.Metadata         `validate:"required"`
-	Component *componentv1.Component   `validate:"required"`
+	EcrRef      *planv1.ECRRepositoryRef `validate:"required"`
+	WaypointRef *planv1.WaypointRef      `validate:"required"`
+	Component   *componentv1.Component   `validate:"required"`
+
+	// optional for the sync image
+	SyncImageSource *SyncImageSource
 }
 
 type baseBuilderOption func(*baseBuilder) error
@@ -36,13 +39,7 @@ func newBaseBuilder(v *validator.Validate, opts ...baseBuilderOption) (*baseBuil
 	return bld, nil
 }
 
-func WithMetadata(metadata *planv1.Metadata) baseBuilderOption {
-	return func(b *baseBuilder) error {
-		b.Metadata = metadata
-		return nil
-	}
-}
-
+// WithEcrRef is used to pass in a configuration for pushing an image to ecr
 func WithEcrRef(ecrRef *planv1.ECRRepositoryRef) baseBuilderOption {
 	return func(b *baseBuilder) error {
 		b.EcrRef = ecrRef
@@ -53,6 +50,13 @@ func WithEcrRef(ecrRef *planv1.ECRRepositoryRef) baseBuilderOption {
 func WithComponent(comp *componentv1.Component) baseBuilderOption {
 	return func(b *baseBuilder) error {
 		b.Component = comp
+		return nil
+	}
+}
+
+func WithWaypointRef(ref *planv1.WaypointRef) baseBuilderOption {
+	return func(b *baseBuilder) error {
+		b.WaypointRef = ref
 		return nil
 	}
 }

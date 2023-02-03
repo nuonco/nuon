@@ -12,7 +12,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	meta := generics.GetFakeObj[*planv1.Metadata]()
+	waypointRef := generics.GetFakeObj[*planv1.WaypointRef]()
 	ecrRef := generics.GetFakeObj[*planv1.ECRRepositoryRef]()
 	component := generics.GetFakeObj[*componentv1.Component]()
 
@@ -25,39 +25,39 @@ func TestNew(t *testing.T) {
 			optFns: func() []baseBuilderOption {
 				return []baseBuilderOption{
 					WithComponent(component),
-					WithMetadata(meta),
+					WithWaypointRef(waypointRef),
 					WithEcrRef(ecrRef),
 				}
 			},
 			assertFn: func(t *testing.T, pln *baseBuilder) {
 				assert.Equal(t, component, pln.Component)
-				assert.Equal(t, meta, pln.Metadata)
+				assert.Equal(t, waypointRef, pln.WaypointRef)
 				assert.Equal(t, ecrRef, pln.EcrRef)
 			},
 		},
 		"missing component": {
 			optFns: func() []baseBuilderOption {
 				return []baseBuilderOption{
-					WithMetadata(meta),
+					WithWaypointRef(waypointRef),
 					WithEcrRef(ecrRef),
 				}
 			},
 			errExpected: fmt.Errorf("baseBuilder.Component"),
 		},
-		"missing metadata": {
+		"missing waypoint ref": {
 			optFns: func() []baseBuilderOption {
 				return []baseBuilderOption{
 					WithComponent(component),
 					WithEcrRef(ecrRef),
 				}
 			},
-			errExpected: fmt.Errorf("baseBuilder.Metadata"),
+			errExpected: fmt.Errorf("baseBuilder.WaypointRef"),
 		},
 		"missing ecr ref": {
 			optFns: func() []baseBuilderOption {
 				return []baseBuilderOption{
 					WithComponent(component),
-					WithMetadata(meta),
+					WithWaypointRef(waypointRef),
 				}
 			},
 			errExpected: fmt.Errorf("baseBuilder.EcrRef"),
