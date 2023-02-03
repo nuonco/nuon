@@ -62,7 +62,7 @@ func (p *planner) GetPlan(ctx context.Context) (*planv1.WaypointPlan, error) {
 	}
 
 	// create builder which will render the waypoint config
-	builder, err := configs.NewStaticBuilder(p.v,
+	builder, err := configs.NewStaticBuilder(p.V,
 		configs.WithComponent(p.Component),
 		configs.WithEcrRef(plan.EcrRepositoryRef),
 		configs.WithMetadata(plan.Metadata),

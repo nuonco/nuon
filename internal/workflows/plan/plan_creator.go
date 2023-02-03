@@ -9,6 +9,7 @@ import (
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	planactivitiesv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1/activities/v1"
 	"github.com/powertoolsdev/workers-executors/internal/planners"
+	"github.com/powertoolsdev/workers-executors/internal/planners/waypoint"
 	waypointbuild "github.com/powertoolsdev/workers-executors/internal/planners/waypoint/build"
 	"google.golang.org/protobuf/proto"
 )
@@ -71,9 +72,9 @@ func (p *planCreatorImpl) getPlanner(req *planactivitiesv1.CreatePlanRequest) (p
 	switch req.Type {
 	case planv1.PlanType_PLAN_TYPE_WAYPOINT_BUILD:
 		planner, err = waypointbuild.New(p.v,
-			waypointbuild.WithComponent(req.Component),
-			waypointbuild.WithMetadata(req.Metadata),
-			waypointbuild.WithOrgMetadata(req.OrgMetadata),
+			waypoint.WithComponent(req.Component),
+			waypoint.WithMetadata(req.Metadata),
+			waypoint.WithOrgMetadata(req.OrgMetadata),
 		)
 	default:
 		return nil, fmt.Errorf("unsupported plan type: %s", req.Type)

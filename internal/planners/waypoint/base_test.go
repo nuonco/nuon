@@ -1,4 +1,4 @@
-package build
+package waypoint
 
 import (
 	"fmt"
@@ -17,50 +17,50 @@ func TestNew(t *testing.T) {
 	component := generics.GetFakeObj[*componentv1.Component]()
 
 	tests := map[string]struct {
-		optFns      func() []plannerOption
-		assertFn    func(*testing.T, *planner)
+		optFns      func() []PlannerOption
+		assertFn    func(*testing.T, *Planner)
 		errExpected error
 	}{
 		"happy path": {
-			optFns: func() []plannerOption {
-				return []plannerOption{
+			optFns: func() []PlannerOption {
+				return []PlannerOption{
 					WithComponent(component),
 					WithMetadata(meta),
 					WithOrgMetadata(orgMeta),
 				}
 			},
-			assertFn: func(t *testing.T, pln *planner) {
+			assertFn: func(t *testing.T, pln *Planner) {
 				assert.Equal(t, component, pln.Component)
 				assert.Equal(t, meta, pln.Metadata)
 				assert.Equal(t, orgMeta, pln.OrgMetadata)
 			},
 		},
 		"missing component": {
-			optFns: func() []plannerOption {
-				return []plannerOption{
+			optFns: func() []PlannerOption {
+				return []PlannerOption{
 					WithMetadata(meta),
 					WithOrgMetadata(orgMeta),
 				}
 			},
-			errExpected: fmt.Errorf("planner.Component"),
+			errExpected: fmt.Errorf("Planner.Component"),
 		},
 		"missing metadata": {
-			optFns: func() []plannerOption {
-				return []plannerOption{
+			optFns: func() []PlannerOption {
+				return []PlannerOption{
 					WithComponent(component),
 					WithOrgMetadata(orgMeta),
 				}
 			},
-			errExpected: fmt.Errorf("planner.Metadata"),
+			errExpected: fmt.Errorf("Planner.Metadata"),
 		},
 		"missing org metadata": {
-			optFns: func() []plannerOption {
-				return []plannerOption{
+			optFns: func() []PlannerOption {
+				return []PlannerOption{
 					WithComponent(component),
 					WithMetadata(meta),
 				}
 			},
-			errExpected: fmt.Errorf("planner.OrgMetadata"),
+			errExpected: fmt.Errorf("Planner.OrgMetadata"),
 		},
 	}
 

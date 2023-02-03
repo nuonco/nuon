@@ -7,6 +7,7 @@ import (
 	"github.com/powertoolsdev/go-generics"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
+	"github.com/powertoolsdev/workers-executors/internal/planners/waypoint"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +16,7 @@ func Test_planner_GetPlanRef(t *testing.T) {
 	orgMeta := generics.GetFakeObj[*planv1.OrgMetadata]()
 	component := generics.GetFakeObj[*componentv1.Component]()
 
-	pln, err := New(validator.New(), WithComponent(component), WithOrgMetadata(orgMeta), WithMetadata(meta))
+	pln, err := New(validator.New(), waypoint.WithComponent(component), waypoint.WithOrgMetadata(orgMeta), waypoint.WithMetadata(meta))
 	assert.NoError(t, err)
 
 	planRef := pln.GetPlanRef()
