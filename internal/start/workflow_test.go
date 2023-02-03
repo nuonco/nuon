@@ -12,8 +12,8 @@ import (
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/instances/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
+	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
-	"github.com/powertoolsdev/workers-deployments/internal/meta"
 	"github.com/powertoolsdev/workers-deployments/internal/start/build"
 	"github.com/powertoolsdev/workers-deployments/internal/start/instances"
 	"github.com/stretchr/testify/assert"
@@ -64,8 +64,8 @@ func TestProvision_planOnly(t *testing.T) {
 		})
 
 	env.OnActivity(act.StartStartRequest, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r meta.StartRequest) (meta.StartResponse, error) {
-			return meta.StartResponse{}, nil
+		Return(func(_ context.Context, r *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
+			return &sharedv1.StartActivityResponse{}, nil
 		})
 
 	env.ExecuteWorkflow(wkflow.Start, req)
@@ -100,26 +100,26 @@ func TestStart(t *testing.T) {
 
 	// Mock activity implementation
 	env.OnActivity(act.StartStartRequest, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r meta.StartRequest) (meta.StartResponse, error) {
-			var resp meta.StartResponse
+		Return(func(_ context.Context, r *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
+			resp := &sharedv1.StartActivityResponse{}
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, cfg.DeploymentsBucket, r.MetadataBucket)
 
 			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgID)
-			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleARN)
+			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
 			expectedPrefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
 
 	env.OnActivity(act.FinishStartRequest, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r meta.FinishRequest) (meta.FinishResponse, error) {
-			var resp meta.FinishResponse
+		Return(func(_ context.Context, r *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
+			resp := &sharedv1.FinishActivityResponse{}
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, cfg.DeploymentsBucket, r.MetadataBucket)
 
 			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgID)
-			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleARN)
+			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
 			expectedPrefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
@@ -137,7 +137,9 @@ func TestStart(t *testing.T) {
 
 	env.OnWorkflow(ins.ProvisionInstances, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *instancesv1.ProvisionRequest) (*instancesv1.ProvisionResponse, error) {
-			resp := &instancesv1.ProvisionResponse{}
+			resp := &instancesv1.ProvisionResponse{
+				WorkflowIds: []string{"abc"},
+			}
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, orgID, r.OrgId)
 			assert.Equal(t, appID, r.AppId)
