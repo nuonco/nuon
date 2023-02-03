@@ -132,6 +132,10 @@ func (m *Metadata) validate(all bool) error {
 
 	}
 
+	// no validation rules for InstallId
+
+	// no validation rules for InstallShortId
+
 	if len(errors) > 0 {
 		return MetadataMultiError(errors)
 	}

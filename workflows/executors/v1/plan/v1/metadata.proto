@@ -30,4 +30,8 @@ message Metadata {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
+
+  // TODO(jm): make these optional + enforce validations if set
+  string install_id = 7 [(tagger.tags) = "faker:\"uuid_hyphenated\""];
+  string install_short_id = 8 [(tagger.tags) = "faker:\"len=26\""];
 }

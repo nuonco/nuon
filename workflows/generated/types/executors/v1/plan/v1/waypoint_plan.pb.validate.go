@@ -330,17 +330,7 @@ func (m *ECRRepositoryRef) validate(all bool) error {
 
 	var errors []error
 
-	if utf8.RuneCountInString(m.GetRegistryId()) != 12 {
-		err := ECRRepositoryRefValidationError{
-			field:  "RegistryId",
-			reason: "value length must be 12 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-
-	}
+	// no validation rules for RegistryId
 
 	if utf8.RuneCountInString(m.GetRepositoryName()) != 53 {
 		err := ECRRepositoryRefValidationError{
@@ -354,29 +344,9 @@ func (m *ECRRepositoryRef) validate(all bool) error {
 
 	}
 
-	if utf8.RuneCountInString(m.GetRepositoryArn()) != 99 {
-		err := ECRRepositoryRefValidationError{
-			field:  "RepositoryArn",
-			reason: "value length must be 99 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
+	// no validation rules for RepositoryArn
 
-	}
-
-	if utf8.RuneCountInString(m.GetRepositoryUri()) != 98 {
-		err := ECRRepositoryRefValidationError{
-			field:  "RepositoryUri",
-			reason: "value length must be 98 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-
-	}
+	// no validation rules for RepositoryUri
 
 	if utf8.RuneCountInString(m.GetTag()) < 1 {
 		err := ECRRepositoryRefValidationError{
@@ -392,7 +362,7 @@ func (m *ECRRepositoryRef) validate(all bool) error {
 	if _, ok := _ECRRepositoryRef_Region_InLookup[m.GetRegion()]; !ok {
 		err := ECRRepositoryRefValidationError{
 			field:  "Region",
-			reason: "value must be in list [us-west-2]",
+			reason: "value must be in list [us-west-2 us-east-2 us-east-1 us-west-1]",
 		}
 		if !all {
 			return err
@@ -480,6 +450,9 @@ var _ interface {
 
 var _ECRRepositoryRef_Region_InLookup = map[string]struct{}{
 	"us-west-2": {},
+	"us-east-2": {},
+	"us-east-1": {},
+	"us-west-1": {},
 }
 
 // Validate checks the field values on Outputs with the rules defined in the
