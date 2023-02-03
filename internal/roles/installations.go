@@ -39,7 +39,7 @@ func InstallationsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 // InstallationsIAMTrustPolicy generates the trust policy for the installations role
 // The trust policy gives access to any role arn with the provided prefix, in this case the EKS roles for our workers
 // running in the main accounts.
-func InstallationsIAMTrustPolicy(workerRoleArnPrefix string) ([]byte, error) {
+func InstallationsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -53,6 +53,19 @@ func InstallationsIAMTrustPolicy(workerRoleArnPrefix string) ([]byte, error) {
 				Condition: iamCondition{
 					StringLike: map[string]string{
 						"aws:PrincipalArn": workerRoleArnPrefix,
+					},
+				},
+			},
+			{
+				Action: "sts:AssumeRole",
+				Effect: "Allow",
+				Sid:    "",
+				Principal: iamPrincipal{
+					AWS: "*",
+				},
+				Condition: iamCondition{
+					StringEquals: map[string]string{
+						"aws:PrincipalArn": supportRoleArn,
 					},
 				},
 			},
