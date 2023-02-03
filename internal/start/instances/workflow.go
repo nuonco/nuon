@@ -52,11 +52,14 @@ func (w *wkflow) ProvisionInstances(ctx workflow.Context, req *instancesv1.Provi
 		}
 
 		actReq := &provisionv1.ProvisionRequest{
-			OrgId:     req.OrgId,
-			InstallId: installShortID,
-			BuildPlan: req.Plan,
-			Prefix:    req.DeploymentPrefix,
-			PlanOnly:  req.PlanOnly,
+			OrgId:        req.OrgId,
+			AppId:        req.AppId,
+			DeploymentId: req.DeploymentId,
+			InstallId:    installShortID,
+			Prefix:       req.DeploymentPrefix,
+			Component:    req.Component,
+			PlanOnly:     req.PlanOnly,
+			BuildPlan:    req.BuildPlan,
 		}
 
 		_, err = execProvisionInstanceActivity(ctx, act, actReq)
