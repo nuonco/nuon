@@ -83,12 +83,12 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *instancesv1.Provision
 		return
 	}
 
-	finishReq := meta.FinishRequest{
+	finishReq := &sharedv1.FinishActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
-		MetadataBucketAssumeRoleARN: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
+		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
 		MetadataBucketPrefix:        req.Prefix,
-		Response:                    metaResponseFromResponse(resp),
-		ResponseStatus:              status,
+		ResponseRef:                 metaResponseFromResponse(resp),
+		Status:                      status,
 		ErrorMessage:                errMessage,
 	}
 
@@ -119,10 +119,10 @@ func execStart(
 func execFinish(
 	ctx workflow.Context,
 	act *Activities,
-	req meta.FinishRequest,
-) (meta.FinishResponse, error) {
+	req *sharedv1.FinishActivityRequest,
+) (*sharedv1.FinishActivityResponse, error) {
 	l := workflow.GetLogger(ctx)
-	resp := meta.FinishResponse{}
+	resp := &sharedv1.FinishActivityResponse{}
 
 	l.Debug("executing finish activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.FinishProvisionRequest, req)

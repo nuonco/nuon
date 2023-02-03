@@ -7,18 +7,16 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/go-waypoint"
-	deploymentplanv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
+	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1"
-	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1/execute/v1"
-	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1/plan/v1"
 	workers "github.com/powertoolsdev/workers-instances/internal"
-	"github.com/powertoolsdev/workers-instances/internal/provision/execute"
-	"github.com/powertoolsdev/workers-instances/internal/provision/plan"
 )
 
 const (
-	defaultActivityTimeout = time.Second * 5
-	defaultDeployTimeout   = time.Minute * 15
+	defaultActivityTimeout    = time.Second * 5
+	defaultDeployTimeout      = time.Minute * 15
+	defaultExecutorsTaskQueue = "executors"
 )
 
 func configureActivityOptions(ctx workflow.Context) workflow.Context {
@@ -38,15 +36,18 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionRequest, typ planv1.PlanType) (*deploymentplanv1.PlanRef, error) {
+func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionRequest, typ planv1.PlanType) (*planv1.PlanRef, error) {
 	l := workflow.GetLogger(ctx)
 
 	planReq := &planv1.CreatePlanRequest{
-		BuildPlan: req.BuildPlan,
-		InstallId: req.InstallId,
-		Type:      typ,
+		OrgId:        req.OrgId,
+		AppId:        req.AppId,
+		DeploymentId: req.DeploymentId,
+		InstallId:    req.InstallId,
+		Component:    req.Component,
+		Type:         typ,
 	}
-	planResp, err := execCreatePlan(ctx, w.cfg, planReq)
+	planResp, err := execCreatePlan(ctx, planReq)
 	if err != nil {
 		err = fmt.Errorf("unable to create %s plan: %w", typ, err)
 		w.finishWorkflow(ctx, req, nil, err)
@@ -54,10 +55,10 @@ func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionReq
 	}
 	l.Debug("finished creating %s plan", typ)
 
-	execReq := &executev1.ExecuteRequest{
+	execReq := &executev1.ExecutePlanRequest{
 		Plan: planResp.Plan,
 	}
-	_, err = execExecutePlan(ctx, w.cfg, execReq)
+	_, err = execExecutePlan(ctx, execReq)
 	if err != nil {
 		err = fmt.Errorf("unable to execute %s plan: %w", typ, err)
 		w.finishWorkflow(ctx, req, nil, err)
@@ -80,14 +81,14 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 		return resp, err
 	}
 
-	imageSyncPlanRef, err := w.planAndExec(ctx, req, planv1.PlanType_PLAN_TYPE_SYNC_IMAGE)
+	imageSyncPlanRef, err := w.planAndExec(ctx, req, planv1.PlanType_PLAN_TYPE_WAYPOINT_SYNC_IMAGE)
 	if err != nil {
 		return resp, nil
 	}
 	resp.ImageSyncPlan = imageSyncPlanRef
 	l.Debug("successfully synced image")
 
-	deployPlanRef, err := w.planAndExec(ctx, req, planv1.PlanType_PLAN_TYPE_DEPLOY)
+	deployPlanRef, err := w.planAndExec(ctx, req, planv1.PlanType_PLAN_TYPE_WAYPOINT_DEPLOY)
 	if err != nil {
 		return resp, nil
 	}
@@ -114,21 +115,20 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 
 func execCreatePlan(
 	ctx workflow.Context,
-	cfg workers.Config,
 	req *planv1.CreatePlanRequest,
 ) (*planv1.CreatePlanResponse, error) {
 	resp := &planv1.CreatePlanResponse{}
 	l := workflow.GetLogger(ctx)
 
-	l.Debug("executing create plan child workflow")
+	l.Debug("executing create plan workflow")
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
+		TaskQueue:                defaultExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
-	wkflow := plan.NewWorkflow(cfg)
-	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.CreatePlan, req)
+	fut := workflow.ExecuteChildWorkflow(ctx, "CreatePlan", req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
@@ -138,21 +138,20 @@ func execCreatePlan(
 
 func execExecutePlan(
 	ctx workflow.Context,
-	cfg workers.Config,
-	req *executev1.ExecuteRequest,
-) (*executev1.ExecuteResponse, error) {
-	resp := &executev1.ExecuteResponse{}
+	req *executev1.ExecutePlanRequest,
+) (*executev1.ExecutePlanResponse, error) {
+	resp := &executev1.ExecutePlanResponse{}
 	l := workflow.GetLogger(ctx)
 
-	l.Debug("executing plan execution workflow")
+	l.Debug("executing execute plan workflow")
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
+		TaskQueue:                defaultExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
-	wkflow := execute.NewWorkflow(cfg)
-	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ExecutePlan, req)
+	fut := workflow.ExecuteChildWorkflow(ctx, "ExecutePlan", req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}

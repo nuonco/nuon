@@ -4,21 +4,18 @@ go 1.19
 
 require (
 	github.com/go-playground/validator/v10 v10.11.1
-	github.com/google/uuid v1.3.0
 	github.com/hashicorp/waypoint v0.10.5
 	github.com/powertoolsdev/go-common v1.2.0
 	github.com/powertoolsdev/go-generics v0.0.1
 	github.com/powertoolsdev/go-sender v0.0.4
-	github.com/powertoolsdev/go-uploader v0.1.0
 	github.com/powertoolsdev/go-waypoint v1.0.0
 	github.com/powertoolsdev/go-workflows-meta v0.1.0
-	github.com/powertoolsdev/protos v0.45.1
+	github.com/powertoolsdev/protos v0.59.3
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.20.0
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.52.0
-	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8
 )
 
 require (
@@ -66,6 +63,7 @@ require (
 	github.com/google/gnostic v0.6.9 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0 // indirect
 	github.com/hashicorp/go-hclog v1.4.0 // indirect
@@ -96,6 +94,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/powertoolsdev/go-aws-assume-role v0.0.3 // indirect
 	github.com/powertoolsdev/go-kube v0.1.3 // indirect
+	github.com/powertoolsdev/go-uploader v0.1.0 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
@@ -118,6 +117,7 @@ require (
 	golang.org/x/time v0.1.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221207170731-23e4bf6bdc37 // indirect
+	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

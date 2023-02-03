@@ -28,16 +28,10 @@ type Config struct {
 
 	// waypoint configuration
 	WaypointTokenSecretNamespace string `config:"waypoint_token_secret_namespace" validate:"required"`
-	WaypointTokenSecretTemplate  string `config:"waypoint_token_secret_template" validate:"required"`
 	WaypointServerRootDomain     string `config:"waypoint_server_root_domain" validate:"required"`
 
 	// org IAM role template names
 	OrgsDeploymentsRoleTemplate string `config:"orgs_deployments_role_template" validate:"required"`
-
-	// configuration for plans
-	OrgsECRRegistryID  string `config:"orgs_ecr_registry_id" validate:"required"`
-	OrgsECRRegistryARN string `config:"orgs_ecr_registry_arn" validate:"required"`
-	OrgsECRRegion      string `config:"orgs_ecr_region" validate:"required"`
 }
 
 func (c Config) Validate() error {
