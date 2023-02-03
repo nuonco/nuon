@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
-	"google.golang.org/protobuf/proto"
 )
 
 func TestProvisionInstances(t *testing.T) {
@@ -36,7 +35,6 @@ func TestProvisionInstances(t *testing.T) {
 			installID, err := shortid.ParseString(req.InstallIds[0])
 			assert.NoError(t, err)
 			assert.Equal(t, installID, pr.InstallId)
-			assert.True(t, proto.Equal(req.Plan, pr.BuildPlan))
 
 			return &provisionv1.ProvisionResponse{}, nil
 		})

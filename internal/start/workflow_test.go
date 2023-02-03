@@ -146,6 +146,7 @@ func TestStart(t *testing.T) {
 			assert.Equal(t, deploymentID, r.DeploymentId)
 			expectedPrefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
 			assert.Equal(t, expectedPrefix, r.DeploymentPrefix)
+			assert.True(t, proto.Equal(req.Component, r.Component))
 			return resp, nil
 		})
 
