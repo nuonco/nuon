@@ -78,8 +78,10 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 		AppId:            appID,
 		DeploymentId:     deploymentID,
 		InstallIds:       req.InstallIds,
+		Component:        req.Component,
 		DeploymentPrefix: getS3Prefix(orgID, appID, req.Component.Name, deploymentID),
 		PlanOnly:         req.PlanOnly,
+		BuildPlan:        bResp.PlanRef,
 	}
 	ipResp, err := execProvisionInstances(ctx, w.cfg, ipReq)
 	if err != nil {

@@ -542,6 +542,10 @@ github.com/powertoolsdev/go-workflows-meta v0.1.0 h1:xBI3mgkkxKLDo+L9VaTYbgR0Fho
 github.com/powertoolsdev/go-workflows-meta v0.1.0/go.mod h1:f+h6Hg7V/leR9voU9mUwp2FbkJpMtYfjnOBvzs3OTC4=
 github.com/powertoolsdev/protos v0.50.0 h1:OLO5RAbGRT2oV5jM3IIbgi1LyJRAW1uKzIvrz0MtJEw=
 github.com/powertoolsdev/protos v0.50.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.59.1 h1:xU4UZspFDZubTTPMgZFwP+j4uAfCPCUUqsVuEutSj+8=
+github.com/powertoolsdev/protos v0.59.1/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.59.3 h1:476mANq89YCWZluz+rAgSrf2R9zirUhA7rPbgUy+y4I=
+github.com/powertoolsdev/protos v0.59.3/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/robfig/cron v1.2.0 h1:ZjScXvvxeQ63Dbyxy76Fj3AT3Ut0aKsyd2/tl3DTMuQ=
 github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
