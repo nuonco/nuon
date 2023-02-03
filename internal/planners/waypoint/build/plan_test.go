@@ -2,6 +2,7 @@ package build
 
 import "testing"
 
+// TODO(jm): readd unit tests once this is stabilized
 func Test_planCreatorImpl_createPlan(t *testing.T) {
 	//req := generics.GetFakeObj[*planactivitiesv1.CreatePlanRequest]()
 	//longIDs := []string{uuid.NewString(), uuid.NewString(), uuid.NewString()}

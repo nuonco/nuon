@@ -1,10 +1,9 @@
 package build
 
-import "fmt"
+import "github.com/powertoolsdev/go-workflows-meta/prefix"
 
 func (p *planner) getPrefix() string {
-	return fmt.Sprintf("org=%s/app=%s/component=%s/deployment=%s/",
-		p.Metadata.OrgShortId,
+	return prefix.DeploymentPath(p.Metadata.OrgShortId,
 		p.Metadata.AppShortId,
 		p.Component.Name,
 		p.Metadata.DeploymentShortId)
