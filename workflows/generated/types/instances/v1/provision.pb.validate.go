@@ -147,6 +147,35 @@ func (m *ProvisionRequest) validate(all bool) error {
 
 	// no validation rules for PlanOnly
 
+	if all {
+		switch v := interface{}(m.GetBuildPlan()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ProvisionRequestValidationError{
+					field:  "BuildPlan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ProvisionRequestValidationError{
+					field:  "BuildPlan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetBuildPlan()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ProvisionRequestValidationError{
+				field:  "BuildPlan",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return ProvisionRequestMultiError(errors)
 	}
