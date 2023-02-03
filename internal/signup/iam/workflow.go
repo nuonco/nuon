@@ -105,7 +105,7 @@ func (w wkflow) provisionInstallerIAM(ctx workflow.Context, req *iamv1.Provision
 	}
 
 	l.Debug("creating installer iam role for org %s", req.OrgId)
-	installerTrustPolicy, err := roles.InstallerIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix)
+	installerTrustPolicy, err := roles.InstallerIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
@@ -158,7 +158,7 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 	}
 
 	l.Debug("creating installations iam role for org %s", req.OrgId)
-	installationsTrustPolicy, err := roles.InstallationsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix)
+	installationsTrustPolicy, err := roles.InstallationsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
@@ -211,7 +211,7 @@ func (w wkflow) provisionOrgsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRe
 	}
 
 	l.Debug("creating orgs iam role for org %s", req.OrgId)
-	installationsTrustPolicy, err := roles.InstallationsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix)
+	installationsTrustPolicy, err := roles.InstallationsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
@@ -264,7 +264,7 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 	}
 
 	l.Debug("creating deployments iam role for org %s", req.OrgId)
-	deploymentsTrustPolicy, err := roles.DeploymentsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix)
+	deploymentsTrustPolicy, err := roles.DeploymentsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}
@@ -317,7 +317,7 @@ func (w wkflow) provisionInstancesIAM(ctx workflow.Context, req *iamv1.Provision
 	}
 
 	l.Debug("creating instances iam role for org %s", req.OrgId)
-	installationsTrustPolicy, err := roles.InstancesIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix)
+	installationsTrustPolicy, err := roles.InstancesIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
 	}

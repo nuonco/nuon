@@ -1,3 +1,4 @@
+# access for talking to the orgs cluster
 output "orgs_k8s_role_arn" {
   # NOTE: you need to update `infra-eks` to add your service into the auth map
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.k8s.access_role_arns["eks-workers-orgs"])
@@ -25,6 +26,7 @@ output "orgs_iam_oidc_provider_arn" {
   value       = nonsensitive(data.tfe_outputs.infra-orgs.values.k8s.oidc_provider_arn)
 }
 
+# configuration for orgs resources
 output "orgs_ecr_registry_arn" {
   description = "Base ECR repo arn for orgs."
   value       = nonsensitive(data.tfe_outputs.infra-orgs.values.ecr.registry_arn)
@@ -40,6 +42,11 @@ output "org_orgs_bucket_name" {
 
 output "org_deployments_bucket_name" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.deployments.name)
+}
+
+# support role for accessing org IAM roles
+output "support_iam_role_arn" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.iam_roles.support.arn)
 }
 
 // the following outputs are from resources managed locally

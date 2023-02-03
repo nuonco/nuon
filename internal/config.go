@@ -54,6 +54,8 @@ type Config struct {
 
 	// configs needed to grant the workers ability to assume org iam roles
 	WorkersIAMRoleARNPrefix string `config:"workers_iam_role_arn_prefix" validate:"required"`
+	SupportIAMRoleARN       string `config:"support_iam_role_arn" validate:"required"`
+
 	// configs needed to create an IAM role for the ODR runner in the orgs account
 	OrgsIAMOidcProviderURL string `config:"orgs_iam_oidc_provider_url" validate:"required"`
 	OrgsIAMOidcProviderArn string `config:"orgs_iam_oidc_provider_arn" validate:"required"`
