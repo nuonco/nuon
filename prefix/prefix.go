@@ -78,14 +78,31 @@ type deployment struct {
 	AppID         string
 	ComponentName string
 	DeploymentID  string
+	Phase         string
 }
 
 func (d deployment) toPath() string {
-	return fmt.Sprintf("org=%s/app=%s/component=%s/deployment=%s",
+	base := fmt.Sprintf("org=%s/app=%s/component=%s/deployment=%s",
 		d.OrgID,
 		d.AppID,
 		d.ComponentName,
 		d.DeploymentID)
+	if d.Phase != "" {
+		base = filepath.Join(base, fmt.Sprintf("phase=%s", d.Phase))
+	}
+
+	return base
+}
+
+// DeploymentPhasePath returns the prefix for a deployment
+func DeploymentPhasePath(orgID, appID, componentName, deploymentID, phase string) string {
+	return deployment{
+		OrgID:         orgID,
+		AppID:         appID,
+		ComponentName: componentName,
+		DeploymentID:  deploymentID,
+		Phase:         phase,
+	}.toPath()
 }
 
 // DeploymentPath returns the prefix for a deployment
