@@ -57,7 +57,7 @@ func deploymentRun(cmd *cobra.Command, args []string) {
 
 	c, err := client.Dial(client.Options{
 		HostPort:  cfg.TemporalHost,
-		Namespace: cfg.TemporalNamespace,
+		Namespace: "deployments",
 		Logger:    temporalzap.NewLogger(l),
 	})
 	if err != nil {

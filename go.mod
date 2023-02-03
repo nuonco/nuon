@@ -9,8 +9,8 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/powertoolsdev/go-common v1.2.0
 	github.com/powertoolsdev/go-generics v0.0.1
-	github.com/powertoolsdev/go-uploader v0.1.0
-	github.com/powertoolsdev/protos v0.59.3
+	github.com/powertoolsdev/go-workflows-meta v0.2.0
+	github.com/powertoolsdev/protos v0.59.5
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.opentelemetry.io/otel v1.12.0
@@ -68,9 +68,8 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/powertoolsdev/go-aws-assume-role v0.0.3 // indirect
-	github.com/powertoolsdev/go-workflows-meta v0.1.0 // indirect
+	github.com/powertoolsdev/go-uploader v0.1.0 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
-	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
