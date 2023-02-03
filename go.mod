@@ -7,10 +7,12 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.50
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.1
 	github.com/go-playground/validator/v10 v10.11.2
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hc-install v0.5.0
 	github.com/hashicorp/terraform-exec v0.17.3
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
+	github.com/powertoolsdev/go-fetch v0.0.0-20230203194457-d35b2d6ae70c
 	github.com/stretchr/testify v1.8.1
 )
 
@@ -38,17 +40,19 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/terraform-json v0.14.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.15.10 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.16 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/powertoolsdev/go-aws-assume-role v0.0.3 // indirect
+	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
