@@ -11,15 +11,23 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/go-generics"
-	deploymentplanv1 "github.com/powertoolsdev/protos/deployments/generated/types/plan/v1"
+	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1"
-	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1/execute/v1"
-	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1/plan/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	workers "github.com/powertoolsdev/workers-instances/internal"
-	"github.com/powertoolsdev/workers-instances/internal/provision/execute"
-	"github.com/powertoolsdev/workers-instances/internal/provision/plan"
 )
+
+// NOTE(jm): unfortunately, the only way to register these workflows in the test env is to do it using the same exact
+// signature. Given we'll be using these workflows from just about every domain, we should probably make a library to
+// wrap these calls, so we don't have to maintain them everywhere like this.
+func CreatePlan(workflow.Context, *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+	return nil, nil
+}
+
+func ExecutePlan(workflow.Context, *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+	return nil, nil
+}
 
 func TestProvision(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
@@ -27,21 +35,19 @@ func TestProvision(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 	req := generics.GetFakeObj[*instancesv1.ProvisionRequest]()
-	planRef := generics.GetFakeObj[*deploymentplanv1.PlanRef]()
+	planRef := generics.GetFakeObj[*planv1.PlanRef]()
 
 	// register child workflows
-	pln := plan.NewWorkflow(cfg)
-	env.RegisterWorkflow(pln.CreatePlan)
-	env.OnWorkflow(pln.CreatePlan, mock.Anything, mock.Anything).
+	env.RegisterWorkflow(CreatePlan)
+	env.OnWorkflow(CreatePlan, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
 			return &planv1.CreatePlanResponse{Plan: planRef}, nil
 		})
 
-	exec := execute.NewWorkflow(cfg)
-	env.RegisterWorkflow(exec.ExecutePlan)
-	env.OnWorkflow(exec.ExecutePlan, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r *executev1.ExecuteRequest) (*executev1.ExecuteResponse, error) {
-			return &executev1.ExecuteResponse{}, nil
+	env.RegisterWorkflow(ExecutePlan)
+	env.OnWorkflow(ExecutePlan, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+			return &executev1.ExecutePlanResponse{}, nil
 		})
 
 	// register activities
