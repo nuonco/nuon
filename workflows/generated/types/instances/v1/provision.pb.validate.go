@@ -105,17 +105,6 @@ func (m *ProvisionRequest) validate(all bool) error {
 
 	}
 
-	if utf8.RuneCountInString(m.GetPrefix()) < 1 {
-		err := ProvisionRequestValidationError{
-			field:  "Prefix",
-			reason: "value length must be at least 1 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if all {
 		switch v := interface{}(m.GetComponent()).(type) {
 		case interface{ ValidateAll() error }:
