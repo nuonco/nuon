@@ -26,10 +26,6 @@ message ProvisionRequest {
 
   component.v1.Component component = 5;
 
-  string deployment_prefix = 6 [
-    (validate.rules).string.min_len = 26,
-    (tagger.tags) = "faker:\"len=26\""
-  ];
   bool plan_only = 7 [(tagger.tags) = "faker:\"-\""];
   .executors.v1.plan.v1.PlanRef build_plan = 8;
 }
