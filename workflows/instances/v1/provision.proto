@@ -31,6 +31,7 @@ message ProvisionRequest {
 
   component.v1.Component component = 6;
   bool plan_only = 7 [(tagger.tags) = "faker:\"-\""];
+  .executors.v1.plan.v1.PlanRef build_plan = 8;
 }
 
 // ProvisionResponse returns the response from an instance provision workflow

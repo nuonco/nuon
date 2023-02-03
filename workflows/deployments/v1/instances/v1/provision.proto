@@ -3,6 +3,7 @@ syntax = "proto3";
 package deployments.v1.instances.v1;
 
 import "component/v1/component.proto";
+import "executors/v1/plan/v1/plan_ref.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -30,6 +31,7 @@ message ProvisionRequest {
     (tagger.tags) = "faker:\"len=26\""
   ];
   bool plan_only = 7 [(tagger.tags) = "faker:\"-\""];
+  .executors.v1.plan.v1.PlanRef build_plan = 8;
 }
 
 // ProvisionResponse is a child workflow response for the plan phase
