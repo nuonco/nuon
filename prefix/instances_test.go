@@ -1,0 +1,79 @@
+package prefix
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/powertoolsdev/go-generics"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestInstancePath(t *testing.T) {
+	obj := generics.GetFakeObj[instance]()
+
+	prefix := InstancePath(obj.OrgID, obj.AppID, obj.ComponentName, obj.DeploymentID, obj.InstallID)
+	expectedKVs := [][2]string{
+		{"org", obj.OrgID},
+		{"app", obj.AppID},
+		{"deployment", obj.DeploymentID},
+		{"component", obj.ComponentName},
+		{"install", obj.InstallID},
+	}
+	for _, kv := range expectedKVs {
+		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
+	}
+}
+
+func TestInstallPath(t *testing.T) {
+	obj := generics.GetFakeObj[install]()
+
+	prefix := InstallPath(obj.OrgID, obj.AppID, obj.InstallID)
+	expectedKVs := [][2]string{
+		{"org", obj.OrgID},
+		{"app", obj.AppID},
+		{"install", obj.InstallID},
+	}
+	for _, kv := range expectedKVs {
+		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
+	}
+}
+
+func TestDeploymentPath(t *testing.T) {
+	obj := generics.GetFakeObj[deployment]()
+
+	prefix := DeploymentPath(obj.OrgID, obj.AppID, obj.ComponentName, obj.DeploymentID)
+	expectedKVs := [][2]string{
+		{"org", obj.OrgID},
+		{"app", obj.AppID},
+		{"deployment", obj.DeploymentID},
+		{"component", obj.ComponentName},
+	}
+	for _, kv := range expectedKVs {
+		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
+	}
+}
+
+func TestAppPath(t *testing.T) {
+	obj := generics.GetFakeObj[app]()
+
+	prefix := AppPath(obj.OrgID, obj.AppID)
+	expectedKVs := [][2]string{
+		{"org", obj.OrgID},
+		{"app", obj.AppID},
+	}
+	for _, kv := range expectedKVs {
+		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
+	}
+}
+
+func TestOrgPath(t *testing.T) {
+	obj := generics.GetFakeObj[org]()
+
+	prefix := OrgPath(obj.OrgID)
+	expectedKVs := [][2]string{
+		{"org", obj.OrgID},
+	}
+	for _, kv := range expectedKVs {
+		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
+	}
+}
