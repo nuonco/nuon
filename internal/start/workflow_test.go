@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
+	"github.com/powertoolsdev/go-workflows-meta/prefix"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/instances/v1"
@@ -107,7 +108,7 @@ func TestStart(t *testing.T) {
 
 			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgID)
 			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
-			expectedPrefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
+			expectedPrefix := prefix.DeploymentPath(orgID, appID, req.Component.Name, deploymentID)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
@@ -120,7 +121,7 @@ func TestStart(t *testing.T) {
 
 			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgID)
 			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
-			expectedPrefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
+			expectedPrefix := prefix.DeploymentPath(orgID, appID, req.Component.Name, deploymentID)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
@@ -144,8 +145,6 @@ func TestStart(t *testing.T) {
 			assert.Equal(t, orgID, r.OrgId)
 			assert.Equal(t, appID, r.AppId)
 			assert.Equal(t, deploymentID, r.DeploymentId)
-			expectedPrefix := getS3Prefix(orgID, appID, req.Component.Name, deploymentID)
-			assert.Equal(t, expectedPrefix, r.DeploymentPrefix)
 			assert.True(t, proto.Equal(req.Component, r.Component))
 			return resp, nil
 		})

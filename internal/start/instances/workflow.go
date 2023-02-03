@@ -56,7 +56,6 @@ func (w *wkflow) ProvisionInstances(ctx workflow.Context, req *instancesv1.Provi
 			AppId:        req.AppId,
 			DeploymentId: req.DeploymentId,
 			InstallId:    installShortID,
-			Prefix:       req.DeploymentPrefix,
 			Component:    req.Component,
 			PlanOnly:     req.PlanOnly,
 			BuildPlan:    req.BuildPlan,
