@@ -22,6 +22,24 @@ func TestInstancePath(t *testing.T) {
 	for _, kv := range expectedKVs {
 		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
 	}
+	assert.NotContains(t, prefix, "phase=")
+}
+
+func TestInstancePhasePath(t *testing.T) {
+	obj := generics.GetFakeObj[instance]()
+
+	prefix := InstancePhasePath(obj.OrgID, obj.AppID, obj.ComponentName, obj.DeploymentID, obj.InstallID, obj.Phase)
+	expectedKVs := [][2]string{
+		{"org", obj.OrgID},
+		{"app", obj.AppID},
+		{"deployment", obj.DeploymentID},
+		{"component", obj.ComponentName},
+		{"install", obj.InstallID},
+		{"phase", obj.Phase},
+	}
+	for _, kv := range expectedKVs {
+		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
+	}
 }
 
 func TestInstallPath(t *testing.T) {

@@ -1,6 +1,9 @@
 package prefix
 
-import "fmt"
+import (
+	"fmt"
+	"path/filepath"
+)
 
 type instance struct {
 	OrgID         string
@@ -8,15 +11,21 @@ type instance struct {
 	ComponentName string
 	DeploymentID  string
 	InstallID     string
+	Phase         string
 }
 
 func (i instance) toPath() string {
-	return fmt.Sprintf("org=%s/app=%s/component=%s/deployment=%s/install=%s",
+	base := fmt.Sprintf("org=%s/app=%s/component=%s/deployment=%s/install=%s",
 		i.OrgID,
 		i.AppID,
 		i.ComponentName,
 		i.DeploymentID,
 		i.InstallID)
+	if i.Phase != "" {
+		base = filepath.Join(base, fmt.Sprintf("phase=%s", i.Phase))
+	}
+
+	return base
 }
 
 // InstancePath returns the prefix for an instance
@@ -27,6 +36,18 @@ func InstancePath(orgID, appID, componentName, deploymentID, installID string) s
 		ComponentName: componentName,
 		DeploymentID:  deploymentID,
 		InstallID:     installID,
+	}.toPath()
+}
+
+// InstancePhasePath returns the prefix for an instance's phase
+func InstancePhasePath(orgID, appID, componentName, deploymentID, installID, phase string) string {
+	return instance{
+		OrgID:         orgID,
+		AppID:         appID,
+		ComponentName: componentName,
+		DeploymentID:  deploymentID,
+		InstallID:     installID,
+		Phase:         phase,
 	}.toPath()
 }
 
