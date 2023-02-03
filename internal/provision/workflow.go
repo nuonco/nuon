@@ -97,11 +97,11 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 
 	// TODO(jm): change this from sending the hostname to slack to just writing it into the response
 	shnReq := SendHostnameNotificationRequest{
-		OrgID:                "todo-org-id",
+		OrgID:                req.OrgId,
 		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
 		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, "todo-org-id"),
 		InstallID:            req.InstallId,
-		AppID:                "todo-app-id",
+		AppID:                req.AppId,
 	}
 	shnResp, err := execSendHostnameNotification(ctx, act, shnReq)
 	if err != nil {

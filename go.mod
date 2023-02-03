@@ -9,8 +9,8 @@ require (
 	github.com/powertoolsdev/go-generics v0.0.1
 	github.com/powertoolsdev/go-sender v0.0.4
 	github.com/powertoolsdev/go-waypoint v1.0.0
-	github.com/powertoolsdev/go-workflows-meta v0.1.0
-	github.com/powertoolsdev/protos v0.59.3
+	github.com/powertoolsdev/go-workflows-meta v0.2.0
+	github.com/powertoolsdev/protos v0.59.5
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.20.0

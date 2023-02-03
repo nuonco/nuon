@@ -6,6 +6,7 @@ import (
 
 	"github.com/powertoolsdev/go-common/shortid"
 	meta "github.com/powertoolsdev/go-workflows-meta"
+	"github.com/powertoolsdev/go-workflows-meta/prefix"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	"go.temporal.io/sdk/workflow"
@@ -27,7 +28,7 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, req *instancesv1.ProvisionR
 	startReq := &sharedv1.StartActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
 		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
-		MetadataBucketPrefix:        req.Prefix,
+		MetadataBucketPrefix:        prefix.InstancePath(req.OrgId, req.AppId, req.Component.Name, req.DeploymentId, req.InstallId),
 		RequestRef:                  metaRequestFromReq(req),
 		WorkflowInfo: &sharedv1.WorkflowInfo{
 			Id: info.WorkflowExecution.ID,
@@ -86,7 +87,7 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *instancesv1.Provision
 	finishReq := &sharedv1.FinishActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
 		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
-		MetadataBucketPrefix:        req.Prefix,
+		MetadataBucketPrefix:        prefix.InstancePath(req.OrgId, req.AppId, req.Component.Name, req.DeploymentId, req.InstallId),
 		ResponseRef:                 metaResponseFromResponse(resp),
 		Status:                      status,
 		ErrorMessage:                errMessage,
