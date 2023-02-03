@@ -1,19 +1,28 @@
-package config
+package configs
 
 import (
 	"bytes"
 	"fmt"
 	"html/template"
 
+	"github.com/go-playground/validator/v10"
 	waypointv1 "github.com/hashicorp/waypoint/pkg/server/gen"
-	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
-	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 )
 
-// NewStaticBuilder returns a builder that renders our hardcoded sample application
-func NewStaticBuilder() *staticBuilder {
-	return &staticBuilder{}
+// NewStaticBuildConfig returns a builder that renders our hardcoded sample application
+func NewStaticBuilder(v *validator.Validate, opts ...baseBuilderOption) (*staticBuilder, error) {
+	baseBuilder, err := newBaseBuilder(v, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &staticBuilder{baseBuilder}, nil
 }
+
+type staticBuilder struct {
+	*baseBuilder
+}
+
+var _ Builder = (*staticBuilder)(nil)
 
 var staticBuildTmpl string = `
 project = "{{.Project}}"
@@ -40,7 +49,7 @@ app "{{.AppName}}" {
 }
 `
 
-type buildTmplArgs struct {
+type staticTmplArgs struct {
 	Project          string
 	AppName          string
 	InputImage       string
@@ -49,23 +58,6 @@ type buildTmplArgs struct {
 	OutputVersion    string
 }
 
-type staticBuilder struct {
-	ecrRef    *planv1.ECRRepositoryRef
-	metadata  *planv1.Metadata
-	component *componentv1.Component
-}
-
-var _ Builder = (*staticBuilder)(nil)
-
-func (s *staticBuilder) WithMetadata(metadata *planv1.Metadata) {
-	s.metadata = metadata
-}
-func (s *staticBuilder) WithECRRef(ecrRef *planv1.ECRRepositoryRef) {
-	s.ecrRef = ecrRef
-}
-func (s *staticBuilder) WithComponent(component *componentv1.Component) {
-	s.component = component
-}
 func (s *staticBuilder) Render() ([]byte, waypointv1.Hcl_Format, error) {
 	tmpl, err := template.New("build-config").Parse(staticBuildTmpl)
 	if err != nil {
@@ -73,13 +65,13 @@ func (s *staticBuilder) Render() ([]byte, waypointv1.Hcl_Format, error) {
 	}
 
 	buf := new(bytes.Buffer)
-	args := buildTmplArgs{
-		Project:          s.metadata.AppShortId,
-		AppName:          s.component.Name,
+	args := staticTmplArgs{
+		Project:          s.Metadata.AppShortId,
+		AppName:          s.Component.Name,
 		InputImage:       "kennethreitz/httpbin",
 		InputVersion:     "latest",
-		OutputRepository: s.ecrRef.RepositoryName,
-		OutputVersion:    s.ecrRef.Tag,
+		OutputRepository: s.EcrRef.RepositoryName,
+		OutputVersion:    s.EcrRef.Tag,
 	}
 
 	if err := tmpl.Execute(buf, args); err != nil {
