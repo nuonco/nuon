@@ -1,7 +1,6 @@
 package provision
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -14,12 +13,6 @@ import (
 	workers "github.com/powertoolsdev/workers-installs/internal"
 	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
 	"github.com/powertoolsdev/workers-installs/internal/provision/sandbox"
-)
-
-const (
-	clusterIDKey       = "cluster_name"
-	clusterEndpointKey = "cluster_endpoint"
-	clusterCAKey       = "cluster_certificate_authority_data"
 )
 
 // NewWorkflow returns a new workflow executor
@@ -43,20 +36,13 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	}
 
 	// parse IDs into short IDs, and use them for all subsequent requests
-	orgID, err := shortid.ParseString(req.OrgId)
+	shortIDs, err := shortid.ParseStrings(req.OrgId, req.AppId, req.InstallId)
 	if err != nil {
-		return resp, fmt.Errorf("unable to get short org ID: %w", err)
+		return resp, fmt.Errorf("invalid request: %w", err)
 	}
+	orgID, appID, installID := shortIDs[0], shortIDs[1], shortIDs[2]
 	req.OrgId = orgID
-	appID, err := shortid.ParseString(req.AppId)
-	if err != nil {
-		return resp, fmt.Errorf("unable to get short org ID: %w", err)
-	}
 	req.AppId = appID
-	installID, err := shortid.ParseString(req.InstallId)
-	if err != nil {
-		return resp, fmt.Errorf("unable to get short install ID: %w", err)
-	}
 	req.InstallId = installID
 
 	activityOpts := workflow.ActivityOptions{
@@ -98,20 +84,22 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	}
 	resp.TerraformOutputs = psr.TerraformOutputs
 
-	if err = checkKeys(psr.TerraformOutputs, []string{clusterIDKey, clusterEndpointKey, clusterCAKey}); err != nil {
-		err = fmt.Errorf("missing necessary TF output to continue: %w", err)
-		w.finishWithErr(ctx, req, act, "check_terraform_outputs", err)
+	tfOutputs, err := sandbox.ParseTerraformOutputs(psr.TerraformOutputs)
+	if err != nil {
+		err = fmt.Errorf("invalid sandbox outputs: %w", err)
+		w.finishWithErr(ctx, req, act, "parse_sandbox_outputs", err)
 		return resp, err
 	}
 
 	prReq := &runnerv1.ProvisionRunnerRequest{
-		OrgId:     orgID,
-		AppId:     appID,
-		InstallId: installID,
+		OrgId:         orgID,
+		AppId:         appID,
+		InstallId:     installID,
+		OdrIamRoleArn: tfOutputs.OdrIAMRoleArn,
 		ClusterInfo: &runnerv1.KubeClusterInfo{
-			Id:             psr.TerraformOutputs[clusterIDKey],
-			Endpoint:       psr.TerraformOutputs[clusterEndpointKey],
-			CaData:         psr.TerraformOutputs[clusterCAKey],
+			Id:             tfOutputs.ClusterID,
+			Endpoint:       tfOutputs.ClusterEndpoint,
+			CaData:         tfOutputs.ClusterCA,
 			TrustedRoleArn: w.cfg.NuonAccessRoleArn,
 		},
 	}
@@ -222,21 +210,4 @@ func execFinish(ctx workflow.Context, act *ProvisionActivities, req FinishReques
 	}
 
 	return resp, nil
-}
-
-var (
-	ErrInvalidInstall         = errors.New("invalid install")
-	ErrInvalidAccountSettings = errors.New("invalid account settings")
-	ErrInvalidSandboxSettings = errors.New("invalid sandbox settings")
-	ErrInvalidBucketName      = errors.New("invalid bucket name")
-	ErrInvalidBucketRegion    = errors.New("invalid bucket region")
-)
-
-func checkKeys(m map[string]string, keys []string) error {
-	for _, k := range keys {
-		if _, ok := m[k]; !ok {
-			return fmt.Errorf("missing key: %s", k)
-		}
-	}
-	return nil
 }

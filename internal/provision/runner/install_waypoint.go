@@ -14,9 +14,10 @@ import (
 )
 
 type RunnerConfig struct {
-	ID         string `validate:"required" json:"id"`
-	Cookie     string `validate:"required" json:"cookie"`
-	ServerAddr string `validate:"required" json:"server_addr"`
+	ID            string `validate:"required" json:"id"`
+	Cookie        string `validate:"required" json:"cookie"`
+	ServerAddr    string `validate:"required" json:"server_addr"`
+	OdrIAMRoleArn string `validate:"required" json:"odr_iam_role_arn"`
 }
 
 type InstallWaypointRequest struct {
@@ -63,6 +64,10 @@ func getWaypointRunnerValues(req InstallWaypointRequest) (map[string]interface{}
 
 	values.Runner.Odr.ServiceAccount.Create = true
 	values.Runner.Odr.ServiceAccount.Name = runnerOdrServiceAccountName(req.InstallID)
+	values.Runner.Odr.ServiceAccount.Annotations = map[string]string{
+		"eks.amazonaws.com/role-arn": req.RunnerConfig.OdrIAMRoleArn,
+	}
+
 	values.Runner.ServiceAccount.Create = true
 	values.Runner.ServiceAccount.Name = runnerServiceAccountName(req.InstallID)
 

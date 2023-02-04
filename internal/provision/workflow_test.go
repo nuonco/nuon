@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
@@ -91,17 +92,11 @@ func TestProvision(t *testing.T) {
 	sWkflow := sandbox.NewWorkflow(cfg)
 	env.RegisterWorkflow(sWkflow.ProvisionSandbox)
 
-	validProvisionOutput := map[string]string{
-		clusterIDKey:       "clusterid",
-		clusterEndpointKey: "https://k8s.endpoint",
-		clusterCAKey:       "b64 encoded ca data key that must be at least 20 chars long",
-	}
-	appShortID, err := shortid.ParseString(req.AppId)
+	shortIDs, err := shortid.ParseStrings(req.OrgId, req.AppId, req.InstallId)
 	assert.NoError(t, err)
-	orgShortID, err := shortid.ParseString(req.OrgId)
-	assert.NoError(t, err)
-	installShortID, err := shortid.ParseString(req.InstallId)
-	assert.NoError(t, err)
+	orgShortID, appShortID, installShortID := shortIDs[0], shortIDs[1], shortIDs[2]
+
+	provisionOutputs := generics.GetFakeObj[sandbox.TerraformOutputs]()
 
 	// Mock activity implementation
 	env.OnWorkflow(sWkflow.ProvisionSandbox, mock.Anything, mock.Anything).
@@ -113,7 +108,10 @@ func TestProvision(t *testing.T) {
 			assert.Equal(t, installShortID, pr.InstallId)
 			assert.Equal(t, req.AccountSettings, pr.AccountSettings)
 			assert.Equal(t, req.SandboxSettings, pr.SandboxSettings)
-			return &sandboxv1.ProvisionSandboxResponse{TerraformOutputs: validProvisionOutput}, nil
+
+			var respOutputs map[string]string
+			assert.NoError(t, mapstructure.Decode(provisionOutputs, &respOutputs))
+			return &sandboxv1.ProvisionSandboxResponse{TerraformOutputs: respOutputs}, nil
 		})
 
 	env.OnActivity(a.StartWorkflow, mock.Anything, mock.Anything).
@@ -126,10 +124,12 @@ func TestProvision(t *testing.T) {
 	env.OnWorkflow(rWkflow.ProvisionRunner, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *runnerv1.ProvisionRunnerRequest) (*runnerv1.ProvisionRunnerResponse, error) {
 			resp := &runnerv1.ProvisionRunnerResponse{}
+
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, orgShortID, r.OrgId)
 			assert.Equal(t, appShortID, r.AppId)
 			assert.Equal(t, installShortID, r.InstallId)
+			assert.Equal(t, provisionOutputs.OdrIAMRoleArn, r.OdrIamRoleArn)
 			return resp, nil
 		})
 
@@ -151,5 +151,7 @@ func TestProvision(t *testing.T) {
 	resp := &installsv1.ProvisionResponse{}
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
-	require.Equal(t, validProvisionOutput, resp.TerraformOutputs)
+	respTfOutputs, err := sandbox.ParseTerraformOutputs(resp.TerraformOutputs)
+	assert.NoError(t, err)
+	require.Equal(t, provisionOutputs, respTfOutputs)
 }

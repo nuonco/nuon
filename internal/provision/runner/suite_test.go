@@ -99,9 +99,10 @@ var _ = Describe("InstallWaypoint", func() {
 				TrustedRoleARN: "arn",
 			},
 			RunnerConfig: runner.RunnerConfig{
-				ID:         namespace,
-				Cookie:     "cookie",
-				ServerAddr: "addr",
+				ID:            namespace,
+				Cookie:        "cookie",
+				ServerAddr:    "addr",
+				OdrIAMRoleArn: "arn",
 			},
 			CreateNamespace: true,
 		}
