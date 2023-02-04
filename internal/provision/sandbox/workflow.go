@@ -11,12 +11,6 @@ import (
 	workers "github.com/powertoolsdev/workers-installs/internal"
 )
 
-const (
-	clusterIDKey       = "cluster_name"
-	clusterEndpointKey = "cluster_endpoint"
-	clusterCAKey       = "cluster_certificate_authority_data"
-)
-
 // NewWorkflow returns a new workflow executor
 func NewWorkflow(cfg workers.Config) wkflow {
 	return wkflow{
@@ -63,7 +57,7 @@ func (w wkflow) ProvisionSandbox(ctx workflow.Context, req *sandboxv1.ProvisionS
 		err = fmt.Errorf("unable to provision sandbox: %w", err)
 		return resp, err
 	}
-	tfOutputs, err := parseTerraformOutputs(psr.Outputs)
+	tfOutputs, err := ParseTerraformOutputs(psr.Outputs)
 	if err != nil {
 		err = fmt.Errorf("unable to parse terraform outputs: %w", err)
 		return resp, err
@@ -90,19 +84,4 @@ func provisionSandbox(ctx workflow.Context, act *Activities, req ApplySandboxReq
 		return resp, err
 	}
 	return resp, nil
-}
-
-type terraformOutputs struct {
-	ClusterID       string `mapstructure:"cluster_name"`
-	ClusterEndpoint string `mapstructure:"cluster_endpoint"`
-	ClusterCA       string `mapstructure:"cluster_certificate_authority_data"`
-}
-
-func parseTerraformOutputs(m map[string]interface{}) (terraformOutputs, error) {
-	var tfOutputs terraformOutputs
-	if err := mapstructure.Decode(m, &tfOutputs); err != nil {
-		return tfOutputs, fmt.Errorf("invalid terraform outputs: %w", err)
-	}
-
-	return tfOutputs, nil
 }

@@ -91,7 +91,6 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 		Chart:           &waypoint.DefaultChart,
 		Atomic:          false,
 		CreateNamespace: true,
-
 		ClusterInfo: kube.ClusterInfo{
 			ID:             req.ClusterInfo.Id,
 			Endpoint:       req.ClusterInfo.Endpoint,
@@ -100,9 +99,10 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 		},
 
 		RunnerConfig: RunnerConfig{
-			Cookie:     gwscResp.Cookie,
-			ID:         req.InstallId,
-			ServerAddr: orgServerAddr,
+			OdrIAMRoleArn: req.OdrIamRoleArn,
+			Cookie:        gwscResp.Cookie,
+			ID:            req.InstallId,
+			ServerAddr:    orgServerAddr,
 		},
 	}
 	_, err = installWaypoint(ctx, act, iwReq)

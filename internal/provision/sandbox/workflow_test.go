@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/powertoolsdev/go-generics"
 	sandboxv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1/sandbox/v1"
 	shared "github.com/powertoolsdev/workers-installs/internal"
@@ -23,11 +24,9 @@ func TestWorkflow_Provision(t *testing.T) {
 	env := testSuite.NewTestWorkflowEnvironment()
 	a := NewActivities(cfg)
 
-	validProvisionOutput := map[string]interface{}{
-		clusterIDKey:       "clusterid",
-		clusterEndpointKey: "https://k8s.endpoint",
-		clusterCAKey:       "b64 encoded ca",
-	}
+	provisionOutputs := generics.GetFakeObj[TerraformOutputs]()
+	var outputs map[string]interface{}
+	assert.NoError(t, mapstructure.Decode(provisionOutputs, &outputs))
 
 	// Mock activity implementation
 	env.OnActivity(a.ApplySandbox, mock.Anything, mock.Anything).
@@ -42,7 +41,7 @@ func TestWorkflow_Provision(t *testing.T) {
 			assert.Equal(t, cfg.NuonAccessRoleArn, pr.NuonAccessRoleArn)
 			assert.Equal(t, cfg.OrgInstanceRoleTemplate, pr.OrgInstanceRoleTemplate)
 
-			return ApplySandboxResponse{Outputs: validProvisionOutput}, nil
+			return ApplySandboxResponse{Outputs: outputs}, nil
 		})
 
 	wkflow := NewWorkflow(cfg)
@@ -51,8 +50,10 @@ func TestWorkflow_Provision(t *testing.T) {
 	require.NoError(t, env.GetWorkflowError())
 	var resp *sandboxv1.ProvisionSandboxResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
-	require.Equal(t, validProvisionOutput[clusterIDKey], resp.TerraformOutputs[clusterIDKey])
-	require.Equal(t, validProvisionOutput[clusterEndpointKey], resp.TerraformOutputs[clusterEndpointKey])
-	require.Equal(t, validProvisionOutput[clusterCAKey], resp.TerraformOutputs[clusterCAKey])
+
+	respTfOutputs, err := ParseTerraformOutputs(resp.TerraformOutputs)
+	assert.NoError(t, err)
+	assert.Equal(t, respTfOutputs, provisionOutputs)
+
 	require.NotNil(t, resp)
 }
