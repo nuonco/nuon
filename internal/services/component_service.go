@@ -79,7 +79,7 @@ func (i *componentService) GetAppComponents(ctx context.Context, ID string, opti
 func (i *componentService) updateComponent(ctx context.Context, input models.ComponentInput) (*models.Component, error) {
 	component, err := i.GetComponent(ctx, *input.ID)
 	if err != nil {
-		i.log.Error("failed to update component",
+		i.log.Error("failed to retrieve component",
 			zap.Any("input", input),
 			zap.String("error", err.Error()))
 		return nil, err
