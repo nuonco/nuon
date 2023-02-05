@@ -23,6 +23,8 @@ type Config struct {
 	TemporalHost      string `config:"temporal_host"`
 	TemporalNamespace string `config:"temporal_namespace"`
 
+	HostIP string `config:"host_ip" validate:"required"`
+
 	// NOTE: these webhook urls are scoped at the project level, but are workflow specific. This is because we
 	// create a slack notifier object at the cmd level and pass it to each individual workflow
 	InstallationBotsSlackWebhookURL string `config:"installation_bots_slack_webhook_url"`
