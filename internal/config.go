@@ -9,6 +9,8 @@ import (
 func init() {
 	config.RegisterDefault("temporal_host", "localhost:7233")
 	config.RegisterDefault("temporal_namespace", "default")
+	config.RegisterDefault("temporal_task_queue", "deployments")
+	config.RegisterDefault("temporal_max_concurrent_activities", 1)
 
 	// deployment defaults
 	config.RegisterDefault("waypoint_token_secret_namespace", "default")
@@ -16,11 +18,14 @@ func init() {
 }
 
 type Config struct {
-	config.Base       `config:",squash"`
-	TemporalHost      string `config:"temporal_host" validate:"required"`
-	TemporalNamespace string `config:"temporal_namespace" validate:"required"`
+	config.Base `config:",squash"`
 
-	HostIP string `config:"host_ip" validate:"required"`
+	// NOTE(jm): this should eventually be migrated to it's own temporal config in a shared package
+	TemporalHost                    string `config:"temporal_host" validate:"required"`
+	TemporalNamespace               string `config:"temporal_namespace" validate:"required"`
+	TemporalTaskQueue               string `config:"temporal_task_queue" validate:"required"`
+	TemporalMaxConcurrentActivities int    `config:"temporal_max_concurrent_activities" validate:"required"`
+	HostIP                          string `config:"host_ip" validate:"required"`
 
 	DeploymentsBucket string `config:"deployments_bucket" validate:"required"`
 
