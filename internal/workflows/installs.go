@@ -12,7 +12,7 @@ import (
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_installs.go -source=installs.go -package=workflows
 const (
-	sandboxVersion string = "0.10.1"
+	sandboxVersion string = "0.10.2"
 	sandboxName    string = "aws-eks"
 )
 
