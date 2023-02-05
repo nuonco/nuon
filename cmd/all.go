@@ -1,17 +1,17 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
-	"sync"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-common/config"
-	"github.com/powertoolsdev/go-common/temporalzap"
+	"github.com/powertoolsdev/workers-deployments/cmd/worker"
 	shared "github.com/powertoolsdev/workers-deployments/internal"
+	"github.com/powertoolsdev/workers-deployments/internal/start"
+	"github.com/powertoolsdev/workers-deployments/internal/start/build"
+	"github.com/powertoolsdev/workers-deployments/internal/start/instances"
 	"github.com/spf13/cobra"
-	"go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/worker"
-	"go.uber.org/zap"
+	tworker "go.temporal.io/sdk/worker"
 )
 
 var allCmd = &cobra.Command{
@@ -25,63 +25,37 @@ func init() {
 	rootCmd.AddCommand(allCmd)
 }
 
-type workerFn func(client.Client, shared.Config, <-chan interface{}) error
-
-func runAll(cmd *cobra.Command, args []string) {
+func runAll(cmd *cobra.Command, _ []string) {
 	var cfg shared.Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
-		panic(fmt.Sprintf("failed to load config: %s", err))
+		log.Fatalf("unable to load config: %v", err)
 	}
 	if err := cfg.Validate(); err != nil {
-		panic(fmt.Sprintf("failed to validate config: %s", err))
+		log.Fatalf("unable to validate config: %v", err)
 	}
 
-	var (
-		l   *zap.Logger
-		err error
+	stWkflow := start.NewWorkflow(cfg)
+	bldWkflow := build.NewWorkflow(cfg)
+	instWkflow := instances.NewWorkflow(cfg)
+
+	wkr, err := worker.New(validator.New(), worker.WithConfig(&cfg),
+		// register workflows
+		worker.WithWorkflow(stWkflow.Start),
+		worker.WithWorkflow(bldWkflow.Build),
+		worker.WithWorkflow(instWkflow.ProvisionInstances),
+
+		// register activities
+		worker.WithActivity(start.NewActivities()),
+		worker.WithActivity(instances.NewActivities(cfg)),
 	)
-	switch cfg.Env {
-	case config.Development:
-		l, err = zap.NewDevelopment()
-	default:
-		l, err = zap.NewProduction()
-	}
-	zap.ReplaceGlobals(l)
-
 	if err != nil {
-		fmt.Printf("failed to instantiate logger: %v\n", err)
+		log.Fatalf("unable to initialize worker: %s", err.Error())
 	}
 
-	c, err := client.Dial(client.Options{
-		HostPort:  cfg.TemporalHost,
-		Namespace: cfg.TemporalNamespace,
-		Logger:    temporalzap.NewLogger(l),
-	})
+	interruptCh := tworker.InterruptCh()
+	err = wkr.Run(interruptCh)
 	if err != nil {
-		l.Fatal("failed to instantiate temporal client", zap.Error(err))
+		log.Fatalf("unable to run worker: %v", err)
 	}
-	defer c.Close()
-
-	ch := worker.InterruptCh()
-
-	wg := new(sync.WaitGroup)
-
-	workflows := []workerFn{
-		runDeploymentWorkers,
-	}
-
-	wg.Add(len(workflows))
-
-	l.Debug("starting all workers", zap.Any("config", cfg))
-	for _, worker := range workflows {
-		go func(fn workerFn) {
-			if err := fn(c, cfg, ch); err != nil {
-				log.Fatalf("error in worker: %s", err)
-			}
-			wg.Done()
-		}(worker)
-	}
-
-	wg.Wait()
 }
