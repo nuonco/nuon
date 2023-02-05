@@ -126,11 +126,12 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 func (w wkflow) finishWithErr(ctx workflow.Context, req *installsv1.ProvisionRequest, act *ProvisionActivities, step string, err error) {
 	l := workflow.GetLogger(ctx)
 	finishReq := FinishRequest{
-		ProvisionRequest:    req,
-		InstallationsBucket: w.cfg.InstallationsBucket,
-		Success:             false,
-		ErrorStep:           step,
-		ErrorMessage:        fmt.Sprintf("%s", err),
+		ProvisionRequest:              req,
+		InstallationsBucket:           w.cfg.InstallationsBucket,
+		InstallationsAccessIAMRoleARN: fmt.Sprintf(w.cfg.OrgInstallationsRoleTemplate, req.OrgId),
+		Success:                       false,
+		ErrorStep:                     step,
+		ErrorMessage:                  fmt.Sprintf("%s", err),
 	}
 
 	if resp, execErr := execFinish(ctx, act, finishReq); execErr != nil {

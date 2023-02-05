@@ -60,6 +60,7 @@ func TestProvision_finishWithErr(t *testing.T) {
 
 	env.OnActivity(act.Finish, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, fr FinishRequest) (FinishResponse, error) {
+			assert.NoError(t, fr.validate())
 			assert.Equal(t, fr.ErrorStep, "provision_sandbox")
 			assert.Contains(t, fr.ErrorMessage, errChildWorkflow.Error())
 			assert.False(t, fr.Success)
