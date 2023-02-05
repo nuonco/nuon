@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/mitchellh/mapstructure"
@@ -35,6 +36,9 @@ func (w wkflow) ProvisionSandbox(ctx workflow.Context, req *sandboxv1.ProvisionS
 		ScheduleToCloseTimeout: 60 * time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
+	ctx = workflow.WithRetryPolicy(ctx, temporal.RetryPolicy{
+		MaximumAttempts: 3,
+	})
 
 	// NOTE(jdt): this is just so that we can use the method names
 	// the actual struct isn't used by temporal during dispatch at all
@@ -77,6 +81,10 @@ func (w wkflow) ProvisionSandbox(ctx workflow.Context, req *sandboxv1.ProvisionS
 func provisionSandbox(ctx workflow.Context, act *Activities, req ApplySandboxRequest) (ApplySandboxResponse, error) {
 	var resp ApplySandboxResponse
 	l := workflow.GetLogger(ctx)
+
+	ctx = workflow.WithRetryPolicy(ctx, temporal.RetryPolicy{
+		MaximumAttempts: 1,
+	})
 
 	l.Debug("executing provision sandbox activity", "request", req)
 	fut := workflow.ExecuteActivity(ctx, act.ApplySandbox, req)
