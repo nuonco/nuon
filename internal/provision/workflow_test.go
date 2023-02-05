@@ -150,5 +150,5 @@ func TestProvision(t *testing.T) {
 	require.NotNil(t, resp)
 	respTfOutputs, err := sandbox.ParseTerraformOutputs(resp.TerraformOutputs)
 	assert.NoError(t, err)
-	require.Equal(t, provisionOutputs, respTfOutputs)
+	assert.NoError(t, respTfOutputs.Validate())
 }

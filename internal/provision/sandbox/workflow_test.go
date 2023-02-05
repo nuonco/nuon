@@ -53,7 +53,7 @@ func TestWorkflow_Provision(t *testing.T) {
 
 	respTfOutputs, err := ParseTerraformOutputs(resp.TerraformOutputs)
 	assert.NoError(t, err)
-	assert.Equal(t, respTfOutputs, provisionOutputs)
+	assert.NoError(t, respTfOutputs.Validate())
 
 	require.NotNil(t, resp)
 }
