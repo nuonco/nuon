@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -17,12 +16,8 @@ import (
 	assumerole "github.com/powertoolsdev/go-aws-assume-role"
 )
 
-// TODO(jdt): add interfaces and test
-
 // uploader is the interface for uploading data into output runs directory
 type Uploader interface {
-	SetUploadPrefix(string)
-
 	// uploadFile writes the data in the file into the output s3 blob
 	UploadFile(context.Context, string, string, string) error
 
@@ -30,17 +25,19 @@ type Uploader interface {
 	UploadBlob(context.Context, []byte, string) error
 }
 
-func NewS3Uploader(bucket, prefix string, opts ...uploaderOptions) *s3Uploader {
+func NewS3Uploader(v *validator.Validate, opts ...uploaderOptions) (*s3Uploader, error) {
 	obj := &s3Uploader{
-		installBucket: bucket,
-		prefix:        prefix,
+		v: v,
 	}
 
 	for _, opt := range opts {
 		opt(obj)
 	}
+	if err := obj.v.Struct(obj); err != nil {
+		return nil, fmt.Errorf("invalid options: %w", err)
+	}
 
-	return obj
+	return obj, nil
 }
 
 type uploaderOptions func(*s3Uploader)
@@ -59,18 +56,29 @@ func WithAssumeSessionName(s string) uploaderOptions {
 	}
 }
 
+// WithPrefix sets the session name of the assume
+func WithPrefix(s string) uploaderOptions {
+	return func(obj *s3Uploader) {
+		obj.prefix = s
+	}
+}
+
+// WithBucketName sets the bucket name
+func WithBucketName(s string) uploaderOptions {
+	return func(obj *s3Uploader) {
+		obj.Bucket = s
+	}
+}
+
 type s3Uploader struct {
-	prefix        string
-	installBucket string
+	v *validator.Validate
+
+	prefix string
+	Bucket string `validate:"required"`
 
 	// assumeRoleARN is an optional role which will be assumed if passed in
 	assumeRoleARN         string
 	assumeRoleSessionName string
-}
-
-func (s *s3Uploader) SetUploadPrefix(prefix string) {
-	ts := time.Now()
-	s.prefix = filepath.Join(prefix, fmt.Sprintf("runs/ts=%d", ts.Unix()))
 }
 
 func (s *s3Uploader) loadAWSConfig(ctx context.Context) (aws.Config, error) {
@@ -119,10 +127,6 @@ func (s *s3Uploader) UploadFile(ctx context.Context, tmpDir, inputName, outputNa
 }
 
 func (s *s3Uploader) UploadBlob(ctx context.Context, byts []byte, outputName string) error {
-	if s.prefix == "" {
-		return fmt.Errorf("unable to upload, missing prefix")
-	}
-
 	cfg, err := s.loadAWSConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to load aws config: %w", err)
@@ -141,7 +145,7 @@ type s3UploaderClient interface {
 
 func (s *s3Uploader) upload(ctx context.Context, client s3UploaderClient, f io.Reader, name string) error {
 	key := filepath.Join(s.prefix, name)
-	bucket := s.installBucket
+	bucket := s.Bucket
 	_, err := client.Upload(ctx, &s3.PutObjectInput{
 		Bucket: &bucket,
 		Key:    &key,

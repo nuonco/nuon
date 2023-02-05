@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/go-playground/validator/v10"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -34,22 +35,6 @@ func (m *mockUploader) UploadBlob(ctx context.Context, byts []byte, outputName s
 }
 
 var _ Uploader = (*mockUploader)(nil)
-
-func TestUploader_setPrefix(t *testing.T) {
-	up := s3Uploader{}
-
-	prefix := "/installID=abc"
-	up.SetUploadPrefix(prefix)
-	assert.NotNil(t, up.prefix)
-
-	// assert that the output key is of format prefix/log_epoch
-	expectedPrefix := prefix + "/runs/ts="
-	assert.True(t, strings.HasPrefix(up.prefix, expectedPrefix))
-
-	epochStr := strings.Split(up.prefix, expectedPrefix)[1]
-	_, err := strconv.ParseInt(epochStr, 10, 64)
-	assert.Nil(t, err)
-}
 
 type mockUploaderClient func(
 	ctx context.Context,
@@ -116,7 +101,7 @@ func Test_upload(t *testing.T) {
 			client := test.client(t)
 
 			up := s3Uploader{
-				installBucket: bucketName,
+				Bucket: bucketName,
 			}
 			f := bytes.NewBuffer(testContent)
 			err := up.upload(context.Background(), client, f, testOutputKey)
@@ -129,32 +114,52 @@ func Test_upload(t *testing.T) {
 
 func TestNewS3Uploader(t *testing.T) {
 	bucketName := "test-nuon-uploads"
-	bucketPrefix := "test-nuon-bucket-prefix"
+	bucketPrefix := "test-prefix"
+
 	tests := map[string]struct {
-		initFn   func() Uploader
-		assertFn func(*testing.T, Uploader)
+		initFn      func() (*s3Uploader, error)
+		assertFn    func(*testing.T, Uploader)
+		errExpected error
 	}{
-		"sets prefix and path correctly": {
-			initFn: func() Uploader {
-				return NewS3Uploader(bucketName, bucketPrefix)
+		"errors with no options": {
+			initFn: func() (*s3Uploader, error) {
+				return NewS3Uploader(validator.New())
 			},
 			assertFn: func(t *testing.T, obj Uploader) {
 				s3Obj, ok := obj.(*s3Uploader)
 				assert.True(t, ok)
-				assert.Equal(t, bucketName, s3Obj.installBucket)
+				assert.Equal(t, bucketName, s3Obj.Bucket)
+			},
+			errExpected: fmt.Errorf("Bucket"),
+		},
+		"initializes with bucket": {
+			initFn: func() (*s3Uploader, error) {
+				return NewS3Uploader(validator.New(), WithBucketName(bucketName))
+			},
+			assertFn: func(t *testing.T, obj Uploader) {
+				s3Obj, ok := obj.(*s3Uploader)
+				assert.True(t, ok)
+				assert.Equal(t, bucketName, s3Obj.Bucket)
+			},
+		},
+		"sets prefix correctly": {
+			initFn: func() (*s3Uploader, error) {
+				return NewS3Uploader(validator.New(), WithBucketName(bucketName), WithPrefix(bucketPrefix))
+			},
+			assertFn: func(t *testing.T, obj Uploader) {
+				s3Obj, ok := obj.(*s3Uploader)
+				assert.True(t, ok)
 				assert.Equal(t, bucketPrefix, s3Obj.prefix)
 			},
 		},
-
 		"sets assume role correctly": {
-			initFn: func() Uploader {
-				return NewS3Uploader(bucketName, bucketPrefix, WithAssumeRoleARN("test-role-arn"))
+			initFn: func() (*s3Uploader, error) {
+				return NewS3Uploader(validator.New(), WithBucketName(bucketName), WithAssumeRoleARN("test-role-arn"))
 			},
 			assertFn: func(t *testing.T, obj Uploader) {
 				s3Obj, ok := obj.(*s3Uploader)
 				assert.True(t, ok)
-				assert.Equal(t, bucketName, s3Obj.installBucket)
-				assert.Equal(t, bucketPrefix, s3Obj.prefix)
+				assert.Equal(t, bucketName, s3Obj.Bucket)
 				assert.Equal(t, "test-role-arn", s3Obj.assumeRoleARN)
 			},
 		},
@@ -162,7 +167,13 @@ func TestNewS3Uploader(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			uploader := test.initFn()
+			uploader, err := test.initFn()
+			if test.errExpected != nil {
+				assert.NotNil(t, err)
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+
 			test.assertFn(t, uploader)
 		})
 	}
