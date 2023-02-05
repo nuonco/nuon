@@ -22,7 +22,11 @@ require (
 	github.com/powertoolsdev/protos v0.60.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
+	go.opentelemetry.io/otel v1.12.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.12.0
+	go.opentelemetry.io/otel/sdk v1.12.0
 	go.temporal.io/sdk v1.20.0
+	go.temporal.io/sdk/contrib/opentelemetry v0.2.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/exp v0.0.0-20220916125017-b168a2c6b86b
 	google.golang.org/grpc v1.52.0
@@ -66,6 +70,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.7 // indirect
 	github.com/aws/smithy-go v1.13.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/containerd/containerd v1.6.8 // indirect
@@ -91,6 +96,7 @@ require (
 	github.com/go-faker/faker/v4 v4.0.0-beta.4 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
@@ -196,6 +202,10 @@ require (
 	github.com/xlab/treeprint v1.1.0 // indirect
 	github.com/zclconf/go-cty v1.12.1 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.6 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.12.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.12.0 // indirect
+	go.opentelemetry.io/otel/trace v1.12.0 // indirect
+	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.starlark.net v0.0.0-20220817180228-f738f5508c12 // indirect
 	go.temporal.io/api v1.14.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect

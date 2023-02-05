@@ -24,17 +24,13 @@ import (
 )
 
 func newFakeConfig() workers.Config {
-	return workers.Config{
-		OrgServerRootDomain:          "test.nuon.co",
-		TokenSecretNamespace:         "default",
-		InstallationsBucket:          "s3://nuon-installations",
-		InstallationsBucketRegion:    "us-west-2",
-		SandboxBucket:                "s3://nuon-sandboxes",
-		NuonAccessRoleArn:            "arn:124355/role",
-		OrgInstanceRoleTemplate:      "arn:aws:123456789:iam:role/org/%[1]s/org-instance-role-%[1]s",
-		OrgInstallerRoleTemplate:     "arn:aws:123456789:iam:role/org/%[1]s/org-installer-role-%[1]s",
-		OrgInstallationsRoleTemplate: "arn:aws:123456789:iam:role/org/%[1]s/org-installations-role-%[1]s",
-	}
+	cfg := generics.GetFakeObj[workers.Config]()
+
+	cfg.OrgInstanceRoleTemplate = "arn:aws:123456789:iam:role/org/%[1]s/org-instance-role-%[1]s"
+	cfg.OrgInstallerRoleTemplate = "arn:aws:123456789:iam:role/org/%[1]s/org-installer-role-%[1]s"
+	cfg.OrgInstallationsRoleTemplate = "arn:aws:123456789:iam:role/org/%[1]s/org-installations-role-%[1]s"
+
+	return cfg
 }
 
 func TestProvision_finishWithErr(t *testing.T) {
