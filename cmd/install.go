@@ -86,7 +86,7 @@ func runInstallWorkers(c client.Client, cfg shared.Config, interruptCh <-chan in
 	)
 
 	otel.SetTracerProvider(tracerProvider)
-	tracer := tracerProvider.Tracer("nuon.workers-executors")
+	tracer := tracerProvider.Tracer("nuon.workers-installs")
 
 	traceIntercepter, err := opentelemetry.NewTracingInterceptor(opentelemetry.TracerOptions{
 		Tracer: tracer,
