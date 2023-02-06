@@ -28,6 +28,7 @@ type Config struct {
 	// name maps to the waypoint application in the customer install
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Types that are assignable to Cfg:
+	//
 	//	*Config_Basic
 	//	*Config_ExternalHelm
 	//	*Config_HelmSource
