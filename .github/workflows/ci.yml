@@ -23,7 +23,7 @@ defaults:
 env:
   REPO_NAME: ${{ github.event.repository.name }}
   GHCR_IMAGE: ghcr.io/powertoolsdev/${{ github.event.repository.name }}
-  DEPENDENCY_REPOS: go-aws-assume-role,go-fetch
+  DEPENDENCY_REPOS: go-aws-assume-role,go-fetch,protos
 
 jobs:
   lint:

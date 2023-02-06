@@ -100,8 +100,8 @@ func (w *workspace) setupWorkingDirectory(ctx context.Context) error {
 func (w *workspace) fetchModule(ctx context.Context) error {
 	fetcher, err := s3fetch.New(
 		w.validator,
-		s3fetch.WithBucketName(w.Sandbox.BucketName),
-		s3fetch.WithBucketKey(w.Sandbox.Key),
+		s3fetch.WithBucketName(w.Module.Bucket),
+		s3fetch.WithBucketKey(w.Module.Key),
 		// fetch.WithRegion(w.Sandbox.Region),
 	)
 	if err != nil {
@@ -123,7 +123,7 @@ func (w *workspace) writeConfiguration() error {
 	bec, err := backend.NewS3Configurator(
 		w.validator,
 		backend.WithBackendConfig(&backend.S3Config{
-			BucketName:   w.Backend.BucketName,
+			BucketName:   w.Backend.Bucket,
 			BucketKey:    w.Backend.Key,
 			BucketRegion: w.Backend.Region},
 		))

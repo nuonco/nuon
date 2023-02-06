@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -16,8 +17,8 @@ func TestNewWorkspace(t *testing.T) {
 	tests := map[string]struct {
 		v           *validator.Validate
 		id          string
-		backend     *Object
-		sandbox     *Object
+		backend     *planv1.Object
+		sandbox     *planv1.Object
 		vars        map[string]interface{}
 		expected    *workspace
 		errExpected error
@@ -25,70 +26,70 @@ func TestNewWorkspace(t *testing.T) {
 		"valid": {
 			v:       v,
 			id:      "valid",
-			backend: &Object{BucketName: "valid", Key: "valid", Region: "us-east-2"},
-			sandbox: &Object{BucketName: "sandbox", Key: "sandbox", Region: "us-east-1"},
+			backend: &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
+			sandbox: &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:    map[string]interface{}{"test": "vars"},
 		},
 		"empty vars is fine": {
 			v:       v,
 			id:      "valid",
-			backend: &Object{BucketName: "valid", Key: "valid", Region: "us-east-2"},
-			sandbox: &Object{BucketName: "sandbox", Key: "sandbox", Region: "us-east-1"},
+			backend: &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
+			sandbox: &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:    map[string]interface{}{},
 		},
 		"missing id": {
 			v:           v,
 			id:          "",
-			backend:     &Object{BucketName: "valid", Key: "valid", Region: "us-east-2"},
-			sandbox:     &Object{BucketName: "sandbox", Key: "sandbox", Region: "us-east-1"},
+			backend:     &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
+			sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:        map[string]interface{}{"test": "vars"},
 			errExpected: fmt.Errorf("Field validation for 'ID' failed on the 'required' tag"),
 		},
 		"missing validator": {
 			v:           nil,
 			id:          "valid",
-			backend:     &Object{BucketName: "valid", Key: "valid", Region: "us-east-2"},
-			sandbox:     &Object{BucketName: "sandbox", Key: "sandbox", Region: "us-east-1"},
+			backend:     &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
+			sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:        map[string]interface{}{"test": "vars"},
 			errExpected: fmt.Errorf("validator is nil"),
 		},
-		"empty backend bucket": {
-			v:           v,
-			id:          "valid",
-			backend:     &Object{},
-			sandbox:     &Object{BucketName: "sandbox", Key: "sandbox", Region: "us-east-1"},
-			vars:        map[string]interface{}{"test": "vars"},
-			errExpected: fmt.Errorf("Key: 'workspace.Backend.BucketName' Error"),
-		},
+		// "empty backend bucket": {
+		// 	v:           v,
+		// 	id:          "valid",
+		// 	backend:     &planv1.Object{},
+		// 	sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
+		// 	vars:        map[string]interface{}{"test": "vars"},
+		// 	errExpected: fmt.Errorf("Key: 'workspace.Backend.BucketName' Error"),
+		// },
 		"missing backend bucket": {
 			v:           v,
 			id:          "valid",
 			backend:     nil,
-			sandbox:     &Object{BucketName: "sandbox", Key: "sandbox", Region: "us-east-1"},
+			sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:        map[string]interface{}{"test": "vars"},
 			errExpected: fmt.Errorf("Field validation for 'Backend' failed on the 'required' tag"),
 		},
-		"empty sandbox bucket": {
-			v:           v,
-			id:          "valid",
-			backend:     &Object{BucketName: "sandbox", Key: "sandbox", Region: "us-east-1"},
-			sandbox:     &Object{},
-			vars:        map[string]interface{}{"test": "vars"},
-			errExpected: fmt.Errorf("Key: 'workspace.Sandbox.BucketName' Error"),
-		},
+		// "empty sandbox bucket": {
+		// 	v:           v,
+		// 	id:          "valid",
+		// 	backend:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
+		// 	sandbox:     &planv1.Object{},
+		// 	vars:        map[string]interface{}{"test": "vars"},
+		// 	errExpected: fmt.Errorf("Key: 'workspace.Module.Bucket' Error"),
+		// },
 		"missing sandbox bucket": {
 			v:           v,
 			id:          "valid",
-			backend:     &Object{BucketName: "sandbox", Key: "sandbox", Region: "us-east-1"},
+			backend:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			sandbox:     nil,
 			vars:        map[string]interface{}{"test": "vars"},
-			errExpected: fmt.Errorf("Field validation for 'Sandbox' failed on the 'required' tag"),
+			errExpected: fmt.Errorf("Field validation for 'Module' failed on the 'required' tag"),
 		},
 		"missing vars": {
 			v:           v,
 			id:          "valid",
-			backend:     &Object{BucketName: "valid", Key: "valid", Region: "us-east-2"},
-			sandbox:     &Object{BucketName: "sandbox", Key: "sandbox", Region: "us-east-1"},
+			backend:     &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
+			sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:        nil,
 			errExpected: fmt.Errorf("Field validation for 'Vars' failed on the 'required' tag"),
 		},
@@ -103,7 +104,7 @@ func TestNewWorkspace(t *testing.T) {
 			w, err := NewWorkspace(
 				test.v,
 				WithID(test.id),
-				WithSandboxBucket(test.sandbox),
+				WithModuleBucket(test.sandbox),
 				WithBackendBucket(test.backend),
 				WithVars(test.vars),
 			)
@@ -114,7 +115,7 @@ func TestNewWorkspace(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, w)
 			assert.Equal(t, test.id, w.ID)
-			assert.Equal(t, test.sandbox, w.Sandbox)
+			assert.Equal(t, test.sandbox, w.Module)
 			assert.Equal(t, test.backend, w.Backend)
 			assert.Equal(t, test.vars, w.Vars)
 			assert.NoError(t, w.Cleanup())

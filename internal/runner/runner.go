@@ -5,17 +5,17 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-multierror"
+
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 )
 
 type runner struct {
-	Bucket string `validate:"required"`
-	Key    string `validate:"required"`
-	Region string `validate:"required"`
+	Plan *planv1.PlanRef `validate:"required,dive"`
 
 	// internal state
 	validator        *validator.Validate
 	cleanupFns       []func() error
-	moduleFetcher    moduleFetcher
+	planFetcher      planFetcher
 	requestParser    requestParser
 	workspaceSetuper workspaceSetuper
 }
@@ -27,7 +27,7 @@ func New(v *validator.Validate, opts ...runnerOption) (*runner, error) {
 	r := &runner{}
 
 	if v == nil {
-		return nil, fmt.Errorf("error instantiating workspace: validator is nil")
+		return nil, fmt.Errorf("error instantiating runner: validator is nil")
 	}
 	r.validator = v
 
@@ -41,33 +41,17 @@ func New(v *validator.Validate, opts ...runnerOption) (*runner, error) {
 		return nil, err
 	}
 
-	r.moduleFetcher = r
+	r.planFetcher = r
 	r.requestParser = r
 	r.workspaceSetuper = r
 
 	return r, nil
 }
 
-// WithBucket specifies the bucket for the request
-func WithBucket(s string) runnerOption {
+// WithPlan specifies the location of the terraform plan to execute
+func WithPlan(p *planv1.PlanRef) runnerOption {
 	return func(r *runner) error {
-		r.Bucket = s
-		return nil
-	}
-}
-
-// WithKey specifies the bucket key (object name) for the request
-func WithKey(s string) runnerOption {
-	return func(r *runner) error {
-		r.Key = s
-		return nil
-	}
-}
-
-// WithRegion specifies the bucket region for the request
-func WithRegion(s string) runnerOption {
-	return func(r *runner) error {
-		r.Region = s
+		r.Plan = p
 		return nil
 	}
 }

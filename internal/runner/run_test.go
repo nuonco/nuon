@@ -5,55 +5,50 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"testing"
 
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 const (
-	validJSON   = "testdata/valid_request.json"
-	invalidJSON = "testdata/invalid.json"
+	validMessage   = "testdata/valid_request"
+	invalidMessage = "testdata/invalid_request"
 )
 
 func TestRunner_parseRequest(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
 		ior         func(t *testing.T) io.Reader
-		expected    *Request
+		expected    *planv1.TerraformPlan
 		errExpected error
 	}{
 		"happy path": {
 			ior: func(t *testing.T) io.Reader {
-				r, err := os.Open(validJSON)
+				r, err := os.Open(validMessage)
 				assert.NoError(t, err)
 				t.Cleanup(func() { _ = r.Close() })
 				return r
 			},
-			expected: &Request{
-				ID:      "testid",
-				RunType: RunTypeApply,
-				Sandbox: Object{BucketName: "sandboxtest", Key: "prefix/key.tar.gz", Region: "us-east-2"},
-				Backend: Object{BucketName: "backendtest", Key: "prefix/state.json", Region: "us-east-2"},
-				Vars:    map[string]interface{}{},
+			expected: &planv1.TerraformPlan{
+				Id:      "testid",
+				RunType: planv1.RunType_RUN_TYPE_APPLY,
+				Module:  &planv1.Object{Bucket: "sandboxtest", Key: "prefix/key.tar.gz", Region: "us-east-2"},
+				Backend: &planv1.Object{Bucket: "backendtest", Key: "prefix/state.json", Region: "us-east-2"},
+				Vars:    map[string]*anypb.Any{},
 			},
 		},
-		"invalid json": {
+		"invalid proto": {
 			ior: func(t *testing.T) io.Reader {
-				r, err := os.Open(invalidJSON)
+				r, err := os.Open(invalidMessage)
 				assert.NoError(t, err)
 				t.Cleanup(func() { _ = r.Close() })
 				return r
 			},
-			errExpected: fmt.Errorf("invalid character ','"),
-		},
-
-		"empty json": {
-			ior: func(t *testing.T) io.Reader {
-				return strings.NewReader("")
-			},
-			errExpected: fmt.Errorf("unexpected end of JSON input"),
+			errExpected: fmt.Errorf("cannot parse invalid wire-format data"),
 		},
 	}
 
@@ -70,16 +65,16 @@ func TestRunner_parseRequest(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
-			assert.Equal(t, test.expected, req)
+			assert.True(t, proto.Equal(test.expected, req))
 		})
 	}
 }
 
-type mockModuleFetcher struct{ mock.Mock }
+type mockPlanFetcher struct{ mock.Mock }
 
-var _ moduleFetcher = (*mockModuleFetcher)(nil)
+var _ planFetcher = (*mockPlanFetcher)(nil)
 
-func (m *mockModuleFetcher) fetchModule(ctx context.Context) (io.ReadCloser, error) {
+func (m *mockPlanFetcher) fetchPlan(ctx context.Context) (io.ReadCloser, error) {
 	args := m.Called(ctx)
 	err := args.Error(1)
 	if args.Get(0) != nil {
@@ -92,11 +87,11 @@ type mockRequestParser struct{ mock.Mock }
 
 var _ requestParser = (*mockRequestParser)(nil)
 
-func (m *mockRequestParser) parseRequest(ior io.Reader) (*Request, error) {
+func (m *mockRequestParser) parseRequest(ior io.Reader) (*planv1.TerraformPlan, error) {
 	args := m.Called(ior)
 	err := args.Error(1)
 	if args.Get(0) != nil {
-		return args.Get(0).(*Request), err
+		return args.Get(0).(*planv1.TerraformPlan), err
 	}
 	return nil, err
 }
@@ -105,7 +100,7 @@ type mockWorkspaceSetuper struct{ mock.Mock }
 
 var _ workspaceSetuper = (*mockWorkspaceSetuper)(nil)
 
-func (m *mockWorkspaceSetuper) setupWorkspace(ctx context.Context, req *Request) (executor, error) {
+func (m *mockWorkspaceSetuper) setupWorkspace(ctx context.Context, req *planv1.TerraformPlan) (executor, error) {
 	args := m.Called(ctx, req)
 	err := args.Error(1)
 	if args.Get(0) != nil {
@@ -118,24 +113,26 @@ func TestRunner_Run(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	tests := map[string]struct {
-		mf          func(*testing.T) *mockModuleFetcher
+		pf          func(*testing.T) *mockPlanFetcher
 		rp          func(*testing.T) *mockRequestParser
 		ws          func(*testing.T) *mockWorkspaceSetuper
 		expected    map[string]interface{}
 		errExpected error
 	}{
 		"happiest path": {
-			mf: func(t *testing.T) *mockModuleFetcher {
+			pf: func(t *testing.T) *mockPlanFetcher {
 				// this is just a random io.ReadCloser
-				iorc, err := os.Open(validJSON)
+				iorc, err := os.Open(validMessage)
 				assert.NoError(t, err)
-				m := &mockModuleFetcher{}
-				m.On("fetchModule", ctx).Return(iorc, nil)
+				m := &mockPlanFetcher{}
+				m.On("fetchPlan", ctx).Return(iorc, nil)
 				return m
 			},
 			rp: func(t *testing.T) *mockRequestParser {
 				m := &mockRequestParser{}
-				m.On("parseRequest", mock.AnythingOfType("*os.File")).Return(&Request{RunType: RunTypeApply}, nil)
+				m.On("parseRequest", mock.AnythingOfType("*os.File")).Return(
+					&planv1.TerraformPlan{RunType: planv1.RunType_RUN_TYPE_APPLY}, nil,
+				)
 				return m
 			},
 			ws: func(t *testing.T) *mockWorkspaceSetuper {
@@ -144,15 +141,15 @@ func TestRunner_Run(t *testing.T) {
 				me.On("Apply", ctx).Return(nil)
 				me.On("Output", ctx).Return(map[string]interface{}{"got": "outputs"}, nil)
 				m := &mockWorkspaceSetuper{}
-				m.On("setupWorkspace", ctx, &Request{RunType: RunTypeApply}).Return(me, nil)
+				m.On("setupWorkspace", ctx, &planv1.TerraformPlan{RunType: planv1.RunType_RUN_TYPE_APPLY}).Return(me, nil)
 				return m
 			},
 			expected: map[string]interface{}{"got": "outputs"},
 		},
-		"failed fetching module": {
-			mf: func(t *testing.T) *mockModuleFetcher {
-				m := &mockModuleFetcher{}
-				m.On("fetchModule", ctx).Return(nil, fmt.Errorf("failed fetching module"))
+		"failed fetching plan": {
+			pf: func(t *testing.T) *mockPlanFetcher {
+				m := &mockPlanFetcher{}
+				m.On("fetchPlan", ctx).Return(nil, fmt.Errorf("failed fetching module"))
 				return m
 			},
 			rp:          func(t *testing.T) *mockRequestParser { return &mockRequestParser{} },
@@ -160,12 +157,12 @@ func TestRunner_Run(t *testing.T) {
 			errExpected: fmt.Errorf("failed fetching module"),
 		},
 		"failed parsing request": {
-			mf: func(t *testing.T) *mockModuleFetcher {
+			pf: func(t *testing.T) *mockPlanFetcher {
 				// this is just a random io.ReadCloser
-				iorc, err := os.Open(validJSON)
+				iorc, err := os.Open(validMessage)
 				assert.NoError(t, err)
-				m := &mockModuleFetcher{}
-				m.On("fetchModule", ctx).Return(iorc, nil)
+				m := &mockPlanFetcher{}
+				m.On("fetchPlan", ctx).Return(iorc, nil)
 				return m
 			},
 			rp: func(t *testing.T) *mockRequestParser {
@@ -177,22 +174,28 @@ func TestRunner_Run(t *testing.T) {
 			errExpected: fmt.Errorf("failed parsing request"),
 		},
 		"failed setting up workspace": {
-			mf: func(t *testing.T) *mockModuleFetcher {
+			pf: func(t *testing.T) *mockPlanFetcher {
 				// this is just a random io.ReadCloser
-				iorc, err := os.Open(validJSON)
+				iorc, err := os.Open(validMessage)
 				assert.NoError(t, err)
-				m := &mockModuleFetcher{}
-				m.On("fetchModule", ctx).Return(iorc, nil)
+				m := &mockPlanFetcher{}
+				m.On("fetchPlan", ctx).Return(iorc, nil)
 				return m
 			},
 			rp: func(t *testing.T) *mockRequestParser {
 				m := &mockRequestParser{}
-				m.On("parseRequest", mock.AnythingOfType("*os.File")).Return(&Request{RunType: RunTypeApply}, nil)
+				m.On("parseRequest", mock.AnythingOfType("*os.File")).Return(
+					&planv1.TerraformPlan{RunType: planv1.RunType_RUN_TYPE_APPLY}, nil,
+				)
+
 				return m
 			},
 			ws: func(t *testing.T) *mockWorkspaceSetuper {
 				m := &mockWorkspaceSetuper{}
-				m.On("setupWorkspace", ctx, &Request{RunType: RunTypeApply}).Return(nil, fmt.Errorf("failed setting up workspace"))
+				m.On("setupWorkspace",
+					ctx,
+					&planv1.TerraformPlan{RunType: planv1.RunType_RUN_TYPE_APPLY},
+				).Return(nil, fmt.Errorf("failed setting up workspace"))
 				return m
 			},
 			errExpected: fmt.Errorf("failed setting up workspace"),
@@ -205,17 +208,17 @@ func TestRunner_Run(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			mf := test.mf(t)
+			pf := test.pf(t)
 			rp := test.rp(t)
 			ws := test.ws(t)
 			r := &runner{
-				moduleFetcher:    mf,
+				planFetcher:      pf,
 				requestParser:    rp,
 				workspaceSetuper: ws,
 			}
 
 			got, err := r.Run(ctx)
-			mf.AssertExpectations(t)
+			pf.AssertExpectations(t)
 			rp.AssertExpectations(t)
 			ws.AssertExpectations(t)
 

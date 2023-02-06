@@ -6,18 +6,13 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-multierror"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 )
 
 const (
 	backendConfigFilename string = "backend.json"
 	varsConfigFilename    string = "nuon.tfvars.json"
 )
-
-type Object struct {
-	BucketName string `validate:"required"`
-	Key        string `validate:"required"`
-	Region     string `validate:"required"`
-}
 
 type workspaceWriter interface {
 	GetWorkingDir() (string, error)
@@ -32,8 +27,8 @@ type workspace struct {
 	// historically has been the nuon install ID
 	ID string `validate:"required"`
 
-	Backend *Object `validate:"required,dive"`
-	Sandbox *Object `validate:"required,dive"`
+	Module  *planv1.Object `validate:"required,dive"`
+	Backend *planv1.Object `validate:"required,dive"`
 
 	Vars map[string]interface{} `validate:"required"`
 
@@ -78,16 +73,16 @@ func WithID(i string) workspaceOption {
 	}
 }
 
-func WithBackendBucket(b *Object) workspaceOption {
+func WithBackendBucket(b *planv1.Object) workspaceOption {
 	return func(w *workspace) error {
 		w.Backend = b
 		return nil
 	}
 }
 
-func WithSandboxBucket(b *Object) workspaceOption {
+func WithModuleBucket(b *planv1.Object) workspaceOption {
 	return func(w *workspace) error {
-		w.Sandbox = b
+		w.Module = b
 		return nil
 	}
 }

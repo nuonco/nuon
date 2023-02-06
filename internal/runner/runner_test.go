@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -22,57 +23,33 @@ func TestNew(t *testing.T) {
 			v: v,
 			opts: func(t *testing.T) []runnerOption {
 				return []runnerOption{
-					WithBucket("testbucket"),
-					WithKey("key/123/request.json"),
-					WithRegion("us-west-2"),
+					WithPlan(&planv1.PlanRef{
+						Bucket:    "testbucket",
+						BucketKey: "key/123/request.json",
+					}),
 				}
 			},
-			expected: &runner{Bucket: "testbucket", Key: "key/123/request.json", Region: "us-west-2", validator: v},
+			expected: &runner{Plan: &planv1.PlanRef{Bucket: "testbucket", BucketKey: "key/123/request.json"}, validator: v},
 		},
 		"missing validator": {
 			v: nil,
 			opts: func(t *testing.T) []runnerOption {
 				return []runnerOption{
-					WithBucket("testbucket"),
-					WithKey("key/123/request.json"),
-					WithRegion("us-west-2"),
+					WithPlan(&planv1.PlanRef{
+						Bucket:    "testbucket",
+						BucketKey: "key/123/request.json",
+					}),
 				}
 			},
-			expected:    &runner{Bucket: "testbucket", Key: "key/123/request.json", Region: "us-west-2"},
+			expected:    &runner{Plan: &planv1.PlanRef{Bucket: "testbucket", BucketKey: "key/123/request.json"}},
 			errExpected: fmt.Errorf("validator is nil"),
 		},
-		"no bucket given": {
+		"no plan given": {
 			v: v,
 			opts: func(t *testing.T) []runnerOption {
-				return []runnerOption{
-					WithBucket(""),
-					WithKey("key/123/request.json"),
-					WithRegion("us-west-2"),
-				}
+				return []runnerOption{}
 			},
-			errExpected: fmt.Errorf("Field validation for 'Bucket' failed on the 'required' tag"),
-		},
-		"no key given": {
-			v: v,
-			opts: func(t *testing.T) []runnerOption {
-				return []runnerOption{
-					WithBucket("testbucket"),
-					WithKey(""),
-					WithRegion("us-west-2"),
-				}
-			},
-			errExpected: fmt.Errorf("Field validation for 'Key' failed on the 'required' tag"),
-		},
-		"no region given": {
-			v: v,
-			opts: func(t *testing.T) []runnerOption {
-				return []runnerOption{
-					WithBucket("testbucket"),
-					WithKey("key/123/request.json"),
-					WithRegion(""),
-				}
-			},
-			errExpected: fmt.Errorf("Field validation for 'Region' failed on the 'required' tag"),
+			errExpected: fmt.Errorf("Field validation for 'Plan' failed on the 'required' tag"),
 		},
 	}
 
@@ -91,7 +68,7 @@ func TestNew(t *testing.T) {
 			assert.NoError(t, err)
 
 			got.cleanupFns = nil
-			got.moduleFetcher = nil
+			got.planFetcher = nil
 			got.requestParser = nil
 			got.workspaceSetuper = nil
 			assert.Equal(t, test.expected, got)

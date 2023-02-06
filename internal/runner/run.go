@@ -2,12 +2,13 @@ package runner
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 
 	s3fetch "github.com/powertoolsdev/go-fetch/pkg/s3"
 	"github.com/powertoolsdev/go-terraform/internal/terraform"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 // Run will actually run the terraform request by:
@@ -19,7 +20,7 @@ func (r *runner) Run(ctx context.Context) (map[string]interface{}, error) {
 	defer func() { _ = r.cleanup() }()
 
 	// get S3 reader
-	iorc, err := r.moduleFetcher.fetchModule(ctx)
+	iorc, err := r.planFetcher.fetchPlan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -38,22 +39,22 @@ func (r *runner) Run(ctx context.Context) (map[string]interface{}, error) {
 	}
 
 	// execute action
-	return run(ctx, ws, req.RunType)
+	return run(ctx, ws, RunTypeApply)
 }
 
-type moduleFetcher interface {
-	fetchModule(context.Context) (io.ReadCloser, error)
+type planFetcher interface {
+	fetchPlan(context.Context) (io.ReadCloser, error)
 }
 
-var _ moduleFetcher = (*runner)(nil)
+var _ planFetcher = (*runner)(nil)
 
-// fetchModule pulls the module from S3
-func (r *runner) fetchModule(ctx context.Context) (io.ReadCloser, error) {
+// fetchPlan pulls the plan from S3
+func (r *runner) fetchPlan(ctx context.Context) (io.ReadCloser, error) {
 	f, err := s3fetch.New(
 		r.validator,
-		s3fetch.WithBucketName(r.Bucket),
-		s3fetch.WithBucketKey(r.Key),
-		// s3.WithRegion(r.Region),
+		s3fetch.WithBucketName(r.Plan.Bucket),
+		s3fetch.WithBucketKey(r.Plan.BucketKey),
+		s3fetch.WithRoleARN(r.Plan.BucketAssumeRoleArn),
 	)
 	if err != nil {
 		return nil, err
@@ -80,60 +81,46 @@ type Object struct {
 	Region     string `json:"region"`
 }
 
-// Request is the necessary information for running terraform
-type Request struct {
-	// ID is the opaque identifier for the run.
-	// Historically, this was the installation short ID
-	ID string `json:"id"`
-	// Sandbox is the cloud object for the sandbox module to use (tar and gzipped)
-	Sandbox Object `json:"sandbox"`
-	// Backend is the cloud object for the backend state store
-	Backend Object `json:"backend"`
-	// Vars are the terraform vars
-	Vars map[string]interface{} `json:"vars"`
-	// RunType is the type of run being requested
-	RunType RunType `json:"run_type"`
-}
-
 type requestParser interface {
-	parseRequest(io.Reader) (*Request, error)
+	parseRequest(io.Reader) (*planv1.TerraformPlan, error)
 }
 
 var _ requestParser = (*runner)(nil)
 
 // parseRequest parses the request
 // typically, this would be pulled from S3
-func (r *runner) parseRequest(ior io.Reader) (*Request, error) {
+func (r *runner) parseRequest(ior io.Reader) (*planv1.TerraformPlan, error) {
 	bs, err := io.ReadAll(ior)
 	if err != nil {
 		return nil, err
 	}
 
-	var req Request
-	err = json.Unmarshal(bs, &req)
-	if err != nil {
+	var tfp planv1.TerraformPlan
+	if err = proto.Unmarshal(bs, &tfp); err != nil {
 		return nil, err
 	}
-	return &req, nil
+	return &tfp, nil
 }
 
 type workspaceSetuper interface {
-	setupWorkspace(context.Context, *Request) (executor, error)
+	setupWorkspace(context.Context, *planv1.TerraformPlan) (executor, error)
 }
 
 var _ workspaceSetuper = (*runner)(nil)
 
 // setupWorkspace sets up the workspace for the given request
-func (r *runner) setupWorkspace(ctx context.Context, req *Request) (executor, error) {
-	sb := terraform.Object(req.Sandbox)
-	bb := terraform.Object(req.Backend)
+func (r *runner) setupWorkspace(ctx context.Context, req *planv1.TerraformPlan) (executor, error) {
+	vars := map[string]interface{}{}
+	for k, v := range req.Vars {
+		vars[k] = v
+	}
 
 	ws, err := terraform.NewWorkspace(
 		r.validator,
-		terraform.WithID(req.ID),
-		terraform.WithSandboxBucket(&sb),
-		terraform.WithBackendBucket(&bb),
-		terraform.WithVars(req.Vars),
+		terraform.WithID(req.Id),
+		terraform.WithModuleBucket(req.Module),
+		terraform.WithBackendBucket(req.Backend),
+		terraform.WithVars(vars),
 	)
 	// NOTE(jdt): always cleanup even if error
 	r.cleanupFns = append(r.cleanupFns, ws.Cleanup)
