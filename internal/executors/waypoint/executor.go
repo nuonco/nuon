@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	pb "github.com/hashicorp/waypoint/pkg/server/gen"
+	s3fetch "github.com/powertoolsdev/go-fetch/pkg/s3"
 	"github.com/powertoolsdev/go-uploader"
 	"github.com/powertoolsdev/go-waypoint/v2/pkg/client"
 	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
@@ -16,7 +17,6 @@ import (
 	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/tasks/queue"
 	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/tasks/upsert"
 	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/tasks/validate"
-	"github.com/powertoolsdev/workers-executors/internal/fetch"
 	"github.com/powertoolsdev/workers-executors/internal/writer"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -151,12 +151,12 @@ func (e *executor) cleanup() {
 }
 
 func (e *executor) fetchWaypointPlan(ctx context.Context) (*planv1.WaypointPlan, error) {
-	fetcher, err := fetch.NewS3(
+	fetcher, err := s3fetch.New(
 		e.v,
-		fetch.WithBucketKey(e.Plan.BucketKey),
-		fetch.WithBucketName(e.Plan.Bucket),
-		fetch.WithRoleARN(e.Plan.BucketAssumeRoleArn),
-		fetch.WithRoleSessionName("fetch-waypoint-plan"),
+		s3fetch.WithBucketKey(e.Plan.BucketKey),
+		s3fetch.WithBucketName(e.Plan.Bucket),
+		s3fetch.WithRoleARN(e.Plan.BucketAssumeRoleArn),
+		s3fetch.WithRoleSessionName("fetch-waypoint-plan"),
 	)
 	if err != nil {
 		return nil, err
