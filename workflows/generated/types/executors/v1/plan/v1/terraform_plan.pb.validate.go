@@ -86,6 +86,160 @@ func (m *TerraformPlan) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for Id
+
+	if all {
+		switch v := interface{}(m.GetModule()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, TerraformPlanValidationError{
+					field:  "Module",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, TerraformPlanValidationError{
+					field:  "Module",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetModule()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return TerraformPlanValidationError{
+				field:  "Module",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetBackend()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, TerraformPlanValidationError{
+					field:  "Backend",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, TerraformPlanValidationError{
+					field:  "Backend",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetBackend()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return TerraformPlanValidationError{
+				field:  "Backend",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	{
+		sorted_keys := make([]string, len(m.GetVars()))
+		i := 0
+		for key := range m.GetVars() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetVars()[key]
+			_ = val
+
+			// no validation rules for Vars[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, TerraformPlanValidationError{
+							field:  fmt.Sprintf("Vars[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, TerraformPlanValidationError{
+							field:  fmt.Sprintf("Vars[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return TerraformPlanValidationError{
+						field:  fmt.Sprintf("Vars[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
+	// no validation rules for RunType
+
+	{
+		sorted_keys := make([]string, len(m.GetOutputs()))
+		i := 0
+		for key := range m.GetOutputs() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetOutputs()[key]
+			_ = val
+
+			// no validation rules for Outputs[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, TerraformPlanValidationError{
+							field:  fmt.Sprintf("Outputs[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, TerraformPlanValidationError{
+							field:  fmt.Sprintf("Outputs[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return TerraformPlanValidationError{
+						field:  fmt.Sprintf("Outputs[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
 	if len(errors) > 0 {
 		return TerraformPlanMultiError(errors)
 	}
@@ -163,3 +317,267 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = TerraformPlanValidationError{}
+
+// Validate checks the field values on Object with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Object) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Object with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in ObjectMultiError, or nil if none found.
+func (m *Object) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Object) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetBucket()) < 1 {
+		err := ObjectValidationError{
+			field:  "Bucket",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(m.GetKey()) < 1 {
+		err := ObjectValidationError{
+			field:  "Key",
+			reason: "value length must be at least 1 bytes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Region
+
+	if all {
+		switch v := interface{}(m.GetAssumeRoleDetails()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ObjectValidationError{
+					field:  "AssumeRoleDetails",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ObjectValidationError{
+					field:  "AssumeRoleDetails",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetAssumeRoleDetails()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ObjectValidationError{
+				field:  "AssumeRoleDetails",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return ObjectMultiError(errors)
+	}
+
+	return nil
+}
+
+// ObjectMultiError is an error wrapping multiple validation errors returned by
+// Object.ValidateAll() if the designated constraints aren't met.
+type ObjectMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ObjectMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ObjectMultiError) AllErrors() []error { return m }
+
+// ObjectValidationError is the validation error returned by Object.Validate if
+// the designated constraints aren't met.
+type ObjectValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ObjectValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ObjectValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ObjectValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ObjectValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ObjectValidationError) ErrorName() string { return "ObjectValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ObjectValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sObject.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ObjectValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ObjectValidationError{}
+
+// Validate checks the field values on AssumeRoleDetails with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *AssumeRoleDetails) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AssumeRoleDetails with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AssumeRoleDetailsMultiError, or nil if none found.
+func (m *AssumeRoleDetails) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AssumeRoleDetails) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetAssumeArn()) < 20 {
+		err := AssumeRoleDetailsValidationError{
+			field:  "AssumeArn",
+			reason: "value length must be at least 20 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return AssumeRoleDetailsMultiError(errors)
+	}
+
+	return nil
+}
+
+// AssumeRoleDetailsMultiError is an error wrapping multiple validation errors
+// returned by AssumeRoleDetails.ValidateAll() if the designated constraints
+// aren't met.
+type AssumeRoleDetailsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AssumeRoleDetailsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AssumeRoleDetailsMultiError) AllErrors() []error { return m }
+
+// AssumeRoleDetailsValidationError is the validation error returned by
+// AssumeRoleDetails.Validate if the designated constraints aren't met.
+type AssumeRoleDetailsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AssumeRoleDetailsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AssumeRoleDetailsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AssumeRoleDetailsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AssumeRoleDetailsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AssumeRoleDetailsValidationError) ErrorName() string {
+	return "AssumeRoleDetailsValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AssumeRoleDetailsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAssumeRoleDetails.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AssumeRoleDetailsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AssumeRoleDetailsValidationError{}
