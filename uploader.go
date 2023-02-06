@@ -104,10 +104,6 @@ func (s *s3Uploader) loadAWSConfig(ctx context.Context) (aws.Config, error) {
 }
 
 func (s *s3Uploader) UploadFile(ctx context.Context, tmpDir, inputName, outputName string) error {
-	if s.prefix == "" {
-		return fmt.Errorf("unable to upload, missing prefix")
-	}
-
 	cfg, err := s.loadAWSConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to load aws config: %w", err)
