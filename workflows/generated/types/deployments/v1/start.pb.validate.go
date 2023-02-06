@@ -245,17 +245,6 @@ func (m *StartResponse) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetWorkflowIds()) < 1 {
-		err := StartResponseValidationError{
-			field:  "WorkflowIds",
-			reason: "value must contain at least 1 item(s)",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if all {
 		switch v := interface{}(m.GetPlanRef()).(type) {
 		case interface{ ValidateAll() error }:

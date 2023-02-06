@@ -264,17 +264,6 @@ func (m *ProvisionResponse) validate(all bool) error {
 
 	var errors []error
 
-	if len(m.GetWorkflowIds()) < 1 {
-		err := ProvisionResponseValidationError{
-			field:  "WorkflowIds",
-			reason: "value must contain at least 1 item(s)",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if len(errors) > 0 {
 		return ProvisionResponseMultiError(errors)
 	}

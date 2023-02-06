@@ -31,6 +31,4 @@ message ProvisionRequest {
 }
 
 // ProvisionResponse is a child workflow response for the plan phase
-message ProvisionResponse {
-  repeated string workflow_ids = 1 [(validate.rules).repeated.min_items = 1];
-}
+message ProvisionResponse {}
