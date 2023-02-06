@@ -9,7 +9,7 @@ import (
 func init() {
 	config.RegisterDefault("temporal_host", "localhost:7233")
 	config.RegisterDefault("temporal_namespace", "default")
-	config.RegisterDefault("temporal_task_queue", "deployments")
+	config.RegisterDefault("temporal_task_queue", "deployment")
 	config.RegisterDefault("temporal_max_concurrent_activities", 1)
 
 	// deployment defaults
