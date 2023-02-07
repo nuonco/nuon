@@ -41,8 +41,8 @@ lint:
 
 DEPS:
     COMMAND
-    COPY go.mod go.sum *.go .
-    COPY --dir internal .
+    COPY go.mod go.sum .
+    COPY --dir internal pkg .
     DO shared-configs+SETUP_SSH --GITHUB_ACTIONS=$GITHUB_ACTIONS
     RUN --ssh git config --global --add safe.directory "$(pwd)" \
         && go mod download
