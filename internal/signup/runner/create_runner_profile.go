@@ -11,7 +11,7 @@ import (
 
 const (
 	defaultODRImagePullPolicy string = "Always"
-	defaultODRImageURL        string = "hashicorp/waypoint-odr:0.10.2"
+	defaultODRImageURL        string = "hashicorp/waypoint-odr:0.10.5"
 )
 
 type CreateRunnerProfileRequest struct {
