@@ -14,7 +14,7 @@ rds:
   multi_az: false
   backup_retention_period: 1
   skip_final_snapshot: true
-  deletion_protection: false
+  deletion_protection: true
   storage_encrypted: true
   enabled_cloudwatch_logs_exports:
     - postgresql
