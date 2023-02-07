@@ -47,7 +47,7 @@ $ go run . server
 
 At this point, you should have the api running and accessible at `http://localhost:8080`.
 
-## Apply DB changes locally
+## How to apply DB changes locally
 
 1. Run `go run . migrate create FILENAME sql` where `FILENAME` is a descriptive name for your migration, e.g. `create_users_table`. This will create a placeholder file with that name under the `migrations` folder. 
 2. Edit the created file and add the SQL commands for your changes, e.g. `CREATE TABLE users...`
@@ -61,3 +61,11 @@ GOOSE_DRIVER=postgres GOOSE_DBSTRING="host=127.0.0.1 port=5432 user=api dbname=a
 ```
 
 Use `go run . migrate status` to check the current status of DB migrations on your local DB.
+
+## How to run tests locally
+
+To run all tests: `go test -count=1 ./...` or specify which tests you want to run.
+
+## How to run the linter locally
+
+Clone the [shared-configs repo](https://github.com/powertoolsdev/shared-configs) and then from your `api` repo run: `golangci-lint run -c ../shared-configs/golangci.yaml` (the command assumes the `shared-configs` repo has the same parent directory as `api`).
