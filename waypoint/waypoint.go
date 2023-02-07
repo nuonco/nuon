@@ -180,5 +180,5 @@ var DefaultChart = helm.Chart{
 	// NOTE(jdt): I don't really care for this but I don't want to keep copying this around
 	Name:    "waypoint",
 	URL:     "https://helm.releases.hashicorp.com",
-	Version: "0.1.14",
+	Version: "0.1.17",
 }
