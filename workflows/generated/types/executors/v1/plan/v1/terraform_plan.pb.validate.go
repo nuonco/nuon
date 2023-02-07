@@ -146,49 +146,32 @@ func (m *TerraformPlan) validate(all bool) error {
 		}
 	}
 
-	{
-		sorted_keys := make([]string, len(m.GetVars()))
-		i := 0
-		for key := range m.GetVars() {
-			sorted_keys[i] = key
-			i++
-		}
-		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
-		for _, key := range sorted_keys {
-			val := m.GetVars()[key]
-			_ = val
-
-			// no validation rules for Vars[key]
-
-			if all {
-				switch v := interface{}(val).(type) {
-				case interface{ ValidateAll() error }:
-					if err := v.ValidateAll(); err != nil {
-						errors = append(errors, TerraformPlanValidationError{
-							field:  fmt.Sprintf("Vars[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				case interface{ Validate() error }:
-					if err := v.Validate(); err != nil {
-						errors = append(errors, TerraformPlanValidationError{
-							field:  fmt.Sprintf("Vars[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				}
-			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
-				if err := v.Validate(); err != nil {
-					return TerraformPlanValidationError{
-						field:  fmt.Sprintf("Vars[%v]", key),
-						reason: "embedded message failed validation",
-						cause:  err,
-					}
-				}
+	if all {
+		switch v := interface{}(m.GetVars()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, TerraformPlanValidationError{
+					field:  "Vars",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
 			}
-
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, TerraformPlanValidationError{
+					field:  "Vars",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetVars()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return TerraformPlanValidationError{
+				field:  "Vars",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
 		}
 	}
 
