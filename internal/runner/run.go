@@ -39,7 +39,7 @@ func (r *runner) Run(ctx context.Context) (map[string]interface{}, error) {
 	}
 
 	// execute action
-	return run(ctx, ws, RunTypeApply)
+	return run(ctx, ws, req.RunType)
 }
 
 type planFetcher interface {
@@ -55,30 +55,12 @@ func (r *runner) fetchPlan(ctx context.Context) (io.ReadCloser, error) {
 		s3fetch.WithBucketName(r.Plan.Bucket),
 		s3fetch.WithBucketKey(r.Plan.BucketKey),
 		s3fetch.WithRoleARN(r.Plan.BucketAssumeRoleArn),
+		s3fetch.WithRoleSessionName("go-terraform-run"),
 	)
 	if err != nil {
 		return nil, err
 	}
 	return f.Fetch(ctx)
-}
-
-// TODO(jdt): move to different module / repo
-
-// RunType is the type of run being requested
-// Corresponds to the equivalent terraform commands
-type RunType string
-
-const (
-	RunTypeApply   RunType = "apply"
-	RunTypePlan    RunType = "plan"
-	RunTypeDestroy RunType = "destroy"
-)
-
-// Object represents an object in cloud storage (e.g. S3)
-type Object struct {
-	BucketName string `json:"bucket"`
-	Key        string `json:"key"`
-	Region     string `json:"region"`
 }
 
 type requestParser interface {
@@ -110,17 +92,12 @@ var _ workspaceSetuper = (*runner)(nil)
 
 // setupWorkspace sets up the workspace for the given request
 func (r *runner) setupWorkspace(ctx context.Context, req *planv1.TerraformPlan) (executor, error) {
-	vars := map[string]interface{}{}
-	for k, v := range req.Vars {
-		vars[k] = v
-	}
-
 	ws, err := terraform.NewWorkspace(
 		r.validator,
 		terraform.WithID(req.Id),
 		terraform.WithModuleBucket(req.Module),
 		terraform.WithBackendBucket(req.Backend),
-		terraform.WithVars(vars),
+		terraform.WithVars(req.Vars.AsMap()),
 	)
 	// NOTE(jdt): always cleanup even if error
 	r.cleanupFns = append(r.cleanupFns, ws.Cleanup)
@@ -143,7 +120,7 @@ type executor interface {
 }
 
 // run executes terraform for typ
-func run(ctx context.Context, e executor, typ RunType) (map[string]interface{}, error) {
+func run(ctx context.Context, e executor, typ planv1.RunType) (map[string]interface{}, error) {
 	var m map[string]interface{}
 
 	// TODO(jdt): maybe don't init if not a valid run type?
@@ -152,17 +129,17 @@ func run(ctx context.Context, e executor, typ RunType) (map[string]interface{}, 
 	}
 
 	switch typ {
-	case RunTypePlan:
+	case planv1.RunType_RUN_TYPE_PLAN:
 		err := e.Plan(ctx)
 		return m, err
 
-	case RunTypeDestroy:
+	case planv1.RunType_RUN_TYPE_DESTROY:
 		err := e.Destroy(ctx)
 		return m, err
 
 	// NOTE(jdt): there's not really a good reason to run plan
 	// before apply as we essentially just auto-apply...
-	case RunTypeApply:
+	case planv1.RunType_RUN_TYPE_APPLY:
 		err := e.Apply(ctx)
 		if err != nil {
 			return m, err

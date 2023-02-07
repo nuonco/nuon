@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 const (
@@ -38,7 +37,6 @@ func TestRunner_parseRequest(t *testing.T) {
 				RunType: planv1.RunType_RUN_TYPE_APPLY,
 				Module:  &planv1.Object{Bucket: "sandboxtest", Key: "prefix/key.tar.gz", Region: "us-east-2"},
 				Backend: &planv1.Object{Bucket: "backendtest", Key: "prefix/state.json", Region: "us-east-2"},
-				Vars:    map[string]*anypb.Any{},
 			},
 		},
 		"invalid proto": {
@@ -263,7 +261,7 @@ func Test_run(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
 		executor    func(*testing.T) *mockExecutor
-		runType     RunType
+		runType     planv1.RunType
 		expected    map[string]interface{}
 		errExpected error
 	}{
@@ -274,7 +272,7 @@ func Test_run(t *testing.T) {
 				m.On("Plan", mock.Anything).Return(nil)
 				return m
 			},
-			runType: RunTypePlan,
+			runType: planv1.RunType_RUN_TYPE_PLAN,
 		},
 		"happy path - apply": {
 			executor: func(t *testing.T) *mockExecutor {
@@ -284,7 +282,7 @@ func Test_run(t *testing.T) {
 				m.On("Output", mock.Anything).Return(map[string]interface{}{}, nil)
 				return m
 			},
-			runType:  RunTypeApply,
+			runType:  planv1.RunType_RUN_TYPE_APPLY,
 			expected: map[string]interface{}{},
 		},
 		"happy path - destroy": {
@@ -294,7 +292,7 @@ func Test_run(t *testing.T) {
 				m.On("Destroy", mock.Anything).Return(nil)
 				return m
 			},
-			runType: RunTypeDestroy,
+			runType: planv1.RunType_RUN_TYPE_DESTROY,
 		},
 		"returns outputs": {
 			executor: func(t *testing.T) *mockExecutor {
@@ -308,7 +306,7 @@ func Test_run(t *testing.T) {
 				}, nil)
 				return m
 			},
-			runType:  RunTypeApply,
+			runType:  planv1.RunType_RUN_TYPE_APPLY,
 			expected: map[string]interface{}{"a": "bunch", "of": "really", "cool": "outputs"},
 		},
 		"invalid runtype": {
@@ -317,7 +315,7 @@ func Test_run(t *testing.T) {
 				m.On("Init", mock.Anything).Return(nil)
 				return m
 			},
-			runType:     "something made up",
+			runType:     planv1.RunType(555),
 			errExpected: fmt.Errorf("invalid run type"),
 		},
 		"init error": {
@@ -326,7 +324,7 @@ func Test_run(t *testing.T) {
 				m.On("Init", mock.Anything).Return(fmt.Errorf("init error"))
 				return m
 			},
-			runType:     RunTypeDestroy,
+			runType:     planv1.RunType_RUN_TYPE_DESTROY,
 			errExpected: fmt.Errorf("init error"),
 		},
 		"plan error": {
@@ -336,7 +334,7 @@ func Test_run(t *testing.T) {
 				m.On("Plan", mock.Anything).Return(fmt.Errorf("plan error"))
 				return m
 			},
-			runType:     RunTypePlan,
+			runType:     planv1.RunType_RUN_TYPE_PLAN,
 			errExpected: fmt.Errorf("plan error"),
 		},
 		"destroy error": {
@@ -346,7 +344,7 @@ func Test_run(t *testing.T) {
 				m.On("Destroy", mock.Anything).Return(fmt.Errorf("destroy error"))
 				return m
 			},
-			runType:     RunTypeDestroy,
+			runType:     planv1.RunType_RUN_TYPE_DESTROY,
 			errExpected: fmt.Errorf("destroy error"),
 		},
 		"apply error": {
@@ -356,7 +354,7 @@ func Test_run(t *testing.T) {
 				m.On("Apply", mock.Anything).Return(fmt.Errorf("apply error"))
 				return m
 			},
-			runType:     RunTypeApply,
+			runType:     planv1.RunType_RUN_TYPE_APPLY,
 			errExpected: fmt.Errorf("apply error"),
 		},
 		"output error": {
@@ -367,7 +365,7 @@ func Test_run(t *testing.T) {
 				m.On("Output", mock.Anything).Return(nil, fmt.Errorf("output error"))
 				return m
 			},
-			runType:     RunTypeApply,
+			runType:     planv1.RunType_RUN_TYPE_APPLY,
 			errExpected: fmt.Errorf("output error"),
 		},
 	}

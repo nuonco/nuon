@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,19 +19,24 @@ import (
 func TestWorkspace_Setup(t *testing.T) {
 	t.Parallel()
 
+	role := "arn:aws:iam::431927561584:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_NuonAdmin_fbf92a7052708a08"
+
 	w, err := NewWorkspace(
 		validator.New(),
 		WithID(t.Name()),
 		// doesn't matter for this test
-		WithBackendBucket(&Object{
-			BucketName: "testbucket",
-			Key:        "testkey",
-			Region:     "us-east-1",
+		WithBackendBucket(&planv1.Object{
+			Bucket: "testbucket",
+			Key:    "testkey",
+			Region: "us-east-1",
 		}),
-		WithSandboxBucket(&Object{
-			BucketName: "nuon-sandboxes",
-			Key:        "sandboxes/empty_0.8.33.tar.gz",
-			Region:     "us-west-2",
+		WithModuleBucket(&planv1.Object{
+			Bucket: "nuon-sandboxes",
+			Key:    "sandboxes/empty_0.8.33.tar.gz",
+			Region: "us-west-2",
+			AssumeRoleDetails: &planv1.AssumeRoleDetails{
+				AssumeArn: role,
+			},
 		}),
 		WithVars(map[string]interface{}{"test": "vars"}),
 	)

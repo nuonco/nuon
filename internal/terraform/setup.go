@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -102,7 +103,8 @@ func (w *workspace) fetchModule(ctx context.Context) error {
 		w.validator,
 		s3fetch.WithBucketName(w.Module.Bucket),
 		s3fetch.WithBucketKey(w.Module.Key),
-		// fetch.WithRegion(w.Sandbox.Region),
+		s3fetch.WithRoleARN(w.Module.AssumeRoleDetails.AssumeArn),
+		s3fetch.WithRoleSessionName(fmt.Sprintf("go-terraform-workspace-%s", w.ID)),
 	)
 	if err != nil {
 		return err
