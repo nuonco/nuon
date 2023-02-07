@@ -16,10 +16,8 @@ import (
 )
 
 // single test to setup workspace end-to-end
-func TestWorkspace_Setup(t *testing.T) {
+func TestWorkspace_Setup_Int(t *testing.T) {
 	t.Parallel()
-
-	role := "arn:aws:iam::431927561584:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_NuonAdmin_fbf92a7052708a08"
 
 	w, err := NewWorkspace(
 		validator.New(),
@@ -35,7 +33,7 @@ func TestWorkspace_Setup(t *testing.T) {
 			Key:    "sandboxes/empty_0.8.33.tar.gz",
 			Region: "us-west-2",
 			AssumeRoleDetails: &planv1.AssumeRoleDetails{
-				AssumeArn: role,
+				AssumeArn: "arn:aws:iam::649224399387:role/jdt-terraform-exec-test",
 			},
 		}),
 		WithVars(map[string]interface{}{"test": "vars"}),

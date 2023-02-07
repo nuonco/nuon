@@ -21,13 +21,19 @@ func TestRunner_Run_Int(t *testing.T) {
 	// 		Bucket: "nuon-sandboxes",
 	// 		Key:    "sandboxes/empty_0.8.8.tar.gz",
 	// 		Region: "us-west-2",
+	// 		AssumeRoleDetails: &planv1.AssumeRoleDetails{
+	// 			AssumeArn: "arn:aws:iam::649224399387:role/jdt-terraform-exec-test",
+	// 		},
 	// 	},
 	// 	Backend: &planv1.Object{
 	// 		Bucket: "jdt-test",
 	// 		Key:    "tf-runner/state.json",
 	// 		Region: "us-west-2",
+	// 		AssumeRoleDetails: &planv1.AssumeRoleDetails{
+	// 			AssumeArn: "arn:aws:iam::649224399387:role/jdt-terraform-exec-test",
+	// 		},
 	// 	},
-	// 	Vars: map[string]*anypb.Any{},
+	// 	Vars: &structpb.Struct{},
 	// }
 	//
 	// bs, err := proto.Marshal(plan)
@@ -40,7 +46,7 @@ func TestRunner_Run_Int(t *testing.T) {
 		WithPlan(&planv1.PlanRef{
 			Bucket:              "jdt-test",
 			BucketKey:           "request.proto",
-			BucketAssumeRoleArn: "arn:aws:iam::649224399387:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_NuonAdmin_c083f7fead01d64e",
+			BucketAssumeRoleArn: "arn:aws:iam::649224399387:role/jdt-terraform-exec-test",
 		}),
 	)
 	assert.NoError(t, err)
@@ -48,5 +54,9 @@ func TestRunner_Run_Int(t *testing.T) {
 	m, err := r.Run(context.Background())
 	assert.NoError(t, err)
 
-	assert.Equal(t, map[string]string{"test_number": "1", "test_string": "test_string"}, m)
+	assert.Equal(t, map[string]interface{}{
+		"test_number": float64(1),
+		"test_string": "test_string",
+		"test_map":    map[string]interface{}{"number": float64(1), "string": "a"},
+	}, m)
 }
