@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package sandbox.v1;
+
+import "sandbox/v1/messages.proto";
+
+service SandboxService {
+  rpc UpsertSandboxVersion(sandbox.v1.UpsertSandboxVersionRequest) returns (sandbox.v1.UpsertSandboxVersionResponse) {}
+}
