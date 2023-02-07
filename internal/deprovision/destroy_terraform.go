@@ -64,10 +64,12 @@ func (t *tfDestroyer) destroyTerraform(ctx context.Context, fn terraformRunnerFn
 			"AWS_REGION": dr.AccountSettings.Region,
 		},
 		TfVars: map[string]interface{}{
-			"nuon_id":          dr.InstallId,
-			"region":           dr.AccountSettings.Region,
-			"assume_role_arn":  dr.AccountSettings.AwsRoleArn,
-			"install_role_arn": req.NuonAssumeRoleArn,
+			"nuon_id":                           dr.InstallId,
+			"region":                            dr.AccountSettings.Region,
+			"assume_role_arn":                   dr.AccountSettings.AwsRoleArn,
+			"install_role_arn":                  req.NuonAssumeRoleArn,
+			"waypoint_odr_namespace":            dr.InstallId,
+			"waypoint_odr_service_account_name": fmt.Sprintf("waypoint-odr-%s", dr.InstallId),
 			"tags": map[string]string{
 				"nuon_sandbox_name":    dr.SandboxSettings.Name,
 				"nuon_sandbox_version": dr.SandboxSettings.Version,
