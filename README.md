@@ -29,6 +29,10 @@ We use [temporalite](https://github.com/temporalio/temporalite) to run a tempora
 
 If you are using `docker-compose up` to manage dependencies, `temporalite` will automatically be started for you.
 
+### Run earthly
+
+We use earthly to run our builds in containers. After `docker-compose up` run `earthly +bin`.
+
 ### Install go and run the api
 
 Next, install `go` - https://go.dev/doc/install - this api generally tracks the most recent stable release.
@@ -38,7 +42,22 @@ Once go is installed, grab dependencies, and run the application:
 ```bash
 $ go mod download
 $ go run . migrate up
-$ go run . api
+$ go run . server
 ```
 
 At this point, you should have the api running and accessible at `http://localhost:8080`.
+
+## Apply DB changes locally
+
+1. Run `go run . migrate create FILENAME sql` where `FILENAME` is a descriptive name for your migration, e.g. `create_users_table`. This will create a placeholder file with that name under the `migrations` folder. 
+2. Edit the created file and add the SQL commands for your changes, e.g. `CREATE TABLE users...`
+3. Run `go run . migrate up`
+
+Alternatively you can set up the goose CLI and use it directly.
+```
+brew install goose
+goose -s -dir "./migrations" create sandbox_versions_create sql
+GOOSE_DRIVER=postgres GOOSE_DBSTRING="host=127.0.0.1 port=5432 user=api dbname=api sslmode=disable" goose -dir "./migrations" up
+```
+
+Use `go run . migrate status` to check the current status of DB migrations on your local DB.
