@@ -297,7 +297,7 @@ jobs:
     needs:
       - release
     if: github.event_name != 'pull_request'
-    uses: ./.github/workflows/deploy.yml
+    uses: powertoolsdev/.github/.github/workflows/deploy.yml@main
     secrets: inherit
     with:
       env: stage
@@ -309,7 +309,7 @@ jobs:
       - release
       - deploy-stage
     if: github.event_name != 'pull_request'
-    uses: ./.github/workflows/deploy.yml
+    uses: powertoolsdev/.github/.github/workflows/deploy.yml@main
     secrets: inherit
     with:
       env: prod
