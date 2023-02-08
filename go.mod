@@ -7,6 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.2.5
 	github.com/bradleyfalzon/ghinstallation/v2 v2.1.0
 	github.com/bufbuild/connect-go v1.4.1
+	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/golang/mock v1.6.0
 	github.com/google/go-github/v41 v41.0.0
@@ -17,7 +18,7 @@ require (
 	github.com/migueleliasweb/go-github-mock v0.0.13
 	github.com/powertoolsdev/go-common v1.1.17
 	github.com/powertoolsdev/go-generics v0.0.1
-	github.com/powertoolsdev/protos v0.63.1
+	github.com/powertoolsdev/protos v0.63.2
 	github.com/pressly/goose/v3 v3.9.0
 	github.com/raphaelvigee/go-paginate v1.0.6
 	github.com/spf13/cobra v1.6.1
@@ -102,6 +103,7 @@ require (
 	golang.org/x/tools v0.5.0 // indirect
 	google.golang.org/grpc v1.51.0 // indirect
 	google.golang.org/protobuf v1.28.2-0.20220831092852-f930b1dc76e8 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

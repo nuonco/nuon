@@ -11,6 +11,7 @@ import (
 	databaseclient "github.com/powertoolsdev/api/internal/clients/database"
 	githubclient "github.com/powertoolsdev/api/internal/clients/github"
 	temporalclient "github.com/powertoolsdev/api/internal/clients/temporal"
+	adminserver "github.com/powertoolsdev/api/internal/servers/admin"
 	appsserver "github.com/powertoolsdev/api/internal/servers/apps"
 	componentsserver "github.com/powertoolsdev/api/internal/servers/components"
 	deploymentsserver "github.com/powertoolsdev/api/internal/servers/deployments"
@@ -121,7 +122,13 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.L
 	userSvc := services.NewUserService(db, log)
 	_, err = usersserver.New(usersserver.WithHTTPMux(mux), usersserver.WithService(userSvc))
 	if err != nil {
-		return fmt.Errorf("unable to initialize orgs server: %w", err)
+		return fmt.Errorf("unable to initialize users server: %w", err)
+	}
+
+	adminSvc := services.NewAdminService(db, log)
+	_, err = adminserver.New(adminserver.WithHTTPMux(mux), adminserver.WithService(adminSvc))
+	if err != nil {
+		return fmt.Errorf("unable to initialize admin server: %w", err)
 	}
 
 	return nil
