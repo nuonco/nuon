@@ -136,17 +136,18 @@ func triggerInstallDeploymentWorkflow(ctx context.Context, tc tclient.Client, ar
 		return "", err
 	}
 
+	deploymentID := uuid.NewString()
 	ids := shortIDsToUUIDs(instReq.OrgId, instReq.AppId, instReq.InstallId)
 	req := &deploymentsv1.StartRequest{
 		OrgId:        ids[0],
 		AppId:        ids[1],
-		DeploymentId: uuid.NewString(),
+		DeploymentId: deploymentID,
 		InstallIds:   []string{ids[2]},
 		Component: &componentv1.Component{
 			Id:   uuid.NewString(),
 			Name: "basic-component",
 		},
-		PlanOnly: true,
+		PlanOnly: false,
 	}
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: "deployment",
@@ -156,6 +157,13 @@ func triggerInstallDeploymentWorkflow(ctx context.Context, tc tclient.Client, ar
 	if err != nil {
 		return "", fmt.Errorf("unable to submit workflow: %w", err)
 	}
+
+	deploymentShortID, err := shortid.ParseString(deploymentID)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse short id: %w", err)
+	}
+
+	fmt.Println(deploymentShortID)
 
 	return run.GetID(), nil
 }

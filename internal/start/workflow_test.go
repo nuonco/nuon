@@ -138,9 +138,7 @@ func TestStart(t *testing.T) {
 
 	env.OnWorkflow(ins.ProvisionInstances, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *instancesv1.ProvisionRequest) (*instancesv1.ProvisionResponse, error) {
-			resp := &instancesv1.ProvisionResponse{
-				WorkflowIds: []string{"abc"},
-			}
+			resp := &instancesv1.ProvisionResponse{}
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, orgID, r.OrgId)
 			assert.Equal(t, appID, r.AppId)
