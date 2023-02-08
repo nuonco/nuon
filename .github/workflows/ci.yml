@@ -287,3 +287,15 @@ jobs:
     with:
       env: stage
       tag: ${{ needs.release.outputs.image_tag }}
+
+  deploy-prod:
+    name: Deploy (prod)
+    needs:
+      - release
+      - deploy-stage
+    if: github.event_name != 'pull_request'
+    uses: powertoolsdev/.github/.github/workflows/deploy.yml@main
+    secrets: inherit
+    with:
+      env: prod
+      tag: ${{ needs.release.outputs.image_tag }}
