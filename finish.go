@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-uploader"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	"google.golang.org/protobuf/proto"
@@ -15,12 +16,15 @@ const (
 )
 
 func NewFinishActivity() *finishActivity {
+	v := validator.New()
 	return &finishActivity{
+		v:        v,
 		finisher: &finisherImpl{},
 	}
 }
 
 type finishActivity struct {
+	v        *validator.Validate
 	finisher finisher
 }
 
@@ -32,11 +36,14 @@ func (a *finishActivity) FinishRequest(ctx context.Context, req *sharedv1.Finish
 	}
 
 	// create upload client
-	assumeRoleOpt := uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleArn)
-	assumeRoleSessionOpt := uploader.WithAssumeSessionName(startAssumeRoleSessionName)
-	uploadClient := uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix,
-		assumeRoleOpt, assumeRoleSessionOpt)
+	uploadClient, err := uploader.NewS3Uploader(a.v,
+		uploader.WithBucketName(req.MetadataBucket),
+		uploader.WithAssumeSessionName(req.MetadataBucket),
+		uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleArn))
 
+	if err != nil {
+		return nil, fmt.Errorf("unable to get uploader: %w", err)
+	}
 	obj := a.finisher.getResponse(req)
 	if err := a.finisher.writeRequestFile(ctx, uploadClient, obj); err != nil {
 		return resp, fmt.Errorf("unable to write request: %w", err)

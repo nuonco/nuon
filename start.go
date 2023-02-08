@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-uploader"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	"google.golang.org/protobuf/proto"
@@ -19,12 +20,15 @@ type WorkflowInfo struct {
 }
 
 func NewStartActivity() *startActivity {
+	v := validator.New()
 	return &startActivity{
+		v:       v,
 		starter: &starterImpl{},
 	}
 }
 
 type startActivity struct {
+	v       *validator.Validate
 	starter starter
 }
 
@@ -36,10 +40,14 @@ func (s *startActivity) StartRequest(ctx context.Context, req *sharedv1.StartAct
 	}
 
 	// create upload client
-	assumeRoleOpt := uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleArn)
-	assumeRoleSessionOpt := uploader.WithAssumeSessionName(startAssumeRoleSessionName)
-	uploadClient := uploader.NewS3Uploader(req.MetadataBucket, req.MetadataBucketPrefix,
-		assumeRoleOpt, assumeRoleSessionOpt)
+	uploadClient, err := uploader.NewS3Uploader(s.v,
+		uploader.WithBucketName(req.MetadataBucket),
+		uploader.WithAssumeSessionName(req.MetadataBucket),
+		uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleArn))
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to get uploader: %w", err)
+	}
 
 	obj := s.starter.getRequest(req)
 	if err := s.starter.writeRequestFile(ctx, uploadClient, obj); err != nil {
