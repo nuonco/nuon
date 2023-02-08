@@ -60,6 +60,8 @@ func (m *SandboxVersion) validate(all bool) error {
 
 	var errors []error
 
+	// no validation rules for Id
+
 	// no validation rules for SandboxName
 
 	// no validation rules for SandboxVersion

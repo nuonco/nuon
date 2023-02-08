@@ -6,11 +6,12 @@ import "google/type/datetime.proto";
 import "validate/validate.proto";
 
 message SandboxVersion {
-  string sandbox_name = 1;
-  string sandbox_version = 2;
-  string tf_version = 3;
-  google.type.DateTime created_at = 4;
-  google.type.DateTime updated_at = 5;
+  string id = 1;
+  string sandbox_name = 2;
+  string sandbox_version = 3;
+  string tf_version = 4;
+  google.type.DateTime created_at = 5;
+  google.type.DateTime updated_at = 6;
 }
 
 message UpsertSandboxVersionRequest {
