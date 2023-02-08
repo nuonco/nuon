@@ -82,13 +82,12 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 		PlanOnly:     req.PlanOnly,
 		BuildPlan:    bResp.PlanRef,
 	}
-	ipResp, err := execProvisionInstances(ctx, w.cfg, ipReq)
+	_, err = execProvisionInstances(ctx, w.cfg, ipReq)
 	if err != nil {
 		err = fmt.Errorf("unable to provision instances: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
-	resp.WorkflowIds = ipResp.WorkflowIds
 
 	w.finishWorkflow(ctx, req, resp, nil)
 	return resp, nil
