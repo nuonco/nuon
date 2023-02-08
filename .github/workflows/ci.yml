@@ -255,7 +255,7 @@ jobs:
           aws_role: ${{ env.TFO_GH_ROLE_ARN }}
           aws_region: ${{ env.TFO_REGION }}
           ecr_registries: ${{ env.TFO_ECR_REGISTRY_ID }}
-          helm_repos: nuon=${{ env.TFO_NUON_CHARTS }}
+          setup_helm: "false"
 
       - name: Build and push container
         run: |
