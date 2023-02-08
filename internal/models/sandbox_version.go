@@ -4,9 +4,9 @@ import "time"
 
 type SandboxVersion struct {
 	Model
-	SandboxName      string
-	SandboxVersion   string
-	TerraformVersion string
+	SandboxName    string
+	SandboxVersion string
+	TfVersion      string
 }
 
 func (s SandboxVersion) GetID() string {
