@@ -55,6 +55,11 @@ func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionReq
 	}
 	l.Debug("finished creating %s plan", typ)
 
+	if req.PlanOnly {
+		l.Debug("plan only enabled, skipping execution of %s plan", typ)
+		return planResp.Plan, nil
+	}
+
 	execReq := &executev1.ExecutePlanRequest{
 		Plan: planResp.Plan,
 	}
@@ -68,6 +73,7 @@ func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionReq
 	return planResp.Plan, nil
 }
 
+//nolint:all
 func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionRequest) (*instancesv1.ProvisionResponse, error) {
 	resp := &instancesv1.ProvisionResponse{
 		BuildPlan: req.BuildPlan,
@@ -87,6 +93,10 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 	}
 	resp.ImageSyncPlan = imageSyncPlanRef
 	l.Debug("successfully synced image")
+
+	// TODO(jm): remove this once deploy plans work
+	l.Debug("returning early until deployments work")
+	return resp, nil
 
 	deployPlanRef, err := w.planAndExec(ctx, req, planv1.PlanType_PLAN_TYPE_WAYPOINT_DEPLOY)
 	if err != nil {
@@ -159,6 +169,7 @@ func execExecutePlan(
 	return resp, nil
 }
 
+//nolint:all
 func execSendHostnameNotification(
 	ctx workflow.Context,
 	act *Activities,
