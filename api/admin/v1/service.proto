@@ -4,6 +4,6 @@ package admin.v1;
 
 import "admin/v1/messages.proto";
 
-service SandboxService {
+service AdminService {
   rpc UpsertSandboxVersion(admin.v1.UpsertSandboxVersionRequest) returns (admin.v1.UpsertSandboxVersionResponse) {}
 }
