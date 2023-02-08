@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	planKey string = "build_plan.json"
+	planKey string = "plan.json"
 )
 
 func (p *planner) GetPlanRef() *planv1.PlanRef {
@@ -15,6 +15,6 @@ func (p *planner) GetPlanRef() *planv1.PlanRef {
 		Bucket:              p.OrgMetadata.Buckets.DeploymentsBucket,
 		BucketKey:           filepath.Join(p.getPrefix(), planKey),
 		BucketAssumeRoleArn: p.OrgMetadata.IamRoleArns.DeploymentsRoleArn,
-		Type:                planv1.PlanType_PLAN_TYPE_WAYPOINT_BUILD,
+		Type:                planv1.PlanType_PLAN_TYPE_WAYPOINT_SYNC_IMAGE,
 	}
 }

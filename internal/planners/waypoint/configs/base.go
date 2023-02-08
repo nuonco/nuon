@@ -60,3 +60,10 @@ func WithWaypointRef(ref *planv1.WaypointRef) baseBuilderOption {
 		return nil
 	}
 }
+
+func WithSourceImage(img *SyncImageSource) baseBuilderOption {
+	return func(b *baseBuilder) error {
+		b.SyncImageSource = img
+		return nil
+	}
+}

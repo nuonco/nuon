@@ -11,12 +11,8 @@ import (
 	"github.com/powertoolsdev/workers-executors/internal/planners"
 	"github.com/powertoolsdev/workers-executors/internal/planners/waypoint"
 	waypointbuild "github.com/powertoolsdev/workers-executors/internal/planners/waypoint/build"
+	waypointsync "github.com/powertoolsdev/workers-executors/internal/planners/waypoint/sync"
 	"google.golang.org/protobuf/proto"
-)
-
-const (
-	planFilename             string = "plan.json"
-	defaultJobTimeoutSeconds uint64 = 3600
 )
 
 func (a *Activities) CreatePlanAct(ctx context.Context, req *planactivitiesv1.CreatePlanRequest) (*planactivitiesv1.CreatePlanResponse, error) {
@@ -39,9 +35,12 @@ func (a *Activities) CreatePlanAct(ctx context.Context, req *planactivitiesv1.Cr
 	}
 
 	// create upload client
-	assumeRoleOpt := uploader.WithAssumeRoleARN(planRef.BucketAssumeRoleArn)
-	assumeRoleSessionOpt := uploader.WithAssumeSessionName("workers-deployments")
-	uploadClient := uploader.NewS3Uploader(planRef.Bucket, planRef.BucketKey, assumeRoleOpt, assumeRoleSessionOpt)
+	uploadClient, err := uploader.NewS3Uploader(a.v, uploader.WithBucketName(planRef.Bucket),
+		uploader.WithAssumeSessionName("workers-executors"),
+		uploader.WithAssumeRoleARN(planRef.BucketAssumeRoleArn))
+	if err != nil {
+		return resp, fmt.Errorf("unable to get uploader: %w", err)
+	}
 
 	err = a.planCreator.uploadPlan(ctx, uploadClient, planRef, plan)
 	if err != nil {
@@ -69,13 +68,17 @@ func (p *planCreatorImpl) getPlanner(req *planactivitiesv1.CreatePlanRequest) (p
 		planner planners.Planner
 	)
 
+	waypointOpts := []waypoint.PlannerOption{
+		waypoint.WithComponent(req.Component),
+		waypoint.WithMetadata(req.Metadata),
+		waypoint.WithOrgMetadata(req.OrgMetadata),
+	}
+
 	switch req.Type {
 	case planv1.PlanType_PLAN_TYPE_WAYPOINT_BUILD:
-		planner, err = waypointbuild.New(p.v,
-			waypoint.WithComponent(req.Component),
-			waypoint.WithMetadata(req.Metadata),
-			waypoint.WithOrgMetadata(req.OrgMetadata),
-		)
+		planner, err = waypointbuild.New(p.v, waypointOpts...)
+	case planv1.PlanType_PLAN_TYPE_WAYPOINT_SYNC_IMAGE:
+		planner, err = waypointsync.New(p.v, waypointOpts...)
 	default:
 		return nil, fmt.Errorf("unsupported plan type: %s", req.Type)
 	}
@@ -93,7 +96,7 @@ func (p *planCreatorImpl) uploadPlan(ctx context.Context, uploader s3BlobUploade
 		return fmt.Errorf("unable to convert plan to json: %w", err)
 	}
 
-	if err := uploader.UploadBlob(ctx, byts, planFilename); err != nil {
+	if err := uploader.UploadBlob(ctx, byts, planRef.BucketKey); err != nil {
 		return fmt.Errorf("unable to upload plan: %w", err)
 	}
 

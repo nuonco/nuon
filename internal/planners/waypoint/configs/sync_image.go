@@ -47,16 +47,18 @@ type syncImageBuilder struct {
 var syncImageTmpl string = `
 project = "{{.WaypointRef.Project}}"
 
-app "{{.WaypointRef.AppName}}" {
+app "{{.WaypointRef.App}}" {
   build {
     use "docker-pull" {
-      image = "{{.SyncImageSource.Tag}}"
+      image = "{{.SyncImageSource.Image}}"
       tag   = "{{.SyncImageSource.Tag}}"
 
-      auth {
-	registryToken = "{{.SyncImageSource.RegistryToken}}"
-	serverAddress = "{{.SyncImageSource.ServerAddress}}"
-      }
+      encoded_auth = base64encode(
+	jsonencode({
+	  username = "{{.SyncImageSource.Username}}",
+	  password = "{{.SyncImageSource.RegistryToken}}"
+	})
+      )
     }
 
     registry {
