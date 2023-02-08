@@ -47,13 +47,21 @@ func (w Workflow) Provision(ctx workflow.Context, req *appv1.ProvisionRequest) (
 		return nil, fmt.Errorf("failed to parse appID to shortID: %w", err)
 	}
 
+	err = w.startWorkflow(ctx, req)
+	if err != nil {
+		err = fmt.Errorf("unable to start workflow: %w", err)
+		return &resp, err
+	}
+
 	prRequest := repository.ProvisionRepositoryRequest{
 		OrgID: orgShortID,
 		AppID: appShortID,
 	}
 	prResp, err := execProvisionRepository(ctx, w.cfg, prRequest)
 	if err != nil {
-		return nil, fmt.Errorf("failed to provision repository: %w", err)
+		err = fmt.Errorf("failed to provision repository: %w", err)
+		w.finishWorkflow(ctx, req, nil, err)
+		return nil, err
 	}
 	l.Debug("successfully provisioned repository: %w", prResp)
 
@@ -63,11 +71,13 @@ func (w Workflow) Provision(ctx workflow.Context, req *appv1.ProvisionRequest) (
 	}
 	ppResp, err := execProvisionProject(ctx, w.cfg, ppReq)
 	if err != nil {
+		w.finishWorkflow(ctx, req, nil, err)
 		return nil, fmt.Errorf("failed to provision project: %w", err)
 	}
 	l.Debug("successfully provisioned project: %w", ppResp)
 
 	l.Debug("finished provisioning app", "response", &resp)
+	w.finishWorkflow(ctx, req, &resp, err)
 	return &resp, nil
 }
 

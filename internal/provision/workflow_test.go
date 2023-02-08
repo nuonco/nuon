@@ -1,6 +1,7 @@
 package provision
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/powertoolsdev/go-common/shortid"
 	appv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
+	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	workers "github.com/powertoolsdev/workers-apps/internal"
 	"github.com/powertoolsdev/workers-apps/internal/provision/project"
 	"github.com/powertoolsdev/workers-apps/internal/provision/repository"
@@ -49,6 +51,8 @@ func Test_Workflow(t *testing.T) {
 
 	wf := NewWorkflow(cfg)
 
+	a := NewActivities()
+
 	orgShortID, err := shortid.ParseString(req.OrgId)
 	require.NoError(t, err)
 
@@ -71,6 +75,14 @@ func Test_Workflow(t *testing.T) {
 			assert.Equal(t, orgShortID, r.OrgID)
 			assert.Equal(t, appShortID, r.AppID)
 			return resp, nil
+		})
+	env.OnActivity(a.StartProvisionRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
+			return &sharedv1.StartActivityResponse{}, nil
+		})
+	env.OnActivity(a.FinishProvisionRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
+			return &sharedv1.FinishActivityResponse{}, nil
 		})
 
 	env.ExecuteWorkflow(wf.Provision, req)
