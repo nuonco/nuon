@@ -335,6 +335,13 @@ type UserOrgInput struct {
 	OrgID  string `json:"orgId" faker:"uuid_hyphenated"`
 }
 
+type SandboxVersionInput struct {
+	ID             string `json:"id" faker:"uuid_hyphenated"`
+	SandboxName    string `json:"sandboxName"`
+	SandboxVersion string `json:"sandboxVersion"`
+	TfVersion      string `json:"tfVersion"`
+}
+
 type AWSRegion string
 
 const (
