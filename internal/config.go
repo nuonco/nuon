@@ -13,6 +13,7 @@ func init() {
 	// deployment defaults
 	config.RegisterDefault("waypoint_token_secret_namespace", "default")
 	config.RegisterDefault("waypoint_org_server_root_domain", "orgs-stage.nuon.co")
+	config.RegisterDefault("waypoint_token_secret_template", "waypoint-bootstrap-token-%s")
 }
 
 type Config struct {

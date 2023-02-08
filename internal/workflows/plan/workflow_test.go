@@ -24,6 +24,7 @@ func getCreatePlanRequest(t *testing.T) *planv1.CreatePlanRequest {
 	req.OrgId = ids[0]
 	req.AppId = ids[1]
 	req.DeploymentId = ids[2]
+	req.InstallId = ""
 
 	return req
 }

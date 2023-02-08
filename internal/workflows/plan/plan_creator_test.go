@@ -45,7 +45,7 @@ func Test_planCreatorImpl_uploadPlan(t *testing.T) {
 
 				args := obj.Calls[0].Arguments
 
-				assert.Equal(t, planFilename, args[2].(string))
+				assert.Equal(t, planRef.BucketKey, args[2].(string))
 
 				//expectedByts, err := proto.Marshal(plan)
 				//assert.NoError(t, err)

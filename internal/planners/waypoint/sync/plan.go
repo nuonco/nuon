@@ -55,14 +55,16 @@ func (p *planner) GetPlan(ctx context.Context) (*planv1.WaypointPlan, error) {
 		Component: p.Component,
 	}
 
-	// TODO(jm):pass in correct values to builders
-	//create builder which will render the waypoint config
-	//ecrRepoName := fmt.Sprintf("%s/%s", p.Metadata.OrgShortId, p.Metadata.AppShortId)
-	//ecrRepoURI := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s", p.OrgMetadata.EcrRegistryId,
-	//p.OrgMetadata.EcrRegion, ecrRepoName)
+	srcImage, err := p.getSourceImage(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get source image: %w", err)
+	}
+
 	builder, err := configs.NewSyncImageBuilder(p.V,
 		configs.WithEcrRef(plan.EcrRepositoryRef),
 		configs.WithWaypointRef(plan.WaypointRef),
+		configs.WithSourceImage(srcImage),
+		configs.WithComponent(p.Component),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create builder: %w", err)

@@ -22,5 +22,5 @@ func Test_planner_GetPlanRef(t *testing.T) {
 	planRef := pln.GetPlanRef()
 	assert.Equal(t, orgMeta.Buckets.DeploymentsBucket, planRef.Bucket)
 	assert.Equal(t, orgMeta.IamRoleArns.DeploymentsRoleArn, planRef.BucketAssumeRoleArn)
-	assert.Equal(t, planv1.PlanType_PLAN_TYPE_WAYPOINT_BUILD, planRef.Type)
+	assert.Equal(t, planv1.PlanType_PLAN_TYPE_WAYPOINT_SYNC_IMAGE, planRef.Type)
 }

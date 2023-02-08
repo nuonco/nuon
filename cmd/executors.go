@@ -46,7 +46,7 @@ func deploymentRun(cmd *cobra.Command, args []string) {
 	case config.Local, config.Development:
 		l, err = zap.NewDevelopment()
 	default:
-		l, err = zap.NewProduction()
+		l, err = zap.NewDevelopment()
 	}
 	zap.ReplaceGlobals(l)
 

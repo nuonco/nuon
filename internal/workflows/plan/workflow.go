@@ -6,7 +6,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/google/uuid"
 	"github.com/powertoolsdev/go-common/shortid"
+	"github.com/powertoolsdev/go-waypoint"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	planactivitiesv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1/activities/v1"
 	workers "github.com/powertoolsdev/workers-executors/internal"
@@ -45,8 +47,16 @@ func (w *wkflow) CreatePlan(ctx workflow.Context, req *planv1.CreatePlanRequest)
 
 	longIDs, err := shortid.ToUUIDs(req.OrgId, req.AppId, req.DeploymentId)
 	if err != nil {
-		return resp, fmt.Errorf("invalid uuids: %w", err)
+		return resp, fmt.Errorf("invalid shortids: %w", err)
 	}
+	var installID uuid.UUID
+	if req.InstallId != "" {
+		installID, err = shortid.ToUUID(req.InstallId)
+		if err != nil {
+			return resp, fmt.Errorf("invalid install shortid: %w", err)
+		}
+	}
+
 	cpReq := &planactivitiesv1.CreatePlanRequest{
 		Type: req.Type,
 		Metadata: &planv1.Metadata{
@@ -56,6 +66,8 @@ func (w *wkflow) CreatePlan(ctx workflow.Context, req *planv1.CreatePlanRequest)
 			AppId:             longIDs[1].String(),
 			DeploymentShortId: req.DeploymentId,
 			DeploymentId:      longIDs[2].String(),
+			InstallShortId:    req.InstallId,
+			InstallId:         installID.String(),
 		},
 		OrgMetadata: &planv1.OrgMetadata{
 			EcrRegion:      w.cfg.OrgsECRRegion,
@@ -66,6 +78,11 @@ func (w *wkflow) CreatePlan(ctx workflow.Context, req *planv1.CreatePlanRequest)
 				InstallationsBucket: w.cfg.InstallationsBucket,
 				OrgsBucket:          w.cfg.OrgsBucket,
 				InstancesBucket:     w.cfg.InstancesBucket,
+			},
+			WaypointServer: &planv1.WaypointServerRef{
+				Address:              waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId),
+				TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
+				TokenSecretName:      fmt.Sprintf(w.cfg.WaypointTokenSecretTemplate, req.OrgId),
 			},
 			IamRoleArns: &planv1.OrgIAMRoleArns{
 				DeploymentsRoleArn:   fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),

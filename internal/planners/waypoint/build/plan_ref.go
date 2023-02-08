@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	planKey string = "build_plan.json"
+	planKey string = "plan.json"
 )
 
 func (p *planner) GetPlanRef() *planv1.PlanRef {

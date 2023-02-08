@@ -90,23 +90,23 @@ func (e *executor) Execute(ctx context.Context) (*executev1.ExecutePlanResponse,
 	e.Logger.Debug("fetching waypoint plan")
 	bp, err := e.fetchWaypointPlan(ctx)
 	if err != nil {
-		return resp, err
+		return resp, fmt.Errorf("unable to fetch plan: %w", err)
 	}
 
 	e.Logger.Debug("getting waypoint client")
 	if err = e.getClient(ctx, bp); err != nil {
-		return resp, err
+		return resp, fmt.Errorf("unable to get client: %w", err)
 	}
 
-	e.Logger.Debug("upserting waypoint project")
+	e.Logger.Debug("upserting waypoint application")
 	if err = e.upsert(ctx, bp); err != nil {
-		return resp, err
+		return resp, fmt.Errorf("unable to upsert application: %w", err)
 	}
 
 	e.Logger.Debug("queuing waypoint job")
 	jobID, err := e.queueJob(ctx, bp)
 	if err != nil {
-		return resp, err
+		return resp, fmt.Errorf("unable to queue job:% w", err)
 	}
 
 	e.Logger = e.Logger.With(zap.String("jobID", jobID))
@@ -273,11 +273,15 @@ func (e *executor) pollJob(ctx context.Context, jobID string) error {
 }
 
 func (e *executor) upload(ctx context.Context, bp *planv1.WaypointPlan) error {
-	uploader := uploader.NewS3Uploader(
-		bp.Outputs.Bucket,
-		bp.Outputs.BucketPrefix,
+	uploader, err := uploader.NewS3Uploader(
+		e.v,
+		uploader.WithBucketName(bp.Outputs.Bucket),
 		uploader.WithAssumeRoleARN(bp.Outputs.BucketAssumeRoleArn),
+		uploader.WithAssumeSessionName("workers-executors"),
 	)
+	if err != nil {
+		return fmt.Errorf("unable to get uploader: %w", err)
+	}
 
 	// NOTE(jdt): this is necessary as we need the real filename (w/o path) of the tmp file for uploading
 	stat, err := e.f.Stat()

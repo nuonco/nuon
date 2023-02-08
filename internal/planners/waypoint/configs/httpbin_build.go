@@ -31,10 +31,10 @@ var _ Builder = (*httpbinBuildBuilder)(nil)
 var httpbinBuildTmpl string = `
 project = "{{.WaypointRef.Project}}"
 
-app "{{.WaypointRef.AppName}}" {
+app "{{.WaypointRef.App}}" {
   build {
     use "docker-pull" {
-      image = "kennethreitz/httpbin""
+      image = "kennethreitz/httpbin"
       tag   = "latest"
     }
 
