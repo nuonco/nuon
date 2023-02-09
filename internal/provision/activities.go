@@ -5,11 +5,8 @@ import (
 	"github.com/powertoolsdev/go-waypoint"
 )
 
-// NOTE(jm): we alias this type so it doesn't conflict
-type waypointProvider = waypoint.Provider
-
 type Activities struct {
-	waypointProvider
+	waypointProvider waypoint.Provider
 	hostnameNotificationSender
 }
 
