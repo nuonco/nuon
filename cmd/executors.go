@@ -7,8 +7,8 @@ import (
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
 	shared "github.com/powertoolsdev/workers-executors/internal"
-	"github.com/powertoolsdev/workers-executors/internal/workflows/execute"
-	"github.com/powertoolsdev/workers-executors/internal/workflows/plan"
+	execwaypoint "github.com/powertoolsdev/workers-executors/internal/workflows/execute/waypoint"
+	planwaypoint "github.com/powertoolsdev/workers-executors/internal/workflows/plan/waypoint"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -100,14 +100,14 @@ func runExecutorWorkers(c client.Client, log *zap.Logger, cfg shared.Config, int
 		return fmt.Errorf("invalid executors config: %w", err)
 	}
 
-	planWkflow := plan.NewWorkflow(cfg)
+	planWkflow := planwaypoint.NewWorkflow(cfg)
 	w.RegisterWorkflow(planWkflow.CreatePlan)
-	planActs := plan.NewActivities()
+	planActs := planwaypoint.NewActivities()
 	w.RegisterActivity(planActs)
 
-	executeWkflow := execute.NewWorkflow(cfg)
+	executeWkflow := execwaypoint.NewWorkflow(cfg)
 	w.RegisterWorkflow(executeWkflow.ExecutePlan)
-	executeActs := execute.NewActivities()
+	executeActs := execwaypoint.NewActivities()
 	w.RegisterActivity(executeActs)
 
 	if err := w.Run(interruptCh); err != nil {
