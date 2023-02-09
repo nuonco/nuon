@@ -169,7 +169,6 @@ func execExecutePlan(
 	return resp, nil
 }
 
-//nolint:all
 func execSendHostnameNotification(
 	ctx workflow.Context,
 	act *Activities,
