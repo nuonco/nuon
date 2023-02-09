@@ -21,14 +21,22 @@ func createSandboxVersion(ctx context.Context, t *testing.T, state repoTestState
 	return sandboxVersion
 }
 
-func TestGetSandboxVersion(t *testing.T) {
+func TestGetSandboxVersionByID(t *testing.T) {
 	execRepoTests(t, []repoTest{
 		{
-			desc: "should get a sandbox version successfully",
+			desc: "should return error if record does not exist",
+			fn: func(ctx context.Context, state repoTestState) {
+				sandboxVersion, err := state.adminRepo.GetSandboxVersionByID(ctx, uuid.New())
+				assert.Error(t, err)
+				assert.Nil(t, sandboxVersion)
+			},
+		},
+		{
+			desc: "should fetch the record if it exists",
 			fn: func(ctx context.Context, state repoTestState) {
 				origSandboxVersion := createSandboxVersion(ctx, t, state)
 
-				sandboxVersion, err := state.adminRepo.GetSandboxVersion(ctx, origSandboxVersion.ID)
+				sandboxVersion, err := state.adminRepo.GetSandboxVersionByID(ctx, origSandboxVersion.ID)
 				assert.NoError(t, err)
 				assert.NotNil(t, sandboxVersion)
 			},
@@ -36,18 +44,34 @@ func TestGetSandboxVersion(t *testing.T) {
 		{
 			desc: "should error with canceled context",
 			fn: func(ctx context.Context, state repoTestState) {
-				sandboxVersion := createSandboxVersion(ctx, t, state)
-
 				state.ctxCloseFn()
-				fetchedSandboxVersion, err := state.adminRepo.GetSandboxVersion(ctx, sandboxVersion.ID)
+				fetchedSandboxVersion, err := state.adminRepo.GetSandboxVersionByID(ctx, uuid.New())
 				assert.Error(t, err)
 				assert.Nil(t, fetchedSandboxVersion)
 			},
 		},
+	})
+}
+
+func TestGetLatestSandboxVersion(t *testing.T) {
+	execRepoTests(t, []repoTest{
 		{
-			desc: "should error with not found",
+			desc: "should fetch the most recent sandbox version",
 			fn: func(ctx context.Context, state repoTestState) {
-				fetchedSandboxVersion, err := state.adminRepo.GetSandboxVersion(ctx, uuid.New())
+				_ = createSandboxVersion(ctx, t, state)
+				_ = createSandboxVersion(ctx, t, state)
+				latestSandboxVersion := createSandboxVersion(ctx, t, state)
+				fetchedSandboxVersion, err := state.adminRepo.GetLatestSandboxVersion(ctx)
+				assert.NoError(t, err)
+				assert.NotNil(t, fetchedSandboxVersion)
+				assert.Equal(t, latestSandboxVersion.ID, fetchedSandboxVersion.ID)
+			},
+		},
+		{
+			desc: "should error with canceled context",
+			fn: func(ctx context.Context, state repoTestState) {
+				state.ctxCloseFn()
+				fetchedSandboxVersion, err := state.adminRepo.GetLatestSandboxVersion(ctx)
 				assert.Error(t, err)
 				assert.Nil(t, fetchedSandboxVersion)
 			},
