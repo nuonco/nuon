@@ -34,7 +34,7 @@ func (a *Activities) CreateWaypointRunnerProfile(ctx context.Context, req Create
 		return resp, fmt.Errorf("failed to validate request: %w", err)
 	}
 
-	client, err := a.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
+	client, err := a.waypointProvider.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get org waypoint client: %w", err)
 	}

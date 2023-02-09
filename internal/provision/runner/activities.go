@@ -8,9 +8,6 @@ import (
 	workers "github.com/powertoolsdev/workers-installs/internal"
 )
 
-// NOTE: we alias this type so it doesn't conflict
-type waypointProvider = waypoint.Provider
-
 // Activities is a type that wraps the set of provision activities that we'll be using to execute this
 // workflow. It should only be a few activities, such as running terraform and installing the agent
 type Activities struct {
@@ -20,7 +17,7 @@ type Activities struct {
 	Kubeconfig *rest.Config
 
 	// TODO(jm): refactor once we've finished all the waypoint setup work
-	waypointProvider
+	waypointProvider waypoint.Provider
 	waypointProjectCreator
 	waypointServerCookieGetter
 	waypointRunnerAdopter
