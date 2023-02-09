@@ -29,7 +29,7 @@ func (a *Activities) CreateWaypointWorkspace(ctx context.Context, req CreateWayp
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	client, err := a.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
+	client, err := a.waypointProvider.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get org waypoint client: %w", err)
 	}
