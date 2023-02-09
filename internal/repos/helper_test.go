@@ -108,6 +108,7 @@ func testDB(testName string) (*gorm.DB, func()) { //nolint:gocritic //unnamedRes
 }
 
 type repoTestState struct {
+	adminRepo      adminRepo
 	appRepo        appRepo
 	installRepo    installRepo
 	userRepo       userRepo
@@ -141,6 +142,7 @@ func execRepoTest(t *testing.T, test repoTest) {
 
 	state := repoTestState{
 		db:             db,
+		adminRepo:      NewAdminRepo(db),
 		appRepo:        NewAppRepo(db),
 		orgRepo:        NewOrgRepo(db),
 		userRepo:       NewUserRepo(db),
