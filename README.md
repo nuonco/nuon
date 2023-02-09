@@ -69,3 +69,32 @@ To run all tests: `go test -count=1 ./...` or specify which tests you want to ru
 ## How to run the linter locally
 
 Clone the [shared-configs repo](https://github.com/powertoolsdev/shared-configs) and then from your `api` repo run: `golangci-lint run -c ../shared-configs/golangci.yaml` (the command assumes the `shared-configs` repo has the same parent directory as `api`).
+
+## How to send requests to the API
+
+First, install grpcurl (cURL for hRPC).
+
+Add these functions to your terminal's script file:
+
+```bash
+function nuon-api-stage-request () {
+  cd ~/path/to/your/api/repo
+  grpcurl -protoset <(buf build -o -) -plaintext -d "$1" api.nuon.us-west-2.stage.nuon.cloud:80 "$2"
+  cd - > /dev/null
+}
+
+function nuon-api-local-request () {
+  cd ~/path/to/your/api/repo
+  grpcurl -protoset <(buf build -o -) -plaintext -d "$1" localhost:8080 "$2"
+  cd - > /dev/null
+}
+```
+
+Use them to send requests locally or in the staging environment (for staging you have to be connected with Twingate).
+
+```bash
+$ nuon-api-local-request '{"id":"369e9d9d-7fba-4c59-aa7b-4ab550d53be9"}' app.v1.AppsService/GetApp
+$ nuon-api-stage-request '{"user_id":"233", "org_id": "123"}' user.v1.UsersService/UpsertOrgMember
+```
+
+The protobufs for all the API's endpoints can be found in [the protos repo](https://github.com/powertoolsdev/protos/tree/main/api) and in [buf.build](https://buf.build/nuon/apis).
