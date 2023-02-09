@@ -22,7 +22,7 @@ func (s *server) UpsertSandboxVersion(ctx context.Context, req *connect.Request[
 		TfVersion:      req.Msg.TfVersion,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to upsert sandbox version: %w", err)
 	}
 
 	return connect.NewResponse(&adminv1.UpsertSandboxVersionResponse{
