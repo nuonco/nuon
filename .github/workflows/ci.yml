@@ -90,7 +90,7 @@ jobs:
     name: Lint
     needs: terraform
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 8
     steps:
       - name: Generate token
         id: generate_token

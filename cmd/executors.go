@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/powertoolsdev/go-common/temporalzap"
@@ -11,8 +10,6 @@ import (
 	planwaypoint "github.com/powertoolsdev/workers-executors/internal/workflows/plan/waypoint"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/sdk/trace"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/contrib/opentelemetry"
 	"go.temporal.io/sdk/interceptor"
@@ -21,9 +18,10 @@ import (
 )
 
 var executorsCmd = &cobra.Command{
-	Use:   "executors",
-	Short: "Run the executor workers",
-	Run:   deploymentRun,
+	Use:    "executors",
+	Short:  "Run the executor workers",
+	Run:    executorsRun,
+	PreRun: config.ConfigureService[*cobra.Command],
 }
 
 //nolint:gochecknoinits
@@ -31,27 +29,16 @@ func init() {
 	rootCmd.AddCommand(executorsCmd)
 }
 
-func deploymentRun(cmd *cobra.Command, args []string) {
+func executorsRun(cmd *cobra.Command, args []string) {
+	l := zap.L()
 	var cfg shared.Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
-		panic(fmt.Sprintf("failed to load config: %s", err))
+		l.Fatal("failed to load config", zap.Error(err))
 	}
 
-	var (
-		l   *zap.Logger
-		err error
-	)
-	switch cfg.Base.Env {
-	case config.Local, config.Development:
-		l, err = zap.NewDevelopment()
-	default:
-		l, err = zap.NewDevelopment()
-	}
-	zap.ReplaceGlobals(l)
-
-	if err != nil {
-		fmt.Printf("failed to instantiate logger: %v\n", err)
+	if err := cfg.Validate(); err != nil {
+		l.Fatal("failed to validate config", zap.Error(err))
 	}
 
 	c, err := client.Dial(client.Options{
@@ -71,22 +58,8 @@ func deploymentRun(cmd *cobra.Command, args []string) {
 }
 
 func runExecutorWorkers(c client.Client, log *zap.Logger, cfg shared.Config, interruptCh <-chan interface{}) error {
-	otlpExporter, err := otlptracegrpc.New(context.Background(),
-		otlptracegrpc.WithInsecure(),
-		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:4317", cfg.HostIP)))
-	if err != nil {
-		return fmt.Errorf("unable to create otlptrace exporter: %w", err)
-	}
-
-	tracerProvider := trace.NewTracerProvider(
-		trace.WithBatcher(otlpExporter),
-	)
-
-	otel.SetTracerProvider(tracerProvider)
-	tracer := tracerProvider.Tracer("nuon.workers-executors")
-
 	traceIntercepter, err := opentelemetry.NewTracingInterceptor(opentelemetry.TracerOptions{
-		Tracer: tracer,
+		Tracer: otel.Tracer(""),
 	})
 	if err != nil {
 		return fmt.Errorf("unable to get tracing interceptor: %w", err)

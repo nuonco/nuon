@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"sync"
 
@@ -15,9 +14,10 @@ import (
 )
 
 var allCmd = &cobra.Command{
-	Use:   "all",
-	Short: "Run all workers",
-	Run:   runAll,
+	Use:    "all",
+	Short:  "Run all workers",
+	Run:    runAll,
+	PreRun: config.ConfigureService[*cobra.Command],
 }
 
 //nolint:gochecknoinits
@@ -28,29 +28,15 @@ func init() {
 type workerFn func(client.Client, *zap.Logger, shared.Config, <-chan interface{}) error
 
 func runAll(cmd *cobra.Command, args []string) {
+	l := zap.L()
 	var cfg shared.Config
 
 	if err := config.LoadInto(cmd.Flags(), &cfg); err != nil {
-		panic(fmt.Sprintf("failed to load config: %s", err))
+		l.Fatal("failed to load config", zap.Error(err))
 	}
+
 	if err := cfg.Validate(); err != nil {
-		panic(fmt.Sprintf("failed to validate config: %s", err))
-	}
-
-	var (
-		l   *zap.Logger
-		err error
-	)
-	switch cfg.Env {
-	case config.Development:
-		l, err = zap.NewDevelopment()
-	default:
-		l, err = zap.NewProduction()
-	}
-	zap.ReplaceGlobals(l)
-
-	if err != nil {
-		fmt.Printf("failed to instantiate logger: %v\n", err)
+		l.Fatal("failed to validate config", zap.Error(err))
 	}
 
 	c, err := client.Dial(client.Options{

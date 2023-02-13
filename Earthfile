@@ -18,7 +18,12 @@ ARG GHCR_IMAGE=ghcr.io/$EARTHLY_GIT_PROJECT_NAME
 
 build:
     DO +DEPS
-    RUN go build -o bin/service .
+    ARG EARTHLY_TARGET_TAG_DOCKER
+    RUN go \
+        build \
+        -ldflags="-X 'github.com/powertoolsdev/go-config/pkg/config.Version=$EARTHLY_TARGET_TAG_DOCKER'" \
+        -o bin/service \
+        .
     SAVE ARTIFACT bin/service /service
 
 # TODO(jdt): do something better and platform specific
