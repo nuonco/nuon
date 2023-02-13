@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -40,7 +41,7 @@ func cleanupHook(testName string) func() {
 
 		id, ok := stmt.Dest.(models.IDer)
 		if !ok {
-			return
+			log.Fatalln(errors.New("error during cleanup hook: could not retrieve ID for " + schm.Table))
 		}
 		entries = append(entries, entity{
 			table: schm.Table,
