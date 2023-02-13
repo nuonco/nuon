@@ -47,6 +47,17 @@ $ go run . server
 
 At this point, you should have the api running and accessible at `http://localhost:8080`.
 
+## How to apply DB changes in stage
+After your schema changes are merged, run this script:
+```
+function stage-migrate-api() {
+  POD_ID=$(kubectl --context stage-nuon get pods -n default -o name -l app.kubernetes.io/name=api | head -n 1)
+  echo "pod $POD_ID"
+  kubectl exec --tty $POD_ID -- sh -c '/bin/service migrate up'
+}
+```
+Remember to `aws-sso-util login` first.
+
 ## How to apply DB changes locally
 
 1. Run `go run . migrate create FILENAME sql` where `FILENAME` is a descriptive name for your migration, e.g. `create_users_table`. This will create a placeholder file with that name under the `migrations` folder. 
