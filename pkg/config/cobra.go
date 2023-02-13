@@ -61,15 +61,15 @@ func configureLogger(cfg *Base) (*zap.Logger, error) {
 	case Local, Development:
 		l, err = zap.NewDevelopment()
 	default:
-		var lvl zapcore.Level
+		zCfg := zap.NewProductionConfig()
 
+		var lvl zapcore.Level
 		lvl, err = zapcore.ParseLevel(cfg.LogLevel)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse level: %s, with error: %w", cfg.LogLevel, err)
+		if err == nil {
+			// only set the level if it was set correctly on the config
+			zCfg.Level.SetLevel(lvl)
 		}
 
-		zCfg := zap.NewProductionConfig()
-		zCfg.Level.SetLevel(lvl)
 		l, err = zCfg.Build()
 	}
 
