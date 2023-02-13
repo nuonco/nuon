@@ -2,7 +2,7 @@ package deployment
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/go-common/config"
+	"github.com/powertoolsdev/go-config/pkg/config"
 )
 
 //nolint:gochecknoinits
