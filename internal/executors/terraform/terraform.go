@@ -46,7 +46,7 @@ func WithPlan(p *planv1.PlanRef) terraformerOption {
 	}
 }
 
-func (t *terraformer) Run(ctx context.Context) (map[string]interface{}, error) {
+func (t *terraformer) Execute(ctx context.Context) (map[string]interface{}, error) {
 	r, err := runner.New(
 		t.v,
 		runner.WithPlan(t.Plan),
