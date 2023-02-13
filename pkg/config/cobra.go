@@ -17,14 +17,15 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
-// NOTE(jdt): this is the only method we use from *cobra.Command
+// flagger represents anything that can return a pointer to a pflag FlagSet
+// typically, this would be a *cobra.Command
 type flagger interface {
 	Flags() *pflag.FlagSet
 }
 
 const configureServiceErrTemplate = `{"level":"error","ts":%d,"msg":"failed to setup service", "error": "%s"}\n`
 
-func ConfigureService(cmd flagger, args []string) {
+func ConfigureService[T flagger](cmd T, args []string) {
 	cfg, err := loadConfig(cmd)
 	if err != nil {
 		fmt.Printf(configureServiceErrTemplate, time.Now().Unix(), err)
