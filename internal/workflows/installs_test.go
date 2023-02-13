@@ -17,6 +17,7 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 	errInstallProvisionTest := fmt.Errorf("error")
 	install := generics.GetFakeObj[*models.Install]()
 	install.AWSSettings = generics.GetFakeObj[*models.AWSSettings]()
+	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
 
 	orgID := uuid.NewString()
 
@@ -47,8 +48,8 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 				assert.Equal(t, install.AWSSettings.Region.ToRegion(), req.AccountSettings.Region)
 				assert.Equal(t, install.AWSSettings.IamRoleArn, req.AccountSettings.AwsRoleArn)
 				// validate sandbox settings
-				assert.Equal(t, sandboxName, req.SandboxSettings.Name)
-				assert.Equal(t, sandboxVersion, req.SandboxSettings.Version)
+				assert.Equal(t, sandboxVersion.SandboxName, req.SandboxSettings.Name)
+				assert.Equal(t, sandboxVersion.SandboxVersion, req.SandboxSettings.Version)
 			},
 		},
 		"error": {
@@ -66,7 +67,7 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 			client := test.clientFn()
 			mgr := NewInstallWorkflowManager(client)
 
-			err := mgr.Provision(context.Background(), install, orgID)
+			err := mgr.Provision(context.Background(), install, orgID, sandboxVersion)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
@@ -81,6 +82,7 @@ func Test_installWorkflowManager_Deprovision(t *testing.T) {
 	errInstallProvisionTest := fmt.Errorf("error")
 	install := generics.GetFakeObj[*models.Install]()
 	install.AWSSettings = generics.GetFakeObj[*models.AWSSettings]()
+	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
 
 	orgID := uuid.NewString()
 
@@ -111,8 +113,8 @@ func Test_installWorkflowManager_Deprovision(t *testing.T) {
 				assert.Equal(t, install.AWSSettings.Region.ToRegion(), req.AccountSettings.Region)
 				assert.Equal(t, install.AWSSettings.IamRoleArn, req.AccountSettings.AwsRoleArn)
 				// validate sandbox settings
-				assert.Equal(t, sandboxName, req.SandboxSettings.Name)
-				assert.Equal(t, sandboxVersion, req.SandboxSettings.Version)
+				assert.Equal(t, sandboxVersion.SandboxName, req.SandboxSettings.Name)
+				assert.Equal(t, sandboxVersion.SandboxVersion, req.SandboxSettings.Version)
 			},
 		},
 		"error": {
@@ -130,7 +132,7 @@ func Test_installWorkflowManager_Deprovision(t *testing.T) {
 			client := test.clientFn()
 			mgr := NewInstallWorkflowManager(client)
 
-			err := mgr.Deprovision(context.Background(), install, orgID)
+			err := mgr.Deprovision(context.Background(), install, orgID, sandboxVersion)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

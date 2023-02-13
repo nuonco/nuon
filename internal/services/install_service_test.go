@@ -19,11 +19,13 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 	errUpsertInstall := fmt.Errorf("error upserting install")
 	install := generics.GetFakeObj[*models.Install]()
 	app := generics.GetFakeObj[*models.App]()
+	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
 	fmt.Println(errUpsertInstall)
 
 	tests := map[string]struct {
 		inputFn     func() models.InstallInput
 		repoFn      func(*gomock.Controller) *repos.MockInstallRepo
+		adminRepoFn func(*gomock.Controller) *repos.MockAdminRepo
 		appRepoFn   func(*gomock.Controller) *repos.MockAppRepo
 		wkflowFn    func(*gomock.Controller) *workflows.MockInstallWorkflowManager
 		errExpected error
@@ -39,6 +41,11 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(install, nil)
 				return repo
 			},
+			adminRepoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
+				repo := repos.NewMockAdminRepo(ctl)
+				repo.EXPECT().GetLatestSandboxVersion(gomock.Any()).Return(sandboxVersion, nil)
+				return repo
+			},
 			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), install.AppID).Return(app, nil)
@@ -46,7 +53,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
 				mgr := workflows.NewMockInstallWorkflowManager(ctl)
-				mgr.EXPECT().Provision(gomock.Any(), install, app.OrgID.String()).Return(nil)
+				mgr.EXPECT().Provision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return(nil)
 				return mgr
 			},
 		},
@@ -61,6 +68,11 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), gomock.Any()).Return(install, nil)
 				return repo
 			},
+			adminRepoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
+				repo := repos.NewMockAdminRepo(ctl)
+				repo.EXPECT().GetLatestSandboxVersion(gomock.Any()).Return(sandboxVersion, nil)
+				return repo
+			},
 			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), install.AppID).Return(app, nil)
@@ -68,7 +80,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
 				mgr := workflows.NewMockInstallWorkflowManager(ctl)
-				mgr.EXPECT().Provision(gomock.Any(), install, app.OrgID.String()).Return(nil)
+				mgr.EXPECT().Provision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return(nil)
 				return mgr
 			},
 		},
@@ -81,6 +93,10 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				repo := repos.NewMockInstallRepo(ctl)
 				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, errUpsertInstall)
+				return repo
+			},
+			adminRepoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
+				repo := repos.NewMockAdminRepo(ctl)
 				return repo
 			},
 			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -103,6 +119,10 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), gomock.Any()).Return(install, nil)
 				return repo
 			},
+			adminRepoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
+				repo := repos.NewMockAdminRepo(ctl)
+				return repo
+			},
 			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				return repo
@@ -123,6 +143,11 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(install, nil)
 				return repo
 			},
+			adminRepoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
+				repo := repos.NewMockAdminRepo(ctl)
+				repo.EXPECT().GetLatestSandboxVersion(gomock.Any()).Return(sandboxVersion, nil)
+				return repo
+			},
 			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), install.AppID).Return(app, nil)
@@ -130,7 +155,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
 				mgr := workflows.NewMockInstallWorkflowManager(ctl)
-				mgr.EXPECT().Provision(gomock.Any(), install, app.OrgID.String()).Return(errUpsertInstall)
+				mgr.EXPECT().Provision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return(errUpsertInstall)
 				return mgr
 			},
 			errExpected: errUpsertInstall,
@@ -146,6 +171,11 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), gomock.Any()).Return(install, nil)
 				return repo
 			},
+			adminRepoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
+				repo := repos.NewMockAdminRepo(ctl)
+				repo.EXPECT().GetLatestSandboxVersion(gomock.Any()).Return(sandboxVersion, nil)
+				return repo
+			},
 			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), install.AppID).Return(app, nil)
@@ -153,7 +183,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
 				mgr := workflows.NewMockInstallWorkflowManager(ctl)
-				mgr.EXPECT().Provision(gomock.Any(), install, app.OrgID.String()).Return(errUpsertInstall)
+				mgr.EXPECT().Provision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return(errUpsertInstall)
 				return mgr
 			},
 			errExpected: errUpsertInstall,
@@ -165,6 +195,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			appInput := test.inputFn()
 			svc := &installService{
+				adminRepo: test.adminRepoFn(mockCtl),
 				appRepo:   test.appRepoFn(mockCtl),
 				log:       zaptest.NewLogger(t),
 				repo:      test.repoFn(mockCtl),
@@ -285,10 +316,12 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 	installID := uuid.New()
 	install := generics.GetFakeObj[*models.Install]()
 	app := generics.GetFakeObj[*models.App]()
+	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
 
 	tests := map[string]struct {
 		installID   string
 		repoFn      func(*gomock.Controller) *repos.MockInstallRepo
+		adminRepoFn func(*gomock.Controller) *repos.MockAdminRepo
 		appRepoFn   func(*gomock.Controller) *repos.MockAppRepo
 		wkflowFn    func(*gomock.Controller) *workflows.MockInstallWorkflowManager
 		errExpected error
@@ -301,6 +334,11 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), installID).Return(install, nil)
 				return repo
 			},
+			adminRepoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
+				repo := repos.NewMockAdminRepo(ctl)
+				repo.EXPECT().GetLatestSandboxVersion(gomock.Any()).Return(sandboxVersion, nil)
+				return repo
+			},
 			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), install.AppID).Return(app, nil)
@@ -308,7 +346,7 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
 				mgr := workflows.NewMockInstallWorkflowManager(ctl)
-				mgr.EXPECT().Deprovision(gomock.Any(), install, app.OrgID.String()).Return(nil)
+				mgr.EXPECT().Deprovision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return(nil)
 				return mgr
 			},
 		},
@@ -318,6 +356,10 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 				repo := repos.NewMockInstallRepo(ctl)
 				repo.EXPECT().Delete(gomock.Any(), installID).Return(true, nil)
 				repo.EXPECT().Get(gomock.Any(), installID).Return(install, nil)
+				return repo
+			},
+			adminRepoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
+				repo := repos.NewMockAdminRepo(ctl)
 				return repo
 			},
 			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -339,6 +381,10 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), installID).Return(install, nil)
 				return repo
 			},
+			adminRepoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
+				repo := repos.NewMockAdminRepo(ctl)
+				return repo
+			},
 			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				return repo
@@ -357,6 +403,11 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), installID).Return(install, nil)
 				return repo
 			},
+			adminRepoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
+				repo := repos.NewMockAdminRepo(ctl)
+				repo.EXPECT().GetLatestSandboxVersion(gomock.Any()).Return(sandboxVersion, nil)
+				return repo
+			},
 			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), install.AppID).Return(app, nil)
@@ -364,7 +415,7 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
 				mgr := workflows.NewMockInstallWorkflowManager(ctl)
-				mgr.EXPECT().Deprovision(gomock.Any(), install, app.OrgID.String()).Return(errDeleteInstall)
+				mgr.EXPECT().Deprovision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return(errDeleteInstall)
 				return mgr
 			},
 			errExpected: errDeleteInstall,
@@ -375,6 +426,7 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			svc := &installService{
+				adminRepo: test.adminRepoFn(mockCtl),
 				appRepo:   test.appRepoFn(mockCtl),
 				log:       zaptest.NewLogger(t),
 				repo:      test.repoFn(mockCtl),

@@ -25,6 +25,7 @@ type InstallService interface {
 var _ InstallService = (*installService)(nil)
 
 type installService struct {
+	adminRepo repos.AdminRepo
 	appRepo   repos.AppRepo
 	log       *zap.Logger
 	repo      repos.InstallRepo
@@ -32,11 +33,11 @@ type installService struct {
 }
 
 func NewInstallService(db *gorm.DB, temporalClient tclient.Client, log *zap.Logger) *installService {
-	installRepo := repos.NewInstallRepo(db)
 	return &installService{
+		adminRepo: repos.NewAdminRepo(db),
 		appRepo:   repos.NewAppRepo(db),
 		log:       log,
-		repo:      installRepo,
+		repo:      repos.NewInstallRepo(db),
 		wkflowMgr: workflows.NewInstallWorkflowManager(temporalClient),
 	}
 }
@@ -52,7 +53,12 @@ func (i *installService) deprovisionInstall(ctx context.Context, install *models
 		return err
 	}
 
-	return i.wkflowMgr.Deprovision(ctx, install, app.OrgID.String())
+	sandboxVersion, err := i.adminRepo.GetLatestSandboxVersion(ctx)
+	if err != nil {
+		return err
+	}
+
+	return i.wkflowMgr.Deprovision(ctx, install, app.OrgID.String(), sandboxVersion)
 }
 
 func (i *installService) DeleteInstall(ctx context.Context, inputID string) (bool, error) {
@@ -164,7 +170,12 @@ func (i *installService) provisionInstall(ctx context.Context, install *models.I
 		return err
 	}
 
-	return i.wkflowMgr.Provision(ctx, install, app.OrgID.String())
+	sandboxVersion, err := i.adminRepo.GetLatestSandboxVersion(ctx)
+	if err != nil {
+		return err
+	}
+
+	return i.wkflowMgr.Provision(ctx, install, app.OrgID.String(), sandboxVersion)
 }
 
 func (i *installService) UpsertInstall(ctx context.Context, input models.InstallInput) (*models.Install, error) {
