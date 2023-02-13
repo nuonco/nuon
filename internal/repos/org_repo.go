@@ -36,7 +36,7 @@ func (o orgRepo) Create(ctx context.Context, org *models.Org) (*models.Org, erro
 	err := o.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		UpdateAll: true,
-	}).Create(&org).Error
+	}).Create(org).Error
 	if err != nil {
 		return nil, err
 	}
