@@ -1,9 +1,9 @@
-output "deployments_bucket_name" {
-  value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.deployments.name)
+output "buckets" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.deployments)
 }
 
-output "orgs_deployments_role_template" {
-  value = nonsensitive(data.tfe_outputs.infra-orgs.values.org_iam_role_name_templates.deployments_access)
+output "org_iam_role_templates" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.org_iam_role_name_templates)
 }
 
 # the following values are for interacting with the orgs k8s cluster, and while they currently are not being used should
