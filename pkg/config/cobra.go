@@ -25,7 +25,7 @@ type flagger interface {
 const configureServiceErrTemplate = `{"level":"error","ts":%d,"msg":"failed to setup service", "error": "%s"}\n`
 
 func ConfigureService(cmd flagger, args []string) {
-	cfg, err := start(cmd)
+	cfg, err := loadConfig(cmd)
 	if err != nil {
 		fmt.Printf(configureServiceErrTemplate, time.Now().Unix(), err)
 		os.Exit(1)
@@ -40,7 +40,7 @@ func ConfigureService(cmd flagger, args []string) {
 	configureOtel(cfg, l)
 }
 
-func start(cmd flagger) (*Base, error) {
+func loadConfig(cmd flagger) (*Base, error) {
 	var cfg Base
 
 	if err := LoadInto(cmd.Flags(), &cfg); err != nil {
@@ -98,7 +98,7 @@ func configureOtel(cfg *Base, l *zap.Logger) {
 				semconv.SchemaURL,
 				semconv.ServiceNameKey.String(cfg.ServiceName),
 				semconv.ServiceNamespaceKey.String(cfg.ServiceOwner),
-				// semconv.ServiceVersionKey.String(serviceVersion),
+				semconv.ServiceVersionKey.String(cfg.Version),
 			),
 		)
 	if err != nil {
@@ -108,7 +108,7 @@ func configureOtel(cfg *Base, l *zap.Logger) {
 	sampler := trace.ParentBased(trace.TraceIDRatioBased(cfg.TraceSampleRate))
 
 	tracerProvider := trace.NewTracerProvider(
-		trace.WithBatcher(otlpExporter),
+		trace.WithBatcher(otlpExporter, trace.WithMaxExportBatchSize(cfg.TraceMaxBatchCount)),
 		trace.WithResource(resource),
 		trace.WithSampler(sampler),
 	)
