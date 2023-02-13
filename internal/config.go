@@ -21,24 +21,22 @@ type Config struct {
 	TemporalHost      string `config:"temporal_host" validate:"required"`
 	TemporalNamespace string `config:"temporal_namespace" validate:"required"`
 
-	HostIP string `config:"host_ip" validate:"required"`
-
 	DeploymentsBucket   string `config:"deployments_bucket" validate:"required"`
-	OrgsBucket          string `config:"orgs_bucket" validate:"required"`
 	InstallationsBucket string `config:"installations_bucket" validate:"required"`
 	InstancesBucket     string `config:"instances_bucket" validate:"required"`
+	OrgsBucket          string `config:"orgs_bucket" validate:"required"`
 
 	// waypoint configuration
+	WaypointServerRootDomain     string `config:"waypoint_server_root_domain" validate:"required"`
 	WaypointTokenSecretNamespace string `config:"waypoint_token_secret_namespace" validate:"required"`
 	WaypointTokenSecretTemplate  string `config:"waypoint_token_secret_template" validate:"required"`
-	WaypointServerRootDomain     string `config:"waypoint_server_root_domain" validate:"required"`
 
 	// org IAM role template names
 	OrgsDeploymentsRoleTemplate   string `config:"orgs_deployments_role_template" validate:"required"`
-	OrgsInstallationsRoleTemplate string `config:"orgs_installations_role_template" validate:"required"`
-	OrgsOdrRoleTemplate           string `config:"orgs_odr_role_template" validate:"required"`
-	OrgsInstancesRoleTemplate     string `config:"orgs_instances_role_template" validate:"required"`
 	OrgsInstallerRoleTemplate     string `config:"orgs_installer_role_template" validate:"required"`
+	OrgsInstallationsRoleTemplate string `config:"orgs_installations_role_template" validate:"required"`
+	OrgsInstancesRoleTemplate     string `config:"orgs_instances_role_template" validate:"required"`
+	OrgsOdrRoleTemplate           string `config:"orgs_odr_role_template" validate:"required"`
 	OrgsOrgsRoleTemplate          string `config:"orgs_orgs_role_template" validate:"required"`
 
 	// configuration for plans
