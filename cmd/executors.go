@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
+	"github.com/powertoolsdev/go-config/pkg/config"
 	shared "github.com/powertoolsdev/workers-executors/internal"
 	execwaypoint "github.com/powertoolsdev/workers-executors/internal/workflows/execute/waypoint"
 	planwaypoint "github.com/powertoolsdev/workers-executors/internal/workflows/plan/waypoint"

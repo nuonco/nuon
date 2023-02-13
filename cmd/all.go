@@ -5,8 +5,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/go-common/temporalzap"
+	"github.com/powertoolsdev/go-config/pkg/config"
 	shared "github.com/powertoolsdev/workers-executors/internal"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"

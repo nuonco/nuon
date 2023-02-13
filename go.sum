@@ -814,6 +814,8 @@ github.com/powertoolsdev/go-aws-assume-role v0.0.3 h1:JBIzJ0aGwrcM3gfnou2zSiZ+gw
 github.com/powertoolsdev/go-aws-assume-role v0.0.3/go.mod h1:5lWSzj7dwPRBFEa6Ch7wqz8lThFFnu+5yu1jQwpFRnw=
 github.com/powertoolsdev/go-common v1.4.1 h1:VXKzGRdSZ7QMNJz80BoKYr2BXOm7DEhfiqgjqzfqvIM=
 github.com/powertoolsdev/go-common v1.4.1/go.mod h1:NXL1EfO9ZZZFHA8VLLOYSVIdEZL38WgK+jDzYQPmXIQ=
+github.com/powertoolsdev/go-config v0.0.2 h1:MiHGFbqUzlizhpxilUSX5OEICeNN5S/dKRGf5w9xNkY=
+github.com/powertoolsdev/go-config v0.0.2/go.mod h1:7zSIvlL6Z05M1E4WQ66RnEawiJoDgbcEqGY3oyLuYhw=
 github.com/powertoolsdev/go-fetch v0.1.0 h1:09L99Ww12BWG6cq3XkA+Jl/QQ00QstVmajx/7D1cPAw=
 github.com/powertoolsdev/go-fetch v0.1.0/go.mod h1:xbD6GLFKI+2XKxOmiGRLxaqyq+oh68sXTIFGnU0ezGs=
 github.com/powertoolsdev/go-generics v0.0.1 h1:We48KVDTRRDm4TeKe0BFJUghzgjpcyaX364797GYxbU=
