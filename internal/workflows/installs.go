@@ -11,10 +11,6 @@ import (
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_installs.go -source=installs.go -package=workflows
-const (
-	sandboxVersion string = "0.10.4"
-	sandboxName    string = "aws-eks"
-)
 
 func NewInstallWorkflowManager(tclient temporalClient) *installWorkflowManager {
 	return &installWorkflowManager{
@@ -27,13 +23,13 @@ type installWorkflowManager struct {
 }
 
 type InstallWorkflowManager interface {
-	Provision(context.Context, *models.Install, string) error
-	Deprovision(context.Context, *models.Install, string) error
+	Provision(context.Context, *models.Install, string, *models.SandboxVersion) error
+	Deprovision(context.Context, *models.Install, string, *models.SandboxVersion) error
 }
 
 var _ InstallWorkflowManager = (*installWorkflowManager)(nil)
 
-func (i *installWorkflowManager) Provision(ctx context.Context, install *models.Install, orgID string) error {
+func (i *installWorkflowManager) Provision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) error {
 	opts := tclient.StartWorkflowOptions{
 		ID:        orgID,
 		TaskQueue: "install",
@@ -58,8 +54,8 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 			AwsRoleArn:   install.AWSSettings.IamRoleArn,
 		},
 		SandboxSettings: &installsv1.SandboxSettings{
-			Name:    sandboxName,
-			Version: sandboxVersion,
+			Name:    sandboxVersion.SandboxName,
+			Version: sandboxVersion.SandboxVersion,
 		},
 	}
 
@@ -67,7 +63,7 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 	return err
 }
 
-func (i *installWorkflowManager) Deprovision(ctx context.Context, install *models.Install, orgID string) error {
+func (i *installWorkflowManager) Deprovision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) error {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: "install",
 	}
@@ -82,8 +78,8 @@ func (i *installWorkflowManager) Deprovision(ctx context.Context, install *model
 			AwsRoleArn:   install.AWSSettings.IamRoleArn,
 		},
 		SandboxSettings: &installsv1.SandboxSettings{
-			Name:    sandboxName,
-			Version: sandboxVersion,
+			Name:    sandboxVersion.SandboxName,
+			Version: sandboxVersion.SandboxVersion,
 		},
 	}
 
