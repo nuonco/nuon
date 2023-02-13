@@ -45,6 +45,10 @@ func (e *Env) String() string {
 	return string(*e)
 }
 
+// Version is set by ldflags, do not set / use this directly
+// use the value exposed from the Base config
+var Version string = "unknown"
+
 // init registers the defaults
 //
 //nolint:gochecknoinits
@@ -54,6 +58,7 @@ func init() {
 	RegisterDefault("export_runtime_metrics", true)
 	RegisterDefault("trace_sample_rate", defaultSampleRate)
 	RegisterDefault("trace_max_batch_count", defaultMaxBatchCount)
+	RegisterDefault("version", Version)
 }
 
 // Base is the base configuration for all services
@@ -65,7 +70,7 @@ type Base struct {
 	ServiceOwner                 string  `config:"service_owner"`
 	ServiceName                  string  `config:"service_name"`
 	SystemPort                   int     `config:"system_port"`
-	TraceAddress                 string  `config:"trace_address"`
+	TraceAddress                 string  `config:"host_ip"`
 	TraceMaxBatchCount           int     `config:"trace_max_batch_count"`
 	TraceSampleRate              float64 `config:"trace_sample_rate"`
 	ProfilerEnabled              bool    `config:"profiler_enabled"`
@@ -73,4 +78,5 @@ type Base struct {
 	ProfilerMutexProfileFraction int     `config:"profiler_mutex_profile_fraction"`
 	DisableLogSampling           bool    `config:"disable_log_sampling"`
 	DisableStackTraces           bool    `config:"disable_stack_traces"`
+	Version                      string  `config:"version"`
 }
