@@ -66,6 +66,8 @@ func (m *Repo) validate(all bool) error {
 
 	// no validation rules for DefaultBranch
 
+	// no validation rules for Private
+
 	if len(errors) > 0 {
 		return RepoMultiError(errors)
 	}

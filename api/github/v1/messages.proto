@@ -8,6 +8,7 @@ message Repo {
   string url = 3;
   string owner = 4;
   string default_branch = 5;
+  bool private = 6;
 }
 
 message GetReposRequest {
