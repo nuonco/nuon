@@ -295,6 +295,7 @@ type Repo struct {
 	FullName      *string `json:"fullName"`
 	Name          *string `json:"name"`
 	Owner         *string `json:"owner"`
+	Private       *bool   `json:"private"`
 	URL           *string `json:"url"`
 }
 
