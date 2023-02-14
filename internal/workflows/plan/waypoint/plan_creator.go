@@ -41,7 +41,7 @@ func (a *Activities) CreatePlanAct(
 		BucketAssumeRoleArn: req.OrgMetadata.IamRoleArns.DeploymentsRoleArn,
 	}
 
-	plan, err := planner.GetPlan(ctx)
+	plan, err := planner.Plan(ctx)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get plan: %w", err)
 	}
@@ -54,7 +54,7 @@ func (a *Activities) CreatePlanAct(
 		return resp, fmt.Errorf("unable to get uploader: %w", err)
 	}
 
-	err = a.planCreator.uploadPlan(ctx, uploadClient, planRef, plan)
+	err = a.planUploader.uploadPlan(ctx, uploadClient, planRef, plan)
 	if err != nil {
 		return resp, fmt.Errorf("unable to upload plan: %w", err)
 	}
@@ -65,7 +65,6 @@ func (a *Activities) CreatePlanAct(
 
 type planCreator interface {
 	getPlanner(*planactivitiesv1.CreatePlanRequest) (planners.Planner, error)
-	uploadPlan(context.Context, s3BlobUploader, *planv1.PlanRef, *planv1.WaypointPlan) error
 }
 
 type planCreatorImpl struct {
@@ -75,11 +74,6 @@ type planCreatorImpl struct {
 var _ planCreator = (*planCreatorImpl)(nil)
 
 func (p *planCreatorImpl) getPlanner(req *planactivitiesv1.CreatePlanRequest) (planners.Planner, error) {
-	var (
-		err     error
-		planner planners.Planner
-	)
-
 	waypointOpts := []waypoint.PlannerOption{
 		waypoint.WithComponent(req.Component),
 		waypoint.WithMetadata(req.Metadata),
@@ -88,21 +82,28 @@ func (p *planCreatorImpl) getPlanner(req *planactivitiesv1.CreatePlanRequest) (p
 
 	switch req.Type {
 	case planv1.PlanType_PLAN_TYPE_WAYPOINT_BUILD:
-		planner, err = waypointbuild.New(p.v, waypointOpts...)
+		return waypointbuild.New(p.v, waypointOpts...)
 	case planv1.PlanType_PLAN_TYPE_WAYPOINT_SYNC_IMAGE:
-		planner, err = waypointsync.New(p.v, waypointOpts...)
+		return waypointsync.New(p.v, waypointOpts...)
 	default:
 		return nil, fmt.Errorf("unsupported plan type: %s", req.Type)
 	}
-
-	if err != nil {
-		return nil, fmt.Errorf("unable to get %s planner", req.Type)
-	}
-
-	return planner, nil
 }
 
-func (p *planCreatorImpl) uploadPlan(ctx context.Context, uploader s3BlobUploader, planRef *planv1.PlanRef, plan *planv1.WaypointPlan) error {
+type planUploader interface {
+	uploadPlan(context.Context, s3BlobUploader, *planv1.PlanRef, *planv1.Plan) error
+}
+
+type planUploaderImpl struct{}
+
+var _ planUploader = (*planUploaderImpl)(nil)
+
+func (p *planUploaderImpl) uploadPlan(
+	ctx context.Context,
+	uploader s3BlobUploader,
+	planRef *planv1.PlanRef,
+	plan *planv1.Plan,
+) error {
 	byts, err := proto.Marshal(plan)
 	if err != nil {
 		return fmt.Errorf("unable to convert plan to json: %w", err)

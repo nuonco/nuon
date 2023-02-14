@@ -14,7 +14,7 @@ const (
 	defaultBuildTimeoutSeconds uint64 = 3600
 )
 
-func (p *planner) GetPlan(ctx context.Context) (*planv1.WaypointPlan, error) {
+func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
 	plan := &planv1.WaypointPlan{
 		Metadata: p.Metadata,
 		// TODO(jm): we should probably just reuse the waypoint server ref for both of these, as they are
@@ -77,5 +77,5 @@ func (p *planner) GetPlan(ctx context.Context) (*planv1.WaypointPlan, error) {
 	plan.WaypointRef.HclConfig = string(cfg)
 	plan.WaypointRef.HclConfigFormat = cfgFmt.String()
 
-	return plan, nil
+	return &planv1.Plan{Actual: &planv1.Plan_WaypointPlan{WaypointPlan: plan}}, nil
 }

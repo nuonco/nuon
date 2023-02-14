@@ -22,7 +22,7 @@ func (m *mockS3BlobUploader) UploadBlob(ctx context.Context, byts []byte, fileNa
 
 var _ s3BlobUploader = (*mockS3BlobUploader)(nil)
 
-func Test_planCreatorImpl_uploadPlan(t *testing.T) {
+func Test_planUploaderImpl_uploadPlan(t *testing.T) {
 	errUploadPlan := fmt.Errorf("error uploading plan")
 
 	plan := generics.GetFakeObj[*planv1.WaypointPlan]()
@@ -64,10 +64,15 @@ func Test_planCreatorImpl_uploadPlan(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			pc := planCreatorImpl{}
+			pc := planUploaderImpl{}
 			client := test.clientFn(t)
 
-			err := pc.uploadPlan(context.Background(), client, planRef, plan)
+			err := pc.uploadPlan(
+				context.Background(),
+				client,
+				planRef,
+				&planv1.Plan{Actual: &planv1.Plan_WaypointPlan{WaypointPlan: plan}},
+			)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
