@@ -34,21 +34,6 @@ message OrgMetadata {
   WaypointServerRef waypoint_server = 6;
 }
 
-message OrgWaypointServer {
-  string server_address = 1 [
-    (validate.rules).string.min_len = 26,
-    (tagger.tags) = "faker:\"len=26\""
-  ];
-  string secret_namespace = 2 [
-    (validate.rules).string.min_len = 5,
-    (tagger.tags) = "faker:\"len=10\""
-  ];
-  string secret_name = 3 [
-    (validate.rules).string.min_len = 26,
-    (tagger.tags) = "faker:\"len=26\""
-  ];
-}
-
 message OrgBuckets {
   string deployments_bucket = 1 [(validate.rules).string.min_len = 5];
   string installations_bucket = 2 [(validate.rules).string.min_len = 5];
