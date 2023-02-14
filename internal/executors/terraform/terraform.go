@@ -10,7 +10,7 @@ import (
 )
 
 type terraformer struct {
-	Plan *planv1.PlanRef `validate:"required:dive"`
+	Plan *planv1.TerraformPlan `validate:"required:dive"`
 
 	// internal state
 	v *validator.Validate
@@ -39,14 +39,14 @@ func New(v *validator.Validate, opts ...terraformerOption) (*terraformer, error)
 }
 
 // WithPlan specifies the location of the terraform plan to execute
-func WithPlan(p *planv1.PlanRef) terraformerOption {
+func WithPlan(p *planv1.TerraformPlan) terraformerOption {
 	return func(t *terraformer) error {
 		t.Plan = p
 		return nil
 	}
 }
 
-func (t *terraformer) Execute(ctx context.Context) (map[string]interface{}, error) {
+func (t *terraformer) Execute(ctx context.Context) (interface{}, error) {
 	r, err := runner.New(
 		t.v,
 		runner.WithPlan(t.Plan),
