@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_planner_getPrefix(t *testing.T) {
+func TestPlanner_Prefix(t *testing.T) {
 	meta := generics.GetFakeObj[*planv1.Metadata]()
 	orgMeta := generics.GetFakeObj[*planv1.OrgMetadata]()
 	component := generics.GetFakeObj[*componentv1.Component]()
@@ -20,7 +20,7 @@ func Test_planner_getPrefix(t *testing.T) {
 	pln, err := New(validator.New(), waypoint.WithComponent(component), waypoint.WithOrgMetadata(orgMeta), waypoint.WithMetadata(meta))
 	assert.NoError(t, err)
 
-	assert.Equal(t, pln.getPrefix(), prefix.InstancePhasePath(meta.OrgShortId,
+	assert.Equal(t, pln.Prefix(), prefix.InstancePhasePath(meta.OrgShortId,
 		meta.AppShortId,
 		component.Name,
 		meta.DeploymentShortId,

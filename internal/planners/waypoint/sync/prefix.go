@@ -8,7 +8,7 @@ const (
 	phaseName string = "sync-container-image"
 )
 
-func (p *planner) getPrefix() string {
+func (p *planner) Prefix() string {
 	return prefix.InstancePhasePath(p.Metadata.OrgShortId,
 		p.Metadata.AppShortId,
 		p.Component.Name,

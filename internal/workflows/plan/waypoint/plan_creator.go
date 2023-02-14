@@ -3,6 +3,7 @@ package plan
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-uploader"
@@ -15,7 +16,14 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func (a *Activities) CreatePlanAct(ctx context.Context, req *planactivitiesv1.CreatePlanRequest) (*planactivitiesv1.CreatePlanResponse, error) {
+const (
+	planKey string = "plan.json"
+)
+
+func (a *Activities) CreatePlanAct(
+	ctx context.Context,
+	req *planactivitiesv1.CreatePlanRequest,
+) (*planactivitiesv1.CreatePlanResponse, error) {
 	resp := &planactivitiesv1.CreatePlanResponse{}
 
 	if err := req.Validate(); err != nil {
@@ -27,7 +35,11 @@ func (a *Activities) CreatePlanAct(ctx context.Context, req *planactivitiesv1.Cr
 		return resp, fmt.Errorf("unable to get planner: %w", err)
 	}
 
-	planRef := planner.GetPlanRef()
+	planRef := &planv1.PlanRef{
+		Bucket:              req.OrgMetadata.Buckets.DeploymentsBucket,
+		BucketKey:           filepath.Join(planner.Prefix(), planKey),
+		BucketAssumeRoleArn: req.OrgMetadata.IamRoleArns.DeploymentsRoleArn,
+	}
 
 	plan, err := planner.GetPlan(ctx)
 	if err != nil {
