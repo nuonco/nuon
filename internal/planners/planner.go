@@ -7,8 +7,6 @@ import (
 )
 
 type Planner interface {
-	GetPlanRef() *planv1.PlanRef
-
-	// TODO(jm): make this interface return a generic *planv1.Plan type that uses a one of
 	GetPlan(context.Context) (*planv1.WaypointPlan, error)
+	Prefix() string
 }

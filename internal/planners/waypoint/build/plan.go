@@ -46,13 +46,13 @@ func (p *planner) GetPlan(ctx context.Context) (*planv1.WaypointPlan, error) {
 		},
 		Outputs: &planv1.Outputs{
 			Bucket:              p.OrgMetadata.Buckets.DeploymentsBucket,
-			BucketPrefix:        p.getPrefix(),
+			BucketPrefix:        p.Prefix(),
 			BucketAssumeRoleArn: p.OrgMetadata.IamRoleArns.DeploymentsRoleArn,
 
 			// TODO(jm): these aren't being used until we've fully implemented the executor
-			LogsKey:     filepath.Join(p.getPrefix(), "logs.txt"),
-			EventsKey:   filepath.Join(p.getPrefix(), "events.json"),
-			ArtifactKey: filepath.Join(p.getPrefix(), "artifacts.json"),
+			LogsKey:     filepath.Join(p.Prefix(), "logs.txt"),
+			EventsKey:   filepath.Join(p.Prefix(), "events.json"),
+			ArtifactKey: filepath.Join(p.Prefix(), "artifacts.json"),
 		},
 		Component: p.Component,
 	}

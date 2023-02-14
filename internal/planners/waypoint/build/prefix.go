@@ -6,7 +6,7 @@ const (
 	phaseName string = "build"
 )
 
-func (p *planner) getPrefix() string {
+func (p *planner) Prefix() string {
 	return prefix.DeploymentPhasePath(p.Metadata.OrgShortId,
 		p.Metadata.AppShortId,
 		p.Component.Name,
