@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package executors.v1.plan.v1;
 
-import "executors/v1/plan/v1/plan_type.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -19,6 +18,4 @@ message PlanRef {
     (validate.rules).string.min_len = 20,
     (tagger.tags) = "faker:\"len=25\""
   ];
-
-  PlanType type = 4;
 }
