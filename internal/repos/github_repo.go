@@ -56,6 +56,7 @@ func (gr *githubRepo) Repos(ctx context.Context, githubInstallationID int64) ([]
 			FullName:      repo.FullName,
 			Name:          repo.Name,
 			Owner:         repo.Owner.Login,
+			Private:       repo.Private,
 			URL:           repo.HTMLURL,
 		})
 	}

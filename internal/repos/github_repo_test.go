@@ -100,6 +100,7 @@ func TestRepos(t *testing.T) {
 									Owner: &github.User{
 										Login: toPtr("octocat"),
 									},
+									Private: toPtr(true),
 								},
 							},
 						}))
@@ -114,6 +115,7 @@ func TestRepos(t *testing.T) {
 					Owner:         toPtr("octocat"),
 					Name:          toPtr("Hello-World"),
 					FullName:      toPtr("octocat/Hello-World"),
+					Private:       toPtr(true),
 				},
 			},
 			errExpected: nil,

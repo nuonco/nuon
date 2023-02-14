@@ -8,11 +8,12 @@ import (
 // GithubRepoModelToProto converts github repo domain model into github repo proto message
 func GithubRepoModelToProto(repo *models.Repo) *githubv1.Repo {
 	return &githubv1.Repo{
-		Name:          *repo.Name,
-		FullName:      *repo.FullName,
-		Url:           *repo.URL,
-		Owner:         *repo.Owner,
 		DefaultBranch: *repo.DefaultBranch,
+		FullName:      *repo.FullName,
+		Name:          *repo.Name,
+		Owner:         *repo.Owner,
+		Private:       *repo.Private,
+		Url:           *repo.URL,
 	}
 }
 
