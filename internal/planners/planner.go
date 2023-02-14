@@ -7,6 +7,6 @@ import (
 )
 
 type Planner interface {
-	GetPlan(context.Context) (*planv1.WaypointPlan, error)
+	Plan(context.Context) (*planv1.Plan, error)
 	Prefix() string
 }

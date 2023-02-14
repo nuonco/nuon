@@ -3,8 +3,9 @@ package plan
 import "github.com/go-playground/validator/v10"
 
 type Activities struct {
-	v           *validator.Validate
-	planCreator planCreator
+	v            *validator.Validate
+	planCreator  planCreator
+	planUploader planUploader
 }
 
 func NewActivities() *Activities {
@@ -14,5 +15,6 @@ func NewActivities() *Activities {
 		planCreator: &planCreatorImpl{
 			v: v,
 		},
+		planUploader: &planUploaderImpl{},
 	}
 }
