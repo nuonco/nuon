@@ -23,25 +23,19 @@ func TestNew(t *testing.T) {
 			v: v,
 			opts: func(t *testing.T) []runnerOption {
 				return []runnerOption{
-					WithPlan(&planv1.PlanRef{
-						Bucket:    "testbucket",
-						BucketKey: "key/123/request.json",
-					}),
+					WithPlan(&planv1.TerraformPlan{}),
 				}
 			},
-			expected: &runner{Plan: &planv1.PlanRef{Bucket: "testbucket", BucketKey: "key/123/request.json"}, validator: v},
+			expected: &runner{Plan: &planv1.TerraformPlan{}, validator: v},
 		},
 		"missing validator": {
 			v: nil,
 			opts: func(t *testing.T) []runnerOption {
 				return []runnerOption{
-					WithPlan(&planv1.PlanRef{
-						Bucket:    "testbucket",
-						BucketKey: "key/123/request.json",
-					}),
+					WithPlan(&planv1.TerraformPlan{}),
 				}
 			},
-			expected:    &runner{Plan: &planv1.PlanRef{Bucket: "testbucket", BucketKey: "key/123/request.json"}},
+			expected:    &runner{Plan: &planv1.TerraformPlan{}},
 			errExpected: fmt.Errorf("validator is nil"),
 		},
 		"no plan given": {
@@ -68,8 +62,6 @@ func TestNew(t *testing.T) {
 			assert.NoError(t, err)
 
 			got.cleanupFns = nil
-			got.planFetcher = nil
-			got.requestParser = nil
 			got.workspaceSetuper = nil
 			assert.Equal(t, test.expected, got)
 		})

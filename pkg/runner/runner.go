@@ -10,13 +10,11 @@ import (
 )
 
 type runner struct {
-	Plan *planv1.PlanRef `validate:"required,dive"`
+	Plan *planv1.TerraformPlan `validate:"required,dive"`
 
 	// internal state
 	validator        *validator.Validate
 	cleanupFns       []func() error
-	planFetcher      planFetcher
-	requestParser    requestParser
 	workspaceSetuper workspaceSetuper
 }
 
@@ -41,15 +39,13 @@ func New(v *validator.Validate, opts ...runnerOption) (*runner, error) {
 		return nil, err
 	}
 
-	r.planFetcher = r
-	r.requestParser = r
 	r.workspaceSetuper = r
 
 	return r, nil
 }
 
-// WithPlan specifies the location of the terraform plan to execute
-func WithPlan(p *planv1.PlanRef) runnerOption {
+// WithPlan specifies the terraform plan to execute
+func WithPlan(p *planv1.TerraformPlan) runnerOption {
 	return func(r *runner) error {
 		r.Plan = p
 		return nil
