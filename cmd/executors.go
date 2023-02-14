@@ -6,7 +6,7 @@ import (
 	"github.com/powertoolsdev/go-common/temporalzap"
 	"github.com/powertoolsdev/go-config/pkg/config"
 	shared "github.com/powertoolsdev/workers-executors/internal"
-	execwaypoint "github.com/powertoolsdev/workers-executors/internal/workflows/execute/waypoint"
+	"github.com/powertoolsdev/workers-executors/internal/workflows/execute"
 	planwaypoint "github.com/powertoolsdev/workers-executors/internal/workflows/plan/waypoint"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel"
@@ -78,9 +78,9 @@ func runExecutorWorkers(c client.Client, log *zap.Logger, cfg shared.Config, int
 	planActs := planwaypoint.NewActivities()
 	w.RegisterActivity(planActs)
 
-	executeWkflow := execwaypoint.NewWorkflow(cfg)
+	executeWkflow := execute.NewWorkflow(cfg)
 	w.RegisterWorkflow(executeWkflow.ExecutePlan)
-	executeActs := execwaypoint.NewActivities()
+	executeActs := execute.NewActivities()
 	w.RegisterActivity(executeActs)
 
 	if err := w.Run(interruptCh); err != nil {
