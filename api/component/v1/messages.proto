@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package component.v1;
 
+import "component/v1/component.proto";
 import "google/type/datetime.proto";
 import "validate/validate.proto";
 
@@ -33,6 +34,8 @@ message ComponentRef {
 
   google.type.DateTime created_at = 7;
   google.type.DateTime updated_at = 8;
+
+  component.v1.Component component_config = 9;
 }
 
 message GetComponentRequest {
@@ -68,6 +71,8 @@ message UpsertComponentRequest {
   oneof vcs_config {
     GithubConfig github_config = 7;
   }
+
+  component.v1.Component component_config = 8;
 }
 
 message UpsertComponentResponse {

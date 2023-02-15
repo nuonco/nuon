@@ -2,6 +2,7 @@
 version: v1
 name: buf.build/nuon/apis
 deps:
+  - buf.build/nuon/components
   - buf.build/googleapis/googleapis
   - buf.build/envoyproxy/protoc-gen-validate
   - buf.build/srikrsna/protoc-gen-gotag
