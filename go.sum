@@ -353,8 +353,8 @@ github.com/powertoolsdev/go-common v1.1.17 h1:xTVPf7kiezNH09fIINiWSHHzqhQ517GQjc
 github.com/powertoolsdev/go-common v1.1.17/go.mod h1:mhY1HkgLn4iPkxnGy2ownap+hxJosifCfE7qwXmpyUE=
 github.com/powertoolsdev/go-generics v0.0.1 h1:We48KVDTRRDm4TeKe0BFJUghzgjpcyaX364797GYxbU=
 github.com/powertoolsdev/go-generics v0.0.1/go.mod h1:ZfpJeyS0qdYRV7CAJhxq1CxjED+PhR/Y+yMc5A4Rjsg=
-github.com/powertoolsdev/protos v0.65.0 h1:ho+nusoNrgUW0z0USQsa7rwLnhjEf0lFjRfEjt7+OIg=
-github.com/powertoolsdev/protos v0.65.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.66.0 h1:uRPn+o825310tqsHY+xX8fFltZ58JF8bXjB15x3AeRs=
+github.com/powertoolsdev/protos v0.66.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/pressly/goose/v3 v3.9.0 h1:3LB3zjt9zTebK+URKuCdGAxPwtpJfyVlalrzCzcVAtA=
 github.com/pressly/goose/v3 v3.9.0/go.mod h1:+/6BqhGx7bt3cRK22Hm3BsJXF2/2gQAhO/xExNG5cSA=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
