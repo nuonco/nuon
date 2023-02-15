@@ -1,0 +1,8 @@
+---
+version: v1
+directories:
+  - api
+  - components
+  - orgs-api
+  - shared
+  - workflows
