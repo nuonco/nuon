@@ -12,8 +12,8 @@ import "validate/validate.proto";
 message CreatePlanRequest {
   PlanType type = 1;
 
-  // 100-
   oneof input {
+    option (tagger.oneof_tags) = "faker:\"-\"";
     Component component = 100;
   }
 }
