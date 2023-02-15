@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/api/internal"
-	connectv1 "github.com/powertoolsdev/protos/api/generated/types/status/v1/statusv1connect"
+	connectv1 "github.com/powertoolsdev/protos/shared/generated/types/status/v1/statusv1connect"
 )
 
 type server struct {
