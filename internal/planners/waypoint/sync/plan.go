@@ -16,14 +16,8 @@ const (
 
 func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
 	plan := &planv1.WaypointPlan{
-		Metadata: p.Metadata,
-		// TODO(jm): we should probably just reuse the waypoint server ref for both of these, as they are
-		// identical
-		WaypointServer: &planv1.WaypointServerRef{
-			Address:              p.OrgMetadata.WaypointServer.Address,
-			TokenSecretNamespace: p.OrgMetadata.WaypointServer.TokenSecretNamespace,
-			TokenSecretName:      p.OrgMetadata.WaypointServer.TokenSecretName,
-		},
+		Metadata:       p.Metadata,
+		WaypointServer: p.OrgMetadata.WaypointServer,
 		EcrRepositoryRef: &planv1.ECRRepositoryRef{
 			RepositoryName: p.Metadata.InstallShortId,
 			Tag:            p.Metadata.DeploymentShortId,

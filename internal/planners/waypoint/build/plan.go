@@ -20,12 +20,8 @@ func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
 		p.OrgMetadata.EcrRegion, ecrRepoName)
 
 	plan := &planv1.WaypointPlan{
-		Metadata: p.Metadata,
-		WaypointServer: &planv1.WaypointServerRef{
-			Address:              p.OrgMetadata.WaypointServer.Address,
-			TokenSecretNamespace: p.OrgMetadata.WaypointServer.TokenSecretNamespace,
-			TokenSecretName:      p.OrgMetadata.WaypointServer.TokenSecretName,
-		},
+		Metadata:       p.Metadata,
+		WaypointServer: p.OrgMetadata.WaypointServer,
 		EcrRepositoryRef: &planv1.ECRRepositoryRef{
 			RegistryId:     p.OrgMetadata.EcrRegistryId,
 			RepositoryName: ecrRepoName,
