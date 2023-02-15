@@ -72,6 +72,7 @@ func (w *wkflow) execCreatePlan(
 		if err := fut.Get(ctx, &resp); err != nil {
 			return resp, fmt.Errorf("unable to get component plan future: %w", err)
 		}
+		return resp, nil
 	default:
 	}
 

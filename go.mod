@@ -12,13 +12,13 @@ require (
 	github.com/powertoolsdev/go-common v1.4.1
 	github.com/powertoolsdev/go-config v0.1.3
 	github.com/powertoolsdev/go-fetch v0.1.0
-	github.com/powertoolsdev/go-generics v0.0.1
+	github.com/powertoolsdev/go-generics v0.1.0
 	github.com/powertoolsdev/go-terraform v1.0.0
 	github.com/powertoolsdev/go-uploader v0.2.1
 	github.com/powertoolsdev/go-waypoint v1.0.0
 	github.com/powertoolsdev/go-waypoint/v2 v2.0.2
 	github.com/powertoolsdev/go-workflows-meta v0.4.0
-	github.com/powertoolsdev/protos v0.67.0
+	github.com/powertoolsdev/protos v0.67.3
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.opentelemetry.io/otel v1.13.0
