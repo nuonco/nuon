@@ -15,7 +15,7 @@ import (
 	statusserver "github.com/powertoolsdev/orgs-api/internal/servers/status"
 	orgsservice "github.com/powertoolsdev/orgs-api/internal/services/orgs"
 	"github.com/powertoolsdev/protos/orgs-api/generated/types/orgs/v1/orgsv1connect"
-	"github.com/powertoolsdev/protos/orgs-api/generated/types/status/v1/statusv1connect"
+	"github.com/powertoolsdev/protos/shared/generated/types/status/v1/statusv1connect"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
