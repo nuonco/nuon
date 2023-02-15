@@ -13,12 +13,12 @@ message CreatePlanRequest {
   PlanType type = 1;
 
   // 100-
-  oneof request {
-    ComponentReq component = 100;
+  oneof input {
+    Component component = 100;
   }
 }
 
-message ComponentReq {
+message Component {
   string org_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
@@ -36,7 +36,7 @@ message ComponentReq {
   component.v1.Component component = 5;
 }
 
-/* message TerraformSandboxReq { */
+/* message Sandbox { */
 /*   string org_id = 1 [ */
 /*     (validate.rules).string.len = 26, */
 /*     (tagger.tags) = "faker:\"len=26\"" */

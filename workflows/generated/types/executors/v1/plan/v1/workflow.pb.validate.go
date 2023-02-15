@@ -59,11 +59,11 @@ func (m *CreatePlanRequest) validate(all bool) error {
 
 	// no validation rules for Type
 
-	switch v := m.Request.(type) {
+	switch v := m.Input.(type) {
 	case *CreatePlanRequest_Component:
 		if v == nil {
 			err := CreatePlanRequestValidationError{
-				field:  "Request",
+				field:  "Input",
 				reason: "oneof value cannot be a typed-nil",
 			}
 			if !all {
@@ -185,22 +185,22 @@ var _ interface {
 	ErrorName() string
 } = CreatePlanRequestValidationError{}
 
-// Validate checks the field values on ComponentReq with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
+// Validate checks the field values on Component with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
-func (m *ComponentReq) Validate() error {
+func (m *Component) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on ComponentReq with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in ComponentReqMultiError, or
-// nil if none found.
-func (m *ComponentReq) ValidateAll() error {
+// ValidateAll checks the field values on Component with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ComponentMultiError, or nil
+// if none found.
+func (m *Component) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *ComponentReq) validate(all bool) error {
+func (m *Component) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -208,7 +208,7 @@ func (m *ComponentReq) validate(all bool) error {
 	var errors []error
 
 	if utf8.RuneCountInString(m.GetOrgId()) != 26 {
-		err := ComponentReqValidationError{
+		err := ComponentValidationError{
 			field:  "OrgId",
 			reason: "value length must be 26 runes",
 		}
@@ -220,7 +220,7 @@ func (m *ComponentReq) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetAppId()) != 26 {
-		err := ComponentReqValidationError{
+		err := ComponentValidationError{
 			field:  "AppId",
 			reason: "value length must be 26 runes",
 		}
@@ -232,7 +232,7 @@ func (m *ComponentReq) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetDeploymentId()) != 26 {
-		err := ComponentReqValidationError{
+		err := ComponentValidationError{
 			field:  "DeploymentId",
 			reason: "value length must be 26 runes",
 		}
@@ -249,7 +249,7 @@ func (m *ComponentReq) validate(all bool) error {
 		switch v := interface{}(m.GetComponent()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, ComponentReqValidationError{
+				errors = append(errors, ComponentValidationError{
 					field:  "Component",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -257,7 +257,7 @@ func (m *ComponentReq) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, ComponentReqValidationError{
+				errors = append(errors, ComponentValidationError{
 					field:  "Component",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -266,7 +266,7 @@ func (m *ComponentReq) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetComponent()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return ComponentReqValidationError{
+			return ComponentValidationError{
 				field:  "Component",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -275,18 +275,18 @@ func (m *ComponentReq) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return ComponentReqMultiError(errors)
+		return ComponentMultiError(errors)
 	}
 
 	return nil
 }
 
-// ComponentReqMultiError is an error wrapping multiple validation errors
-// returned by ComponentReq.ValidateAll() if the designated constraints aren't met.
-type ComponentReqMultiError []error
+// ComponentMultiError is an error wrapping multiple validation errors returned
+// by Component.ValidateAll() if the designated constraints aren't met.
+type ComponentMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m ComponentReqMultiError) Error() string {
+func (m ComponentMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -295,11 +295,11 @@ func (m ComponentReqMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m ComponentReqMultiError) AllErrors() []error { return m }
+func (m ComponentMultiError) AllErrors() []error { return m }
 
-// ComponentReqValidationError is the validation error returned by
-// ComponentReq.Validate if the designated constraints aren't met.
-type ComponentReqValidationError struct {
+// ComponentValidationError is the validation error returned by
+// Component.Validate if the designated constraints aren't met.
+type ComponentValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -307,22 +307,22 @@ type ComponentReqValidationError struct {
 }
 
 // Field function returns field value.
-func (e ComponentReqValidationError) Field() string { return e.field }
+func (e ComponentValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e ComponentReqValidationError) Reason() string { return e.reason }
+func (e ComponentValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e ComponentReqValidationError) Cause() error { return e.cause }
+func (e ComponentValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e ComponentReqValidationError) Key() bool { return e.key }
+func (e ComponentValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e ComponentReqValidationError) ErrorName() string { return "ComponentReqValidationError" }
+func (e ComponentValidationError) ErrorName() string { return "ComponentValidationError" }
 
 // Error satisfies the builtin error interface
-func (e ComponentReqValidationError) Error() string {
+func (e ComponentValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -334,14 +334,14 @@ func (e ComponentReqValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sComponentReq.%s: %s%s",
+		"invalid %sComponent.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = ComponentReqValidationError{}
+var _ error = ComponentValidationError{}
 
 var _ interface {
 	Field() string
@@ -349,7 +349,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = ComponentReqValidationError{}
+} = ComponentValidationError{}
 
 // Validate checks the field values on CreatePlanResponse with the rules
 // defined in the proto definition for this message. If any rules are
