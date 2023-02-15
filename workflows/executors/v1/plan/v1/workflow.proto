@@ -10,6 +10,15 @@ import "validate/validate.proto";
 
 // CreatePlanRequest is a child workflow request for the plan phase
 message CreatePlanRequest {
+  PlanType type = 1;
+
+  // 100-
+  oneof request {
+    ComponentReq component = 100;
+  }
+}
+
+message ComponentReq {
   string org_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
@@ -25,8 +34,25 @@ message CreatePlanRequest {
   string install_id = 4;
 
   component.v1.Component component = 5;
-  PlanType type = 6;
 }
+
+/* message TerraformSandboxReq { */
+/*   string org_id = 1 [ */
+/*     (validate.rules).string.len = 26, */
+/*     (tagger.tags) = "faker:\"len=26\"" */
+/*   ]; */
+/*   string app_id = 2 [ */
+/*     (validate.rules).string.len = 26, */
+/*     (tagger.tags) = "faker:\"len=26\"" */
+/*   ]; */
+/*   string install_id = 3 [ */
+/*     (validate.rules).string.len = 26, */
+/*     (tagger.tags) = "faker:\"len=26\"" */
+/*   ]; */
+/*  */
+/*  */
+/*  */
+/* } */
 
 // CreatePlanResponse is a child workflow response for the plan phase
 message CreatePlanResponse {

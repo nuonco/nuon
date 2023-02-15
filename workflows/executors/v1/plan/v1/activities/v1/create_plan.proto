@@ -10,9 +10,17 @@ import "executors/v1/plan/v1/plan_type.proto";
 
 message CreatePlanRequest {
   .executors.v1.plan.v1.PlanType type = 1;
-  .executors.v1.plan.v1.Metadata metadata = 2;
-  .executors.v1.plan.v1.OrgMetadata org_metadata = 3;
-  component.v1.Component component = 4;
+
+  // 100-
+  oneof request {
+    ComponentReq component = 100;
+  }
+}
+
+message ComponentReq {
+  .executors.v1.plan.v1.Metadata metadata = 1;
+  .executors.v1.plan.v1.OrgMetadata org_metadata = 2;
+  component.v1.Component component = 3;
 }
 
 message CreatePlanResponse {
