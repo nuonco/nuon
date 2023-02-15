@@ -90,7 +90,6 @@ type ExternalHelmAuthConfig struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Cfg:
-	//
 	//	*ExternalHelmAuthConfig_Noop
 	//	*ExternalHelmAuthConfig_Basic
 	Cfg isExternalHelmAuthConfig_Cfg `protobuf_oneof:"cfg"`

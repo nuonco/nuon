@@ -95,7 +95,6 @@ type ExternalImageAuthConfig struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Cfg:
-	//
 	//	*ExternalImageAuthConfig_AwsIamAuthCfg
 	//	*ExternalImageAuthConfig_PublicAuthCfg
 	Cfg isExternalImageAuthConfig_Cfg `protobuf_oneof:"cfg"`

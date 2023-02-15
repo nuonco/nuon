@@ -26,7 +26,6 @@ type Config struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Cfg:
-	//
 	//	*Config_PrivateGithubConfig
 	//	*Config_PublicGithubConfig
 	Cfg isConfig_Cfg `protobuf_oneof:"cfg"`
