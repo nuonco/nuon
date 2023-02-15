@@ -21,14 +21,15 @@ build:
     RUN go build -o bin/service .
     SAVE ARTIFACT bin/service /service
 
-# TODO(jdt): do something better and platform specific
 iamauthenticator:
     FROM +base
     WORKDIR /tmp
     # iam authenticator download url
-    ENV AUTHR_URL='https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.5.9/aws-iam-authenticator_0.5.9_linux_amd64'
-    RUN curl -Lo aws-iam-authenticator $AUTHR_URL && \
-        chmod +x aws-iam-authenticator
+    ARG version=0.6.2
+    RUN curl \
+            -Lo aws-iam-authenticator \
+            "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
+        && chmod +x aws-iam-authenticator
     SAVE ARTIFACT aws-iam-authenticator
 
 docker:
