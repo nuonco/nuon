@@ -7,7 +7,7 @@ import (
 	"github.com/powertoolsdev/go-config/pkg/config"
 	shared "github.com/powertoolsdev/workers-executors/internal"
 	"github.com/powertoolsdev/workers-executors/internal/workflows/execute"
-	planwaypoint "github.com/powertoolsdev/workers-executors/internal/workflows/plan/waypoint"
+	"github.com/powertoolsdev/workers-executors/internal/workflows/plan"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel"
 	"go.temporal.io/sdk/client"
@@ -73,9 +73,9 @@ func runExecutorWorkers(c client.Client, log *zap.Logger, cfg shared.Config, int
 		return fmt.Errorf("invalid executors config: %w", err)
 	}
 
-	planWkflow := planwaypoint.NewWorkflow(cfg)
+	planWkflow := plan.NewWorkflow(cfg)
 	w.RegisterWorkflow(planWkflow.CreatePlan)
-	planActs := planwaypoint.NewActivities()
+	planActs := plan.NewActivities()
 	w.RegisterActivity(planActs)
 
 	executeWkflow := execute.NewWorkflow(cfg)
