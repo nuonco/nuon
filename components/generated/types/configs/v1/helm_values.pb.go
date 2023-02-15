@@ -75,6 +75,7 @@ type HelmValue struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Value:
+	//
 	//	*HelmValue_User
 	//	*HelmValue_Image
 	Value isHelmValue_Value `protobuf_oneof:"value"`

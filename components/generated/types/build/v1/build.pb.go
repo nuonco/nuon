@@ -27,6 +27,7 @@ type Config struct {
 
 	Timeout string `protobuf:"bytes,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	// Types that are assignable to Cfg:
+	//
 	//	*Config_DockerCfg
 	//	*Config_ExternalImageCfg
 	//	*Config_Noop
