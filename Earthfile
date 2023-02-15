@@ -21,16 +21,6 @@ build:
     RUN go build -o bin/service .
     SAVE ARTIFACT bin/service /service
 
-# TODO(jdt): do something better and platform specific
-iamauthenticator:
-    FROM +base
-    WORKDIR /tmp
-    # iam authenticator download url
-    ENV AUTHR_URL='https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.5.9/aws-iam-authenticator_0.5.9_linux_amd64'
-    RUN curl -Lo aws-iam-authenticator $AUTHR_URL && \
-        chmod +x aws-iam-authenticator
-    SAVE ARTIFACT aws-iam-authenticator
-
 docker:
     FROM alpine:3.16
     ARG EARTHLY_GIT_ORIGIN_URL
@@ -44,9 +34,7 @@ docker:
     ARG cache_tag=$EARTHLY_TARGET_TAG_DOCKER
     ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
-    BUILD +iamauthenticator
     COPY +build/service /bin/service
-    COPY +iamauthenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
     RUN apk add --update --no-cache \
         git \
         zip
