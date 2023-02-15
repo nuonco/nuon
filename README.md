@@ -24,6 +24,14 @@ Objects represent core objects which can be shared throughout our system. They a
 
 **NOTE:** object protos are designed to be shared and are safe to import by services.
 
+#### importing objects protos 
+
+To be able to import for example `components` protos to the `api` protos you need to do the following first in your local env:
+- generate a [buf token](https://buf.build/settings/user)
+- set the token as the value of the environment variable `BUF_TOKEN` (manually or as part of the `.netrc` file)
+
+If these steps are not done first when you try to `go generate` you will get the error `Failure: repository "buf.build/nuon/components" was not found`.
+
 ## usage
 
 We currently do _not_ support generating code in CI. This means that in order for your changes to be applied, you must run the generate step yourself locally.
