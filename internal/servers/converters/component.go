@@ -3,6 +3,8 @@ package converters
 import (
 	"github.com/powertoolsdev/api/internal/models"
 	componentv1 "github.com/powertoolsdev/protos/api/generated/types/component/v1"
+	componentConfig "github.com/powertoolsdev/protos/components/generated/types/component/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func ComponentTypeToProto(input models.ComponentType) componentv1.ComponentType {
@@ -37,14 +39,20 @@ func ProtoToComponentType(input componentv1.ComponentType) models.ComponentType 
 
 // Component model to proto converts component domain model into component proto message
 func ComponentModelToProto(component *models.Component) *componentv1.ComponentRef {
+	config := &componentConfig.Component{}
+	if err := protojson.Unmarshal([]byte(component.Config.String()), config); err != nil {
+		panic(err)
+	}
+
 	res := &componentv1.ComponentRef{
-		Id:          component.ID.String(),
-		Name:        component.Name,
-		CreatedById: component.CreatedByID,
-		BuildImage:  component.BuildImage,
-		Type:        ComponentTypeToProto(models.ComponentType(component.Type)),
-		UpdatedAt:   TimeToDatetime(component.UpdatedAt),
-		CreatedAt:   TimeToDatetime(component.CreatedAt),
+		Id:              component.ID.String(),
+		Name:            component.Name,
+		CreatedById:     component.CreatedByID,
+		BuildImage:      component.BuildImage,
+		ComponentConfig: config,
+		Type:            ComponentTypeToProto(models.ComponentType(component.Type)),
+		UpdatedAt:       TimeToDatetime(component.UpdatedAt),
+		CreatedAt:       TimeToDatetime(component.CreatedAt),
 	}
 
 	if component.GithubConfig != nil {
