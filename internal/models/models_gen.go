@@ -117,6 +117,7 @@ type ComponentInput struct {
 	BuildImage   string             `json:"buildImage"`
 	CreatedByID  string             `json:"created_by_id"`
 	Type         ComponentType      `json:"type"`
+	Config       string             `json:"component_config"`
 	GithubConfig *GithubConfigInput `json:"githubConfig"`
 }
 
