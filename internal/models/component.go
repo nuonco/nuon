@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/datatypes"
 )
 
 type Component struct {
@@ -13,11 +14,12 @@ type Component struct {
 	AppID        uuid.UUID
 	App          App `faker:"-"`
 	CreatedByID  string
-	BuildImage   string        `json:"build_image"`
-	Type         string        `json:"type"`
-	Deployments  []Deployment  `faker:"-"`
-	VcsConfig    VcsConfig     `gorm:"-" faker:"-"`
-	GithubConfig *GithubConfig `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" faker:"-"`
+	BuildImage   string         `json:"build_image"`
+	Type         string         `json:"type"`
+	Config       datatypes.JSON `gorm:"not null;default:'{}'" json:"config"`
+	Deployments  []Deployment   `faker:"-"`
+	VcsConfig    VcsConfig      `gorm:"-" faker:"-"`
+	GithubConfig *GithubConfig  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" faker:"-"`
 }
 
 func (Component) IsNode() {}
