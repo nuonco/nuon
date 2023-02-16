@@ -14,6 +14,7 @@ import (
 	"github.com/powertoolsdev/workers-executors/internal/planners"
 	waypointplanners "github.com/powertoolsdev/workers-executors/internal/planners/waypoint"
 	waypointbuild "github.com/powertoolsdev/workers-executors/internal/planners/waypoint/build"
+	waypointdeploy "github.com/powertoolsdev/workers-executors/internal/planners/waypoint/deploy"
 	waypointsync "github.com/powertoolsdev/workers-executors/internal/planners/waypoint/sync"
 )
 
@@ -83,6 +84,8 @@ func (a *Activities) getComponentPlanner(req *planactivitiesv1.CreateComponentPl
 		return waypointbuild.New(a.v, waypointOpts...)
 	case planv1.PlanType_PLAN_TYPE_WAYPOINT_SYNC_IMAGE:
 		return waypointsync.New(a.v, waypointOpts...)
+	case planv1.PlanType_PLAN_TYPE_WAYPOINT_DEPLOY:
+		return waypointdeploy.New(a.v, waypointOpts...)
 	default:
 		return nil, fmt.Errorf("unsupported plan type: %s", req.Type)
 	}
