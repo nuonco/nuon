@@ -147,3 +147,31 @@ func OrgPath(orgID string) string {
 func (o org) toPath() string {
 	return fmt.Sprintf("org=%s", o.OrgID)
 }
+
+type sandbox struct {
+	OrgID          string
+	AppID          string
+	InstallID      string
+	SandboxName    string
+	SandboxVersion string
+}
+
+func SandboxPath(orgID, appID, installID, sandboxName, sandboxVersion string) string {
+	return sandbox{
+		OrgID:          orgID,
+		AppID:          appID,
+		InstallID:      installID,
+		SandboxName:    sandboxName,
+		SandboxVersion: sandboxVersion,
+	}.toPath()
+}
+
+func (s sandbox) toPath() string {
+	return fmt.Sprintf("org=%s/app=%s/install=%s/sandbox=%s/version=%s",
+		s.OrgID,
+		s.AppID,
+		s.InstallID,
+		s.SandboxName,
+		s.SandboxVersion,
+	)
+}
