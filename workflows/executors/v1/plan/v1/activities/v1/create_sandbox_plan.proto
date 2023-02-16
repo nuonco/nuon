@@ -8,7 +8,15 @@ import "executors/v1/plan/v1/terraform_plan.proto";
 
 message CreateSandboxPlan {
   .executors.v1.plan.v1.PlanType type = 1;
-  .executors.v1.plan.v1.Object module = 2;
-  .executors.v1.plan.v1.Object backend = 3;
-  .executors.v1.plan.v1.Sandbox sandbox = 4;
+  .executors.v1.plan.v1.Sandbox sandbox = 2;
+
+  Bucket module = 3;
+  Bucket backend = 4;
+  Bucket plan = 5;
+}
+
+message Bucket {
+  string name = 1;
+  string region = 2;
+  optional .executors.v1.plan.v1.AssumeRoleDetails assume_role_details = 3;
 }

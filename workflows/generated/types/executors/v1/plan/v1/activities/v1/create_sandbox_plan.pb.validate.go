@@ -64,6 +64,35 @@ func (m *CreateSandboxPlan) validate(all bool) error {
 	// no validation rules for Type
 
 	if all {
+		switch v := interface{}(m.GetSandbox()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreateSandboxPlanValidationError{
+					field:  "Sandbox",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreateSandboxPlanValidationError{
+					field:  "Sandbox",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetSandbox()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreateSandboxPlanValidationError{
+				field:  "Sandbox",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
 		switch v := interface{}(m.GetModule()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
@@ -122,11 +151,11 @@ func (m *CreateSandboxPlan) validate(all bool) error {
 	}
 
 	if all {
-		switch v := interface{}(m.GetSandbox()).(type) {
+		switch v := interface{}(m.GetPlan()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
 				errors = append(errors, CreateSandboxPlanValidationError{
-					field:  "Sandbox",
+					field:  "Plan",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
@@ -134,16 +163,16 @@ func (m *CreateSandboxPlan) validate(all bool) error {
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
 				errors = append(errors, CreateSandboxPlanValidationError{
-					field:  "Sandbox",
+					field:  "Plan",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
 			}
 		}
-	} else if v, ok := interface{}(m.GetSandbox()).(interface{ Validate() error }); ok {
+	} else if v, ok := interface{}(m.GetPlan()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return CreateSandboxPlanValidationError{
-				field:  "Sandbox",
+				field:  "Plan",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
@@ -229,3 +258,138 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = CreateSandboxPlanValidationError{}
+
+// Validate checks the field values on Bucket with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Bucket) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Bucket with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in BucketMultiError, or nil if none found.
+func (m *Bucket) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Bucket) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for Region
+
+	if m.AssumeRoleDetails != nil {
+
+		if all {
+			switch v := interface{}(m.GetAssumeRoleDetails()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, BucketValidationError{
+						field:  "AssumeRoleDetails",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, BucketValidationError{
+						field:  "AssumeRoleDetails",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssumeRoleDetails()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return BucketValidationError{
+					field:  "AssumeRoleDetails",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return BucketMultiError(errors)
+	}
+
+	return nil
+}
+
+// BucketMultiError is an error wrapping multiple validation errors returned by
+// Bucket.ValidateAll() if the designated constraints aren't met.
+type BucketMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m BucketMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m BucketMultiError) AllErrors() []error { return m }
+
+// BucketValidationError is the validation error returned by Bucket.Validate if
+// the designated constraints aren't met.
+type BucketValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e BucketValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e BucketValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e BucketValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e BucketValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e BucketValidationError) ErrorName() string { return "BucketValidationError" }
+
+// Error satisfies the builtin error interface
+func (e BucketValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sBucket.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = BucketValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = BucketValidationError{}
