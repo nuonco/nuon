@@ -6,19 +6,19 @@ import (
 )
 
 type instance struct {
-	OrgID         string
-	AppID         string
-	ComponentName string
-	DeploymentID  string
-	InstallID     string
-	Phase         string
+	OrgID        string
+	AppID        string
+	ComponentID  string
+	DeploymentID string
+	InstallID    string
+	Phase        string
 }
 
 func (i instance) toPath() string {
 	base := fmt.Sprintf("org=%s/app=%s/component=%s/deployment=%s/install=%s",
 		i.OrgID,
 		i.AppID,
-		i.ComponentName,
+		i.ComponentID,
 		i.DeploymentID,
 		i.InstallID)
 	if i.Phase != "" {
@@ -29,25 +29,25 @@ func (i instance) toPath() string {
 }
 
 // InstancePath returns the prefix for an instance
-func InstancePath(orgID, appID, componentName, deploymentID, installID string) string {
+func InstancePath(orgID, appID, componentID, deploymentID, installID string) string {
 	return instance{
-		OrgID:         orgID,
-		AppID:         appID,
-		ComponentName: componentName,
-		DeploymentID:  deploymentID,
-		InstallID:     installID,
+		OrgID:        orgID,
+		AppID:        appID,
+		ComponentID:  componentID,
+		DeploymentID: deploymentID,
+		InstallID:    installID,
 	}.toPath()
 }
 
 // InstancePhasePath returns the prefix for an instance's phase
 func InstancePhasePath(orgID, appID, componentName, deploymentID, installID, phase string) string {
 	return instance{
-		OrgID:         orgID,
-		AppID:         appID,
-		ComponentName: componentName,
-		DeploymentID:  deploymentID,
-		InstallID:     installID,
-		Phase:         phase,
+		OrgID:        orgID,
+		AppID:        appID,
+		ComponentID:  componentName,
+		DeploymentID: deploymentID,
+		InstallID:    installID,
+		Phase:        phase,
 	}.toPath()
 }
 

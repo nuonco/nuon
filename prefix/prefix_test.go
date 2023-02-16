@@ -11,12 +11,12 @@ import (
 func TestInstancePath(t *testing.T) {
 	obj := generics.GetFakeObj[instance]()
 
-	prefix := InstancePath(obj.OrgID, obj.AppID, obj.ComponentName, obj.DeploymentID, obj.InstallID)
+	prefix := InstancePath(obj.OrgID, obj.AppID, obj.ComponentID, obj.DeploymentID, obj.InstallID)
 	expectedKVs := [][2]string{
 		{"org", obj.OrgID},
 		{"app", obj.AppID},
 		{"deployment", obj.DeploymentID},
-		{"component", obj.ComponentName},
+		{"component", obj.ComponentID},
 		{"install", obj.InstallID},
 	}
 	for _, kv := range expectedKVs {
@@ -28,12 +28,12 @@ func TestInstancePath(t *testing.T) {
 func TestInstancePhasePath(t *testing.T) {
 	obj := generics.GetFakeObj[instance]()
 
-	prefix := InstancePhasePath(obj.OrgID, obj.AppID, obj.ComponentName, obj.DeploymentID, obj.InstallID, obj.Phase)
+	prefix := InstancePhasePath(obj.OrgID, obj.AppID, obj.ComponentID, obj.DeploymentID, obj.InstallID, obj.Phase)
 	expectedKVs := [][2]string{
 		{"org", obj.OrgID},
 		{"app", obj.AppID},
 		{"deployment", obj.DeploymentID},
-		{"component", obj.ComponentName},
+		{"component", obj.ComponentID},
 		{"install", obj.InstallID},
 		{"phase", obj.Phase},
 	}
