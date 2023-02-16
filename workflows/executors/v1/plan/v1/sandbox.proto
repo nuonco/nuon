@@ -20,6 +20,7 @@ message Sandbox {
   ];
 
   SandboxSettings sandbox_settings = 4;
+  optional string terraform_version = 5;
 
   oneof account_settings {
     AWSSettings aws = 100;

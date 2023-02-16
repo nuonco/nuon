@@ -223,6 +223,10 @@ func (m *TerraformPlan) validate(all bool) error {
 		}
 	}
 
+	if m.TerraformVersion != nil {
+		// no validation rules for TerraformVersion
+	}
+
 	if len(errors) > 0 {
 		return TerraformPlanMultiError(errors)
 	}

@@ -167,6 +167,10 @@ func (m *Sandbox) validate(all bool) error {
 		_ = v // ensures v is used
 	}
 
+	if m.TerraformVersion != nil {
+		// no validation rules for TerraformVersion
+	}
+
 	if len(errors) > 0 {
 		return SandboxMultiError(errors)
 	}
