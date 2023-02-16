@@ -40,6 +40,7 @@ func (r *runner) setupWorkspace(ctx context.Context, req *planv1.TerraformPlan) 
 		terraform.WithModuleBucket(req.Module),
 		terraform.WithBackendBucket(req.Backend),
 		terraform.WithVars(req.Vars.AsMap()),
+		terraform.WithVersion(req.TerraformVersion),
 	)
 	// NOTE(jdt): always cleanup even if error
 	r.cleanupFns = append(r.cleanupFns, ws.Cleanup)

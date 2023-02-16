@@ -25,12 +25,11 @@ type workspaceWriter interface {
 type workspace struct {
 	// ID is the opaque identifier for this run
 	// historically has been the nuon install ID
-	ID string `validate:"required"`
-
-	Module  *planv1.Object `validate:"required,dive"`
-	Backend *planv1.Object `validate:"required,dive"`
-
-	Vars map[string]interface{} `validate:"required"`
+	ID      string                 `validate:"required"`
+	Module  *planv1.Object         `validate:"required,dive"`
+	Backend *planv1.Object         `validate:"required,dive"`
+	Vars    map[string]interface{} `validate:"required"`
+	Version string                 `validate:"required,min=5"`
 
 	// internal state
 	validator       *validator.Validate
@@ -94,6 +93,12 @@ func WithVars(m map[string]interface{}) workspaceOption {
 	}
 }
 
+func WithVersion(v string) workspaceOption {
+	return func(w *workspace) error {
+		w.Version = v
+		return nil
+	}
+}
 func (w *workspace) Cleanup() error {
 	var errOut error
 	for _, fn := range w.cleanupFns {

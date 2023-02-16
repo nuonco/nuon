@@ -62,6 +62,7 @@ func (w *workspace) installTerraform(ctx context.Context) error {
 		install.WithInstallDir(tmpdir),
 		// TODO(jdt): fix logger
 		install.WithLogger(log.Default()),
+		install.WithVersion(w.Version),
 	)
 	if err != nil {
 		return err

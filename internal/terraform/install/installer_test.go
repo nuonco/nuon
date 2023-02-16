@@ -36,16 +36,12 @@ func TestNew(t *testing.T) {
 				assert.Equal(t, "v1.2.3", i.Version)
 			},
 		},
-		"uses default version": {
-			d: "/tmp",
-			l: log.Default(),
-			v: v,
-			assertions: func(t *testing.T, i *terraformInstaller) {
-				assert.Equal(t, "/tmp", i.Dir)
-				assert.NotEmpty(t, i.Logger)
-				assert.Equal(t, product.Terraform.Name, i.installer.(*releases.ExactVersion).Product.Name)
-				assert.Equal(t, defaultTerraformVersion, i.Version)
-			},
+		"missing version": {
+			d:           "/tmp",
+			l:           log.Default(),
+			v:           v,
+			vers:        "",
+			errExpected: fmt.Errorf("Field validation for 'Version' failed on the 'required' tag"),
 		},
 		"invalid version": {
 			d:           "/tmp",

@@ -20,6 +20,7 @@ func TestNewWorkspace(t *testing.T) {
 		backend     *planv1.Object
 		sandbox     *planv1.Object
 		vars        map[string]interface{}
+		version     string
 		expected    *workspace
 		errExpected error
 	}{
@@ -29,6 +30,7 @@ func TestNewWorkspace(t *testing.T) {
 			backend: &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
 			sandbox: &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:    map[string]interface{}{"test": "vars"},
+			version: "v1.3.9",
 		},
 		"empty vars is fine": {
 			v:       v,
@@ -36,6 +38,15 @@ func TestNewWorkspace(t *testing.T) {
 			backend: &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
 			sandbox: &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:    map[string]interface{}{},
+			version: "v1.3.9",
+		},
+		"empty version": {
+			v:           v,
+			id:          "valid",
+			backend:     &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
+			sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
+			vars:        map[string]interface{}{"test": "vars"},
+			errExpected: fmt.Errorf("Field validation for 'Version' failed on the 'required' tag"),
 		},
 		"missing id": {
 			v:           v,
@@ -43,6 +54,7 @@ func TestNewWorkspace(t *testing.T) {
 			backend:     &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
 			sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:        map[string]interface{}{"test": "vars"},
+			version:     "v1.3.9",
 			errExpected: fmt.Errorf("Field validation for 'ID' failed on the 'required' tag"),
 		},
 		"missing validator": {
@@ -51,6 +63,7 @@ func TestNewWorkspace(t *testing.T) {
 			backend:     &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
 			sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:        map[string]interface{}{"test": "vars"},
+			version:     "v1.3.9",
 			errExpected: fmt.Errorf("validator is nil"),
 		},
 		// "empty backend bucket": {
@@ -59,6 +72,7 @@ func TestNewWorkspace(t *testing.T) {
 		// 	backend:     &planv1.Object{},
 		// 	sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 		// 	vars:        map[string]interface{}{"test": "vars"},
+		// version: "v1.3.9",
 		// 	errExpected: fmt.Errorf("Key: 'workspace.Backend.BucketName' Error"),
 		// },
 		"missing backend bucket": {
@@ -67,6 +81,7 @@ func TestNewWorkspace(t *testing.T) {
 			backend:     nil,
 			sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:        map[string]interface{}{"test": "vars"},
+			version:     "v1.3.9",
 			errExpected: fmt.Errorf("Field validation for 'Backend' failed on the 'required' tag"),
 		},
 		// "empty sandbox bucket": {
@@ -75,6 +90,7 @@ func TestNewWorkspace(t *testing.T) {
 		// 	backend:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 		// 	sandbox:     &planv1.Object{},
 		// 	vars:        map[string]interface{}{"test": "vars"},
+		// version: "v1.3.9",
 		// 	errExpected: fmt.Errorf("Key: 'workspace.Module.Bucket' Error"),
 		// },
 		"missing sandbox bucket": {
@@ -83,6 +99,7 @@ func TestNewWorkspace(t *testing.T) {
 			backend:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			sandbox:     nil,
 			vars:        map[string]interface{}{"test": "vars"},
+			version:     "v1.3.9",
 			errExpected: fmt.Errorf("Field validation for 'Module' failed on the 'required' tag"),
 		},
 		"missing vars": {
@@ -91,6 +108,7 @@ func TestNewWorkspace(t *testing.T) {
 			backend:     &planv1.Object{Bucket: "valid", Key: "valid", Region: "us-east-2"},
 			sandbox:     &planv1.Object{Bucket: "sandbox", Key: "sandbox", Region: "us-east-1"},
 			vars:        nil,
+			version:     "v1.3.9",
 			errExpected: fmt.Errorf("Field validation for 'Vars' failed on the 'required' tag"),
 		},
 	}
@@ -107,6 +125,7 @@ func TestNewWorkspace(t *testing.T) {
 				WithModuleBucket(test.sandbox),
 				WithBackendBucket(test.backend),
 				WithVars(test.vars),
+				WithVersion(test.version),
 			)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
@@ -118,6 +137,7 @@ func TestNewWorkspace(t *testing.T) {
 			assert.Equal(t, test.sandbox, w.Module)
 			assert.Equal(t, test.backend, w.Backend)
 			assert.Equal(t, test.vars, w.Vars)
+			assert.Equal(t, test.version, w.Version)
 			assert.NoError(t, w.Cleanup())
 		})
 	}

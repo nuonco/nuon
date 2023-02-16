@@ -11,14 +11,10 @@ import (
 	"github.com/hashicorp/hc-install/releases"
 )
 
-const (
-	defaultTerraformVersion = "v1.3.4"
-)
-
 type terraformInstaller struct {
 	Logger  *log.Logger `validate:"required"`
 	Dir     string      `validate:"required,dir,min=1"`
-	Version string      `validate:"required"`
+	Version string      `validate:"required,min=5"`
 
 	// internal state
 	installer installer
@@ -30,7 +26,7 @@ type terraformInstallerOption func(*terraformInstaller) error
 
 // New instantiates a new terraform installer
 func New(v *validator.Validate, opts ...terraformInstallerOption) (*terraformInstaller, error) {
-	t := &terraformInstaller{Version: defaultTerraformVersion}
+	t := &terraformInstaller{}
 
 	if v == nil {
 		return nil, fmt.Errorf("error instantiating terraform installer: validator is nil")
@@ -76,7 +72,6 @@ func WithInstallDir(d string) terraformInstallerOption {
 }
 
 // WithVersion sets the version of terraform to install
-// If not specified, will use the default version specified above
 func WithVersion(v string) terraformInstallerOption {
 	return func(t *terraformInstaller) error {
 		t.Version = v

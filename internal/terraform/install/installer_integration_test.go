@@ -14,7 +14,7 @@ import (
 func TestTerraformInstaller_Install_Int(t *testing.T) {
 	t.Parallel()
 	tmpdir := t.TempDir()
-	i, err := New(validator.New(), WithInstallDir(tmpdir), WithLogger(log.Default()))
+	i, err := New(validator.New(), WithInstallDir(tmpdir), WithLogger(log.Default()), WithVersion("1.3.9"))
 	assert.NoError(t, err)
 	defer i.Cleanup()
 
@@ -26,7 +26,7 @@ func TestTerraformInstaller_Install_Int(t *testing.T) {
 func TestTerraformInstaller_Cleanup_Int(t *testing.T) {
 	t.Parallel()
 	tmpdir := t.TempDir()
-	i, err := New(validator.New(), WithInstallDir(tmpdir), WithLogger(log.Default()))
+	i, err := New(validator.New(), WithInstallDir(tmpdir), WithLogger(log.Default()), WithVersion("1.3.9"))
 	assert.NoError(t, err)
 	assert.NoError(t, i.Cleanup())
 }
