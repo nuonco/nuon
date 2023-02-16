@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package executors.v1.plan.v1;
 
+import "executors/v1/plan/v1/terraform_run_type.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -21,6 +22,7 @@ message Sandbox {
 
   SandboxSettings sandbox_settings = 4;
   optional string terraform_version = 5;
+  .executors.v1.plan.v1.TerraformRunType run_type = 6;
 
   oneof account_settings {
     AWSSettings aws = 100;

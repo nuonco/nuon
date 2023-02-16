@@ -121,6 +121,8 @@ func (m *Sandbox) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for RunType
+
 	switch v := m.AccountSettings.(type) {
 	case *Sandbox_Aws:
 		if v == nil {

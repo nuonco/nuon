@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+enum TerraformRunType {
+  TERRAFORM_RUN_TYPE_UNSPECIFIED = 0;
+  TERRAFORM_RUN_TYPE_PLAN = 1;
+  TERRAFORM_RUN_TYPE_APPLY = 2;
+  TERRAFORM_RUN_TYPE_DESTROY = 3;
+}

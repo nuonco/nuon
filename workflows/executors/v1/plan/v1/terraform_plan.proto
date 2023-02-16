@@ -3,17 +3,18 @@ syntax = "proto3";
 package executors.v1.plan.v1;
 
 import "executors/v1/plan/v1/metadata.proto";
+import "executors/v1/plan/v1/terraform_run_type.proto";
 import "google/protobuf/struct.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 message TerraformPlan {
-  Metadata metadata = 1;
+  .executors.v1.plan.v1.Metadata metadata = 1;
   string id = 2;
   Object module = 3;
   Object backend = 4;
   google.protobuf.Struct vars = 5;
-  RunType run_type = 6;
+  .executors.v1.plan.v1.TerraformRunType run_type = 6;
   map<string, Object> outputs = 7;
   string terraform_version = 8;
 }
@@ -36,11 +37,4 @@ message AssumeRoleDetails {
     (validate.rules).string.min_len = 20,
     (tagger.tags) = "faker:\"len=25\""
   ];
-}
-
-enum RunType {
-  RUN_TYPE_UNSPECIFIED = 0;
-  RUN_TYPE_PLAN = 1;
-  RUN_TYPE_APPLY = 2;
-  RUN_TYPE_DESTROY = 3;
 }
