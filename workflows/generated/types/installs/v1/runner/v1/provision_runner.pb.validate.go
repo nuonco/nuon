@@ -133,6 +133,17 @@ func (m *ProvisionRunnerRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if _, ok := _ProvisionRunnerRequest_Region_InLookup[m.GetRegion()]; !ok {
+		err := ProvisionRunnerRequestValidationError{
+			field:  "Region",
+			reason: "value must be in list [us-west-2 us-west-1 us-east-2 us-east-1]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return ProvisionRunnerRequestMultiError(errors)
 	}
@@ -212,6 +223,13 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ProvisionRunnerRequestValidationError{}
+
+var _ProvisionRunnerRequest_Region_InLookup = map[string]struct{}{
+	"us-west-2": {},
+	"us-west-1": {},
+	"us-east-2": {},
+	"us-east-1": {},
+}
 
 // Validate checks the field values on KubeClusterInfo with the rules defined
 // in the proto definition for this message. If any rules are violated, the

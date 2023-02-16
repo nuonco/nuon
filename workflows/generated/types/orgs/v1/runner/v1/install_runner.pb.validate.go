@@ -80,6 +80,17 @@ func (m *InstallRunnerRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if _, ok := _InstallRunnerRequest_Region_InLookup[m.GetRegion()]; !ok {
+		err := InstallRunnerRequestValidationError{
+			field:  "Region",
+			reason: "value must be in list [us-west-2]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if len(errors) > 0 {
 		return InstallRunnerRequestMultiError(errors)
 	}
@@ -159,6 +170,10 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = InstallRunnerRequestValidationError{}
+
+var _InstallRunnerRequest_Region_InLookup = map[string]struct{}{
+	"us-west-2": {},
+}
 
 // Validate checks the field values on InstallRunnerResponse with the rules
 // defined in the proto definition for this message. If any rules are
