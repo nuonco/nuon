@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/gogo/protobuf/jsonpb"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/servers/converters"
 	componentv1 "github.com/powertoolsdev/protos/api/generated/types/component/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func (s *server) UpsertComponent(
@@ -33,8 +33,7 @@ func (s *server) UpsertComponent(
 
 	// convert input ComponentConfig to JSON
 	if req.Msg.ComponentConfig != nil {
-		m := jsonpb.Marshaler{}
-		componentConfig, err := m.MarshalToString(req.Msg.ComponentConfig)
+		componentConfig, err := protojson.Marshal(req.Msg.ComponentConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse component configuration: %w", err)
 		}

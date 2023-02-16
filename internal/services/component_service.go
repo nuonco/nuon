@@ -91,7 +91,7 @@ func (i *componentService) updateComponent(ctx context.Context, input models.Com
 	component.BuildImage = input.BuildImage
 	component.Type = string(input.Type)
 
-	if input.Config != "" {
+	if input.Config != nil {
 		component.Config = datatypes.JSON(input.Config)
 	}
 
@@ -135,7 +135,7 @@ func (i *componentService) UpsertComponent(ctx context.Context, input models.Com
 	component.BuildImage = input.BuildImage
 	component.Type = string(input.Type)
 	component.CreatedByID = input.CreatedByID
-	if input.Config != "" {
+	if input.Config != nil {
 		component.Config = datatypes.JSON(input.Config)
 	}
 	if input.GithubConfig != nil {
