@@ -24,7 +24,7 @@ func (p *planUploaderImpl) uploadPlan(
 ) error {
 	byts, err := proto.Marshal(plan)
 	if err != nil {
-		return fmt.Errorf("unable to convert plan to json: %w", err)
+		return fmt.Errorf("unable to serialize plan: %w", err)
 	}
 
 	if err := uploader.UploadBlob(ctx, byts, planRef.BucketKey); err != nil {

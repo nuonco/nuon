@@ -73,8 +73,19 @@ func (w *wkflow) execCreatePlan(
 			return resp, fmt.Errorf("unable to get component plan future: %w", err)
 		}
 		return resp, nil
-	default:
-	}
 
-	return nil, fmt.Errorf("unable to execute plan for type: %s", req.Type)
+	case *planv1.CreatePlanRequest_Sandbox:
+		actReq, err := w.sandboxPlanRequest(req.Type, r.Sandbox)
+		if err != nil {
+			return resp, fmt.Errorf("unable to create sandbox plan request: %w", err)
+		}
+		fut := workflow.ExecuteActivity(ctx, act.CreateTerraformSandboxPlan, actReq)
+		if err := fut.Get(ctx, &resp); err != nil {
+			return resp, fmt.Errorf("unable to get sandbox plan future: %w", err)
+		}
+		return resp, nil
+
+	default:
+		return nil, fmt.Errorf("unable to execute plan for type: %s", req.Type)
+	}
 }
