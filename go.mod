@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.18.3
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/google/uuid v1.3.0
-	github.com/powertoolsdev/go-generics v0.0.1
+	github.com/powertoolsdev/go-generics v0.1.0
 	github.com/stretchr/testify v1.8.1
 )
 
@@ -30,6 +30,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/powertoolsdev/go-common v1.4.1 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect

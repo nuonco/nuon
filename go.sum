@@ -51,8 +51,10 @@ github.com/leodido/go-urn v1.2.1/go.mod h1:zt4jvISO2HfUBqxjfIshjdMTYS56ZS/qv49ic
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/powertoolsdev/go-generics v0.0.1 h1:We48KVDTRRDm4TeKe0BFJUghzgjpcyaX364797GYxbU=
-github.com/powertoolsdev/go-generics v0.0.1/go.mod h1:ZfpJeyS0qdYRV7CAJhxq1CxjED+PhR/Y+yMc5A4Rjsg=
+github.com/powertoolsdev/go-common v1.4.1 h1:VXKzGRdSZ7QMNJz80BoKYr2BXOm7DEhfiqgjqzfqvIM=
+github.com/powertoolsdev/go-common v1.4.1/go.mod h1:NXL1EfO9ZZZFHA8VLLOYSVIdEZL38WgK+jDzYQPmXIQ=
+github.com/powertoolsdev/go-generics v0.1.0 h1:kqXIpjml0VTw859adl8UaKT+oeRQ3QgpUtCHjl5kZXk=
+github.com/powertoolsdev/go-generics v0.1.0/go.mod h1:mxjqE4cLFXzAMDpIME5TDeS/VlS3sU5NV3t+9Mi42ck=
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
