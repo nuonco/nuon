@@ -38,7 +38,7 @@ func TestRunner_Run(t *testing.T) {
 				me.On("Apply", ctx).Return(nil)
 				me.On("Output", ctx).Return(map[string]interface{}{"got": "outputs"}, nil)
 				m := &mockWorkspaceSetuper{}
-				m.On("setupWorkspace", ctx, &planv1.TerraformPlan{RunType: planv1.RunType_RUN_TYPE_APPLY}).Return(me, nil)
+				m.On("setupWorkspace", ctx, &planv1.TerraformPlan{RunType: planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY}).Return(me, nil)
 				return m
 			},
 			expected: map[string]interface{}{"got": "outputs"},
@@ -48,7 +48,7 @@ func TestRunner_Run(t *testing.T) {
 				m := &mockWorkspaceSetuper{}
 				m.On("setupWorkspace",
 					ctx,
-					&planv1.TerraformPlan{RunType: planv1.RunType_RUN_TYPE_APPLY},
+					&planv1.TerraformPlan{RunType: planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY},
 				).Return(nil, fmt.Errorf("failed setting up workspace"))
 				return m
 			},
@@ -64,7 +64,7 @@ func TestRunner_Run(t *testing.T) {
 
 			ws := test.ws(t)
 			r := &runner{
-				Plan:             &planv1.TerraformPlan{RunType: planv1.RunType_RUN_TYPE_APPLY},
+				Plan:             &planv1.TerraformPlan{RunType: planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY},
 				workspaceSetuper: ws,
 			}
 
@@ -112,7 +112,7 @@ func Test_run(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
 		executor    func(*testing.T) *mockExecutor
-		runType     planv1.RunType
+		runType     planv1.TerraformRunType
 		expected    map[string]interface{}
 		errExpected error
 	}{
@@ -123,7 +123,7 @@ func Test_run(t *testing.T) {
 				m.On("Plan", mock.Anything).Return(nil)
 				return m
 			},
-			runType: planv1.RunType_RUN_TYPE_PLAN,
+			runType: planv1.TerraformRunType_TERRAFORM_RUN_TYPE_PLAN,
 		},
 		"happy path - apply": {
 			executor: func(t *testing.T) *mockExecutor {
@@ -133,7 +133,7 @@ func Test_run(t *testing.T) {
 				m.On("Output", mock.Anything).Return(map[string]interface{}{}, nil)
 				return m
 			},
-			runType:  planv1.RunType_RUN_TYPE_APPLY,
+			runType:  planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY,
 			expected: map[string]interface{}{},
 		},
 		"happy path - destroy": {
@@ -143,7 +143,7 @@ func Test_run(t *testing.T) {
 				m.On("Destroy", mock.Anything).Return(nil)
 				return m
 			},
-			runType: planv1.RunType_RUN_TYPE_DESTROY,
+			runType: planv1.TerraformRunType_TERRAFORM_RUN_TYPE_DESTROY,
 		},
 		"returns outputs": {
 			executor: func(t *testing.T) *mockExecutor {
@@ -157,7 +157,7 @@ func Test_run(t *testing.T) {
 				}, nil)
 				return m
 			},
-			runType:  planv1.RunType_RUN_TYPE_APPLY,
+			runType:  planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY,
 			expected: map[string]interface{}{"a": "bunch", "of": "really", "cool": "outputs"},
 		},
 		"invalid runtype": {
@@ -166,7 +166,7 @@ func Test_run(t *testing.T) {
 				m.On("Init", mock.Anything).Return(nil)
 				return m
 			},
-			runType:     planv1.RunType(555),
+			runType:     planv1.TerraformRunType(555),
 			errExpected: fmt.Errorf("invalid run type"),
 		},
 		"init error": {
@@ -175,7 +175,7 @@ func Test_run(t *testing.T) {
 				m.On("Init", mock.Anything).Return(fmt.Errorf("init error"))
 				return m
 			},
-			runType:     planv1.RunType_RUN_TYPE_DESTROY,
+			runType:     planv1.TerraformRunType_TERRAFORM_RUN_TYPE_DESTROY,
 			errExpected: fmt.Errorf("init error"),
 		},
 		"plan error": {
@@ -185,7 +185,7 @@ func Test_run(t *testing.T) {
 				m.On("Plan", mock.Anything).Return(fmt.Errorf("plan error"))
 				return m
 			},
-			runType:     planv1.RunType_RUN_TYPE_PLAN,
+			runType:     planv1.TerraformRunType_TERRAFORM_RUN_TYPE_PLAN,
 			errExpected: fmt.Errorf("plan error"),
 		},
 		"destroy error": {
@@ -195,7 +195,7 @@ func Test_run(t *testing.T) {
 				m.On("Destroy", mock.Anything).Return(fmt.Errorf("destroy error"))
 				return m
 			},
-			runType:     planv1.RunType_RUN_TYPE_DESTROY,
+			runType:     planv1.TerraformRunType_TERRAFORM_RUN_TYPE_DESTROY,
 			errExpected: fmt.Errorf("destroy error"),
 		},
 		"apply error": {
@@ -205,7 +205,7 @@ func Test_run(t *testing.T) {
 				m.On("Apply", mock.Anything).Return(fmt.Errorf("apply error"))
 				return m
 			},
-			runType:     planv1.RunType_RUN_TYPE_APPLY,
+			runType:     planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY,
 			errExpected: fmt.Errorf("apply error"),
 		},
 		"output error": {
@@ -216,7 +216,7 @@ func Test_run(t *testing.T) {
 				m.On("Output", mock.Anything).Return(nil, fmt.Errorf("output error"))
 				return m
 			},
-			runType:     planv1.RunType_RUN_TYPE_APPLY,
+			runType:     planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY,
 			errExpected: fmt.Errorf("output error"),
 		},
 	}

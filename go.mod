@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/terraform-exec v0.17.3
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
 	github.com/powertoolsdev/go-fetch v0.1.0
-	github.com/powertoolsdev/protos v0.68.3
+	github.com/powertoolsdev/protos v0.68.4
 	github.com/stretchr/testify v1.8.1
 )
 

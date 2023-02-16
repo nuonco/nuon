@@ -369,6 +369,8 @@ github.com/powertoolsdev/protos v0.68.2 h1:DnwTOmRTSK9zttlP3U6QkUM0/6icN122ucmt4
 github.com/powertoolsdev/protos v0.68.2/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/powertoolsdev/protos v0.68.3 h1:eGVJg/0pPpmFbBzg+wq2HKLy02kaIbnvldfMnflOeaE=
 github.com/powertoolsdev/protos v0.68.3/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.68.4 h1:oMHACsbocl19XgDKgEJUvbfP9nZHG+nZnjOT5T4Nj28=
+github.com/powertoolsdev/protos v0.68.4/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=

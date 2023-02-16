@@ -63,7 +63,7 @@ type executor interface {
 }
 
 // run executes terraform for typ
-func run(ctx context.Context, e executor, typ planv1.RunType) (map[string]interface{}, error) {
+func run(ctx context.Context, e executor, typ planv1.TerraformRunType) (map[string]interface{}, error) {
 	var m map[string]interface{}
 
 	// TODO(jdt): maybe don't init if not a valid run type?
@@ -72,17 +72,17 @@ func run(ctx context.Context, e executor, typ planv1.RunType) (map[string]interf
 	}
 
 	switch typ {
-	case planv1.RunType_RUN_TYPE_PLAN:
+	case planv1.TerraformRunType_TERRAFORM_RUN_TYPE_PLAN:
 		err := e.Plan(ctx)
 		return m, err
 
-	case planv1.RunType_RUN_TYPE_DESTROY:
+	case planv1.TerraformRunType_TERRAFORM_RUN_TYPE_DESTROY:
 		err := e.Destroy(ctx)
 		return m, err
 
 	// NOTE(jdt): there's not really a good reason to run plan
 	// before apply as we essentially just auto-apply...
-	case planv1.RunType_RUN_TYPE_APPLY:
+	case planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY:
 		err := e.Apply(ctx)
 		if err != nil {
 			return m, err
