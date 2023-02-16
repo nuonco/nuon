@@ -39,7 +39,7 @@ type Config struct {
 	OrgServerRootDomain  string `config:"org_server_root_domain" validate:"required"`
 
 	// org IAM role template names
-	OrgInstanceRoleTemplate      string `config:"orgs_instance_role_template" validate:"required"`
+	OrgInstanceRoleTemplate      string `config:"orgs_instances_role_template" validate:"required"`
 	OrgInstallationsRoleTemplate string `config:"orgs_installations_role_template" validate:"required"`
 	OrgInstallerRoleTemplate     string `config:"orgs_installer_role_template" validate:"required"`
 
