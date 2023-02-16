@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/servers/converters"
 	componentv1 "github.com/powertoolsdev/protos/api/generated/types/component/v1"
@@ -28,6 +29,16 @@ func (s *server) UpsertComponent(
 		// NOTE: the following parameters will not be used once we migrate to the new component ref
 		BuildImage: req.Msg.BuildImage,
 		Type:       converters.ProtoToComponentType(req.Msg.ComponentType),
+	}
+
+	// convert input ComponentConfig to JSON
+	if req.Msg.ComponentConfig != nil {
+		m := jsonpb.Marshaler{}
+		componentConfig, err := m.MarshalToString(req.Msg.ComponentConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse component configuration: %w", err)
+		}
+		params.Config = componentConfig
 	}
 
 	if req.Msg.GetGithubConfig() != nil {

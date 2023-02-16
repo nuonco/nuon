@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/utils"
 	"go.uber.org/zap"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -89,6 +90,11 @@ func (i *componentService) updateComponent(ctx context.Context, input models.Com
 	component.Name = input.Name
 	component.BuildImage = input.BuildImage
 	component.Type = string(input.Type)
+
+	if input.Config != "" {
+		component.Config = datatypes.JSON(input.Config)
+	}
+
 	if input.GithubConfig != nil {
 		if component.GithubConfig != nil {
 			component.GithubConfig.Repo = input.GithubConfig.Repo
@@ -129,6 +135,9 @@ func (i *componentService) UpsertComponent(ctx context.Context, input models.Com
 	component.BuildImage = input.BuildImage
 	component.Type = string(input.Type)
 	component.CreatedByID = input.CreatedByID
+	if input.Config != "" {
+		component.Config = datatypes.JSON(input.Config)
+	}
 	if input.GithubConfig != nil {
 		component.GithubConfig = &models.GithubConfig{
 			Repo:      input.GithubConfig.Repo,
