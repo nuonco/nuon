@@ -14,6 +14,9 @@ func init() {
 	config.RegisterDefault("waypoint_token_secret_namespace", "default")
 	config.RegisterDefault("waypoint_org_server_root_domain", "orgs-stage.nuon.co")
 	config.RegisterDefault("waypoint_token_secret_template", "waypoint-bootstrap-token-%s")
+
+	config.RegisterDefault("sandbox_bucket", "nuon-sandboxes")
+	config.RegisterDefault("sandbox_bucket_region", "us-west-2")
 }
 
 type Config struct {
@@ -21,10 +24,14 @@ type Config struct {
 	TemporalHost      string `config:"temporal_host" validate:"required"`
 	TemporalNamespace string `config:"temporal_namespace" validate:"required"`
 
-	DeploymentsBucket   string `config:"deployments_bucket" validate:"required"`
-	InstallationsBucket string `config:"installations_bucket" validate:"required"`
-	InstancesBucket     string `config:"instances_bucket" validate:"required"`
-	OrgsBucket          string `config:"orgs_bucket" validate:"required"`
+	DeploymentsBucket         string `config:"deployments_bucket" validate:"required"`
+	DeploymentsBucketRegion   string `config:"deployments_bucket_region" validate:"required"`
+	InstallationsBucket       string `config:"installations_bucket" validate:"required"`
+	InstallationsBucketRegion string `config:"installations_bucket_region" validate:"required"`
+	InstancesBucket           string `config:"instances_bucket" validate:"required"`
+	InstancesBucketRegion     string `config:"instances_bucket_region" validate:"required"`
+	OrgsBucket                string `config:"orgs_bucket" validate:"required"`
+	OrgsBucketRegion          string `config:"orgs_bucket_region" validate:"required"`
 
 	// waypoint configuration
 	WaypointServerRootDomain     string `config:"waypoint_server_root_domain" validate:"required"`
@@ -39,10 +46,14 @@ type Config struct {
 	OrgsOdrRoleTemplate           string `config:"orgs_odr_role_template" validate:"required"`
 	OrgsOrgsRoleTemplate          string `config:"orgs_orgs_role_template" validate:"required"`
 
-	// configuration for plans
+	// configuration for waypoint plans
 	OrgsECRRegistryID  string `config:"orgs_ecr_registry_id" validate:"required"`
 	OrgsECRRegistryARN string `config:"orgs_ecr_registry_arn" validate:"required"`
 	OrgsECRRegion      string `config:"orgs_ecr_region" validate:"required" faker:"oneof: us-west-2"`
+
+	// configuration for terraform plans
+	SandboxBucket       string `config:"sandbox_bucket" validate:"required"`
+	SandboxBucketRegion string `config:"sandbox_bucket_region" validate:"required"`
 }
 
 func (c Config) Validate() error {
