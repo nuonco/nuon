@@ -38,19 +38,23 @@ func TestProvision(t *testing.T) {
 	env.RegisterWorkflow(ExecutePlan)
 
 	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+		Return(func(_ workflow.Context, r *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
 			resp := &planv1.CreatePlanResponse{
 				Plan: planRef,
 			}
-			assert.Equal(t, req.OrgId, r.OrgId)
-			assert.Equal(t, req.AppId, r.AppId)
-			assert.Equal(t, req.DeploymentId, r.DeploymentId)
-			assert.True(t, proto.Equal(req.Component, r.Component))
+
+			input, ok := r.Input.(*planv1.CreatePlanRequest_Component)
+			assert.True(t, ok)
+
+			assert.Equal(t, req.OrgId, input.Component.OrgId)
+			assert.Equal(t, req.AppId, input.Component.AppId)
+			assert.Equal(t, req.DeploymentId, input.Component.DeploymentId)
+			assert.True(t, proto.Equal(req.Component, input.Component.Component))
 			assert.Nil(t, r.Validate())
 			return resp, nil
 		})
 	env.OnWorkflow("ExecutePlan", mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+		Return(func(_ workflow.Context, r *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
 			resp := &executev1.ExecutePlanResponse{}
 			assert.True(t, proto.Equal(planRef, r.Plan))
 			assert.Nil(t, r.Validate())
