@@ -15,7 +15,7 @@ message TerraformPlan {
   google.protobuf.Struct vars = 5;
   RunType run_type = 6;
   map<string, Object> outputs = 7;
-  optional string terraform_version = 8;
+  string terraform_version = 8;
 }
 
 message Object {
