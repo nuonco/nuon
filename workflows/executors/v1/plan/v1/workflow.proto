@@ -5,7 +5,7 @@ package executors.v1.plan.v1;
 import "component/v1/component.proto";
 import "executors/v1/plan/v1/plan_ref.proto";
 import "executors/v1/plan/v1/plan_type.proto";
-import "executors/v1/plan/v1/terraform_plan.proto";
+import "executors/v1/plan/v1/sandbox.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -16,7 +16,7 @@ message CreatePlanRequest {
   oneof input {
     option (tagger.oneof_tags) = "faker:\"-\"";
     Component component = 100;
-    .executors.v1.plan.v1.TerraformPlan sandbox = 101;
+    .executors.v1.plan.v1.Sandbox sandbox = 101;
   }
 }
 
