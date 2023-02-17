@@ -58,14 +58,14 @@ func ToUUID(s string) (uuid.UUID, error) {
 }
 
 // ParseUUID parses a uuid into a short id string
-func ParseUUID(u uuid.UUID) (string, error) {
+func ParseUUID(u uuid.UUID) string {
 	msi := binary.BigEndian.Uint64(u[:intBytes])
 	lsi := binary.BigEndian.Uint64(u[intBytes:])
 
 	mss := strconv.FormatUint(msi, base)
 	lss := strconv.FormatUint(lsi, base)
 
-	return fmt.Sprintf("%026s", mss+lss), nil
+	return fmt.Sprintf("%026s", mss+lss)
 }
 
 // ParseString parses a string uuid into a short id, returning an error if invalid
@@ -74,7 +74,12 @@ func ParseString(s string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return ParseUUID(u)
+	return ParseUUID(u), nil
+}
+
+// New returns a new shortID
+func New() string {
+	return ParseUUID(uuid.New())
 }
 
 // ParseStrings parses a list of string UUIDs into a list of shortids, failing all if any fail

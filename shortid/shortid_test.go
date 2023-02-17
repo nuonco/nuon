@@ -39,8 +39,7 @@ func TestParseString(t *testing.T) {
 func TestParseUUID(t *testing.T) {
 	for _, test := range validTests {
 		t.Run(test.s, func(t *testing.T) {
-			s, err := ParseUUID(test.u)
-			assert.NoError(t, err)
+			s := ParseUUID(test.u)
 			assert.Equal(t, test.s, s)
 		})
 	}
@@ -53,8 +52,7 @@ func TestUUID(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, test.u, u)
 
-			s, err := ParseUUID(u)
-			assert.NoError(t, err)
+			s := ParseUUID(u)
 			assert.Equal(t, test.s, s)
 		})
 	}
