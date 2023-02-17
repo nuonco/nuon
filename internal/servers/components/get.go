@@ -24,8 +24,13 @@ func (s *server) GetComponent(
 		return nil, fmt.Errorf("unable to get component: %w", err)
 	}
 
+	componentToProto, err := converters.ComponentModelToProto(component)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert to proto: %w", err)
+	}
+
 	return connect.NewResponse(&componentv1.GetComponentResponse{
-		Component: converters.ComponentModelToProto(component),
+		Component: componentToProto,
 	}), nil
 }
 
@@ -43,7 +48,12 @@ func (s *server) GetComponentsByApp(
 		return nil, fmt.Errorf("unable to get app components: %w", err)
 	}
 
+	componentsToProto, err := converters.ComponentModelsToProtos(components)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert to proto: %w", err)
+	}
+
 	return connect.NewResponse(&componentv1.GetComponentsByAppResponse{
-		Components: converters.ComponentModelsToProtos(components),
+		Components: componentsToProto,
 	}), nil
 }
