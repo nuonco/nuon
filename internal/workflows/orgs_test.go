@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/go-common/shortid"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -13,7 +14,8 @@ import (
 
 func Test_orgWorkflowManager_Provision(t *testing.T) {
 	errOrgProvisionTest := fmt.Errorf("error")
-	orgID := uuid.New()
+	reqOrgID := uuid.New()
+	orgID := shortid.ParseUUID(reqOrgID)
 
 	tests := map[string]struct {
 		clientFn    func() temporalClient
@@ -35,7 +37,7 @@ func Test_orgWorkflowManager_Provision(t *testing.T) {
 				req, ok := args[0].(*orgsv1.SignupRequest)
 				assert.True(t, ok)
 
-				assert.Equal(t, orgID.String(), req.OrgId)
+				assert.Equal(t, orgID, req.OrgId)
 			},
 		},
 		"error": {
@@ -53,7 +55,7 @@ func Test_orgWorkflowManager_Provision(t *testing.T) {
 			client := test.clientFn()
 			mgr := NewOrgWorkflowManager(client)
 
-			err := mgr.Provision(context.Background(), orgID.String())
+			err := mgr.Provision(context.Background(), reqOrgID.String())
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
@@ -66,7 +68,8 @@ func Test_orgWorkflowManager_Provision(t *testing.T) {
 
 func Test_orgWorkflowManager_Deprovision(t *testing.T) {
 	errOrgDeprovisionTest := fmt.Errorf("error")
-	orgID := uuid.New()
+	reqOrgID := uuid.New()
+	orgID := shortid.ParseUUID(reqOrgID)
 
 	tests := map[string]struct {
 		clientFn    func() temporalClient
@@ -88,7 +91,7 @@ func Test_orgWorkflowManager_Deprovision(t *testing.T) {
 				req, ok := args[0].(orgDeprovisionArgs)
 				assert.True(t, ok)
 
-				assert.Equal(t, orgID.String(), req.OrgID)
+				assert.Equal(t, orgID, req.OrgID)
 			},
 		},
 		"error": {
@@ -106,7 +109,7 @@ func Test_orgWorkflowManager_Deprovision(t *testing.T) {
 			client := test.clientFn()
 			mgr := NewOrgWorkflowManager(client)
 
-			err := mgr.Deprovision(context.Background(), orgID.String())
+			err := mgr.Deprovision(context.Background(), reqOrgID.String())
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
