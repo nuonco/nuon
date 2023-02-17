@@ -1,6 +1,8 @@
 package sync
 
-import "github.com/powertoolsdev/go-workflows-meta/prefix"
+import (
+	"github.com/powertoolsdev/go-workflows-meta/prefix"
+)
 
 const (
 	// NOTE(jm): this phase is used to control the s3 path we emit information to. Future phases will be include
@@ -11,7 +13,7 @@ const (
 func (p *planner) Prefix() string {
 	return prefix.InstancePhasePath(p.Metadata.OrgShortId,
 		p.Metadata.AppShortId,
-		p.Component.Name,
+		p.Component.Id,
 		p.Metadata.DeploymentShortId,
 		p.Metadata.InstallShortId,
 		phaseName,
