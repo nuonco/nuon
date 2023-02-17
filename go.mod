@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/powertoolsdev/go-common v1.5.0
 	github.com/powertoolsdev/go-generics v0.1.0
-	github.com/powertoolsdev/go-workflows-meta v0.6.1
+	github.com/powertoolsdev/go-workflows-meta v0.6.2
 	github.com/powertoolsdev/protos v0.68.7
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
