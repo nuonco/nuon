@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/go-common/shortid"
 	meta "github.com/powertoolsdev/go-workflows-meta"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
@@ -13,19 +12,11 @@ import (
 
 func (w *wkflow) startWorkflow(ctx workflow.Context, req *deploymentsv1.StartRequest) error {
 	info := workflow.GetInfo(ctx)
-	prefix, err := getS3PrefixFromRequest(req)
-	if err != nil {
-		return fmt.Errorf("unable to get s3 prefix: %w", err)
-	}
-
-	orgID, err := shortid.ParseString(req.OrgId)
-	if err != nil {
-		return fmt.Errorf("unable to parse org id: %w", err)
-	}
+	prefix := getS3PrefixFromRequest(req)
 
 	startReq := &sharedv1.StartActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
-		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
+		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
 		MetadataBucketPrefix:        prefix,
 		RequestRef:                  metaRequestFromReq(req),
 		WorkflowInfo: &sharedv1.WorkflowInfo{
@@ -80,10 +71,7 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *deploymentsv1.StartRe
 		l.Debug("unable to finish workflow: %w", err)
 	}()
 
-	prefix, err := getS3PrefixFromRequest(req)
-	if err != nil {
-		return
-	}
+	prefix := getS3PrefixFromRequest(req)
 
 	status := sharedv1.ResponseStatus_RESPONSE_STATUS_OK
 	errMessage := ""
@@ -92,15 +80,9 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *deploymentsv1.StartRe
 		errMessage = workflowErr.Error()
 	}
 
-	orgID, err := shortid.ParseString(req.OrgId)
-	if err != nil {
-		err = fmt.Errorf("unable to parse orgID: %w", err)
-		return
-	}
-
 	finishReq := &sharedv1.FinishActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
-		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, orgID),
+		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
 		MetadataBucketPrefix:        prefix,
 		ResponseRef:                 metaResponseFromResponse(resp),
 		Status:                      status,

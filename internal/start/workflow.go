@@ -6,7 +6,6 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/go-common/shortid"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	buildv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/build/v1"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/instances/v1"
@@ -45,22 +44,16 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 		return resp, err
 	}
 
-	shortIDs, err := shortid.ParseStrings(req.OrgId, req.AppId, req.DeploymentId)
-	if err != nil {
-		return resp, fmt.Errorf("unable to parse short IDs: %w", err)
-	}
-	orgID, appID, deploymentID := shortIDs[0], shortIDs[1], shortIDs[2]
-
-	if err = w.startWorkflow(ctx, req); err != nil {
+	if err := w.startWorkflow(ctx, req); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
 		return resp, err
 	}
 
 	// run the build workflow
 	bReq := &buildv1.BuildRequest{
-		OrgId:        orgID,
-		AppId:        appID,
-		DeploymentId: deploymentID,
+		OrgId:        req.OrgId,
+		AppId:        req.AppId,
+		DeploymentId: req.DeploymentId,
 		Component:    req.Component,
 		PlanOnly:     req.PlanOnly,
 	}
@@ -74,9 +67,9 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 	resp.PlanRef = bResp.PlanRef
 
 	ipReq := &instancesv1.ProvisionRequest{
-		OrgId:        orgID,
-		AppId:        appID,
-		DeploymentId: deploymentID,
+		OrgId:        req.OrgId,
+		AppId:        req.AppId,
+		DeploymentId: req.DeploymentId,
 		InstallIds:   req.InstallIds,
 		Component:    req.Component,
 		PlanOnly:     req.PlanOnly,

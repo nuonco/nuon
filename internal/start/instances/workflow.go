@@ -7,7 +7,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/go-common/shortid"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/instances/v1"
 	provisionv1 "github.com/powertoolsdev/protos/workflows/generated/types/instances/v1"
 	workers "github.com/powertoolsdev/workers-deployments/internal"
@@ -46,23 +45,17 @@ func (w *wkflow) ProvisionInstances(ctx workflow.Context, req *instancesv1.Provi
 
 	// start instance workflows
 	for _, installID := range req.InstallIds {
-		var installShortID string
-		installShortID, err := shortid.ParseString(installID)
-		if err != nil {
-			return resp, fmt.Errorf("unable to parse short ID for install: %w", err)
-		}
-
 		actReq := &provisionv1.ProvisionRequest{
 			OrgId:        req.OrgId,
 			AppId:        req.AppId,
 			DeploymentId: req.DeploymentId,
-			InstallId:    installShortID,
+			InstallId:    installID,
 			Component:    req.Component,
 			PlanOnly:     req.PlanOnly,
 			BuildPlan:    req.BuildPlan,
 		}
 
-		_, err = execProvisionInstanceActivity(ctx, act, actReq)
+		_, err := execProvisionInstanceActivity(ctx, act, actReq)
 		if err != nil {
 			l.Error("failed to provision instance", zap.Error(err))
 		}
