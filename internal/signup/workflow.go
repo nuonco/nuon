@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-waypoint"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	iamv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/iam/v1"
@@ -41,27 +40,23 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	id, err := shortid.ParseString(req.OrgId)
-	if err != nil {
-		return resp, fmt.Errorf("failed to generate short ID: %w", err)
-	}
-	waypointServerAddr := waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, id)
+	waypointServerAddr := waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId)
 
 	act := NewActivities(nil)
 
-	if err = w.startWorkflow(ctx, req); err != nil {
+	if err := w.startWorkflow(ctx, req); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
 		return resp, err
 	}
 
 	sendNotification(ctx, act, SendNotificationRequest{
-		ID:      id,
+		ID:      req.OrgId,
 		Started: true,
 	})
 
 	l.Debug("provisioning iam for org")
 	iamResp, err := execProvisionIAMWorkflow(ctx, w.cfg, &iamv1.ProvisionIAMRequest{
-		OrgId: id,
+		OrgId: req.OrgId,
 	})
 	if err != nil {
 		err = fmt.Errorf("failed to provision iam: %w", err)
@@ -72,7 +67,7 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 
 	l.Debug("provisioning waypoint org server")
 	serverResp, err := execProvisionWaypointServerWorkflow(ctx, w.cfg, &serverv1.ProvisionServerRequest{
-		OrgId:  id,
+		OrgId:  req.OrgId,
 		Region: req.Region,
 	})
 	if err != nil {
@@ -84,8 +79,9 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 
 	l.Debug("installing waypoint org runner")
 	_, err = execInstallWaypointRunnerWorkflow(ctx, w.cfg, &runnerv1.InstallRunnerRequest{
-		OrgId:         id,
+		OrgId:         req.OrgId,
 		OdrIamRoleArn: iamResp.OdrRoleArn,
+		Region:        req.Region,
 	})
 	if err != nil {
 		err = fmt.Errorf("failed to install runner: %w", err)
@@ -95,7 +91,7 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 
 	l.Debug("sending success notification")
 	sendNotification(ctx, act, SendNotificationRequest{
-		ID:                    id,
+		ID:                    req.OrgId,
 		Finished:              true,
 		WaypointServerAddress: waypointServerAddr,
 	})

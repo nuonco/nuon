@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -25,13 +26,9 @@ func (t *testK8sRoleBindingCreator) Apply(ctx context.Context, req *rbacapplyv1.
 	return nil, args.Error(1)
 }
 
-func getFakeCreateRoleBindingRequest() CreateRoleBindingRequest {
-	return getFakeObj[CreateRoleBindingRequest]()
-}
-
 func Test_roleBindingCreatorImpl_createRoleBinding(t *testing.T) {
 	errRoleBindingCreate := fmt.Errorf("error creating role binding")
-	req := getFakeCreateRoleBindingRequest()
+	req := generics.GetFakeObj[CreateRoleBindingRequest]()
 
 	tests := map[string]struct {
 		clientFn    func() k8sRoleBindingCreator

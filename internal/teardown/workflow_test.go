@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/powertoolsdev/go-common/shortid"
+	"github.com/powertoolsdev/go-generics"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -18,21 +18,18 @@ func Test_Workflow(t *testing.T) {
 
 	a := NewActivities()
 
-	req := &orgsv1.TeardownRequest{OrgId: "00000000-0000-0000-0000-000000000000", Region: "us-west-2"}
-
-	id, err := shortid.ParseString(req.OrgId)
-	require.NoError(t, err)
+	req := generics.GetFakeObj[*orgsv1.TeardownRequest]()
 
 	// Mock activity implementation
 	env.OnActivity(a.DestroyNamespace, mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, cnr DestroyNamespaceRequest) (DestroyNamespaceResponse, error) {
-			require.Equal(t, id, cnr.NamespaceName)
+			require.Equal(t, req.OrgId, cnr.NamespaceName)
 			return DestroyNamespaceResponse{}, nil
 		})
 
 	env.OnActivity(a.UninstallWaypoint, mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, uwr UninstallWaypointRequest) (UninstallWaypointResponse, error) {
-			require.Equal(t, fmt.Sprintf("wp-%s", id), uwr.ReleaseName)
+			require.Equal(t, fmt.Sprintf("wp-%s", req.OrgId), uwr.ReleaseName)
 			return UninstallWaypointResponse{}, nil
 		})
 

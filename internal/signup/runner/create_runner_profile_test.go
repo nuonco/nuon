@@ -7,14 +7,11 @@ import (
 	"testing"
 
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 )
-
-func getFakeCreateRunnerProfileRequest() CreateRunnerProfileRequest {
-	return getFakeObj[CreateRunnerProfileRequest]()
-}
 
 func TestCreateRunnerProfile_validateRequest(t *testing.T) {
 	tests := map[string]struct {
@@ -22,11 +19,11 @@ func TestCreateRunnerProfile_validateRequest(t *testing.T) {
 		errExpected error
 	}{
 		"happy path": {
-			reqFn: getFakeCreateRunnerProfileRequest,
+			reqFn: generics.GetFakeObj[CreateRunnerProfileRequest],
 		},
 		"no-org-id": {
 			reqFn: func() CreateRunnerProfileRequest {
-				req := getFakeCreateRunnerProfileRequest()
+				req := generics.GetFakeObj[CreateRunnerProfileRequest]()
 				req.OrgID = ""
 				return req
 			},
@@ -34,7 +31,7 @@ func TestCreateRunnerProfile_validateRequest(t *testing.T) {
 		},
 		"no-namespace": {
 			reqFn: func() CreateRunnerProfileRequest {
-				req := getFakeCreateRunnerProfileRequest()
+				req := generics.GetFakeObj[CreateRunnerProfileRequest]()
 				req.TokenSecretNamespace = ""
 				return req
 			},
@@ -42,7 +39,7 @@ func TestCreateRunnerProfile_validateRequest(t *testing.T) {
 		},
 		"no-server-addr": {
 			reqFn: func() CreateRunnerProfileRequest {
-				req := getFakeCreateRunnerProfileRequest()
+				req := generics.GetFakeObj[CreateRunnerProfileRequest]()
 				req.OrgServerAddr = ""
 				return req
 			},
@@ -82,7 +79,7 @@ func (t *testClientRunnerProfileCreator) UpsertOnDemandRunnerConfig(
 
 func TestRunnerProfileCreatorCreateRunnerProfile(t *testing.T) {
 	errCreateWpRunnerProfile := fmt.Errorf("error creating wp runner profile")
-	req := getFakeCreateRunnerProfileRequest()
+	req := generics.GetFakeObj[CreateRunnerProfileRequest]()
 
 	tests := map[string]struct {
 		clientFn    func() clientODRConfigUpserter

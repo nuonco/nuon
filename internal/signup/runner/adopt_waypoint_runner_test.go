@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -30,21 +31,17 @@ func (t *testWaypointClientRunnerAdopter) AdoptRunner(
 	return nil, args.Error(1)
 }
 
-func getFakeAdoptWaypointRunnerRequest() AdoptWaypointRunnerRequest {
-	return getFakeObj[AdoptWaypointRunnerRequest]()
-}
-
 func TestAdoptWaypointRunner_validateRequest(t *testing.T) {
 	tests := map[string]struct {
 		reqFn       func() AdoptWaypointRunnerRequest
 		errExpected error
 	}{
 		"happy path": {
-			reqFn: getFakeAdoptWaypointRunnerRequest,
+			reqFn: generics.GetFakeObj[AdoptWaypointRunnerRequest],
 		},
 		"no-org-id": {
 			reqFn: func() AdoptWaypointRunnerRequest {
-				req := getFakeAdoptWaypointRunnerRequest()
+				req := generics.GetFakeObj[AdoptWaypointRunnerRequest]()
 				req.OrgID = ""
 				return req
 			},
@@ -52,7 +49,7 @@ func TestAdoptWaypointRunner_validateRequest(t *testing.T) {
 		},
 		"no-namespace": {
 			reqFn: func() AdoptWaypointRunnerRequest {
-				req := getFakeAdoptWaypointRunnerRequest()
+				req := generics.GetFakeObj[AdoptWaypointRunnerRequest]()
 				req.TokenSecretNamespace = ""
 				return req
 			},
@@ -60,7 +57,7 @@ func TestAdoptWaypointRunner_validateRequest(t *testing.T) {
 		},
 		"no-server-addr": {
 			reqFn: func() AdoptWaypointRunnerRequest {
-				req := getFakeAdoptWaypointRunnerRequest()
+				req := generics.GetFakeObj[AdoptWaypointRunnerRequest]()
 				req.OrgServerAddr = ""
 				return req
 			},
