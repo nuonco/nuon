@@ -4,7 +4,7 @@ IMPORT github.com/powertoolsdev/shared-configs:main
 
 FROM ghcr.io/powertoolsdev/ci-go-builder-docker-compose
 
-WORKDIR /work
+WORKDIR /app
 
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
@@ -22,7 +22,13 @@ CACHE $GOMODCACHE
 
 build:
     DO +DEPS
+    ARG EARTHLY_TARGET_TAG_DOCKER
     RUN go build -o bin/service .
+    RUN go \
+        build \
+        -ldflags="-X 'github.com/powertoolsdev/go-config/pkg/config.Version=$EARTHLY_TARGET_TAG_DOCKER'" \
+        -o bin/service \
+        .
     SAVE ARTIFACT bin/service /service
     SAVE IMAGE --push $GHCR_IMAGE:build
 
@@ -42,11 +48,11 @@ docker:
     ARG EARTHLY_GIT_SHORT_HASH
     ARG EARTHLY_SOURCE_DATE_EPOCH
     ARG EARTHLY_TARGET_PROJECT_NO_TAG
-    ARG cache_tag=$EARTHLY_TARGET_TAG_DOCKER
     ARG EARTHLY_TARGET_TAG_DOCKER
 
     # These are set to run locally. They _must_ be overridden in CI.
     ARG repo=$EARTHLY_TARGET_PROJECT_NO_TAG
+    ARG cache_tag=$EARTHLY_TARGET_TAG_DOCKER
     ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
     COPY +build/service /bin/service
@@ -70,7 +76,6 @@ helm-bump-and-publish:
     DO shared-configs+HELM_RELEASE \
         --chart_version=$chart_version \
         --repos=$repos
-    SAVE IMAGE --push $GHCR_IMAGE:helm
 
 deploy:
     FROM ghcr.io/powertoolsdev/ci-helm-releaser
@@ -99,7 +104,6 @@ deploy:
         --chart_version=$chart_version \
         --repository=$repository \
         --image_tag=$image_tag
-    SAVE IMAGE --push $GHCR_IMAGE:deploy
 
 test:
     DO +DEPS
