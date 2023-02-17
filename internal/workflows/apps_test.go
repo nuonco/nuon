@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
 	appsv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
 	"github.com/stretchr/testify/assert"
@@ -37,8 +38,8 @@ func Test_appWorkflowManager_Provision(t *testing.T) {
 				assert.True(t, ok)
 
 				assert.True(t, ok)
-				assert.Equal(t, app.ID.String(), req.AppId)
-				assert.Equal(t, app.OrgID.String(), req.OrgId)
+				assert.Equal(t, shortid.ParseUUID(app.ID), req.AppId)
+				assert.Equal(t, shortid.ParseUUID(app.OrgID), req.OrgId)
 			},
 		},
 		"error": {

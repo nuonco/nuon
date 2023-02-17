@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	"github.com/stretchr/testify/assert"
@@ -44,10 +45,11 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 
 				// make sure all ids are correcctly set
 				app := deployment.Component.App
-				assert.Equal(t, deployment.ID.String(), req.DeploymentId)
-				assert.Equal(t, app.ID.String(), req.AppId)
-				assert.Equal(t, app.OrgID.String(), req.OrgId)
-				assert.Equal(t, install.ID.String(), req.InstallIds[0])
+
+				assert.Equal(t, shortid.ParseUUID(deployment.ID), req.DeploymentId)
+				assert.Equal(t, shortid.ParseUUID(app.ID), req.AppId)
+				assert.Equal(t, shortid.ParseUUID(app.OrgID), req.OrgId)
+				assert.Equal(t, shortid.ParseUUID(deployment.Component.ID), req.Component.Id)
 			},
 		},
 		"error": {

@@ -2,7 +2,9 @@ package workflows
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/powertoolsdev/go-common/shortid"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	tclient "go.temporal.io/sdk/client"
 )
@@ -29,12 +31,22 @@ type OrgWorkflowManager interface {
 var _ OrgWorkflowManager = (*orgWorkflowManager)(nil)
 
 func (o *orgWorkflowManager) Provision(ctx context.Context, orgID string) error {
+	orgID, err := shortid.ParseString(orgID)
+	if err != nil {
+		return fmt.Errorf("unable to parse shortid from orgID: %w", err)
+	}
+
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: orgTaskQueue,
+		// Memo is non-indexed metadata available when listing workflows
+		Memo: map[string]interface{}{
+			"org-id":     orgID,
+			"started-by": "api",
+		},
 	}
 	args := &orgsv1.SignupRequest{OrgId: orgID, Region: "us-west-2"}
 
-	_, err := o.tc.ExecuteWorkflow(ctx, opts, "Signup", args)
+	_, err = o.tc.ExecuteWorkflow(ctx, opts, "Signup", args)
 	return err
 }
 
@@ -44,11 +56,21 @@ type orgDeprovisionArgs struct {
 }
 
 func (o *orgWorkflowManager) Deprovision(ctx context.Context, orgID string) error {
+	orgID, err := shortid.ParseString(orgID)
+	if err != nil {
+		return fmt.Errorf("unable to parse shortid from orgID: %w", err)
+	}
+
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: orgTaskQueue,
+		// Memo is non-indexed metadata available when listing workflows
+		Memo: map[string]interface{}{
+			"org-id":     orgID,
+			"started-by": "api",
+		},
 	}
 	args := orgDeprovisionArgs{OrgID: orgID, Region: "us-west-2"}
 
-	_, err := o.tc.ExecuteWorkflow(ctx, opts, "Teardown", args)
+	_, err = o.tc.ExecuteWorkflow(ctx, opts, "Teardown", args)
 	return err
 }
