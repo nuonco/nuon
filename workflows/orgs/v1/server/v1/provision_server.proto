@@ -8,7 +8,7 @@ import "validate/validate.proto";
 message ProvisionServerRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 
   string region = 2 [

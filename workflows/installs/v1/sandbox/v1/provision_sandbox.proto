@@ -11,15 +11,15 @@ import "validate/validate.proto";
 message ProvisionSandboxRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string app_id = 2 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string install_id = 3 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 
   AccountSettings account_settings = 4;

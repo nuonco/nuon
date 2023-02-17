@@ -9,12 +9,12 @@ message ProvisionRequest {
   bool dry_run = 1;
 
   string org_id = 2 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string app_id = 3 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 

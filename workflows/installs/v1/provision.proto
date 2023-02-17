@@ -10,16 +10,16 @@ import "validate/validate.proto";
 // ProvisionRequest: provision a nuon sandbox and runner
 message ProvisionRequest {
   string org_id = 1 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string app_id = 2 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string install_id = 3 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
   ];
 
   AccountSettings account_settings = 4;
