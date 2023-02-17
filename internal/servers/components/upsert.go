@@ -51,10 +51,15 @@ func (s *server) UpsertComponent(
 
 	component, err := s.Svc.UpsertComponent(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("unable to upsert component: %w", err)
+		return nil, fmt.Errorf("failed to upsert component: %w", err)
+	}
+
+	componentToProto, err := converters.ComponentModelToProto(component)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert to proto: %w", err)
 	}
 
 	return connect.NewResponse(&componentv1.UpsertComponentResponse{
-		Component: converters.ComponentModelToProto(component),
+		Component: componentToProto,
 	}), nil
 }

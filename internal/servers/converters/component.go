@@ -1,6 +1,8 @@
 package converters
 
 import (
+	"fmt"
+
 	"github.com/powertoolsdev/api/internal/models"
 	componentv1 "github.com/powertoolsdev/protos/api/generated/types/component/v1"
 	componentConfig "github.com/powertoolsdev/protos/components/generated/types/component/v1"
@@ -38,10 +40,10 @@ func ProtoToComponentType(input componentv1.ComponentType) models.ComponentType 
 }
 
 // Component model to proto converts component domain model into component proto message
-func ComponentModelToProto(component *models.Component) *componentv1.ComponentRef {
+func ComponentModelToProto(component *models.Component) (*componentv1.ComponentRef, error) {
 	config := &componentConfig.Component{}
 	if err := protojson.Unmarshal([]byte(component.Config.String()), config); err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 
 	res := &componentv1.ComponentRef{
@@ -66,15 +68,19 @@ func ComponentModelToProto(component *models.Component) *componentv1.ComponentRe
 		}
 	}
 
-	return res
+	return res, nil
 }
 
 // ComponentModelsToProtos converts a slice of component models to protos
-func ComponentModelsToProtos(components []*models.Component) []*componentv1.ComponentRef {
+func ComponentModelsToProtos(components []*models.Component) ([]*componentv1.ComponentRef, error) {
 	protos := make([]*componentv1.ComponentRef, len(components))
 	for idx, component := range components {
-		protos[idx] = ComponentModelToProto(component)
+		protoComponent, err := ComponentModelToProto(component)
+		if err != nil {
+			return nil, err
+		}
+		protos[idx] = protoComponent
 	}
 
-	return protos
+	return protos, nil
 }
