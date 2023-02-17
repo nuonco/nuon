@@ -130,7 +130,7 @@ func runInstallWorkers(c client.Client, cfg shared.Config, interruptCh <-chan in
 	w.RegisterWorkflow(prWorkflow.Provision)
 	w.RegisterWorkflow(prRWorkflow.ProvisionRunner)
 	w.RegisterWorkflow(prSWorkflow.ProvisionSandbox)
-	w.RegisterActivity(provision.NewProvisionActivities(cfg, n))
+	w.RegisterActivity(provision.NewActivities(cfg, n))
 	w.RegisterActivity(sandbox.NewActivities(cfg))
 	w.RegisterActivity(runner.NewActivities(cfg))
 

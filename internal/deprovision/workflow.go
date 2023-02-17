@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/go-common/shortid"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	workers "github.com/powertoolsdev/workers-installs/internal"
 	"go.temporal.io/sdk/workflow"
@@ -47,25 +46,6 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	// parse IDs into short IDs, and use them for all subsequent requests
-	orgID, err := shortid.ParseString(req.OrgId)
-	if err != nil {
-		return resp, fmt.Errorf("unable to get short org ID: %w", err)
-	}
-	appID, err := shortid.ParseString(req.AppId)
-	if err != nil {
-		return resp, fmt.Errorf("unable to get short org ID: %w", err)
-	}
-	installID, err := shortid.ParseString(req.InstallId)
-	if err != nil {
-		return resp, fmt.Errorf("unable to get short install ID: %w", err)
-	}
-
-	// NOTE(jm): set the ids to short ids on the request, so every other part of this workflow uses shortids
-	req.AppId = appID
-	req.OrgId = orgID
-	req.InstallId = installID
-
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 60 * time.Minute,
 	}
@@ -77,7 +57,7 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 		DeprovisionRequest:  req,
 		InstallationsBucket: w.cfg.InstallationsBucket,
 	}
-	_, err = execStart(ctx, act, stReq)
+	_, err := execStart(ctx, act, stReq)
 	if err != nil {
 		l.Debug("unable to execute start activity: %w", err)
 		return resp, fmt.Errorf("unable to execute start activity: %w", err)

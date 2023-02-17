@@ -146,6 +146,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 		OrgServerAddr:        orgServerAddr,
 		InstallID:            req.InstallId,
 		OrgID:                req.OrgId,
+		AwsRegion:            req.Region,
 	}
 	_, err = createWaypointRunnerProfile(ctx, act, cwrpReq)
 	if err != nil {
