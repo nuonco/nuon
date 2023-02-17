@@ -4,42 +4,23 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/jaswdr/faker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/go-common/shortid"
+	"github.com/powertoolsdev/go-generics"
 	appv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
-	workers "github.com/powertoolsdev/workers-apps/internal"
+	"github.com/powertoolsdev/workers-apps/internal"
 	"github.com/powertoolsdev/workers-apps/internal/provision/project"
 	"github.com/powertoolsdev/workers-apps/internal/provision/repository"
 )
 
-func getFakeConfig() workers.Config {
-	fkr := faker.New()
-	var cfg workers.Config
-	fkr.Struct().Fill(&cfg)
-	return cfg
-}
-
-func getFakeProvisionRequest() *appv1.ProvisionRequest {
-	fkr := faker.New()
-	var req appv1.ProvisionRequest
-	fkr.Struct().Fill(&req)
-
-	req.OrgId = uuid.NewString()
-	req.AppId = uuid.NewString()
-	return &req
-}
-
 func Test_Workflow(t *testing.T) {
-	cfg := getFakeConfig()
-	req := getFakeProvisionRequest()
+	cfg := generics.GetFakeObj[internal.Config]()
+	req := generics.GetFakeObj[*appv1.ProvisionRequest]()
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
@@ -53,18 +34,12 @@ func Test_Workflow(t *testing.T) {
 
 	a := NewActivities()
 
-	orgShortID, err := shortid.ParseString(req.OrgId)
-	require.NoError(t, err)
-
-	appShortID, err := shortid.ParseString(req.AppId)
-	require.NoError(t, err)
-
 	env.OnWorkflow(repoWkflow.ProvisionRepository, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r repository.ProvisionRepositoryRequest) (repository.ProvisionRepositoryResponse, error) {
 			var resp repository.ProvisionRepositoryResponse
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, orgShortID, r.OrgID)
-			assert.Equal(t, appShortID, r.AppID)
+			assert.Equal(t, req.OrgId, r.OrgID)
+			assert.Equal(t, req.AppId, r.AppID)
 			return resp, nil
 		})
 
@@ -72,8 +47,8 @@ func Test_Workflow(t *testing.T) {
 		Return(func(ctx workflow.Context, r project.ProvisionProjectRequest) (project.ProvisionProjectResponse, error) {
 			var resp project.ProvisionProjectResponse
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, orgShortID, r.OrgID)
-			assert.Equal(t, appShortID, r.AppID)
+			assert.Equal(t, req.OrgId, r.OrgID)
+			assert.Equal(t, req.AppId, r.AppID)
 			return resp, nil
 		})
 	env.OnActivity(a.StartProvisionRequest, mock.Anything, mock.Anything).

@@ -7,7 +7,6 @@ import (
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/go-common/shortid"
 	appv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
 	workers "github.com/powertoolsdev/workers-apps/internal"
 	"github.com/powertoolsdev/workers-apps/internal/provision/project"
@@ -38,24 +37,15 @@ func (w Workflow) Provision(ctx workflow.Context, req *appv1.ProvisionRequest) (
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	orgShortID, err := shortid.ParseString(req.OrgId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse orgId to shortID: %w", err)
-	}
-	appShortID, err := shortid.ParseString(req.AppId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse appID to shortID: %w", err)
-	}
-
-	err = w.startWorkflow(ctx, req)
+	err := w.startWorkflow(ctx, req)
 	if err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
 		return &resp, err
 	}
 
 	prRequest := repository.ProvisionRepositoryRequest{
-		OrgID: orgShortID,
-		AppID: appShortID,
+		OrgID: req.OrgId,
+		AppID: req.AppId,
 	}
 	prResp, err := execProvisionRepository(ctx, w.cfg, prRequest)
 	if err != nil {
@@ -66,8 +56,8 @@ func (w Workflow) Provision(ctx workflow.Context, req *appv1.ProvisionRequest) (
 	l.Debug("successfully provisioned repository: %w", prResp)
 
 	ppReq := project.ProvisionProjectRequest{
-		OrgID: orgShortID,
-		AppID: appShortID,
+		OrgID: req.OrgId,
+		AppID: req.AppId,
 	}
 	ppResp, err := execProvisionProject(ctx, w.cfg, ppReq)
 	if err != nil {

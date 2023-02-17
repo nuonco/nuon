@@ -6,18 +6,11 @@ import (
 	"testing"
 
 	"github.com/hashicorp/waypoint/pkg/server/gen"
-	"github.com/jaswdr/faker"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 )
-
-func getFakeUpsertWaypointWorkspaceRequest() UpsertWaypointWorkspaceRequest {
-	fkr := faker.New()
-	var req UpsertWaypointWorkspaceRequest
-	fkr.Struct().Fill(&req)
-	return req
-}
 
 type testWaypointClientWorkspaceUpserter struct {
 	mock.Mock
@@ -35,7 +28,7 @@ func (t *testWaypointClientWorkspaceUpserter) UpsertWorkspace(ctx context.Contex
 var _ waypointClientWorkspaceUpserter = (*testWaypointClientWorkspaceUpserter)(nil)
 
 func Test_wpWorkspaceUpserter_upsertWaypointWorkspace(t *testing.T) {
-	req := getFakeUpsertWaypointWorkspaceRequest()
+	req := generics.GetFakeObj[UpsertWaypointWorkspaceRequest]()
 	errUpsertWaypointWorkspace := fmt.Errorf("upsert waypoint workspace")
 
 	tests := map[string]struct {
