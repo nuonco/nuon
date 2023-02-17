@@ -104,8 +104,8 @@ github.com/hashicorp/hcl/v2 v2.10.1-0.20210621220818-327f3ce2570e h1:ZloftGcVtVB
 github.com/hashicorp/hcl/v2 v2.10.1-0.20210621220818-327f3ce2570e/go.mod h1:FwWsfWEjyV/CMj8s/gqAuiviY72rJ1/oayI9WftqcKg=
 github.com/hashicorp/opaqueany v0.0.0-20220321170339-a5c6ff5bb0ec h1:WfdoyL0vJ+mQWaUdzNMkk+o1ACVa6aO2i9AzGPboF5k=
 github.com/hashicorp/opaqueany v0.0.0-20220321170339-a5c6ff5bb0ec/go.mod h1:adXen43rUDlxaaEpSsu3lcG4bfteZNptunpxPvx0sW8=
-github.com/hashicorp/waypoint v0.10.5 h1:4OtnclwPuk6FAanT1VKpNT3PGgutPQfq29Xh5xfFgEw=
-github.com/hashicorp/waypoint v0.10.5/go.mod h1:WFtbewMw7r5Y+EKvIg360CTmEreKYXmDwMt4v3AD5F0=
+github.com/hashicorp/waypoint v0.11.0 h1:lUAKsmHi2bnfIL9SQUgdzU2T084vjQ/o59qPA/w4X6w=
+github.com/hashicorp/waypoint v0.11.0/go.mod h1:BZi8e9Jdp9sOClK8BzU7DktYC2cUeKflGWxsyBjlFAE=
 github.com/imdario/mergo v0.3.13 h1:lFzP57bqS/wsqKssCGmtLAb8A0wKjLGrve2q3PPVcBk=
 github.com/imdario/mergo v0.3.13/go.mod h1:4lJ1jqUDcsbIECGy0RUJAXNIhg+6ocWgb1ALK2O4oXg=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=
