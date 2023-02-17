@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/go-common/shortid"
 	appsv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
 	tclient "go.temporal.io/sdk/client"
 )
@@ -27,12 +28,21 @@ type appWorkflowManager struct {
 }
 
 func (a *appWorkflowManager) Provision(ctx context.Context, app *models.App) error {
+	orgID := shortid.ParseUUID(app.OrgID)
+	appID := shortid.ParseUUID(app.ID)
+
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: "apps",
+		// Memo is non-indexed metadata available when listing workflows
+		Memo: map[string]interface{}{
+			"org-id":     orgID,
+			"app-id":     appID,
+			"started-by": "api",
+		},
 	}
 	args := appsv1.ProvisionRequest{
-		OrgId: app.OrgID.String(),
-		AppId: app.ID.String(),
+		OrgId: orgID,
+		AppId: appID,
 	}
 
 	_, err := a.tc.ExecuteWorkflow(ctx, opts, "Provision", &args)

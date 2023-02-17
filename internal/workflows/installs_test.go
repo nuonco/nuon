@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +20,11 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 	install.AWSSettings = generics.GetFakeObj[*models.AWSSettings]()
 	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
 
-	orgID := uuid.NewString()
+	reqOrgID := uuid.NewString()
+
+	shortIDs, err := shortid.ParseStrings(reqOrgID, install.AppID.String(), install.ID.String())
+	assert.NoError(t, err)
+	orgID, appID, installID := shortIDs[0], shortIDs[1], shortIDs[2]
 
 	tests := map[string]struct {
 		clientFn    func() temporalClient
@@ -42,8 +47,8 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 				assert.True(t, ok)
 
 				assert.Equal(t, orgID, req.OrgId)
-				assert.Equal(t, install.ID.String(), req.InstallId)
-				assert.Equal(t, install.AppID.String(), req.AppId)
+				assert.Equal(t, installID, req.InstallId)
+				assert.Equal(t, appID, req.AppId)
 				// validate account settings
 				assert.Equal(t, install.AWSSettings.Region.ToRegion(), req.AccountSettings.Region)
 				assert.Equal(t, install.AWSSettings.IamRoleArn, req.AccountSettings.AwsRoleArn)
@@ -67,7 +72,7 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 			client := test.clientFn()
 			mgr := NewInstallWorkflowManager(client)
 
-			err := mgr.Provision(context.Background(), install, orgID, sandboxVersion)
+			err := mgr.Provision(context.Background(), install, reqOrgID, sandboxVersion)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
@@ -84,7 +89,11 @@ func Test_installWorkflowManager_Deprovision(t *testing.T) {
 	install.AWSSettings = generics.GetFakeObj[*models.AWSSettings]()
 	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
 
-	orgID := uuid.NewString()
+	reqOrgID := uuid.NewString()
+
+	shortIDs, err := shortid.ParseStrings(reqOrgID, install.AppID.String(), install.ID.String())
+	assert.NoError(t, err)
+	orgID, appID, installID := shortIDs[0], shortIDs[1], shortIDs[2]
 
 	tests := map[string]struct {
 		clientFn    func() temporalClient
@@ -107,8 +116,8 @@ func Test_installWorkflowManager_Deprovision(t *testing.T) {
 				assert.True(t, ok)
 
 				assert.Equal(t, orgID, req.OrgId)
-				assert.Equal(t, install.ID.String(), req.InstallId)
-				assert.Equal(t, install.AppID.String(), req.AppId)
+				assert.Equal(t, installID, req.InstallId)
+				assert.Equal(t, appID, req.AppId)
 				// validate account settings
 				assert.Equal(t, install.AWSSettings.Region.ToRegion(), req.AccountSettings.Region)
 				assert.Equal(t, install.AWSSettings.IamRoleArn, req.AccountSettings.AwsRoleArn)
@@ -132,7 +141,7 @@ func Test_installWorkflowManager_Deprovision(t *testing.T) {
 			client := test.clientFn()
 			mgr := NewInstallWorkflowManager(client)
 
-			err := mgr.Deprovision(context.Background(), install, orgID, sandboxVersion)
+			err := mgr.Deprovision(context.Background(), install, reqOrgID, sandboxVersion)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

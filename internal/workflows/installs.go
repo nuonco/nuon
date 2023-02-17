@@ -2,8 +2,10 @@ package workflows
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/go-common/shortid"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
@@ -30,6 +32,13 @@ type InstallWorkflowManager interface {
 var _ InstallWorkflowManager = (*installWorkflowManager)(nil)
 
 func (i *installWorkflowManager) Provision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) error {
+	shortIDs, err := shortid.ParseStrings(orgID, install.AppID.String(), install.ID.String())
+	if err != nil {
+		return fmt.Errorf("unable to parse ids to shortids: %w", err)
+	}
+
+	orgID, appID, installID := shortIDs[0], shortIDs[1], shortIDs[2]
+
 	opts := tclient.StartWorkflowOptions{
 		ID:        orgID,
 		TaskQueue: "install",
@@ -39,15 +48,16 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
 			"org-id":     orgID,
-			"app-id":     install.AppID.String(),
-			"install-id": install.ID.String(),
+			"app-id":     appID,
+			"install-id": installID,
+			"started-by": "api",
 		},
 	}
 
 	args := &installsv1.ProvisionRequest{
 		OrgId:     orgID,
-		AppId:     install.AppID.String(),
-		InstallId: install.ID.String(),
+		AppId:     appID,
+		InstallId: installID,
 		AccountSettings: &installsv1.AccountSettings{
 			Region:       install.AWSSettings.Region.ToRegion(),
 			AwsAccountId: "548377525120",
@@ -59,19 +69,36 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 		},
 	}
 
-	_, err := i.tc.ExecuteWorkflow(ctx, opts, "Provision", args)
+	_, err = i.tc.ExecuteWorkflow(ctx, opts, "Provision", args)
 	return err
 }
 
 func (i *installWorkflowManager) Deprovision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) error {
+	shortIDs, err := shortid.ParseStrings(orgID, install.AppID.String(), install.ID.String())
+	if err != nil {
+		return fmt.Errorf("unable to parse ids to shortids: %w", err)
+	}
+
+	orgID, appID, installID := shortIDs[0], shortIDs[1], shortIDs[2]
+
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: "install",
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 1,
+		},
+		// Memo is non-indexed metadata available when listing workflows
+		Memo: map[string]interface{}{
+			"org-id":     orgID,
+			"app-id":     appID,
+			"install-id": installID,
+			"started-by": "api",
+		},
 	}
 
 	args := &installsv1.DeprovisionRequest{
 		OrgId:     orgID,
-		AppId:     install.AppID.String(),
-		InstallId: install.ID.String(),
+		AppId:     appID,
+		InstallId: installID,
 		AccountSettings: &installsv1.AccountSettings{
 			Region:       install.AWSSettings.Region.ToRegion(),
 			AwsAccountId: "548377525120",
@@ -83,6 +110,6 @@ func (i *installWorkflowManager) Deprovision(ctx context.Context, install *model
 		},
 	}
 
-	_, err := i.tc.ExecuteWorkflow(ctx, opts, "Deprovision", args)
+	_, err = i.tc.ExecuteWorkflow(ctx, opts, "Deprovision", args)
 	return err
 }

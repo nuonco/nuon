@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/go-common/shortid"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	tclient "go.temporal.io/sdk/client"
@@ -30,28 +30,42 @@ type DeploymentWorkflowManager interface {
 var _ DeploymentWorkflowManager = (*deploymentWorkflowManager)(nil)
 
 func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *models.Deployment) error {
+	app := deployment.Component.App
+	shortIDs, err := shortid.ParseStrings(app.OrgID.String(), app.ID.String(), deployment.Component.ID.String(), deployment.ID.String())
+	if err != nil {
+		return fmt.Errorf("unable to parse ids to shortids: %w", err)
+	}
+	orgID, appID, componentID, deploymentID := shortIDs[0], shortIDs[1], shortIDs[2], shortIDs[3]
+
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: "deployment",
+		// Memo is non-indexed metadata available when listing workflows
+		Memo: map[string]interface{}{
+			"org-id":        orgID,
+			"app-id":        appID,
+			"deployment-id": deploymentID,
+			"component-id":  componentID,
+			"started-by":    "api",
+		},
 	}
-
-	app := deployment.Component.App
 	req := &deploymentsv1.StartRequest{
-		OrgId:        app.OrgID.String(),
-		AppId:        app.ID.String(),
-		DeploymentId: deployment.ID.String(),
+		OrgId:        orgID,
+		AppId:        appID,
+		DeploymentId: deploymentID,
 		InstallIds:   make([]string, len(app.Installs)),
 
 		// TODO(jm): make this an actual component, instead of a hard coded component type
 		Component: &componentv1.Component{
-			Id:   uuid.NewString(),
+			Id:   componentID,
 			Name: deployment.Component.Name,
 		},
 	}
 	for idx, install := range app.Installs {
-		req.InstallIds[idx] = install.ID.String()
+		installID := shortid.ParseUUID(install.ID)
+		req.InstallIds[idx] = installID
 	}
 
-	_, err := d.tc.ExecuteWorkflow(ctx, opts, "Start", req)
+	_, err = d.tc.ExecuteWorkflow(ctx, opts, "Start", req)
 	if err != nil {
 		return fmt.Errorf("unable to start deployment: %w", err)
 	}
