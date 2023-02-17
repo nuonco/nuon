@@ -1,0 +1,89 @@
+package provision
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/powertoolsdev/go-sender"
+	"github.com/powertoolsdev/go-workflows-meta/prefix"
+	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
+)
+
+type notifier interface {
+	sendSuccessNotification(context.Context, string, *installsv1.ProvisionRequest) error
+	sendStartNotification(context.Context, string, *installsv1.ProvisionRequest) error
+	sendErrorNotification(context.Context, string, *installsv1.ProvisionRequest, string) error
+}
+
+var _ notifier = (*notifierImpl)(nil)
+
+type notifierImpl struct {
+	sender sender.NotificationSender
+}
+
+const errorNotificationTemplate string = `:rotating_light: _error provisioning sandbox_ :rotating_light:
+• *s3-path*: s3://%s/%s
+• *sandbox-name*: _%s_
+• *sandbox-version*: _%s_
+• *nuon-id*: _%s_
+• *error*: _%s_
+`
+
+func (n *notifierImpl) sendErrorNotification(ctx context.Context, bucket string, req *installsv1.ProvisionRequest, errMsg string) error {
+	prefix := prefix.InstallPath(req.OrgId, req.AppId, req.InstallId)
+
+	notif := fmt.Sprintf(errorNotificationTemplate,
+		bucket,
+		prefix,
+		req.SandboxSettings.Name,
+		req.SandboxSettings.Version,
+		req.InstallId,
+		errMsg)
+
+	return n.sender.Send(ctx, notif)
+}
+
+const successNotificationTemplate string = `:white_check_mark: _successfully provisioned sandbox_ :white_check_mark:
+• *s3-path*: s3://%s/%s
+• *sandbox-name*: _%s_
+• *sandbox-version*: _%s_
+• *nuon-id*: _%s_
+• *runner-id*: _%s_
+• *org-id*: _%s_
+`
+
+func (n *notifierImpl) sendSuccessNotification(ctx context.Context, bucket string, req *installsv1.ProvisionRequest) error {
+	s3Prefix := prefix.InstallPath(req.OrgId, req.AppId, req.InstallId)
+	notif := fmt.Sprintf(successNotificationTemplate,
+		bucket,
+		s3Prefix,
+		req.SandboxSettings.Name,
+		req.SandboxSettings.Version,
+		req.InstallId,
+		req.InstallId,
+		req.OrgId)
+
+	return n.sender.Send(ctx, notif)
+}
+
+const startNotificationTemplate = `:package: _started provisioning sandbox_ :package:
+• *s3-path*: s3://%s/%s
+• *sandbox-name*: _%s_
+• *sandbox-version*: _%s_
+• *role*: _%s_
+• *nuon-id*: _%s_
+`
+
+// sendStartNotification sends the start notification via the configured sender
+func (n *notifierImpl) sendStartNotification(ctx context.Context, bucket string, req *installsv1.ProvisionRequest) error {
+	prefix := prefix.InstallPath(req.OrgId, req.AppId, req.InstallId)
+
+	msg := fmt.Sprintf(startNotificationTemplate, bucket, prefix,
+		req.SandboxSettings.Name,
+		req.SandboxSettings.Version,
+		req.AccountSettings.AwsRoleArn,
+		req.InstallId,
+	)
+
+	return n.sender.Send(ctx, msg)
+}

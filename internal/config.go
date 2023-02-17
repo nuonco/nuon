@@ -1,4 +1,4 @@
-package install
+package internal
 
 import (
 	"github.com/go-playground/validator/v10"

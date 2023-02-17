@@ -19,6 +19,7 @@ type CreateWaypointRunnerProfileRequest struct {
 	OrgServerAddr        string `json:"org_server_address" validate:"required"`
 	OrgID                string `json:"org_id" validate:"required"`
 	InstallID            string `json:"install_id" validate:"required"`
+	AwsRegion            string `json:"aws_region" validate:"required"`
 }
 
 func (c CreateWaypointRunnerProfileRequest) validate() error {
@@ -34,7 +35,7 @@ func (a *Activities) CreateWaypointRunnerProfile(ctx context.Context, req Create
 		return resp, fmt.Errorf("failed to validate request: %w", err)
 	}
 
-	client, err := a.waypointProvider.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
+	client, err := a.Provider.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get org waypoint client: %w", err)
 	}
@@ -77,9 +78,11 @@ func (w *wpRunnerProfileCreator) createWaypointRunnerProfile(ctx context.Context
 "service_account": "%s",
 "image_pull_policy": "%s"
 }`, odrServiceAccount, defaultODRImagePullPolicy)),
-			ConfigFormat:         gen.Hcl_JSON,
-			Default:              false,
-			EnvironmentVariables: map[string]string{},
+			ConfigFormat: gen.Hcl_JSON,
+			Default:      false,
+			EnvironmentVariables: map[string]string{
+				"AWS_REGION_DEFAULT": req.AwsRegion,
+			},
 		},
 	})
 

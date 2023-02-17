@@ -17,7 +17,7 @@ type Activities struct {
 	Kubeconfig *rest.Config
 
 	// TODO(jm): refactor once we've finished all the waypoint setup work
-	waypointProvider waypoint.Provider
+	waypoint.Provider
 	waypointProjectCreator
 	waypointServerCookieGetter
 	waypointRunnerAdopter
@@ -30,7 +30,7 @@ func NewActivities(cfg workers.Config) *Activities {
 	return &Activities{
 		helmInstaller: helm.NewInstaller(),
 
-		waypointProvider:             waypoint.NewProvider(),
+		Provider:                     waypoint.NewProvider(),
 		waypointProjectCreator:       &wpProjectCreator{},
 		waypointServerCookieGetter:   &wpServerCookieGetter{},
 		waypointRunnerAdopter:        &wpRunnerAdopter{},

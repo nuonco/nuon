@@ -31,7 +31,7 @@ func (a *Activities) GetWaypointServerCookie(ctx context.Context, req GetWaypoin
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	client, err := a.waypointProvider.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
+	client, err := a.Provider.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get org waypoint client: %w", err)
 	}
