@@ -50,7 +50,6 @@ docker:
     ARG cache_tag=$EARTHLY_TARGET_TAG_DOCKER
     ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
-    BUILD +iamauthenticator
     COPY +build/service /bin/service
     COPY +iamauthenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
     RUN apk add --update --no-cache \
