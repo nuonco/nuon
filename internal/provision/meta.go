@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/go-common/shortid"
 	meta "github.com/powertoolsdev/go-workflows-meta"
 	"github.com/powertoolsdev/go-workflows-meta/prefix"
 	appsv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
@@ -78,15 +77,9 @@ func (w *Workflow) finishWorkflow(ctx workflow.Context, req *appsv1.ProvisionReq
 		errMessage = workflowErr.Error()
 	}
 
-	orgID, err := shortid.ParseString(req.OrgId)
-	if err != nil {
-		err = fmt.Errorf("unable to parse orgID: %w", err)
-		return
-	}
-
 	finishReq := &sharedv1.FinishActivityRequest{
 		MetadataBucket:              w.cfg.OrgsBucketName,
-		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsRoleTemplate, orgID),
+		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsRoleTemplate, req.OrgId),
 		MetadataBucketPrefix:        prefix.AppPath(req.OrgId, req.AppId),
 		ResponseRef:                 metaResponseFromResponse(resp),
 		Status:                      status,
