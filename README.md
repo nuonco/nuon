@@ -1,2 +1,4 @@
-# template-go-workers
-Template for creating a workers repository.
+# workers-apps
+
+Apps infra here.
+
