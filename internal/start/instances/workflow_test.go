@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/instances/v1"
@@ -19,7 +18,7 @@ import (
 func TestProvisionInstances(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
 	req := generics.GetFakeObj[*instancesv1.ProvisionRequest]()
-	req.InstallIds = []string{uuid.NewString()}
+	req.InstallIds = []string{shortid.New()}
 	wkflow := NewWorkflow(cfg)
 	testSuite := &testsuite.WorkflowTestSuite{}
 
@@ -32,9 +31,7 @@ func TestProvisionInstances(t *testing.T) {
 			assert.Nil(t, pr.Validate())
 			assert.Equal(t, req.OrgId, pr.OrgId)
 
-			installID, err := shortid.ParseString(req.InstallIds[0])
-			assert.NoError(t, err)
-			assert.Equal(t, installID, pr.InstallId)
+			assert.Equal(t, req.InstallIds[0], pr.InstallId)
 
 			return &provisionv1.ProvisionResponse{}, nil
 		})

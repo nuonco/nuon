@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-workflows-meta/prefix"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
@@ -95,10 +94,6 @@ func TestStart(t *testing.T) {
 	err := req.Validate()
 	assert.NoError(t, err)
 
-	shortIDs, err := shortid.ParseStrings(req.OrgId, req.AppId, req.DeploymentId)
-	assert.NoError(t, err)
-	orgID, appID, deploymentID := shortIDs[0], shortIDs[1], shortIDs[2]
-
 	// Mock activity implementation
 	env.OnActivity(act.StartStartRequest, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, r *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
@@ -106,9 +101,9 @@ func TestStart(t *testing.T) {
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, cfg.DeploymentsBucket, r.MetadataBucket)
 
-			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgID)
+			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, req.OrgId)
 			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
-			expectedPrefix := prefix.DeploymentPath(orgID, appID, req.Component.Name, deploymentID)
+			expectedPrefix := prefix.DeploymentPath(req.OrgId, req.AppId, req.Component.Id, req.DeploymentId)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
@@ -119,9 +114,9 @@ func TestStart(t *testing.T) {
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, cfg.DeploymentsBucket, r.MetadataBucket)
 
-			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, orgID)
+			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, req.OrgId)
 			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
-			expectedPrefix := prefix.DeploymentPath(orgID, appID, req.Component.Name, deploymentID)
+			expectedPrefix := prefix.DeploymentPath(req.OrgId, req.AppId, req.Component.Id, req.DeploymentId)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
@@ -132,7 +127,7 @@ func TestStart(t *testing.T) {
 				PlanRef: planRef,
 			}
 			assert.Nil(t, br.Validate())
-			assert.Equal(t, orgID, br.OrgId)
+			assert.Equal(t, req.OrgId, br.OrgId)
 			return resp, nil
 		})
 
@@ -140,9 +135,9 @@ func TestStart(t *testing.T) {
 		Return(func(ctx workflow.Context, r *instancesv1.ProvisionRequest) (*instancesv1.ProvisionResponse, error) {
 			resp := &instancesv1.ProvisionResponse{}
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, orgID, r.OrgId)
-			assert.Equal(t, appID, r.AppId)
-			assert.Equal(t, deploymentID, r.DeploymentId)
+			assert.Equal(t, req.OrgId, r.OrgId)
+			assert.Equal(t, req.AppId, r.AppId)
+			assert.Equal(t, req.DeploymentId, r.DeploymentId)
 			assert.True(t, proto.Equal(req.Component, r.Component))
 			return resp, nil
 		})
