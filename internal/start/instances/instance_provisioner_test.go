@@ -17,12 +17,19 @@ func TestInstanceProvisioner_startWorkflow(t *testing.T) {
 	ip := instanceProvisioner{}
 	req := generics.GetFakeObj[*provisionv1.ProvisionRequest]()
 
-	expectedOpts := tclient.StartWorkflowOptions{TaskQueue: "instance"}
+	expectedOpts := tclient.StartWorkflowOptions{TaskQueue: "instance",
+		Memo: map[string]interface{}{
+			"org-id":        req.OrgId,
+			"app-id":        req.AppId,
+			"deployment-id": req.DeploymentId,
+			"install-id":    req.InstallId,
+		},
+	}
 	workflowRun := &tmock.WorkflowRun{}
-	workflowRun.On("GetID").Return("abc")
+
+	workflowRun.On("Get", mock.Anything, mock.Anything).Return(nil)
 	tc.On("ExecuteWorkflow", mock.Anything, expectedOpts, "Provision", req).Return(workflowRun, nil)
 
-	workflowID, err := ip.startWorkflow(context.Background(), tc, req)
+	err := ip.startWorkflow(context.Background(), tc, req)
 	assert.Nil(t, err)
-	assert.Equal(t, workflowRun.GetID(), workflowID)
 }

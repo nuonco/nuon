@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/go-common/shortid"
 	instancesv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1/instances/v1"
@@ -63,7 +64,7 @@ func (w *wkflow) ProvisionInstances(ctx workflow.Context, req *instancesv1.Provi
 
 		_, err = execProvisionInstanceActivity(ctx, act, actReq)
 		if err != nil {
-			return resp, fmt.Errorf("unable to execute provision instance activity: %w", err)
+			l.Error("failed to provision instance", zap.Error(err))
 		}
 	}
 
