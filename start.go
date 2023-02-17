@@ -42,6 +42,7 @@ func (s *startActivity) StartRequest(ctx context.Context, req *sharedv1.StartAct
 	// create upload client
 	uploadClient, err := uploader.NewS3Uploader(s.v,
 		uploader.WithBucketName(req.MetadataBucket),
+		uploader.WithPrefix(req.MetadataBucketPrefix),
 		uploader.WithAssumeSessionName(req.MetadataBucket),
 		uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleArn))
 
