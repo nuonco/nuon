@@ -726,6 +726,8 @@ github.com/powertoolsdev/go-waypoint v1.0.0 h1:GENBqQoXuCa3zsMDRNA+mjFpp0H/oiWuj
 github.com/powertoolsdev/go-waypoint v1.0.0/go.mod h1:BWBSiz8ub+tkeDN1iy4t1OvMOwJypGNCNUYeroE9gHc=
 github.com/powertoolsdev/go-workflows-meta v0.6.1 h1:zqtIgzzdHwDbStnVsoMvUdypAeA5G3IQhJN8Ju0Efbs=
 github.com/powertoolsdev/go-workflows-meta v0.6.1/go.mod h1:xrTnzuc2cxaDPmAoATATKNMrFY+lzoNewjPpJO7MHa0=
+github.com/powertoolsdev/go-workflows-meta v0.6.2 h1:n0eAQAEytZau0vBn6zRG/crZGizgF9uobgqGHSyll9o=
+github.com/powertoolsdev/go-workflows-meta v0.6.2/go.mod h1:xrTnzuc2cxaDPmAoATATKNMrFY+lzoNewjPpJO7MHa0=
 github.com/powertoolsdev/protos v0.68.7 h1:GF2+f5mtAsXT5zUoK2irHpzQTvi985CLOWG1NLcybso=
 github.com/powertoolsdev/protos v0.68.7/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
