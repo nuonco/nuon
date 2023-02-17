@@ -13,7 +13,10 @@ option go_package = "github.com/powertoolsdev/protos/components/generated/types/
 message Component {
   string name = 1 [(validate.rules).string.min_bytes = 1];
 
-  string id = 2 [(validate.rules).string.min_bytes = 1];
+  string id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
 
   build.v1.Config build_cfg = 3 [(tagger.tags) = "faker:\"-\""];
   deploy.v1.Config deploy_cfg = 4 [(tagger.tags) = "faker:\"-\""];

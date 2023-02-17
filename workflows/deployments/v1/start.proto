@@ -10,16 +10,16 @@ import "validate/validate.proto";
 // StartRequest represents a workflow input for creating a deployment
 message StartRequest {
   string org_id = 1 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string app_id = 2 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string deployment_id = 3 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
   ];
 
   repeated string install_ids = 4 [(validate.rules).repeated.min_items = 1];

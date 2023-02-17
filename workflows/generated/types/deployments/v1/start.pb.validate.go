@@ -35,9 +35,6 @@ var (
 	_ = sort.Sort
 )
 
-// define the regex for a UUID once up-front
-var _start_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-
 // Validate checks the field values on StartRequest with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -60,40 +57,40 @@ func (m *StartRequest) validate(all bool) error {
 
 	var errors []error
 
-	if err := m._validateUuid(m.GetOrgId()); err != nil {
-		err = StartRequestValidationError{
+	if utf8.RuneCountInString(m.GetOrgId()) != 26 {
+		err := StartRequestValidationError{
 			field:  "OrgId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+			reason: "value length must be 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
+
 	}
 
-	if err := m._validateUuid(m.GetAppId()); err != nil {
-		err = StartRequestValidationError{
+	if utf8.RuneCountInString(m.GetAppId()) != 26 {
+		err := StartRequestValidationError{
 			field:  "AppId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+			reason: "value length must be 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
+
 	}
 
-	if err := m._validateUuid(m.GetDeploymentId()); err != nil {
-		err = StartRequestValidationError{
+	if utf8.RuneCountInString(m.GetDeploymentId()) != 26 {
+		err := StartRequestValidationError{
 			field:  "DeploymentId",
-			reason: "value must be a valid UUID",
-			cause:  err,
+			reason: "value length must be 26 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
+
 	}
 
 	if len(m.GetInstallIds()) < 1 {
@@ -140,14 +137,6 @@ func (m *StartRequest) validate(all bool) error {
 
 	if len(errors) > 0 {
 		return StartRequestMultiError(errors)
-	}
-
-	return nil
-}
-
-func (m *StartRequest) _validateUuid(uuid string) error {
-	if matched := _start_uuidPattern.MatchString(uuid); !matched {
-		return errors.New("invalid uuid format")
 	}
 
 	return nil
