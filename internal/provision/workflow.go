@@ -40,12 +40,16 @@ func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionReq
 	l := workflow.GetLogger(ctx)
 
 	planReq := &planv1.CreatePlanRequest{
-		OrgId:        req.OrgId,
-		AppId:        req.AppId,
-		DeploymentId: req.DeploymentId,
-		InstallId:    req.InstallId,
-		Component:    req.Component,
-		Type:         typ,
+		Input: &planv1.CreatePlanRequest_Component{
+			Component: &planv1.Component{
+				OrgId:        req.OrgId,
+				AppId:        req.AppId,
+				DeploymentId: req.DeploymentId,
+				InstallId:    req.InstallId,
+				Component:    req.Component,
+			},
+		},
+		Type: typ,
 	}
 	planResp, err := execCreatePlan(ctx, planReq)
 	if err != nil {
