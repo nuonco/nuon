@@ -1,0 +1,41 @@
+package deployments
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/google/uuid"
+	"github.com/powertoolsdev/go-common/shortid"
+	"github.com/powertoolsdev/nuonctl/internal/commands/deployments/presets"
+	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
+)
+
+// this file contains shared tooling for emitting deployments and observing a single install
+
+// installPresetRequest returns a request for a preset, for the specified install
+func (c *commands) installPresetRequest(ctx context.Context, installID string, componentPreset string) (*deploymentsv1.StartRequest, error) {
+	req, err := c.Workflows.GetInstallProvisionRequest(ctx, installID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install provision request: %w", err)
+	}
+
+	presetComp, err := presets.New(c.v, componentPreset)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get preset: %w", err)
+	}
+
+	deploymentID := uuid.NewString()
+	ids, err := shortid.ToUUIDs(req.OrgId, req.AppId, req.InstallId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid install ids: %w", err)
+	}
+
+	return &deploymentsv1.StartRequest{
+		OrgId:        ids[0].String(),
+		AppId:        ids[1].String(),
+		DeploymentId: deploymentID,
+		InstallIds:   []string{ids[2].String()},
+		Component:    presetComp,
+		PlanOnly:     true,
+	}, nil
+}

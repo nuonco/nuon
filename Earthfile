@@ -44,6 +44,7 @@ DEPS:
     COPY go.mod go.sum .
     COPY *.go .
     COPY --dir cmd .
+    COPY --dir internal .
     DO shared-configs+SETUP_SSH --GITHUB_ACTIONS=$GITHUB_ACTIONS
     RUN --ssh git config --global --add safe.directory "$(pwd)" \
         && go mod download
