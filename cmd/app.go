@@ -76,6 +76,7 @@ func runAppWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interf
 
 	wkflow := provision.NewWorkflow(cfg)
 	w.RegisterWorkflow(wkflow.Provision)
+	w.RegisterActivity(provision.NewActivities())
 
 	// register provision/project workflow
 	pwkflow := project.NewWorkflow(cfg)
