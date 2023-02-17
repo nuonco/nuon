@@ -911,6 +911,8 @@ github.com/powertoolsdev/go-workflows-meta v0.4.0 h1:RtOnj3eBEIn5eFZL7myL+FYDTB0
 github.com/powertoolsdev/go-workflows-meta v0.4.0/go.mod h1:f+h6Hg7V/leR9voU9mUwp2FbkJpMtYfjnOBvzs3OTC4=
 github.com/powertoolsdev/go-workflows-meta v0.6.0 h1:aCtcU1pxrjwWQnfy59AWXEB24WfzYMTfaB9eh3zHt8w=
 github.com/powertoolsdev/go-workflows-meta v0.6.0/go.mod h1:xrTnzuc2cxaDPmAoATATKNMrFY+lzoNewjPpJO7MHa0=
+github.com/powertoolsdev/go-workflows-meta v0.6.2 h1:n0eAQAEytZau0vBn6zRG/crZGizgF9uobgqGHSyll9o=
+github.com/powertoolsdev/go-workflows-meta v0.6.2/go.mod h1:xrTnzuc2cxaDPmAoATATKNMrFY+lzoNewjPpJO7MHa0=
 github.com/powertoolsdev/protos v0.67.3 h1:kFrNLkPsS3u4s8EVLQ04EoqOiinfDy6WH3Kr9J0zCB8=
 github.com/powertoolsdev/protos v0.67.3/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
 github.com/powertoolsdev/protos v0.67.4 h1:wXXragGr1DL4UDhHiCxNUpDoHXRlv7DqEiBBvFzpggo=
