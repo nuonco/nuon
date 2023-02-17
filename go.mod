@@ -10,15 +10,14 @@ require (
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/waypoint v0.10.5
-	github.com/jaswdr/faker v1.16.0
-	github.com/powertoolsdev/go-common v1.4.1
-	github.com/powertoolsdev/go-generics v0.0.1
+	github.com/powertoolsdev/go-common v1.5.0
+	github.com/powertoolsdev/go-generics v0.1.0
 	github.com/powertoolsdev/go-waypoint v1.0.0
-	github.com/powertoolsdev/go-workflows-meta v0.5.0
-	github.com/powertoolsdev/protos v0.62.0
+	github.com/powertoolsdev/go-workflows-meta v0.6.1
+	github.com/powertoolsdev/protos v0.68.8
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
-	go.temporal.io/sdk v1.21.0
+	go.temporal.io/sdk v1.21.1
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.53.0
 )

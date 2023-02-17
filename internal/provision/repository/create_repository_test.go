@@ -9,18 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/google/uuid"
-	"github.com/jaswdr/faker"
 	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-func getFakeCreateRepositoryRequest() CreateRepositoryRequest {
-	fkr := faker.New()
-	var req CreateRepositoryRequest
-	fkr.Struct().Fill(&req)
-	return req
-}
 
 type testAwsClientIamRoleAssumer struct {
 	mock.Mock
@@ -116,7 +108,7 @@ func (t *testAwsEcrRepoCreator) CreateRepository(
 }
 
 func TestCreateRepository_createRepository(t *testing.T) {
-	req := getFakeCreateRepositoryRequest()
+	req := generics.GetFakeObj[CreateRepositoryRequest]()
 	createRepoErr := fmt.Errorf("test-create-repo-err")
 
 	tests := map[string]struct {

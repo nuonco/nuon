@@ -4,31 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jaswdr/faker"
-	workers "github.com/powertoolsdev/workers-apps/internal"
+	"github.com/powertoolsdev/go-generics"
+	"github.com/powertoolsdev/workers-apps/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 )
 
-func getFakeConfig() workers.Config {
-	fkr := faker.New()
-	var cfg workers.Config
-	fkr.Struct().Fill(&cfg)
-	return cfg
-}
-
-func getFakeProvisionRepositoryRequest() ProvisionRepositoryRequest {
-	fkr := faker.New()
-	var req ProvisionRepositoryRequest
-	fkr.Struct().Fill(&req)
-	return req
-}
-
 func TestRunner(t *testing.T) {
-	cfg := getFakeConfig()
-	req := getFakeProvisionRepositoryRequest()
+	cfg := generics.GetFakeObj[internal.Config]()
+	req := generics.GetFakeObj[ProvisionRepositoryRequest]()
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
