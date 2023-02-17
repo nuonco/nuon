@@ -88,11 +88,14 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 
 	if err := w.startWorkflow(ctx, req); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
 
 	imageSyncPlanRef, err := w.planAndExec(ctx, req, planv1.PlanType_PLAN_TYPE_WAYPOINT_SYNC_IMAGE)
 	if err != nil {
+		err = fmt.Errorf("unable to sync image: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
 		return resp, nil
 	}
 	resp.ImageSyncPlan = imageSyncPlanRef
@@ -100,6 +103,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 
 	// TODO(jm): remove this once deploy plans work
 	l.Debug("returning early until deployments work")
+	w.finishWorkflow(ctx, req, resp, nil)
 	return resp, nil
 
 	deployPlanRef, err := w.planAndExec(ctx, req, planv1.PlanType_PLAN_TYPE_WAYPOINT_DEPLOY)
