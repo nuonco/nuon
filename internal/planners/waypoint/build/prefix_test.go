@@ -22,6 +22,6 @@ func TestPlanner_Prefix(t *testing.T) {
 
 	assert.Equal(t, pln.Prefix(), prefix.DeploymentPhasePath(meta.OrgShortId,
 		meta.AppShortId,
-		component.Name,
+		component.Id,
 		meta.DeploymentShortId, phaseName))
 }

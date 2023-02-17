@@ -1,6 +1,8 @@
 package build
 
-import "github.com/powertoolsdev/go-workflows-meta/prefix"
+import (
+	"github.com/powertoolsdev/go-workflows-meta/prefix"
+)
 
 const (
 	phaseName string = "build"
@@ -9,7 +11,7 @@ const (
 func (p *planner) Prefix() string {
 	return prefix.DeploymentPhasePath(p.Metadata.OrgShortId,
 		p.Metadata.AppShortId,
-		p.Component.Name,
+		p.Component.Id,
 		p.Metadata.DeploymentShortId,
 		phaseName,
 	)
