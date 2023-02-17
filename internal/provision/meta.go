@@ -27,7 +27,7 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, req *instancesv1.ProvisionR
 	startReq := &sharedv1.StartActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
 		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
-		MetadataBucketPrefix:        prefix.InstancePath(req.OrgId, req.AppId, req.Component.Name, req.DeploymentId, req.InstallId),
+		MetadataBucketPrefix:        prefix.InstancePath(req.OrgId, req.AppId, req.Component.Id, req.DeploymentId, req.InstallId),
 		RequestRef:                  metaRequestFromReq(req),
 		WorkflowInfo: &sharedv1.WorkflowInfo{
 			Id: info.WorkflowExecution.ID,
@@ -80,7 +80,7 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *instancesv1.Provision
 	finishReq := &sharedv1.FinishActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
 		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, req.OrgId),
-		MetadataBucketPrefix:        prefix.InstancePath(req.OrgId, req.AppId, req.Component.Name, req.DeploymentId, req.InstallId),
+		MetadataBucketPrefix:        prefix.InstancePath(req.OrgId, req.AppId, req.Component.Id, req.DeploymentId, req.InstallId),
 		ResponseRef:                 metaResponseFromResponse(resp),
 		Status:                      status,
 		ErrorMessage:                errMessage,
