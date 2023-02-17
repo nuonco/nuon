@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 )
-
-func getFakeCreateServerConfigRequest() CreateServerConfigRequest {
-	return getFakeObj[CreateServerConfigRequest]()
-}
 
 func TestCreateServerConfig_validateRequest(t *testing.T) {
 	tests := map[string]struct {
@@ -17,11 +14,11 @@ func TestCreateServerConfig_validateRequest(t *testing.T) {
 		errExpected error
 	}{
 		"happy path": {
-			reqFn: getFakeCreateServerConfigRequest,
+			reqFn: generics.GetFakeObj[CreateServerConfigRequest],
 		},
 		"no-org-id": {
 			reqFn: func() CreateServerConfigRequest {
-				req := getFakeCreateServerConfigRequest()
+				req := generics.GetFakeObj[CreateServerConfigRequest]()
 				req.OrgID = ""
 				return req
 			},
@@ -29,7 +26,7 @@ func TestCreateServerConfig_validateRequest(t *testing.T) {
 		},
 		"no-namespace": {
 			reqFn: func() CreateServerConfigRequest {
-				req := getFakeCreateServerConfigRequest()
+				req := generics.GetFakeObj[CreateServerConfigRequest]()
 				req.TokenSecretNamespace = ""
 				return req
 			},
@@ -37,7 +34,7 @@ func TestCreateServerConfig_validateRequest(t *testing.T) {
 		},
 		"no-server-addr": {
 			reqFn: func() CreateServerConfigRequest {
-				req := getFakeCreateServerConfigRequest()
+				req := generics.GetFakeObj[CreateServerConfigRequest]()
 				req.OrgServerAddr = ""
 				return req
 			},

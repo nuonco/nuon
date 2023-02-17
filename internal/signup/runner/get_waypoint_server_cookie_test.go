@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -29,21 +30,17 @@ func (t *testWaypointClientServerConfigGetter) GetServerConfig(
 	return nil, args.Error(1)
 }
 
-func getFakeWaypointServerCookieRequest() GetWaypointServerCookieRequest {
-	return getFakeObj[GetWaypointServerCookieRequest]()
-}
-
 func TestGetWaypointServerCookie_validateRequest(t *testing.T) {
 	tests := map[string]struct {
 		reqFn       func() GetWaypointServerCookieRequest
 		errExpected error
 	}{
 		"happy path": {
-			reqFn: getFakeWaypointServerCookieRequest,
+			reqFn: generics.GetFakeObj[GetWaypointServerCookieRequest],
 		},
 		"no-org-id": {
 			reqFn: func() GetWaypointServerCookieRequest {
-				req := getFakeWaypointServerCookieRequest()
+				req := generics.GetFakeObj[GetWaypointServerCookieRequest]()
 				req.OrgID = ""
 				return req
 			},
@@ -51,7 +48,7 @@ func TestGetWaypointServerCookie_validateRequest(t *testing.T) {
 		},
 		"no-namespace": {
 			reqFn: func() GetWaypointServerCookieRequest {
-				req := getFakeWaypointServerCookieRequest()
+				req := generics.GetFakeObj[GetWaypointServerCookieRequest]()
 				req.TokenSecretNamespace = ""
 				return req
 			},
@@ -59,7 +56,7 @@ func TestGetWaypointServerCookie_validateRequest(t *testing.T) {
 		},
 		"no-server-addr": {
 			reqFn: func() GetWaypointServerCookieRequest {
-				req := getFakeWaypointServerCookieRequest()
+				req := generics.GetFakeObj[GetWaypointServerCookieRequest]()
 				req.OrgServerAddr = ""
 				return req
 			},

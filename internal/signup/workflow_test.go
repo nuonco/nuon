@@ -4,14 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	iamv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/iam/v1"
 	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
 	serverv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/server/v1"
+	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
-	"github.com/powertoolsdev/workers-orgs/internal/meta"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/iam"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/workers-orgs/internal/signup/server"
@@ -40,28 +39,24 @@ func Test_Workflow(t *testing.T) {
 	wf := NewWorkflow(cfg)
 	a := NewActivities(nil)
 
-	req := &orgsv1.SignupRequest{OrgId: "00000000-0000-0000-0000-000000000000", Region: "us-west-2"}
+	req := generics.GetFakeObj[*orgsv1.SignupRequest]()
 	iamResp := generics.GetFakeObj[*iamv1.ProvisionIAMResponse]()
 	serverResp := generics.GetFakeObj[*serverv1.ProvisionServerResponse]()
 
-	id, err := shortid.ParseString(req.OrgId)
-	require.NoError(t, err)
-
 	// Mock activity implementations
-
 	env.OnActivity(a.SendNotification, mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, snr SendNotificationRequest) (SendNotificationResponse, error) {
 			return SendNotificationResponse{}, nil
 		})
 
 	env.OnActivity(a.StartSignupRequest, mock.Anything, mock.Anything).
-		Return(func(ctx context.Context, r meta.StartRequest) (meta.StartResponse, error) {
-			return meta.StartResponse{}, nil
+		Return(func(ctx context.Context, r *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
+			return &sharedv1.StartActivityResponse{}, nil
 		})
 
 	env.OnActivity(a.FinishSignupRequest, mock.Anything, mock.Anything).
-		Return(func(ctx context.Context, r meta.FinishRequest) (meta.FinishResponse, error) {
-			return meta.FinishResponse{}, nil
+		Return(func(ctx context.Context, r *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
+			return &sharedv1.FinishActivityResponse{}, nil
 		})
 
 	env.OnWorkflow(iamer.ProvisionIAM, mock.Anything, mock.Anything).
@@ -73,7 +68,7 @@ func Test_Workflow(t *testing.T) {
 	env.OnWorkflow(srv.ProvisionServer, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *serverv1.ProvisionServerRequest) (*serverv1.ProvisionServerResponse, error) {
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, id, r.OrgId)
+			assert.Equal(t, req.OrgId, r.OrgId)
 			return serverResp, nil
 		})
 
@@ -81,7 +76,7 @@ func Test_Workflow(t *testing.T) {
 		Return(func(ctx workflow.Context, r *runnerv1.InstallRunnerRequest) (*runnerv1.InstallRunnerResponse, error) {
 			var resp runnerv1.InstallRunnerResponse
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, id, r.OrgId)
+			assert.Equal(t, req.OrgId, r.OrgId)
 			return &resp, nil
 		})
 

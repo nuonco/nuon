@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/powertoolsdev/go-generics"
 	"github.com/powertoolsdev/go-helm"
 	"github.com/powertoolsdev/go-helm/waypoint"
 	"github.com/stretchr/testify/assert"
@@ -23,10 +24,6 @@ func (t testHelmInstaller) Install(ctx context.Context, cfg *helm.InstallConfig)
 	return t.fn(ctx, cfg)
 }
 
-func getFakeInstallWaypointRequest() InstallWaypointRequest {
-	return getFakeObj[InstallWaypointRequest]()
-}
-
 func TestInstallWaypoint(t *testing.T) {
 	errInstallWaypoint := fmt.Errorf("install-waypoint-err")
 
@@ -38,7 +35,7 @@ func TestInstallWaypoint(t *testing.T) {
 	}{
 		"errors without namespace": {
 			requestFn: func() InstallWaypointRequest {
-				req := getFakeInstallWaypointRequest()
+				req := generics.GetFakeObj[InstallWaypointRequest]()
 				req.Namespace = ""
 				return req
 			},
@@ -47,7 +44,7 @@ func TestInstallWaypoint(t *testing.T) {
 
 		"errors without release name": {
 			requestFn: func() InstallWaypointRequest {
-				req := getFakeInstallWaypointRequest()
+				req := generics.GetFakeObj[InstallWaypointRequest]()
 				req.ReleaseName = ""
 				return req
 			},
@@ -56,7 +53,7 @@ func TestInstallWaypoint(t *testing.T) {
 
 		"errors without chart": {
 			requestFn: func() InstallWaypointRequest {
-				req := getFakeInstallWaypointRequest()
+				req := generics.GetFakeObj[InstallWaypointRequest]()
 				req.Chart = nil
 				return req
 			},
@@ -65,7 +62,7 @@ func TestInstallWaypoint(t *testing.T) {
 
 		"errors without chart name": {
 			requestFn: func() InstallWaypointRequest {
-				req := getFakeInstallWaypointRequest()
+				req := generics.GetFakeObj[InstallWaypointRequest]()
 				req.Chart.Name = ""
 				return req
 			},
@@ -74,7 +71,7 @@ func TestInstallWaypoint(t *testing.T) {
 
 		"errors without chart url": {
 			requestFn: func() InstallWaypointRequest {
-				req := getFakeInstallWaypointRequest()
+				req := generics.GetFakeObj[InstallWaypointRequest]()
 				req.Chart.URL = ""
 				return req
 			},
@@ -83,7 +80,7 @@ func TestInstallWaypoint(t *testing.T) {
 
 		"errors without chart version": {
 			requestFn: func() InstallWaypointRequest {
-				req := getFakeInstallWaypointRequest()
+				req := generics.GetFakeObj[InstallWaypointRequest]()
 				req.Chart.Version = ""
 				return req
 			},
@@ -92,7 +89,7 @@ func TestInstallWaypoint(t *testing.T) {
 
 		"uses api": {
 			requestFn: func() InstallWaypointRequest {
-				req := getFakeInstallWaypointRequest()
+				req := generics.GetFakeObj[InstallWaypointRequest]()
 				req.ReleaseName = "test-release"
 				req.Chart.Name = "waypoint"
 				return req
@@ -111,7 +108,7 @@ func TestInstallWaypoint(t *testing.T) {
 
 		"configures values correctly": {
 			requestFn: func() InstallWaypointRequest {
-				req := getFakeInstallWaypointRequest()
+				req := generics.GetFakeObj[InstallWaypointRequest]()
 				return req
 			},
 			helmInstallFn: func(t *testing.T) testHelmInstaller {
@@ -132,7 +129,7 @@ func TestInstallWaypoint(t *testing.T) {
 
 		"wraps errors": {
 			requestFn: func() InstallWaypointRequest {
-				req := getFakeInstallWaypointRequest()
+				req := generics.GetFakeObj[InstallWaypointRequest]()
 				return req
 			},
 			errExpected: errInstallWaypoint,
@@ -180,7 +177,7 @@ func Test_waypointRunnerValues(t *testing.T) {
 	}{
 		"happy path": {
 			requestFn: func() InstallWaypointRequest {
-				return getFakeInstallWaypointRequest()
+				return generics.GetFakeObj[InstallWaypointRequest]()
 			},
 			assertFn: func(t *testing.T, v map[string]interface{}, req InstallWaypointRequest) {
 				var vals waypoint.Values
@@ -206,7 +203,7 @@ func Test_waypointRunnerValues(t *testing.T) {
 		},
 		"errors with invalid request": {
 			requestFn: func() InstallWaypointRequest {
-				req := getFakeInstallWaypointRequest()
+				req := generics.GetFakeObj[InstallWaypointRequest]()
 				req.Namespace = ""
 				return req
 			},

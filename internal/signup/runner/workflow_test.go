@@ -3,11 +3,10 @@ package runner
 import (
 	"context"
 	"fmt"
-	"log"
 	"testing"
 
-	faker "github.com/go-faker/faker/v4"
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/go-generics"
 	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1"
 	workers "github.com/powertoolsdev/workers-orgs/internal"
 	"github.com/stretchr/testify/assert"
@@ -16,23 +15,14 @@ import (
 	"go.temporal.io/sdk/testsuite"
 )
 
-func getFakeObj[T any]() T {
-	var obj T
-	err := faker.FakeData(&obj)
-	if err != nil {
-		log.Fatalf("unable to create fake obj: %s", err)
-	}
-	return obj
-}
-
 func TestRunner(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	cfg := getFakeObj[workers.Config]()
+	cfg := generics.GetFakeObj[workers.Config]()
 
 	a := NewActivities(workers.Config{})
 
-	req := getFakeObj[*runnerv1.InstallRunnerRequest]()
+	req := generics.GetFakeObj[*runnerv1.InstallRunnerRequest]()
 
 	/*
 		validProvisionOutput := map[string]string{

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/go-common/shortid"
 	orgsv1 "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
@@ -19,22 +18,17 @@ func Teardown(ctx workflow.Context, req *orgsv1.TeardownRequest) (*orgsv1.Teardo
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	id, err := shortid.ParseString(req.OrgId)
-	if err != nil {
-		return resp, fmt.Errorf("failed to generate short ID: %w", err)
-	}
-
 	act := NewActivities()
 
-	_, err = uninstallWaypoint(ctx, act, UninstallWaypointRequest{
-		Namespace:   id,
-		ReleaseName: fmt.Sprintf("wp-%s", id),
+	_, err := uninstallWaypoint(ctx, act, UninstallWaypointRequest{
+		Namespace:   req.OrgId,
+		ReleaseName: fmt.Sprintf("wp-%s", req.OrgId),
 	})
 	if err != nil {
 		return resp, fmt.Errorf("failed to uninstall waypoint: %w", err)
 	}
 
-	_, err = destroyNamespace(ctx, act, DestroyNamespaceRequest{NamespaceName: id})
+	_, err = destroyNamespace(ctx, act, DestroyNamespaceRequest{NamespaceName: req.OrgId})
 	if err != nil {
 		return resp, fmt.Errorf("failed to destroy namespace: %w", err)
 	}
