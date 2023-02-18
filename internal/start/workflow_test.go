@@ -150,3 +150,58 @@ func TestStart(t *testing.T) {
 	assert.True(t, proto.Equal(planRef, resp.PlanRef))
 	require.NotNil(t, resp)
 }
+
+func TestStartBuildOnly(t *testing.T) {
+	cfg := generics.GetFakeObj[workers.Config]()
+	wkflow := NewWorkflow(cfg)
+	planRef := generics.GetFakeObj[*planv1.PlanRef]()
+
+	testSuite := &testsuite.WorkflowTestSuite{}
+	env := testSuite.NewTestWorkflowEnvironment()
+
+	act := NewActivities()
+	bld := build.NewWorkflow(cfg)
+	ins := instances.NewWorkflow(cfg)
+	env.RegisterWorkflow(bld.Build)
+	env.RegisterWorkflow(ins.ProvisionInstances)
+
+	req := getFakeStartRequest()
+	req.BuildOnly = true
+	err := req.Validate()
+	assert.NoError(t, err)
+
+	// Mock activity implementation
+	env.OnActivity(act.StartStartRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
+			resp := &sharedv1.StartActivityResponse{}
+			return resp, nil
+		})
+
+	env.OnActivity(act.FinishStartRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
+			resp := &sharedv1.FinishActivityResponse{}
+			return resp, nil
+		})
+
+	env.OnWorkflow(bld.Build, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, br *buildv1.BuildRequest) (*buildv1.BuildResponse, error) {
+			resp := &buildv1.BuildResponse{
+				PlanRef: planRef,
+			}
+			return resp, nil
+		})
+
+	env.OnWorkflow(ins.ProvisionInstances, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r *instancesv1.ProvisionRequest) (*instancesv1.ProvisionResponse, error) {
+			t.Errorf("provision instances called from build-only")
+			return nil, nil
+		})
+
+	env.ExecuteWorkflow(wkflow.Start, req)
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	var resp *deploymentsv1.StartResponse
+	require.NoError(t, env.GetWorkflowResult(&resp))
+	assert.True(t, proto.Equal(planRef, resp.PlanRef))
+	require.NotNil(t, resp)
+}
