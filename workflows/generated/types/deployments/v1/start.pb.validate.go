@@ -135,6 +135,8 @@ func (m *StartRequest) validate(all bool) error {
 
 	// no validation rules for PlanOnly
 
+	// no validation rules for BuildOnly
+
 	if len(errors) > 0 {
 		return StartRequestMultiError(errors)
 	}

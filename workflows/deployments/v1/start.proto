@@ -27,6 +27,7 @@ message StartRequest {
   component.v1.Component component = 5;
 
   bool plan_only = 6 [(tagger.tags) = "faker:\"-\""];
+  bool build_only = 7 [(tagger.tags) = "faker:\"-\""];
 }
 
 // StartResponse returns the response from a deployment workflow
