@@ -66,6 +66,11 @@ func (w *wkflow) Start(ctx workflow.Context, req *deploymentsv1.StartRequest) (*
 	l.Debug(fmt.Sprintf("finished build %v", bResp))
 	resp.PlanRef = bResp.PlanRef
 
+	if req.BuildOnly {
+		w.finishWorkflow(ctx, req, resp, nil)
+		return resp, nil
+	}
+
 	ipReq := &instancesv1.ProvisionRequest{
 		OrgId:        req.OrgId,
 		AppId:        req.AppId,

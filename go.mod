@@ -10,7 +10,7 @@ require (
 	github.com/powertoolsdev/go-common v1.5.0
 	github.com/powertoolsdev/go-generics v0.1.0
 	github.com/powertoolsdev/go-workflows-meta v0.6.2
-	github.com/powertoolsdev/protos v0.68.7
+	github.com/powertoolsdev/protos v0.69.0
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.opentelemetry.io/otel v1.12.0
