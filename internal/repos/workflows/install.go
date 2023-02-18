@@ -7,15 +7,22 @@ import (
 	"io"
 	"strings"
 
-	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	assumerole "github.com/powertoolsdev/go-aws-assume-role"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 )
 
 func (r *repo) GetInstallProvisionRequest(ctx context.Context, installID string) (*installsv1.ProvisionRequest, error) {
 	resp := &installsv1.ProvisionRequest{}
 
-	cfg, err := aws_config.LoadDefaultConfig(ctx)
+	assumer, err := assumerole.New(r.v,
+		assumerole.WithRoleARN(r.IAMRoleARN),
+		assumerole.WithRoleSessionName(assumeRoleSessionName))
+	if err != nil {
+		return nil, fmt.Errorf("unable to assume role: %w", err)
+	}
+
+	cfg, err := assumer.LoadConfigWithAssumedRole(ctx)
 	if err != nil {
 		return resp, err
 	}

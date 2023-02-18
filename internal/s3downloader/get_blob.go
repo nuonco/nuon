@@ -36,7 +36,7 @@ func (s *s3Downloader) getBlob(ctx context.Context, client s3BlobGetter, key str
 		Key:    generics.ToPtr(key),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to download bytes key: %w", err)
+		return nil, fmt.Errorf("unable to download bytes: key=%s: %w", key, err)
 	}
 
 	return buf.Bytes(), err

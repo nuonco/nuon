@@ -26,12 +26,19 @@ type Repo interface {
 
 	GetOrgProvisionRequest(ctx context.Context, orgID string) (*sharedv1.Request, error)
 	GetOrgProvisionResponse(ctx context.Context, orgID string) (*sharedv1.Response, error)
+
+	GetAppProvisionRequest(ctx context.Context, orgID, appID string) (*sharedv1.Request, error)
+	GetAppProvisionResponse(ctx context.Context, orgID, appID string) (*sharedv1.Response, error)
+
+	GetDeploymentsRequest(ctx context.Context, key string) (*sharedv1.Request, error)
+	GetDeploymentsResponse(ctx context.Context, key string) (*sharedv1.Response, error)
 }
 
 type repo struct {
 	v *validator.Validate
 
 	InstallsBucket    string `validate:"required"`
+	AppsBucket        string `validate:"required"`
 	OrgsBucket        string `validate:"required"`
 	DeploymentsBucket string `validate:"required"`
 	IAMRoleARN        string `validate:"required"`
@@ -63,6 +70,7 @@ func WithConfig(cfg *internal.Config) repoOption {
 	return func(r *repo) error {
 		r.InstallsBucket = cfg.InstallsBucket
 		r.OrgsBucket = cfg.OrgsBucket
+		r.AppsBucket = cfg.OrgsBucket
 		r.DeploymentsBucket = cfg.DeploymentsBucket
 		r.IAMRoleARN = cfg.SupportIAMRoleArn
 

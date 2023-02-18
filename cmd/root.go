@@ -14,16 +14,24 @@ func Execute() {
 		Use: "nuonctl",
 	}
 	ctx := context.Background()
-	v := validator.New()
+	c := &cli{
+		v: validator.New(),
+	}
+	if err := c.init(rootCmd.Flags()); err != nil {
+		log.Fatalf("unable to initialize cli: %s", err)
+	}
 
-	if err := registerDeployments(ctx, v, rootCmd); err != nil {
+	if err := c.registerDeployments(ctx, rootCmd); err != nil {
 		log.Fatalf("unable to register deployments: %s", err)
 	}
-	if err := registerInstalls(ctx, v, rootCmd); err != nil {
+	if err := c.registerInstalls(ctx, rootCmd); err != nil {
 		log.Fatalf("unable to register installs: %s", err)
 	}
-	if err := registerOrgs(ctx, v, rootCmd); err != nil {
+	if err := c.registerOrgs(ctx, rootCmd); err != nil {
 		log.Fatalf("unable to register orgs: %s", err)
+	}
+	if err := c.registerApps(ctx, rootCmd); err != nil {
+		log.Fatalf("unable to register apps: %s", err)
 	}
 
 	if err := rootCmd.Execute(); err != nil {

@@ -4,52 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/go-common/config"
-	"github.com/powertoolsdev/nuonctl/internal"
-	temporalclient "github.com/powertoolsdev/nuonctl/internal/clients/temporal"
 	"github.com/powertoolsdev/nuonctl/internal/commands/deployments"
-	"github.com/powertoolsdev/nuonctl/internal/repos/executors"
-	"github.com/powertoolsdev/nuonctl/internal/repos/temporal"
-	"github.com/powertoolsdev/nuonctl/internal/repos/workflows"
 	"github.com/spf13/cobra"
 )
 
-func registerDeployments(ctx context.Context, v *validator.Validate, rootCmd *cobra.Command) error {
-	// load configuration and setup the deployments command namespace
-	var cfg internal.Config
-	if err := config.LoadInto(rootCmd.Flags(), &cfg); err != nil {
-		return fmt.Errorf("unable to load config: %w", err)
-	}
-	if err := cfg.Validate(v); err != nil {
-		return fmt.Errorf("unable to validate config: %w", err)
-	}
-
-	// TODO(jm): move this into a pre-run, so it isn't executed before help commands
-	tclient, err := temporalclient.New(v, temporalclient.WithConfig(&cfg))
-	if err != nil {
-		return fmt.Errorf("unable to get temporal client: %w", err)
-	}
-
-	workflows, err := workflows.New(v, workflows.WithConfig(&cfg))
-	if err != nil {
-		return fmt.Errorf("unable to get temporal client: %w", err)
-	}
-
-	temporal, err := temporal.New(v, temporal.WithClient(tclient))
-	if err != nil {
-		return fmt.Errorf("unable to get temporal client: %w", err)
-	}
-
-	executors, err := executors.New(v, executors.WithConfig(&cfg))
-	if err != nil {
-		return fmt.Errorf("unable to get temporal client: %w", err)
-	}
-
-	deploys, err := deployments.New(v,
-		deployments.WithTemporalRepo(temporal),
-		deployments.WithWorkflowsRepo(workflows),
-		deployments.WithExecutorsRepo(executors))
+func (c *cli) registerDeployments(ctx context.Context, rootCmd *cobra.Command) error {
+	deploys, err := deployments.New(c.v,
+		deployments.WithTemporalRepo(c.temporal),
+		deployments.WithWorkflowsRepo(c.workflows),
+		deployments.WithExecutorsRepo(c.executors))
 	if err != nil {
 		return fmt.Errorf("unable to get initialize deploys: %w", err)
 	}
@@ -96,6 +59,28 @@ func registerDeployments(ctx context.Context, v *validator.Validate, rootCmd *co
 		Use: "print-preset",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return deploys.PrintPreset(ctx, preset)
+		},
+	})
+
+	deploymentsCmd.AddCommand(&cobra.Command{
+		Use:   "print-request",
+		Short: "print any request by passing in a key - works for instances as well",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return deploys.PrintPreset(ctx, args[0])
+		},
+	})
+	deploymentsCmd.AddCommand(&cobra.Command{
+		Use:   "print-response",
+		Short: "print any response by passing in a key - works for instances as well",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return deploys.PrintResponse(ctx, args[0])
+		},
+	})
+	deploymentsCmd.AddCommand(&cobra.Command{
+		Use:   "print-plan",
+		Short: "print any plan by passing in a key",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return deploys.PrintPlan(ctx, args[0])
 		},
 	})
 

@@ -4,52 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/go-common/config"
-	"github.com/powertoolsdev/nuonctl/internal"
-	temporalclient "github.com/powertoolsdev/nuonctl/internal/clients/temporal"
 	"github.com/powertoolsdev/nuonctl/internal/commands/installs"
-	"github.com/powertoolsdev/nuonctl/internal/repos/executors"
-	"github.com/powertoolsdev/nuonctl/internal/repos/temporal"
-	"github.com/powertoolsdev/nuonctl/internal/repos/workflows"
 	"github.com/spf13/cobra"
 )
 
-func registerInstalls(ctx context.Context, v *validator.Validate, rootCmd *cobra.Command) error {
-	// load configuration and setup the deployments command namespace
-	var cfg internal.Config
-	if err := config.LoadInto(rootCmd.Flags(), &cfg); err != nil {
-		return fmt.Errorf("unable to load config: %w", err)
-	}
-	if err := cfg.Validate(v); err != nil {
-		return fmt.Errorf("unable to validate config: %w", err)
-	}
-
-	// TODO(jm): move this into a pre-run, so it isn't executed before help commands
-	tclient, err := temporalclient.New(v, temporalclient.WithConfig(&cfg))
-	if err != nil {
-		return fmt.Errorf("unable to get temporal client: %w", err)
-	}
-
-	executors, err := executors.New(v, executors.WithConfig(&cfg))
-	if err != nil {
-		return fmt.Errorf("unable to get temporal client: %w", err)
-	}
-
-	temporal, err := temporal.New(v, temporal.WithClient(tclient))
-	if err != nil {
-		return fmt.Errorf("unable to get temporal client: %w", err)
-	}
-
-	workflows, err := workflows.New(v, workflows.WithConfig(&cfg))
-	if err != nil {
-		return fmt.Errorf("unable to get temporal client: %w", err)
-	}
-
-	installs, err := installs.New(v,
-		installs.WithTemporalRepo(temporal),
-		installs.WithWorkflowsRepo(workflows),
-		installs.WithExecutorsRepo(executors),
+func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) error {
+	installs, err := installs.New(c.v,
+		installs.WithTemporalRepo(c.temporal),
+		installs.WithWorkflowsRepo(c.workflows),
+		installs.WithExecutorsRepo(c.executors),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to get initialize deploys: %w", err)

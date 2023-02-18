@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/go-common/shortid"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 )
 
@@ -16,7 +16,7 @@ type preset struct {
 func New(v *validator.Validate, name string, opts ...presetOption) (*componentv1.Component, error) {
 	p := &preset{
 		v:  v,
-		ID: uuid.NewString(),
+		ID: shortid.New(),
 	}
 	for idx, opt := range opts {
 		if err := opt(p); err != nil {

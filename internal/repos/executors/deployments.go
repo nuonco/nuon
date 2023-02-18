@@ -9,15 +9,15 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func (r *repo) GetPlan(ctx context.Context, ref *planv1.PlanRef) (*planv1.Plan, error) {
-	client, err := s3downloader.New(ref.Bucket,
+func (r *repo) GetDeploymentsPlan(ctx context.Context, key string) (*planv1.Plan, error) {
+	client, err := s3downloader.New(r.DeploymentsBucket,
 		s3downloader.WithAssumeRoleARN(r.IAMRoleARN),
 		s3downloader.WithAssumeRoleSessionName(assumeRoleSessionName))
 	if err != nil {
 		return nil, fmt.Errorf("unable to get downloader: %w", err)
 	}
 
-	byts, err := client.GetBlob(ctx, ref.BucketKey)
+	byts, err := client.GetBlob(ctx, key)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get blob: %w", err)
 	}

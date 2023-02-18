@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/nuonctl/internal/commands/deployments/presets"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
@@ -24,17 +23,11 @@ func (c *commands) installPresetRequest(ctx context.Context, installID string, c
 		return nil, fmt.Errorf("unable to get preset: %w", err)
 	}
 
-	deploymentID := uuid.NewString()
-	ids, err := shortid.ToUUIDs(req.OrgId, req.AppId, req.InstallId)
-	if err != nil {
-		return nil, fmt.Errorf("invalid install ids: %w", err)
-	}
-
 	return &deploymentsv1.StartRequest{
-		OrgId:        ids[0].String(),
-		AppId:        ids[1].String(),
-		DeploymentId: deploymentID,
-		InstallIds:   []string{ids[2].String()},
+		OrgId:        req.OrgId,
+		AppId:        req.AppId,
+		DeploymentId: shortid.New(),
+		InstallIds:   []string{installID},
 		Component:    presetComp,
 		PlanOnly:     true,
 	}, nil

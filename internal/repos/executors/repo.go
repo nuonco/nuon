@@ -15,10 +15,14 @@ const (
 
 type Repo interface {
 	GetPlan(context.Context, *planv1.PlanRef) (*planv1.Plan, error)
+	GetDeploymentsPlan(context.Context, string) (*planv1.Plan, error)
 }
 
 type repo struct {
 	v *validator.Validate
+
+	IAMRoleARN        string `validate:"required"`
+	DeploymentsBucket string `validate:"required"`
 }
 
 var _ Repo = (*repo)(nil)
@@ -45,6 +49,8 @@ type repoOption func(*repo) error
 
 func WithConfig(cfg *internal.Config) repoOption {
 	return func(r *repo) error {
+		r.IAMRoleARN = cfg.SupportIAMRoleArn
+		r.DeploymentsBucket = cfg.DeploymentsBucket
 		return nil
 	}
 }
