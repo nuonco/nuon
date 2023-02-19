@@ -14,23 +14,19 @@ const (
 	defaultBuildTimeoutSeconds uint64 = 3600
 )
 
-func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
-	plan := &planv1.WaypointPlan{
+func (p *planner) getBasePlan() *planv1.WaypointPlan {
+	return &planv1.WaypointPlan{
 		Metadata:       p.Metadata,
 		WaypointServer: p.OrgMetadata.WaypointServer,
 		EcrRepositoryRef: &planv1.ECRRepositoryRef{
 			RepositoryName: p.Metadata.InstallShortId,
 			Tag:            p.Metadata.DeploymentShortId,
-			// TODO(jm): we don't have a great way of knowing what region the customer install is using this
-			// deep in this stage. Eventually, we would ideally fetch this information from `orgs-api`, but
-			// for now just hard code us-west-2
-			Region: "us-west-2",
 		},
 		WaypointRef: &planv1.WaypointRef{
 			Project:              p.Metadata.InstallShortId,
 			Workspace:            p.Metadata.InstallShortId,
-			App:                  p.Component.Name,
-			SingletonId:          fmt.Sprintf("%s-%s", p.Metadata.DeploymentShortId, p.Component.Name),
+			App:                  p.Component.Id,
+			SingletonId:          fmt.Sprintf("%s-%s-%s", p.Metadata.DeploymentShortId, p.Metadata.InstallShortId, phaseName),
 			Labels:               waypoint.DefaultLabels(p.Metadata, p.Component.Name, phaseName),
 			RunnerId:             p.Metadata.InstallShortId,
 			OnDemandRunnerConfig: p.Metadata.InstallShortId,
@@ -48,28 +44,32 @@ func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
 		},
 		Component: p.Component,
 	}
+}
 
-	srcImage, err := p.getSourceImage(ctx)
+func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
+	plan := p.getBasePlan()
+
+	imgSrc, err := p.getImageSource(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get source image: %w", err)
 	}
 
-	builder, err := configs.NewSyncImageBuilder(p.V,
+	cfg, err := configs.NewPrivateDockerPullBuild(p.V,
 		configs.WithEcrRef(plan.EcrRepositoryRef),
 		configs.WithWaypointRef(plan.WaypointRef),
-		configs.WithSourceImage(srcImage),
 		configs.WithComponent(p.Component),
+		configs.WithPrivateImageSource(imgSrc),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create builder: %w", err)
 	}
 
-	cfg, cfgFmt, err := builder.Render()
+	waypointCfg, waypointCfgFmt, err := cfg.Render()
 	if err != nil {
 		return nil, fmt.Errorf("unable to render config: %w", err)
 	}
-	plan.WaypointRef.HclConfig = string(cfg)
-	plan.WaypointRef.HclConfigFormat = cfgFmt.String()
+	plan.WaypointRef.HclConfig = string(waypointCfg)
+	plan.WaypointRef.HclConfigFormat = waypointCfgFmt.String()
 
 	return &planv1.Plan{Actual: &planv1.Plan_WaypointPlan{WaypointPlan: plan}}, nil
 }

@@ -134,7 +134,11 @@ DEPS:
     DO shared-configs+SETUP_SSH --GITHUB_ACTIONS=$GITHUB_ACTIONS
     RUN --ssh git config --global --add safe.directory "$(pwd)" \
         && go mod download
+    DO +GEN
 
+GEN:
+  COMMAND
+  RUN go generate ./...
 
 ################################### LOCAL #####################################
 bin:

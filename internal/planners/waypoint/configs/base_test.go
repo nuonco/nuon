@@ -17,13 +17,13 @@ func TestNew(t *testing.T) {
 	component := generics.GetFakeObj[*componentv1.Component]()
 
 	tests := map[string]struct {
-		optFns      func() []baseBuilderOption
+		optFns      func() []Option
 		assertFn    func(*testing.T, *baseBuilder)
 		errExpected error
 	}{
 		"happy path": {
-			optFns: func() []baseBuilderOption {
-				return []baseBuilderOption{
+			optFns: func() []Option {
+				return []Option{
 					WithComponent(component),
 					WithWaypointRef(waypointRef),
 					WithEcrRef(ecrRef),
@@ -36,8 +36,8 @@ func TestNew(t *testing.T) {
 			},
 		},
 		"missing component": {
-			optFns: func() []baseBuilderOption {
-				return []baseBuilderOption{
+			optFns: func() []Option {
+				return []Option{
 					WithWaypointRef(waypointRef),
 					WithEcrRef(ecrRef),
 				}
@@ -45,8 +45,8 @@ func TestNew(t *testing.T) {
 			errExpected: fmt.Errorf("baseBuilder.Component"),
 		},
 		"missing waypoint ref": {
-			optFns: func() []baseBuilderOption {
-				return []baseBuilderOption{
+			optFns: func() []Option {
+				return []Option{
 					WithComponent(component),
 					WithEcrRef(ecrRef),
 				}
@@ -54,8 +54,8 @@ func TestNew(t *testing.T) {
 			errExpected: fmt.Errorf("baseBuilder.WaypointRef"),
 		},
 		"missing ecr ref": {
-			optFns: func() []baseBuilderOption {
-				return []baseBuilderOption{
+			optFns: func() []Option {
+				return []Option{
 					WithComponent(component),
 					WithWaypointRef(waypointRef),
 				}
