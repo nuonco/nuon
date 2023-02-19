@@ -15,13 +15,15 @@ type baseBuilder struct {
 	WaypointRef *planv1.WaypointRef      `validate:"required"`
 	Component   *componentv1.Component   `validate:"required"`
 
-	// optional for the sync image
-	SyncImageSource *SyncImageSource
+	// optional params, for other config builders
+	PrivateImageSource *PrivateImageSource
+	PublicImageSource  *PublicImageSource
+	RepoSource         *RepoSource
 }
 
-type baseBuilderOption func(*baseBuilder) error
+type Option func(*baseBuilder) error
 
-func newBaseBuilder(v *validator.Validate, opts ...baseBuilderOption) (*baseBuilder, error) {
+func newBaseBuilder(v *validator.Validate, opts ...Option) (*baseBuilder, error) {
 	bld := &baseBuilder{
 		v: v,
 	}
@@ -40,30 +42,58 @@ func newBaseBuilder(v *validator.Validate, opts ...baseBuilderOption) (*baseBuil
 }
 
 // WithEcrRef is used to pass in a configuration for pushing an image to ecr
-func WithEcrRef(ecrRef *planv1.ECRRepositoryRef) baseBuilderOption {
+func WithEcrRef(ecrRef *planv1.ECRRepositoryRef) Option {
 	return func(b *baseBuilder) error {
+		if err := ecrRef.ValidateAll(); err != nil {
+			return err
+		}
+
 		b.EcrRef = ecrRef
 		return nil
 	}
 }
 
-func WithComponent(comp *componentv1.Component) baseBuilderOption {
+func WithComponent(comp *componentv1.Component) Option {
 	return func(b *baseBuilder) error {
+		// TODO(jm): add validating
+		//if err := comp.ValidateAll(); err != nil {
+		//return err
+		//}
+
 		b.Component = comp
 		return nil
 	}
 }
 
-func WithWaypointRef(ref *planv1.WaypointRef) baseBuilderOption {
+func WithWaypointRef(ref *planv1.WaypointRef) Option {
 	return func(b *baseBuilder) error {
+		if err := ref.ValidateAll(); err != nil {
+			return err
+		}
+
 		b.WaypointRef = ref
 		return nil
 	}
 }
 
-func WithSourceImage(img *SyncImageSource) baseBuilderOption {
+func WithPrivateImageSource(img *PrivateImageSource) Option {
 	return func(b *baseBuilder) error {
-		b.SyncImageSource = img
+		if err := img.validate(b.v); err != nil {
+			return err
+		}
+
+		b.PrivateImageSource = img
+		return nil
+	}
+}
+
+func WithPublicImageSource(img *PublicImageSource) Option {
+	return func(b *baseBuilder) error {
+		if err := img.validate(b.v); err != nil {
+			return err
+		}
+
+		b.PublicImageSource = img
 		return nil
 	}
 }

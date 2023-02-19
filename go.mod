@@ -18,7 +18,7 @@ require (
 	github.com/powertoolsdev/go-waypoint v1.0.0
 	github.com/powertoolsdev/go-waypoint/v2 v2.0.2
 	github.com/powertoolsdev/go-workflows-meta v0.6.2
-	github.com/powertoolsdev/protos v0.68.6
+	github.com/powertoolsdev/protos v0.69.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.opentelemetry.io/otel v1.13.0

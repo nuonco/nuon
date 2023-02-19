@@ -13,20 +13,20 @@ const (
 	basicDeployTmplName string = "basic-deploy"
 )
 
-// NewBasicDeployBuilder returns a builder that creates a configuration for a basic deployment.
-func NewBasicDeployBuilder(v *validator.Validate, opts ...baseBuilderOption) (*basicDeployBuilder, error) {
+// NewBasicDeploy returns a builder that creates a configuration for a basic deployment.
+func NewBasicDeploy(v *validator.Validate, opts ...Option) (*basicDeploy, error) {
 	baseBuilder, err := newBaseBuilder(v, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return &basicDeployBuilder{baseBuilder}, nil
+	return &basicDeploy{baseBuilder}, nil
 }
 
-type basicDeployBuilder struct {
+type basicDeploy struct {
 	*baseBuilder
 }
 
-var _ Builder = (*basicDeployBuilder)(nil)
+var _ Builder = (*basicDeploy)(nil)
 
 var basicDeployTmpl string = `
 project = "{{.WaypointRef.Project}}"
@@ -37,20 +37,19 @@ app "{{.WaypointRef.App}}" {
       use "aws-ecr" {
 	repository = "{{.EcrRef.RepositoryName}}"
 	tag	 = "{{.EcrRef.Tag}}"
-	region = "{{.EcrRef.Region}}"
       }
     }
   }
 
   deploy {
     use "kubernetes" {
-	    service_port = 80
+      service_port = 80
     }
   }
 }
 `
 
-func (s *basicDeployBuilder) Render() ([]byte, waypointv1.Hcl_Format, error) {
+func (s *basicDeploy) Render() ([]byte, waypointv1.Hcl_Format, error) {
 	tmpl, err := template.New(basicDeployTmplName).Parse(basicDeployTmpl)
 	if err != nil {
 		return nil, waypointv1.Hcl_HCL, fmt.Errorf("unable to parse static template: %w", err)

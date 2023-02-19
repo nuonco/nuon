@@ -10,32 +10,37 @@ import (
 )
 
 const (
-	httpbinBuildTmplName string = "httpbin-build"
+	publicDockerPullBuildTmplName string = "public-image-build"
 )
 
-// NewHttpbinBuildBuilder returns a builder that renders our hardcoded sample application
-func NewHttpbinBuildBuilder(v *validator.Validate, opts ...baseBuilderOption) (*httpbinBuildBuilder, error) {
+// NewPublicDockerPullBuild returns a builder that renders our hardcoded sample application
+func NewPublicDockerPullBuild(v *validator.Validate, opts ...Option) (*publicDockerPullBuild, error) {
 	baseBuilder, err := newBaseBuilder(v, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return &httpbinBuildBuilder{baseBuilder}, nil
+
+	if baseBuilder.PublicImageSource == nil {
+		return nil, fmt.Errorf("public image source not provided")
+	}
+
+	return &publicDockerPullBuild{baseBuilder}, nil
 }
 
-type httpbinBuildBuilder struct {
+type publicDockerPullBuild struct {
 	*baseBuilder
 }
 
-var _ Builder = (*httpbinBuildBuilder)(nil)
+var _ Builder = (*publicDockerPullBuild)(nil)
 
-var httpbinBuildTmpl string = `
+var publicDockerPullBuildTmpl string = `
 project = "{{.WaypointRef.Project}}"
 
 app "{{.WaypointRef.App}}" {
   build {
     use "docker-pull" {
-      image = "kennethreitz/httpbin"
-      tag   = "latest"
+      image = "{{.PublicImageSource.Image}}"
+      tag   = "{{.PublicImageSource.Tag}}"
     }
 
     registry {
@@ -53,8 +58,8 @@ app "{{.WaypointRef.App}}" {
 }
 `
 
-func (s *httpbinBuildBuilder) Render() ([]byte, waypointv1.Hcl_Format, error) {
-	tmpl, err := template.New(httpbinBuildTmplName).Parse(httpbinBuildTmpl)
+func (s *publicDockerPullBuild) Render() ([]byte, waypointv1.Hcl_Format, error) {
+	tmpl, err := template.New(publicDockerPullBuildTmplName).Parse(publicDockerPullBuildTmpl)
 	if err != nil {
 		return nil, waypointv1.Hcl_HCL, fmt.Errorf("unable to parse static template: %w", err)
 	}

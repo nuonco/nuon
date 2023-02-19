@@ -5,21 +5,21 @@ import (
 	"fmt"
 	"path/filepath"
 
+	buildv1 "github.com/powertoolsdev/protos/components/generated/types/build/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/powertoolsdev/workers-executors/internal/planners/waypoint"
-	"github.com/powertoolsdev/workers-executors/internal/planners/waypoint/configs"
 )
 
 const (
 	defaultBuildTimeoutSeconds uint64 = 3600
 )
 
-func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
+func (p *planner) getBasePlan() *planv1.WaypointPlan {
 	ecrRepoName := fmt.Sprintf("%s/%s", p.Metadata.OrgShortId, p.Metadata.AppShortId)
 	ecrRepoURI := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s", p.OrgMetadata.EcrRegistryId,
 		p.OrgMetadata.EcrRegion, ecrRepoName)
 
-	plan := &planv1.WaypointPlan{
+	return &planv1.WaypointPlan{
 		Metadata:       p.Metadata,
 		WaypointServer: p.OrgMetadata.WaypointServer,
 		EcrRepositoryRef: &planv1.ECRRepositoryRef{
@@ -52,23 +52,28 @@ func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
 		},
 		Component: p.Component,
 	}
+}
 
-	// create builder which will render the waypoint config
-	builder, err := configs.NewHttpbinBuildBuilder(p.V,
-		configs.WithComponent(p.Component),
-		configs.WithEcrRef(plan.EcrRepositoryRef),
-		configs.WithWaypointRef(plan.WaypointRef),
+func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
+	var (
+		err  error
+		plan *planv1.WaypointPlan
 	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create builder: %w", err)
+
+	switch cfg := p.Component.BuildCfg.Cfg.(type) {
+	case *buildv1.Config_DockerCfg:
+		plan, err = p.getDockerPlan(ctx, cfg)
+	case *buildv1.Config_ExternalImageCfg:
+		plan, err = p.getExternalImagePlan(ctx, cfg)
+	case *buildv1.Config_Noop:
+		plan, err = p.getNoopPlan(ctx, cfg)
+	default:
+		return nil, fmt.Errorf("unsupported build config type")
 	}
 
-	cfg, cfgFmt, err := builder.Render()
 	if err != nil {
-		return nil, fmt.Errorf("unable to render config: %w", err)
+		return nil, fmt.Errorf("unable to build plan: %w", err)
 	}
-	plan.WaypointRef.HclConfig = string(cfg)
-	plan.WaypointRef.HclConfigFormat = cfgFmt.String()
 
 	return &planv1.Plan{Actual: &planv1.Plan_WaypointPlan{WaypointPlan: plan}}, nil
 }
