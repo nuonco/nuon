@@ -120,7 +120,10 @@ message WaypointRef {
     (tagger.tags) = "faker:\"len=26\""
   ];
 
-  uint64 job_timeout_seconds = 8 [(validate.rules).uint64.gt = 60];
+  uint64 job_timeout_seconds = 8 [
+    (validate.rules).uint64.gt = 60,
+    (tagger.tags) = "faker:\"oneof:120\""
+  ];
 
   string hcl_config = 9 [(validate.rules).string.min_bytes = 1];
   string hcl_config_format = 10 [(validate.rules).string.min_bytes = 1];
