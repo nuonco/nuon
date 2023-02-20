@@ -26,3 +26,4 @@ bin/
 k8s/charts/
 infra/.terraform
 *mock_test.go
+*mock.go
