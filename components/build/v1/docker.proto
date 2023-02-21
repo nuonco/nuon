@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package build.v1;
 
+import "tagger/tagger.proto";
 import "vcs/v1/config.proto";
 
 option go_package = "github.com/powertoolsdev/protos/components/generated/types/build/v1";
@@ -17,7 +18,7 @@ message DockerConfig {
   // docker target, should default to empty unless the customer has a multi stage build
   string target = 4;
 
-  vcs.v1.Config vcs_cfg = 5;
+  vcs.v1.Config vcs_cfg = 5 [(tagger.tags) = "faker:\"-\""];
 }
 
 message DockerBuildArg {
