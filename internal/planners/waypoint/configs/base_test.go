@@ -6,15 +6,22 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-generics"
+	buildv1 "github.com/powertoolsdev/protos/components/generated/types/build/v1"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestNew(t *testing.T) {
 	waypointRef := generics.GetFakeObj[*planv1.WaypointRef]()
 	ecrRef := generics.GetFakeObj[*planv1.ECRRepositoryRef]()
 	component := generics.GetFakeObj[*componentv1.Component]()
+
+	// optional builders
+	dockerCfg := generics.GetFakeObj[*buildv1.DockerConfig]()
+	publicImg := generics.GetFakeObj[*PublicImageSource]()
+	privateImg := generics.GetFakeObj[*PrivateImageSource]()
 
 	tests := map[string]struct {
 		optFns      func() []Option
@@ -61,6 +68,45 @@ func TestNew(t *testing.T) {
 				}
 			},
 			errExpected: fmt.Errorf("baseBuilder.EcrRef"),
+		},
+		"sets docker config": {
+			optFns: func() []Option {
+				return []Option{
+					WithComponent(component),
+					WithWaypointRef(waypointRef),
+					WithEcrRef(ecrRef),
+					WithDockerCfg(dockerCfg),
+				}
+			},
+			assertFn: func(t *testing.T, pln *baseBuilder) {
+				assert.True(t, proto.Equal(pln.DockerCfg, dockerCfg))
+			},
+		},
+		"sets public image": {
+			optFns: func() []Option {
+				return []Option{
+					WithComponent(component),
+					WithWaypointRef(waypointRef),
+					WithEcrRef(ecrRef),
+					WithPublicImageSource(publicImg),
+				}
+			},
+			assertFn: func(t *testing.T, pln *baseBuilder) {
+				assert.Equal(t, pln.PublicImageSource, publicImg)
+			},
+		},
+		"sets private image": {
+			optFns: func() []Option {
+				return []Option{
+					WithComponent(component),
+					WithWaypointRef(waypointRef),
+					WithEcrRef(ecrRef),
+					WithPrivateImageSource(privateImg),
+				}
+			},
+			assertFn: func(t *testing.T, pln *baseBuilder) {
+				assert.Equal(t, pln.PrivateImageSource, privateImg)
+			},
 		},
 	}
 

@@ -1,0 +1,50 @@
+package build
+
+import (
+	"context"
+	"fmt"
+
+	vcsv1 "github.com/powertoolsdev/protos/components/generated/types/vcs/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
+	githubtoken "github.com/powertoolsdev/workers-executors/internal/github-repo-token"
+)
+
+const (
+	//nolint:gosec
+	githubAppKeySecretName      string = "graphql-api-github-app-key"
+	githubAppKeySecretNamespace string = "default"
+)
+
+//nolint:unparam
+func (p *planner) getPublicGitSource(_ context.Context, cfg *vcsv1.PublicGithubConfig) (*planv1.GitSource, error) {
+	return &planv1.GitSource{
+		Url:  cfg.Repo,
+		Ref:  cfg.Branch,
+		Path: cfg.Directory,
+	}, nil
+}
+
+func (p *planner) getPrivateGitSource(ctx context.Context, cfg *vcsv1.PrivateGithubConfig) (*planv1.GitSource, error) {
+	tokenGetter, err := githubtoken.New(p.V,
+		githubtoken.WithRepo(cfg.Repo),
+		githubtoken.WithInstallID(cfg.GithubInstallId),
+		githubtoken.WithAppKeyID(cfg.GithubAppKeyId),
+		githubtoken.WithAppKeySecretName(githubAppKeySecretName),
+		githubtoken.WithAppKeySecretNamespace(githubAppKeySecretNamespace),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get github token: %w", err)
+	}
+
+	installationToken, err := tokenGetter.InstallationToken(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get installation token: %w", err)
+	}
+
+	return &planv1.GitSource{
+		Url:               fmt.Sprintf("https://%s@github.com/%s.git", installationToken, cfg.Repo),
+		Ref:               cfg.CommitRef,
+		Path:              cfg.Directory,
+		RecurseSubmodules: 2,
+	}, nil
+}

@@ -27,11 +27,13 @@ type queuer struct {
 	Project            string            `validate:"required"`
 	Application        string            `validate:"required"`
 	Labels             map[string]string `validate:"required"`
-	GitURL             string            `validate:"required"`
 	WaypointHCL        []byte            `validate:"required"`
 	TargetRunnerID     string            `validate:"required"`
 	OnDemandRunnerName string            `validate:"required"`
 	JobTimeout         string            `validate:"required"`
+	GitURL             string            `validate:"required"`
+	Path               string
+	CommitRef          string
 
 	// internal state
 	v *validator.Validate
@@ -108,6 +110,20 @@ func WithGitURL(url string) queuerOption {
 	}
 }
 
+func WithPath(path string) queuerOption {
+	return func(q *queuer) error {
+		q.Path = path
+		return nil
+	}
+}
+
+func WithCommitRef(ref string) queuerOption {
+	return func(q *queuer) error {
+		q.CommitRef = ref
+		return nil
+	}
+}
+
 func WithWaypointHCL(hcl []byte) queuerOption {
 	return func(q *queuer) error {
 		q.WaypointHCL = hcl
@@ -155,7 +171,9 @@ func (q *queuer) QueueDeployment(ctx context.Context) (string, error) {
 			DataSource: &gen.Job_DataSource{
 				Source: &gen.Job_DataSource_Git{
 					Git: &gen.Job_Git{
-						Url: q.GitURL,
+						Url:  q.GitURL,
+						Path: q.Path,
+						Ref:  q.CommitRef,
 					},
 				},
 			},
