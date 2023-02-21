@@ -3,6 +3,7 @@ syntax = "proto3";
 package executors.v1.plan.v1;
 
 import "component/v1/component.proto";
+import "executors/v1/plan/v1/git_source.proto";
 import "executors/v1/plan/v1/metadata.proto";
 import "executors/v1/plan/v1/waypoint_server.proto";
 import "tagger/tagger.proto";
@@ -16,6 +17,7 @@ message WaypointPlan {
   WaypointRef waypoint_ref = 4;
   Outputs outputs = 5;
   component.v1.Component component = 6;
+  GitSource git_source = 7;
 }
 
 // ECRRepositoryRef contains all of the information for referencing the app's ECR repo. Note, that all ECR repos are
