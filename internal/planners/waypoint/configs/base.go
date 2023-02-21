@@ -2,6 +2,7 @@ package configs
 
 import (
 	"github.com/go-playground/validator/v10"
+	buildv1 "github.com/powertoolsdev/protos/components/generated/types/build/v1"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 )
@@ -15,10 +16,11 @@ type baseBuilder struct {
 	WaypointRef *planv1.WaypointRef      `validate:"required"`
 	Component   *componentv1.Component   `validate:"required"`
 
-	// optional params, for other config builders
+	// optional params, for different config builders. By default, we try to use the component protos where
+	// possible.
 	PrivateImageSource *PrivateImageSource
 	PublicImageSource  *PublicImageSource
-	RepoSource         *RepoSource
+	DockerCfg          *buildv1.DockerConfig
 }
 
 type Option func(*baseBuilder) error
@@ -94,6 +96,13 @@ func WithPublicImageSource(img *PublicImageSource) Option {
 		}
 
 		b.PublicImageSource = img
+		return nil
+	}
+}
+
+func WithDockerCfg(cfg *buildv1.DockerConfig) Option {
+	return func(b *baseBuilder) error {
+		b.DockerCfg = cfg
 		return nil
 	}
 }

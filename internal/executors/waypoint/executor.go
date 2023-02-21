@@ -184,8 +184,10 @@ func (e *executor) queueJob(ctx context.Context) (string, error) {
 		queue.WithApplication(e.Plan.WaypointRef.App),
 		queue.WithProject(e.Plan.WaypointRef.Project),
 		queue.WithLabels(e.Plan.WaypointRef.Labels),
-		queue.WithGitURL("https://github.com/jonmorehouse/empty"),   // TODO(jdt): should this come from the plan?
-		queue.WithWaypointHCL([]byte(e.Plan.WaypointRef.HclConfig)), // TODO(jdt): we probably shouldn't be going back and forth...
+		queue.WithGitURL(e.Plan.GitSource.Url),
+		queue.WithPath(e.Plan.GitSource.Path),
+		queue.WithCommitRef(e.Plan.GitSource.Ref),
+		queue.WithWaypointHCL([]byte(e.Plan.WaypointRef.HclConfig)),
 		queue.WithTargetRunnerID(e.Plan.WaypointRef.RunnerId),
 		queue.WithOnDemandRunnerName(e.Plan.WaypointRef.OnDemandRunnerConfig),
 	)

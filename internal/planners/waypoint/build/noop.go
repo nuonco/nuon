@@ -8,13 +8,5 @@ import (
 )
 
 func (p *planner) getNoopPlan(ctx context.Context, cfg *buildv1.Config_Noop) (*planv1.WaypointPlan, error) {
-	//plan := p.getBasePlan()
-
-	//baseOpts := []configs.Option{
-	//configs.WithComponent(p.Component),
-	//configs.WithEcrRef(plan.EcrRepositoryRef),
-	//configs.WithWaypointRef(plan.WaypointRef),
-	//}
-
 	return nil, nil
 }

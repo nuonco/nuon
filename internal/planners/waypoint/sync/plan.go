@@ -42,6 +42,9 @@ func (p *planner) getBasePlan() *planv1.WaypointPlan {
 			EventsKey:   filepath.Join(p.Prefix(), "events.json"),
 			ArtifactKey: filepath.Join(p.Prefix(), "artifacts.json"),
 		},
+		GitSource: &planv1.GitSource{
+			Url: "https://github.com/jonmorehouse/empty",
+		},
 		Component: p.Component,
 	}
 }
