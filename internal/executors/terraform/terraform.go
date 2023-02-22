@@ -10,7 +10,7 @@ import (
 )
 
 type terraformer struct {
-	Plan *planv1.TerraformPlan `validate:"required:dive"`
+	Plan *planv1.TerraformPlan `validate:"required"`
 
 	// internal state
 	v *validator.Validate

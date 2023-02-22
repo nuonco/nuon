@@ -37,6 +37,7 @@ func (w *wkflow) CreatePlan(ctx workflow.Context, req *planv1.CreatePlanRequest)
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
 	act := NewActivities()
+	l.Debug("starting create plan", "request", req)
 
 	if err := req.Validate(); err != nil {
 		return resp, err

@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/waypoint v0.10.5
 	github.com/pkg/errors v0.9.1
 	github.com/powertoolsdev/go-aws-assume-role v0.0.3
-	github.com/powertoolsdev/go-common v1.4.1
+	github.com/powertoolsdev/go-common v1.5.0
 	github.com/powertoolsdev/go-config v0.1.3
 	github.com/powertoolsdev/go-fetch v0.1.0
 	github.com/powertoolsdev/go-generics v0.1.0
@@ -28,7 +28,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.opentelemetry.io/otel v1.13.0
-	go.temporal.io/sdk v1.20.0
+	go.temporal.io/sdk v1.21.1
 	go.temporal.io/sdk/contrib/opentelemetry v0.2.0
 	go.uber.org/zap v1.24.0
 	google.golang.org/genproto v0.0.0-20230209215440-0dfe4f8abfcc
@@ -148,7 +148,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.13.0 // indirect
 	go.opentelemetry.io/otel/trace v1.13.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
-	go.temporal.io/api v1.14.0 // indirect
+	go.temporal.io/api v1.16.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect

@@ -22,6 +22,7 @@ func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
 	if err != nil {
 		return nil, err
 	}
+	p.L.Debug("got vars", "vars", vars)
 
 	// NOTE(jdt): we should not try to default a version anywhere after this point
 	vers := defaultTerraformVersion
@@ -50,6 +51,7 @@ func (p *planner) Plan(ctx context.Context) (*planv1.Plan, error) {
 		TerraformVersion: vers,
 		Outputs:          map[string]*planv1.Object{},
 	}
+	p.L.Debug("created plan", "plan", plan)
 
 	return &planv1.Plan{Actual: &planv1.Plan_TerraformPlan{TerraformPlan: plan}}, nil
 }
@@ -70,7 +72,8 @@ func (p *planner) vars() (*structpb.Struct, error) {
 		"install_role_arn":                  "arn:aws:iam::618886478608:role/install-k8s-admin-stage",
 		"waypoint_odr_namespace":            installID,
 		"waypoint_odr_service_account_name": fmt.Sprintf("waypoint-odr-%s", installID),
-		"tags": map[string]string{
+		// while these are all string, they won't correctly parse into a Struct that way
+		"tags": map[string]interface{}{
 			"nuon_sandbox_name":    sboxSettings.Name,
 			"nuon_sandbox_version": sboxSettings.Version,
 			"nuon_install_id":      installID,
