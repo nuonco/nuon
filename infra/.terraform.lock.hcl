@@ -5,6 +5,7 @@ provider "registry.terraform.io/cloudposse/utils" {
   version     = "1.7.1"
   constraints = ">= 0.17.23"
   hashes = [
+    "h1:19GXFlLgUS9wcmwpgQmF27CGo9yIAn78C35YihtfOjA=",
     "h1:9mBaEq+K9wwwNlrNtDa0qVFeRrBL1LXn+hoRSwgp5qY=",
     "zh:29ae50e4416180fd0f39d1edbd1368bdbc5ea3579981845e354753c4138e4936",
     "zh:2e8ac4980b078387523c6fdcea8406840e02112b0739edd54f92fad4bd48e93b",
@@ -52,6 +53,7 @@ provider "registry.terraform.io/hashicorp/random" {
   constraints = ">= 3.1.0"
   hashes = [
     "h1:saZR+mhthL0OZl4SyHXZraxyaBNVMxiZzks78nWcZ2o=",
+    "h1:xZGZf18JjMS06pFa4NErzANI98qi59SEcBsOcS2P2yQ=",
     "zh:41c53ba47085d8261590990f8633c8906696fa0a3c4b384ff6a7ecbf84339752",
     "zh:59d98081c4475f2ad77d881c4412c5129c56214892f490adf11c7e7a5a47de9b",
     "zh:686ad1ee40b812b9e016317e7f34c0d63ef837e084dea4a1f578f64a6314ad53",
