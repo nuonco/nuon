@@ -54,8 +54,45 @@ func (a *appService) GetApp(ctx context.Context, inputID string) (*models.App, e
 	return app, nil
 }
 
-// UpsertApp: upsert an application
+func (a *appService) updateApp(ctx context.Context, input models.AppInput) (*models.App, error) {
+	app, err := a.GetApp(ctx, *input.ID)
+	if err != nil {
+		a.log.Error("failed to retrieve app",
+			zap.Any("input", input),
+			zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	if input.Name != "" {
+		app.Name = input.Name
+	}
+	if input.GithubInstallID != nil {
+		app.GithubInstallID = *input.GithubInstallID
+	}
+
+	finalApp, err := a.repo.Update(ctx, app)
+	if err != nil {
+		a.log.Error("failed to update app",
+			zap.Any("app", app),
+			zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	if err := a.workflowMgr.Provision(ctx, app); err != nil {
+		a.log.Error("failed to provision app",
+			zap.Any("finalApp", *finalApp),
+			zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	return finalApp, nil
+}
+
 func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*models.App, error) {
+	if input.ID != nil {
+		return a.updateApp(ctx, input)
+	}
+
 	var app models.App
 	app.Name = input.Name
 	if input.GithubInstallID != nil {
@@ -67,15 +104,9 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 	orgID, _ := uuid.Parse(input.OrgID)
 	app.OrgID = orgID
 
-	if input.ID != nil {
-		// parsing the uuid while ignoring the error handling since we do this at protobuf level
-		appID, _ := uuid.Parse(*input.ID)
-		app.ID = appID
-	}
-
-	finalApp, err := a.repo.Upsert(ctx, &app)
+	finalApp, err := a.repo.Create(ctx, &app)
 	if err != nil {
-		a.log.Error("failed to upsert app",
+		a.log.Error("failed to insert app",
 			zap.Any("app", app),
 			zap.String("error", err.Error()))
 		return nil, err

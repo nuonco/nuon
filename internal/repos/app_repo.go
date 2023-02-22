@@ -7,7 +7,6 @@ import (
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/utils"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
@@ -15,7 +14,8 @@ import (
 type AppRepo interface {
 	Get(context.Context, uuid.UUID) (*models.App, error)
 	GetPageByOrg(context.Context, uuid.UUID, *models.ConnectionOptions) ([]*models.App, *utils.Page, error)
-	Upsert(context.Context, *models.App) (*models.App, error)
+	Create(context.Context, *models.App) (*models.App, error)
+	Update(context.Context, *models.App) (*models.App, error)
 	Delete(context.Context, uuid.UUID) (bool, error)
 }
 
@@ -39,17 +39,18 @@ func (a appRepo) Get(ctx context.Context, appID uuid.UUID) (*models.App, error) 
 	return &app, nil
 }
 
-// TODO(jm): remove this method and use Get/Update/Create methods from service to control flow
-func (a appRepo) Upsert(ctx context.Context, app *models.App) (*models.App, error) {
-	err := a.db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "id"}},
-		UpdateAll: true,
-	}).Create(app).Error
+func (a appRepo) Create(ctx context.Context, app *models.App) (*models.App, error) {
+	if err := a.db.WithContext(ctx).Create(app).Error; err != nil {
+		return nil, err
+	}
 
-	// we don't care if it's duplicate
-	if err != nil && utils.IsDuplicateKeyError(err) {
-		return app, nil
-	} else if err != nil {
+	return app, nil
+}
+
+func (a appRepo) Update(ctx context.Context, app *models.App) (*models.App, error) {
+	if err := a.db.WithContext(ctx).
+		Session(&gorm.Session{FullSaveAssociations: true}).
+		Updates(app).Error; err != nil {
 		return nil, err
 	}
 

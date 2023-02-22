@@ -82,7 +82,7 @@ func TestAppService_UpsertApp(t *testing.T) {
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
-				repo.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(app, nil)
+				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(app, nil)
 				return repo
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
@@ -91,14 +91,33 @@ func TestAppService_UpsertApp(t *testing.T) {
 				return mgr
 			},
 		},
-		"upsert error": {
+		"upsert happy path": {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
+				inp.ID = generics.ToPtr(app.ID.String())
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
-				repo.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil, errUpsertApp)
+				repo.EXPECT().Get(gomock.Any(), gomock.Any()).Return(app, nil)
+				repo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(app, nil)
+				return repo
+			},
+			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
+				mgr := workflows.NewMockAppWorkflowManager(ctl)
+				mgr.EXPECT().Provision(gomock.Any(), app).Return(nil)
+				return mgr
+			},
+		},
+		"upsert not found": {
+			inputFn: func() models.AppInput {
+				inp := generics.GetFakeObj[models.AppInput]()
+				inp.ID = generics.ToPtr(app.ID.String())
+				return inp
+			},
+			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
+				repo := repos.NewMockAppRepo(ctl)
+				repo.EXPECT().Get(gomock.Any(), app.ID).Return(nil, errUpsertApp)
 				return repo
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
@@ -109,11 +128,12 @@ func TestAppService_UpsertApp(t *testing.T) {
 		"error provisioning": {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
+				inp.ID = nil
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
-				repo.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(app, nil)
+				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(app, nil)
 				return repo
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
