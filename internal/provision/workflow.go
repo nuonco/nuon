@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/go-waypoint"
 	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
@@ -57,10 +58,10 @@ func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionReq
 		w.finishWorkflow(ctx, req, nil, err)
 		return nil, err
 	}
-	l.Debug("finished creating %s plan", typ)
+	l.Debug("finished creating", zap.Any("plan_type", typ))
 
 	if req.PlanOnly {
-		l.Debug("plan only enabled, skipping execution of %s plan", typ)
+		l.Debug("plan only enabled, skipping execution of", zap.Any("plan_type", typ))
 		return planResp.Plan, nil
 	}
 
@@ -77,7 +78,6 @@ func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionReq
 	return planResp.Plan, nil
 }
 
-//nolint:all
 func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionRequest) (*instancesv1.ProvisionResponse, error) {
 	resp := &instancesv1.ProvisionResponse{
 		BuildPlan: req.BuildPlan,
@@ -99,35 +99,33 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 		return resp, nil
 	}
 	resp.ImageSyncPlan = imageSyncPlanRef
-	l.Debug("successfully synced image")
-
-	// TODO(jm): remove this once deploy plans work
-	l.Debug("returning early until deployments work")
-	w.finishWorkflow(ctx, req, resp, nil)
-	return resp, nil
+	l.Debug("successfully deployed", zap.Any("plan_only", req.PlanOnly))
 
 	deployPlanRef, err := w.planAndExec(ctx, req, planv1.PlanType_PLAN_TYPE_WAYPOINT_DEPLOY)
 	if err != nil {
 		return resp, nil
 	}
 	resp.DeployPlan = deployPlanRef
-	l.Debug("successfully deployed")
+	l.Debug("successfully deployed", zap.Any("plan_only", req.PlanOnly))
 
-	// TODO(jm): change this from sending the hostname to slack to just writing it into the response
-	shnReq := SendHostnameNotificationRequest{
-		OrgID:                req.OrgId,
-		TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, "todo-org-id"),
-		InstallID:            req.InstallId,
-		AppID:                req.AppId,
+	if !req.PlanOnly {
+		shnReq := SendHostnameNotificationRequest{
+			OrgID:                req.OrgId,
+			TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
+			OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId),
+			InstallID:            req.InstallId,
+			AppID:                req.AppId,
+		}
+		shnResp, err := execSendHostnameNotification(ctx, act, shnReq)
+		if err != nil {
+			return resp, err
+		}
+		resp.Hostname = shnResp.Hostname
+		l.Debug("successfully sent hostname notification: ", shnResp)
 	}
-	shnResp, err := execSendHostnameNotification(ctx, act, shnReq)
-	if err != nil {
-		return resp, err
-	}
-	l.Debug("successfully sent hostname notification: ", shnResp)
-	resp.Hostname = shnResp.Hostname
 
+	w.finishWorkflow(ctx, req, resp, nil)
+	l.Debug("successfully wrote response")
 	return resp, nil
 }
 
