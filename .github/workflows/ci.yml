@@ -29,7 +29,12 @@ jobs:
   lint-protos:
     strategy:
       matrix:
-        repo: [api, components, orgs-api, workflows]
+        repo:
+          - api
+          - components
+          - orgs-api
+          - shared
+          - workflows
     name: Lint protos
     runs-on: ubuntu-latest
     steps:
@@ -65,7 +70,12 @@ jobs:
     if: github.event_name != 'pull_request'
     strategy:
       matrix:
-        repo: [api, components, orgs-api, workflows]
+        repo:
+          - api
+          - components
+          - orgs-api
+          - shared
+          - workflows
     runs-on: ubuntu-latest
     steps:
       - name: Generate token
