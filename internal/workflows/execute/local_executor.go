@@ -14,6 +14,7 @@ import (
 	"go.temporal.io/sdk/log"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type executor interface {
@@ -36,11 +37,17 @@ func (a *Activities) ExecutePlanLocally(ctx context.Context, req *executev1.Exec
 	}
 
 	l.Debug("executing plan")
-	_, err = e.Execute(ctx)
+	output, err := e.Execute(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("executor did not succeed: %w", err)
 	}
-	return &executev1.ExecutePlanResponse{}, nil
+
+	resp, err := a.parseOutput(l, plan, output)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse planner outputs: %w", err)
+	}
+
+	return resp, nil
 }
 
 func (a *Activities) fetchPlan(ctx context.Context, planref *planv1.PlanRef) (*planv1.Plan, error) {
@@ -83,6 +90,36 @@ func (a *Activities) getExecutor(l log.Logger, plan *planv1.Plan) (executor, err
 	case *planv1.Plan_TerraformPlan:
 		l.Debug("got terraform plan", "plan", plan)
 		return terraform.New(a.v, terraform.WithPlan(actual.TerraformPlan))
+
+	default:
+		typ := fmt.Sprintf("%T", actual)
+		l.Debug("got unknown plan", "plan", plan, "type", typ)
+		return nil, fmt.Errorf("unknown plan type: %s", typ)
+	}
+}
+
+func (a *Activities) parseOutput(l log.Logger, plan *planv1.Plan, output interface{}) (*executev1.ExecutePlanResponse, error) {
+	resp := &executev1.ExecutePlanResponse{}
+
+	switch actual := plan.Actual.(type) {
+	case *planv1.Plan_WaypointPlan:
+		l.Debug("waypoint plan not parsing outputs")
+		return resp, nil
+
+	case *planv1.Plan_TerraformPlan:
+		l.Debug("parsing outputs for terraform plan")
+		m, ok := output.(map[string]interface{})
+		if !ok {
+			l.Warn("terraform output not correct type")
+			return resp, fmt.Errorf("terraform output is incorrect type: %T", output)
+		}
+		s, err := structpb.NewStruct(m)
+		if err != nil {
+			return resp, err
+		}
+		resp.Outputs = &executev1.ExecutePlanResponse_TerraformOutputs{TerraformOutputs: s}
+
+		return resp, nil
 
 	default:
 		typ := fmt.Sprintf("%T", actual)
