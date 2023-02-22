@@ -30,6 +30,11 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 	resp := &buildv1.BuildResponse{}
 	l := workflow.GetLogger(ctx)
 
+	// TODO(jm): handle noop builds better
+	if req.Component.BuildCfg.GetNoop() != nil {
+		return resp, nil
+	}
+
 	// create plan for container build
 	planReq := &planv1.CreatePlanRequest{
 		Type: planv1.PlanType_PLAN_TYPE_WAYPOINT_BUILD,
