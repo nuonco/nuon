@@ -41,12 +41,14 @@ func (w *wkflow) ExecutePlan(ctx workflow.Context, req *executev1.ExecutePlanReq
 		return resp, err
 	}
 
-	_, err := execExecutePlanLocally(ctx, act, req)
+	epResp, err := execExecutePlanLocally(ctx, act, req)
 	if err != nil {
 		return resp, fmt.Errorf("unable to execute plan locally: %w", err)
 	}
-
 	l.Debug("successfully executed plan")
+
+	resp.Outputs = epResp.Outputs
+
 	return resp, nil
 }
 
