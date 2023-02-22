@@ -9,6 +9,7 @@ import (
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	planactivitiesv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1/activities/v1"
 	"github.com/powertoolsdev/workers-executors/internal/planners/terraform/sandbox"
+	"go.temporal.io/sdk/activity"
 )
 
 //nolint:unparam // NOTE(jdt): trying to keep these methods consistent, hence the unused error output
@@ -20,7 +21,9 @@ func (w *wkflow) sandboxPlanRequest(typ planv1.PlanType, req *planv1.Sandbox) (*
 			Name:   w.cfg.SandboxBucket,
 			Region: w.cfg.SandboxBucketRegion,
 			AssumeRoleDetails: &planv1.AssumeRoleDetails{
-				AssumeArn: fmt.Sprintf(w.cfg.OrgsInstallationsRoleTemplate, req.OrgId),
+				// AssumeArn: fmt.Sprintf(w.cfg.OrgsInstallationsRoleTemplate, req.OrgId),
+				// TODO(jdt): un-hardcode
+				AssumeArn: "arn:aws:iam::676549690856:role/eks/eks-workers-executors",
 			},
 		},
 		Backend: &planactivitiesv1.Bucket{
@@ -45,19 +48,24 @@ func (a *Activities) CreateTerraformSandboxPlan(
 	req *planactivitiesv1.CreateSandboxPlan,
 ) (*planactivitiesv1.CreatePlanResponse, error) {
 	resp := &planactivitiesv1.CreatePlanResponse{}
+	l := activity.GetLogger(ctx)
 
+	l.Debug("starting create terraform sandbox plan")
 	if err := req.Validate(); err != nil {
 		return resp, fmt.Errorf("unable to validate request: %w", err)
 	}
 
+	l.Debug("creating sandbox planner")
 	planner, err := sandbox.New(
 		a.v,
 		sandbox.WithPlan(req),
+		sandbox.WithLogger(l),
 	)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get planner: %w", err)
 	}
 
+	l.Debug("creating sandbox plan")
 	plan, err := planner.Plan(ctx)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get plan: %w", err)
@@ -69,7 +77,7 @@ func (a *Activities) CreateTerraformSandboxPlan(
 		BucketAssumeRoleArn: req.Plan.AssumeRoleDetails.AssumeArn,
 	}
 
-	// create upload client
+	l.Debug("uploading sandbox plan")
 	uploadClient, err := uploader.NewS3Uploader(
 		a.v,
 		uploader.WithBucketName(planRef.Bucket),

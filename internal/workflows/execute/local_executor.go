@@ -76,17 +76,17 @@ func (a *Activities) fetchPlan(ctx context.Context, planref *planv1.PlanRef) (*p
 func (a *Activities) getExecutor(l log.Logger, plan *planv1.Plan) (executor, error) {
 	switch actual := plan.Actual.(type) {
 	case *planv1.Plan_WaypointPlan:
-		l.Debug("got waypoint plan", zap.Any("plan", plan))
+		l.Debug("got waypoint plan", "plan", plan)
 		zapLog := zap.L()
 		return waypoint.New(a.v, waypoint.WithPlan(actual.WaypointPlan), waypoint.WithLogger(zapLog))
 
 	case *planv1.Plan_TerraformPlan:
-		l.Debug("got terraform plan", zap.Any("plan", plan))
+		l.Debug("got terraform plan", "plan", plan)
 		return terraform.New(a.v, terraform.WithPlan(actual.TerraformPlan))
 
 	default:
 		typ := fmt.Sprintf("%T", actual)
-		l.Debug("got unknown plan", zap.Any("plan", plan), zap.String("type", typ))
+		l.Debug("got unknown plan", "plan", plan, "type", typ)
 		return nil, fmt.Errorf("unknown plan type: %s", typ)
 	}
 }
