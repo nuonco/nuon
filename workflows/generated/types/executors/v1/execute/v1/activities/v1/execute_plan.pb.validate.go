@@ -188,6 +188,52 @@ func (m *ExecuteLocallyResponse) validate(all bool) error {
 
 	var errors []error
 
+	switch v := m.Outputs.(type) {
+	case *ExecuteLocallyResponse_TerraformOutputs:
+		if v == nil {
+			err := ExecuteLocallyResponseValidationError{
+				field:  "Outputs",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetTerraformOutputs()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ExecuteLocallyResponseValidationError{
+						field:  "TerraformOutputs",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ExecuteLocallyResponseValidationError{
+						field:  "TerraformOutputs",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetTerraformOutputs()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ExecuteLocallyResponseValidationError{
+					field:  "TerraformOutputs",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	default:
+		_ = v // ensures v is used
+	}
+
 	if len(errors) > 0 {
 		return ExecuteLocallyResponseMultiError(errors)
 	}
