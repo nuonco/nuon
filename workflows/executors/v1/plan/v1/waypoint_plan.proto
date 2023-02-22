@@ -20,6 +20,13 @@ message WaypointPlan {
   GitSource git_source = 7;
 }
 
+enum WaypointJobType {
+  WAYPOINT_JOB_TYPE_UNSPECIFIED = 0;
+  WAYPOINT_JOB_TYPE_BUILD = 1;
+  WAYPOINT_JOB_TYPE_DEPLOY_ARTIFACT = 2;
+  WAYPOINT_JOB_TYPE_DEPLOY = 3;
+}
+
 // ECRRepositoryRef contains all of the information for referencing the app's ECR repo. Note, that all ECR repos are
 // created with the format `orgShortID/appShortID` so we can use prefix based IAM roles to limit them.
 message ECRRepositoryRef {
@@ -129,4 +136,6 @@ message WaypointRef {
 
   string hcl_config = 9 [(validate.rules).string.min_bytes = 1];
   string hcl_config_format = 10 [(validate.rules).string.min_bytes = 1];
+
+  WaypointJobType job_type = 11;
 }

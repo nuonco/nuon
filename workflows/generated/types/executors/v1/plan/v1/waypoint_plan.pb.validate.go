@@ -785,6 +785,8 @@ func (m *WaypointRef) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	// no validation rules for JobType
+
 	if len(errors) > 0 {
 		return WaypointRefMultiError(errors)
 	}
