@@ -13,7 +13,7 @@ import (
 func createApp(ctx context.Context, t *testing.T, state repoTestState) *models.App {
 	userID := uuid.NewString()
 	org := createOrg(ctx, t, state.orgRepo)
-	app, err := state.appRepo.Upsert(ctx, &models.App{
+	app, err := state.appRepo.Create(ctx, &models.App{
 		Name:        uuid.NewString(),
 		CreatedByID: userID,
 		OrgID:       org.ID,
@@ -36,21 +36,21 @@ func TestUpsertApp(t *testing.T) {
 					CreatedByID: userID,
 					OrgID:       org.ID,
 				}
-				app, err := state.appRepo.Upsert(ctx, appInput)
+				app, err := state.appRepo.Create(ctx, appInput)
 				assert.Nil(t, err)
 				assert.NotNil(t, app)
 				assert.NotNil(t, app.ID)
 			},
 		},
 		{
-			desc: "should upsert when creating with same ID",
+			desc: "should update an app successfully",
 			fn: func(ctx context.Context, state repoTestState) {
 				origApp := createApp(ctx, t, state)
 				appInput := &models.App{
 					Model: models.Model{ID: origApp.ID},
 					Name:  origApp.Name + "a",
 				}
-				app, err := state.appRepo.Upsert(ctx, appInput)
+				app, err := state.appRepo.Update(ctx, appInput)
 				assert.Nil(t, err)
 				assert.NotNil(t, app)
 
@@ -63,7 +63,7 @@ func TestUpsertApp(t *testing.T) {
 			desc: "should error when context is canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				app, err := state.appRepo.Upsert(ctx, &models.App{})
+				app, err := state.appRepo.Create(ctx, &models.App{})
 				assert.NotNil(t, err)
 				assert.Nil(t, app)
 			},
