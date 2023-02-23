@@ -65,3 +65,7 @@ output "orgs_bucket_access_role_arn" {
   description = "IAM role for accessing the orgs bucket in the orgs account"
   value       = module.orgs_bucket_access_role.iam_role_arn
 }
+
+output "sandbox" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.sandbox)
+}
