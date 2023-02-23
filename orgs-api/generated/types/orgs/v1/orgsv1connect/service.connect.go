@@ -28,7 +28,6 @@ const (
 // OrgsServiceClient is a client for the orgs.v1.OrgsService service.
 type OrgsServiceClient interface {
 	GetRunners(context.Context, *connect_go.Request[v1.GetRunnersRequest]) (*connect_go.Response[v1.GetRunnersResponse], error)
-	GetInstalls(context.Context, *connect_go.Request[v1.GetInstallsRequest]) (*connect_go.Response[v1.GetInstallsResponse], error)
 	GetInfo(context.Context, *connect_go.Request[v1.GetInfoRequest]) (*connect_go.Response[v1.GetInfoResponse], error)
 	GetStatus(context.Context, *connect_go.Request[v1.GetStatusRequest]) (*connect_go.Response[v1.GetStatusResponse], error)
 }
@@ -48,11 +47,6 @@ func NewOrgsServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+"/orgs.v1.OrgsService/GetRunners",
 			opts...,
 		),
-		getInstalls: connect_go.NewClient[v1.GetInstallsRequest, v1.GetInstallsResponse](
-			httpClient,
-			baseURL+"/orgs.v1.OrgsService/GetInstalls",
-			opts...,
-		),
 		getInfo: connect_go.NewClient[v1.GetInfoRequest, v1.GetInfoResponse](
 			httpClient,
 			baseURL+"/orgs.v1.OrgsService/GetInfo",
@@ -68,20 +62,14 @@ func NewOrgsServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 
 // orgsServiceClient implements OrgsServiceClient.
 type orgsServiceClient struct {
-	getRunners  *connect_go.Client[v1.GetRunnersRequest, v1.GetRunnersResponse]
-	getInstalls *connect_go.Client[v1.GetInstallsRequest, v1.GetInstallsResponse]
-	getInfo     *connect_go.Client[v1.GetInfoRequest, v1.GetInfoResponse]
-	getStatus   *connect_go.Client[v1.GetStatusRequest, v1.GetStatusResponse]
+	getRunners *connect_go.Client[v1.GetRunnersRequest, v1.GetRunnersResponse]
+	getInfo    *connect_go.Client[v1.GetInfoRequest, v1.GetInfoResponse]
+	getStatus  *connect_go.Client[v1.GetStatusRequest, v1.GetStatusResponse]
 }
 
 // GetRunners calls orgs.v1.OrgsService.GetRunners.
 func (c *orgsServiceClient) GetRunners(ctx context.Context, req *connect_go.Request[v1.GetRunnersRequest]) (*connect_go.Response[v1.GetRunnersResponse], error) {
 	return c.getRunners.CallUnary(ctx, req)
-}
-
-// GetInstalls calls orgs.v1.OrgsService.GetInstalls.
-func (c *orgsServiceClient) GetInstalls(ctx context.Context, req *connect_go.Request[v1.GetInstallsRequest]) (*connect_go.Response[v1.GetInstallsResponse], error) {
-	return c.getInstalls.CallUnary(ctx, req)
 }
 
 // GetInfo calls orgs.v1.OrgsService.GetInfo.
@@ -97,7 +85,6 @@ func (c *orgsServiceClient) GetStatus(ctx context.Context, req *connect_go.Reque
 // OrgsServiceHandler is an implementation of the orgs.v1.OrgsService service.
 type OrgsServiceHandler interface {
 	GetRunners(context.Context, *connect_go.Request[v1.GetRunnersRequest]) (*connect_go.Response[v1.GetRunnersResponse], error)
-	GetInstalls(context.Context, *connect_go.Request[v1.GetInstallsRequest]) (*connect_go.Response[v1.GetInstallsResponse], error)
 	GetInfo(context.Context, *connect_go.Request[v1.GetInfoRequest]) (*connect_go.Response[v1.GetInfoResponse], error)
 	GetStatus(context.Context, *connect_go.Request[v1.GetStatusRequest]) (*connect_go.Response[v1.GetStatusResponse], error)
 }
@@ -112,11 +99,6 @@ func NewOrgsServiceHandler(svc OrgsServiceHandler, opts ...connect_go.HandlerOpt
 	mux.Handle("/orgs.v1.OrgsService/GetRunners", connect_go.NewUnaryHandler(
 		"/orgs.v1.OrgsService/GetRunners",
 		svc.GetRunners,
-		opts...,
-	))
-	mux.Handle("/orgs.v1.OrgsService/GetInstalls", connect_go.NewUnaryHandler(
-		"/orgs.v1.OrgsService/GetInstalls",
-		svc.GetInstalls,
 		opts...,
 	))
 	mux.Handle("/orgs.v1.OrgsService/GetInfo", connect_go.NewUnaryHandler(
@@ -137,10 +119,6 @@ type UnimplementedOrgsServiceHandler struct{}
 
 func (UnimplementedOrgsServiceHandler) GetRunners(context.Context, *connect_go.Request[v1.GetRunnersRequest]) (*connect_go.Response[v1.GetRunnersResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("orgs.v1.OrgsService.GetRunners is not implemented"))
-}
-
-func (UnimplementedOrgsServiceHandler) GetInstalls(context.Context, *connect_go.Request[v1.GetInstallsRequest]) (*connect_go.Response[v1.GetInstallsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("orgs.v1.OrgsService.GetInstalls is not implemented"))
 }
 
 func (UnimplementedOrgsServiceHandler) GetInfo(context.Context, *connect_go.Request[v1.GetInfoRequest]) (*connect_go.Response[v1.GetInfoResponse], error) {

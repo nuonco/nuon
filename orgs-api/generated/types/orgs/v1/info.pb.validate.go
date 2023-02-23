@@ -35,9 +35,6 @@ var (
 	_ = sort.Sort
 )
 
-// define the regex for a UUID once up-front
-var _info_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-
 // Validate checks the field values on GetInfoResponse with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.
@@ -72,18 +69,6 @@ func (m *GetInfoResponse) validate(all bool) error {
 
 	}
 
-	if err := m._validateUuid(m.GetLongId()); err != nil {
-		err = GetInfoResponseValidationError{
-			field:  "LongId",
-			reason: "value must be a valid UUID",
-			cause:  err,
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if all {
 		switch v := interface{}(m.GetServerInfo()).(type) {
 		case interface{ ValidateAll() error }:
@@ -114,11 +99,11 @@ func (m *GetInfoResponse) validate(all bool) error {
 	}
 
 	if all {
-		switch v := interface{}(m.GetRunnerInfo()).(type) {
+		switch v := interface{}(m.GetBuildRunnerInfo()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
 				errors = append(errors, GetInfoResponseValidationError{
-					field:  "RunnerInfo",
+					field:  "BuildRunnerInfo",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
@@ -126,16 +111,16 @@ func (m *GetInfoResponse) validate(all bool) error {
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
 				errors = append(errors, GetInfoResponseValidationError{
-					field:  "RunnerInfo",
+					field:  "BuildRunnerInfo",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
 			}
 		}
-	} else if v, ok := interface{}(m.GetRunnerInfo()).(interface{ Validate() error }); ok {
+	} else if v, ok := interface{}(m.GetBuildRunnerInfo()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return GetInfoResponseValidationError{
-				field:  "RunnerInfo",
+				field:  "BuildRunnerInfo",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
@@ -173,14 +158,6 @@ func (m *GetInfoResponse) validate(all bool) error {
 
 	if len(errors) > 0 {
 		return GetInfoResponseMultiError(errors)
-	}
-
-	return nil
-}
-
-func (m *GetInfoResponse) _validateUuid(uuid string) error {
-	if matched := _info_uuidPattern.MatchString(uuid); !matched {
-		return errors.New("invalid uuid format")
 	}
 
 	return nil

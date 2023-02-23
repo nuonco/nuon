@@ -57,6 +57,10 @@ func (m *GetStatusResponse) validate(all bool) error {
 
 	var errors []error
 
+	// no validation rules for Status
+
+	// no validation rules for Message
+
 	if len(errors) > 0 {
 		return GetStatusResponseMultiError(errors)
 	}

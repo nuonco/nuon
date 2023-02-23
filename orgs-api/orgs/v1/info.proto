@@ -10,23 +10,17 @@ import "validate/validate.proto";
 message GetInfoResponse {
   string id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
-  ];
-  string long_id = 2 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 
-  ServerInfo server_info = 3;
-
-  RunnerInfo runner_info = 4;
-
-  IAMInfo iam_info = 5;
+  ServerInfo server_info = 2;
+  RunnerInfo build_runner_info = 3;
+  IAMInfo iam_info = 4;
 }
 
 message GetInfoRequest {
-  string org_id = 2 [
+  string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }

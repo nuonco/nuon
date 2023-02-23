@@ -2,15 +2,18 @@ syntax = "proto3";
 
 package orgs.v1;
 
+import "orgs/v1/types.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-// GetRunnersResponse returns a ref of each installation
-message GetRunnersResponse {}
+// GetRunnersResponse returns all of the runners connected to an org's waypoint server
+message GetRunnersResponse {
+  repeated RunnerInfo runners = 1;
+}
 
 message GetRunnersRequest {
-  string org_id = 2 [
+  string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
