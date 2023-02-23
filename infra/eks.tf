@@ -55,4 +55,6 @@ module "iam_eks_role" {
   role_policy_arns = {
     custom = aws_iam_policy.workers_policy.arn
   }
+
+  allow_self_assume_role = true
 }
