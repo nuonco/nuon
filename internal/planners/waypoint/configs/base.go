@@ -46,10 +46,6 @@ func newBaseBuilder(v *validator.Validate, opts ...Option) (*baseBuilder, error)
 // WithEcrRef is used to pass in a configuration for pushing an image to ecr
 func WithEcrRef(ecrRef *planv1.ECRRepositoryRef) Option {
 	return func(b *baseBuilder) error {
-		if err := ecrRef.ValidateAll(); err != nil {
-			return err
-		}
-
 		b.EcrRef = ecrRef
 		return nil
 	}
@@ -69,10 +65,6 @@ func WithComponent(comp *componentv1.Component) Option {
 
 func WithWaypointRef(ref *planv1.WaypointRef) Option {
 	return func(b *baseBuilder) error {
-		if err := ref.ValidateAll(); err != nil {
-			return err
-		}
-
 		b.WaypointRef = ref
 		return nil
 	}

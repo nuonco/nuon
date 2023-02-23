@@ -33,6 +33,8 @@ project = "{{.WaypointRef.Project}}"
 
 app "{{.WaypointRef.App}}" {
   build {
+    use "docker-pull" {}
+
     registry {
       use "aws-ecr" {
 	repository = "{{.EcrRef.RepositoryName}}"

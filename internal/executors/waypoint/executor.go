@@ -190,6 +190,7 @@ func (e *executor) queueJob(ctx context.Context) (string, error) {
 		queue.WithWaypointHCL([]byte(e.Plan.WaypointRef.HclConfig)),
 		queue.WithTargetRunnerID(e.Plan.WaypointRef.RunnerId),
 		queue.WithOnDemandRunnerName(e.Plan.WaypointRef.OnDemandRunnerConfig),
+		queue.WithJobType(e.Plan.WaypointRef.JobType),
 	)
 	if err != nil {
 		return "", err

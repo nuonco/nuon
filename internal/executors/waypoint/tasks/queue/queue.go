@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"google.golang.org/grpc"
 )
 
@@ -15,23 +16,25 @@ const (
 
 type jobQueuer interface {
 	QueueJob(ctx context.Context, in *gen.QueueJobRequest, opts ...grpc.CallOption) (*gen.QueueJobResponse, error)
+	GetLatestPushedArtifact(ctx context.Context, in *gen.GetLatestPushedArtifactRequest, opts ...grpc.CallOption) (*gen.PushedArtifact, error)
 }
 
 var _ jobQueuer = (gen.WaypointClient)(nil)
 
 // TODO(jdt): robust-ify validation?
 type queuer struct {
-	Client             jobQueuer         `validate:"required"`
-	ID                 string            `validate:"required"`
-	Workspace          string            `validate:"required"`
-	Project            string            `validate:"required"`
-	Application        string            `validate:"required"`
-	Labels             map[string]string `validate:"required"`
-	WaypointHCL        []byte            `validate:"required"`
-	TargetRunnerID     string            `validate:"required"`
-	OnDemandRunnerName string            `validate:"required"`
-	JobTimeout         string            `validate:"required"`
-	GitURL             string            `validate:"required"`
+	Client             jobQueuer              `validate:"required"`
+	ID                 string                 `validate:"required"`
+	Workspace          string                 `validate:"required"`
+	Project            string                 `validate:"required"`
+	Application        string                 `validate:"required"`
+	Labels             map[string]string      `validate:"required"`
+	WaypointHCL        []byte                 `validate:"required"`
+	TargetRunnerID     string                 `validate:"required"`
+	OnDemandRunnerName string                 `validate:"required"`
+	JobTimeout         string                 `validate:"required"`
+	JobType            planv1.WaypointJobType `validate:"required"`
+	GitURL             string                 `validate:"required"`
 	Path               string
 	CommitRef          string
 
@@ -145,6 +148,13 @@ func WithOnDemandRunnerName(name string) queuerOption {
 	}
 }
 
+func WithJobType(typ planv1.WaypointJobType) queuerOption {
+	return func(q *queuer) error {
+		q.JobType = typ
+		return nil
+	}
+}
+
 func WithJobTimeout(timeout string) queuerOption {
 	return func(q *queuer) error {
 		q.JobTimeout = timeout
@@ -152,13 +162,27 @@ func WithJobTimeout(timeout string) queuerOption {
 	}
 }
 
+func (q *queuer) getArtifact(ctx context.Context) (*gen.PushedArtifact, error) {
+	push, err := q.Client.GetLatestPushedArtifact(ctx, &gen.GetLatestPushedArtifactRequest{
+		Application: &gen.Ref_Application{
+			Application: q.Application,
+			Project:     q.Project,
+		},
+		Workspace: &gen.Ref_Workspace{
+			Workspace: q.Workspace,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return push, nil
+}
+
 // QueueDeployment queues the job returning the jobID or error
 func (q *queuer) QueueDeployment(ctx context.Context) (string, error) {
 	req := &gen.QueueJobRequest{
 		Job: &gen.Job{
-			Operation: &gen.Job_Build{
-				Build: &gen.Job_BuildOp{DisablePush: false},
-			},
 			SingletonId: q.ID,
 			Workspace: &gen.Ref_Workspace{
 				Workspace: q.Workspace,
@@ -196,6 +220,29 @@ func (q *queuer) QueueDeployment(ctx context.Context) (string, error) {
 			Variables: []*gen.Variable{},
 		},
 		ExpiresIn: q.JobTimeout,
+	}
+
+	switch q.JobType {
+	case planv1.WaypointJobType_WAYPOINT_JOB_TYPE_BUILD:
+		req.Job.Operation = &gen.Job_Build{
+			Build: &gen.Job_BuildOp{DisablePush: false},
+		}
+	case planv1.WaypointJobType_WAYPOINT_JOB_TYPE_DEPLOY_ARTIFACT:
+		artifact, err := q.getArtifact(ctx)
+		if err != nil {
+			return "", fmt.Errorf("unable to get artifact: %w", err)
+		}
+		req.Job.Operation = &gen.Job_Deploy{
+			Deploy: &gen.Job_DeployOp{
+				Artifact: artifact,
+			},
+		}
+	case planv1.WaypointJobType_WAYPOINT_JOB_TYPE_DEPLOY:
+		req.Job.Operation = &gen.Job_Deploy{
+			Deploy: &gen.Job_DeployOp{},
+		}
+	default:
+		return "", fmt.Errorf("invalid job type: %s", q.JobType)
 	}
 
 	resp, err := q.Client.QueueJob(ctx, req)

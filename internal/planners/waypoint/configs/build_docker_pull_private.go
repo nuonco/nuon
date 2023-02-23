@@ -54,7 +54,6 @@ app "{{.WaypointRef.App}}" {
       use "aws-ecr" {
 	repository = "{{.EcrRef.RepositoryName}}"
 	tag	 = "{{.EcrRef.Tag}}"
-	region = "{{.EcrRef.Region}}"
       }
     }
   }

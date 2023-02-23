@@ -36,13 +36,13 @@ func (p *planner) getPrivateGitSource(ctx context.Context, cfg *vcsv1.PrivateGit
 		return nil, fmt.Errorf("unable to get github token: %w", err)
 	}
 
-	installationToken, err := tokenGetter.InstallationToken(ctx)
+	clonePath, err := tokenGetter.ClonePath(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get installation token: %w", err)
+		return nil, fmt.Errorf("unable to get clone path: %w", err)
 	}
 
 	return &planv1.GitSource{
-		Url:               fmt.Sprintf("https://%s@github.com/%s.git", installationToken, cfg.Repo),
+		Url:               clonePath,
 		Ref:               cfg.CommitRef,
 		Path:              cfg.Directory,
 		RecurseSubmodules: 2,

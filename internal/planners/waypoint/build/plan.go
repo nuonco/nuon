@@ -33,12 +33,13 @@ func (p *planner) getBasePlan() *planv1.WaypointPlan {
 		WaypointRef: &planv1.WaypointRef{
 			Project:              p.Metadata.AppShortId,
 			Workspace:            p.Metadata.AppShortId,
-			App:                  p.Component.Name,
-			SingletonId:          fmt.Sprintf("%s-%s", p.Metadata.DeploymentShortId, p.Component.Name),
+			App:                  p.Component.Id,
+			SingletonId:          fmt.Sprintf("%s-%s", p.Metadata.DeploymentShortId, p.Component.Id),
 			Labels:               waypoint.DefaultLabels(p.Metadata, p.Component.Name, phaseName),
 			RunnerId:             p.Metadata.OrgShortId,
 			OnDemandRunnerConfig: p.Metadata.OrgShortId,
 			JobTimeoutSeconds:    defaultBuildTimeoutSeconds,
+			JobType:              planv1.WaypointJobType_WAYPOINT_JOB_TYPE_BUILD,
 		},
 		Outputs: &planv1.Outputs{
 			Bucket:              p.OrgMetadata.Buckets.DeploymentsBucket,

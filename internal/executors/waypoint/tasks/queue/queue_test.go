@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -20,6 +21,10 @@ func (m *mockJobQueuer) QueueJob(
 	opts ...grpc.CallOption) (*gen.QueueJobResponse, error) {
 	args := m.Called(ctx, in, opts)
 	return args.Get(0).(*gen.QueueJobResponse), args.Error(1)
+}
+
+func (m *mockJobQueuer) GetLatestPushedArtifact(ctx context.Context, in *gen.GetLatestPushedArtifactRequest, opts ...grpc.CallOption) (*gen.PushedArtifact, error) {
+	return nil, nil
 }
 
 var _ jobQueuer = (*mockJobQueuer)(nil)
@@ -56,7 +61,7 @@ func TestNew(t *testing.T) {
 			additionalOpts: []queuerOption{WithID("")},
 			errExpected:    fmt.Errorf("Field validation for 'ID' failed"),
 		},
-		"error on conifg": {
+		"error on config": {
 			v:              v,
 			additionalOpts: []queuerOption{func(*queuer) error { return fmt.Errorf("error on config") }},
 			errExpected:    fmt.Errorf("error on config"),
@@ -95,6 +100,7 @@ func testOptions() []queuerOption {
 		WithTargetRunnerID("target-runner-id"),
 		WithOnDemandRunnerName("on-demand-runner-name"),
 		WithJobTimeout("1m"),
+		WithJobType(planv1.WaypointJobType_WAYPOINT_JOB_TYPE_BUILD),
 		WithWaypointHCL([]byte("waypoint-hcl")),
 	}
 }

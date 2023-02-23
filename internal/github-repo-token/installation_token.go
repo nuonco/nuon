@@ -9,6 +9,15 @@ import (
 	"github.com/powertoolsdev/workers-executors/internal/github-repo-token/secret"
 )
 
+func (g *gh) ClonePath(ctx context.Context) (string, error) {
+	token, err := g.InstallationToken(ctx)
+	if err != nil {
+		return "", fmt.Errorf("unable to get installation token: %w", err)
+	}
+
+	return fmt.Sprintf("https://%s:%s@github.com/%s/%s.git", g.RepoOwner, token, g.RepoOwner, g.RepoName), nil
+}
+
 //
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=installation_token_mock_test.go -source=installation_token.go -package=github
@@ -27,7 +36,7 @@ func (g *gh) InstallationToken(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("unable to get app key: %w", err)
 	}
 
-	_, err = client.New(g.v,
+	ghClient, err := client.New(g.v,
 		client.WithAppID(g.AppKeyID),
 		client.WithAppKey(appKey),
 	)
@@ -35,7 +44,12 @@ func (g *gh) InstallationToken(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("unable to get github client: %w", err)
 	}
 
-	return "", nil
+	token, err := g.createInstallationToken(ctx, ghClient.Apps)
+	if err != nil {
+		return "", fmt.Errorf("unable to get github client: %w", err)
+	}
+
+	return token, nil
 }
 
 type installationTokenCreatorClient interface {
