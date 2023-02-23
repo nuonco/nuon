@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-workflows-meta/prefix"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 )
 
@@ -49,7 +50,7 @@ type starterImpl struct{}
 
 func (s *starterImpl) sendStartNotification(ctx context.Context, req StartRequest, sender notificationSender) error {
 	dr := req.DeprovisionRequest
-	s3Prefix := getS3Prefix(req.InstallationsBucket, dr.OrgId, dr.AppId, dr.InstallId)
+	s3Prefix := fmt.Sprintf("s3://%s/%s", req.InstallationsBucket, prefix.InstallPath(dr.OrgId, dr.AppId, dr.InstallId))
 	notif := fmt.Sprintf(startNotificationTemplate,
 		s3Prefix,
 		dr.SandboxSettings.Name,

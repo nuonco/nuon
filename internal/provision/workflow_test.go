@@ -20,8 +20,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/powertoolsdev/workers-installs/internal"
-	"github.com/powertoolsdev/workers-installs/internal/outputs"
 	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
+	"github.com/powertoolsdev/workers-installs/internal/sandbox"
 )
 
 // NOTE(jm): unfortunately, the only way to register these workflows in the test env is to do it using the same exact
@@ -49,6 +49,7 @@ func TestProvision_finishWithErr(t *testing.T) {
 	cfg := newFakeConfig()
 	assert.NoError(t, cfg.Validate())
 	req := generics.GetFakeObj[*installsv1.ProvisionRequest]()
+	req.PlanOnly = false
 	assert.NoError(t, req.Validate())
 
 	testSuite := &testsuite.WorkflowTestSuite{}
@@ -100,7 +101,7 @@ func TestProvision_finishWithErr(t *testing.T) {
 	env.ExecuteWorkflow(wkflow.Provision, req)
 
 	var resp *installsv1.ProvisionResponse
-	assert.NoError(t, env.GetWorkflowResult(&resp))
+	assert.Error(t, env.GetWorkflowResult(&resp))
 }
 
 func TestProvision(t *testing.T) {
@@ -119,7 +120,7 @@ func TestProvision(t *testing.T) {
 	env.RegisterWorkflow(CreatePlan)
 	env.RegisterWorkflow(ExecutePlan)
 
-	provisionOutputs := generics.GetFakeObj[outputs.TerraformOutputs]()
+	provisionOutputs := generics.GetFakeObj[sandbox.TerraformOutputs]()
 
 	act := NewActivities(internal.Config{}, nil)
 	// Mock activity implementation
@@ -130,6 +131,7 @@ func TestProvision(t *testing.T) {
 			assert.Equal(t, req.OrgId, pr.GetSandbox().OrgId)
 			assert.Equal(t, req.AppId, pr.GetSandbox().AppId)
 			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
+			assert.Equal(t, planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY, pr.GetSandbox().RunType)
 
 			acctSettings := pr.GetSandbox().GetAws()
 			assert.Equal(t, req.AccountSettings.AwsAccountId, acctSettings.AccountId)

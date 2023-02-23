@@ -6,13 +6,27 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/go-generics"
+	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	workers "github.com/powertoolsdev/workers-installs/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/workflow"
 )
+
+// NOTE(jm): unfortunately, the only way to register these workflows in the test env is to do it using the same exact
+// signature. Given we'll be using these workflows from just about every domain, we should probably make a library to
+// wrap these calls, so we don't have to maintain them everywhere like this.
+func CreatePlan(workflow.Context, *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+	return nil, nil
+}
+
+func ExecutePlan(workflow.Context, *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+	return nil, nil
+}
 
 func TestDeprovision_finishWithErr(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
@@ -24,7 +38,19 @@ func TestDeprovision_finishWithErr(t *testing.T) {
 	env := testSuite.NewTestWorkflowEnvironment()
 	act := NewActivities(nil)
 
-	errDestroyTerraform := fmt.Errorf("unable to destroy terraform")
+	errChildWorkflow := fmt.Errorf("unable to complete workflow")
+
+	env.RegisterWorkflow(CreatePlan)
+	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
+		Return(func(_ workflow.Context, pr *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+			return &planv1.CreatePlanResponse{}, errChildWorkflow
+		})
+
+	// env.RegisterWorkflow(ExecutePlan)
+	// env.OnWorkflow("ExecutePlan", mock.Anything, mock.Anything).
+	// 	Return(func(_ workflow.Context, pr *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+	// 		return &executev1.ExecutePlanResponse{}, errChildWorkflow
+	// 	})
 
 	env.OnActivity(act.Start, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, sReq StartRequest) (StartResponse, error) {
@@ -33,20 +59,14 @@ func TestDeprovision_finishWithErr(t *testing.T) {
 			return resp, nil
 		})
 
-	env.OnActivity(act.DestroyTerraform, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, _ DestroyTerraformRequest) (DestroyTerraformResponse, error) {
-			var resp DestroyTerraformResponse
-			return resp, errDestroyTerraform
-		})
-
 	env.OnActivity(act.FinishDeprovision, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, fReq FinishRequest) (FinishResponse, error) {
 			var resp FinishResponse
 			assert.NoError(t, fReq.validate())
 
 			// verify that when a step fails, the error handler calls finish with the right params
-			assert.Contains(t, fReq.ErrorMessage, errDestroyTerraform.Error())
-			assert.Contains(t, fReq.ErrorStep, "destroy_terraform")
+			assert.Contains(t, fReq.ErrorMessage, errChildWorkflow.Error())
+			assert.Contains(t, fReq.ErrorStep, "sandbox_plan")
 			assert.False(t, fReq.Success)
 
 			return resp, nil
@@ -61,23 +81,44 @@ func TestDeprovision(t *testing.T) {
 	assert.NoError(t, cfg.Validate())
 	req := generics.GetFakeObj[*installsv1.DeprovisionRequest]()
 	assert.NoError(t, req.Validate())
+	planref := generics.GetFakeObj[*planv1.PlanRef]()
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 	act := NewActivities(nil)
 
-	// Mock activity implementation
-	env.OnActivity(act.DestroyTerraform, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, dtfReq DestroyTerraformRequest) (DestroyTerraformResponse, error) {
-			var resp DestroyTerraformResponse
-			assert.NoError(t, dtfReq.validate())
+	env.RegisterWorkflow(CreatePlan)
+	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
+		Return(func(_ workflow.Context, pr *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+			assert.Nil(t, pr.Validate())
 
-			assert.Equal(t, req.OrgId, dtfReq.DeprovisionRequest.OrgId)
-			assert.Equal(t, req.AppId, dtfReq.DeprovisionRequest.AppId)
-			assert.Equal(t, req.InstallId, dtfReq.DeprovisionRequest.InstallId)
-			return resp, nil
+			assert.Equal(t, req.OrgId, pr.GetSandbox().OrgId)
+			assert.Equal(t, req.AppId, pr.GetSandbox().AppId)
+			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
+			assert.Equal(t, planv1.TerraformRunType_TERRAFORM_RUN_TYPE_DESTROY, pr.GetSandbox().RunType)
+
+			acctSettings := pr.GetSandbox().GetAws()
+			assert.Equal(t, req.AccountSettings.AwsAccountId, acctSettings.AccountId)
+			assert.Equal(t, req.AccountSettings.Region, acctSettings.Region)
+			assert.Equal(t, req.AccountSettings.AwsRoleArn, acctSettings.RoleArn)
+
+			sbxSettings := pr.GetSandbox().GetSandboxSettings()
+			assert.Equal(t, req.SandboxSettings.Name, sbxSettings.Name)
+			assert.Equal(t, req.SandboxSettings.Version, sbxSettings.Version)
+
+			return &planv1.CreatePlanResponse{Plan: planref}, nil
 		})
 
+	env.RegisterWorkflow(ExecutePlan)
+	env.OnWorkflow("ExecutePlan", mock.Anything, mock.Anything).
+		Return(func(_ workflow.Context, pr *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+			assert.Nil(t, pr.Validate())
+			assert.Equal(t, planref, pr.Plan)
+
+			return &executev1.ExecutePlanResponse{}, nil
+		})
+
+	// Mock activity implementation
 	env.OnActivity(act.Start, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, stReq StartRequest) (StartResponse, error) {
 			var resp StartResponse

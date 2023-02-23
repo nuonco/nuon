@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	workers "github.com/powertoolsdev/workers-installs/internal"
+	"github.com/powertoolsdev/workers-installs/internal/sandbox"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -31,7 +34,7 @@ func (w wkflow) finishWithErr(ctx workflow.Context, req *installsv1.DeprovisionR
 	}
 
 	if resp, execErr := execFinish(ctx, act, finishReq); execErr != nil {
-		l.Debug("unable to finish with error: %w", execErr, resp)
+		l.Debug("unable to finish with error", "error", execErr, "response", resp)
 	}
 }
 
@@ -42,15 +45,15 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 
 	l.Debug("validating deprovision request")
 	if err := req.Validate(); err != nil {
-		l.Debug("unable to validate terraform destroy request: %w", err)
+		l.Debug("unable to validate terraform destroy request", "error", err)
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 60 * time.Minute,
 	}
-	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
+	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 	act := NewActivities(nil)
 
 	stReq := StartRequest{
@@ -59,24 +62,53 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 	}
 	_, err := execStart(ctx, act, stReq)
 	if err != nil {
-		l.Debug("unable to execute start activity: %w", err)
+		l.Debug("unable to execute start activity", "error", err)
 		return resp, fmt.Errorf("unable to execute start activity: %w", err)
 	}
 
-	dtReq := DestroyTerraformRequest{
-		DeprovisionRequest: req,
-
-		InstallationsBucketName:   w.cfg.InstallationsBucket,
-		InstallationsBucketRegion: w.cfg.InstallationsBucketRegion,
-		SandboxBucketName:         w.cfg.SandboxBucket,
-		NuonAssumeRoleArn:         w.cfg.NuonAccessRoleArn,
+	cpReq := planv1.CreatePlanRequest{
+		Type: planv1.PlanType_PLAN_TYPE_TERRAFORM_SANDBOX,
+		Input: &planv1.CreatePlanRequest_Sandbox{
+			Sandbox: &planv1.Sandbox{
+				OrgId:           req.OrgId,
+				AppId:           req.AppId,
+				InstallId:       req.InstallId,
+				SandboxSettings: &planv1.SandboxSettings{Name: req.SandboxSettings.Name, Version: req.SandboxSettings.Version},
+				// TODO(jdt): accept this from the API and set it here?
+				// it's defaulted in workers-executors so no need to double hard-code
+				// TerraformVersion: new(string),
+				RunType: planv1.TerraformRunType_TERRAFORM_RUN_TYPE_DESTROY,
+				AccountSettings: &planv1.Sandbox_Aws{
+					Aws: &planv1.AWSSettings{
+						Region:    req.AccountSettings.Region,
+						AccountId: req.AccountSettings.AwsAccountId,
+						RoleArn:   req.AccountSettings.AwsRoleArn,
+					},
+				},
+			},
+		},
 	}
 
-	_, err = execDestroyTerraform(ctx, act, dtReq)
+	l.Debug("executing sandbox plan")
+	spr, err := sandbox.Plan(ctx, &cpReq)
 	if err != nil {
-		l.Debug("unable to execute terraform destroy: %w", err)
-		err = fmt.Errorf("unable to run terraform destroy: %w", err)
-		w.finishWithErr(ctx, req, act, "destroy_terraform", err)
+		err = fmt.Errorf("unable to plan deprovision sandbox: %w", err)
+		w.finishWithErr(ctx, req, act, "sandbox_plan", err)
+		return resp, err
+	}
+
+	// if req.PlanOnly {
+	// 	l.Info("skipping the rest of the workflow - plan only")
+	// 	w.finishWorkflow(ctx, req, resp, nil)
+	// 	return resp, nil
+	// }
+
+	l.Debug("executing sandbox execute")
+	seReq := executev1.ExecutePlanRequest{Plan: spr.Plan}
+	_, err = sandbox.Execute(ctx, &seReq)
+	if err != nil {
+		err = fmt.Errorf("unable to execute deprovision sandbox: %w", err)
+		w.finishWithErr(ctx, req, act, "sandbox_execute", err)
 		return resp, err
 	}
 
@@ -86,25 +118,12 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 		Success:             true,
 	}
 	if _, err = execFinish(ctx, act, finishReq); err != nil {
-		l.Debug("unable to execute finish step: %w", err)
+		l.Debug("unable to execute finish step", "error", err)
 		return resp, fmt.Errorf("unable to execute finish activity: %w", err)
 	}
 
 	l.Debug("finished deprovisioning installation", "response", resp)
 	return resp, err
-}
-
-// execTerraformDestroy executes a terraform destroy activity
-func execDestroyTerraform(ctx workflow.Context, act *Activities, req DestroyTerraformRequest) (DestroyTerraformResponse, error) {
-	var resp DestroyTerraformResponse
-	l := workflow.GetLogger(ctx)
-
-	l.Debug("executing terraform destroy activity", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.DestroyTerraform, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-	return resp, nil
 }
 
 // exec start executes the start activity
