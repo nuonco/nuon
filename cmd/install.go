@@ -11,7 +11,6 @@ import (
 	"github.com/powertoolsdev/workers-installs/internal/deprovision"
 	"github.com/powertoolsdev/workers-installs/internal/provision"
 	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
-	"github.com/powertoolsdev/workers-installs/internal/provision/sandbox"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -125,13 +124,10 @@ func runInstallWorkers(c client.Client, cfg shared.Config, interruptCh <-chan in
 	// register provision
 	prWorkflow := provision.NewWorkflow(cfg)
 	prRWorkflow := runner.NewWorkflow(cfg)
-	prSWorkflow := sandbox.NewWorkflow(cfg)
 
 	w.RegisterWorkflow(prWorkflow.Provision)
 	w.RegisterWorkflow(prRWorkflow.ProvisionRunner)
-	w.RegisterWorkflow(prSWorkflow.ProvisionSandbox)
 	w.RegisterActivity(provision.NewActivities(cfg, n))
-	w.RegisterActivity(sandbox.NewActivities(cfg))
 	w.RegisterActivity(runner.NewActivities(cfg))
 
 	// register deprovision

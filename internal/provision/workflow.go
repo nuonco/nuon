@@ -6,12 +6,13 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 	runnerv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1/runner/v1"
-	sandboxv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1/sandbox/v1"
 	workers "github.com/powertoolsdev/workers-installs/internal"
+	"github.com/powertoolsdev/workers-installs/internal/outputs"
 	"github.com/powertoolsdev/workers-installs/internal/provision/runner"
-	"github.com/powertoolsdev/workers-installs/internal/provision/sandbox"
 )
 
 // NewWorkflow returns a new workflow executor
@@ -44,22 +45,51 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		return resp, err
 	}
 
-	psReq := &sandboxv1.ProvisionSandboxRequest{
-		AppId:           req.AppId,
-		OrgId:           req.OrgId,
-		InstallId:       req.InstallId,
-		AccountSettings: req.AccountSettings,
-		SandboxSettings: req.SandboxSettings,
+	cpReq := planv1.CreatePlanRequest{
+		Type: planv1.PlanType_PLAN_TYPE_TERRAFORM_SANDBOX,
+		Input: &planv1.CreatePlanRequest_Sandbox{
+			Sandbox: &planv1.Sandbox{
+				OrgId:           req.OrgId,
+				AppId:           req.AppId,
+				InstallId:       req.InstallId,
+				SandboxSettings: &planv1.SandboxSettings{Name: req.SandboxSettings.Name, Version: req.SandboxSettings.Version},
+				// TODO(jdt): accept this from the API and set it here?
+				// it's defaulted in workers-executors so no need to double hard-code
+				// TerraformVersion: new(string),
+				RunType: planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY,
+				AccountSettings: &planv1.Sandbox_Aws{
+					Aws: &planv1.AWSSettings{
+						Region:    req.AccountSettings.Region,
+						AccountId: req.AccountSettings.AwsAccountId,
+						RoleArn:   req.AccountSettings.AwsRoleArn,
+					},
+				},
+			},
+		},
 	}
-	psr, err := execProvisionSandbox(ctx, w.cfg, psReq)
+
+	if req.PlanOnly {
+		l.Info("skipping the rest of the workflow - plan only")
+		w.finishWorkflow(ctx, req, resp, nil)
+		return resp, nil
+	}
+
+	spr, err := execSandboxPlan(ctx, &cpReq)
 	if err != nil {
-		err = fmt.Errorf("unable to provision sandbox: %w", err)
+		err = fmt.Errorf("unable to plan sandbox: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
-	resp.TerraformOutputs = psr.TerraformOutputs
 
-	tfOutputs, err := sandbox.ParseTerraformOutputs(psr.TerraformOutputs)
+	seReq := executev1.ExecutePlanRequest{Plan: spr.Plan}
+	ser, err := execSandboxExecute(ctx, &seReq)
+	if err != nil {
+		err = fmt.Errorf("unable to execute sandbox: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, err
+	}
+
+	tfOutputs, err := outputs.ParseTerraformOutputs(ser.GetTerraformOutputs())
 	if err != nil {
 		err = fmt.Errorf("invalid sandbox outputs: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
@@ -90,21 +120,40 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	return resp, nil
 }
 
-func execProvisionSandbox(
+func execSandboxPlan(
 	ctx workflow.Context,
-	cfg workers.Config,
-	iwrr *sandboxv1.ProvisionSandboxRequest,
-) (*sandboxv1.ProvisionSandboxResponse, error) {
-	resp := &sandboxv1.ProvisionSandboxResponse{}
+	cpr *planv1.CreatePlanRequest,
+) (*planv1.CreatePlanResponse, error) {
+	resp := &planv1.CreatePlanResponse{}
 
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 30,
 		WorkflowTaskTimeout:      time.Minute * 15,
+		TaskQueue:                "executors",
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
+	fut := workflow.ExecuteChildWorkflow(ctx, "CreatePlan", cpr)
 
-	wkflow := sandbox.NewWorkflow(cfg)
-	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionSandbox, iwrr)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func execSandboxExecute(
+	ctx workflow.Context,
+	cpr *executev1.ExecutePlanRequest,
+) (*executev1.ExecutePlanResponse, error) {
+	resp := &executev1.ExecutePlanResponse{}
+
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 30,
+		WorkflowTaskTimeout:      time.Minute * 15,
+		TaskQueue:                "executors",
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+	fut := workflow.ExecuteChildWorkflow(ctx, "ExecutePlan", cpr)
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
