@@ -34,6 +34,7 @@ func (p *planner) getDockerPlan(ctx context.Context, cfg *buildv1.Config_DockerC
 		configs.WithComponent(p.Component),
 		configs.WithEcrRef(plan.EcrRepositoryRef),
 		configs.WithWaypointRef(plan.WaypointRef),
+		configs.WithDockerCfg(cfg.DockerCfg),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create waypoint config builder: %w", err)

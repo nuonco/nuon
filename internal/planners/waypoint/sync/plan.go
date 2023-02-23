@@ -31,6 +31,7 @@ func (p *planner) getBasePlan() *planv1.WaypointPlan {
 			RunnerId:             p.Metadata.InstallShortId,
 			OnDemandRunnerConfig: p.Metadata.InstallShortId,
 			JobTimeoutSeconds:    defaultBuildTimeoutSeconds,
+			JobType:              planv1.WaypointJobType_WAYPOINT_JOB_TYPE_BUILD,
 		},
 		Outputs: &planv1.Outputs{
 			Bucket:              p.OrgMetadata.Buckets.DeploymentsBucket,

@@ -15,6 +15,11 @@ const (
 )
 
 func (p *planner) getBasePlan() *planv1.WaypointPlan {
+	jobTyp := planv1.WaypointJobType_WAYPOINT_JOB_TYPE_DEPLOY_ARTIFACT
+	if p.Component.BuildCfg.GetNoop() != nil {
+		jobTyp = planv1.WaypointJobType_WAYPOINT_JOB_TYPE_DEPLOY
+	}
+
 	return &planv1.WaypointPlan{
 		Metadata:       p.Metadata,
 		WaypointServer: p.OrgMetadata.WaypointServer,
@@ -26,11 +31,12 @@ func (p *planner) getBasePlan() *planv1.WaypointPlan {
 			Project:              p.Metadata.InstallShortId,
 			Workspace:            p.Metadata.InstallShortId,
 			App:                  p.Component.Id,
-			SingletonId:          fmt.Sprintf("%s-%s", p.Metadata.DeploymentShortId, p.Metadata.InstallShortId),
+			SingletonId:          fmt.Sprintf("%s-%s-%s", p.Metadata.DeploymentShortId, p.Metadata.InstallShortId, phaseName),
 			Labels:               waypoint.DefaultLabels(p.Metadata, p.Component.Name, phaseName),
 			RunnerId:             p.Metadata.InstallShortId,
 			OnDemandRunnerConfig: p.Metadata.InstallShortId,
 			JobTimeoutSeconds:    defaultBuildTimeoutSeconds,
+			JobType:              jobTyp,
 		},
 		Outputs: &planv1.Outputs{
 			Bucket:              p.OrgMetadata.Buckets.DeploymentsBucket,

@@ -47,6 +47,7 @@ func Test_planner_getBasePlan(t *testing.T) {
 	assert.Equal(t, installID, p.WaypointRef.RunnerId)
 	assert.Equal(t, installID, p.WaypointRef.OnDemandRunnerConfig)
 	assert.Equal(t, defaultBuildTimeoutSeconds, p.WaypointRef.JobTimeoutSeconds)
+	assert.Equal(t, planv1.WaypointJobType_WAYPOINT_JOB_TYPE_BUILD, p.WaypointRef.JobType)
 
 	// assert outputs
 	assert.Equal(t, orgMetadata.Buckets.DeploymentsBucket, p.Outputs.Bucket)

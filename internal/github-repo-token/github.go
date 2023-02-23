@@ -17,6 +17,7 @@ const appKeySecretKeyKey string = "github_app_key"
 //go:generate mockgen -destination=github_mock.go -source=github.go -package=github
 type CloneTokenGetter interface {
 	InstallationToken(context.Context) (string, error)
+	ClonePath(context.Context) (string, error)
 }
 
 // gh is a type that lets you get a clone token for a repo

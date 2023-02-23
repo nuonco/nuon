@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/workers-executors/internal/executors/waypoint/event"
 	"go.uber.org/zap"
 )
@@ -49,5 +50,11 @@ func WithLog(l *zap.Logger) logEventWriterOption {
 
 func (w *logEventWriter) Write(ev event.WaypointJobEvent) error {
 	w.Logger.Debug("processed waypoint job event", zap.Any("event", ev))
+	switch e := ev.GetEventUnsafe().(type) {
+	case *gen.GetJobStreamResponse_Terminal:
+		for _, termEvent := range e.Events {
+			w.Logger.Debug(termEvent.String())
+		}
+	}
 	return nil
 }

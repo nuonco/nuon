@@ -37,7 +37,7 @@ func New(v *validator.Validate, opts ...Option) (*github.Client, error) {
 		return nil, fmt.Errorf("unable to validate github: %w", err)
 	}
 
-	appstp, err := ghinstallation.NewAppsTransport(gh.HTTPClient.Transport, gh.AppID, gh.AppKey)
+	appstp, err := ghinstallation.NewAppsTransport(http.DefaultTransport, gh.AppID, gh.AppKey)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create github apps transport: %w", err)
 	}
