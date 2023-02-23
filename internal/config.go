@@ -60,6 +60,9 @@ type Config struct {
 	OrgsIAMOidcProviderURL string `config:"orgs_iam_oidc_provider_url" validate:"required"`
 	OrgsIAMOidcProviderArn string `config:"orgs_iam_oidc_provider_arn" validate:"required"`
 	OrgsECRRegistryArn     string `config:"orgs_ecr_registry_arn" validate:"required"`
+
+	SandboxBucketARN string `config:"sandbox_bucket_arn" validate:"required"`
+	SandboxKeyARN    string `config:"sandbox_key_arn" validate:"required"`
 }
 
 func (c Config) Validate() error {

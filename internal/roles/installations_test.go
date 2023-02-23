@@ -11,9 +11,13 @@ import (
 func TestInstallationsIAMPolicy(t *testing.T) {
 	bucketName := "nuon-org-installations-test"
 	orgID := uuid.NewString()
+	sandboxARN := "arn:aws:s3:::nuon-sandboxes"
+	keyARN := "arn:aws:kms:us-west-2:431927561584:key/4d47db50-340c-4204-a02b-7e10a37308a2"
 
-	doc, err := InstallationsIAMPolicy(bucketName, orgID)
+	doc, err := InstallationsIAMPolicy(bucketName, orgID, sandboxARN, keyARN)
 	assert.NoError(t, err)
+
+	t.Log(string(doc))
 
 	var policy iamRolePolicy
 	err = json.Unmarshal(doc, &policy)
@@ -24,6 +28,9 @@ func TestInstallationsIAMPolicy(t *testing.T) {
 	assert.Equal(t, "s3:*", policy.Statement[0].Action[0])
 	assert.Contains(t, policy.Statement[0].Resource, "orgID="+orgID)
 	assert.Contains(t, policy.Statement[0].Resource, bucketName)
+	assert.Equal(t, policy.Statement[1].Resource, sandboxARN)
+	assert.Contains(t, policy.Statement[2].Resource, sandboxARN)
+	assert.Equal(t, policy.Statement[3].Resource, keyARN)
 }
 
 func TestInstallationsIAMName(t *testing.T) {
