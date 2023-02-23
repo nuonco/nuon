@@ -28,8 +28,8 @@ type SendHostnameNotificationRequest struct {
 	TokenSecretNamespace string `json:"token_secret_namespace" validate:"required"`
 	OrgServerAddr        string `json:"org_server_address" validate:"required"`
 
-	InstallID string `json:"install_id" validate:"required"`
-	AppID     string `json:"app_id" validate:"required"`
+	InstallID   string `json:"install_id" validate:"required"`
+	ComponentID string `json:"component_id" validate:"required"`
 }
 
 func (s SendHostnameNotificationRequest) validate() error {
@@ -99,7 +99,7 @@ func (h *hostnameNotificationSenderImpl) getHostname(ctx context.Context, client
 			Target: &gen.Hostname_Target_Application{
 				Application: &gen.Hostname_TargetApp{
 					Application: &gen.Ref_Application{
-						Application: "mario",
+						Application: req.ComponentID,
 						Project:     req.InstallID,
 					},
 					Workspace: &gen.Ref_Workspace{

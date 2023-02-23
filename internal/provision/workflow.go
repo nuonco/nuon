@@ -114,7 +114,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 			TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
 			OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId),
 			InstallID:            req.InstallId,
-			AppID:                req.AppId,
+			ComponentID:          req.Component.Id,
 		}
 		shnResp, err := execSendHostnameNotification(ctx, act, shnReq)
 		if err != nil {

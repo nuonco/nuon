@@ -60,7 +60,7 @@ func Test_hostnameNotificationSenderImpl_getHostname(t *testing.T) {
 				wpReq := obj.Calls[0].Arguments[1].(*gen.ListHostnamesRequest)
 
 				target := wpReq.Target.Target.(*gen.Hostname_Target_Application)
-				assert.Equal(t, "mario", target.Application.Application.Application)
+				assert.Equal(t, req.ComponentID, target.Application.Application.Application)
 				assert.Equal(t, req.InstallID, target.Application.Application.Project)
 				assert.Equal(t, req.InstallID, target.Application.Workspace.Workspace)
 			},
