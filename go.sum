@@ -993,8 +993,6 @@ github.com/powertoolsdev/go-uploader v0.2.1 h1:Xqz8oDBhq/dd2h9WS7UZSbH+PO7SSIyuy
 github.com/powertoolsdev/go-uploader v0.2.1/go.mod h1:maWqXSXegLuUKkVjUjYt1nkg3oz3JLm6MktgfhRt8TY=
 github.com/powertoolsdev/go-waypoint v0.2.1 h1:wEKsP5whsMltptXzil8FLyQAzNPNkv3GdNrueS47xag=
 github.com/powertoolsdev/go-waypoint v0.2.1/go.mod h1:Ot2gQbZNhaV+jIuQ0vDYiz7MyU4aQBw4jaCHtAU6+Jo=
-github.com/powertoolsdev/go-workflows-meta v0.6.1 h1:zqtIgzzdHwDbStnVsoMvUdypAeA5G3IQhJN8Ju0Efbs=
-github.com/powertoolsdev/go-workflows-meta v0.6.1/go.mod h1:xrTnzuc2cxaDPmAoATATKNMrFY+lzoNewjPpJO7MHa0=
 github.com/powertoolsdev/go-workflows-meta v0.6.2 h1:n0eAQAEytZau0vBn6zRG/crZGizgF9uobgqGHSyll9o=
 github.com/powertoolsdev/go-workflows-meta v0.6.2/go.mod h1:xrTnzuc2cxaDPmAoATATKNMrFY+lzoNewjPpJO7MHa0=
 github.com/powertoolsdev/protos v0.68.8 h1:aqlEymuNVYrd83G/YZ3jc7aRXOUxPnSHcqrZLWdRe8g=

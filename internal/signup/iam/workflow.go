@@ -141,7 +141,12 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 
 	// create deployments
 	l.Debug("creating installations iam policy for org %s", req.OrgId)
-	installationsPolicy, err := roles.InstallationsIAMPolicy(w.cfg.OrgInstallationsBucketName, req.OrgId)
+	installationsPolicy, err := roles.InstallationsIAMPolicy(
+		w.cfg.OrgInstallationsBucketName,
+		req.OrgId,
+		w.cfg.SandboxBucketARN,
+		w.cfg.SandboxKeyARN,
+	)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM policy document: %w", err)
 	}

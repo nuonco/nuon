@@ -12,7 +12,7 @@ func InstallationsIAMName(orgID string) string {
 // InstallationsIAMPolicy generates the policy for the installations role
 // bucketName is expected to be the install bucket in the orgs account(?)
 // orgID is expected to be the shortID of the org for this role
-func InstallationsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
+func InstallationsIAMPolicy(bucketName string, orgID string, sandboxBucketARN, sandboxKeyARN string) ([]byte, error) {
 	policy := iamRolePolicy{
 		Version: defaultIAMPolicyVersion,
 
@@ -24,6 +24,28 @@ func InstallationsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 					"s3:*",
 				},
 				Resource: fmt.Sprintf("arn:aws:s3:::%s/orgID=%s/*", bucketName, orgID),
+			},
+			// allow the role to read the sandbox bucket
+			{
+				Effect: "Allow",
+				Action: []string{
+					"s3:ListBucket",
+				},
+				Resource: sandboxBucketARN,
+			},
+			{
+				Effect: "Allow",
+				Action: []string{
+					"s3:GetObject",
+				},
+				Resource: fmt.Sprintf("%s/sandboxes/*", sandboxBucketARN),
+			},
+			{
+				Effect: "Allow",
+				Action: []string{
+					"kms:Decrypt",
+				},
+				Resource: sandboxKeyARN,
 			},
 		},
 	}
