@@ -24,6 +24,8 @@ message DeprovisionRequest {
 
   AccountSettings account_settings = 4;
   SandboxSettings sandbox_settings = 5;
+
+  bool plan_only = 6;
 }
 
 // StartResponse returns the response from a deployment workflow

@@ -151,6 +151,8 @@ func (m *DeprovisionRequest) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for PlanOnly
+
 	if len(errors) > 0 {
 		return DeprovisionRequestMultiError(errors)
 	}
