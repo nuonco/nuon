@@ -12,16 +12,14 @@ type notificationSender interface {
 
 type Activities struct {
 	sender notificationSender
-	terraformDestroyer
 	starter
 	finisher
 }
 
 func NewActivities(sender notificationSender) *Activities {
 	return &Activities{
-		sender:             sender,
-		terraformDestroyer: &tfDestroyer{},
-		starter:            &starterImpl{},
-		finisher:           &finisherImpl{},
+		sender:   sender,
+		starter:  &starterImpl{},
+		finisher: &finisherImpl{},
 	}
 }

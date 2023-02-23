@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-workflows-meta/prefix"
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 )
 
@@ -68,7 +69,7 @@ type finisherImpl struct{}
 
 func (s *finisherImpl) sendErrorNotification(ctx context.Context, req FinishRequest, sender notificationSender) error {
 	dr := req.DeprovisionRequest
-	s3Prefix := getS3Prefix(req.InstallationsBucket, dr.OrgId, dr.AppId, dr.InstallId)
+	s3Prefix := fmt.Sprintf("s3://%s/%s", req.InstallationsBucket, prefix.InstallPath(dr.OrgId, dr.AppId, dr.InstallId))
 	notif := fmt.Sprintf(errorNotificationTemplate,
 		s3Prefix,
 		dr.SandboxSettings.Name,
@@ -82,7 +83,7 @@ func (s *finisherImpl) sendErrorNotification(ctx context.Context, req FinishRequ
 
 func (s *finisherImpl) sendSuccessNotification(ctx context.Context, req FinishRequest, sender notificationSender) error {
 	dr := req.DeprovisionRequest
-	s3Prefix := getS3Prefix(req.InstallationsBucket, dr.OrgId, dr.AppId, dr.InstallId)
+	s3Prefix := fmt.Sprintf("s3://%s/%s", req.InstallationsBucket, prefix.InstallPath(dr.OrgId, dr.AppId, dr.InstallId))
 	notif := fmt.Sprintf(successNotificationTemplate,
 		s3Prefix,
 		dr.SandboxSettings.Name,
