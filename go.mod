@@ -14,7 +14,7 @@ require (
 	github.com/powertoolsdev/go-generics v0.1.0
 	github.com/powertoolsdev/go-waypoint v1.0.0
 	github.com/powertoolsdev/go-workflows-meta v0.6.2
-	github.com/powertoolsdev/protos v0.68.8
+	github.com/powertoolsdev/protos v0.73.0
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.temporal.io/sdk v1.21.1

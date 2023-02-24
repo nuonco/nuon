@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
+	ecr_types "github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/google/uuid"
@@ -110,19 +111,22 @@ func (t *testAwsEcrRepoCreator) CreateRepository(
 func TestCreateRepository_createRepository(t *testing.T) {
 	req := generics.GetFakeObj[CreateRepositoryRequest]()
 	createRepoErr := fmt.Errorf("test-create-repo-err")
+	ecrRepo := generics.GetFakeObj[*ecr_types.Repository]()
 
 	tests := map[string]struct {
 		clientFn    func(*testing.T) awsClientEcrRepoCreator
-		assertFn    func(*testing.T, awsClientEcrRepoCreator)
+		assertFn    func(*testing.T, awsClientEcrRepoCreator, *ecr_types.Repository)
 		errExpected error
 	}{
 		"happy path": {
 			clientFn: func(t *testing.T) awsClientEcrRepoCreator {
 				client := &testAwsEcrRepoCreator{}
-				client.On("CreateRepository", mock.Anything, mock.Anything, mock.Anything).Return(&ecr.CreateRepositoryOutput{}, nil)
+				client.On("CreateRepository", mock.Anything, mock.Anything, mock.Anything).Return(&ecr.CreateRepositoryOutput{
+					Repository: ecrRepo,
+				}, nil)
 				return client
 			},
-			assertFn: func(t *testing.T, client awsClientEcrRepoCreator) {
+			assertFn: func(t *testing.T, client awsClientEcrRepoCreator, repo *ecr_types.Repository) {
 				obj := client.(*testAwsEcrRepoCreator)
 				obj.AssertNumberOfCalls(t, "CreateRepository", 1)
 				rReq := obj.Calls[0].Arguments[1].(*ecr.CreateRepositoryInput)
@@ -134,6 +138,8 @@ func TestCreateRepository_createRepository(t *testing.T) {
 
 				assert.Equal(t, req.OrgID, *rReq.Tags[1].Value)
 				assert.Equal(t, "org-id", *rReq.Tags[1].Key)
+
+				assert.Equal(t, repo, ecrRepo)
 			},
 			errExpected: nil,
 		},
@@ -151,12 +157,12 @@ func TestCreateRepository_createRepository(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			repoCreator := repositoryCreatorImpl{}
 			client := test.clientFn(t)
-			err := repoCreator.createECRRepo(context.Background(), req, client)
+			repo, err := repoCreator.createECRRepo(context.Background(), req, client)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
-			test.assertFn(t, client)
+			test.assertFn(t, client, repo)
 			assert.NoError(t, err)
 		})
 	}

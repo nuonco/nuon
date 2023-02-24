@@ -25,7 +25,12 @@ func (r CreateRepositoryRequest) validate() error {
 	return validate.Struct(r)
 }
 
-type CreateRepositoryResponse struct{}
+type CreateRepositoryResponse struct {
+	RegistryID     string
+	RepositoryName string
+	RepositoryArn  string
+	RepositoryURI  string
+}
 
 func (a *Activities) CreateRepository(ctx context.Context, req CreateRepositoryRequest) (CreateRepositoryResponse, error) {
 	var resp CreateRepositoryResponse
@@ -51,16 +56,21 @@ func (a *Activities) CreateRepository(ctx context.Context, req CreateRepositoryR
 	}
 
 	ecrClient := ecr.NewFromConfig(cfg)
-	if err := a.createECRRepo(ctx, req, ecrClient); err != nil {
-		return resp, fmt.Errorf("failed to create ECR repo: %w", err)
+	repo, err := a.createECRRepo(ctx, req, ecrClient)
+	if err != nil {
+		return resp, fmt.Errorf("failed to create ecr repo: %w", err)
 	}
 
+	resp.RegistryID = *repo.RegistryId
+	resp.RepositoryName = *repo.RepositoryName
+	resp.RepositoryArn = *repo.RepositoryArn
+	resp.RepositoryURI = *repo.RepositoryUri
 	return resp, nil
 }
 
 type repositoryCreator interface {
 	assumeIamRole(context.Context, string, awsClientIamRoleAssumer) (*sts_types.Credentials, error)
-	createECRRepo(context.Context, CreateRepositoryRequest, awsClientEcrRepoCreator) error
+	createECRRepo(context.Context, CreateRepositoryRequest, awsClientEcrRepoCreator) (*ecr_types.Repository, error)
 }
 
 type repositoryCreatorImpl struct{}
@@ -92,7 +102,7 @@ func (r *repositoryCreatorImpl) assumeIamRole(ctx context.Context, roleArn strin
 	return resp.Credentials, nil
 }
 
-func (r *repositoryCreatorImpl) createECRRepo(ctx context.Context, req CreateRepositoryRequest, client awsClientEcrRepoCreator) error {
+func (r *repositoryCreatorImpl) createECRRepo(ctx context.Context, req CreateRepositoryRequest, client awsClientEcrRepoCreator) (*ecr_types.Repository, error) {
 	params := &ecr.CreateRepositoryInput{
 		RepositoryName:     generics.ToPtr(req.OrgID + "/" + req.AppID),
 		ImageTagMutability: ecr_types.ImageTagMutabilityImmutable,
@@ -112,6 +122,10 @@ func (r *repositoryCreatorImpl) createECRRepo(ctx context.Context, req CreateRep
 		},
 	}
 
-	_, err := client.CreateRepository(ctx, params)
-	return err
+	resp, err := client.CreateRepository(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create repository: %w", err)
+	}
+
+	return resp.Repository, nil
 }

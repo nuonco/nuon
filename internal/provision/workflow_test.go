@@ -9,9 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/workflow"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/powertoolsdev/go-generics"
 	appv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
+	projectv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1/project/v1"
+	repov1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1/repository/v1"
 	sharedv1 "github.com/powertoolsdev/protos/workflows/generated/types/shared/v1"
 	"github.com/powertoolsdev/workers-apps/internal"
 	"github.com/powertoolsdev/workers-apps/internal/provision/project"
@@ -34,21 +37,21 @@ func Test_Workflow(t *testing.T) {
 
 	a := NewActivities()
 
+	prResp := generics.GetFakeObj[*repov1.ProvisionRepositoryResponse]()
 	env.OnWorkflow(repoWkflow.ProvisionRepository, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r repository.ProvisionRepositoryRequest) (repository.ProvisionRepositoryResponse, error) {
-			var resp repository.ProvisionRepositoryResponse
+		Return(func(ctx workflow.Context, r *repov1.ProvisionRepositoryRequest) (*repov1.ProvisionRepositoryResponse, error) {
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, req.OrgId, r.OrgID)
-			assert.Equal(t, req.AppId, r.AppID)
-			return resp, nil
+			assert.Equal(t, req.OrgId, r.OrgId)
+			assert.Equal(t, req.AppId, r.AppId)
+			return prResp, nil
 		})
 
 	env.OnWorkflow(projectWkflow.ProvisionProject, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r project.ProvisionProjectRequest) (project.ProvisionProjectResponse, error) {
-			var resp project.ProvisionProjectResponse
+		Return(func(ctx workflow.Context, r *projectv1.ProvisionProjectRequest) (*projectv1.ProvisionProjectResponse, error) {
+			resp := &projectv1.ProvisionProjectResponse{}
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, req.OrgId, r.OrgID)
-			assert.Equal(t, req.AppId, r.AppID)
+			assert.Equal(t, req.OrgId, r.OrgId)
+			assert.Equal(t, req.AppId, r.AppId)
 			return resp, nil
 		})
 	env.OnActivity(a.StartProvisionRequest, mock.Anything, mock.Anything).
@@ -66,4 +69,5 @@ func Test_Workflow(t *testing.T) {
 	var resp appv1.ProvisionResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, &resp)
+	assert.True(t, proto.Equal(resp.Repository, prResp))
 }

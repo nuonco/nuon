@@ -4,38 +4,24 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-playground/validator/v10"
+	repov1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1/repository/v1"
 	workers "github.com/powertoolsdev/workers-apps/internal"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
 
-type ProvisionRepositoryRequest struct {
-	DryRun bool `json:"dry_run"`
-
-	OrgID string `json:"org_id" validate:"required"`
-	AppID string `json:"app_id" validate:"required"`
-}
-
-func (r ProvisionRepositoryRequest) Validate() error {
-	validate := validator.New()
-	return validate.Struct(r)
-}
-
-type ProvisionRepositoryResponse struct{}
-
-type Workflow struct {
+type wkflow struct {
 	cfg workers.Config
 }
 
-func NewWorkflow(cfg workers.Config) Workflow {
-	return Workflow{
+func NewWorkflow(cfg workers.Config) wkflow {
+	return wkflow{
 		cfg: cfg,
 	}
 }
 
-func (w Workflow) ProvisionRepository(ctx workflow.Context, req ProvisionRepositoryRequest) (ProvisionRepositoryResponse, error) {
-	resp := ProvisionRepositoryResponse{}
+func (w wkflow) ProvisionRepository(ctx workflow.Context, req *repov1.ProvisionRepositoryRequest) (*repov1.ProvisionRepositoryResponse, error) {
+	resp := &repov1.ProvisionRepositoryResponse{}
 
 	l := log.With(workflow.GetLogger(ctx))
 	ao := workflow.ActivityOptions{
@@ -46,14 +32,18 @@ func (w Workflow) ProvisionRepository(ctx workflow.Context, req ProvisionReposit
 
 	l.Debug("creating ecr repository")
 	crReq := CreateRepositoryRequest{
-		OrgID:                req.OrgID,
-		AppID:                req.AppID,
+		OrgID:                req.OrgId,
+		AppID:                req.AppId,
 		OrgsEcrAccessRoleArn: w.cfg.OrgsEcrAccessRoleArn,
 	}
-	_, err := execCreateRepository(ctx, act, crReq)
+	ecrResp, err := execCreateRepository(ctx, act, crReq)
 	if err != nil {
 		return resp, fmt.Errorf("failed to create repository: %w", err)
 	}
+	resp.RegistryId = ecrResp.RegistryID
+	resp.RepositoryArn = ecrResp.RepositoryArn
+	resp.RepositoryName = ecrResp.RepositoryName
+	resp.RepositoryUri = ecrResp.RepositoryURI
 
 	return resp, nil
 }

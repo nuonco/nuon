@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/go-generics"
+	projectv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1/project/v1"
 	"github.com/powertoolsdev/workers-apps/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -14,7 +15,7 @@ import (
 
 func TestWorkflow(t *testing.T) {
 	cfg := generics.GetFakeObj[internal.Config]()
-	req := generics.GetFakeObj[ProvisionProjectRequest]()
+	req := generics.GetFakeObj[*projectv1.ProvisionProjectRequest]()
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
@@ -41,7 +42,7 @@ func TestWorkflow(t *testing.T) {
 	env.ExecuteWorkflow(wkflow.ProvisionProject, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	var resp ProvisionProjectResponse
+	var resp *projectv1.ProvisionProjectResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
 }
