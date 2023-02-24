@@ -18,6 +18,9 @@ const (
 type Repo interface {
 	GetOrgProvisionRequest(ctx context.Context) (*sharedv1.Request, error)
 	GetOrgProvisionResponse(ctx context.Context) (*sharedv1.Response, error)
+
+	GetAppProvisionRequest(ctx context.Context) (*sharedv1.Request, error)
+	GetAppProvisionResponse(ctx context.Context) (*sharedv1.Response, error)
 }
 
 // contextGetter is used to grab an org's context out of the passed in context

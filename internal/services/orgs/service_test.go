@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/orgs-api/internal/repos/s3"
 	"github.com/powertoolsdev/orgs-api/internal/repos/waypoint"
 	"github.com/powertoolsdev/orgs-api/internal/repos/workflows"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +12,6 @@ import (
 
 func TestNew(t *testing.T) {
 	mockCtl := gomock.NewController(t)
-	s3Repo := s3.NewMockRepo(mockCtl)
 	waypointRepo := waypoint.NewMockRepo(mockCtl)
 	workflowsRepo := workflows.NewMockRepo(mockCtl)
 
@@ -25,30 +23,18 @@ func TestNew(t *testing.T) {
 		"happy path": {
 			optFns: func() []serviceOption {
 				return []serviceOption{
-					WithS3Repo(s3Repo),
 					WithWaypointRepo(waypointRepo),
 					WithWorkflowsRepo(workflowsRepo),
 				}
 			},
 			assertFn: func(t *testing.T, srv *service) {
-				assert.Equal(t, s3Repo, srv.S3Repo)
 				assert.Equal(t, waypointRepo, srv.WaypointRepo)
 				assert.Equal(t, workflowsRepo, srv.WorkflowsRepo)
 			},
 		},
-		"missing s3 repo": {
-			optFns: func() []serviceOption {
-				return []serviceOption{
-					WithWaypointRepo(waypointRepo),
-					WithWorkflowsRepo(workflowsRepo),
-				}
-			},
-			errExpected: fmt.Errorf("service.S3Repo"),
-		},
 		"missing waypoint repo": {
 			optFns: func() []serviceOption {
 				return []serviceOption{
-					WithS3Repo(s3Repo),
 					WithWorkflowsRepo(workflowsRepo),
 				}
 			},
@@ -57,7 +43,6 @@ func TestNew(t *testing.T) {
 		"missing workflows repo": {
 			optFns: func() []serviceOption {
 				return []serviceOption{
-					WithS3Repo(s3Repo),
 					WithWaypointRepo(waypointRepo),
 				}
 			},

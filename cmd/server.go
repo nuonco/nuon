@@ -8,7 +8,6 @@ import (
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/orgs-api/internal"
 	"github.com/powertoolsdev/orgs-api/internal/orgcontext"
-	"github.com/powertoolsdev/orgs-api/internal/repos/s3"
 	"github.com/powertoolsdev/orgs-api/internal/repos/waypoint"
 	"github.com/powertoolsdev/orgs-api/internal/repos/workflows"
 	orgsserver "github.com/powertoolsdev/orgs-api/internal/servers/orgs"
@@ -68,9 +67,7 @@ func registerOrgsServer(mux *http.ServeMux, cfg *internal.Config) error {
 		return fmt.Errorf("unable to create waypoint repo: %w", err)
 	}
 
-	s3Repo := s3.New()
 	svc, err := orgsservice.New(orgsservice.WithWorkflowsRepo(workflowsRepo),
-		orgsservice.WithS3Repo(s3Repo),
 		orgsservice.WithWaypointRepo(waypointRepo))
 	if err != nil {
 		return fmt.Errorf("unable to get service: %w", err)

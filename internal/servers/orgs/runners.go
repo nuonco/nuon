@@ -11,8 +11,15 @@ func (s *server) GetRunners(
 	ctx context.Context,
 	req *connect.Request[orgsv1.GetRunnersRequest],
 ) (*connect.Response[orgsv1.GetRunnersResponse], error) {
-	res := connect.NewResponse(&orgsv1.GetRunnersResponse{
-		//
-	})
-	return res, nil
+	ctx, err := s.CtxProvider.SetContext(ctx, req.Msg.OrgId)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.Svc.GetRunners(ctx, req.Msg.OrgId)
+	if err != nil {
+		return nil, err
+	}
+
+	return connect.NewResponse(resp), nil
 }

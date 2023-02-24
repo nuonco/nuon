@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/orgs-api/internal/orgcontext"
-	"github.com/powertoolsdev/orgs-api/internal/repos/s3"
 	"github.com/powertoolsdev/orgs-api/internal/repos/waypoint"
 	"github.com/powertoolsdev/orgs-api/internal/repos/workflows"
 	orgsv1 "github.com/powertoolsdev/protos/orgs-api/generated/types/orgs/v1"
@@ -16,6 +15,7 @@ import (
 //go:generate mockgen -destination=service_mocks.go -source=service.go -package=services
 type Service interface {
 	GetInfo(context.Context, string) (*orgsv1.GetInfoResponse, error)
+	GetRunners(context.Context, string) (*orgsv1.GetRunnersResponse, error)
 }
 
 func New(opts ...serviceOption) (*service, error) {
@@ -37,7 +37,6 @@ func New(opts ...serviceOption) (*service, error) {
 }
 
 type service struct {
-	S3Repo        s3.Repo        `validate:"required"`
 	WaypointRepo  waypoint.Repo  `validate:"required"`
 	WorkflowsRepo workflows.Repo `validate:"required"`
 
@@ -48,13 +47,6 @@ type service struct {
 var _ Service = (*service)(nil)
 
 type serviceOption func(*service) error
-
-func WithS3Repo(repo s3.Repo) serviceOption {
-	return func(s *service) error {
-		s.S3Repo = repo
-		return nil
-	}
-}
 
 func WithWorkflowsRepo(repo workflows.Repo) serviceOption {
 	return func(s *service) error {
