@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/orgs-api/internal/repos/waypoint"
 	orgsv1 "github.com/powertoolsdev/protos/orgs-api/generated/types/orgs/v1"
 )
@@ -31,13 +30,8 @@ func (s *service) GetInfo(ctx context.Context, orgID string) (*orgsv1.GetInfoRes
 		return nil, fmt.Errorf("unable to get runner: %w", err)
 	}
 
-	longID, err := shortid.ToUUID(orgID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse id into long ID: %w", err)
-	}
 	return &orgsv1.GetInfoResponse{
-		Id:     orgID,
-		LongId: longID.String(),
+		Id: orgID,
 		ServerInfo: &orgsv1.ServerInfo{
 			Version:                serverInfo.Info.Version,
 			ProtocolVersion:        fmt.Sprintf("%d", serverInfo.Info.Api.Current),
@@ -45,7 +39,7 @@ func (s *service) GetInfo(ctx context.Context, orgID string) (*orgsv1.GetInfoRes
 			Address:                wpServer.ServerAddress,
 			SecretNamespace:        wpServer.SecretName,
 		},
-		RunnerInfo: &orgsv1.RunnerInfo{
+		BuildRunnerInfo: &orgsv1.RunnerInfo{
 			Id:            runnerInfo.Id,
 			Kind:          fmt.Sprintf("%s", runnerInfo.Kind),
 			Labels:        runnerInfo.Labels,

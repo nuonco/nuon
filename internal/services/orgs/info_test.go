@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
-	"github.com/google/uuid"
 	waypointv1 "github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
@@ -17,9 +16,7 @@ import (
 )
 
 func Test_service_GetInfo(t *testing.T) {
-	//errGetInfo := fmt.Errorf("error getting info")
-	orgID, err := shortid.ParseUUID(uuid.New())
-	assert.NoError(t, err)
+	orgID := shortid.New()
 
 	mockRunnerResp := &waypointv1.Runner{Id: orgID}
 	mockVersionInfoResp := generics.GetFakeObj[*waypointv1.GetVersionInfoResponse]()
