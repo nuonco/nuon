@@ -16,8 +16,9 @@ func (c *cli) registerOrgs(ctx context.Context, rootCmd *cobra.Command) error {
 
 	// register commands
 	var orgsCmd = &cobra.Command{
-		Use:   "orgs",
-		Short: "commands for working with orgs",
+		Use:     "orgs",
+		Aliases: []string{"o"},
+		Short:   "commands for working with orgs",
 	}
 	rootCmd.AddCommand(orgsCmd)
 

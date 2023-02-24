@@ -18,13 +18,13 @@ func (p *preset) privateDockerHttpbin() (*componentv1.Component, error) {
 					VcsCfg: &vcsv1.Config{
 						Cfg: &vcsv1.Config_PrivateGithubConfig{
 							PrivateGithubConfig: &vcsv1.PrivateGithubConfig{
-								Repo:      "kennethreitz/httpbin",
-								Directory: "/",
+								Repo:      "jonmorehouse/go-httpbin",
+								Directory: ".",
 								// TODO(jm): add branch
-								//Branch:		  "main",
-								GithubAppKeyId:         "",
-								GithubAppKeySecretName: "",
-								GithubInstallId:        "",
+								CommitRef:              "main",
+								GithubAppKeyId:         "261597",
+								GithubAppKeySecretName: "graphql-api-github-app-key",
+								GithubInstallId:        "34504664",
 							},
 						},
 					},
@@ -36,7 +36,7 @@ func (p *preset) privateDockerHttpbin() (*componentv1.Component, error) {
 				Basic: &deployv1.BasicConfig{
 					InstanceCount: 1,
 					ListenerCfg: &deployv1.ListenerConfig{
-						ListenPort:      80,
+						ListenPort:      8080,
 						HealthCheckPath: "/",
 					},
 				},

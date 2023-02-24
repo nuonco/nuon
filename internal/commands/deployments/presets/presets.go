@@ -42,7 +42,6 @@ func New(v *validator.Validate, name string, opts ...presetOption) (*componentv1
 	// private docker repo that contains httpbin
 	case "private_docker_httpbin":
 		fn = p.privateDockerHttpbin
-
 	case "public_helm_chart":
 		fn = p.publicHelmChart
 	default:

@@ -20,8 +20,9 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 
 	// register commands
 	var installsCmd = &cobra.Command{
-		Use:   "installs",
-		Short: "commands for working with installs",
+		Use:     "installs",
+		Short:   "commands for working with installs",
+		Aliases: []string{"i"},
 	}
 	rootCmd.AddCommand(installsCmd)
 
@@ -34,6 +35,21 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 		// TODO(jm): do not use RunE and provide own formatter
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return installs.PrintProvisionRequest(ctx, installID)
+		},
+	})
+
+	installsCmd.AddCommand(&cobra.Command{
+		Use:   "print-request",
+		Short: "print any request by passing in a key - works for instances as well",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return installs.PrintRequest(ctx, args[0])
+		},
+	})
+	installsCmd.AddCommand(&cobra.Command{
+		Use:   "print-response",
+		Short: "print any response by passing in a key - works for instances as well",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return installs.PrintResponse(ctx, args[0])
 		},
 	})
 	return nil

@@ -2,7 +2,6 @@ package workflows
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -12,9 +11,8 @@ import (
 	installsv1 "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1"
 )
 
+// TODO(jm): this should use s3downloader properly
 func (r *repo) GetInstallProvisionRequest(ctx context.Context, installID string) (*installsv1.ProvisionRequest, error) {
-	resp := &installsv1.ProvisionRequest{}
-
 	assumer, err := assumerole.New(r.v,
 		assumerole.WithRoleARN(r.IAMRoleARN),
 		assumerole.WithRoleSessionName(assumeRoleSessionName))
@@ -24,7 +22,7 @@ func (r *repo) GetInstallProvisionRequest(ctx context.Context, installID string)
 
 	cfg, err := assumer.LoadConfigWithAssumedRole(ctx)
 	if err != nil {
-		return resp, err
+		return nil, err
 	}
 	client := s3.NewFromConfig(cfg)
 
@@ -38,7 +36,7 @@ func (r *repo) GetInstallProvisionRequest(ctx context.Context, installID string)
 	for {
 		s3Resp, err2 := client.ListObjectsV2(ctx, req)
 		if err2 != nil {
-			return resp, err2
+			return nil, err2
 		}
 
 		for _, obj := range s3Resp.Contents {
@@ -55,7 +53,7 @@ func (r *repo) GetInstallProvisionRequest(ctx context.Context, installID string)
 		req.ContinuationToken = s3Resp.ContinuationToken
 	}
 	if key == "" {
-		return resp, fmt.Errorf("unable to find previous request for install")
+		return nil, fmt.Errorf("unable to find previous request for install")
 	}
 
 	// grab the object
@@ -65,16 +63,21 @@ func (r *repo) GetInstallProvisionRequest(ctx context.Context, installID string)
 	}
 	objResp, err := client.GetObject(ctx, objReq)
 	if err != nil {
-		return resp, err
+		return nil, err
 	}
 	byts, err := io.ReadAll(objResp.Body)
 	if err != nil {
-		return resp, err
+		return nil, err
 	}
 
-	if err := json.Unmarshal(byts, &resp); err != nil {
-		return resp, fmt.Errorf("unable to decode to request file: %w", err)
+	resp, err := unmarshalRequest(byts)
+	if err != nil {
+		return nil, err
 	}
 
-	return resp, nil
+	if resp.Request.GetInstallProvision() == nil {
+		return nil, fmt.Errorf("invalid request object")
+	}
+
+	return resp.Request.GetInstallProvision(), nil
 }

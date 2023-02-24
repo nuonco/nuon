@@ -3,21 +3,27 @@ package deployments
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/powertoolsdev/nuonctl/internal/proto"
 )
 
-func (c *commands) InstallDeployPlan(ctx context.Context, installID, componentPreset string) error {
+func (c *commands) InstallDeployPlan(ctx context.Context, installID, componentPreset string, planOnly bool) error {
 	req, err := c.installPresetRequest(ctx, installID, componentPreset)
 	if err != nil {
 		return fmt.Errorf("unable to get install preset request: %w", err)
 	}
+	req.PlanOnly = planOnly
 
 	_, err = c.Temporal.ExecDeploymentStart(ctx, req)
 	if err != nil {
 		return fmt.Errorf("unable to execute deployment start: %w", err)
 	}
 
+	// NOTE(jm): we wait an additional 5 seconds before checking instance as deployments currently don't wait for
+	// instances to finish
+	//nolint:all
+	time.Sleep(time.Second * 5)
 	resp, err := c.Workflows.GetInstanceProvisionResponse(ctx,
 		req.OrgId,
 		req.AppId,
@@ -34,7 +40,11 @@ func (c *commands) InstallDeployPlan(ctx context.Context, installID, componentPr
 		return fmt.Errorf("invalid response")
 	}
 
-	deployPlan, err := c.Executors.GetPlan(ctx, instance.ImageSyncPlan)
+	if instance.DeployPlan == nil {
+		return fmt.Errorf("no deploy plan set")
+	}
+
+	deployPlan, err := c.Executors.GetPlan(ctx, instance.DeployPlan)
 	if err != nil {
 		return fmt.Errorf("unable to get deploy plan: %w", err)
 	}

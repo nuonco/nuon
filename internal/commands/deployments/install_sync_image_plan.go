@@ -3,21 +3,27 @@ package deployments
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/powertoolsdev/nuonctl/internal/proto"
 )
 
-func (c *commands) InstallSyncImagePlan(ctx context.Context, installID, componentPreset string) error {
+func (c *commands) InstallSyncImagePlan(ctx context.Context, installID, componentPreset string, planOnly bool) error {
 	req, err := c.installPresetRequest(ctx, installID, componentPreset)
 	if err != nil {
 		return fmt.Errorf("unable to get install preset request: %w", err)
 	}
+	req.PlanOnly = planOnly
 
 	_, err = c.Temporal.ExecDeploymentStart(ctx, req)
 	if err != nil {
 		return fmt.Errorf("unable to execute deployment start: %w", err)
 	}
 
+	// NOTE(jm): we wait an additional 5 seconds before checking instance as deployments currently don't wait for
+	// instances to finish
+	//nolint:all
+	time.Sleep(time.Second * 5)
 	resp, err := c.Workflows.GetInstanceProvisionResponse(ctx,
 		req.OrgId,
 		req.AppId,

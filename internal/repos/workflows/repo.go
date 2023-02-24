@@ -32,6 +32,9 @@ type Repo interface {
 
 	GetDeploymentsRequest(ctx context.Context, key string) (*sharedv1.Request, error)
 	GetDeploymentsResponse(ctx context.Context, key string) (*sharedv1.Response, error)
+
+	GetInstallsRequest(ctx context.Context, key string) (*sharedv1.Request, error)
+	GetInstallsResponse(ctx context.Context, key string) (*sharedv1.Response, error)
 }
 
 type repo struct {

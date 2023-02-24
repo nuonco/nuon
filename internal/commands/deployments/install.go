@@ -29,6 +29,5 @@ func (c *commands) installPresetRequest(ctx context.Context, installID string, c
 		DeploymentId: shortid.New(),
 		InstallIds:   []string{installID},
 		Component:    presetComp,
-		PlanOnly:     true,
 	}, nil
 }

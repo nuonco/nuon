@@ -18,9 +18,9 @@ func (p *preset) publicDockerHttpbin() (*componentv1.Component, error) {
 					VcsCfg: &vcsv1.Config{
 						Cfg: &vcsv1.Config_PublicGithubConfig{
 							PublicGithubConfig: &vcsv1.PublicGithubConfig{
-								Repo:      "kennethreitz/httpbin",
-								Directory: "/",
-								Branch:    "main",
+								Repo:      "https://github.com/postmanlabs/httpbin.git",
+								Directory: ".",
+								Branch:    "master",
 							},
 						},
 					},

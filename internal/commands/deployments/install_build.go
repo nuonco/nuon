@@ -7,11 +7,13 @@ import (
 	"github.com/powertoolsdev/nuonctl/internal/proto"
 )
 
-func (c *commands) InstallBuildPlan(ctx context.Context, installID, componentPreset string) error {
+func (c *commands) InstallBuild(ctx context.Context, installID, componentPreset string, planOnly bool) error {
 	req, err := c.installPresetRequest(ctx, installID, componentPreset)
 	if err != nil {
 		return fmt.Errorf("unable to get install preset request: %w", err)
 	}
+	req.BuildOnly = true
+	req.PlanOnly = planOnly
 
 	resp, err := c.Temporal.ExecDeploymentStart(ctx, req)
 	if err != nil {

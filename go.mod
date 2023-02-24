@@ -15,7 +15,7 @@ require (
 	github.com/powertoolsdev/go-common v1.5.0
 	github.com/powertoolsdev/go-generics v0.0.1
 	github.com/powertoolsdev/go-workflows-meta v0.6.0
-	github.com/powertoolsdev/protos v0.66.4
+	github.com/powertoolsdev/protos v0.70.2
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.1

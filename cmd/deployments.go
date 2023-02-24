@@ -19,8 +19,9 @@ func (c *cli) registerDeployments(ctx context.Context, rootCmd *cobra.Command) e
 
 	// register commands
 	var deploymentsCmd = &cobra.Command{
-		Use:   "deployments",
-		Short: "commands for working with deployments",
+		Use:     "deployments",
+		Aliases: []string{"d"},
+		Short:   "commands for working with deployments",
 	}
 	rootCmd.AddCommand(deploymentsCmd)
 
@@ -28,6 +29,8 @@ func (c *cli) registerDeployments(ctx context.Context, rootCmd *cobra.Command) e
 	deploymentsCmd.PersistentFlags().StringVar(&installID, "install-id", "", "install short id")
 	var preset string
 	deploymentsCmd.PersistentFlags().StringVar(&preset, "preset", "", "component preset name")
+	var planOnly bool
+	deploymentsCmd.PersistentFlags().BoolVar(&planOnly, "plan-only", true, "only plan, not execute")
 
 	deploymentsCmd.AddCommand(&cobra.Command{
 		Use: "install-preset",
@@ -37,21 +40,21 @@ func (c *cli) registerDeployments(ctx context.Context, rootCmd *cobra.Command) e
 	})
 
 	deploymentsCmd.AddCommand(&cobra.Command{
-		Use: "install-build-plan",
+		Use: "install-build",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return deploys.InstallBuildPlan(ctx, installID, preset)
+			return deploys.InstallBuild(ctx, installID, preset, planOnly)
 		},
 	})
 	deploymentsCmd.AddCommand(&cobra.Command{
-		Use: "install-sync-image-plan",
+		Use: "install-sync-image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return deploys.InstallSyncImagePlan(ctx, installID, preset)
+			return deploys.InstallSyncImagePlan(ctx, installID, preset, planOnly)
 		},
 	})
 	deploymentsCmd.AddCommand(&cobra.Command{
-		Use: "install-deploy-plan",
+		Use: "install-deploy",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return deploys.InstallDeployPlan(ctx, installID, preset)
+			return deploys.InstallDeployPlan(ctx, installID, preset, planOnly)
 		},
 	})
 

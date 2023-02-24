@@ -16,8 +16,9 @@ func (c *cli) registerApps(ctx context.Context, rootCmd *cobra.Command) error {
 
 	// register commands
 	var appsCmd = &cobra.Command{
-		Use:   "apps",
-		Short: "commands for working with apps",
+		Use:     "apps",
+		Aliases: []string{"a"},
+		Short:   "commands for working with apps",
 	}
 	rootCmd.AddCommand(appsCmd)
 
