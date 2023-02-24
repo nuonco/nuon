@@ -21,9 +21,7 @@ func (w *wkflow) sandboxPlanRequest(typ planv1.PlanType, req *planv1.Sandbox) (*
 			Name:   w.cfg.SandboxBucket,
 			Region: w.cfg.SandboxBucketRegion,
 			AssumeRoleDetails: &planv1.AssumeRoleDetails{
-				// AssumeArn: fmt.Sprintf(w.cfg.OrgsInstallationsRoleTemplate, req.OrgId),
-				// TODO(jdt): un-hardcode
-				AssumeArn: "arn:aws:iam::676549690856:role/eks/eks-workers-executors",
+				AssumeArn: fmt.Sprintf(w.cfg.OrgsInstallationsRoleTemplate, req.OrgId),
 			},
 		},
 		Backend: &planactivitiesv1.Bucket{
@@ -35,7 +33,6 @@ func (w *wkflow) sandboxPlanRequest(typ planv1.PlanType, req *planv1.Sandbox) (*
 			Name:   w.cfg.InstallationsBucket,
 			Region: w.cfg.InstallationsBucketRegion,
 			AssumeRoleDetails: &planv1.AssumeRoleDetails{
-				// TODO(jdt): is this the correct role?
 				AssumeArn: fmt.Sprintf(w.cfg.OrgsInstallationsRoleTemplate, req.OrgId),
 			},
 		},
