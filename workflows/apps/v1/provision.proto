@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package apps.v1;
 
+import "apps/v1/repository/v1/workflow.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -18,4 +19,6 @@ message ProvisionRequest {
   ];
 }
 
-message ProvisionResponse {}
+message ProvisionResponse {
+  apps.v1.repository.v1.ProvisionRepositoryResponse repository = 1;
+}
