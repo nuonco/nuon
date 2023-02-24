@@ -8,6 +8,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	appv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1"
+	projectv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1/project/v1"
+	repov1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1/repository/v1"
 	workers "github.com/powertoolsdev/workers-apps/internal"
 	"github.com/powertoolsdev/workers-apps/internal/provision/project"
 	"github.com/powertoolsdev/workers-apps/internal/provision/repository"
@@ -43,9 +45,9 @@ func (w Workflow) Provision(ctx workflow.Context, req *appv1.ProvisionRequest) (
 		return &resp, err
 	}
 
-	prRequest := repository.ProvisionRepositoryRequest{
-		OrgID: req.OrgId,
-		AppID: req.AppId,
+	prRequest := &repov1.ProvisionRepositoryRequest{
+		OrgId: req.OrgId,
+		AppId: req.AppId,
 	}
 	prResp, err := execProvisionRepository(ctx, w.cfg, prRequest)
 	if err != nil {
@@ -54,10 +56,11 @@ func (w Workflow) Provision(ctx workflow.Context, req *appv1.ProvisionRequest) (
 		return nil, err
 	}
 	l.Debug("successfully provisioned repository: %w", prResp)
+	resp.Repository = prResp
 
-	ppReq := project.ProvisionProjectRequest{
-		OrgID: req.OrgId,
-		AppID: req.AppId,
+	ppReq := &projectv1.ProvisionProjectRequest{
+		OrgId: req.OrgId,
+		AppId: req.AppId,
 	}
 	ppResp, err := execProvisionProject(ctx, w.cfg, ppReq)
 	if err != nil {
@@ -74,9 +77,9 @@ func (w Workflow) Provision(ctx workflow.Context, req *appv1.ProvisionRequest) (
 func execProvisionRepository(
 	ctx workflow.Context,
 	cfg workers.Config,
-	req repository.ProvisionRepositoryRequest,
-) (repository.ProvisionRepositoryResponse, error) {
-	var resp repository.ProvisionRepositoryResponse
+	req *repov1.ProvisionRepositoryRequest,
+) (*repov1.ProvisionRepositoryResponse, error) {
+	resp := &repov1.ProvisionRepositoryResponse{}
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("executing provision repository child workflow")
@@ -99,9 +102,9 @@ func execProvisionRepository(
 func execProvisionProject(
 	ctx workflow.Context,
 	cfg workers.Config,
-	req project.ProvisionProjectRequest,
-) (project.ProvisionProjectResponse, error) {
-	var resp project.ProvisionProjectResponse
+	req *projectv1.ProvisionProjectRequest,
+) (*projectv1.ProvisionProjectResponse, error) {
+	resp := &projectv1.ProvisionProjectResponse{}
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("executing provision project child workflow")

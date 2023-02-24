@@ -4,26 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-waypoint"
+	projectv1 "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1/project/v1"
 	workers "github.com/powertoolsdev/workers-apps/internal"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
-
-type ProvisionProjectRequest struct {
-	DryRun bool `json:"dry_run"`
-
-	OrgID string `json:"org_id" validate:"required"`
-	AppID string `json:"app_id" validate:"required"`
-}
-
-func (r ProvisionProjectRequest) Validate() error {
-	validate := validator.New()
-	return validate.Struct(r)
-}
-
-type ProvisionProjectResponse struct{}
 
 type Workflow struct {
 	cfg workers.Config
@@ -35,8 +21,8 @@ func NewWorkflow(cfg workers.Config) Workflow {
 	}
 }
 
-func (w Workflow) ProvisionProject(ctx workflow.Context, req ProvisionProjectRequest) (ProvisionProjectResponse, error) {
-	resp := ProvisionProjectResponse{}
+func (w Workflow) ProvisionProject(ctx workflow.Context, req *projectv1.ProvisionProjectRequest) (*projectv1.ProvisionProjectResponse, error) {
+	resp := &projectv1.ProvisionProjectResponse{}
 
 	l := log.With(workflow.GetLogger(ctx))
 	ao := workflow.ActivityOptions{
@@ -47,9 +33,9 @@ func (w Workflow) ProvisionProject(ctx workflow.Context, req ProvisionProjectReq
 
 	cwpRequest := CreateWaypointProjectRequest{
 		TokenSecretNamespace: w.cfg.WaypointTokenNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgID),
-		OrgID:                req.OrgID,
-		AppID:                req.AppID,
+		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId),
+		OrgID:                req.OrgId,
+		AppID:                req.AppId,
 	}
 	cwpResp, err := execCreateWaypointProject(ctx, act, cwpRequest)
 	if err != nil {
@@ -59,9 +45,9 @@ func (w Workflow) ProvisionProject(ctx workflow.Context, req ProvisionProjectReq
 
 	uwwRequest := UpsertWaypointWorkspaceRequest{
 		TokenSecretNamespace: w.cfg.WaypointTokenNamespace,
-		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgID),
-		OrgID:                req.OrgID,
-		AppID:                req.AppID,
+		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId),
+		OrgID:                req.OrgId,
+		AppID:                req.AppId,
 	}
 	uwwResp, err := execUpsertWaypointWorkspace(ctx, act, uwwRequest)
 	if err != nil {
