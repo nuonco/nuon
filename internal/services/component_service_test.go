@@ -49,10 +49,11 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 			},
 			errExpected: errUpsertComponent,
 		},
-		"upsert happy path": {
+		"upsert without component config": {
 			inputFn: func() models.ComponentInput {
 				inp := generics.GetFakeObj[models.ComponentInput]()
 				inp.ID = generics.ToPtr(component.ID.String())
+				inp.Config = nil
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {

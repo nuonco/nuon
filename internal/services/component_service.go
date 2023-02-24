@@ -2,12 +2,15 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
 	"github.com/powertoolsdev/api/internal/utils"
+	componentConfig "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/encoding/protojson"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -83,7 +86,7 @@ func (i *componentService) updateComponent(ctx context.Context, input models.Com
 		i.log.Error("failed to retrieve component",
 			zap.Any("input", input),
 			zap.String("error", err.Error()))
-		return nil, err
+		return nil, fmt.Errorf("failed to retrieve component: %w", err)
 	}
 
 	// NOTE: we do not support changing region or account ID on an install
@@ -92,7 +95,36 @@ func (i *componentService) updateComponent(ctx context.Context, input models.Com
 	component.Type = string(input.Type)
 
 	if input.Config != nil {
-		component.Config = datatypes.JSON(input.Config)
+		dbConfig, _ := component.Config.MarshalJSON()
+		i.log.Info("updating component configuration",
+			zap.String("existing component configuration", string(dbConfig)),
+			zap.String("input component configuration", string(input.Config)))
+
+		// convert to structs
+		databaseConfig := &componentConfig.Component{}
+		if err = protojson.Unmarshal([]byte(component.Config.String()), databaseConfig); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal DB JSON: %w", err)
+		}
+		inputConfig := &componentConfig.Component{}
+		if err = protojson.Unmarshal(input.Config, inputConfig); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal input JSON: %w", err)
+		}
+
+		// calculate delta
+		if inputConfig.BuildCfg != nil {
+			databaseConfig.BuildCfg = inputConfig.BuildCfg
+		}
+		if inputConfig.DeployCfg != nil {
+			databaseConfig.DeployCfg = inputConfig.DeployCfg
+		}
+
+		//convert back to byte
+		var updatedConfig []byte
+		updatedConfig, err = protojson.Marshal(databaseConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse updated component configuration: %w", err)
+		}
+		component.Config = datatypes.JSON(updatedConfig)
 	}
 
 	if input.GithubConfig != nil {
