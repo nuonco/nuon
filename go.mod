@@ -3,7 +3,7 @@ module github.com/powertoolsdev/go-fetch
 go 1.19
 
 require (
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.4
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.5
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/powertoolsdev/go-aws-assume-role v0.0.3
 	github.com/stretchr/testify v1.8.1
