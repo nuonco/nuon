@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package apps.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// GetInfoResponse returns infrastructure information about the org
+message GetInfoResponse {
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+}
+
+message GetInfoRequest {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string app_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+}
