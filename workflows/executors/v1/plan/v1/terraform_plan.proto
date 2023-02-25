@@ -7,6 +7,8 @@ import "google/protobuf/struct.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1";
+
 message TerraformPlan {
   string id = 1;
   Object module = 2;

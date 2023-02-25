@@ -5,6 +5,8 @@ package executors.v1.plan.v1;
 import "executors/v1/plan/v1/terraform_plan.proto";
 import "executors/v1/plan/v1/waypoint_plan.proto";
 
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1";
+
 message Plan {
   oneof actual {
     WaypointPlan waypoint_plan = 1;

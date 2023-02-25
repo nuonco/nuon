@@ -5,6 +5,8 @@ package apps.v1.project.v1;
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1/project/v1";
+
 message ProvisionProjectRequest {
   bool dry_run = 1;
 

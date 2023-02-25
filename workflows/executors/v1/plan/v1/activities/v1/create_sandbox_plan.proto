@@ -6,6 +6,8 @@ import "executors/v1/plan/v1/plan_type.proto";
 import "executors/v1/plan/v1/sandbox.proto";
 import "executors/v1/plan/v1/terraform_plan.proto";
 
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1/activities/v1";
+
 message CreateSandboxPlan {
   .executors.v1.plan.v1.PlanType type = 1;
   .executors.v1.plan.v1.Sandbox sandbox = 2;

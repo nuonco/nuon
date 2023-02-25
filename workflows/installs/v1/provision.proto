@@ -7,6 +7,8 @@ import "installs/v1/sandbox_settings.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/installs/v1";
+
 // ProvisionRequest: provision a nuon sandbox and runner
 message ProvisionRequest {
   string org_id = 1 [

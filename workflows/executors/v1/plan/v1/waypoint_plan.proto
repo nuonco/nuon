@@ -9,6 +9,8 @@ import "executors/v1/plan/v1/waypoint_server.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1";
+
 // WaypointPlan represents a waypoint plan used for builds or deploys.
 message WaypointPlan {
   Metadata metadata = 1;

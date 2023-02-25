@@ -5,6 +5,8 @@ package executors.v1.plan.v1;
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1";
+
 message Metadata {
   string org_id = 1 [
     (validate.rules).string.uuid = true,

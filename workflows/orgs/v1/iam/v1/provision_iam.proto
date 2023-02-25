@@ -5,6 +5,8 @@ package orgs.v1.iam.v1;
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/iam/v1";
+
 message ProvisionIAMRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,

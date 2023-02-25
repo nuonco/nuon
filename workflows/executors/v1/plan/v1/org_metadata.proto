@@ -6,6 +6,8 @@ import "executors/v1/plan/v1/waypoint_server.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1";
+
 message OrgMetadata {
   string ecr_region = 1 [
     (validate.rules).string = {
