@@ -25,6 +25,12 @@ type Repo interface {
 
 	GetInstallProvisionRequest(ctx context.Context, orgID, appID, installID string) (*sharedv1.Request, error)
 	GetInstallProvisionResponse(ctx context.Context, orgID, appID, installID string) (*sharedv1.Response, error)
+
+	GetDeploymentProvisionRequest(ctx context.Context, orgID, appID, componentID, deploymentID string) (*sharedv1.Request, error)
+	GetDeploymentProvisionResponse(ctx context.Context, orgID, appID, componentID, deploymentID string) (*sharedv1.Response, error)
+
+	GetInstanceProvisionRequest(ctx context.Context, orgID, appID, componentID, deploymentID, installID string) (*sharedv1.Request, error)
+	GetInstanceProvisionResponse(ctx context.Context, orgID, appID, componentID, deploymentID, installID string) (*sharedv1.Response, error)
 }
 
 type Bucket struct {
