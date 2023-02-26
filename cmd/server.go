@@ -11,6 +11,8 @@ import (
 	"github.com/powertoolsdev/orgs-api/internal/orgcontext"
 	"github.com/powertoolsdev/orgs-api/internal/servers"
 	appsserver "github.com/powertoolsdev/orgs-api/internal/servers/apps"
+	deploymentsserver "github.com/powertoolsdev/orgs-api/internal/servers/deployments"
+	instancesserver "github.com/powertoolsdev/orgs-api/internal/servers/instances"
 	orgsserver "github.com/powertoolsdev/orgs-api/internal/servers/orgs"
 	statusserver "github.com/powertoolsdev/orgs-api/internal/servers/status"
 	"github.com/powertoolsdev/protos/shared/generated/types/status/v1/statusv1connect"
@@ -63,6 +65,38 @@ func registerAppsServer(v *validator.Validate, mux *http.ServeMux, cfg *internal
 	path, handler, err := appsserver.NewHandler(v, servers.WithContextProvider(ctxProvider))
 	if err != nil {
 		return fmt.Errorf("unable to initialize status server: %w", err)
+	}
+
+	mux.Handle(path, handler)
+	return nil
+}
+
+// registerInstancesServer registers the installs service handler on the provided mux
+func registerInstancesServer(v *validator.Validate, mux *http.ServeMux, cfg *internal.Config) error {
+	ctxProvider, err := orgcontext.NewStaticProvider(v, orgcontext.WithConfig(cfg))
+	if err != nil {
+		return fmt.Errorf("unable to create orgcontext provider: %w", err)
+	}
+
+	path, handler, err := instancesserver.NewHandler(v, servers.WithContextProvider(ctxProvider))
+	if err != nil {
+		return fmt.Errorf("unable to initialize installs server: %w", err)
+	}
+
+	mux.Handle(path, handler)
+	return nil
+}
+
+// registerDeploymentsServer registers the installs service handler on the provided mux
+func registerDeploymentsServer(v *validator.Validate, mux *http.ServeMux, cfg *internal.Config) error {
+	ctxProvider, err := orgcontext.NewStaticProvider(v, orgcontext.WithConfig(cfg))
+	if err != nil {
+		return fmt.Errorf("unable to create orgcontext provider: %w", err)
+	}
+
+	path, handler, err := deploymentsserver.NewHandler(v, servers.WithContextProvider(ctxProvider))
+	if err != nil {
+		return fmt.Errorf("unable to initialize installs server: %w", err)
 	}
 
 	mux.Handle(path, handler)
@@ -136,6 +170,12 @@ func runServer(cmd *cobra.Command, args []string) {
 		l.Fatal("unable to register apps server:", zap.Error(err))
 	}
 	if err := registerInstallsServer(v, mux, &cfg); err != nil {
+		l.Fatal("unable to register installs server:", zap.Error(err))
+	}
+	if err := registerDeploymentsServer(v, mux, &cfg); err != nil {
+		l.Fatal("unable to register installs server:", zap.Error(err))
+	}
+	if err := registerInstancesServer(v, mux, &cfg); err != nil {
 		l.Fatal("unable to register installs server:", zap.Error(err))
 	}
 	registerLoadbalancerHealthCheck(mux)
