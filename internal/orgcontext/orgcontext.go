@@ -1,6 +1,8 @@
 package orgcontext
 
-import "context"
+import (
+	"context"
+)
 
 //
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
@@ -12,7 +14,7 @@ import "context"
 
 // Provider exposes an interface for setting a context which can be used by this package
 type Provider interface {
-	SetContext(context.Context, string) (context.Context, error)
+	Get(context.Context, string) (*Context, error)
 }
 
 type provider = Provider
@@ -20,10 +22,13 @@ type provider = Provider
 type BucketType string
 
 const (
-	BucketTypeUnknown       BucketType = ""
-	BucketTypeDeployments   BucketType = "deployments"
-	BucketTypeOrgs          BucketType = "orgs"
-	BucketTypeInstallations BucketType = "installations"
+	BucketTypeUnknown BucketType = ""
+
+	BucketTypeOrgs        BucketType = "orgs"
+	BucketTypeApps        BucketType = "apps"
+	BucketTypeInstalls    BucketType = "installs"
+	BucketTypeDeployments BucketType = "deployments"
+	BucketTypeInstances   BucketType = "instances"
 )
 
 const (
@@ -31,10 +36,9 @@ const (
 )
 
 type Bucket struct {
-	Name           string `json:"name" validate:"required"`
-	Prefix         string `json:"prefix" validate:"required"`
-	AssumeRoleARN  string `json:"assume_role_arn" validate:"required"`
-	AssumeRoleName string `json:"assume_role_name" validate:"required"`
+	Name               string `validate:"required"`
+	IamRoleArn         string `validate:"required"`
+	IamRoleSessionName string `validate:"required"`
 }
 
 // WaypointServer contains all of the information needed to access the waypoint server
@@ -42,8 +46,6 @@ type WaypointServer struct {
 	Address         string `json:"address" validate:"required"`
 	SecretNamespace string `json:"secret_namespace" validate:"required"`
 	SecretName      string `json:"secret_name" validate:"required"`
-
-	// TODO(jm): eventually update this to use kube.ClusterInfo and the orgs cluster
 }
 
 // Context is injected into each "request"
@@ -53,5 +55,3 @@ type Context struct {
 	Buckets        map[BucketType]Bucket `json:"bucket_access" validate:"required" faker:"-"`
 	WaypointServer WaypointServer        `json:"waypoint_server" validate:"required"`
 }
-
-type Key struct{}

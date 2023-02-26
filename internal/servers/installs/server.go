@@ -1,4 +1,4 @@
-package orgs
+package installs
 
 import (
 	"fmt"
@@ -6,14 +6,14 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/orgs-api/internal/servers"
-	connectv1 "github.com/powertoolsdev/protos/orgs-api/generated/types/orgs/v1/orgsv1connect"
+	connectv1 "github.com/powertoolsdev/protos/orgs-api/generated/types/installs/v1/installsv1connect"
 )
 
 type server struct {
 	*servers.Base
 }
 
-var _ connectv1.OrgsServiceHandler = (*server)(nil)
+var _ connectv1.InstallsServiceHandler = (*server)(nil)
 
 func NewHandler(v *validator.Validate, opts ...servers.BaseOption) (string, http.Handler, error) {
 	baseSrv, err := servers.New(v, opts...)
@@ -21,7 +21,7 @@ func NewHandler(v *validator.Validate, opts ...servers.BaseOption) (string, http
 		return "", nil, fmt.Errorf("invalid base server: %w", err)
 	}
 
-	path, handler := connectv1.NewOrgsServiceHandler(&server{
+	path, handler := connectv1.NewInstallsServiceHandler(&server{
 		Base: baseSrv,
 	})
 	return path, handler, nil

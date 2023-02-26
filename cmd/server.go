@@ -5,15 +5,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/orgs-api/internal"
 	"github.com/powertoolsdev/orgs-api/internal/orgcontext"
-	"github.com/powertoolsdev/orgs-api/internal/repos/waypoint"
-	"github.com/powertoolsdev/orgs-api/internal/repos/workflows"
+	"github.com/powertoolsdev/orgs-api/internal/servers"
+	appsserver "github.com/powertoolsdev/orgs-api/internal/servers/apps"
 	orgsserver "github.com/powertoolsdev/orgs-api/internal/servers/orgs"
 	statusserver "github.com/powertoolsdev/orgs-api/internal/servers/status"
-	orgsservice "github.com/powertoolsdev/orgs-api/internal/services/orgs"
-	"github.com/powertoolsdev/protos/orgs-api/generated/types/orgs/v1/orgsv1connect"
 	"github.com/powertoolsdev/protos/shared/generated/types/status/v1/statusv1connect"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -54,32 +53,50 @@ func registerStatusServer(mux *http.ServeMux, cfg *internal.Config) error {
 	return nil
 }
 
-// registerOrgsServer registers the orgs service handler on the provided mux
-func registerOrgsServer(mux *http.ServeMux, cfg *internal.Config) error {
-	ctxProvider, err := orgcontext.NewStaticProvider(orgcontext.WithConfig(cfg))
+// registerAppsServer registers the apps service handler on the provided mux
+func registerAppsServer(v *validator.Validate, mux *http.ServeMux, cfg *internal.Config) error {
+	ctxProvider, err := orgcontext.NewStaticProvider(v, orgcontext.WithConfig(cfg))
 	if err != nil {
 		return fmt.Errorf("unable to create orgcontext provider: %w", err)
 	}
 
-	workflowsRepo := workflows.New()
-	waypointRepo, err := waypoint.New()
-	if err != nil {
-		return fmt.Errorf("unable to create waypoint repo: %w", err)
-	}
-
-	svc, err := orgsservice.New(orgsservice.WithWorkflowsRepo(workflowsRepo),
-		orgsservice.WithWaypointRepo(waypointRepo))
-	if err != nil {
-		return fmt.Errorf("unable to get service: %w", err)
-	}
-
-	srv, err := orgsserver.New(orgsserver.WithContextProvider(ctxProvider),
-		orgsserver.WithService(svc))
+	path, handler, err := appsserver.NewHandler(v, servers.WithContextProvider(ctxProvider))
 	if err != nil {
 		return fmt.Errorf("unable to initialize status server: %w", err)
 	}
 
-	path, handler := orgsv1connect.NewOrgsServiceHandler(srv)
+	mux.Handle(path, handler)
+	return nil
+}
+
+// registerInstallsServer registers the installs service handler on the provided mux
+func registerInstallsServer(v *validator.Validate, mux *http.ServeMux, cfg *internal.Config) error {
+	ctxProvider, err := orgcontext.NewStaticProvider(v, orgcontext.WithConfig(cfg))
+	if err != nil {
+		return fmt.Errorf("unable to create orgcontext provider: %w", err)
+	}
+
+	path, handler, err := orgsserver.NewHandler(v, servers.WithContextProvider(ctxProvider))
+	if err != nil {
+		return fmt.Errorf("unable to initialize installs server: %w", err)
+	}
+
+	mux.Handle(path, handler)
+	return nil
+}
+
+// registerOrgsServer registers the orgs service handler on the provided mux
+func registerOrgsServer(v *validator.Validate, mux *http.ServeMux, cfg *internal.Config) error {
+	ctxProvider, err := orgcontext.NewStaticProvider(v, orgcontext.WithConfig(cfg))
+	if err != nil {
+		return fmt.Errorf("unable to create orgcontext provider: %w", err)
+	}
+
+	path, handler, err := orgsserver.NewHandler(v, servers.WithContextProvider(ctxProvider))
+	if err != nil {
+		return fmt.Errorf("unable to initialize status server: %w", err)
+	}
+
 	mux.Handle(path, handler)
 	return nil
 }
@@ -107,12 +124,19 @@ func runServer(cmd *cobra.Command, args []string) {
 		fmt.Printf("failed to instantiate logger: %v\n", err)
 	}
 
+	v := validator.New()
 	mux := http.NewServeMux()
 	if err := registerStatusServer(mux, &cfg); err != nil {
 		l.Fatal("unable to register status server:", zap.Error(err))
 	}
-	if err := registerOrgsServer(mux, &cfg); err != nil {
+	if err := registerOrgsServer(v, mux, &cfg); err != nil {
 		l.Fatal("unable to register orgs server:", zap.Error(err))
+	}
+	if err := registerAppsServer(v, mux, &cfg); err != nil {
+		l.Fatal("unable to register apps server:", zap.Error(err))
+	}
+	if err := registerInstallsServer(v, mux, &cfg); err != nil {
+		l.Fatal("unable to register installs server:", zap.Error(err))
 	}
 	registerLoadbalancerHealthCheck(mux)
 

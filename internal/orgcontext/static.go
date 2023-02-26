@@ -10,43 +10,56 @@ import (
 )
 
 type staticProvider struct {
-	validate *validator.Validate `validate:"required"`
+	v *validator.Validate `validate:"required"`
 
 	DeploymentsBucketName               string `validate:"required"`
 	DeploymentsBucketAssumeRoleTemplate string `validate:"required"`
 
-	InstallationsBucketName               string `validate:"required"`
-	InstallationsBucketAssumeRoleTemplate string `validate:"required"`
+	InstallsBucketName          string `validate:"required"`
+	InstallsBucketAssumeRoleARN string `validate:"required"`
 
 	OrgsBucketName               string `validate:"required"`
 	OrgsBucketAssumeRoleTemplate string `validate:"required"`
+
+	AppsBucketName               string `validate:"required"`
+	AppsBucketAssumeRoleTemplate string `validate:"required"`
+
+	InstancesBucketName               string `validate:"required"`
+	InstancesBucketAssumeRoleTemplate string `validate:"required"`
 
 	WaypointTokenSecretNamespace string `validate:"required"`
 	WaypointTokenSecretTemplate  string `validate:"required"`
 	WaypointServerRootDomain     string `validate:"required"`
 }
 
-func (s *staticProvider) createContext(orgID string) *Context {
+func (s *staticProvider) Get(_ context.Context, orgID string) (*Context, error) {
 	return &Context{
 		OrgID: orgID,
 		Buckets: map[BucketType]Bucket{
-			BucketTypeDeployments: {
-				Prefix:         fmt.Sprintf("org=%s/", orgID),
-				Name:           s.DeploymentsBucketName,
-				AssumeRoleARN:  fmt.Sprintf(s.DeploymentsBucketAssumeRoleTemplate, orgID),
-				AssumeRoleName: defaultAssumeRoleName,
-			},
 			BucketTypeOrgs: {
-				Prefix:         fmt.Sprintf("org=%s/", orgID),
-				Name:           s.OrgsBucketName,
-				AssumeRoleARN:  fmt.Sprintf(s.OrgsBucketAssumeRoleTemplate, orgID),
-				AssumeRoleName: defaultAssumeRoleName,
+				Name:               s.OrgsBucketName,
+				IamRoleArn:         fmt.Sprintf(s.OrgsBucketAssumeRoleTemplate, orgID),
+				IamRoleSessionName: defaultAssumeRoleName,
 			},
-			BucketTypeInstallations: {
-				Name:           s.InstallationsBucketName,
-				Prefix:         fmt.Sprintf("org=%s/", orgID),
-				AssumeRoleARN:  fmt.Sprintf(s.InstallationsBucketAssumeRoleTemplate, orgID),
-				AssumeRoleName: defaultAssumeRoleName,
+			BucketTypeApps: {
+				Name:               s.AppsBucketName,
+				IamRoleArn:         fmt.Sprintf(s.AppsBucketAssumeRoleTemplate, orgID),
+				IamRoleSessionName: defaultAssumeRoleName,
+			},
+			BucketTypeInstalls: {
+				Name:               s.InstallsBucketName,
+				IamRoleArn:         fmt.Sprintf(s.InstallsBucketAssumeRoleARN, orgID),
+				IamRoleSessionName: defaultAssumeRoleName,
+			},
+			BucketTypeDeployments: {
+				Name:               s.DeploymentsBucketName,
+				IamRoleArn:         fmt.Sprintf(s.DeploymentsBucketAssumeRoleTemplate, orgID),
+				IamRoleSessionName: defaultAssumeRoleName,
+			},
+			BucketTypeInstances: {
+				Name:               s.InstancesBucketName,
+				IamRoleArn:         fmt.Sprintf(s.InstancesBucketAssumeRoleTemplate, orgID),
+				IamRoleSessionName: defaultAssumeRoleName,
 			},
 		},
 		WaypointServer: WaypointServer{
@@ -54,29 +67,14 @@ func (s *staticProvider) createContext(orgID string) *Context {
 			SecretNamespace: s.WaypointTokenSecretNamespace,
 			SecretName:      fmt.Sprintf(s.WaypointTokenSecretTemplate, orgID),
 		},
-	}
-}
-
-func (s *staticProvider) SetContext(ctx context.Context, orgID string) (context.Context, error) {
-	orgCtx := s.createContext(orgID)
-	if err := s.validate.Struct(orgCtx); err != nil {
-		return nil, fmt.Errorf("invalid context: %w", err)
-	}
-
-	for bktType, bkt := range orgCtx.Buckets {
-		if err := s.validate.Struct(bkt); err != nil {
-			return nil, fmt.Errorf("invalid %s bucket: %w", bktType, err)
-		}
-	}
-
-	return context.WithValue(ctx, Key{}, orgCtx), nil
+	}, nil
 }
 
 var _ provider = (*staticProvider)(nil)
 
-func NewStaticProvider(opts ...staticOption) (*staticProvider, error) {
+func NewStaticProvider(v *validator.Validate, opts ...staticOption) (*staticProvider, error) {
 	spr := &staticProvider{
-		validate: validator.New(),
+		v: v,
 	}
 
 	for idx, opt := range opts {
@@ -85,7 +83,7 @@ func NewStaticProvider(opts ...staticOption) (*staticProvider, error) {
 		}
 	}
 
-	if err := spr.validate.Struct(spr); err != nil {
+	if err := spr.v.Struct(spr); err != nil {
 		return nil, fmt.Errorf("unable to validate server: %w", err)
 	}
 
@@ -98,14 +96,20 @@ type staticOption func(*staticProvider) error
 // needing to pass the config around or do a bunch of "hand wiring" outside of this context.
 func WithConfig(cfg *internal.Config) staticOption {
 	return func(s *staticProvider) error {
+		s.OrgsBucketName = cfg.OrgsBucket
+		s.OrgsBucketAssumeRoleTemplate = cfg.OrgsOrgsBucketRoleTemplate
+
+		s.AppsBucketName = cfg.OrgsBucket
+		s.AppsBucketAssumeRoleTemplate = cfg.OrgsOrgsBucketRoleTemplate
+
+		s.InstallsBucketName = cfg.InstallationsBucket
+		s.InstallsBucketAssumeRoleARN = cfg.OrgsInstallationsRoleTemplate
+
 		s.DeploymentsBucketName = cfg.DeploymentsBucket
 		s.DeploymentsBucketAssumeRoleTemplate = cfg.OrgsDeploymentsRoleTemplate
 
-		s.InstallationsBucketName = cfg.InstallationsBucket
-		s.InstallationsBucketAssumeRoleTemplate = cfg.OrgsInstallationsRoleTemplate
-
-		s.OrgsBucketName = cfg.OrgsBucket
-		s.OrgsBucketAssumeRoleTemplate = cfg.OrgsOrgsBucketRoleTemplate
+		s.InstancesBucketName = cfg.DeploymentsBucket
+		s.InstancesBucketAssumeRoleTemplate = cfg.OrgsDeploymentsRoleTemplate
 
 		s.WaypointServerRootDomain = cfg.WaypointServerRootDomain
 		s.WaypointTokenSecretTemplate = cfg.WaypointTokenSecretTemplate

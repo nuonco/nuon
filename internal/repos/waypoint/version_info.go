@@ -9,9 +9,9 @@ import (
 )
 
 func (r *repo) GetVersionInfo(ctx context.Context) (*waypointv1.GetVersionInfoResponse, error) {
-	client, err := r.ClientGetter(ctx)
+	client, err := r.WaypointClientProvider.GetClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get org client: %w", err)
+		return nil, fmt.Errorf("unable to get waypoint client: %w", err)
 	}
 
 	resp, err := r.getVersionInfo(ctx, client)
