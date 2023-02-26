@@ -15,3 +15,12 @@ func unmarshalResponse(byts []byte) (*sharedv1.Response, error) {
 
 	return &resp, nil
 }
+
+func unmarshalRequest(byts []byte) (*sharedv1.Request, error) {
+	req := sharedv1.Request{}
+	if err := proto.Unmarshal(byts, &req); err != nil {
+		return nil, fmt.Errorf("invalid response: %w", err)
+	}
+
+	return &req, nil
+}

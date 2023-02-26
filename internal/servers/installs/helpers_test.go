@@ -1,4 +1,4 @@
-package orgs
+package installs
 
 //import (
 //"github.com/powertoolsdev/go-generics"
