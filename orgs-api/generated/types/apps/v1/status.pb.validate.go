@@ -175,6 +175,18 @@ func (m *GetStatusRequest) validate(all bool) error {
 
 	}
 
+	if utf8.RuneCountInString(m.GetAppId()) != 26 {
+		err := GetStatusRequestValidationError{
+			field:  "AppId",
+			reason: "value length must be 26 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+
+	}
+
 	if len(errors) > 0 {
 		return GetStatusRequestMultiError(errors)
 	}
