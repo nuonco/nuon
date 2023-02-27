@@ -149,16 +149,6 @@ func (i *deploymentService) processGithubDeployment(ctx context.Context, deploym
 		return nil, fmt.Errorf("error parsing GithubInstallID: %w", err)
 	}
 
-	// get installation token from github
-	//TODO: remove since the workers are getting their own tokens?
-	_, err = repos.GithubRepo.GetInstallToken(i.githubRepo, ctx, ghInstallID)
-	if err != nil {
-		i.log.Error("failed to get install token from GitHub",
-			zap.Any("githubInstallID", ghInstallID),
-			zap.String("error", err.Error()))
-		return nil, fmt.Errorf("error getting an install token from github: %w", err)
-	}
-
 	// get commit info from github
 	commit, err := repos.GithubRepo.GetCommit(i.githubRepo,
 		ctx,
