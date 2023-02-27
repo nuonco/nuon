@@ -33,6 +33,13 @@ func (s *server) getStatus(ctx context.Context, req *appsv1.GetStatusRequest, wk
 
 	resp, err := wkflows.GetAppProvisionResponse(ctx, req.OrgId, req.AppId)
 	if err != nil {
+		req, err := wkflows.GetAppProvisionRequest(ctx, req.OrgId, req.AppId)
+		if err != nil || req.Request.GetAppProvision() == nil {
+			return &appsv1.GetStatusResponse{
+				Status: appsv1.Status_STATUS_UNKNOWN,
+			}, nil
+		}
+
 		return &appsv1.GetStatusResponse{
 			Status: appsv1.Status_STATUS_PROVISIONING,
 		}, nil
@@ -44,7 +51,7 @@ func (s *server) getStatus(ctx context.Context, req *appsv1.GetStatusRequest, wk
 	case sharedv1.ResponseStatus_RESPONSE_STATUS_UNSPECIFIED:
 		status = appsv1.Status_STATUS_UNKNOWN
 	case sharedv1.ResponseStatus_RESPONSE_STATUS_OK:
-		prResp := resp.Response.GetInstallProvision()
+		prResp := resp.Response.GetAppsProvision()
 		if prResp == nil {
 			status = appsv1.Status_STATUS_UNKNOWN
 		} else {

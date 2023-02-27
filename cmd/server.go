@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/orgs-api/internal/servers"
 	appsserver "github.com/powertoolsdev/orgs-api/internal/servers/apps"
 	deploymentsserver "github.com/powertoolsdev/orgs-api/internal/servers/deployments"
+	installserver "github.com/powertoolsdev/orgs-api/internal/servers/installs"
 	instancesserver "github.com/powertoolsdev/orgs-api/internal/servers/instances"
 	orgsserver "github.com/powertoolsdev/orgs-api/internal/servers/orgs"
 	statusserver "github.com/powertoolsdev/orgs-api/internal/servers/status"
@@ -110,7 +111,7 @@ func registerInstallsServer(v *validator.Validate, mux *http.ServeMux, cfg *inte
 		return fmt.Errorf("unable to create orgcontext provider: %w", err)
 	}
 
-	path, handler, err := orgsserver.NewHandler(v, servers.WithContextProvider(ctxProvider))
+	path, handler, err := installserver.NewHandler(v, servers.WithContextProvider(ctxProvider))
 	if err != nil {
 		return fmt.Errorf("unable to initialize installs server: %w", err)
 	}

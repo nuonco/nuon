@@ -33,6 +33,13 @@ func (s *server) getStatus(ctx context.Context, req *installsv1.GetStatusRequest
 
 	resp, err := wkflows.GetInstallProvisionResponse(ctx, req.OrgId, req.AppId, req.InstallId)
 	if err != nil {
+		req, err := wkflows.GetInstallProvisionRequest(ctx, req.OrgId, req.AppId, req.InstallId)
+		if err != nil || req.Request.GetInstallProvision() == nil {
+			return &installsv1.GetStatusResponse{
+				Status: installsv1.Status_STATUS_UNKNOWN,
+			}, nil
+		}
+
 		return &installsv1.GetStatusResponse{
 			Status: installsv1.Status_STATUS_PROVISIONING,
 		}, nil
