@@ -6,7 +6,7 @@ require (
 	github.com/jaswdr/faker v1.16.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/powertoolsdev/go-kube v0.1.3
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	helm.sh/helm/v3 v3.11.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/cli-runtime v0.26.1
