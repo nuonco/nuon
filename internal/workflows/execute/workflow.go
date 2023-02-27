@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	executev1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1"
@@ -15,10 +16,12 @@ const (
 )
 
 func configureActivityOptions(ctx workflow.Context) workflow.Context {
-	activityOpts := workflow.ActivityOptions{
+	return workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		ScheduleToCloseTimeout: defaultActivityTimeout,
-	}
-	return workflow.WithActivityOptions(ctx, activityOpts)
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 1,
+		},
+	})
 }
 
 type wkflow struct {
