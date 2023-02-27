@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/go-hclog v1.4.0
 	github.com/hashicorp/waypoint v0.11.0
 	github.com/powertoolsdev/go-kube v0.1.3
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	google.golang.org/grpc v1.53.0
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
