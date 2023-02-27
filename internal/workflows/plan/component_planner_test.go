@@ -10,7 +10,6 @@ import (
 	workers "github.com/powertoolsdev/workers-executors/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 	"google.golang.org/protobuf/proto"
 )
@@ -50,12 +49,12 @@ func TestCreateComponentPlan(t *testing.T) {
 
 	// execute workflow
 	env.ExecuteWorkflow(wkflow.CreatePlan, cpReq)
-	require.True(t, env.IsWorkflowCompleted())
-	require.NoError(t, env.GetWorkflowError())
+	assert.True(t, env.IsWorkflowCompleted())
+	assert.NoError(t, env.GetWorkflowError())
 
 	// verify expected workflow response
 	resp := &planv1.CreatePlanResponse{}
-	require.NoError(t, env.GetWorkflowResult(&resp))
-	require.NotNil(t, resp)
+	assert.NoError(t, env.GetWorkflowResult(&resp))
+	assert.NotNil(t, resp)
 	assert.True(t, proto.Equal(planRef, resp.Plan))
 }
