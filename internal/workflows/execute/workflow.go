@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	defaultActivityTimeout = time.Second * 1800
+	defaultActivityTimeout = 45 * time.Minute
 )
 
 func configureActivityOptions(ctx workflow.Context) workflow.Context {
