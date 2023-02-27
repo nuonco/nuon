@@ -33,6 +33,13 @@ func (s *server) getStatus(ctx context.Context, req *orgsv1.GetStatusRequest, wk
 
 	resp, err := wkflows.GetOrgProvisionResponse(ctx, req.OrgId)
 	if err != nil {
+		req, err := wkflows.GetOrgProvisionRequest(ctx, req.OrgId)
+		if err != nil || req.Request.GetOrgSignup() == nil {
+			return &orgsv1.GetStatusResponse{
+				Status: orgsv1.Status_STATUS_UNKNOWN,
+			}, nil
+		}
+
 		return &orgsv1.GetStatusResponse{
 			Status: orgsv1.Status_STATUS_PROVISIONING,
 		}, nil
