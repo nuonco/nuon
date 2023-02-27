@@ -6,7 +6,7 @@ require (
 	github.com/go-faker/faker/v4 v4.0.0
 	github.com/google/uuid v1.3.0
 	github.com/powertoolsdev/go-common v1.5.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 )
 
 require (
