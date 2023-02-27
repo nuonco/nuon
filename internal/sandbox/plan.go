@@ -11,8 +11,7 @@ func Plan(ctx workflow.Context, cpr *planv1.CreatePlanRequest) (*planv1.CreatePl
 	resp := &planv1.CreatePlanResponse{}
 
 	cwo := workflow.ChildWorkflowOptions{
-		WorkflowExecutionTimeout: time.Minute * 30,
-		WorkflowTaskTimeout:      time.Minute * 15,
+		WorkflowExecutionTimeout: time.Minute * 5,
 		TaskQueue:                "executors",
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
