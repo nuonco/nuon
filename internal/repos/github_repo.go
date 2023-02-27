@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	gh "github.com/bradleyfalzon/ghinstallation/v2"
@@ -17,7 +16,6 @@ import (
 type GithubRepo interface {
 	Repos(context.Context, int64) ([]*models.Repo, error)
 	GetCommit(context.Context, int64, string, string, string) (*github.RepositoryCommit, error)
-	GetInstallToken(context.Context, int64) (string, error)
 }
 
 var _ GithubRepo = (*githubRepo)(nil)
@@ -75,27 +73,4 @@ func (gr *githubRepo) GetCommit(ctx context.Context, githubInstallationID int64,
 	}
 
 	return commit, err
-}
-
-// Get an install token from the github API
-func (gr *githubRepo) GetInstallToken(ctx context.Context, githubInstallationID int64) (string, error) {
-	// create github client
-	gr.client.Transport = gr.Transport
-	client := github.NewClient(gr.client)
-
-	// get a new install token
-	token, resp, _ := client.Apps.CreateInstallationToken(
-		ctx,
-		githubInstallationID,
-		&github.InstallationTokenOptions{})
-	// The go-github-mock library has a bug that causes the test to panic
-	// when the Error() method is called, se we cannot have the
-	// if err != nil check here if we want to have tests.
-	// The library always returns a response object so we are throwing
-	// the status returned by github as an error if the token is nil
-	// bug reference: https://github.com/migueleliasweb/go-github-mock/issues/6
-	if token != nil {
-		return token.GetToken(), nil
-	}
-	return "", errors.New(resp.Response.Status)
 }
