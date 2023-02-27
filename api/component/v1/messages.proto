@@ -6,36 +6,15 @@ import "component/v1/component.proto";
 import "google/type/datetime.proto";
 import "validate/validate.proto";
 
-enum ComponentType {
-  COMPONENT_TYPE_UNSPECIFIED = 0;
-  COMPONENT_TYPE_PUBLIC_IMAGE = 1;
-  COMPONENT_TYPE_HELM = 2;
-  COMPONENT_TYPE_TERRAFORM = 3;
-  COMPONENT_TYPE_GITHUB_REPO = 4;
-}
-
-message GithubConfig {
-  string branch = 1;
-  string directory = 2;
-  string repo = 3;
-  string repo_owner = 4;
-}
-
 message ComponentRef {
   string id = 1;
-  string build_image = 2;
-  ComponentType type = 3;
-  string name = 4;
-  string created_by_id = 5;
+  string name = 2;
+  string created_by_id = 3;
 
-  oneof vcs_config {
-    GithubConfig github_config = 6;
-  }
+  google.type.DateTime created_at = 4;
+  google.type.DateTime updated_at = 5;
 
-  google.type.DateTime created_at = 7;
-  google.type.DateTime updated_at = 8;
-
-  component.v1.Component component_config = 9;
+  component.v1.Component component_config = 6;
 }
 
 message GetComponentRequest {
@@ -64,15 +43,9 @@ message UpsertComponentRequest {
     ignore_empty: true
   }];
   string name = 3;
-  string build_image = 4;
-  string created_by_id = 5;
-  ComponentType component_type = 6;
+  string created_by_id = 4;
 
-  oneof vcs_config {
-    GithubConfig github_config = 7;
-  }
-
-  component.v1.Component component_config = 8;
+  component.v1.Component component_config = 5;
 }
 
 message UpsertComponentResponse {

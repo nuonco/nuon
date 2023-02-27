@@ -38,113 +38,6 @@ var (
 // define the regex for a UUID once up-front
 var _messages_uuidPattern = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
-// Validate checks the field values on GithubConfig with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *GithubConfig) Validate() error {
-	return m.validate(false)
-}
-
-// ValidateAll checks the field values on GithubConfig with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in GithubConfigMultiError, or
-// nil if none found.
-func (m *GithubConfig) ValidateAll() error {
-	return m.validate(true)
-}
-
-func (m *GithubConfig) validate(all bool) error {
-	if m == nil {
-		return nil
-	}
-
-	var errors []error
-
-	// no validation rules for Branch
-
-	// no validation rules for Directory
-
-	// no validation rules for Repo
-
-	// no validation rules for RepoOwner
-
-	if len(errors) > 0 {
-		return GithubConfigMultiError(errors)
-	}
-
-	return nil
-}
-
-// GithubConfigMultiError is an error wrapping multiple validation errors
-// returned by GithubConfig.ValidateAll() if the designated constraints aren't met.
-type GithubConfigMultiError []error
-
-// Error returns a concatenation of all the error messages it wraps.
-func (m GithubConfigMultiError) Error() string {
-	var msgs []string
-	for _, err := range m {
-		msgs = append(msgs, err.Error())
-	}
-	return strings.Join(msgs, "; ")
-}
-
-// AllErrors returns a list of validation violation errors.
-func (m GithubConfigMultiError) AllErrors() []error { return m }
-
-// GithubConfigValidationError is the validation error returned by
-// GithubConfig.Validate if the designated constraints aren't met.
-type GithubConfigValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e GithubConfigValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e GithubConfigValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e GithubConfigValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e GithubConfigValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e GithubConfigValidationError) ErrorName() string { return "GithubConfigValidationError" }
-
-// Error satisfies the builtin error interface
-func (e GithubConfigValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sGithubConfig.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = GithubConfigValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = GithubConfigValidationError{}
-
 // Validate checks the field values on ComponentRef with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -168,10 +61,6 @@ func (m *ComponentRef) validate(all bool) error {
 	var errors []error
 
 	// no validation rules for Id
-
-	// no validation rules for BuildImage
-
-	// no validation rules for Type
 
 	// no validation rules for Name
 
@@ -262,52 +151,6 @@ func (m *ComponentRef) validate(all bool) error {
 				cause:  err,
 			}
 		}
-	}
-
-	switch v := m.VcsConfig.(type) {
-	case *ComponentRef_GithubConfig:
-		if v == nil {
-			err := ComponentRefValidationError{
-				field:  "VcsConfig",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetGithubConfig()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, ComponentRefValidationError{
-						field:  "GithubConfig",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, ComponentRefValidationError{
-						field:  "GithubConfig",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetGithubConfig()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return ComponentRefValidationError{
-					field:  "GithubConfig",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	default:
-		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
@@ -954,11 +797,7 @@ func (m *UpsertComponentRequest) validate(all bool) error {
 
 	// no validation rules for Name
 
-	// no validation rules for BuildImage
-
 	// no validation rules for CreatedById
-
-	// no validation rules for ComponentType
 
 	if all {
 		switch v := interface{}(m.GetComponentConfig()).(type) {
@@ -987,52 +826,6 @@ func (m *UpsertComponentRequest) validate(all bool) error {
 				cause:  err,
 			}
 		}
-	}
-
-	switch v := m.VcsConfig.(type) {
-	case *UpsertComponentRequest_GithubConfig:
-		if v == nil {
-			err := UpsertComponentRequestValidationError{
-				field:  "VcsConfig",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetGithubConfig()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, UpsertComponentRequestValidationError{
-						field:  "GithubConfig",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, UpsertComponentRequestValidationError{
-						field:  "GithubConfig",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetGithubConfig()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return UpsertComponentRequestValidationError{
-					field:  "GithubConfig",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	default:
-		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
