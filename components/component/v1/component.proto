@@ -11,13 +11,11 @@ option go_package = "github.com/powertoolsdev/protos/components/generated/types/
 
 // Docker config uses the waypoint build
 message Component {
-  string name = 1 [(validate.rules).string.min_bytes = 1];
-
-  string id = 2 [
+  string id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  build.v1.Config build_cfg = 3 [(tagger.tags) = "faker:\"-\""];
-  deploy.v1.Config deploy_cfg = 4 [(tagger.tags) = "faker:\"-\""];
+  build.v1.Config build_cfg = 2 [(tagger.tags) = "faker:\"-\""];
+  deploy.v1.Config deploy_cfg = 3 [(tagger.tags) = "faker:\"-\""];
 }

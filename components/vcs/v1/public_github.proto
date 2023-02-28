@@ -13,5 +13,5 @@ message PublicGithubConfig {
 
   // for public repo configs, we'll just use the branch since the API doesn't have permissions to clone etc and this is
   // really just for demo purposes
-  string branch = 3;
+  string git_ref = 3;
 }
