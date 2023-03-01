@@ -20,7 +20,6 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 	install := generics.GetFakeObj[*models.Install]()
 	app := generics.GetFakeObj[*models.App]()
 	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
-	fmt.Println(errUpsertInstall)
 
 	tests := map[string]struct {
 		inputFn     func() models.InstallInput
