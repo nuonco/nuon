@@ -2,7 +2,7 @@ VERSION --use-cache-command 0.6
 
 IMPORT github.com/powertoolsdev/shared-configs:main
 
-FROM ghcr.io/powertoolsdev/ci-go-builder-docker-compose
+FROM ghcr.io/powertoolsdev/ci-go-builder-docker-compose:v0.9.3
 
 WORKDIR /app
 
