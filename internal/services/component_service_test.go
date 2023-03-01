@@ -18,16 +18,20 @@ import (
 func TestComponentService_UpsertComponent(t *testing.T) {
 	errUpsertComponent := fmt.Errorf("error upserting component")
 	component := generics.GetFakeObj[*models.Component]()
+	app := generics.GetFakeObj[*models.App]()
+	app.ID = component.AppID
 
 	tests := map[string]struct {
 		inputFn     func() models.ComponentInput
 		repoFn      func(*gomock.Controller) *repos.MockComponentRepo
+		appRepoFn   func(*gomock.Controller) *repos.MockAppRepo
 		errExpected error
 	}{
 		"create a new component": {
 			inputFn: func() models.ComponentInput {
 				inp := generics.GetFakeObj[models.ComponentInput]()
 				inp.ID = nil
+				inp.AppID = app.ID.String()
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
@@ -35,6 +39,29 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(component, nil)
 				return repo
 			},
+			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
+				repo := repos.NewMockAppRepo(ctl)
+				repo.EXPECT().Get(gomock.Any(), component.AppID).Return(app, nil)
+				return repo
+			},
+		},
+		"app not found": {
+			inputFn: func() models.ComponentInput {
+				inp := generics.GetFakeObj[models.ComponentInput]()
+				inp.ID = nil
+				inp.AppID = app.ID.String()
+				return inp
+			},
+			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
+				repo := repos.NewMockComponentRepo(ctl)
+				return repo
+			},
+			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
+				repo := repos.NewMockAppRepo(ctl)
+				repo.EXPECT().Get(gomock.Any(), component.AppID).Return(nil, errUpsertComponent)
+				return repo
+			},
+			errExpected: errUpsertComponent,
 		},
 		"upsert not found": {
 			inputFn: func() models.ComponentInput {
@@ -45,6 +72,10 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
 				repo := repos.NewMockComponentRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), component.ID).Return(nil, errUpsertComponent)
+				return repo
+			},
+			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
+				repo := repos.NewMockAppRepo(ctl)
 				return repo
 			},
 			errExpected: errUpsertComponent,
@@ -62,6 +93,10 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), component.ID).Return(component, nil)
 				return repo
 			},
+			appRepoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
+				repo := repos.NewMockAppRepo(ctl)
+				return repo
+			},
 			errExpected: nil,
 		},
 	}
@@ -72,8 +107,9 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 			componentInput := test.inputFn()
 			repo := test.repoFn(mockCtl)
 			svc := &componentService{
-				log:  zaptest.NewLogger(t),
-				repo: repo,
+				log:     zaptest.NewLogger(t),
+				appRepo: test.appRepoFn(mockCtl),
+				repo:    repo,
 			}
 
 			returnedComponent, err := svc.UpsertComponent(context.Background(), componentInput)

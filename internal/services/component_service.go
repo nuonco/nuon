@@ -25,8 +25,9 @@ type ComponentService interface {
 }
 
 type componentService struct {
-	log  *zap.Logger
-	repo repos.ComponentRepo
+	log     *zap.Logger
+	repo    repos.ComponentRepo
+	appRepo repos.AppRepo
 }
 
 var _ ComponentService = (*componentService)(nil)
@@ -34,8 +35,9 @@ var _ ComponentService = (*componentService)(nil)
 func NewComponentService(db *gorm.DB, log *zap.Logger) ComponentService {
 	componentRepo := repos.NewComponentRepo(db)
 	return &componentService{
-		log:  log,
-		repo: componentRepo,
+		log:     log,
+		repo:    componentRepo,
+		appRepo: repos.NewAppRepo(db),
 	}
 }
 
@@ -140,10 +142,20 @@ func (i *componentService) UpsertComponent(ctx context.Context, input models.Com
 		return i.updateComponent(ctx, input)
 	}
 
-	var component models.Component
-	component.Name = input.Name
 	// parsing the uuid while ignoring the error handling since we do this at protobuf level
 	appID, _ := uuid.Parse(input.AppID)
+
+	// check if app exists
+	_, err := i.appRepo.Get(ctx, appID)
+	if err != nil {
+		i.log.Error("failed to get app",
+			zap.String("appID", appID.String()),
+			zap.String("error", err.Error()))
+		return nil, fmt.Errorf("failed to get app: %w", err)
+	}
+
+	var component models.Component
+	component.Name = input.Name
 	component.AppID = appID
 	component.CreatedByID = input.CreatedByID
 	if input.Config != nil {
