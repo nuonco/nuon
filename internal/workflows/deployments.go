@@ -6,9 +6,10 @@ import (
 
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/go-common/shortid"
-	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
+	componentConfig "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	tclient "go.temporal.io/sdk/client"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
@@ -48,17 +49,23 @@ func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *model
 			"started-by":    "api",
 		},
 	}
+
+	// get component config
+	compConf := &componentConfig.Component{
+		Id: componentID,
+	}
+	if deployment.Component.Config != nil {
+		if err = protojson.Unmarshal([]byte(deployment.Component.Config.String()), compConf); err != nil {
+			return fmt.Errorf("failed to unmarshal DB JSON: %w", err)
+		}
+	}
+
 	req := &deploymentsv1.StartRequest{
 		OrgId:        orgID,
 		AppId:        appID,
 		DeploymentId: deploymentID,
 		InstallIds:   make([]string, len(app.Installs)),
-
-		// TODO(jm): make this an actual component, instead of a hard coded component type
-		Component: &componentv1.Component{
-			Id:   componentID,
-			Name: deployment.Component.Name,
-		},
+		Component:    compConf,
 	}
 	for idx, install := range app.Installs {
 		installID := shortid.ParseUUID(install.ID)

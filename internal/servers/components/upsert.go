@@ -25,10 +25,6 @@ func (s *server) UpsertComponent(
 		ID:          converters.ToOptionalStr(req.Msg.Id),
 		Name:        req.Msg.Name,
 		CreatedByID: req.Msg.CreatedById,
-
-		// NOTE: the following parameters will not be used once we migrate to the new component ref
-		BuildImage: req.Msg.BuildImage,
-		Type:       converters.ProtoToComponentType(req.Msg.ComponentType),
 	}
 
 	// convert input ComponentConfig to JSON
@@ -38,15 +34,6 @@ func (s *server) UpsertComponent(
 			return nil, fmt.Errorf("failed to parse component configuration: %w", err)
 		}
 		params.Config = componentConfig
-	}
-
-	if req.Msg.GetGithubConfig() != nil {
-		params.GithubConfig = &models.GithubConfigInput{
-			Repo:      req.Msg.GetGithubConfig().Repo,
-			Branch:    &req.Msg.GetGithubConfig().Branch,
-			RepoOwner: &req.Msg.GetGithubConfig().RepoOwner,
-			Directory: &req.Msg.GetGithubConfig().Directory,
-		}
 	}
 
 	component, err := s.Svc.UpsertComponent(ctx, params)
