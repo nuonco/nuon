@@ -91,8 +91,6 @@ func (i *componentService) updateComponent(ctx context.Context, input models.Com
 
 	// NOTE: we do not support changing region or account ID on an install
 	component.Name = input.Name
-	component.BuildImage = input.BuildImage
-	component.Type = string(input.Type)
 
 	if input.Config != nil {
 		dbConfig, _ := component.Config.MarshalJSON()
@@ -127,23 +125,6 @@ func (i *componentService) updateComponent(ctx context.Context, input models.Com
 		component.Config = datatypes.JSON(updatedConfig)
 	}
 
-	if input.GithubConfig != nil {
-		if component.GithubConfig != nil {
-			component.GithubConfig.Repo = input.GithubConfig.Repo
-			component.GithubConfig.Directory = *input.GithubConfig.Directory
-			component.GithubConfig.RepoOwner = *input.GithubConfig.RepoOwner
-			component.GithubConfig.Branch = *input.GithubConfig.Branch
-		} else {
-			component.GithubConfig = &models.GithubConfig{
-				Repo:      input.GithubConfig.Repo,
-				Directory: *input.GithubConfig.Directory,
-				RepoOwner: *input.GithubConfig.RepoOwner,
-				Branch:    *input.GithubConfig.Branch,
-			}
-		}
-		component.VcsConfig = component.GithubConfig
-	}
-
 	updatedComponent, err := i.repo.Update(ctx, component)
 	if err != nil {
 		i.log.Error("failed to update component",
@@ -164,20 +145,9 @@ func (i *componentService) UpsertComponent(ctx context.Context, input models.Com
 	// parsing the uuid while ignoring the error handling since we do this at protobuf level
 	appID, _ := uuid.Parse(input.AppID)
 	component.AppID = appID
-	component.BuildImage = input.BuildImage
-	component.Type = string(input.Type)
 	component.CreatedByID = input.CreatedByID
 	if input.Config != nil {
 		component.Config = datatypes.JSON(input.Config)
-	}
-	if input.GithubConfig != nil {
-		component.GithubConfig = &models.GithubConfig{
-			Repo:      input.GithubConfig.Repo,
-			Directory: *input.GithubConfig.Directory,
-			RepoOwner: *input.GithubConfig.RepoOwner,
-			Branch:    *input.GithubConfig.Branch,
-		}
-		component.VcsConfig = component.GithubConfig
 	}
 
 	createdComponent, err := i.repo.Create(ctx, &component)

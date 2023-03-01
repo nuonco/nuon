@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	gh "github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/api/internal/repos"
+	componentConfig "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/powertoolsdev/api/internal/utils"
 	"github.com/powertoolsdev/api/internal/workflows"
@@ -140,7 +143,7 @@ func (i *deploymentService) startDeployment(ctx context.Context, deployment *mod
 	return nil
 }
 
-func (i *deploymentService) processGithubDeployment(ctx context.Context, deployment *models.Deployment) (*models.Deployment, error) {
+func (i *deploymentService) processGithubDeployment(ctx context.Context, repo string, deployment *models.Deployment) (*models.Deployment, error) {
 	ghInstallID, err := strconv.ParseInt(deployment.Component.App.GithubInstallID, 10, 64)
 	if err != nil {
 		i.log.Error("failed to parse GithubInstallID",
@@ -149,24 +152,33 @@ func (i *deploymentService) processGithubDeployment(ctx context.Context, deploym
 		return nil, fmt.Errorf("error parsing GithubInstallID: %w", err)
 	}
 
+	// input repo is a combo of repo name + owner in this format: octocat/Hello-World
+	githubInfo := strings.Split(repo, "/")
+	// after the split:
+	// githubInfo[0] = RepoOwner
+	// githubInfo[1] = RepoName
+
 	// get commit info from github
+	// TODO: we are no longer saving the default branch in the repo so we will need to get it from somewhere else
 	commit, err := repos.GithubRepo.GetCommit(i.githubRepo,
 		ctx,
 		ghInstallID,
-		deployment.Component.GithubConfig.RepoOwner,
-		deployment.Component.GithubConfig.Repo,
-		deployment.Component.GithubConfig.Branch)
+		githubInfo[0],
+		githubInfo[1],
+		"main") // TODO: replace this with the defaultBranch for the repo?
 	if err != nil {
 		i.log.Error("failed to get commit from GitHub",
 			zap.Any("githubInstallID", ghInstallID),
-			zap.String("repoOwner", deployment.Component.GithubConfig.RepoOwner),
-			zap.String("repo", deployment.Component.GithubConfig.Repo),
-			zap.String("branch", deployment.Component.GithubConfig.Branch),
+			zap.String("repoOwner", githubInfo[0]),
+			zap.String("repoName", githubInfo[1]),
+			zap.String("repoBranch", "main"), // TODO: replace this with the defaultBranch for the repo?
 			zap.String("error", err.Error()))
 		return nil, fmt.Errorf("error getting the github commit: %w", err)
 	}
 
 	// update deployment with commit info
+	// TODO: set commit.GetSHA() here for private https://github.com/powertoolsdev/protos/blob/main/components/vcs/v1/private_github.proto#L13
+	// TODO: set commit.GetSHA() here for public https://github.com/powertoolsdev/protos/blob/main/components/vcs/v1/public_github.proto#L16
 	deployment.CommitAuthor = *commit.Author.Login
 	deployment.CommitHash = commit.GetSHA()
 	deployment, err = i.repo.Update(ctx, deployment)
@@ -185,7 +197,7 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.
 	// parsing the uuid while ignoring the error handling since we do this at protobuf level
 	componentID, _ := uuid.Parse(input.ComponentID)
 
-	_, err := i.componentRepo.Get(ctx, componentID)
+	component, err := i.componentRepo.Get(ctx, componentID)
 	if err != nil {
 		i.log.Error("failed to get component",
 			zap.String("componentID", componentID.String()),
@@ -205,14 +217,34 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.
 		return nil, fmt.Errorf("failed to create deployment: %w", err)
 	}
 
-	// do github stuff only when ComponentType is GITHUB_REPO
-	if deployment.Component.Type == "GITHUB_REPO" {
-		deployment, err = i.processGithubDeployment(ctx, deployment)
-		if err != nil {
-			i.log.Error("failed to process github deployment",
-				zap.Any("deployment", deployment),
-				zap.String("error", err.Error()))
-			return nil, err
+	// retrieve commits if the component configuration contains github info
+	dbConfig := &componentConfig.Component{}
+	if err = protojson.Unmarshal([]byte(component.Config.String()), dbConfig); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal DB JSON: %w", err)
+	}
+	if dbConfig.BuildCfg != nil {
+		dockerCfg := dbConfig.BuildCfg.GetDockerCfg()
+		if dockerCfg != nil {
+			vcsCfg := dockerCfg.GetVcsCfg()
+			if vcsCfg != nil {
+				// I'm getting the commit info for both public + private so I can populate them
+				// at the deployment record and show this info at the UI
+				privateGithubConfig := vcsCfg.GetPrivateGithubConfig()
+				publicGithubConfig := vcsCfg.GetPublicGithubConfig()
+				var repo string
+				if privateGithubConfig != nil {
+					repo = privateGithubConfig.Repo
+				} else {
+					repo = publicGithubConfig.Repo
+				}
+				deployment, err = i.processGithubDeployment(ctx, repo, deployment)
+				if err != nil {
+					i.log.Error("failed to process github deployment",
+						zap.Any("deployment", deployment),
+						zap.String("error", err.Error()))
+					return nil, err
+				}
+			}
 		}
 	}
 

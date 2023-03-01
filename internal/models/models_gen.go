@@ -29,11 +29,6 @@ type Node interface {
 	GetUpdatedAt() time.Time
 }
 
-// Represents version control settings for the component
-type VcsConfig interface {
-	IsVcsConfig()
-}
-
 type AWSSettingsInput struct {
 	Region     AWSRegion `json:"region"`
 	AccountID  string    `json:"accountId" faker:"uuid_hyphenated"`
@@ -111,14 +106,11 @@ type ComponentEdge struct {
 }
 
 type ComponentInput struct {
-	AppID        string             `json:"appId" faker:"uuid_hyphenated"`
-	ID           *string            `json:"id" faker:"uuid_hyphenated"`
-	Name         string             `json:"name"`
-	BuildImage   string             `json:"buildImage"`
-	CreatedByID  string             `json:"created_by_id"`
-	Type         ComponentType      `json:"type"`
-	Config       []byte             `json:"component_config"`
-	GithubConfig *GithubConfigInput `json:"githubConfig"`
+	AppID       string  `json:"appId" faker:"uuid_hyphenated"`
+	ID          *string `json:"id" faker:"uuid_hyphenated"`
+	Name        string  `json:"name"`
+	CreatedByID string  `json:"created_by_id"`
+	Config      []byte  `json:"component_config"`
 }
 
 // Filters returned Connection results
@@ -199,13 +191,6 @@ type DeploymentInput struct {
 
 type GCPSettingsInput struct {
 	Bogus string `json:"bogus"`
-}
-
-type GithubConfigInput struct {
-	Repo      string  `json:"repo"`
-	Directory *string `json:"directory"`
-	RepoOwner *string `json:"repoOwner"`
-	Branch    *string `json:"branch"`
 }
 
 // An auto-generated type for paginating through multiple Installs
@@ -391,51 +376,6 @@ func (e AWSRegion) MarshalGQL(w io.Writer) {
 }
 
 // Represents a collection of general settings and information about a piece of a App
-type ComponentType string
-
-const (
-	ComponentTypePublicImage ComponentType = "PUBLIC_IMAGE"
-	ComponentTypeHelm        ComponentType = "HELM"
-	ComponentTypeTerraform   ComponentType = "TERRAFORM"
-	ComponentTypeGithubRepo  ComponentType = "GITHUB_REPO"
-)
-
-var AllComponentType = []ComponentType{
-	ComponentTypePublicImage,
-	ComponentTypeHelm,
-	ComponentTypeTerraform,
-	ComponentTypeGithubRepo,
-}
-
-func (e ComponentType) IsValid() bool {
-	switch e {
-	case ComponentTypePublicImage, ComponentTypeHelm, ComponentTypeTerraform, ComponentTypeGithubRepo:
-		return true
-	}
-	return false
-}
-
-func (e ComponentType) String() string {
-	return string(e)
-}
-
-func (e *ComponentType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ComponentType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ComponentType", str)
-	}
-	return nil
-}
-
-func (e ComponentType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
 type OrderDirection string
 
 const (

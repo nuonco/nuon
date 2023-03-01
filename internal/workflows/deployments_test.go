@@ -16,6 +16,8 @@ import (
 func Test_deploymentWorkflowManager_Start(t *testing.T) {
 	errDeploymentProvisionTest := fmt.Errorf("error")
 	deployment := generics.GetFakeObj[*models.Deployment]()
+	// TODO: add valid component config
+	deployment.Component.Config = nil
 	install := generics.GetFakeObj[models.Install]()
 	deployment.Component.App.Installs = []models.Install{install}
 

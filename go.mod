@@ -18,7 +18,7 @@ require (
 	github.com/migueleliasweb/go-github-mock v0.0.13
 	github.com/powertoolsdev/go-common v1.5.0
 	github.com/powertoolsdev/go-generics v0.1.0
-	github.com/powertoolsdev/protos v0.70.1
+	github.com/powertoolsdev/protos v0.76.2
 	github.com/pressly/goose/v3 v3.9.0
 	github.com/raphaelvigee/go-paginate v1.0.6
 	github.com/spf13/cobra v1.6.1

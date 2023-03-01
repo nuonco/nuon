@@ -10,16 +10,12 @@ import (
 
 type Component struct {
 	Model
-	Name         string
-	AppID        uuid.UUID
-	App          App `faker:"-"`
-	CreatedByID  string
-	BuildImage   string         `json:"build_image"`
-	Type         string         `json:"type"`
-	Config       datatypes.JSON `gorm:"not null;default:'{}'" json:"config"`
-	Deployments  []Deployment   `faker:"-"`
-	VcsConfig    VcsConfig      `gorm:"-" faker:"-"`
-	GithubConfig *GithubConfig  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" faker:"-"`
+	Name        string
+	AppID       uuid.UUID
+	App         App `faker:"-"`
+	CreatedByID string
+	Config      datatypes.JSON `gorm:"not null;default:'{}'" json:"config"`
+	Deployments []Deployment   `faker:"-"`
 }
 
 func (Component) IsNode() {}
