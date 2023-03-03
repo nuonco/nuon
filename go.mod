@@ -19,7 +19,7 @@ require (
 	github.com/powertoolsdev/go-fetch v0.1.0
 	github.com/powertoolsdev/go-generics v0.1.0
 	github.com/powertoolsdev/go-kube v0.1.3
-	github.com/powertoolsdev/go-terraform v1.0.3
+	github.com/powertoolsdev/go-terraform v1.1.0
 	github.com/powertoolsdev/go-uploader v0.2.1
 	github.com/powertoolsdev/go-waypoint v1.0.0
 	github.com/powertoolsdev/go-waypoint/v2 v2.0.2

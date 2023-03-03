@@ -835,8 +835,8 @@ github.com/powertoolsdev/go-generics v0.1.0 h1:kqXIpjml0VTw859adl8UaKT+oeRQ3QgpU
 github.com/powertoolsdev/go-generics v0.1.0/go.mod h1:mxjqE4cLFXzAMDpIME5TDeS/VlS3sU5NV3t+9Mi42ck=
 github.com/powertoolsdev/go-kube v0.1.3 h1:5qRDn3yOv4SMUCl5Nk+EJdPeyZwPR85nQOzbesbfpRY=
 github.com/powertoolsdev/go-kube v0.1.3/go.mod h1:N+Te5MGOwJez2TXcNcj2VWHwue7926wykgti4mXB8c0=
-github.com/powertoolsdev/go-terraform v1.0.3 h1:it+iZ1Y5m78ySWaQI45VUR3BSD5NdeVgFyy+o4OmnQ4=
-github.com/powertoolsdev/go-terraform v1.0.3/go.mod h1:c49ttiB9bxzW6WqSK6sDTh6XktFclW1NKLTNwG92aQo=
+github.com/powertoolsdev/go-terraform v1.1.0 h1:eccKlfjKt1QfFGL5eRzX1VW6rW5T9JC0ba+IuwR1Vv0=
+github.com/powertoolsdev/go-terraform v1.1.0/go.mod h1:TwUwms7/smQ46ei0cAfAYHxwdYJzfXKVGa+RsnwDX5Y=
 github.com/powertoolsdev/go-uploader v0.2.1 h1:Xqz8oDBhq/dd2h9WS7UZSbH+PO7SSIyuyVgAnMMp4Cc=
 github.com/powertoolsdev/go-uploader v0.2.1/go.mod h1:maWqXSXegLuUKkVjUjYt1nkg3oz3JLm6MktgfhRt8TY=
 github.com/powertoolsdev/go-waypoint v1.0.0 h1:GENBqQoXuCa3zsMDRNA+mjFpp0H/oiWujnnHRkpuI/M=
