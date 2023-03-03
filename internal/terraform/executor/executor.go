@@ -2,9 +2,11 @@ package executor
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/terraform-exec/tfexec"
+	"go.uber.org/zap"
 )
 
 type tfExecutor struct {
@@ -48,6 +50,12 @@ func New(v *validator.Validate, opts ...tfExecutorOption) (*tfExecutor, error) {
 		// NOTE(jdt): we validate the inputs before this so this should never error
 		return nil, err
 	}
+
+	// TODO(jdt): plumb logger through instead of using zap.L
+	tfClient.SetLogger(&printfer{l: zap.L()})
+	tfClient.SetStderr(os.Stderr)
+	tfClient.SetStdout(os.Stdout)
+
 	e.initer = tfClient
 	e.planner = tfClient
 	e.applier = tfClient
@@ -88,4 +96,12 @@ func WithVarFile(f string) tfExecutorOption {
 		te.VarFile = f
 		return nil
 	}
+}
+
+type printfer struct {
+	l *zap.Logger
+}
+
+func (p *printfer) Printf(format string, v ...interface{}) {
+	p.l.Sugar().Infof(format, v...)
 }
