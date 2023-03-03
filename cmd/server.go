@@ -87,16 +87,18 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.L
 		return fmt.Errorf("unable to initialize components server: %w", err)
 	}
 
-	deploymentsSvc := services.NewDeploymentService(db, tc, ghTransport, log)
+	// get github app details from config
+	githubAppID, err := strconv.ParseInt(cfg.GithubAppID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("unable to parse github app id: %w", err)
+	}
+
+	deploymentsSvc := services.NewDeploymentService(db, tc, ghTransport, cfg.GithubAppID, cfg.GithubAppKeySecretName, log)
 	_, err = deploymentsserver.New(deploymentsserver.WithHTTPMux(mux), deploymentsserver.WithService(deploymentsSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize deployments server: %w", err)
 	}
 
-	githubAppID, err := strconv.ParseInt(cfg.GithubAppID, 10, 64)
-	if err != nil {
-		return fmt.Errorf("unable to parse github app id: %w", err)
-	}
 	appstp, err := ghinstallation.NewAppsTransport(http.DefaultTransport, githubAppID, []byte(cfg.GithubAppKey))
 	if err != nil {
 		return fmt.Errorf("unable to parse github app id: %w", err)

@@ -27,6 +27,7 @@ func init() {
 
 	// default for github
 	config.RegisterDefault("github_app_id", "261597")
+	config.RegisterDefault("github_app_key_secret_name", "graphql-api-github-app-key")
 }
 
 type Config struct {
@@ -54,8 +55,9 @@ type Config struct {
 	TemporalNamespace string `config:"temporal_namespace"`
 
 	// github configuration
-	GithubAppID  string `config:"github_app_id"`
-	GithubAppKey string `config:"github_app_key"`
+	GithubAppID            string `config:"github_app_id"`
+	GithubAppKey           string `config:"github_app_key"`
+	GithubAppKeySecretName string `config:"github_app_key_secret_name"`
 }
 
 func (c Config) Validate() error {
