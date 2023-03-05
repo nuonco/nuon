@@ -16,6 +16,6 @@ message Component {
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  build.v1.Config build_cfg = 2 [(tagger.tags) = "faker:\"-\""];
-  deploy.v1.Config deploy_cfg = 3 [(tagger.tags) = "faker:\"-\""];
+  build.v1.Config build_cfg = 2 [(tagger.tags) = "faker:\"buildConfig\""];
+  deploy.v1.Config deploy_cfg = 3 [(tagger.tags) = "faker:\"deployConfig\""];
 }
