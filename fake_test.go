@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/go-common/shortid"
+	"github.com/powertoolsdev/go-generics/fakers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,6 +14,7 @@ type testFakeObj struct {
 }
 
 func TestGetFakeObj(t *testing.T) {
+	fakers.Register()
 	obj := GetFakeObj[testFakeObj]()
 
 	parsed, err := shortid.ToUUID(obj.ValidShortID)
