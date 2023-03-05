@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
 	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	planv1 "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1"
@@ -16,7 +17,9 @@ func Test_planner_getBasePlan(t *testing.T) {
 	v := validator.New()
 	metadata := generics.GetFakeObj[*planv1.Metadata]()
 	orgMetadata := generics.GetFakeObj[*planv1.OrgMetadata]()
-	component := generics.GetFakeObj[*componentv1.Component]()
+	component := &componentv1.Component{
+		Id: shortid.New(),
+	}
 
 	planner, err := New(v,
 		waypoint.WithComponent(component),
@@ -41,7 +44,7 @@ func Test_planner_getBasePlan(t *testing.T) {
 
 	assert.Contains(t, p.WaypointRef.SingletonId, p.Component.Id)
 	assert.Contains(t, p.WaypointRef.SingletonId, metadata.DeploymentShortId)
-	assert.Equal(t, p.WaypointRef.Labels, waypoint.DefaultLabels(metadata, component.Name, "build"))
+	assert.Equal(t, p.WaypointRef.Labels, waypoint.DefaultLabels(metadata, component.Id, "build"))
 	assert.Equal(t, p.Metadata.OrgShortId, p.WaypointRef.RunnerId)
 	assert.Equal(t, p.Metadata.OrgShortId, p.WaypointRef.OnDemandRunnerConfig)
 	assert.Equal(t, defaultBuildTimeoutSeconds, p.WaypointRef.JobTimeoutSeconds)

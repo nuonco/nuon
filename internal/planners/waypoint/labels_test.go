@@ -11,16 +11,16 @@ import (
 
 func TestDefaultLabels(t *testing.T) {
 	meta := generics.GetFakeObj[*planv1.Metadata]()
-	compName := uuid.NewString()
+	compID := uuid.NewString()
 	phaseName := uuid.NewString()
 
-	labels := DefaultLabels(meta, compName, phaseName)
+	labels := DefaultLabels(meta, compID, phaseName)
 	expectedKVs := [][2]string{
 		{"deployment-id", meta.DeploymentShortId},
 		{"app-id", meta.AppShortId},
 		{"org-id", meta.OrgShortId},
-		{"component-name", compName},
-		{"phase-name", phaseName},
+		{"component-id", compID},
+		{"phase", phaseName},
 		{"install-id", meta.InstallShortId},
 	}
 	for _, kv := range expectedKVs {
@@ -30,13 +30,13 @@ func TestDefaultLabels(t *testing.T) {
 
 	// ensure that install id is not set empty
 	meta.InstallShortId = ""
-	labels = DefaultLabels(meta, compName, phaseName)
+	labels = DefaultLabels(meta, compID, phaseName)
 	expectedKVs = [][2]string{
 		{"deployment-id", meta.DeploymentShortId},
 		{"app-id", meta.AppShortId},
 		{"org-id", meta.OrgShortId},
-		{"component-name", compName},
-		{"phase-name", phaseName},
+		{"component-id", compID},
+		{"phase", phaseName},
 	}
 	for _, kv := range expectedKVs {
 		assert.Equal(t, labels[kv[0]], kv[1])
