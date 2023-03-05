@@ -736,6 +736,8 @@ github.com/powertoolsdev/go-generics v0.1.0 h1:kqXIpjml0VTw859adl8UaKT+oeRQ3QgpU
 github.com/powertoolsdev/go-generics v0.1.0/go.mod h1:mxjqE4cLFXzAMDpIME5TDeS/VlS3sU5NV3t+9Mi42ck=
 github.com/powertoolsdev/protos v0.76.2 h1:aqkPK7GCxUHORFmMwwKWp/SHakt5Vh+JMwoX7/nQUz8=
 github.com/powertoolsdev/protos v0.76.2/go.mod h1:K0rOXcHVOkpOqBWQLxuX1p+hI8+O7bm8OYqalRnTUdE=
+github.com/powertoolsdev/protos v0.76.4 h1:XSXQ6HPEHRr4OTdap7C1Nhm8zuMO0h2ZrkgzcgH7PP4=
+github.com/powertoolsdev/protos v0.76.4/go.mod h1:K0rOXcHVOkpOqBWQLxuX1p+hI8+O7bm8OYqalRnTUdE=
 github.com/pressly/goose/v3 v3.9.0 h1:3LB3zjt9zTebK+URKuCdGAxPwtpJfyVlalrzCzcVAtA=
 github.com/pressly/goose/v3 v3.9.0/go.mod h1:+/6BqhGx7bt3cRK22Hm3BsJXF2/2gQAhO/xExNG5cSA=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
