@@ -51,6 +51,7 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 				assert.Equal(t, shortid.ParseUUID(deployment.ID), req.DeploymentId)
 				assert.Equal(t, shortid.ParseUUID(app.ID), req.AppId)
 				assert.Equal(t, shortid.ParseUUID(app.OrgID), req.OrgId)
+
 				assert.Equal(t, shortid.ParseUUID(deployment.Component.ID), req.Component.Id)
 			},
 		},
