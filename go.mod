@@ -17,16 +17,16 @@ require (
 	github.com/powertoolsdev/go-common v1.5.0
 	github.com/powertoolsdev/go-config v0.1.3
 	github.com/powertoolsdev/go-fetch v0.1.0
-	github.com/powertoolsdev/go-generics v0.1.0
+	github.com/powertoolsdev/go-generics v0.2.0
 	github.com/powertoolsdev/go-kube v0.1.3
 	github.com/powertoolsdev/go-terraform v1.1.0
 	github.com/powertoolsdev/go-uploader v0.2.1
 	github.com/powertoolsdev/go-waypoint v1.0.0
 	github.com/powertoolsdev/go-waypoint/v2 v2.0.2
 	github.com/powertoolsdev/go-workflows-meta v0.6.2
-	github.com/powertoolsdev/protos v0.71.2
+	github.com/powertoolsdev/protos v0.76.4
 	github.com/spf13/cobra v1.6.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	go.opentelemetry.io/otel v1.13.0
 	go.temporal.io/sdk v1.21.1
 	go.temporal.io/sdk/contrib/opentelemetry v0.2.0
@@ -74,7 +74,7 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/go-faker/faker/v4 v4.0.0-beta.4 // indirect
+	github.com/go-faker/faker/v4 v4.1.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect

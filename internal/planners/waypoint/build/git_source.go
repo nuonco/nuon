@@ -19,7 +19,7 @@ const (
 func (p *planner) getPublicGitSource(_ context.Context, cfg *vcsv1.PublicGithubConfig) (*planv1.GitSource, error) {
 	return &planv1.GitSource{
 		Url:  cfg.Repo,
-		Ref:  cfg.Branch,
+		Ref:  cfg.GitRef,
 		Path: cfg.Directory,
 	}, nil
 }
@@ -43,7 +43,7 @@ func (p *planner) getPrivateGitSource(ctx context.Context, cfg *vcsv1.PrivateGit
 
 	return &planv1.GitSource{
 		Url:               clonePath,
-		Ref:               cfg.CommitRef,
+		Ref:               cfg.GitRef,
 		Path:              cfg.Directory,
 		RecurseSubmodules: 2,
 	}, nil

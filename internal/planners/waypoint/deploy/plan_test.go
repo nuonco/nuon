@@ -17,9 +17,12 @@ func Test_planner_getBasePlan(t *testing.T) {
 	v := validator.New()
 	metadata := generics.GetFakeObj[*planv1.Metadata]()
 	orgMetadata := generics.GetFakeObj[*planv1.OrgMetadata]()
-	component := generics.GetFakeObj[*componentv1.Component]()
-	component.BuildCfg = &buildv1.Config{
-		Cfg: generics.GetFakeObj[*buildv1.Config_Noop](),
+	component := &componentv1.Component{
+		BuildCfg: &buildv1.Config{
+			Cfg: &buildv1.Config_Noop{
+				Noop: &buildv1.NoopConfig{},
+			},
+		},
 	}
 
 	planner, err := New(v,
@@ -46,7 +49,7 @@ func Test_planner_getBasePlan(t *testing.T) {
 	assert.Equal(t, component.Id, p.WaypointRef.App)
 	assert.Contains(t, p.WaypointRef.SingletonId, installID)
 	assert.Contains(t, p.WaypointRef.SingletonId, metadata.DeploymentShortId)
-	assert.Equal(t, p.WaypointRef.Labels, waypoint.DefaultLabels(metadata, component.Name, "deploy"))
+	assert.Equal(t, p.WaypointRef.Labels, waypoint.DefaultLabels(metadata, component.Id, "deploy"))
 	assert.Equal(t, installID, p.WaypointRef.RunnerId)
 	assert.Equal(t, installID, p.WaypointRef.OnDemandRunnerConfig)
 	assert.Equal(t, defaultBuildTimeoutSeconds, p.WaypointRef.JobTimeoutSeconds)

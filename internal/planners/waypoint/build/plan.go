@@ -35,7 +35,7 @@ func (p *planner) getBasePlan() *planv1.WaypointPlan {
 			Workspace:            p.Metadata.AppShortId,
 			App:                  p.Component.Id,
 			SingletonId:          fmt.Sprintf("%s-%s", p.Metadata.DeploymentShortId, p.Component.Id),
-			Labels:               waypoint.DefaultLabels(p.Metadata, p.Component.Name, phaseName),
+			Labels:               waypoint.DefaultLabels(p.Metadata, p.Component.Id, phaseName),
 			RunnerId:             p.Metadata.OrgShortId,
 			OnDemandRunnerConfig: p.Metadata.OrgShortId,
 			JobTimeoutSeconds:    defaultBuildTimeoutSeconds,
