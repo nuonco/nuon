@@ -144,8 +144,7 @@ func triggerInstallDeploymentWorkflow(ctx context.Context, tc tclient.Client, ar
 		DeploymentId: deploymentID,
 		InstallIds:   []string{ids[2]},
 		Component: &componentv1.Component{
-			Id:   uuid.NewString(),
-			Name: "basic-component",
+			Id: uuid.NewString(),
 		},
 		PlanOnly: false,
 	}
