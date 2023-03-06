@@ -64,6 +64,55 @@ func TestAppService_GetApp(t *testing.T) {
 	}
 }
 
+func TestAppService_GetOrgApps(t *testing.T) {
+	errGetOrgApps := fmt.Errorf("error getting apps")
+	orgID := uuid.New()
+	app := generics.GetFakeObj[*models.App]()
+
+	tests := map[string]struct {
+		orgID       string
+		repoFn      func(*gomock.Controller) *repos.MockAppRepo
+		errExpected error
+		assertFn    func(*testing.T, *models.App)
+	}{
+		"happy path": {
+			orgID: orgID.String(),
+			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
+				repo := repos.NewMockAppRepo(ctl)
+				repo.EXPECT().GetPageByOrg(gomock.Any(), orgID, gomock.Any()).Return([]*models.App{app}, nil, nil)
+				return repo
+			},
+		},
+		"error": {
+			orgID: orgID.String(),
+			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
+				repo := repos.NewMockAppRepo(ctl)
+				repo.EXPECT().GetPageByOrg(gomock.Any(), orgID, gomock.Any()).Return(nil, nil, errGetOrgApps)
+				return repo
+			},
+			errExpected: errGetOrgApps,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			mockCtl := gomock.NewController(t)
+			repo := test.repoFn(mockCtl)
+			svc := &appService{
+				log:  zaptest.NewLogger(t),
+				repo: repo,
+			}
+			returnedApp, _, err := svc.GetOrgApps(context.Background(), test.orgID, &models.ConnectionOptions{})
+			if test.errExpected != nil {
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+			assert.Nil(t, err)
+			assert.NotNil(t, returnedApp)
+		})
+	}
+}
+
 func TestAppService_UpsertApp(t *testing.T) {
 	errUpsertApp := fmt.Errorf("error upserting app")
 	app := generics.GetFakeObj[*models.App]()
