@@ -3,6 +3,7 @@ package workflows
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/go-common/shortid"
@@ -10,6 +11,11 @@ import (
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	tclient "go.temporal.io/sdk/client"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/durationpb"
+)
+
+const (
+	defaultDeployTimeout time.Duration = time.Second * 10
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
@@ -57,6 +63,7 @@ func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *model
 		}
 	}
 	compConf.Id = componentID
+	compConf.DeployCfg.Timeout = durationpb.New(defaultDeployTimeout)
 
 	req := &deploymentsv1.StartRequest{
 		OrgId:        orgID,

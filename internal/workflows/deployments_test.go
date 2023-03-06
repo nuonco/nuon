@@ -8,16 +8,21 @@ import (
 	"github.com/powertoolsdev/api/internal/models"
 	"github.com/powertoolsdev/go-common/shortid"
 	"github.com/powertoolsdev/go-generics"
+	componentv1 "github.com/powertoolsdev/protos/components/generated/types/component/v1"
 	deploymentsv1 "github.com/powertoolsdev/protos/workflows/generated/types/deployments/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func Test_deploymentWorkflowManager_Start(t *testing.T) {
 	errDeploymentProvisionTest := fmt.Errorf("error")
 	deployment := generics.GetFakeObj[*models.Deployment]()
 	// TODO: add valid component config
-	deployment.Component.Config = nil
+	component := generics.GetFakeObj[*componentv1.Component]()
+	byts, err := protojson.Marshal(component)
+	assert.NoError(t, err)
+	deployment.Component.Config = byts
 	install := generics.GetFakeObj[models.Install]()
 	deployment.Component.App.Installs = []models.Install{install}
 
@@ -75,7 +80,7 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
-
+			assert.NoError(t, err)
 			test.assertFn(t, client)
 		})
 	}
