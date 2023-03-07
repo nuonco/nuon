@@ -9,6 +9,8 @@ metadata:
     {{- with .Values.controller.labels }}
       {{- toYaml . | nindent 4 }}
     {{- end }}
+    app.kubernetes.io/name: {{ include "common.name" . }}-{{.instance.namespace}}
+    app.kubernetes.io/instance: {{ .Release.Name }}-{{.instance.namespace}}
   {{- with .Values.controller.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
