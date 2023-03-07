@@ -61,3 +61,10 @@ func WithLogger(log *zap.Logger) temporalOption {
 		return nil
 	}
 }
+
+func WithNamespace(namespace string) temporalOption {
+	return func(t *temporal) error {
+		t.Namespace = namespace
+		return nil
+	}
+}
