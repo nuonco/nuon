@@ -12,8 +12,6 @@ message RunnerPlan {
   string namespace = 2 [(tagger.tags) = "faker:\"len=26\""];
   string release_name = 3 [(tagger.tags) = "faker:\"len=26\""];
 
-  string atomic = 4 [(tagger.tags) = "faker:\"len=26\""];
-
   RunnerConfig config = 5;
   HelmChart chart = 6;
   KubeInfo cluster_info = 7;
@@ -21,22 +19,22 @@ message RunnerPlan {
 
 message RunnerConfig {
   string runner_id = 1 [(tagger.tags) = "faker:\"len=26\""];
-
   string cookie = 2 [(tagger.tags) = "faker:\"len=26\""];
-
   string server_addr = 3 [(tagger.tags) = "faker:\"len=26\""];
-
   string odr_iam_role_arn = 4 [(tagger.tags) = "faker:\"len=26\""];
 }
 
 message HelmChart {
   string name = 1 [(tagger.tags) = "faker:\"len=26\""];
-
   string url = 2 [(tagger.tags) = "faker:\"len=26\""];
-
   string version = 3 [(tagger.tags) = "faker:\"len=26\""];
 
-  google.protobuf.Struct helm_values = 4;
+  HelmConfig config = 4;
+}
+
+message HelmConfig {
+  google.protobuf.Struct helm_values = 1;
+  string atomic = 2 [(tagger.tags) = "faker:\"len=26\""];
 }
 
 message KubeInfo {
