@@ -8,7 +8,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_host", "localhost:7233")
-	config.RegisterDefault("temporal_namespace", "default")
+	config.RegisterDefault("temporal_namespace", "orgs")
 
 	// org defaults
 	config.RegisterDefault("waypoint_server_root_domain", "orgs-stage.nuon.co")
