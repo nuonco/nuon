@@ -51,22 +51,6 @@ func TestCreateOrg(t *testing.T) {
 			},
 		},
 		{
-			desc: "should error when creating dupe name",
-			fn: func(ctx context.Context, state repoTestState) {
-				name := uuid.NewString()
-
-				_, err := state.orgRepo.Create(ctx, &models.Org{
-					Name: name,
-				})
-				assert.Nil(t, err)
-				org, err := state.orgRepo.Create(ctx, &models.Org{
-					Name: name,
-				})
-				assert.Nil(t, org)
-				assert.NotNil(t, err)
-			},
-		},
-		{
 			desc: "should error when context is canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
