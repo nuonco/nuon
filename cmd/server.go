@@ -59,15 +59,12 @@ func registerStatusServer(mux *http.ServeMux, cfg *internal.Config) error {
 }
 
 // registerPrimaryServers registers each domain's server
+//
+//nolint:all
 func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.Logger) error {
 	db, err := databaseclient.New(databaseclient.WithConfig(cfg))
 	if err != nil {
 		return fmt.Errorf("unable to create database client: %w", err)
-	}
-
-	tc, err := temporalclient.New(temporalclient.WithConfig(cfg))
-	if err != nil {
-		return fmt.Errorf("unable to create temporal client: %w", err)
 	}
 
 	ghTransport, err := githubclient.New(githubclient.WithConfig(cfg))
@@ -75,7 +72,11 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.L
 		return fmt.Errorf("unable to github client: %w", err)
 	}
 
-	appSvc := services.NewAppService(db, tc, log)
+	appsTc, err := temporalclient.New(temporalclient.WithConfig(cfg), temporalclient.WithNamespace("apps"))
+	if err != nil {
+		return fmt.Errorf("unable to create temporal client: %w", err)
+	}
+	appSvc := services.NewAppService(db, appsTc, log)
 	_, err = appsserver.New(appsserver.WithHTTPMux(mux), appsserver.WithService(appSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize apps server: %w", err)
@@ -93,7 +94,11 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.L
 		return fmt.Errorf("unable to parse github app id: %w", err)
 	}
 
-	deploymentsSvc := services.NewDeploymentService(db, tc, ghTransport, cfg.GithubAppID, cfg.GithubAppKeySecretName, log)
+	deploymentsTc, err := temporalclient.New(temporalclient.WithConfig(cfg), temporalclient.WithNamespace("deployments"))
+	if err != nil {
+		return fmt.Errorf("unable to create temporal client: %w", err)
+	}
+	deploymentsSvc := services.NewDeploymentService(db, deploymentsTc, ghTransport, cfg.GithubAppID, cfg.GithubAppKeySecretName, log)
 	_, err = deploymentsserver.New(deploymentsserver.WithHTTPMux(mux), deploymentsserver.WithService(deploymentsSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize deployments server: %w", err)
@@ -109,13 +114,21 @@ func registerPrimaryServers(mux *http.ServeMux, cfg *internal.Config, log *zap.L
 		return fmt.Errorf("unable to initialize github server: %w", err)
 	}
 
-	installSvc := services.NewInstallService(db, tc, log)
+	installsTc, err := temporalclient.New(temporalclient.WithConfig(cfg), temporalclient.WithNamespace("installs"))
+	if err != nil {
+		return fmt.Errorf("unable to create temporal client: %w", err)
+	}
+	installSvc := services.NewInstallService(db, installsTc, log)
 	_, err = installsserver.New(installsserver.WithHTTPMux(mux), installsserver.WithService(installSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize installs server: %w", err)
 	}
 
-	orgSvc := services.NewOrgService(db, tc, log)
+	orgsTc, err := temporalclient.New(temporalclient.WithConfig(cfg), temporalclient.WithNamespace("orgs"))
+	if err != nil {
+		return fmt.Errorf("unable to create temporal client: %w", err)
+	}
+	orgSvc := services.NewOrgService(db, orgsTc, log)
 	_, err = orgsserver.New(orgsserver.WithHTTPMux(mux), orgsserver.WithService(orgSvc))
 	if err != nil {
 		return fmt.Errorf("unable to initialize orgs server: %w", err)
