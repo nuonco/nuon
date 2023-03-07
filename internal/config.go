@@ -8,7 +8,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_host", "localhost:7233")
-	config.RegisterDefault("temporal_namespace", "default")
+	config.RegisterDefault("temporal_namespace", "installs")
 
 	// install defaults
 	config.RegisterDefault("nuon_access_role_arn", "arn:aws:iam::618886478608:role/install-k8s-admin-stage")
