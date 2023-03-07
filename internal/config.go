@@ -8,7 +8,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_host", "localhost:7233")
-	config.RegisterDefault("temporal_namespace", "default")
+	config.RegisterDefault("temporal_namespace", "instances")
 
 	// instance defaults
 	config.RegisterDefault("waypoint_token_secret_namespace", "default")
