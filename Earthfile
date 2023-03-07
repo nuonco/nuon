@@ -55,7 +55,7 @@ docker:
     RUN apk add --update --no-cache \
         git \
         zip
-    ENTRYPOINT ["/bin/service", "all"]
+
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
     LABEL org.opencontainers.image.version=$image_tag
