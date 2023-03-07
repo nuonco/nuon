@@ -9,6 +9,27 @@ configmap:
 
 envSecrets: []
 
+instances:
+  - namespace: orgs
+    replicas: 1
+    command: ["/bin/service", "--temporal_namespace=orgs", "all"]
+
+  - namespace: apps
+    replicas: 1
+    command: ["/bin/service", "--temporal_namespace=apps", "all"]
+
+  - namespace: installs
+    replicas: 1
+    command: ["/bin/service", "--temporal_namespace=installs", "all"]
+
+  - namespace: deployments
+    replicas: 1
+    command: ["/bin/service", "--temporal_namespace=deployments", "all"]
+
+  - namespace: instances
+    replicas: 1
+    command: ["/bin/service", "--temporal_namespace=instances", "all"]
+
 controller:
   enabled: true
   type: deployment
@@ -32,7 +53,6 @@ serviceAccount:
   # If not set and create is true,
   # a name is generated using the fullname template
   name:
-
 
 service:
   main:

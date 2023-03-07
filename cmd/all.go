@@ -23,6 +23,11 @@ var allCmd = &cobra.Command{
 //nolint:gochecknoinits
 func init() {
 	rootCmd.AddCommand(allCmd)
+	flags := allCmd.Flags()
+
+	flags.String("service_name", "workers-executors", "the name of the service")
+	flags.String("temporal_host", "", "the temporal host and port")
+	flags.String("temporal_namespace", "", "the temporal namespace")
 }
 
 type workerFn func(client.Client, *zap.Logger, shared.Config, <-chan interface{}) error
