@@ -26,10 +26,20 @@ func (w Workflow) ProvisionProject(ctx workflow.Context, req *projectv1.Provisio
 
 	l := log.With(workflow.GetLogger(ctx))
 	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 15 * time.Minute,
+		ScheduleToCloseTimeout: 30 * time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 	act := NewActivities()
+
+	pwsRequest := PingWaypointServerRequest{
+		Timeout: time.Minute * 15,
+		Addr:    waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId),
+	}
+	pwsResp, err := execPingWaypointServer(ctx, act, pwsRequest)
+	if err != nil {
+		return resp, fmt.Errorf("failed to ping waypoint server: %w", err)
+	}
+	l.Debug("successfully pinged waypoint server: %v", pwsResp)
 
 	cwpRequest := CreateWaypointProjectRequest{
 		TokenSecretNamespace: w.cfg.WaypointTokenNamespace,
@@ -88,6 +98,25 @@ func execUpsertWaypointWorkspace(
 
 	l.Debug("executing upsert uwaypoint workspace activity")
 	fut := workflow.ExecuteActivity(ctx, act.UpsertWaypointWorkspace, req)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		l.Error("error executing do: %s", err)
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func execPingWaypointServer(
+	ctx workflow.Context,
+	act *Activities,
+	req PingWaypointServerRequest,
+) (PingWaypointServerResponse, error) {
+	var resp PingWaypointServerResponse
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing ping waypoint server activity")
+	fut := workflow.ExecuteActivity(ctx, act.PingWaypointServer, req)
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		l.Error("error executing do: %s", err)

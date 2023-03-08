@@ -22,6 +22,14 @@ func TestWorkflow(t *testing.T) {
 
 	act := NewActivities()
 
+	env.OnActivity(act.PingWaypointServer, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, pwsReq PingWaypointServerRequest) (PingWaypointServerResponse, error) {
+			var resp PingWaypointServerResponse
+			assert.Nil(t, pwsReq.validate())
+
+			return resp, nil
+		})
+
 	env.OnActivity(act.CreateWaypointProject, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, crReq CreateWaypointProjectRequest) (CreateWaypointProjectResponse, error) {
 			var resp CreateWaypointProjectResponse
