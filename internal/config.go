@@ -9,6 +9,7 @@ import (
 func init() {
 	config.RegisterDefault("temporal_host", "localhost:7233")
 	config.RegisterDefault("temporal_namespace", "deployments")
+	config.RegisterDefault("instances_temporal_namespace", "instances")
 	config.RegisterDefault("temporal_task_queue", "deployment")
 	config.RegisterDefault("temporal_max_concurrent_activities", 1)
 
@@ -23,6 +24,7 @@ type Config struct {
 	// NOTE(jm): this should eventually be migrated to it's own temporal config in a shared package
 	TemporalHost                    string `config:"temporal_host" validate:"required"`
 	TemporalNamespace               string `config:"temporal_namespace" validate:"required"`
+	InstancesTemporalNamespace      string `config:"instances_temporal_namespace" validate:"required"`
 	TemporalTaskQueue               string `config:"temporal_task_queue" validate:"required"`
 	TemporalMaxConcurrentActivities int    `config:"temporal_max_concurrent_activities" validate:"required"`
 	HostIP                          string `config:"host_ip" validate:"required"`
