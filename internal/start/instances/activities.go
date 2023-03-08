@@ -10,7 +10,7 @@ func NewActivities(cfg workers.Config) *Activities {
 	return &Activities{
 		provisioner: &instanceProvisioner{
 			TemporalHost:      cfg.TemporalHost,
-			TemporalNamespace: cfg.TemporalNamespace,
+			TemporalNamespace: cfg.InstancesTemporalNamespace,
 		},
 	}
 }
