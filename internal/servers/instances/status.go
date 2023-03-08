@@ -31,7 +31,7 @@ func (s *server) GetStatus(
 func (s *server) getStatus(ctx context.Context, req *instancesv1.GetStatusRequest, wkflows workflows.Repo) (*instancesv1.GetStatusResponse, error) {
 	var status instancesv1.Status
 
-	resp, err := wkflows.GetDeploymentProvisionResponse(ctx, req.OrgId, req.AppId, req.ComponentId, req.DeploymentId)
+	resp, err := wkflows.GetInstanceProvisionResponse(ctx, req.OrgId, req.AppId, req.ComponentId, req.DeploymentId, req.InstallId)
 	if err != nil {
 		return &instancesv1.GetStatusResponse{
 			Status: instancesv1.Status_STATUS_PROVISIONING,
