@@ -6,6 +6,7 @@ type Activities struct {
 	waypoint.Provider
 	waypointProjectCreator
 	waypointWorkspaceUpserter
+	waypointServerPinger
 }
 
 func NewActivities() *Activities {
@@ -13,5 +14,6 @@ func NewActivities() *Activities {
 		Provider:                  waypoint.NewProvider(),
 		waypointProjectCreator:    &wpProjectCreator{},
 		waypointWorkspaceUpserter: &wpWorkspaceUpserter{},
+		waypointServerPinger:      &wpServerPinger{},
 	}
 }

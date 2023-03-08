@@ -84,8 +84,8 @@ func execProvisionRepository(
 
 	l.Debug("executing provision repository child workflow")
 	cwo := workflow.ChildWorkflowOptions{
-		WorkflowExecutionTimeout: time.Minute * 20,
-		WorkflowTaskTimeout:      time.Minute * 10,
+		WorkflowExecutionTimeout: time.Minute * 60,
+		WorkflowTaskTimeout:      time.Minute * 30,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
