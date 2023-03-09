@@ -285,8 +285,10 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.
 				if privateGithubConfig != nil {
 					repo = privateGithubConfig.Repo
 				} else {
-					repo = publicGithubConfig.Repo
 					isPrivate = false
+					// TODO: temporary workaround, will refactor after the component config retro
+					repo = strings.ReplaceAll(publicGithubConfig.Repo, "https://github.com/", "")
+					repo = strings.ReplaceAll(repo, ".git", "")
 				}
 
 				// get commit hash and update deployment record
