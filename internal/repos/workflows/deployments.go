@@ -30,9 +30,9 @@ func (r *repo) GetDeploymentProvisionRequest(ctx context.Context, orgID, appID, 
 }
 
 func (r *repo) GetDeploymentProvisionResponse(ctx context.Context, orgID, appID, componentID, deploymentID string) (*sharedv1.Response, error) {
-	client, err := downloader.New(r.OrgsBucket.Name,
-		downloader.WithAssumeRoleARN(r.OrgsBucket.IamRoleArn),
-		downloader.WithAssumeRoleSessionName(r.OrgsBucket.IamRoleSessionName))
+	client, err := downloader.New(r.DeploymentsBucket.Name,
+		downloader.WithAssumeRoleARN(r.DeploymentsBucket.IamRoleArn),
+		downloader.WithAssumeRoleSessionName(r.DeploymentsBucket.IamRoleSessionName))
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to get downloader: %w", err)

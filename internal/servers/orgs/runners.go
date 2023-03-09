@@ -6,13 +6,28 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/powertoolsdev/orgs-api/internal/repos/waypoint"
+	"github.com/powertoolsdev/orgs-api/internal/servers"
 	orgsv1 "github.com/powertoolsdev/protos/orgs-api/generated/types/orgs/v1"
 )
+
+func ensureShortIDsGetRunnersRequest(msg *orgsv1.GetRunnersRequest) error {
+	orgID, err := servers.EnsureShortID(msg.OrgId)
+	if err != nil {
+		return fmt.Errorf("invalid orgID: %w", err)
+	}
+	msg.OrgId = orgID
+
+	return nil
+}
 
 func (s *server) GetRunners(
 	ctx context.Context,
 	req *connect.Request[orgsv1.GetRunnersRequest],
 ) (*connect.Response[orgsv1.GetRunnersResponse], error) {
+	if err := ensureShortIDsGetRunnersRequest(req.Msg); err != nil {
+		return nil, fmt.Errorf("unable to ensure ids: %w", err)
+	}
+
 	wpRepo, err := s.WaypointRepo(ctx, req.Msg.OrgId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get waypoint repo: %w", err)
