@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/orgs-api/internal/servers"
 	connectv1 "github.com/powertoolsdev/protos/orgs-api/generated/types/orgs/v1/orgsv1connect"
@@ -23,6 +24,6 @@ func NewHandler(v *validator.Validate, opts ...servers.BaseOption) (string, http
 
 	path, handler := connectv1.NewOrgsServiceHandler(&server{
 		Base: baseSrv,
-	})
+	}, connect.WithInterceptors(connect.UnaryInterceptorFunc(servers.EnsureShortIDInterceptor)))
 	return path, handler, nil
 }

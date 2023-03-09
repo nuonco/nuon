@@ -18,7 +18,7 @@ require (
 	github.com/powertoolsdev/go-waypoint v1.0.0
 	github.com/powertoolsdev/go-waypoint/v2 v2.0.2
 	github.com/powertoolsdev/go-workflows-meta v0.6.2
-	github.com/powertoolsdev/protos v0.76.0
+	github.com/powertoolsdev/protos v0.77.3
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/zap v1.24.0
@@ -101,6 +101,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.15.0 // indirect
 	github.com/srikrsna/protoc-gen-gotag v0.6.2 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/zclconf/go-cty v1.12.1 // indirect
 	go.uber.org/atomic v1.10.0 // indirect

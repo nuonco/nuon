@@ -7,28 +7,13 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/powertoolsdev/orgs-api/internal/repos/waypoint"
 	"github.com/powertoolsdev/orgs-api/internal/repos/workflows"
-	"github.com/powertoolsdev/orgs-api/internal/servers"
 	orgsv1 "github.com/powertoolsdev/protos/orgs-api/generated/types/orgs/v1"
 )
-
-func ensureShortIDsGetInfoRequest(msg *orgsv1.GetInfoRequest) error {
-	orgID, err := servers.EnsureShortID(msg.OrgId)
-	if err != nil {
-		return fmt.Errorf("invalid orgID: %w", err)
-	}
-	msg.OrgId = orgID
-
-	return nil
-}
 
 func (s *server) GetInfo(
 	ctx context.Context,
 	req *connect.Request[orgsv1.GetInfoRequest],
 ) (*connect.Response[orgsv1.GetInfoResponse], error) {
-	if err := ensureShortIDsGetInfoRequest(req.Msg); err != nil {
-		return nil, fmt.Errorf("unable to ensure ids: %w", err)
-	}
-
 	wkflows, err := s.WorkflowsRepo(ctx, req.Msg.OrgId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get workflows repo: %w", err)
