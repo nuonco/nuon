@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/go-common/config"
 	"github.com/powertoolsdev/orgs-api/internal"
@@ -34,8 +35,19 @@ func init() {
 	rootCmd.AddCommand(runServerCmd)
 }
 
+type serverRegisterFn func(*validator.Validate, *http.ServeMux, *internal.Config) error
+
+var srvs map[string]serverRegisterFn = map[string]serverRegisterFn{
+	"instances.v1.InstancesService":     registerInstancesServer,
+	"installs.v1.InstallsService":       registerInstallsServer,
+	"orgs.v1.OrgsService":               registerOrgsServer,
+	"deployments.v1.DeploymentsService": registerDeploymentsServer,
+	"apps.v1.AppsService":               registerAppsServer,
+	"shared.v1.StatusService":           registerStatusServer,
+}
+
 func registerLoadbalancerHealthCheck(mux *http.ServeMux) {
-	mux.Handle("/_ping", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	mux.Handle("/_ping", http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		rw.WriteHeader(http.StatusOK)
 
 		if _, err := rw.Write([]byte("{\"status\": \"ok\"}")); err != nil {
@@ -44,8 +56,19 @@ func registerLoadbalancerHealthCheck(mux *http.ServeMux) {
 	}))
 }
 
+func registerReflectServer(mux *http.ServeMux) {
+	names := make([]string, 0, len(srvs))
+	for k := range srvs {
+		names = append(names, k)
+	}
+	reflector := grpcreflect.NewStaticReflector(names...)
+
+	mux.Handle(grpcreflect.NewHandlerV1(reflector))
+	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
+}
+
 // registerStatusServer registers the status service handler on the provided mux
-func registerStatusServer(mux *http.ServeMux, cfg *internal.Config) error {
+func registerStatusServer(_ *validator.Validate, mux *http.ServeMux, cfg *internal.Config) error {
 	srv, err := statusserver.New(statusserver.WithConfig(cfg))
 	if err != nil {
 		return fmt.Errorf("unable to initialize status server: %w", err)
@@ -161,24 +184,13 @@ func runServer(cmd *cobra.Command, args []string) {
 
 	v := validator.New()
 	mux := http.NewServeMux()
-	if err := registerStatusServer(mux, &cfg); err != nil {
-		l.Fatal("unable to register status server:", zap.Error(err))
+
+	for name, fn := range srvs {
+		if err := fn(v, mux, &cfg); err != nil {
+			l.Fatal("unable to register server:", zap.String("name", name), zap.Error(err))
+		}
 	}
-	if err := registerOrgsServer(v, mux, &cfg); err != nil {
-		l.Fatal("unable to register orgs server:", zap.Error(err))
-	}
-	if err := registerAppsServer(v, mux, &cfg); err != nil {
-		l.Fatal("unable to register apps server:", zap.Error(err))
-	}
-	if err := registerInstallsServer(v, mux, &cfg); err != nil {
-		l.Fatal("unable to register installs server:", zap.Error(err))
-	}
-	if err := registerDeploymentsServer(v, mux, &cfg); err != nil {
-		l.Fatal("unable to register installs server:", zap.Error(err))
-	}
-	if err := registerInstancesServer(v, mux, &cfg); err != nil {
-		l.Fatal("unable to register installs server:", zap.Error(err))
-	}
+	registerReflectServer(mux)
 	registerLoadbalancerHealthCheck(mux)
 
 	l.Info("server starting: ",
