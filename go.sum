@@ -334,6 +334,8 @@ github.com/powertoolsdev/go-workflows-meta v0.6.2 h1:n0eAQAEytZau0vBn6zRG/crZGiz
 github.com/powertoolsdev/go-workflows-meta v0.6.2/go.mod h1:xrTnzuc2cxaDPmAoATATKNMrFY+lzoNewjPpJO7MHa0=
 github.com/powertoolsdev/protos v0.76.0 h1:+7iS+3Ehwzzi8iLoB77saumSUVfkbJIxoKhM9viQ3X8=
 github.com/powertoolsdev/protos v0.76.0/go.mod h1:PFvGFnY2hcx5n7OQyhyahEpeXZx+HhpCK42SulOtwPI=
+github.com/powertoolsdev/protos v0.77.3 h1:Jmr69+ZklmVh6Ib3eAOBSE3cxHMLgaor1rmfUgtvmwk=
+github.com/powertoolsdev/protos v0.77.3/go.mod h1:K0rOXcHVOkpOqBWQLxuX1p+hI8+O7bm8OYqalRnTUdE=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
