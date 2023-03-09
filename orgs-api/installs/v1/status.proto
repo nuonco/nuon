@@ -22,14 +22,14 @@ message GetStatusResponse {
 message GetStatusRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
   string app_id = 2 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
   string install_id = 3 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
 }

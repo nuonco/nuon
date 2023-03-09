@@ -21,6 +21,6 @@ message GetInfoResponse {
 message GetInfoRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
 }
