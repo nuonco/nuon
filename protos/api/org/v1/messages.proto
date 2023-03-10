@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package org.v1;
+
+import "google/type/datetime.proto";
+import "validate/validate.proto";
+
+message Org {
+  string id = 1;
+  string name = 2;
+  string owner_id = 3;
+  google.type.DateTime updated_at = 4;
+  google.type.DateTime created_at = 5;
+}
+
+message GetOrgsByMemberRequest {
+  string member_id = 1;
+}
+
+message GetOrgsByMemberResponse {
+  repeated Org orgs = 1;
+}
+
+message GetOrgRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message GetOrgResponse {
+  Org org = 1;
+}
+
+message UpsertOrgRequest {
+  string id = 1 [(validate.rules).string = {
+    uuid: true,
+    ignore_empty: true
+  }];
+  string name = 2;
+  string owner_id = 3;
+}
+
+message UpsertOrgResponse {
+  Org org = 1;
+}
+
+message DeleteOrgRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message DeleteOrgResponse {
+  bool deleted = 1;
+}

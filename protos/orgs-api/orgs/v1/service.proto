@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package orgs.v1;
+
+import "orgs/v1/info.proto";
+import "orgs/v1/runners.proto";
+import "orgs/v1/status.proto";
+
+service OrgsService {
+  rpc GetRunners(orgs.v1.GetRunnersRequest) returns (orgs.v1.GetRunnersResponse) {}
+  rpc GetInfo(orgs.v1.GetInfoRequest) returns (orgs.v1.GetInfoResponse) {}
+  rpc GetStatus(orgs.v1.GetStatusRequest) returns (orgs.v1.GetStatusResponse) {}
+}

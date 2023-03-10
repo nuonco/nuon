@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package apps.v1.project.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/apps/v1/project/v1";
+
+message ProvisionProjectRequest {
+  bool dry_run = 1;
+
+  string org_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string app_id = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+}
+
+message ProvisionProjectResponse {}

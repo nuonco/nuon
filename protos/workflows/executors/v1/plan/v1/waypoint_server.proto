@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1";
+
+// WaypointServerRef represents the waypoint server that should be used
+message WaypointServerRef {
+  string address = 1 [
+    (validate.rules).string.min_len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+
+  string token_secret_namespace = 3 [
+    (validate.rules).string.min_len = 5,
+    (tagger.tags) = "faker:\"len=10\""
+  ];
+  string token_secret_name = 2 [
+    (validate.rules).string.min_len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+}

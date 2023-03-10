@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package shared.v1;
+
+import "apps/v1/provision.proto";
+import "deployments/v1/start.proto";
+import "installs/v1/deprovision.proto";
+import "installs/v1/provision.proto";
+import "instances/v1/provision.proto";
+import "orgs/v1/signup.proto";
+import "orgs/v1/teardown.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+// FinishActivityRequest is used by clients to implement a finish activity
+message FinishActivityRequest {
+  string metadata_bucket = 1 [(validate.rules).string.min_len = 5];
+  string metadata_bucket_assume_role_arn = 2 [(validate.rules).string.min_len = 5];
+  string metadata_bucket_prefix = 3 [(validate.rules).string.min_len = 5];
+  ResponseRef response_ref = 4 [(tagger.tags) = "faker:\"-\""];
+  ResponseStatus status = 5;
+  string error_message = 6;
+}
+
+message FinishActivityResponse {}
+
+// Response represents a workflow execution
+message Response {
+  ResponseStatus status = 1;
+  ResponseRef response = 2 [(tagger.tags) = "faker:\"-\""];
+}
+
+enum ResponseStatus {
+  RESPONSE_STATUS_UNSPECIFIED = 0;
+  RESPONSE_STATUS_OK = 1;
+  RESPONSE_STATUS_ERROR = 2;
+}
+
+// ResponseRef represents the request that was passed in
+message ResponseRef {
+  oneof response {
+    deployments.v1.StartResponse deployment_start = 1;
+
+    installs.v1.ProvisionResponse install_provision = 2;
+    installs.v1.DeprovisionResponse install_deprovision = 3;
+
+    orgs.v1.SignupResponse org_signup = 4;
+    orgs.v1.TeardownResponse org_teardown = 5;
+
+    instances.v1.ProvisionResponse instance_provision = 6;
+
+    apps.v1.ProvisionResponse apps_provision = 7;
+  }
+}
