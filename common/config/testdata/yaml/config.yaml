@@ -1,0 +1,14 @@
+---
+string: test
+int: 10
+float: 10.5
+map:
+  one: one
+  two: two
+slice:
+  - one
+  - two
+  - three
+duration: 10s
+custom: two
+password: abc
