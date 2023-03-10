@@ -262,3 +262,91 @@ func TestGetCommit(t *testing.T) {
 		})
 	}
 }
+
+func TestGetRepo(t *testing.T) {
+	tests := map[string]struct {
+		githubInstallID  int64
+		githubRepoOwner  string
+		githubRepoName   string
+		githubClient     *http.Client
+		expectedResponse *github.Repository
+		errExpected      error
+	}{
+		"auth error": {
+			githubInstallID: 1234567,
+			githubRepoOwner: "octocat",
+			githubRepoName:  "Hello-World",
+			githubClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatchHandler(
+					mock.PostAppInstallationsAccessTokensByInstallationId,
+					http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						mock.WriteError(
+							w,
+							http.StatusUnauthorized,
+							"tokenError",
+						)
+					}),
+				),
+			),
+			errExpected: errors.New("received non 2xx response status \"401 Unauthorized\""),
+		},
+		"happy path": {
+			githubInstallID: 1234567,
+			githubRepoOwner: "octocat",
+			githubRepoName:  "Hello-World",
+			githubClient: mock.NewMockedHTTPClient(
+				mock.WithRequestMatch(
+					mock.PostAppInstallationsAccessTokensByInstallationId,
+					struct {
+						Token     string    `json:"token"`
+						ExpiresAt time.Time `json:"expires_at"`
+					}{
+						Token:     "this-is-the-token",
+						ExpiresAt: time.Now().Add(5 * time.Minute),
+					},
+				),
+				mock.WithRequestMatchHandler(
+					mock.GetReposByOwnerByRepo,
+					http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						_, err := w.Write(mock.MustMarshal(&github.Repository{
+							ID:            toPtr(int64(123)),
+							Name:          toPtr("Hello-World"),
+							DefaultBranch: toPtr("main"),
+							Private:       toPtr(false),
+						}))
+						assert.NoError(t, err)
+					}),
+				),
+			),
+			expectedResponse: &github.Repository{
+				ID:            toPtr(int64(123)),
+				Name:          toPtr("Hello-World"),
+				DefaultBranch: toPtr("main"),
+				Private:       toPtr(false),
+			},
+			errExpected: nil,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			appTransport, err := gh.NewAppsTransport(test.githubClient.Transport, 123456, key)
+			require.NoError(t, err)
+
+			githubRepo := NewGithubRepo(appTransport, zaptest.NewLogger(t), test.githubClient)
+
+			r, err := githubRepo.GetRepo(context.Background(),
+				test.githubInstallID,
+				test.githubRepoOwner,
+				test.githubRepoName)
+
+			if test.errExpected != nil {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectedResponse, r)
+		})
+	}
+}
