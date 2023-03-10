@@ -1,0 +1,85 @@
+package server
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"google.golang.org/grpc"
+)
+
+type CreateWaypointProjectRequest struct {
+	TokenSecretNamespace string `json:"token_secret_namespace" validate:"required"`
+	OrgServerAddr        string `json:"org_server_address" validate:"required"`
+	OrgID                string `json:"org_id" validate:"required"`
+}
+
+func (c CreateWaypointProjectRequest) validate() error {
+	validate := validator.New()
+	return validate.Struct(c)
+}
+
+type CreateWaypointProjectResponse struct{}
+
+func (a *Activities) CreateWaypointProject(ctx context.Context, req CreateWaypointProjectRequest) (CreateWaypointProjectResponse, error) {
+	var resp CreateWaypointProjectResponse
+	if err := req.validate(); err != nil {
+		return resp, fmt.Errorf("invalid request: %w", err)
+	}
+
+	client, err := a.waypointProvider.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get org waypoint client: %w", err)
+	}
+
+	if err := a.createWaypointProject(ctx, client, req.OrgID); err != nil {
+		return resp, fmt.Errorf("unable to create waypoint project: %w", err)
+	}
+
+	return resp, nil
+}
+
+type waypointProjectCreator interface {
+	createWaypointProject(context.Context, waypointClientProjectUpserter, string) error
+}
+
+var _ waypointProjectCreator = (*wpProjectCreator)(nil)
+
+type wpProjectCreator struct{}
+
+type waypointClientProjectUpserter interface {
+	UpsertProject(ctx context.Context, in *gen.UpsertProjectRequest, opts ...grpc.CallOption) (*gen.UpsertProjectResponse, error)
+}
+
+func (w *wpProjectCreator) createWaypointProject(ctx context.Context, client waypointClientProjectUpserter, orgID string) error {
+	waypointHcl, err := getProjectWaypointConfig(orgID)
+	if err != nil {
+		return fmt.Errorf("unable to create project waypoint config: %w", err)
+	}
+
+	req := &gen.UpsertProjectRequest{
+		Project: &gen.Project{
+			Name:          orgID,
+			RemoteEnabled: true,
+			DataSource: &gen.Job_DataSource{
+				Source: &gen.Job_DataSource_Git{
+					// NOTE(jm): this is a temporary hack until we either a.) figure out a way to
+					// not pass a repo in, or b.) figure out how to have different data sources in
+					// waypoint
+					Git: &gen.Job_Git{
+						Url: "https://github.com/jonmorehouse/empty",
+					},
+				},
+			},
+			DataSourcePoll: &gen.Project_Poll{
+				Enabled: false,
+			},
+			WaypointHcl:       waypointHcl,
+			WaypointHclFormat: gen.Hcl_JSON,
+		},
+	}
+
+	_, err = client.UpsertProject(ctx, req)
+	return err
+}
