@@ -1,0 +1,17 @@
+---
+environment: stage
+
+configmap:
+  values:
+    DB_HOST: $TFO_DB_INSTANCE_HOST
+    DB_NAME: $TFO_DB_INSTANCE_NAME
+    DB_USER: $TFO_DB_INSTANCE_USERNAME
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: $TFO_EKS_ROLE_ARN
+
+service:
+  main:
+    annotations:
+      external-dns.alpha.kubernetes.io/internal-hostname: api.nuon.us-west-2.prod.nuon.cloud
