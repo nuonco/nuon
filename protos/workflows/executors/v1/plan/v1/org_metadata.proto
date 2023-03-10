@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "executors/v1/plan/v1/waypoint_server.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1";
+
+message OrgMetadata {
+  string ecr_region = 1 [
+    (validate.rules).string = {
+      in: [
+        "us-west-2",
+        "us-west-1",
+        "us-east-2",
+        "us-east-1"
+      ]
+    },
+    (tagger.tags) = "faker:\"oneof: us-west-2\""
+  ];
+
+  string ecr_registry_id = 2 [
+    (validate.rules).string.min_len = 12,
+    (tagger.tags) = "faker:\"len=12\""
+  ];
+
+  string ecr_registry_arn = 3 [
+    (validate.rules).string.min_len = 20,
+    (tagger.tags) = "faker:\"len=20\""
+  ];
+
+  OrgBuckets buckets = 4;
+  OrgIAMRoleArns iam_role_arns = 5;
+  WaypointServerRef waypoint_server = 6;
+}
+
+message OrgBuckets {
+  string deployments_bucket = 1 [(validate.rules).string.min_len = 5];
+  string installations_bucket = 2 [(validate.rules).string.min_len = 5];
+  string orgs_bucket = 3 [(validate.rules).string.min_len = 5];
+  string instances_bucket = 4 [(validate.rules).string.min_len = 5];
+}
+
+message OrgIAMRoleArns {
+  string deployments_role_arn = 1 [(validate.rules).string.min_len = 20];
+
+  string installations_role_arn = 2 [(validate.rules).string.min_len = 20];
+
+  string odr_role_arn = 3 [(validate.rules).string.min_len = 20];
+
+  string instances_role_arn = 4 [(validate.rules).string.min_len = 20];
+
+  string installer_role_arn = 5 [(validate.rules).string.min_len = 20];
+
+  string orgs_role_arn = 6 [(validate.rules).string.min_len = 20];
+}

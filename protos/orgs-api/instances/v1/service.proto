@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package instances.v1;
+
+import "instances/v1/info.proto";
+import "instances/v1/status.proto";
+
+service InstancesService {
+  rpc GetInfo(instances.v1.GetInfoRequest) returns (instances.v1.GetInfoResponse) {}
+  rpc GetStatus(instances.v1.GetStatusRequest) returns (instances.v1.GetStatusResponse) {}
+}

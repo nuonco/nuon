@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package component.v1;
+
+import "build/v1/build.proto";
+import "deploy/v1/config.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/component/v1";
+
+// Docker config uses the waypoint build
+message Component {
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  build.v1.Config build_cfg = 2 [(tagger.tags) = "faker:\"buildConfig\""];
+  deploy.v1.Config deploy_cfg = 3 [(tagger.tags) = "faker:\"deployConfig\""];
+}

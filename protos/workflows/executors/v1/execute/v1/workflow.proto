@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package executors.v1.execute.v1;
+
+import "executors/v1/plan/v1/plan_ref.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/execute/v1";
+
+// ExecutePlanRequest executes a plan with the provided plan ref
+message ExecutePlanRequest {
+  .executors.v1.plan.v1.PlanRef plan = 1;
+}
+
+// ExecutePlanResponse returns once a plan has been executed
+message ExecutePlanResponse {
+  oneof outputs {
+    google.protobuf.Struct terraform_outputs = 1;
+  }
+}
