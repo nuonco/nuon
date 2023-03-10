@@ -1,0 +1,351 @@
+package services
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
+	gh "github.com/bradleyfalzon/ghinstallation/v2"
+	"github.com/google/uuid"
+	"github.com/powertoolsdev/api/internal/models"
+	"github.com/powertoolsdev/api/internal/repos"
+	componentConfig "github.com/powertoolsdev/protos/components/generated/types/component/v1"
+	vcsv1 "github.com/powertoolsdev/protos/components/generated/types/vcs/v1"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/powertoolsdev/api/internal/utils"
+	"github.com/powertoolsdev/api/internal/workflows"
+	tclient "go.temporal.io/sdk/client"
+	"gorm.io/gorm"
+)
+
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_deployment_service.go -source=deployment_service.go -package=services
+type DeploymentService interface {
+	// GetDeployment returns a deployment by id
+	GetDeployment(context.Context, string) (*models.Deployment, error)
+	// GetAppDeployments returns deployment for any of the provided app IDs
+	GetAppDeployments(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
+	// GetComponentDeployments returns deployment for any of the provided component IDs
+	GetComponentDeployments(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
+	// GetInstallDeployments returns deployment for any of the provided install IDs
+	GetInstallDeployments(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
+	// CreateDeployment creates a new deployment for the specified component id
+	CreateDeployment(context.Context, *models.DeploymentInput) (*models.Deployment, error)
+}
+
+type deploymentService struct {
+	repo                   repos.DeploymentRepo
+	componentRepo          repos.ComponentRepo
+	githubRepo             repos.GithubRepo
+	wkflowMgr              workflows.DeploymentWorkflowManager
+	githubAppID            string
+	githubAppKeySecretName string
+	log                    *zap.Logger
+}
+
+var _ DeploymentService = (*deploymentService)(nil)
+
+func NewDeploymentService(db *gorm.DB,
+	temporalClient tclient.Client,
+	tsprt *gh.AppsTransport,
+	githubAppID string,
+	githubAppKeySecretName string,
+	log *zap.Logger) *deploymentService {
+	return &deploymentService{
+		repo:                   repos.NewDeploymentRepo(db),
+		wkflowMgr:              workflows.NewDeploymentWorkflowManager(temporalClient),
+		componentRepo:          repos.NewComponentRepo(db),
+		githubRepo:             repos.NewGithubRepo(tsprt, &zap.Logger{}, &http.Client{}),
+		githubAppID:            githubAppID,
+		githubAppKeySecretName: githubAppKeySecretName,
+		log:                    log,
+	}
+}
+
+func (i *deploymentService) GetDeployment(ctx context.Context, inputID string) (*models.Deployment, error) {
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	deploymentID, _ := uuid.Parse(inputID)
+
+	deployment, err := i.repo.Get(ctx, deploymentID)
+	if err != nil {
+		i.log.Error("failed to retrieve deployment",
+			zap.String("deploymentID", deploymentID.String()),
+			zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	return deployment, nil
+}
+
+func (i *deploymentService) GetComponentDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+	uuids := make([]uuid.UUID, 0)
+	for _, v := range ids {
+		// parsing the uuid while ignoring the error handling since we do this at protobuf level
+		componentID, _ := uuid.Parse(v)
+		uuids = append(uuids, componentID)
+	}
+
+	deployments, pg, err := i.repo.ListByComponents(ctx, uuids, options)
+	if err != nil {
+		i.log.Error("failed to retrieve component's deployments",
+			zap.Any("componentIDs", uuids),
+			zap.Any("options", *options),
+			zap.String("error", err.Error()))
+		return nil, nil, err
+	}
+
+	return deployments, pg, nil
+}
+
+func (i *deploymentService) GetAppDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+	uuids := make([]uuid.UUID, 0)
+	for _, v := range ids {
+		// parsing the uuid while ignoring the error handling since we do this at protobuf level
+		appID, _ := uuid.Parse(v)
+		uuids = append(uuids, appID)
+	}
+
+	deployments, pg, err := i.repo.ListByApps(ctx, uuids, options)
+	if err != nil {
+		i.log.Error("failed to retrieve apps's deployments",
+			zap.Any("appIDs", uuids),
+			zap.Any("options", *options),
+			zap.String("error", err.Error()))
+		return nil, nil, err
+	}
+
+	return deployments, pg, nil
+}
+
+func (i *deploymentService) GetInstallDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+	uuids := make([]uuid.UUID, 0)
+	for _, v := range ids {
+		// parsing the uuid while ignoring the error handling since we do this at protobuf level
+		installID, _ := uuid.Parse(v)
+		uuids = append(uuids, installID)
+	}
+
+	deployments, pg, err := i.repo.ListByInstalls(ctx, uuids, options)
+	if err != nil {
+		i.log.Error("failed to retrieve install's deployments",
+			zap.Any("installIDs", uuids),
+			zap.Any("options", *options),
+			zap.String("error", err.Error()))
+		return nil, nil, err
+	}
+
+	return deployments, pg, nil
+}
+
+func (i *deploymentService) startDeployment(ctx context.Context, deployment *models.Deployment) error {
+	err := i.wkflowMgr.Start(ctx, deployment)
+	if err != nil {
+		i.log.Error("failed to start deployment",
+			zap.Any("deployment", deployment),
+			zap.String("error", err.Error()))
+		return fmt.Errorf("unable to start deployment: %w", err)
+	}
+
+	return nil
+}
+
+func (i *deploymentService) getRepoBranch(ctx context.Context, ghRepoOwner string, ghRepoName string, ghInstallID int64) (string, error) {
+	// get repo info from github
+	ghRepo, err := repos.GithubRepo.GetRepo(i.githubRepo, ctx, ghInstallID, ghRepoOwner, ghRepoName)
+	if err != nil {
+		i.log.Error("failed to get commit from GitHub",
+			zap.Any("githubInstallID", ghInstallID),
+			zap.String("ghRepoOwner", ghRepoOwner),
+			zap.String("ghRepoName", ghRepoName),
+			zap.String("error", err.Error()))
+		return "", fmt.Errorf("error getting the github commit: %w", err)
+	}
+
+	return *ghRepo.DefaultBranch, nil
+}
+
+func (i *deploymentService) getCommitHash(ctx context.Context, repoOwner string, repoName string, branch string, ghInstallID int64, deployment *models.Deployment) (*models.Deployment, error) {
+	// get commit info from github
+	commit, err := repos.GithubRepo.GetCommit(i.githubRepo,
+		ctx,
+		ghInstallID,
+		repoOwner,
+		repoName,
+		branch)
+	if err != nil {
+		i.log.Error("failed to get commit from GitHub",
+			zap.Any("githubInstallID", ghInstallID),
+			zap.String("repoOwner", repoOwner),
+			zap.String("repoName", repoName),
+			zap.String("repoBranch", branch),
+			zap.String("error", err.Error()))
+		return nil, fmt.Errorf("error getting the github commit: %w", err)
+	}
+
+	// update deployment with commit info
+	deployment.CommitAuthor = *commit.Author.Login
+	deployment.CommitHash = commit.GetSHA()
+	deployment, err = i.repo.Update(ctx, deployment)
+	if err != nil {
+		i.log.Error("failed to update deployment with commit info",
+			zap.String("commitAuthor", *commit.Author.Login),
+			zap.String("commitHash", commit.GetSHA()),
+			zap.String("error", err.Error()))
+		return nil, fmt.Errorf("error updating the deployment: %w", err)
+	}
+
+	return deployment, nil
+}
+
+func (i *deploymentService) updateComponentConfig(ctx context.Context, ghInstallID int64, isPrivate bool, component *models.Component, deployment *models.Deployment) (*models.Deployment, error) {
+	// unmarshal existing JSON
+	dbConfig, _ := component.Config.MarshalJSON()
+	i.log.Info("updating component configuration",
+		zap.String("component configuration", string(dbConfig)))
+	componentConfiguration := &componentConfig.Component{}
+	if err := protojson.Unmarshal(dbConfig, componentConfiguration); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal input JSON: %w", err)
+	}
+
+	if isPrivate {
+		// for private repos set: git_ref, github_app_key_id, github_app_key_secret_name, github_install_id
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPrivateGithubConfig().GitRef = deployment.CommitHash
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPrivateGithubConfig().GithubAppKeyId = i.githubAppID
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPrivateGithubConfig().GithubAppKeySecretName = i.githubAppKeySecretName
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPrivateGithubConfig().GithubInstallId = fmt.Sprint(ghInstallID)
+	} else {
+		// for public repos set only the git_ref
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPublicGithubConfig().GitRef = deployment.CommitHash
+	}
+
+	//marshal JSON
+	var updatedConfig []byte
+	updatedConfig, err := protojson.Marshal(componentConfiguration)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse updated component configuration: %w", err)
+	}
+	component.Config = updatedConfig
+
+	// update component record with new configuration
+	component, err = i.componentRepo.Update(ctx, component)
+	if err != nil {
+		i.log.Error("failed to update component configuration",
+			zap.Any("component", *component),
+			zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	return i.GetDeployment(ctx, deployment.GetID())
+}
+
+func (i *deploymentService) processGithubRepo(ctx context.Context, vcsCfg *vcsv1.Config, deployment *models.Deployment, component *models.Component) (*models.Deployment, error) {
+	privateGithubConfig := vcsCfg.GetPrivateGithubConfig()
+	publicGithubConfig := vcsCfg.GetPublicGithubConfig()
+
+	// read github_install_id from config
+	ghInstallID, parsingErr := strconv.ParseInt(deployment.Component.App.GithubInstallID, 10, 64)
+	if parsingErr != nil {
+		i.log.Error("failed to parse GithubInstallID",
+			zap.String("GithubInstallID", deployment.Component.App.GithubInstallID),
+			zap.String("error", parsingErr.Error()))
+		return nil, fmt.Errorf("error parsing GithubInstallID: %w", parsingErr)
+	}
+
+	var repo string
+	isPrivate := true
+	if privateGithubConfig != nil {
+		repo = privateGithubConfig.Repo
+	} else {
+		isPrivate = false
+		// TODO: temporary workaround, will refactor after the component config retro
+		repo = strings.ReplaceAll(publicGithubConfig.Repo, "https://github.com/", "")
+		repo = strings.ReplaceAll(repo, ".git", "")
+	}
+
+	githubInfo := strings.Split(repo, "/") // githubInfo = [RepoOwner, RepoName]
+
+	// get default branch from github
+	var defaultBranch string
+	defaultBranch, err := i.getRepoBranch(ctx, githubInfo[0], githubInfo[1], ghInstallID)
+	if err != nil {
+		i.log.Error("failed to get github repo details",
+			zap.String("repo", repo),
+			zap.Any("deployment", deployment),
+			zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	// get commit hash and update deployment record
+	deployment, err = i.getCommitHash(ctx, githubInfo[0], githubInfo[1], defaultBranch, ghInstallID, deployment)
+	if err != nil {
+		i.log.Error("failed to get github commit hash",
+			zap.String("repo", repo),
+			zap.Int64("ghInstallID", ghInstallID),
+			zap.Any("deployment", deployment),
+			zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	// update component config with github info
+	deployment, err = i.updateComponentConfig(ctx, ghInstallID, isPrivate, component, deployment)
+	if err != nil {
+		i.log.Error("failed to update component configuration",
+			zap.Int64("ghInstallID", ghInstallID),
+			zap.Any("component", component),
+			zap.Any("deployment", deployment),
+			zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	return deployment, nil
+}
+
+func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.DeploymentInput) (*models.Deployment, error) {
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	componentID, _ := uuid.Parse(input.ComponentID)
+	component, err := i.componentRepo.Get(ctx, componentID)
+	if err != nil {
+		i.log.Error("failed to get component", zap.String("componentID", componentID.String()), zap.String("error", err.Error()))
+		return nil, fmt.Errorf("failed to get component: %w", err)
+	}
+
+	deployment := &models.Deployment{
+		ComponentID: componentID,
+		CreatedByID: *input.CreatedByID,
+	}
+	deployment, err = i.repo.Create(ctx, deployment)
+	if err != nil {
+		i.log.Error("failed to create deployment",
+			zap.Any("deployment", deployment),
+			zap.String("error", err.Error()))
+		return nil, fmt.Errorf("failed to create deployment: %w", err)
+	}
+
+	// retrieve commits if the component configuration contains github info
+	dbConfig := &componentConfig.Component{}
+	if err = protojson.Unmarshal([]byte(component.Config.String()), dbConfig); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal DB JSON: %w", err)
+	}
+	if dbConfig.BuildCfg != nil {
+		dockerCfg := dbConfig.BuildCfg.GetDockerCfg()
+		if dockerCfg != nil {
+			deployment, err = i.processGithubRepo(ctx, dockerCfg.GetVcsCfg(), deployment, component)
+			if err != nil {
+				return nil, fmt.Errorf("failed to process github repo: %w", err)
+			}
+		}
+	}
+
+	// start deployment workflow
+	err = i.startDeployment(ctx, deployment)
+	if err != nil {
+		i.log.Error("failed to start deployment", zap.Any("deployment", deployment), zap.String("error", err.Error()))
+		return nil, err
+	}
+
+	return deployment, nil
+}
