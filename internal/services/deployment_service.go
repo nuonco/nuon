@@ -152,27 +152,35 @@ func (i *deploymentService) startDeployment(ctx context.Context, deployment *mod
 	return nil
 }
 
-func (i *deploymentService) getCommitHash(ctx context.Context, repo string, ghInstallID int64, deployment *models.Deployment) (*models.Deployment, error) {
-	// input repo is a combo of repo name + owner in this format: octocat/Hello-World
-	githubInfo := strings.Split(repo, "/")
-	// after the split:
-	// githubInfo[0] = RepoOwner
-	// githubInfo[1] = RepoName
-
-	// get commit info from github
-	// TODO: we are no longer saving the default branch in the repo so we will need to get it from somewhere else
-	commit, err := repos.GithubRepo.GetCommit(i.githubRepo,
-		ctx,
-		ghInstallID,
-		githubInfo[0],
-		githubInfo[1],
-		"main") // TODO: replace this with the defaultBranch for the repo?
+func (i *deploymentService) getRepoBranch(ctx context.Context, ghRepoOwner string, ghRepoName string, ghInstallID int64) (string, error) {
+	// get repo info from github
+	ghRepo, err := repos.GithubRepo.GetRepo(i.githubRepo, ctx, ghInstallID, ghRepoOwner, ghRepoName)
 	if err != nil {
 		i.log.Error("failed to get commit from GitHub",
 			zap.Any("githubInstallID", ghInstallID),
-			zap.String("repoOwner", githubInfo[0]),
-			zap.String("repoName", githubInfo[1]),
-			zap.String("repoBranch", "main"), // TODO: replace this with the defaultBranch for the repo?
+			zap.String("ghRepoOwner", ghRepoOwner),
+			zap.String("ghRepoName", ghRepoName),
+			zap.String("error", err.Error()))
+		return "", fmt.Errorf("error getting the github commit: %w", err)
+	}
+
+	return *ghRepo.DefaultBranch, nil
+}
+
+func (i *deploymentService) getCommitHash(ctx context.Context, repoOwner string, repoName string, branch string, ghInstallID int64, deployment *models.Deployment) (*models.Deployment, error) {
+	// get commit info from github
+	commit, err := repos.GithubRepo.GetCommit(i.githubRepo,
+		ctx,
+		ghInstallID,
+		repoOwner,
+		repoName,
+		branch)
+	if err != nil {
+		i.log.Error("failed to get commit from GitHub",
+			zap.Any("githubInstallID", ghInstallID),
+			zap.String("repoOwner", repoOwner),
+			zap.String("repoName", repoName),
+			zap.String("repoBranch", branch),
 			zap.String("error", err.Error()))
 		return nil, fmt.Errorf("error getting the github commit: %w", err)
 	}
@@ -238,9 +246,7 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.
 	componentID, _ := uuid.Parse(input.ComponentID)
 	component, err := i.componentRepo.Get(ctx, componentID)
 	if err != nil {
-		i.log.Error("failed to get component",
-			zap.String("componentID", componentID.String()),
-			zap.String("error", err.Error()))
+		i.log.Error("failed to get component", zap.String("componentID", componentID.String()), zap.String("error", err.Error()))
 		return nil, fmt.Errorf("failed to get component: %w", err)
 	}
 
@@ -266,8 +272,6 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.
 		if dockerCfg != nil {
 			vcsCfg := dockerCfg.GetVcsCfg()
 			if vcsCfg != nil {
-				// I'm getting the commit info for both public + private so I can populate them
-				// at the deployment record and show this info at the UI
 				privateGithubConfig := vcsCfg.GetPrivateGithubConfig()
 				publicGithubConfig := vcsCfg.GetPublicGithubConfig()
 
@@ -291,8 +295,21 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.
 					repo = strings.ReplaceAll(repo, ".git", "")
 				}
 
+				githubInfo := strings.Split(repo, "/") // githubInfo = [RepoOwner, RepoName]
+
+				// get default branch from github
+				var defaultBranch string
+				defaultBranch, err = i.getRepoBranch(ctx, githubInfo[0], githubInfo[1], ghInstallID)
+				if err != nil {
+					i.log.Error("failed to get github repo details",
+						zap.String("repo", repo),
+						zap.Any("deployment", deployment),
+						zap.String("error", err.Error()))
+					return nil, err
+				}
+
 				// get commit hash and update deployment record
-				deployment, err = i.getCommitHash(ctx, repo, ghInstallID, deployment)
+				deployment, err = i.getCommitHash(ctx, githubInfo[0], githubInfo[1], defaultBranch, ghInstallID, deployment)
 				if err != nil {
 					i.log.Error("failed to get github commit hash",
 						zap.String("repo", repo),
@@ -319,9 +336,7 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.
 	// start deployment workflow
 	err = i.startDeployment(ctx, deployment)
 	if err != nil {
-		i.log.Error("failed to start deployment",
-			zap.Any("deployment", deployment),
-			zap.String("error", err.Error()))
+		i.log.Error("failed to start deployment", zap.Any("deployment", deployment), zap.String("error", err.Error()))
 		return nil, err
 	}
 
