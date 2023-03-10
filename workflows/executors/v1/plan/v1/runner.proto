@@ -7,7 +7,7 @@ import "tagger/tagger.proto";
 
 option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1";
 
-message RunnerPlan {
+message RunnerInput {
   string runner_id = 1 [(tagger.tags) = "faker:\"len=26\""];
   string namespace = 2 [(tagger.tags) = "faker:\"len=26\""];
   string release_name = 3 [(tagger.tags) = "faker:\"len=26\""];

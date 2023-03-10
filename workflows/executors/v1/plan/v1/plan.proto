@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package executors.v1.plan.v1;
 
-import "executors/v1/plan/v1/runner_plan.proto";
 import "executors/v1/plan/v1/terraform_plan.proto";
 import "executors/v1/plan/v1/waypoint_plan.proto";
 
@@ -12,6 +11,5 @@ message Plan {
   oneof actual {
     WaypointPlan waypoint_plan = 1;
     TerraformPlan terraform_plan = 2;
-    RunnerPlan runner_plan = 3;
   }
 }
