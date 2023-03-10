@@ -16,6 +16,7 @@ import (
 type GithubRepo interface {
 	Repos(context.Context, int64) ([]*models.Repo, error)
 	GetCommit(context.Context, int64, string, string, string) (*github.RepositoryCommit, error)
+	GetRepo(context.Context, int64, string, string) (*github.Repository, error)
 }
 
 var _ GithubRepo = (*githubRepo)(nil)
@@ -73,4 +74,17 @@ func (gr *githubRepo) GetCommit(ctx context.Context, githubInstallationID int64,
 	}
 
 	return commit, err
+}
+
+func (gr *githubRepo) GetRepo(ctx context.Context, githubInstallationID int64, ghRepoOwner string, ghRepoName string) (*github.Repository, error) {
+	installtp := gh.NewFromAppsTransport(gr.Transport, githubInstallationID)
+	gr.client.Transport = installtp
+	client := github.NewClient(gr.client)
+
+	repo, _, err := client.Repositories.Get(ctx, ghRepoOwner, ghRepoName)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo, err
 }
