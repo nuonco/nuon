@@ -1,0 +1,129 @@
+---
+name: CI
+"on":
+  pull_request:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+  issues: read
+  packages: write
+  pull-requests: write
+  statuses: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  REPO_NAME: ${{ github.event.repository.name }}
+  GHCR_IMAGE: ghcr.io/powertoolsdev/${{ github.event.repository.name }}
+  DEPENDENCY_REPOS: go-aws-assume-role,go-fetch,protos
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+          repositories: ${{ env.DEPENDENCY_REPOS }}
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup for CI
+        uses: powertoolsdev/action-setup-ci@main
+        with:
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Lint
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --remote-cache=ghcr.io/${{ github.repository }}:lint \
+            +lint
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+          repositories: ${{ env.DEPENDENCY_REPOS }}
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup for CI
+        uses: powertoolsdev/action-setup-ci@main
+        with:
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Test
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --remote-cache=ghcr.io/${{ github.repository }}:test-integration \
+            +test-integration
+
+  update_status:
+    name: Update status
+    needs:
+      - lint
+      - test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: Required CI Checks
+          status: success
+
+  release:
+    name: Release
+    needs:
+      - lint
+      - test
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Determine next version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          patchAll: true
+
+      - name: Bump version and push tag
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: ${{ steps.semver.outputs.nextStrict }}
