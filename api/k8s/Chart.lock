@@ -1,0 +1,6 @@
+dependencies:
+- name: common
+  repository: s3://nuon-charts/charts
+  version: 0.8.1
+digest: sha256:99fdb9d3414870af4b819d187658c8ce4f05338f838ad539dac8d0a45127ceb5
+generated: "2023-02-02T10:22:13.379012145-06:00"
