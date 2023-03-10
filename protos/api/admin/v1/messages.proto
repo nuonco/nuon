@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package admin.v1;
+
+import "google/type/datetime.proto";
+import "validate/validate.proto";
+
+message SandboxVersion {
+  string id = 1;
+  string sandbox_name = 2;
+  string sandbox_version = 3;
+  string tf_version = 4;
+  google.type.DateTime created_at = 5;
+  google.type.DateTime updated_at = 6;
+}
+
+message UpsertSandboxVersionRequest {
+  string id = 1 [(validate.rules).string = {
+    uuid: true,
+    ignore_empty: true
+  }];
+  string sandbox_name = 2;
+  string sandbox_version = 3;
+  string tf_version = 4;
+}
+
+message UpsertSandboxVersionResponse {
+  SandboxVersion sandbox = 1;
+}

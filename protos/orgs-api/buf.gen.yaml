@@ -1,0 +1,25 @@
+---
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/powertoolsdev/protos/orgs-api/generated/types
+    except:
+      - buf.build/googleapis/googleapis
+      - buf.build/envoyproxy/protoc-gen-validate
+      - buf.build/srikrsna/protoc-gen-gotag
+      - buf.build/nuon/components
+      - buf.build/nuon/deployments
+      - buf.build/nuon/workflows
+plugins:
+  - plugin: buf.build/protocolbuffers/go
+    out: generated/types
+    opt: paths=source_relative
+
+  - plugin: buf.build/bufbuild/validate-go
+    out: generated/types
+    opt: paths=source_relative
+
+  - plugin: buf.build/bufbuild/connect-go
+    out: generated/types
+    opt: paths=source_relative

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package deploy.v1;
+
+option go_package = "github.com/powertoolsdev/protos/components/generated/types/deploy/v1";
+
+// ExternalHelmConfig
+message ExternalHelmConfig {
+  string name = 1;
+  string chart_url = 2;
+
+  ExternalHelmAuthConfig auth_cfg = 3;
+}
+
+message ExternalHelmAuthConfig {
+  oneof cfg {
+    NoopExternalHelmAuthConfig noop = 1;
+    BasicHelmAuthConfig basic = 2;
+  }
+}
+
+message NoopExternalHelmAuthConfig {}
+
+message BasicHelmAuthConfig {}

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package orgs.v1.runner.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/orgs/v1/runner/v1";
+
+message InstallRunnerRequest {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string odr_iam_role_arn = 2 [
+    (validate.rules).string.min_len = 20,
+    (tagger.tags) = "faker:\"len=20\""
+  ];
+  string region = 3 [
+    (validate.rules).string = {
+      in: ["us-west-2"]
+    },
+    (tagger.tags) = "faker:\"oneof: us-west-2\""
+  ];
+}
+
+message InstallRunnerResponse {}
