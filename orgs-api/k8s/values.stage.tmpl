@@ -1,0 +1,34 @@
+---
+environment: stage
+
+configmap:
+  values:
+    # state buckets
+    DEPLOYMENTS_BUCKET: $TFO_DEPLOYMENTS_BUCKET_NAME
+    INSTALLATIONS_BUCKET: $TFO_INSTALLATIONS_BUCKET_NAME
+    ORGS_BUCKET: $TFO_ORGS_BUCKET_NAME
+
+    # templates for org IAM roles
+    ORGS_DEPLOYMENTS_ROLE_TEMPLATE: $TFO_ORGS_DEPLOYMENTS_ROLE_TEMPLATE
+    ORGS_INSTALLATIONS_ROLE_TEMPLATE: $TFO_ORGS_INSTALLATIONS_ROLE_TEMPLATE
+    ORGS_ORGS_ROLE_TEMPLATE: $TFO_ORGS_ORGS_ROLE_TEMPLATE
+
+    # configs for accessing orgs account k8s cluster
+    ORGS_K8S_CA_DATA: $TFO_ORGS_K8S_CA_DATA
+    ORGS_K8S_PUBLIC_ENDPOINT: $TFO_ORGS_K8S_PUBLIC_ENDPOINT
+    ORGS_K8S_ROLE_ARN: $TFO_ORGS_K8S_ROLE_ARN
+    ORGS_K8S_CLUSTER_ID: $TFO_ORGS_K8S_CLUSTER_ID
+
+    # accessing waypoint
+    WAYPOINT_SERVER_ROOT_DOMAIN: $TFO_WAYPOINT_SERVER_ROOT_DOMAIN
+    WAYPOINT_TOKEN_SECRET_NAMESPACE: $TFO_WAYPOINT_TOKEN_SECRET_NAMESPACE
+    WAYPOINT_TOKEN_SECRET_TEMPLATE: $TFO_WAYPOINT_TOKEN_SECRET_TEMPLATE
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: $TFO_EKS_ROLE_ARN
+
+service:
+  main:
+    annotations:
+      external-dns.alpha.kubernetes.io/internal-hostname: orgs-api.nuon.us-west-2.stage.nuon.cloud
