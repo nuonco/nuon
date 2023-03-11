@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+enum PlanType {
+  PLAN_TYPE_UNSPECIFIED = 0;
+  // waypoint 0-50
+  PLAN_TYPE_WAYPOINT_BUILD = 1;
+  PLAN_TYPE_WAYPOINT_SYNC_IMAGE = 2;
+  PLAN_TYPE_WAYPOINT_DEPLOY = 3;
+
+  // terraform 50-
+  PLAN_TYPE_TERRAFORM_SANDBOX = 50;
+}

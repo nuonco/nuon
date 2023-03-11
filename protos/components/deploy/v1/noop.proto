@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package deploy.v1;
-
-option go_package = "github.com/powertoolsdev/protos/components/generated/types/deploy/v1";
-
-message NoopConfig {}

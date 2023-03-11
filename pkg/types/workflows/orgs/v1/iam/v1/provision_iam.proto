@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package orgs.v1.iam.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1";
+
+message ProvisionIAMRequest {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+}
+
+message ProvisionIAMResponse {
+  string deployments_role_arn = 1 [(validate.rules).string.min_len = 20];
+
+  string installations_role_arn = 2 [(validate.rules).string.min_len = 20];
+
+  string odr_role_arn = 3 [(validate.rules).string.min_len = 20];
+
+  string instances_role_arn = 4 [(validate.rules).string.min_len = 20];
+
+  string installer_role_arn = 5 [(validate.rules).string.min_len = 20];
+
+  string orgs_role_arn = 6 [(validate.rules).string.min_len = 20];
+}

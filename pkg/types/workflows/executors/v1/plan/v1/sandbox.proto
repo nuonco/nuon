@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "executors/v1/plan/v1/terraform_run_type.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+message Sandbox {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+  string app_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+  string install_id = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+
+  SandboxSettings sandbox_settings = 4;
+  optional string terraform_version = 5;
+  .executors.v1.plan.v1.TerraformRunType run_type = 6;
+
+  oneof account_settings {
+    AWSSettings aws = 100;
+  }
+}
+
+message AWSSettings {
+  string region = 1 [
+    (validate.rules).string = {
+      in: [
+        "us-west-2",
+        "us-west-1",
+        "us-east-2",
+        "us-east-1"
+      ]
+    },
+    (tagger.tags) = "faker:\"oneof: us-west-2\""
+  ];
+
+  string account_id = 2 [
+    (validate.rules).string.min_len = 12,
+    (tagger.tags) = "faker:\"len=12\""
+  ];
+
+  string role_arn = 3 [
+    (validate.rules).string.min_len = 20,
+    (tagger.tags) = "faker:\"len=20\""
+  ];
+}
+
+message SandboxSettings {
+  string name = 1 [
+    (validate.rules).string.min_len = 1,
+    (tagger.tags) = "faker:\"len=5\""
+  ];
+
+  string version = 2 [
+    (validate.rules).string.min_len = 1,
+    (tagger.tags) = "faker:\"len=5\""
+  ];
+}
