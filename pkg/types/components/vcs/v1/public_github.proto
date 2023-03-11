@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package vcs.v1;
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1";
+
+// Github public config is for public repos configuration. This VCS config can be used either for helm charts or docker
+// builds
+message PublicGithubConfig {
+  // repo is the org/repo path of the repository
+  string repo = 1;
+  string directory = 2;
+
+  // for public repo configs, we'll just use the branch since the API doesn't have permissions to clone etc and this is
+  // really just for demo purposes
+  string git_ref = 3;
+}

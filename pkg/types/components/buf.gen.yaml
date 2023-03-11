@@ -1,0 +1,24 @@
+---
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/powertoolsdev/mono/pkg/types/components
+    except:
+      - buf.build/googleapis/googleapis
+      - buf.build/srikrsna/protoc-gen-gotag
+      - buf.build/envoyproxy/protoc-gen-validate
+plugins:
+  - name: go
+    out: .
+    opt: paths=source_relative
+
+  - name: go-grpc
+    out: .
+    opt:
+      - paths=source_relative
+      - require_unimplemented_servers=false
+
+  - plugin: buf.build/bufbuild/validate-go
+    out: .
+    opt: paths=source_relative
