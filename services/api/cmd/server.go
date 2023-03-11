@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	ghinstallation "github.com/bradleyfalzon/ghinstallation/v2"
+	"github.com/powertoolsdev/mono/pkg/common/config"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	databaseclient "github.com/powertoolsdev/mono/services/api/internal/clients/database"
 	githubclient "github.com/powertoolsdev/mono/services/api/internal/clients/github"
@@ -21,7 +22,6 @@ import (
 	statusserver "github.com/powertoolsdev/mono/services/api/internal/servers/status"
 	usersserver "github.com/powertoolsdev/mono/services/api/internal/servers/users"
 	"github.com/powertoolsdev/mono/services/api/internal/services"
-	"github.com/powertoolsdev/mono/pkg/common/config"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"

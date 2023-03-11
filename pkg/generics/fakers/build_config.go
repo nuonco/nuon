@@ -3,8 +3,8 @@ package fakers
 import (
 	"reflect"
 
-	buildv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/build/v1"
-	vcsv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/vcs/v1"
+	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
+	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 )
 
 func fakeBuildConfig(v reflect.Value) (interface{}, error) {

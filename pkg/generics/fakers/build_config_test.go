@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	buildv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/build/v1"
+	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
 	"github.com/stretchr/testify/assert"
 )
 

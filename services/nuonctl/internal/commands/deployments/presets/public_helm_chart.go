@@ -1,15 +1,14 @@
 package presets
 
 import (
-	buildv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/build/v1"
-	componentv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/component/v1"
-	deployv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/deploy/v1"
+	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
+	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
 )
 
 func (p *preset) publicHelmChart() (*componentv1.Component, error) {
 	return &componentv1.Component{
-		Id:   p.ID,
-		Name: "public-helm-chart",
+		Id: p.ID,
 		BuildCfg: &buildv1.Config{
 			Cfg: &buildv1.Config_Noop{},
 		},

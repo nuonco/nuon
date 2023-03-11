@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/powertoolsdev/mono/pkg/helm"
 	"github.com/powertoolsdev/go-waypoint"
+	"github.com/powertoolsdev/mono/pkg/helm"
 	"k8s.io/client-go/rest"
 )
 

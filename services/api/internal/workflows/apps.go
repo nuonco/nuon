@@ -3,9 +3,9 @@ package workflows
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
-	appsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/apps/v1"
+	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
+	"github.com/powertoolsdev/mono/services/api/internal/models"
 	tclient "go.temporal.io/sdk/client"
 )
 

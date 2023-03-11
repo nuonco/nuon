@@ -11,10 +11,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	executev1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/executors/v1/execute/v1"
-	planv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/executors/v1/plan/v1"
-	instancesv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/instances/v1"
-	sharedv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/shared/v1"
+	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	instancesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
+	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-instances/internal"
 )
 

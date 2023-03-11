@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
-	buildv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/build/v1"
-	deployv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/deploy/v1"
+	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
+	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
 	"github.com/stretchr/testify/assert"
 )
 

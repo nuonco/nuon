@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	orgsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/orgs/v1"
+	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )

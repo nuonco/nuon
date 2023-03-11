@@ -3,9 +3,9 @@ package converters
 import (
 	"fmt"
 
+	componentv1 "github.com/powertoolsdev/mono/pkg/types/api/component/v1"
+	componentConfig "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
-	componentv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/component/v1"
-	componentConfig "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/component/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 

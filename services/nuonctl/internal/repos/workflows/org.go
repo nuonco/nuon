@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"path/filepath"
 
+	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows-meta/prefix"
 	"github.com/powertoolsdev/mono/services/nuonctl/internal/s3downloader"
-	sharedv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/shared/v1"
 )
 
 // GetOrgProvisionRequest returns a provision request for an org

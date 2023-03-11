@@ -1,15 +1,14 @@
 package presets
 
 import (
-	buildv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/build/v1"
-	componentv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/component/v1"
-	deployv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/deploy/v1"
+	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
+	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
 )
 
 func (p *preset) privateExternalImageHttpbin() (*componentv1.Component, error) {
 	return &componentv1.Component{
-		Id:   p.ID,
-		Name: "private-external-image-httpbin",
+		Id: p.ID,
 		BuildCfg: &buildv1.Config{
 			Cfg: &buildv1.Config_ExternalImageCfg{
 				ExternalImageCfg: &buildv1.ExternalImageConfig{

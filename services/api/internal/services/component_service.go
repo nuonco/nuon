@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	componentConfig "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
-	componentConfig "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/component/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
 	"gorm.io/datatypes"

@@ -8,10 +8,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/go-waypoint"
 	waypointhelm "github.com/powertoolsdev/mono/pkg/helm/waypoint"
 	"github.com/powertoolsdev/mono/pkg/kube"
-	"github.com/powertoolsdev/go-waypoint"
-	runnerv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/orgs/v1/runner/v1"
+	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/runner/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 )
 

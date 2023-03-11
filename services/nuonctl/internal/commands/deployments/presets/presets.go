@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
-	componentv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/component/v1"
+	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 )
 
 type preset struct {

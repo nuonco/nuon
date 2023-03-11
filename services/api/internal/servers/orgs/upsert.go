@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
+	orgv1 "github.com/powertoolsdev/mono/pkg/types/api/org/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/servers/converters"
-	orgv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/org/v1"
 )
 
 func (s *server) UpsertOrg(

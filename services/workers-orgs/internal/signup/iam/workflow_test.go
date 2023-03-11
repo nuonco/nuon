@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	iamv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/orgs/v1/iam/v1"
+	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
 	"github.com/stretchr/testify/assert"

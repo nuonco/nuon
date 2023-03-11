@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	executev1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/executors/v1/execute/v1"
-	planv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/executors/v1/plan/v1"
-	installsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/installs/v1"
+	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

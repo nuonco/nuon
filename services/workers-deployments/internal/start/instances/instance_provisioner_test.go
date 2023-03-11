@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	provisionv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/instances/v1"
+	provisionv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	tclient "go.temporal.io/sdk/client"

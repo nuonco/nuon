@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
 	"github.com/powertoolsdev/mono/services/nuonctl/internal/commands/deployments/presets"
-	deploymentsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/deployments/v1"
 )
 
 func (c *commands) TriggerInstallPreset(ctx context.Context, installID, componentPreset string) error {

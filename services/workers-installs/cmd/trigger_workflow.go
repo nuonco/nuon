@@ -13,7 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/common/config"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
-	installsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/installs/v1"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	shared "github.com/powertoolsdev/mono/services/workers-installs/internal"
 	"github.com/spf13/cobra"
 	tclient "go.temporal.io/sdk/client"

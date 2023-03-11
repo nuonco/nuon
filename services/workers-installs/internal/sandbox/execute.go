@@ -3,7 +3,7 @@ package sandbox
 import (
 	"time"
 
-	executev1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/executors/v1/execute/v1"
+	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	"go.temporal.io/sdk/workflow"
 )
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	runnerv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/orgs/v1/runner/v1"
+	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/runner/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
