@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
+	adminv1 "github.com/powertoolsdev/mono/pkg/types/api/admin/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
-	adminv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/admin/v1"
 )
 
 func (s *server) UpsertSandboxVersion(ctx context.Context, req *connect.Request[adminv1.UpsertSandboxVersionRequest]) (*connect.Response[adminv1.UpsertSandboxVersionResponse], error) {

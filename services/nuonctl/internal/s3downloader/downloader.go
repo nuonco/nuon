@@ -8,7 +8,7 @@ import (
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
-//go:generate mockgen -destination=downloader_mock.go -source=downloader.go -package=downloader
+//go:generate mockgen -destination=downloader_mock.go -source=downloader.go -package=s3downloader
 type Downloader interface {
 	GetBlob(context.Context, string) ([]byte, error)
 

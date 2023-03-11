@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
-	appv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/app/v1"
+	appv1 "github.com/powertoolsdev/mono/pkg/types/api/app/v1"
 )
 
 func (s *server) DeleteApp(

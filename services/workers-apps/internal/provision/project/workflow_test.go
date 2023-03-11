@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	projectv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/apps/v1/project/v1"
+	projectv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1/project/v1"
 	"github.com/powertoolsdev/mono/services/workers-apps/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

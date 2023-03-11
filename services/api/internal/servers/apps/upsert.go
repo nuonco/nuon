@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
+	appv1 "github.com/powertoolsdev/mono/pkg/types/api/app/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/servers/converters"
-	appv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/app/v1"
 )
 
 func (s *server) UpsertApp(

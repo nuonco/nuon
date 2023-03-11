@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	orgsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/orgs/v1"
+	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
+	githubv1 "github.com/powertoolsdev/mono/pkg/types/api/github/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/servers/converters"
-	githubv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/github/v1"
 )
 
 func (s *server) GetRepos(

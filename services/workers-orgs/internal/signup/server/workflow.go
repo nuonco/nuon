@@ -6,7 +6,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/helm/waypoint"
 	"github.com/powertoolsdev/mono/pkg/kube"
-	serverv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/orgs/v1/server/v1"
+	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"

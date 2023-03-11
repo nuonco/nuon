@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	installsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/installs/v1"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
