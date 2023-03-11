@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package deploy.v1;
+
+import "deploy/v1/basic.proto";
+import "deploy/v1/external_helm.proto";
+import "deploy/v1/helm_source.proto";
+import "google/protobuf/duration.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1";
+
+message Config {
+  // name maps to the waypoint application in the customer install
+  google.protobuf.Duration timeout = 1 [(validate.rules).duration.required = true];
+
+  oneof cfg {
+    option (validate.required) = true;
+
+    BasicConfig basic = 2;
+    ExternalHelmConfig external_helm = 3;
+    HelmSourceConfig helm_source = 4;
+  }
+}

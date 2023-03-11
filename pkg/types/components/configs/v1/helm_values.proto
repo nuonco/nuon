@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package configs.v1;
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/configs/v1";
+
+message HelmValuesConfig {
+  repeated HelmValue values = 1;
+}
+
+// NOTE: helm value is a container type that encapsulates the different type of helm values that are possible. As we add
+// addition helm values here in the future, it will be expanded upon.
+message HelmValue {
+  oneof value {
+    HelmUserValue user = 1;
+    HelmImageValue image = 2;
+  }
+}
+
+message HelmUserValue {
+  string name = 1;
+  bool sensitive = 2;
+  string value = 3;
+}
+
+// NOTE: we may have more "builtin" values in the future, but for starters let's just support the bare minimum which is
+// the image being passed in, eg:
+//       value = artifact.name
+message HelmImageValue {
+  string name = 1;
+}
