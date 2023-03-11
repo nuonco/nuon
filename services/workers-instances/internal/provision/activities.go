@@ -1,8 +1,8 @@
 package provision
 
 import (
-	"github.com/powertoolsdev/mono/pkg/sender"
 	"github.com/powertoolsdev/go-waypoint"
+	"github.com/powertoolsdev/mono/pkg/sender"
 )
 
 type Activities struct {

@@ -1,8 +1,8 @@
 package converters
 
 import (
+	orgv1 "github.com/powertoolsdev/mono/pkg/types/api/org/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
-	orgv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/org/v1"
 )
 
 // Org model to proto converts org domain model into org proto message

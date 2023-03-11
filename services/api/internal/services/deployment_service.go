@@ -9,10 +9,10 @@ import (
 
 	gh "github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/google/uuid"
+	componentConfig "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
-	componentConfig "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/component/v1"
-	vcsv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/vcs/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
 

@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zaptest"
 )

@@ -1,8 +1,8 @@
 package converters
 
 import (
+	githubv1 "github.com/powertoolsdev/mono/pkg/types/api/github/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
-	githubv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/github/v1"
 )
 
 // GithubRepoModelToProto converts github repo domain model into github repo proto message

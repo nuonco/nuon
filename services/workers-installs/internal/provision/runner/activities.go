@@ -1,8 +1,8 @@
 package runner
 
 import (
-	"github.com/powertoolsdev/mono/pkg/helm"
 	"github.com/powertoolsdev/go-waypoint"
+	"github.com/powertoolsdev/mono/pkg/helm"
 	"k8s.io/client-go/rest"
 
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"

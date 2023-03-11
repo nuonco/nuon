@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
+	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	meta "github.com/powertoolsdev/mono/pkg/workflows-meta"
-	deploymentsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/deployments/v1"
-	sharedv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/shared/v1"
 	"go.temporal.io/sdk/workflow"
 )
 

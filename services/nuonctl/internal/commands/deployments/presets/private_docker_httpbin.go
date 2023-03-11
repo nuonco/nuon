@@ -1,16 +1,15 @@
 package presets
 
 import (
-	buildv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/build/v1"
-	componentv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/component/v1"
-	deployv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/deploy/v1"
-	vcsv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/vcs/v1"
+	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
+	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
+	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 )
 
 func (p *preset) privateDockerHttpbin() (*componentv1.Component, error) {
 	return &componentv1.Component{
-		Id:   p.ID,
-		Name: "private-docker-httpbin",
+		Id: p.ID,
 		BuildCfg: &buildv1.Config{
 			Cfg: &buildv1.Config_DockerCfg{
 				DockerCfg: &buildv1.DockerConfig{
@@ -21,7 +20,7 @@ func (p *preset) privateDockerHttpbin() (*componentv1.Component, error) {
 								Repo:      "jonmorehouse/go-httpbin",
 								Directory: ".",
 								// TODO(jm): add branch
-								CommitRef:              "main",
+								GitRef:                 "main",
 								GithubAppKeyId:         "261597",
 								GithubAppKeySecretName: "graphql-api-github-app-key",
 								GithubInstallId:        "34504664",

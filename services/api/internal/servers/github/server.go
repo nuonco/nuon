@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	connectv1 "github.com/powertoolsdev/mono/pkg/types/api/github/v1/githubv1connect"
 	"github.com/powertoolsdev/mono/services/api/internal/services"
-	connectv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/github/v1/githubv1connect"
 )
 
 type server struct {

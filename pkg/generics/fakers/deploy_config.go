@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"time"
 
-	deployv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/deploy/v1"
+	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 

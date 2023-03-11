@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/connect-go"
-	statusv1 "github.com/powertoolsdev/mono/pkg/protos/shared/generated/types/status/v1"
+	statusv1 "github.com/powertoolsdev/mono/pkg/types/shared/status/v1"
 )
 
 func (s *server) Ping(

@@ -1,8 +1,8 @@
 package converters
 
 import (
+	installv1 "github.com/powertoolsdev/mono/pkg/types/api/install/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
-	installv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/install/v1"
 )
 
 // Install model to proto converts install domain model into install proto message

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	iamv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/orgs/v1/iam/v1"
+	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/roles"
 	"go.temporal.io/sdk/log"
