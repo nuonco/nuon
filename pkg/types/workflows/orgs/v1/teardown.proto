@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package orgs.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1";
+
+message TeardownRequest {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string region = 2 [
+    (validate.rules).string = {
+      in: ["us-west-2"]
+    },
+    (tagger.tags) = "faker:\"oneof: us-west-2\""
+  ];
+}
+
+message TeardownResponse {}
