@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
+	userv1 "github.com/powertoolsdev/mono/pkg/types/api/user/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
-	userv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/user/v1"
 )
 
 func (s *server) UpsertOrgMember(

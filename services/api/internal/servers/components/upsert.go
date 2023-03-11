@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
+	componentv1 "github.com/powertoolsdev/mono/pkg/types/api/component/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/servers/converters"
-	componentv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/component/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 

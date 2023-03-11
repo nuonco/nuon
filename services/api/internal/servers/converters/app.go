@@ -1,8 +1,8 @@
 package converters
 
 import (
+	appv1 "github.com/powertoolsdev/mono/pkg/types/api/app/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
-	appv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/app/v1"
 )
 
 // App model to proto converts app domain model into app proto message

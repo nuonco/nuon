@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	serverv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/orgs/v1/server/v1"
+	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
 	"github.com/stretchr/testify/assert"

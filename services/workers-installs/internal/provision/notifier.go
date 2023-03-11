@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/sender"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows-meta/prefix"
-	installsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/installs/v1"
 )
 
 type notifier interface {

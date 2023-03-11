@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
-	installv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/install/v1"
+	installv1 "github.com/powertoolsdev/mono/pkg/types/api/install/v1"
 )
 
 func (s *server) DeleteInstall(

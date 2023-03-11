@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows-meta/prefix"
-	installsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/installs/v1"
 )
 
 const successNotificationTemplate string = `:white_check_mark: _successfully deprovisioned sandbox_ :white_check_mark:

@@ -6,8 +6,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	instancesv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/deployments/v1/instances/v1"
-	provisionv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/instances/v1"
+	instancesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1/instances/v1"
+	provisionv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-deployments/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

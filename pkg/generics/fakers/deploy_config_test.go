@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	deployv1 "github.com/powertoolsdev/mono/pkg/protos/components/generated/types/deploy/v1"
+	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
 	"github.com/stretchr/testify/assert"
 )
 

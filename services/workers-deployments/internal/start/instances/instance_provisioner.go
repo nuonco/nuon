@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	provisionv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/instances/v1"
-	sharedv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/shared/v1"
+	provisionv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
+	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	tclient "go.temporal.io/sdk/client"
 )
 

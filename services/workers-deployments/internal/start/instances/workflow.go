@@ -7,8 +7,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	instancesv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/deployments/v1/instances/v1"
-	provisionv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/instances/v1"
+	instancesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1/instances/v1"
+	provisionv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-deployments/internal"
 )
 

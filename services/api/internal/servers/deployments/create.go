@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
+	deploymentv1 "github.com/powertoolsdev/mono/pkg/types/api/deployment/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/servers/converters"
-	deploymentv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/deployment/v1"
 )
 
 func (s *server) CreateDeployment(

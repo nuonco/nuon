@@ -1,8 +1,8 @@
 package converters
 
 import (
+	deploymentv1 "github.com/powertoolsdev/mono/pkg/types/api/deployment/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
-	deploymentv1 "github.com/powertoolsdev/mono/pkg/protos/api/generated/types/deployment/v1"
 )
 
 // Deployment model to proto converts deployment domain model into deployment proto message

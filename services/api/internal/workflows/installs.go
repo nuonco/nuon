@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
-	installsv1 "github.com/powertoolsdev/mono/pkg/protos/workflows/generated/types/installs/v1"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	"github.com/powertoolsdev/mono/services/api/internal/models"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 )
