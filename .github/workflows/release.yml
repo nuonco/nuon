@@ -58,6 +58,7 @@ jobs:
             echo IMAGE_TAG=${{ steps.semver.outputs.next }}
             echo HELM_CHART_VERSION=${{ steps.semver.outputs.nextStrict }}
           } >> "$GITHUB_ENV"
+
       - name: Setup for CI
         uses: powertoolsdev/action-setup-ci@main
         with:
@@ -70,6 +71,7 @@ jobs:
           setup_helm: "false"
 
       - name: Build and push container
+        working-directory: services/${{inputs.service}}
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
@@ -78,6 +80,7 @@ jobs:
             --repo=${{ env.TFO_ECR_REPOSITORY_URL }} \
             --image_tag=${{ env.IMAGE_TAG }}
       - name: Bump and publish chart
+        working-directory: services/${{inputs.service}}/k8s
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
