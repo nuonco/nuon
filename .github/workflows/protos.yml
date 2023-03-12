@@ -27,8 +27,6 @@ jobs:
   changes:
     name: Check for changes
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
     outputs:
       protos: ${{ steps.filter.outputs.protos }}
     steps:
