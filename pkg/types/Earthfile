@@ -27,41 +27,10 @@ push-proto:
     RUN buf push
 
 lint:
-    BUILD +lint-standard
-    BUILD +lint-proto
-
-lint-standard:
-    FROM ghcr.io/powertoolsdev/ci-reviewdog
-    WORKDIR /work
-    COPY --dir . .
-    DO shared-configs+LINT \
-        --GITHUB_ACTIONS=$GITHUB_ACTIONS \
-        --GOCACHE=$GOCACHE \
-        --GOMODCACHE=$GOMODCACHE
-    SAVE IMAGE --push $GHCR_IMAGE:lint
-
-lint-proto:
     FROM +proto
     DO +BUF_LOGIN
     RUN sh -c "buf lint && buf format -d --exit-code" \
             || sh -c "printf '%s\n' 'Buf Format changes exist in current branch' >&2 && exit 1"
-
-generate-protos:
-    WORKDIR /work
-    COPY --dir . .
-
-    RUN go install github.com/bufbuild/buf/cmd/buf@v1.12.0 \
-        && go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
-        && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest \
-        && go install github.com/srikrsna/protoc-gen-gotag@v0.6.2
-
-    DO +BUF_LOGIN
-    RUN go generate ./...
-
-    SAVE ARTIFACT orgs-api/generated orgs-api/generated
-    SAVE ARTIFACT components/generated components/generated
-    SAVE ARTIFACT api/generated api/generated
-    SAVE ARTIFACT workflows/generated workflows/generated
 
 ################################### UDCs ######################################
 
