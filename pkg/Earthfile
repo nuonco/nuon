@@ -2,8 +2,6 @@ VERSION --use-cache-command 0.6
 
 FROM ghcr.io/powertoolsdev/ci-go-builder
 
-ARG BUF_USER=jonmorehouse
-ARG BUF_API_TOKEN=4c51e8481ed34404b7ab6a0c62dc7b2db82757d8f86e4caa853750973e2c5083
 WORKDIR /src
 
 ARG GOCACHE=/go-cache

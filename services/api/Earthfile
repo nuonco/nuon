@@ -23,7 +23,6 @@ CACHE $GOMODCACHE
 build:
     DO +DEPS
     ARG EARTHLY_TARGET_TAG_DOCKER
-    RUN go build -o bin/service .
     RUN go \
         build \
         -ldflags="-X 'github.com/powertoolsdev/go-config/pkg/config.Version=$EARTHLY_TARGET_TAG_DOCKER'" \
