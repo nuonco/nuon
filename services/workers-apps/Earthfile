@@ -10,13 +10,14 @@ ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 ARG SERVICE=workers-apps
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
+ARG GITHUB_ACTIONS=
 
 CACHE $GOCACHE
 CACHE $GOMODCACHE
 
 code:
-    FROM ../../.+deps
-    COPY ../../pkg+code/pkg pkg
+    FROM ../../.+deps --GITHUB_ACTIONS=$GITHUB_ACTIONS
+    COPY ../../pkg+code/pkg --GITHUB_ACTIONS=$GITHUB_ACTIONS pkg
     COPY --dir . ./services/$SERVICE
     WORKDIR services/$SERVICE
     RUN go generate ./...
@@ -64,42 +65,3 @@ docker:
     LABEL org.opencontainers.image.authors=nuon
     LABEL org.opencontainers.image.vendor=nuon
     SAVE IMAGE --push --cache-from=$repo:$cache_tag $repo:$image_tag
-
-# TODO(jm): this should be a shared earthfile between all services
-helm-bump-and-publish:
-    FROM ghcr.io/powertoolsdev/ci-helm-releaser
-    ARG chart_version
-    ARG repos
-    WORKDIR /work
-    COPY --dir k8s /work/k8s
-    DO shared-configs+HELM_RELEASE \
-        --chart_version=$chart_version \
-        --repos=$repos
-
-deploy:
-    FROM ghcr.io/powertoolsdev/ci-helm-releaser
-    WORKDIR /work
-    COPY --dir k8s /work/k8s
-    ARG env
-    ARG cluster_name
-    ARG role_arn
-    ARG chart_version
-    ARG repository
-    ARG image_tag
-    ARG tfenv=.tfenv
-    ARG repos
-    DO shared-configs+HELM_SETUP \
-        --repos="$repos"
-
-    WORKDIR /work/k8s
-    COPY $tfenv .
-    RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
-        && envsubst < "values.$env.tmpl" > "values.$env.yaml"
-
-    DO shared-configs+K8S_DEPLOY \
-        --env=$env \
-        --cluster_name=$cluster_name \
-        --role_arn=$role_arn \
-        --chart_version=$chart_version \
-        --repository=$repository \
-        --image_tag=$image_tag
