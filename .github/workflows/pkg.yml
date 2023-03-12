@@ -1,6 +1,6 @@
 # workflows for interacting with protos and pushing our types to protos schema registry
 ---
-name: protos
+name: pkg
 "on":
   pull_request:
   push:
@@ -28,7 +28,7 @@ jobs:
     name: Check for changes
     runs-on: ubuntu-latest
     outputs:
-      protos: ${{ steps.filter.outputs.protos }}
+      protos: ${{ steps.filter.outputs.pkg }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -38,22 +38,14 @@ jobs:
         with:
           filters: |
             protos:
-              - 'pkg/types/**'
-  lint-protos:
-    name: Lint protos
+              - 'pkg/**'
+  lint:
+    name: Lint pkg
     needs: changes
-    if: ${{ needs.changes.outputs.protos == 'true' }}
-    strategy:
-      matrix:
-        repo:
-          - api
-          - components
-          - orgs-api
-          - shared
-          - workflows
+    if: ${{ needs.changes.outputs.pkg == 'true' }}
     defaults:
       run:
-        working-directory: pkg/types
+        working-directory: pkg
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -68,25 +60,16 @@ jobs:
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}:protos-lint-${{matrix.repo}} \
-            +lint \
-            --REPO=${{matrix.repo}} \
+            --remote-cache=ghcr.io/${{ github.repository }}:pkg-lint \
+            +lint
 
-  release-protos:
-    name: Release protos
+  test:
+    name: Test pkg
     needs: changes
-    if: ${{ needs.changes.outputs.protos == 'true' && github.event_name != 'pull_request' }}
+    if: ${{ needs.changes.outputs.pkg == 'true' }}
     defaults:
       run:
-        working-directory: pkg/types
-    strategy:
-      matrix:
-        repo:
-          - api
-          - components
-          - orgs-api
-          - shared
-          - workflows
+        working-directory: pkg
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -97,18 +80,18 @@ jobs:
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
 
-      - name: Push protos
+      - name: Test
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}:protos \
-            +push-proto \
-            --REPO=${{matrix.repo}} \
+            --remote-cache=ghcr.io/${{ github.repository }}:pkg-test \
+            +test
+
   release:
     name: Release
     needs:
       - changes
-      - release-protos
+      - test
     if: ${{ needs.changes.outputs.protos == 'true' && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
@@ -119,9 +102,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
           patchAll: true
-          prefix: protos/
+          prefix: pkg/
       - name: Push tag
         uses: mathieudutour/github-tag-action@v6.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ steps.semver.outputs.nextStrict }}
+
