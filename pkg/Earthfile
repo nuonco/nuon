@@ -8,7 +8,7 @@ ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
 CACHE $GOCACHE
 CACHE $GOMODCACHE
-ARG GITHUB_ACTIONS=
+ARG GITHUB_ACTIONS=1
 
 # code should be used to consume pkg as code. It exports the fully generated pkg.
 code:
