@@ -63,7 +63,6 @@ jobs:
         uses: powertoolsdev/action-setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
-          clone_token: ${{ steps.generate_token.outputs.token }}
 
       - name: Lint
         run: |
@@ -92,6 +91,11 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+
+      - name: Setup for CI
+        uses: powertoolsdev/action-setup-ci@main
+        with:
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
 
       - name: Push protos
         run: |
