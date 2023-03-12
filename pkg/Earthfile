@@ -20,6 +20,9 @@ test:
     FROM +code
     RUN go test ./...
 
+lint:
+    RUN echo "noop..."
+
 GEN:
     COMMAND
     DO ./types+BUF_LOGIN
