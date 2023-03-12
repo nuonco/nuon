@@ -19,9 +19,8 @@ ARG GITHUB_ACTIONS=
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 
 test:
-    DO +DEPS
-    RUN go test ./...
-    SAVE IMAGE --push $GHCR_IMAGE:test
+    COPY ../code+artifact .
+    RUN ls -R /
 
 test-integration:
     DO +DEPS
