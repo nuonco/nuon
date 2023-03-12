@@ -1,0 +1,42 @@
+FROM ghcr.io/powertoolsdev/ci-helm-releaser
+
+code:
+    WORKDIR /work
+    COPY --dir . .
+    RUN ls
+
+helm-bump-and-publish:
+    FROM +code
+
+    ARG chart_version
+    ARG repos
+    DO shared-configs+HELM_RELEASE \
+        --chart_version=$chart_version \
+        --repos=$repos
+
+deploy:
+    FROM +code
+
+    ARG env
+    ARG cluster_name
+    ARG role_arn
+    ARG chart_version
+    ARG repository
+    ARG image_tag
+    ARG tfenv=.tfenv
+    ARG repos
+    DO shared-configs+HELM_SETUP \
+        --repos="$repos"
+
+    # TODO(jm): remove this once CI is setup correctly for this service
+    COPY $tfenv .
+    RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
+        && envsubst < "values.$env.tmpl" > "values.$env.yaml"
+
+    DO shared-configs+K8S_DEPLOY \
+        --env=$env \
+        --cluster_name=$cluster_name \
+        --role_arn=$role_arn \
+        --chart_version=$chart_version \
+        --repository=$repository \
+        --image_tag=$image_tag

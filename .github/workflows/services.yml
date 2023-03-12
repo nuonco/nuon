@@ -1,0 +1,56 @@
+# workflows for building/testing/deploying services
+---
+name: services
+"on":
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  id-token: write
+  issues: read
+  packages: write
+  pull-requests: write
+  statuses: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  changes:
+    name: Check for changes
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            orgs-api: services/orgs-api/**
+            workers-apps: services/workers-apps/**
+            workers-deployments: services/workers-deployments/**
+            workers-executors: services/workers-executors/**
+            workers-instances: services/workers-instances/**
+            workers-installs: services/workers-installs/**
+            workers-orgs: services/workers-orgs/**
+  ci:
+    name: service ci
+    needs: changes
+    strategy:
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
+    uses: ./.github/workflows/service-ci.yml
+    with:
+      service: ${{matrix.service}}
+    secrets: inherit
