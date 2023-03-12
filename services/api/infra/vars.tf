@@ -14,7 +14,7 @@ locals {
 
   name                   = "api"
   pool                   = "nuon"
-  github_repository      = local.name
+  github_repository      = "mono"
   github_organization    = "powertoolsdev"
   terraform_organization = "launchpaddev"
 
