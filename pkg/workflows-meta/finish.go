@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/go-uploader"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
+	"github.com/powertoolsdev/mono/pkg/uploader"
 	"google.golang.org/protobuf/proto"
 )
 
