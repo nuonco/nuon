@@ -17,7 +17,7 @@ CACHE $GOMODCACHE
 
 code:
     FROM ../../.+deps --GITHUB_ACTIONS=$GITHUB_ACTIONS
-    COPY ../../pkg+code/pkg --GITHUB_ACTIONS=$GITHUB_ACTIONS pkg
+    COPY ../../pkg+code/pkg pkg
     COPY --dir . ./services/$SERVICE
     WORKDIR services/$SERVICE
     RUN go generate ./...
@@ -27,6 +27,9 @@ test:
     RUN go test ./...
 
 test-integration:
+    RUN echo "noop..."
+
+lint:
     RUN echo "noop..."
 
 build:

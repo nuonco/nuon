@@ -75,11 +75,12 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}:lint \
             +lint
 
-      - name: Run helm lint
-        shell: bash
-        working-directory: services/${{inputs.service}}/k8s
-        run: |
-          helm lint .
+      # TODO(jm): enable this once we know how to fetch chart common
+      #- name: Run helm lint
+      #shell: bash
+      #working-directory: services/${{inputs.service}}/k8s
+      #run: |
+      #helm lint .
 
   test:
     name: Test
@@ -165,6 +166,8 @@ jobs:
     if: github.event_name != 'pull_request'
     uses: ./.github/workflows/release.yml
     secrets: inherit
+    with:
+      service: ${{ inputs.service }}
 
   deploy-stage:
     name: Deploy (stage)
