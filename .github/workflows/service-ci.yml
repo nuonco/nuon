@@ -179,6 +179,7 @@ jobs:
     with:
       env: stage
       tag: ${{ needs.release.outputs.image_tag }}
+      service: ${{ inputs.service }}
 
   deploy-prod:
     name: Deploy (prod)
@@ -191,3 +192,4 @@ jobs:
     with:
       env: prod
       tag: ${{ needs.release.outputs.image_tag }}
+      service: ${{ inputs.service }}

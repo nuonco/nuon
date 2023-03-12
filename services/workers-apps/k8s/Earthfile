@@ -1,4 +1,12 @@
+VERSION --use-cache-command 0.6
+
+IMPORT github.com/powertoolsdev/shared-configs:main
 FROM ghcr.io/powertoolsdev/ci-helm-releaser
+
+ARG EARTHLY_GIT_PROJECT_NAME
+ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
+ARG SERVICE=workers-apps
+ARG GITHUB_ACTIONS=
 
 code:
     WORKDIR /work
