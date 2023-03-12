@@ -1,6 +1,6 @@
 # protos
 
-This is a mono repo for managing our protocol buffers at Nuon.
+This directory is for managing protocol buffers at Nuon.
 
 ## repos
 
@@ -24,7 +24,7 @@ Objects represent core objects which can be shared throughout our system. They a
 
 **NOTE:** object protos are designed to be shared and are safe to import by services.
 
-#### importing objects protos 
+#### importing objects protos
 
 To be able to import for example `components` protos to the `api` protos you need to do the following first in your local env:
 - generate a [buf token](https://buf.build/settings/user)
