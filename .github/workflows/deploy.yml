@@ -9,6 +9,9 @@ name: Deploy
       tag:
         type: string
         required: true
+      service:
+        type: string
+        required: true
 
   workflow_dispatch:
     inputs:
@@ -56,12 +59,12 @@ jobs:
           cli_config_credentials_token: ${{ secrets.TF_API_KEY }}
 
       - name: Init terraform
-        working-directory: infra
+        working-directory: services/${{inputs.service}}/infra
         run: |
           terraform init
 
       - name: Get terraform outputs
-        working-directory: infra
+        working-directory: services/${{inputs.service}}/infra
         run: |
           terraform-bin output -json > ${{ env.TF_OUT }}
 
@@ -88,6 +91,7 @@ jobs:
           printenv | grep "TFO_" >> .tfenv
 
       - name: Deploy to kubernetes
+        working-directory: services/${{inputs.service}}/k8s
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
