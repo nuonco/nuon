@@ -28,7 +28,7 @@ jobs:
     name: Check for changes
     runs-on: ubuntu-latest
     outputs:
-      protos: ${{ steps.filter.outputs.pkg }}
+      pkg: ${{ steps.filter.outputs.pkg }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -37,10 +37,10 @@ jobs:
         id: filter
         with:
           filters: |
-            protos:
+            pkg:
               - 'pkg/**'
   lint:
-    name: Lint pkg
+    name: lint target
     needs: changes
     if: ${{ needs.changes.outputs.pkg == 'true' }}
     defaults:
@@ -48,13 +48,22 @@ jobs:
         working-directory: pkg
     runs-on: ubuntu-latest
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+          repositories: go-aws-assume-role,go-kube,protos
+
       - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Setup for CI
         uses: powertoolsdev/action-setup-ci@main
         with:
-          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ steps.generate_token.outputs.token }}
 
       - name: Lint
         run: |
@@ -63,8 +72,8 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}:pkg-lint \
             +lint
 
-  test:
-    name: Test pkg
+  test-integration:
+    name: test-integration earthly target
     needs: changes
     if: ${{ needs.changes.outputs.pkg == 'true' }}
     defaults:
@@ -72,13 +81,53 @@ jobs:
         working-directory: pkg
     runs-on: ubuntu-latest
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+
       - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Setup for CI
         uses: powertoolsdev/action-setup-ci@main
         with:
-          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Test
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --remote-cache=ghcr.io/${{ github.repository }}:pkg-integration-test \
+            +test-integration
+
+  test:
+    name: test earthly target
+    needs: changes
+    if: ${{ needs.changes.outputs.pkg == 'true' }}
+    defaults:
+      run:
+        working-directory: pkg
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup for CI
+        uses: powertoolsdev/action-setup-ci@main
+        with:
+          clone_token: ${{ steps.generate_token.outputs.token }}
 
       - name: Test
         run: |
