@@ -62,7 +62,7 @@ updates:
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
-    directory: "services/workers-installs/infra"
+    directory: "services/workers-instances/infra"
     schedule:
       interval: "daily"
       time: "08:00"
