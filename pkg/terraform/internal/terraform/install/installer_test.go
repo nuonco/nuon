@@ -14,6 +14,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	// TODO(jm): reenable this test, as it is failing in CI.
 	t.Parallel()
 	v := validator.New()
 	tests := map[string]struct {

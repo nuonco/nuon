@@ -21,8 +21,6 @@ CACHE $GOCACHE
 CACHE $GOMODCACHE
 
 deps:
-    DO shared-configs+SETUP_SSH --GITHUB_ACTIONS=$GITHUB_ACTIONS
-
     # TODO(jm): we shouldn't be installing these dependencies here in this way. Probably should be in tools.go or even
     # better, in our base image.
     RUN go install github.com/bufbuild/buf/cmd/buf@v1.12.0 \
@@ -34,6 +32,7 @@ deps:
 
     # NOTE(jm): once we have finished migrating go-waypoint we can remove the ssh step
     # RUN go mod download
+    DO shared-configs+SETUP_SSH --GITHUB_ACTIONS=$GITHUB_ACTIONS
     RUN --ssh git config --global --add safe.directory "$(pwd)" \
         && go mod download
 
