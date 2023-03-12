@@ -1,4 +1,4 @@
-# workflows for interacting with protos and pushing our types to protos schema registry
+# workflow jobs for testing/linting and verifying changes to go packages
 ---
 name: pkg
 "on":
@@ -157,4 +157,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ steps.semver.outputs.nextStrict }}
-
