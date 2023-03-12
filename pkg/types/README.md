@@ -42,10 +42,4 @@ The preferred way of doing this, is using `go generate`
 $ go generate ./...
 ```
 
-Alternatively, if you have the `buf` cli present you can use `buf fmt` `buf lint` etc from within repo folders:
-
-
-```bash
-cd workflows
-buf lint
-```
+Alternatively, if you have the `buf` cli present you can use `buf fmt` `buf lint` from within this folder.
