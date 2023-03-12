@@ -20,11 +20,6 @@ ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 CACHE $GOCACHE
 CACHE $GOMODCACHE
 
-code:
-  DO +DEPS
-  DO +GEN
-  SAVE ARTIFACT .
-
 deps:
     DO shared-configs+SETUP_SSH --GITHUB_ACTIONS=$GITHUB_ACTIONS
 
@@ -44,17 +39,6 @@ deps:
 
     SAVE ARTIFACT go.mod AS LOCAL go.mod
     SAVE ARTIFACT go.sum AS LOCAL go.sum
-
-lint:
-    FROM ghcr.io/powertoolsdev/ci-reviewdog
-    DO +DEPS
-    DO +GEN
-    DO github.com/powertoolsdev/shared-configs+LINT \
-        --GITHUB_ACTIONS=$GITHUB_ACTIONS \
-        --GOCACHE=$GOCACHE \
-        --GOMODCACHE=$GOMODCACHE
-
-    SAVE IMAGE --push $GHCR_IMAGE:lint
 
 ################################### UDCs ######################################
 

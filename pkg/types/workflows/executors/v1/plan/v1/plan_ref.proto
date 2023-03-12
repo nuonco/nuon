@@ -5,7 +5,7 @@ package executors.v1.plan.v1;
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/powertoolsdev/protos/workflows/generated/types/executors/v1/plan/v1";
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
 
 // PlanRef contains the information needed to access a plan
 message PlanRef {
