@@ -1,0 +1,190 @@
+---
+name: CI (go)
+"on":
+  workflow_call:
+    inputs:
+      service:
+        type: string
+        required: true
+    outputs: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  terraform:
+    name: Get terraform outputs
+    uses: ./.github/workflows/terraform-outputs.yml
+    secrets: inherit
+    with:
+      workspace: stage
+      dir: services/${{ inputs.service }}/infra
+
+  lint:
+    name: Lint
+    needs:
+      - terraform
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Download terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: env-${{ github.run_id }}
+
+      - name: Setup environment
+        run: |
+          cat .tfenv >> "$GITHUB_ENV"
+
+      - name: Setup for CI
+        uses: powertoolsdev/action-setup-ci@main
+        with:
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ steps.generate_token.outputs.token }}
+          aws_role: ${{ env.TFO_GH_ROLE_ARN }}
+          aws_region: ${{ env.TFO_REGION }}
+
+      - name: Terraform init
+        working-directory: services/${{inputs.service}}
+        run: |
+          terraform -chdir=infra init -backend=false
+
+      - name: Lint
+        working-directory: services/${{inputs.service}}
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --remote-cache=ghcr.io/${{ github.repository }}:lint \
+            +lint
+
+      - name: Run helm lint
+        shell: bash
+        working-directory: services/${{inputs.service}}/k8s
+        run: |
+          helm lint .
+
+  test:
+    name: Test
+    needs:
+      - terraform
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 7
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Download terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: env-${{ github.run_id }}
+
+      - name: Setup for CI
+        uses: powertoolsdev/action-setup-ci@main
+        with:
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ steps.generate_token.outputs.token }}
+          setup_helm: "false"
+
+      - name: Setup terraform environment
+        run: |
+          cat .tfenv >> "$GITHUB_ENV"
+
+      - name: Earthly test target
+        working-directory: services/${{inputs.service}}
+        if: always()
+        run: |
+          earthly \
+            --allow-privileged \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --remote-cache=ghcr.io/${{ github.repository }}-${{inputs.service}}-test \
+            +test
+
+      - name: Earthly integration-test target
+        working-directory: services/${{inputs.service}}
+        if: always()
+        run: |
+          earthly \
+            --allow-privileged \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --remote-cache=ghcr.io/${{ github.repository }}-${{inputs.service}}-test-integration \
+            +test-integration
+
+  update_status:
+    name: Update status
+    needs:
+      - lint
+      - test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    timeout-minutes: 7
+    steps:
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: Required CI Checks
+          status: success
+
+  release:
+    name: Release
+    needs:
+      - terraform
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/release.yml
+    secrets: inherit
+
+  deploy-stage:
+    name: Deploy (stage)
+    needs:
+      - release
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      env: stage
+      tag: ${{ needs.release.outputs.image_tag }}
+
+  deploy-prod:
+    name: Deploy (prod)
+    needs:
+      - release
+      - deploy-stage
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      env: prod
+      tag: ${{ needs.release.outputs.image_tag }}
