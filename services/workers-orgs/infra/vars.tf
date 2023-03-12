@@ -4,7 +4,7 @@ locals {
   }
 
   name                   = "workers-orgs"
-  github_repository      = local.name
+  github_repository      = "mono"
   github_organization    = "powertoolsdev"
   terraform_organization = "launchpaddev"
 
