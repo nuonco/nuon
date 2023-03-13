@@ -66,7 +66,7 @@ jobs:
     needs:
       - changes
       - tag
-    if: ${{ needs.changes.outputs.services }}
+    if: ${{ needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     strategy:
       matrix:
         service: ${{ fromJSON(needs.changes.outputs.services) }}
@@ -75,3 +75,16 @@ jobs:
       service: ${{matrix.service}}
       tag: ${{needs.tag.outputs.tag}}
     secrets: inherit
+
+  push_tag:
+    name: Push tag to repo
+    needs:
+      - tag
+      - services
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push tag
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: ${{ needs.tag.outputs.tag }}
