@@ -28,6 +28,7 @@ deploy:
     ARG cluster_name
     ARG role_arn
     ARG chart_version
+    ARG chart_name
     ARG repository
     ARG image_tag
     ARG tfenv=.tfenv
