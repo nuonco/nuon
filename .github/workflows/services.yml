@@ -44,14 +44,34 @@ jobs:
             workers-instances: services/workers-instances/**
             workers-installs: services/workers-installs/**
             workers-orgs: services/workers-orgs/**
-  ci:
-    name: service ci
-    needs: changes
+
+  tag:
+    name: Determine next tag for services changed
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.semver.outputs.next }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Determine next version
+        id: semver
+        uses: ietf-tools/semver-action@v1.4.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          patchAll: true
+
+  services:
+    name: Service job
+    needs:
+      - changes
+      - tag
     if: ${{ needs.changes.outputs.services }}
     strategy:
       matrix:
         service: ${{ fromJSON(needs.changes.outputs.services) }}
-    uses: ./.github/workflows/service-ci.yml
+    uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
+      tag: ${{needs.tag.outputs.tag}}
     secrets: inherit

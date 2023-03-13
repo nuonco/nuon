@@ -6,6 +6,9 @@ name: CI (go)
       service:
         type: string
         required: true
+      tag:
+        type: string
+        required: true
     outputs: {}
 
 defaults:
