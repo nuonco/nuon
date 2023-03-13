@@ -1,5 +1,5 @@
 ---
-name: services
+name: required
 "on":
   pull_request:
   push:
