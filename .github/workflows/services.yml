@@ -47,6 +47,7 @@ jobs:
   ci:
     name: service ci
     needs: changes
+    if: ${{ needs.changes.outputs.services }}
     strategy:
       matrix:
         service: ${{ fromJSON(needs.changes.outputs.services) }}
