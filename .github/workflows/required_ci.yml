@@ -1,5 +1,5 @@
 ---
-name: required
+name: required-ci
 "on":
   pull_request:
   push:
