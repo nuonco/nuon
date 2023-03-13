@@ -3,7 +3,6 @@ VERSION --use-cache-command 0.6
 IMPORT github.com/powertoolsdev/shared-configs:main
 FROM ghcr.io/powertoolsdev/ci-helm-releaser
 
-ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 ARG SERVICE=workers-apps
 ARG GITHUB_ACTIONS=
@@ -18,6 +17,7 @@ helm-bump-and-publish:
     ARG repos
     WORKDIR /work
     DO shared-configs+HELM_RELEASE \
+        --EARTHLY_GIT_PROJECT_NAME=workers-apps \
         --chart_version=$chart_version \
         --repos=$repos
 
@@ -41,6 +41,7 @@ deploy:
         && envsubst < "values.$env.tmpl" > "values.$env.yaml"
 
     DO shared-configs+K8S_DEPLOY \
+        --EARTHLY_GIT_PROJECT_NAME=workers-apps \
         --env=$env \
         --cluster_name=$cluster_name \
         --role_arn=$role_arn \
