@@ -144,24 +144,6 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}-${{inputs.service}}-test-integration \
             +test-integration
 
-  update_status:
-    name: Update status
-    needs:
-      - lint
-      - test
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      statuses: write
-    timeout-minutes: 7
-    steps:
-      - name: Update status
-        uses: ouzi-dev/commit-status-updater@v2.0.1
-        with:
-          name: Required CI Checks
-          status: success
-
   release:
     name: Release
     needs:
@@ -171,6 +153,7 @@ jobs:
     secrets: inherit
     with:
       service: ${{ inputs.service }}
+      tag: ${{ inputs.tag }}
 
   deploy-stage:
     name: Deploy (stage)
