@@ -17,8 +17,8 @@ helm-bump-and-publish:
     ARG repos
     WORKDIR /work
     DO shared-configs+HELM_RELEASE \
-        --EARTHLY_GIT_PROJECT_NAME=workers-apps \
         --chart_version=$chart_version \
+        --chart_name=$SERVICE \
         --repos=$repos
 
 deploy:
@@ -41,10 +41,10 @@ deploy:
         && envsubst < "values.$env.tmpl" > "values.$env.yaml"
 
     DO shared-configs+K8S_DEPLOY \
-        --EARTHLY_GIT_PROJECT_NAME=workers-apps \
         --env=$env \
         --cluster_name=$cluster_name \
         --role_arn=$role_arn \
         --chart_version=$chart_version \
+        --chart_name=$SERVICE \
         --repository=$repository \
         --image_tag=$image_tag
