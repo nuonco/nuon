@@ -4,7 +4,6 @@ IMPORT github.com/powertoolsdev/shared-configs:mono
 FROM ghcr.io/powertoolsdev/ci-helm-releaser
 
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
-ARG SERVICE=workers-apps
 ARG GITHUB_ACTIONS=
 
 code:
@@ -14,11 +13,12 @@ code:
 helm-bump-and-publish:
     FROM +code
     ARG chart_version
+    ARG chart_name
     ARG repos
     WORKDIR /work
     DO shared-configs+HELM_RELEASE \
         --chart_version=$chart_version \
-        --chart_name=$SERVICE \
+        --chart_name=$chart_name \
         --repos=$repos
 
 deploy:
@@ -45,6 +45,6 @@ deploy:
         --cluster_name=$cluster_name \
         --role_arn=$role_arn \
         --chart_version=$chart_version \
-        --chart_name=$SERVICE \
+        --chart_name=$chart_name \
         --repository=$repository \
         --image_tag=$image_tag

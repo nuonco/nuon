@@ -82,6 +82,7 @@ jobs:
           aws_region: ${{ env.TFO_REGION }}
 
       - name: Configure env
+        working-directory: services/${{inputs.service}}/k8s
         run: |
           tag=${{ inputs.tag }}
           {
@@ -100,6 +101,7 @@ jobs:
             --env=${{ inputs.env }} \
             --cluster_name=${{ env.TFO_CLUSTER_NAME }} \
             --role_arn=${{ env.TFO_CLUSTER_GH_ROLE_ARN }} \
+            --chart_name=${{ inputs.service }} \
             --chart_version=${{ env.HELM_CHART_VERSION }} \
             --repository=${{ env.TFO_ECR_REPOSITORY_URL }} \
             --image_tag=${{ env.IMAGE_TAG }} \
