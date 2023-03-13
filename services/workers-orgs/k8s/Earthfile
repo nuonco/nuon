@@ -1,0 +1,51 @@
+VERSION --use-cache-command 0.6
+
+IMPORT github.com/powertoolsdev/shared-configs:mono
+FROM ghcr.io/powertoolsdev/ci-helm-releaser
+
+ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
+ARG GITHUB_ACTIONS=
+
+code:
+    WORKDIR /work
+    COPY --dir . /work/k8s
+
+helm-bump-and-publish:
+    FROM +code
+    ARG chart_version
+    ARG chart_name
+    ARG repos
+    WORKDIR /work
+    DO shared-configs+HELM_RELEASE \
+        --chart_version=$chart_version \
+        --chart_name=$chart_name \
+        --repos=$repos
+
+deploy:
+    FROM +code
+
+    ARG env
+    ARG cluster_name
+    ARG role_arn
+    ARG chart_version
+    ARG chart_name
+    ARG repository
+    ARG image_tag
+    ARG tfenv=.tfenv
+    ARG repos
+    DO shared-configs+HELM_SETUP \
+        --repos="$repos"
+
+    WORKDIR /work/k8s
+    COPY $tfenv .
+    RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
+        && envsubst < "values.$env.tmpl" > "values.$env.yaml"
+
+    DO shared-configs+K8S_DEPLOY \
+        --env=$env \
+        --cluster_name=$cluster_name \
+        --role_arn=$role_arn \
+        --chart_version=$chart_version \
+        --chart_name=$chart_name \
+        --repository=$repository \
+        --image_tag=$image_tag
