@@ -10,14 +10,13 @@ ARG GITHUB_ACTIONS=
 
 code:
     WORKDIR /work
-    COPY --dir . .
-    RUN ls
+    COPY --dir . /work/k8s
 
 helm-bump-and-publish:
     FROM +code
-
     ARG chart_version
     ARG repos
+    WORKDIR /work
     DO shared-configs+HELM_RELEASE \
         --chart_version=$chart_version \
         --repos=$repos
@@ -36,7 +35,7 @@ deploy:
     DO shared-configs+HELM_SETUP \
         --repos="$repos"
 
-    # TODO(jm): remove this once CI is setup correctly for this service
+    WORKDIR /work/k8s
     COPY $tfenv .
     RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
         && envsubst < "values.$env.tmpl" > "values.$env.yaml"
