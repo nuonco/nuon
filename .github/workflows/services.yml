@@ -51,14 +51,16 @@ jobs:
     name: Determine next tag for services changed
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.semver.outputs.next }}
-      tag_strict: ${{ steps.semver.outputs.nextStrict }}
+      tag: ${{ github.event_name != 'pull_request' && steps.semver.outputs.next || 'local' }}
+      tag_strict: ${{ github.event_name != 'pull_request' && steps.semver.outputs.nextStrict || 'local' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+
       - name: Determine next version
+        if: github.event_name != 'pull_request'
         id: semver
-        uses: ietf-tools/semver-action@v1.4.0
+        uses: ietf-tools/semver-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
@@ -76,7 +78,7 @@ jobs:
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
-      tag: ${{needs.tag.outputs.tag}}
+      tag: ${{ needs.tag.outputs.tag }}
     secrets: inherit
 
   push_tag:
