@@ -23,6 +23,7 @@ jobs:
     with:
       workspace: stage
       dir: services/${{ inputs.service }}/infra
+      service: ${{ inputs.service }}
 
   lint:
     name: Lint
@@ -51,7 +52,7 @@ jobs:
       - name: Download terraform outputs
         uses: actions/download-artifact@v3
         with:
-          name: env-${{ github.run_id }}
+          name: env-${{ github.run_id }}-${{ inputs.service }}
 
       - name: Setup environment
         run: |
@@ -111,7 +112,7 @@ jobs:
       - name: Download terraform outputs
         uses: actions/download-artifact@v3
         with:
-          name: env-${{ github.run_id }}
+          name: env-${{ github.run_id }}-${{ inputs.service }}
 
       - name: Setup for CI
         uses: powertoolsdev/action-setup-ci@main
