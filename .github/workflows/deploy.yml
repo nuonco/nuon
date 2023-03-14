@@ -84,11 +84,6 @@ jobs:
       - name: Configure env
         working-directory: services/${{inputs.service}}/k8s
         run: |
-          tag=${{ inputs.tag }}
-          {
-            echo "IMAGE_TAG=$tag"
-            echo "HELM_CHART_VERSION=${tag#v}"
-          } >> "$GITHUB_ENV"
           printenv | grep "TFO_" >> .tfenv
 
       - name: Deploy to kubernetes
@@ -102,6 +97,6 @@ jobs:
             --cluster_name=${{ env.TFO_CLUSTER_NAME }} \
             --role_arn=${{ env.TFO_CLUSTER_GH_ROLE_ARN }} \
             --chart_name=${{ inputs.service }} \
-            --chart_version=${{ env.HELM_CHART_VERSION }} \
+            --chart_version=${{ inputs.tag }} \
             --repository=${{ env.TFO_ECR_REPOSITORY_URL }} \
-            --image_tag=${{ env.IMAGE_TAG }} \
+            --image_tag=${{ inputs.tag }} \
