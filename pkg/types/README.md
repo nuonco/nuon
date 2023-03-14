@@ -34,10 +34,7 @@ If these steps are not done first when you try to `go generate` you will get the
 
 ## usage
 
-We currently do _not_ support generating code in CI. This means that in order for your changes to be applied, you must run the generate step yourself locally.
-
-The preferred way of doing this, is using `go generate`
-
+Protos are generated during both CI and locally. They should no longer be checked into source control. To generate locally, run:
 ```bash
 $ go generate ./...
 ```
