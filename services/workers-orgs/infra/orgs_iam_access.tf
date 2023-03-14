@@ -29,6 +29,18 @@ data "aws_iam_policy_document" "orgs_account_iam_access_trust" {
       ]
     }
   }
+
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole", ]
+
+    principals {
+      type = "AWS"
+      identifiers = [
+        data.tfe_outputs.infra-orgs.values.iam_roles.support.arn,
+      ]
+    }
+  }
 }
 
 resource "aws_iam_policy" "orgs_account_iam_access_policy" {
