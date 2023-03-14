@@ -114,7 +114,7 @@ jobs:
     steps:
       - name: Determine next version
         id: semver
-        uses: ietf-tools/semver-action@latest
+        uses: ietf-tools/semver-action@v1.4.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
