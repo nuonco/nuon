@@ -16,8 +16,8 @@ dist/
 bin/
 
 # filter out deployment and infra
-k8s/charts/
-infra/.terraform
+**/k8s/charts/
+**/.terraform
 
 # Go files
 # generated protobufs
@@ -27,3 +27,4 @@ pkg/types/**/**.go
 go.work
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
