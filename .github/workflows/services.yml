@@ -81,6 +81,7 @@ jobs:
 
   push_tag:
     name: Push tag to repo
+    if: github.event_name != 'pull_request'
     needs:
       - tag
       - services
