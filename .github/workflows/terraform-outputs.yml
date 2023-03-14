@@ -6,6 +6,9 @@ name: Release
       workspace:
         type: string
         required: false
+      service:
+        type: string
+        required: false
       dir:
         type: string
         required: true
@@ -56,7 +59,7 @@ jobs:
       - name: Save outputs
         uses: actions/upload-artifact@v3
         with:
-          name: env-${{ github.run_id }}
+          name: env-${{ github.run_id }}-${{inputs.service}}
           path: ${{ runner.temp }}/.tfenv
           if-no-files-found: error
           retention-days: 1
