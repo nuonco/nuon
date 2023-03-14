@@ -26,6 +26,8 @@ jobs:
       contents: read
       packages: write
       id-token: write
+    outputs:
+      image_tag: ${{ inputs.tag }}
     timeout-minutes: 7
     steps:
       - name: Generate token
