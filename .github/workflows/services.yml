@@ -27,7 +27,7 @@ defaults:
 
 jobs:
   changes:
-    name: Check for changes
+    name: 🔍 changes
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.filter.outputs.changes }}
@@ -67,7 +67,8 @@ jobs:
           patchAll: true
 
   services:
-    name: Service job
+    # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
+    name: 🚢
     needs:
       - changes
       - tag
