@@ -66,6 +66,11 @@ output "orgs_bucket_access_role_arn" {
   value       = module.orgs_bucket_access_role.iam_role_arn
 }
 
+output "orgs_account_kms_access_role_arn" {
+  description = "IAM role for managing KMS resources in the orgs account"
+  value       = module.orgs_account_kms_access_role.iam_role_arn
+}
+
 output "sandbox" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.sandbox)
 }
