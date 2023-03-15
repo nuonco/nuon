@@ -27,7 +27,7 @@ defaults:
 
 jobs:
   changes:
-    name: Check for changes
+    name: 🔍 changes
     runs-on: [ubuntu-latest-16-cores, linux]
     outputs:
       pkg: ${{ steps.filter.outputs.pkg }}
@@ -45,7 +45,7 @@ jobs:
               - go.mod
               - go.sum
   lint:
-    name: lint target
+    name: 🌏 lint
     needs: changes
     if: ${{ needs.changes.outputs.pkg == 'true' }}
     defaults:
@@ -78,7 +78,7 @@ jobs:
             +lint
 
   test-integration:
-    name: test-integration earthly target
+    name: 🌏 test-integration
     needs: changes
     if: ${{ needs.changes.outputs.pkg == 'true' }}
     defaults:
@@ -110,7 +110,7 @@ jobs:
             +test-integration
 
   test:
-    name: test earthly target
+    name: 🌏 test
     needs: changes
     if: ${{ needs.changes.outputs.pkg == 'true' }}
     defaults:
@@ -142,7 +142,7 @@ jobs:
             +test
 
   cache:
-    name: cache earthly code target
+    name: 🌏 cache
     needs:
       - changes
       - test
@@ -168,7 +168,7 @@ jobs:
         with:
           clone_token: ${{ steps.generate_token.outputs.token }}
 
-      - name: Cache
+      - name: cache
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
