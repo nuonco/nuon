@@ -1,7 +1,8 @@
-name: auto-update
+name: auto update
 "on":
   pull_request:
-   - opened
+    types:
+      - opened
   push:
     branches:
       - main
