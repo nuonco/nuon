@@ -28,7 +28,7 @@ defaults:
 jobs:
   changes:
     name: 🔍 changes
-    runs-on: [ubuntu-latest-16-cores, linux]
+    runs-on: ubuntu-latest
     outputs:
       pkg: ${{ steps.filter.outputs.pkg }}
     steps:
