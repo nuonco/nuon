@@ -1,3 +1,4 @@
+---
 name: auto update
 "on":
   pull_request:
@@ -12,14 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
       - name: update prs
-        uses: brainly/action-autoupdate-branch@2.1.1
-        with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          label: auto-update
+        uses: docker://chinthakagodawita/autoupdate-action:v1
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          PR_FILTER: "labelled"
+          PR_LABELS: "auto-update"
 
   add-label:
     runs-on: ubuntu-latest
