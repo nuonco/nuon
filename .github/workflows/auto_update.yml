@@ -21,12 +21,6 @@ jobs:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           label: auto-update
 
-      - name: update dependabot prs
-        uses: brainly/action-autoupdate-branch@2.1.1
-        with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          label: dependencies
-
   add-label:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' }}
