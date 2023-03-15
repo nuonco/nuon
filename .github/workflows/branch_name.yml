@@ -1,0 +1,28 @@
+name: 'branch name check'
+on: pull_request
+
+jobs:
+  branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check branch
+        uses: deepakputhraya/action-branch-name@master
+        id: check
+        with:
+          regex: '([a-z])+\/([a-z])+'
+          allowed_prefixes: 'cp,nh,jm,jst,mp,pl,dependabot'
+          ignore: main
+          min_length: 5
+
+      - name: comment
+        uses: peter-evans/create-or-update-comment@v2
+        if: steps.check.outcome != 'success'
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            🚨 **Invalid branch name** 🚨
+
+            - please use a branch with a valid prefix, or your initials
+            - eg: `cp/fix` or `nh/test`
+
+          reactions: 'eyes'
