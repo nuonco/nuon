@@ -16,6 +16,7 @@ code:
     FROM ../.+deps --GITHUB_ACTIONS=$GITHUB_ACTIONS
     COPY --dir . ./pkg
     DO +GEN
+    SAVE ARTIFACT pkg
     SAVE IMAGE --push $GHCR_IMAGE
 
 test:
