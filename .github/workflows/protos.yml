@@ -25,7 +25,7 @@ defaults:
 
 jobs:
   changes:
-    name: Check for changes
+    name: 🔍 changes
     runs-on: ubuntu-latest
     outputs:
       protos: ${{ steps.filter.outputs.protos }}
@@ -40,7 +40,7 @@ jobs:
             protos:
               - 'pkg/types/**'
   lint-protos:
-    name: Lint protos
+    name: ✉️  lint protos
     needs: changes
     if: ${{ needs.changes.outputs.protos == 'true' }}
     strategy:
@@ -73,7 +73,7 @@ jobs:
             --REPO=${{matrix.repo}} \
 
   release-protos:
-    name: Release protos
+    name:  🚀 release protos
     needs: changes
     if: ${{ needs.changes.outputs.protos == 'true' && github.event_name != 'pull_request' }}
     defaults:
