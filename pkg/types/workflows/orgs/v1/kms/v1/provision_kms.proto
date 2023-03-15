@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package orgs.v1.kms.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/kms/v1";
+
+message ProvisionKMSRequest {
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
+}
+
+message ProvisionKMSResponse {
+  string kms_key_arn = 1 [(validate.rules).string.min_len = 20];
+}
