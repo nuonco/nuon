@@ -24,7 +24,7 @@ defaults:
 
 jobs:
   update_status:
-    name: Update status
+    name: ✅ ci checks
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
