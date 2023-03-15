@@ -38,6 +38,7 @@ deps:
 
     SAVE ARTIFACT go.mod AS LOCAL go.mod
     SAVE ARTIFACT go.sum AS LOCAL go.sum
+    SAVE IMAGE --cache-hint
 
 ################################### UDCs ######################################
 
