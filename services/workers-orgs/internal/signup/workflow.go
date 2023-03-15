@@ -7,10 +7,12 @@ import (
 	"github.com/powertoolsdev/go-waypoint"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
+	kmsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/kms/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/runner/v1"
 	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/iam"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/kms"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/server"
 	"go.temporal.io/sdk/log"
@@ -64,6 +66,17 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 		return resp, err
 	}
 	resp.IamRoles = iamResp
+
+	l.Debug("provisioning kms for org")
+	kmsResp, err := execProvisionKMSWorkflow(ctx, w.cfg, &kmsv1.ProvisionKMSRequest{
+		OrgId: req.OrgId,
+	})
+	if err != nil {
+		err = fmt.Errorf("failed to provision kms: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, err
+	}
+	resp.Kms = kmsResp
 
 	l.Debug("provisioning waypoint org server")
 	serverResp, err := execProvisionWaypointServerWorkflow(ctx, w.cfg, &serverv1.ProvisionServerRequest{
@@ -176,6 +189,29 @@ func execProvisionIAMWorkflow(
 
 	wkflow := iam.NewWorkflow(cfg)
 	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionIAM, req)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return &resp, err
+	}
+
+	return &resp, nil
+}
+
+func execProvisionKMSWorkflow(
+	ctx workflow.Context,
+	cfg workers.Config,
+	req *kmsv1.ProvisionKMSRequest,
+) (*kmsv1.ProvisionKMSResponse, error) {
+	var resp kmsv1.ProvisionKMSResponse
+
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 10,
+		WorkflowTaskTimeout:      time.Minute * 5,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	wkflow := kms.NewWorkflow(cfg)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionKMS, req)
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		return &resp, err
