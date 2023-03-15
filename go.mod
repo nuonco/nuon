@@ -28,7 +28,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hc-install v0.5.0
-	github.com/hashicorp/hcl/v2 v2.10.1-0.20210621220818-327f3ce2570e
+	github.com/hashicorp/hcl/v2 v2.16.2
 	github.com/hashicorp/terraform-exec v0.18.1
 	github.com/hashicorp/waypoint v0.11.0
 	github.com/jackc/pgconn v1.14.0
