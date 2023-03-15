@@ -76,7 +76,8 @@ jobs:
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}:lint \
+            --ci \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +lint
 
       # TODO(jm): enable this once we know how to fetch chart common
@@ -132,7 +133,8 @@ jobs:
           earthly \
             --allow-privileged \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}-${{inputs.service}}-test \
+            --ci \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +test
 
       - name: Earthly integration-test target
@@ -142,7 +144,8 @@ jobs:
           earthly \
             --allow-privileged \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}-${{inputs.service}}-test-integration \
+            --ci \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +test-integration
 
   release:
