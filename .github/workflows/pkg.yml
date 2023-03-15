@@ -41,6 +41,9 @@ jobs:
           filters: |
             pkg:
               - 'pkg/**'
+              - .github/workflows/pkg.yml
+              - go.mod
+              - go.sum
   lint:
     name: lint target
     needs: changes
@@ -71,7 +74,7 @@ jobs:
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}:pkg-lint \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +lint
 
   test-integration:
@@ -103,7 +106,7 @@ jobs:
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}:pkg-integration-test \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +test-integration
 
   test:
@@ -135,7 +138,7 @@ jobs:
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}:pkg-test \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +test
 
   cache:
@@ -170,7 +173,8 @@ jobs:
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
             --push \
-            --remote-cache=ghcr.io/${{ github.repository }}:pkg \
+            --max-remote-cache \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +code
 
   release:
