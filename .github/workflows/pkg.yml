@@ -138,6 +138,41 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}:pkg-test \
             +test
 
+  cache:
+    name: cache earthly code target
+    needs:
+      - changes
+      - test
+    if: ${{ needs.changes.outputs.pkg == 'true' && github.event_name == 'pull_request' }}
+    defaults:
+      run:
+        working-directory: pkg
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/action-app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup for CI
+        uses: powertoolsdev/action-setup-ci@main
+        with:
+          clone_token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Test
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --push \
+            --remote-cache=ghcr.io/${{ github.repository }}:pkg \
+            +code
+
   release:
     name: Release
     needs:

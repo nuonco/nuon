@@ -9,13 +9,14 @@ ARG GOMODCACHE=/go-mod-cache
 CACHE $GOCACHE
 CACHE $GOMODCACHE
 ARG GITHUB_ACTIONS=1
+ARG GHCR_IMAGE=ghcr.io/powertoolsdev/mono:pkg
 
-# code should be used to consume pkg as code. It exports the fully generated pkg.
+# code should be used to consume pkg as code. It exports the fully generated pkg
 code:
     FROM ../.+deps --GITHUB_ACTIONS=$GITHUB_ACTIONS
     COPY --dir . ./pkg
     DO +GEN
-    SAVE ARTIFACT pkg
+    SAVE IMAGE --push $GHCR_IMAGE
 
 test:
     FROM +code
