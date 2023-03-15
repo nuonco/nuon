@@ -33,7 +33,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest-16-cores, linux]
     timeout-minutes: 9
     steps:
       - name: Generate token
@@ -91,7 +91,7 @@ jobs:
     name: Test
     needs:
       - terraform
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest-16-cores, linux]
     permissions:
       contents: read
       packages: write
