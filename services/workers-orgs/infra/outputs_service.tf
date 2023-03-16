@@ -60,9 +60,9 @@ output "workers_iam_role_arn_prefix" {
   value = "arn:aws:iam::${local.accounts[var.env].id}:role/eks/eks-*"
 }
 
-output "orgs_account_iam_access_role_arn" {
+output "orgs_iam_access_role_arn" {
   description = "IAM role for managing IAM resources in the orgs account"
-  value       = module.orgs_account_iam_access_role.iam_role_arn
+  value       = module.orgs_iam_access_role.iam_role_arn
 }
 
 output "orgs_bucket_access_role_arn" {
@@ -70,9 +70,9 @@ output "orgs_bucket_access_role_arn" {
   value       = module.orgs_bucket_access_role.iam_role_arn
 }
 
-output "orgs_account_kms_access_role_arn" {
+output "orgs_kms_access_role_arn" {
   description = "IAM role for managing KMS resources in the orgs account"
-  value       = module.orgs_account_kms_access_role.iam_role_arn
+  value       = module.orgs_kms_access_role.iam_role_arn
 }
 
 output "sandbox" {
