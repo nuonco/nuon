@@ -1,0 +1,115 @@
+package roles
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// KeyValuesIAMName is the name of the policy / role
+func KeyValuesIAMName(orgID string) string {
+	return fmt.Sprintf("org-key-values-access-%s", orgID)
+}
+
+func KeyValuesKMSKeyPolicy(keyValuesRoleARN string) ([]byte, error) {
+	policy := iamRoleTrustPolicy{
+		Version: defaultIAMPolicyVersion,
+		Statement: []iamRoleTrustStatement{
+			{
+				Action: "kms:*",
+				Effect: "Allow",
+				Sid:    "",
+				Principal: iamPrincipal{
+					AWS: "*",
+				},
+				Condition: iamCondition{
+					StringLike: map[string]string{
+						"aws:PrincipalArn": keyValuesRoleARN,
+					},
+				},
+			},
+		},
+	}
+
+	byts, err := json.Marshal(policy)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create kms key policy: %w", err)
+	}
+
+	return byts, nil
+}
+
+// KeyValuesIAMPolicy generates the policy for the key values role. It's worth noting, the key-values IAM policy is
+// created before the key, and thus we do not know the arn of the key at the time of creation.
+//
+// However, the KMS key policy allows access to the the key-value IAM policy by arn, so practically it's not a huge
+// problem.
+func KeyValuesIAMPolicy(bucketName string, orgID string) ([]byte, error) {
+	policy := iamRolePolicy{
+		Version: defaultIAMPolicyVersion,
+		Statement: []iamRoleStatement{
+			// allow the role to read/write the orgID prefix of the bucketName bucket
+			{
+				Effect: "Allow",
+				Action: []string{
+					"s3:*",
+				},
+				Resource: fmt.Sprintf("arn:aws:s3:::%s/orgID=%s/*", bucketName, orgID),
+			},
+			{
+				Effect: "Allow",
+				Action: []string{
+					"kms:*",
+				},
+				Resource: "*",
+			},
+		},
+	}
+
+	byts, err := json.Marshal(policy)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert policy to json: %w", err)
+	}
+	return byts, nil
+}
+
+// KeyValuesTrustPolicy is the trust policy that controls who can assume the key values IAM role
+func KeyValuesTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, error) {
+	trustPolicy := iamRoleTrustPolicy{
+		Version: defaultIAMPolicyVersion,
+		Statement: []iamRoleTrustStatement{
+			{
+				Action: "sts:AssumeRole",
+				Effect: "Allow",
+				Sid:    "",
+				Principal: iamPrincipal{
+					AWS: "*",
+				},
+				Condition: iamCondition{
+					StringLike: map[string]string{
+						"aws:PrincipalArn": workerRoleArnPrefix,
+					},
+				},
+			},
+			{
+				Action: "sts:AssumeRole",
+				Effect: "Allow",
+				Sid:    "",
+				Principal: iamPrincipal{
+					AWS: "*",
+				},
+				Condition: iamCondition{
+					StringEquals: map[string]string{
+						"aws:PrincipalArn": supportRoleArn,
+					},
+				},
+			},
+		},
+	}
+
+	byts, err := json.Marshal(trustPolicy)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create trust policy: %w", err)
+	}
+
+	return byts, nil
+}

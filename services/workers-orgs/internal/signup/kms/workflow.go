@@ -6,16 +6,14 @@ import (
 
 	kmsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/kms/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/roles"
+	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
 
 const (
 	defaultActivityTimeout time.Duration = time.Second * 10
 )
-
-func defaultIAMPath(orgID string) string {
-	return fmt.Sprintf("/orgs/%s/", orgID)
-}
 
 // NewWorkflow returns a new workflow executor
 func NewWorkflow(cfg workers.Config) wkflow {
@@ -29,9 +27,9 @@ type wkflow struct {
 }
 
 // ProvisionIAM is a workflow that creates org specific IAM roles in the designated orgs IAM account
-//
-//nolint:all
 func (w wkflow) ProvisionKMS(ctx workflow.Context, req *kmsv1.ProvisionKMSRequest) (*kmsv1.ProvisionKMSResponse, error) {
+	l := log.With(workflow.GetLogger(ctx))
+	act := NewActivities()
 	resp := &kmsv1.ProvisionKMSResponse{}
 
 	if err := req.Validate(); err != nil {
@@ -42,23 +40,49 @@ func (w wkflow) ProvisionKMS(ctx workflow.Context, req *kmsv1.ProvisionKMSReques
 		ScheduleToCloseTimeout: defaultActivityTimeout,
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
-	// TODO(jm): implement kms functionality
+
+	ckkReq := CreateKMSKeyRequest{
+		AssumeRoleARN: w.cfg.OrgsKMSAccessRoleArn,
+		KeyTags:       append(roles.DefaultTags(req.OrgId), [2]string{"Name", "org/" + req.OrgId}),
+	}
+	l.Debug("creating KMS key")
+	ckkResp, err := execCreateKMSKey(ctx, act, ckkReq)
+	if err != nil {
+		return resp, fmt.Errorf("unable to create kms key: %w", err)
+	}
+	l.Debug("finished creating kms key", "key", ckkResp)
+
+	l.Debug("creating KMS key policy")
+	policy, err := roles.KeyValuesKMSKeyPolicy(req.KeyValuesIamRoleArn)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get kms key policy: %w", err)
+	}
+	ckkpReq := CreateKMSKeyPolicyRequest{
+		AssumeRoleARN: w.cfg.OrgsKMSAccessRoleArn,
+		KeyID:         ckkResp.KeyID,
+		PolicyName:    roles.KeyValuesIAMName(req.OrgId),
+		Policy:        string(policy),
+	}
+	err = execCreateKMSKeyPolicy(ctx, act, ckkpReq)
+	if err != nil {
+		return resp, fmt.Errorf("unable to create kms key: %w", err)
+	}
+	l.Debug("finished creating kms key", "key", ckkResp)
+
 	return resp, nil
 }
 
-//nolint:all
 func execCreateKMSKey(
 	ctx workflow.Context,
 	act *Activities,
-	req CreateKMSKeyPolicyRequest,
-) (CreateKMSKeyPolicyResponse, error) {
-	var resp CreateKMSKeyPolicyResponse
+	req CreateKMSKeyRequest,
+) (CreateKMSKeyResponse, error) {
+	var resp CreateKMSKeyResponse
 
 	l := workflow.GetLogger(ctx)
 
-	l.Debug("executing create iam role activity")
+	l.Debug("executing create kms key activity")
 	fut := workflow.ExecuteActivity(ctx, act.CreateKMSKey, req)
-
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
@@ -66,7 +90,6 @@ func execCreateKMSKey(
 	return resp, nil
 }
 
-//nolint:all
 func execCreateKMSKeyPolicy(
 	ctx workflow.Context,
 	act *Activities,

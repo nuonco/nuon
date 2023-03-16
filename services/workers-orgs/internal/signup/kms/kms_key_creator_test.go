@@ -5,86 +5,80 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/aws/aws-sdk-go-v2/service/iam"
-	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
+	"github.com/aws/aws-sdk-go-v2/service/kms"
+	kms_types "github.com/aws/aws-sdk-go-v2/service/kms/types"
+	gomock "github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-type testAwsClientIAMPolicy struct {
-	mock.Mock
-}
-
-var _ awsClientIAMPolicy = (*testAwsClientIAMPolicy)(nil)
-
-func (t *testAwsClientIAMPolicy) CreatePolicy(ctx context.Context, req *iam.CreatePolicyInput, opts ...func(*iam.Options)) (*iam.CreatePolicyOutput, error) {
-	args := t.Called(ctx, req, opts)
-	if args.Get(0) != nil {
-		return args.Get(0).(*iam.CreatePolicyOutput), args.Error(1)
-	}
-
-	return nil, args.Error(1)
-}
-
-func Test_odrIAMPolicyCreatorImpl_createOdrIAMPolicy(t *testing.T) {
-	testIAMPolicyErr := fmt.Errorf("test-iam-policy-err")
+func Test_createKMSKey(t *testing.T) {
+	errCreateKMSKey := fmt.Errorf("error creating kms key")
 	req := generics.GetFakeObj[CreateKMSKeyRequest]()
+	req.KeyTags = [][2]string{{"key", "value"}}
 
 	tests := map[string]struct {
-		clientFn    func(*testing.T) awsClientIAMPolicy
-		assertFn    func(*testing.T, awsClientIAMPolicy, string)
+		awsClient   func(*gomock.Controller) awsClientKMSKeyCreator
+		assertFn    func(*testing.T, *kms_types.KeyMetadata)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func(t *testing.T) awsClientIAMPolicy {
-				client := &testAwsClientIAMPolicy{}
-				resp := &iam.CreatePolicyOutput{
-					Policy: &iam_types.Policy{
-						Arn: generics.ToPtr("policy-arn-test"),
+			awsClient: func(mockCtl *gomock.Controller) awsClientKMSKeyCreator {
+				mock := NewMockawsClientKMSKeyCreator(mockCtl)
+
+				mockReq := &kms.CreateKeyInput{
+					CustomerMasterKeySpec: kms_types.CustomerMasterKeySpecSymmetricDefault,
+					KeyUsage:              kms_types.KeyUsageTypeEncryptDecrypt,
+					Origin:                kms_types.OriginTypeAwsKms,
+					Tags: []kms_types.Tag{
+						{
+							TagKey:   generics.ToPtr("key"),
+							TagValue: generics.ToPtr("value"),
+						},
 					},
 				}
-				client.On("CreatePolicy", mock.Anything, mock.Anything, mock.Anything).Return(resp, nil)
-				return client
-			},
-			assertFn: func(t *testing.T, client awsClientIAMPolicy, roleArn string) {
-				obj := client.(*testAwsClientIAMPolicy)
-				obj.AssertNumberOfCalls(t, "CreatePolicy", 1)
-				assert.Equal(t, roleArn, "policy-arn-test")
-
-				inp := obj.Calls[0].Arguments[1].(*iam.CreatePolicyInput)
-				assert.Equal(t, req.PolicyDocument, *inp.PolicyDocument)
-				assert.Equal(t, req.PolicyName, *inp.PolicyName)
-				assert.Equal(t, req.PolicyPath, *inp.Path)
-
-				assert.Equal(t, len(req.PolicyTags), len(inp.Tags))
-				for idx, pair := range req.PolicyTags {
-					assert.Equal(t, pair[0], *inp.Tags[idx].Key)
-					assert.Equal(t, pair[1], *inp.Tags[idx].Value)
+				mockResp := &kms.CreateKeyOutput{
+					KeyMetadata: &kms_types.KeyMetadata{
+						KeyId: generics.ToPtr("key-id"),
+						Arn:   generics.ToPtr("key-arn"),
+					},
 				}
+				mock.EXPECT().CreateKey(gomock.Any(), mockReq, gomock.Any()).
+					Return(mockResp, nil)
+
+				return mock
+			},
+			assertFn: func(t *testing.T, resp *kms_types.KeyMetadata) {
+				assert.Equal(t, "key-id", *resp.KeyId)
+				assert.Equal(t, "key-arn", *resp.Arn)
 			},
 		},
 		"error": {
-			clientFn: func(t *testing.T) awsClientIAMPolicy {
-				client := &testAwsClientIAMPolicy{}
-				client.On("CreatePolicy", mock.Anything, mock.Anything, mock.Anything).Return(nil, testIAMPolicyErr)
-				return client
+			awsClient: func(mockCtl *gomock.Controller) awsClientKMSKeyCreator {
+				mock := NewMockawsClientKMSKeyCreator(mockCtl)
+				mock.EXPECT().CreateKey(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, errCreateKMSKey)
+				return mock
 			},
-			errExpected: testIAMPolicyErr,
+			errExpected: errCreateKMSKey,
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			policyCreator := kmsKeyCreatorImpl{}
-			client := test.clientFn(t)
-			roleArn, err := policyCreator.createIAMPolicy(context.Background(), client, req)
+			ctx := context.Background()
+			mockCtl := gomock.NewController(t)
+			awsClient := test.awsClient(mockCtl)
+
+			impl := &kmsKeyCreatorImpl{}
+			resp, err := impl.createKMSKey(ctx, awsClient, req)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
+
 			assert.NoError(t, err)
-			test.assertFn(t, client, roleArn)
+			test.assertFn(t, resp)
 		})
 	}
 }

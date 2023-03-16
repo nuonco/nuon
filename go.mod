@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.57
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.18.6
 	github.com/aws/aws-sdk-go-v2/service/iam v1.19.5
+	github.com/aws/aws-sdk-go-v2/service/kms v1.20.7
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.6
 	github.com/aws/aws-sdk-go-v2/service/sts v1.18.6
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0

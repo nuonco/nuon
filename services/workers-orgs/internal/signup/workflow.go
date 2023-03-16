@@ -69,7 +69,8 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 
 	l.Debug("provisioning kms for org")
 	kmsResp, err := execProvisionKMSWorkflow(ctx, w.cfg, &kmsv1.ProvisionKMSRequest{
-		OrgId: req.OrgId,
+		OrgId:               req.OrgId,
+		KeyValuesIamRoleArn: iamResp.KeyValuesRoleArn,
 	})
 	if err != nil {
 		err = fmt.Errorf("failed to provision kms: %w", err)
