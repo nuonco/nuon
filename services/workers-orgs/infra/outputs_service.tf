@@ -44,6 +44,10 @@ output "org_deployments_bucket_name" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.deployments.name)
 }
 
+output "org_key_values_bucket_name" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.key_values.name)
+}
+
 # support role for accessing org IAM roles
 output "support_iam_role_arn" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.iam_roles.support.arn)
