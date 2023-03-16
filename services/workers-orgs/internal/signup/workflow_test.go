@@ -65,26 +65,28 @@ func Test_Workflow(t *testing.T) {
 		})
 
 	env.OnWorkflow(kmser.ProvisionKMS, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r *kmsv1.ProvisionKMSRequest) (*kmsv1.ProvisionKMSResponse, error) {
+		Return(func(_ workflow.Context, r *kmsv1.ProvisionKMSRequest) (*kmsv1.ProvisionKMSResponse, error) {
 			assert.Nil(t, r.Validate())
+			assert.Equal(t, req.OrgId, r.OrgId)
+			assert.Equal(t, iamResp.KeyValuesRoleArn, r.KeyValuesIamRoleArn)
 			return kmsResp, nil
 		})
 
 	env.OnWorkflow(iamer.ProvisionIAM, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r *iamv1.ProvisionIAMRequest) (*iamv1.ProvisionIAMResponse, error) {
+		Return(func(_ workflow.Context, r *iamv1.ProvisionIAMRequest) (*iamv1.ProvisionIAMResponse, error) {
 			assert.Nil(t, r.Validate())
 			return iamResp, nil
 		})
 
 	env.OnWorkflow(srv.ProvisionServer, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r *serverv1.ProvisionServerRequest) (*serverv1.ProvisionServerResponse, error) {
+		Return(func(_ workflow.Context, r *serverv1.ProvisionServerRequest) (*serverv1.ProvisionServerResponse, error) {
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, req.OrgId, r.OrgId)
 			return serverResp, nil
 		})
 
 	env.OnWorkflow(run.Install, mock.Anything, mock.Anything).
-		Return(func(ctx workflow.Context, r *runnerv1.InstallRunnerRequest) (*runnerv1.InstallRunnerResponse, error) {
+		Return(func(_ workflow.Context, r *runnerv1.InstallRunnerRequest) (*runnerv1.InstallRunnerResponse, error) {
 			var resp runnerv1.InstallRunnerResponse
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, req.OrgId, r.OrgId)

@@ -7,6 +7,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	kmsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/kms/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/roles"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -32,20 +33,12 @@ func Test_Workflow(t *testing.T) {
 		Return(func(ctx context.Context, r CreateKMSKeyRequest) (CreateKMSKeyResponse, error) {
 			resp := CreateKMSKeyResponse{
 				KeyArn: "test-policy-arn",
+				KeyID:  "abc",
 			}
-			assert.Equal(t, defaultIAMPath(req.OrgId), r.PolicyPath)
 			assert.NoError(t, r.validate())
-
-			return resp, nil
-		})
-
-	env.OnActivity(a.CreateKMSKey, mock.Anything, mock.Anything).
-		Return(func(ctx context.Context, r CreateKMSKeyPolicyRequest) (CreateKMSKeyPolicyResponse, error) {
-			resp := CreateKMSKeyPolicyResponse{
-				RoleArn: "test-role-arn",
-			}
-			assert.Equal(t, defaultIAMPath(req.OrgId), r.RolePath)
-			assert.NoError(t, r.validate())
+			assert.Equal(t, cfg.OrgsKMSAccessRoleArn, r.AssumeRoleARN)
+			assert.Equal(t, 3, len(r.KeyTags))
+			assert.Equal(t, [2]string{"Name", "org/" + req.OrgId}, r.KeyTags[2])
 
 			return resp, nil
 		})
@@ -54,8 +47,13 @@ func Test_Workflow(t *testing.T) {
 		Return(func(ctx context.Context, r CreateKMSKeyPolicyRequest) (CreateKMSKeyPolicyResponse, error) {
 			resp := CreateKMSKeyPolicyResponse{}
 			assert.NoError(t, r.validate())
-			assert.Equal(t, "test-policy-arn", r.KeyArn)
 
+			assert.Equal(t, "abc", r.KeyID)
+			assert.Equal(t, roles.KeyValuesIAMName(req.OrgId), r.PolicyName)
+
+			expectedPolicy, err := roles.KeyValuesKMSKeyPolicy(req.KeyValuesIamRoleArn)
+			assert.NoError(t, err)
+			assert.Equal(t, string(expectedPolicy), r.Policy)
 			return resp, nil
 		})
 
