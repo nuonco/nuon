@@ -3,32 +3,24 @@ package kms
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/iam"
-	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
+	"github.com/aws/aws-sdk-go-v2/service/kms"
 	"github.com/go-playground/validator/v10"
 	assumerole "github.com/powertoolsdev/mono/pkg/aws-assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-const (
-	defaultIAMRoleSessionDuration time.Duration = time.Minute * 60
-)
-
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_kms_key_policy_creator.go -source=kms_key_policy_creator.go -package=kms
 type CreateKMSKeyPolicyRequest struct {
-	AssumeRoleARN string `validate:"required" json:"assume_role_arn"`
+	AssumeRoleARN string `validate:"required"`
 
-	KeyArn              string      `validate:"required" json:"key_arn"`
-	RoleName            string      `validate:"required" json:"role_name"`
-	RolePath            string      `validate:"required" json:"role_path"`
-	TrustPolicyDocument string      `validate:"required" json:"trust_policy_document"`
-	RoleTags            [][2]string `validate:"required" json:"role_tags"`
+	KeyID      string `validate:"required"`
+	PolicyName string `validate:"required"`
+	Policy     string `validate:"required"`
 }
 
-type CreateKMSKeyPolicyResponse struct {
-	RoleArn string `json:"role_arn" validate:"required"`
-}
+type CreateKMSKeyPolicyResponse struct{}
 
 func (a *Activities) CreateKMSKeyPolicy(ctx context.Context, req CreateKMSKeyPolicyRequest) (CreateKMSKeyPolicyResponse, error) {
 	var resp CreateKMSKeyPolicyResponse
@@ -45,12 +37,11 @@ func (a *Activities) CreateKMSKeyPolicy(ctx context.Context, req CreateKMSKeyPol
 		return resp, fmt.Errorf("unable to load config with assumed role: %w", err)
 	}
 
-	client := iam.NewFromConfig(cfg)
-	roleArn, err := a.kmsKeyPolicyCreator.createIAMRole(ctx, client, req)
+	client := kms.NewFromConfig(cfg)
+	err = a.kmsKeyPolicyCreator.createKMSKeyPolicy(ctx, client, req)
 	if err != nil {
 		return resp, fmt.Errorf("unable to create odr IAM role: %w", err)
 	}
-	resp.RoleArn = roleArn
 
 	return resp, nil
 }
@@ -61,38 +52,27 @@ func (r CreateKMSKeyPolicyRequest) validate() error {
 }
 
 type kmsKeyPolicyCreator interface {
-	createIAMRole(context.Context, awsClientIAMRoleCreator, CreateKMSKeyPolicyRequest) (string, error)
+	createKMSKeyPolicy(context.Context, awsClientKMSKeyPolicyCreator, CreateKMSKeyPolicyRequest) error
 }
 
 var _ kmsKeyPolicyCreator = (*kmsKeyPolicyCreatorImpl)(nil)
 
 type kmsKeyPolicyCreatorImpl struct{}
 
-type awsClientIAMRoleCreator interface {
-	CreateRole(context.Context, *iam.CreateRoleInput, ...func(*iam.Options)) (*iam.CreateRoleOutput, error)
+type awsClientKMSKeyPolicyCreator interface {
+	PutKeyPolicy(context.Context, *kms.PutKeyPolicyInput, ...func(*kms.Options)) (*kms.PutKeyPolicyOutput, error)
 }
 
-func (o *kmsKeyPolicyCreatorImpl) createIAMRole(ctx context.Context, client awsClientIAMRoleCreator, req CreateKMSKeyPolicyRequest) (string, error) {
-	tags := make([]iam_types.Tag, 0, len(req.RoleTags)+1)
-	for _, pair := range req.RoleTags {
-		tags = append(tags, iam_types.Tag{
-			Key:   generics.ToPtr(pair[0]),
-			Value: generics.ToPtr(pair[1]),
-		})
+func (o *kmsKeyPolicyCreatorImpl) createKMSKeyPolicy(ctx context.Context, client awsClientKMSKeyPolicyCreator, req CreateKMSKeyPolicyRequest) error {
+	params := &kms.PutKeyPolicyInput{
+		KeyId:      generics.ToPtr(req.KeyID),
+		Policy:     generics.ToPtr(req.Policy),
+		PolicyName: generics.ToPtr(req.PolicyName),
 	}
-
-	params := &iam.CreateRoleInput{
-		AssumeRolePolicyDocument: &req.TrustPolicyDocument,
-		RoleName:                 &req.RoleName,
-		MaxSessionDuration:       generics.ToPtr(int32(defaultIAMRoleSessionDuration.Seconds())),
-		Path:                     &req.RolePath,
-		Tags:                     tags,
-	}
-
-	resp, err := client.CreateRole(ctx, params)
+	_, err := client.PutKeyPolicy(ctx, params)
 	if err != nil {
-		return "", fmt.Errorf("unable to create IAM role: %w", err)
+		return err
 	}
 
-	return *resp.Role.Arn, nil
+	return nil
 }

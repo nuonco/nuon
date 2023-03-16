@@ -12,8 +12,14 @@ message ProvisionKMSRequest {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
+
+  string key_values_iam_role_arn = 2 [
+    (validate.rules).string.min_len = 20,
+    (tagger.tags) = "faker:\"len=26\""
+  ];
 }
 
 message ProvisionKMSResponse {
   string kms_key_arn = 1 [(validate.rules).string.min_len = 20];
+  string kms_key_id = 2;
 }
