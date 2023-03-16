@@ -4,21 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go-v2/service/iam"
-	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
+	"github.com/aws/aws-sdk-go-v2/service/kms"
+	kms_types "github.com/aws/aws-sdk-go-v2/service/kms/types"
 	"github.com/go-playground/validator/v10"
 	assumerole "github.com/powertoolsdev/mono/pkg/aws-assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_kms_key_creator.go -source=kms_key_creator.go -package=kms
 type CreateKMSKeyRequest struct {
 	AssumeRoleARN string `validate:"required" json:"assume_role_arn"`
 
-	PolicyName     string `validate:"required" json:"policy_name"`
-	PolicyPath     string `validate:"required" json:"policy_path"`
-	PolicyDocument string `validate:"required" json:"policy_document"`
-
-	PolicyTags [][2]string `validate:"required" json:"policy_tags"`
+	KeyTags [][2]string `validate:"required" json:"key_tags"`
 }
 
 func (r CreateKMSKeyRequest) validate() error {
@@ -28,6 +26,7 @@ func (r CreateKMSKeyRequest) validate() error {
 
 type CreateKMSKeyResponse struct {
 	KeyArn string `validate:"required" json:"key_arn"`
+	KeyID  string `validate:"required" json:"key_id"`
 }
 
 func (a *Activities) CreateKMSKey(ctx context.Context, req CreateKMSKeyRequest) (CreateKMSKeyResponse, error) {
@@ -47,48 +46,47 @@ func (a *Activities) CreateKMSKey(ctx context.Context, req CreateKMSKeyRequest) 
 		return resp, fmt.Errorf("unable to load config with assumed role: %w", err)
 	}
 
-	client := iam.NewFromConfig(cfg)
-	policyArn, err := a.kmsKeyCreator.createIAMPolicy(ctx, client, req)
+	client := kms.NewFromConfig(cfg)
+	keyMeta, err := a.kmsKeyCreator.createKMSKey(ctx, client, req)
 	if err != nil {
 		return resp, fmt.Errorf("unable to create odr IAM policy: %w", err)
 	}
 
-	resp.KeyArn = policyArn
+	resp.KeyArn = *keyMeta.Arn
+	resp.KeyID = *keyMeta.KeyId
 	return resp, nil
 }
 
 type kmsKeyCreator interface {
-	createIAMPolicy(context.Context, awsClientIAMPolicy, CreateKMSKeyRequest) (string, error)
+	createKMSKey(context.Context, awsClientKMSKeyCreator, CreateKMSKeyRequest) (*kms_types.KeyMetadata, error)
 }
 
 var _ kmsKeyCreator = (*kmsKeyCreatorImpl)(nil)
 
 type kmsKeyCreatorImpl struct{}
 
-type awsClientIAMPolicy interface {
-	CreatePolicy(context.Context, *iam.CreatePolicyInput, ...func(*iam.Options)) (*iam.CreatePolicyOutput, error)
+type awsClientKMSKeyCreator interface {
+	CreateKey(context.Context, *kms.CreateKeyInput, ...func(*kms.Options)) (*kms.CreateKeyOutput, error)
 }
 
-func (o *kmsKeyCreatorImpl) createIAMPolicy(ctx context.Context, client awsClientIAMPolicy, req CreateKMSKeyRequest) (string, error) {
-	tags := make([]iam_types.Tag, 0, len(req.PolicyTags)+1)
-	for _, pair := range req.PolicyTags {
-		tags = append(tags, iam_types.Tag{
-			Key:   generics.ToPtr(pair[0]),
-			Value: generics.ToPtr(pair[1]),
+func (o *kmsKeyCreatorImpl) createKMSKey(ctx context.Context, client awsClientKMSKeyCreator, req CreateKMSKeyRequest) (*kms_types.KeyMetadata, error) {
+	tags := make([]kms_types.Tag, 0, len(req.KeyTags)+1)
+	for _, pair := range req.KeyTags {
+		tags = append(tags, kms_types.Tag{
+			TagKey:   generics.ToPtr(pair[0]),
+			TagValue: generics.ToPtr(pair[1]),
 		})
 	}
 
-	params := &iam.CreatePolicyInput{
-		PolicyDocument: &req.PolicyDocument,
-		PolicyName:     &req.PolicyName,
-		Path:           &req.PolicyPath,
-		Tags:           tags,
+	params := &kms.CreateKeyInput{
+		CustomerMasterKeySpec: kms_types.CustomerMasterKeySpecSymmetricDefault,
+		KeyUsage:              kms_types.KeyUsageTypeEncryptDecrypt,
+		Origin:                kms_types.OriginTypeAwsKms,
+		Tags:                  tags,
 	}
-
-	output, err := client.CreatePolicy(ctx, params)
+	output, err := client.CreateKey(ctx, params)
 	if err != nil {
-		return "", fmt.Errorf("unable to create policy: %w", err)
+		return nil, fmt.Errorf("unable to create policy: %w", err)
 	}
-
-	return *output.Policy.Arn, nil
+	return output.KeyMetadata, nil
 }
