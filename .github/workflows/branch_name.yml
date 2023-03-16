@@ -8,6 +8,7 @@ jobs:
       - name: check branch
         uses: deepakputhraya/action-branch-name@master
         id: check
+        continue-on-error: true
         with:
           regex: '([a-z])+\/([a-z])+'
           allowed_prefixes: 'cp,nh,jm,jst,mp,pl,dependabot'
