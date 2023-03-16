@@ -17,7 +17,6 @@ require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
 	github.com/bufbuild/connect-go v1.5.2
 	github.com/bufbuild/connect-grpcreflect-go v1.0.0
-	github.com/envoyproxy/protoc-gen-validate v0.9.1
 	github.com/go-faker/faker/v4 v4.1.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.11.2
@@ -64,7 +63,7 @@ require (
 	golang.org/x/net v0.8.0
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4
 	google.golang.org/grpc v1.53.0
-	google.golang.org/protobuf v1.29.1
+	google.golang.org/protobuf v1.30.0
 	gorm.io/datatypes v1.1.1
 	gorm.io/driver/postgres v1.5.0
 	gorm.io/gorm v1.24.7-0.20230306060331-85eaf9eeda11
