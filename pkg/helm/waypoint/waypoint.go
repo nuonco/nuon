@@ -172,6 +172,7 @@ func NewDefaultOrgServerValues() *Values {
 	vals.UI.Service.Type = "ClusterIP"
 	vals.Bootstrap.ServiceAccount.Create = false
 	vals.Runner.Enabled = false
+	vals.Server.RunArgs = []string{"-vv", "-url-enabled=false"}
 
 	return &vals
 }
