@@ -40,7 +40,7 @@ type Config struct {
 	// IAM roles used to manage things in orgs account
 	OrgsIAMAccessRoleArn    string `config:"orgs_iam_access_role_arn" validate:"required"`
 	OrgsBucketAccessRoleArn string `config:"orgs_bucket_access_role_arn" validate:"required"`
-	OrgsKMSAccessRoleArn    string `config:"orgs_kms_access_role" validate:"required"`
+	OrgsKMSAccessRoleArn    string `config:"orgs_kms_access_role_arn" validate:"required"`
 
 	// configs needed to access the orgs cluster, which runs all org runner/servers
 	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id" json:"orgs_k8s_cluster_id" validate:"required"`
