@@ -67,17 +67,17 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 	}
 	resp.IamRoles = iamResp
 
-	l.Debug("provisioning kms for org")
-	kmsResp, err := execProvisionKMSWorkflow(ctx, w.cfg, &kmsv1.ProvisionKMSRequest{
-		OrgId:               req.OrgId,
-		KeyValuesIamRoleArn: iamResp.KeyValuesRoleArn,
-	})
-	if err != nil {
-		err = fmt.Errorf("failed to provision kms: %w", err)
-		w.finishWorkflow(ctx, req, resp, err)
-		return resp, err
-	}
-	resp.Kms = kmsResp
+	//l.Debug("provisioning kms for org")
+	//kmsResp, err := execProvisionKMSWorkflow(ctx, w.cfg, &kmsv1.ProvisionKMSRequest{
+	//OrgId:		     req.OrgId,
+	//KeyValuesIamRoleArn: iamResp.KeyValuesRoleArn,
+	//})
+	//if err != nil {
+	//err = fmt.Errorf("failed to provision kms: %w", err)
+	//w.finishWorkflow(ctx, req, resp, err)
+	//return resp, err
+	//}
+	//resp.Kms = kmsResp
 
 	l.Debug("provisioning waypoint org server")
 	serverResp, err := execProvisionWaypointServerWorkflow(ctx, w.cfg, &serverv1.ProvisionServerRequest{
