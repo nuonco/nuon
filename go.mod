@@ -5,10 +5,10 @@ go 1.20
 require (
 	github.com/aws/aws-sdk-go v1.44.222
 	github.com/aws/aws-sdk-go-v2 v1.17.6
-	github.com/aws/aws-sdk-go-v2/config v1.18.17
+	github.com/aws/aws-sdk-go-v2/config v1.18.18
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.17
 	github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.2.8
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.57
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.58
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.18.6
 	github.com/aws/aws-sdk-go-v2/service/iam v1.19.5
 	github.com/aws/aws-sdk-go-v2/service/kms v1.20.7
@@ -17,7 +17,6 @@ require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
 	github.com/bufbuild/connect-go v1.5.2
 	github.com/bufbuild/connect-grpcreflect-go v1.0.0
-	github.com/envoyproxy/protoc-gen-validate v0.9.1
 	github.com/go-faker/faker/v4 v4.1.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.11.2
