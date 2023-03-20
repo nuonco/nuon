@@ -18,13 +18,16 @@ You should be able to work with this repo just like any go repository. Before ge
 
 You need the following tools setup to work with this repo:
 
-* Earthly
-* Buf
-* go
+* [Earthly](https://earthly.dev/)
+* [Buf](https://buf.build)
+* [go](https://go.dev/)
+* [protoc-gen-go-grpc](https://grpc.io/docs/languages/go/quickstart/)
+* `go install github.com/srikrsna/protoc-gen-gotag`
 
-Once you have these setup, simply do the following to start working locally:
+Once you have these setup, do the following to start working locally:
 
 ```bash
+buf registry login
 $ go mod download
 $ go generate ./...
 ```
