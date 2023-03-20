@@ -17,10 +17,9 @@ require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
 	github.com/bufbuild/connect-go v1.5.2
 	github.com/bufbuild/connect-grpcreflect-go v1.0.0
-	github.com/envoyproxy/protoc-gen-validate v0.9.1
 	github.com/go-faker/faker/v4 v4.1.0
 	github.com/go-playground/validator v9.31.0+incompatible
-	github.com/go-playground/validator/v10 v10.11.2
+	github.com/go-playground/validator/v10 v10.12.0
 	github.com/gogo/status v1.1.1
 	github.com/golang/mock v1.6.0
 	github.com/google/go-github/v41 v41.0.0
@@ -181,7 +180,7 @@ require (
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
-	github.com/leodido/go-urn v1.2.1 // indirect
+	github.com/leodido/go-urn v1.2.2 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/lyft/protoc-gen-star v0.6.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
@@ -244,7 +243,7 @@ require (
 	go.temporal.io/api v1.16.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.6.0 // indirect
+	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/oauth2 v0.4.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
