@@ -1,7 +1,7 @@
 package runner
 
 import (
-	"github.com/powertoolsdev/go-waypoint"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/helm"
 	"k8s.io/client-go/rest"
 
@@ -11,13 +11,12 @@ import (
 // Activities is a type that wraps the set of provision activities that we'll be using to execute this
 // workflow. It should only be a few activities, such as running terraform and installing the agent
 type Activities struct {
+	v             *validator.Validate
 	helmInstaller installer
 
 	// this is exposed for testing and should not otherwise be used
 	Kubeconfig *rest.Config
 
-	// TODO(jm): refactor once we've finished all the waypoint setup work
-	waypoint.Provider
 	waypointProjectCreator
 	waypointServerCookieGetter
 	waypointRunnerAdopter
@@ -26,11 +25,10 @@ type Activities struct {
 	waypointRunnerProfileCreator
 }
 
-func NewActivities(cfg workers.Config) *Activities {
+func NewActivities(v *validator.Validate, cfg workers.Config) *Activities {
 	return &Activities{
-		helmInstaller: helm.NewInstaller(),
-
-		Provider:                     waypoint.NewProvider(),
+		v:                            v,
+		helmInstaller:                helm.NewInstaller(),
 		waypointProjectCreator:       &wpProjectCreator{},
 		waypointServerCookieGetter:   &wpServerCookieGetter{},
 		waypointRunnerAdopter:        &wpRunnerAdopter{},

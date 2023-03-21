@@ -20,6 +20,8 @@ type Activities struct {
 
 func NewActivities(v *validator.Validate) *Activities {
 	return &Activities{
+		v: v,
+
 		namespaceCreator:           &nsCreator{},
 		serviceCreator:             &svcCreator{},
 		helmInstaller:              helm.NewInstaller(),

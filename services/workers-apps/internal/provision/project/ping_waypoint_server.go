@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
-	"github.com/powertoolsdev/go-waypoint"
+	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -31,7 +31,14 @@ func (a *Activities) PingWaypointServer(ctx context.Context, req PingWaypointSer
 	ctx, cancelFn := context.WithTimeout(ctx, req.Timeout)
 	defer cancelFn()
 
-	err := a.pingWaypointServerUntilReachable(ctx, req.Addr, a.Provider)
+	provider, err := waypoint.NewUnauthenticatedProvider(a.v, waypoint.WithUnauthenticatedConfig(waypoint.Config{
+		Address: req.Addr,
+	}))
+	if err != nil {
+		return resp, fmt.Errorf("unable to get org provider: %w", err)
+	}
+
+	err = a.pingWaypointServerUntilReachable(ctx, provider)
 	if err != nil {
 		return resp, fmt.Errorf("unable to reach waypoint server after %s: %w", req.Timeout, err)
 	}
@@ -39,8 +46,12 @@ func (a *Activities) PingWaypointServer(ctx context.Context, req PingWaypointSer
 	return resp, nil
 }
 
+type waypointProvider interface {
+	GetClient(context.Context) (gen.WaypointClient, error)
+}
+
 type waypointServerPinger interface {
-	pingWaypointServerUntilReachable(context.Context, string, waypoint.Provider) error
+	pingWaypointServerUntilReachable(context.Context, waypointProvider) error
 }
 
 type wpServerPinger struct{}
@@ -50,7 +61,7 @@ var _ waypointServerPinger = (*wpServerPinger)(nil)
 var errUnableToPingWaypointServer = fmt.Errorf("unable to ping waypoint server")
 
 // pingUntilReachable pings a server until its reachable
-func (w *wpServerPinger) pingWaypointServerUntilReachable(ctx context.Context, addr string, provider waypoint.Provider) error {
+func (w *wpServerPinger) pingWaypointServerUntilReachable(ctx context.Context, provider waypointProvider) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -58,7 +69,7 @@ func (w *wpServerPinger) pingWaypointServerUntilReachable(ctx context.Context, a
 		default:
 		}
 
-		client, err := provider.GetUnauthenticatedWaypointClient(ctx, addr)
+		client, err := provider.GetClient(ctx)
 		if err != nil {
 			fmt.Printf("unable to get client: %v", err)
 			continue

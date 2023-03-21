@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/common/config"
 	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
 	"github.com/powertoolsdev/mono/pkg/sender"
@@ -92,9 +93,10 @@ func runInstanceWorkers(c client.Client, cfg shared.Config, interruptCh <-chan i
 		}
 	}
 
+	v := validator.New()
 	wkflow := provision.NewWorkflow(cfg)
 	w.RegisterWorkflow(wkflow.Provision)
-	w.RegisterActivity(provision.NewActivities(n))
+	w.RegisterActivity(provision.NewActivities(v, n))
 
 	if err := w.Run(interruptCh); err != nil {
 		return err

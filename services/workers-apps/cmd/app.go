@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/common/config"
 	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
 	shared "github.com/powertoolsdev/mono/services/workers-apps/internal"
@@ -66,6 +67,7 @@ func appRun(cmd *cobra.Command, _ []string) {
 }
 
 func runAppWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interface{}) error {
+	v := validator.New()
 	w := worker.New(c, "apps", worker.Options{
 		MaxConcurrentActivityExecutionSize: 1,
 	})
@@ -81,7 +83,7 @@ func runAppWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interf
 	// register provision/project workflow
 	pwkflow := project.NewWorkflow(cfg)
 	w.RegisterWorkflow(pwkflow.ProvisionProject)
-	pacts := project.NewActivities()
+	pacts := project.NewActivities(v)
 	w.RegisterActivity(pacts)
 
 	// register provision/project workflow
