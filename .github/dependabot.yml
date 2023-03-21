@@ -8,69 +8,79 @@ updates:
   - package-ecosystem: "gomod"  # See documentation for possible values
     directory: "/"  # Location of package manifests
     schedule:
-      interval: "daily"
+      day: "sunday"
+      interval: "weekly"
       time: "07:05"
       timezone: "America/New_York"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      day: "sunday"
+      interval: "weekly"
       time: "07:00"
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
     directory: "services/api/infra"
     schedule:
-      interval: "daily"
+      day: "sunday"
+      interval: "weekly"
       time: "07:10"
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
     directory: "services/orgs-api/infra"
     schedule:
-      interval: "daily"
+      day: "sunday"
+      interval: "weekly"
       time: "07:15"
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
     directory: "services/workers-apps/infra"
     schedule:
-      interval: "daily"
+      day: "sunday"
+      interval: "weekly"
       time: "07:20"
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
     directory: "services/workers-deployments/infra"
     schedule:
-      interval: "daily"
+      day: "sunday"
+      interval: "weekly"
       time: "07:25"
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
     directory: "services/workers-executors/infra"
     schedule:
-      interval: "daily"
+      day: "sunday"
+      interval: "weekly"
       time: "07:30"
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
     directory: "services/workers-installs/infra"
     schedule:
-      interval: "daily"
+      day: "sunday"
+      interval: "weekly"
       time: "07:35"
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
     directory: "services/workers-instances/infra"
     schedule:
-      interval: "daily"
+      day: "sunday"
+      interval: "weekly"
       time: "07:40"
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
     directory: "services/workers-orgs/infra"
     schedule:
-      interval: "daily"
+      day: "sunday"
+      interval: "weekly"
       time: "07:45"
       timezone: "America/New_York"
