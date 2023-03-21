@@ -13,8 +13,8 @@ func fakeBuildConfig(v reflect.Value) (interface{}, error) {
 			DockerCfg: &buildv1.DockerConfig{
 				Dockerfile: "Dockerfile",
 				VcsCfg: &vcsv1.Config{
-					Cfg: &vcsv1.Config_PublicGithubConfig{
-						PublicGithubConfig: &vcsv1.PublicGithubConfig{
+					Cfg: &vcsv1.Config_PublicGitConfig{
+						PublicGitConfig: &vcsv1.PublicGitConfig{
 							Repo:      "https://github.com/postmanlabs/httpbin.git",
 							Directory: ".",
 							GitRef:    "master",
