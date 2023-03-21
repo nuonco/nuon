@@ -13,7 +13,6 @@ ARG GOPRIVATE=github.com/powertoolsdev/*
 ARG ETCSSL=/etc/ssl/cert.pem
 ARG BUF_USER=jonmorehouse
 ARG BUF_API_TOKEN=4c51e8481ed34404b7ab6a0c62dc7b2db82757d8f86e4caa853750973e2c5083
-ARG GITHUB_ACTIONS=
 ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 
@@ -29,12 +28,7 @@ deps:
         && go install github.com/srikrsna/protoc-gen-gotag@v0.6.2
 
     COPY go.mod go.sum ./
-
-    # NOTE(jm): once we have finished migrating go-waypoint we can remove the ssh step
-    # RUN go mod download
-    DO shared-configs+SETUP_SSH --GITHUB_ACTIONS=$GITHUB_ACTIONS
-    RUN --ssh git config --global --add safe.directory "$(pwd)" \
-        && go mod download
+    RUN go mod download
 
     SAVE ARTIFACT go.mod AS LOCAL go.mod
     SAVE ARTIFACT go.sum AS LOCAL go.sum
