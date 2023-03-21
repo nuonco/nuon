@@ -17,7 +17,6 @@ require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
 	github.com/bufbuild/connect-go v1.5.2
 	github.com/bufbuild/connect-grpcreflect-go v1.0.0
-	github.com/envoyproxy/protoc-gen-validate v0.9.1
 	github.com/go-faker/faker/v4 v4.1.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.12.0
@@ -33,7 +32,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.16.2
 	github.com/hashicorp/terraform-exec v0.18.1
 	github.com/hashicorp/waypoint v0.11.0
-	github.com/jackc/pgx/v5 v5.3.0
+	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jaswdr/faker v1.16.0
 	github.com/lib/pq v1.10.7
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
