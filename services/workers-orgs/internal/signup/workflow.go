@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/go-waypoint"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
 	kmsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/kms/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/runner/v1"
 	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
+	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/iam"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/kms"

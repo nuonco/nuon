@@ -34,7 +34,7 @@ func Test_Workflow(t *testing.T) {
 	env.RegisterWorkflow(wkfl.Install)
 
 	wf := NewWorkflow(cfg)
-	a := NewActivities()
+	a := NewActivities(nil)
 
 	req := &serverv1.ProvisionServerRequest{OrgId: "0hihjnf1znsaa2j7w5hz1jx7te", Region: "us-west-2"}
 

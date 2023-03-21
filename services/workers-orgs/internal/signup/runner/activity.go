@@ -1,19 +1,16 @@
 package runner
 
 import (
-	"github.com/powertoolsdev/go-waypoint"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/helm"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"k8s.io/client-go/rest"
 )
 
-// NOTE(jm): we alias this type here so that it embeds as WaypointProvider, but allows us to have waypoint.Provider as
-// the actual package
-type WaypointProvider = waypoint.Provider
-
 type Activities struct {
-	waypointProvider WaypointProvider
-	helmInstaller    installer
+	v *validator.Validate
+
+	helmInstaller installer
 	waypointServerCookieGetter
 	waypointRunnerAdopter
 	roleBindingCreator
@@ -22,9 +19,9 @@ type Activities struct {
 	Kubeconfig *rest.Config
 }
 
-func NewActivities(cfg workers.Config) *Activities {
+func NewActivities(v *validator.Validate, cfg workers.Config) *Activities {
 	return &Activities{
-		waypointProvider:           waypoint.NewProvider(),
+		v:                          v,
 		waypointServerCookieGetter: &wpServerCookieGetter{},
 		waypointRunnerAdopter:      &wpRunnerAdopter{},
 		config:                     cfg,
