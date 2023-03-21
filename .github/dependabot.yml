@@ -12,6 +12,7 @@ updates:
       interval: "weekly"
       time: "07:05"
       timezone: "America/New_York"
+    open-pull-requests-limit: 1
 
   - package-ecosystem: "github-actions"
     directory: "/"
