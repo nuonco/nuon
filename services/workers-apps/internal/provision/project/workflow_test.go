@@ -20,7 +20,7 @@ func TestWorkflow(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
-	act := NewActivities()
+	act := NewActivities(nil)
 
 	env.OnActivity(act.PingWaypointServer, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, pwsReq PingWaypointServerRequest) (PingWaypointServerResponse, error) {

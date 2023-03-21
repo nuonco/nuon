@@ -23,7 +23,7 @@ func TestProvisionRunner(t *testing.T) {
 	env := testSuite.NewTestWorkflowEnvironment()
 	assert.Nil(t, cfg.Validate())
 
-	a := NewActivities(cfg)
+	a := NewActivities(nil, cfg)
 
 	serverCookie := uuid.NewString()
 	orgServerAddr := fmt.Sprintf("%s.%s:9701", req.OrgId, cfg.OrgServerRootDomain)
