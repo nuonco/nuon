@@ -10,8 +10,8 @@ jobs:
         id: check
         continue-on-error: true
         with:
-          regex: '([a-z])+\/([a-z])+'
-          allowed_prefixes: "cp,nh,jm,jdt,mp,pl,dependabot"
+          regex: '([a-z])+\/([a-z0-9])+'
+          allowed_prefixes: "cp,nh,jm,mp,pl,dependabot"
           ignore: main
           min_length: 5
 
