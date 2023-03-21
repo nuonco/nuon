@@ -39,6 +39,7 @@ jobs:
         id: filter
         with:
           filters: |
+            api: services/api/**
             orgs-api: services/orgs-api/**
             workers-apps: services/workers-apps/**
             workers-deployments: services/workers-deployments/**
@@ -48,7 +49,7 @@ jobs:
             workers-orgs: services/workers-orgs/**
 
   tag:
-    name: Determine next tag for services changed
+    name: Determine next tag
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ github.event_name != 'pull_request' && steps.semver.outputs.next || 'local' }}
