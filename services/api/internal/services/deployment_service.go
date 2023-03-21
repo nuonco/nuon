@@ -186,13 +186,18 @@ func (i *deploymentService) getCommitHash(ctx context.Context, repoOwner string,
 		return nil, fmt.Errorf("error getting the github commit: %w", err)
 	}
 
+	commitAuthor := ""
+	if commit.Commit.Author.Name != nil {
+		commitAuthor = *commit.Commit.Author.Name
+	}
+
 	// update deployment with commit info
-	deployment.CommitAuthor = *commit.Author.Login
+	deployment.CommitAuthor = commitAuthor
 	deployment.CommitHash = commit.GetSHA()
 	deployment, err = i.repo.Update(ctx, deployment)
 	if err != nil {
 		i.log.Error("failed to update deployment with commit info",
-			zap.String("commitAuthor", *commit.Author.Login),
+			zap.String("commitAuthor", commitAuthor),
 			zap.String("commitHash", commit.GetSHA()),
 			zap.String("error", err.Error()))
 		return nil, fmt.Errorf("error updating the deployment: %w", err)
