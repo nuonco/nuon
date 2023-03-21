@@ -1,5 +1,6 @@
 output "gh_role_arn" {
-  value = module.github_actions.iam_role_arn
+  value       = module.github_actions.iam_role_arn
+  description = "github role"
 }
 
 output "region" {
