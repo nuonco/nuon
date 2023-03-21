@@ -20,7 +20,7 @@ func TestRunner(t *testing.T) {
 	env := testSuite.NewTestWorkflowEnvironment()
 	cfg := generics.GetFakeObj[workers.Config]()
 
-	a := NewActivities(workers.Config{})
+	a := NewActivities(nil, workers.Config{})
 
 	req := generics.GetFakeObj[*runnerv1.InstallRunnerRequest]()
 

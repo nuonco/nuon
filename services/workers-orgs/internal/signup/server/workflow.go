@@ -49,7 +49,7 @@ func (w wkflow) ProvisionServer(ctx workflow.Context, req *serverv1.ProvisionSer
 		TrustedRoleARN: w.cfg.OrgsK8sRoleArn,
 	}
 
-	act := NewActivities()
+	act := NewActivities(nil)
 
 	cnReq := CreateNamespaceRequest{
 		NamespaceName: req.OrgId,
