@@ -4,9 +4,9 @@ package vcs.v1;
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1";
 
-// Github public config is for public repos configuration. This VCS config can be used either for helm charts or docker
-// builds
-message PublicGithubConfig {
+// Git configuration for public repos
+// Can be used either for helm charts or docker builds
+message PublicGitConfig {
   // repo is the org/repo path of the repository
   string repo = 1;
   string directory = 2;

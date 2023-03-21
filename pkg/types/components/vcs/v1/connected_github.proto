@@ -4,7 +4,7 @@ package vcs.v1;
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1";
 
-message PrivateGithubConfig {
+message ConnectedGithubConfig {
   // repo is the org/repo path of the repository
   string repo = 1;
   string directory = 2;
