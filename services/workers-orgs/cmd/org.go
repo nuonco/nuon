@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/common/config"
 	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
 	"github.com/powertoolsdev/mono/pkg/sender"
@@ -80,6 +81,7 @@ func runOrgWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interf
 	)
 
 	l := zap.L()
+	v := validator.New()
 
 	// NOTE(jdt): this isn't my favorite
 	switch cfg.Env {
@@ -103,11 +105,11 @@ func runOrgWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interf
 
 	runiFlow := runner.NewWorkflow(cfg)
 	w.RegisterWorkflow(runiFlow.Install)
-	w.RegisterActivity(runner.NewActivities(cfg))
+	w.RegisterActivity(runner.NewActivities(v, cfg))
 
 	srvWkflow := server.NewWorkflow(cfg)
 	w.RegisterWorkflow(srvWkflow.ProvisionServer)
-	w.RegisterActivity(server.NewActivities())
+	w.RegisterActivity(server.NewActivities(v))
 
 	iamWkflow := iam.NewWorkflow(cfg)
 	w.RegisterWorkflow(iamWkflow.ProvisionIAM)
