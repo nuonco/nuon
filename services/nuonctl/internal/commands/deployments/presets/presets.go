@@ -2,10 +2,16 @@ package presets
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+)
+
+const (
+	defaultBuildTimeout  time.Duration = time.Minute * 2
+	defaultDeployTimeout time.Duration = time.Minute * 5
 )
 
 type preset struct {
