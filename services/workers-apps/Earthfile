@@ -9,13 +9,12 @@ ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 ARG SERVICE=workers-apps
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
-ARG GITHUB_ACTIONS=
 
 CACHE $GOCACHE
 CACHE $GOMODCACHE
 
 code:
-    FROM ../../.+deps --GITHUB_ACTIONS=$GITHUB_ACTIONS
+    FROM ../../.+deps
     COPY ../../pkg+code/pkg pkg
     COPY --dir . ./services/$SERVICE
     WORKDIR services/$SERVICE
