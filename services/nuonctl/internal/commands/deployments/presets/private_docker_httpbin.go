@@ -15,8 +15,8 @@ func (p *preset) privateDockerHttpbin() (*componentv1.Component, error) {
 				DockerCfg: &buildv1.DockerConfig{
 					Dockerfile: "Dockerfile",
 					VcsCfg: &vcsv1.Config{
-						Cfg: &vcsv1.Config_PrivateGithubConfig{
-							PrivateGithubConfig: &vcsv1.PrivateGithubConfig{
+						Cfg: &vcsv1.Config_ConnectedGithubConfig{
+							ConnectedGithubConfig: &vcsv1.ConnectedGithubConfig{
 								Repo:      "jonmorehouse/go-httpbin",
 								Directory: ".",
 								// TODO(jm): add branch

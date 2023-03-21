@@ -213,13 +213,13 @@ func (i *deploymentService) updateComponentConfig(ctx context.Context, ghInstall
 
 	if isPrivate {
 		// for private repos set: git_ref, github_app_key_id, github_app_key_secret_name, github_install_id
-		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPrivateGithubConfig().GitRef = deployment.CommitHash
-		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPrivateGithubConfig().GithubAppKeyId = i.githubAppID
-		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPrivateGithubConfig().GithubAppKeySecretName = i.githubAppKeySecretName
-		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPrivateGithubConfig().GithubInstallId = fmt.Sprint(ghInstallID)
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GitRef = deployment.CommitHash
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GithubAppKeyId = i.githubAppID
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GithubAppKeySecretName = i.githubAppKeySecretName
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GithubInstallId = fmt.Sprint(ghInstallID)
 	} else {
 		// for public repos set only the git_ref
-		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPublicGithubConfig().GitRef = deployment.CommitHash
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPublicGitConfig().GitRef = deployment.CommitHash
 	}
 
 	//marshal JSON
@@ -243,8 +243,8 @@ func (i *deploymentService) updateComponentConfig(ctx context.Context, ghInstall
 }
 
 func (i *deploymentService) processGithubRepo(ctx context.Context, vcsCfg *vcsv1.Config, deployment *models.Deployment, component *models.Component) (*models.Deployment, error) {
-	privateGithubConfig := vcsCfg.GetPrivateGithubConfig()
-	publicGithubConfig := vcsCfg.GetPublicGithubConfig()
+	connectedGithubConfig := vcsCfg.GetConnectedGithubConfig()
+	publicGitConfig := vcsCfg.GetPublicGitConfig()
 
 	// read github_install_id from config
 	ghInstallID, parsingErr := strconv.ParseInt(deployment.Component.App.GithubInstallID, 10, 64)
@@ -257,12 +257,12 @@ func (i *deploymentService) processGithubRepo(ctx context.Context, vcsCfg *vcsv1
 
 	var repo string
 	isPrivate := true
-	if privateGithubConfig != nil {
-		repo = privateGithubConfig.Repo
+	if connectedGithubConfig != nil {
+		repo = connectedGithubConfig.Repo
 	} else {
 		isPrivate = false
 		// TODO: temporary workaround, will refactor after the component config retro
-		repo = strings.ReplaceAll(publicGithubConfig.Repo, "https://github.com/", "")
+		repo = strings.ReplaceAll(publicGitConfig.Repo, "https://github.com/", "")
 		repo = strings.ReplaceAll(repo, ".git", "")
 	}
 
