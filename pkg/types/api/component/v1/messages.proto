@@ -15,6 +15,7 @@ message ComponentRef {
   google.type.DateTime updated_at = 5;
 
   component.v1.Component component_config = 6;
+  string app_id = 7;
 }
 
 message GetComponentRequest {
