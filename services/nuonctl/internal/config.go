@@ -11,7 +11,7 @@ func init() {
 
 	// temporal defaults
 	config.RegisterDefault("dev_temporal_host", "localhost:7233")
-	config.RegisterDefault("temporal_namespace", "default")
+	config.RegisterDefault("temporal_namespace", "deployments")
 	config.RegisterDefault("stage_temporal_host", "temporal-frontend.nuon.us-west-2.stage.nuon.cloud:7233")
 
 	// github defaults
