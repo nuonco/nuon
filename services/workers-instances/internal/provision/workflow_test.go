@@ -51,7 +51,7 @@ func TestProvision(t *testing.T) {
 		})
 
 	// register activities
-	a := NewActivities(nil)
+	a := NewActivities(nil, nil)
 	env.OnActivity(a.SendHostnameNotification, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, shnReq SendHostnameNotificationRequest) (SendHostnameNotificationResponse, error) {
 			var resp SendHostnameNotificationResponse

@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"google.golang.org/grpc"
 )
 
@@ -35,9 +36,20 @@ func (a *Activities) CreateWaypointRunnerProfile(ctx context.Context, req Create
 		return resp, fmt.Errorf("failed to validate request: %w", err)
 	}
 
-	client, err := a.Provider.GetOrgWaypointClient(ctx, req.TokenSecretNamespace, req.OrgID, req.OrgServerAddr)
+	provider, err := waypoint.NewOrgProvider(a.v, waypoint.WithOrgConfig(waypoint.Config{
+		Address: req.OrgServerAddr,
+		Token: waypoint.Token{
+			Namespace: req.TokenSecretNamespace,
+			Name:      waypoint.DefaultTokenSecretName(req.OrgID),
+		},
+	}))
 	if err != nil {
-		return resp, fmt.Errorf("unable to get org waypoint client: %w", err)
+		return resp, fmt.Errorf("unable to get org provider: %w", err)
+	}
+
+	client, err := provider.GetClient(ctx)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get client: %w", err)
 	}
 
 	if err := a.createWaypointRunnerProfile(ctx, client, req); err != nil {

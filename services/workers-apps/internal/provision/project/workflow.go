@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/go-waypoint"
 	projectv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1/project/v1"
+	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	workers "github.com/powertoolsdev/mono/services/workers-apps/internal"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
@@ -29,7 +29,7 @@ func (w Workflow) ProvisionProject(ctx workflow.Context, req *projectv1.Provisio
 		ScheduleToCloseTimeout: 30 * time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
-	act := NewActivities()
+	act := NewActivities(nil)
 
 	pwsRequest := PingWaypointServerRequest{
 		Timeout: time.Minute * 15,

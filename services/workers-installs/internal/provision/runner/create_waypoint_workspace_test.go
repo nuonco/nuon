@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 
-	"github.com/powertoolsdev/go-waypoint"
+	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 )
 
 func getFakeCreateWaypointWorkspaceRequest() CreateWaypointWorkspaceRequest {

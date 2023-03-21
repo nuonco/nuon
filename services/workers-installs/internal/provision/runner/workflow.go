@@ -43,7 +43,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 
 	// NOTE(jdt): this is just so that we can use the method names
 	// the actual struct isn't used by temporal during dispatch at all
-	act := NewActivities(workers.Config{})
+	act := NewActivities(nil, workers.Config{})
 
 	// create waypoint project
 	cwpReq := CreateWaypointProjectRequest{
