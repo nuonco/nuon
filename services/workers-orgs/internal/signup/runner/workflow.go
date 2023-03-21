@@ -8,10 +8,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/go-waypoint"
 	waypointhelm "github.com/powertoolsdev/mono/pkg/helm/waypoint"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/runner/v1"
+	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 )
 
@@ -68,7 +68,7 @@ func (w wkflow) Install(ctx workflow.Context, req *runnerv1.InstallRunnerRequest
 
 	// NOTE(jdt): this is just so that we can use the method names
 	// the actual struct isn't used by temporal during dispatch at all
-	act := NewActivities(workers.Config{})
+	act := NewActivities(nil, workers.Config{})
 
 	// get waypoint server cookie
 	gwscReq := GetWaypointServerCookieRequest{

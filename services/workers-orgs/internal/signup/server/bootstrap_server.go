@@ -10,6 +10,7 @@ import (
 	pb "github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/kube"
+	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -43,9 +44,17 @@ func (a *Activities) BootstrapWaypointServer(
 	req BootstrapWaypointServerRequest,
 ) (BootstrapWaypointServerResponse, error) {
 	var resp BootstrapWaypointServerResponse
-	client, err := a.waypointProvider.GetUnauthenticatedWaypointClient(ctx, req.ServerAddr)
+
+	provider, err := waypoint.NewUnauthenticatedProvider(a.v, waypoint.WithUnauthenticatedConfig(waypoint.Config{
+		Address: req.ServerAddr,
+	}))
 	if err != nil {
-		return resp, err
+		return resp, fmt.Errorf("unable to get waypoint provider: %w", err)
+	}
+
+	client, err := provider.GetClient(ctx)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get client: %w", err)
 	}
 
 	bootstrapToken, err := a.bootstrapWaypointServer(ctx, client)
