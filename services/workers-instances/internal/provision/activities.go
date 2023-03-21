@@ -1,18 +1,18 @@
 package provision
 
 import (
-	"github.com/powertoolsdev/go-waypoint"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/sender"
 )
 
 type Activities struct {
-	waypointProvider waypoint.Provider
+	v *validator.Validate
 	hostnameNotificationSender
 }
 
-func NewActivities(sender sender.NotificationSender) *Activities {
+func NewActivities(v *validator.Validate, sender sender.NotificationSender) *Activities {
 	return &Activities{
-		waypointProvider: waypoint.NewProvider(),
+		v: v,
 		hostnameNotificationSender: &hostnameNotificationSenderImpl{
 			sender: sender,
 		},

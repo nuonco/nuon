@@ -34,7 +34,7 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, req *instancesv1.ProvisionR
 		},
 	}
 
-	act := NewActivities(nil)
+	act := NewActivities(nil, nil)
 	if _, err := execStart(ctx, act, startReq); err != nil {
 		return fmt.Errorf("unable to start workflow: %w", err)
 	}
@@ -87,7 +87,7 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *instancesv1.Provision
 	}
 
 	// exec activity
-	act := NewActivities(nil)
+	act := NewActivities(nil, nil)
 	_, err = execFinish(ctx, act, finishReq)
 	if err != nil {
 		err = fmt.Errorf("unable to execute finish activity: %w", err)

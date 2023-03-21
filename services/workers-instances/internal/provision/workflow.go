@@ -7,10 +7,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/go-waypoint"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	instancesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
+	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	workers "github.com/powertoolsdev/mono/services/workers-instances/internal"
 )
 
@@ -84,7 +84,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 	}
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
-	act := NewActivities(nil)
+	act := NewActivities(nil, nil)
 
 	if err := w.startWorkflow(ctx, req); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)

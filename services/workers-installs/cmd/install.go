@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/common/config"
 	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
 	"github.com/powertoolsdev/mono/pkg/sender"
@@ -73,6 +74,7 @@ func installRun(cmd *cobra.Command, args []string) {
 }
 
 func runInstallWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interface{}) error {
+	v := validator.New()
 	otlpExporter, err := otlptracegrpc.New(context.Background(),
 		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithEndpoint(fmt.Sprintf("%s:4317", cfg.HostIP)))
@@ -128,7 +130,7 @@ func runInstallWorkers(c client.Client, cfg shared.Config, interruptCh <-chan in
 	w.RegisterWorkflow(prWorkflow.Provision)
 	w.RegisterWorkflow(prRWorkflow.ProvisionRunner)
 	w.RegisterActivity(provision.NewActivities(cfg, n))
-	w.RegisterActivity(runner.NewActivities(cfg))
+	w.RegisterActivity(runner.NewActivities(v, cfg))
 
 	// register deprovision
 	dprWorkflow := deprovision.NewWorkflow(cfg)

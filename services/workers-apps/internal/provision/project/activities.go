@@ -1,17 +1,21 @@
 package project
 
-import "github.com/powertoolsdev/go-waypoint"
+import (
+	"github.com/go-playground/validator/v10"
+)
 
 type Activities struct {
-	waypoint.Provider
+	v *validator.Validate
+
 	waypointProjectCreator
 	waypointWorkspaceUpserter
 	waypointServerPinger
 }
 
-func NewActivities() *Activities {
+func NewActivities(v *validator.Validate) *Activities {
 	return &Activities{
-		Provider:                  waypoint.NewProvider(),
+		v: v,
+
 		waypointProjectCreator:    &wpProjectCreator{},
 		waypointWorkspaceUpserter: &wpWorkspaceUpserter{},
 		waypointServerPinger:      &wpServerPinger{},
