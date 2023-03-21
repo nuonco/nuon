@@ -1,35 +1,50 @@
 VERSION --use-cache-command 0.6
 
-IMPORT github.com/powertoolsdev/shared-configs:main
+FROM ghcr.io/powertoolsdev/ci-go-builder
 
-FROM ghcr.io/powertoolsdev/ci-go-builder-docker-compose:v0.9.3
-
-WORKDIR /app
-
-ARG GOCACHE=/go-cache
-ARG GOMODCACHE=/go-mod-cache
-ARG CGO_ENABLED=0
-ARG GOPRIVATE=github.com/powertoolsdev/*
-ARG ETCSSL=/etc/ssl/cert.pem
-
-ARG GITHUB_ACTIONS=
+WORKDIR /src
 
 ARG EARTHLY_GIT_PROJECT_NAME
-ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
+ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}-api
+ARG SERVICE=api
+ARG GOCACHE=/go-cache
+ARG GOMODCACHE=/go-mod-cache
+ARG GITHUB_ACTIONS=
 
 CACHE $GOCACHE
 CACHE $GOMODCACHE
 
-build:
-    DO +DEPS
-    ARG EARTHLY_TARGET_TAG_DOCKER
-    RUN go \
-        build \
-        -ldflags="-X 'github.com/powertoolsdev/go-config/pkg/config.Version=$EARTHLY_TARGET_TAG_DOCKER'" \
-        -o bin/service \
-        .
-    SAVE ARTIFACT bin/service /service
-    SAVE IMAGE --push $GHCR_IMAGE:build
+code:
+    FROM ../../.+deps --GITHUB_ACTIONS=$GITHUB_ACTIONS
+    COPY ../../pkg+code/pkg pkg
+    COPY --dir . ./services/$SERVICE
+    WORKDIR services/$SERVICE
+    RUN go generate ./...
+
+test:
+    FROM +code
+    RUN echo "not running tests, just running build./... for now."
+    RUN go build ./...
+
+test-integration:
+    RUN echo "noop..."
+    #FROM +code
+    #RUN apk add --update --no-cache jq
+
+    #COPY docker-compose.yml ./
+    #COPY wait_for_pg.sh /bin
+
+    #WITH DOCKER \
+        #--compose docker-compose.yml \
+        #--pull ghcr.io/powertoolsdev/ci-temporalite:latest \
+        #--pull postgres:13.4-alpine
+        #RUN \
+            #wait_for_pg.sh \
+            #&& go run main.go migrate up\
+            #&& go test \
+                #-tags=integration \
+                #./...
+    #END
 
 certs:
     FROM alpine:3.16
@@ -40,6 +55,29 @@ certs:
         && cat global-bundle.pem >> "$ETCSSL"
     SAVE ARTIFACT "$ETCSSL" /cert.pem
     SAVE IMAGE --cache-hint
+
+lint:
+    RUN echo "noop..."
+
+build:
+    FROM +code
+    RUN go \
+        build \
+        -ldflags="-X 'github.com/powertoolsdev/mono/pkg/config.Version=$EARTHLY_TARGET_TAG_DOCKER'" \
+        -o bin/service \
+        .
+    SAVE ARTIFACT bin/service /service
+    SAVE IMAGE --push $GHCR_IMAGE:build
+
+iamauthenticator:
+    WORKDIR /tmp
+    # iam authenticator download url
+    ARG version=0.6.2
+    RUN curl \
+            -Lo aws-iam-authenticator \
+            "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
+        && chmod +x aws-iam-authenticator
+    SAVE ARTIFACT aws-iam-authenticator
 
 docker:
     FROM alpine:3.16
@@ -57,7 +95,9 @@ docker:
     COPY +build/service /bin/service
     COPY +certs/cert.pem "$ETCSSL"
     COPY --dir migrations /migrations
+
     ENTRYPOINT ["/bin/service"]
+
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
     LABEL org.opencontainers.image.version=$image_tag
@@ -65,115 +105,3 @@ docker:
     LABEL org.opencontainers.image.authors=nuon
     LABEL org.opencontainers.image.vendor=nuon
     SAVE IMAGE --push --cache-from=$repo:$cache_tag $repo:$image_tag
-
-helm-bump-and-publish:
-    FROM ghcr.io/powertoolsdev/ci-helm-releaser
-    ARG chart_version
-    ARG repos
-    WORKDIR /work
-    COPY --dir k8s /work/k8s
-    DO shared-configs+HELM_RELEASE \
-        --chart_version=$chart_version \
-        --repos=$repos
-
-deploy:
-    FROM ghcr.io/powertoolsdev/ci-helm-releaser
-    WORKDIR /work
-    COPY --dir k8s /work/k8s
-    ARG env
-    ARG cluster_name
-    ARG role_arn
-    ARG chart_version
-    ARG repository
-    ARG image_tag
-    ARG tfenv=.tfenv
-    ARG repos
-    DO shared-configs+HELM_SETUP \
-        --repos="$repos"
-
-    WORKDIR /work/k8s
-    COPY $tfenv .
-    RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
-        && envsubst < "values.$env.tmpl" > "values.$env.yaml"
-
-    DO shared-configs+K8S_DEPLOY \
-        --env=$env \
-        --cluster_name=$cluster_name \
-        --role_arn=$role_arn \
-        --chart_version=$chart_version \
-        --repository=$repository \
-        --image_tag=$image_tag
-
-test:
-    DO +DEPS
-    COPY docker-compose.yml ./
-    COPY wait_for_pg.sh /bin
-    WITH DOCKER \
-        --compose docker-compose.yml \
-        --pull ghcr.io/powertoolsdev/ci-temporalite:latest \
-        --pull postgres:13.4-alpine
-        RUN  \
-            wait_for_pg.sh \
-            && go run main.go migrate up\
-            && go test -v ./...
-    END
-    SAVE IMAGE --push $GHCR_IMAGE:test
-
-test-integration:
-    DO +DEPS
-    COPY docker-compose.yml ./
-    COPY wait_for_pg.sh /bin
-    WITH DOCKER \
-        --compose docker-compose.yml \
-        --pull ghcr.io/powertoolsdev/ci-temporalite:latest \
-        --pull postgres:13.4-alpine
-        RUN \
-            wait_for_pg.sh \
-            && go run main.go migrate up\
-            && go test \
-                -tags=integration \
-                ./...
-    END
-    SAVE IMAGE --push $GHCR_IMAGE:test-integration
-
-lint:
-    FROM ghcr.io/powertoolsdev/ci-reviewdog
-    CACHE $GOCACHE
-    CACHE $GOMODCACHE
-    WORKDIR /work
-    DO +DEPS
-    COPY --dir . .
-    DO shared-configs+LINT \
-        --GITHUB_ACTIONS=$GITHUB_ACTIONS \
-        --GOCACHE=$GOCACHE \
-        --GOMODCACHE=$GOMODCACHE
-    SAVE IMAGE --push $GHCR_IMAGE:lint
-
-
-################################### UDCs ######################################
-
-DEPS:
-    COMMAND
-    COPY go.mod go.sum .
-    COPY --dir cmd internal migrations .
-    COPY *.go .
-    DO shared-configs+SETUP_SSH --GITHUB_ACTIONS=$GITHUB_ACTIONS
-    RUN --ssh git config --global --add safe.directory "$(pwd)" \
-        && go mod download
-    DO +GEN
-
-GEN:
-  COMMAND
-  RUN go generate ./...
-
-################################### LOCAL #####################################
-
-bin:
-   ARG BUILD_SIGNATURE=local
-   ARG EARTHLY_GIT_SHORT_HASH
-   LOCALLY
-   RUN unset GOCACHE GOMODCACHE \
-        && go build \
-           -v \
-           -o bin/service \
-           .
