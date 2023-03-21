@@ -17,6 +17,9 @@ func Execute() {
 	c := &cli{
 		v: validator.New(),
 	}
+
+	c.registerIDs(ctx, rootCmd)
+
 	if err := c.init(rootCmd.Flags()); err != nil {
 		log.Fatalf("unable to initialize cli: %s", err)
 	}
