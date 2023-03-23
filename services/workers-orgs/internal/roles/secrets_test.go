@@ -11,8 +11,9 @@ import (
 func TestKeyValuesKMSKeyPolicy(t *testing.T) {
 	arn := uuid.NewString()
 	currentServiceRoleARN := uuid.NewString()
+	rootAccountRoleARN := uuid.NewString()
 
-	doc, err := KeyValuesKMSKeyPolicy(arn, currentServiceRoleARN)
+	doc, err := SecretsKMSKeyPolicy(arn, currentServiceRoleARN, rootAccountRoleARN)
 	assert.NoError(t, err)
 
 	var policy iamRoleTrustPolicy
@@ -23,24 +24,28 @@ func TestKeyValuesKMSKeyPolicy(t *testing.T) {
 	assert.Equal(t, defaultIAMPolicyVersion, policy.Version)
 	assert.Equal(t, "Allow", policy.Statement[0].Effect)
 	assert.NotEmpty(t, policy.Statement[0].Action)
-
 	// assert principal condition
 	assert.Equal(t, currentServiceRoleARN, policy.Statement[0].Principal.AWS)
 
-	// assert kms permissions
 	assert.Equal(t, defaultIAMPolicyVersion, policy.Version)
 	assert.Equal(t, "Allow", policy.Statement[1].Effect)
-	assert.Equal(t, "kms:*", policy.Statement[1].Action[0])
-
+	assert.NotEmpty(t, policy.Statement[1].Action)
 	// assert principal condition
-	assert.Equal(t, arn, policy.Statement[1].Condition.StringLike["aws:PrincipalArn"])
+	assert.Equal(t, rootAccountRoleARN, policy.Statement[1].Principal.AWS)
+
+	// assert kms permissions
+	assert.Equal(t, defaultIAMPolicyVersion, policy.Version)
+	assert.Equal(t, "Allow", policy.Statement[2].Effect)
+	assert.Equal(t, "kms:*", policy.Statement[2].Action[0])
+	// assert principal condition
+	assert.Equal(t, arn, policy.Statement[2].Condition.StringLike["aws:PrincipalArn"])
 }
 
 func TestKeyValuesIAMPolicy(t *testing.T) {
 	bucketName := uuid.NewString()
 	orgID := uuid.NewString()
 
-	byts, err := KeyValuesIAMPolicy(bucketName, orgID)
+	byts, err := SecretsIAMPolicy(bucketName, orgID)
 	assert.NoError(t, err)
 
 	var policy iamRolePolicy
@@ -61,7 +66,7 @@ func TestKeyValuesIAMPolicy(t *testing.T) {
 
 func TestKeyValuesIAMName(t *testing.T) {
 	orgID := uuid.NewString()
-	iamName := KeyValuesIAMName(orgID)
+	iamName := SecretsIAMName(orgID)
 
 	assert.Contains(t, iamName, orgID)
 	assert.Contains(t, iamName, "org-")
