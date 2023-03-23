@@ -26,7 +26,7 @@ func Test_createKMSKeyPolicy(t *testing.T) {
 				mockReq := &kms.PutKeyPolicyInput{
 					KeyId:      generics.ToPtr(req.KeyID),
 					Policy:     generics.ToPtr(req.Policy),
-					PolicyName: generics.ToPtr(req.PolicyName),
+					PolicyName: generics.ToPtr(defaultKeyPolicyName),
 				}
 				mockResp := &kms.PutKeyPolicyOutput{}
 				mock.EXPECT().PutKeyPolicy(gomock.Any(), mockReq, gomock.Any()).

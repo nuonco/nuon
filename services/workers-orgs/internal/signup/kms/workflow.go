@@ -60,7 +60,6 @@ func (w wkflow) ProvisionKMS(ctx workflow.Context, req *kmsv1.ProvisionKMSReques
 	ckkpReq := CreateKMSKeyPolicyRequest{
 		AssumeRoleARN: w.cfg.OrgsKMSAccessRoleArn,
 		KeyID:         ckkResp.KeyID,
-		PolicyName:    roles.KeyValuesIAMName(req.OrgId),
 		Policy:        string(policy),
 	}
 	err = execCreateKMSKeyPolicy(ctx, act, ckkpReq)

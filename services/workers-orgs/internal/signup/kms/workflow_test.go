@@ -49,7 +49,6 @@ func Test_Workflow(t *testing.T) {
 			assert.NoError(t, r.validate())
 
 			assert.Equal(t, "abc", r.KeyID)
-			assert.Equal(t, roles.KeyValuesIAMName(req.OrgId), r.PolicyName)
 
 			expectedPolicy, err := roles.KeyValuesKMSKeyPolicy(req.KeyValuesIamRoleArn)
 			assert.NoError(t, err)
