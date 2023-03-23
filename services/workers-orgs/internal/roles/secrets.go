@@ -5,12 +5,12 @@ import (
 	"fmt"
 )
 
-// KeyValuesIAMName is the name of the policy / role
-func KeyValuesIAMName(orgID string) string {
+// SecretsIAMName is the name of the policy / role
+func SecretsIAMName(orgID string) string {
 	return fmt.Sprintf("org-key-values-access-%s", orgID)
 }
 
-func KeyValuesKMSKeyPolicy(keyValuesRoleARN, currentServiceRoleARN string) ([]byte, error) {
+func SecretsKMSKeyPolicy(keyValuesRoleARN, currentServiceRoleARN, rootAccountARN string) ([]byte, error) {
 	policy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -29,16 +29,40 @@ func KeyValuesKMSKeyPolicy(keyValuesRoleARN, currentServiceRoleARN string) ([]by
 					"kms:ScheduleKeyDeletion",
 					"kms:CancelKeyDeletion",
 				},
-				Effect: "Allow",
-				Sid:    "Allow administration of the key",
+				Effect:   "Allow",
+				Resource: "*",
+				Sid:      "Allow administration of the key",
 				Principal: iamPrincipal{
 					AWS: currentServiceRoleARN,
 				},
 			},
 			{
-				Action: []string{"kms:*"},
-				Effect: "Allow",
-				Sid:    "",
+				Action: []string{
+					"kms:Create*",
+					"kms:Describe*",
+					"kms:Enable*",
+					"kms:List*",
+					"kms:Put*",
+					"kms:Update*",
+					"kms:Revoke*",
+					"kms:Disable*",
+					"kms:Get*",
+					"kms:Delete*",
+					"kms:ScheduleKeyDeletion",
+					"kms:CancelKeyDeletion",
+				},
+				Effect:   "Allow",
+				Resource: "*",
+				Sid:      "Allow administration of the key",
+				Principal: iamPrincipal{
+					AWS: rootAccountARN,
+				},
+			},
+			{
+				Action:   []string{"kms:*"},
+				Effect:   "Allow",
+				Resource: "*",
+				Sid:      "",
 				Principal: iamPrincipal{
 					AWS: "*",
 				},
@@ -59,12 +83,12 @@ func KeyValuesKMSKeyPolicy(keyValuesRoleARN, currentServiceRoleARN string) ([]by
 	return byts, nil
 }
 
-// KeyValuesIAMPolicy generates the policy for the key values role. It's worth noting, the key-values IAM policy is
+// SecretsIAMPolicy generates the policy for the key values role. It's worth noting, the key-values IAM policy is
 // created before the key, and thus we do not know the arn of the key at the time of creation.
 //
 // However, the KMS key policy allows access to the the key-value IAM policy by arn, so practically it's not a huge
 // problem.
-func KeyValuesIAMPolicy(bucketName string, orgID string) ([]byte, error) {
+func SecretsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 	policy := iamRolePolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleStatement{
@@ -93,8 +117,8 @@ func KeyValuesIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 	return byts, nil
 }
 
-// KeyValuesTrustPolicy is the trust policy that controls who can assume the key values IAM role
-func KeyValuesTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, error) {
+// SecretsTrustPolicy is the trust policy that controls who can assume the key values IAM role
+func SecretsTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{

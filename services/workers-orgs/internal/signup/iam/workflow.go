@@ -35,13 +35,13 @@ func (w wkflow) provisionKeyValuesIAM(ctx workflow.Context, req *iamv1.Provision
 	act := NewActivities()
 
 	l.Debug("creating key values iam policy for org %s", req.OrgId)
-	kvPolicy, err := roles.KeyValuesIAMPolicy(w.cfg.OrgKeyValuesBucketName, req.OrgId)
+	kvPolicy, err := roles.SecretsIAMPolicy(w.cfg.OrgSecretsBucketName, req.OrgId)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM policy document: %w", err)
 	}
 	cdpReq := CreateIAMPolicyRequest{
 		AssumeRoleARN:  w.cfg.OrgsIAMAccessRoleArn,
-		PolicyName:     roles.KeyValuesIAMName(req.OrgId),
+		PolicyName:     roles.SecretsIAMName(req.OrgId),
 		PolicyPath:     defaultIAMPath(req.OrgId),
 		PolicyDocument: string(kvPolicy),
 		PolicyTags:     roles.DefaultTags(req.OrgId),
@@ -61,7 +61,7 @@ func (w wkflow) provisionKeyValuesIAM(ctx workflow.Context, req *iamv1.Provision
 	}
 	cdrReq := CreateIAMRoleRequest{
 		AssumeRoleARN:       w.cfg.OrgsIAMAccessRoleArn,
-		RoleName:            roles.KeyValuesIAMName(req.OrgId),
+		RoleName:            roles.SecretsIAMName(req.OrgId),
 		RolePath:            defaultIAMPath(req.OrgId),
 		TrustPolicyDocument: string(kvTrustPolicy),
 		RoleTags:            roles.DefaultTags(req.OrgId),
@@ -75,7 +75,7 @@ func (w wkflow) provisionKeyValuesIAM(ctx workflow.Context, req *iamv1.Provision
 	cdpaReq := CreateIAMRolePolicyAttachmentRequest{
 		AssumeRoleARN: w.cfg.OrgsIAMAccessRoleArn,
 		PolicyArn:     cdpResp.PolicyArn,
-		RoleName:      roles.KeyValuesIAMName(req.OrgId),
+		RoleName:      roles.SecretsIAMName(req.OrgId),
 	}
 	err = execCreateIAMRolePolicyAttachment(ctx, act, cdpaReq)
 	if err != nil {

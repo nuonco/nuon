@@ -44,13 +44,17 @@ output "org_deployments_bucket_name" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.deployments.name)
 }
 
-output "org_key_values_bucket_name" {
-  value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.key_values.name)
+output "org_secrets_bucket_name" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets.secrets.name)
 }
 
 # support role for accessing org IAM roles
 output "support_iam_role_arn" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.iam_roles.support.arn)
+}
+
+output "orgs_account_root_arn" {
+  value = "arn:aws:iam::${local.accounts["orgs-${var.env}"].id}:root"
 }
 
 // the following outputs are from resources managed locally

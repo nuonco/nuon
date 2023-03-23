@@ -51,12 +51,13 @@ type Config struct {
 	// configs needed for setting up permissions to org resources
 	OrgInstallationsBucketName string `config:"org_installations_bucket_name" json:"org_installations_bucket_name" validate:"required"`
 	OrgDeploymentsBucketName   string `config:"org_deployments_bucket_name" json:"org_deployments_bucket_name" validate:"required"`
-	OrgKeyValuesBucketName     string `config:"org_key_values_bucket_name" json:"org_key_values_bucket_name" validate:"required"`
+	OrgSecretsBucketName       string `config:"org_secrets_bucket_name" json:"org_key_values_bucket_name" validate:"required"`
 	OrgsBucketName             string `config:"org_orgs_bucket_name" json:"org_orgs_bucket_name" validate:"required"`
 
 	// configs needed to grant the workers ability to assume org iam roles
 	WorkersIAMRoleARNPrefix string `config:"workers_iam_role_arn_prefix" validate:"required"`
 	SupportIAMRoleARN       string `config:"support_iam_role_arn" validate:"required"`
+	OrgsAccountRootARN      string `config:"orgs_account_root_arn" json:"orgs_account_root_arn"`
 
 	// configs needed to create an IAM role for the ODR runner in the orgs account
 	OrgsIAMOidcProviderURL string `config:"orgs_iam_oidc_provider_url" validate:"required"`
