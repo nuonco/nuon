@@ -10,14 +10,17 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
+const (
+	defaultKeyPolicyName string = "default"
+)
+
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_kms_key_policy_creator.go -source=kms_key_policy_creator.go -package=kms
 type CreateKMSKeyPolicyRequest struct {
 	AssumeRoleARN string `validate:"required"`
 
-	KeyID      string `validate:"required"`
-	PolicyName string `validate:"required"`
-	Policy     string `validate:"required"`
+	KeyID  string `validate:"required"`
+	Policy string `validate:"required"`
 }
 
 type CreateKMSKeyPolicyResponse struct{}
@@ -67,7 +70,7 @@ func (o *kmsKeyPolicyCreatorImpl) createKMSKeyPolicy(ctx context.Context, client
 	params := &kms.PutKeyPolicyInput{
 		KeyId:      generics.ToPtr(req.KeyID),
 		Policy:     generics.ToPtr(req.Policy),
-		PolicyName: generics.ToPtr(req.PolicyName),
+		PolicyName: generics.ToPtr(defaultKeyPolicyName),
 	}
 	_, err := client.PutKeyPolicy(ctx, params)
 	if err != nil {
