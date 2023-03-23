@@ -18,13 +18,21 @@ func TestKeyValuesKMSKeyPolicy(t *testing.T) {
 	err = json.Unmarshal(doc, &policy)
 	assert.NoError(t, err)
 
-	// assert permissions
+	// assert kms admin permissions
 	assert.Equal(t, defaultIAMPolicyVersion, policy.Version)
 	assert.Equal(t, "Allow", policy.Statement[0].Effect)
-	assert.Equal(t, "kms:*", policy.Statement[0].Action)
+	assert.NotEmpty(t, policy.Statement[0].Action)
 
 	// assert principal condition
-	assert.Equal(t, arn, policy.Statement[0].Condition.StringLike["aws:PrincipalArn"])
+	assert.Equal(t, arn, policy.Statement[0].Principal.AWS)
+
+	// assert kms permissions
+	assert.Equal(t, defaultIAMPolicyVersion, policy.Version)
+	assert.Equal(t, "Allow", policy.Statement[1].Effect)
+	assert.Equal(t, "kms:*", policy.Statement[1].Action[0])
+
+	// assert principal condition
+	assert.Equal(t, arn, policy.Statement[1].Condition.StringLike["aws:PrincipalArn"])
 }
 
 func TestKeyValuesIAMPolicy(t *testing.T) {
