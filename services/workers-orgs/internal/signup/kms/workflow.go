@@ -51,6 +51,8 @@ func (w wkflow) ProvisionKMS(ctx workflow.Context, req *kmsv1.ProvisionKMSReques
 		return resp, fmt.Errorf("unable to create kms key: %w", err)
 	}
 	l.Debug("finished creating kms key", "key", ckkResp)
+	resp.KmsKeyArn = ckkResp.KeyArn
+	resp.KmsKeyId = ckkResp.KeyID
 
 	l.Debug("creating KMS key policy")
 	policy, err := roles.SecretsKMSKeyPolicy(req.KeyValuesIamRoleArn, w.cfg.OrgsKMSAccessRoleArn, w.cfg.OrgsAccountRootARN)
@@ -66,8 +68,19 @@ func (w wkflow) ProvisionKMS(ctx workflow.Context, req *kmsv1.ProvisionKMSReques
 	if err != nil {
 		return resp, fmt.Errorf("unable to create kms key: %w", err)
 	}
-	l.Debug("finished creating kms key", "key", ckkResp)
 
+	l.Debug("creating KMS key alias")
+	ckkaReq := CreateKMSKeyAliasRequest{
+		AssumeRoleARN: w.cfg.OrgsKMSAccessRoleArn,
+		KeyID:         ckkResp.KeyID,
+		Alias:         fmt.Sprintf("alias/org-%s", req.OrgId),
+	}
+	err = execCreateKMSKeyAlias(ctx, act, ckkaReq)
+	if err != nil {
+		return resp, fmt.Errorf("unable to create kms alias: %w", err)
+	}
+
+	l.Debug("finished creating kms key", "key", ckkResp)
 	return resp, nil
 }
 
@@ -100,6 +113,24 @@ func execCreateKMSKeyPolicy(
 	fut := workflow.ExecuteActivity(ctx, act.CreateKMSKeyPolicy, req)
 
 	var resp CreateKMSKeyPolicyResponse
+	if err := fut.Get(ctx, &resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func execCreateKMSKeyAlias(
+	ctx workflow.Context,
+	act *Activities,
+	req CreateKMSKeyAliasRequest,
+) error {
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing create kms key alias activity")
+	fut := workflow.ExecuteActivity(ctx, act.CreateKMSKeyAlias, req)
+
+	var resp CreateKMSKeyAliasResponse
 	if err := fut.Get(ctx, &resp); err != nil {
 		return err
 	}
