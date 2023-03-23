@@ -40,7 +40,7 @@ func OrgsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, err
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
 			{
-				Action: "sts:AssumeRoleWithWebIdentity",
+				Action: []string{"sts:AssumeRoleWithWebIdentity"},
 				Effect: "Allow",
 				Sid:    "",
 				Principal: iamPrincipal{
@@ -53,7 +53,7 @@ func OrgsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, err
 				},
 			},
 			{
-				Action: "sts:AssumeRoleWithWebIdentity",
+				Action: []string{"sts:AssumeRoleWithWebIdentity"},
 				Effect: "Allow",
 				Sid:    "",
 				Principal: iamPrincipal{
