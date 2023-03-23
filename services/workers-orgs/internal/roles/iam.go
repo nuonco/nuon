@@ -36,7 +36,7 @@ type iamCondition struct {
 }
 
 type iamRoleTrustStatement struct {
-	Action    string       `json:"Action,omitempty"`
+	Action    []string     `json:"Action,omitempty"`
 	Effect    string       `json:"Effect,omitempty"`
 	Resource  string       `json:"Resource,omitempty"`
 	Sid       string       `json:"Sid"`

@@ -15,7 +15,29 @@ func KeyValuesKMSKeyPolicy(keyValuesRoleARN string) ([]byte, error) {
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
 			{
-				Action: "kms:*",
+				Action: []string{
+					"kms:Create*",
+					"kms:Describe*",
+					"kms:Enable*",
+					"kms:List*",
+					"kms:Put*",
+					"kms:Update*",
+					"kms:Revoke*",
+					"kms:Disable*",
+					"kms:Get*",
+					"kms:Delete*",
+					"kms:ScheduleKeyDeletion",
+					"kms:CancelKeyDeletion",
+				},
+				Effect: "Allow",
+				Sid:    "Allow administration of the key",
+				Principal: iamPrincipal{
+					AWS: keyValuesRoleARN,
+				},
+			},
+
+			{
+				Action: []string{"kms:*"},
 				Effect: "Allow",
 				Sid:    "",
 				Principal: iamPrincipal{
@@ -78,7 +100,7 @@ func KeyValuesTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, e
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
 			{
-				Action: "sts:AssumeRole",
+				Action: []string{"sts:AssumeRole"},
 				Effect: "Allow",
 				Sid:    "",
 				Principal: iamPrincipal{
@@ -91,7 +113,7 @@ func KeyValuesTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, e
 				},
 			},
 			{
-				Action: "sts:AssumeRole",
+				Action: []string{"sts:AssumeRole"},
 				Effect: "Allow",
 				Sid:    "",
 				Principal: iamPrincipal{

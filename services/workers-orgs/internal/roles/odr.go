@@ -57,7 +57,7 @@ func OdrIAMTrustPolicy(oidcProviderARN, oidcProviderURL, orgID string) ([]byte, 
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
 			{
-				Action: "sts:AssumeRoleWithWebIdentity",
+				Action: []string{"sts:AssumeRoleWithWebIdentity"},
 				Effect: "Allow",
 				Sid:    "",
 				Principal: iamPrincipal{
