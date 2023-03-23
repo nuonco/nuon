@@ -13,7 +13,7 @@ message ProvisionKMSRequest {
     (tagger.tags) = "faker:\"len=26\""
   ];
 
-  string key_values_iam_role_arn = 2 [
+  string secrets_iam_role_arn = 2 [
     (validate.rules).string.min_len = 20,
     (tagger.tags) = "faker:\"len=26\""
   ];

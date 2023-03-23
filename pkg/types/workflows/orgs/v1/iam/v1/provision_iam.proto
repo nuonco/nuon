@@ -27,5 +27,5 @@ message ProvisionIAMResponse {
 
   string orgs_role_arn = 6 [(validate.rules).string.min_len = 20];
 
-  string key_values_role_arn = 7 [(validate.rules).string.min_len = 20];
+  string secrets_role_arn = 7 [(validate.rules).string.min_len = 20];
 }
