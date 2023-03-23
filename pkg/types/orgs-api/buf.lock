@@ -8,11 +8,11 @@ deps:
   - remote: buf.build
     owner: googleapis
     repository: googleapis
-    commit: 75b4300737fb4efca0831636be94e517
+    commit: 463926e7ee924d46ad0a726e1cf4eacd
   - remote: buf.build
     owner: nuon
     repository: components
-    commit: 1cea22fe0b7447658479ff5bfc51caf1
+    commit: 034c2580255e4d84ab30d86b12536afd
   - remote: buf.build
     owner: nuon
     repository: deployments
@@ -20,7 +20,7 @@ deps:
   - remote: buf.build
     owner: nuon
     repository: workflows
-    commit: 8ba37a6ad0d54557b2c22a193b4c3e78
+    commit: 9b68159adc2748e88b5d9f50f6da47f7
   - remote: buf.build
     owner: srikrsna
     repository: protoc-gen-gotag

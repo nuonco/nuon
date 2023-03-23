@@ -70,5 +70,5 @@ func TestKeyValuesIAMName(t *testing.T) {
 
 	assert.Contains(t, iamName, orgID)
 	assert.Contains(t, iamName, "org-")
-	assert.Contains(t, iamName, "key-values-")
+	assert.Contains(t, iamName, "secrets-")
 }

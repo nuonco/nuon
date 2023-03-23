@@ -68,4 +68,7 @@ func Test_Workflow(t *testing.T) {
 	require.NotNil(t, resp)
 	assert.Equal(t, "test-role-arn", resp.DeploymentsRoleArn)
 	assert.Equal(t, "test-role-arn", resp.InstallationsRoleArn)
+	assert.Equal(t, "test-role-arn", resp.SecretsRoleArn)
+	assert.Equal(t, "test-role-arn", resp.InstancesRoleArn)
+	assert.Equal(t, "test-role-arn", resp.OrgsRoleArn)
 }
