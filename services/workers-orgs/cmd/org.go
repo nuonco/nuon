@@ -10,6 +10,7 @@ import (
 	shared "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/iam"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/kms"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/server"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/teardown"
@@ -114,6 +115,10 @@ func runOrgWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interf
 	iamWkflow := iam.NewWorkflow(cfg)
 	w.RegisterWorkflow(iamWkflow.ProvisionIAM)
 	w.RegisterActivity(iam.NewActivities())
+
+	kmsWkflow := kms.NewWorkflow(cfg)
+	w.RegisterWorkflow(kmsWkflow.ProvisionKMS)
+	w.RegisterActivity(kms.NewActivities())
 
 	if err := w.Run(interruptCh); err != nil {
 		return err
