@@ -45,7 +45,7 @@ func DeploymentsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]by
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
 			{
-				Action: "sts:AssumeRole",
+				Action: []string{"sts:AssumeRole"},
 				Effect: "Allow",
 				Sid:    "",
 				Principal: iamPrincipal{
@@ -58,7 +58,7 @@ func DeploymentsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]by
 				},
 			},
 			{
-				Action: "sts:AssumeRole",
+				Action: []string{"sts:AssumeRole"},
 				Effect: "Allow",
 				Sid:    "",
 				Principal: iamPrincipal{
