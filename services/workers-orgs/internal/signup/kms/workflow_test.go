@@ -2,6 +2,7 @@ package kms
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -30,7 +31,7 @@ func Test_Workflow(t *testing.T) {
 
 	// Mock activity implementations
 	env.OnActivity(a.CreateKMSKey, mock.Anything, mock.Anything).
-		Return(func(ctx context.Context, r CreateKMSKeyRequest) (CreateKMSKeyResponse, error) {
+		Return(func(_ context.Context, r CreateKMSKeyRequest) (CreateKMSKeyResponse, error) {
 			resp := CreateKMSKeyResponse{
 				KeyArn: "test-policy-arn",
 				KeyID:  "abc",
@@ -44,7 +45,7 @@ func Test_Workflow(t *testing.T) {
 		})
 
 	env.OnActivity(a.CreateKMSKeyPolicy, mock.Anything, mock.Anything).
-		Return(func(ctx context.Context, r CreateKMSKeyPolicyRequest) (CreateKMSKeyPolicyResponse, error) {
+		Return(func(_ context.Context, r CreateKMSKeyPolicyRequest) (CreateKMSKeyPolicyResponse, error) {
 			resp := CreateKMSKeyPolicyResponse{}
 			assert.NoError(t, r.validate())
 
@@ -53,6 +54,16 @@ func Test_Workflow(t *testing.T) {
 			expectedPolicy, err := roles.SecretsKMSKeyPolicy(req.KeyValuesIamRoleArn, cfg.OrgsKMSAccessRoleArn, cfg.OrgsAccountRootARN)
 			assert.NoError(t, err)
 			assert.Equal(t, string(expectedPolicy), r.Policy)
+			return resp, nil
+		})
+
+	env.OnActivity(a.CreateKMSKeyAlias, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r CreateKMSKeyAliasRequest) (CreateKMSKeyAliasResponse, error) {
+			resp := CreateKMSKeyAliasResponse{}
+			assert.NoError(t, r.validate())
+
+			assert.Equal(t, "abc", r.KeyID)
+			assert.Equal(t, fmt.Sprintf("alias/org-%s", req.OrgId), r.Alias)
 			return resp, nil
 		})
 
