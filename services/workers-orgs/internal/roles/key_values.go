@@ -10,7 +10,7 @@ func KeyValuesIAMName(orgID string) string {
 	return fmt.Sprintf("org-key-values-access-%s", orgID)
 }
 
-func KeyValuesKMSKeyPolicy(keyValuesRoleARN string) ([]byte, error) {
+func KeyValuesKMSKeyPolicy(keyValuesRoleARN, currentServiceRoleARN string) ([]byte, error) {
 	policy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -32,10 +32,9 @@ func KeyValuesKMSKeyPolicy(keyValuesRoleARN string) ([]byte, error) {
 				Effect: "Allow",
 				Sid:    "Allow administration of the key",
 				Principal: iamPrincipal{
-					AWS: keyValuesRoleARN,
+					AWS: currentServiceRoleARN,
 				},
 			},
-
 			{
 				Action: []string{"kms:*"},
 				Effect: "Allow",

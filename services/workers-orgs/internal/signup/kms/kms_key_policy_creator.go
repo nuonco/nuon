@@ -43,7 +43,7 @@ func (a *Activities) CreateKMSKeyPolicy(ctx context.Context, req CreateKMSKeyPol
 	client := kms.NewFromConfig(cfg)
 	err = a.kmsKeyPolicyCreator.createKMSKeyPolicy(ctx, client, req)
 	if err != nil {
-		return resp, fmt.Errorf("unable to create odr IAM role: %w", err)
+		return resp, fmt.Errorf("unable to create kms key policy: %w", err)
 	}
 
 	return resp, nil
