@@ -30,11 +30,11 @@ type wkflow struct {
 	cfg workers.Config
 }
 
-func (w wkflow) provisionKeyValuesIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
+func (w wkflow) provisionSecretsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
 	l := log.With(workflow.GetLogger(ctx))
 	act := NewActivities()
 
-	l.Debug("creating key values iam policy for org %s", req.OrgId)
+	l.Debug("creating secrets iam policy for org %s", req.OrgId)
 	kvPolicy, err := roles.SecretsIAMPolicy(w.cfg.OrgSecretsBucketName, req.OrgId)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM policy document: %w", err)
@@ -51,7 +51,7 @@ func (w wkflow) provisionKeyValuesIAM(ctx workflow.Context, req *iamv1.Provision
 		return "", fmt.Errorf("unable to create IAM policy: %w", err)
 	}
 
-	l.Debug("creating key value role for org %s", req.OrgId)
+	l.Debug("creating secrets role for org %s", req.OrgId)
 	kvTrustPolicy, err := roles.InstallerIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
 	if err != nil {
 		return "", fmt.Errorf("unable to create IAM trust policy document: %w", err)
@@ -456,11 +456,11 @@ func (w wkflow) ProvisionIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReques
 	}
 	resp.InstancesRoleArn = instanceRoleArn
 
-	kvRoleArn, err := w.provisionKeyValuesIAM(ctx, req)
+	secretsRoleArn, err := w.provisionSecretsIAM(ctx, req)
 	if err != nil {
 		return resp, fmt.Errorf("unable to provision instance IAM role: %w", err)
 	}
-	resp.KeyValuesRoleArn = kvRoleArn
+	resp.SecretsRoleArn = secretsRoleArn
 	return resp, nil
 }
 

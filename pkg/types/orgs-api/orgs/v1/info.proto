@@ -14,8 +14,9 @@ message GetInfoResponse {
   ];
 
   ServerInfo server_info = 2;
-  RunnerInfo build_runner_info = 3;
-  IAMInfo iam_info = 4;
+  SecretsKeyInfo secrets_key_info = 3;
+  RunnerInfo build_runner_info = 4;
+  IAMInfo iam_info = 5;
 }
 
 message GetInfoRequest {

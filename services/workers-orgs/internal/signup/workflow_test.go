@@ -68,7 +68,7 @@ func Test_Workflow(t *testing.T) {
 		Return(func(_ workflow.Context, r *kmsv1.ProvisionKMSRequest) (*kmsv1.ProvisionKMSResponse, error) {
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, req.OrgId, r.OrgId)
-			assert.Equal(t, iamResp.KeyValuesRoleArn, r.KeyValuesIamRoleArn)
+			assert.Equal(t, iamResp.SecretsRoleArn, r.SecretsIamRoleArn)
 			return kmsResp, nil
 		})
 

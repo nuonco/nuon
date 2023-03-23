@@ -51,7 +51,7 @@ func Test_Workflow(t *testing.T) {
 
 			assert.Equal(t, "abc", r.KeyID)
 
-			expectedPolicy, err := roles.SecretsKMSKeyPolicy(req.KeyValuesIamRoleArn, cfg.OrgsKMSAccessRoleArn, cfg.OrgsAccountRootARN)
+			expectedPolicy, err := roles.SecretsKMSKeyPolicy(req.SecretsIamRoleArn, cfg.OrgsKMSAccessRoleArn, cfg.OrgsAccountRootARN)
 			assert.NoError(t, err)
 			assert.Equal(t, string(expectedPolicy), r.Policy)
 			return resp, nil
