@@ -7,7 +7,7 @@ import (
 
 // SecretsIAMName is the name of the policy / role
 func SecretsIAMName(orgID string) string {
-	return fmt.Sprintf("org-key-values-access-%s", orgID)
+	return fmt.Sprintf("org-secrets-access-%s", orgID)
 }
 
 func SecretsKMSKeyPolicy(keyValuesRoleARN, currentServiceRoleARN, rootAccountARN string) ([]byte, error) {
@@ -83,7 +83,7 @@ func SecretsKMSKeyPolicy(keyValuesRoleARN, currentServiceRoleARN, rootAccountARN
 	return byts, nil
 }
 
-// SecretsIAMPolicy generates the policy for the key values role. It's worth noting, the key-values IAM policy is
+// SecretsIAMPolicy generates the policy for the key values role. It's worth noting, the secrets IAM policy is
 // created before the key, and thus we do not know the arn of the key at the time of creation.
 //
 // However, the KMS key policy allows access to the the key-value IAM policy by arn, so practically it's not a huge
