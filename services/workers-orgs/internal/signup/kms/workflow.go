@@ -53,7 +53,7 @@ func (w wkflow) ProvisionKMS(ctx workflow.Context, req *kmsv1.ProvisionKMSReques
 	l.Debug("finished creating kms key", "key", ckkResp)
 
 	l.Debug("creating KMS key policy")
-	policy, err := roles.KeyValuesKMSKeyPolicy(req.KeyValuesIamRoleArn)
+	policy, err := roles.KeyValuesKMSKeyPolicy(req.KeyValuesIamRoleArn, w.cfg.OrgsKMSAccessRoleArn)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get kms key policy: %w", err)
 	}

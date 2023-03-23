@@ -10,8 +10,9 @@ import (
 
 func TestKeyValuesKMSKeyPolicy(t *testing.T) {
 	arn := uuid.NewString()
+	currentServiceRoleARN := uuid.NewString()
 
-	doc, err := KeyValuesKMSKeyPolicy(arn)
+	doc, err := KeyValuesKMSKeyPolicy(arn, currentServiceRoleARN)
 	assert.NoError(t, err)
 
 	var policy iamRoleTrustPolicy
@@ -24,7 +25,7 @@ func TestKeyValuesKMSKeyPolicy(t *testing.T) {
 	assert.NotEmpty(t, policy.Statement[0].Action)
 
 	// assert principal condition
-	assert.Equal(t, arn, policy.Statement[0].Principal.AWS)
+	assert.Equal(t, currentServiceRoleARN, policy.Statement[0].Principal.AWS)
 
 	// assert kms permissions
 	assert.Equal(t, defaultIAMPolicyVersion, policy.Version)
