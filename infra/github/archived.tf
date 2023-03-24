@@ -291,3 +291,85 @@ module "workers-orgs" {
 
   topics = ["helm", "terraform", "from-template-go-service"]
 }
+
+module "infra-aws" {
+  source = "./modules/repository"
+
+  name        = "infra-aws"
+  archived    = true
+  description = "terraform module for managing the aws org and accounts"
+  topics      = ["terraform"]
+}
+
+module "infra-eks-nuon" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "infra-eks-nuon"
+  description = "terraform module for managing EKS"
+  topics      = ["terraform"]
+}
+
+module "infra-github" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "infra-github"
+  description = "terraform module for managing github"
+  topics      = ["terraform"]
+}
+
+module "infra-grafana" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "infra-grafana"
+  description = "terraform module for managing grafana cloud"
+  topics      = ["terraform"]
+}
+
+module "infra-nuon-dns" {
+  source = "./modules/repository"
+
+  name        = "infra-nuon-dns"
+  archived    = true
+  description = "terraform module for managing the nuon.co domain"
+  topics      = ["terraform"]
+}
+
+module "infra-orgs" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "infra-orgs"
+  description = "terraform module for managing org resources, such as installations, runs and builds."
+  topics      = ["terraform"]
+}
+
+module "infra-powertools" {
+  source = "./modules/repository"
+
+  name        = "infra-powertools"
+  archived    = true
+  description = "terraform module for managing the powertools.dev domain"
+  topics      = ["terraform"]
+}
+
+module "infra-temporal" {
+  source = "./modules/repository"
+
+  name        = "infra-temporal"
+  archived    = true
+  description = "terraform module for managing our temporal installations"
+  topics      = ["terraform", "helm", ]
+  enable_ecr  = true
+}
+
+module "infra-terraform" {
+  source = "./modules/repository"
+
+  name        = "infra-terraform"
+  archived    = true
+  description = "terraform module for managing our terraform workspaces"
+  topics      = ["terraform"]
+}
