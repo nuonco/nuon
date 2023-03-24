@@ -143,6 +143,8 @@ func NewDefaultInstallValues() *Values {
 	vals.Runner.Odr.ServiceAccount.Create = true
 	vals.Runner.Resources.Requests.Memory = "256Mi"
 	vals.Runner.Resources.Requests.CPU = "250m"
+	vals.Runner.Image.Repository = "public.ecr.aws/p7e3r5y0/waypoint"
+	vals.Runner.Image.Tag = "v0.0.5"
 
 	return &vals
 }
