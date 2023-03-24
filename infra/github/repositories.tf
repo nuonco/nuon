@@ -62,13 +62,6 @@ module "apks" {
   topics      = ["terraform"]
 }
 
-module "awesome-customer-cloud" {
-  source = "./modules/repository"
-
-  name        = "awesome-customer-cloud"
-  description = "experimental customer cloud repo"
-  topics      = ["experimental"]
-}
 
 module "chart-common" {
   source = "./modules/repository"
@@ -77,7 +70,6 @@ module "chart-common" {
   description = "repo for common charts"
   topics      = ["terraform", "helm"]
 }
-
 
 module "api-gateway" {
   source = "./modules/repository"

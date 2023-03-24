@@ -11,6 +11,15 @@ module "api" {
   enable_prod_environment  = true
 }
 
+module "awesome-customer-cloud" {
+  source = "./modules/repository"
+
+  archived = true
+  name        = "awesome-customer-cloud"
+  description = "experimental customer cloud repo"
+  topics      = ["experimental"]
+}
+
 module "go-aws-assume-role" {
   source = "./modules/repository"
 
