@@ -77,6 +77,7 @@ module "infra-eks-orgs-prod-main" {
 module "infra-eks-orgs-stage-main" {
   source = "./modules/workspace"
 
+  name = "infra-eks-orgs-stage-main"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = true
@@ -99,6 +100,7 @@ module "infra-eks-orgs-stage-main" {
 module "infra-eks-prod-nuon" {
   source = "./modules/workspace"
 
+  name = "infra-eks-prod-nuon"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = false
@@ -114,6 +116,7 @@ module "infra-eks-prod-nuon" {
 module "infra-eks-stage-nuon" {
   source = "./modules/workspace"
 
+  name = "infra-eks-stage-nuon"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = true
@@ -129,6 +132,7 @@ module "infra-eks-stage-nuon" {
 module "infra-eks-sandbox-jtarasovic" {
   source = "./modules/workspace"
 
+  name = "infra-eks-sandbox-jtarasovic"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
