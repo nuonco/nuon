@@ -1,0 +1,227 @@
+module "apks" {
+  source = "./modules/workspace"
+
+  name          = "apks"
+  repo          = "powertoolsdev/apks"
+  auto_apply    = false
+  dir           = "infra"
+  variable_sets = ["aws-environment-credentials"]
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
+}
+
+module "chart-common" {
+  source = "./modules/workspace"
+
+  name                            = "chart-common"
+  repo                            = "powertoolsdev/chart-common"
+  auto_apply                      = true
+  dir                             = "infra"
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  allowed_remote_state_workspaces = ["global"]
+}
+
+module "ci-images" {
+  source = "./modules/workspace"
+
+  name          = "ci-images"
+  repo          = "powertoolsdev/ci-images"
+  auto_apply    = false
+  dir           = "infra"
+  variable_sets = ["aws-environment-credentials"]
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+}
+
+module "infra-eks-horizon-main" {
+  source = "./modules/workspace"
+
+  name                            = "infra-eks-horizon-main"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/eks"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  vars = {
+    account = "horizon"
+    pool    = "main"
+  }
+}
+
+module "infra-eks-orgs-prod-main" {
+  source = "./modules/workspace"
+
+  name                            = "infra-eks-orgs-prod-main"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/eks"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  allowed_remote_state_workspaces = [
+    module.infra-orgs-prod.workspace_id,
+    module.workers-orgs-prod.workspace_id,
+    module.workers-installs-prod.workspace_id,
+    module.workers-apps-prod.workspace_id,
+    module.workers-deployments-prod.workspace_id,
+    module.workers-executors-prod.workspace_id,
+  module.workers-instances-prod.workspace_id]
+
+  vars = {
+    account = "orgs-prod"
+    pool    = "main"
+  }
+}
+
+module "infra-eks-orgs-stage-main" {
+  source = "./modules/workspace"
+
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/eks"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  allowed_remote_state_workspaces = [
+    module.infra-orgs-stage.workspace_id,
+    module.workers-orgs-stage.workspace_id,
+    module.workers-installs-stage.workspace_id,
+    module.workers-apps-stage.workspace_id,
+    module.workers-deployments-stage.workspace_id,
+    module.workers-executors-stage.workspace_id,
+  module.workers-instances-stage.workspace_id]
+  vars = {
+    account = "orgs-stage"
+    pool    = "main"
+  }
+}
+
+module "infra-eks-prod-nuon" {
+  source = "./modules/workspace"
+
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/eks"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  allowed_remote_state_workspaces = ["global"]
+  vars = {
+    account = "prod"
+    pool    = "nuon"
+  }
+}
+
+module "infra-eks-stage-nuon" {
+  source = "./modules/workspace"
+
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/eks"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  allowed_remote_state_workspaces = ["global"]
+  vars = {
+    account = "stage"
+    pool    = "nuon"
+  }
+}
+
+module "infra-eks-sandbox-jtarasovic" {
+  source = "./modules/workspace"
+
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/eks"
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  vars = {
+    account = "sandbox"
+    pool    = "jtarasovic"
+  }
+}
+
+module "infra-grafana" {
+  source = "./modules/workspace"
+
+  name                            = "infra-grafana"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/grafana"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = []
+  allowed_remote_state_workspaces = [
+    module.infra-eks-stage-nuon.workspace_id,
+    module.infra-eks-prod-nuon.workspace_id,
+    module.infra-eks-sandbox-jtarasovic.workspace_id,
+    module.infra-eks-horizon-main.workspace_id,
+    module.infra-eks-orgs-prod-main.workspace_id,
+  module.infra-eks-orgs-stage-main.workspace_id]
+}
+
+module "infra-temporal-prod" {
+  source = "./modules/workspace"
+
+  name                            = "infra-temporal-prod"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/temporal"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  vars = {
+    env = "prod"
+  }
+}
+
+module "infra-temporal-stage" {
+  source = "./modules/workspace"
+
+  name                            = "infra-temporal-stage"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/temporal"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  vars = {
+    env = "stage"
+  }
+}
+
+module "infra-terraform" {
+  source = "./modules/workspace"
+
+  name                            = "infra-terraform"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/terraform"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+}
+
+module "nuon-dns" {
+  source = "./modules/workspace"
+
+  name                            = "nuon-dns"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/dns"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+}
+
+module "infra-github" {
+  source = "./modules/workspace"
+
+  name                            = "infra-github"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/github"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "github-admin-powertoolsdev"]
+}
+module "powertools" {
+  source = "./modules/workspace"
+
+  name                            = "powertools"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/powertools"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+}
