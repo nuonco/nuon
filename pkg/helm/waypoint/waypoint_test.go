@@ -1,6 +1,7 @@
 package waypoint
 
 import (
+	_ "embed"
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
@@ -41,4 +42,27 @@ func TestNewDefaultOrgServerValues(t *testing.T) {
 	assert.True(t, vals.UI.Service.Enabled)
 	assert.False(t, vals.Bootstrap.ServiceAccount.Create)
 	assert.False(t, vals.Runner.Enabled)
+
+	// assert that image is set
+	assert.NotEmpty(t, vals.Server.Image.Repository)
+	assert.NotEmpty(t, vals.Server.Image.Tag)
+}
+
+func TestNewDefaultOrgRunnerValues(t *testing.T) {
+	vals := NewDefaultOrgRunnerValues()
+
+	assert.True(t, vals.Runner.Enabled)
+	assert.Equal(t, 1, vals.Runner.Replicas)
+	assert.True(t, vals.Runner.Server.TLS)
+	assert.True(t, vals.Runner.Server.TLSSkipVerify)
+	assert.True(t, vals.Runner.Odr.ServiceAccount.Create)
+
+	// resources
+	assert.Equal(t, "1Gi", vals.Runner.Storage.Size)
+	assert.Equal(t, "256Mi", vals.Runner.Resources.Requests.Memory)
+	assert.Equal(t, "250m", vals.Runner.Resources.Requests.CPU)
+
+	// assert that image is set
+	assert.NotEmpty(t, vals.Runner.Image.Repository)
+	assert.NotEmpty(t, vals.Runner.Image.Tag)
 }
