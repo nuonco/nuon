@@ -114,10 +114,8 @@ module "demo" {
   source = "./modules/repository"
 
   name        = "demo"
-  enable_ecr  = true
+  enable_ecr  = false
   description = "Demo repo for Nuon."
-
-  extra_ecr_repos = ["external-image-go-httpbin"]
 }
 
 module "graveyard" {
