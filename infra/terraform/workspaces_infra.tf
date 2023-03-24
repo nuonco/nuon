@@ -129,38 +129,6 @@ module "infra-eks-stage-nuon" {
   }
 }
 
-module "infra-eks-sandbox-jtarasovic" {
-  source = "./modules/workspace"
-
-  name = "infra-eks-sandbox-jtarasovic"
-  repo                            = "powertoolsdev/mono"
-  dir                             = "infra/eks"
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
-  vars = {
-    account = "sandbox"
-    pool    = "jtarasovic"
-  }
-}
-
-module "infra-grafana" {
-  source = "./modules/workspace"
-
-  name                            = "infra-grafana"
-  repo                            = "powertoolsdev/mono"
-  dir                             = "infra/grafana"
-  auto_apply                      = true
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = []
-  allowed_remote_state_workspaces = [
-    module.infra-eks-stage-nuon.workspace_id,
-    module.infra-eks-prod-nuon.workspace_id,
-    module.infra-eks-sandbox-jtarasovic.workspace_id,
-    module.infra-eks-horizon-main.workspace_id,
-    module.infra-eks-orgs-prod-main.workspace_id,
-  module.infra-eks-orgs-stage-main.workspace_id]
-}
-
 module "infra-temporal-prod" {
   source = "./modules/workspace"
 
@@ -189,6 +157,19 @@ module "infra-temporal-stage" {
   }
 }
 
+
+
+module "infra-github" {
+  source = "./modules/workspace"
+
+  name                            = "infra-github"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/github"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "github-admin-powertoolsdev"]
+}
+
 module "infra-terraform" {
   source = "./modules/workspace"
 
@@ -210,16 +191,6 @@ module "nuon-dns" {
   variable_sets                   = ["aws-environment-credentials"]
 }
 
-module "infra-github" {
-  source = "./modules/workspace"
-
-  name                            = "infra-github"
-  repo                            = "powertoolsdev/mono"
-  dir                             = "infra/github"
-  auto_apply                      = true
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials", "github-admin-powertoolsdev"]
-}
 module "powertools" {
   source = "./modules/workspace"
 

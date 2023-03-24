@@ -1,3 +1,15 @@
+module "demo" {
+  source = "./modules/workspace"
+
+  name          = "demo"
+  repo          = "powertoolsdev/demo"
+  auto_apply    = true
+  dir           = "terraform"
+  variable_sets = ["aws-environment-credentials"]
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+}
+
 module "horizon-prod" {
   source = "./modules/workspace"
 
@@ -10,32 +22,6 @@ module "horizon-prod" {
   }
   variable_sets                   = ["aws-environment-credentials", "hashicorp-cloud-platform"]
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
-module "waypoint" {
-  source = "./modules/workspace"
-
-  name                            = "waypoint"
-  repo                            = "powertoolsdev/waypoint"
-  auto_apply                      = true
-  dir                             = "infra"
-  variable_sets                   = ["aws-environment-credentials"]
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
-module "sandboxes" {
-  source = "./modules/workspace"
-
-  name                            = "sandboxes"
-  repo                            = "powertoolsdev/sandboxes"
-  auto_apply                      = true
-  dir                             = "infra"
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
-  allowed_remote_state_workspaces = [
-    module.infra-orgs-prod.workspace_id,
-    module.infra-orgs-stage.workspace_id,
-  ]
 }
 
 module "infra-orgs-prod" {
@@ -92,14 +78,28 @@ module "infra-orgs-stage" {
   ]
 }
 
-module "demo" {
+module "waypoint" {
   source = "./modules/workspace"
 
-  name          = "demo"
-  repo          = "powertoolsdev/demo"
-  auto_apply    = true
-  dir           = "terraform"
-  variable_sets = ["aws-environment-credentials"]
-
+  name                            = "waypoint"
+  repo                            = "powertoolsdev/waypoint"
+  auto_apply                      = true
+  dir                             = "infra"
+  variable_sets                   = ["aws-environment-credentials"]
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+}
+
+module "sandboxes" {
+  source = "./modules/workspace"
+
+  name                            = "sandboxes"
+  repo                            = "powertoolsdev/sandboxes"
+  auto_apply                      = true
+  dir                             = "infra"
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  allowed_remote_state_workspaces = [
+    module.infra-orgs-prod.workspace_id,
+    module.infra-orgs-stage.workspace_id,
+  ]
 }
