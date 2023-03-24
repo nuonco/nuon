@@ -32,6 +32,10 @@ func TestNewDefaultInstallValues(t *testing.T) {
 	enabled, ok = uiServiceValues.(map[string]interface{})["enabled"]
 	assert.True(t, ok)
 	assert.False(t, enabled.(bool))
+
+	// assert that image is set
+	assert.NotEmpty(t, vals.Runner.Image.Repository)
+	assert.NotEmpty(t, vals.Runner.Image.Tag)
 }
 
 func TestNewDefaultOrgServerValues(t *testing.T) {

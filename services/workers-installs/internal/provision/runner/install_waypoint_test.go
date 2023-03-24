@@ -122,6 +122,8 @@ func TestInstallWaypoint(t *testing.T) {
 						assert.Nil(t, err)
 						assert.True(t, vals.Runner.Enabled)
 						assert.False(t, vals.Server.Enabled)
+						assert.NotEmpty(t, vals.Runner.Image.Repository)
+						assert.NotEmpty(t, vals.Runner.Image.Tag)
 						return &release.Release{Name: cfg.ReleaseName}, nil
 					},
 				}
