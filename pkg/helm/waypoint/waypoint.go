@@ -158,6 +158,9 @@ func NewDefaultOrgRunnerValues() *Values {
 	vals.Runner.Odr.ServiceAccount.Create = true
 	vals.Runner.Resources.Requests.Memory = "256Mi"
 	vals.Runner.Resources.Requests.CPU = "250m"
+	vals.Runner.Image.Repository = "public.ecr.aws/p7e3r5y0/waypoint"
+	vals.Runner.Image.Tag = "v0.0.5"
+
 	vals.Bootstrap.ServiceAccount.Create = false
 
 	return &vals
@@ -168,10 +171,14 @@ func NewDefaultOrgServerValues() *Values {
 	var vals Values
 
 	vals.Server.Enabled = true
+	vals.Server.Image.Repository = "public.ecr.aws/p7e3r5y0/waypoint"
+	vals.Server.Image.Tag = "v0.0.5"
+
+	vals.Runner.Enabled = false
+
 	vals.UI.Service.Enabled = true
 	vals.UI.Service.Type = "ClusterIP"
 	vals.Bootstrap.ServiceAccount.Create = false
-	vals.Runner.Enabled = false
 
 	return &vals
 }
@@ -180,5 +187,5 @@ var DefaultChart = helm.Chart{
 	// NOTE(jdt): I don't really care for this but I don't want to keep copying this around
 	Name:    "waypoint",
 	URL:     "https://helm.releases.hashicorp.com",
-	Version: "0.1.17",
+	Version: "0.1.18",
 }

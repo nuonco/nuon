@@ -120,6 +120,9 @@ func TestInstallWaypointServer(t *testing.T) {
 						assert.True(t, vals.Server.Enabled)
 						assert.False(t, vals.Bootstrap.ServiceAccount.Create)
 
+						// assert that the image values are set correctly
+						assert.NotEmpty(t, vals.Server.Image.Repository)
+						assert.NotEmpty(t, vals.Server.Image.Tag)
 						return &release.Release{Name: cfg.ReleaseName}, nil
 					},
 				}
