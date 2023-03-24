@@ -1,0 +1,99 @@
+---
+mode: deployment
+config:
+  exporters:
+    logging: {}
+    prometheusremotewrite/grafana:
+      auth:
+        authenticator: basicauth/prometheusremotewrite
+    otlphttp/grafana:
+      auth:
+        authenticator: basicauth/otlp
+      endpoint: https://otlp-gateway-prod-us-central-0.grafana.net/otlp
+  extensions:
+    health_check: {}
+    memory_ballast: {}
+    basicauth/prometheusremotewrite: {}
+    basicauth/otlp: {}
+  processors:
+    batch: {}
+    # If set to null, will be overridden with values based on k8s resource limits
+    memory_limiter: null
+    # these values are set via yaml encoded hcl
+    attributes/default: []
+    filter/default:
+      metrics:
+        exclude:
+          match_type: regexp
+          metric_names:
+            - apiserver_*
+
+  receivers:
+    jaeger: null
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+    prometheus:
+      config:
+        scrape_configs:
+          - job_name: opentelemetry-collector
+            scrape_interval: 30s
+            static_configs:
+              - targets:
+                  - ${MY_POD_IP}:8888
+    zipkin: null
+  service:
+    telemetry:
+      metrics:
+        address: 0.0.0.0:8888
+    extensions:
+      - health_check
+      - memory_ballast
+      - basicauth/prometheusremotewrite
+      - basicauth/otlp
+    pipelines:
+      logs:
+        exporters:
+          - logging
+        processors:
+          - memory_limiter
+          - batch
+          - attributes/default
+        receivers:
+          - otlp
+      metrics:
+        exporters:
+          # - logging
+          - prometheusremotewrite/grafana
+        processors:
+          - memory_limiter
+          - batch
+          - attributes/default
+          - filter/default
+        receivers:
+          - otlp
+          - prometheus
+      traces:
+        exporters:
+          - logging
+          - otlphttp/grafana
+        processors:
+          - memory_limiter
+          - batch
+          - attributes/default
+        receivers:
+          - otlp
+
+
+# OpenTelemetry Collector executable
+command:
+  name: otelcol-contrib
+  extraArgs: []
+
+resources:
+  limits:
+    cpu: ".5"
+    memory: 1Gi

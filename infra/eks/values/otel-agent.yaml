@@ -1,0 +1,146 @@
+---
+mode: daemonset
+config:
+  exporters:
+    otlp:
+      endpoint: collector-opentelemetry-collector:4317
+      tls:
+        insecure: true
+  extensions:
+    health_check: {}
+    memory_ballast: {}
+  processors:
+    batch: {}
+    # If set to null, will be overridden with values based on k8s resource limits
+    memory_limiter: null
+  receivers:
+    jaeger: null
+    hostmetrics:
+      scrapers:
+        cpu:
+        load:
+        memory:
+        disk:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+    prometheus:
+      config:
+        scrape_configs:
+          - job_name: opentelemetry-agent
+            scrape_interval: 30s
+            static_configs:
+              - targets:
+                  - ${MY_POD_IP}:8888
+
+          - job_name: kubernetes-nodes
+            scheme: https
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            scrape_interval: 30s
+            metrics_path: /api/v1/nodes/${MY_NODE_NAME}/proxy/metrics
+            relabel_configs:
+              - target_label: instance
+                replacement: ${MY_NODE_NAME}
+            static_configs:
+              - targets:
+                  - kubernetes.default.svc:443
+
+          - job_name: kubernetes-nodes-cadvisor
+            scheme: https
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            scrape_interval: 30s
+            metrics_path: /api/v1/nodes/${MY_NODE_NAME}/proxy/metrics/cadvisor
+            relabel_configs:
+              - target_label: instance
+                replacement: ${MY_NODE_NAME}
+            static_configs:
+              - targets:
+                  - kubernetes.default.svc:443
+    zipkin: null
+  service:
+    telemetry:
+      # logs:
+      #   level: debug
+      metrics:
+        address: 0.0.0.0:8888
+    extensions:
+      - health_check
+      - memory_ballast
+    pipelines:
+      logs:
+        exporters:
+          - otlp
+        processors:
+          - memory_limiter
+          - batch
+        receivers:
+          - otlp
+      metrics:
+        exporters:
+          - otlp
+        processors:
+          - memory_limiter
+          - batch
+        receivers:
+          - hostmetrics
+          - otlp
+          - prometheus
+      traces:
+        exporters:
+          - otlp
+        processors:
+          - memory_limiter
+          - batch
+        receivers:
+          - otlp
+
+
+# OpenTelemetry Collector executable
+command:
+  name: otelcol-contrib
+  extraArgs: []
+
+clusterRole:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources:
+        - nodes
+        - nodes/proxy
+        - nodes/metrics
+        - services
+        - endpoints
+        - pods
+      verbs: ["get", "list", "watch"]
+    - apiGroups:
+        - extensions
+        - networking.k8s.io
+      resources:
+        - ingresses
+      verbs: ["get", "list", "watch"]
+    - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
+      verbs: ["get"]
+
+resources:
+  limits:
+    cpu: ".5"
+    memory: 1Gi
+
+priorityClassName: "system-node-critical"
+
+tolerations:
+  - operator: Exists
+
+extraHostPathMounts:
+  - name: hostfs
+    hostPath: /
+    mountPath: /hostfs
+    readOnly: true
+    mountPropagation: HostToContainer

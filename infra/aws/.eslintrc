@@ -1,0 +1,6 @@
+{
+  "extends": ["@powertoolsdev/eslint-config-nuon"],
+  "rules": {
+    "import/no-namespace": ["error", { "ignore": ["*.json"]}]
+  }
+}

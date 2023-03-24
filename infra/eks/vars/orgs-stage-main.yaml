@@ -1,0 +1,27 @@
+---
+auth_map_additions:
+  - name: eks-orgs-api
+    account: stage
+    groups:
+      - "system:masters"
+  - name: eks-workers-apps
+    account: stage
+    groups:
+      - "system:masters"
+  - name: eks-workers-deployments
+    account: stage
+    groups:
+      - "system:masters"
+  - name: eks-workers-installs
+    account: stage
+    groups:
+      - "system:masters"
+  - name: eks-workers-instances
+    account: stage
+    groups:
+      - "system:masters"
+  - name: eks-workers-orgs
+    account: stage
+    groups:
+      - "system:masters"
+tier: beta

@@ -1,0 +1,293 @@
+module "api" {
+  source = "./modules/repository"
+
+  name        = "api"
+  description = "repo for nuon grpc api"
+  topics      = ["terraform", "helm"]
+  enable_ecr  = true
+  archived    = true
+
+  enable_stage_environment = true
+  enable_prod_environment  = true
+}
+
+module "go-aws-assume-role" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-aws-assume-role"
+  description = "shared tooling for assuming IAM roles"
+}
+
+module "go-common" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-common"
+  description = "repo common shared golang"
+  topics      = ["go-lib", ]
+}
+
+module "go-components" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-components"
+  description = "repo for shared component configurations"
+  topics      = ["go-lib", "from-template-go-lib", ]
+}
+
+module "go-config" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-config"
+  description = "repo for go service config"
+  topics      = ["go-lib", "from-template-go-lib", ]
+}
+
+module "go-fetch" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-fetch"
+  description = "repo for fetching"
+  topics      = ["go-lib", "from-template-go-lib"]
+}
+
+module "go-generics" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-generics"
+  description = "go package for shared generic functions"
+
+  topics = ["go-lib", "from-template-go-lib"]
+}
+
+module "go-helm" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-helm"
+  description = "go package for shared helm tooling"
+
+  topics = ["go-lib", "from-template-go-lib"]
+}
+
+module "go-kube" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-kube"
+  description = "go package for shared kubernetes tooling"
+
+  topics = ["go-lib", "from-template-go-lib"]
+}
+
+module "go-sender" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-sender"
+  description = "go package for shared notification tooling"
+
+  topics = ["go-lib", "from-template-go-lib"]
+}
+
+module "go-terraform" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-terraform"
+  description = "go package for shared terraform tooling"
+
+  topics = ["go-lib", "from-template-go-lib"]
+}
+
+module "go-shared-types" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-shared-types"
+  description = "HACK: go package for shared types"
+
+  topics = ["go-lib", "from-template-go-lib"]
+}
+
+module "go-uploader" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-uploader"
+  description = "go package for upload to s3 tooling"
+
+  topics = ["go-lib", "from-template-go-lib"]
+}
+
+module "go-waypoint" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-waypoint"
+  description = "go package for shared waypoint tooling"
+
+  topics = ["go-lib", "from-template-go-lib"]
+}
+
+module "go-workflows-meta" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "go-workflows-meta"
+  description = "go package for shared tooling for writing out workflow related metadata."
+
+  topics = ["go-lib", "from-template-go-lib"]
+}
+
+module "graphql-api" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "graphql-api"
+  description = "repo for nuon graphql api"
+  topics      = ["terraform", "helm"]
+  enable_ecr  = true
+
+  enable_stage_environment = true
+  enable_prod_environment  = true
+}
+
+module "nuonctl" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "nuonctl"
+  description = "an experimental cli with automations and easy ways to interact with the api"
+
+  topics = ["experimental"]
+}
+
+module "orgs-api" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "orgs-api"
+  description = "repo for nuon orgs api, which exposes infrastructure details of orgs, installs and deployments."
+  topics      = ["terraform", "helm"]
+  enable_ecr  = true
+
+  enable_stage_environment = true
+  enable_prod_environment  = true
+}
+
+module "protos" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "protos"
+  description = "mono repo of protocol buffers that power apis, workflows and internal systems - using buf.build."
+  topics      = []
+}
+
+module "template-go-library" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "template-go-library"
+  description = "Template for creating a new go library."
+  topics      = ["template"]
+  is_template = true
+}
+
+module "template-go-service" {
+  source = "./modules/repository"
+
+  archived                 = true
+  name                     = "template-go-service"
+  description              = "Template for creating a go service repository."
+  is_template              = true
+  enable_ecr               = true
+  enable_prod_environment  = true
+  enable_stage_environment = true
+
+  topics = ["template"]
+}
+
+module "workers-apps" {
+  source = "./modules/repository"
+
+  archived                 = true
+  name                     = "workers-apps"
+  description              = "temporal workers for apps"
+  enable_ecr               = true
+  enable_prod_environment  = true
+  enable_stage_environment = true
+
+  topics = ["helm", "terraform", "from-template-go-service"]
+}
+
+module "workers-deployments" {
+  source = "./modules/repository"
+
+  archived                 = true
+  name                     = "workers-deployments"
+  description              = "temporal workers for deployments"
+  enable_ecr               = true
+  enable_prod_environment  = true
+  enable_stage_environment = true
+
+  topics = ["helm", "terraform", "from-template-go-service"]
+}
+
+module "workers-executors" {
+  source = "./modules/repository"
+
+  archived                 = true
+  name                     = "workers-executors"
+  description              = "temporal workers for managing infrastructure"
+  enable_ecr               = true
+  enable_prod_environment  = true
+  enable_stage_environment = true
+
+  topics = ["helm", "terraform", "from-template-go-service"]
+}
+
+module "workers-installs" {
+  source = "./modules/repository"
+
+  archived                 = true
+  name                     = "workers-installs"
+  description              = "temporal workers for installs"
+  enable_ecr               = true
+  enable_prod_environment  = true
+  enable_stage_environment = true
+
+  topics = ["helm", "terraform", "from-template-go-service"]
+}
+
+module "workers-instances" {
+  source = "./modules/repository"
+
+  archived                 = true
+  name                     = "workers-instances"
+  description              = "temporal workers for instances"
+  enable_ecr               = true
+  enable_prod_environment  = true
+  enable_stage_environment = true
+
+  topics = ["helm", "terraform", "from-template-go-service"]
+}
+
+module "workers-orgs" {
+  source = "./modules/repository"
+
+  archived                 = true
+  name                     = "workers-orgs"
+  description              = "temporal workers for orgs"
+  enable_ecr               = true
+  enable_prod_environment  = true
+  enable_stage_environment = true
+
+  topics = ["helm", "terraform", "from-template-go-service"]
+}

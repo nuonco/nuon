@@ -1,0 +1,41 @@
+---
+fullnameOverride: temporal
+
+cassandra:
+  enabled: false
+# TODO(jdt): enable AWS elasticsearch?
+elasticsearch:
+  enabled: false
+grafana:
+  enabled: false
+mysql:
+  enabled: false
+postgresql:
+  enabled: true
+prometheus:
+  enabled: false
+
+schema:
+  setup:
+    enabled: false
+  update:
+    enabled: false
+
+server:
+  replicaCount: 2
+  config:
+    persistence:
+      default:
+        driver: sql
+        sql:
+          database: temporal
+          driver: postgres
+          maxConnLifetime: 1h
+          maxConns: 20
+      visibility:
+        driver: sql
+        sql:
+          database: temporal_visibility
+          driver: postgres
+          maxConnLifetime: 1h
+          maxConns: 20

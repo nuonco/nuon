@@ -1,0 +1,9 @@
+---
+pool: nuon
+rds:
+  db_name: temporal
+  instance_class: "db.t4g.medium"
+  allocated_storage: "100"
+  multi_az: true
+  skip_final_snapshot: false
+  deletion_protection: true

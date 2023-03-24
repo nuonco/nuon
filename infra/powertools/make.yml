@@ -1,0 +1,17 @@
+---
+base_cmd: | #!/usr/bin/env bash
+    set -e
+    set -o pipefail
+    set -u
+
+    cd $WORKSPACE_ROOT/src/infra-powertools
+    export TF_DATA_DIR=/tmp/powertools-infrastructure
+
+install:
+  description: install correct version of terraform
+  cmd: |
+    curl https://releases.hashicorp.com/terraform/0.12.13/terraform_0.12.13_darwin_amd64.zip > /tmp/powertools-tf.zip
+    cd /tmp
+    unzip /tmp/powertools-tf.zip
+    mkdir -p ~/bin
+    mv terraform ~/bin/terraform

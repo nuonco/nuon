@@ -1,0 +1,35 @@
+---
+auth_map_additions:
+  - name: eks-orgs-api
+    account: prod
+    groups:
+      - "system:masters"
+  - name: eks-workers-apps
+    account: prod
+    groups:
+      - "system:masters"
+  - name: eks-workers-deployments
+    account: prod
+    groups:
+      - "system:masters"
+  - name: eks-workers-executors
+    account: prod
+    groups:
+      - "system:masters"
+  - name: eks-workers-installs
+    account: prod
+    groups:
+      - "system:masters"
+  - name: eks-workers-instances
+    account: prod
+    groups:
+      - "system:masters"
+  - name: eks-workers-orgs
+    account: prod
+    groups:
+      - "system:masters"
+managed_node_group:
+  desired_size: 2
+  min_size: 2
+  max_size: 3
+tier: stable

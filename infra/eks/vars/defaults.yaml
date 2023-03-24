@@ -1,0 +1,11 @@
+---
+alb_settings: {}
+auth_map_additions: []
+managed_node_group:
+  instance_types:
+    - t3a.medium
+  desired_size: 1
+  min_size: 1
+  max_size: 2
+region: "us-west-2"
+root_domain: "nuon.cloud"

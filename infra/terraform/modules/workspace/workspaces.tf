@@ -1,0 +1,29 @@
+locals {
+  global_remote_state = contains(var.allowed_remote_state_workspaces, "global")
+}
+resource "tfe_workspace" "workspace" {
+  name         = var.name
+  description  = "${var.name} terraform workspace for repo ${var.repo}."
+  organization = data.tfe_organization.main.name
+
+  auto_apply        = var.auto_apply
+  queue_all_runs    = false
+  working_directory = var.dir
+  trigger_prefixes  = var.dir != "" ? [var.dir] : []
+
+  global_remote_state       = local.global_remote_state
+  remote_state_consumer_ids = local.global_remote_state ? [] : var.allowed_remote_state_workspaces
+
+  tag_names = ["managed-by:terraform", "${var.auto_apply ? "auto-applied" : "manually-applied"}"]
+
+  dynamic "vcs_repo" {
+    # only create if repo is not empty.
+    # this allows for manually applied workspaces
+    for_each = var.repo == "" ? [] : [1]
+    content {
+      identifier     = var.repo
+      branch         = "main"
+      oauth_token_id = data.tfe_oauth_client.github.oauth_token_id
+    }
+  }
+}

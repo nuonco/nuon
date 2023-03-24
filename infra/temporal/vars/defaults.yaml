@@ -1,0 +1,52 @@
+---
+root_domain: nuon.cloud
+region: us-west-2
+rds:
+  engine: postgres
+  engine_version: "14.3"
+  family: "postgres14"
+  major_engine_version: "14"
+  instance_class: "db.t4g.small"
+  allocated_storage: "20"
+  db_name: nuon
+  port: 5432
+  username: nuonadmin
+  multi_az: false
+  backup_retention_period: 1
+  skip_final_snapshot: true
+  deletion_protection: false
+  storage_encrypted: true
+  enabled_cloudwatch_logs_exports:
+    - postgresql
+    - upgrade
+  enable_replica: false
+
+elasticache:
+  enabled: false
+  port: 6379
+  engine: redis
+  engine_version: "6.x"
+  family: "redis6.x"
+  node_type: cache.t4g.medium
+  num_cache_nodes: 1
+  parameters:
+    maxmemory-policy: noeviction
+
+elasticsearch:
+  enabled: false
+  instance_type: "t3.small.search"
+  instance_count: 1
+  zone_awareness:
+    enabled: false
+    availability_zone_count: 3
+  warm:
+    enabled: false
+    count: 2
+  dedicated_master:
+    enabled: false
+    type: ""
+    count: 1
+  advanced_options: {}
+  ebs:
+    enabled: true
+    volume_size: 20
