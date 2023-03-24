@@ -14,7 +14,6 @@ locals {
     terraform   = terraform.workspace
   }
 
-  terraform_organization = "launchpaddev"
   vars                   = yamldecode(data.utils_deep_merge_yaml.vars.output)
 }
 

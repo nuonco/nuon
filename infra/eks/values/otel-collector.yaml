@@ -3,13 +3,6 @@ mode: deployment
 config:
   exporters:
     logging: {}
-    prometheusremotewrite/grafana:
-      auth:
-        authenticator: basicauth/prometheusremotewrite
-    otlphttp/grafana:
-      auth:
-        authenticator: basicauth/otlp
-      endpoint: https://otlp-gateway-prod-us-central-0.grafana.net/otlp
   extensions:
     health_check: {}
     memory_ballast: {}
@@ -52,8 +45,6 @@ config:
     extensions:
       - health_check
       - memory_ballast
-      - basicauth/prometheusremotewrite
-      - basicauth/otlp
     pipelines:
       logs:
         exporters:
@@ -66,8 +57,7 @@ config:
           - otlp
       metrics:
         exporters:
-          # - logging
-          - prometheusremotewrite/grafana
+        # - logging
         processors:
           - memory_limiter
           - batch
@@ -79,14 +69,12 @@ config:
       traces:
         exporters:
           - logging
-          - otlphttp/grafana
         processors:
           - memory_limiter
           - batch
           - attributes/default
         receivers:
           - otlp
-
 
 # OpenTelemetry Collector executable
 command:

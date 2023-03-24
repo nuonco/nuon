@@ -32,7 +32,7 @@ terraform {
     }
     twingate = {
       source  = "Twingate/twingate"
-      version = ">= 0.1.6"
+      version = ">= 0.3.3"
     }
     tfe = {
       source  = "hashicorp/tfe"

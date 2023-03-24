@@ -59,26 +59,8 @@ resource "helm_release" "otel" {
     # set attributes for otel collector
     each.key != "collector" ? "" : yamlencode({
       config = {
-        exporters = {
-          "prometheusremotewrite/grafana" = {
-            endpoint = data.tfe_outputs.infra-grafana.values.otel.prometheus_remote_write_endpoint
-          }
-        },
-        extensions = {
-          "basicauth/prometheusremotewrite" = {
-            client_auth = {
-              username = data.tfe_outputs.infra-grafana.values.otel.prometheus_user_id
-              password = data.tfe_outputs.infra-grafana.values.otel.api_key
-            }
-          },
-          "basicauth/otlp" = {
-            client_auth = {
-              # TODO(jm): expose the instance id for our stack from infra-grafana
-              username = "526406"
-              password = data.tfe_outputs.infra-grafana.values.otel.api_key
-            }
-          }
-        },
+        exporters = {},
+        extensions = {},
         processors = {
           "attributes/default" = {
             actions = [
