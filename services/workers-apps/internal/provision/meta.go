@@ -6,8 +6,8 @@ import (
 
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
-	meta "github.com/powertoolsdev/mono/pkg/workflows-meta"
-	"github.com/powertoolsdev/mono/pkg/workflows-meta/prefix"
+	meta "github.com/powertoolsdev/mono/pkg/workflows/meta"
+	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 	"go.temporal.io/sdk/workflow"
 )
 

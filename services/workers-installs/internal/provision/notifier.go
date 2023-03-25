@@ -6,7 +6,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/sender"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows-meta/prefix"
+	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 )
 
 type notifier interface {

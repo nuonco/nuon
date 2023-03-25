@@ -2,7 +2,7 @@ package start
 
 import (
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows-meta/prefix"
+	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 )
 
 // getS3Prefix returns the prefix to be used for the plan and it's encompassed files
