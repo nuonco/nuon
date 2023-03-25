@@ -7,7 +7,7 @@ import (
 
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
-	"github.com/powertoolsdev/mono/services/nuonctl/internal/s3downloader"
+	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
 )
 
 // GetOrgProvisionRequest returns a provision request for an org

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
-	"github.com/powertoolsdev/mono/services/nuonctl/internal/s3downloader"
+	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
 )
 
 func (r *repo) GetDeploymentsResponse(ctx context.Context, key string) (*sharedv1.Response, error) {

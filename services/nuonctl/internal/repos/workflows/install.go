@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	assumerole "github.com/powertoolsdev/mono/pkg/aws-assume-role"
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 )
 

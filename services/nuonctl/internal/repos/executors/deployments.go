@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
-	"github.com/powertoolsdev/mono/services/nuonctl/internal/s3downloader"
+	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
 	"google.golang.org/protobuf/proto"
 )
 
