@@ -6,8 +6,8 @@ import (
 
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
-	meta "github.com/powertoolsdev/mono/pkg/workflows-meta"
-	"github.com/powertoolsdev/mono/pkg/workflows-meta/prefix"
+	meta "github.com/powertoolsdev/mono/pkg/workflows/meta"
+	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal"
 	"go.temporal.io/sdk/workflow"
 )

@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows-meta/prefix"
+	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 )
 
 const startNotificationTemplate string = `:construction: _started deprovisioning sandbox_ :construction:
