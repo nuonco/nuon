@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iam_types "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/go-playground/validator/v10"
-	assumerole "github.com/powertoolsdev/mono/pkg/aws-assume-role"
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
