@@ -13,6 +13,10 @@ module "ecr" {
   create_lifecycle_policy                   = false
   create_registry_replication_configuration = true
 
+  // NOTE(jm): we enable mutable images to help when debugging our CI systems. The only time we would _ever_ run into an
+  // issue where the image is updated in place is when our CI is broken for some reason.
+  repository_image_tag_mutability = "MUTABLE"
+
   repository_name               = var.name
   repository_encryption_type    = "KMS"
   repository_image_scan_on_push = true
