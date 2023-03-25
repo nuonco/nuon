@@ -6,6 +6,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
@@ -41,7 +42,7 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 
 	opts := tclient.StartWorkflowOptions{
 		ID:        orgID,
-		TaskQueue: "install",
+		TaskQueue: workflows.DefaultTaskQueue,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 1,
 		},
@@ -82,7 +83,7 @@ func (i *installWorkflowManager) Deprovision(ctx context.Context, install *model
 	orgID, appID, installID := shortIDs[0], shortIDs[1], shortIDs[2]
 
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: "install",
+		TaskQueue: workflows.DefaultTaskQueue,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 1,
 		},

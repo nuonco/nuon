@@ -11,13 +11,13 @@ import (
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	instancesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
 	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	workers "github.com/powertoolsdev/mono/services/workers-instances/internal"
 )
 
 const (
-	defaultActivityTimeout    = time.Second * 5
-	defaultDeployTimeout      = time.Minute * 15
-	defaultExecutorsTaskQueue = "executors"
+	defaultActivityTimeout = time.Second * 5
+	defaultDeployTimeout   = time.Minute * 15
 )
 
 func configureActivityOptions(ctx workflow.Context) workflow.Context {
@@ -140,7 +140,7 @@ func execCreatePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
-		TaskQueue:                defaultExecutorsTaskQueue,
+		TaskQueue:                workflows.DefaultTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -163,7 +163,7 @@ func execExecutePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
-		TaskQueue:                defaultExecutorsTaskQueue,
+		TaskQueue:                workflows.DefaultTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 

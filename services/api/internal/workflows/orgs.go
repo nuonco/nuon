@@ -6,13 +6,12 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	tclient "go.temporal.io/sdk/client"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_orgs.go -source=orgs.go -package=workflows
-const orgTaskQueue string = "org"
-
 func NewOrgWorkflowManager(tc temporalClient) *orgWorkflowManager {
 	return &orgWorkflowManager{
 		tc: tc,
@@ -37,7 +36,7 @@ func (o *orgWorkflowManager) Provision(ctx context.Context, orgID string) error 
 	}
 
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: orgTaskQueue,
+		TaskQueue: workflows.DefaultTaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
 			"org-id":     orgID,
@@ -62,7 +61,7 @@ func (o *orgWorkflowManager) Deprovision(ctx context.Context, orgID string) erro
 	}
 
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: orgTaskQueue,
+		TaskQueue: workflows.DefaultTaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
 			"org-id":     orgID,
