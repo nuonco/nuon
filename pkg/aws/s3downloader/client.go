@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	assumerole "github.com/powertoolsdev/mono/pkg/aws-assume-role"
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 )
 
 func (s *s3Downloader) getClient(ctx context.Context) (*s3.Client, error) {
