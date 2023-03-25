@@ -3,11 +3,11 @@ package internal
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 )
 
 //nolint:gochecknoinits
 func init() {
-	config.RegisterDefault("temporal_host", "localhost:7233")
 	config.RegisterDefault("temporal_namespace", "installs")
 
 	// install defaults
@@ -19,11 +19,7 @@ func init() {
 
 // Config exposes a set of configuration options for the install domain
 type Config struct {
-	config.Base       `config:",squash"`
-	TemporalHost      string `config:"temporal_host"`
-	TemporalNamespace string `config:"temporal_namespace"`
-
-	HostIP string `config:"host_ip" validate:"required"`
+	worker.Config `config:",squash"`
 
 	// NOTE: these webhook urls are scoped at the project level, but are workflow specific. This is because we
 	// create a slack notifier object at the cmd level and pass it to each individual workflow
