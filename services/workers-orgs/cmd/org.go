@@ -90,7 +90,7 @@ func runOrgWorkers(c client.Client, cfg shared.Config, interruptCh <-chan interf
 		l.Info("using noop notification sender")
 		n = sender.NewNoopSender()
 	default:
-		n, err = sender.NewSlackSender(cfg.BotsSlackWebhookURL, l)
+		n, err = sender.NewSlackSender(cfg.BotsSlackWebhookURL)
 		if err != nil {
 			l.Warn("failed to create slack notifier, using noop", zap.Error(err))
 			n = sender.NewNoopSender()
