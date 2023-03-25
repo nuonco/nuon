@@ -3,12 +3,14 @@ package internal
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 )
 
 //nolint:gochecknoinits
 func init() {
-	config.RegisterDefault("temporal_host", "localhost:7233")
 	config.RegisterDefault("temporal_namespace", "apps")
+	config.RegisterDefault("temporal_task_queue", "apps")
+
 	config.RegisterDefault("waypoint_token_namespace", "default")
 	config.RegisterDefault("waypoint_server_root_domain", "orgs-stage.nuon.co")
 
@@ -17,10 +19,7 @@ func init() {
 }
 
 type Config struct {
-	config.Base `config:",squash"`
-
-	TemporalHost      string `config:"temporal_host"`
-	TemporalNamespace string `config:"temporal_namespace"`
+	worker.Config `config:",squash"`
 
 	OrgsEcrAccessRoleArn string `config:"orgs_ecr_access_role_arn" validate:"required" json:"orgs_ecr_access_iam_role_arn"`
 	OrgsBucketName       string `config:"org_orgs_bucket_name" json:"org_orgs_bucket_name" validate:"required"`
