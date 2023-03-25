@@ -3,7 +3,7 @@ package worker
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/config"
+	"github.com/powertoolsdev/mono/pkg/config"
 	"go.uber.org/zap"
 )
 

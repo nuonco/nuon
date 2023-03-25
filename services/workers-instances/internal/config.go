@@ -2,7 +2,7 @@ package instance
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/common/config"
+	"github.com/powertoolsdev/mono/pkg/config"
 )
 
 //nolint:gochecknoinits

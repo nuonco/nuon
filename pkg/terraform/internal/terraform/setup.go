@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	s3fetch "github.com/powertoolsdev/mono/pkg/fetch/pkg/s3"
+	s3fetch "github.com/powertoolsdev/mono/pkg/fetch/s3"
 	"github.com/powertoolsdev/mono/pkg/terraform/internal/terraform/config"
 	"github.com/powertoolsdev/mono/pkg/terraform/internal/terraform/config/backend"
 	"github.com/powertoolsdev/mono/pkg/terraform/internal/terraform/config/vars"

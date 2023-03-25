@@ -5,8 +5,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/powertoolsdev/mono/pkg/common/config"
 	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
+	"github.com/powertoolsdev/mono/pkg/config"
 	shared "github.com/powertoolsdev/mono/services/workers-apps/internal"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"

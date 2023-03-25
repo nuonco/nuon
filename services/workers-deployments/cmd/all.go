@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/common/config"
+	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-deployments/internal"
 	"github.com/powertoolsdev/mono/services/workers-deployments/internal/start"

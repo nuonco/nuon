@@ -5,7 +5,7 @@ import (
 	"log"
 
 	_ "github.com/lib/pq"
-	"github.com/powertoolsdev/mono/pkg/common/config"
+	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	databaseclient "github.com/powertoolsdev/mono/services/api/internal/clients/database"
 	"github.com/pressly/goose/v3"
