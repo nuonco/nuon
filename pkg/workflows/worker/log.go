@@ -13,7 +13,7 @@ func (w *worker) getLogger() (*zap.Logger, error) {
 		err error
 	)
 
-	switch w.Config.Base.Env {
+	switch w.Config.Env {
 	case config.Local, config.Development:
 		l, err = zap.NewDevelopment()
 	default:
