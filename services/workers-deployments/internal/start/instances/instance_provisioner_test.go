@@ -6,6 +6,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	provisionv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	tclient "go.temporal.io/sdk/client"
@@ -17,7 +18,8 @@ func TestInstanceProvisioner_startWorkflow(t *testing.T) {
 	ip := instanceProvisioner{}
 	req := generics.GetFakeObj[*provisionv1.ProvisionRequest]()
 
-	expectedOpts := tclient.StartWorkflowOptions{TaskQueue: "instance",
+	expectedOpts := tclient.StartWorkflowOptions{
+		TaskQueue: workflows.DefaultTaskQueue,
 		Memo: map[string]interface{}{
 			"org-id":        req.OrgId,
 			"app-id":        req.AppId,

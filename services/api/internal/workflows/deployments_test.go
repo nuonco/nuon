@@ -9,9 +9,11 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	tclient "go.temporal.io/sdk/client"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -43,6 +45,11 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 
 				args, ok := obj.Calls[0].Arguments[3].([]interface{})
 				assert.True(t, ok)
+
+				opts, ok := obj.Calls[0].Arguments[1].(tclient.StartWorkflowOptions)
+				assert.True(t, ok)
+				assert.Equal(t, workflows.DefaultTaskQueue, opts.TaskQueue)
+
 				req, ok := args[0].(*deploymentsv1.StartRequest)
 				assert.True(t, ok)
 
