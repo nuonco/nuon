@@ -20,7 +20,7 @@ func Test_Workflow(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
 
 	wkfl := runner.NewWorkflow(cfg)
-	env.RegisterWorkflow(wkfl.Install)
+	env.RegisterWorkflow(wkfl.ProvisionRunner)
 
 	wf := NewWorkflow(cfg)
 	a := NewActivities()
