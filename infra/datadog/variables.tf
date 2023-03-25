@@ -1,14 +1,13 @@
 locals {
-  name                   = "${var.env}-${local.vars.pool}-${local.service}"
-  service                = "temporal"
+  name = "datadog"
   terraform_organization = "launchpaddev"
+
   zone                   = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.private_zone)
 
   tags = {
     environment = var.env
-    service     = local.service
     pool        = local.vars.pool
-    terraform   = "infra-temporal-${var.env}"
+    terraform   = "infra-datadog-${var.env}"
   }
 
   vars = yamldecode(data.utils_deep_merge_yaml.vars.output)
@@ -17,4 +16,9 @@ locals {
 variable "env" {
   type        = string
   description = "The environment to use"
+}
+
+variable "datadog_api_key" {
+  type        = string
+  description = "The datadog api key"
 }

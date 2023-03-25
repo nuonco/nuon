@@ -12,8 +12,6 @@ locals {
     # This requires the awscli to be installed locally where Terraform is executed
     args = ["eks", "get-token", "--cluster-name", "${var.env}-${local.vars.pool}", "--role-arn", local.tf_role_arn, ]
   }]
-
-  helm_ecr_registry_url = "oci://${trimprefix(data.aws_ecr_authorization_token.ecr_token.proxy_endpoint, "https://")}"
 }
 
 # this is the root account that the credentials have permissions for.
@@ -50,13 +48,8 @@ provider "aws" {
 
 provider "helm" {
   experiments {
-    manifest = true
-  }
-
-  registry {
-    url      = local.helm_ecr_registry_url
-    username = data.aws_ecr_authorization_token.ecr_token.user_name
-    password = data.aws_ecr_authorization_token.ecr_token.password
+    // TODO(jm): figure out why the plan and apply phases are inconsistent
+    manifest = false
   }
 
   kubernetes {

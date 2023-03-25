@@ -1,1 +1,22 @@
 ---
+targetSystem: "linux"
+datadog:
+  site: us5.datadoghq.com
+
+  # TODO(jm): exclude other namespaces once we have logs running to save costs
+  #containerExclude: kube_namespace:logging kube_namespace:monitoring
+  logs:
+    enabled: true
+    containerCollectAll: true
+    #containerCollectUsingFiles: true
+  apm:
+    portEnabled: true
+    socketPath: /var/run/datadog/apm.socket
+    hostSocketPath: /var/run/datadog/
+  processAgent:
+    enabled: true
+    processCollection: false
+  systemProbe:
+    enableTCPQueueLength: false
+    enableOOMKill: true
+    collectDNSStats: false

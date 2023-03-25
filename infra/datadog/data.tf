@@ -13,6 +13,13 @@ data "aws_vpc" "vpc" {
   id = data.aws_vpcs.vpcs.ids[0]
 }
 
+locals {
+  vpc = {
+    id         = data.aws_vpc.vpc.id
+    cidr_block = data.aws_vpc.vpc.cidr_block_associations[0].cidr_block
+  }
+}
+
 data "aws_subnets" "private" {
   filter {
     name   = "vpc-id"
