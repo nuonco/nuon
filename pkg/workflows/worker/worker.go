@@ -4,17 +4,14 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	shared "github.com/powertoolsdev/mono/services/workers-deployments/internal"
 )
 
 type worker struct {
 	v *validator.Validate `validate:"required"`
 
-	// TODO(jm): once we have a standard configuration library, accept that
-	Config *shared.Config `validate:"required"`
-
-	Workflows  []interface{} `validate:"required"`
-	Activities []interface{} `validate:"required"`
+	Config     *Config       `validate:"required,dive"`
+	Workflows  []interface{} `validate:"required,gt=0"`
+	Activities []interface{} `validate:"required,gt=0"`
 }
 
 func New(v *validator.Validate, opts ...workerOption) (*worker, error) {
@@ -41,7 +38,7 @@ func New(v *validator.Validate, opts ...workerOption) (*worker, error) {
 
 type workerOption func(*worker) error
 
-func WithConfig(cfg *shared.Config) workerOption {
+func WithConfig(cfg *Config) workerOption {
 	return func(w *worker) error {
 		w.Config = cfg
 		return nil
