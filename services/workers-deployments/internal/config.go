@@ -20,6 +20,7 @@ func init() {
 type Config struct {
 	worker.Config `config:",squash"`
 
+	InstancesTemporalNamespace string `config:"instances_temporal_namespace" validate:"required"`
 	// waypoint configuration
 	WaypointTokenSecretNamespace string `config:"waypoint_token_secret_namespace" validate:"required"`
 	WaypointTokenSecretTemplate  string `config:"waypoint_token_secret_template" validate:"required"`
