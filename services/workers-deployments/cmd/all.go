@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/common/config"
-	"github.com/powertoolsdev/mono/services/workers-deployments/cmd/worker"
+	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-deployments/internal"
 	"github.com/powertoolsdev/mono/services/workers-deployments/internal/start"
 	"github.com/powertoolsdev/mono/services/workers-deployments/internal/start/build"
@@ -39,7 +39,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 	bldWkflow := build.NewWorkflow(cfg)
 	instWkflow := instances.NewWorkflow(cfg)
 
-	wkr, err := worker.New(validator.New(), worker.WithConfig(&cfg),
+	wkr, err := worker.New(validator.New(), worker.WithConfig(&cfg.Config),
 		// register workflows
 		worker.WithWorkflow(stWkflow.Start),
 		worker.WithWorkflow(bldWkflow.Build),
