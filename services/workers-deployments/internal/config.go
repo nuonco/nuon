@@ -10,7 +10,6 @@ import (
 func init() {
 	config.RegisterDefault("temporal_namespace", "deployments")
 	config.RegisterDefault("instances_temporal_namespace", "instances")
-	config.RegisterDefault("temporal_task_queue", "deployment")
 
 	// deployment defaults
 	config.RegisterDefault("waypoint_token_secret_namespace", "default")

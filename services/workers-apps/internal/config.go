@@ -9,7 +9,6 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "apps")
-	config.RegisterDefault("temporal_task_queue", "apps")
 
 	config.RegisterDefault("waypoint_token_namespace", "default")
 	config.RegisterDefault("waypoint_server_root_domain", "orgs-stage.nuon.co")
