@@ -122,5 +122,3 @@ resource "kubectl_manifest" "karpenter_provisioner" {
     helm_release.karpenter
   ]
 }
-
-
