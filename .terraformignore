@@ -1,0 +1,10 @@
+/
+!services/api/infra/
+!services/orgs-api/infra/
+!services/workers-apps/infra/
+!services/workers-deployments/infra/
+!services/workers-executors/infra/
+!services/workers-installs/infra/
+!services/workers-instances/infra/
+!services/workers-orgs/infra/
+!infra/
