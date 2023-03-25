@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	ghinstallation "github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/powertoolsdev/mono/pkg/common/config"
+	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	databaseclient "github.com/powertoolsdev/mono/services/api/internal/clients/database"
 	githubclient "github.com/powertoolsdev/mono/services/api/internal/clients/github"

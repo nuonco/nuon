@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"github.com/powertoolsdev/mono/pkg/common/config"
+	"github.com/powertoolsdev/mono/pkg/config"
 )
 
 //nolint:gochecknoinits

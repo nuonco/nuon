@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/common/config"
+	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/services/nuonctl/internal"
 	temporalclient "github.com/powertoolsdev/mono/services/nuonctl/internal/clients/temporal"
 	"github.com/powertoolsdev/mono/services/nuonctl/internal/repos/executors"
