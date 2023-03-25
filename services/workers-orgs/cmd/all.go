@@ -65,7 +65,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 		// register workflows
 		worker.WithWorkflow(wkflow.Signup),
 		worker.WithWorkflow(teardown.Teardown),
-		worker.WithWorkflow(runiFlow.Install),
+		worker.WithWorkflow(runiFlow.ProvisionRunner),
 		worker.WithWorkflow(srvWkflow.ProvisionServer),
 		worker.WithWorkflow(iamWkflow.ProvisionIAM),
 		worker.WithWorkflow(kmsWkflow.ProvisionKMS),
