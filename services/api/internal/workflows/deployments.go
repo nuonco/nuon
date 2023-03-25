@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	tclient "go.temporal.io/sdk/client"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -45,7 +46,7 @@ func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *model
 	orgID, appID, componentID, deploymentID := shortIDs[0], shortIDs[1], shortIDs[2], shortIDs[3]
 
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: "deployment",
+		TaskQueue: workflows.DefaultTaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
 			"org-id":        orgID,

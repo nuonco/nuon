@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	tclient "go.temporal.io/sdk/client"
 )
 
 func (r *repo) TriggerDeploymentStart(ctx context.Context, req *deploymentsv1.StartRequest) error {
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: "deployment",
+		TaskQueue: workflows.DefaultTaskQueue,
 	}
 
 	_, err := r.Client.ExecuteWorkflow(ctx, opts, "Start", req)
@@ -23,7 +24,7 @@ func (r *repo) TriggerDeploymentStart(ctx context.Context, req *deploymentsv1.St
 
 func (r *repo) ExecDeploymentStart(ctx context.Context, req *deploymentsv1.StartRequest) (*deploymentsv1.StartResponse, error) {
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: "deployment",
+		TaskQueue: workflows.DefaultTaskQueue,
 	}
 
 	resp := &deploymentsv1.StartResponse{}
