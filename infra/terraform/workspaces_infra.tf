@@ -35,6 +35,34 @@ module "ci-images" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
+module "infra-datadog-prod" {
+  source = "./modules/workspace"
+
+  name                            = "infra-datadog-prod"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/datadog"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  vars = {
+    env = "prod"
+  }
+}
+
+module "infra-datadog-stage" {
+  source = "./modules/workspace"
+
+  name                            = "infra-datadog-stage"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/datadog"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  vars = {
+    env = "stage"
+  }
+}
+
 module "infra-eks-horizon-main" {
   source = "./modules/workspace"
 
@@ -129,6 +157,17 @@ module "infra-eks-stage-nuon" {
   }
 }
 
+module "infra-github" {
+  source = "./modules/workspace"
+
+  name                            = "infra-github"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/github"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "github-admin-powertoolsdev"]
+}
+
 module "infra-temporal-prod" {
   source = "./modules/workspace"
 
@@ -155,19 +194,6 @@ module "infra-temporal-stage" {
   vars = {
     env = "stage"
   }
-}
-
-
-
-module "infra-github" {
-  source = "./modules/workspace"
-
-  name                            = "infra-github"
-  repo                            = "powertoolsdev/mono"
-  dir                             = "infra/github"
-  auto_apply                      = true
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials", "github-admin-powertoolsdev"]
 }
 
 module "infra-terraform" {
