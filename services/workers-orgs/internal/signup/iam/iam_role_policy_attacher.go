@@ -6,7 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/go-playground/validator/v10"
-	assumerole "github.com/powertoolsdev/mono/pkg/aws-assume-role"
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 )
 
 type CreateIAMRolePolicyAttachmentRequest struct {
