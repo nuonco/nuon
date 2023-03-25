@@ -12,7 +12,7 @@ import (
 	instancesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1/instances/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows-meta/prefix"
+	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 	workers "github.com/powertoolsdev/mono/services/workers-deployments/internal"
 	"github.com/powertoolsdev/mono/services/workers-deployments/internal/start/build"
 	"github.com/powertoolsdev/mono/services/workers-deployments/internal/start/instances"
