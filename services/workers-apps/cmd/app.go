@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/common/config"
 	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
+	"github.com/powertoolsdev/mono/pkg/config"
 	shared "github.com/powertoolsdev/mono/services/workers-apps/internal"
 	"github.com/powertoolsdev/mono/services/workers-apps/internal/provision"
 	"github.com/powertoolsdev/mono/services/workers-apps/internal/provision/project"

@@ -14,6 +14,8 @@ type TestEnvConfig struct {
 
 func TestEnv(t *testing.T) {
 	t.Run("not set", func(t *testing.T) {
+		os.Setenv("ENV", "")
+
 		var cfg TestEnvConfig
 		require.NoError(t, LoadInto(nil, &cfg))
 		assert.Equal(t, Local, cfg.Env)
