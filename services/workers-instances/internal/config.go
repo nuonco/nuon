@@ -3,11 +3,11 @@ package instance
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 )
 
 //nolint:gochecknoinits
 func init() {
-	config.RegisterDefault("temporal_host", "localhost:7233")
 	config.RegisterDefault("temporal_namespace", "instances")
 
 	// instance defaults
@@ -16,9 +16,7 @@ func init() {
 }
 
 type Config struct {
-	config.Base       `config:",squash"`
-	TemporalHost      string `config:"temporal_host"`
-	TemporalNamespace string `config:"temporal_namespace"`
+	worker.Config `config:",squash"`
 
 	DeploymentBotsSlackWebhookURL string `config:"deployment_bots_slack_webhook_url" validate:"required"`
 	DeploymentsBucket             string `config:"deployments_bucket" validate:"required"`
