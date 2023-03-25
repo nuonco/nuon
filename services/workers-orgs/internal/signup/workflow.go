@@ -166,7 +166,7 @@ func execInstallWaypointRunnerWorkflow(
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
 	wkflow := runner.NewWorkflow(cfg)
-	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.Install, iwrr)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionRunner, iwrr)
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		return &resp, err

@@ -38,7 +38,7 @@ func Test_Workflow(t *testing.T) {
 	env.RegisterWorkflow(srv.ProvisionServer)
 	env.RegisterWorkflow(iamer.ProvisionIAM)
 	env.RegisterWorkflow(kmser.ProvisionKMS)
-	env.RegisterWorkflow(run.Install)
+	env.RegisterWorkflow(run.ProvisionRunner)
 
 	wf := NewWorkflow(cfg)
 	a := NewActivities(nil)
@@ -85,7 +85,7 @@ func Test_Workflow(t *testing.T) {
 			return serverResp, nil
 		})
 
-	env.OnWorkflow(run.Install, mock.Anything, mock.Anything).
+	env.OnWorkflow(run.ProvisionRunner, mock.Anything, mock.Anything).
 		Return(func(_ workflow.Context, r *runnerv1.InstallRunnerRequest) (*runnerv1.InstallRunnerResponse, error) {
 			var resp runnerv1.InstallRunnerResponse
 			assert.Nil(t, r.Validate())
