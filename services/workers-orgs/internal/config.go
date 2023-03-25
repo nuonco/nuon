@@ -3,6 +3,7 @@ package org
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 )
 
 //nolint:gochecknoinits
@@ -27,7 +28,7 @@ func init() {
 }
 
 type Config struct {
-	config.Base `config:",squash"`
+	worker.Config `config:",squash"`
 
 	// NOTE: top level configuration for starting the worker
 	BotsSlackWebhookURL string `config:"bots_slack_webhook_url"`
