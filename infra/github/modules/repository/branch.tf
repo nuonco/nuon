@@ -35,6 +35,6 @@ resource "github_branch_protection" "default" {
     strict = true
     # This is a generic, required check.
     # The meaning of it is left to each repo to determine
-    contexts = ["Required PR Checks", "Required CI Checks", ]
+    contexts = var.required_checks
   }
 }

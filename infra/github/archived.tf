@@ -14,7 +14,7 @@ module "api" {
 module "awesome-customer-cloud" {
   source = "./modules/repository"
 
-  archived = true
+  archived    = true
   name        = "awesome-customer-cloud"
   description = "experimental customer cloud repo"
   topics      = ["experimental"]
@@ -206,7 +206,6 @@ module "template-go-library" {
   name        = "template-go-library"
   description = "Template for creating a new go library."
   topics      = ["template"]
-  is_template = true
 }
 
 module "template-go-service" {
@@ -215,7 +214,6 @@ module "template-go-service" {
   archived                 = true
   name                     = "template-go-service"
   description              = "Template for creating a go service repository."
-  is_template              = true
   enable_ecr               = true
   enable_prod_environment  = true
   enable_stage_environment = true

@@ -18,7 +18,6 @@ resource "github_repository" "main" {
   has_issues   = true  # we used to turn off issues for archived repos. that causes issues so don't
   has_projects = false # we use org projects, not older projects v1
   has_wiki     = false # we use notion
-  is_template  = var.is_template
   auto_init    = true
 
   # merge commits are messy

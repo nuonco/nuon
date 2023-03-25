@@ -1,6 +1,7 @@
-variable "name" {
-  type        = string
-  description = "The repository name"
+variable "archived" {
+  default     = false
+  type        = bool
+  description = "Whether to archive the repo or not"
 }
 
 variable "description" {
@@ -14,34 +15,10 @@ variable "enable_branch_protection" {
   description = "Enable branch protection. Disable with caution."
 }
 
-variable "topics" {
-  default     = []
-  type        = list(string)
-  description = "the list of topics to assign to the repo"
-}
-
 variable "enable_ecr" {
   default     = false
   type        = bool
   description = "Whether to create an ECR repo for the source code repository"
-}
-
-variable "archived" {
-  default     = false
-  type        = bool
-  description = "Whether to archive the repo or not"
-}
-
-variable "enable_prod_environment" {
-  default     = false
-  type        = bool
-  description = "Whether to create a prod environment"
-}
-
-variable "prod_wait_timer" {
-  type        = number
-  default     = 15
-  description = "Number of minutes to delay jobs for this environment"
 }
 
 variable "enable_stage_environment" {
@@ -50,10 +27,10 @@ variable "enable_stage_environment" {
   description = "Whether to create a stage environment"
 }
 
-variable "owning_team" {
-  description = "The owning team of the repo"
-  type        = map(any)
-  default     = {}
+variable "enable_prod_environment" {
+  default     = false
+  type        = bool
+  description = "Whether to create a prod environment"
 }
 
 variable "extra_ecr_repos" {
@@ -62,8 +39,32 @@ variable "extra_ecr_repos" {
   default     = []
 }
 
-variable "is_template" {
-  default     = false
-  type        = bool
-  description = "Whether the repo is a template repo"
+variable "name" {
+  type        = string
+  description = "The repository name"
+}
+
+variable "owning_team" {
+  description = "The owning team of the repo"
+  type        = map(any)
+  default     = {}
+}
+
+
+variable "prod_wait_timer" {
+  type        = number
+  default     = 15
+  description = "Number of minutes to delay jobs for this environment"
+}
+
+variable "required_checks" {
+  default     = ["Required PR Checks", "Required CI Checks"]
+  type        = list(string)
+  description = "Required checks that are enforced before merging"
+}
+
+variable "topics" {
+  default     = []
+  type        = list(string)
+  description = "the list of topics to assign to the repo"
 }
