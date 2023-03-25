@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 func TestSend_slack(t *testing.T) {
@@ -83,7 +82,6 @@ func TestSend_slack(t *testing.T) {
 			defer svr.Close()
 			s := &slackNotifier{
 				webhookURL: svr.URL,
-				l:          zap.NewNop(),
 			}
 
 			err := s.Send(context.Background(), expectedMsg)
@@ -99,41 +97,30 @@ func TestSend_slack(t *testing.T) {
 
 func TestNewSlackSender(t *testing.T) {
 	validURL := "https://hooks.slack.com/webhook/test"
-	noopLogger := zap.NewNop()
 	tests := map[string]struct {
 		maybeURL    string
-		l           *zap.Logger
 		errExpected error
 	}{
 		"happy path": {
 			maybeURL: validURL,
-			l:        noopLogger,
-		},
-		"nil logger": {
-			maybeURL:    validURL,
-			l:           nil,
-			errExpected: errMissingLogger,
 		},
 		"invalid url scheme": {
 			maybeURL:    "http://hooks.slack.com",
-			l:           noopLogger,
 			errExpected: errInvalidURL,
 		},
 		"not a slack url": {
 			maybeURL:    "https://notslack.com",
-			l:           noopLogger,
 			errExpected: errInvalidURL,
 		},
 		"unparseable url": {
 			maybeURL:    "htt🍆ps://invalid",
-			l:           noopLogger,
 			errExpected: errInvalidURL,
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			s, err := NewSlackSender(test.maybeURL, test.l)
+			s, err := NewSlackSender(test.maybeURL)
 			if test.errExpected != nil {
 				assert.ErrorIs(t, err, test.errExpected)
 				return
@@ -141,7 +128,6 @@ func TestNewSlackSender(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, s)
 			assert.NotEmpty(t, s.webhookURL)
-			assert.Equal(t, test.l, s.l)
 		})
 	}
 }

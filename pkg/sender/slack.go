@@ -7,13 +7,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-
-	"go.uber.org/zap"
 )
 
 type slackNotifier struct {
 	webhookURL string
-	l          *zap.Logger
 }
 
 var (
@@ -22,7 +19,7 @@ var (
 )
 
 // NewSlackSender instantiates a new sender that sends to Slack using maybeURL
-func NewSlackSender(maybeURL string, l *zap.Logger) (*slackNotifier, error) {
+func NewSlackSender(maybeURL string) (*slackNotifier, error) {
 	u, err := url.Parse(maybeURL)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse URL: %q: %w", maybeURL, errInvalidURL)
@@ -32,16 +29,11 @@ func NewSlackSender(maybeURL string, l *zap.Logger) (*slackNotifier, error) {
 		return nil, fmt.Errorf("invalid scheme or host: %q: %w", maybeURL, errInvalidURL)
 	}
 
-	if l == nil {
-		return nil, errMissingLogger
-	}
-
-	return &slackNotifier{webhookURL: u.String(), l: l}, nil
+	return &slackNotifier{webhookURL: u.String()}, nil
 }
 
 // Send a message via Slack
 func (s *slackNotifier) Send(ctx context.Context, msg string) error {
-	s.l.Debug("starting to send slack notification", zap.String("msg", msg))
 	bs, err := json.Marshal(struct {
 		Text string `json:"text"`
 	}{
