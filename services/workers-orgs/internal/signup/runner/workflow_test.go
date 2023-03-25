@@ -99,7 +99,7 @@ func TestRunner(t *testing.T) {
 		})
 
 	wkflow := NewWorkflow(cfg)
-	env.ExecuteWorkflow(wkflow.Install, req)
+	env.ExecuteWorkflow(wkflow.ProvisionRunner, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
 	var resp runnerv1.InstallRunnerResponse
