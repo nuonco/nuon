@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	tclient "go.temporal.io/sdk/client"
 )
 
 // TODO(jm): eventually rename this workflow to Provision
 func (r *repo) TriggerOrgSignup(ctx context.Context, req *orgsv1.SignupRequest) error {
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: "org",
+		TaskQueue: workflows.DefaultTaskQueue,
 		Memo: map[string]interface{}{
 			"org-id":     req.OrgId,
 			"started-by": "nuonctl",
@@ -28,7 +29,7 @@ func (r *repo) TriggerOrgSignup(ctx context.Context, req *orgsv1.SignupRequest) 
 
 func (r *repo) ExecOrgSignup(ctx context.Context, req *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error) {
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: "org",
+		TaskQueue: workflows.DefaultTaskQueue,
 		Memo: map[string]interface{}{
 			"org-id":     req.OrgId,
 			"started-by": "nuonctl",

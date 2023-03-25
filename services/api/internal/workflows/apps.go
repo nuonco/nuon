@@ -5,7 +5,9 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
+
 	tclient "go.temporal.io/sdk/client"
 )
 
@@ -32,7 +34,7 @@ func (a *appWorkflowManager) Provision(ctx context.Context, app *models.App) err
 	appID := shortid.ParseUUID(app.ID)
 
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: "apps",
+		TaskQueue: workflows.DefaultTaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
 			"org-id":     orgID,

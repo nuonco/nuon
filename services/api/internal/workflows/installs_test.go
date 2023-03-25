@@ -9,9 +9,11 @@ import (
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	tclient "go.temporal.io/sdk/client"
 )
 
 func Test_installWorkflowManager_Provision(t *testing.T) {
@@ -43,6 +45,11 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 
 				args, ok := obj.Calls[0].Arguments[3].([]interface{})
 				assert.True(t, ok)
+
+				opts, ok := obj.Calls[0].Arguments[1].(tclient.StartWorkflowOptions)
+				assert.True(t, ok)
+				assert.Equal(t, workflows.DefaultTaskQueue, opts.TaskQueue)
+
 				req, ok := args[0].(*installsv1.ProvisionRequest)
 				assert.True(t, ok)
 
