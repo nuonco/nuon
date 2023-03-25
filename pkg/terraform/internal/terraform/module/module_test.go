@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
-	errfetch "github.com/powertoolsdev/mono/pkg/fetch/pkg/error"
-	filefetch "github.com/powertoolsdev/mono/pkg/fetch/pkg/file"
-	stringfetch "github.com/powertoolsdev/mono/pkg/fetch/pkg/string"
+	errfetch "github.com/powertoolsdev/mono/pkg/fetch/error"
+	filefetch "github.com/powertoolsdev/mono/pkg/fetch/file"
+	stringfetch "github.com/powertoolsdev/mono/pkg/fetch/string"
 	"github.com/stretchr/testify/assert"
 )
 
