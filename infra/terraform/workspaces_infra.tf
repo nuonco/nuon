@@ -11,6 +11,58 @@ module "apks" {
   allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
 }
 
+module "aws" {
+  source = "./modules/workspace"
+
+  name          = "aws"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = false
+  dir           = "infra/aws/cdktf.out/stacks/org"
+  variable_sets = ["aws-environment-credentials"]
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
+}
+
+module "aws-accounts" {
+  source = "./modules/workspace"
+
+  name          = "aws-accounts"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = false
+  dir           = "infra/aws/cdktf.out/stacks/accounts"
+  variable_sets = ["aws-environment-credentials"]
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
+}
+
+module "aws-audit" {
+  source = "./modules/workspace"
+
+  name          = "aws-audit"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = false
+  dir           = "infra/aws/cdktf.out/stacks/audit"
+  variable_sets = ["aws-environment-credentials"]
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
+}
+
+module "aws-sso" {
+  source = "./modules/workspace"
+
+  name          = "aws-sso"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = false
+  dir           = "infra/aws/cdktf.out/stacks/sso"
+  variable_sets = ["aws-environment-credentials"]
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
+}
+
 module "chart-common" {
   source = "./modules/workspace"
 
@@ -105,7 +157,7 @@ module "infra-eks-orgs-prod-main" {
 module "infra-eks-orgs-stage-main" {
   source = "./modules/workspace"
 
-  name = "infra-eks-orgs-stage-main"
+  name                            = "infra-eks-orgs-stage-main"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = true
@@ -128,7 +180,7 @@ module "infra-eks-orgs-stage-main" {
 module "infra-eks-prod-nuon" {
   source = "./modules/workspace"
 
-  name = "infra-eks-prod-nuon"
+  name                            = "infra-eks-prod-nuon"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = false
@@ -144,7 +196,7 @@ module "infra-eks-prod-nuon" {
 module "infra-eks-stage-nuon" {
   source = "./modules/workspace"
 
-  name = "infra-eks-stage-nuon"
+  name                            = "infra-eks-stage-nuon"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = true
