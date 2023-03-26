@@ -15,7 +15,6 @@
         "cross-stack-output-aws_organizations_account.horizon.id": "cross-stack-output-aws_organizations_accounthorizonid",
         "cross-stack-output-aws_organizations_account.infra-shared-prod.id": "cross-stack-output-aws_organizations_accountinfra-shared-prodid",
         "cross-stack-output-aws_organizations_account.infra-shared-stage.id": "cross-stack-output-aws_organizations_accountinfra-shared-stageid",
-        "cross-stack-output-aws_organizations_account.logs.id": "cross-stack-output-aws_organizations_accountlogsid",
         "cross-stack-output-aws_organizations_account.orgs-prod.id": "cross-stack-output-aws_organizations_accountorgs-prodid",
         "cross-stack-output-aws_organizations_account.orgs-stage.id": "cross-stack-output-aws_organizations_accountorgs-stageid",
         "cross-stack-output-aws_organizations_account.prod.id": "cross-stack-output-aws_organizations_accountprodid",
@@ -127,10 +126,6 @@
       "sensitive": true,
       "value": "${aws_organizations_account.infra-shared-stage.id}"
     },
-    "cross-stack-output-aws_organizations_accountlogsid": {
-      "sensitive": true,
-      "value": "${aws_organizations_account.logs.id}"
-    },
     "cross-stack-output-aws_organizations_accountorgs-prodid": {
       "sensitive": true,
       "value": "${aws_organizations_account.orgs-prod.id}"
@@ -165,7 +160,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-26T00:12:02.769Z"
+      "value": "2023-03-26T01:07:18.412Z"
     }
   },
   "provider": {
@@ -310,24 +305,6 @@
         },
         "name": "infra-shared-stage",
         "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
-      },
-      "logs": {
-        "//": {
-          "metadata": {
-            "path": "org/logs",
-            "uniqueId": "logs"
-          }
-        },
-        "close_on_deletion": true,
-        "email": "aws-accounts+logs@powertools.dev",
-        "iam_user_access_to_billing": "ALLOW",
-        "lifecycle": {
-          "ignore_changes": [
-            "iam_user_access_to_billing"
-          ]
-        },
-        "name": "logs",
-        "parent_id": "${aws_organizations_organizational_unit.meta.id}"
       },
       "orgs-prod": {
         "//": {
@@ -637,17 +614,6 @@
         "name": "infra-shared-stage-environment-tag-policy",
         "type": "TAG_POLICY"
       },
-      "env_tag_policy_logs": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_logs",
-            "uniqueId": "env_tag_policy_logs"
-          }
-        },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"logs\"]}}}}",
-        "name": "logs-environment-tag-policy",
-        "type": "TAG_POLICY"
-      },
       "env_tag_policy_orgs-prod": {
         "//": {
           "metadata": {
@@ -806,16 +772,6 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_infra-shared-stage.id}",
         "target_id": "${aws_organizations_account.infra-shared-stage.id}"
-      },
-      "env_tag_policy_attach_logs": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_attach_logs",
-            "uniqueId": "env_tag_policy_attach_logs"
-          }
-        },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_logs.id}",
-        "target_id": "${aws_organizations_account.logs.id}"
       },
       "env_tag_policy_attach_orgs-prod": {
         "//": {

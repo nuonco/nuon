@@ -16,7 +16,6 @@
         "horizon-gh-oidc-provider": "horizon-gh-oidc-provider",
         "infra-shared-prod-gh-oidc-provider": "infra-shared-prod-gh-oidc-provider",
         "infra-shared-stage-gh-oidc-provider": "infra-shared-stage-gh-oidc-provider",
-        "logs-gh-oidc-provider": "logs-gh-oidc-provider",
         "orgs-prod-gh-oidc-provider": "orgs-prod-gh-oidc-provider",
         "orgs-stage-gh-oidc-provider": "orgs-stage-gh-oidc-provider",
         "prod-gh-oidc-provider": "prod-gh-oidc-provider",
@@ -67,7 +66,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-26T00:12:02.863Z"
+      "value": "2023-03-26T01:07:18.511Z"
     },
     "audit-gh-oidc-provider": {
       "description": "The Github OIDC provider for the audit account",
@@ -96,10 +95,6 @@
     "infra-shared-stage-gh-oidc-provider": {
       "description": "The Github OIDC provider for the infra-shared-stage account",
       "value": "${aws_iam_openid_connect_provider.infra-shared-stage-github-oidc-provider}"
-    },
-    "logs-gh-oidc-provider": {
-      "description": "The Github OIDC provider for the logs account",
-      "value": "${aws_iam_openid_connect_provider.logs-github-oidc-provider}"
     },
     "orgs-prod-gh-oidc-provider": {
       "description": "The Github OIDC provider for the orgs-prod account",
@@ -301,91 +296,6 @@
         "assume_role": [
           {
             "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-2"
-      },
-      {
-        "alias": "logs",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountlogsid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "logs-us-east-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountlogsid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-1"
-      },
-      {
-        "alias": "logs-us-east-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountlogsid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "logs-us-west-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountlogsid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-1"
-      },
-      {
-        "alias": "logs-us-west-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountlogsid}:role/OrganizationAccountAccessRole"
           }
         ],
         "default_tags": [
@@ -1492,16 +1402,6 @@
         "account_alias": "nuon-infra-shared-stage",
         "provider": "aws.infra-shared-stage"
       },
-      "logs-iam-alias": {
-        "//": {
-          "metadata": {
-            "path": "accounts/logs-iam-alias",
-            "uniqueId": "logs-iam-alias"
-          }
-        },
-        "account_alias": "nuon-logs",
-        "provider": "aws.logs"
-      },
       "orgs-prod-iam-alias": {
         "//": {
           "metadata": {
@@ -1681,22 +1581,6 @@
           "sts.amazonaws.com"
         ],
         "provider": "aws.infra-shared-stage",
-        "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
-        ],
-        "url": "https://token.actions.githubusercontent.com"
-      },
-      "logs-github-oidc-provider": {
-        "//": {
-          "metadata": {
-            "path": "accounts/logs-github-oidc-provider",
-            "uniqueId": "logs-github-oidc-provider"
-          }
-        },
-        "client_id_list": [
-          "sts.amazonaws.com"
-        ],
-        "provider": "aws.logs",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1"
         ],
@@ -1927,22 +1811,6 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.infra-shared-stage"
-      },
-      "logs-terraform-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/logs-terraform-role",
-            "uniqueId": "logs-terraform-role"
-          }
-        },
-        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
-        "description": "Terraform role to assume",
-        "managed_policy_arns": [
-          "arn:aws:iam::aws:policy/AdministratorAccess"
-        ],
-        "name": "terraform",
-        "path": "/",
-        "provider": "aws.logs"
       },
       "orgs-prod-terraform-role": {
         "//": {
@@ -2268,36 +2136,6 @@
         "aws_service_name": "spot.amazonaws.com",
         "provider": "aws.infra-shared-stage"
       },
-      "logs-opensearch-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/logs-opensearch-service-linked-role",
-            "uniqueId": "logs-opensearch-service-linked-role"
-          }
-        },
-        "aws_service_name": "opensearchservice.amazonaws.com",
-        "provider": "aws.logs"
-      },
-      "logs-spot-fleet-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/logs-spot-fleet-service-linked-role",
-            "uniqueId": "logs-spot-fleet-service-linked-role"
-          }
-        },
-        "aws_service_name": "spotfleet.amazonaws.com",
-        "provider": "aws.logs"
-      },
-      "logs-spot-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/logs-spot-service-linked-role",
-            "uniqueId": "logs-spot-service-linked-role"
-          }
-        },
-        "aws_service_name": "spot.amazonaws.com",
-        "provider": "aws.logs"
-      },
       "orgs-prod-opensearch-service-linked-role": {
         "//": {
           "metadata": {
@@ -2608,20 +2446,6 @@
         "type": "NS",
         "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
       },
-      "logs-ns-delegation": {
-        "//": {
-          "metadata": {
-            "path": "accounts/logs-ns-delegation",
-            "uniqueId": "logs-ns-delegation"
-          }
-        },
-        "name": "logs.nuon.co",
-        "provider": "aws",
-        "records": "${aws_route53_zone.logs-hosted-zone.name_servers}",
-        "ttl": 300,
-        "type": "NS",
-        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
-      },
       "orgs-prod-ns-delegation": {
         "//": {
           "metadata": {
@@ -2791,16 +2615,6 @@
         },
         "name": "infra-shared-stage.nuon.co",
         "provider": "aws.infra-shared-stage"
-      },
-      "logs-hosted-zone": {
-        "//": {
-          "metadata": {
-            "path": "accounts/logs-hosted-zone",
-            "uniqueId": "logs-hosted-zone"
-          }
-        },
-        "name": "logs.nuon.co",
-        "provider": "aws.logs"
       },
       "orgs-prod-hosted-zone": {
         "//": {

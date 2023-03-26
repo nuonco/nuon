@@ -45,7 +45,6 @@ export const desiredOrgStructure: orgStructure = [
     accounts: [
       { name: "audit" },
       { additionalEnvTags: ["stage", "prod"], name: "external" },
-      { name: "logs" },
       { name: "security" },
     ],
     name: "meta",
