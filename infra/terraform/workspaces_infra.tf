@@ -21,7 +21,7 @@ module "aws" {
   variable_sets = ["aws-environment-credentials"]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
+  allowed_remote_state_workspaces = ["global"]
 }
 
 module "aws-accounts" {
@@ -34,7 +34,7 @@ module "aws-accounts" {
   variable_sets = ["aws-environment-credentials"]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
+  allowed_remote_state_workspaces = ["global"]
 }
 
 module "aws-audit" {
@@ -47,7 +47,7 @@ module "aws-audit" {
   variable_sets = ["aws-environment-credentials"]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
+  allowed_remote_state_workspaces = ["global"]
 }
 
 module "aws-sso" {
@@ -60,7 +60,7 @@ module "aws-sso" {
   variable_sets = ["aws-environment-credentials"]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
+  allowed_remote_state_workspaces = ["global"]
 }
 
 module "chart-common" {
