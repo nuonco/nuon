@@ -37,19 +37,6 @@ module "aws-accounts" {
   allowed_remote_state_workspaces = ["global"]
 }
 
-module "aws-audit" {
-  source = "./modules/workspace"
-
-  name          = "aws-audit"
-  repo          = "powertoolsdev/mono"
-  auto_apply    = false
-  dir           = "infra/aws/cdktf.out/stacks/audit"
-  variable_sets = ["aws-environment-credentials"]
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = ["global"]
-}
-
 module "aws-sso" {
   source = "./modules/workspace"
 
