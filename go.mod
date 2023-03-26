@@ -3,7 +3,7 @@ module github.com/powertoolsdev/mono
 go 1.20
 
 require (
-	github.com/aws/aws-sdk-go v1.44.226
+	github.com/aws/aws-sdk-go v1.44.229
 	github.com/aws/aws-sdk-go-v2 v1.17.6
 	github.com/aws/aws-sdk-go-v2/config v1.18.18
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.17
@@ -160,6 +160,7 @@ require (
 	github.com/hashicorp/opaqueany v0.0.0-20220321170339-a5c6ff5bb0ec // indirect
 	github.com/hashicorp/terraform-json v0.15.0 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
+	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -236,6 +237,7 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/oauth2 v0.6.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
