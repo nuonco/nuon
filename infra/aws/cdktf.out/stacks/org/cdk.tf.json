@@ -22,7 +22,6 @@
         "cross-stack-output-aws_organizations_account.sandbox.id": "cross-stack-output-aws_organizations_accountsandboxid",
         "cross-stack-output-aws_organizations_account.security.id": "cross-stack-output-aws_organizations_accountsecurityid",
         "cross-stack-output-aws_organizations_account.stage.id": "cross-stack-output-aws_organizations_accountstageid",
-        "cross-stack-output-aws_organizations_organization.org.id": "cross-stack-output-aws_organizations_organizationorgid",
         "org-last-updated": "org-last-updated"
       }
     }
@@ -154,13 +153,9 @@
       "sensitive": true,
       "value": "${aws_organizations_account.stage.id}"
     },
-    "cross-stack-output-aws_organizations_organizationorgid": {
-      "sensitive": true,
-      "value": "${aws_organizations_organization.org.id}"
-    },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-26T01:07:18.412Z"
+      "value": "2023-03-26T01:30:42.793Z"
     }
   },
   "provider": {

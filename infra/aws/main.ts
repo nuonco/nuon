@@ -1,5 +1,5 @@
 import { App, RemoteBackend } from "cdktf";
-import { Accounts, Audit, Org, SSO } from "./lib";
+import { Accounts, Org, SSO } from "./lib";
 
 const defaultTags = [
   {
@@ -26,23 +26,6 @@ new RemoteBackend(sso, {
   organization: "launchpaddev",
   workspaces: {
     name: "aws-sso",
-  },
-});
-
-const auditAccount = org.accounts.find((acct) => acct.name == "audit");
-if (!auditAccount) {
-  throw new Error("unable to find audit account");
-}
-const audit = new Audit(app, "audit", {
-  account: auditAccount,
-  defaultTags,
-  org: org.org,
-});
-new RemoteBackend(audit, {
-  hostname: "app.terraform.io",
-  organization: "launchpaddev",
-  workspaces: {
-    name: "aws-audit",
   },
 });
 

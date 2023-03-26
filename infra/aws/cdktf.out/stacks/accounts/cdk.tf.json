@@ -66,7 +66,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-26T01:07:18.511Z"
+      "value": "2023-03-26T01:30:42.875Z"
     },
     "audit-gh-oidc-provider": {
       "description": "The Github OIDC provider for the audit account",

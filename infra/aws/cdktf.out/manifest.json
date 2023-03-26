@@ -19,16 +19,6 @@
         "org"
       ]
     },
-    "audit": {
-      "name": "audit",
-      "constructPath": "audit",
-      "workingDirectory": "stacks/audit",
-      "synthesizedStackPath": "stacks/audit/cdk.tf.json",
-      "annotations": [],
-      "dependencies": [
-        "org"
-      ]
-    },
     "accounts": {
       "name": "accounts",
       "constructPath": "accounts",
