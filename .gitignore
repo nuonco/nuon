@@ -25,6 +25,4 @@ pkg/types/**/**.go
 # generated mocks
 *mock*.go
 go.work
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
-
+.gen
