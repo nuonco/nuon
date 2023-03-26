@@ -6,10 +6,8 @@
   "license": "MPL-2.0",
   "private": true,
   "scripts": {
-    "get": "cdktf get",
     "build": "tsc",
     "synth": "cdktf synth",
-    "deploy": "cdktf deploy org sso audit accounts",
     "compile": "tsc --pretty",
     "fmt": "prettier --write main.ts lib/**",
     "lint": "eslint main.ts lib/**/*.ts",

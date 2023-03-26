@@ -1,9 +1,5 @@
 # infra-aws
 
-Meta config for AWS accounts.
-
-# Repo
-
 ## Concepts
 
 Looking at `main.tf` or any of the stack configs in `./lib/`, one may presume
@@ -17,18 +13,13 @@ keep in mind when the logic runs - either during synthesis or during apply.
 ## Setup
 
 - Install dependencies: `npm ci`
-- Generate modules/providers: `npm run get`
+- Synthesize `npm run synth`
 
-## Deploy
+## Changing infrastructure
 
-- `npm run deploy`
+Terraform cloud is used to run `terraform plan` and `terraform apply` on the synthesized terraform that `cdktf` creates. You should _not_ run `cdktf` commands locally, as they can easily delete resources.
 
-Alternatively, it is sometimes helpful to synthesize and plan/apply
-independently.
 - `npm run synth`
-- `cd cdktf.out/stacks/${STACK} && terraform init && terraform plan`
-
-
 
 # Configuration
 

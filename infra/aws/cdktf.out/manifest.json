@@ -1,0 +1,43 @@
+{
+  "version": "0.15.5",
+  "stacks": {
+    "org": {
+      "name": "org",
+      "constructPath": "org",
+      "workingDirectory": "stacks/org",
+      "synthesizedStackPath": "stacks/org/cdk.tf.json",
+      "annotations": [],
+      "dependencies": []
+    },
+    "sso": {
+      "name": "sso",
+      "constructPath": "sso",
+      "workingDirectory": "stacks/sso",
+      "synthesizedStackPath": "stacks/sso/cdk.tf.json",
+      "annotations": [],
+      "dependencies": [
+        "org"
+      ]
+    },
+    "audit": {
+      "name": "audit",
+      "constructPath": "audit",
+      "workingDirectory": "stacks/audit",
+      "synthesizedStackPath": "stacks/audit/cdk.tf.json",
+      "annotations": [],
+      "dependencies": [
+        "org"
+      ]
+    },
+    "accounts": {
+      "name": "accounts",
+      "constructPath": "accounts",
+      "workingDirectory": "stacks/accounts",
+      "synthesizedStackPath": "stacks/accounts/cdk.tf.json",
+      "annotations": [],
+      "dependencies": [
+        "org"
+      ]
+    }
+  }
+}

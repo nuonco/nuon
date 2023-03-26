@@ -1,0 +1,605 @@
+{
+  "//": {
+    "metadata": {
+      "backend": "remote",
+      "cloud": "tfc",
+      "stackName": "sso",
+      "version": "0.15.5"
+    },
+    "outputs": {
+      "sso": {
+        "sso-last-updated": "sso-last-updated"
+      }
+    }
+  },
+  "data": {
+    "aws_identitystore_group": {
+      "NuonAdmin-group": {
+        "//": {
+          "metadata": {
+            "path": "sso/NuonAdmin-group",
+            "uniqueId": "NuonAdmin-group"
+          }
+        },
+        "alternate_identifier": {
+          "unique_attribute": {
+            "attribute_path": "DisplayName",
+            "attribute_value": "AWS Admins"
+          }
+        },
+        "identity_store_id": "${element(data.aws_ssoadmin_instances.this.identity_store_ids, 0)}"
+      },
+      "NuonPowerUser-group": {
+        "//": {
+          "metadata": {
+            "path": "sso/NuonPowerUser-group",
+            "uniqueId": "NuonPowerUser-group"
+          }
+        },
+        "alternate_identifier": {
+          "unique_attribute": {
+            "attribute_path": "DisplayName",
+            "attribute_value": "Engineers"
+          }
+        },
+        "identity_store_id": "${element(data.aws_ssoadmin_instances.this.identity_store_ids, 0)}"
+      }
+    },
+    "aws_ssoadmin_instances": {
+      "this": {
+        "//": {
+          "metadata": {
+            "path": "sso/this",
+            "uniqueId": "this"
+          }
+        }
+      }
+    },
+    "terraform_remote_state": {
+      "cross-stack-reference-input-org": {
+        "backend": "remote",
+        "config": {
+          "hostname": "app.terraform.io",
+          "organization": "launchpaddev",
+          "workspaces": {
+            "name": "aws"
+          }
+        }
+      }
+    }
+  },
+  "output": {
+    "sso-last-updated": {
+      "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
+      "value": "2023-03-26T00:12:02.798Z"
+    }
+  },
+  "provider": {
+    "aws": [
+      {
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      }
+    ]
+  },
+  "resource": {
+    "aws_ssoadmin_account_assignment": {
+      "nuonadmin-audit": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-audit",
+            "uniqueId": "nuonadmin-audit"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountauditid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-ci": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-ci",
+            "uniqueId": "nuonadmin-ci"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-demo": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-demo",
+            "uniqueId": "nuonadmin-demo"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountdemoid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-external": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-external",
+            "uniqueId": "nuonadmin-external"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-horizon": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-horizon",
+            "uniqueId": "nuonadmin-horizon"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accounthorizonid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-infra-shared-prod": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-infra-shared-prod",
+            "uniqueId": "nuonadmin-infra-shared-prod"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-shared-prodid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-infra-shared-stage": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-infra-shared-stage",
+            "uniqueId": "nuonadmin-infra-shared-stage"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-shared-stageid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-logs": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-logs",
+            "uniqueId": "nuonadmin-logs"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountlogsid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-orgs-prod": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-orgs-prod",
+            "uniqueId": "nuonadmin-orgs-prod"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountorgs-prodid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-orgs-stage": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-orgs-stage",
+            "uniqueId": "nuonadmin-orgs-stage"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountorgs-stageid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-prod": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-prod",
+            "uniqueId": "nuonadmin-prod"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountprodid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-public": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-public",
+            "uniqueId": "nuonadmin-public"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountpublicid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-sandbox": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-sandbox",
+            "uniqueId": "nuonadmin-sandbox"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandboxid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-security": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-security",
+            "uniqueId": "nuonadmin-security"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsecurityid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-stage": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-stage",
+            "uniqueId": "nuonadmin-stage"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountstageid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-audit": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-audit",
+            "uniqueId": "nuonpoweruser-audit"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountauditid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-ci": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-ci",
+            "uniqueId": "nuonpoweruser-ci"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-demo": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-demo",
+            "uniqueId": "nuonpoweruser-demo"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountdemoid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-external": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-external",
+            "uniqueId": "nuonpoweruser-external"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-horizon": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-horizon",
+            "uniqueId": "nuonpoweruser-horizon"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accounthorizonid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-infra-shared-prod": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-infra-shared-prod",
+            "uniqueId": "nuonpoweruser-infra-shared-prod"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-shared-prodid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-infra-shared-stage": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-infra-shared-stage",
+            "uniqueId": "nuonpoweruser-infra-shared-stage"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountinfra-shared-stageid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-logs": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-logs",
+            "uniqueId": "nuonpoweruser-logs"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountlogsid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-orgs-prod": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-orgs-prod",
+            "uniqueId": "nuonpoweruser-orgs-prod"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountorgs-prodid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-orgs-stage": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-orgs-stage",
+            "uniqueId": "nuonpoweruser-orgs-stage"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountorgs-stageid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-prod": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-prod",
+            "uniqueId": "nuonpoweruser-prod"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountprodid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-public": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-public",
+            "uniqueId": "nuonpoweruser-public"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountpublicid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-sandbox": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-sandbox",
+            "uniqueId": "nuonpoweruser-sandbox"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandboxid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-security": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-security",
+            "uniqueId": "nuonpoweruser-security"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsecurityid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-stage": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-stage",
+            "uniqueId": "nuonpoweruser-stage"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountstageid}",
+        "target_type": "AWS_ACCOUNT"
+      }
+    },
+    "aws_ssoadmin_managed_policy_attachment": {
+      "nuonadmin-administratoraccess": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-administratoraccess",
+            "uniqueId": "nuonadmin-administratoraccess"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "managed_policy_arn": "arn:aws:iam::aws:policy/AdministratorAccess",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}"
+      },
+      "nuonadmin-awsbillingreadonlyaccess": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-awsbillingreadonlyaccess",
+            "uniqueId": "nuonadmin-awsbillingreadonlyaccess"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "managed_policy_arn": "arn:aws:iam::aws:policy/AWSBillingReadOnlyAccess",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}"
+      },
+      "nuonpoweruser-awsbillingreadonlyaccess": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-awsbillingreadonlyaccess",
+            "uniqueId": "nuonpoweruser-awsbillingreadonlyaccess"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "managed_policy_arn": "arn:aws:iam::aws:policy/AWSBillingReadOnlyAccess",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}"
+      },
+      "nuonpoweruser-poweruseraccess": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-poweruseraccess",
+            "uniqueId": "nuonpoweruser-poweruseraccess"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "managed_policy_arn": "arn:aws:iam::aws:policy/PowerUserAccess",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}"
+      }
+    },
+    "aws_ssoadmin_permission_set": {
+      "nuonadmin": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin",
+            "uniqueId": "nuonadmin"
+          }
+        },
+        "description": "NuonAdmin provides administrator access within an account",
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "name": "NuonAdmin",
+        "session_duration": "PT12H"
+      },
+      "nuonpoweruser": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser",
+            "uniqueId": "nuonpoweruser"
+          }
+        },
+        "description": "NuonPowerUser provides full access to AWS services and resources, but does not allow management of Users and groups.",
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "name": "NuonPowerUser",
+        "session_duration": "PT8H"
+      }
+    }
+  },
+  "terraform": {
+    "backend": {
+      "remote": {
+        "hostname": "app.terraform.io",
+        "organization": "launchpaddev",
+        "workspaces": {
+          "name": "aws-sso"
+        }
+      }
+    },
+    "required_providers": {
+      "aws": {
+        "source": "aws",
+        "version": "4.60.0"
+      }
+    }
+  }
+}

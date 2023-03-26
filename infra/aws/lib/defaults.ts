@@ -53,7 +53,6 @@ export const desiredOrgStructure: orgStructure = [
   {
     accounts: [
       { name: "demo" },
-      { name: "jmorehouse" },
       { name: "public" },
     ],
     disableScp: true,
