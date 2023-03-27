@@ -1,9 +1,6 @@
 locals {
   # please keep alphabetical!
   members = {
-    alphavibe : {
-      teams : [github_team.team.name, ]
-    },
     chrispotter : {
       teams : [github_team.team.name, github_team.backend.name, ]
     },
@@ -22,6 +19,7 @@ locals {
     },
     nnnnat : {
       teams : [github_team.team.name, github_team.frontend.name, ]
+      role : "admin"
     },
     nuonbot : {
       teams : [github_team.team.name, github_team.frontend.name, ]
