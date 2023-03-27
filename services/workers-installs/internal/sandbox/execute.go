@@ -13,7 +13,7 @@ func Execute(ctx workflow.Context, cpr *executev1.ExecutePlanRequest) (*executev
 
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 60,
-		TaskQueue:                workflows.DefaultTaskQueue,
+		TaskQueue:                workflows.ExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 	fut := workflow.ExecuteChildWorkflow(ctx, "ExecutePlan", cpr)

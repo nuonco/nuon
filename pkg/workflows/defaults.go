@@ -4,3 +4,6 @@ package workflows
 // single queue in each namespace, we can more easily understand queue depth + have headroom to have a
 // high-priority/low-priority queue in the future.
 const DefaultTaskQueue string = "main"
+
+// each namespace has it's own queue for executors.
+const ExecutorsTaskQueue string = "executors"
