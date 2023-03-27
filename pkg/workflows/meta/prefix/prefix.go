@@ -51,6 +51,17 @@ func InstancePhasePath(orgID, appID, componentName, deploymentID, installID, pha
 	}.toPath()
 }
 
+type component_install struct {
+	OrgID       string
+	AppID       string
+	ComponentID string
+	InstallID   string
+}
+
+func (ci component_install) toPath() string {
+	return fmt.Sprintf("org=%s/app=%s/component=%s/install=%s", ci.OrgID, ci.AppID, ci.ComponentID, ci.InstallID)
+}
+
 type install struct {
 	OrgID     string
 	AppID     string
@@ -174,4 +185,13 @@ func (s sandbox) toPath() string {
 		s.SandboxName,
 		s.SandboxVersion,
 	)
+}
+
+func SecretsPath(orgID, appID, componentID, installID string) string {
+	return component_install{
+		OrgID:       orgID,
+		AppID:       appID,
+		ComponentID: componentID,
+		InstallID:   installID,
+	}.toPath()
 }
