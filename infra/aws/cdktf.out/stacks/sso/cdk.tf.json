@@ -71,7 +71,7 @@
   "output": {
     "sso-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-27T18:16:06.701Z"
+      "value": "2023-03-27T21:58:15.813Z"
     }
   },
   "provider": {
@@ -395,6 +395,17 @@
         "managed_policy_arn": "arn:aws:iam::aws:policy/AWSBillingReadOnlyAccess",
         "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}"
       },
+      "nuonpoweruser-administratoraccess": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-administratoraccess",
+            "uniqueId": "nuonpoweruser-administratoraccess"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "managed_policy_arn": "arn:aws:iam::aws:policy/AdministratorAccess",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}"
+      },
       "nuonpoweruser-awsbillingreadonlyaccess": {
         "//": {
           "metadata": {
@@ -441,7 +452,7 @@
         "description": "NuonPowerUser provides full access to AWS services and resources, but does not allow management of Users and groups.",
         "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
         "name": "NuonPowerUser",
-        "session_duration": "PT8H"
+        "session_duration": "PT12H"
       }
     }
   },
