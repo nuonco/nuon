@@ -19,6 +19,7 @@ func InstallModelToProto(install *models.Install) *installv1.Install {
 		CreatedById: install.CreatedByID,
 		CreatedAt:   TimeToDatetime(install.CreatedAt),
 		UpdatedAt:   TimeToDatetime(install.UpdatedAt),
+		AppId:       install.AppID.String(),
 	}
 }
 
