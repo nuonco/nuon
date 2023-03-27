@@ -18,7 +18,7 @@ output "org_iam_role_name_templates" {
     # this is the org iam role that grants access to the deployments bucket with it's prefix
     deployments_access = "arn:aws:iam::${local.org_account_id}:role/orgs/%[1]s/org-deployments-access-%[1]s"
     # this is the org iam role that grants access to the key values bucket and key
-    secrets_access = "arn:aws:iam::${local.org_account_id}:role/orgs/%[1]s/org-key-values-access-%[1]s"
+    secrets_access = "arn:aws:iam::${local.org_account_id}:role/orgs/%[1]s/org-secrets-access-%[1]s"
     # this is the org iam role that grants access to the installations bucket with it's prefix
     installations_access = "arn:aws:iam::${local.org_account_id}:role/orgs/%[1]s/org-installations-access-%[1]s"
     # this is the org specific role that grants the instances workflow access
