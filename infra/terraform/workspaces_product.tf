@@ -28,7 +28,8 @@ module "infra-orgs-prod" {
   source = "./modules/workspace"
 
   name       = "infra-orgs-prod"
-  repo       = "powertoolsdev/infra-orgs"
+  repo       = "powertoolsdev/mono"
+  dir = "infra/orgs"
   auto_apply = false
   vars = {
     env = "prod"
@@ -55,7 +56,8 @@ module "infra-orgs-stage" {
   source = "./modules/workspace"
 
   name       = "infra-orgs-stage"
-  repo       = "powertoolsdev/infra-orgs"
+  repo       = "powertoolsdev/mono"
+  dir = "infra/orgs"
   auto_apply = true
   vars = {
     env = "stage"
