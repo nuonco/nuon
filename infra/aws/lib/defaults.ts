@@ -43,9 +43,7 @@ export const desiredOrgStructure: orgStructure = [
   },
   {
     accounts: [
-      { name: "audit" },
       { additionalEnvTags: ["stage", "prod"], name: "external" },
-      { name: "security" },
     ],
     name: "meta",
   },
@@ -83,8 +81,6 @@ export const desiredOrgStructure: orgStructure = [
         ],
       },
       { additionalEnvTags: ["prod"], name: "orgs-prod" },
-      { name: "sandbox" },
-      { name: "ci" },
       { additionalEnvTags: ["stage", "prod"], name: "horizon" },
     ],
     defaultQuotas: [

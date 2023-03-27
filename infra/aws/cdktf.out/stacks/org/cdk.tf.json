@@ -8,8 +8,6 @@
     },
     "outputs": {
       "org": {
-        "cross-stack-output-aws_organizations_account.audit.id": "cross-stack-output-aws_organizations_accountauditid",
-        "cross-stack-output-aws_organizations_account.ci.id": "cross-stack-output-aws_organizations_accountciid",
         "cross-stack-output-aws_organizations_account.demo.id": "cross-stack-output-aws_organizations_accountdemoid",
         "cross-stack-output-aws_organizations_account.external.id": "cross-stack-output-aws_organizations_accountexternalid",
         "cross-stack-output-aws_organizations_account.horizon.id": "cross-stack-output-aws_organizations_accounthorizonid",
@@ -19,8 +17,6 @@
         "cross-stack-output-aws_organizations_account.orgs-stage.id": "cross-stack-output-aws_organizations_accountorgs-stageid",
         "cross-stack-output-aws_organizations_account.prod.id": "cross-stack-output-aws_organizations_accountprodid",
         "cross-stack-output-aws_organizations_account.public.id": "cross-stack-output-aws_organizations_accountpublicid",
-        "cross-stack-output-aws_organizations_account.sandbox.id": "cross-stack-output-aws_organizations_accountsandboxid",
-        "cross-stack-output-aws_organizations_account.security.id": "cross-stack-output-aws_organizations_accountsecurityid",
         "cross-stack-output-aws_organizations_account.stage.id": "cross-stack-output-aws_organizations_accountstageid",
         "org-last-updated": "org-last-updated"
       }
@@ -97,14 +93,6 @@
     }
   },
   "output": {
-    "cross-stack-output-aws_organizations_accountauditid": {
-      "sensitive": true,
-      "value": "${aws_organizations_account.audit.id}"
-    },
-    "cross-stack-output-aws_organizations_accountciid": {
-      "sensitive": true,
-      "value": "${aws_organizations_account.ci.id}"
-    },
     "cross-stack-output-aws_organizations_accountdemoid": {
       "sensitive": true,
       "value": "${aws_organizations_account.demo.id}"
@@ -141,21 +129,13 @@
       "sensitive": true,
       "value": "${aws_organizations_account.public.id}"
     },
-    "cross-stack-output-aws_organizations_accountsandboxid": {
-      "sensitive": true,
-      "value": "${aws_organizations_account.sandbox.id}"
-    },
-    "cross-stack-output-aws_organizations_accountsecurityid": {
-      "sensitive": true,
-      "value": "${aws_organizations_account.security.id}"
-    },
     "cross-stack-output-aws_organizations_accountstageid": {
       "sensitive": true,
       "value": "${aws_organizations_account.stage.id}"
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-26T01:30:42.793Z"
+      "value": "2023-03-27T16:16:17.374Z"
     }
   },
   "provider": {
@@ -175,42 +155,6 @@
   },
   "resource": {
     "aws_organizations_account": {
-      "audit": {
-        "//": {
-          "metadata": {
-            "path": "org/audit",
-            "uniqueId": "audit"
-          }
-        },
-        "close_on_deletion": true,
-        "email": "aws-accounts+audit@powertools.dev",
-        "iam_user_access_to_billing": "ALLOW",
-        "lifecycle": {
-          "ignore_changes": [
-            "iam_user_access_to_billing"
-          ]
-        },
-        "name": "audit",
-        "parent_id": "${aws_organizations_organizational_unit.meta.id}"
-      },
-      "ci": {
-        "//": {
-          "metadata": {
-            "path": "org/ci",
-            "uniqueId": "ci"
-          }
-        },
-        "close_on_deletion": true,
-        "email": "aws-accounts+ci@powertools.dev",
-        "iam_user_access_to_billing": "ALLOW",
-        "lifecycle": {
-          "ignore_changes": [
-            "iam_user_access_to_billing"
-          ]
-        },
-        "name": "ci",
-        "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
-      },
       "demo": {
         "//": {
           "metadata": {
@@ -373,42 +317,6 @@
         "name": "public",
         "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
       },
-      "sandbox": {
-        "//": {
-          "metadata": {
-            "path": "org/sandbox",
-            "uniqueId": "sandbox"
-          }
-        },
-        "close_on_deletion": true,
-        "email": "aws-accounts+sandbox@powertools.dev",
-        "iam_user_access_to_billing": "ALLOW",
-        "lifecycle": {
-          "ignore_changes": [
-            "iam_user_access_to_billing"
-          ]
-        },
-        "name": "sandbox",
-        "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
-      },
-      "security": {
-        "//": {
-          "metadata": {
-            "path": "org/security",
-            "uniqueId": "security"
-          }
-        },
-        "close_on_deletion": true,
-        "email": "aws-accounts+security@powertools.dev",
-        "iam_user_access_to_billing": "ALLOW",
-        "lifecycle": {
-          "ignore_changes": [
-            "iam_user_access_to_billing"
-          ]
-        },
-        "name": "security",
-        "parent_id": "${aws_organizations_organizational_unit.meta.id}"
-      },
       "stage": {
         "//": {
           "metadata": {
@@ -532,28 +440,6 @@
         "name": "org-environment-tag-policy",
         "type": "TAG_POLICY"
       },
-      "env_tag_policy_audit": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_audit",
-            "uniqueId": "env_tag_policy_audit"
-          }
-        },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"audit\"]}}}}",
-        "name": "audit-environment-tag-policy",
-        "type": "TAG_POLICY"
-      },
-      "env_tag_policy_ci": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_ci",
-            "uniqueId": "env_tag_policy_ci"
-          }
-        },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"ci\"]}}}}",
-        "name": "ci-environment-tag-policy",
-        "type": "TAG_POLICY"
-      },
       "env_tag_policy_demo": {
         "//": {
           "metadata": {
@@ -653,28 +539,6 @@
         "name": "public-environment-tag-policy",
         "type": "TAG_POLICY"
       },
-      "env_tag_policy_sandbox": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_sandbox",
-            "uniqueId": "env_tag_policy_sandbox"
-          }
-        },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"sandbox\"]}}}}",
-        "name": "sandbox-environment-tag-policy",
-        "type": "TAG_POLICY"
-      },
-      "env_tag_policy_security": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_security",
-            "uniqueId": "env_tag_policy_security"
-          }
-        },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"security\"]}}}}",
-        "name": "security-environment-tag-policy",
-        "type": "TAG_POLICY"
-      },
       "env_tag_policy_stage": {
         "//": {
           "metadata": {
@@ -697,26 +561,6 @@
         },
         "policy_id": "${aws_organizations_policy.ai_opt_out_policy.id}",
         "target_id": "${aws_organizations_organization.org.roots[0].id}"
-      },
-      "env_tag_policy_attach_audit": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_attach_audit",
-            "uniqueId": "env_tag_policy_attach_audit"
-          }
-        },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_audit.id}",
-        "target_id": "${aws_organizations_account.audit.id}"
-      },
-      "env_tag_policy_attach_ci": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_attach_ci",
-            "uniqueId": "env_tag_policy_attach_ci"
-          }
-        },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_ci.id}",
-        "target_id": "${aws_organizations_account.ci.id}"
       },
       "env_tag_policy_attach_demo": {
         "//": {
@@ -807,26 +651,6 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_public.id}",
         "target_id": "${aws_organizations_account.public.id}"
-      },
-      "env_tag_policy_attach_sandbox": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_attach_sandbox",
-            "uniqueId": "env_tag_policy_attach_sandbox"
-          }
-        },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_sandbox.id}",
-        "target_id": "${aws_organizations_account.sandbox.id}"
-      },
-      "env_tag_policy_attach_security": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_attach_security",
-            "uniqueId": "env_tag_policy_attach_security"
-          }
-        },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_security.id}",
-        "target_id": "${aws_organizations_account.security.id}"
       },
       "env_tag_policy_attach_stage": {
         "//": {

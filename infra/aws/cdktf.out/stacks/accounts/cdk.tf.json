@@ -9,8 +9,6 @@
     "outputs": {
       "accounts": {
         "accounts-last-updated": "accounts-last-updated",
-        "audit-gh-oidc-provider": "audit-gh-oidc-provider",
-        "ci-gh-oidc-provider": "ci-gh-oidc-provider",
         "demo-gh-oidc-provider": "demo-gh-oidc-provider",
         "external-gh-oidc-provider": "external-gh-oidc-provider",
         "horizon-gh-oidc-provider": "horizon-gh-oidc-provider",
@@ -20,8 +18,6 @@
         "orgs-stage-gh-oidc-provider": "orgs-stage-gh-oidc-provider",
         "prod-gh-oidc-provider": "prod-gh-oidc-provider",
         "public-gh-oidc-provider": "public-gh-oidc-provider",
-        "sandbox-gh-oidc-provider": "sandbox-gh-oidc-provider",
-        "security-gh-oidc-provider": "security-gh-oidc-provider",
         "stage-gh-oidc-provider": "stage-gh-oidc-provider"
       }
     }
@@ -66,15 +62,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-26T01:30:42.875Z"
-    },
-    "audit-gh-oidc-provider": {
-      "description": "The Github OIDC provider for the audit account",
-      "value": "${aws_iam_openid_connect_provider.audit-github-oidc-provider}"
-    },
-    "ci-gh-oidc-provider": {
-      "description": "The Github OIDC provider for the ci account",
-      "value": "${aws_iam_openid_connect_provider.ci-github-oidc-provider}"
+      "value": "2023-03-27T16:16:17.463Z"
     },
     "demo-gh-oidc-provider": {
       "description": "The Github OIDC provider for the demo account",
@@ -112,14 +100,6 @@
       "description": "The Github OIDC provider for the public account",
       "value": "${aws_iam_openid_connect_provider.public-github-oidc-provider}"
     },
-    "sandbox-gh-oidc-provider": {
-      "description": "The Github OIDC provider for the sandbox account",
-      "value": "${aws_iam_openid_connect_provider.sandbox-github-oidc-provider}"
-    },
-    "security-gh-oidc-provider": {
-      "description": "The Github OIDC provider for the security account",
-      "value": "${aws_iam_openid_connect_provider.security-github-oidc-provider}"
-    },
     "stage-gh-oidc-provider": {
       "description": "The Github OIDC provider for the stage account",
       "value": "${aws_iam_openid_connect_provider.stage-github-oidc-provider}"
@@ -137,91 +117,6 @@
           }
         ],
         "region": "us-east-2"
-      },
-      {
-        "alias": "audit",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountauditid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "audit-us-east-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountauditid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-1"
-      },
-      {
-        "alias": "audit-us-east-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountauditid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "audit-us-west-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountauditid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-1"
-      },
-      {
-        "alias": "audit-us-west-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountauditid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-2"
       },
       {
         "alias": "external",
@@ -296,91 +191,6 @@
         "assume_role": [
           {
             "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-2"
-      },
-      {
-        "alias": "security",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsecurityid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "security-us-east-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsecurityid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-1"
-      },
-      {
-        "alias": "security-us-east-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsecurityid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "security-us-west-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsecurityid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-1"
-      },
-      {
-        "alias": "security-us-west-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsecurityid}:role/OrganizationAccountAccessRole"
           }
         ],
         "default_tags": [
@@ -1074,176 +884,6 @@
         "region": "us-west-2"
       },
       {
-        "alias": "sandbox",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandboxid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "sandbox-us-east-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandboxid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-1"
-      },
-      {
-        "alias": "sandbox-us-east-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandboxid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "sandbox-us-west-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandboxid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-1"
-      },
-      {
-        "alias": "sandbox-us-west-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountsandboxid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-2"
-      },
-      {
-        "alias": "ci",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "ci-us-east-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-1"
-      },
-      {
-        "alias": "ci-us-east-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "ci-us-west-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-1"
-      },
-      {
-        "alias": "ci-us-west-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountciid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-2"
-      },
-      {
         "alias": "horizon",
         "assume_role": [
           {
@@ -1332,26 +972,6 @@
   },
   "resource": {
     "aws_iam_account_alias": {
-      "audit-iam-alias": {
-        "//": {
-          "metadata": {
-            "path": "accounts/audit-iam-alias",
-            "uniqueId": "audit-iam-alias"
-          }
-        },
-        "account_alias": "nuon-audit",
-        "provider": "aws.audit"
-      },
-      "ci-iam-alias": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-iam-alias",
-            "uniqueId": "ci-iam-alias"
-          }
-        },
-        "account_alias": "nuon-ci",
-        "provider": "aws.ci"
-      },
       "demo-iam-alias": {
         "//": {
           "metadata": {
@@ -1442,26 +1062,6 @@
         "account_alias": "nuon-public",
         "provider": "aws.public"
       },
-      "sandbox-iam-alias": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-iam-alias",
-            "uniqueId": "sandbox-iam-alias"
-          }
-        },
-        "account_alias": "nuon-sandbox",
-        "provider": "aws.sandbox"
-      },
-      "security-iam-alias": {
-        "//": {
-          "metadata": {
-            "path": "accounts/security-iam-alias",
-            "uniqueId": "security-iam-alias"
-          }
-        },
-        "account_alias": "nuon-security",
-        "provider": "aws.security"
-      },
       "stage-iam-alias": {
         "//": {
           "metadata": {
@@ -1474,38 +1074,6 @@
       }
     },
     "aws_iam_openid_connect_provider": {
-      "audit-github-oidc-provider": {
-        "//": {
-          "metadata": {
-            "path": "accounts/audit-github-oidc-provider",
-            "uniqueId": "audit-github-oidc-provider"
-          }
-        },
-        "client_id_list": [
-          "sts.amazonaws.com"
-        ],
-        "provider": "aws.audit",
-        "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
-        ],
-        "url": "https://token.actions.githubusercontent.com"
-      },
-      "ci-github-oidc-provider": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-github-oidc-provider",
-            "uniqueId": "ci-github-oidc-provider"
-          }
-        },
-        "client_id_list": [
-          "sts.amazonaws.com"
-        ],
-        "provider": "aws.ci",
-        "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
-        ],
-        "url": "https://token.actions.githubusercontent.com"
-      },
       "demo-github-oidc-provider": {
         "//": {
           "metadata": {
@@ -1650,38 +1218,6 @@
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
-      "sandbox-github-oidc-provider": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-github-oidc-provider",
-            "uniqueId": "sandbox-github-oidc-provider"
-          }
-        },
-        "client_id_list": [
-          "sts.amazonaws.com"
-        ],
-        "provider": "aws.sandbox",
-        "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
-        ],
-        "url": "https://token.actions.githubusercontent.com"
-      },
-      "security-github-oidc-provider": {
-        "//": {
-          "metadata": {
-            "path": "accounts/security-github-oidc-provider",
-            "uniqueId": "security-github-oidc-provider"
-          }
-        },
-        "client_id_list": [
-          "sts.amazonaws.com"
-        ],
-        "provider": "aws.security",
-        "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
-        ],
-        "url": "https://token.actions.githubusercontent.com"
-      },
       "stage-github-oidc-provider": {
         "//": {
           "metadata": {
@@ -1700,38 +1236,6 @@
       }
     },
     "aws_iam_role": {
-      "audit-terraform-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/audit-terraform-role",
-            "uniqueId": "audit-terraform-role"
-          }
-        },
-        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
-        "description": "Terraform role to assume",
-        "managed_policy_arns": [
-          "arn:aws:iam::aws:policy/AdministratorAccess"
-        ],
-        "name": "terraform",
-        "path": "/",
-        "provider": "aws.audit"
-      },
-      "ci-terraform-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-terraform-role",
-            "uniqueId": "ci-terraform-role"
-          }
-        },
-        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
-        "description": "Terraform role to assume",
-        "managed_policy_arns": [
-          "arn:aws:iam::aws:policy/AdministratorAccess"
-        ],
-        "name": "terraform",
-        "path": "/",
-        "provider": "aws.ci"
-      },
       "demo-terraform-role": {
         "//": {
           "metadata": {
@@ -1876,38 +1380,6 @@
         "path": "/",
         "provider": "aws.public"
       },
-      "sandbox-terraform-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-terraform-role",
-            "uniqueId": "sandbox-terraform-role"
-          }
-        },
-        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
-        "description": "Terraform role to assume",
-        "managed_policy_arns": [
-          "arn:aws:iam::aws:policy/AdministratorAccess"
-        ],
-        "name": "terraform",
-        "path": "/",
-        "provider": "aws.sandbox"
-      },
-      "security-terraform-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/security-terraform-role",
-            "uniqueId": "security-terraform-role"
-          }
-        },
-        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
-        "description": "Terraform role to assume",
-        "managed_policy_arns": [
-          "arn:aws:iam::aws:policy/AdministratorAccess"
-        ],
-        "name": "terraform",
-        "path": "/",
-        "provider": "aws.security"
-      },
       "stage-terraform-role": {
         "//": {
           "metadata": {
@@ -1926,66 +1398,6 @@
       }
     },
     "aws_iam_service_linked_role": {
-      "audit-opensearch-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/audit-opensearch-service-linked-role",
-            "uniqueId": "audit-opensearch-service-linked-role"
-          }
-        },
-        "aws_service_name": "opensearchservice.amazonaws.com",
-        "provider": "aws.audit"
-      },
-      "audit-spot-fleet-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/audit-spot-fleet-service-linked-role",
-            "uniqueId": "audit-spot-fleet-service-linked-role"
-          }
-        },
-        "aws_service_name": "spotfleet.amazonaws.com",
-        "provider": "aws.audit"
-      },
-      "audit-spot-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/audit-spot-service-linked-role",
-            "uniqueId": "audit-spot-service-linked-role"
-          }
-        },
-        "aws_service_name": "spot.amazonaws.com",
-        "provider": "aws.audit"
-      },
-      "ci-opensearch-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-opensearch-service-linked-role",
-            "uniqueId": "ci-opensearch-service-linked-role"
-          }
-        },
-        "aws_service_name": "opensearchservice.amazonaws.com",
-        "provider": "aws.ci"
-      },
-      "ci-spot-fleet-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-spot-fleet-service-linked-role",
-            "uniqueId": "ci-spot-fleet-service-linked-role"
-          }
-        },
-        "aws_service_name": "spotfleet.amazonaws.com",
-        "provider": "aws.ci"
-      },
-      "ci-spot-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-spot-service-linked-role",
-            "uniqueId": "ci-spot-service-linked-role"
-          }
-        },
-        "aws_service_name": "spot.amazonaws.com",
-        "provider": "aws.ci"
-      },
       "demo-opensearch-service-linked-role": {
         "//": {
           "metadata": {
@@ -2256,66 +1668,6 @@
         "aws_service_name": "spot.amazonaws.com",
         "provider": "aws.public"
       },
-      "sandbox-opensearch-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-opensearch-service-linked-role",
-            "uniqueId": "sandbox-opensearch-service-linked-role"
-          }
-        },
-        "aws_service_name": "opensearchservice.amazonaws.com",
-        "provider": "aws.sandbox"
-      },
-      "sandbox-spot-fleet-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-spot-fleet-service-linked-role",
-            "uniqueId": "sandbox-spot-fleet-service-linked-role"
-          }
-        },
-        "aws_service_name": "spotfleet.amazonaws.com",
-        "provider": "aws.sandbox"
-      },
-      "sandbox-spot-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-spot-service-linked-role",
-            "uniqueId": "sandbox-spot-service-linked-role"
-          }
-        },
-        "aws_service_name": "spot.amazonaws.com",
-        "provider": "aws.sandbox"
-      },
-      "security-opensearch-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/security-opensearch-service-linked-role",
-            "uniqueId": "security-opensearch-service-linked-role"
-          }
-        },
-        "aws_service_name": "opensearchservice.amazonaws.com",
-        "provider": "aws.security"
-      },
-      "security-spot-fleet-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/security-spot-fleet-service-linked-role",
-            "uniqueId": "security-spot-fleet-service-linked-role"
-          }
-        },
-        "aws_service_name": "spotfleet.amazonaws.com",
-        "provider": "aws.security"
-      },
-      "security-spot-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/security-spot-service-linked-role",
-            "uniqueId": "security-spot-service-linked-role"
-          }
-        },
-        "aws_service_name": "spot.amazonaws.com",
-        "provider": "aws.security"
-      },
       "stage-opensearch-service-linked-role": {
         "//": {
           "metadata": {
@@ -2348,34 +1700,6 @@
       }
     },
     "aws_route53_record": {
-      "audit-ns-delegation": {
-        "//": {
-          "metadata": {
-            "path": "accounts/audit-ns-delegation",
-            "uniqueId": "audit-ns-delegation"
-          }
-        },
-        "name": "audit.nuon.co",
-        "provider": "aws",
-        "records": "${aws_route53_zone.audit-hosted-zone.name_servers}",
-        "ttl": 300,
-        "type": "NS",
-        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
-      },
-      "ci-ns-delegation": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-ns-delegation",
-            "uniqueId": "ci-ns-delegation"
-          }
-        },
-        "name": "ci.nuon.co",
-        "provider": "aws",
-        "records": "${aws_route53_zone.ci-hosted-zone.name_servers}",
-        "ttl": 300,
-        "type": "NS",
-        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
-      },
       "demo-ns-delegation": {
         "//": {
           "metadata": {
@@ -2502,34 +1826,6 @@
         "type": "NS",
         "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
       },
-      "sandbox-ns-delegation": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-ns-delegation",
-            "uniqueId": "sandbox-ns-delegation"
-          }
-        },
-        "name": "sandbox.nuon.co",
-        "provider": "aws",
-        "records": "${aws_route53_zone.sandbox-hosted-zone.name_servers}",
-        "ttl": 300,
-        "type": "NS",
-        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
-      },
-      "security-ns-delegation": {
-        "//": {
-          "metadata": {
-            "path": "accounts/security-ns-delegation",
-            "uniqueId": "security-ns-delegation"
-          }
-        },
-        "name": "security.nuon.co",
-        "provider": "aws",
-        "records": "${aws_route53_zone.security-hosted-zone.name_servers}",
-        "ttl": 300,
-        "type": "NS",
-        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
-      },
       "stage-ns-delegation": {
         "//": {
           "metadata": {
@@ -2546,26 +1842,6 @@
       }
     },
     "aws_route53_zone": {
-      "audit-hosted-zone": {
-        "//": {
-          "metadata": {
-            "path": "accounts/audit-hosted-zone",
-            "uniqueId": "audit-hosted-zone"
-          }
-        },
-        "name": "audit.nuon.co",
-        "provider": "aws.audit"
-      },
-      "ci-hosted-zone": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-hosted-zone",
-            "uniqueId": "ci-hosted-zone"
-          }
-        },
-        "name": "ci.nuon.co",
-        "provider": "aws.ci"
-      },
       "demo-hosted-zone": {
         "//": {
           "metadata": {
@@ -2656,26 +1932,6 @@
         "name": "public.nuon.co",
         "provider": "aws.public"
       },
-      "sandbox-hosted-zone": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-hosted-zone",
-            "uniqueId": "sandbox-hosted-zone"
-          }
-        },
-        "name": "sandbox.nuon.co",
-        "provider": "aws.sandbox"
-      },
-      "security-hosted-zone": {
-        "//": {
-          "metadata": {
-            "path": "accounts/security-hosted-zone",
-            "uniqueId": "security-hosted-zone"
-          }
-        },
-        "name": "security.nuon.co",
-        "provider": "aws.security"
-      },
       "stage-hosted-zone": {
         "//": {
           "metadata": {
@@ -2688,102 +1944,6 @@
       }
     },
     "aws_servicequotas_service_quota": {
-      "ci-us-east-1-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-us-east-1-L-1216C47A",
-            "uniqueId": "ci-us-east-1-L-1216C47A"
-          }
-        },
-        "provider": "aws.ci-us-east-1",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "ci-us-east-1-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-us-east-1-L-34B43A08",
-            "uniqueId": "ci-us-east-1-L-34B43A08"
-          }
-        },
-        "provider": "aws.ci-us-east-1",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "ci-us-east-2-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-us-east-2-L-1216C47A",
-            "uniqueId": "ci-us-east-2-L-1216C47A"
-          }
-        },
-        "provider": "aws.ci-us-east-2",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "ci-us-east-2-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-us-east-2-L-34B43A08",
-            "uniqueId": "ci-us-east-2-L-34B43A08"
-          }
-        },
-        "provider": "aws.ci-us-east-2",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "ci-us-west-1-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-us-west-1-L-1216C47A",
-            "uniqueId": "ci-us-west-1-L-1216C47A"
-          }
-        },
-        "provider": "aws.ci-us-west-1",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "ci-us-west-1-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-us-west-1-L-34B43A08",
-            "uniqueId": "ci-us-west-1-L-34B43A08"
-          }
-        },
-        "provider": "aws.ci-us-west-1",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "ci-us-west-2-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-us-west-2-L-1216C47A",
-            "uniqueId": "ci-us-west-2-L-1216C47A"
-          }
-        },
-        "provider": "aws.ci-us-west-2",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "ci-us-west-2-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/ci-us-west-2-L-34B43A08",
-            "uniqueId": "ci-us-west-2-L-34B43A08"
-          }
-        },
-        "provider": "aws.ci-us-west-2",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
       "horizon-us-east-1-L-1216C47A": {
         "//": {
           "metadata": {
@@ -3356,102 +2516,6 @@
           }
         },
         "provider": "aws.prod-us-west-2",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "sandbox-us-east-1-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-us-east-1-L-1216C47A",
-            "uniqueId": "sandbox-us-east-1-L-1216C47A"
-          }
-        },
-        "provider": "aws.sandbox-us-east-1",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "sandbox-us-east-1-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-us-east-1-L-34B43A08",
-            "uniqueId": "sandbox-us-east-1-L-34B43A08"
-          }
-        },
-        "provider": "aws.sandbox-us-east-1",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "sandbox-us-east-2-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-us-east-2-L-1216C47A",
-            "uniqueId": "sandbox-us-east-2-L-1216C47A"
-          }
-        },
-        "provider": "aws.sandbox-us-east-2",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "sandbox-us-east-2-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-us-east-2-L-34B43A08",
-            "uniqueId": "sandbox-us-east-2-L-34B43A08"
-          }
-        },
-        "provider": "aws.sandbox-us-east-2",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "sandbox-us-west-1-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-us-west-1-L-1216C47A",
-            "uniqueId": "sandbox-us-west-1-L-1216C47A"
-          }
-        },
-        "provider": "aws.sandbox-us-west-1",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "sandbox-us-west-1-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-us-west-1-L-34B43A08",
-            "uniqueId": "sandbox-us-west-1-L-34B43A08"
-          }
-        },
-        "provider": "aws.sandbox-us-west-1",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "sandbox-us-west-2-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-us-west-2-L-1216C47A",
-            "uniqueId": "sandbox-us-west-2-L-1216C47A"
-          }
-        },
-        "provider": "aws.sandbox-us-west-2",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "sandbox-us-west-2-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/sandbox-us-west-2-L-34B43A08",
-            "uniqueId": "sandbox-us-west-2-L-34B43A08"
-          }
-        },
-        "provider": "aws.sandbox-us-west-2",
         "quota_code": "L-34B43A08",
         "service_code": "ec2",
         "value": 32
