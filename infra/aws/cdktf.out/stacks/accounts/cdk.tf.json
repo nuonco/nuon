@@ -53,7 +53,7 @@
           "hostname": "app.terraform.io",
           "organization": "launchpaddev",
           "workspaces": {
-            "name": "aws"
+            "name": "aws-org"
           }
         }
       }
@@ -62,7 +62,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-27T16:16:17.463Z"
+      "value": "2023-03-27T18:16:06.748Z"
     },
     "demo-gh-oidc-provider": {
       "description": "The Github OIDC provider for the demo account",

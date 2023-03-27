@@ -135,7 +135,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-27T16:16:17.374Z"
+      "value": "2023-03-27T18:16:06.673Z"
     }
   },
   "provider": {
@@ -680,7 +680,7 @@
         "hostname": "app.terraform.io",
         "organization": "launchpaddev",
         "workspaces": {
-          "name": "aws"
+          "name": "aws-org"
         }
       }
     },

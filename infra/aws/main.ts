@@ -13,7 +13,7 @@ new RemoteBackend(org, {
   hostname: "app.terraform.io",
   organization: "launchpaddev",
   workspaces: {
-    name: "aws",
+    name: "aws-org",
   },
 });
 

@@ -62,7 +62,7 @@
           "hostname": "app.terraform.io",
           "organization": "launchpaddev",
           "workspaces": {
-            "name": "aws"
+            "name": "aws-org"
           }
         }
       }
@@ -71,7 +71,7 @@
   "output": {
     "sso-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-27T16:16:17.401Z"
+      "value": "2023-03-27T18:16:06.701Z"
     }
   },
   "provider": {
