@@ -12,7 +12,7 @@ import (
 
 const (
 	defaultODRImagePullPolicy string = "Always"
-	defaultODRImageURL        string = "hashicorp/waypoint-odr:0.10.5"
+	defaultODRImageURL        string = "public.ecr.aws/p7e3r5y0/waypoint-odr:v0.0.5"
 )
 
 type CreateWaypointRunnerProfileRequest struct {
