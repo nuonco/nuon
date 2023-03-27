@@ -140,7 +140,7 @@ func execCreatePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
-		TaskQueue:                workflows.DefaultTaskQueue,
+		TaskQueue:                workflows.ExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -163,7 +163,7 @@ func execExecutePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
-		TaskQueue:                workflows.DefaultTaskQueue,
+		TaskQueue:                workflows.ExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 

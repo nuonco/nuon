@@ -68,17 +68,17 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		},
 	}
 
-	if req.PlanOnly {
-		l.Info("skipping the rest of the workflow - plan only")
-		w.finishWorkflow(ctx, req, resp, nil)
-		return resp, nil
-	}
-
 	spr, err := sandbox.Plan(ctx, &cpReq)
 	if err != nil {
 		err = fmt.Errorf("unable to plan sandbox: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
+	}
+
+	if req.PlanOnly {
+		l.Info("skipping the rest of the workflow - plan only")
+		w.finishWorkflow(ctx, req, resp, nil)
+		return resp, nil
 	}
 
 	seReq := executev1.ExecutePlanRequest{Plan: spr.Plan}
