@@ -17,6 +17,7 @@ message Install {
   string created_by_id = 5;
   google.type.DateTime created_at = 6;
   google.type.DateTime updated_at = 7;
+  string app_id = 8;
 }
 
 enum AwsRegion {
