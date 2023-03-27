@@ -14,7 +14,7 @@ module "apks" {
 module "aws" {
   source = "./modules/workspace"
 
-  name          = "aws"
+  name          = "aws-org"
   repo          = "powertoolsdev/mono"
   auto_apply    = false
   dir           = "infra/aws/cdktf.out/stacks/org"
