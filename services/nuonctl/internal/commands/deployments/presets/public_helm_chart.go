@@ -13,8 +13,8 @@ func (p *preset) publicHelmChart() (*componentv1.Component, error) {
 			Cfg: &buildv1.Config_Noop{},
 		},
 		DeployCfg: &deployv1.Config{
-			Cfg: &deployv1.Config_ExternalHelm{
-				ExternalHelm: &deployv1.ExternalHelmConfig{
+			Cfg: &deployv1.Config_PublicHelm{
+				PublicHelm: &deployv1.PublicHelmConfig{
 					Name:     "public-helm-chart",
 					ChartUrl: "matheusfm/httpbin",
 					// TODO(jm): add ability to specify a custom repo
