@@ -8,8 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerIDs(ctx context.Context, rootCmd *cobra.Command) {
-
+func (c *cli) registerIDs(_ context.Context, rootCmd *cobra.Command) {
 	var idsCmd = &cobra.Command{
 		Use:     "ids",
 		Aliases: []string{"s"},
