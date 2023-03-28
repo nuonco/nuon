@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	ghinstallation "github.com/bradleyfalzon/ghinstallation/v2"
+	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	databaseclient "github.com/powertoolsdev/mono/services/api/internal/clients/database"
@@ -56,6 +57,21 @@ func registerStatusServer(mux *http.ServeMux, cfg *internal.Config) error {
 	}
 
 	return nil
+}
+
+var srvs []string = []string{
+	// shared handlers
+	"shared.v1.StatusService",
+
+	// local handlers
+	"admin.v1.AdminService",
+	"app.v1.AppService",
+	"component.v1.ComponentService",
+	"deployment.v1.DeploymentService",
+	"github.v1.GithubService",
+	"install.v1.InstallService",
+	"org.v1.OrgService",
+	"user.v1.UserService",
 }
 
 // registerPrimaryServers registers each domain's server
@@ -168,6 +184,13 @@ func initializeLogger(cfg *internal.Config) (*zap.Logger, error) {
 	return l, nil
 }
 
+func registerReflectServer(mux *http.ServeMux) {
+	reflector := grpcreflect.NewStaticReflector(srvs...)
+
+	mux.Handle(grpcreflect.NewHandlerV1(reflector))
+	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
+}
+
 //nolint:all
 func runServer(cmd *cobra.Command, args []string) {
 	var cfg internal.Config
@@ -185,6 +208,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		l.Fatal("unable to register status server:", zap.Error(err))
 	}
 	registerLoadbalancerHealthCheck(mux)
+	registerReflectServer(mux)
 	if err := registerPrimaryServers(mux, &cfg, l); err != nil {
 		l.Fatal("unable to register primary server:", zap.Error(err))
 	}
