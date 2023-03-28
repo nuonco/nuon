@@ -4,15 +4,15 @@ package deploy.v1;
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1";
 
-// ExternalHelmConfig
-message ExternalHelmConfig {
+// PublicHelmConfig
+message PublicHelmConfig {
   string name = 1;
   string chart_url = 2;
 
-  ExternalHelmAuthConfig auth_cfg = 3;
+  PublicHelmAuthConfig auth_cfg = 3;
 }
 
-message ExternalHelmAuthConfig {
+message PublicHelmAuthConfig {
   oneof cfg {
     NoopExternalHelmAuthConfig noop = 1;
     BasicHelmAuthConfig basic = 2;
