@@ -62,8 +62,7 @@ func (a *Activities) FinishProvisionRequest(ctx context.Context, req *sharedv1.F
 	}
 
 	if req.Status != sharedv1.ResponseStatus_RESPONSE_STATUS_OK {
-		errStr := fmt.Sprintf("%s", err)
-		err = a.notifier.sendErrorNotification(ctx, req.MetadataBucket, &wkflowReq, errStr)
+		err = a.notifier.sendErrorNotification(ctx, req.MetadataBucket, &wkflowReq, err.Error())
 	} else {
 		err = a.notifier.sendSuccessNotification(ctx, req.MetadataBucket, &wkflowReq)
 	}
