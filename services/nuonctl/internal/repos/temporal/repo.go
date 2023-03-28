@@ -11,6 +11,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 )
 
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_repo.go -source=repo.go -package=temporal
 type Repo interface {
 	TriggerDeploymentStart(context.Context, *deploymentsv1.StartRequest) error
