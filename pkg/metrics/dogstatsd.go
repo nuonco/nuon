@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
@@ -20,8 +21,9 @@ func (w *writer) handleErr(err error) {
 	w.Log.Error("unable to write", zap.String("addr", w.Address))
 }
 
-func (w *writer) Incr(name string, value int) {
+func (w *writer) Incr(name string, value int, tags []string) {
 	if w.Disable {
+		w.Log.Info(fmt.Sprintf("incr.%s", name))
 		return
 	}
 
@@ -31,11 +33,12 @@ func (w *writer) Incr(name string, value int) {
 		return
 	}
 
-	w.handleErr(client.Incr(name, w.Tags, float64(value)))
+	w.handleErr(client.Incr(name, append(w.Tags, tags...), float64(value)))
 }
 
-func (w *writer) Decr(name string, value int) {
+func (w *writer) Decr(name string, value int, tags []string) {
 	if w.Disable {
+		w.Log.Info(fmt.Sprintf("decr.%s", name))
 		return
 	}
 
@@ -45,11 +48,12 @@ func (w *writer) Decr(name string, value int) {
 		return
 	}
 
-	w.handleErr(client.Decr(name, w.Tags, float64(value)))
+	w.handleErr(client.Decr(name, append(w.Tags, tags...), float64(value)))
 }
 
-func (w *writer) Timing(name string, value time.Duration) {
+func (w *writer) Timing(name string, value time.Duration, tags []string) {
 	if w.Disable {
+		w.Log.Info(fmt.Sprintf("timing.%s", name))
 		return
 	}
 
@@ -59,7 +63,7 @@ func (w *writer) Timing(name string, value time.Duration) {
 		return
 	}
 
-	w.handleErr(client.Timing(name, value, w.Tags, defaultRate))
+	w.handleErr(client.Timing(name, value, append(w.Tags, tags...), defaultRate))
 }
 
 func (w *writer) Event(ev *statsd.Event) {
