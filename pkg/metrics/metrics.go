@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	defaultAddress string = "127.0.0.1:8125"
+	defaultStatsdHostEnvVar string = "HOST_IP"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
@@ -29,7 +30,7 @@ type Writer interface {
 type writer struct {
 	v *validator.Validate
 
-	Address string `validate:"required"`
+	Address string
 	Disable bool
 	Tags    []string
 	Log     *zap.Logger `validate:"required"`
@@ -47,15 +48,18 @@ func New(v *validator.Validate, opts ...writerOption) (*writer, error) {
 		return nil, fmt.Errorf("unable to get logger: %w", err)
 	}
 	r := &writer{
-		v:       v,
-		Address: defaultAddress,
-		Tags:    make([]string, 0),
-		Log:     l,
+		v:    v,
+		Tags: make([]string, 0),
+		Log:  l,
 	}
 	for idx, opt := range opts {
 		if err := opt(r); err != nil {
 			return nil, fmt.Errorf("option %d failed: %w", idx, err)
 		}
+	}
+
+	if !r.Disable && r.Address == "" {
+		r.Address = fmt.Sprintf("%s:8125", os.Getenv(defaultStatsdHostEnvVar))
 	}
 
 	if err := r.v.Struct(r); err != nil {
