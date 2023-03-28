@@ -9,6 +9,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "apps")
+	config.RegisterDefault("temporal_max_concurrent_activities", 10)
 
 	config.RegisterDefault("waypoint_token_namespace", "default")
 	config.RegisterDefault("waypoint_server_root_domain", "orgs-stage.nuon.co")

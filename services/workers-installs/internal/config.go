@@ -9,6 +9,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "installs")
+	config.RegisterDefault("temporal_max_concurrent_activities", 10)
 
 	// install defaults
 	config.RegisterDefault("nuon_access_role_arn", "arn:aws:iam::618886478608:role/install-k8s-admin-stage")
