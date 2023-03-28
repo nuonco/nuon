@@ -52,7 +52,7 @@ func NewPaginator(opts *models.ConnectionOptions) (*Paginator, Cursor, error) {
 		pg           *Paginator
 		err          error
 		curParams    cursorParams
-		defaultLimit = 25
+		defaultLimit = 50
 	)
 
 	curParams.limit = defaultLimit
