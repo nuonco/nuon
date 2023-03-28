@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
+	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"google.golang.org/protobuf/proto"
 )
 

@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal"
 	"go.temporal.io/sdk/workflow"
+	anypb "google.golang.org/protobuf/types/known/anypb"
 )
 
 func (w *wkflow) startWorkflow(ctx workflow.Context, req *installsv1.ProvisionRequest) error {
@@ -53,6 +54,23 @@ func metaResponseFromResponse(resp *installsv1.ProvisionResponse) *sharedv1.Resp
 // NOTE(jm): the following start and response activities need to properly emit notifications, once the meta workflows
 // package works with them.
 func (a *Activities) FinishProvisionRequest(ctx context.Context, req *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
+	var err error
+
+	var wkflowReq installsv1.ProvisionRequest
+	if err = req.Other.UnmarshalTo(&wkflowReq); err != nil {
+		return nil, fmt.Errorf("request was not set on input")
+	}
+
+	if req.Status != sharedv1.ResponseStatus_RESPONSE_STATUS_OK {
+		errStr := fmt.Sprintf("%s", err)
+		err = a.notifier.sendErrorNotification(ctx, req.MetadataBucket, &wkflowReq, errStr)
+	} else {
+		err = a.notifier.sendSuccessNotification(ctx, req.MetadataBucket, &wkflowReq)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to send notification: %w", err)
+	}
+
 	act := meta.NewFinishActivity()
 	return act.FinishRequest(ctx, req)
 }
@@ -87,6 +105,10 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *installsv1.ProvisionR
 		errMessage = workflowErr.Error()
 	}
 
+	other, err := anypb.New(req)
+	if err != nil {
+		err = fmt.Errorf("unable to create any object: %w", err)
+	}
 	finishReq := &sharedv1.FinishActivityRequest{
 		MetadataBucket:              w.cfg.InstallationsBucket,
 		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgInstallationsRoleTemplate, req.OrgId),
@@ -94,6 +116,7 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *installsv1.ProvisionR
 		ResponseRef:                 metaResponseFromResponse(resp),
 		Status:                      status,
 		ErrorMessage:                errMessage,
+		Other:                       other,
 	}
 
 	// exec activity

@@ -4,6 +4,7 @@ package shared.v1;
 
 import "apps/v1/provision.proto";
 import "deployments/v1/start.proto";
+import "google/protobuf/any.proto";
 import "installs/v1/deprovision.proto";
 import "installs/v1/provision.proto";
 import "instances/v1/provision.proto";
@@ -20,6 +21,8 @@ message FinishActivityRequest {
   ResponseRef response_ref = 4 [(tagger.tags) = "faker:\"-\""];
   ResponseStatus status = 5;
   string error_message = 6;
+
+  google.protobuf.Any other = 7;
 }
 
 message FinishActivityResponse {}

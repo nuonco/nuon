@@ -10,9 +10,9 @@ import (
 )
 
 type notifier interface {
-	sendSuccessNotification(context.Context, string, *installsv1.ProvisionRequest) error
-	sendStartNotification(context.Context, string, *installsv1.ProvisionRequest) error
-	sendErrorNotification(context.Context, string, *installsv1.ProvisionRequest, string) error
+	sendSuccessNotification(ctx context.Context, bucket string, req *installsv1.ProvisionRequest) error
+	sendStartNotification(ctx context.Context, bucket string, req *installsv1.ProvisionRequest) error
+	sendErrorNotification(ctx context.Context, bucket string, req *installsv1.ProvisionRequest, errMsg string) error
 }
 
 var _ notifier = (*notifierImpl)(nil)
