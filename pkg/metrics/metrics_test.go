@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
@@ -11,13 +12,15 @@ import (
 
 func TestNew(t *testing.T) {
 	log := zaptest.NewLogger(t)
+	os.Setenv("HOST_IP", "test-host-ip")
+	defer os.Unsetenv("HOST_IP")
 
 	tests := map[string]struct {
 		optFns      func() []writerOption
 		assertFn    func(*testing.T, *writer)
 		errExpected error
 	}{
-		"defaults": {
+		"defaults + uses HOST_IP env var": {
 			optFns: func() []writerOption {
 				return []writerOption{
 					WithLogger(log),
@@ -25,7 +28,8 @@ func TestNew(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, w *writer) {
 				assert.False(t, w.Disable)
-				assert.Equal(t, defaultAddress, w.Address)
+				assert.NotEmpty(t, w.Address)
+				assert.Equal(t, "test-host-ip:8125", w.Address)
 			},
 		},
 		"disable": {
