@@ -6,13 +6,18 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	tclient "go.temporal.io/sdk/client"
 )
 
+//go:generate mockgen -destination=mock_repo.go -source=repo.go -package=temporal
 type Repo interface {
 	TriggerDeploymentStart(context.Context, *deploymentsv1.StartRequest) error
 	ExecDeploymentStart(context.Context, *deploymentsv1.StartRequest) (*deploymentsv1.StartResponse, error)
+
+	TriggerInstallProvision(context.Context, *installsv1.ProvisionRequest) error
+	TriggerInstallDeprovision(context.Context, *installsv1.DeprovisionRequest) error
 
 	TriggerOrgSignup(context.Context, *orgsv1.SignupRequest) error
 	ExecOrgSignup(context.Context, *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error)
@@ -21,7 +26,7 @@ type Repo interface {
 type repo struct {
 	v *validator.Validate
 
-	Client tclient.Client `validate:"required"`
+	Client temporalClient `validate:"required"`
 }
 
 var _ Repo = (*repo)(nil)
