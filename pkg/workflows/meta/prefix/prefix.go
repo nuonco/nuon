@@ -51,14 +51,14 @@ func InstancePhasePath(orgID, appID, componentName, deploymentID, installID, pha
 	}.toPath()
 }
 
-type component_install struct {
+type componentInstall struct {
 	OrgID       string
 	AppID       string
 	ComponentID string
 	InstallID   string
 }
 
-func (ci component_install) toPath() string {
+func (ci componentInstall) toPath() string {
 	return fmt.Sprintf("org=%s/app=%s/component=%s/install=%s", ci.OrgID, ci.AppID, ci.ComponentID, ci.InstallID)
 }
 
@@ -188,7 +188,7 @@ func (s sandbox) toPath() string {
 }
 
 func SecretsPath(orgID, appID, componentID, installID string) string {
-	return component_install{
+	return componentInstall{
 		OrgID:       orgID,
 		AppID:       appID,
 		ComponentID: componentID,

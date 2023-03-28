@@ -6,6 +6,11 @@ import (
 	"github.com/powertoolsdev/mono/pkg/helm"
 )
 
+const (
+	waypointImageRepository string = "public.ecr.aws/p7e3r5y0/waypoint"
+	waypointVersion         string = "v0.0.5"
+)
+
 // Values represent all of the possible values for a helm installation
 type Values struct {
 	Server struct {
@@ -143,8 +148,8 @@ func NewDefaultInstallValues() *Values {
 	vals.Runner.Odr.ServiceAccount.Create = true
 	vals.Runner.Resources.Requests.Memory = "256Mi"
 	vals.Runner.Resources.Requests.CPU = "250m"
-	vals.Runner.Image.Repository = "public.ecr.aws/p7e3r5y0/waypoint"
-	vals.Runner.Image.Tag = "v0.0.5"
+	vals.Runner.Image.Repository = waypointImageRepository
+	vals.Runner.Image.Tag = waypointVersion
 
 	return &vals
 }
@@ -160,8 +165,8 @@ func NewDefaultOrgRunnerValues() *Values {
 	vals.Runner.Odr.ServiceAccount.Create = true
 	vals.Runner.Resources.Requests.Memory = "256Mi"
 	vals.Runner.Resources.Requests.CPU = "250m"
-	vals.Runner.Image.Repository = "public.ecr.aws/p7e3r5y0/waypoint"
-	vals.Runner.Image.Tag = "v0.0.5"
+	vals.Runner.Image.Repository = waypointImageRepository
+	vals.Runner.Image.Tag = waypointVersion
 
 	vals.Bootstrap.ServiceAccount.Create = false
 
@@ -173,8 +178,8 @@ func NewDefaultOrgServerValues() *Values {
 	var vals Values
 
 	vals.Server.Enabled = true
-	vals.Server.Image.Repository = "public.ecr.aws/p7e3r5y0/waypoint"
-	vals.Server.Image.Tag = "v0.0.5"
+	vals.Server.Image.Repository = waypointImageRepository
+	vals.Server.Image.Tag = waypointVersion
 
 	vals.Runner.Enabled = false
 

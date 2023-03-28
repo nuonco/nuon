@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/workflow"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/powertoolsdev/mono/services/workers-installs/internal"
@@ -94,6 +95,12 @@ func TestProvision_finishWithErr(t *testing.T) {
 			assert.Equal(t, assertedRoleARN, r.MetadataBucketAssumeRoleArn)
 			assertedPrefix := prefix.InstallPath(req.OrgId, req.AppId, req.InstallId)
 			assert.Equal(t, assertedPrefix, r.MetadataBucketPrefix)
+
+			var wkflowReq installsv1.ProvisionRequest
+			err := r.Other.UnmarshalTo(&wkflowReq)
+			assert.NoError(t, err)
+			assert.True(t, proto.Equal(&wkflowReq, req))
+
 			return resp, nil
 		})
 

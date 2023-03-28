@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
-	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
 )
 
 // GetInstanceProvisionResponse returns a provision response
