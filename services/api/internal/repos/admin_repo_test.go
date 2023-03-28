@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -22,6 +23,11 @@ func createSandboxVersion(ctx context.Context, t *testing.T, state repoTestState
 }
 
 func TestGetSandboxVersionByID(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should return error if record does not exist",
@@ -54,6 +60,11 @@ func TestGetSandboxVersionByID(t *testing.T) {
 }
 
 func TestGetLatestSandboxVersion(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should fetch the most recent sandbox version",
@@ -80,6 +91,11 @@ func TestGetLatestSandboxVersion(t *testing.T) {
 }
 
 func TestUpsertSandboxVersion(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should create a sandbox version successfully",

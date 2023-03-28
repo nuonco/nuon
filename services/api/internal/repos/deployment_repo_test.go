@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -22,6 +23,11 @@ func createDeployment(ctx context.Context, t *testing.T, state repoTestState) *m
 }
 
 func TestGetDeployment(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should get a deployment successfully",
@@ -56,6 +62,11 @@ func TestGetDeployment(t *testing.T) {
 }
 
 func TestListByComponents(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should get a list of deployments successfully",
@@ -88,6 +99,11 @@ func TestListByComponents(t *testing.T) {
 }
 
 func TestListByApps(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should get a list of deployments successfully",
@@ -126,6 +142,11 @@ func TestListByApps(t *testing.T) {
 }
 
 func TestListByInstalls(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should get a list of deployments successfully",

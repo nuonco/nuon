@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -24,6 +25,11 @@ func createComponent(ctx context.Context, t *testing.T, state repoTestState) *mo
 }
 
 func TestUpsertComponent(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should create an component successfully",
@@ -52,6 +58,11 @@ func TestUpsertComponent(t *testing.T) {
 }
 
 func TestDeleteComponent(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should delete an install successfully",
@@ -79,6 +90,11 @@ func TestDeleteComponent(t *testing.T) {
 }
 
 func TestGetComponent(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should get an component successfully",
@@ -113,6 +129,11 @@ func TestGetComponent(t *testing.T) {
 }
 
 func TestComponentListByApp(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should get all components successfully when no limit is set",
