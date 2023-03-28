@@ -24,8 +24,7 @@ code:
 
 test:
     FROM +code
-    RUN echo "not running tests, just running build./... for now."
-    RUN go build ./...
+    RUN go test ./...
 
 test-integration:
     RUN echo "noop..."
