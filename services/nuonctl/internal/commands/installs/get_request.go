@@ -17,5 +17,5 @@ func (c *commands) PrintProvisionRequest(ctx context.Context, installID string) 
 }
 
 func (c *commands) PrintProvisionResponse(ctx context.Context, installID string) error {
-	return nil
+	return fmt.Errorf("not yet implemented")
 }

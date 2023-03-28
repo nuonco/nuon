@@ -18,6 +18,8 @@ var (
 	responseFilename string = "response.json"
 )
 
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_repo.go -source=repo.go -package=workflows
 type Repo interface {
 	GetInstallProvisionRequest(ctx context.Context, installID string) (*installsv1.ProvisionRequest, error)
 

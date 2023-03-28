@@ -13,6 +13,7 @@ const (
 	assumeRoleSessionName string = "nuonctl-executors"
 )
 
+//go:generate mockgen -destination=mock_repo.go -source=repo.go -package=executors
 type Repo interface {
 	GetPlan(context.Context, *planv1.PlanRef) (*planv1.Plan, error)
 	GetDeploymentsPlan(context.Context, string) (*planv1.Plan, error)
