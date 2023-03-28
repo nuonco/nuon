@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -28,6 +29,11 @@ func createInstall(ctx context.Context, t *testing.T, state repoTestState) *mode
 }
 
 func TestUpsertInstall(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should create an install successfully",
@@ -59,6 +65,11 @@ func TestUpsertInstall(t *testing.T) {
 }
 
 func TestDeleteInstall(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should delete an install successfully",
@@ -86,6 +97,11 @@ func TestDeleteInstall(t *testing.T) {
 }
 
 func TestGetInstall(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should get an install successfully",
@@ -131,6 +147,11 @@ func TestGetInstall(t *testing.T) {
 }
 
 func TestInstallListByApp(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should get all apps successfully when no limit is set",

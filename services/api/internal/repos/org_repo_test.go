@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -19,6 +20,11 @@ func createOrg(ctx context.Context, t *testing.T, orgRepo OrgRepo) *models.Org {
 }
 
 func TestCreateOrg(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should create org successfully",
@@ -64,6 +70,11 @@ func TestCreateOrg(t *testing.T) {
 }
 
 func TestUpsertOrg(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should upsert an org successfully",
@@ -82,6 +93,11 @@ func TestUpsertOrg(t *testing.T) {
 }
 
 func TestDeleteOrg(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should delete an org successfully",
@@ -119,6 +135,11 @@ func TestDeleteOrg(t *testing.T) {
 }
 
 func TestGetOrg(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should get an org successfully",

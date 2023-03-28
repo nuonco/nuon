@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -9,6 +10,11 @@ import (
 )
 
 func TestUpsertUserOrg(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	execRepoTests(t, []repoTest{
 		{
 			desc: "should get an org's users successfully",

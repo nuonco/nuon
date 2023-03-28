@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -12,6 +13,11 @@ import (
 )
 
 func TestIsDuplicateKeyError(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
 	gormDB, err := gorm.Open(postgres.New(postgres.Config{DSN: "dbname=api host=localhost user=api"}), &gorm.Config{})
 	assert.NoError(t, err)
 	assert.NotNil(t, gormDB)
