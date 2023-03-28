@@ -19,6 +19,7 @@ func Test_writer_Incr(t *testing.T) {
 	tests := map[string]struct {
 		client func(*testing.T, *gomock.Controller) dogstatsdClient
 		opts   func() []writerOption
+		tags   []string
 	}{
 		"happy path": {
 			opts: func() []writerOption {
@@ -26,6 +27,17 @@ func Test_writer_Incr(t *testing.T) {
 					WithTags("key:value"),
 				}
 			},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				client.EXPECT().Incr(key, []string{"key:value"}, float64(value)).Return(nil)
+				return client
+			},
+		},
+		"happy path with tags": {
+			opts: func() []writerOption {
+				return []writerOption{}
+			},
+			tags: []string{"key:value"},
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Incr(key, []string{"key:value"}, float64(value)).Return(nil)
@@ -57,7 +69,7 @@ func Test_writer_Incr(t *testing.T) {
 			assert.NoError(t, err)
 			writer.client = client
 
-			writer.Incr(key, value)
+			writer.Incr(key, value, test.tags)
 		})
 	}
 }
@@ -69,6 +81,7 @@ func Test_writer_Decr(t *testing.T) {
 	tests := map[string]struct {
 		client func(*testing.T, *gomock.Controller) dogstatsdClient
 		opts   func() []writerOption
+		tags   []string
 	}{
 		"happy path": {
 			opts: func() []writerOption {
@@ -76,6 +89,17 @@ func Test_writer_Decr(t *testing.T) {
 					WithTags("key:value"),
 				}
 			},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				client.EXPECT().Decr(key, []string{"key:value"}, float64(value)).Return(nil)
+				return client
+			},
+		},
+		"happy path with tags": {
+			opts: func() []writerOption {
+				return []writerOption{}
+			},
+			tags: []string{"key:value"},
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Decr(key, []string{"key:value"}, float64(value)).Return(nil)
@@ -107,7 +131,7 @@ func Test_writer_Decr(t *testing.T) {
 			assert.NoError(t, err)
 			writer.client = client
 
-			writer.Decr(key, value)
+			writer.Decr(key, value, test.tags)
 		})
 	}
 }
@@ -119,6 +143,7 @@ func Test_writer_Timing(t *testing.T) {
 	tests := map[string]struct {
 		client func(*testing.T, *gomock.Controller) dogstatsdClient
 		opts   func() []writerOption
+		tags   []string
 	}{
 		"happy path": {
 			opts: func() []writerOption {
@@ -126,6 +151,17 @@ func Test_writer_Timing(t *testing.T) {
 					WithTags("key:value"),
 				}
 			},
+			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
+				client := NewMockdogstatsdClient(mockCtl)
+				client.EXPECT().Timing(key, value, []string{"key:value"}, defaultRate).Return(nil)
+				return client
+			},
+		},
+		"happy path with tags": {
+			opts: func() []writerOption {
+				return []writerOption{}
+			},
+			tags: []string{"key:value"},
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
 				client.EXPECT().Timing(key, value, []string{"key:value"}, defaultRate).Return(nil)
@@ -157,7 +193,7 @@ func Test_writer_Timing(t *testing.T) {
 			assert.NoError(t, err)
 			writer.client = client
 
-			writer.Timing(key, value)
+			writer.Timing(key, value, test.tags)
 		})
 	}
 }
