@@ -20,3 +20,6 @@ datadog:
     enableTCPQueueLength: false
     enableOOMKill: true
     collectDNSStats: false
+  dogstatsd:
+    useHostPort: true
+    port: 8125
