@@ -50,6 +50,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 		worker.WithWorkflow(rwkflow.ProvisionRepository),
 
 		// register activities
+		worker.WithActivity(provision.NewActivities()),
 		worker.WithActivity(project.NewActivities(v)),
 		worker.WithActivity(repository.NewActivities()),
 	)
