@@ -31,7 +31,6 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 
 	installsCmd.AddCommand(&cobra.Command{
 		Use: "print-provision-request",
-
 		// TODO(jm): do not use RunE and provide own formatter
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return installs.PrintProvisionRequest(ctx, installID)
@@ -50,6 +49,20 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 		Short: "print any response by passing in a key - works for instances as well",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return installs.PrintResponse(ctx, args[0])
+		},
+	})
+	installsCmd.AddCommand(&cobra.Command{
+		Use:   "reprovision",
+		Short: "reprovision an install by re-triggering workflow with it's original request",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return installs.Reprovision(ctx, args[0])
+		},
+	})
+	installsCmd.AddCommand(&cobra.Command{
+		Use:   "deprovision",
+		Short: "deprovision an install by submitting deprovision with it's original request",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return installs.Deprovision(ctx, args[0])
 		},
 	})
 	return nil
