@@ -14,8 +14,7 @@ type slackNotifier struct {
 }
 
 var (
-	errInvalidURL    error = fmt.Errorf("unspecified or invalid webhook URL")
-	errMissingLogger error = fmt.Errorf("missing logger")
+	errInvalidURL error = fmt.Errorf("unspecified or invalid webhook URL")
 )
 
 // NewSlackSender instantiates a new sender that sends to Slack using maybeURL

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
+	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 )
 
 func (r *repo) GetInstallsResponse(ctx context.Context, key string) (*sharedv1.Response, error) {
