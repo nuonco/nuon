@@ -49,10 +49,10 @@ jobs:
             workers-orgs: services/workers-orgs/**
 
   tag:
-    name: Determine next tag
+    name: Determine short ref
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ github.event_name != 'pull_request' && steps.git_ref.outputs.git_ref }}
+      git_ref: ${{steps.git_ref.outputs.git_ref}}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -74,5 +74,5 @@ jobs:
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
-      tag: ${{ needs.tag.outputs.tag }}
+      tag: ${{ needs.tag.outputs.git_ref }}
     secrets: inherit

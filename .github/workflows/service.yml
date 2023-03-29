@@ -1,5 +1,5 @@
 ---
-name: CI (go)
+name: service
 "on":
   workflow_call:
     inputs:
@@ -152,7 +152,8 @@ jobs:
     name: 📦 release
     needs:
       - terraform
-    if: github.event_name != 'pull_request'
+      - lint
+      - test
     uses: ./.github/workflows/release.yml
     secrets: inherit
     with:
@@ -161,9 +162,10 @@ jobs:
 
   deploy-stage:
     name: ☁️  deploy stage
+    # only run on main, or when the PR is not in a draft
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     needs:
       - release
-    if: github.event_name != 'pull_request'
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
     with:
@@ -172,11 +174,11 @@ jobs:
       service: ${{ inputs.service }}
 
   deploy-prod:
+    if: github.event_name != 'pull_request'
     name: ☁️  deploy prod
     needs:
       - release
       - deploy-stage
-    if: github.event_name != 'pull_request'
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
     with:
