@@ -83,7 +83,7 @@ jobs:
             +helm-bump-and-publish \
             --repos=nuon=${{ env.TFO_NUON_CHARTS }} \
             --chart_name=${{ inputs.service }} \
-            --chart_version=${{ inputs.tag }}
+            --chart_version=v0.0.1-${{ inputs.tag }}
 
       - name: Handle failures
         if: failure()
@@ -93,7 +93,7 @@ jobs:
             github.com/powertoolsdev/shared-configs+helm-unrelease \
             --repo_name=${{ github.repository }} \
             --registry_id=${{ env.TFO_ECR_REGISTRY_ID }} \
-            --chart_version=${{ inputs.tag }} \
+            --chart_version=v0.0.1-${{ inputs.tag }} \
             --image_tag=${{ inputs.tag }} \
             --helm_repos="nuon=${{ env.TFO_NUON_CHARTS }}" \
           || true
