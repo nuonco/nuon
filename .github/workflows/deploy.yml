@@ -100,3 +100,13 @@ jobs:
             --chart_version=${{ inputs.tag }} \
             --repository=${{ env.TFO_ECR_REPOSITORY_URL }} \
             --image_tag=${{ inputs.tag }} \
+
+      - name: DataDog Event
+        uses: jordan-simonovski/datadog-event-action@1.0.3
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          EVENT_TITLE: Deploy succeeded 🚀
+          EVENT_TEXT: ${{inputs.service}}@${{inputs.version}} was deployed to ${{inputs.env}}
+          EVENT_PRIORITY: normal
+          EVENT_TAGS: "['service:${{inputs.service}}','env:${{inputs.env}}','git_ref:${{inputs.version}}']"
+          EVENT_ALERT_TYPE: info
