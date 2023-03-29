@@ -60,7 +60,7 @@ Remember to `aws-sso-util login` first.
 
 ## How to apply DB changes locally
 
-1. Run `go run . migrate create FILENAME sql` where `FILENAME` is a descriptive name for your migration, e.g. `create_users_table`. This will create a placeholder file with that name under the `migrations` folder. 
+1. Run `go run . migrate create FILENAME sql` where `FILENAME` is a descriptive name for your migration, e.g. `create_users_table`. This will create a placeholder file with that name under the `migrations` folder.
 2. Edit the created file and add the SQL commands for your changes, e.g. `CREATE TABLE users...`
 3. Run `go run . migrate up`
 
@@ -109,3 +109,4 @@ $ nuon-api-stage-request '{"user_id":"233", "org_id": "123"}' user.v1.UsersServi
 ```
 
 The protobufs for all the API's endpoints can be found in [the protos repo](https://github.com/powertoolsdev/protos/tree/main/api) and in [buf.build](https://buf.build/nuon/apis).
+
