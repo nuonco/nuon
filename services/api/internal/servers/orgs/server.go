@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/go-playground/validator/v10"
 	connectv1 "github.com/powertoolsdev/mono/pkg/types/api/org/v1/orgv1connect"
+	"github.com/powertoolsdev/mono/services/api/internal/servers"
 	"github.com/powertoolsdev/mono/services/api/internal/services"
 )
 
@@ -35,7 +37,9 @@ type serverOption func(*server) error
 
 func WithHTTPMux(mux *http.ServeMux) serverOption {
 	return func(s *server) error {
-		path, handler := connectv1.NewOrgsServiceHandler(s)
+		path, handler := connectv1.NewOrgsServiceHandler(s,
+			connect.WithInterceptors(connect.UnaryInterceptorFunc(servers.MetricsInterceptor)))
+
 		mux.Handle(path, handler)
 		return nil
 	}
