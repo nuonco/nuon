@@ -97,7 +97,7 @@ jobs:
             --cluster_name=${{ env.TFO_CLUSTER_NAME }} \
             --role_arn=${{ env.TFO_CLUSTER_GH_ROLE_ARN }} \
             --chart_name=${{ inputs.service }} \
-            --chart_version=${{ inputs.tag }} \
+            --chart_version=v0.0.1-${{ inputs.tag }} \
             --repository=${{ env.TFO_ECR_REPOSITORY_URL }} \
             --image_tag=${{ inputs.tag }} \
 
@@ -108,5 +108,5 @@ jobs:
           EVENT_TITLE: Deploy succeeded 🚀
           EVENT_TEXT: ${{inputs.service}}@${{inputs.version}} was deployed to ${{inputs.env}}
           EVENT_PRIORITY: normal
-          EVENT_TAGS: "['service:${{inputs.service}}','env:${{inputs.env}}','git_ref:${{inputs.version}}']"
+          EVENT_TAGS: "['service:${{inputs.service}}','env:${{inputs.env}}','git_ref:${{inputs.tag}}']"
           EVENT_ALERT_TYPE: info
