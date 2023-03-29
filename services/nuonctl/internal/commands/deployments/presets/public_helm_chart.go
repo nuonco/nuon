@@ -1,9 +1,12 @@
 package presets
 
 import (
+	"time"
+
 	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func (p *preset) publicHelmChart() (*componentv1.Component, error) {
@@ -13,10 +16,12 @@ func (p *preset) publicHelmChart() (*componentv1.Component, error) {
 			Cfg: &buildv1.Config_Noop{},
 		},
 		DeployCfg: &deployv1.Config{
-			Cfg: &deployv1.Config_PublicHelm{
-				PublicHelm: &deployv1.PublicHelmConfig{
-					Name:     "public-helm-chart",
-					ChartUrl: "matheusfm/httpbin",
+			Timeout: durationpb.New(time.Minute * 5),
+			Cfg: &deployv1.Config_HelmRepo{
+				HelmRepo: &deployv1.HelmRepoConfig{
+					Name:      "public-helm-chart",
+					ChartRepo: "matheusfm/httpbin",
+
 					// TODO(jm): add ability to specify a custom repo
 					//$ helm repo add matheusfm https://matheusfm.dev/charts
 				},
