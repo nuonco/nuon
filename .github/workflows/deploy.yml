@@ -108,8 +108,8 @@ jobs:
           api-key: ${{ secrets.DATADOG_API_KEY }}
           api-url: 'https://us5.datadoghq.com'
           events: |
-            - title: "deployed ${{ inputs.service}} to ${{ inputs.service }} `${{inputs.tag}}`"
-              text: "deployed ${{ inputs.service}} to ${{ inputs.service }} `${{inputs.tag}}`"
+            - title: "deployed ${{ inputs.service}} to ${{ inputs.env }} `${{inputs.tag}}`"
+              text: "deployed ${{ inputs.service}} to ${{ inputs.env }} `${{inputs.tag}}`"
               alert_type: "info"
               tags:
                 - "service:${{inputs.service}}"
