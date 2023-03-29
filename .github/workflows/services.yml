@@ -52,20 +52,14 @@ jobs:
     name: Determine next tag
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ github.event_name != 'pull_request' && steps.semver.outputs.next || 'local' }}
-      tag_strict: ${{ github.event_name != 'pull_request' && steps.semver.outputs.nextStrict || 'local' }}
+      tag: ${{ github.event_name != 'pull_request' && steps.git_ref.outputs.git_ref }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Determine next version
-        if: github.event_name != 'pull_request'
-        id: semver
-        uses: ietf-tools/semver-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-          patchAll: true
+      - name: Set git_ref output
+        id: git_ref
+        run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
   services:
     # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
@@ -82,17 +76,3 @@ jobs:
       service: ${{matrix.service}}
       tag: ${{ needs.tag.outputs.tag }}
     secrets: inherit
-
-  push_tag:
-    name: Push tag to repo
-    if: github.event_name != 'pull_request'
-    needs:
-      - tag
-      - services
-    runs-on: ubuntu-latest
-    steps:
-      - name: Push tag
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          custom_tag: ${{ needs.tag.outputs.tag_strict }}
