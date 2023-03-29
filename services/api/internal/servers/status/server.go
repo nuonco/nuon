@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/go-playground/validator/v10"
 	connectv1 "github.com/powertoolsdev/mono/pkg/types/shared/status/v1/statusv1connect"
 	"github.com/powertoolsdev/mono/services/api/internal"
+	"github.com/powertoolsdev/mono/services/api/internal/servers"
 )
 
 type server struct {
@@ -14,11 +16,6 @@ type server struct {
 }
 
 var _ connectv1.StatusServiceHandler = (*server)(nil)
-
-func NewHandler() (string, http.Handler) {
-	srv := &server{}
-	return connectv1.NewStatusServiceHandler(srv)
-}
 
 func New(opts ...serverOption) (*server, error) {
 	srv := &server{}
@@ -49,7 +46,8 @@ func WithConfig(cfg *internal.Config) serverOption {
 
 func WithHTTPMux(mux *http.ServeMux) serverOption {
 	return func(s *server) error {
-		path, handler := connectv1.NewStatusServiceHandler(s)
+		path, handler := connectv1.NewStatusServiceHandler(s,
+			connect.WithInterceptors(connect.UnaryInterceptorFunc(servers.MetricsInterceptor)))
 		mux.Handle(path, handler)
 		return nil
 	}
