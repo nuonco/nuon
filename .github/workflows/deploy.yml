@@ -101,12 +101,18 @@ jobs:
             --repository=${{ env.TFO_ECR_REPOSITORY_URL }} \
             --image_tag=${{ inputs.tag }} \
 
-      - name: DataDog Event
-        uses: jordan-simonovski/datadog-event-action@1.0.3
-        env:
-          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-          EVENT_TITLE: Deploy succeeded 🚀
-          EVENT_TEXT: ${{inputs.service}}@${{inputs.version}} was deployed to ${{inputs.env}}
-          EVENT_PRIORITY: normal
-          EVENT_TAGS: "['service:${{inputs.service}}','env:${{inputs.env}}','git_ref:${{inputs.tag}}']"
-          EVENT_ALERT_TYPE: info
+
+      - name: Datadog
+        uses: masci/datadog@v1.5.0
+        with:
+          api-key: ${{ secrets.DATADOG_API_KEY }}
+          api-url: 'https://us5.datadoghq.com'
+          events: |
+            - title: "Successfully deployed ${{ inputs.service}}"
+              text: "${{inputs.tag}} deployed to ${{ inputs.env }}"
+              alert_type: "info"
+              tags:
+                - "service:${{inputs.service}}"
+                - "env:${{inputs.env}}"
+                - "project:${{ github.repository }}"
+                - "git_ref:${{ inputs.tag }}"
