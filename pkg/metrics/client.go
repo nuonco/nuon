@@ -8,9 +8,6 @@ import (
 
 const (
 	maxBytesPerPayload int = 4096
-
-	// we set the `HOST_IP` env var on all running pods in our cluster.
-	dogstatsdHostEnvVar string = "HOST_IP"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
