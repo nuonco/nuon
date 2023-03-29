@@ -34,6 +34,6 @@ deps:
     SAVE ARTIFACT go.sum AS LOCAL go.sum
     SAVE IMAGE --cache-hint
 
-################################### UDCs ######################################
-
-################################### LOCAL #####################################
+clean:
+    LOCALLY
+    RUN git clean -f -x
