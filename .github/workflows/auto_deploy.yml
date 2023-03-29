@@ -6,9 +6,6 @@ name: auto deploy
       - opened
       - ready_for_review
       - reopened
-  push:
-    branches:
-      - main
 
 jobs:
   add-label:
