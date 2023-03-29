@@ -1,0 +1,22 @@
+---
+name: auto deploy
+"on":
+  pull_request:
+    types:
+      - opened
+      - ready_for_review
+      - reopened
+  push:
+    branches:
+      - main
+
+jobs:
+  add-label:
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: add auto deploy label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: auto-deploy
+
