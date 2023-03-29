@@ -162,8 +162,9 @@ jobs:
 
   deploy-stage:
     name: ☁️  deploy stage
-    # only run on main, or when the PR is not in a draft
-    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    # only run on main, or when the auto-deploy label is set
+    if: ${{ github.event_name != 'pull_request'
+           || contains(github.event.pull_request.labels.*.name, 'auto-deploy') }}
     needs:
       - release
     uses: ./.github/workflows/deploy.yml
