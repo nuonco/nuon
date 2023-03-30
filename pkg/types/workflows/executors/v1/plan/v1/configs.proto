@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+message Configs {
+  repeated Config configs = 1;
+}
+
+message Config {
+  oneof actual {
+    EnvVar env_var = 1;
+    HelmValue helm_value = 2;
+  }
+}
+
+enum EnvVarType {
+  ENV_VAR_TYPE_UNSPECIFIED = 0;
+  ENV_VAR_TYPE_RUNNER_JOB = 1;
+  ENV_VAR_TYPE_DEPLOY = 2;
+}
+
+// EnvVar represents an env var that is injected into a live container
+message EnvVar {
+  EnvVarType type = 1;
+
+  bool sensitive = 2;
+  string name = 3;
+  string value = 4;
+}
+
+// HelmValueType represents the different types of helm values, as some come from secrets and some are from builtin.
+enum HelmValueType {
+  HELM_VALUE_TYPE_UNSPECIFIED = 0;
+  HELM_VALUE_TYPE_DEFAULT = 1;
+
+  // builtin helm value
+  HELM_VALUE_TYPE_BUILTIN_IMAGE = 2;
+  HELM_VALUE_TYPE_BUILTIN_IMAGE_TAG = 3;
+}
+
+// HelmValue is a user provided helm value that comes from secrets
+message HelmValue {
+  HelmValueType type = 1;
+
+  string name = 2;
+  bool sensitive = 3;
+  string value = 4;
+}
