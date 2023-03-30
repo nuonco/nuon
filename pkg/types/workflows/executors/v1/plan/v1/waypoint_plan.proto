@@ -21,7 +21,7 @@ message WaypointPlan {
   Outputs outputs = 5;
   component.v1.Component component = 6;
   GitSource git_source = 7;
-  Configs configs = 8 [(tagger.tags) = "faker:\"plan_configs\""];
+  Configs configs = 8;
 }
 
 enum WaypointJobType {
