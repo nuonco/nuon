@@ -8,4 +8,5 @@ func Register() {
 	_ = faker.AddProvider("shortID", fakeShortID)
 	_ = faker.AddProvider("buildConfig", fakeBuildConfig)
 	_ = faker.AddProvider("deployConfig", fakeDeployConfig)
+	_ = faker.AddProvider("planConfigs", fakePlanConfigs)
 }

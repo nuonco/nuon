@@ -19,8 +19,9 @@ func (p *preset) publicHelmChart() (*componentv1.Component, error) {
 			Timeout: durationpb.New(time.Minute * 5),
 			Cfg: &deployv1.Config_HelmRepo{
 				HelmRepo: &deployv1.HelmRepoConfig{
-					Name:      "public-helm-chart",
-					ChartRepo: "matheusfm/httpbin",
+					ChartName:    "public-helm-chart",
+					ChartRepo:    "matheusfm/httpbin",
+					ChartVersion: "v0.0.0",
 
 					// TODO(jm): add ability to specify a custom repo
 					//$ helm repo add matheusfm https://matheusfm.dev/charts
