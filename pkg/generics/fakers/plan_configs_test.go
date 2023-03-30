@@ -13,9 +13,10 @@ func Test_fakePlanConfigs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 
-	cfgs, ok := cfg.(*planv1.Configs)
+	cfgs, ok := cfg.([]*planv1.Config)
 	assert.True(t, ok)
 
-	err = cfgs.Validate()
-	assert.NoError(t, err)
+	for _, cfg := range cfgs {
+		assert.NoError(t, cfg.Validate())
+	}
 }
