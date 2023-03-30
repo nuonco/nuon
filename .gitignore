@@ -21,7 +21,9 @@ bin/
 
 # Go files
 # generated protobufs
-pkg/types/**/**.go
+pkg/types/**/**pb.go
+pkg/types/**/**pb.validate.go
+pkg/types/**/**connect.go
 # generated mocks
 *mock*.go
 go.work
