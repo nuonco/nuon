@@ -18,8 +18,6 @@ func Execute() {
 		v: validator.New(),
 	}
 
-	c.registerIDs(ctx, rootCmd)
-
 	if err := c.init(rootCmd.Flags()); err != nil {
 		log.Fatalf("unable to initialize cli: %s", err)
 	}
@@ -35,6 +33,12 @@ func Execute() {
 	}
 	if err := c.registerApps(ctx, rootCmd); err != nil {
 		log.Fatalf("unable to register apps: %s", err)
+	}
+	if err := c.registerGeneral(ctx, rootCmd); err != nil {
+		log.Fatalf("unable to register general: %s", err)
+	}
+	if err := c.registerServices(ctx, rootCmd); err != nil {
+		log.Fatalf("unable to register service commands: %s", err)
 	}
 
 	if err := rootCmd.Execute(); err != nil {
