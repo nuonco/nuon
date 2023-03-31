@@ -20,7 +20,7 @@ deps:
   - remote: buf.build
     owner: nuon
     repository: workflows
-    commit: 1a09090b4a234593924e963a58968a49
+    commit: b5fa464213b74b919154c3364b31360c
   - remote: buf.build
     owner: srikrsna
     repository: protoc-gen-gotag
