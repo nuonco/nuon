@@ -15,9 +15,9 @@ func (c *cli) registerGeneral(_ context.Context, rootCmd *cobra.Command) error {
 	}
 
 	var generalCmd = &cobra.Command{
-		Use:	 "general",
+		Use:     "general",
 		Aliases: []string{"g"},
-		Short:	 "general commands for things like ids and more",
+		Short:   "general commands for things like ids and more",
 	}
 	rootCmd.AddCommand(generalCmd)
 
@@ -50,6 +50,13 @@ func (c *cli) registerGeneral(_ context.Context, rootCmd *cobra.Command) error {
 		Short: "convert an id into a long-id",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmds.ToLongID(inputID)
+		},
+	})
+	generalCmd.AddCommand(&cobra.Command{
+		Use:   "kubecfg",
+		Short: "get a kubecfg",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmds.GetKubecfg()
 		},
 	})
 
