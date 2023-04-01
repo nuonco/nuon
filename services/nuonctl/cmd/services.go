@@ -31,5 +31,13 @@ func (c *cli) registerServices(ctx context.Context, rootCmd *cobra.Command) erro
 		},
 	})
 
+	generalCmd.AddCommand(&cobra.Command{
+		Use:   "env",
+		Short: "fetch a service's env and output as json",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmds.Env(ctx, name)
+		},
+	})
+
 	return nil
 }
