@@ -75,6 +75,7 @@ require (
 	k8s.io/cli-runtime v0.26.2
 	k8s.io/client-go v0.26.2
 	moul.io/zapgorm2 v1.3.0
+	sigs.k8s.io/aws-iam-authenticator v0.6.8
 	sigs.k8s.io/controller-runtime v0.14.5
 )
 
@@ -144,6 +145,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
