@@ -31,9 +31,9 @@ module "api-gateway-stage" {
   source = "./modules/workspace"
 
   name       = "api-gateway-stage"
-  repo       = "powertoolsdev/api-gateway"
+  repo       = "powertoolsdev/mono"
   auto_apply = true
-  dir        = "infra"
+  dir        = "services/api-gateway/infra"
   vars = {
     env = "stage"
   }
@@ -46,9 +46,9 @@ module "api-gateway-prod" {
   source = "./modules/workspace"
 
   name       = "api-gateway-prod"
-  repo       = "powertoolsdev/api-gateway"
+  repo       = "powertoolsdev/mono"
   auto_apply = true
-  dir        = "infra"
+  dir        = "services/api-gateway/infra"
   vars = {
     env = "prod"
   }
