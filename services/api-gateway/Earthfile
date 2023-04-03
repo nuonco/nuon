@@ -14,22 +14,25 @@ ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 deps:
   COPY package.json package-lock.json .npmrc ./
   RUN \
-    --secret github_token \
-    --secret buf_token \
-    NUON_NPM_GITHUB_TOKEN=$github_token \
-    NPM_BUF_TOKEN=$buf_token \
+    --secret GITHUB_TOKEN \
+    --secret BUF_TOKEN \
+    NUON_NPM_GITHUB_TOKEN=$GITHUB_TOKEN \
+    NPM_BUF_TOKEN=$BUF_TOKEN \
     npm ci
+
   COPY tsconfig.json tsconfig.build.json ./
   COPY src src
 
 test-integration:
   RUN echo "noop..."
 
-test:
+lint:
   FROM +deps
-
   RUN echo "running type check..." && \
     npm run typecheck
+
+test:
+  FROM +deps
 
   RUN echo "running unit tests..." && \
     npm run test:unit
