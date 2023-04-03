@@ -22,12 +22,29 @@ updates:
       time: "07:00"
       timezone: "America/New_York"
 
+  - package-ecosystem: "npm"
+    directory: "services/api-gateway"
+    registries: "*"
+    schedule:
+      interval: "daily"
+      time: "07:30"
+      timezone: "America/New_York"
+
+  # terraform workspaces
   - package-ecosystem: "terraform"
     directory: "services/api/infra"
     schedule:
       day: "sunday"
       interval: "weekly"
       time: "07:10"
+      timezone: "America/New_York"
+
+  - package-ecosystem: "terraform"
+    directory: "services/api-gateway/infra"
+    schedule:
+      day: "sunday"
+      interval: "weekly"
+      time: "07:20"
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
@@ -85,3 +102,73 @@ updates:
       interval: "weekly"
       time: "07:45"
       timezone: "America/New_York"
+
+  - package-ecosystem: "terraform"
+    directory: "infra/orgs"
+    schedule:
+      day: "sunday"
+      interval: "weekly"
+      time: "07:45"
+      timezone: "America/New_York"
+
+  - package-ecosystem: "terraform"
+    directory: "infra/datadog"
+    schedule:
+      day: "sunday"
+      interval: "weekly"
+      time: "07:45"
+      timezone: "America/New_York"
+
+  - package-ecosystem: "terraform"
+    directory: "infra/dns"
+    schedule:
+      day: "sunday"
+      interval: "weekly"
+      time: "07:45"
+      timezone: "America/New_York"
+
+  - package-ecosystem: "terraform"
+    directory: "infra/eks"
+    schedule:
+      day: "sunday"
+      interval: "weekly"
+      time: "07:45"
+      timezone: "America/New_York"
+
+  - package-ecosystem: "terraform"
+    directory: "infra/github"
+    schedule:
+      day: "sunday"
+      interval: "weekly"
+      time: "07:45"
+      timezone: "America/New_York"
+
+  - package-ecosystem: "terraform"
+    directory: "infra/powertools"
+    schedule:
+      day: "sunday"
+      interval: "weekly"
+      time: "07:45"
+      timezone: "America/New_York"
+
+  - package-ecosystem: "terraform"
+    directory: "infra/temporal"
+    schedule:
+      day: "sunday"
+      interval: "weekly"
+      time: "07:45"
+      timezone: "America/New_York"
+
+  - package-ecosystem: "terraform"
+    directory: "infra/terraform"
+    schedule:
+      day: "sunday"
+      interval: "weekly"
+      time: "07:45"
+      timezone: "America/New_York"
+
+registries:
+  npm-github:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.NUON_NPM_GITHUB_TOKEN}}
