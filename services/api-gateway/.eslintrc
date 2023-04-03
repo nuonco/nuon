@@ -1,0 +1,29 @@
+{
+  "overrides": [
+    {
+      "files": ["*.ts"],
+      "extends": ["@powertoolsdev/eslint-config-nuon"],
+      "rules": {
+        "@typescript-eslint/no-unused-vars": [
+          "error",
+          { "varsIgnorePattern": "^_" }
+        ],
+        "import/no-extraneous-dependencies": [
+          "error",
+          { "devDependencies": ["./test/**/*.ts"] }
+        ]
+      },
+      "parserOptions": {
+        "project": ["./tsconfig.json"]
+      }
+    },
+    {
+      "files": ["*.graphql"],
+      "parser": "@graphql-eslint/eslint-plugin",
+      "plugins": ["@graphql-eslint"],
+      "rules": {
+        "prettier/prettier": "error"
+      }
+    }
+  ]
+}
