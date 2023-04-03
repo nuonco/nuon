@@ -1,0 +1,10 @@
+---
+extends: default
+
+ignore: |
+  */.terraform
+  node_modules/
+
+rules:
+  line-length:
+    max: 140

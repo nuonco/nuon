@@ -1,0 +1,273 @@
+##############################################################################
+# Component Config GQL types
+##############################################################################
+
+"""
+Represents no operation configuration
+"""
+type NoopConfig {
+  noop: Boolean!
+}
+
+"""
+Represents settings for a public git repository
+"""
+type PublicGitConfig {
+  repo: String!
+  gitRef: String
+  directory: String!
+}
+
+"""
+Represents settings for a connected github repository
+"""
+type ConnectedGithubConfig {
+  repo: String!
+  gitRef: String
+  directory: String!
+  branch: String
+}
+
+"""
+Represents version control settings for the component
+"""
+union VcsConfig = PublicGitConfig | ConnectedGithubConfig
+
+"""
+Represents a Docker build configuration
+"""
+type DockerBuildConfig {
+  """
+  Name of Dockerfile used to build image
+  """
+  dockerfile: String!
+  """
+  Docker build arguments
+  """
+  buildArgs: [KeyValuePair!]
+  """
+  Version control system configuration
+  """
+  vcsConfig: VcsConfig
+}
+
+"""
+Represents the AWS Authentication configuration used to access the vendor's OCI image
+"""
+type AWSAuthConfig {
+  """
+  AWS IAM Role
+  """
+  role: String!
+  """
+  AWS Region
+  """
+  region: AWSRegion!
+}
+
+"""
+Represents an external OCI image configuration
+"""
+type ExternalImageConfig {
+  """
+  URL where the OCI image is hosted
+  """
+  ociImageUrl: String!
+  """
+  OCI image tag
+  """
+  tag: String!
+  authConfig: AWSAuthConfig
+}
+
+"""
+Represents all the component build configurations
+"""
+union ComponentBuildConfig =
+    ExternalImageConfig
+  | DockerBuildConfig
+  | NoopConfig
+
+"""
+Represents a basic Kubernetes deployment configurations
+"""
+type BasicDeployConfig {
+  """
+  The health check endpoint for the Kubernetes liveness probe
+  """
+  healthCheckPath: String!
+  """
+  How many instances of deployment to maintain
+  """
+  instanceCount: Int!
+  """
+  Container port
+  """
+  port: Int!
+}
+
+"""
+Represents a public helm chart deployment configuration
+"""
+type HelmRepoDeployConfig {
+  chartName: String!
+  chartRepo: String!
+  chartVersion: String!
+
+  imageRepoValuesKey: String
+  imageTagValuesKey: String
+}
+
+"""
+Represents all the component deployment configurations
+"""
+union ComponentDeployConfig =
+    BasicDeployConfig
+  | HelmRepoDeployConfig
+  | NoopConfig
+
+"""
+Represents all configuration for the  component
+"""
+type ComponentConfig {
+  buildConfig: ComponentBuildConfig
+  deployConfig: ComponentDeployConfig
+}
+
+##############################################################################
+# Component GQL types
+##############################################################################
+
+"""
+Represents a collection of general settings and information about a piece of a App
+"""
+type Component implements Node {
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+  config: ComponentConfig
+  deployments(options: ConnectionOptions): DeploymentConnection!
+  app: App
+}
+
+"""
+An auto-generated type which holds one Component and a cursor during pagination
+"""
+type ComponentEdge {
+  """
+  A cursor for use in pagination
+  """
+  cursor: String!
+  """
+  The item at the end of ComponentEdge
+  """
+  node: Component
+}
+
+"""
+An auto-generated type for paginating through multiple Components
+"""
+type ComponentConnection implements Connection {
+  totalCount: Int!
+  pageInfo: PageInfo!
+  """
+  A list of edges
+  """
+  edges: [ComponentEdge!]
+}
+
+##############################################################################
+# Component inputs
+##############################################################################
+
+input PublicGitConfigInput {
+  repo: String!
+  gitRef: String
+  directory: String!
+}
+
+input ConnectedGithubConfigInput {
+  repo: String!
+  gitRef: String
+  directory: String!
+  branch: String!
+}
+
+input VcsConfigInput {
+  publicGit: PublicGitConfigInput
+  connectedGithub: ConnectedGithubConfigInput
+}
+
+input DockerBuildInput {
+  dockerfile: String!
+  vcsConfig: VcsConfigInput!
+}
+
+input AWSAuthConfigInput {
+  role: String!
+  region: AWSRegion!
+}
+
+input ExternalImageInput {
+  ociImageUrl: String!
+  tag: String
+  authConfig: AWSAuthConfigInput
+}
+
+input BuildConfigInput {
+  noop: Boolean
+  dockerBuildConfig: DockerBuildInput
+  externalImageConfig: ExternalImageInput
+}
+
+input BasicDeployConfigInput {
+  healthCheckPath: String!
+  instanceCount: Int!
+  port: Int!
+}
+
+input HelmRepoDeployConfigInput {
+  chartName: String!
+  chartRepo: String!
+  chartVersion: String!
+
+  imageRepoValuesKey: String
+  imageTagValuesKey: String
+}
+
+input DeployConfigInput {
+  noop: Boolean
+  basicDeployConfig: BasicDeployConfigInput
+  helmRepoDeployConfig: HelmRepoDeployConfigInput
+}
+
+input ComponentConfigInput {
+  buildConfig: BuildConfigInput
+  deployConfig: DeployConfigInput
+}
+
+input ComponentInput {
+  appId: ID
+  id: ID
+  name: String
+  config: ComponentConfigInput
+}
+
+##############################################################################
+# Component query types
+##############################################################################
+
+extend type Query {
+  component(id: ID!): Component
+  components(appId: ID!, options: ConnectionOptions): ComponentConnection!
+}
+
+##############################################################################
+# Component mutation types
+##############################################################################
+
+extend type Mutation {
+  deleteComponent(id: ID!): Boolean!
+  upsertComponent(input: ComponentInput!): Component
+}
