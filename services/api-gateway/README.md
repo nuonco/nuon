@@ -29,11 +29,15 @@ Now that you've installed the deps & configured the `.env` you can start the gat
 
 ## Updating buf dependencies
 
-When changes to our protobufs happen we'll need to manually update the dependencies for the gateway. To do this you'll need to `export` your Buf token in the terminal then run `npm install {buf-pakage}`, this should update the `package-lock.json` file with the latest version of the grpc lib.
+When changes to our protobufs happen we'll need to manually update the dependencies for the gateway. To do this you'll need to `export` your Buf token in the terminal then run  `npm update` or `npm update {buf-package}`, this should update the `package-lock.json` file with the latest version of the grpc lib.
 
 **Buf dependencies list**
 
-* APIs `npm install @buf/nuon_apis.grpc_node`;
-* Components `npm install @buf/nuon_components.grpc_node`;
-* orgs-api `npm install @buf/nuon_orgs-api.grpc_node`;
-* shared: `npm install @buf/nuon_shared.grpc_node`;
+* APIs `npm update @buf/nuon_apis.grpc_node`;
+* Components `npm update @buf/nuon_components.grpc_node`;
+* orgs-api `npm update @buf/nuon_orgs-api.grpc_node`;
+* shared: `npm update @buf/nuon_shared.grpc_node`;
+
+## Updating GQL types
+
+Whenever the GQL schema changes you'll need to regenerate the types to Typescript. You can do this by running `npm run generate-gql-types` and committing the generated file.
