@@ -1,10 +1,8 @@
-import { TComponent } from "../../types";
+import type { Component, ComponentConfig, VcsConfig } from "../../types";
 import { getNodeFields } from "../../utils";
 
-export function getVcsConfig(config) {
-  let vcsConfig = {
-    __typename: "NoopConfig",
-  };
+export function getVcsConfig(config): VcsConfig {
+  let vcsConfig = null;
   const { connectedGithubConfig, publicGitConfig } = config?.vcsCfg;
 
   if (connectedGithubConfig) {
@@ -22,7 +20,7 @@ export function getVcsConfig(config) {
   return vcsConfig;
 }
 
-export function getConfig(config) {
+export function getConfig(config): ComponentConfig {
   let buildConfig = null;
   let deployConfig = null;
 
@@ -95,7 +93,7 @@ export function getConfig(config) {
   };
 }
 
-export function formatComponent(component): TComponent {
+export function formatComponent(component): Component {
   const config = getConfig(component.componentConfig);
 
   delete component.componentConfig;

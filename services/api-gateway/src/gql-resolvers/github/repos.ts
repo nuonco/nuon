@@ -1,17 +1,8 @@
 import { GetReposRequest } from "@buf/nuon_apis.grpc_node/github/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import {
-  IConnectionResolver,
-  TConnection,
-  TRepo,
-  TResolverFn,
-} from "../../types";
+import type { Query, QueryReposArgs, TResolverFn } from "../../types";
 
-interface IReposResolver extends IConnectionResolver {
-  githubInstallId: string;
-}
-
-export const repos: TResolverFn<IReposResolver, TConnection<TRepo>> = (
+export const repos: TResolverFn<QueryReposArgs, Query["repos"]> = (
   _,
   { githubInstallId },
   { clients }

@@ -1,20 +1,11 @@
 import { GetComponentsByAppRequest } from "@buf/nuon_apis.grpc_node/component/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import {
-  IConnectionResolver,
-  TComponent,
-  TConnection,
-  TResolverFn,
-} from "../../types";
+import type { Query, QueryComponentsArgs, TResolverFn } from "../../types";
 import { formatComponent } from "./utils";
 
-interface IComponentsResolver extends IConnectionResolver {
-  appId: string;
-}
-
 export const components: TResolverFn<
-  IComponentsResolver,
-  TConnection<TComponent>
+  QueryComponentsArgs,
+  Query["components"]
 > = (_, { appId }, { clients }) =>
   new Promise((resolve, reject) => {
     if (clients.component) {

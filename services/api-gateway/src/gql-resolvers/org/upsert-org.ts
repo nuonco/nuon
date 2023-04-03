@@ -1,19 +1,17 @@
 import { UpsertOrgRequest } from "@buf/nuon_apis.grpc_node/org/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import { TOrg, TResolverFn } from "../../types";
+import type {
+  Mutation,
+  MutationUpsertOrgArgs,
+  Org,
+  TResolverFn,
+} from "../../types";
 import { getNodeFields } from "../../utils";
 
-type TOrgInput = {
-  id?: string;
-  name?: string;
-  ownerId?: string;
-};
-
-export const upsertOrg: TResolverFn<{ input: TOrgInput }, TOrg> = (
-  _,
-  { input },
-  { clients }
-) =>
+export const upsertOrg: TResolverFn<
+  MutationUpsertOrgArgs,
+  Mutation["upsertOrg"]
+> = (_, { input }, { clients }) =>
   new Promise((resolve, reject) => {
     if (clients.org) {
       const request = new UpsertOrgRequest()
@@ -25,7 +23,7 @@ export const upsertOrg: TResolverFn<{ input: TOrgInput }, TOrg> = (
         if (err) {
           reject(new GraphQLError(err.message));
         } else {
-          resolve(getNodeFields(res.toObject().org));
+          resolve(getNodeFields<Org>(res.toObject().org));
         }
       });
     } else {

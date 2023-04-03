@@ -1,7 +1,4 @@
-import { TResolverFn } from "../../types";
+import type { Query, TResolverFn } from "../../types";
 
-export const me: TResolverFn<undefined, { id: string } | null> = (
-  _,
-  __,
-  { user }
-) => user;
+export const me: TResolverFn<undefined, Query["me"]> = (_, __, { user }) =>
+  user;

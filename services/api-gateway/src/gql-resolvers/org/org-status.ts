@@ -1,9 +1,9 @@
 import { GetStatusRequest } from "@buf/nuon_orgs-api.grpc_node/orgs/v1/status_pb";
 import { GraphQLError } from "graphql";
-import { TResolverFn } from "../../types";
+import type { Query, QueryOrgStatusArgs, TResolverFn } from "../../types";
 import { STATUS_ENUM } from "../../utils";
 
-export const orgStatus: TResolverFn<{ id: string }, string> = (
+export const orgStatus: TResolverFn<QueryOrgStatusArgs, Query["orgStatus"]> = (
   _,
   { id },
   { clients }

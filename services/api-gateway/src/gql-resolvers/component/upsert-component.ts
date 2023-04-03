@@ -19,48 +19,18 @@ import { Config as VcsConfig } from "@buf/nuon_components.grpc_node/vcs/v1/confi
 import { ConnectedGithubConfig } from "@buf/nuon_components.grpc_node/vcs/v1/connected_github_pb";
 import { PublicGitConfig } from "@buf/nuon_components.grpc_node/vcs/v1/public_git_pb";
 import { GraphQLError } from "graphql";
-import { TComponent, TResolverFn } from "../../types";
+import type {
+  BuildConfigInput,
+  ComponentConfigInput,
+  DeployConfigInput,
+  Mutation,
+  MutationUpsertComponentArgs,
+  TResolverFn,
+} from "../../types";
 import { formatComponent } from "./utils";
 
-interface IConnectedGithubConfigInput {
-  branch?: string;
-  directory: string;
-  repo: string;
-}
-interface IPublicGitConfigInput {
-  directory: string;
-  repo: string;
-}
-
-interface IVcsConfigInput {
-  connectedGithub?: IConnectedGithubConfigInput;
-  publicGit?: IPublicGitConfigInput;
-}
-
-interface IDockerBuildConfigInput {
-  dockerfile: string;
-  vcsConfig: IVcsConfigInput;
-}
-
-interface IExternalImageInput {
-  authConfig?: IExternalImageAuthConfig;
-  ociImageUrl: string;
-  tag?: string;
-}
-
-interface IExternalImageAuthConfig {
-  region: "US_EAST_1" | "US_EAST_2" | "US_WEST_1" | "US_WEST_2";
-  role: string;
-}
-
-interface IBuildConfigInput {
-  dockerBuildConfig?: IDockerBuildConfigInput;
-  externalImageConfig?: IExternalImageInput;
-  noop?: boolean;
-}
-
 export function parseBuildConfigInput(
-  buildConfig: IBuildConfigInput
+  buildConfig: BuildConfigInput
 ): Record<string, unknown> | any {
   const buildCfg = new BuildConfig();
 
@@ -120,28 +90,8 @@ export function parseBuildConfigInput(
   return buildCfg;
 }
 
-interface IBasicDeployConfigInput {
-  healthCheckPath: string;
-  instanceCount: number;
-  port: number;
-}
-
-interface IHelmRepoDeployConfigInput {
-  chartName: string;
-  chartRepo: string;
-  chartVersion: string;
-  imageRepoValuesKey: string;
-  imageTagValuesKey: string;
-}
-
-interface IDeployConfigInput {
-  basicDeployConfig?: IBasicDeployConfigInput;
-  helmRepoDeployConfig?: IHelmRepoDeployConfigInput;
-  noop?: boolean;
-}
-
 export function parseDeployConfigInput(
-  deployConfig: IDeployConfigInput
+  deployConfig: DeployConfigInput
 ): Record<string, unknown> | any {
   const deployCfg = new DeployConfig();
 
@@ -179,13 +129,8 @@ export function parseDeployConfigInput(
   return deployCfg;
 }
 
-interface IComponentConfigInput {
-  buildConfig?: IBuildConfigInput;
-  deployConfig?: IDeployConfigInput;
-}
-
 export function parseConfigInput(
-  config: IComponentConfigInput
+  config: ComponentConfigInput
 ): Record<string, unknown> | any {
   const componentConfig = new Component();
 
@@ -200,16 +145,9 @@ export function parseConfigInput(
   return componentConfig;
 }
 
-interface IComponentInput {
-  appId?: string;
-  config?: IComponentConfigInput;
-  id?: string;
-  name?: string;
-}
-
 export const upsertComponent: TResolverFn<
-  { input: IComponentInput },
-  TComponent
+  MutationUpsertComponentArgs,
+  Mutation["upsertComponent"]
 > = (_, { input }, { clients, user }) =>
   new Promise((resolve, reject) => {
     if (clients.component) {

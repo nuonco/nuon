@@ -1,4 +1,4 @@
-import { TNode } from "../types";
+import type { Node } from "../types";
 import { getNodeFields } from "./get-node-fields";
 
 test("getNodeFields should return node object with formated dates", () => {
@@ -10,7 +10,7 @@ test("getNodeFields should return node object with formated dates", () => {
     seconds: 30,
     year: 1999,
   };
-  const spec = getNodeFields<TNode>({
+  const spec = getNodeFields<Node>({
     createdAt: mockDateTimeObject,
     id: "test-id",
     name: "test-node",
