@@ -1,3 +1,4 @@
+import { AwsRegion } from "../../types";
 import {
   parseBuildConfigInput,
   parseConfigInput,
@@ -33,7 +34,7 @@ test("parseBuildConfigInput should return a build config for a private ECR exter
   const spec = parseBuildConfigInput({
     externalImageConfig: {
       authConfig: {
-        region: "US_EAST_1",
+        region: AwsRegion.UsEast_1,
         role: "test",
       },
       ociImageUrl: "some-place.io/test/image",

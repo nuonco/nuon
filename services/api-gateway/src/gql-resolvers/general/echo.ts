@@ -1,4 +1,6 @@
-import { TResolverFn } from "../../types";
+import type { Mutation, MutationEchoArgs, TResolverFn } from "../../types";
 
-export const echo: TResolverFn<{ word: string }, string> = (_, { word }) =>
-  word;
+export const echo: TResolverFn<MutationEchoArgs, Mutation["echo"]> = (
+  _,
+  { word }
+) => word;

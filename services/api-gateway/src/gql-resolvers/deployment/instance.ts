@@ -1,21 +1,14 @@
 import { GetInfoRequest } from "@buf/nuon_orgs-api.grpc_node/instances/v1/info_pb";
 import { GetStatusRequest } from "@buf/nuon_orgs-api.grpc_node/instances/v1/status_pb";
 import { GraphQLError } from "graphql";
-import { TResolverFn } from "../../types";
+import type { Query, QueryInstanceArgs, TResolverFn } from "../../types";
 import { STATUS_ENUM } from "../../utils";
 
-type TInstanceArgs = {
-  appId: string;
-  componentId: string;
-  deploymentId: string;
-  installId: string;
-  orgId: string;
-};
-
-export const instance: TResolverFn<
-  TInstanceArgs,
-  { __typename: string; hostname?: string; status: string }
-> = (_, { appId, componentId, deploymentId, installId, orgId }, { clients }) =>
+export const instance: TResolverFn<QueryInstanceArgs, Query["instance"]> = (
+  _,
+  { appId, componentId, deploymentId, installId, orgId },
+  { clients }
+) =>
   new Promise((resolve, reject) => {
     if (clients.instance) {
       const infoRequest = new GetInfoRequest()

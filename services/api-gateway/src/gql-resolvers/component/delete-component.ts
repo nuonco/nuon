@@ -1,12 +1,15 @@
 import { DeleteComponentRequest } from "@buf/nuon_apis.grpc_node/component/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import { TResolverFn } from "../../types";
+import type {
+  Mutation,
+  MutationDeleteComponentArgs,
+  TResolverFn,
+} from "../../types";
 
-export const deleteComponent: TResolverFn<{ id: string }, boolean> = (
-  _,
-  { id },
-  { clients }
-) =>
+export const deleteComponent: TResolverFn<
+  MutationDeleteComponentArgs,
+  Mutation["deleteComponent"]
+> = (_, { id }, { clients }) =>
   new Promise((resolve, reject) => {
     if (clients.component) {
       const request = new DeleteComponentRequest().setId(id);
