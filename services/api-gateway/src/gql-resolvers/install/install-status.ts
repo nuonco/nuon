@@ -1,11 +1,11 @@
 import { GetStatusRequest } from "@buf/nuon_orgs-api.grpc_node/installs/v1/status_pb";
 import { GraphQLError } from "graphql";
-import { TResolverFn } from "../../types";
+import type { Query, QueryInstallStatusArgs, TResolverFn } from "../../types";
 import { STATUS_ENUM } from "../../utils";
 
 export const installStatus: TResolverFn<
-  { appId: string; installId: string; orgId: string },
-  string
+  QueryInstallStatusArgs,
+  Query["installStatus"]
 > = (_, { appId, installId, orgId }, { clients }) =>
   new Promise((resolve, reject) => {
     if (clients.installStatus) {

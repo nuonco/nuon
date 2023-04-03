@@ -1,15 +1,8 @@
 import { GetSecretsRequest } from "@buf/nuon_orgs-api.grpc_node/instances/v1/secrets_pb";
 import { GraphQLError } from "graphql";
-import { TResolverFn, TSecret } from "../../types";
+import type { Query, QuerySecretsArgs, TResolverFn } from "../../types";
 
-interface ISecretsResolver {
-  appId: string;
-  componentId: string;
-  installId: string;
-  orgId: string;
-}
-
-export const secrets: TResolverFn<ISecretsResolver, TSecret[]> = (
+export const secrets: TResolverFn<QuerySecretsArgs, Query["secrets"]> = (
   _,
   { appId, componentId, installId, orgId },
   { clients }

@@ -1,9 +1,9 @@
 import { GetAppRequest } from "@buf/nuon_apis.grpc_node/app/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import { TApp, TResolverFn } from "../../types";
+import type { App, Query, QueryAppArgs, TResolverFn } from "../../types";
 import { getNodeFields } from "../../utils";
 
-export const app: TResolverFn<{ id: string }, TApp> = (
+export const app: TResolverFn<QueryAppArgs, Query["app"]> = (
   _,
   { id },
   { clients }
@@ -16,7 +16,7 @@ export const app: TResolverFn<{ id: string }, TApp> = (
         if (err) {
           reject(new GraphQLError(err?.message));
         } else {
-          resolve(getNodeFields<TApp>(res.toObject().app));
+          resolve(getNodeFields<App>(res.toObject().app));
         }
       });
     } else {

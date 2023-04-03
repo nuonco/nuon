@@ -1,18 +1,9 @@
 import { GetAppsByOrgRequest } from "@buf/nuon_apis.grpc_node/app/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import {
-  IConnectionResolver,
-  TApp,
-  TConnection,
-  TResolverFn,
-} from "../../types";
+import type { App, Query, QueryAppsArgs, TResolverFn } from "../../types";
 import { getNodeFields } from "../../utils";
 
-interface IAppsResolver extends IConnectionResolver {
-  orgId: string;
-}
-
-export const apps: TResolverFn<IAppsResolver, TConnection<TApp>> = (
+export const apps: TResolverFn<QueryAppsArgs, Query["apps"]> = (
   _,
   { orgId },
   { clients }
@@ -31,7 +22,7 @@ export const apps: TResolverFn<IAppsResolver, TConnection<TApp>> = (
             edges:
               appsList?.map((app) => ({
                 cursor: app?.id,
-                node: getNodeFields(app),
+                node: getNodeFields<App>(app),
               })) || [],
             pageInfo: {
               endCursor: null,

@@ -1,11 +1,15 @@
 import { GetStatusRequest } from "@buf/nuon_orgs-api.grpc_node/deployments/v1/status_pb";
 import { GraphQLError } from "graphql";
-import { TResolverFn } from "../../types";
+import type {
+  Query,
+  QueryDeploymentStatusArgs,
+  TResolverFn,
+} from "../../types";
 import { STATUS_ENUM } from "../../utils";
 
 export const deploymentStatus: TResolverFn<
-  { appId: string; componentId: string; deploymentId: string; orgId: string },
-  string
+  QueryDeploymentStatusArgs,
+  Query["deploymentStatus"]
 > = (_, { appId, componentId, deploymentId, orgId }, { clients }) =>
   new Promise((resolve, reject) => {
     if (clients.deploymentStatus) {

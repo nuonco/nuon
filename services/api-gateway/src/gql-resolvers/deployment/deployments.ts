@@ -4,23 +4,17 @@ import {
   GetDeploymentsByInstallsRequest,
 } from "@buf/nuon_apis.grpc_node/deployment/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import {
-  IConnectionResolver,
-  TConnection,
-  TDeployment,
+import type {
+  Deployment,
+  Query,
+  QueryDeploymentsArgs,
   TResolverFn,
 } from "../../types";
 import { getNodeFields } from "../../utils";
 
-interface IDeploymentsResolver extends IConnectionResolver {
-  appIds?: string[];
-  componentIds?: string[];
-  installIds?: string[];
-}
-
 export const deployments: TResolverFn<
-  IDeploymentsResolver,
-  TConnection<TDeployment>
+  QueryDeploymentsArgs,
+  Query["deployments"]
 > = (_, { appIds, componentIds, installIds }, { clients }) =>
   new Promise((resolve, reject) => {
     if (clients.deployment) {
@@ -40,7 +34,7 @@ export const deployments: TResolverFn<
               edges:
                 deploymentsList?.map((deployment) => ({
                   cursor: deployment?.id,
-                  node: getNodeFields(deployment),
+                  node: getNodeFields<Deployment>(deployment),
                 })) || [],
               pageInfo: {
                 endCursor: null,
@@ -67,7 +61,7 @@ export const deployments: TResolverFn<
               edges:
                 deploymentsList?.map((deployment) => ({
                   cursor: deployment?.id,
-                  node: getNodeFields(deployment),
+                  node: getNodeFields<Deployment>(deployment),
                 })) || [],
               pageInfo: {
                 endCursor: null,
@@ -92,7 +86,7 @@ export const deployments: TResolverFn<
               edges:
                 deploymentsList?.map((deployment) => ({
                   cursor: deployment?.id,
-                  node: getNodeFields(deployment),
+                  node: getNodeFields<Deployment>(deployment),
                 })) || [],
               pageInfo: {
                 endCursor: null,

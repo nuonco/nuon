@@ -1,3 +1,5 @@
+import { YogaInitialContext } from "graphql-yoga";
+
 export type TDateTimeObject = {
   day: number;
   hours: number;
@@ -9,3 +11,14 @@ export type TDateTimeObject = {
   utcOffset: { nanos: number; seconds: number };
   year: number;
 };
+
+export interface IGQLContext extends Partial<YogaInitialContext> {
+  clients?: Record<string, any>;
+  user?: Record<string, unknown>;
+}
+
+export type TResolverFn<A, O, I = undefined> = (
+  info?: I,
+  args?: A,
+  ctx?: IGQLContext
+) => Promise<Partial<O>> | Partial<O>;

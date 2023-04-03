@@ -1,9 +1,9 @@
 import { GetInstallRequest } from "@buf/nuon_apis.grpc_node/install/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import { TInstall, TResolverFn } from "../../types";
+import type { Query, QueryInstallArgs, TResolverFn } from "../../types";
 import { formatInstall } from "./utils";
 
-export const install: TResolverFn<{ id: string }, TInstall> = (
+export const install: TResolverFn<QueryInstallArgs, Query["install"]> = (
   _,
   { id },
   { clients }

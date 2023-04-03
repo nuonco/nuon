@@ -1,18 +1,9 @@
 import { GetInstallsByAppRequest } from "@buf/nuon_apis.grpc_node/install/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import {
-  IConnectionResolver,
-  TConnection,
-  TInstall,
-  TResolverFn,
-} from "../../types";
+import type { Query, QueryInstallsArgs, TResolverFn } from "../../types";
 import { formatInstall } from "./utils";
 
-interface IInstallsResolver extends IConnectionResolver {
-  appId: string;
-}
-
-export const installs: TResolverFn<IInstallsResolver, TConnection<TInstall>> = (
+export const installs: TResolverFn<QueryInstallsArgs, Query["installs"]> = (
   _,
   { appId },
   { clients }

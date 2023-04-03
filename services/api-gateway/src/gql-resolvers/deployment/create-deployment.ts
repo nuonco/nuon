@@ -1,11 +1,16 @@
 import { CreateDeploymentRequest } from "@buf/nuon_apis.grpc_node/deployment/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import { TDeployment, TResolverFn } from "../../types";
+import type {
+  Deployment,
+  Mutation,
+  MutationCreateDeploymentArgs,
+  TResolverFn,
+} from "../../types";
 import { getNodeFields } from "../../utils";
 
 export const createDeployment: TResolverFn<
-  { componentId: string },
-  TDeployment
+  MutationCreateDeploymentArgs,
+  Mutation["createDeployment"]
 > = (_, { componentId }, { clients, user }) =>
   new Promise((resolve, reject) => {
     if (clients.deployment) {
@@ -17,7 +22,7 @@ export const createDeployment: TResolverFn<
         if (err) {
           reject(new GraphQLError(err.message));
         } else {
-          resolve(getNodeFields(res.toObject().deployment));
+          resolve(getNodeFields<Deployment>(res.toObject().deployment));
         }
       });
     } else {

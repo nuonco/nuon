@@ -1,4 +1,4 @@
-import { TInstall } from "../../types";
+import type { Install, InstallSettings } from "../../types";
 import { getNodeFields } from "../../utils";
 
 const EAWSRegion = {
@@ -9,8 +9,8 @@ const EAWSRegion = {
   4: "US_WEST_2",
 };
 
-export function getInstallSettings(install) {
-  let settings = { __typename: "NoopSettings" };
+export function getInstallSettings(install): InstallSettings {
+  let settings = null;
   const { awsSettings, gcpSettings } = install;
 
   if (gcpSettings) {
@@ -29,14 +29,14 @@ export function getInstallSettings(install) {
   return settings;
 }
 
-export function formatInstall(install): TInstall {
+export function formatInstall(install): Install {
   const settings = getInstallSettings(install);
 
   delete install?.gcpSettings;
   delete install?.awsSettings;
 
   return {
-    ...getNodeFields<TInstall>(install),
+    ...getNodeFields<Install>(install),
     settings,
   };
 }
