@@ -1,20 +1,17 @@
 import { UpsertAppRequest } from "@buf/nuon_apis.grpc_node/app/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import { TApp, TResolverFn } from "../../types";
+import type {
+  App,
+  Mutation,
+  MutationUpsertAppArgs,
+  TResolverFn,
+} from "../../types";
 import { getNodeFields } from "../../utils";
 
-type TAppInput = {
-  githubInstallId?: string;
-  id?: string;
-  name?: string;
-  orgId?: string;
-};
-
-export const upsertApp: TResolverFn<{ input: TAppInput }, TApp> = (
-  _,
-  { input },
-  { clients, user }
-) =>
+export const upsertApp: TResolverFn<
+  MutationUpsertAppArgs,
+  Mutation["upsertApp"]
+> = (_, { input }, { clients, user }) =>
   new Promise((resolve, reject) => {
     if (clients.app) {
       const request = new UpsertAppRequest()
@@ -28,7 +25,7 @@ export const upsertApp: TResolverFn<{ input: TAppInput }, TApp> = (
         if (err) {
           reject(new GraphQLError(err.message));
         } else {
-          resolve(getNodeFields(res.toObject().app));
+          resolve(getNodeFields<App>(res.toObject().app));
         }
       });
     } else {

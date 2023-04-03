@@ -1,8 +1,12 @@
 import { PingRequest } from "@buf/nuon_shared.grpc_node/status/v1/ping_pb";
 import { GraphQLError } from "graphql";
-import { TResolverFn } from "../../types";
+import type { Query, TResolverFn } from "../../types";
 
-export const ping: TResolverFn<undefined, string> = (_, args, { clients }) =>
+export const ping: TResolverFn<undefined, Query["ping"]> = (
+  _,
+  args,
+  { clients }
+) =>
   new Promise((resolve, reject) => {
     if (clients.status) {
       const request = new PingRequest();

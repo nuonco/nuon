@@ -1,13 +1,17 @@
 import { GetDeploymentRequest } from "@buf/nuon_apis.grpc_node/deployment/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import { TDeployment, TResolverFn } from "../../types";
+import type {
+  Deployment,
+  Query,
+  QueryDeploymentArgs,
+  TResolverFn,
+} from "../../types";
 import { getNodeFields } from "../../utils";
 
-export const deployment: TResolverFn<{ id: string }, TDeployment> = (
-  _,
-  { id },
-  { clients }
-) =>
+export const deployment: TResolverFn<
+  QueryDeploymentArgs,
+  Query["deployment"]
+> = (_, { id }, { clients }) =>
   new Promise((resolve, reject) => {
     if (clients.deployment) {
       const request = new GetDeploymentRequest().setId(id);
@@ -16,7 +20,7 @@ export const deployment: TResolverFn<{ id: string }, TDeployment> = (
         if (err) {
           reject(new GraphQLError(err?.message));
         } else {
-          resolve(getNodeFields<TDeployment>(res.toObject().deployment));
+          resolve(getNodeFields<Deployment>(res.toObject().deployment));
         }
       });
     } else {

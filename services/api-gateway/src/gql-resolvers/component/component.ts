@@ -1,9 +1,9 @@
 import { GetComponentRequest } from "@buf/nuon_apis.grpc_node/component/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import { TComponent, TResolverFn } from "../../types";
+import type { Query, QueryComponentArgs, TResolverFn } from "../../types";
 import { formatComponent } from "./utils";
 
-export const component: TResolverFn<{ id: string }, TComponent> = (
+export const component: TResolverFn<QueryComponentArgs, Query["component"]> = (
   _,
   { id },
   { clients }

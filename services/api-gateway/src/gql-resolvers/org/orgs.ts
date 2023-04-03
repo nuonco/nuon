@@ -1,18 +1,9 @@
 import { GetOrgsByMemberRequest } from "@buf/nuon_apis.grpc_node/org/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import {
-  IConnectionResolver,
-  TConnection,
-  TOrg,
-  TResolverFn,
-} from "../../types";
+import type { Org, Query, QueryOrgsArgs, TResolverFn } from "../../types";
 import { getNodeFields } from "../../utils";
 
-interface IOrgsResolver extends IConnectionResolver {
-  memberId: string;
-}
-
-export const orgs: TResolverFn<IOrgsResolver, TConnection<TOrg>> = (
+export const orgs: TResolverFn<QueryOrgsArgs, Query["orgs"]> = (
   _,
   { memberId },
   { clients }
@@ -31,7 +22,7 @@ export const orgs: TResolverFn<IOrgsResolver, TConnection<TOrg>> = (
             edges:
               orgsList?.map((org) => ({
                 cursor: org?.id,
-                node: getNodeFields(org),
+                node: getNodeFields<Org>(org),
               })) || [],
             pageInfo: {
               endCursor: null,

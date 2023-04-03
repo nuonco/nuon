@@ -1,3 +1,4 @@
+import { AwsRegion } from "../../types";
 import { upsertInstall } from "./upsert-install";
 
 const mockDateTimeObject = {
@@ -46,7 +47,7 @@ test("upsertInstall resolver should return Install object on successful mutation
     {
       input: {
         appId: "app-id",
-        awsSettings: { region: "US_EAST_1", role: "test:role" },
+        awsSettings: { region: AwsRegion.UsEast_1, role: "test:role" },
         name: "test-node",
       },
     },
@@ -73,7 +74,7 @@ test("upsertInstall resolver should return error on failed query", async () => {
       {
         input: {
           appId: "app-id",
-          awsSettings: { region: "US_EAST_1", role: "test:role" },
+          awsSettings: { region: AwsRegion.UsEast_1, role: "test:role" },
           name: "test-node",
         },
       },
@@ -89,7 +90,7 @@ test("upsertInstall resolver should return error if service client doesn't exist
       {
         input: {
           appId: "app-id",
-          awsSettings: { region: "US_EAST_1", role: "test:role" },
+          awsSettings: { region: AwsRegion.UsEast_1, role: "test:role" },
           name: "test-node",
         },
       },

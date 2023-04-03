@@ -1,9 +1,9 @@
 import { GetOrgRequest } from "@buf/nuon_apis.grpc_node/org/v1/messages_pb";
 import { GraphQLError } from "graphql";
-import { TOrg, TResolverFn } from "../../types";
+import type { Org, Query, QueryOrgArgs, TResolverFn } from "../../types";
 import { getNodeFields } from "../../utils";
 
-export const org: TResolverFn<{ id: string }, TOrg> = (
+export const org: TResolverFn<QueryOrgArgs, Query["org"]> = (
   _,
   { id },
   { clients }
@@ -16,7 +16,7 @@ export const org: TResolverFn<{ id: string }, TOrg> = (
         if (err) {
           reject(new GraphQLError(err?.message));
         } else {
-          resolve(getNodeFields<TOrg>(res.toObject().org));
+          resolve(getNodeFields<Org>(res.toObject().org));
         }
       });
     } else {

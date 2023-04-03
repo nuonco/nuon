@@ -10,6 +10,7 @@
     "copy-gql": "cp src/gql-schema/*.graphql dist/src/gql-schema/",
     "dev": "nodemon src/main.ts",
     "fmt": "prettier --write src",
+    "generate-gql-types": "graphql-codegen --config codegen.ts",
     "lint": "eslint src",
     "start": "node dist/src/main.js",
     "prestart": "npm run build",
@@ -44,6 +45,9 @@
     "pino": "^8.11.0"
   },
   "devDependencies": {
+    "@graphql-codegen/add": "^4.0.1",
+    "@graphql-codegen/cli": "^3.2.2",
+    "@graphql-codegen/typescript": "^3.0.2",
     "@graphql-eslint/eslint-plugin": "^3.16.1",
     "@powertoolsdev/eslint-config-nuon": "^1.0.1",
     "@types/cors": "^2.8.13",
