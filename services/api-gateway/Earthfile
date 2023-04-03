@@ -12,7 +12,16 @@ ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 
 deps:
-  COPY package.json package-lock.json .npmrc ./
+    COPY \
+      .eslintrc \
+      .npmrc \
+      .prettierrc \
+      jest.config.js \
+      package-lock.json \
+      package.json \
+      tsconfig.build.json \
+      tsconfig.json \
+     ./
   RUN \
     --secret GITHUB_TOKEN \
     --secret BUF_TOKEN \
@@ -20,8 +29,7 @@ deps:
     NPM_BUF_TOKEN=$BUF_TOKEN \
     npm ci
 
-  COPY tsconfig.json tsconfig.build.json ./
-  COPY src src
+  COPY --dir src src
 
 test-integration:
   RUN echo "noop..."
@@ -31,9 +39,12 @@ lint:
   RUN echo "running type check..." && \
     npm run typecheck
 
+  RUN echo "running lint..." && \
+    npm run lint
+
 test:
   FROM +deps
-
+  COPY --dir test test
   RUN echo "running unit tests..." && \
     npm run test:unit
 
