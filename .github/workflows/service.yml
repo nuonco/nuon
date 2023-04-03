@@ -63,6 +63,8 @@ jobs:
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
           clone_token: ${{ steps.generate_token.outputs.token }}
+          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           aws_role: ${{ env.TFO_GH_ROLE_ARN }}
           aws_region: ${{ env.TFO_REGION }}
 
@@ -79,13 +81,6 @@ jobs:
             --ci \
             --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +lint
-
-      # TODO(jm): enable this once we know how to fetch chart common
-      #- name: Run helm lint
-      #shell: bash
-      #working-directory: services/${{inputs.service}}/k8s
-      #run: |
-      #helm lint .
 
   test:
     name: 🌏 test
@@ -121,6 +116,8 @@ jobs:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
           clone_token: ${{ steps.generate_token.outputs.token }}
           setup_helm: "false"
+          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup terraform environment
         run: |
