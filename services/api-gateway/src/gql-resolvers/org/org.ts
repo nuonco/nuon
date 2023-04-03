@@ -1,0 +1,25 @@
+import { GetOrgRequest } from "@buf/nuon_apis.grpc_node/org/v1/messages_pb";
+import { GraphQLError } from "graphql";
+import { TOrg, TResolverFn } from "../../types";
+import { getNodeFields } from "../../utils";
+
+export const org: TResolverFn<{ id: string }, TOrg> = (
+  _,
+  { id },
+  { clients }
+) =>
+  new Promise((resolve, reject) => {
+    if (clients.org) {
+      const request = new GetOrgRequest().setId(id);
+
+      clients.org.getOrg(request, (err, res) => {
+        if (err) {
+          reject(new GraphQLError(err?.message));
+        } else {
+          resolve(getNodeFields<TOrg>(res.toObject().org));
+        }
+      });
+    } else {
+      reject(new GraphQLError("Service isn't available"));
+    }
+  });
