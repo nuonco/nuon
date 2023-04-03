@@ -11,7 +11,9 @@
 # Test binary, built with `go test -c`
 *.test
 
-
+.env
+coverage/
+node_modules/
 dist/
 bin/
 
