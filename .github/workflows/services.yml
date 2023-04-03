@@ -40,6 +40,7 @@ jobs:
         with:
           filters: |
             api: services/api/**
+            api-gateway: services/api-gateway/**
             orgs-api: services/orgs-api/**
             workers-apps: services/workers-apps/**
             workers-deployments: services/workers-deployments/**

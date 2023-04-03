@@ -1,0 +1,22 @@
+import merge from "lodash.merge";
+import { appResolvers } from "./app";
+import { componentResolvers } from "./component";
+import { deploymentResolvers } from "./deployment";
+import { generalResolvers } from "./general";
+import { githubResolvers } from "./github";
+import { installResolvers } from "./install";
+import { orgResolvers } from "./org";
+import { secretResolvers } from "./secret";
+import { userResolvers } from "./user";
+
+export const resolvers = merge(
+  appResolvers,
+  componentResolvers,
+  deploymentResolvers,
+  generalResolvers,
+  githubResolvers,
+  installResolvers,
+  orgResolvers,
+  secretResolvers,
+  userResolvers
+);
