@@ -1,7 +1,7 @@
 process.env.TZ = 'UTC';
 
 module.exports = {
-  roots: ["<rootDir>/src", "<rootDir>/test"],
+  roots: ["<rootDir>/src"],
   transform: {
     "^.+\\.(ts|tsx)$": ["ts-jest", {
       isolatedModules: true,
@@ -10,5 +10,5 @@ module.exports = {
   testPathIgnorePatterns: ["/node_modules/"],
   setupFilesAfterEnv: [],
   testEnvironment: "node",
-  coveragePathIgnorePatterns: ["/node_modules/", "/test/"],
+  coveragePathIgnorePatterns: ["/node_modules/"],
 };
