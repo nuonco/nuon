@@ -5,8 +5,8 @@ import (
 )
 
 type eksClient struct {
-	RoleARN         string `validate:"required"`
-	RoleSessionName string `validate:"required"`
+	RoleARN         string
+	RoleSessionName string
 	ClusterName     string `validate:"required"`
 	Region          string `validate:"required"`
 

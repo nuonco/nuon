@@ -37,26 +37,6 @@ func TestNew(t *testing.T) {
 				assert.Equal(t, region, e.Region)
 			},
 		},
-		"missing role arn": {
-			optsFn: func() []eksOptions {
-				return []eksOptions{
-					WithRoleSessionName(roleSessionName),
-					WithRegion(region),
-					WithClusterName(clusterName),
-				}
-			},
-			errExpected: fmt.Errorf("RoleARN"),
-		},
-		"missing role session name": {
-			optsFn: func() []eksOptions {
-				return []eksOptions{
-					WithRoleARN(roleArn),
-					WithRegion(region),
-					WithClusterName(clusterName),
-				}
-			},
-			errExpected: fmt.Errorf("RoleSessionName"),
-		},
 		"missing region": {
 			optsFn: func() []eksOptions {
 				return []eksOptions{

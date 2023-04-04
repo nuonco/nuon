@@ -18,7 +18,7 @@ const (
 	region                = "us-west-2"
 	clusterName           = "stage-nuon"
 	assumeRoleSessionName = "nuonctl"
-	assumeRoleARN         = "arn:aws:sts::676549690856:assumed-role/AWSReservedSSO_NuonAdmin_0f18dda574edcaca"
+	assumeRoleARN         = ""
 	serviceNamespace      = "default"
 )
 
