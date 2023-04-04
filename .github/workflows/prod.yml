@@ -1,8 +1,6 @@
 ---
 name: prod
-"on":
-  workflow_call:
-    inputs: []
+on: workflow_dispatch
 
 permissions:
   contents: write
