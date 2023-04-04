@@ -42,7 +42,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: powertoolsdev/action-app-token@main
+        uses: powertoolsdev/mono/actions/app-token@main
         with:
           app_id: ${{ secrets.CROSS_REPO_APP_ID }}
           installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
@@ -69,12 +69,12 @@ jobs:
           terraform-bin output -json > ${{ env.TF_OUT }}
 
       - name: Parse terraform outputs
-        uses: powertoolsdev/action-tf-output@main
+        uses: powertoolsdev/mono/actions/tf-output@main
         with:
           file: ${{ env.TF_OUT }}
 
       - name: Setup for CI
-        uses: powertoolsdev/action-setup-ci@main
+        uses: powertoolsdev/mono/actions/setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
           clone_token: ${{ steps.generate_token.outputs.token }}
@@ -101,12 +101,11 @@ jobs:
             --repository=${{ env.TFO_ECR_REPOSITORY_URL }} \
             --image_tag=${{ inputs.tag }} \
 
-
       - name: Datadog
         uses: masci/datadog@v1.5.0
         with:
           api-key: ${{ secrets.DATADOG_API_KEY }}
-          api-url: 'https://us5.datadoghq.com'
+          api-url: "https://us5.datadoghq.com"
           events: |
             - title: "deployed ${{ inputs.service}} to ${{ inputs.env }} `${{inputs.tag}}`"
               text: "deployed ${{ inputs.service}} to ${{ inputs.env }} `${{inputs.tag}}`"

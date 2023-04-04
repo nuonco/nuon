@@ -1,4 +1,4 @@
-# action-setup-helm
+# setup-helm
 
 This action is a convenience wrapper for setting up helm for Nuon.
 
@@ -8,7 +8,7 @@ and adds any additional repos.
 ```yml
     steps:
       - name: Setup helm
-        uses: powertoolsdev/action-setup-helm@main
+        uses: powertoolsdev/mono/actions/setup-helm@main
 ```
 
 ## Configuration

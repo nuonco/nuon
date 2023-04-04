@@ -1,4 +1,4 @@
-# action-reviewdog
+# reviewdog
 
 This action runs a standard set of linters. Generally, this action should be
 able to be used with minimal setup on every repository.
@@ -6,7 +6,7 @@ able to be used with minimal setup on every repository.
 ```yml
     steps:
       - name: Lint
-        uses: powertoolsdev/action-reviewdog@main
+        uses: powertoolsdev/mono/actions/reviewdog@main
 ```
 
 ## Linters
