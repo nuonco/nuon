@@ -73,6 +73,11 @@ func (c *commands) Run(ctx context.Context, svcName string, args []string) error
 
 // run a service locally with the provided environment + cfg using earthly
 func (c *commands) runService(ctx context.Context, svcName, imageURL string, cfg *config.Config, env map[string]string, userArgs []string) error {
+	dockerPath, err := getDockerPath()
+	if err != nil {
+		return fmt.Errorf("unable to get docker path: %w", err)
+	}
+
 	args := []string{
 		"run",
 		"--interactive",
@@ -94,7 +99,7 @@ func (c *commands) runService(ctx context.Context, svcName, imageURL string, cfg
 	}
 
 	if cfg.Port > 0 {
-		args = append(args, "--publish", fmt.Sprintf("%d", cfg.Port))
+		args = append(args, "--publish", fmt.Sprintf("%d:%d", cfg.Port, cfg.Port))
 	}
 
 	args = append(args, imageURL)
@@ -102,7 +107,7 @@ func (c *commands) runService(ctx context.Context, svcName, imageURL string, cfg
 
 	cmd, err := command.New(c.v,
 		command.WithEnv(map[string]string{}),
-		command.WithCmd("docker"),
+		command.WithCmd(dockerPath),
 		command.WithArgs(args),
 	)
 	if err != nil {
@@ -130,6 +135,7 @@ func (c *commands) buildService(ctx context.Context, svc string) (string, error)
 		command.WithArgs([]string{
 			"--output",
 			"--ci",
+			"--use-inline-cache",
 			"+docker",
 			"--image_tag=" + defaultLocalImageTag,
 			"--repo=" + imageRepo,

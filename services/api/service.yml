@@ -1,7 +1,14 @@
 ---
-type: api
-port: 8080
 env:
+  DB_HOST: postgres
+  DB_NAME: api
+  DB_PASSWORD: password
+  DB_SSL_MODE: disable
+  DB_USE_IAM: false
+  DB_USE_SSL: false
+  GITHUB_APP_KEY: |
+    REDACTED BUT GOES HERE
   DISABLE_METRICS: true
   TEMPORAL_NAMESPACE: default
-  DATABASE_HOST: postgres
+port: 8080
+type: api
