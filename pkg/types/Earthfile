@@ -13,7 +13,6 @@ ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/$EARTHLY_GIT_PROJECT_NAME
 
 ARG BUF_USER=jonmorehouse
-ARG BUF_API_TOKEN=4c51e8481ed34404b7ab6a0c62dc7b2db82757d8f86e4caa853750973e2c5083
 
 proto:
     FROM bufbuild/buf
@@ -36,6 +35,8 @@ lint:
 
 BUF_LOGIN:
   COMMAND
-  RUN echo $BUF_API_TOKEN | buf registry login --username $BUF_USER --token-stdin
+  RUN --secret BUF_TOKEN \
+     echo $BUF_TOKEN \
+     | buf registry login --username $BUF_USER --token-stdin
 
 ################################### LOCAL #####################################
