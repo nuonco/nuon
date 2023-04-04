@@ -63,16 +63,16 @@ func (c *commands) Run(ctx context.Context, svcName string, args []string) error
 		return fmt.Errorf("unable to get config map: %w", err)
 	}
 
-	imageUrl, err := c.buildService(ctx, svcName)
+	imageURL, err := c.buildService(ctx, svcName)
 	if err != nil {
 		return fmt.Errorf("unable to build service %s: %w", svcName, err)
 	}
 
-	return c.runService(ctx, svcName, imageUrl, cfg, env, args)
+	return c.runService(ctx, svcName, imageURL, cfg, env, args)
 }
 
 // run a service locally with the provided environment + cfg using earthly
-func (c *commands) runService(ctx context.Context, svcName, imageUrl string, cfg *config.Config, env map[string]string, userArgs []string) error {
+func (c *commands) runService(ctx context.Context, svcName, imageURL string, cfg *config.Config, env map[string]string, userArgs []string) error {
 	args := []string{
 		"run",
 		"--interactive",
@@ -83,7 +83,7 @@ func (c *commands) runService(ctx context.Context, svcName, imageUrl string, cfg
 		"--name=" + svcName,
 		"--network=mono_default",
 	}
-	for k, v := range DEFAULT_ENV_VARS {
+	for k, v := range DefaultEnvVars {
 		env[k] = v
 	}
 	for k, v := range cfg.Env {
@@ -97,7 +97,7 @@ func (c *commands) runService(ctx context.Context, svcName, imageUrl string, cfg
 		args = append(args, "--publish", fmt.Sprintf("%d", cfg.Port))
 	}
 
-	args = append(args, imageUrl)
+	args = append(args, imageURL)
 	args = append(args, userArgs...)
 
 	cmd, err := command.New(c.v,

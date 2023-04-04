@@ -47,7 +47,6 @@ func Test_commands_getServiceEnv(t *testing.T) {
 					Return(nil, errGetEnv)
 
 				return client
-
 			},
 			errExpected: errGetEnv,
 		},

@@ -1,4 +1,4 @@
-package eks_client
+package eksclient
 
 import (
 	"fmt"

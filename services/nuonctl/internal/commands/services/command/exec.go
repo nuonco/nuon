@@ -20,6 +20,7 @@ func (c *command) Exec(ctx context.Context) error {
 	return nil
 }
 
+//nolint:gosec
 func (c *command) buildCommand(ctx context.Context) *exec.Cmd {
 	cmd := exec.CommandContext(ctx, c.Cmd, c.Args...)
 

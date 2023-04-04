@@ -1,8 +1,6 @@
 package presets
 
 import (
-	"time"
-
 	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
@@ -16,7 +14,7 @@ func (p *preset) publicHelmChart() (*componentv1.Component, error) {
 			Cfg: &buildv1.Config_Noop{},
 		},
 		DeployCfg: &deployv1.Config{
-			Timeout: durationpb.New(time.Minute * 5),
+			Timeout: durationpb.New(defaultDeployTimeout),
 			Cfg: &deployv1.Config_HelmRepo{
 				HelmRepo: &deployv1.HelmRepoConfig{
 					ChartName:    "public-helm-chart",

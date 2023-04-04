@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var DEFAULT_ENV_VARS map[string]string = map[string]string{
+var DefaultEnvVars map[string]string = map[string]string{
 	"TEMPORAL_HOST": "temporal:7233",
 	"HOST_IP":       "0.0.0.0",
 }
@@ -65,12 +65,12 @@ func (c *commands) Exec(ctx context.Context, svcName string, cmd []string) error
 		return fmt.Errorf("unable to get config map: %w", err)
 	}
 
-	return c.exec(ctx, svcName, cfg, env, cmd)
+	return c.exec(ctx, cfg, env, cmd)
 }
 
 // run a service locally with the provided environment + cfg using earthly
-func (c *commands) exec(ctx context.Context, svc string, cfg *config.Config, env map[string]string, args []string) error {
-	for k, v := range DEFAULT_ENV_VARS {
+func (c *commands) exec(ctx context.Context, cfg *config.Config, env map[string]string, args []string) error {
+	for k, v := range DefaultEnvVars {
 		env[k] = v
 	}
 	for k, v := range cfg.Env {
