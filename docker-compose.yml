@@ -2,6 +2,7 @@
 version: "3.9"
 
 services:
+  # postgres for the api
   postgres:
     image: postgres:13.4-alpine
     ports:
@@ -17,13 +18,13 @@ services:
     networks:
       - default
 
+  # temporal for all workers + api
   temporal:
     image: ghcr.io/powertoolsdev/ci-temporalite:latest
     ports:
       - 7233:7233
     networks:
       - default
-
 
 networks:
   default:
