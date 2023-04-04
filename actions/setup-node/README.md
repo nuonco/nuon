@@ -1,4 +1,4 @@
-# action-setup-node
+# setup-node
 
 Github action to set up node projects.
 
@@ -15,7 +15,7 @@ unit-test:
       uses: actions/checkout@v3
 
     - name: Set up Node.js
-      uses: powertoolsdev/action-setup-node@main
+      uses: powertoolsdev/mono/actions/setup-node@main
 
     - name: Unit test
       run: npm run test:unit

@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: powertoolsdev/action-app-token@main
+        uses: powertoolsdev/mono/actions/app-token@main
         with:
           app_id: ${{ secrets.CROSS_REPO_APP_ID }}
           installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
@@ -59,7 +59,7 @@ jobs:
           cat .tfenv >> "$GITHUB_ENV"
 
       - name: Setup for CI
-        uses: powertoolsdev/action-setup-ci@main
+        uses: powertoolsdev/mono/actions/setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
           clone_token: ${{ steps.generate_token.outputs.token }}
@@ -111,7 +111,7 @@ jobs:
           name: env-${{ github.run_id }}-${{ inputs.service }}
 
       - name: Setup for CI
-        uses: powertoolsdev/action-setup-ci@main
+        uses: powertoolsdev/mono/actions/setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
           clone_token: ${{ steps.generate_token.outputs.token }}
@@ -161,7 +161,7 @@ jobs:
     name: ☁️  deploy stage
     # only run on main, or when the auto-deploy label is set
     if: ${{ github.event_name != 'pull_request'
-           || contains(github.event.pull_request.labels.*.name, 'auto-deploy') }}
+      || contains(github.event.pull_request.labels.*.name, 'auto-deploy') }}
     needs:
       - release
     uses: ./.github/workflows/deploy.yml
