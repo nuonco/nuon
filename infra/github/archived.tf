@@ -1,3 +1,65 @@
+module "action-app-token" {
+  source = "./modules/repository"
+
+  name        = "action-app-token"
+  description = "shared github token action"
+  topics      = ["github-actions"]
+  archived    = true
+}
+
+module "action-pr-checks" {
+  source = "./modules/repository"
+
+  name        = "action-pr-checks"
+  description = "shared action for checking PRs"
+  topics      = ["github-actions"]
+  archived    = true
+}
+
+module "action-reviewdog" {
+  source = "./modules/repository"
+
+  name        = "action-reviewdog"
+  description = "repo for shared action linting"
+  topics      = ["github-actions"]
+  archived    = true
+}
+
+module "action-setup-ci" {
+  source = "./modules/repository"
+
+  name        = "action-setup-ci"
+  description = "github action to set up ci"
+  topics      = ["github-actions"]
+  archived    = true
+}
+
+module "action-setup-helm" {
+  source = "./modules/repository"
+
+  name        = "action-setup-helm"
+  description = "github action to set up helm"
+  topics      = ["github-actions"]
+  archived    = true
+}
+
+module "action-setup-node" {
+  source = "./modules/repository"
+
+  name        = "action-setup-node"
+  description = "github action to set up node"
+  topics      = ["github-actions"]
+  archived    = true
+}
+
+module "action-tf-output" {
+  source = "./modules/repository"
+
+  name        = "action-tf-output"
+  description = "repo for terraform outputs"
+  topics      = ["github-actions"]
+  archived    = true
+}
 module "api" {
   source = "./modules/repository"
 
@@ -9,6 +71,16 @@ module "api" {
 
   enable_stage_environment = true
   enable_prod_environment  = true
+}
+
+module "api-gateway" {
+  source = "./modules/repository"
+
+  name        = "api-gateway"
+  description = "repo for the graphql api gateway"
+  enable_ecr  = true
+  topics      = ["terraform", "helm"]
+  archived    = true
 }
 
 module "awesome-customer-cloud" {

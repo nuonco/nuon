@@ -1,59 +1,3 @@
-module "action-app-token" {
-  source = "./modules/repository"
-
-  name        = "action-app-token"
-  description = "shared github token action"
-  topics      = ["github-actions"]
-}
-
-module "action-pr-checks" {
-  source = "./modules/repository"
-
-  name        = "action-pr-checks"
-  description = "shared action for checking PRs"
-  topics      = ["github-actions"]
-}
-
-module "action-reviewdog" {
-  source = "./modules/repository"
-
-  name        = "action-reviewdog"
-  description = "repo for shared action linting"
-  topics      = ["github-actions"]
-}
-
-module "action-setup-ci" {
-  source = "./modules/repository"
-
-  name        = "action-setup-ci"
-  description = "github action to set up ci"
-  topics      = ["github-actions"]
-}
-
-module "action-setup-helm" {
-  source = "./modules/repository"
-
-  name        = "action-setup-helm"
-  description = "github action to set up helm"
-  topics      = ["github-actions"]
-}
-
-module "action-setup-node" {
-  source = "./modules/repository"
-
-  name        = "action-setup-node"
-  description = "github action to set up node"
-  topics      = ["github-actions"]
-}
-
-module "action-tf-output" {
-  source = "./modules/repository"
-
-  name        = "action-tf-output"
-  description = "repo for terraform outputs"
-  topics      = ["github-actions"]
-}
-
 module "apks" {
   source = "./modules/repository"
 
@@ -62,21 +6,11 @@ module "apks" {
   topics      = ["terraform"]
 }
 
-
 module "chart-common" {
   source = "./modules/repository"
 
   name        = "chart-common"
   description = "repo for common charts"
-  topics      = ["terraform", "helm"]
-}
-
-module "api-gateway" {
-  source = "./modules/repository"
-
-  name        = "api-gateway"
-  description = "repo for the graphql api gateway"
-  enable_ecr  = true
   topics      = ["terraform", "helm"]
 }
 
