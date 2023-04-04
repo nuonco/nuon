@@ -6,6 +6,9 @@ name: service
       service:
         type: string
         required: true
+      prod:
+        type: boolean
+        required: true
       tag:
         type: string
         required: true
@@ -172,7 +175,7 @@ jobs:
       service: ${{ inputs.service }}
 
   deploy-prod:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && inputs.prod
     name: ☁️  deploy prod
     needs:
       - release
