@@ -63,6 +63,7 @@ jobs:
         uses: powertoolsdev/action-setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
+          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
 
       - name: Lint
         run: |
@@ -73,7 +74,7 @@ jobs:
             --REPO=${{matrix.repo}} \
 
   release-protos:
-    name:  🚀 release protos
+    name: 🚀 release protos
     needs: changes
     if: ${{ needs.changes.outputs.protos == 'true' && github.event_name != 'pull_request' }}
     defaults:
@@ -96,6 +97,7 @@ jobs:
         uses: powertoolsdev/action-setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
+          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
 
       - name: Push protos
         run: |

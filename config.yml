@@ -1,0 +1,3 @@
+global:
+  disable_analytics: true
+  disable_log_sharing: true
