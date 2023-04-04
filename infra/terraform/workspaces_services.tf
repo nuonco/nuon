@@ -87,7 +87,7 @@ module "orgs-api-prod" {
 module "workers-canary-stage" {
   source = "./modules/workspace"
 
-  name       = "workers-canary"
+  name       = "workers-canary-stage"
   repo       = "powertoolsdev/mono"
   auto_apply = true
   dir        = "services/workers-canary/infra"
@@ -101,7 +101,7 @@ module "workers-canary-stage" {
 module "workers-canary-prod" {
   source = "./modules/workspace"
 
-  name       = "workers-canary"
+  name       = "workers-canary-prod"
   repo       = "powertoolsdev/mono"
   auto_apply = true
   dir        = "services/workers-canary/infra"
