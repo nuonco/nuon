@@ -11,7 +11,7 @@ type ServiceType string
 const (
 	ServiceTypeUnknown     = ""
 	ServiceTypeWorker      = "worker"
-	ServiceTypeInternalApi = "internal-api"
+	ServiceTypeInternalAPI = "internal-api"
 	ServiceTypeBinary      = "binary"
 )
 

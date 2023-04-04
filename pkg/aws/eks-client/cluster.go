@@ -1,4 +1,4 @@
-package eks_client
+package eksclient
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 
 //
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
-//go:generate mockgen -destination=cluster_mock_test.go -source=cluster.go -package=eks_client
+//go:generate mockgen -destination=cluster_mock_test.go -source=cluster.go -package=eksclient
 func (e *eksClient) GetCluster(ctx context.Context) (*ekstypes.Cluster, error) {
 	cfg, err := e.getConfig(ctx)
 	if err != nil {
