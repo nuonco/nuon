@@ -29,7 +29,7 @@ module "infra-orgs-prod" {
 
   name       = "infra-orgs-prod"
   repo       = "powertoolsdev/mono"
-  dir = "infra/orgs"
+  dir        = "infra/orgs"
   auto_apply = false
   vars = {
     env = "prod"
@@ -57,7 +57,7 @@ module "infra-orgs-stage" {
 
   name       = "infra-orgs-stage"
   repo       = "powertoolsdev/mono"
-  dir = "infra/orgs"
+  dir        = "infra/orgs"
   auto_apply = true
   vars = {
     env = "stage"

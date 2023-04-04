@@ -84,6 +84,34 @@ module "orgs-api-prod" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
+module "workers-canary-stage" {
+  source = "./modules/workspace"
+
+  name       = "workers-canary"
+  repo       = "powertoolsdev/mono"
+  auto_apply = true
+  dir        = "services/workers-canary/infra"
+  vars = {
+    env = "stage"
+  }
+  variable_sets                   = ["aws-environment-credentials"]
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+}
+
+module "workers-canary-prod" {
+  source = "./modules/workspace"
+
+  name       = "workers-canary"
+  repo       = "powertoolsdev/mono"
+  auto_apply = true
+  dir        = "services/workers-canary/infra"
+  vars = {
+    env = "prod"
+  }
+  variable_sets                   = ["aws-environment-credentials"]
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+}
+
 module "workers-apps-prod" {
   source = "./modules/workspace"
 
