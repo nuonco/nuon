@@ -2,7 +2,7 @@ package command
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -29,16 +29,16 @@ func TestNew(t *testing.T) {
 					WithCmd(cmd),
 					WithArgs(args),
 					WithEnv(env),
-					WithStderr(ioutil.Discard),
-					WithStdout(ioutil.Discard),
+					WithStderr(io.Discard),
+					WithStdout(io.Discard),
 				}
 			},
 			assertFn: func(t *testing.T, l *command) {
 				assert.Equal(t, cmd, l.Cmd)
 				assert.Equal(t, args, l.Args)
 				assert.Equal(t, env, l.Env)
-				assert.Equal(t, ioutil.Discard, l.Stderr)
-				assert.Equal(t, ioutil.Discard, l.Stdout)
+				assert.Equal(t, io.Discard, l.Stderr)
+				assert.Equal(t, io.Discard, l.Stdout)
 			},
 		},
 		"uses stdout/err/in by default": {

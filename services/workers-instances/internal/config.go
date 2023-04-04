@@ -9,7 +9,6 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "instances")
-	config.RegisterDefault("temporal_max_concurrent_activities", 10)
 
 	// instance defaults
 	config.RegisterDefault("waypoint_token_secret_namespace", "default")
