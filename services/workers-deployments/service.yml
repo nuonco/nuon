@@ -1,0 +1,6 @@
+---
+type: worker
+env:
+  DISABLE_METRICS: true
+  TEMPORAL_NAMESPACE: default
+  INSTANCES_TEMPORAL_NAMESPACE: default

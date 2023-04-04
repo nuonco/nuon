@@ -1,0 +1,7 @@
+---
+type: api
+port: 8080
+env:
+  DISABLE_METRICS: true
+  TEMPORAL_NAMESPACE: default
+  DATABASE_HOST: postgres
