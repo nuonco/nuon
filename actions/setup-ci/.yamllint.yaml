@@ -1,0 +1,10 @@
+---
+
+extends: default
+
+ignore:
+  .github/testdata
+
+rules:
+  line-length:
+    max: 140
