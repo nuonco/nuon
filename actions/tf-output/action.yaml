@@ -1,5 +1,5 @@
 ---
-name: action-tf-output
+name: tf-output
 description: |
   Converts terraform json output into Github Actions environment variables
 author: "@powertoolsdev/team"

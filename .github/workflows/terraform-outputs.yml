@@ -48,7 +48,7 @@ jobs:
           terraform-bin output -json > "${{ runner.temp }}/tf.out"
 
       - name: Parse terraform outputs
-        uses: powertoolsdev/action-tf-output@main
+        uses: powertoolsdev/mono/actions/tf-output@main
         with:
           file: ${{ runner.temp }}/tf.out
 

@@ -1,4 +1,4 @@
-# action-tf-output
+# tf-output
 
 This actions takes a file containing the output of `terraform output -json` and
 turns each tf output into an environment variable.
@@ -23,7 +23,7 @@ usable in workflows.
 
       - name: Parse output
         id: tf_parse
-        uses: powertoolsdev/action-tf-output@main
+        uses: powertoolsdev/mono/actions/tf-output@main
         with:
           file: ${{ env.TF_OUT }}
 

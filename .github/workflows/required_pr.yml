@@ -19,4 +19,4 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Run lints
-        uses: powertoolsdev/action-pr-checks@main
+        uses: powertoolsdev/mono/actions/pr-checks@main

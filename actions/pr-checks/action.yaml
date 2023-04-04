@@ -1,5 +1,5 @@
 ---
-name: action-pr-check
+name: pr-check
 description: |
   Runs Nuon standard PR checks
 author: "@powertoolsdev/team"

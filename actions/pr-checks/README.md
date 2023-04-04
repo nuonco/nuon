@@ -1,2 +1,2 @@
-# action-pr-checks
+# pr-checks
 shared action for checking PRs

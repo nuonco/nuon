@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: powertoolsdev/action-app-token@main
+        uses: powertoolsdev/mono/actions/app-token@main
         with:
           app_id: ${{ secrets.APP_ID }}
           installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
