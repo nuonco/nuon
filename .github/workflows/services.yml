@@ -48,7 +48,6 @@ jobs:
             workers-instances: services/workers-instances/**
             workers-installs: services/workers-installs/**
             workers-orgs: services/workers-orgs/**
-
   tag:
     name: Determine short ref
     runs-on: ubuntu-latest
@@ -76,4 +75,5 @@ jobs:
     with:
       service: ${{matrix.service}}
       tag: ${{ needs.tag.outputs.git_ref }}
+      prod: false
     secrets: inherit
