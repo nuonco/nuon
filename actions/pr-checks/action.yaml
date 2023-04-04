@@ -1,0 +1,65 @@
+---
+name: action-pr-check
+description: |
+  Runs Nuon standard PR checks
+author: "@powertoolsdev/team"
+
+inputs:
+  github_token:
+    description: 'GITHUB_TOKEN'
+    default: '${{ github.token }}'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Calculate size labels
+      uses: actions-ecosystem/action-size@v2
+      id: size
+
+    - name: Remove existing size label
+      uses: actions-ecosystem/action-remove-labels@v1
+      with:
+        github_token: ${{ inputs.github_token }}
+        labels: ${{ steps.size.outputs.stale_labels }}
+
+    - name: Add new size label
+      uses: actions-ecosystem/action-add-labels@v1
+      with:
+        github_token: ${{ inputs.github_token }}
+        labels: ${{ steps.size.outputs.new_label }}
+
+    - uses: actions-marketplace-validations/ActionsDesk_lfs-warning@master
+      if: always()
+      id: lfs
+      with:
+        filesizelimit: 2MB
+        token: ${{ inputs.github_token }}
+
+    - name: Lint pull request title
+      if: always()
+      id: title
+      uses: jef/conventional-commits-pr-action@v1
+      with:
+        token: ${{ inputs.github_token }}
+
+    - name: Determine status
+      shell: bash
+      run: |
+        lfs=${{ steps.lfs.outcome }}
+        title=${{ steps.title.outcome }}
+        if [ "$lfs" == "success" ] && [ "$title" = "success" ]; then
+          echo "NUON_WORKFLOW_STATUS=success" >> "$GITHUB_ENV";
+          exit 0;
+        fi
+        echo "NUON_WORKFLOW_STATUS=failure" >> "$GITHUB_ENV";
+
+    - name: Update status
+      uses: ouzi-dev/commit-status-updater@v2.0.1
+      with:
+        name: Required PR Checks
+        status: "${{ env.NUON_WORKFLOW_STATUS }}"
+        token: ${{ inputs.github_token }}
+
+branding:
+  icon: 'check'
+  color: 'cyan'

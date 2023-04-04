@@ -1,0 +1,10 @@
+---
+
+extends: default
+
+ignore:
+  node_modules
+
+rules:
+  line-length:
+    max: 140

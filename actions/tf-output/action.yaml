@@ -1,0 +1,22 @@
+---
+name: action-tf-output
+description: |
+  Converts terraform json output into Github Actions environment variables
+author: "@powertoolsdev/team"
+inputs:
+  file:
+    description: |
+      The JSON file to process
+    required: true
+  cleanup:
+    description: |
+      Whether to clean up the input file.
+    default: true
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+
+branding:
+  icon: 'check'
+  color: 'blue'
