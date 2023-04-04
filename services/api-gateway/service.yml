@@ -1,0 +1,5 @@
+---
+type: api
+env:
+  DISABLE_METRICS: true
+  TEMPORAL_NAMESPACE: default

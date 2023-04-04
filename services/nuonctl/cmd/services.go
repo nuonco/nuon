@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/powertoolsdev/mono/services/nuonctl/internal/commands/services"
 	"github.com/spf13/cobra"
@@ -26,16 +27,28 @@ func (c *cli) registerServices(ctx context.Context, rootCmd *cobra.Command) erro
 	generalCmd.AddCommand(&cobra.Command{
 		Use:   "run",
 		Short: "run a service locally",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmds.Run(ctx, name)
+		Run: func(_ *cobra.Command, args []string) {
+			if err := cmds.Run(ctx, name, args); err != nil {
+				log.Fatal(err)
+			}
+		},
+	})
+
+	generalCmd.AddCommand(&cobra.Command{
+		Use:   "exec",
+		Short: "execute a command with a service's config",
+		RunE: func(_ *cobra.Command, args []string) error {
+			return cmds.Exec(ctx, name, args)
 		},
 	})
 
 	generalCmd.AddCommand(&cobra.Command{
 		Use:   "env",
-		Short: "fetch a service's env and output as json",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmds.Env(ctx, name)
+		Short: "fetch a service's stage env and output as json",
+		Run: func(_ *cobra.Command, _ []string) {
+			if err := cmds.Env(ctx, name); err != nil {
+				log.Fatal(err)
+			}
 		},
 	})
 

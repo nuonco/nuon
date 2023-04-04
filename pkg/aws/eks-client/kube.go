@@ -29,11 +29,12 @@ func (e *eksClient) getKubeConfig(cluster *ekstypes.Cluster) (*rest.Config, erro
 	if err != nil {
 		return nil, err
 	}
+
 	opts := &token.GetTokenOptions{
 		Region:        e.Region,
 		AssumeRoleARN: e.RoleARN,
 		SessionName:   e.RoleSessionName,
-		ClusterID:     *cluster.Id,
+		ClusterID:     *cluster.Name,
 	}
 	tok, err := gen.GetWithOptions(opts)
 	if err != nil {
