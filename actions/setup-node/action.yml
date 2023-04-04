@@ -1,5 +1,5 @@
 ---
-name: action-setup-node
+name: setup-node
 description: |
   Sets up node.js, creates cache & installs dependencies
 author: "@powertoolsdev/team"

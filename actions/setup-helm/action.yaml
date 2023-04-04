@@ -1,5 +1,5 @@
 ---
-name: action-setup-helm
+name: setup-helm
 description: |
   Sets up helm by install helm itself, common plugins, and updating dependencies
 author: "@powertoolsdev/team"
