@@ -2,7 +2,7 @@ package command
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"os/exec"
 	"testing"
 
@@ -22,8 +22,8 @@ func Test_command_buildCommand(t *testing.T) {
 				cmd, err := New(v, WithCmd("/tmp/test/ls"),
 					WithArgs([]string{"-alh"}),
 					WithEnv(map[string]string{"KEY": "VALUE"}),
-					WithStdout(ioutil.Discard),
-					WithStderr(ioutil.Discard),
+					WithStdout(io.Discard),
+					WithStderr(io.Discard),
 					WithCwd("/tmp/test"),
 				)
 				assert.NoError(t, err)
@@ -33,8 +33,8 @@ func Test_command_buildCommand(t *testing.T) {
 			assertFn: func(t *testing.T, c *exec.Cmd) {
 				assert.Equal(t, "/tmp/test/ls", c.Path)
 				assert.Equal(t, "-alh", c.Args[1])
-				assert.Equal(t, ioutil.Discard, c.Stdout)
-				assert.Equal(t, ioutil.Discard, c.Stderr)
+				assert.Equal(t, io.Discard, c.Stdout)
+				assert.Equal(t, io.Discard, c.Stderr)
 				assert.Equal(t, "/tmp/test", c.Dir)
 
 				found := false
@@ -58,5 +58,4 @@ func Test_command_buildCommand(t *testing.T) {
 			test.assertFn(t, execCmd)
 		})
 	}
-
 }

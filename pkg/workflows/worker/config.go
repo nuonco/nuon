@@ -5,11 +5,15 @@ import (
 	"github.com/powertoolsdev/mono/pkg/workflows"
 )
 
+const (
+	defaultMaxConcurrentActivities int = 10
+)
+
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_task_queue", workflows.DefaultTaskQueue)
 	config.RegisterDefault("temporal_host", "localhost:7233")
-	config.RegisterDefault("temporal_max_concurrent_activities", 1)
+	config.RegisterDefault("temporal_max_concurrent_activities", defaultMaxConcurrentActivities)
 }
 
 // Config defines the standard workflow worker config, which all workers should embed as part of their application.
