@@ -43,7 +43,7 @@ jobs:
           - api
           - orgs-api
           - workers-apps
-          - workers-instances
+          - workers-canary
           - workers-deployments
           - workers-executors
           - workers-installs
