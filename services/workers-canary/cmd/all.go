@@ -7,6 +7,8 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-canary/internal"
+	"github.com/powertoolsdev/mono/services/workers-canary/internal/deprovision"
+	"github.com/powertoolsdev/mono/services/workers-canary/internal/provision"
 	"github.com/spf13/cobra"
 	tworker "go.temporal.io/sdk/worker"
 )
@@ -32,15 +34,17 @@ func runAll(cmd *cobra.Command, _ []string) {
 		log.Fatalf("unable to validate config: %v", err)
 	}
 
-	wkr, err := worker.New(validator.New(), worker.WithConfig(&cfg.Config)) //// register workflows
-	//worker.WithWorkflow(stWkflow.Start),
-	//worker.WithWorkflow(bldWkflow.Build),
-	//worker.WithWorkflow(instWkflow.ProvisionInstances),
+	prWkflow := provision.NewWorkflow(cfg)
+	dprWkflow := deprovision.NewWorkflow(cfg)
 
-	// register activities
-	//worker.WithActivity(start.NewActivities()),
-	//worker.WithActivity(instances.NewActivities(cfg)),
+	wkr, err := worker.New(validator.New(), worker.WithConfig(&cfg.Config),
+		worker.WithWorkflow(prWkflow.Provision),
+		worker.WithWorkflow(dprWkflow.Deprovision),
 
+		// register activities
+		worker.WithActivity(provision.NewActivities()),
+		worker.WithActivity(deprovision.NewActivities()),
+	)
 	if err != nil {
 		log.Fatalf("unable to initialize worker: %s", err.Error())
 	}
