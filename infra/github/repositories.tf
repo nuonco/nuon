@@ -61,16 +61,27 @@ module "horizon" {
   extra_ecr_repos = ["hashicorp-horizon", "hashicorp-waypoint-hzn"]
 }
 
-
 module "mono" {
   source = "./modules/repository"
 
   name        = "mono"
   description = "Mono repo for all go code at Nuon."
 
-  topics = ["terraform", "helm", "go"]
+  topics     = ["terraform", "helm", "go"]
+  enable_ecr = false
+  extra_ecr_repos = [
+    "api",
+    "api-gateway",
+    "orgs-api",
+    "workers-apps",
+    "workers-canary",
+    "workers-deployments",
+    "workers-executors",
+    "workers-installs",
+    "workers-instances",
+    "workers-orgs",
+  ]
 }
-
 
 module "public-docs" {
   source = "./modules/repository"
@@ -81,6 +92,7 @@ module "public-docs" {
 
   enable_branch_protection = false
 }
+
 module "sandboxes" {
   source = "./modules/repository"
 
@@ -95,7 +107,6 @@ module "shared_configs" {
   name        = "shared-configs"
   description = "shared configuration files"
 }
-
 
 module "ui" {
   source = "./modules/repository"
@@ -112,9 +123,6 @@ module "waypoint" {
   topics      = ["terraform"]
 }
 
-
-# NOTE: this is a temporary workspace until we resolve some of the questions in
-# https://github.com/powertoolsdev/infra-github/issues/162
 module "code-jonmorehouse" {
   source = "./modules/repository"
 
