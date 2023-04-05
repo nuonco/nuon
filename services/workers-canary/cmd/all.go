@@ -43,7 +43,8 @@ func runAll(cmd *cobra.Command, _ []string) {
 
 		// register activities
 		worker.WithActivity(provision.NewActivities()),
-		worker.WithActivity(deprovision.NewActivities()),
+		// TODO(jm): enable once activities are implemented
+		//worker.WithActivity(deprovision.NewActivities()),
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize worker: %s", err.Error())
