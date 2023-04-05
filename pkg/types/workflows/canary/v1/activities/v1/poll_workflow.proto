@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package canary.v1.activities.v1;
+
+import "canary/v1/types.proto";
+import "google/protobuf/any.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/canary/v1/activities/v1";
+
+message PollWorkflowRequest {
+  string namespace = 1 [
+    (validate.rules).string = {
+      in: [
+        "apps",
+        "deployments",
+        "installs",
+        "instances",
+        "orgs"
+      ]
+    },
+    (tagger.tags) = "faker:\"oneof: instances\""
+  ];
+
+  string workflow_name = 2 [(validate.rules).string.min_len = 5];
+  string workflow_id = 3 [(validate.rules).string.min_len = 5];
+}
+
+message PollWorkflowResponse {
+  canary.v1.Step step = 1 [(validate.rules).message.required = true];
+
+  google.protobuf.Any response = 2;
+}
