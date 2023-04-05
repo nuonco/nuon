@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package canary.v1;
+
+import "google/type/interval.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/canary/v1";
+
+// Status represents both an individual step as well as a full provision/deprovision
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_OK = 1;
+  STATUS_ERROR = 2;
+}
+
+// Step represents an individual step in a canary provisioning
+message Step {
+  Status status = 1;
+  string name = 2;
+  optional string error = 3;
+
+  google.type.Interval interval = 4;
+}
