@@ -18,21 +18,21 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
       "kms:GenerateDataKey*",
       "kms:DescribeKey",
     ]
-    resources = [local.helm_bucket_kms_key_arn, ]
+    resources = [local.helm.bucket_kms_key_arn, ]
   }
   statement {
     effect = "Allow"
     actions = [
       "s3:ListBucket",
     ]
-    resources = [local.helm_bucket_arn, ]
+    resources = [local.helm.bucket_arn, ]
   }
   statement {
     effect = "Allow"
     actions = [
       "s3:*Object",
     ]
-    resources = ["${local.helm_bucket_arn}/*", ]
+    resources = ["${local.helm.bucket_arn}/*", ]
   }
   statement {
     actions = [
@@ -54,7 +54,7 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
 }
 
 resource "aws_iam_policy" "github_actions_policy" {
-  name   = "github-actions-policy-${local.name}"
+  name   = "github-actions-policy-${var.name}"
   policy = data.aws_iam_policy_document.github_actions_policy_doc.json
 }
 
@@ -63,7 +63,7 @@ module "github_actions" {
   version     = ">= 5.1.0"
   create_role = true
 
-  role_name = "gha-${local.name}"
+  role_name = "gha-${var.name}"
   role_path = "/github/actions/"
 
   provider_url                   = "token.actions.githubusercontent.com"

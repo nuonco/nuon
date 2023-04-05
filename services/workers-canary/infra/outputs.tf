@@ -1,31 +1,31 @@
 output "gh_role_arn" {
-  value = module.github_actions.iam_role_arn
+  value = module.service.gh_role_arn
 }
 
 output "region" {
-  value = local.vars.region
+  value = module.service.region
 }
 
 output "eks_role_arn" {
-  value = module.iam_eks_role.iam_role_arn
+  value = module.service.eks_role_arn
 }
 
 output "nuon_charts" {
-  value = local.helm_bucket_url
+  value = module.service.nuon_charts
 }
 
 output "ecr_repository_url" {
-  value = data.aws_ecr_repository.ecr_repository.repository_url
+  value = module.service.ecr_repository_url
 }
 
 output "ecr_registry_id" {
-  value = data.aws_ecr_repository.ecr_repository.registry_id
+  value = module.service.ecr_registry_id
 }
 
 output "cluster_name" {
-  value = "${var.env}-nuon"
+  value = module.service.cluster_name
 }
 
 output "cluster_gh_role_arn" {
-  value = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.github_action_role_arn)
+  value = module.service.cluster_gh_role_arn
 }

@@ -4,7 +4,7 @@ data "aws_organizations_organization" "orgs" {
 
 data "aws_ecr_repository" "ecr_repository" {
   provider = aws.infra-shared-prod
-  name     = local.name
+  name     = local.ecr_repository
 }
 
 data "terraform_remote_state" "chart_common" {
