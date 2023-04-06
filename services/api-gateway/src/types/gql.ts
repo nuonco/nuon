@@ -426,7 +426,7 @@ export type MutationDeleteOrgArgs = {
 
 
 export type MutationDeleteSecretsArgs = {
-  ids?: InputMaybe<Array<Scalars['ID']>>;
+  input?: InputMaybe<Array<SecretsIdsInput>>;
 };
 
 
@@ -707,6 +707,14 @@ export type SecretInput = {
   id?: InputMaybe<Scalars['ID']>;
   key: Scalars['String'];
   value: Scalars['String'];
+};
+
+export type SecretsIdsInput = {
+  appId: Scalars['ID'];
+  componentId: Scalars['ID'];
+  installId: Scalars['ID'];
+  orgId: Scalars['ID'];
+  secretId: Scalars['ID'];
 };
 
 export type SecretsInput = {
