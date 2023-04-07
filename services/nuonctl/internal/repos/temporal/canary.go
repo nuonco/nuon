@@ -18,7 +18,7 @@ func (r *repo) TriggerCanaryProvision(ctx context.Context, req *canaryv1.Provisi
 		},
 	}
 
-	_, err := r.Client.ExecuteWorkflow(ctx, opts, "Provision", req)
+	_, err := r.Client.ExecuteWorkflowInNamespace(ctx, "canary", opts, "Provision", req)
 	if err != nil {
 		return fmt.Errorf("unable to provision install: %w", err)
 	}
