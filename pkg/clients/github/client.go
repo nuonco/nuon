@@ -7,18 +7,21 @@ import (
 
 	ghinstallation "github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/services/nuonctl/internal"
 )
 
 type githubOption func(*github) error
 
 type github struct {
+	v *validator.Validate
+
 	AppID  int64  `validate:"required"`
 	AppKey []byte `validate:"required"`
 }
 
-func New(opts ...githubOption) (*ghinstallation.AppsTransport, error) {
-	gh := &github{}
+func New(v *validator.Validate, opts ...githubOption) (*ghinstallation.AppsTransport, error) {
+	gh := &github{
+		v: v,
+	}
 
 	for idx, opt := range opts {
 		if err := opt(gh); err != nil {
@@ -26,8 +29,7 @@ func New(opts ...githubOption) (*ghinstallation.AppsTransport, error) {
 		}
 	}
 
-	validate := validator.New()
-	if err := validate.Struct(gh); err != nil {
+	if err := v.Struct(gh); err != nil {
 		return nil, fmt.Errorf("unable to validate temporal: %w", err)
 	}
 
@@ -40,14 +42,20 @@ func New(opts ...githubOption) (*ghinstallation.AppsTransport, error) {
 	return appstp, nil
 }
 
-func WithConfig(cfg *internal.Config) githubOption {
-	return func(d *github) error {
-		githubAppID, err := strconv.ParseInt(cfg.GithubAppID, 10, 64)
+func WithGithubAppID(ghAppID string) githubOption {
+	return func(g *github) error {
+		githubAppID, err := strconv.ParseInt(ghAppID, 10, 64)
 		if err != nil {
 			return fmt.Errorf("unable to parse github app id: %w", err)
 		}
-		d.AppID = githubAppID
-		d.AppKey = []byte(cfg.GithubAppKey)
+		g.AppID = githubAppID
+		return nil
+	}
+}
+
+func WithGithubAppKey(ghAppKey string) githubOption {
+	return func(g *github) error {
+		g.AppKey = []byte(ghAppKey)
 		return nil
 	}
 }
