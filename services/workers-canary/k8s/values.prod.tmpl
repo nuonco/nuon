@@ -2,7 +2,8 @@
 environment: prod
 
 configmap:
-  values: {}
+  values:
+    SLACK_WEBHOOK_URL: $TFO_CANARY_SLACK_WEBHOOK_URL
 
 serviceAccount:
   annotations:

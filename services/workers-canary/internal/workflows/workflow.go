@@ -9,7 +9,6 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/go-playground/validator/v10"
-	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1/activities/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-canary/internal"
 )
@@ -77,9 +76,4 @@ func (w *wkflow) pollWorkflow(ctx workflow.Context, namespace, name, workflowID 
 	l.Info("successfully got %s.%s workflow response", namespace, name)
 
 	return &resp, nil
-}
-
-type step struct {
-	name string
-	fn   func(workflow.Context, string, *canaryv1.ProvisionRequest) (*canaryv1.Step, error)
 }

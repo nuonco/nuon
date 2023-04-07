@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/config"
+	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-canary/internal"
 	"github.com/powertoolsdev/mono/services/workers-canary/internal/activities"
@@ -47,12 +48,18 @@ func runAll(cmd *cobra.Command, _ []string) {
 		log.Fatalf("unable to create activities: %s", err.Error())
 	}
 
+	sharedActs, err := sharedactivities.New(v)
+	if err != nil {
+		log.Fatalf("unable to create activities: %s", err.Error())
+	}
+
 	wkr, err := worker.New(v, worker.WithConfig(&cfg.Config),
 		worker.WithWorkflow(wkflow.Provision),
 		worker.WithWorkflow(wkflow.Deprovision),
 
 		// register activities
 		worker.WithActivity(acts),
+		worker.WithActivity(sharedActs),
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize worker: %s", err.Error())

@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
+//nolint:all
 func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWorkflowRequest) (*activitiesv1.PollWorkflowResponse, error) {
 	tClient, err := temporalclient.New(a.v,
 		temporalclient.WithNamespace(req.Namespace),
@@ -30,43 +31,44 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 	// TODO(jm): I'm not a fan of this approach, but we can't pass an interface as an Any and then unmarshal it, so
 	// there's not much of a better way TBH.
 	var (
-		resp *anypb.Any
+		resp      *anypb.Any
+		wkflowErr error
 	)
 	switch [2]string{req.Namespace, req.WorkflowName} {
 	case [2]string{"orgs", "Signup"}:
 		var wkflowResp *orgsv1.SignupResponse
-		if err := wkflow.Get(ctx, &resp); err != nil {
+		if wkflowErr = wkflow.Get(ctx, &resp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
-		resp, err = anypb.New(wkflowResp)
-		if err != nil {
+		resp, wkflowErr = anypb.New(wkflowResp)
+		if wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
 	case [2]string{"apps", "Provision"}:
 		var wkflowResp *appsv1.ProvisionResponse
-		if err := wkflow.Get(ctx, &resp); err != nil {
+		if wkflowErr = wkflow.Get(ctx, &resp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
-		resp, err = anypb.New(wkflowResp)
-		if err != nil {
+		resp, wkflowErr = anypb.New(wkflowResp)
+		if wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
 	case [2]string{"installs", "Provision"}:
 		var wkflowResp *installsv1.ProvisionResponse
-		if err := wkflow.Get(ctx, &resp); err != nil {
+		if wkflowErr = wkflow.Get(ctx, &resp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
-		resp, err = anypb.New(wkflowResp)
-		if err != nil {
+		resp, wkflowErr = anypb.New(wkflowResp)
+		if wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
 	case [2]string{"deployments", "Start"}:
 		var wkflowResp *deploymentsv1.StartResponse
-		if err := wkflow.Get(ctx, &resp); err != nil {
+		if wkflowErr = wkflow.Get(ctx, &resp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
-		resp, err = anypb.New(wkflowResp)
-		if err != nil {
+		resp, wkflowErr = anypb.New(wkflowResp)
+		if wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
 	}

@@ -8,6 +8,8 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1/activities/v1"
+	sharedactivitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1"
+	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	workers "github.com/powertoolsdev/mono/services/workers-canary/internal"
 	"github.com/powertoolsdev/mono/services/workers-canary/internal/activities"
 	"github.com/stretchr/testify/assert"
@@ -29,11 +31,18 @@ func TestProvision(t *testing.T) {
 
 	act, _ := activities.New(v)
 	env.RegisterActivity(act)
+	sharedActs, _ := sharedactivities.New(v)
+	env.RegisterActivity(sharedActs)
 
 	// Mock activity implementations
 	env.OnActivity("PollWorkflow", mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, aReq *activitiesv1.PollWorkflowRequest) (*activitiesv1.PollWorkflowResponse, error) {
 			return &activitiesv1.PollWorkflowResponse{}, nil
+		})
+
+	env.OnActivity("SendNotification", mock.Anything, mock.Anything).
+		Return(func(ctx context.Context, aReq *sharedactivitiesv1.SendNotificationRequest) (*sharedactivitiesv1.SendNotificationResponse, error) {
+			return &sharedactivitiesv1.SendNotificationResponse{}, nil
 		})
 
 	env.OnActivity("StartWorkflow", mock.Anything, mock.Anything).
@@ -42,7 +51,6 @@ func TestProvision(t *testing.T) {
 		})
 
 	// execute workflow
-	return
 	env.ExecuteWorkflow(wkflow.Provision, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())

@@ -5,14 +5,15 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	sharedactivitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1"
+	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	"go.temporal.io/sdk/workflow"
 )
 
 type deprovisionStep struct {
 	name string
-	fn   func(workflow.Context, string, *canaryv1.DeprovisionRequest) (*canaryv1.Step, error)
+	fn   func(workflow.Context, *canaryv1.DeprovisionRequest) (*canaryv1.Step, error)
 }
 
 func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) (*canaryv1.DeprovisionResponse, error) {
@@ -25,6 +26,13 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 	}
 	if err := req.Validate(); err != nil {
 		return resp, err
+	}
+
+	if err := sharedactivities.SendNotification(ctx, &sharedactivitiesv1.SendNotificationRequest{
+		SlackWebhookUrl: w.cfg.SlackWebhookURL,
+		Notification:    fmt.Sprintf("🐦 deprovisioning canary `%s`", req.CanaryId),
+	}); err != nil {
+		return resp, fmt.Errorf("unable to send notification: %w", err)
 	}
 
 	steps := []deprovisionStep{
@@ -47,7 +55,7 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 	}
 
 	for _, step := range steps {
-		stepResp, err := step.fn(ctx, canaryID, req)
+		stepResp, err := step.fn(ctx, req)
 		if err != nil {
 			return resp, fmt.Errorf("unable to deprovision %s %w", step.name, err)
 		}
@@ -59,10 +67,10 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 	return resp, nil
 }
 
-func (w *wkflow) deprovisionOrg(ctx workflow.Context, canaryID string, canaryReq *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
+func (w *wkflow) deprovisionOrg(ctx workflow.Context, canaryReq *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
 	l := workflow.GetLogger(ctx)
 	wkflowReq := &orgsv1.SignupRequest{
-		OrgId:  canaryID,
+		OrgId:  canaryReq.CanaryId,
 		Region: defaultRegion,
 	}
 
@@ -81,36 +89,38 @@ func (w *wkflow) deprovisionOrg(ctx workflow.Context, canaryID string, canaryReq
 	return pollResp.Step, nil
 }
 
-func (w *wkflow) deprovisionApp(ctx workflow.Context, canaryID string, req *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
+func (w *wkflow) deprovisionApp(ctx workflow.Context, req *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
 	// TODO(jm): implement deprovision app workflow
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (w *wkflow) deprovisionInstall(ctx workflow.Context, canaryID string, req *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
+//nolint:all
+func (w *wkflow) deprovisionInstall(ctx workflow.Context, req *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
 	// TODO(jm): build out actual install request
 	return nil, fmt.Errorf("not implemented")
-	l := workflow.GetLogger(ctx)
-	wkflowReq := &installsv1.DeprovisionRequest{
-		OrgId:     canaryID,
-		AppId:     canaryID,
-		InstallId: canaryID,
-	}
+	//l := workflow.GetLogger(ctx)
+	//wkflowReq := &installsv1.DeprovisionRequest{
+	//OrgId:	   canaryID,
+	//AppId:	   canaryID,
+	//InstallId: canaryID,
+	//}
 
-	l.Info("provisioning app", "request", wkflowReq)
-	workflowID, err := w.startWorkflow(ctx, "apps", "Deprovision", wkflowReq)
-	if err != nil {
-		return nil, fmt.Errorf("unable to start workflow: %w", err)
-	}
+	//l.Info("provisioning app", "request", wkflowReq)
+	//workflowID, err := w.startWorkflow(ctx, "apps", "Deprovision", wkflowReq)
+	//if err != nil {
+	//return nil, fmt.Errorf("unable to start workflow: %w", err)
+	//}
 
-	pollResp, err := w.pollWorkflow(ctx, "apps", "Deprovision", workflowID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get finished workflow: %w", err)
-	}
-	l.Info("successfully got app response", "response", pollResp)
-	return nil, nil
+	//pollResp, err := w.pollWorkflow(ctx, "apps", "Deprovision", workflowID)
+	//if err != nil {
+	//return nil, fmt.Errorf("unable to get finished workflow: %w", err)
+	//}
+	//l.Info("successfully got app response", "response", pollResp)
+	//return nil, nil
 }
 
-func (w *wkflow) deprovisionDeployment(ctx workflow.Context, canaryID string, req *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
+//nolint:all
+func (w *wkflow) deprovisionDeployment(ctx workflow.Context, req *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
 	// TODO(jm): build out actual deployment request
 	return nil, fmt.Errorf("not implemented")
 }

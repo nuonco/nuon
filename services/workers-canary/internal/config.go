@@ -13,6 +13,9 @@ func init() {
 
 type Config struct {
 	worker.Config `config:",squash"`
+
+	SlackWebhookURL      string `config:"slack_webhook_url"`
+	DisableNotifications bool   `config:"disable_notifications"`
 }
 
 func (c Config) Validate() error {
