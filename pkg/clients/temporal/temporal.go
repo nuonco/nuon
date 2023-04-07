@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
-	"github.com/powertoolsdev/mono/services/nuonctl/internal"
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 )
@@ -13,7 +12,7 @@ import (
 type temporal struct {
 	v *validator.Validate
 
-	HostPort  string      `validate:"required"`
+	Addr      string      `validate:"required"`
 	Namespace string      `validate:"required"`
 	Logger    *zap.Logger `validate:"required"`
 }
@@ -36,7 +35,7 @@ func New(v *validator.Validate, opts ...temporalOption) (tclient.Client, error) 
 	}
 
 	tc, err := tclient.Dial(tclient.Options{
-		HostPort:  tmp.HostPort,
+		HostPort:  tmp.Addr,
 		Namespace: tmp.Namespace,
 		Logger:    temporalzap.NewLogger(logger),
 	})
@@ -49,15 +48,9 @@ func New(v *validator.Validate, opts ...temporalOption) (tclient.Client, error) 
 
 type temporalOption func(*temporal) error
 
-func WithConfig(cfg *internal.Config) temporalOption {
+func WithAddr(addr string) temporalOption {
 	return func(t *temporal) error {
-		if cfg.Env == "stage" {
-			t.HostPort = cfg.StageTemporalHost
-		} else {
-			t.HostPort = cfg.DevTemporalHost
-		}
-
-		t.Namespace = cfg.TemporalNamespace
+		t.Addr = addr
 		return nil
 	}
 }
@@ -65,6 +58,13 @@ func WithConfig(cfg *internal.Config) temporalOption {
 func WithLogger(log *zap.Logger) temporalOption {
 	return func(t *temporal) error {
 		t.Logger = log
+		return nil
+	}
+}
+
+func WithNamespace(namespace string) temporalOption {
+	return func(t *temporal) error {
+		t.Namespace = namespace
 		return nil
 	}
 }
