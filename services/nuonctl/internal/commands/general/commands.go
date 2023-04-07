@@ -4,10 +4,13 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/services/nuonctl/internal/repos/temporal"
 )
 
 type commands struct {
 	v *validator.Validate
+
+	Temporal temporal.Repo `validate:"required"`
 }
 
 // New returns a default commands with the default orgcontext getter
@@ -29,3 +32,10 @@ func New(v *validator.Validate, opts ...commandsOption) (*commands, error) {
 }
 
 type commandsOption func(*commands) error
+
+func WithTemporalRepo(temporal temporal.Repo) commandsOption {
+	return func(c *commands) error {
+		c.Temporal = temporal
+		return nil
+	}
+}

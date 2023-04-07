@@ -11,7 +11,12 @@ option go_package = "github.com/powertoolsdev/mono/pkg/types/canary/v1";
 message ProvisionRequest {
   bool dry_run = 1;
 
-  map<string, string> tags = 2;
+  string canary_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  map<string, string> tags = 3;
 }
 
 message ProvisionResponse {

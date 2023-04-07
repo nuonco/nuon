@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerGeneral(_ context.Context, rootCmd *cobra.Command) error {
-	cmds, err := general.New(c.v)
+func (c *cli) registerGeneral(ctx context.Context, rootCmd *cobra.Command) error {
+	cmds, err := general.New(c.v, general.WithTemporalRepo(c.temporal))
 	if err != nil {
 		return fmt.Errorf("unable to initialize general commands: %w", err)
 	}
@@ -60,5 +60,12 @@ func (c *cli) registerGeneral(_ context.Context, rootCmd *cobra.Command) error {
 		},
 	})
 
+	generalCmd.AddCommand(&cobra.Command{
+		Use:   "trigger-canary",
+		Short: "trigger a canary workflow",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmds.TriggerCanary(ctx)
+		},
+	})
 	return nil
 }
