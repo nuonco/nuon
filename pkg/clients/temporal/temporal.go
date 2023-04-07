@@ -15,9 +15,11 @@ type temporal struct {
 	Addr      string      `validate:"required"`
 	Namespace string      `validate:"required"`
 	Logger    *zap.Logger `validate:"required"`
+
+	tclient.Client
 }
 
-func New(v *validator.Validate, opts ...temporalOption) (tclient.Client, error) {
+func New(v *validator.Validate, opts ...temporalOption) (Client, error) {
 	logger, _ := zap.NewProduction(zap.WithCaller(false))
 	tmp := &temporal{
 		v:      v,
@@ -43,7 +45,8 @@ func New(v *validator.Validate, opts ...temporalOption) (tclient.Client, error) 
 		return nil, fmt.Errorf("unable to dial temporal: %w", err)
 	}
 
-	return tc, nil
+	tmp.Client = tc
+	return tmp, nil
 }
 
 type temporalOption func(*temporal) error
