@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/services/nuonctl/internal"
-	temporalclient "github.com/powertoolsdev/mono/services/nuonctl/internal/clients/temporal"
 	"github.com/powertoolsdev/mono/services/nuonctl/internal/repos/executors"
 	"github.com/powertoolsdev/mono/services/nuonctl/internal/repos/temporal"
 	"github.com/powertoolsdev/mono/services/nuonctl/internal/repos/workflows"
@@ -36,7 +36,7 @@ func (c *cli) loadConfig(flags *pflag.FlagSet) (*internal.Config, error) {
 }
 
 func (c *cli) loadTemporalRepo(cfg *internal.Config) (temporal.Repo, error) {
-	tclient, err := temporalclient.New(c.v, temporalclient.WithConfig(cfg))
+	tclient, err := temporalclient.New(c.v, temporalclient.WithAddr(cfg.DevTemporalHost), temporalclient.WithNamespace(cfg.TemporalNamespace))
 	if err != nil {
 		return nil, fmt.Errorf("unable to get temporal client: %w", err)
 	}
