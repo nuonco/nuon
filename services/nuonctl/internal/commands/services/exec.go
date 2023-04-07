@@ -80,7 +80,7 @@ func (c *commands) exec(ctx context.Context, cfg *config.Config, env map[string]
 	cmd, err := command.New(c.v,
 		command.WithEnv(env),
 		command.WithCmd(args[0]),
-		command.WithArgs(args[0:]),
+		command.WithArgs(args[1:]),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to build command: %w", err)
