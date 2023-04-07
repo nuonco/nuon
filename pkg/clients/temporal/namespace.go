@@ -19,7 +19,7 @@ func (t *temporal) ExecuteWorkflowInNamespace(ctx context.Context,
 		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
 	}
 
-	return client.ExecuteWorkflow(ctx, options, workflow, args)
+	return client.ExecuteWorkflow(ctx, options, workflow, args...)
 }
 
 func (t *temporal) GetWorkflowInNamespace(ctx context.Context,
