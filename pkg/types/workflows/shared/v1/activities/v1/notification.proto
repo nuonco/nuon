@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package shared.v1.activities.v1;
+
+import "validate/validate.proto";
+
+// SendNotificationRequest is used by clients to send a notification
+message SendNotificationRequest {
+  string notification = 1 [(validate.rules).string.min_len = 5];
+  string slack_webhook_url = 2 [(validate.rules).string.min_len = 5];
+  bool dry_run = 3;
+}
+
+message SendNotificationResponse {}
