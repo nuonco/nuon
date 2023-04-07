@@ -9,6 +9,7 @@
     "outputs": {
       "accounts": {
         "accounts-last-updated": "accounts-last-updated",
+        "canary-gh-oidc-provider": "canary-gh-oidc-provider",
         "demo-gh-oidc-provider": "demo-gh-oidc-provider",
         "external-gh-oidc-provider": "external-gh-oidc-provider",
         "horizon-gh-oidc-provider": "horizon-gh-oidc-provider",
@@ -62,7 +63,11 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-03-27T21:58:15.858Z"
+      "value": "2023-04-07T21:54:29.426Z"
+    },
+    "canary-gh-oidc-provider": {
+      "description": "The Github OIDC provider for the canary account",
+      "value": "${aws_iam_openid_connect_provider.canary-github-oidc-provider}"
     },
     "demo-gh-oidc-provider": {
       "description": "The Github OIDC provider for the demo account",
@@ -361,6 +366,91 @@
         "assume_role": [
           {
             "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountpublicid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-west-2"
+      },
+      {
+        "alias": "canary",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountcanaryid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      },
+      {
+        "alias": "canary-us-east-1",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountcanaryid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-1"
+      },
+      {
+        "alias": "canary-us-east-2",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountcanaryid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      },
+      {
+        "alias": "canary-us-west-1",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountcanaryid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-west-1"
+      },
+      {
+        "alias": "canary-us-west-2",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountcanaryid}:role/OrganizationAccountAccessRole"
           }
         ],
         "default_tags": [
@@ -972,6 +1062,16 @@
   },
   "resource": {
     "aws_iam_account_alias": {
+      "canary-iam-alias": {
+        "//": {
+          "metadata": {
+            "path": "accounts/canary-iam-alias",
+            "uniqueId": "canary-iam-alias"
+          }
+        },
+        "account_alias": "nuon-canary",
+        "provider": "aws.canary"
+      },
       "demo-iam-alias": {
         "//": {
           "metadata": {
@@ -1074,6 +1174,22 @@
       }
     },
     "aws_iam_openid_connect_provider": {
+      "canary-github-oidc-provider": {
+        "//": {
+          "metadata": {
+            "path": "accounts/canary-github-oidc-provider",
+            "uniqueId": "canary-github-oidc-provider"
+          }
+        },
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
+        "provider": "aws.canary",
+        "thumbprint_list": [
+          "6938fd4d98bab03faadb97b34396831e3780aea1"
+        ],
+        "url": "https://token.actions.githubusercontent.com"
+      },
       "demo-github-oidc-provider": {
         "//": {
           "metadata": {
@@ -1236,6 +1352,22 @@
       }
     },
     "aws_iam_role": {
+      "canary-terraform-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/canary-terraform-role",
+            "uniqueId": "canary-terraform-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
+        "description": "Terraform role to assume",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "terraform",
+        "path": "/",
+        "provider": "aws.canary"
+      },
       "demo-terraform-role": {
         "//": {
           "metadata": {
@@ -1398,6 +1530,36 @@
       }
     },
     "aws_iam_service_linked_role": {
+      "canary-opensearch-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/canary-opensearch-service-linked-role",
+            "uniqueId": "canary-opensearch-service-linked-role"
+          }
+        },
+        "aws_service_name": "opensearchservice.amazonaws.com",
+        "provider": "aws.canary"
+      },
+      "canary-spot-fleet-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/canary-spot-fleet-service-linked-role",
+            "uniqueId": "canary-spot-fleet-service-linked-role"
+          }
+        },
+        "aws_service_name": "spotfleet.amazonaws.com",
+        "provider": "aws.canary"
+      },
+      "canary-spot-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/canary-spot-service-linked-role",
+            "uniqueId": "canary-spot-service-linked-role"
+          }
+        },
+        "aws_service_name": "spot.amazonaws.com",
+        "provider": "aws.canary"
+      },
       "demo-opensearch-service-linked-role": {
         "//": {
           "metadata": {
@@ -1700,6 +1862,20 @@
       }
     },
     "aws_route53_record": {
+      "canary-ns-delegation": {
+        "//": {
+          "metadata": {
+            "path": "accounts/canary-ns-delegation",
+            "uniqueId": "canary-ns-delegation"
+          }
+        },
+        "name": "canary.nuon.co",
+        "provider": "aws",
+        "records": "${aws_route53_zone.canary-hosted-zone.name_servers}",
+        "ttl": 300,
+        "type": "NS",
+        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
+      },
       "demo-ns-delegation": {
         "//": {
           "metadata": {
@@ -1842,6 +2018,16 @@
       }
     },
     "aws_route53_zone": {
+      "canary-hosted-zone": {
+        "//": {
+          "metadata": {
+            "path": "accounts/canary-hosted-zone",
+            "uniqueId": "canary-hosted-zone"
+          }
+        },
+        "name": "canary.nuon.co",
+        "provider": "aws.canary"
+      },
       "demo-hosted-zone": {
         "//": {
           "metadata": {

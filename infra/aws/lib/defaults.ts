@@ -51,6 +51,7 @@ export const desiredOrgStructure: orgStructure = [
     accounts: [
       { name: "demo" },
       { name: "public" },
+      { name: "canary" },
     ],
     disableScp: true,
     name: "nuon-testing",
