@@ -16,6 +16,7 @@ type Config struct {
 
 	SlackWebhookURL      string `config:"slack_webhook_url"`
 	DisableNotifications bool   `config:"disable_notifications"`
+	InstallIamRoleArn    string `config:"install_iam_role_arn"`
 }
 
 func (c Config) Validate() error {

@@ -4,6 +4,7 @@ environment: prod
 configmap:
   values:
     SLACK_WEBHOOK_URL: $TFO_CANARY_SLACK_WEBHOOKS_URL
+    INSTALL_IAM_ROLE_ARN: $TFO_CANARY_INSTALL_IAM_ROLE_ARN
 
 serviceAccount:
   annotations:
