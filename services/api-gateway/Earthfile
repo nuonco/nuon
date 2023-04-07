@@ -12,6 +12,11 @@ ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 
 deps:
+    RUN apk add --update build-base \
+      make \
+      python3 \
+      py3-pip
+
     COPY \
       .eslintrc \
       .npmrc \
