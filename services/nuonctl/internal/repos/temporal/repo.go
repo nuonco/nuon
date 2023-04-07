@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
@@ -14,6 +15,8 @@ import (
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_repo.go -source=repo.go -package=temporal
 type Repo interface {
+	TriggerCanaryProvision(context.Context, *canaryv1.ProvisionRequest) error
+
 	TriggerDeploymentStart(context.Context, *deploymentsv1.StartRequest) error
 	ExecDeploymentStart(context.Context, *deploymentsv1.StartRequest) (*deploymentsv1.StartResponse, error)
 
