@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
-	tclient "go.temporal.io/sdk/client"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
@@ -30,7 +30,7 @@ type Repo interface {
 type repo struct {
 	v *validator.Validate
 
-	Client temporalClient `validate:"required"`
+	Client temporal.Client `validate:"required"`
 }
 
 var _ Repo = (*repo)(nil)
@@ -55,7 +55,7 @@ func New(v *validator.Validate, opts ...repoOption) (*repo, error) {
 
 type repoOption func(*repo) error
 
-func WithClient(client tclient.Client) repoOption {
+func WithClient(client temporal.Client) repoOption {
 	return func(r *repo) error {
 		r.Client = client
 		return nil

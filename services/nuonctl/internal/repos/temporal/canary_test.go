@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"github.com/stretchr/testify/assert"
@@ -15,20 +16,20 @@ func Test_repo_TriggerCanaryProvision(t *testing.T) {
 	errProvision := fmt.Errorf("error provision")
 	req := generics.GetFakeObj[*canaryv1.ProvisionRequest]()
 	tests := map[string]struct {
-		client      func(*testing.T, *gomock.Controller) temporalClient
+		client      func(*testing.T, *gomock.Controller) temporal.Client
 		errExpected error
 	}{
 		"happy path": {
-			client: func(t *testing.T, mockCtl *gomock.Controller) temporalClient {
-				client := NewMocktemporalClient(mockCtl)
-				client.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), "Provision", gomock.Any()).Return(nil, nil)
+			client: func(t *testing.T, mockCtl *gomock.Controller) temporal.Client {
+				client := temporal.NewMockClient(mockCtl)
+				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "canary", gomock.Any(), "Provision", gomock.Any()).Return(nil, nil)
 				return client
 			},
 		},
 		"error": {
-			client: func(t *testing.T, mockCtl *gomock.Controller) temporalClient {
-				client := NewMocktemporalClient(mockCtl)
-				client.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), "Provision", req).Return(nil, errProvision)
+			client: func(t *testing.T, mockCtl *gomock.Controller) temporal.Client {
+				client := temporal.NewMockClient(mockCtl)
+				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "canary", gomock.Any(), "Provision", req).Return(nil, errProvision)
 				return client
 			},
 			errExpected: errProvision,
