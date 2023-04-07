@@ -36,14 +36,14 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 			"app",
 			w.deprovisionApp,
 		},
-		{
-			"install",
-			w.deprovisionInstall,
-		},
-		{
-			"docker-pull-deployment",
-			w.deprovisionDeployment,
-		},
+		//{
+		//"install",
+		//w.deprovisionInstall,
+		//},
+		//{
+		//"docker-pull-deployment",
+		//w.deprovisionDeployment,
+		//},
 	}
 
 	for _, step := range steps {

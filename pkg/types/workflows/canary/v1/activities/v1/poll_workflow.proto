@@ -30,5 +30,5 @@ message PollWorkflowRequest {
 message PollWorkflowResponse {
   canary.v1.Step step = 1 [(validate.rules).message.required = true];
 
-  google.protobuf.Any response = 2;
+  google.protobuf.Any response = 2 [(validate.rules).any.required = true];
 }

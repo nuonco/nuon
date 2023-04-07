@@ -50,7 +50,7 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, namespace, name string, msg
 	}
 
 	var resp activitiesv1.StartWorkflowResponse
-	fut := workflow.ExecuteActivity(ctx, activitiesv1.Activity_ACTIVITY_START_WORKFLOW.String(), startReq)
+	fut := workflow.ExecuteActivity(ctx, "StartWorkflow", startReq)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return "", fmt.Errorf("unable to get start workflow response: %w", err)
 	}
@@ -61,6 +61,7 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, namespace, name string, msg
 
 func (w *wkflow) pollWorkflow(ctx workflow.Context, namespace, name, workflowID string) (*activitiesv1.PollWorkflowResponse, error) {
 	l := workflow.GetLogger(ctx)
+
 	pollReq := &activitiesv1.PollWorkflowRequest{
 		Namespace:    namespace,
 		WorkflowName: name,
@@ -69,7 +70,7 @@ func (w *wkflow) pollWorkflow(ctx workflow.Context, namespace, name, workflowID 
 
 	var resp activitiesv1.PollWorkflowResponse
 	ctx = configureActivityOptions(ctx)
-	fut := workflow.ExecuteActivity(ctx, activitiesv1.Activity_ACTIVITY_POLL_WORKFLOW.String(), pollReq)
+	fut := workflow.ExecuteActivity(ctx, "PollWorkflow", pollReq)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return nil, fmt.Errorf("unable to get poll workflow response: %w", err)
 	}

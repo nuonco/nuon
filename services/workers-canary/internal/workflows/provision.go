@@ -3,7 +3,6 @@ package workflows
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -13,11 +12,11 @@ import (
 
 func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest) (*canaryv1.ProvisionResponse, error) {
 	l := workflow.GetLogger(ctx)
+	l.Info("provisioning canary", "id", req.CanaryId)
 
-	canaryID := shortid.New()
 	resp := &canaryv1.ProvisionResponse{
 		Steps:    make([]*canaryv1.Step, 0),
-		CanaryId: canaryID,
+		CanaryId: req.CanaryId,
 	}
 	if err := req.Validate(); err != nil {
 		return resp, err
@@ -28,22 +27,22 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 			"org",
 			w.provisionOrg,
 		},
-		{
-			"app",
-			w.provisionApp,
-		},
-		{
-			"install",
-			w.provisionInstall,
-		},
-		{
-			"docker-pull-deployment",
-			w.provisionDeployment,
-		},
+		//{
+		//"app",
+		//w.provisionApp,
+		//},
+		//{
+		//"install",
+		//w.provisionInstall,
+		//},
+		//{
+		//"docker-pull-deployment",
+		//w.provisionDeployment,
+		//},
 	}
 
 	for _, step := range steps {
-		stepResp, err := step.fn(ctx, canaryID, req)
+		stepResp, err := step.fn(ctx, req.CanaryId, req)
 		if err != nil {
 			return resp, fmt.Errorf("unable to provision %s %w", step.name, err)
 		}
