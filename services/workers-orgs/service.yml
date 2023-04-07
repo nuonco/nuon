@@ -2,4 +2,4 @@
 type: worker
 env:
   DISABLE_METRICS: true
-  TEMPORAL_NAMESPACE: default
+  TEMPORAL_NAMESPACE: orgs
