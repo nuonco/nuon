@@ -14,6 +14,10 @@ locals {
       teams : [github_team.team.name, github_team.backend.name, github_team.frontend.name, ]
       role : "admin"
     },
+    jordan-acosta: {
+      teams : [github_team.team.name, github_team.backend.name, github_team.frontend.name, ]
+      role : "admin"
+    },
     mpaktiti : {
       teams : [github_team.team.name, github_team.backend.name, ]
     },
