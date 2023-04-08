@@ -20,3 +20,14 @@ jobs:
 
       - name: Run lints
         uses: powertoolsdev/mono/actions/pr-checks@main
+
+  update_status:
+    name: ✅ pull request checks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: pull_request
+          status: success

@@ -1,4 +1,4 @@
-name: "branch name check"
+name: "branch checks"
 on: pull_request
 
 jobs:
@@ -25,5 +25,17 @@ jobs:
 
             - please use a branch with a valid prefix, or your initials
             - eg: `cp/fix` or `nh/test`
-
           reactions: "eyes"
+
+  update_status:
+    name: ✅ branch checks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs:
+      - branch-name
+    steps:
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: branch
+          status: success

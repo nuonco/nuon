@@ -1,5 +1,5 @@
 ---
-name: required-ci
+name: infra checks
 "on":
   pull_request:
   push:
@@ -15,8 +15,8 @@ permissions:
   statuses: write
 
 concurrency:
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  cancel-in-progress: true
 
 defaults:
   run:
@@ -24,15 +24,13 @@ defaults:
 
 jobs:
   update_status:
-    name: ✅ ci checks
+    name: ✅ infra checks
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      statuses: write
+    needs: []
     steps:
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
-          name: Required CI Checks
+          name: infra
           status: success
