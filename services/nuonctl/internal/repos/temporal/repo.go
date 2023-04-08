@@ -16,6 +16,7 @@ import (
 //go:generate mockgen -destination=mock_repo.go -source=repo.go -package=temporal
 type Repo interface {
 	TriggerCanaryProvision(context.Context, *canaryv1.ProvisionRequest) error
+	TriggerCanaryDeprovision(context.Context, *canaryv1.DeprovisionRequest) error
 
 	TriggerDeploymentStart(context.Context, *deploymentsv1.StartRequest) error
 	ExecDeploymentStart(context.Context, *deploymentsv1.StartRequest) (*deploymentsv1.StartResponse, error)
