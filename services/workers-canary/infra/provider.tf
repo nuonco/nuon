@@ -9,7 +9,6 @@ locals {
   }
 
   tags = {
-    environment = var.env
     service     = local.name
     terraform   = "${local.name}-${var.env}"
   }
