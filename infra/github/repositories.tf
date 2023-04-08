@@ -84,14 +84,15 @@ module "mono" {
 
   required_checks = [
     // lints + tests + release + deploys for services and lib/infra.
-    "services",
-    "pkg",
-    "infra",
+    "services ✅",
+    "pkg ✅",
+    "infra ✅",
+    "protos ✅",
 
     // linting and various hygiene checks
-    "pull_request",
-    "branch",
-    "lint_other",
+    "pull_request ✅",
+    "branch ✅",
+    "lint ✅",
   ]
 }
 
