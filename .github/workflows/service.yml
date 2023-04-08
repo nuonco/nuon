@@ -27,129 +27,27 @@ jobs:
     uses: ./.github/workflows/terraform-outputs.yml
     secrets: inherit
     with:
-      workspace: stage
       dir: services/${{ inputs.service }}/infra
       service: ${{ inputs.service }}
+      workspace: stage
 
   lint:
     name: 🌏 lint
+    uses: ./.github/workflows/service_lint.yml
+    secrets: inherit
+    with:
+      service: ${{ inputs.service }}
     needs:
       - terraform
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    runs-on: [ubuntu-latest-16-cores, linux]
-    timeout-minutes: 9
-    steps:
-      - name: Generate token
-        id: generate_token
-        uses: powertoolsdev/mono/actions/app-token@main
-        with:
-          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
-          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
-          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
-
-      - name: Checkout repo
-        uses: actions/checkout@v3
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-
-      - name: Download terraform outputs
-        uses: actions/download-artifact@v3
-        with:
-          name: env-${{ github.run_id }}-${{ inputs.service }}
-
-      - name: Setup environment
-        run: |
-          cat .tfenv >> "$GITHUB_ENV"
-
-      - name: Setup for CI
-        uses: powertoolsdev/mono/actions/setup-ci@main
-        with:
-          tfcloud_token: ${{ secrets.TF_API_KEY }}
-          clone_token: ${{ steps.generate_token.outputs.token }}
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          aws_role: ${{ env.TFO_GH_ROLE_ARN }}
-          aws_region: ${{ env.TFO_REGION }}
-
-      - name: Terraform init
-        working-directory: services/${{inputs.service}}
-        run: |
-          terraform -chdir=infra init -backend=false
-
-      - name: Lint
-        working-directory: services/${{inputs.service}}
-        run: |
-          earthly \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --ci \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +lint
 
   test:
     name: 🌏 test
+    uses: ./.github/workflows/service_test.yml
+    secrets: inherit
+    with:
+      service: ${{ inputs.service }}
     needs:
       - terraform
-    runs-on: [ubuntu-latest-16-cores, linux]
-    permissions:
-      contents: read
-      packages: write
-    timeout-minutes: 9
-    steps:
-      - name: Generate token
-        id: generate_token
-        uses: powertoolsdev/mono/actions/app-token@main
-        with:
-          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
-          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
-          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
-
-      - name: Checkout repo
-        uses: actions/checkout@v3
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-
-      - name: Download terraform outputs
-        uses: actions/download-artifact@v3
-        with:
-          name: env-${{ github.run_id }}-${{ inputs.service }}
-
-      - name: Setup for CI
-        uses: powertoolsdev/mono/actions/setup-ci@main
-        with:
-          tfcloud_token: ${{ secrets.TF_API_KEY }}
-          clone_token: ${{ steps.generate_token.outputs.token }}
-          setup_helm: "false"
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup terraform environment
-        run: |
-          cat .tfenv >> "$GITHUB_ENV"
-
-      - name: Earthly test target
-        working-directory: services/${{inputs.service}}
-        if: always()
-        run: |
-          earthly \
-            --allow-privileged \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --ci \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +test
-
-      - name: Earthly integration-test target
-        working-directory: services/${{inputs.service}}
-        if: always()
-        run: |
-          earthly \
-            --allow-privileged \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --ci \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +test-integration
 
   release:
     name: 📦 release
@@ -158,7 +56,7 @@ jobs:
       - terraform
       - lint
       - test
-    uses: ./.github/workflows/release.yml
+    uses: ./.github/workflows/service_release.yml
     secrets: inherit
     with:
       service: ${{ inputs.service }}
@@ -170,7 +68,7 @@ jobs:
     if: ${{ inputs.stage }}
     needs:
       - release
-    uses: ./.github/workflows/deploy.yml
+    uses: ./.github/workflows/service_deploy.yml
     secrets: inherit
     with:
       env: stage
@@ -183,7 +81,7 @@ jobs:
     needs:
       - release
       - deploy-stage
-    uses: ./.github/workflows/deploy.yml
+    uses: ./.github/workflows/service_deploy.yml
     secrets: inherit
     with:
       env: prod
