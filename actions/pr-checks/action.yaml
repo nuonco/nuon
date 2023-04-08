@@ -42,24 +42,6 @@ runs:
       with:
         token: ${{ inputs.github_token }}
 
-    - name: Determine status
-      shell: bash
-      run: |
-        lfs=${{ steps.lfs.outcome }}
-        title=${{ steps.title.outcome }}
-        if [ "$lfs" == "success" ] && [ "$title" = "success" ]; then
-          echo "NUON_WORKFLOW_STATUS=success" >> "$GITHUB_ENV";
-          exit 0;
-        fi
-        echo "NUON_WORKFLOW_STATUS=failure" >> "$GITHUB_ENV";
-
-    - name: Update status
-      uses: ouzi-dev/commit-status-updater@v2.0.1
-      with:
-        name: Required PR Checks
-        status: "${{ env.NUON_WORKFLOW_STATUS }}"
-        token: ${{ inputs.github_token }}
-
 branding:
   icon: "check"
   color: "cyan"
