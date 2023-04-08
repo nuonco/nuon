@@ -54,4 +54,5 @@ jobs:
       service: ${{matrix.service}}
       tag: ${{ needs.tag.outputs.git_ref }}
       prod: true
+      stage: false
     secrets: inherit
