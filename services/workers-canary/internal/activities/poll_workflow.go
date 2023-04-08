@@ -23,7 +23,7 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 		return nil, fmt.Errorf("unable to get temporal client: %w", err)
 	}
 
-	wkflow := tClient.GetWorkflow(ctx, req.WorkflowId, "")
+	wkflow, err := tClient.GetWorkflowInNamespace(ctx, req.Namespace, req.WorkflowId, "")
 	if err != nil {
 		return nil, fmt.Errorf("unable to get workflow with id: %s: %w", req.WorkflowId, err)
 	}
