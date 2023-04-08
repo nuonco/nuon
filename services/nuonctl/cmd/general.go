@@ -72,7 +72,7 @@ func (c *cli) registerGeneral(ctx context.Context, rootCmd *cobra.Command) error
 		Use:   "deprovision-canary",
 		Short: "deprovision a canary workflow",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmds.DeprovisionCanary(ctx)
+			return cmds.DeprovisionCanary(ctx, inputID)
 		},
 	})
 	return nil

@@ -23,9 +23,9 @@ func (c *commands) ProvisionCanary(ctx context.Context) error {
 	return nil
 }
 
-func (c *commands) DeprovisionCanary(ctx context.Context) error {
+func (c *commands) DeprovisionCanary(ctx context.Context, canaryID string) error {
 	req := &canaryv1.ProvisionRequest{
-		CanaryId: shortid.New(),
+		CanaryId: canaryID,
 		Tags: map[string]string{
 			"triggered-by": "nuonctl",
 		},
