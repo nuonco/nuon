@@ -6,11 +6,11 @@ author: "@powertoolsdev/team"
 
 inputs:
   github_token:
-    description: 'GITHUB_TOKEN'
-    default: '${{ github.token }}'
+    description: "GITHUB_TOKEN"
+    default: "${{ github.token }}"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Calculate size labels
       uses: actions-ecosystem/action-size@v2
@@ -61,5 +61,5 @@ runs:
         token: ${{ inputs.github_token }}
 
 branding:
-  icon: 'check'
-  color: 'cyan'
+  icon: "check"
+  color: "cyan"
