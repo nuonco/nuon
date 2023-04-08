@@ -59,18 +59,18 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 
 func (w *wkflow) deprovisionOrg(ctx workflow.Context, canaryReq *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
 	l := workflow.GetLogger(ctx)
-	wkflowReq := &orgsv1.SignupRequest{
+	wkflowReq := &orgsv1.TeardownRequest{
 		OrgId:  canaryReq.CanaryId,
 		Region: defaultRegion,
 	}
 
-	l.Info("provisioning org", "request", wkflowReq)
-	workflowID, err := w.startWorkflow(ctx, "orgs", "Signup", wkflowReq)
+	l.Info("deprovisioning org", "request", wkflowReq)
+	workflowID, err := w.startWorkflow(ctx, "orgs", "Teardown", wkflowReq)
 	if err != nil {
 		return nil, fmt.Errorf("unable to start workflow: %w", err)
 	}
 
-	pollResp, err := w.pollWorkflow(ctx, "orgs", "Signup", workflowID)
+	pollResp, err := w.pollWorkflow(ctx, "orgs", "Teardown", workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get finished workflow: %w", err)
 	}
@@ -102,7 +102,7 @@ func (w *wkflow) deprovisionInstall(ctx workflow.Context, req *canaryv1.Deprovis
 		return nil, fmt.Errorf("unable to start workflow: %w", err)
 	}
 
-	pollResp, err := w.pollWorkflow(ctx, "installs", "Provision", workflowID)
+	pollResp, err := w.pollWorkflow(ctx, "installs", "Deprovision", workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get finished workflow: %w", err)
 	}
