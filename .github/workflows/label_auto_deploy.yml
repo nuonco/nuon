@@ -1,5 +1,5 @@
 ---
-name: auto deploy
+name: auto deploy label
 "on":
   pull_request:
     types:

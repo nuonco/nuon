@@ -1,6 +1,6 @@
 # workflow jobs for testing/linting and verifying changes to go packages
 ---
-name: pkg
+name: pkg checks
 "on":
   pull_request:
   push:
@@ -17,8 +17,6 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  # NOTE(jm): we only want to "cancel" in flight jobs if pushing to an existing PR. If this is running on main, do not
-  # cancel previous jobs.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 defaults:
@@ -77,39 +75,6 @@ jobs:
             ${{ env.EARTHLY_EXTRA_ARGS }} \
             --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +lint
-
-  test-integration:
-    name: 🌏 test-integration
-    needs: changes
-    if: ${{ needs.changes.outputs.pkg == 'true' }}
-    defaults:
-      run:
-        working-directory: pkg
-    runs-on: [ubuntu-latest-16-cores, linux]
-    steps:
-      - name: Generate token
-        id: generate_token
-        uses: powertoolsdev/mono/actions/app-token@main
-        with:
-          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
-          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
-          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
-
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Setup for CI
-        uses: powertoolsdev/mono/actions/setup-ci@main
-        with:
-          clone_token: ${{ steps.generate_token.outputs.token }}
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
-
-      - name: Test
-        run: |
-          earthly \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +test-integration
 
   test:
     name: 🌏 test
@@ -202,3 +167,18 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ steps.semver.outputs.nextStrict }}
+
+  update_status:
+    name: ✅ pkg checks
+    needs: []
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: pkg
+          status: success

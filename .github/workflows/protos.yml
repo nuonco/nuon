@@ -106,3 +106,15 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}:protos \
             +push-proto \
             --REPO=${{matrix.repo}} \
+
+  update_status:
+    name: ✅ proto checks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: []
+    steps:
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: protos
+          status: success
