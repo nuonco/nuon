@@ -94,5 +94,7 @@ issues:
 run:
   skip-dirs:
     - '.*/generated/.*'
+    - 'infra/'
+    - '.*/node_modules/.*'
   timeout: 5m
   go: '1.19'
