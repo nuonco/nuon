@@ -14,6 +14,7 @@ permissions:
   packages: write
   pull-requests: write
   statuses: write
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -39,8 +40,8 @@ jobs:
           filters: |
             protos:
               - 'pkg/types/**'
-  lint-protos:
-    name: ✉️  lint protos
+  lint:
+    name: ✉️  lint
     needs: changes
     if: ${{ needs.changes.outputs.protos == 'true' }}
     strategy:
@@ -73,9 +74,11 @@ jobs:
             +lint \
             --REPO=${{matrix.repo}} \
 
-  release-protos:
-    name: 🚀 release protos
-    needs: changes
+  release:
+    name: 🚀 release
+    needs:
+      - changes
+      - lint
     if: ${{ needs.changes.outputs.protos == 'true' && github.event_name != 'pull_request' }}
     defaults:
       run:
@@ -108,13 +111,18 @@ jobs:
             --REPO=${{matrix.repo}} \
 
   update_status:
-    name: ✅ proto checks
-    if: github.event_name == 'pull_request'
+    name: update status
+    if: github.event_name == 'pull_request' && always()
     runs-on: ubuntu-latest
-    needs: []
+    needs:
+      - changes
+      - lint
+      - release
     steps:
+      - uses: martialonline/workflow-status@v3
+        id: check
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
-          name: protos
-          status: success
+          name: protos ✅
+          status: ${{steps.check.outputs.status}}

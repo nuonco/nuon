@@ -1,6 +1,6 @@
 # workflow jobs for testing/linting and verifying changes to go packages
 ---
-name: pkg checks
+name: pkg
 "on":
   pull_request:
   push:
@@ -169,7 +169,7 @@ jobs:
           custom_tag: ${{ steps.semver.outputs.nextStrict }}
 
   update_status:
-    name: ✅ pkg checks
+    name: update status
     needs: []
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -180,5 +180,5 @@ jobs:
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
-          name: pkg
+          name: pkg ✅
           status: success
