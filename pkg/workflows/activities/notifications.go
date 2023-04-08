@@ -34,8 +34,6 @@ func SendNotification(ctx workflow.Context, req *sharedactivitiesv1.SendNotifica
 	return nil
 }
 
-type notifierImpl struct{}
-
 func (a *Activities) SendNotification(ctx context.Context, req *sharedactivitiesv1.SendNotificationRequest) (*sharedactivitiesv1.SendNotificationResponse, error) {
 	var resp sharedactivitiesv1.SendNotificationResponse
 
