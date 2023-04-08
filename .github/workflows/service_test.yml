@@ -1,0 +1,74 @@
+---
+name: test
+"on":
+  workflow_call:
+    inputs:
+      service:
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: 🌏 test
+    runs-on: [ubuntu-latest-16-cores, linux]
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 9
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: powertoolsdev/mono/actions/app-token@main
+        with:
+          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
+          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
+          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - name: Download terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: env-${{ github.run_id }}-${{ inputs.service }}
+
+      - name: Setup for CI
+        uses: powertoolsdev/mono/actions/setup-ci@main
+        with:
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ steps.generate_token.outputs.token }}
+          setup_helm: "false"
+          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup terraform environment
+        run: |
+          cat .tfenv >> "$GITHUB_ENV"
+
+      - name: Earthly test target
+        working-directory: services/${{inputs.service}}
+        if: always()
+        run: |
+          earthly \
+            --allow-privileged \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --ci \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
+            +test
+
+      - name: Earthly integration-test target
+        working-directory: services/${{inputs.service}}
+        if: always()
+        run: |
+          earthly \
+            --allow-privileged \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --ci \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
+            +test-integration
