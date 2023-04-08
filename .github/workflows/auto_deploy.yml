@@ -16,4 +16,3 @@ jobs:
         uses: actions-ecosystem/action-add-labels@v1
         with:
           labels: auto-deploy
-
