@@ -3,7 +3,6 @@ package workflows
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
@@ -18,10 +17,9 @@ type deprovisionStep struct {
 func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) (*canaryv1.DeprovisionResponse, error) {
 	l := workflow.GetLogger(ctx)
 
-	canaryID := shortid.New()
 	resp := &canaryv1.DeprovisionResponse{
 		Steps:    make([]*canaryv1.Step, 0),
-		CanaryId: canaryID,
+		CanaryId: req.CanaryId,
 	}
 	if err := req.Validate(); err != nil {
 		return resp, err

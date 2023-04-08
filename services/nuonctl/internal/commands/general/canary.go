@@ -24,14 +24,14 @@ func (c *commands) ProvisionCanary(ctx context.Context) error {
 }
 
 func (c *commands) DeprovisionCanary(ctx context.Context, canaryID string) error {
-	req := &canaryv1.ProvisionRequest{
+	req := &canaryv1.DeprovisionRequest{
 		CanaryId: canaryID,
 		Tags: map[string]string{
 			"triggered-by": "nuonctl",
 		},
 	}
 
-	if err := c.Temporal.TriggerCanaryProvision(ctx, req); err != nil {
+	if err := c.Temporal.TriggerCanaryDeprovision(ctx, req); err != nil {
 		return fmt.Errorf("unable to deprovision canary: %w", err)
 	}
 
