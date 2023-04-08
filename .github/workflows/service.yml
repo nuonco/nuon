@@ -9,6 +9,9 @@ name: service
       prod:
         type: boolean
         required: true
+      stage:
+        type: boolean
+        required: true
       tag:
         type: string
         required: true
@@ -150,6 +153,7 @@ jobs:
 
   release:
     name: 📦 release
+    if: ${{ inputs.stage || inputs.prod }}
     needs:
       - terraform
       - lint
@@ -163,8 +167,7 @@ jobs:
   deploy-stage:
     name: ☁️  deploy stage
     # only run on main, or when the auto-deploy label is set
-    if: ${{ github.event_name != 'pull_request'
-      || contains(github.event.pull_request.labels.*.name, 'auto-deploy') }}
+    if: ${{ inputs.stage }}
     needs:
       - release
     uses: ./.github/workflows/deploy.yml
@@ -175,7 +178,7 @@ jobs:
       service: ${{ inputs.service }}
 
   deploy-prod:
-    if: github.event_name != 'pull_request' && inputs.prod
+    if: ${{ inputs.prod }}
     name: ☁️  deploy prod
     needs:
       - release

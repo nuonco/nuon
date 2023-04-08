@@ -72,11 +72,26 @@ jobs:
         id: git_ref
         run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+  check_labels:
+    name: Check for labels
+    runs-on: ubuntu-latest
+    needs:
+      - tag
+    outputs:
+      auto_deploy: ${{ steps.auto_deploy.outputs.label_check == 'success' }}
+    steps:
+      - uses: docker://agilepathway/pull-request-label-checker:latest
+        id: auto_deploy
+        with:
+          all_of: auto-deploy
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+
   services:
     # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
     name: 🚢
     needs:
       - changes
+      - check_labels
       - tag
     if: ${{ needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     strategy:
@@ -85,6 +100,7 @@ jobs:
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
-      tag: ${{ needs.tag.outputs.git_ref }}
       prod: false
+      stage: ${{ github.event_name != 'pull_request' || needs.check_labels.outputs.auto_deploy == 'true'}}
+      tag: ${{ needs.tag.outputs.git_ref }}
     secrets: inherit
