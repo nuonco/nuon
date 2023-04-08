@@ -65,7 +65,7 @@ module "mono" {
   source = "./modules/repository"
 
   name        = "mono"
-  description = "Mono repo for all go code at Nuon."
+  description = "Mono repo for all service code at Nuon."
 
   topics     = ["terraform", "helm", "go"]
   enable_ecr = false
@@ -80,6 +80,18 @@ module "mono" {
     "workers-installs",
     "workers-instances",
     "workers-orgs",
+  ]
+
+  required_checks = [
+    // lints + tests + release + deploys for services and lib/infra.
+    "services",
+    "pkg",
+    "infra",
+
+    // linting and various hygiene checks
+    "pull_request",
+    "branch",
+    "lint_other",
   ]
 }
 
