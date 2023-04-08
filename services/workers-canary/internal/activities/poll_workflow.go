@@ -37,7 +37,7 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 	switch [2]string{req.Namespace, req.WorkflowName} {
 	case [2]string{"orgs", "Signup"}:
 		var wkflowResp *orgsv1.SignupResponse
-		if wkflowErr = wkflow.Get(ctx, &resp); wkflowErr != nil {
+		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
 		resp, wkflowErr = anypb.New(wkflowResp)
@@ -46,7 +46,7 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 		}
 	case [2]string{"apps", "Provision"}:
 		var wkflowResp *appsv1.ProvisionResponse
-		if wkflowErr = wkflow.Get(ctx, &resp); wkflowErr != nil {
+		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
 		resp, wkflowErr = anypb.New(wkflowResp)
@@ -55,7 +55,7 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 		}
 	case [2]string{"installs", "Provision"}:
 		var wkflowResp *installsv1.ProvisionResponse
-		if wkflowErr = wkflow.Get(ctx, &resp); wkflowErr != nil {
+		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
 		resp, wkflowErr = anypb.New(wkflowResp)
@@ -64,7 +64,7 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 		}
 	case [2]string{"deployments", "Start"}:
 		var wkflowResp *deploymentsv1.StartResponse
-		if wkflowErr = wkflow.Get(ctx, &resp); wkflowErr != nil {
+		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
 		resp, wkflowErr = anypb.New(wkflowResp)
