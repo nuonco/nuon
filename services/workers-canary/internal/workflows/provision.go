@@ -5,6 +5,7 @@ import (
 
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	"go.temporal.io/sdk/workflow"
 )
@@ -36,10 +37,10 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 			"app",
 			w.provisionApp,
 		},
-		//{
-		//"install",
-		//w.provisionInstall,
-		//},
+		{
+			"install",
+			w.provisionInstall,
+		},
 		//{
 		//"docker-pull-deployment",
 		//w.provisionDeployment,
@@ -105,29 +106,35 @@ func (w *wkflow) provisionApp(ctx workflow.Context, req *canaryv1.ProvisionReque
 	return pollResp.Step, nil
 }
 
-//nolint:all
 func (w *wkflow) provisionInstall(ctx workflow.Context, req *canaryv1.ProvisionRequest) (*canaryv1.Step, error) {
-	// TODO(jm): build out actual install request
-	return nil, fmt.Errorf("not implemented")
-	//l := workflow.GetLogger(ctx)
-	//wkflowReq := &installsv1.ProvisionRequest{
-	//OrgId:	   canaryID,
-	//AppId:	   canaryID,
-	//InstallId: canaryID,
-	//}
+	l := workflow.GetLogger(ctx)
+	wkflowReq := &installsv1.ProvisionRequest{
+		OrgId:     req.CanaryId,
+		AppId:     req.CanaryId,
+		InstallId: req.CanaryId,
+		AccountSettings: &installsv1.AccountSettings{
+			Region:       "us-west-2",
+			AwsAccountId: "548377525120",
+			AwsRoleArn:   w.cfg.InstallIamRoleArn,
+		},
+		SandboxSettings: &installsv1.SandboxSettings{
+			Name:    "aws-eks",
+			Version: "0.10.4",
+		},
+	}
 
-	//l.Info("provisioning app", "request", wkflowReq)
-	//workflowID, err := w.startWorkflow(ctx, "apps", "Provision", wkflowReq)
-	//if err != nil {
-	//return nil, fmt.Errorf("unable to start workflow: %w", err)
-	//}
+	l.Info("provisioning install", "request", wkflowReq)
+	workflowID, err := w.startWorkflow(ctx, "installs", "Provision", wkflowReq)
+	if err != nil {
+		return nil, fmt.Errorf("unable to start workflow: %w", err)
+	}
 
-	//pollResp, err := w.pollWorkflow(ctx, "apps", "Provision", workflowID)
-	//if err != nil {
-	//return nil, fmt.Errorf("unable to get finished workflow: %w", err)
-	//}
-	//l.Info("successfully got app response", "response", pollResp)
-	//return nil, nil
+	pollResp, err := w.pollWorkflow(ctx, "installs", "Provision", workflowID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get finished workflow: %w", err)
+	}
+	l.Info("successfully got install response", "response", pollResp)
+	return pollResp.Step, nil
 }
 
 //nolint:all

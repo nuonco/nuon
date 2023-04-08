@@ -5,6 +5,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	"go.temporal.io/sdk/workflow"
 )
@@ -33,13 +34,9 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 			w.deprovisionOrg,
 		},
 		{
-			"app",
-			w.deprovisionApp,
+			"install",
+			w.deprovisionInstall,
 		},
-		//{
-		//"install",
-		//w.deprovisionInstall,
-		//},
 		//{
 		//"docker-pull-deployment",
 		//w.deprovisionDeployment,
@@ -84,38 +81,33 @@ func (w *wkflow) deprovisionOrg(ctx workflow.Context, canaryReq *canaryv1.Deprov
 	return pollResp.Step, nil
 }
 
-func (w *wkflow) deprovisionApp(ctx workflow.Context, req *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
-	// TODO(jm): implement deprovision app workflow
-	return nil, fmt.Errorf("not implemented")
-}
-
-//nolint:all
 func (w *wkflow) deprovisionInstall(ctx workflow.Context, req *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
-	// TODO(jm): build out actual install request
-	return nil, fmt.Errorf("not implemented")
-	//l := workflow.GetLogger(ctx)
-	//wkflowReq := &installsv1.DeprovisionRequest{
-	//OrgId:	   canaryID,
-	//AppId:	   canaryID,
-	//InstallId: canaryID,
-	//}
+	l := workflow.GetLogger(ctx)
+	wkflowReq := &installsv1.DeprovisionRequest{
+		OrgId:     req.CanaryId,
+		AppId:     req.CanaryId,
+		InstallId: req.CanaryId,
+		AccountSettings: &installsv1.AccountSettings{
+			Region:       "us-west-2",
+			AwsAccountId: "548377525120",
+			AwsRoleArn:   w.cfg.InstallIamRoleArn,
+		},
+		SandboxSettings: &installsv1.SandboxSettings{
+			Name:    "aws-eks",
+			Version: "0.10.4",
+		},
+	}
 
-	//l.Info("provisioning app", "request", wkflowReq)
-	//workflowID, err := w.startWorkflow(ctx, "apps", "Deprovision", wkflowReq)
-	//if err != nil {
-	//return nil, fmt.Errorf("unable to start workflow: %w", err)
-	//}
+	l.Info("deprovisioning install", "request", wkflowReq)
+	workflowID, err := w.startWorkflow(ctx, "installs", "Deprovision", wkflowReq)
+	if err != nil {
+		return nil, fmt.Errorf("unable to start workflow: %w", err)
+	}
 
-	//pollResp, err := w.pollWorkflow(ctx, "apps", "Deprovision", workflowID)
-	//if err != nil {
-	//return nil, fmt.Errorf("unable to get finished workflow: %w", err)
-	//}
-	//l.Info("successfully got app response", "response", pollResp)
-	//return nil, nil
-}
-
-//nolint:all
-func (w *wkflow) deprovisionDeployment(ctx workflow.Context, req *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
-	// TODO(jm): build out actual deployment request
-	return nil, fmt.Errorf("not implemented")
+	pollResp, err := w.pollWorkflow(ctx, "installs", "Provision", workflowID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get finished workflow: %w", err)
+	}
+	l.Info("successfully got install response", "response", pollResp)
+	return pollResp.Step, nil
 }

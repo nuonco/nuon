@@ -14,9 +14,9 @@ func init() {
 type Config struct {
 	worker.Config `config:",squash"`
 
-	SlackWebhookURL      string `config:"slack_webhook_url"`
+	SlackWebhookURL      string `config:"slack_webhook_url" validate:"required"`
 	DisableNotifications bool   `config:"disable_notifications"`
-	InstallIamRoleArn    string `config:"install_iam_role_arn"`
+	InstallIamRoleArn    string `config:"install_iam_role_arn" validate:"required"`
 }
 
 func (c Config) Validate() error {
