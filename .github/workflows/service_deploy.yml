@@ -91,6 +91,7 @@ jobs:
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --push \
             +deploy \
             --repos=nuon=${{ env.TFO_NUON_CHARTS }} \
             --env=${{ inputs.env }} \
