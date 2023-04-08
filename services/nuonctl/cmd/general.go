@@ -61,10 +61,18 @@ func (c *cli) registerGeneral(ctx context.Context, rootCmd *cobra.Command) error
 	})
 
 	generalCmd.AddCommand(&cobra.Command{
-		Use:   "trigger-canary",
-		Short: "trigger a canary workflow",
+		Use:   "provision-canary",
+		Short: "provision a canary workflow",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmds.TriggerCanary(ctx)
+			return cmds.ProvisionCanary(ctx)
+		},
+	})
+
+	generalCmd.AddCommand(&cobra.Command{
+		Use:   "deprovision-canary",
+		Short: "deprovision a canary workflow",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmds.DeprovisionCanary(ctx)
 		},
 	})
 	return nil

@@ -55,3 +55,47 @@ func Test_repo_TriggerCanaryProvision(t *testing.T) {
 		})
 	}
 }
+
+func Test_repo_TriggerCanaryDeprovision(t *testing.T) {
+	errDeprovision := fmt.Errorf("error deprovision")
+	req := generics.GetFakeObj[*canaryv1.DeprovisionRequest]()
+	tests := map[string]struct {
+		client      func(*testing.T, *gomock.Controller) temporal.Client
+		errExpected error
+	}{
+		"happy path": {
+			client: func(t *testing.T, mockCtl *gomock.Controller) temporal.Client {
+				client := temporal.NewMockClient(mockCtl)
+				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "canary", gomock.Any(), "Deprovision", gomock.Any()).Return(nil, nil)
+				return client
+			},
+		},
+		"error": {
+			client: func(t *testing.T, mockCtl *gomock.Controller) temporal.Client {
+				client := temporal.NewMockClient(mockCtl)
+				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "canary", gomock.Any(), "Deprovision", req).Return(nil, errDeprovision)
+				return client
+			},
+			errExpected: errDeprovision,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			mockCtl := gomock.NewController(t)
+
+			client := test.client(t, mockCtl)
+			repo := &repo{
+				Client: client,
+			}
+
+			err := repo.TriggerCanaryDeprovision(ctx, req)
+			if test.errExpected != nil {
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
