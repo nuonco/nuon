@@ -108,12 +108,12 @@ jobs:
     secrets: inherit
 
   update_status:
-    name: ✅ service checks
+    name: update status
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
-          name: services
+          name: services ✅
           status: success

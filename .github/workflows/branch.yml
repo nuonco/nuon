@@ -1,4 +1,4 @@
-name: "branch checks"
+name: branch checks
 on: pull_request
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
           reactions: "eyes"
 
   update_status:
-    name: ✅ branch checks
+    name: update status
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     needs:
@@ -37,5 +37,5 @@ jobs:
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
-          name: branch
+          name: branch ✅
           status: success
