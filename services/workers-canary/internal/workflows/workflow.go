@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -36,6 +38,9 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, namespace, name string, msg
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		ScheduleToCloseTimeout: defaultStartActivityTimeout * defaultMaxActivityRetries,
 		StartToCloseTimeout:    defaultStartActivityTimeout,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: defaultMaxActivityRetries,
+		},
 	})
 
 	req, err := anypb.New(msg)
@@ -51,7 +56,8 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, namespace, name string, msg
 	var resp activitiesv1.StartWorkflowResponse
 	fut := workflow.ExecuteActivity(ctx, "StartWorkflow", startReq)
 	if err := fut.Get(ctx, &resp); err != nil {
-		return "", fmt.Errorf("unable to get start workflow response: %w", err)
+		l.Info("unable to start workflow", zap.Error(err))
+		return "", fmt.Errorf("unable to start workflow: %w", err)
 	}
 	l.Info("successfully started %s.%s workflow", namespace, name)
 
@@ -71,9 +77,13 @@ func (w *wkflow) pollWorkflow(ctx workflow.Context, namespace, name, workflowID 
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		ScheduleToCloseTimeout: defaultPollActivityTimeout * defaultMaxActivityRetries,
 		StartToCloseTimeout:    defaultPollActivityTimeout,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: defaultMaxActivityRetries,
+		},
 	})
 	fut := workflow.ExecuteActivity(ctx, "PollWorkflow", pollReq)
 	if err := fut.Get(ctx, &resp); err != nil {
+		l.Info("unable to get poll workflow response", zap.Error(err))
 		return nil, fmt.Errorf("unable to get poll workflow response: %w", err)
 	}
 	l.Info("successfully got %s.%s workflow response", namespace, name)
