@@ -6,8 +6,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
-	sharedactivitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1"
-	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -28,13 +26,7 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 		return resp, err
 	}
 
-	if err := sharedactivities.SendNotification(ctx, &sharedactivitiesv1.SendNotificationRequest{
-		SlackWebhookUrl: w.cfg.SlackWebhookURL,
-		Notification:    fmt.Sprintf("🐦 deprovisioning canary `%s`", req.CanaryId),
-	}); err != nil {
-		return resp, fmt.Errorf("unable to send notification: %w", err)
-	}
-
+	w.sendNotification(ctx, notificationTypeDeprovisionStart, req.CanaryId, nil)
 	steps := []deprovisionStep{
 		{
 			"org",
@@ -57,13 +49,16 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 	for _, step := range steps {
 		stepResp, err := step.fn(ctx, req)
 		if err != nil {
-			return resp, fmt.Errorf("unable to deprovision %s %w", step.name, err)
+			err = fmt.Errorf("unable to provision %s: %w", step.name, err)
+			w.sendNotification(ctx, notificationTypeDeprovisionError, req.CanaryId, err)
+			return resp, err
 		}
 
 		resp.Steps = append(resp.Steps, stepResp)
 		l.Info("successfully executed %s step", step.name)
 	}
 
+	w.sendNotification(ctx, notificationTypeDeprovisionSuccess, req.CanaryId, nil)
 	return resp, nil
 }
 

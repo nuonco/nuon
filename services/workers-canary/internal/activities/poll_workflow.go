@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1/activities/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
-	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 

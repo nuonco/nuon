@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
 	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1/activities/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
-	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
 	tclient "go.temporal.io/sdk/client"
 )
 

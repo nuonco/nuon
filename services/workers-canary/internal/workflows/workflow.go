@@ -14,16 +14,11 @@ import (
 )
 
 const (
-	defaultActivityTimeout = time.Second * 5
-	defaultRegion          = "us-west-2"
+	defaultStartActivityTimeout = time.Second * 5
+	defaultPollActivityTimeout  = time.Minute * 30
+	defaultMaxActivityRetries   = 5
+	defaultRegion               = "us-west-2"
 )
-
-func configureActivityOptions(ctx workflow.Context) workflow.Context {
-	activityOpts := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: defaultActivityTimeout,
-	}
-	return workflow.WithActivityOptions(ctx, activityOpts)
-}
 
 type wkflow struct {
 	cfg workers.Config
@@ -37,7 +32,12 @@ func New(v *validator.Validate, cfg workers.Config) (*wkflow, error) {
 
 func (w *wkflow) startWorkflow(ctx workflow.Context, namespace, name string, msg protoreflect.ProtoMessage) (string, error) {
 	l := workflow.GetLogger(ctx)
-	ctx = configureActivityOptions(ctx)
+
+	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
+		ScheduleToCloseTimeout: defaultStartActivityTimeout * defaultMaxActivityRetries,
+		StartToCloseTimeout:    defaultStartActivityTimeout,
+	})
+
 	req, err := anypb.New(msg)
 	if err != nil {
 		return "", fmt.Errorf("unable to create any request: %w", err)
@@ -68,12 +68,14 @@ func (w *wkflow) pollWorkflow(ctx workflow.Context, namespace, name, workflowID 
 	}
 
 	var resp activitiesv1.PollWorkflowResponse
-	ctx = configureActivityOptions(ctx)
+	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
+		ScheduleToCloseTimeout: defaultPollActivityTimeout * defaultMaxActivityRetries,
+		StartToCloseTimeout:    defaultPollActivityTimeout,
+	})
 	fut := workflow.ExecuteActivity(ctx, "PollWorkflow", pollReq)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return nil, fmt.Errorf("unable to get poll workflow response: %w", err)
 	}
 	l.Info("successfully got %s.%s workflow response", namespace, name)
-
 	return &resp, nil
 }

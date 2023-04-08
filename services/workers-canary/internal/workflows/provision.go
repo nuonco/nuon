@@ -6,8 +6,6 @@ import (
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
-	sharedactivitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1"
-	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -28,22 +26,16 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 		return resp, err
 	}
 
-	if err := sharedactivities.SendNotification(ctx, &sharedactivitiesv1.SendNotificationRequest{
-		SlackWebhookUrl: w.cfg.SlackWebhookURL,
-		Notification:    fmt.Sprintf("🐦 provisioning canary `%s`", req.CanaryId),
-	}); err != nil {
-		return resp, fmt.Errorf("unable to send notification: %w", err)
-	}
-
+	w.sendNotification(ctx, notificationTypeProvisionStart, req.CanaryId, nil)
 	steps := []provisionStep{
 		{
 			"org",
 			w.provisionOrg,
 		},
-		//{
-		//"app",
-		//w.provisionApp,
-		//},
+		{
+			"app",
+			w.provisionApp,
+		},
 		//{
 		//"install",
 		//w.provisionInstall,
@@ -57,13 +49,16 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	for _, step := range steps {
 		stepResp, err := step.fn(ctx, req)
 		if err != nil {
-			return resp, fmt.Errorf("unable to provision %s %w", step.name, err)
+			err = fmt.Errorf("unable to provision %s: %w", step.name, err)
+			w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, err)
+			return resp, err
 		}
 
 		resp.Steps = append(resp.Steps, stepResp)
 		l.Info("successfully executed %s step", step.name)
 	}
 
+	w.sendNotification(ctx, notificationTypeProvisionSuccess, req.CanaryId, nil)
 	return resp, nil
 }
 
@@ -89,7 +84,6 @@ func (w *wkflow) provisionOrg(ctx workflow.Context, req *canaryv1.ProvisionReque
 	return pollResp.Step, nil
 }
 
-//nolint:all
 func (w *wkflow) provisionApp(ctx workflow.Context, req *canaryv1.ProvisionRequest) (*canaryv1.Step, error) {
 	l := workflow.GetLogger(ctx)
 	wkflowReq := &appsv1.ProvisionRequest{
