@@ -106,3 +106,14 @@ jobs:
       stage: ${{ github.event_name != 'pull_request' || needs.check_labels.outputs.auto_deploy == 'true'}}
       tag: ${{ needs.tag.outputs.git_ref }}
     secrets: inherit
+
+  update_status:
+    name: ✅ service checks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update status
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: services
+          status: success
