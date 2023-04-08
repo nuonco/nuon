@@ -82,9 +82,11 @@ jobs:
     steps:
       - uses: docker://agilepathway/pull-request-label-checker:latest
         id: auto_deploy
+        if: ${{ github.event_name == 'pull_request' }}
         with:
           all_of: auto-deploy
           repo_token: ${{ secrets.GITHUB_TOKEN }}
+          allow_failure: true
 
   services:
     # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
