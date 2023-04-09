@@ -70,6 +70,7 @@ module "mono" {
   topics     = ["terraform", "helm", "go"]
   enable_ecr = false
   extra_ecr_repos = [
+    //services
     "api",
     "api-gateway",
     "orgs-api",
@@ -80,6 +81,9 @@ module "mono" {
     "workers-installs",
     "workers-instances",
     "workers-orgs",
+
+    // infra projects
+    "infra-temporal",
   ]
 
   required_checks = [
