@@ -15,7 +15,7 @@ data "terraform_remote_state" "chart_common" {
 
 data "aws_ecr_repository" "api-gateway" {
   provider = aws.infra-shared-prod
-  name     = local.name
+  name     = "mono/${local.name}"
 }
 
 data "aws_route53_zone" "public" {
