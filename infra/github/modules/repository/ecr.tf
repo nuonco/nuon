@@ -47,7 +47,7 @@ module "extra-ecr-repos" {
   create_registry_replication_configuration = true
 
   repository_name                 = "${var.name}/${element(var.extra_ecr_repos, count.index)}"
-  repository_image_tag_mutability = "IMMUTABLE"
+  repository_image_tag_mutability = "MUTABLE"
   repository_encryption_type      = "KMS"
   repository_image_scan_on_push   = true
   repository_policy               = data.aws_iam_policy_document.ecr_policy.json
