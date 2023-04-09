@@ -14,6 +14,7 @@ permissions:
   packages: write
   pull-requests: write
   statuses: write
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -109,11 +110,15 @@ jobs:
 
   update_status:
     name: update status
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && always()
+    needs:
+      - services
     runs-on: ubuntu-latest
     steps:
+      - uses: martialonline/workflow-status@v3
+        id: check
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: services ✅
-          status: success
+          status: ${{steps.check.outputs.status}}
