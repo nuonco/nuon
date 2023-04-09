@@ -22,14 +22,14 @@ func Test_repo_TriggerInstallDeprovision(t *testing.T) {
 		"happy path": {
 			client: func(t *testing.T, mockCtl *gomock.Controller) temporal.Client {
 				client := temporal.NewMockClient(mockCtl)
-				client.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), "Deprovision", gomock.Any()).Return(nil, nil)
+				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), "Deprovision", gomock.Any()).Return(nil, nil)
 				return client
 			},
 		},
 		"error": {
 			client: func(t *testing.T, mockCtl *gomock.Controller) temporal.Client {
 				client := temporal.NewMockClient(mockCtl)
-				client.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), "Deprovision", req).Return(nil, errDeprovision)
+				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), "Deprovision", req).Return(nil, errDeprovision)
 				return client
 			},
 			errExpected: errDeprovision,
@@ -66,14 +66,14 @@ func Test_repo_TriggerInstallProvision(t *testing.T) {
 		"happy path": {
 			client: func(t *testing.T, mockCtl *gomock.Controller) temporal.Client {
 				client := temporal.NewMockClient(mockCtl)
-				client.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), "Provision", gomock.Any()).Return(nil, nil)
+				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), "Provision", gomock.Any()).Return(nil, nil)
 				return client
 			},
 		},
 		"error": {
 			client: func(t *testing.T, mockCtl *gomock.Controller) temporal.Client {
 				client := temporal.NewMockClient(mockCtl)
-				client.EXPECT().ExecuteWorkflow(gomock.Any(), gomock.Any(), "Provision", req).Return(nil, errProvision)
+				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), "Provision", req).Return(nil, errProvision)
 				return client
 			},
 			errExpected: errProvision,

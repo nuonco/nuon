@@ -55,14 +55,22 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 		Use:   "reprovision",
 		Short: "reprovision an install by re-triggering workflow with it's original request",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return installs.Reprovision(ctx, args[0])
+			return installs.Reprovision(ctx, installID)
 		},
 	})
 	installsCmd.AddCommand(&cobra.Command{
 		Use:   "deprovision",
 		Short: "deprovision an install by submitting deprovision with it's original request",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return installs.Deprovision(ctx, args[0])
+			return installs.Deprovision(ctx, installID)
+		},
+	})
+
+	installsCmd.AddCommand(&cobra.Command{
+		Use:   "deprovision-bulk",
+		Short: "deprovision all installs that are passed in",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return installs.DeprovisionBulk(ctx, args)
 		},
 	})
 	return nil
