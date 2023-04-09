@@ -20,7 +20,7 @@ func (r *repo) TriggerInstallProvision(ctx context.Context, req *installsv1.Prov
 		},
 	}
 
-	_, err := r.Client.ExecuteWorkflow(ctx, opts, "Provision", req)
+	_, err := r.Client.ExecuteWorkflowInNamespace(ctx, "installs", opts, "Provision", req)
 	if err != nil {
 		return fmt.Errorf("unable to provision install: %w", err)
 	}
@@ -39,7 +39,7 @@ func (r *repo) TriggerInstallDeprovision(ctx context.Context, req *installsv1.De
 		},
 	}
 
-	_, err := r.Client.ExecuteWorkflow(ctx, opts, "Deprovision", req)
+	_, err := r.Client.ExecuteWorkflowInNamespace(ctx, "installs", opts, "Deprovision", req)
 	if err != nil {
 		return fmt.Errorf("unable to deprovision install: %w", err)
 	}
