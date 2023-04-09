@@ -44,6 +44,15 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 		if wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
+	case [2]string{"orgs", "Teardown"}:
+		var wkflowResp *orgsv1.TeardownResponse
+		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
+			return nil, fmt.Errorf("unable to get response: %w", err)
+		}
+		resp, wkflowErr = anypb.New(wkflowResp)
+		if wkflowErr != nil {
+			return nil, fmt.Errorf("unable to get response: %w", err)
+		}
 	case [2]string{"apps", "Provision"}:
 		var wkflowResp *appsv1.ProvisionResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
@@ -55,6 +64,15 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 		}
 	case [2]string{"installs", "Provision"}:
 		var wkflowResp *installsv1.ProvisionResponse
+		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
+			return nil, fmt.Errorf("unable to get response: %w", err)
+		}
+		resp, wkflowErr = anypb.New(wkflowResp)
+		if wkflowErr != nil {
+			return nil, fmt.Errorf("unable to get response: %w", err)
+		}
+	case [2]string{"installs", "Deprovision"}:
+		var wkflowResp *installsv1.DeprovisionResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", err)
 		}
