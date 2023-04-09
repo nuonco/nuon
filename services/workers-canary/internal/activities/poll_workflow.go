@@ -38,68 +38,63 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 	case [2]string{"orgs", "Signup"}:
 		var wkflowResp *orgsv1.SignupResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
 		resp, wkflowErr = anypb.New(wkflowResp)
 		if wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
-	case [2]string{"orgs", "Teardown"}:
-		var wkflowResp *orgsv1.TeardownResponse
-		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
-		}
-		resp, wkflowErr = anypb.New(wkflowResp)
-		if wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
-		}
+	//case [2]string{"orgs", "Teardown"}:
+	//var wkflowResp *orgsv1.TeardownResponse
+	//if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
+	//return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
+	//}
+	//resp, wkflowErr = anypb.New(wkflowResp)
+	//if wkflowErr != nil {
+	//return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
+	//}
 	case [2]string{"apps", "Provision"}:
 		var wkflowResp *appsv1.ProvisionResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
 		resp, wkflowErr = anypb.New(wkflowResp)
 		if wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
 	case [2]string{"installs", "Provision"}:
 		var wkflowResp *installsv1.ProvisionResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
 		resp, wkflowErr = anypb.New(wkflowResp)
 		if wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
 	case [2]string{"installs", "Deprovision"}:
 		var wkflowResp *installsv1.DeprovisionResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
 		resp, wkflowErr = anypb.New(wkflowResp)
 		if wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
 	case [2]string{"deployments", "Start"}:
 		var wkflowResp *deploymentsv1.StartResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
 		resp, wkflowErr = anypb.New(wkflowResp)
 		if wkflowErr != nil {
-			return nil, fmt.Errorf("unable to get response: %w", err)
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
-	}
-
-	any, err := anypb.New(resp)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create any object from response: %w", err)
 	}
 
 	return &activitiesv1.PollWorkflowResponse{
 		Step: &canaryv1.Step{
 			// TODO(jm): fill this in
 		},
-		Response: any,
+		Response: resp,
 	}, nil
 }

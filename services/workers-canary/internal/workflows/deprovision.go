@@ -44,7 +44,7 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 	for _, step := range steps {
 		stepResp, err := step.fn(ctx, req)
 		if err != nil {
-			err = fmt.Errorf("unable to provision %s: %w", step.name, err)
+			err = fmt.Errorf("unable to deprovision %s: %w", step.name, err)
 			w.sendNotification(ctx, notificationTypeDeprovisionError, req.CanaryId, err)
 			return resp, err
 		}
