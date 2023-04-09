@@ -27,7 +27,7 @@ provider "aws" {
   alias  = "canary"
 
   assume_role {
-    role_arn = "arn:aws:iam::${local.accounts.infra-shared-prod.id}:role/terraform"
+    role_arn = "arn:aws:iam::${local.accounts.canary.id}:role/terraform"
   }
 
   default_tags {
