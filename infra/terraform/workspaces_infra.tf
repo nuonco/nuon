@@ -11,6 +11,19 @@ module "apks" {
   allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
 }
 
+module "artifacts" {
+  source = "./modules/workspace"
+
+  name          = "artifacts"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = false
+  dir           = "infra/artifacts"
+  variable_sets = ["aws-environment-credentials"]
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  allowed_remote_state_workspaces = []
+}
+
 module "aws" {
   source = "./modules/workspace"
 

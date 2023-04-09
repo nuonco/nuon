@@ -14,7 +14,7 @@ locals {
     terraform   = terraform.workspace
   }
 
-  vars                   = yamldecode(data.utils_deep_merge_yaml.vars.output)
+  vars = yamldecode(data.utils_deep_merge_yaml.vars.output)
 }
 
 data "utils_deep_merge_yaml" "vars" {
