@@ -57,7 +57,7 @@ resource "helm_release" "twingate" {
 
   set {
     name  = "connector.network"
-    value = "nuon"
+    value = "nuonco"
   }
 
   set_sensitive {
