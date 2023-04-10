@@ -42,6 +42,7 @@ export class SSO extends TerraformStack {
         managedPolicyArns: [
           "arn:aws:iam::aws:policy/PowerUserAccess",
           "arn:aws:iam::aws:policy/AWSBillingReadOnlyAccess",
+          "arn:aws:iam::aws:policy/AdministratorAccess",
         ],
         name: "NuonPowerUser",
         sessionDuration: "PT12H",

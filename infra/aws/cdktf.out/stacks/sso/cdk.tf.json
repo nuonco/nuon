@@ -71,7 +71,7 @@
   "output": {
     "sso-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-04-10T18:18:14.563Z"
+      "value": "2023-04-10T19:01:56.740Z"
     }
   },
   "provider": {
@@ -422,6 +422,17 @@
         "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
         "managed_policy_arn": "arn:aws:iam::aws:policy/AWSBillingReadOnlyAccess",
         "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}"
+      },
+      "nuonpoweruser-administratoraccess": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-administratoraccess",
+            "uniqueId": "nuonpoweruser-administratoraccess"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "managed_policy_arn": "arn:aws:iam::aws:policy/AdministratorAccess",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}"
       },
       "nuonpoweruser-awsbillingreadonlyaccess": {
         "//": {
