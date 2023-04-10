@@ -140,7 +140,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-04-10T19:01:56.715Z"
+      "value": "2023-04-10T19:32:22.390Z"
     }
   },
   "provider": {
