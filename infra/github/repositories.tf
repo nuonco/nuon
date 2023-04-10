@@ -81,9 +81,6 @@ module "mono" {
     "workers-installs",
     "workers-instances",
     "workers-orgs",
-
-    // infra projects
-    "infra-temporal",
   ]
 
   required_checks = [
