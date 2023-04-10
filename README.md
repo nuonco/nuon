@@ -1,8 +1,8 @@
 # Mono
 
-This is Nuon's mono repo. Currently it contains all of our go code.
+This is Nuon's mono repo. Currently it contains all of our go code plus the API Gateway code.
 
-## Getting started
+## Getting started and filesystem organization
 
 You should be able to work with this repo just like any go repository. Before getting started, it's important to take note of the directory structure:
 
@@ -33,3 +33,9 @@ $ go generate ./...
 ```
 
 This will download dependencies, and generate all code needed to execute locally. From here, you can work with any pkg or service directly.
+
+# Basic Development Workflow
+
+Generally, use `earthly ls` to see targets defined for any given `Earthfile`. We typically have `+test`, `+lint`, `+deploy` but these vary depending on the needs of a given sevice/project.
+
+As new code is pulled in from git, running `go generate -v ./...` from the root of the monorepo will be necessary periodically if the changes affect generated types. You may also need to restart your lsp (language server protocol) server if your IDE functionality gets confused about the local filesystem state.
