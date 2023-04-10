@@ -19,23 +19,3 @@ resource "aws_route53_record" "www" {
     "proxy-ssl.webflow.com"
   ]
 }
-
-resource "aws_route53_record" "blog" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "blog"
-  type    = "CNAME"
-  ttl     = 300
-  records = [
-    "nuon-2.ghost.io"
-  ]
-}
-
-resource "aws_route53_record" "updates" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "updates"
-  type    = "CNAME"
-  ttl     = 300
-  records = [
-    "customer.launchnotes.net"
-  ]
-}
