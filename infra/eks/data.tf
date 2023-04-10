@@ -1,3 +1,3 @@
 data "twingate_groups" "engineers" {
-  name = "Engineers"
+  name = "engineers"
 }
