@@ -24,7 +24,7 @@ You can use the GRPC services on staging if you're connecting over Twingate.
 
 
 ## Usage
- 
+
 Now that you've installed the deps & configured the `.env` you can start the gateway with `npm start` or run it in dev mode using `npm run dev`. See [this guide](https://www.notion.so/nuon/Use-GraphQL-6a882d61c1a24e45bb5306158f6174f1) on how to authenticate & interact with the GQL gateway.
 
 ## Updating buf dependencies
@@ -41,3 +41,4 @@ When changes to our protobufs happen we'll need to manually update the dependenc
 ## Updating GQL types
 
 Whenever the GQL schema changes you'll need to regenerate the types to Typescript. You can do this by running `npm run generate-gql-types` and committing the generated file.
+
