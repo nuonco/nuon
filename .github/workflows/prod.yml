@@ -41,6 +41,7 @@ jobs:
       matrix:
         service:
           - api
+          - api-gateway
           - orgs-api
           - workers-apps
           - workers-canary
