@@ -27,7 +27,7 @@ export class SSO extends TerraformStack {
       {
         description:
           "NuonAdmin provides administrator access within an account",
-        groupName: "AWS Admins",
+        groupName: "engineers-root",
         managedPolicyArns: [
           "arn:aws:iam::aws:policy/AdministratorAccess",
           "arn:aws:iam::aws:policy/AWSBillingReadOnlyAccess",
@@ -38,12 +38,8 @@ export class SSO extends TerraformStack {
       {
         description:
           "NuonPowerUser provides full access to AWS services and resources, but does not allow management of Users and groups.",
-        groupName: "Engineers",
+        groupName: "engineers",
         managedPolicyArns: [
-          // TODO(jm): eventually, we won't allow every user to have admin, so when we decide to do that at say 10/15
-          // engineers we can simply remove AdministratorAccess here.
-          "arn:aws:iam::aws:policy/AdministratorAccess",
-
           "arn:aws:iam::aws:policy/PowerUserAccess",
           "arn:aws:iam::aws:policy/AWSBillingReadOnlyAccess",
         ],

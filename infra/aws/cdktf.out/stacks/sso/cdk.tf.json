@@ -24,7 +24,7 @@
         "alternate_identifier": {
           "unique_attribute": {
             "attribute_path": "DisplayName",
-            "attribute_value": "AWS Admins"
+            "attribute_value": "engineers-root"
           }
         },
         "identity_store_id": "${element(data.aws_ssoadmin_instances.this.identity_store_ids, 0)}"
@@ -39,7 +39,7 @@
         "alternate_identifier": {
           "unique_attribute": {
             "attribute_path": "DisplayName",
-            "attribute_value": "Engineers"
+            "attribute_value": "engineers"
           }
         },
         "identity_store_id": "${element(data.aws_ssoadmin_instances.this.identity_store_ids, 0)}"
@@ -71,7 +71,7 @@
   "output": {
     "sso-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-04-07T21:54:29.386Z"
+      "value": "2023-04-10T18:18:14.563Z"
     }
   },
   "provider": {
@@ -422,17 +422,6 @@
         "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
         "managed_policy_arn": "arn:aws:iam::aws:policy/AWSBillingReadOnlyAccess",
         "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}"
-      },
-      "nuonpoweruser-administratoraccess": {
-        "//": {
-          "metadata": {
-            "path": "sso/nuonpoweruser-administratoraccess",
-            "uniqueId": "nuonpoweruser-administratoraccess"
-          }
-        },
-        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
-        "managed_policy_arn": "arn:aws:iam::aws:policy/AdministratorAccess",
-        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}"
       },
       "nuonpoweruser-awsbillingreadonlyaccess": {
         "//": {

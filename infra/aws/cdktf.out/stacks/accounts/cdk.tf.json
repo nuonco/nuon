@@ -63,7 +63,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-04-07T21:54:29.426Z"
+      "value": "2023-04-10T18:18:14.605Z"
     },
     "canary-gh-oidc-provider": {
       "description": "The Github OIDC provider for the canary account",
