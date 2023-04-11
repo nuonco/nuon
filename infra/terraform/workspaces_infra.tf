@@ -11,10 +11,10 @@ module "apks" {
   allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
 }
 
-module "artifacts" {
+module "infra-artifacts" {
   source = "./modules/workspace"
 
-  name          = "artifacts"
+  name          = "infra-artifacts"
   repo          = "powertoolsdev/mono"
   auto_apply    = false
   dir           = "infra/artifacts"
