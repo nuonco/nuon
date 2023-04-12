@@ -115,6 +115,20 @@ module "infra-datadog-orgs-stage" {
   }
 }
 
+module "infra-datadog-prod" {
+  source = "./modules/workspace"
+
+  name                            = "infra-datadog-prod"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/datadog"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  vars = {
+    env = "prod"
+  }
+}
+
 module "infra-datadog-stage" {
   source = "./modules/workspace"
 
