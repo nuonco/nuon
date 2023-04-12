@@ -183,3 +183,50 @@ func Test_ToUUIDs(t *testing.T) {
 		})
 	}
 }
+
+func TestToShortID(t *testing.T) {
+	for _, test := range validTests {
+		t.Run(test.s, func(t *testing.T) {
+			result, err := ToShortID(test.s)
+			assert.NoError(t, err)
+			assert.Equal(t, test.s, result)
+
+			result, err = ToShortID(test.u.String())
+			assert.NoError(t, err)
+			assert.Equal(t, test.s, result)
+		})
+	}
+}
+
+func TestToShortID_Errors(t *testing.T) {
+
+	tests := map[string]struct {
+		input       string
+		errExpected string
+	}{
+		"empty string": {
+			input:       "",
+			errExpected: "empty",
+		},
+		"wrong length": {
+			input:       "nope",
+			errExpected: "incorrect length",
+		},
+		"invalid shortid": {
+			input:       "!5wum892ok3t32mhreas0h26ba",
+			errExpected: "invalid",
+		},
+		"invalid uuid": {
+			input:       "!57c6ae2-be20-47bd-8ab8-cbc3428829bb",
+			errExpected: "invalid",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := ToShortID(test.input)
+			assert.ErrorContains(t, err, test.errExpected)
+			assert.Equal(t, "", result)
+		})
+	}
+}
