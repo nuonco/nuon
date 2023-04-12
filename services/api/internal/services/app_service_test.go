@@ -116,9 +116,12 @@ func TestAppService_GetOrgApps(t *testing.T) {
 func TestAppService_UpsertApp(t *testing.T) {
 	errUpsertApp := fmt.Errorf("error upserting app")
 	app := generics.GetFakeObj[*models.App]()
+	org := generics.GetFakeObj[*models.Org]()
+	org.ID = app.OrgID
 
 	tests := map[string]struct {
 		inputFn     func() models.AppInput
+		orgRepoFn   func(*gomock.Controller) *repos.MockOrgRepo
 		repoFn      func(*gomock.Controller) *repos.MockAppRepo
 		wkflowFn    func(*gomock.Controller) *workflows.MockAppWorkflowManager
 		errExpected error
@@ -127,7 +130,13 @@ func TestAppService_UpsertApp(t *testing.T) {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
 				inp.ID = nil
+				inp.OrgID = org.ID.String()
 				return inp
+			},
+			orgRepoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
+				repo := repos.NewMockOrgRepo(ctl)
+				repo.EXPECT().Get(gomock.Any(), app.OrgID).Return(org, nil)
+				return repo
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
@@ -144,7 +153,13 @@ func TestAppService_UpsertApp(t *testing.T) {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
 				inp.ID = generics.ToPtr(app.ID.String())
+				inp.OrgID = org.ID.String()
 				return inp
+			},
+			orgRepoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
+				repo := repos.NewMockOrgRepo(ctl)
+				repo.EXPECT().Get(gomock.Any(), app.OrgID).Return(org, nil)
+				return repo
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
@@ -158,11 +173,39 @@ func TestAppService_UpsertApp(t *testing.T) {
 				return mgr
 			},
 		},
+		"org not found": {
+			inputFn: func() models.AppInput {
+				inp := generics.GetFakeObj[models.AppInput]()
+				inp.ID = generics.ToPtr(app.ID.String())
+				inp.OrgID = org.ID.String()
+				return inp
+			},
+			orgRepoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
+				repo := repos.NewMockOrgRepo(ctl)
+				repo.EXPECT().Get(gomock.Any(), app.OrgID).Return(nil, errUpsertApp)
+				return repo
+			},
+			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
+				repo := repos.NewMockAppRepo(ctl)
+				return repo
+			},
+			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
+				mgr := workflows.NewMockAppWorkflowManager(ctl)
+				return mgr
+			},
+			errExpected: errUpsertApp,
+		},
 		"upsert not found": {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
 				inp.ID = generics.ToPtr(app.ID.String())
+				inp.OrgID = org.ID.String()
 				return inp
+			},
+			orgRepoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
+				repo := repos.NewMockOrgRepo(ctl)
+				repo.EXPECT().Get(gomock.Any(), app.OrgID).Return(org, nil)
+				return repo
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
@@ -178,7 +221,13 @@ func TestAppService_UpsertApp(t *testing.T) {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
 				inp.ID = nil
+				inp.OrgID = org.ID.String()
 				return inp
+			},
+			orgRepoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
+				repo := repos.NewMockOrgRepo(ctl)
+				repo.EXPECT().Get(gomock.Any(), app.OrgID).Return(org, nil)
+				return repo
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
@@ -202,6 +251,7 @@ func TestAppService_UpsertApp(t *testing.T) {
 			mgr := test.wkflowFn(mockCtl)
 			svc := &appService{
 				log:         zaptest.NewLogger(t),
+				orgRepo:     test.orgRepoFn(mockCtl),
 				repo:        repo,
 				workflowMgr: mgr,
 			}
