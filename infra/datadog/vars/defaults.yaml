@@ -1,3 +1,7 @@
 ---
 root_domain: nuon.cloud
 region: us-west-2
+chart:
+  version: "3.22.0"
+  repo: "https://helm.datadoghq.com"
+  name: datadog

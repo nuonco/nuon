@@ -87,17 +87,31 @@ module "ci-images" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
-module "infra-datadog-prod" {
+module "infra-datadog-orgs-prod" {
   source = "./modules/workspace"
 
-  name                            = "infra-datadog-prod"
+  name                            = "infra-datadog-orgs-prod"
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/datadog"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
   vars = {
-    env = "prod"
+    env = "orgs-prod"
+  }
+}
+
+module "infra-datadog-orgs-stage" {
+  source = "./modules/workspace"
+
+  name                            = "infra-datadog-orgs-stage"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/datadog"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  vars = {
+    env = "orgs-stage"
   }
 }
 

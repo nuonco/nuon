@@ -1,8 +1,6 @@
 locals {
   datadog = {
     value_file = "values/datadog.yaml"
-    # helm search repo datadog/datadog --versions to find latest versions
-    version = "3.22.0"
   }
 }
 
@@ -11,9 +9,9 @@ resource "helm_release" "datadog" {
   name             = "datadog-agent"
   create_namespace = true
 
-  repository = "https://helm.datadoghq.com"
-  chart      = "datadog"
-  version    = local.datadog.version
+  repository = local.vars.chart.repo
+  chart      = local.vars.chart.name
+  version    = local.vars.chart.version
 
   values = [
     file(local.datadog.value_file),
