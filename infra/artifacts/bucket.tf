@@ -1,6 +1,6 @@
 locals {
   org_id              = data.aws_organizations_organization.orgs.id
-  current_acct_id     = data.aws_caller_identity.current.account_id
+  account_id = local.accounts[local.aws_settings.account_name]
 }
 
 resource "aws_kms_key" "bucket" {
@@ -23,7 +23,7 @@ data "aws_iam_policy_document" "bucket_key_policy" {
     resources = ["*", ]
     principals {
       type        = "AWS"
-      identifiers = [local.current_acct_id, ]
+      identifiers = [local.account_id, ]
     }
   }
 
@@ -50,7 +50,7 @@ data "aws_iam_policy_document" "bucket_key_policy" {
     condition {
       test     = "StringEquals"
       variable = "kms:CallerAccount"
-      values   = [local.current_acct_id, ]
+      values   = [local.account_id ]
     }
   }
 
@@ -77,7 +77,7 @@ data "aws_iam_policy_document" "bucket_key_policy" {
     condition {
       test     = "StringEquals"
       variable = "aws:PrincipalOrgID"
-      values   = [data.aws_organizations_organization.orgs.id]
+      values   = [local.org_id]
     }
   }
 }

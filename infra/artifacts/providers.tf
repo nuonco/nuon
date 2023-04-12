@@ -4,22 +4,24 @@ locals {
     acct.name => acct.id
   }
 
-  tf_role_arn = "arn:aws:iam::${local.accounts[var.env]}:role/terraform"
-  account_name = "public"
+  aws_settings = {
+    region = "us-west-2"
+    account_name = "public"
+  }
 }
 
 # this is the root account that the credentials have permissions for.
 # use it to get list of accounts and pivot to the correct one
 provider "aws" {
-  region = local.vars.region
+  region = local.aws_settings.region
   alias  = "mgmt"
 }
 
 provider "aws" {
-  region = local.vars.region
+  region = local.aws_settings.region
 
   assume_role {
-    role_arn = "arn:aws:iam::${local.accounts[local.account_name]}:role/terraform"
+    role_arn = "arn:aws:iam::${local.accounts[local.aws_settings.account_name]}:role/terraform"
   }
 
   default_tags {

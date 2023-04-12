@@ -3,7 +3,9 @@ terraform {
 
   backend "remote" {
     organization = "launchpaddev"
-    workspace = "infra-artifacts"
+    workspaces {
+      name = "infra-artifacts"
+    }
   }
 
   required_providers {
