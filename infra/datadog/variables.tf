@@ -20,5 +20,10 @@ variable "env" {
 
 variable "datadog_api_key" {
   type        = string
-  description = "The datadog api key"
+  description = "The datadog api key - used by the agents."
+}
+
+variable "datadog_app_key" {
+  type        = string
+  description = "The datadog app key"
 }

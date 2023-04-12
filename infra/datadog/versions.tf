@@ -26,5 +26,8 @@ terraform {
       source  = "cloudposse/utils"
       version = ">= 0.17.23"
     }
+    datadog = {
+      source = "DataDog/datadog"
+    }
   }
 }

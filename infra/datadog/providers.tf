@@ -46,6 +46,12 @@ provider "aws" {
   }
 }
 
+provider "datadog" {
+  api_key = var.datadog_api_key
+  app_key = var.datadog_app_key
+  api_url = "https://api.us5.datadoghq.com/"
+}
+
 provider "helm" {
   experiments {
     // TODO(jm): figure out why the plan and apply phases are inconsistent
