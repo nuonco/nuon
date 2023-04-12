@@ -96,3 +96,22 @@ func ParseStrings(strs ...string) ([]string, error) {
 
 	return ids, nil
 }
+
+// ToShortID coerces strings to shortids handling shortids or uuids as input
+// An error will be returned for anything else, including empty string
+func ToShortID(s string) (string, error) {
+	switch len(s) {
+	case 0:
+		return "", fmt.Errorf("empty string is not a valid shortid")
+	case 26:
+		uu, err := ToUUID(s)
+		if err != nil {
+			return "", fmt.Errorf("invalid shortid: %w", err)
+		}
+		return ParseUUID(uu), nil
+	case 36:
+		return ParseString(s)
+	default:
+		return "", fmt.Errorf("id incorrect length")
+	}
+}
