@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -26,6 +27,7 @@ var _ AppService = (*appService)(nil)
 
 type appService struct {
 	log         *zap.Logger
+	orgRepo     repos.OrgRepo
 	repo        repos.AppRepo
 	workflowMgr workflows.AppWorkflowManager
 }
@@ -34,6 +36,7 @@ func NewAppService(db *gorm.DB, tc tclient.Client, log *zap.Logger) *appService 
 	repo := repos.NewAppRepo(db)
 	return &appService{
 		log:         log,
+		orgRepo:     repos.NewOrgRepo(db),
 		repo:        repo,
 		workflowMgr: workflows.NewAppWorkflowManager(tc),
 	}
@@ -89,6 +92,18 @@ func (a *appService) updateApp(ctx context.Context, input models.AppInput) (*mod
 }
 
 func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*models.App, error) {
+	// parsing the uuid while ignoring the error handling since we do this at protobuf level
+	orgID, _ := uuid.Parse(input.OrgID)
+
+	// check if org exists
+	_, err := a.orgRepo.Get(ctx, orgID)
+	if err != nil {
+		a.log.Error("failed to get org",
+			zap.String("orgID", orgID.String()),
+			zap.String("error", err.Error()))
+		return nil, fmt.Errorf("failed to get org: %w", err)
+	}
+
 	if input.ID != nil {
 		return a.updateApp(ctx, input)
 	}
@@ -99,9 +114,6 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 		app.GithubInstallID = *input.GithubInstallID
 	}
 	app.CreatedByID = *input.CreatedByID
-
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	orgID, _ := uuid.Parse(input.OrgID)
 	app.OrgID = orgID
 
 	finalApp, err := a.repo.Create(ctx, &app)
