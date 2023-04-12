@@ -12,16 +12,17 @@ Before working with this project you'll need to create a personal access token f
 
 You can copy the `.env.example` file & add the needed values `cp .env.example .env`.
 
-**Auth 0**
+You should update the following environment variables in the file:
 
-You'll need to login the Nuon Auth0 account to get the `AUTH_ISSUER` & `AUTH_AUDIENCE` values. The `AUTH_AUDIENCE` can be found on the API Gateway under "applications/apis" & the `AUTH_ISSUER` can be found in the API Gateway settings domain under "applications/applications".
+- `AUTH_AUDIENCE` and `AUTH_ISSUER`. To get the values you will need to log in the Nuon Auth0 account. The `AUTH_AUDIENCE` can be found on the API Gateway under "applications/apis" & the `AUTH_ISSUER` can be found in the API Gateway settings domain under "applications/applications".
+- `SERVICES`: this is a list of the GRPC services you want to connect to the gateway. Each service can be connect by adding an object to the `SERVICES` array. (i.e. `SERVICES=[{ "name": "org", "url": "localhost:8080" }]`). Note that in order to use the GRPC services on staging you need to be connected to Twingate. Sample `SERVICES` value to use the GRPC staging on services:
+  ```
+  SERVICES=[{"name":"status","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"org","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"app","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"install","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"component","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"deployment","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"github","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"instance","url":"orgs-api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"orgStatus","url":"orgs-api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"installStatus","url":"orgs-api.nuon.us-west-2.stage.nuon.cloud:80"}]
+  ```
+- `NUON_NPM_GITHUB_TOKEN`: your github personal access token you generated earlier
+- `NPM_BUF_TOKEN`: your buf token you generated earlier
 
-**GRPC Services**
-
-Now you'll need to set the GRPC services you want to connect to the gateway. Each service can be connect by adding an object to the `SERVICES` array. (i.e. `SERVICES=[{ "name": "org", "url": "localhost:8080" }]`).
-
-You can use the GRPC services on staging if you're connecting over Twingate.
-
+Make sure you do not source this `.env` file. Upon startup the gateway will read this file and set the appropriate environment variables.
 
 ## Usage
 
@@ -29,16 +30,86 @@ Now that you've installed the deps & configured the `.env` you can start the gat
 
 ## Updating buf dependencies
 
-When changes to our protobufs happen we'll need to manually update the dependencies for the gateway. To do this you'll need to `export` your Buf token in the terminal then run  `npm update` or `npm update {buf-package}`, this should update the `package-lock.json` file with the latest version of the grpc lib.
+When changes to our protobufs happen we'll need to manually update the dependencies for the gateway. To do this you'll need to `export` your Buf token in the terminal then run `npm update` or `npm update {buf-package}`, this should update the `package-lock.json` file with the latest version of the grpc lib.
 
 **Buf dependencies list**
 
-* APIs `npm update @buf/nuon_apis.grpc_node`;
-* Components `npm update @buf/nuon_components.grpc_node`;
-* orgs-api `npm update @buf/nuon_orgs-api.grpc_node`;
-* shared: `npm update @buf/nuon_shared.grpc_node`;
+- APIs `npm update @buf/nuon_apis.grpc_node`;
+- Components `npm update @buf/nuon_components.grpc_node`;
+- orgs-api `npm update @buf/nuon_orgs-api.grpc_node`;
+- shared: `npm update @buf/nuon_shared.grpc_node`;
+
+Note that sometimes we have to update nested dependencies. An example is the Components package which is used both by the gateway directly and by the package APIs. In this case you would have to update both packages: Components and APIs. To do that you should:
+
+1. update the Components package here with `npm update @buf/nuon_components.grpc_node`
+1. update the APIs package by going to the [API protos repo](https://github.com/powertoolsdev/mono/tree/main/pkg/types/api), running `buf mod update`, and committing the changes to the `buf.lock` file
+1. once the APIs package changes are deployed, update the APIs package here with `npm update @buf/nuon_apis.grpc_node`
 
 ## Updating GQL types
 
 Whenever the GQL schema changes you'll need to regenerate the types to Typescript. You can do this by running `npm run generate-gql-types` and committing the generated file.
 
+## Adding a resolver
+
+To add a new resolver we usually have to: update the package that contains the new grpc service, add the GQL schema for the query or mutation, list the query or mutation to the index file, write the resolver code, and add unit tests.
+
+1. Add the GQL schema for the new resolver. This might require to update a package first in order to get the latest protos. Let's say we want to add a new query to retrieve all components for an organization. If this is a new GRPC service then we would have to first upgrade the API package (`npm update @buf/nuon_apis.grpc_node`) and then we would add something like this to the file `src/gql-schema/component.graphql`:
+
+```graphql
+extend type Query {
+  componentsByOrg(orgId: ID!, options: ConnectionOptions): ComponentConnection!
+}
+```
+
+2. Next step is to list the new query or mutation to the index file of the entity. Following the same example, we would edit `src/gql-resolvers/component/index.ts` and list the new query like this:
+
+```ts
+export const componentResolvers = {
+  Query: {
+    componentsByOrg,
+  },
+};
+```
+
+3. Finally, we write the code for the resolver. Add a new `.ts` file under the entity, following the same name convention as your query or mutation, and call the corresponding grpc service. Example:
+
+```ts
+export const components: TResolverFn<
+  QueryComponentsArgs,
+  Query["components"]
+> = (_, { orgId }, { clients }) =>
+  new Promise((resolve, reject) => {
+    if (clients.component) {
+      const request = new GetComponentsByOrgRequest().setOrgId(orgId);
+
+      clients.component.getComponentsByOrg(request, (err, res) => {
+        if (err) {
+          reject(new GraphQLError(err?.message));
+        } else {
+          const { componentsList } = res.toObject();
+
+          resolve({
+            edges:
+              componentsList?.map((component) => ({
+                cursor: component?.id,
+                node: formatComponent(component),
+              })) || [],
+            pageInfo: {
+              endCursor: null,
+              hasNextPage: false,
+              hasPreviousPage: false,
+              startCursor: null,
+            },
+            totalCount: componentsList?.length || 0,
+          });
+        }
+      });
+    } else {
+      reject(new GraphQLError("Service isn't available"));
+    }
+  });
+```
+
+To find the names of the methods to call (`GetComponentsByOrgRequest`, `getComponentsByOrg`) you will have to manually check the `pb` files of the imported package. For example, `@buf/nuon_apis.grpc_node/component/v1/messages_pb`.
+
+Test your new resolver with Altair and if all is ok continue with writing unit tests for it.
