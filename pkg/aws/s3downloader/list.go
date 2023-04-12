@@ -38,7 +38,7 @@ func (s *s3Downloader) listPrefix(ctx context.Context, client s3Lister, prefix s
 	req := &s3.ListObjectsV2Input{
 		Bucket: generics.ToPtr(s.Bucket),
 	}
-	if prefix == "" {
+	if prefix != "" {
 		req.Prefix = generics.ToPtr(prefix)
 	}
 
