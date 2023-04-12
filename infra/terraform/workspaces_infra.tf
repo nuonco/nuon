@@ -95,7 +95,7 @@ module "infra-datadog-orgs-prod" {
   dir                             = "infra/datadog"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
+  variable_sets                   = ["aws-environment-credentials", "datadog"]
   vars = {
     env = "orgs-prod"
   }
@@ -109,7 +109,7 @@ module "infra-datadog-orgs-stage" {
   dir                             = "infra/datadog"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
+  variable_sets                   = ["aws-environment-credentials", "datadog"]
   vars = {
     env = "orgs-stage"
   }
@@ -123,7 +123,7 @@ module "infra-datadog-prod" {
   dir                             = "infra/datadog"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
+  variable_sets                   = ["aws-environment-credentials", "datadog"]
   vars = {
     env = "prod"
   }
@@ -137,7 +137,7 @@ module "infra-datadog-stage" {
   dir                             = "infra/datadog"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
+  variable_sets                   = ["aws-environment-credentials", "datadog"]
   vars = {
     env = "stage"
   }
