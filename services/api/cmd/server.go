@@ -8,6 +8,7 @@ import (
 	ghinstallation "github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/bufbuild/connect-go"
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/interceptors"
 	"github.com/powertoolsdev/mono/services/api/internal"
@@ -65,13 +66,22 @@ func newServer(cfg *internal.Config) (*server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize logger: %w", err)
 	}
+
+	tClient, err := temporal.New(v,
+		temporal.WithAddr(cfg.TemporalHost),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize temporal: %w", err)
+	}
+
 	srv := &server{
 		v:   v,
 		cfg: cfg,
 		log: l,
 		interceptors: []connect.Interceptor{
-			connect.UnaryInterceptorFunc(interceptors.LoggerInterceptor),
-			connect.UnaryInterceptorFunc(interceptors.MetricsInterceptor),
+			interceptors.LoggerInterceptor(),
+			interceptors.MetricsInterceptor(),
+			interceptors.NewTemporalClientInterceptor(tClient),
 		},
 	}
 
