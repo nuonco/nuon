@@ -2,23 +2,16 @@ package interceptors
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/connect-go"
-	"go.uber.org/zap"
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 )
 
-func LoggerInterceptor() connect.UnaryInterceptorFunc {
+func NewTemporalClientInterceptor(client temporal.Client) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return connect.UnaryFunc(func(ctx context.Context, request connect.AnyRequest) (connect.AnyResponse, error) {
-			l := zap.L()
-
-			resp, err := next(ctx, request)
-			if err != nil {
-				l.Error(fmt.Sprintf("error %s", err.Error()))
-			}
-
-			return resp, err
+			ctx = context.WithValue(ctx, temporal.ContextKey{}, client)
+			return next(ctx, request)
 		})
 	}
 
