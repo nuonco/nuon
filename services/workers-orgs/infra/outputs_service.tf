@@ -74,6 +74,16 @@ output "orgs_account_bucket_access_role_arn" {
   value       = module.orgs_account_bucket_access_role.iam_role_arn
 }
 
+output "waypoint_server_root_domain" {
+  description = "root domain for waypoint server"
+  value       = "orgs-${var.env}.nuon.co"
+}
+
+output "waypoint_bootstrap_token_namespace" {
+  description = "root domain for waypoint server"
+  value       = "default"
+}
+
 output "orgs_account_kms_access_role_arn" {
   description = "IAM role for managing KMS resources in the orgs account"
   value       = module.orgs_account_kms_access_role.iam_role_arn
