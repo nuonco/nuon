@@ -9,6 +9,12 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	defaultNamespace string = "default"
+)
+
+type ContextKey struct{}
+
 type temporal struct {
 	v *validator.Validate
 
@@ -22,8 +28,9 @@ type temporal struct {
 func New(v *validator.Validate, opts ...temporalOption) (Client, error) {
 	logger, _ := zap.NewProduction(zap.WithCaller(false))
 	tmp := &temporal{
-		v:      v,
-		Logger: logger,
+		v:         v,
+		Logger:    logger,
+		Namespace: defaultNamespace,
 	}
 
 	for idx, opt := range opts {

@@ -11,7 +11,6 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	temporalHost := generics.GetFakeObj[string]()
 	namespace := generics.GetFakeObj[string]()
 	logger := zaptest.NewLogger(t)
 
@@ -27,15 +26,6 @@ func TestNew(t *testing.T) {
 				}
 			},
 			errExpected: fmt.Errorf("Addr"),
-		},
-		"missing namespace": {
-			optFns: func() []temporalOption {
-				return []temporalOption{
-					WithLogger(logger),
-					WithAddr(temporalHost),
-				}
-			},
-			errExpected: fmt.Errorf("Namespace"),
 		},
 	}
 
