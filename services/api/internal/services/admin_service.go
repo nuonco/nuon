@@ -10,6 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock_admin_service.go -source=admin_service.go -package=services
 type AdminService interface {
 	UpsertSandboxVersion(context.Context, models.SandboxVersionInput) (*models.SandboxVersion, error)
 }
