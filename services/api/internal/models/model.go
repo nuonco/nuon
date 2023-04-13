@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/services/api/internal/jobs"
 	"gorm.io/gorm"
 )
 
@@ -12,6 +13,11 @@ type Model struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+func (m *Model) GetJobsManager() (jobs.Manager, error) {
+	// TODO(jm): update this
+	return nil, nil
 }
 
 func (m *Model) BeforeCreate(tx *gorm.DB) (err error) {
