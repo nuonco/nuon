@@ -5,21 +5,25 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	connectv1 "github.com/powertoolsdev/mono/pkg/types/api/admin/v1/adminv1connect"
-	"github.com/powertoolsdev/mono/services/api/internal/servers"
 	"github.com/powertoolsdev/mono/services/api/internal/services"
 )
 
 type server struct {
-	Svc services.AdminService
+	v *validator.Validate
+
+	Svc          services.AdminService `validate:"required"`
+	Interceptors []connect.Interceptor `validate:"required"`
 }
 
 var _ connectv1.AdminServiceHandler = (*server)(nil)
 
-func New(opts ...serverOption) (*server, error) {
-	srv := &server{}
-	validate := validator.New()
+func New(v *validator.Validate, opts ...serverOption) (*server, error) {
+	srv := &server{
+		v:            v,
+		Interceptors: make([]connect.Interceptor, 0),
+	}
 
 	for idx, opt := range opts {
 		if err := opt(srv); err != nil {
@@ -27,7 +31,7 @@ func New(opts ...serverOption) (*server, error) {
 		}
 	}
 
-	if err := validate.Struct(srv); err != nil {
+	if err := srv.v.Struct(srv); err != nil {
 		return nil, fmt.Errorf("unable to validate server: %w", err)
 	}
 	return srv, nil
@@ -37,8 +41,7 @@ type serverOption func(*server) error
 
 func WithHTTPMux(mux *http.ServeMux) serverOption {
 	return func(s *server) error {
-		path, handler := connectv1.NewAdminServiceHandler(s,
-			connect.WithInterceptors(connect.UnaryInterceptorFunc(servers.MetricsInterceptor)))
+		path, handler := connectv1.NewAdminServiceHandler(s, connect.WithInterceptors(s.Interceptors...))
 		mux.Handle(path, handler)
 		return nil
 	}
@@ -47,6 +50,13 @@ func WithHTTPMux(mux *http.ServeMux) serverOption {
 func WithService(svc services.AdminService) serverOption {
 	return func(s *server) error {
 		s.Svc = svc
+		return nil
+	}
+}
+
+func WithInterceptors(int ...connect.Interceptor) serverOption {
+	return func(s *server) error {
+		s.Interceptors = int
 		return nil
 	}
 }

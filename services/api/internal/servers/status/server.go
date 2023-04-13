@@ -7,19 +7,22 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/go-playground/validator/v10"
 	connectv1 "github.com/powertoolsdev/mono/pkg/types/shared/status/v1/statusv1connect"
-	"github.com/powertoolsdev/mono/services/api/internal"
-	"github.com/powertoolsdev/mono/services/api/internal/servers"
 )
 
 type server struct {
-	GitRef string `validate:"required"`
+	v *validator.Validate
+
+	GitRef       string                `validate:"required"`
+	Interceptors []connect.Interceptor `validate:"required"`
 }
 
 var _ connectv1.StatusServiceHandler = (*server)(nil)
 
-func New(opts ...serverOption) (*server, error) {
-	srv := &server{}
-	validate := validator.New()
+func New(v *validator.Validate, opts ...serverOption) (*server, error) {
+	srv := &server{
+		v:            v,
+		Interceptors: make([]connect.Interceptor, 0),
+	}
 
 	for idx, opt := range opts {
 		if err := opt(srv); err != nil {
@@ -27,7 +30,7 @@ func New(opts ...serverOption) (*server, error) {
 		}
 	}
 
-	if err := validate.Struct(srv); err != nil {
+	if err := srv.v.Struct(srv); err != nil {
 		return nil, fmt.Errorf("unable to validate server: %w", err)
 	}
 	return srv, nil
@@ -35,20 +38,24 @@ func New(opts ...serverOption) (*server, error) {
 
 type serverOption func(*server) error
 
-// WithConfig is a helper which allows us to encapsulate what fields are needed from the config here, while also not
-// _just_ attaching it to the server struct.
-func WithConfig(cfg *internal.Config) serverOption {
+func WithHTTPMux(mux *http.ServeMux) serverOption {
 	return func(s *server) error {
-		s.GitRef = cfg.GitRef
+		path, handler := connectv1.NewStatusServiceHandler(s, connect.WithInterceptors(s.Interceptors...))
+		mux.Handle(path, handler)
 		return nil
 	}
 }
 
-func WithHTTPMux(mux *http.ServeMux) serverOption {
+func WithInterceptors(int ...connect.Interceptor) serverOption {
 	return func(s *server) error {
-		path, handler := connectv1.NewStatusServiceHandler(s,
-			connect.WithInterceptors(connect.UnaryInterceptorFunc(servers.MetricsInterceptor)))
-		mux.Handle(path, handler)
+		s.Interceptors = int
+		return nil
+	}
+}
+
+func WithGitRef(gitRef string) serverOption {
+	return func(s *server) error {
+		s.GitRef = gitRef
 		return nil
 	}
 }
