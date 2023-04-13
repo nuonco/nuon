@@ -1,0 +1,45 @@
+---
+name: artifact test
+"on":
+  workflow_call:
+    inputs:
+      artifact:
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: 🌏 test
+    runs-on: [ubuntu-latest-16-cores, linux]
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 9
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup for CI
+        uses: powertoolsdev/mono/actions/setup-ci@main
+        with:
+          clone_token: ${{ secrets.GITHUB_TOKEN }}
+          setup_helm: "false"
+          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Earthly test target
+        working-directory: bins/${{inputs.artifact}}
+        if: always()
+        run: |
+          earthly \
+            --allow-privileged \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --ci \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
+            +test
