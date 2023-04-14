@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/api/internal/jobs/createdeployment"
+	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
 )
 
 func (m *manager) CreateDeployment(ctx context.Context, deploymentID string) error {
-	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "CreateDeployment", createdeployment.CreateDeploymentRequest{
-		DeploymentID: deploymentID,
+	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "CreateDeployment", &jobsv1.CreateDeploymentRequest{
+		DeploymentId: deploymentID,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to trigger deployment job: %w", err)

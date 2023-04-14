@@ -2,14 +2,9 @@ package createorg
 
 import (
 	"github.com/go-playground/validator/v10"
+	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
 	"go.temporal.io/sdk/workflow"
 )
-
-type CreateOrgRequest struct {
-	OrgID string `validate:"required"`
-}
-
-type CreateOrgResponse struct{}
 
 func New(v *validator.Validate) *wkflow {
 	return &wkflow{}
@@ -17,8 +12,8 @@ func New(v *validator.Validate) *wkflow {
 
 type wkflow struct{}
 
-func (w *wkflow) CreateOrg(ctx workflow.Context, req CreateOrgRequest) (CreateOrgResponse, error) {
+func (w *wkflow) CreateOrg(ctx workflow.Context, req jobsv1.CreateOrgRequest) (jobsv1.CreateOrgResponse, error) {
 	l := workflow.GetLogger(ctx)
 	l.Info("create org")
-	return CreateOrgResponse{}, nil
+	return jobsv1.CreateOrgResponse{}, nil
 }

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultNamespace                string        = "api"
+	defaultNamespace                string        = "default"
 	defaultWorkflowRunTimeout       time.Duration = time.Hour * 12
 	defaultWorkflowExecutionTimeout time.Duration = time.Hour * 24
 )
@@ -46,7 +46,7 @@ func New(v *validator.Validate, opts ...managerOption) (*manager, error) {
 			WorkflowRunTimeout:       defaultWorkflowRunTimeout,
 			TaskQueue:                workflows.DefaultTaskQueue,
 			Memo: map[string]interface{}{
-				"started-by": "api",
+				"started-by": "default",
 			},
 		},
 	}
