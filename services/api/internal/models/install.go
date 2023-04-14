@@ -2,9 +2,12 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/services/api/internal/jobs"
+	"gorm.io/gorm"
 )
 
 type Install struct {
@@ -20,6 +23,20 @@ type Install struct {
 
 	AWSSettings *AWSSettings `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" faker:"-"`
 	GCPSettings *GCPSettings `faker:"-"`
+}
+
+func (i Install) AfterCreate(tx *gorm.DB) error {
+	ctx := tx.Statement.Context
+	mgr, err := jobs.FromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to get job manager: %w", err)
+	}
+
+	if err := mgr.CreateInstall(ctx, i.ID.String()); err != nil {
+		return fmt.Errorf("unable to create org: %w", err)
+	}
+
+	return nil
 }
 
 func (Install) IsNode() {}

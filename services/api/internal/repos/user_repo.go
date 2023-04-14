@@ -2,8 +2,10 @@ package repos
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -31,6 +33,8 @@ func (u userRepo) UpsertUserOrg(ctx context.Context, userID string, orgID uuid.U
 	var uo models.UserOrg
 	uo.UserID = userID
 	uo.OrgID = orgID
+
+	fmt.Println(ctx.Value(temporal.ContextKey{}))
 	if err := u.db.WithContext(ctx).
 		Clauses(clause.OnConflict{DoNothing: true}).
 		Create(&uo).Error; err != nil {

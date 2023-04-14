@@ -29,9 +29,9 @@ func (s *server) registerApps(mux *http.ServeMux) error {
 	}
 	appSvc := services.NewAppService(s.db, appsTc, s.log)
 	_, err = appsserver.New(s.v,
-		appsserver.WithHTTPMux(mux),
 		appsserver.WithService(appSvc),
 		appsserver.WithInterceptors(s.interceptors...),
+		appsserver.WithHTTPMux(mux),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize apps server: %w", err)
@@ -43,9 +43,9 @@ func (s *server) registerApps(mux *http.ServeMux) error {
 func (s *server) registerAdmin(mux *http.ServeMux) error {
 	adminSvc := services.NewAdminService(s.db, s.log)
 	_, err := adminserver.New(s.v,
-		adminserver.WithHTTPMux(mux),
 		adminserver.WithService(adminSvc),
 		adminserver.WithInterceptors(s.interceptors...),
+		adminserver.WithHTTPMux(mux),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize admin server: %w", err)
@@ -57,9 +57,9 @@ func (s *server) registerAdmin(mux *http.ServeMux) error {
 func (s *server) registerComponents(mux *http.ServeMux) error {
 	componentsSvc := services.NewComponentService(s.db, s.log)
 	_, err := componentsserver.New(s.v,
-		componentsserver.WithHTTPMux(mux),
 		componentsserver.WithService(componentsSvc),
 		componentsserver.WithInterceptors(s.interceptors...),
+		componentsserver.WithHTTPMux(mux),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize components server: %w", err)
@@ -81,9 +81,9 @@ func (s *server) registerDeployments(mux *http.ServeMux) error {
 
 	deploymentsSvc := services.NewDeploymentService(s.db, deploymentsTc, ghTransport, s.cfg.GithubAppID, s.cfg.GithubAppKeySecretName, s.log)
 	_, err = deploymentsserver.New(s.v,
-		deploymentsserver.WithHTTPMux(mux),
 		deploymentsserver.WithService(deploymentsSvc),
 		deploymentsserver.WithInterceptors(s.interceptors...),
+		deploymentsserver.WithHTTPMux(mux),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize deployments server: %w", err)
@@ -106,9 +106,9 @@ func (s *server) registerGithub(mux *http.ServeMux) error {
 	githubSvc := services.NewGithubService(appstp, s.log)
 
 	_, err = githubserver.New(s.v,
-		githubserver.WithHTTPMux(mux),
 		githubserver.WithService(githubSvc),
 		githubserver.WithInterceptors(s.interceptors...),
+		githubserver.WithHTTPMux(mux),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize github server: %w", err)
@@ -124,9 +124,9 @@ func (s *server) registerInstalls(mux *http.ServeMux) error {
 	}
 	installSvc := services.NewInstallService(s.db, installsTc, s.log)
 	_, err = installsserver.New(s.v,
-		installsserver.WithHTTPMux(mux),
 		installsserver.WithService(installSvc),
 		installsserver.WithInterceptors(s.interceptors...),
+		installsserver.WithHTTPMux(mux),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize installs server: %w", err)
@@ -141,9 +141,9 @@ func (s *server) registerOrgs(mux *http.ServeMux) error {
 	}
 	orgSvc := services.NewOrgService(s.db, orgsTc, s.log)
 	_, err = orgsserver.New(s.v,
-		orgsserver.WithHTTPMux(mux),
 		orgsserver.WithService(orgSvc),
 		orgsserver.WithInterceptors(s.interceptors...),
+		orgsserver.WithHTTPMux(mux),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize orgs server: %w", err)
@@ -154,9 +154,9 @@ func (s *server) registerOrgs(mux *http.ServeMux) error {
 func (s *server) registerUsers(mux *http.ServeMux) error {
 	userSvc := services.NewUserService(s.db, s.log)
 	_, err := usersserver.New(s.v,
-		usersserver.WithHTTPMux(mux),
 		usersserver.WithService(userSvc),
 		usersserver.WithInterceptors(s.interceptors...),
+		usersserver.WithHTTPMux(mux),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize users server: %w", err)
@@ -167,9 +167,9 @@ func (s *server) registerUsers(mux *http.ServeMux) error {
 
 func (s *server) registerStatus(mux *http.ServeMux) error {
 	_, err := statusserver.New(s.v,
-		statusserver.WithHTTPMux(mux),
 		statusserver.WithGitRef(s.cfg.GitRef),
 		statusserver.WithInterceptors(s.interceptors...),
+		statusserver.WithHTTPMux(mux),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize status server: %w", err)

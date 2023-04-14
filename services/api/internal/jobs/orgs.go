@@ -12,7 +12,7 @@ func (m *manager) CreateOrg(ctx context.Context, orgID string) error {
 		OrgID: orgID,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to provision install: %w", err)
+		return fmt.Errorf("unable to provision org: %w", err)
 	}
 
 	return nil
