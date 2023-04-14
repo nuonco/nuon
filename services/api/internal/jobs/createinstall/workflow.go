@@ -1,6 +1,9 @@
 package createinstall
 
-import "context"
+import (
+	"github.com/go-playground/validator/v10"
+	"go.temporal.io/sdk/workflow"
+)
 
 type CreateInstallRequest struct {
 	InstallID string `validate:"required"`
@@ -8,8 +11,14 @@ type CreateInstallRequest struct {
 
 type CreateInstallResponse struct{}
 
-type workflow struct{}
+func New(v *validator.Validate) *wkflow {
+	return &wkflow{}
+}
 
-func (w *workflow) CreateInstall(ctx context.Context, req CreateInstallRequest) (CreateInstallResponse, error) {
+type wkflow struct{}
+
+func (w *wkflow) CreateInstall(ctx workflow.Context, req CreateInstallRequest) (CreateInstallResponse, error) {
+	l := workflow.GetLogger(ctx)
+	l.Info("create install")
 	return CreateInstallResponse{}, nil
 }
