@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-playground/validator"
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs"
 	"gorm.io/gorm"
 )
@@ -21,16 +19,9 @@ type Org struct {
 
 func (o *Org) AfterCreate(tx *gorm.DB) (err error) {
 	ctx := tx.Statement.Context
-	val := ctx.Value(temporal.ContextKey{})
-	temporalClient, ok := val.(temporal.Client)
-	if !ok {
-		return fmt.Errorf("no temporal client configured in context: %w", err)
-	}
-
-	v := validator.New()
-	mgr, err := jobs.New(v, jobs.WithClient(temporalClient))
+	mgr, err := jobs.FromContext(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to get manager: %w", err)
+		return fmt.Errorf("unable to get job manager: %w", err)
 	}
 
 	if err := mgr.CreateOrg(ctx, o.ID.String()); err != nil {
