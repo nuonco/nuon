@@ -119,7 +119,7 @@ func (w *wkflow) provisionInstall(ctx workflow.Context, req *canaryv1.ProvisionR
 		},
 		SandboxSettings: &installsv1.SandboxSettings{
 			Name:    "aws-eks",
-			Version: "0.10.4",
+			Version: "0.11.1",
 		},
 	}
 

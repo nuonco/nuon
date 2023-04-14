@@ -92,7 +92,7 @@ func (w *wkflow) deprovisionInstall(ctx workflow.Context, req *canaryv1.Deprovis
 		},
 		SandboxSettings: &installsv1.SandboxSettings{
 			Name:    "aws-eks",
-			Version: "0.10.4",
+			Version: "0.11.1",
 		},
 	}
 
