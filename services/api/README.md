@@ -109,6 +109,3 @@ $ nuon-api-stage-request '{"user_id":"233", "org_id": "123"}' user.v1.UsersServi
 ```
 
 The protobufs for all the API's endpoints can be found in [the protos repo](https://github.com/powertoolsdev/protos/tree/main/api) and in [buf.build](https://buf.build/nuon/apis).
-
-
-
