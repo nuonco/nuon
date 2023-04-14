@@ -1,6 +1,9 @@
 package createdeployment
 
-import "context"
+import (
+	"github.com/go-playground/validator/v10"
+	"go.temporal.io/sdk/workflow"
+)
 
 type CreateDeploymentRequest struct {
 	DeploymentID string `validate:"required"`
@@ -8,8 +11,15 @@ type CreateDeploymentRequest struct {
 
 type CreateDeploymentResponse struct{}
 
-type workflow struct{}
+func New(v *validator.Validate) *wkflow {
+	return &wkflow{}
+}
 
-func (w *workflow) CreateDeployment(ctx context.Context, req CreateDeploymentRequest) (CreateDeploymentResponse, error) {
+type wkflow struct{}
+
+func (w *wkflow) CreateDeployment(ctx workflow.Context, req CreateDeploymentRequest) (CreateDeploymentResponse, error) {
+	l := workflow.GetLogger(ctx)
+	l.Info("create deployment")
+
 	return CreateDeploymentResponse{}, nil
 }

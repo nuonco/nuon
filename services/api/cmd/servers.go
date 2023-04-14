@@ -22,7 +22,7 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/services"
 )
 
-func (s *server) registerApps(mux *http.ServeMux) error {
+func (s *app) registerAppsServer(mux *http.ServeMux) error {
 	appsTc, err := temporalclient.New(temporalclient.WithConfig(s.cfg), temporalclient.WithNamespace("apps"))
 	if err != nil {
 		return fmt.Errorf("unable to create temporal client: %w", err)
@@ -40,7 +40,7 @@ func (s *server) registerApps(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *server) registerAdmin(mux *http.ServeMux) error {
+func (s *app) registerAdminServer(mux *http.ServeMux) error {
 	adminSvc := services.NewAdminService(s.db, s.log)
 	_, err := adminserver.New(s.v,
 		adminserver.WithService(adminSvc),
@@ -54,7 +54,7 @@ func (s *server) registerAdmin(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *server) registerComponents(mux *http.ServeMux) error {
+func (s *app) registerComponentsServer(mux *http.ServeMux) error {
 	componentsSvc := services.NewComponentService(s.db, s.log)
 	_, err := componentsserver.New(s.v,
 		componentsserver.WithService(componentsSvc),
@@ -68,7 +68,7 @@ func (s *server) registerComponents(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *server) registerDeployments(mux *http.ServeMux) error {
+func (s *app) registerDeploymentsServer(mux *http.ServeMux) error {
 	deploymentsTc, err := temporalclient.New(temporalclient.WithConfig(s.cfg), temporalclient.WithNamespace("deployments"))
 	if err != nil {
 		return fmt.Errorf("unable to create temporal client: %w", err)
@@ -92,7 +92,7 @@ func (s *server) registerDeployments(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *server) registerGithub(mux *http.ServeMux) error {
+func (s *app) registerGithubServer(mux *http.ServeMux) error {
 	// get github app details from config
 	githubAppID, err := strconv.ParseInt(s.cfg.GithubAppID, 10, 64)
 	if err != nil {
@@ -117,7 +117,7 @@ func (s *server) registerGithub(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *server) registerInstalls(mux *http.ServeMux) error {
+func (s *app) registerInstallsServer(mux *http.ServeMux) error {
 	installsTc, err := temporalclient.New(temporalclient.WithConfig(s.cfg), temporalclient.WithNamespace("installs"))
 	if err != nil {
 		return fmt.Errorf("unable to create temporal client: %w", err)
@@ -134,7 +134,7 @@ func (s *server) registerInstalls(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *server) registerOrgs(mux *http.ServeMux) error {
+func (s *app) registerOrgsServer(mux *http.ServeMux) error {
 	orgsTc, err := temporalclient.New(temporalclient.WithConfig(s.cfg), temporalclient.WithNamespace("orgs"))
 	if err != nil {
 		return fmt.Errorf("unable to create temporal client: %w", err)
@@ -151,7 +151,7 @@ func (s *server) registerOrgs(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *server) registerUsers(mux *http.ServeMux) error {
+func (s *app) registerUsersServer(mux *http.ServeMux) error {
 	userSvc := services.NewUserService(s.db, s.log)
 	_, err := usersserver.New(s.v,
 		usersserver.WithService(userSvc),
@@ -165,7 +165,7 @@ func (s *server) registerUsers(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *server) registerStatus(mux *http.ServeMux) error {
+func (s *app) registerStatusServer(mux *http.ServeMux) error {
 	_, err := statusserver.New(s.v,
 		statusserver.WithGitRef(s.cfg.GitRef),
 		statusserver.WithInterceptors(s.interceptors...),
@@ -177,7 +177,7 @@ func (s *server) registerStatus(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *server) registerLoadbalancerHealthCheck(mux *http.ServeMux) {
+func (s *app) registerLoadbalancerHealthCheck(mux *http.ServeMux) {
 	mux.Handle("/_ping", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(http.StatusOK)
 		if _, err := rw.Write([]byte("{\"status\": \"ok\"}")); err != nil {
@@ -186,47 +186,47 @@ func (s *server) registerLoadbalancerHealthCheck(mux *http.ServeMux) {
 	}))
 }
 
-func (s *server) registerReflectServer(mux *http.ServeMux) {
+func (s *app) registerReflectServer(mux *http.ServeMux) {
 	reflector := grpcreflect.NewStaticReflector(srvs...)
 
 	mux.Handle(grpcreflect.NewHandlerV1(reflector))
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 }
 
-func (s *server) registerAll(mux *http.ServeMux) error {
-	if err := s.registerApps(mux); err != nil {
+func (s *app) registerAllServers(mux *http.ServeMux) error {
+	if err := s.registerAppsServer(mux); err != nil {
 		return fmt.Errorf("unable to register apps: %w", err)
 	}
 
-	if err := s.registerAdmin(mux); err != nil {
+	if err := s.registerAdminServer(mux); err != nil {
 		return fmt.Errorf("unable to register admin: %w", err)
 	}
 
-	if err := s.registerComponents(mux); err != nil {
+	if err := s.registerComponentsServer(mux); err != nil {
 		return fmt.Errorf("unable to register components: %w", err)
 	}
 
-	if err := s.registerDeployments(mux); err != nil {
+	if err := s.registerDeploymentsServer(mux); err != nil {
 		return fmt.Errorf("unable to register deployments: %w", err)
 	}
 
-	if err := s.registerGithub(mux); err != nil {
+	if err := s.registerGithubServer(mux); err != nil {
 		return fmt.Errorf("unable to register github: %w", err)
 	}
 
-	if err := s.registerInstalls(mux); err != nil {
+	if err := s.registerInstallsServer(mux); err != nil {
 		return fmt.Errorf("unable to register installs: %w", err)
 	}
 
-	if err := s.registerOrgs(mux); err != nil {
+	if err := s.registerOrgsServer(mux); err != nil {
 		return fmt.Errorf("unable to register orgs: %w", err)
 	}
 
-	if err := s.registerUsers(mux); err != nil {
+	if err := s.registerUsersServer(mux); err != nil {
 		return fmt.Errorf("unable to register users: %w", err)
 	}
 
-	if err := s.registerStatus(mux); err != nil {
+	if err := s.registerStatusServer(mux); err != nil {
 		return fmt.Errorf("unable to register status: %w", err)
 	}
 
