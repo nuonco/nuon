@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 )
 
 //nolint:gochecknoinits
@@ -22,7 +23,6 @@ func init() {
 	config.RegisterDefault("db_migrations_path", "./migrations")
 
 	// defaults for temporal
-	config.RegisterDefault("temporal_host", "localhost:7233")
 	config.RegisterDefault("temporal_namespace", "default")
 
 	// default for github
@@ -31,7 +31,7 @@ func init() {
 }
 
 type Config struct {
-	config.Base `config:",squash"`
+	worker.Config `config:",squash"`
 
 	// configs for starting and introspecting service
 	GitRef      string `config:"git_ref" validate:"required"`

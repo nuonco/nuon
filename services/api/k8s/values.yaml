@@ -3,6 +3,10 @@ replicaCount: 2
 args:
   - server
 
+workers:
+  command: workers
+  replicaCount: 3
+
 configmap:
   enabled: true
   values:

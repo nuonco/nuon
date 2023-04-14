@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	defaultNamespace                string = "api"
-	defaultWorkflowRunTimeout              = time.Hour * 12
-	defaultWorkflowExecutionTimeout        = time.Hour * 24
+	defaultNamespace                string        = "api"
+	defaultWorkflowRunTimeout       time.Duration = time.Hour * 12
+	defaultWorkflowExecutionTimeout time.Duration = time.Hour * 24
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
