@@ -1,0 +1,276 @@
+# https://github.com/rebuy-de/aws-nuke
+
+---
+regions:
+  - us-west-1
+  - us-west-2
+  - us-east-1
+  - us-east-2
+  - global
+
+# while read -r acct id;
+# do
+#   printf "- \"%s\" # %s\n" $id $acct;
+# done < <(terraform output -json org_accounts \
+#   | jq -rc 'to_entries | .[] \
+#   | {acct: .key, id: .value.id} \
+#   | [.acct, .id] |@tsv')
+account-blocklist:
+  # external
+  - 618886478608
+  # horizon
+  - 715615000159
+  # infra-shared-prod
+  - 431927561584
+  # infra-shared-stage
+  - 576099457177
+  # orgs-prod
+  - 814326426574
+  # orgs-stage
+  - 766121324316
+  # root
+  - 491187160246
+  # prod
+  - 007754799877
+  # public
+  - 410635945163
+  # stage
+  - 676549690856
+
+accounts:
+  # demo
+  "949309607565":
+    presets:
+      - common
+  # canary
+  "543425801867":
+    presets:
+      - common
+
+presets:
+  common:
+    filters:
+      CloudFormationStack:
+        - type: glob
+          value: '*'
+      CloudTrailTrail:
+        - nuon-org-trail
+      IAMOpenIDConnectProvider:
+        - type: contains
+          value: token.actions.githubusercontent.com
+
+      IAMRole:
+        - type: glob
+          value: AWSServiceRole*
+        - type: glob
+          value: AWSReservedSSO*
+        - type: glob
+          value: stacksets-exec-*
+        - property: Name
+          value: OrganizationAccountAccessRole
+        - property: Name
+          value: terraform
+
+      IAMRolePolicyAttachment:
+        - property: RoleName
+          type: glob
+          value: AWSReservedSSO*
+        - property: RoleName
+          type: glob
+          value: stacksets-exec-*
+        - property: RoleName
+          value: OrganizationAccountAccessRole
+        - property: RoleName
+          value: terraform
+
+      IAMSAMLProvider:
+        - type: contains
+          value: AWSSSO
+
+      Route53HostedZone:
+        - type: contains
+          value: nuon.co
+
+resource-types:
+  # services we don't and are unlikely to use.
+  # this will speed up execution time a fair amount
+  excludes:
+    - AWS::AppFlow::ConnectorProfile
+    - AWS::AppFlow::Flow
+    - AWS::AppRunner::Service
+    - AWS::ApplicationInsights::Application
+    - AWS::Backup::Framework
+    - AWS::MWAA::Environment
+    - AWS::NetworkFirewall::Firewall
+    - AWS::NetworkFirewall::FirewallPolicy
+    - AWS::NetworkFirewall::RuleGroup
+    - AWS::Synthetics::Canary
+    - AWS::Timestream::Database
+    - AWS::Timestream::ScheduledQuery
+    - AWS::Timestream::Table
+    - AWS::Transfer::Workflow
+    - AccessAnalyzer
+    - AMPWorkspace
+    - AppMeshMesh
+    - AppMeshRoute
+    - AppMeshVirtualGateway
+    - AppMeshVirtualNode
+    - AppMeshVirtualRouter
+    - AppMeshVirtualService
+    - AppStreamDirectoryConfig
+    - AppStreamFleet
+    - AppStreamFleetState
+    - AppStreamImage
+    - AppStreamImageBuilder
+    - AppStreamImageBuilderWaiter
+    - AppStreamStack
+    - AppStreamStackFleetAttachment
+    - AppSyncGraphqlAPI
+    - ArchiveRule
+    - AthenaNamedQuery
+    - AthenaWorkGroup
+    - AutoScalingGroup
+    - AutoScalingPlansScalingPlan
+    - Budget
+    - CloudHSMV2Cluster
+    - CloudHSMV2ClusterHSM
+    - CloudSearchDomain
+    - CodeArtifactDomain
+    - CodeArtifactRepository
+    - CodeBuildProject
+    - CodeCommitRepository
+    - CodeDeployApplication
+    - CodePipelinePipeline
+    - CodeStarConnection
+    - CodeStarNotificationRule
+    - CodeStarProject
+    - CognitoIdentityPool
+    - CognitoIdentityProvider
+    - CognitoUserPool
+    - CognitoUserPoolClient
+    - CognitoUserPoolDomain
+    - ComprehendDocumentClassifier
+    - ComprehendDominantLanguageDetectionJob
+    - ComprehendEndpoint
+    - ComprehendEntitiesDetectionJob
+    - ComprehendEntityRecognizer
+    - ComprehendKeyPhrasesDetectionJob
+    - ComprehendSentimentDetectionJob
+    - ConfigServiceConfigRule
+    - ConfigServiceConfigurationRecorder
+    - ConfigServiceDeliveryChannel
+    - DataPipelinePipeline
+    - DeviceFarmProject
+    - EMRSecurityConfiguration
+    - FMSNotificationChannel
+    - FMSPolicy
+    - FSxBackup
+    - FSxFileSystem
+    - FirehoseDeliveryStream
+    - GlobalAccelerator
+    - GlobalAcceleratorEndpointGroup
+    - GlobalAcceleratorListener
+    - GlueClassifier
+    - GlueConnection
+    - GlueCrawler
+    - GlueDatabase
+    - GlueDevEndpoint
+    - GlueJob
+    - GlueTrigger
+    - GuardDutyDetector
+    - ImageBuilderComponent
+    - ImageBuilderDistributionConfiguration
+    - ImageBuilderImage
+    - ImageBuilderInfrastructureConfiguration
+    - ImageBuilderPipeline
+    - ImageBuilderRecipe
+    - Inspector2
+    - InspectorAssessmentRun
+    - InspectorAssessmentTarget
+    - InspectorAssessmentTemplate
+    - IoTAuthorizer
+    - IoTCACertificate
+    - IoTCertificate
+    - IoTJob
+    - IoTOTAUpdate
+    - IoTPolicy
+    - IoTRoleAlias
+    - IoTStream
+    - IoTThing
+    - IoTThingGroup
+    - IoTThingType
+    - IoTThingTypeState
+    - IoTTopicRule
+    - KendraIndex
+    - LexBot
+    - LexIntent
+    - LexModelBuildingServiceBotAlias
+    - LexSlotType
+    - LifecycleHook
+    - MachineLearningBranchPrediction
+    - MachineLearningDataSource
+    - MachineLearningEvaluation
+    - MachineLearningMLModel
+    - Macie
+    - MediaConvertJobTemplate
+    - MediaConvertPreset
+    - MediaConvertQueue
+    - MediaLiveChannel
+    - MediaLiveInput
+    - MediaLiveInputSecurityGroup
+    - MediaPackageChannel
+    - MediaPackageOriginEndpoint
+    - MediaStoreContainer
+    - MediaStoreDataItems
+    - MediaTailorConfiguration
+    - MobileProject
+    - NeptuneCluster
+    - NeptuneInstance
+    - NetpuneSnapshot
+    - OpsWorksApp
+    - OpsWorksCMBackup
+    - OpsWorksCMServer
+    - OpsWorksCMServerState
+    - OpsWorksInstance
+    - OpsWorksLayer
+    - OpsWorksUserProfile
+    - RekognitionCollection
+    - RoboMakerDeploymentJob
+    - RoboMakerFleet
+    - RoboMakerRobot
+    - RoboMakerRobotApplication
+    - RoboMakerSimulationApplication
+    - RoboMakerSimulationJob
+    - SFNStateMachine
+    - SageMakerApp
+    - SageMakerDomain
+    - SageMakerEndpoint
+    - SageMakerEndpointConfig
+    - SageMakerModel
+    - SageMakerNotebookInstance
+    - SageMakerNotebookInstanceLifecycleConfig
+    - SageMakerNotebookInstanceState
+    - SageMakerUserProfiles
+    - ServiceCatalogConstraintPortfolioAttachment
+    - ServiceCatalogPortfolio
+    - ServiceCatalogPortfolioProductAttachment
+    - ServiceCatalogPortfolioShareAttachment
+    - ServiceCatalogPrincipalPortfolioAttachment
+    - ServiceCatalogProduct
+    - ServiceCatalogProvisionedProduct
+    - ServiceCatalogTagOption
+    - ServiceCatalogTagOptionPortfolioAttachment
+    - ServiceDiscoveryInstance
+    - ServiceDiscoveryNamespace
+    - ServiceDiscoveryService
+    - SimpleDBDomain
+    - StorageGatewayFileShare
+    - StorageGatewayGateway
+    - StorageGatewayTape
+    - StorageGatewayVolume
+    - TransferServer
+    - TransferServerUser
+    - WorkLinkFleet
+    - WorkSpacesWorkspace
+    - XRayGroup
+    - XRaySamplingRule
