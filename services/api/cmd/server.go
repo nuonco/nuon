@@ -80,8 +80,8 @@ func newServer(cfg *internal.Config) (*server, error) {
 		log: l,
 		interceptors: []connect.Interceptor{
 			interceptors.LoggerInterceptor(),
-			interceptors.MetricsInterceptor(),
 			interceptors.NewTemporalClientInterceptor(tClient),
+			interceptors.MetricsInterceptor(),
 		},
 	}
 

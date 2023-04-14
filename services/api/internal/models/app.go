@@ -1,9 +1,12 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/services/api/internal/jobs"
+	"gorm.io/gorm"
 )
 
 type App struct {
@@ -14,6 +17,20 @@ type App struct {
 	GithubInstallID string
 	Components      []Component `faker:"-"`
 	Installs        []Install   `faker:"-"`
+}
+
+func (a *App) AfterCreate(tx *gorm.DB) (err error) {
+	ctx := tx.Statement.Context
+	mgr, err := jobs.FromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to get job manager: %w", err)
+	}
+
+	if err := mgr.CreateApp(ctx, a.ID.String()); err != nil {
+		return fmt.Errorf("unable to create org: %w", err)
+	}
+
+	return nil
 }
 
 func (App) IsNode() {}
