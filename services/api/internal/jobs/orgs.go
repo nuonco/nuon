@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/api/internal/jobs/createorg"
+	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
 )
 
 func (m *manager) CreateOrg(ctx context.Context, orgID string) error {
-	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "CreateOrg", createorg.CreateOrgRequest{
-		OrgID: orgID,
+	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "CreateOrg", &jobsv1.CreateOrgRequest{
+		OrgId: orgID,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to provision org: %w", err)
