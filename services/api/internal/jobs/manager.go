@@ -18,12 +18,12 @@ const (
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
-//go:generate mockgen -destination=mock_manager.go -source=jobs.go -package=jobs
+//go:generate mockgen -destination=mock_manager.go -source=manager.go -package=jobs
 type Manager interface {
 	CreateOrg(context.Context, string) error
-	//CreateApp(context.Context, string) error
-	//CreateInstall(context.Context, string) error
-	//CreateDeployment(context.Context, string) error
+	CreateApp(context.Context, string) error
+	CreateInstall(context.Context, string) error
+	CreateDeployment(context.Context, string) error
 }
 
 var _ Manager = (*manager)(nil)
