@@ -1,5 +1,96 @@
 # api
-Repo for the Nuon gRPC API.
+
+Repo for the Nuon gRPC API. Also known as the "core API" (`services/api`) to distinguish from the "orgs API" (`services/orgs-api`).
+
+## How to: Setup for local development (docker & earthly stack)
+
+This is onboarding setup only needed the first time you do development work on this service or when we make significant changes to our toolset.
+
+* Set up a github account in the highly unlikely event that you do not have one
+* Set up a [github personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) and store it in your password manager
+* Install [docker](https://www.docker.com/get-started/) **OR** [podman](https://podman.io/)
+  * Throughout this documentation, we will document `docker` commands. If you prefer `podman`, adjust accordingly.
+* Sign up for [buf.build](https://buf.build/)
+* Create a buf token using the buf web interface
+* Store your `BUF_TOKEN` in your password manager
+* Store your `BUF_USER` username for use later
+* Install [AWS SSO Util](https://github.com/benkehoe/aws-sso-util)
+* Setup AWS SSO util
+
+```bash
+unset AWS_PROFILE
+aws-sso-util configure populate
+```
+
+* Make sure that opens the correct browser window and you authenticate with the correct google nuon account
+* Install [golang](https://go.dev/doc/install)
+  * this api generally tracks the most recent stable release.
+
+## How to: develop locally with docker-compose & earthly
+
+* Do a fresh `aws-sso-util login` daily as needed
+* Ensure your `BUF_TOKEN` is not expired and refresh as needed
+* Setup your environment in your shell using secrets from your password manager
+
+```bash
+export AWS_PROFILE='stage.NuonPowerUser'
+export AWS_REGION='us-west-2'
+export EARTHLY_SECRETS="BUF_TOKEN=CHANGEME_PUT_YOUR_REAL_BUF_TOKEN_HERE,GITHUB_TOKEN=CHANGEME_PUT_YOUR_REAL_GITHUB_PERSONAL_ACCESS_TOKEN_HERE"
+export EARTHLY_BUILD_ARGS='BUF_USER=CHANGEME_PUT_YOUR_REAL_BUF_USERNAME_HERE'
+```
+* Launch dependencies including postgresql and temporalite via `docker-compose`
+
+```bash
+# run from the monorepo root directory
+cd mono
+docker compose up -d
+```
+
+* Run the golang unit tests for this service in earthly
+
+```bash
+# run from services/api
+cd services/api
+earthly +test
+```
+
+## How to: develop locally with docker-compose & go
+
+* Login to buf for protobuf builds: `buf registry login`
+* Generate fresh golang code
+
+```bash
+# run from the monorepo root directory
+cd mono
+go generate -v ./...
+```
+* Start the dependencies
+
+```
+# run from the monorepo root directory
+cd mono
+docker compose up -d
+```
+
+* Set up your shell environment variables
+
+```bash
+export AWS_PROFILE='stage.NuonPowerUser'
+export AWS_REGION='us-west-2'
+export GIT_REF='HEAD'
+export GITHUB_APP_KEY='CHANGEME_PUT_THE_FULL_SSH_KEY_FILE_HERE'
+```
+
+* Run the db migrations and start the golang server
+
+```bash
+# run from the services/api directory in the monorepo
+cd services/api
+go mod download
+go run . migrate up
+go run . server
+```
+At this point, you should have the api running and accessible at `http://localhost:8080`.
 
 ## Local setup
 
@@ -7,8 +98,10 @@ Repo for the Nuon gRPC API.
 
 To run the api locally, you need to have a `postgres` database running locally. You can start this using `docker-compose` by running:
 
-```
-$ docker-compose up
+```bash
+# run from the monorepo root directory
+cd mono
+docker-compose up
 ```
 
 Docker-compose should create your `api` user and `api` database for you, but if it doesn't, within
@@ -17,8 +110,8 @@ the docker container run the following:
 Once postgres is running, create `api` user and a database called `api`:
 
 ```bash
-$ psql -c "CREATE USER api"
-$ psql -U postgres -c "CREATE DATABASE api"
+psql -c "CREATE USER api"
+psql -U postgres -c "CREATE DATABASE api"
 ```
 
 If you'd like to use a different database, you can configure environment variables to change them.
@@ -28,24 +121,6 @@ If you'd like to use a different database, you can configure environment variabl
 We use [temporalite](https://github.com/temporalio/temporalite) to run a temporal server locally. While this won't actually process the jobs, it will enable us to emit workflow calls.
 
 If you are using `docker-compose up` to manage dependencies, `temporalite` will automatically be started for you.
-
-### Run earthly
-
-We use earthly to run our builds in containers. After `docker-compose up` run `earthly +bin`.
-
-### Install go and run the api
-
-Next, install `go` - https://go.dev/doc/install - this api generally tracks the most recent stable release.
-
-Once go is installed, grab dependencies, and run the application:
-
-```bash
-$ go mod download
-$ go run . migrate up
-$ go run . server
-```
-
-At this point, you should have the api running and accessible at `http://localhost:8080`.
 
 ## How to apply DB changes in stage
 After your schema changes are merged, run this script:
@@ -79,7 +154,10 @@ To run all tests: `go test -count=1 ./...` or specify which tests you want to ru
 
 ## How to run the linter locally
 
-Clone the [shared-configs repo](https://github.com/powertoolsdev/shared-configs) and then from your `api` repo run: `golangci-lint run -c ../shared-configs/golangci.yaml` (the command assumes the `shared-configs` repo has the same parent directory as `api`).
+```bash
+cd services/api
+golangci-lint run
+```
 
 ## How to send requests to the API
 
@@ -108,4 +186,4 @@ $ nuon-api-local-request '{"id":"369e9d9d-7fba-4c59-aa7b-4ab550d53be9"}' app.v1.
 $ nuon-api-stage-request '{"user_id":"233", "org_id": "123"}' user.v1.UsersService/UpsertOrgMember
 ```
 
-The protobufs for all the API's endpoints can be found in [the protos repo](https://github.com/powertoolsdev/protos/tree/main/api) and in [buf.build](https://buf.build/nuon/apis).
+The protobufs for all the API's endpoints can be found in the `pkg/types` directory in the monorepo and in [buf.build](https://buf.build/nuon/apis).
