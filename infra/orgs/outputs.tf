@@ -32,6 +32,12 @@ output "org_iam_role_name_templates" {
   }
 }
 
+output "api" {
+  value = {
+    url = nonsensitive("orgs-api.${data.tfe_outputs.infra-eks.values.root_domain}"),
+  }
+}
+
 # outputs for working with the org's account ECR registry
 output "ecr" {
   value = {

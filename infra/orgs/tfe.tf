@@ -3,6 +3,11 @@ data "tfe_outputs" "infra-eks-orgs" {
   workspace    = "infra-eks-orgs-${var.env}-main"
 }
 
+data "tfe_outputs" "infra-eks" {
+  organization = local.terraform_organization
+  workspace    = "infra-eks-${var.env}-nuon"
+}
+
 data "tfe_outputs" "sandboxes" {
   organization = local.terraform_organization
   workspace    = "sandboxes"
