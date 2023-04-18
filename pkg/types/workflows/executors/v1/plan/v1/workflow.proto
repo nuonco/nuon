@@ -3,9 +3,9 @@ syntax = "proto3";
 package executors.v1.plan.v1;
 
 import "component/v1/component.proto";
+import "executors/v1/plan/v1/org_runner_input.proto";
 import "executors/v1/plan/v1/plan_ref.proto";
 import "executors/v1/plan/v1/plan_type.proto";
-import "executors/v1/plan/v1/runner.proto";
 import "executors/v1/plan/v1/sandbox.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
@@ -20,7 +20,7 @@ message CreatePlanRequest {
     option (tagger.oneof_tags) = "faker:\"-\"";
     Component component = 100;
     .executors.v1.plan.v1.Sandbox sandbox = 101;
-    .executors.v1.plan.v1.RunnerInput runner = 102;
+    .executors.v1.plan.v1.OrgRunnerInput org_runner = 102;
   }
 }
 
