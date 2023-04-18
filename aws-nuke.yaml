@@ -109,6 +109,11 @@ resource-types:
     - AWS::Timestream::ScheduledQuery
     - AWS::Timestream::Table
     - AWS::Transfer::Workflow
+    - S3Object
+    - S3Bucket
+    - IAMRole
+    - IAMRolePolicy
+    - IAMRolePolicyAttachment
     - AccessAnalyzer
     - AMPWorkspace
     - AppMeshMesh
