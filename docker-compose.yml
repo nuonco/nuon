@@ -20,7 +20,9 @@ services:
 
   # temporal for all workers + api
   temporal:
-    image: ghcr.io/powertoolsdev/ci-temporalite:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.temporalite
     ports:
       - 7233:7233
       - 8233:8233
