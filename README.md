@@ -39,7 +39,7 @@ This will download dependencies, and generate all code needed to execute locally
 
 `Nuonctl` provides tools for working with services locally, triggering and inspecting workflows and various adhoc tasks. Any automations should be built into `nuonctl` first.
 
-To run `nuonctl`, simply build the project into your `$PATH`:
+To run `nuonctl`, build the project into your `$PATH`:
 
 
 ```bash
@@ -71,3 +71,41 @@ Services all expose a helm chart, in the `k8s` subdirectory, and terraform in th
 * `nuonctl service exec` - execute a command in a service's environment
 * `nuonctl service env` - print a service's stage environment
 * `nuonctl service run` - run a service locally
+
+# Development Tasks How-Tos
+
+## How to: debug with delve and VS Code
+
+Configure a VS Code launch configuration in `.vscode/launch.json` similar to the following:
+
+```json
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "delve localhost:2345",
+            "type": "go",
+            "request": "attach",
+            "mode": "remote",
+            "port": 2345,
+            "host": "localhost",
+            "apiVersion": 1,
+        }
+    ]
+}
+```
+
+Then, in a terminal shell, load whatever environment variables the given service or go project needs, and launch it under the delve debugger. Here's an example for the `orgs-api`
+
+```bash
+cd services/orgs-api
+dlv debug --headless --listen 127.0.0.1:2345 . -- server
+```
+Delve should get prepared and stop the program just prior to `main()` (I think). It will not start the program until a remote debug client attaches to the debugger process. So don't worry if you don't see any startup log output yet.
+
+In VS Code, activate the "Run and Debug" activity from the activity bar (ctrl+shft+d). You should see a menu of launch configurations including the one we defined in our `launch.json` above. Choose that one and click the play button.
+
+You should now be good to set breakpoints and do typical graphical debugger investigation tasks.
