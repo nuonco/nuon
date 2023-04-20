@@ -2,6 +2,7 @@ package shortid
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/google/uuid"
@@ -227,6 +228,36 @@ func TestToShortID_Errors(t *testing.T) {
 			result, err := ToShortID(test.input)
 			assert.ErrorContains(t, err, test.errExpected)
 			assert.Equal(t, "", result)
+		})
+	}
+}
+
+func TestNewNanoID(t *testing.T) {
+	tests := map[string]struct {
+		inputPrefix string
+		errExpected error
+	}{
+		"get ID with specific prefix": {
+			inputPrefix: "cmp",
+			errExpected: nil,
+		},
+		"get ID with default prefix": {
+			inputPrefix: "",
+			errExpected: nil,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := NewNanoID(test.inputPrefix)
+			assert.NoError(t, err)
+			assert.Len(t, result, 26)
+			assert.Regexp(t, regexp.MustCompile("^[a-zA-Z0-9]*$"), result[3:])
+			if test.inputPrefix == "" {
+				assert.Equal(t, "def", result[:3])
+				return
+			}
+			assert.Equal(t, test.inputPrefix, result[:3])
 		})
 	}
 }

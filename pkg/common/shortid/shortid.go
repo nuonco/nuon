@@ -6,13 +6,16 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 const (
-	base       = 36
-	intBytes   = 8
-	shortIDLen = 26
-	uuidBytes  = 64
+	base           = 36
+	intBytes       = 8
+	shortIDLen     = 26
+	uuidBytes      = 64
+	nanoIDAlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	nanoIDLen      = 23
 )
 
 // ToUUIDs parses a list of string shortids into a list of uuids, failing all if any fail
@@ -80,6 +83,19 @@ func ParseString(s string) (string, error) {
 // New returns a new shortID
 func New() string {
 	return ParseUUID(uuid.New())
+}
+
+// NewNanoID returns a new nanoID
+func NewNanoID(prefix string) (string, error) {
+	id, err := gonanoid.Generate(nanoIDAlphabet, nanoIDLen)
+	if err != nil {
+		return "", err
+	}
+	if prefix != "" {
+		return prefix + id, nil
+	}
+	// adding a default prefix value in case none is provided as input
+	return "def" + id, nil
 }
 
 // ParseStrings parses a list of string UUIDs into a list of shortids, failing all if any fail
