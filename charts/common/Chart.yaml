@@ -1,0 +1,7 @@
+---
+apiVersion: v2
+name: common
+description: A Helm chart for Kubernetes
+type: library
+version: 0.8.4
+appVersion: "0.0.0"

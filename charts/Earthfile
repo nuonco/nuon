@@ -1,0 +1,10 @@
+VERSION --use-cache-command 0.6
+
+FROM ghcr.io/powertoolsdev/ci-go-builder
+
+WORKDIR /src
+
+# code should be used to consume pkg as code. It exports the fully generated pkg
+code:
+    COPY --dir . ./charts
+    SAVE ARTIFACT charts
