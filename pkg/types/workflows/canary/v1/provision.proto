@@ -12,11 +12,16 @@ message ProvisionRequest {
   bool dry_run = 1;
 
   string canary_id = 2 [
-    (validate.rules).string.len = 26,
+    (validate.rules).string = {
+      ignore_empty: true,
+      len: 26
+    },
     (tagger.tags) = "faker:\"shortID\""
   ];
 
   map<string, string> tags = 3;
+
+  bool deprovision = 4;
 }
 
 message ProvisionResponse {

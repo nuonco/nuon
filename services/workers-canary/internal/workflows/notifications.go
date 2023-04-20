@@ -21,27 +21,27 @@ const (
 	notificationTypeDeprovisionError
 )
 
-func (n notificationType) notification(canaryID string, err error) string {
+func (n notificationType) notification(canaryID, env string, err error) string {
 	switch n {
 	case notificationTypeProvisionStart:
-		return fmt.Sprintf("🐦 started provisioning canary `%s` 🚂", canaryID)
+		return fmt.Sprintf("🐦 started provisioning `%s` canary `%s` 🚂", env, canaryID)
 	case notificationTypeProvisionSuccess:
-		return fmt.Sprintf("🐦 successfully provisioning canary `%s` 🏁", canaryID)
+		return fmt.Sprintf("🐦 successfully provisioned `%s` canary `%s` 🏁", env, canaryID)
 	case notificationTypeProvisionError:
-		return fmt.Sprintf("🐦 error provisioning canary `%s`\n\t```%s```", canaryID, err)
+		return fmt.Sprintf("🐦 error provisioning `%s` canary `%s`\n\t```%s```", env, canaryID, err)
 	case notificationTypeDeprovisionStart:
-		return fmt.Sprintf("🐦 started deprovisioning canary `%s` 👷", canaryID)
+		return fmt.Sprintf("🐦 started deprovisioning `%s` canary `%s` 👷", env, canaryID)
 	case notificationTypeDeprovisionSuccess:
-		return fmt.Sprintf("🐦 successfully deprovisioned canary `%s` 🏁", canaryID)
+		return fmt.Sprintf("🐦 successfully deprovisioned `%s` canary `%s` 🏁", env, canaryID)
 	case notificationTypeDeprovisionError:
-		return fmt.Sprintf("🐦 error deprovisioning canary `%s`\n\t```%s```", canaryID, err)
+		return fmt.Sprintf("🐦 error deprovisioning `%s` canary `%s`\n\t```%s```", env, canaryID, err)
 	}
 
 	return ""
 }
 
 func (w *wkflow) sendNotification(ctx workflow.Context, typ notificationType, canaryID string, stepErr error) {
-	msg := typ.notification(canaryID, stepErr)
+	msg := typ.notification(canaryID, w.cfg.Env.String(), stepErr)
 	l := zap.L()
 
 	if err := sharedactivities.SendNotification(ctx, &sharedactivitiesv1.SendNotificationRequest{
