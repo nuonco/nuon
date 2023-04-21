@@ -1,6 +1,14 @@
 ---
-name: prod
-on: workflow_dispatch
+name: promote
+on:
+  workflow_dispatch:
+    inputs:
+      prod:
+        type: boolean
+        required: true
+      stage:
+        type: boolean
+        required: true
 
 permissions:
   contents: write
@@ -32,6 +40,22 @@ jobs:
         id: git_ref
         run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+  slack_notifications:
+    name: update promotions channel
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Slack Notification
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_ICON_EMOJI: 🤖
+        SLACK_USERNAME: github-bot
+        SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
+        SLACK_MESSAGE: |
+          ⛴  promoting `${{ needs.tag.outputs.git_ref }}`
+          *stage* - ${{ inputs.stage }}
+          *prod* - ${{ inputs.prod }}
+
   services:
     # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
     name: 🚢
@@ -54,6 +78,6 @@ jobs:
     with:
       service: ${{matrix.service}}
       tag: ${{ needs.tag.outputs.git_ref }}
-      prod: true
-      stage: true
+      prod: ${{ inputs.prod }}
+      stage: ${{ inputs.stage }}
     secrets: inherit
