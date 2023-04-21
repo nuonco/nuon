@@ -14,9 +14,6 @@ inputs:
   github_token:
     description: "GITHUB_TOKEN"
     default: "${{ github.token }}"
-  buf_auth_token:
-    description: Buf auth token
-    default: ""
   aws_role:
     description: |
       (Optional) The AWS role to assume.
@@ -126,10 +123,8 @@ runs:
         readarray -d ',' -t secrets < <(printf "%s" "$EARTHLY_SECRETS")
         # append additional secrets
         secrets+=("github_token=${{ inputs.github_token }}")
-        secrets+=("buf_token=${{ inputs.buf_auth_token }}")
         secrets+=("clone_token=${{ inputs.clone_token }}")
         secrets+=("GITHUB_TOKEN=${{ inputs.github_token }}")
-        secrets+=("BUF_TOKEN=${{ inputs.buf_auth_token }}")
         secrets+=("AWS_REGION=${{ env.AWS_REGION}}")
         secrets+=("AWS_ACCESS_KEY_ID=${{ env.AWS_ACCESS_KEY_ID}}")
         secrets+=("AWS_SECRET_ACCESS_KEY=${{ env.AWS_SECRET_ACCESS_KEY}}")
