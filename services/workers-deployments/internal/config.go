@@ -10,10 +10,6 @@ import (
 func init() {
 	config.RegisterDefault("temporal_namespace", "deployments")
 	config.RegisterDefault("instances_temporal_namespace", "instances")
-
-	// deployment defaults
-	config.RegisterDefault("waypoint_token_secret_namespace", "default")
-	config.RegisterDefault("waypoint_org_server_root_domain", "orgs-stage.nuon.co")
 }
 
 type Config struct {
