@@ -1,24 +1,21 @@
-# infra
+# Infrastructure
 
-This directory contains infrastructure as code that powers `nuon`.
+This code manages all of our infra.
 
-## earthly
+## File Organization
 
-We use `earthly` during CI to run various steps and validations against code changes here. To run this locally, do the following:
+An easy way to understand how it all fits together is to think of it in layers:
 
-Export a terraform cloud team token with access to the `launchpaddev` workspace:
+1. `/terraform`: manages terraform workspaces.
+1. `/aws`: manages the AWS accounts and SSO.
+1. `/eks`: manages EKS clusters.
+1. `/orgs`: expose EKS fields and settings that are used by the workers.
 
-```bash
-export EARTHLY_SECRETS="TERRAFORM_CLOUD_TOKEN=<your-token>"
-```
+The terraform in the rest of the directories runs on top of all that, to provision common services like Datadog, Temporal, and Waypoint. Finally, the terraform in each service directory runs on top of everything here, to provision app-specific resources.
 
-Run earthly by passing in a module, as well as a workspace to be used for the backend during initialization:
+## Workspaces
 
-```bash
-$ earthly +lint --MODULE=datadog --TERRAFORM_WORKSPACE=infra-datadog-orgs-stage
-```
-
-## Key workspaces
+We use workspaces to organize our Terraform code. These are, themselves, configured using Terraform, and you can find that code in `/terraform`.
 
 ### aws
 
@@ -55,3 +52,39 @@ Manages our github enterprise, repos, teams and configuration.
 ### temporal
 
 Manages temporal via helm in our stage and prod accounts.
+
+## Earthly
+
+We use `earthly` during CI to run various steps and validations against code changes here. To run this locally, do the following:
+
+Export a terraform cloud team token with access to the `launchpaddev` workspace:
+
+```bash
+export EARTHLY_SECRETS="TERRAFORM_CLOUD_TOKEN=<your-token>"
+```
+
+Run earthly by passing in a module, as well as a workspace to be used for the backend during initialization:
+
+```bash
+$ earthly +lint --MODULE=datadog --TERRAFORM_WORKSPACE=infra-datadog-orgs-stage
+```
+
+## Architecture
+
+Our infrastructure is all in AWS, with the exception of our IdP, which is Auth0. Within AWS, we have a pretty standard EKS architecture, with a few wrinkles that mainly stem from isolating org infra away from our own service infra.
+
+### AWS Accounts
+
+We split up our infra across 3 AWS accounts, primarily to isolate org-specific infrastructure from our own, internal infra.
+
+1. prod: Hosts Nuon services, like our API.
+1. orgs-prod: Hosts org-specific services, like the Waypoint servers and runners created for each org.
+1. infra-shared-prod: (I'm actually not sure what this is for yet.)
+
+We also have a staging env with the same structure, but with `prod` swapped for `stage` in all the names.
+
+TODO: Outline the other accounts, like canary.
+
+### AWS Infra
+
+The prod account contains a pretty standard EKS setup. (Insert some Miro diagrams here, like this one: https://miro.com/app/board/uXjVMT5BLxs=/?moveToWidget=3458764552294864172&cot=14)
