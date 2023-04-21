@@ -139,14 +139,24 @@ Remember to `aws-sso-util login` first.
 2. Edit the created file and add the SQL commands for your changes, e.g. `CREATE TABLE users...`
 3. Run `go run . migrate up`
 
-Alternatively you can set up the goose CLI and use it directly.
-```
-brew install goose
-goose -s -dir "./migrations" create sandbox_versions_create sql
-GOOSE_DRIVER=postgres GOOSE_DBSTRING="host=127.0.0.1 port=5432 user=api dbname=api sslmode=disable" goose -dir "./migrations" up
-```
+## How to: create a DB schema migration
 
-Use `go run . migrate status` to check the current status of DB migrations on your local DB.
+* Install `goose` with `brew install goose` or your preferred package manager
+  * https://github.com/pressly/goose
+* Generate a template migration script
+ * `goose -s -dir "./migrations" create sandbox_versions_create sql`
+* Edit the corresponding `./migrations/*create_sandbox_versions.sql` file
+* When ready to test the migration, run
+  * `GOOSE_DRIVER=postgres GOOSE_DBSTRING="host=127.0.0.1 port=5432 user=api dbname=api sslmode=disable" goose -dir "./migrations" up`
+* run `go run . migrate status` to check the current status of DB migrations on your local DB.
+
+## How to: get a psql prompt for DB work
+
+If postgres is not already running via `docker compose`, start it from the mono root directory with `docker compose up -d`.
+
+Run `docker exec --interactive --tty mono-postgres-1 psql --username=api`
+
+You can now run SQL, DDL, or weird postgres syntax like `\d orgs` to describe the `orgs` table.
 
 ## How to run tests locally
 

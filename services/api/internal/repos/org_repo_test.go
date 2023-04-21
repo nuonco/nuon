@@ -2,10 +2,12 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jaswdr/faker"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +32,8 @@ func TestCreateOrg(t *testing.T) {
 			desc: "should create org successfully",
 			fn: func(ctx context.Context, state repoTestState) {
 				orgInput := models.Org{
-					Name: uuid.NewString(),
+					Name:            uuid.NewString(),
+					GithubInstallID: fmt.Sprintf("%d", faker.New().UInt32()),
 				}
 
 				org, err := state.orgRepo.Create(ctx, &orgInput)
@@ -81,12 +84,14 @@ func TestUpsertOrg(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				org := createOrg(ctx, t, state.orgRepo)
 				org.Name += "abc"
+				org.GithubInstallID = fmt.Sprintf("%d", faker.New().UInt32())
 				org, err := state.orgRepo.Create(ctx, org)
 				assert.Nil(t, err)
 
 				fetchedOrg, err := state.orgRepo.Get(ctx, org.ID)
 				assert.Nil(t, err)
 				assert.Equal(t, org.Name, fetchedOrg.Name)
+				assert.Equal(t, org.GithubInstallID, fetchedOrg.GithubInstallID)
 			},
 		},
 	})

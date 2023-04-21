@@ -84,7 +84,8 @@ func (o *orgService) GetOrg(ctx context.Context, inputID string) (*models.Org, e
 
 func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*models.Org, error) {
 	org := &models.Org{
-		Name: input.Name,
+		Name:            input.Name,
+		GithubInstallID: *input.GithubInstallID,
 	}
 	if input.ID != nil {
 		// parsing the uuid while ignoring the error handling since we do this at protobuf level
