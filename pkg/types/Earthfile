@@ -37,8 +37,7 @@ lint:
 
 BUF_LOGIN:
   COMMAND
-  RUN --secret BUF_TOKEN \
-     echo $BUF_TOKEN \
+  RUN echo $BUF_TOKEN \
      | buf registry login --username $BUF_USER --token-stdin
 
 ################################### LOCAL #####################################
