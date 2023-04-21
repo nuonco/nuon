@@ -259,9 +259,10 @@ type OrgEdge struct {
 }
 
 type OrgInput struct {
-	ID      *string `json:"id" faker:"uuid_hyphenated"`
-	Name    string  `json:"name"`
-	OwnerID string  `json:"ownerId" faker:"uuid_hyphenated"`
+	ID              *string `json:"id" faker:"uuid_hyphenated"`
+	Name            string  `json:"name"`
+	OwnerID         string  `json:"ownerId" faker:"uuid_hyphenated"`
+	GithubInstallID *string `json:"githubInstallId"`
 }
 
 // Returns information about pagination in a connection, in accordance with the Relay specification

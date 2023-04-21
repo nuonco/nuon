@@ -8,11 +8,12 @@ import (
 // Org model to proto converts org domain model into org proto message
 func OrgModelToProto(org *models.Org) *orgv1.Org {
 	return &orgv1.Org{
-		Id:        org.ID.String(),
-		Name:      org.Name,
-		OwnerId:   org.CreatedByID,
-		UpdatedAt: TimeToDatetime(org.UpdatedAt),
-		CreatedAt: TimeToDatetime(org.CreatedAt),
+		Id:              org.ID.String(),
+		Name:            org.Name,
+		OwnerId:         org.CreatedByID,
+		GithubInstallId: org.GithubInstallID,
+		UpdatedAt:       TimeToDatetime(org.UpdatedAt),
+		CreatedAt:       TimeToDatetime(org.CreatedAt),
 	}
 }
 
