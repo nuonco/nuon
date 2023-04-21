@@ -11,10 +11,11 @@ import (
 type Org struct {
 	Model
 
-	CreatedByID string
-	Name        string `gorm:"uniqueIndex"`
-	Apps        []App  `faker:"-"`
-	IsNew       bool   `gorm:"-:all"`
+	CreatedByID     string
+	Name            string `gorm:"uniqueIndex"`
+	Apps            []App  `faker:"-"`
+	IsNew           bool   `gorm:"-:all"`
+	GithubInstallID string
 }
 
 func (o *Org) AfterCreate(tx *gorm.DB) (err error) {

@@ -11,6 +11,7 @@ message Org {
   string owner_id = 3;
   google.type.DateTime updated_at = 4;
   google.type.DateTime created_at = 5;
+  string github_install_id = 6 [(validate.rules).string.pattern = "^[0-9]*$"];
 }
 
 message GetOrgsByMemberRequest {
@@ -36,6 +37,7 @@ message UpsertOrgRequest {
   }];
   string name = 2;
   string owner_id = 3;
+  string github_install_id = 4;
 }
 
 message UpsertOrgResponse {

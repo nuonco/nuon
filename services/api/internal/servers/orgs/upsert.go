@@ -20,9 +20,10 @@ func (s *server) UpsertOrg(
 	}
 
 	org, err := s.Svc.UpsertOrg(ctx, models.OrgInput{
-		ID:      converters.ToOptionalStr(req.Msg.Id),
-		Name:    req.Msg.Name,
-		OwnerID: req.Msg.OwnerId,
+		ID:              converters.ToOptionalStr(req.Msg.Id),
+		Name:            req.Msg.Name,
+		OwnerID:         req.Msg.OwnerId,
+		GithubInstallID: converters.ToOptionalStr(req.Msg.GithubInstallId),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to upsert org: %w", err)
