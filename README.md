@@ -72,6 +72,20 @@ Services all expose a helm chart, in the `k8s` subdirectory, and terraform in th
 * `nuonctl service env` - print a service's stage environment
 * `nuonctl service run` - run a service locally
 
+# Validation with declarative tagging
+
+We use 2 main libraries to assist with basic structural validation of our data and inputs.
+
+* For protocol buffers, we use a plugin called `protoc-gen-validate`
+  * This adds functionality to the basic `protoc` protocol buffer compiler
+  * We can declare validations directly in our `.proto` source files
+  * The list of built-in validations we can use is [in validate.proto here](https://github.com/bufbuild/protoc-gen-validate/blob/main/validate/validate.proto)
+  * The syntax can be tricky. Study existing examples in code.
+  * Use `buf lint` and `buf build` locally to check your syntax
+* In regular go source code, we use [go-playground validator v10](https://pkg.go.dev/github.com/go-playground/validator/v10#section-documentation)
+  * These we can use in `.go` source files as golang struct tags
+  * golang structs get a generated method `.Validate()` we can use to trigger the validation
+
 # Development Tasks How-Tos
 
 ## How to: debug with delve and VS Code

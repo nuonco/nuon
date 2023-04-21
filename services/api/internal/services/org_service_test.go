@@ -142,6 +142,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 	errUpsertOrg := fmt.Errorf("error upserting app")
 	org := generics.GetFakeObj[*models.Org]()
 	org.IsNew = false
+	org.GithubInstallID = "1234567890"
 	userID := uuid.NewString()
 
 	tests := map[string]struct {
@@ -156,6 +157,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = nil
 				inp.OwnerID = userID
+				inp.GithubInstallID = &org.GithubInstallID
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
@@ -163,6 +165,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 				returnedOrg := generics.GetFakeObj[*models.Org]()
 				returnedOrg.IsNew = true
 				returnedOrg.ID = org.ID
+				returnedOrg.GithubInstallID = org.GithubInstallID
 				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(returnedOrg, nil)
 				return repo
 			},
@@ -181,6 +184,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			inputFn: func() models.OrgInput {
 				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = generics.ToPtr(org.ID.String())
+				inp.GithubInstallID = &org.GithubInstallID
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
