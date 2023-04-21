@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/workflow"
 )
 
 func TestProvision(t *testing.T) {
@@ -29,12 +30,20 @@ func TestProvision(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
+	env.RegisterWorkflow(wkflow.Deprovision)
 	act, _ := activities.New(v)
 	env.RegisterActivity(act)
 	sharedActs, _ := sharedactivities.New(v)
 	env.RegisterActivity(sharedActs)
 
 	// Mock activity implementations
+	env.OnWorkflow(wkflow.Deprovision, mock.Anything, mock.Anything).
+		Return(func(_ workflow.Context, r *canaryv1.DeprovisionRequest) (*canaryv1.DeprovisionResponse, error) {
+			resp := &canaryv1.DeprovisionResponse{}
+			assert.Nil(t, r.Validate())
+			return resp, nil
+		})
+
 	env.OnActivity("PollWorkflow", mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, aReq *activitiesv1.PollWorkflowRequest) (*activitiesv1.PollWorkflowResponse, error) {
 			return &activitiesv1.PollWorkflowResponse{}, nil
