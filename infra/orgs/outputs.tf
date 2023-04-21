@@ -83,7 +83,7 @@ output "iam_roles" {
   value = {
     # TODO(jm): should this be scoped per org, instead of a single role?
     install_k8s_access = {
-      description = "k8s iam role that allows us to provision infra in a sandbox's EKS cluster"
+      description = "k8s iam role that allows us to provision infra in a sandbox EKS cluster"
       arn         = module.install_k8s_role_external.iam_role_arn
     }
 
