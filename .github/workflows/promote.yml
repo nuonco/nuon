@@ -17,6 +17,7 @@ permissions:
   packages: write
   pull-requests: write
   statuses: write
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -40,8 +41,10 @@ jobs:
         id: git_ref
         run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-  slack_notifications:
+  start_slack_notifications:
     name: update promotions channel
+    needs:
+      - tag
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -81,3 +84,27 @@ jobs:
       prod: ${{ inputs.prod }}
       stage: ${{ inputs.stage }}
     secrets: inherit
+
+  status_slack_notifications:
+    name: update promotions channel
+    if: always()
+    needs:
+      - tag
+      - services
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: martialonline/workflow-status@v3
+      id: check
+    - name: Slack Notification
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_ICON_EMOJI: 🤖
+        SLACK_USERNAME: github-bot
+        SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
+        SLACK_COLOR: ${{steps.check.outputs.status}}
+        SLACK_MESSAGE: |
+          ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} finished promoting `${{ needs.tag.outputs.git_ref }}`
+          *stage* - ${{ inputs.stage }}
+          *prod* - ${{ inputs.prod }}
+          *status* - ${{steps.check.outputs.status}}
