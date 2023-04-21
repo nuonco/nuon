@@ -324,7 +324,7 @@ type UserOrgInput struct {
 }
 
 type SandboxVersionInput struct {
-	ID             string `json:"id" faker:"uuid_hyphenated"`
+	ID             string `json:"id"`
 	SandboxName    string `json:"sandboxName"`
 	SandboxVersion string `json:"sandboxVersion"`
 	TfVersion      string `json:"tfVersion"`
