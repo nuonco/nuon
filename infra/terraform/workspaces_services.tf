@@ -94,7 +94,7 @@ module "workers-canary-stage" {
   vars = {
     env = "stage"
   }
-  variable_sets                   = ["aws-environment-credentials"]
+  variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
@@ -108,7 +108,7 @@ module "workers-canary-prod" {
   vars = {
     env = "prod"
   }
-  variable_sets                   = ["aws-environment-credentials"]
+  variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
