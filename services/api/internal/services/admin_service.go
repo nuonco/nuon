@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"go.uber.org/zap"
@@ -37,9 +36,7 @@ func (a adminService) UpsertSandboxVersion(ctx context.Context, input models.San
 		SandboxVersion: input.SandboxVersion,
 		TfVersion:      input.TfVersion,
 	}
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	sandboxVersionID, _ := uuid.Parse(input.ID)
-	sandboxVersion.ID = sandboxVersionID
+	sandboxVersion.ID = input.ID
 
 	updatedSandboxVersion, err := a.repo.UpsertSandboxVersion(ctx, &sandboxVersion)
 	if err != nil {

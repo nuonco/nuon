@@ -3,20 +3,20 @@ package models
 import "time"
 
 type SandboxVersion struct {
-	Model
+	ModelV2
 	SandboxName    string
 	SandboxVersion string
 	TfVersion      string
 }
 
 func (s SandboxVersion) GetID() string {
-	return s.Model.ID.String()
+	return s.ModelV2.ID
 }
 
 func (s SandboxVersion) GetCreatedAt() time.Time {
-	return s.Model.CreatedAt
+	return s.ModelV2.CreatedAt
 }
 
 func (s SandboxVersion) GetUpdatedAt() time.Time {
-	return s.Model.UpdatedAt
+	return s.ModelV2.UpdatedAt
 }

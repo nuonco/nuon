@@ -40,7 +40,7 @@ func TestAdminService_UpsertSandboxVersion(t *testing.T) {
 		"upsert not found": {
 			inputFn: func() models.SandboxVersionInput {
 				inp := generics.GetFakeObj[models.SandboxVersionInput]()
-				inp.ID = sandboxVersion.ID.String()
+				inp.ID = sandboxVersion.ID
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
@@ -53,7 +53,7 @@ func TestAdminService_UpsertSandboxVersion(t *testing.T) {
 		"upsert happy path": {
 			inputFn: func() models.SandboxVersionInput {
 				inp := generics.GetFakeObj[models.SandboxVersionInput]()
-				inp.ID = sandboxVersion.ID.String()
+				inp.ID = sandboxVersion.ID
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockAdminRepo {
