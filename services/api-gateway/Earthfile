@@ -29,9 +29,7 @@ deps:
      ./
   RUN \
     --secret GITHUB_TOKEN \
-    --secret BUF_TOKEN \
     NUON_NPM_GITHUB_TOKEN=$GITHUB_TOKEN \
-    NPM_BUF_TOKEN=$BUF_TOKEN \
     npm ci
 
   COPY --dir src src
