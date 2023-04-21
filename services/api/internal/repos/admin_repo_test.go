@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,6 +24,7 @@ func createSandboxVersion(ctx context.Context, t *testing.T, state repoTestState
 
 func TestGetSandboxVersionByID(t *testing.T) {
 	integration := os.Getenv("INTEGRATION")
+	id, _ := shortid.NewNanoID("snb")
 	if integration == "" {
 		t.Skip("INTEGRATION=true must be set in environment to run.")
 	}
@@ -32,7 +33,7 @@ func TestGetSandboxVersionByID(t *testing.T) {
 		{
 			desc: "should return error if record does not exist",
 			fn: func(ctx context.Context, state repoTestState) {
-				sandboxVersion, err := state.adminRepo.GetSandboxVersionByID(ctx, uuid.New())
+				sandboxVersion, err := state.adminRepo.GetSandboxVersionByID(ctx, id)
 				assert.Error(t, err)
 				assert.Nil(t, sandboxVersion)
 			},
@@ -51,7 +52,7 @@ func TestGetSandboxVersionByID(t *testing.T) {
 			desc: "should error with canceled context",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				fetchedSandboxVersion, err := state.adminRepo.GetSandboxVersionByID(ctx, uuid.New())
+				fetchedSandboxVersion, err := state.adminRepo.GetSandboxVersionByID(ctx, id)
 				assert.Error(t, err)
 				assert.Nil(t, fetchedSandboxVersion)
 			},
@@ -123,7 +124,8 @@ func TestUpsertSandboxVersion(t *testing.T) {
 					SandboxVersion: "1.0",
 					TfVersion:      "10.1",
 				}
-				sandboxVersion.ID = uuid.New()
+				id, _ := shortid.NewNanoID("snb")
+				sandboxVersion.ID = id
 				updatedSandboxVersion, err := state.adminRepo.UpsertSandboxVersion(ctx, sandboxVersion)
 				require.Error(t, err)
 				assert.Nil(t, updatedSandboxVersion)

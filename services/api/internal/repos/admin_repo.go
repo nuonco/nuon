@@ -3,7 +3,7 @@ package repos
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"gorm.io/gorm"
 )
@@ -12,7 +12,7 @@ import (
 //go:generate mockgen -destination=mock_admin_repo.go -source=admin_repo.go -package=repos
 type AdminRepo interface {
 	GetLatestSandboxVersion(context.Context) (*models.SandboxVersion, error)
-	GetSandboxVersionByID(context.Context, uuid.UUID) (*models.SandboxVersion, error)
+	GetSandboxVersionByID(context.Context, string) (*models.SandboxVersion, error)
 	UpsertSandboxVersion(context.Context, *models.SandboxVersion) (*models.SandboxVersion, error)
 }
 
@@ -28,7 +28,7 @@ type adminRepo struct {
 	db *gorm.DB
 }
 
-func (a adminRepo) GetSandboxVersionByID(ctx context.Context, sandboxID uuid.UUID) (*models.SandboxVersion, error) {
+func (a adminRepo) GetSandboxVersionByID(ctx context.Context, sandboxID string) (*models.SandboxVersion, error) {
 	var sandboxVersion models.SandboxVersion
 
 	// SELECT * from sandbox_versions WHERE ID = sandboxID
@@ -54,11 +54,17 @@ func (a adminRepo) GetLatestSandboxVersion(ctx context.Context) (*models.Sandbox
 
 func (a adminRepo) UpsertSandboxVersion(ctx context.Context, sandboxVersion *models.SandboxVersion) (*models.SandboxVersion, error) {
 	// if id was provided check that the sandbox exists
-	if sandboxVersion.ID != uuid.Nil {
+	if sandboxVersion.ID != "" {
 		_, err := a.GetSandboxVersionByID(ctx, sandboxVersion.ID)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		nanoID, err := shortid.NewNanoID("snb")
+		if err != nil {
+			return nil, err
+		}
+		sandboxVersion.ID = nanoID
 	}
 
 	// upsert sandbox
