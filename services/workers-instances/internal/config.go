@@ -9,10 +9,6 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "instances")
-
-	// instance defaults
-	config.RegisterDefault("waypoint_token_secret_namespace", "default")
-	config.RegisterDefault("waypoint_server_root_domain", "orgs-stage.nuon.co")
 }
 
 type Config struct {
