@@ -27,7 +27,7 @@ func (s *server) UpsertSandboxVersion(ctx context.Context, req *connect.Request[
 
 	return connect.NewResponse(&adminv1.UpsertSandboxVersionResponse{
 		Sandbox: &adminv1.SandboxVersion{
-			Id:             sandboxVersion.GetID(),
+			Id:             sandboxVersion.ID,
 			SandboxName:    sandboxVersion.SandboxName,
 			SandboxVersion: sandboxVersion.SandboxVersion,
 			TfVersion:      sandboxVersion.TfVersion,
