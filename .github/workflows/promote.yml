@@ -65,6 +65,7 @@ jobs:
     needs:
       - tag
     strategy:
+      fail-fast: false
       matrix:
         service:
           - api
