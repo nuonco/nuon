@@ -35,3 +35,21 @@ func (t *temporal) GetWorkflowInNamespace(ctx context.Context,
 
 	return client.GetWorkflow(ctx, workflowID, runID), nil
 }
+
+func (t *temporal) CancelWorkflowInNamespace(ctx context.Context,
+	namespace string,
+	workflowID string,
+	runID string) error {
+	client, err := tclient.NewClientFromExisting(t.Client, tclient.Options{
+		Namespace: namespace,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
+	}
+
+	if err := client.CancelWorkflow(ctx, workflowID, runID); err != nil {
+		return fmt.Errorf("unable to cancel workflow: %w", err)
+	}
+
+	return nil
+}
