@@ -1,0 +1,73 @@
+---
+name: artifact publish
+"on":
+  workflow_call:
+    inputs:
+      artifact:
+        type: string
+        required: true
+      tag:
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  publish:
+    name: 🌏 publish
+    runs-on: [ubuntu-latest-16-cores, linux]
+    permissions:
+      contents: read
+      packages: write
+    env:
+      TF_OUT: ${{ github.workspace }}/tf-out.json
+    timeout-minutes: 9
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_KEY }}
+
+      - name: Get terraform outputs
+        shell: bash
+        working-directory: infra/artifacts
+        run: |
+          terraform init
+          terraform-bin output -json > ${{ env.TF_OUT }}
+
+      - name: Parse output
+        uses: powertoolsdev/action-tf-output@main
+        with:
+          file: ${{ env.TF_OUT }}
+
+      - name: Setup for CI
+        uses: powertoolsdev/mono/actions/setup-ci@main
+        with:
+          setup_helm: "false"
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          clone_token: ${{ secrets.GITHUB_TOKEN }}
+          # NOTE(jm): for some reason this is just, not working - not sure what is actually going on, but land this and
+          # keep making progress until it's fixed.
+          aws_role: "arn:aws:iam::007754799877:role/github/actions/gha-workers-apps"
+          aws_region: us-west-2
+
+      - name: Earthly build artifacts
+        working-directory: bins/${{inputs.artifact}}
+        run: |
+          earthly \
+            --allow-privileged \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --ci \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
+            +artifacts
+
+      - name: push artifacts to s3
+        run: |
+          aws s3 sync ./out s3://${{ env.TFO_BUCKET_NAME }}/${{ inputs.artifact }}/${{ inputs.tag }}/

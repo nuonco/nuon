@@ -32,3 +32,11 @@ jobs:
     secrets: inherit
     with:
       artifact: ${{ inputs.artifact }}
+
+  publish:
+    name: 🌏 publish
+    uses: ./.github/workflows/artifact_publish.yml
+    secrets: inherit
+    with:
+      artifact: ${{ inputs.artifact }}
+      tag: ${{ inputs.tag }}
