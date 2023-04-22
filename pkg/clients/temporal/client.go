@@ -23,4 +23,10 @@ type Client interface {
 		namespace string,
 		workflowID string,
 		runID string) (tclient.WorkflowRun, error)
+
+	// CancelWorkflowInNamespace is a wrapper that will get a workflow in a different namespace
+	CancelWorkflowInNamespace(ctx context.Context,
+		namespace string,
+		workflowID string,
+		runID string) error
 }
