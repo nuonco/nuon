@@ -3,6 +3,10 @@ output "gh_role_arn" {
   description = "github role"
 }
 
+output "region" {
+  value       = local.aws_settings.region
+}
+
 output "bucket" {
   value = {
     name   = module.bucket.s3_bucket_id
