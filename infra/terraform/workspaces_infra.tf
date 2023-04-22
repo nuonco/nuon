@@ -16,7 +16,7 @@ module "infra-artifacts" {
 
   name          = "infra-artifacts"
   repo          = "powertoolsdev/mono"
-  auto_apply    = false
+  auto_apply    = true
   dir           = "infra/artifacts"
   variable_sets = ["aws-environment-credentials"]
 
