@@ -9,12 +9,6 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "installs")
-
-	// install defaults
-	config.RegisterDefault("nuon_access_role_arn", "arn:aws:iam::618886478608:role/install-k8s-admin-stage")
-	config.RegisterDefault("token_secret_namespace", "default")
-	config.RegisterDefault("org_server_root_domain", "orgs-stage.nuon.co")
-	config.RegisterDefault("sandbox_bucket", "nuon-sandboxes")
 }
 
 // Config exposes a set of configuration options for the install domain
