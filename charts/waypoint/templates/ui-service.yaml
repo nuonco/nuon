@@ -1,0 +1,42 @@
+{{- if (and (eq (.Values.ui.service.enabled | toString) "true") (eq (.Values.server.enabled | toString) "true")) }}
+# UI Service for Waypoint Server
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "waypoint.fullname" . }}-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "waypoint.name" . }}
+    chart: {{ template "waypoint.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+    component: ui
+  {{- if .Values.ui.service.annotations }}
+  annotations:
+    {{ tpl .Values.ui.service.annotations . | nindent 4 | trim }}
+  {{- end }}
+spec:
+  selector:
+    app.kubernetes.io/name: {{ template "waypoint.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    component: server
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: https
+      port: 443
+      targetPort: https
+    - name: grpc
+      port: 9701
+      targetPort: grpc
+    - name: https-2
+      port: 9702
+      targetPort: https
+  {{- if .Values.ui.service.type }}
+  type: {{ .Values.ui.service.type }}
+  {{- end }}
+  {{- if .Values.ui.service.additionalSpec }}
+  {{ tpl .Values.ui.service.additionalSpec . | nindent 2 | trim }}
+  {{- end }}
+{{- end }}

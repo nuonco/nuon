@@ -1,0 +1,119 @@
+{{- if (eq (.Values.server.enabled | toString) "true") }}
+# StatefulSet to run the Waypoint server.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "waypoint.fullname" . }}-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "waypoint.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  {{- template "waypoint.statefulSet.annotations" . }}
+spec:
+  serviceName: {{ template "waypoint.fullname" . }}-server
+  replicas: 1 # Waypoint doesn't support horizontal scaling today
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "waypoint.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      component: server
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: {{ template "waypoint.chart" . }}
+        app.kubernetes.io/name: {{ template "waypoint.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        component: server
+        {{- if  .Values.server.extraLabels -}}
+          {{- toYaml .Values.server.extraLabels | nindent 8 -}}
+        {{- end -}}
+      {{ template "waypoint.annotations" . }}
+    spec:
+      {{- if .Values.server.priorityClassName }}
+      priorityClassName: {{ .Values.server.priorityClassName }}
+      {{- end }}
+      terminationGracePeriodSeconds: 30
+      serviceAccountName: {{ template "waypoint.serviceAccount.name" . }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 1000
+        fsGroup: 1000
+      volumes:
+        - name: home
+          emptyDir: {}
+      {{- if .Values.server.certs.secretName }}
+        - name: certs
+          secret:
+            secretName: "{{ .Values.server.certs.secretName }}"
+      {{- end }}
+      {{- include "imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: waypoint
+          resources:
+{{ toYaml .Values.server.resources | indent 12 }}
+          image: {{ .Values.server.image.repository }}:{{ .Values.server.image.tag | default "latest" }}
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          command:
+          - "waypoint"
+          args:
+          - "server"
+          - "run"
+          - "-accept-tos"
+          - "-db=/data/data.db"
+          - "-listen-grpc=0.0.0.0:9701"
+          - "-listen-http=0.0.0.0:9702"
+          - "-listen-http-insecure=0.0.0.0:9703"
+          {{- if .Values.server.certs.secretName }}
+          - "-tls-cert-file=/secret/certs/{{ .Values.server.certs.certName }}"
+          - "-tls-key-file=/secret/certs/{{ .Values.server.certs.keyName }}"
+          {{- end }}
+          {{- range .Values.server.runArgs }}
+          - "{{ . }}"
+          {{- end }}
+          env:
+            - name: HOME
+              value: /home/waypoint
+          volumeMounts:
+            - name: data-{{ .Release.Namespace }}
+              mountPath: /data
+            - name: home
+              mountPath: /home/waypoint
+          {{- if .Values.server.certs.secretName }}
+            - name: certs
+              mountPath: /secret/certs
+              readOnly: true
+          {{- end }}
+          ports:
+            - containerPort: 9701
+              name: grpc
+            - containerPort: 9702
+              name: https
+            - containerPort: 9703
+              name: http
+          livenessProbe:
+            tcpSocket:
+             port: grpc
+            failureThreshold: 2
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            successThreshold: 1
+            timeoutSeconds: 5
+      {{- if .Values.server.nodeSelector }}
+      nodeSelector:
+        {{ tpl .Values.server.nodeSelector . | indent 8 | trim }}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data-{{ .Release.Namespace }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.server.storage.size }}
+        {{- if .Values.server.storage.storageClass }}
+        storageClassName: {{ .Values.server.storage.storageClass }}
+        {{- end }}
+{{ end }}

@@ -1,0 +1,28 @@
+{{- if (eq (.Values.server.enabled | toString) "true") }}
+# Headless service for Waypoint server statefulset.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "waypoint.fullname" . }}-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm.sh/chart: {{ include "waypoint.chart" . }}
+    app.kubernetes.io/name: {{ include "waypoint.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+{{ template "waypoint.service.annotations" .}}
+spec:
+  clusterIP: None
+  ports:
+    - name: https
+      port: 9702
+      targetPort: https
+    - name: grpc
+      port: 9701
+      targetPort: grpc
+  selector:
+    app.kubernetes.io/name: {{ include "waypoint.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    component: server
+{{- end }}

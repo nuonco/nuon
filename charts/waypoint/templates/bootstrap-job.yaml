@@ -1,0 +1,67 @@
+{{- if (eq (.Values.server.enabled | toString) "true") }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "waypoint.fullname" . }}-bootstrap-{{ .Values.server.image.tag | default "latest" }}-{{ randAlphaNum 6 | nospace | lower }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "waypoint.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ template "waypoint.chart" . }}
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      name: {{ template "waypoint.fullname" . }}-bootstrap
+      labels:
+        helm.sh/chart: {{ template "waypoint.chart" . }}
+        app.kubernetes.io/name: {{ template "waypoint.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        component: bootstrap
+    spec:
+      serviceAccountName: {{ template "waypoint.bootstrap.serviceAccount.name" . }}
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 1000
+        fsGroup: 1000
+      {{- include "imagePullSecrets" . | nindent 6 }}
+      volumes:
+        - name: home
+          emptyDir: {}
+      containers:
+        - name: waypoint-bootstrap
+          resources:
+          image: {{ .Values.server.image.repository }}:{{ .Values.server.image.tag | default "latest" }}
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          command:
+          - "waypoint"
+          args:
+          - "k8s"
+          - "bootstrap"
+          - "-vvv"
+          - "-root-token-secret={{ template "waypoint.serverTokenSecret" . }}"
+          - "-runner-token-secret={{ template "waypoint.runnerTokenSecret" . }}"
+          - "-odr-image={{ .Values.runner.odr.image.repository }}:{{ .Values.runner.odr.image.tag }}"
+          - "-odr-service-account={{ template "waypoint.runner.odr.serviceAccount.name" . }}"
+          - "-odr-image-pull-policy={{ .Values.runner.odr.image.pullPolicy }}"
+          - "-advertise-service={{ template "waypoint.fullname" . }}-ui"
+          - "-advertise-tls=true"
+          - "-advertise-tls-skip-verify=true"
+          env:
+            - name: HOME
+              value: /home/waypoint
+            - name: WAYPOINT_SERVER_ADDR
+              value: {{ template "waypoint.fullname" . }}-server:9701
+            - name: WAYPOINT_SERVER_TLS
+              value: "true"
+            - name: WAYPOINT_SERVER_TLS_SKIP_VERIFY
+              value: "true"
+          volumeMounts:
+            - name: home
+              mountPath: /home
+{{ end }}

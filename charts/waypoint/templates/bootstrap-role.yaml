@@ -1,0 +1,20 @@
+{{- if (and (eq (.Values.server.enabled | toString) "true") (eq (.Values.bootstrap.serviceAccount.create | toString) "true" )) }}
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "waypoint.fullname" . }}-bootstrap
+  labels:
+    app.kubernetes.io/name: {{ include "waypoint.name" . }}-bootstrap
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "patch"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get"]
+{{- end }}
