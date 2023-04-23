@@ -21,6 +21,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     env:
       TF_OUT: ${{ github.workspace }}/tf-out.json
     timeout-minutes: 9
@@ -50,13 +51,8 @@ jobs:
       - name: Setup for CI
         uses: powertoolsdev/mono/actions/setup-ci@main
         with:
-          setup_helm: "false"
-          tfcloud_token: ${{ secrets.TF_API_KEY }}
-          clone_token: ${{ secrets.GITHUB_TOKEN }}
-          # NOTE(jm): for some reason this is just, not working - not sure what is actually going on, but land this and
-          # keep making progress until it's fixed.
-          aws_role: "arn:aws:iam::007754799877:role/github/actions/gha-workers-apps"
-          aws_region: us-west-2
+          aws_role: ${{ env.TFO_GH_ROLE_ARN }}
+          aws_region: ${{ env.TFO_REGION }}
 
       - name: Earthly build artifacts
         working-directory: bins/${{inputs.artifact}}
@@ -66,8 +62,9 @@ jobs:
             ${{ env.EARTHLY_EXTRA_ARGS }} \
             --ci \
             --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +artifacts
+            --artifact +artifacts/out && \
+            ls
 
       - name: push artifacts to s3
-        run: |
-          aws s3 sync ./out s3://${{ env.TFO_BUCKET_NAME }}/${{ inputs.artifact }}/${{ inputs.tag }}/
+        working-directory: bins/${{inputs.artifact}}
+        run: aws s3 sync ./out s3://${{ env.TFO_BUCKET_NAME }}/${{ inputs.artifact }}/${{ inputs.tag }}/
