@@ -1,0 +1,28 @@
+{{- if (eq (.Values.server.enabled | toString) "true") }}
+Thank you for installing HashiCorp Waypoint!
+
+Waypoint will take a few minutes to bootstrap. Once it is bootstrapped, you
+can log in to the local CLI by running the following command. If this command
+fails, please wait a few more minutes and try again.
+
+  $ waypoint login -from-kubernetes
+
+Once logged in, you can use the "waypoint ui" command to open the web interface.
+Alternately, you can visit the address of the load balancer service configured.
+
+If anything fails to configure properly you can uninstall this release:
+
+  $ helm uninstall {{ .Release.Name }}
+{{- else }}
+{{- if (eq (.Values.runner.enabled | toString) "true") }}
+You've successfully installed a HashiCorp Waypoint runner!
+
+The runner should start in a few minutes. You can look for the runner to register
+with the server using the "waypoint runner list" command. If you did not supply
+a runner token ahead of time, you may have to adopt the runner using the
+UI or the "waypoint runner adopt" command.
+
+If the runner does not show up in the runner list output, you can debug it
+by looking at the logs for the runner pod that was just launched.
+{{- end }}
+{{- end }}

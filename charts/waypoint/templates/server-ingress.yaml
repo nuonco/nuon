@@ -1,0 +1,52 @@
+{{- if (and (eq (.Values.server.enabled | toString) "true") .Values.ui.ingress.enabled) -}}
+{{- $fullname := (include "waypoint.fullname" .) -}}
+{{- $extraPaths := .Values.ui.ingress.extraPaths -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "waypoint.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm.sh/chart: {{ include "waypoint.chart" . }}
+    app.kubernetes.io/name: {{ include "waypoint.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    {{- with .Values.ui.ingress.labels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    alb.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    traefik.ingress.kubernetes.io/service.serversscheme: "https"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  {{- template "waypoint.ingress.annotations" . }}
+spec:
+{{- if .Values.ui.ingress.tls }}
+  tls:
+  {{- range .Values.ui.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+{{- end }}
+  rules:
+  {{- range .Values.ui.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+{{ if $extraPaths }}
+{{ toYaml $extraPaths | indent 10 }}
+{{- end }}
+        {{- range (.paths | default (list "/")) }}
+          - path: {{ . }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullname }}-server
+                port:
+                  name: https
+        {{- end }}
+  {{- end }}
+{{- end }}

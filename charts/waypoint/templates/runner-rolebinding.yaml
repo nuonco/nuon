@@ -1,0 +1,18 @@
+{{- if (eq (.Values.runner.serviceAccount.create | toString) "true" ) }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ template "waypoint.fullname" . }}-runner-rolebinding
+  labels:
+    app.kubernetes.io/name: {{ include "waypoint.name" . }}-runner
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+roleRef:
+  apiGroup: ""
+  kind: ClusterRole
+  name: edit
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "waypoint.runner.serviceAccount.name" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
