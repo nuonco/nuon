@@ -60,6 +60,7 @@ jobs:
     name: 🚢
     needs:
       - changes
+      - tag
     if: ${{ needs.changes.outputs.artifacts != '[]' && needs.changes.outputs.artifacts != '' }}
     strategy:
       matrix:
