@@ -36,7 +36,11 @@ jobs:
   publish:
     name: 🌏 publish
     uses: ./.github/workflows/artifact_publish.yml
+    if: ${{ inputs.publish }}
     secrets: inherit
+    needs:
+      - test
+      - lint
     with:
       artifact: ${{ inputs.artifact }}
       tag: ${{ inputs.tag }}
