@@ -8,7 +8,7 @@ import "validate/validate.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
 
-message Sandbox {
+message SandboxInput {
   string org_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
