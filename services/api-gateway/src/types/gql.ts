@@ -484,6 +484,7 @@ export type Org = Node & {
   __typename?: 'Org';
   apps: AppConnection;
   createdAt: Scalars['DateTime'];
+  githubInstallId?: Maybe<Scalars['ID']>;
   id: Scalars['ID'];
   name: Scalars['String'];
   updatedAt: Scalars['DateTime'];
@@ -514,6 +515,7 @@ export type OrgEdge = {
 };
 
 export type OrgInput = {
+  githubInstallId?: InputMaybe<Scalars['ID']>;
   id?: InputMaybe<Scalars['ID']>;
   name?: InputMaybe<Scalars['String']>;
   ownerId?: InputMaybe<Scalars['ID']>;
