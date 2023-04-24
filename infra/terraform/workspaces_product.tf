@@ -105,3 +105,31 @@ module "sandboxes" {
     module.infra-orgs-stage.workspace_id,
   ]
 }
+
+module "infra-waypoint-orgs-prod" {
+  source = "./modules/workspace"
+
+  name                            = "infra-waypoint-orgs-prod"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/waypoint"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  vars = {
+    env = "orgs-prod"
+  }
+}
+
+module "infra-waypoint-orgs-stage" {
+  source = "./modules/workspace"
+
+  name                            = "infra-waypoint-orgs-stage"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/waypoint"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  vars = {
+    env = "orgs-stage"
+  }
+}
