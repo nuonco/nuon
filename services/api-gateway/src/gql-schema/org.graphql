@@ -8,6 +8,7 @@ Represents a collection of general settings and information about a Nuon tenant
 type Org implements Node {
   id: ID!
   name: String!
+  githubInstallId: ID
   updatedAt: DateTime!
   createdAt: DateTime!
   apps(options: ConnectionOptions): AppConnection!
@@ -47,6 +48,7 @@ input OrgInput {
   id: ID
   name: String
   ownerId: ID
+  githubInstallId: ID
 }
 
 #############################################################################

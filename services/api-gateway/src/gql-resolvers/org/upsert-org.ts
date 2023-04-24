@@ -17,6 +17,7 @@ export const upsertOrg: TResolverFn<
       const request = new UpsertOrgRequest()
         .setId(input.id)
         .setOwnerId(input.ownerId)
+        .setGithubInstallId(input.githubInstallId)
         .setName(input.name);
 
       clients.org.upsertOrg(request, (err, res) => {

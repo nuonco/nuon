@@ -14,7 +14,9 @@ You can copy the `.env.example` file & add the needed values `cp .env.example .e
 
 You should update the following environment variables in the file:
 
-- `AUTH_AUDIENCE` and `AUTH_ISSUER`. To get the values you will need to log in the Nuon Auth0 account. The `AUTH_AUDIENCE` can be found on the API Gateway under "applications/apis" & the `AUTH_ISSUER` can be found in the API Gateway settings domain under "applications/applications".
+- `AUTH_AUDIENCE` and `AUTH_ISSUER`. To get the values you will need to log in the Nuon Auth0 account.
+  - The `AUTH_AUDIENCE` can be found under "Applications / APIs / API Gateway / Settings / Identifier". Currently this is `api.nuon.co`.
+  - The `AUTH_ISSUER` can be found under "Applications / Applications / API Gateway / Settings / Domain" and should be prefixed with `https://` so `https://nuon.us.auth0.com`
 - `SERVICES`: this is a list of the GRPC services you want to connect to the gateway. Each service can be connect by adding an object to the `SERVICES` array. (i.e. `SERVICES=[{ "name": "org", "url": "localhost:8080" }]`). Note that in order to use the GRPC services on staging you need to be connected to Twingate. Sample `SERVICES` value to use the GRPC staging on services:
   ```
   SERVICES=[{"name":"status","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"org","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"app","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"install","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"component","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"deployment","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"github","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"instance","url":"orgs-api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"orgStatus","url":"orgs-api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"installStatus","url":"orgs-api.nuon.us-west-2.stage.nuon.cloud:80"}]
@@ -30,7 +32,7 @@ Now that you've installed the deps & configured the `.env` you can start the gat
 
 ## Updating buf dependencies
 
-When changes to our protobufs happen we'll need to manually update the dependencies for the gateway. To do this you'll need to `export` your Buf token in the terminal then run `npm update` or `npm update {buf-package}`, this should update the `package-lock.json` file with the latest version of the grpc lib.
+When changes to our protobufs happen we'll need to manually update the dependencies for the gateway. To do this you'll need to `export BUF_TOKEN` your Buf token in the terminal then run `npm update` or `npm update {buf-package}`, this should update the `package-lock.json` file with the latest version of the grpc lib.
 
 **Buf dependencies list**
 
