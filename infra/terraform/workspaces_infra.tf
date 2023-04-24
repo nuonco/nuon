@@ -169,6 +169,7 @@ module "infra-eks-orgs-prod-main" {
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
   allowed_remote_state_workspaces = [
     module.infra-datadog-orgs-prod.workspace_id,
+    module.infra-waypoint-orgs-prod.workspace_id,
     module.infra-orgs-prod.workspace_id,
     module.workers-orgs-prod.workspace_id,
     module.workers-installs-prod.workspace_id,
@@ -194,6 +195,7 @@ module "infra-eks-orgs-stage-main" {
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
   allowed_remote_state_workspaces = [
     module.infra-datadog-orgs-stage.workspace_id,
+    module.infra-waypoint-orgs-stage.workspace_id,
     module.infra-orgs-stage.workspace_id,
     module.workers-orgs-stage.workspace_id,
     module.workers-installs-stage.workspace_id,
