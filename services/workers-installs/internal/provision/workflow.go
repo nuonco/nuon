@@ -48,16 +48,18 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	cpReq := planv1.CreatePlanRequest{
 		Type: planv1.PlanType_PLAN_TYPE_TERRAFORM_SANDBOX,
 		Input: &planv1.CreatePlanRequest_Sandbox{
-			Sandbox: &planv1.Sandbox{
-				OrgId:           req.OrgId,
-				AppId:           req.AppId,
-				InstallId:       req.InstallId,
-				SandboxSettings: &planv1.SandboxSettings{Name: req.SandboxSettings.Name, Version: req.SandboxSettings.Version},
+			Sandbox: &planv1.SandboxInput{
+				OrgId:     req.OrgId,
+				AppId:     req.AppId,
+				InstallId: req.InstallId,
+				SandboxSettings: &planv1.SandboxSettings{
+					Name:    req.SandboxSettings.Name,
+					Version: req.SandboxSettings.Version},
 				// TODO(jdt): accept this from the API and set it here?
 				// it's defaulted in workers-executors so no need to double hard-code
 				// TerraformVersion: new(string),
 				RunType: planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY,
-				AccountSettings: &planv1.Sandbox_Aws{
+				AccountSettings: &planv1.SandboxInput_Aws{
 					Aws: &planv1.AWSSettings{
 						Region:    req.AccountSettings.Region,
 						AccountId: req.AccountSettings.AwsAccountId,

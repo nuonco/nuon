@@ -42,7 +42,7 @@ func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionReq
 
 	planReq := &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
-			Component: &planv1.Component{
+			Component: &planv1.ComponentInput{
 				OrgId:        req.OrgId,
 				AppId:        req.AppId,
 				DeploymentId: req.DeploymentId,
