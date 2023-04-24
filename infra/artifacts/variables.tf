@@ -1,14 +1,21 @@
 locals {
-  name                   = "artifacts"
-  terraform_organization = "launchpaddev"
+  name        = "artifacts"
   bucket_name = "nuon-artifacts"
 
   github = {
     organization = "powertoolsdev"
-    repo = "mono"
+    repo         = "mono"
   }
 
   tags = {
-    terraform   = "infra-artifacts"
+    terraform = "infra-artifacts"
   }
+
+  artifacts = [
+    "nuonctl",
+    "helm-waypoint",
+    "helm-temporal",
+    "sandbox-aws-eks",
+    "sandbox-empty",
+  ]
 }

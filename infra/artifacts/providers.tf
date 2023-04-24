@@ -5,8 +5,20 @@ locals {
   }
 
   aws_settings = {
-    region = "us-west-2"
+    region       = "us-west-2"
     account_name = "public"
+  }
+}
+
+provider "aws" {
+  region = local.aws_settings.region
+
+  assume_role {
+    role_arn = "arn:aws:iam::${local.accounts[local.aws_settings.account_name]}:role/terraform"
+  }
+
+  default_tags {
+    tags = local.tags
   }
 }
 
@@ -18,10 +30,10 @@ provider "aws" {
 }
 
 provider "aws" {
+  alias = "infra-shared-prod"
   region = local.aws_settings.region
-
   assume_role {
-    role_arn = "arn:aws:iam::${local.accounts[local.aws_settings.account_name]}:role/terraform"
+    role_arn = "arn:aws:iam::${local.accounts.infra-shared-prod}:role/terraform"
   }
 
   default_tags {

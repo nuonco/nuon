@@ -1,5 +1,5 @@
 locals {
-  org_id              = data.aws_organizations_organization.orgs.id
+  org_id     = data.aws_organizations_organization.orgs.id
   account_id = local.accounts[local.aws_settings.account_name]
 }
 
@@ -50,7 +50,7 @@ data "aws_iam_policy_document" "bucket_key_policy" {
     condition {
       test     = "StringEquals"
       variable = "kms:CallerAccount"
-      values   = [local.account_id ]
+      values   = [local.account_id]
     }
   }
 
