@@ -30,3 +30,6 @@ pkg/types/**/**connect.go
 *mock*.go
 go.work
 .gen
+
+# Ignore earthly secret files
+.secret
