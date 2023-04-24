@@ -1,0 +1,38 @@
+VERSION --use-cache-command 0.6
+
+FROM ghcr.io/terraform-linters/tflint-bundle
+
+ARG SANDBOX=
+ARG TERRAFORM_WORKSPACE=
+
+WORKDIR /src
+ARG TERRAFORM_VERSION=1.4.5
+
+deps:
+    ARG URL=https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+    ARG OUTPUT=bundle.zip
+
+    RUN echo "installing terraform" && \
+      wget -O $OUTPUT $URL && \
+      unzip $OUTPUT && \
+      rm $OUTPUT && \
+      mv terraform /usr/bin/terraform
+
+    RUN echo "installing additional deps" && \
+      apk add --update git
+
+lint:
+    FROM +deps
+    COPY $SANDBOX .
+
+    RUN echo "running tflint..." && tflint
+
+    RUN --secret TERRAFORM_CLOUD_TOKEN echo "initializing terraform..." && \
+      TF_TOKEN_app_terraform_io=$TERRAFORM_CLOUD_TOKEN \
+      TF_WORKSPACE=$TERRAFORM_WORKSPACE \
+      terraform init -backend=false
+
+    RUN --secret TERRAFORM_CLOUD_TOKEN echo "validating terraform..." && \
+      TF_TOKEN_app_terraform_io=$TERRAFORM_CLOUD_TOKEN \
+      TF_WORKSPACE=$TERRAFORM_WORKSPACE \
+      terraform validate
