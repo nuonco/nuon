@@ -69,7 +69,7 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 	cpReq := planv1.CreatePlanRequest{
 		Type: planv1.PlanType_PLAN_TYPE_TERRAFORM_SANDBOX,
 		Input: &planv1.CreatePlanRequest_Sandbox{
-			Sandbox: &planv1.Sandbox{
+			Sandbox: &planv1.SandboxInput{
 				OrgId:           req.OrgId,
 				AppId:           req.AppId,
 				InstallId:       req.InstallId,
@@ -78,7 +78,7 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 				// it's defaulted in workers-executors so no need to double hard-code
 				// TerraformVersion: new(string),
 				RunType: planv1.TerraformRunType_TERRAFORM_RUN_TYPE_DESTROY,
-				AccountSettings: &planv1.Sandbox_Aws{
+				AccountSettings: &planv1.SandboxInput_Aws{
 					Aws: &planv1.AWSSettings{
 						Region:    req.AccountSettings.Region,
 						AccountId: req.AccountSettings.AwsAccountId,
@@ -98,9 +98,9 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 	}
 
 	// if req.PlanOnly {
-	// 	l.Info("skipping the rest of the workflow - plan only")
-	// 	w.finishWorkflow(ctx, req, resp, nil)
-	// 	return resp, nil
+	//	l.Info("skipping the rest of the workflow - plan only")
+	//	w.finishWorkflow(ctx, req, resp, nil)
+	//	return resp, nil
 	// }
 
 	l.Debug("executing sandbox execute")

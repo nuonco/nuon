@@ -36,7 +36,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildv1.BuildRequest) (*buildv
 	planReq := &planv1.CreatePlanRequest{
 		Type: planv1.PlanType_PLAN_TYPE_WAYPOINT_BUILD,
 		Input: &planv1.CreatePlanRequest_Component{
-			Component: &planv1.Component{
+			Component: &planv1.ComponentInput{
 				OrgId:        req.OrgId,
 				AppId:        req.AppId,
 				DeploymentId: req.DeploymentId,
