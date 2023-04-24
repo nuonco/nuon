@@ -40,9 +40,9 @@ require (
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jaswdr/faker v1.16.0
 	github.com/lib/pq v1.10.7
+	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
 	github.com/migueleliasweb/go-github-mock v0.0.16
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.4
@@ -70,7 +70,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/datatypes v1.1.1
 	gorm.io/driver/postgres v1.5.0
-	gorm.io/gorm v1.24.7-0.20230306060331-85eaf9eeda11
+	gorm.io/gorm v1.25.0
 	helm.sh/helm/v3 v3.11.2
 	k8s.io/api v0.26.2
 	k8s.io/apimachinery v0.26.2
@@ -191,7 +191,6 @@ require (
 	github.com/lyft/protoc-gen-star v0.6.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/matoous/go-nanoid/v2 v2.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
