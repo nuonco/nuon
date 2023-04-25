@@ -8,3 +8,4 @@
 !services/workers-instances/infra/
 !services/workers-orgs/infra/
 !infra/
+!charts/
