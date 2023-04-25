@@ -36,6 +36,26 @@ data "aws_iam_policy_document" "ecr_policy" {
       values = ["o-thxealue7f", ]
     }
   }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:GetLifecyclePolicy",
+      "ecr:GetLifecyclePolicyPreview",
+      "ecr:GetRepositoryPolicy",
+      "ecr:InitiateLayerUpload",
+      "ecr:ListImages",
+      "ecr:ListTagsForResource",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+    ]
+
+    principals {
+      type        = "*"
+      identifiers = ["*", ]
+    }
+  }
 }
 
 # Optionally, create an ECR repo for the GH repo
