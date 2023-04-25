@@ -9,18 +9,17 @@ resource "helm_release" "waypoint" {
   name             = "waypoint"
   create_namespace = true
 
-  repository = local.vars.chart.repo
+  repository = local.vars.chart.path
   chart      = local.vars.chart.name
   version    = local.vars.chart.version
 
   values = [
     file(local.waypoint.value_file),
-
-    // TODO(jm): add tags for environments
     yamlencode({
-      waypoint = {
-        tags        = ["env:${var.env}"]
-        clusterName = var.env
+      server = {
+        public_service = {
+          domain = "waypoint.${var.env}.${local.vars.public_root_domain}"
+        }
       }
     })
   ]

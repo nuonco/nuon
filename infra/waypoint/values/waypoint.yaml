@@ -1,80 +1,183 @@
----
-targetSystem: "linux"
-waypoint:
-  global:
+global:
   # Image pull secret to use for registry authentication.
   # Alternatively, the value may be specified as an array of strings.
   imagePullSecret: ""
+  imagePullSecrets: []
   # imagePullSecrets:
   #   - name: image-pull-secret
 
+server:
+  # If not set to true, Waypoint server will not be installed.
+  enabled: true
+  # The image to use for the installation.
+  image:
+    repository: "public.ecr.aws/p7e3r5y0/waypoint"
+    tag: "v0.0.5"
+    pullPolicy: IfNotPresent
+    # tag: "latest"
+    # pullPolicy: Always
+
+  # Arguments to pass to the `waypoint server run` command. Will overwrite default options.
+  runArgs: ["-vv"]
+
+  certs:
+    # The name of the Kubernetes secret of type "kubernetes.io/tls" that
+    # contains the TLS certificate and key to use for the server API.
+    # If this is not set, then a self-signed certificate will be generated
+    # and used per instance.
+    secretName: null
+
+    # certName and keyName are the names of the files within the secret for
+    # the TLS cert and private key, respectively. These have reasonable
+    # defaults but can be customized if necessary.
+    certName: tls.crt
+    keyName: tls.key
+
+  # This configures the Waypoint Statefulset to create a PVC for data storage.
+  storage:
+    # Size of the PVC created
+    size: 10Gi
+    # Name of the storage class to use.  If null it will use the
+    # configured default Storage Class.
+    storageClass: null
+    # Annotations to apply to the PVC
+    annotations: {}
+
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    #  limits:
+    #    memory: 256Mi
+    #    cpu: 250m
+
+  # Priority class for server pods
+  priorityClassName: ""
+
+  # Extra labels to attach to the server pods
+  # This should be a YAML map of the labels to apply to the server pods
+  extraLabels: {}
+
+  # Extra annotations to attach to the server pods
+  # This can either be YAML or a YAML-formatted multi-line templated string map
+  # of the annotations to apply to the server pods
+  annotations: {}
+
+  # nodeSelector labels for server pod assignment
+  # This should be formatted as a multi-line string.
+  # Example:
+  # ```yaml
+  # nodeSelector: |
+  #   beta.kubernetes.io/arch: amd64
+  # ```
+  nodeSelector: null
+
+  # Definition of the serviceAccount used to run Waypoint.
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+    # Extra annotations for the serviceAccount definition. This can either be
+    # YAML or a YAML-formatted multi-line templated string map of the
+    # annotations to apply to the serviceAccount.
+    annotations: {}
+
+  # Settings for the statefulSet used to run Waypoint.
+  statefulSet:
+    # Extra annotations for the statefulSet. This can either be YAML or a
+    # YAML-formatted multi-line templated string map of the annotations to apply
+    # to the statefulSet.
+    annotations: {}
+
+  # Configures the headless service to be used by the statefulset.
+  service:
+    # Extra annotations for the service definition. This can either be YAML or a
+    # YAML-formatted multi-line templated string map of the annotations to apply
+    # to the service.
+    annotations: {}
+
+  public_service:
+    enabled: true
+    domain: waypoint.orgs-stage.nuon.co
+
+runner:
+  # If not set to true, the Waypoint runner will not be installed. At least
+  # one static runner must exist in a Waypoint cluster for on-demand runners
+  # to work properly. If this is false, on-demand runners will also not
+  # be configured for this cluster.
+  enabled: true
+
+  # Unique ID for the runner. If this is not specified, Waypoint will generate a
+  # unique ID automatically.
+  id: "bootstrap"
+
+  # The number of runners to run. This normally only has to be 1 or 2 since
+  # the way Waypoint works is by using runners to launch on-demand runners.
+  # Therefore, this usually isn't a bottleneck to scalability.
+  replicas: 1
+
+  # The image to use for the installation.
+  image:
+    repository: "public.ecr.aws/p7e3r5y0/waypoint"
+    tag: "v0.0.5"
+    pullPolicy: IfNotPresent
+    # tag: "latest"
+    # pullPolicy: Always
+
+  # Arguments to pass to the `waypoint runner agent` command. Will overwrite default options.
+  agentArgs: ["-vv"]
+
+  # Address to talk to the server with. If this is not specified, this will
+  # default to the server installed with this Helm chart release. If you're
+  # installing additional runners, you must specify this since additional runners
+  # are installed using Helm releases.
   server:
-    # If not set to true, Waypoint server will not be installed.
-    enabled: true
-    # The image to use for the installation.
+    addr: ""
+    tls: true
+    tlsSkipVerify: true
+
+    # Cookie must be specified for runner adoption. The cookie can be retrieved
+    # using the `waypoint server cookie` CLI command or the API.
+    cookie: ""
+
+    # A secret to read the auth token from. This is optional. If this isn't
+    # set, runner adoption will be used. This only applies for runner-only
+    # installs. For server installs, the bootstrap token is used.
+    tokenSecret: ""
+
+  # This configures the Statefulset to create a PVC for data storage for the
+  # runner. Runners do not require much data storage.
+  storage:
+    # Size of the PVC created
+    size: 1Gi
+    # Name of the storage class to use.  If null it will use the
+    # configured default Storage Class.
+    storageClass: null
+
+  odr:
+    # The image to use for the on-demand runner.
     image:
-      repository: "docker.io/hashicorp/waypoint"
-      tag: "0.11.0"
+      repository: "public.ecr.aws/p7e3r5y0/waypoint-odr"
+      tag: "v0.0.5"
       pullPolicy: IfNotPresent
       # tag: "latest"
       # pullPolicy: Always
 
-    # Arguments to pass to the `waypoint server run` command. Will overwrite default options.
-    runArgs: ["-vv"]
+    # List of namespaces that waypoint can access and deploy into.
+    # By default, the Waypoint on-demand runner will create a rolebinding granting the
+    # edit clusterrole in the namespace the chart is installed into.
+    # If any managedNamespaces are specified, rolebindings will be created to
+    # grant permissions in those namespaces instead.
+    # If Waypoint should be able to generate deployments in it's own namespace and
+    # additional other namespaces, Waypoint's own namespace must also be appended to
+    # this set.
+    managedNamespaces: []
 
-    certs:
-      # The name of the Kubernetes secret of type "kubernetes.io/tls" that
-      # contains the TLS certificate and key to use for the server API.
-      # If this is not set, then a self-signed certificate will be generated
-      # and used per instance.
-      secretName: null
-
-      # certName and keyName are the names of the files within the secret for
-      # the TLS cert and private key, respectively. These have reasonable
-      # defaults but can be customized if necessary.
-      certName: tls.crt
-      keyName: tls.key
-
-    # This configures the Waypoint Statefulset to create a PVC for data storage.
-    storage:
-      # Size of the PVC created
-      size: 10Gi
-      # Name of the storage class to use.  If null it will use the
-      # configured default Storage Class.
-      storageClass: null
-      # Annotations to apply to the PVC
-      annotations: {}
-
-    resources:
-      requests:
-        memory: 256Mi
-        cpu: 250m
-      #  limits:
-      #    memory: 256Mi
-      #    cpu: 250m
-
-    # Priority class for server pods
-    priorityClassName: ""
-
-    # Extra labels to attach to the server pods
-    # This should be a YAML map of the labels to apply to the server pods
-    extraLabels: {}
-
-    # Extra annotations to attach to the server pods
-    # This can either be YAML or a YAML-formatted multi-line templated string map
-    # of the annotations to apply to the server pods
-    annotations: {}
-
-    # nodeSelector labels for server pod assignment
-    # This should be formatted as a multi-line string.
-    # Example:
-    # ```yaml
-    # nodeSelector: |
-    #   beta.kubernetes.io/arch: amd64
-    # ```
-    nodeSelector: null
-
-    # Definition of the serviceAccount used to run Waypoint.
+    # Definition of the serviceAccount used to by Waypoint on-demand runners.
+    # On-demand runners execute the kubernetes plugin, so they need permission to
+    # and destroy deployments, services, etc.
     serviceAccount:
       # Specifies whether a service account should be created
       create: true
@@ -86,235 +189,143 @@ waypoint:
       # annotations to apply to the serviceAccount.
       annotations: {}
 
-    # Settings for the statefulSet used to run Waypoint.
-    statefulSet:
-      # Extra annotations for the statefulSet. This can either be YAML or a
-      # YAML-formatted multi-line templated string map of the annotations to apply
-      # to the statefulSet.
-      annotations: {}
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    #  limits:
+    #    memory: 256Mi
+    #    cpu: 250m
 
-    # Configures the headless service to be used by the statefulset.
-    service:
-      # Extra annotations for the service definition. This can either be YAML or a
-      # YAML-formatted multi-line templated string map of the annotations to apply
-      # to the service.
-      annotations: {}
+  # Priority class for runner pods
+  priorityClassName: ""
 
-  runner:
-    # If not set to true, the Waypoint runner will not be installed. At least
-    # one static runner must exist in a Waypoint cluster for on-demand runners
-    # to work properly. If this is false, on-demand runners will also not
-    # be configured for this cluster.
-    enabled: true
+  # Extra labels to attach to the runner pods
+  # This should be a YAML map of the labels to apply to the runner pods
+  extraLabels: {}
 
-    # Unique ID for the runner. If this is not specified, Waypoint will generate a
-    # unique ID automatically.
-    id: ""
+  # Extra annotations to attach to the runner pods
+  # This can either be YAML or a YAML-formatted multi-line templated string map
+  # of the annotations to apply to the runner pods
+  annotations: {}
 
-    # The number of runners to run. This normally only has to be 1 or 2 since
-    # the way Waypoint works is by using runners to launch on-demand runners.
-    # Therefore, this usually isn't a bottleneck to scalability.
-    replicas: 1
+  # nodeSelector labels for runner pod assignment
+  # This should be formatted as a multi-line string.
+  # Example:
+  # ```yaml
+  # nodeSelector: |
+  #   beta.kubernetes.io/arch: amd64
+  # ```
+  nodeSelector: null
 
-    # The image to use for the installation.
-    image:
-      repository: "docker.io/hashicorp/waypoint"
-      tag: "0.11.0"
-      pullPolicy: IfNotPresent
-      # tag: "latest"
-      # pullPolicy: Always
-
-    # Arguments to pass to the `waypoint runner agent` command. Will overwrite default options.
-    agentArgs: ["-vv"]
-
-    # Address to talk to the server with. If this is not specified, this will
-    # default to the server installed with this Helm chart release. If you're
-    # installing additional runners, you must specify this since additional runners
-    # are installed using Helm releases.
-    server:
-      addr: ""
-      tls: true
-      tlsSkipVerify: true
-
-      # Cookie must be specified for runner adoption. The cookie can be retrieved
-      # using the `waypoint server cookie` CLI command or the API.
-      cookie: ""
-
-      # A secret to read the auth token from. This is optional. If this isn't
-      # set, runner adoption will be used. This only applies for runner-only
-      # installs. For server installs, the bootstrap token is used.
-      tokenSecret: ""
-
-    # This configures the Statefulset to create a PVC for data storage for the
-    # runner. Runners do not require much data storage.
-    storage:
-      # Size of the PVC created
-      size: 1Gi
-      # Name of the storage class to use.  If null it will use the
-      # configured default Storage Class.
-      storageClass: null
-
-    odr:
-      # The image to use for the on-demand runner.
-      image:
-        repository: "docker.io/hashicorp/waypoint-odr"
-        tag: "0.11.0"
-        pullPolicy: IfNotPresent
-        # tag: "latest"
-        # pullPolicy: Always
-
-      # List of namespaces that waypoint can access and deploy into.
-      # By default, the Waypoint on-demand runner will create a rolebinding granting the
-      # edit clusterrole in the namespace the chart is installed into.
-      # If any managedNamespaces are specified, rolebindings will be created to
-      # grant permissions in those namespaces instead.
-      # If Waypoint should be able to generate deployments in it's own namespace and
-      # additional other namespaces, Waypoint's own namespace must also be appended to
-      # this set.
-      managedNamespaces: []
-
-      # Definition of the serviceAccount used to by Waypoint on-demand runners.
-      # On-demand runners execute the kubernetes plugin, so they need permission to
-      # and destroy deployments, services, etc.
-      serviceAccount:
-        # Specifies whether a service account should be created
-        create: true
-        # The name of the service account to use.
-        # If not set and create is true, a name is generated using the fullname template
-        name: ""
-        # Extra annotations for the serviceAccount definition. This can either be
-        # YAML or a YAML-formatted multi-line templated string map of the
-        # annotations to apply to the serviceAccount.
-        annotations: {}
-
-    resources:
-      requests:
-        memory: 256Mi
-        cpu: 250m
-      #  limits:
-      #    memory: 256Mi
-      #    cpu: 250m
-
-    # Priority class for runner pods
-    priorityClassName: ""
-
-    # Extra labels to attach to the runner pods
-    # This should be a YAML map of the labels to apply to the runner pods
-    extraLabels: {}
-
-    # Extra annotations to attach to the runner pods
-    # This can either be YAML or a YAML-formatted multi-line templated string map
-    # of the annotations to apply to the runner pods
+  # Definition of the serviceAccount used to by Waypoint static runner.
+  # If using on-demand runners (enabled by default), this primarily
+  # needs permissions to run tasks.
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+    # Extra annotations for the serviceAccount definition. This can either be
+    # YAML or a YAML-formatted multi-line templated string map of the
+    # annotations to apply to the serviceAccount.
     annotations: {}
 
-    # nodeSelector labels for runner pod assignment
-    # This should be formatted as a multi-line string.
+  # Settings for the deployment used to run Waypoint static runners.
+  deployment:
+    # Extra annotations for the deployment. This can either be YAML or a
+    # YAML-formatted multi-line templated string map of the annotations to apply
+    # to the deployment.
+    annotations: {}
+
+# Values that configure the Waypoint UI.
+ui:
+  # Configure the service for the Waypoint UI.
+  service:
+    # This will enable/disable registering a Kubernetes Service for the UI.
+    enabled: true
+
+    # The service type to register.
+    # @type: string
+    type: LoadBalancer
+
+    # Annotations to apply to the UI service.
+    #
     # Example:
+    #
     # ```yaml
-    # nodeSelector: |
-    #   beta.kubernetes.io/arch: amd64
+    # annotations: |
+    #   'annotation-key': annotation-value
     # ```
-    nodeSelector: null
+    # @type: string
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+      service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=false
+      external-dns.alpha.kubernetes.io/hostname: waypoint-ui.orgs-stage.nuon.co
 
-    # Definition of the serviceAccount used to by Waypoint static runner.
-    # If using on-demand runners (enabled by default), this primarily
-    # needs permissions to run tasks.
-    serviceAccount:
-      # Specifies whether a service account should be created
-      create: true
-      # The name of the service account to use.
-      # If not set and create is true, a name is generated using the fullname template
-      name: ""
-      # Extra annotations for the serviceAccount definition. This can either be
-      # YAML or a YAML-formatted multi-line templated string map of the
-      # annotations to apply to the serviceAccount.
-      annotations: {}
-
-    # Settings for the deployment used to run Waypoint static runners.
-    deployment:
-      # Extra annotations for the deployment. This can either be YAML or a
-      # YAML-formatted multi-line templated string map of the annotations to apply
-      # to the deployment.
-      annotations: {}
-
-  # Values that configure the Waypoint UI.
-  ui:
-    # Configure the service for the Waypoint UI.
-    service:
-      # This will enable/disable registering a Kubernetes Service for the UI.
-      enabled: true
-
-      # The service type to register.
-      # @type: string
+    # Additional ServiceSpec values
+    # This should be a multi-line string mapping directly to a Kubernetes
+    # ServiceSpec object.
+    # @type: string
+    additionalSpec:
       type: LoadBalancer
+      loadBalancerClass: service.k8s.aws/nlb
+      allocateLoadBalancerNodePorts: false
+      externalTrafficPolicy: Local
+      internalTrafficPolicy: Local
 
-      # Annotations to apply to the UI service.
-      #
-      # Example:
-      #
-      # ```yaml
-      # annotations: |
-      #   'annotation-key': annotation-value
-      # ```
-      # @type: string
-      annotations: null
+  # Ingress allows ingress services to be created to allow external access
+  # to the Waypoint server. This is disabled by default and requires some
+  # configuration.
+  ingress:
+    # Set this to true to enable the ingress. Please set some additional
+    # config below as noted.
+    enabled: false
 
-      # Additional ServiceSpec values
-      # This should be a multi-line string mapping directly to a Kubernetes
-      # ServiceSpec object.
-      # @type: string
-      additionalSpec: null
+    # Hosts is the set of hosts that should be routed to this ingress.
+    hosts:
+      - host: chart-example.local
+        paths: []
 
-    # Ingress allows ingress services to be created to allow external access
-    # to the Waypoint server. This is disabled by default and requires some
-    # configuration.
-    ingress:
-      # Set this to true to enable the ingress. Please set some additional
-      # config below as noted.
-      enabled: false
+    labels:
+      {}
+      # traffic: external
 
-      # Hosts is the set of hosts that should be routed to this ingress.
-      hosts:
-        - host: chart-example.local
-          paths: []
+    annotations:
+      {}
+      # |
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+      #   or
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
 
-      labels:
-        {}
-        # traffic: external
+    ## Extra paths to prepend to the host configuration. This is useful when working with annotation based services.
+    extraPaths: []
+    # - path: /*
+    #   backend:
+    #     serviceName: ssl-redirect
+    #     servicePort: use-annotation
 
-      annotations:
-        {}
-        # |
-        # kubernetes.io/ingress.class: nginx
-        # kubernetes.io/tls-acme: "true"
-        #   or
-        # kubernetes.io/ingress.class: nginx
-        # kubernetes.io/tls-acme: "true"
+    # TLS certs to use for termination. This will default to the manually
+    # specified TLS certs for the server if set. Otherwise, this will set
+    # no certs and only insecure HTTP will be supported (not recommended)
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
 
-      ## Extra paths to prepend to the host configuration. This is useful when working with annotation based services.
-      extraPaths: []
-      # - path: /*
-      #   backend:
-      #     serviceName: ssl-redirect
-      #     servicePort: use-annotation
-
-      # TLS certs to use for termination. This will default to the manually
-      # specified TLS certs for the server if set. Otherwise, this will set
-      # no certs and only insecure HTTP will be supported (not recommended)
-      tls: []
-      #  - secretName: chart-example-tls
-      #    hosts:
-      #      - chart-example.local
-
-  bootstrap:
-    # Definition of the serviceAccount used to bootstrap Waypoint.
-    serviceAccount:
-      # Specifies whether a service account should be created
-      create: true
-      # The name of the service account to use.
-      # If not set and create is true, a name is generated using the fullname template
-      name: ""
-      # Extra annotations for the serviceAccount definition. This can either be
-      # YAML or a YAML-formatted multi-line templated string map of the
-      # annotations to apply to the serviceAccount.
-      annotations: {}
+bootstrap:
+  # Definition of the serviceAccount used to bootstrap Waypoint.
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+    # Extra annotations for the serviceAccount definition. This can either be
+    # YAML or a YAML-formatted multi-line templated string map of the
+    # annotations to apply to the serviceAccount.
+    annotations: {}

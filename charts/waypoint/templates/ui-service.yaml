@@ -13,7 +13,7 @@ metadata:
     component: ui
   {{- if .Values.ui.service.annotations }}
   annotations:
-    {{ tpl .Values.ui.service.annotations . | nindent 4 | trim }}
+  {{- template "ui.service.annotations" . }}
   {{- end }}
 spec:
   selector:
@@ -37,6 +37,6 @@ spec:
   type: {{ .Values.ui.service.type }}
   {{- end }}
   {{- if .Values.ui.service.additionalSpec }}
-  {{ tpl .Values.ui.service.additionalSpec . | nindent 2 | trim }}
+  {{- template "ui.service.additionalSpec" . }}
   {{- end }}
 {{- end }}

@@ -97,6 +97,10 @@ server:
     # to the service.
     annotations: {}
 
+  public_service:
+    enabled: false
+    domain: ""
+
 runner:
   # If not set to true, the Waypoint runner will not be installed. At least
   # one static runner must exist in a Waypoint cluster for on-demand runners
