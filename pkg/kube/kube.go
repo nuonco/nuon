@@ -87,7 +87,6 @@ func validateClusterInfo(c *ClusterInfo) error {
 	if err != nil {
 		return fmt.Errorf("%w: error decoding certificate data: %v ", ErrInvalidCert, err)
 	}
-	// NOTE(jdt): I don't like mutating like this...
 	c.CAData = string(caDec)
 
 	return nil
