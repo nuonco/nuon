@@ -16,6 +16,10 @@ auth_map_additions:
     account: prod
     groups:
       - "system:masters"
+  - name: eks-workers-executors
+    account: prod
+    groups:
+      - "system:masters"
   - name: eks-workers-installs
     account: prod
     groups:

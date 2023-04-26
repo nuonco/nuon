@@ -12,6 +12,10 @@ auth_map_additions:
     account: stage
     groups:
       - "system:masters"
+  - name: eks-workers-executors
+    account: stage
+    groups:
+      - "system:masters"
   - name: eks-workers-installs
     account: stage
     groups:
