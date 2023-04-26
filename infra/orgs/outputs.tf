@@ -53,9 +53,30 @@ output "waypoint" {
     token_secret_namespace = "default"
     token_secret_template  = "waypoint-bootstrap-token-%[1]s"
 
-    // TODO(jm): add proper values for using k8s cluster in orgs account for waypoint token here.
+    // waypoint servers and runners live in the org account+cluster.
+    cluster_id        = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_id),
+    ca_data           = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_certificate_authority_data),
+    public_endpoint   = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_endpoint),
+    oidc_provider_url = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider)
+    oidc_provider_arn = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider_arn)
   }
 }
+
+output "bootstrap_waypoint" {
+  value = {
+    root_domain            = "bootstrap.${nonsensitive(data.tfe_outputs.infra-eks-orgs.values.root_domain)}"
+    token_secret_namespace = "waypoint"
+    token_secret_template  = "waypoint-server-token"
+
+    // bootstrap waypoint runs in the orgs account+cluster.
+    cluster_id        = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_id),
+    ca_data           = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_certificate_authority_data),
+    public_endpoint   = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.cluster_endpoint),
+    oidc_provider_url = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider)
+    oidc_provider_arn = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider_arn)
+  }
+}
+
 
 # buckets for storing/managing state related to an org
 output "buckets" {
