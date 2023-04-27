@@ -100,6 +100,14 @@ export const desiredOrgStructure: orgStructure = [
     ],
     name: "workloads",
   },
+  {
+    accounts: [
+      { name: "sandbox-jm" },
+      { name: "sandbox-ja" },
+    ],
+    disableScp: true,
+    name: "engineers",
+  },
 ];
 
 export function getAccountQuotas(): Record<string, quota[]> {
