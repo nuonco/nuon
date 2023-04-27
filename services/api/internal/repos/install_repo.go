@@ -91,10 +91,12 @@ func (i installRepo) Delete(ctx context.Context, installID uuid.UUID) (bool, err
 		return false, err
 	}
 
-	var install models.Install
+	install := models.Install{
+		Model: models.Model{ID: installID},
+	}
 	if err := i.db.WithContext(ctx).
 		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).
-		Delete(&install, "id = ?", installID).Error; err != nil {
+		Delete(&install).Error; err != nil {
 		return false, err
 	}
 	return install.ID != uuid.Nil, nil

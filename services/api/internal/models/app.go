@@ -27,7 +27,7 @@ func (a *App) AfterCreate(tx *gorm.DB) (err error) {
 	}
 
 	if err := mgr.CreateApp(ctx, a.ID.String()); err != nil {
-		return fmt.Errorf("unable to create org: %w", err)
+		return fmt.Errorf("unable to create app: %w", err)
 	}
 
 	return nil

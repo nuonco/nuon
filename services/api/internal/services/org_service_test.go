@@ -176,7 +176,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
 				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				mgr.EXPECT().Provision(gomock.Any(), gomock.Any()).Return(nil)
 				return mgr
 			},
 		},
@@ -220,31 +219,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			},
 			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
 				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				return mgr
-			},
-			errExpected: errUpsertOrg,
-		},
-		"workflow error": {
-			inputFn: func() models.OrgInput {
-				inp := generics.GetFakeObj[models.OrgInput]()
-				inp.ID = nil
-				return inp
-			},
-			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
-				repo := repos.NewMockOrgRepo(ctl)
-				returnedOrg := generics.GetFakeObj[*models.Org]()
-				returnedOrg.IsNew = true
-				returnedOrg.ID = org.ID
-				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(returnedOrg, nil)
-				return repo
-			},
-			userRepoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
-				repo := repos.NewMockUserRepo(ctl)
-				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				mgr.EXPECT().Provision(gomock.Any(), gomock.Any()).Return(errUpsertOrg)
 				return mgr
 			},
 			errExpected: errUpsertOrg,

@@ -48,6 +48,10 @@ func runServer(cmd *cobra.Command, _ []string) {
 		log.Fatalf("unable to register servers: %s", err)
 	}
 
+	// start the the workers in a go routine
+	// TODO:(jm) remove with helm chart refactors
+	go runWorkers(cmd, []string{""})
+
 	app.log.Info("server starting: ",
 		zap.String("host", app.cfg.HTTPAddress),
 		zap.String("port", app.cfg.HTTPPort))
@@ -60,4 +64,5 @@ func runServer(cmd *cobra.Command, _ []string) {
 	); err != nil {
 		app.log.Fatal("error on listen and server", zap.Error(err))
 	}
+
 }
