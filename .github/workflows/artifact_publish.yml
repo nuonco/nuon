@@ -54,6 +54,13 @@ jobs:
           aws_role: ${{ env.TFO_GH_ROLE_ARN }}
           aws_region: ${{ env.TFO_REGION }}
 
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registries: ${{ env.TFO_ARTIFACTS_NUONCTL_ECR_REGISTRY_ID }}
+          registry-type: ${{ env.NUONCTL_TFO_ARTIFACTS_NUONCTL_ECR_IS_PUBLIC && 'public' || 'private' }}
+
       - name: Earthly build artifacts
         working-directory: bins/${{inputs.artifact}}
         run: |
@@ -68,3 +75,15 @@ jobs:
       - name: push artifacts to s3
         working-directory: bins/${{inputs.artifact}}
         run: aws s3 sync ./out s3://${{ env.TFO_BUCKET_NAME }}/${{ inputs.artifact }}/${{ inputs.tag }}/
+
+      - name: Build and push oci-artifact
+        working-directory: bins/${{inputs.artifact}}
+        run: |
+          earthly \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --ci \
+            --push \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
+            +oci-artifacts \
+            --repo=${{ env.TFO_ARTIFACTS_NUONCTL_ECR_REPOSITORY_URL }} \
+            --image_tag=${{ inputs.tag }}
