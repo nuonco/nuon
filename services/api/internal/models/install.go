@@ -39,6 +39,19 @@ func (i Install) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 
+func (i Install) BeforeDelete(tx *gorm.DB) error {
+	ctx := tx.Statement.Context
+	mgr, err := jobs.FromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to get job manager: %w", err)
+	}
+
+	if err := mgr.DeleteInstall(ctx, i.ID.String()); err != nil {
+		return fmt.Errorf("unable to delete install: %w", err)
+	}
+
+	return nil
+}
 func (Install) IsNode() {}
 
 func (i Install) GetID() string {

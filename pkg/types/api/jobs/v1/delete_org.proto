@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package jobs.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message DeleteOrgRequest {
+  string org_id = 1 [
+    (validate.rules).string.uuid = true,
+    (tagger.tags) = "faker:\"uuid\""
+  ];
+}
+
+message DeleteOrgResponse {}

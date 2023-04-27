@@ -1,4 +1,4 @@
-package createinstall
+package deleteinstall
 
 import (
 	"time"
@@ -14,7 +14,7 @@ func New(v *validator.Validate) *wkflow {
 
 type wkflow struct{}
 
-func (w *wkflow) CreateInstall(ctx workflow.Context, req *jobsv1.CreateInstallRequest) (*jobsv1.CreateInstallResponse, error) {
+func (w *wkflow) DeleteInstall(ctx workflow.Context, req *jobsv1.DeleteInstallRequest) (*jobsv1.DeleteInstallResponse, error) {
 	var resp TriggerJobResponse
 
 	act := &activities{}
@@ -25,9 +25,10 @@ func (w *wkflow) CreateInstall(ctx workflow.Context, req *jobsv1.CreateInstallRe
 
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
-	fut := workflow.ExecuteActivity(ctx, act.TriggerInstallJob, req.InstallId)
+	fut := workflow.ExecuteActivity(ctx, act.TriggerInstallDeprovJob, req.InstallId)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return nil, err
 	}
-	return &jobsv1.CreateInstallResponse{}, nil
+
+	return &jobsv1.DeleteInstallResponse{}, nil
 }
