@@ -1,4 +1,5 @@
 data "aws_iam_policy_document" "github_actions_policy_doc" {
+  // allow pushing to artifacts bucket
   statement {
     effect = "Allow"
     actions = [
@@ -12,6 +13,62 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
       "s3:*Object",
     ]
     resources = ["${module.bucket.s3_bucket_arn}/*", ]
+  }
+
+  // grant permissions to auth with
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:GetAuthorizationToken",
+      "ecr-public:GetAuthorizationToken",
+      "sts:GetServiceBearerToken",
+    ]
+    resources = ["*", ]
+  }
+
+  // grant permissions for public repos
+  statement {
+    actions = [
+      "ecr-public:BatchCheckLayerAvailability",
+      "ecr-public:BatchGetImage",
+      "ecr-public:BatchDeleteImage",
+      "ecr-public:BatchImportUpstreamImage",
+      "ecr-public:CompleteLayerUpload",
+      "ecr-public:DescribeImages",
+      "ecr-public:DescribeRepositories",
+      "ecr-public:GetDownloadUrlForLayer",
+      "ecr-public:InitiateLayerUpload",
+      "ecr-public:ListImages",
+      "ecr-public:PutImage",
+      "ecr-public:UploadLayerPart",
+    ]
+    resources = [
+      module.helm_temporal.repository_arn,
+      module.helm_waypoint.repository_arn,
+      module.waypoint_plugin_exp.repository_arn,
+    ]
+  }
+
+  statement {
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:BatchDeleteImage",
+      "ecr:BatchImportUpstreamImage",
+      "ecr:CompleteLayerUpload",
+      "ecr:DescribeImages",
+      "ecr:DescribeRepositories",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:ListImages",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart",
+    ]
+    resources = [
+      module.nuonctl.repository_arn,
+      module.sandbox_aws_eks.repository_arn,
+      module.sandbox_empty.repository_arn,
+    ]
   }
 }
 
