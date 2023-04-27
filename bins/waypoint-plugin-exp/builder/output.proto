@@ -1,0 +1,13 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+
+syntax = "proto3";
+
+package platform;
+
+option go_package = "github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/builder";
+
+message Binary {
+  string location = 1;
+}

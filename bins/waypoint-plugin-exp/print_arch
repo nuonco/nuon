@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  echo "linux"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  echo "darwin"
+elif [[ "$OSTYPE" == "cygwin" ]]; then
+  # POSIX compatibility layer and Linux environment emulation for Windows
+  echo "windows"
+elif [[ "$OSTYPE" == "msys" ]]; then
+  # Lightweight shell and GNU utilities compiled for Windows (part of MinGW)
+  echo "windows"
+else
+  exit 1        # Unknown.
+fi
