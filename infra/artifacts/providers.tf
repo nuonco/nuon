@@ -24,7 +24,7 @@ provider "aws" {
 
 provider "aws" {
   alias = "public"
-  region = local.aws_settings.region
+  region = "us-east-1"
 
   assume_role {
     role_arn = "arn:aws:iam::${local.accounts.public}:role/terraform"
