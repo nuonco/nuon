@@ -23,7 +23,7 @@ func init() {
 	config.RegisterDefault("db_migrations_path", "./migrations")
 
 	// defaults for temporal
-	config.RegisterDefault("temporal_namespace", "default")
+	config.RegisterDefault("temporal_namespace", "api")
 
 	// default for github
 	config.RegisterDefault("github_app_id", "261597")

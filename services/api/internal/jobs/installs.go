@@ -17,3 +17,14 @@ func (m *manager) CreateInstall(ctx context.Context, installID string) error {
 
 	return nil
 }
+
+func (m *manager) DeleteInstall(ctx context.Context, installID string) error {
+	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "DeleteInstall", &jobsv1.DeleteInstallRequest{
+		InstallId: installID,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to trigger install delete job: %w", err)
+	}
+
+	return nil
+}

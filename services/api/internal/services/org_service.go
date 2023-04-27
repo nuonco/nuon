@@ -110,14 +110,6 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 		return org, nil
 	}
 
-	err = o.wkflowMgr.Provision(ctx, org.ID.String())
-	if err != nil {
-		o.log.Error("failed to provision org",
-			zap.String("orgID", org.ID.String()),
-			zap.String("error", err.Error()))
-		return nil, fmt.Errorf("unable to provision org: %w", err)
-	}
-
 	_, err = o.userOrgUpdater.UpsertUserOrg(ctx, input.OwnerID, org.ID)
 	if err != nil {
 		o.log.Error("failed to upsert org member",

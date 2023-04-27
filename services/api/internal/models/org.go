@@ -32,6 +32,20 @@ func (o *Org) AfterCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
+func (o *Org) AfterDelete(tx *gorm.DB) (err error) {
+	ctx := tx.Statement.Context
+	mgr, err := jobs.FromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to get job manager: %w", err)
+	}
+
+	if err := mgr.DeleteOrg(ctx, o.ID.String()); err != nil {
+		return fmt.Errorf("unable to delete org: %w", err)
+	}
+
+	return nil
+}
+
 func (Org) IsNode() {}
 
 func (o Org) GetID() string {

@@ -81,13 +81,6 @@ func (a *appService) updateApp(ctx context.Context, input models.AppInput) (*mod
 		return nil, err
 	}
 
-	if err := a.workflowMgr.Provision(ctx, app); err != nil {
-		a.log.Error("failed to provision app",
-			zap.Any("finalApp", *finalApp),
-			zap.String("error", err.Error()))
-		return nil, err
-	}
-
 	return finalApp, nil
 }
 
@@ -120,13 +113,6 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 	if err != nil {
 		a.log.Error("failed to insert app",
 			zap.Any("app", app),
-			zap.String("error", err.Error()))
-		return nil, err
-	}
-
-	if err := a.workflowMgr.Provision(ctx, finalApp); err != nil {
-		a.log.Error("failed to provision app",
-			zap.Any("finalApp", *finalApp),
 			zap.String("error", err.Error()))
 		return nil, err
 	}
