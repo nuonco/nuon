@@ -17,3 +17,14 @@ func (m *manager) CreateOrg(ctx context.Context, orgID string) error {
 
 	return nil
 }
+
+func (m *manager) DeleteOrg(ctx context.Context, orgID string) error {
+	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "DeleteOrg", &jobsv1.DeleteOrgRequest{
+		OrgId: orgID,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to provision org: %w", err)
+	}
+
+	return nil
+}

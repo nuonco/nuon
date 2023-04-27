@@ -78,7 +78,9 @@ func (o orgRepo) GetPageByUser(ctx context.Context, userID string, opts *models.
 }
 
 func (o orgRepo) Delete(ctx context.Context, orgID uuid.UUID) (bool, error) {
-	var org models.Org
+	org := models.Org{
+		Model: models.Model{ID: orgID},
+	}
 	if err := o.db.WithContext(ctx).
 		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).
 		Delete(&org, "id = ?", orgID).Error; err != nil {

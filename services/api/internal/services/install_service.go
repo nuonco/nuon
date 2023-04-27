@@ -42,48 +42,14 @@ func NewInstallService(db *gorm.DB, temporalClient tclient.Client, log *zap.Logg
 	}
 }
 
-func (i *installService) deprovisionInstall(ctx context.Context, install *models.Install) error {
-	// NOTE(jm): this is a hack, we should figure out how to grab the app id without having to pass the appRepo in
-	// here etc. Maybe a method on the installRepo, called GetAppOrgID?
-	app, err := i.appRepo.Get(ctx, install.AppID)
-	if err != nil {
-		i.log.Error("failed to retrieve app",
-			zap.String("appID", install.AppID.String()),
-			zap.String("error", err.Error()))
-		return err
-	}
-
-	sandboxVersion, err := i.adminRepo.GetLatestSandboxVersion(ctx)
-	if err != nil {
-		return err
-	}
-
-	return i.wkflowMgr.Deprovision(ctx, install, app.OrgID.String(), sandboxVersion)
-}
-
 func (i *installService) DeleteInstall(ctx context.Context, inputID string) (bool, error) {
 	// parsing the uuid while ignoring the error handling since we do this at protobuf level
 	installID, _ := uuid.Parse(inputID)
-
-	savedInstall, err := i.repo.Get(ctx, installID)
-	if err != nil {
-		i.log.Error("failed to retrieve install",
-			zap.String("installID", installID.String()),
-			zap.String("error", err.Error()))
-		return false, err
-	}
 
 	success, err := i.repo.Delete(ctx, installID)
 	if err != nil {
 		i.log.Error("failed to delete install",
 			zap.String("installID", installID.String()),
-			zap.String("error", err.Error()))
-		return false, err
-	}
-
-	if err := i.deprovisionInstall(ctx, savedInstall); err != nil {
-		i.log.Error("failed to deprovision install",
-			zap.Any("savedInstall", savedInstall),
 			zap.String("error", err.Error()))
 		return false, err
 	}
@@ -150,32 +116,7 @@ func (i *installService) updateInstall(ctx context.Context, input models.Install
 		return nil, err
 	}
 
-	if err := i.provisionInstall(ctx, install); err != nil {
-		i.log.Error("failed to provision install",
-			zap.Any("install", install),
-			zap.String("error", err.Error()))
-		return nil, err
-	}
 	return updatedInstall, nil
-}
-
-func (i *installService) provisionInstall(ctx context.Context, install *models.Install) error {
-	// NOTE(jm): this is a hack, we should figure out how to grab the app id without having to pass the appRepo in
-	// here etc. Maybe a method on the installRepo, called GetAppOrgID?
-	app, err := i.appRepo.Get(ctx, install.AppID)
-	if err != nil {
-		i.log.Error("failed to retrieve app",
-			zap.String("appID", install.AppID.String()),
-			zap.String("error", err.Error()))
-		return err
-	}
-
-	sandboxVersion, err := i.adminRepo.GetLatestSandboxVersion(ctx)
-	if err != nil {
-		return err
-	}
-
-	return i.wkflowMgr.Provision(ctx, install, app.OrgID.String(), sandboxVersion)
 }
 
 func (i *installService) UpsertInstall(ctx context.Context, input models.InstallInput) (*models.Install, error) {
@@ -208,13 +149,6 @@ func (i *installService) UpsertInstall(ctx context.Context, input models.Install
 	savedInstall, err := i.repo.Create(ctx, &install)
 	if err != nil {
 		i.log.Error("failed to create install",
-			zap.Any("install", install),
-			zap.String("error", err.Error()))
-		return nil, err
-	}
-
-	if err := i.provisionInstall(ctx, savedInstall); err != nil {
-		i.log.Error("failed to provision install",
 			zap.Any("install", install),
 			zap.String("error", err.Error()))
 		return nil, err

@@ -141,18 +141,6 @@ func (i *deploymentService) GetInstallDeployments(ctx context.Context, ids []str
 	return deployments, pg, nil
 }
 
-func (i *deploymentService) startDeployment(ctx context.Context, deployment *models.Deployment) error {
-	err := i.wkflowMgr.Start(ctx, deployment)
-	if err != nil {
-		i.log.Error("failed to start deployment",
-			zap.Any("deployment", deployment),
-			zap.String("error", err.Error()))
-		return fmt.Errorf("unable to start deployment: %w", err)
-	}
-
-	return nil
-}
-
 func (i *deploymentService) getRepoBranch(ctx context.Context, ghRepoOwner string, ghRepoName string, ghInstallID int64) (string, error) {
 	// get repo info from github
 	ghRepo, err := repos.GithubRepo.GetRepo(i.githubRepo, ctx, ghInstallID, ghRepoOwner, ghRepoName)
@@ -343,13 +331,6 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.
 				return nil, fmt.Errorf("failed to process github repo: %w", err)
 			}
 		}
-	}
-
-	// start deployment workflow
-	err = i.startDeployment(ctx, deployment)
-	if err != nil {
-		i.log.Error("failed to start deployment", zap.Any("deployment", deployment), zap.String("error", err.Error()))
-		return nil, err
 	}
 
 	return deployment, nil

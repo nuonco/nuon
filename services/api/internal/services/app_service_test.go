@@ -10,7 +10,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zaptest"
 )
@@ -123,7 +122,6 @@ func TestAppService_UpsertApp(t *testing.T) {
 		inputFn     func() models.AppInput
 		orgRepoFn   func(*gomock.Controller) *repos.MockOrgRepo
 		repoFn      func(*gomock.Controller) *repos.MockAppRepo
-		wkflowFn    func(*gomock.Controller) *workflows.MockAppWorkflowManager
 		errExpected error
 	}{
 		"create a new app": {
@@ -142,11 +140,6 @@ func TestAppService_UpsertApp(t *testing.T) {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(app, nil)
 				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
-				mgr := workflows.NewMockAppWorkflowManager(ctl)
-				mgr.EXPECT().Provision(gomock.Any(), app).Return(nil)
-				return mgr
 			},
 		},
 		"upsert happy path": {
@@ -167,11 +160,6 @@ func TestAppService_UpsertApp(t *testing.T) {
 				repo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(app, nil)
 				return repo
 			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
-				mgr := workflows.NewMockAppWorkflowManager(ctl)
-				mgr.EXPECT().Provision(gomock.Any(), app).Return(nil)
-				return mgr
-			},
 		},
 		"org not found": {
 			inputFn: func() models.AppInput {
@@ -188,10 +176,6 @@ func TestAppService_UpsertApp(t *testing.T) {
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
-				mgr := workflows.NewMockAppWorkflowManager(ctl)
-				return mgr
 			},
 			errExpected: errUpsertApp,
 		},
@@ -212,33 +196,6 @@ func TestAppService_UpsertApp(t *testing.T) {
 				repo.EXPECT().Get(gomock.Any(), app.ID).Return(nil, errUpsertApp)
 				return repo
 			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
-				return workflows.NewMockAppWorkflowManager(ctl)
-			},
-			errExpected: errUpsertApp,
-		},
-		"error provisioning": {
-			inputFn: func() models.AppInput {
-				inp := generics.GetFakeObj[models.AppInput]()
-				inp.ID = nil
-				inp.OrgID = org.ID.String()
-				return inp
-			},
-			orgRepoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
-				repo := repos.NewMockOrgRepo(ctl)
-				repo.EXPECT().Get(gomock.Any(), app.OrgID).Return(org, nil)
-				return repo
-			},
-			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
-				repo := repos.NewMockAppRepo(ctl)
-				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(app, nil)
-				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
-				mgr := workflows.NewMockAppWorkflowManager(ctl)
-				mgr.EXPECT().Provision(gomock.Any(), gomock.Any()).Return(errUpsertApp)
-				return mgr
-			},
 			errExpected: errUpsertApp,
 		},
 	}
@@ -248,12 +205,10 @@ func TestAppService_UpsertApp(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			appInput := test.inputFn()
 			repo := test.repoFn(mockCtl)
-			mgr := test.wkflowFn(mockCtl)
 			svc := &appService{
-				log:         zaptest.NewLogger(t),
-				orgRepo:     test.orgRepoFn(mockCtl),
-				repo:        repo,
-				workflowMgr: mgr,
+				log:     zaptest.NewLogger(t),
+				orgRepo: test.orgRepoFn(mockCtl),
+				repo:    repo,
 			}
 
 			returnedApp, err := svc.UpsertApp(context.Background(), appInput)

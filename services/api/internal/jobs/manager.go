@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultNamespace                string        = "default"
+	defaultNamespace                string        = "api"
 	defaultWorkflowRunTimeout       time.Duration = time.Hour * 12
 	defaultWorkflowExecutionTimeout time.Duration = time.Hour * 24
 )
