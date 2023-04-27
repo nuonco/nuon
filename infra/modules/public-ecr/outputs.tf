@@ -9,3 +9,7 @@ output "repository_arn" {
 output "registry_id" {
   value = aws_ecrpublic_repository.main.registry_id
 }
+
+output "is_public" {
+  value = true
+}

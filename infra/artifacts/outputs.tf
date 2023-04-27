@@ -19,29 +19,21 @@ output "bucket" {
 output "artifacts" {
   value = {
     nuonctl = {
-      ecr_repository_url = ""
-      ecr_registry_id    = ""
-      ecr_is_public      = false
+      ecr = {
+        repository_url = module.nuonctl.repository_url
+        registry_id    = module.nuonctl.registry_id
+        repository_arn = module.nuonctl.repository_arn
+        is_public      = module.nuonctl.is_public
+      }
     }
 
-    waypoint = {
-      ecr_repository_arn = ""
-    }
-
-    temporal = {
-      ecr_repository_arn = ""
-    }
-
-    sandbox_aws_eks = {
-      ecr_repository_url = ""
-      ecr_registry_id    = ""
-      ecr_is_public      = false
-    }
-
-    sandbox_empty = {
-      ecr_repository_url = ""
-      ecr_registry_id    = ""
-      ecr_is_public      = false
+    waypoint-plugin-exp = {
+      ecr = {
+        repository_url = module.waypoint_plugin_exp.repository_url
+        registry_id    = module.waypoint_plugin_exp.registry_id
+        repository_arn = module.waypoint_plugin_exp.repository_arn
+        is_public      = module.waypoint_plugin_exp.is_public
+      }
     }
   }
 }
