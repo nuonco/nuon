@@ -10,12 +10,4 @@ locals {
   tags = {
     terraform = "infra-artifacts"
   }
-
-  artifacts = [
-    "nuonctl",
-    "helm-waypoint",
-    "helm-temporal",
-    "sandbox-aws-eks",
-    "sandbox-empty",
-  ]
 }

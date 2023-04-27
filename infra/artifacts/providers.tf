@@ -22,6 +22,19 @@ provider "aws" {
   }
 }
 
+provider "aws" {
+  alias = "public"
+  region = local.aws_settings.region
+
+  assume_role {
+    role_arn = "arn:aws:iam::${local.accounts.public}:role/terraform"
+  }
+
+  default_tags {
+    tags = local.tags
+  }
+}
+
 # this is the root account that the credentials have permissions for.
 # use it to get list of accounts and pivot to the correct one
 provider "aws" {

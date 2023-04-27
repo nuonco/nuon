@@ -1,98 +1,88 @@
-data "aws_caller_identity" "current" {
-  provider = aws.infra-shared-prod
-}
+module "nuonctl" {
+  source = "../modules/ecr"
 
-data "aws_iam_policy_document" "ecr_policy" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:BatchDeleteImage",
-      "ecr:BatchGetImage",
-      "ecr:CompleteLayerUpload",
-      "ecr:DescribeImageScanFindings",
-      "ecr:DescribeImages",
-      "ecr:DescribeRepositories",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:GetLifecyclePolicy",
-      "ecr:GetLifecyclePolicyPreview",
-      "ecr:GetRepositoryPolicy",
-      "ecr:InitiateLayerUpload",
-      "ecr:ListImages",
-      "ecr:ListTagsForResource",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart"
-    ]
-
-    principals {
-      type        = "AWS"
-      identifiers = ["*", ]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "aws:PrincipalOrgID"
-      # NOTE(jdt): this sucks but it's better than passing in the same value for every module invocation
-      # TODO(jdt): should this be restricted to just accounts in the workloads ou?
-      values = ["o-thxealue7f", ]
-    }
+  name = "nuonctl"
+  tags = {
+    artifact = "sandbox-aws-eks"
+    artifact_type = "binary"
   }
-
-  statement {
-    effect = "Allow"
-    actions = [
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:GetLifecyclePolicy",
-      "ecr:GetLifecyclePolicyPreview",
-      "ecr:GetRepositoryPolicy",
-      "ecr:InitiateLayerUpload",
-      "ecr:ListImages",
-      "ecr:ListTagsForResource",
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:BatchGetImage",
-    ]
-
-    principals {
-      type        = "*"
-      identifiers = ["*", ]
-    }
-  }
-}
-
-# Optionally, create an ECR repo for the GH repo
-# This should be enabled for any services deployed to EKS
-module "ecr" {
-  source  = "terraform-aws-modules/ecr/aws"
-  version = ">= 1.3.2"
-
-  for_each = toset(local.artifacts)
 
   providers = {
     aws = aws.infra-shared-prod
   }
+}
 
-  create                                    = true
-  create_repository                         = true
-  create_repository_policy                  = false
-  attach_repository_policy                  = true
-  create_lifecycle_policy                   = false
-  create_registry_replication_configuration = true
+module "helm_temporal" {
+  source = "../modules/public-ecr"
 
-  // NOTE(jm): we enable mutable images to help when debugging our CI systems. The only time we would _ever_ run into an
-  // issue where the image is updated in place is when our CI is broken for some reason.
-  repository_image_tag_mutability = "MUTABLE"
+  name = "helm-temporal"
+  description = "temporal helm chart from mono/charts"
+  about = "Helm chart for installing temporal"
+  tags = {
+    artifact = "helm-temporal"
+    artifact_type = "helm-oci"
+  }
 
-  repository_name               = each.key
-  repository_encryption_type    = "KMS"
-  repository_image_scan_on_push = true
-  repository_policy             = data.aws_iam_policy_document.ecr_policy.json
-  registry_replication_rules = [
-    {
-      destinations = [{
-        region      = "us-east-2"
-        registry_id = data.aws_caller_identity.current.account_id
-      }]
-    }
-  ]
+  providers = {
+    aws = aws.public
+  }
+}
 
-  tags = { artifact = each.key }
+module "helm_waypoint" {
+  source = "../modules/public-ecr"
+
+  name = "helm-waypoint"
+  description = "waypoint helm chart from mono/charts"
+  about = "Helm chart for installing waypoint"
+
+  tags = {
+    artifact = "helm-waypoint"
+    artifact_type = "helm-oci"
+  }
+
+  providers = {
+    aws = aws.public
+  }
+}
+
+module "waypoint_plugin_exp" {
+  source = "../modules/ecr"
+
+  name = "waypoint-plugin-exp"
+  tags = {
+    artifact = "waypoint-plugin-exp"
+    artifact_type = "waypoint-odr-oci"
+  }
+
+  providers = {
+    aws = aws.public
+  }
+}
+
+module "sandbox_aws_eks" {
+  source = "../modules/ecr"
+
+  name = "sandbox-aws-eks"
+  tags = {
+    artifact = "sandbox-aws-eks"
+    artifact_type = "terraform-oci"
+  }
+
+  providers = {
+    aws = aws.infra-shared-prod
+  }
+}
+
+module "sandbox_empty" {
+  source = "../modules/ecr"
+
+  name = "sandbox-empty"
+  tags = {
+    artifact = "sandbox-empty"
+    artifact_type = "terraform-oci"
+  }
+
+  providers = {
+    aws = aws.infra-shared-prod
+  }
 }
