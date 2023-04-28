@@ -43,10 +43,26 @@ jobs:
           terraform init
           terraform-bin output -json > ${{ env.TF_OUT }}
 
+          which jq
+
       - name: Parse output
         uses: powertoolsdev/action-tf-output@main
         with:
+          cleanup: false
           file: ${{ env.TF_OUT }}
+
+      - name: Parse artifact outputs
+        working-directory: infra/artifacts
+        run: |
+          repo_url=$(cat ${{ env.TF_OUT }} | jq -r .artifacts.value.${{ inputs.artifact }}.ecr.repository_url)
+          repo_arn=$(cat ${{ env.TF_OUT }} | jq -r .artifacts.value.${{ inputs.artifact }}.ecr.repository_arn)
+          is_public=$(cat ${{ env.TF_OUT }} | jq -r .artifacts.value.${{ inputs.artifact }}.ecr.is_public)
+          registry_id=$(cat ${{ env.TF_OUT }} | jq -r .artifacts.value.${{ inputs.artifact }}.ecr.registry_id)
+
+          echo "ARTIFACT_ECR_REPOSITORY_URL=$repo_url" >> "$GITHUB_ENV"
+          echo "ARTIFACT_ECR_REPOSITORY_ARN=$repo_arn" >> "$GITHUB_ENV"
+          echo "ARTIFACT_ECR_IS_PUBLIC=$is_public" >> "$GITHUB_ENV"
+          echo "ARTIFACT_ECR_REGISTRY_ID=$registry_id" >> "$GITHUB_ENV"
 
       - name: Setup for CI
         uses: powertoolsdev/mono/actions/setup-ci@main
@@ -58,8 +74,8 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         with:
-          registries: ${{ env.TFO_ARTIFACTS_NUONCTL_ECR_REGISTRY_ID }}
-          registry-type: ${{ env.NUONCTL_TFO_ARTIFACTS_NUONCTL_ECR_IS_PUBLIC && 'public' || 'private' }}
+          registries: ${{ env.ARTIFACT_ECR_REGISTRY_ID }}
+          registry-type: ${{ env.ARTIFACT_ECR_IS_PUBLIC == 'true' && 'public' || 'private' }}
 
       - name: Earthly build artifacts
         working-directory: bins/${{inputs.artifact}}
@@ -85,5 +101,5 @@ jobs:
             --push \
             --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +oci-artifacts \
-            --repo=${{ env.TFO_ARTIFACTS_NUONCTL_ECR_REPOSITORY_URL }} \
+            --repo=${{ env.ARTIFACT_ECR_REPOSITORY_URL }} \
             --image_tag=${{ inputs.tag }}
