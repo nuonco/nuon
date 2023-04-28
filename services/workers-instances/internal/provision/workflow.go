@@ -37,7 +37,7 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionRequest, typ planv1.PlanType) (*planv1.PlanRef, error) {
+func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionRequest, typ planv1.ComponentInputType) (*planv1.PlanRef, error) {
 	l := workflow.GetLogger(ctx)
 
 	planReq := &planv1.CreatePlanRequest{
@@ -48,9 +48,9 @@ func (w *wkflow) planAndExec(ctx workflow.Context, req *instancesv1.ProvisionReq
 				DeploymentId: req.DeploymentId,
 				InstallId:    req.InstallId,
 				Component:    req.Component,
+				Type:         typ,
 			},
 		},
-		Type: typ,
 	}
 	planResp, err := execCreatePlan(ctx, planReq)
 	if err != nil {
@@ -92,7 +92,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 		return resp, err
 	}
 
-	imageSyncPlanRef, err := w.planAndExec(ctx, req, planv1.PlanType_PLAN_TYPE_WAYPOINT_SYNC_IMAGE)
+	imageSyncPlanRef, err := w.planAndExec(ctx, req, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE)
 	if err != nil {
 		err = fmt.Errorf("unable to sync image: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
@@ -101,7 +101,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 	resp.ImageSyncPlan = imageSyncPlanRef
 	l.Debug("successfully deployed", zap.Any("plan_only", req.PlanOnly))
 
-	deployPlanRef, err := w.planAndExec(ctx, req, planv1.PlanType_PLAN_TYPE_WAYPOINT_DEPLOY)
+	deployPlanRef, err := w.planAndExec(ctx, req, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY)
 	if err != nil {
 		return resp, nil
 	}

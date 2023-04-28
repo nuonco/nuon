@@ -138,7 +138,7 @@ func TestProvision(t *testing.T) {
 			assert.Equal(t, req.OrgId, pr.GetSandbox().OrgId)
 			assert.Equal(t, req.AppId, pr.GetSandbox().AppId)
 			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
-			assert.Equal(t, planv1.TerraformRunType_TERRAFORM_RUN_TYPE_APPLY, pr.GetSandbox().RunType)
+			assert.Equal(t, planv1.SandboxInputType_SANDBOX_INPUT_TYPE_PROVISION, pr.GetSandbox().Type)
 
 			acctSettings := pr.GetSandbox().GetAws()
 			assert.Equal(t, req.AccountSettings.AwsAccountId, acctSettings.AccountId)

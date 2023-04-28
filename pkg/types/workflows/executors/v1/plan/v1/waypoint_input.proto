@@ -8,11 +8,18 @@ import "validate/validate.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
 
-message OrgRunnerInput {
-  string org_id = 1 [
+message WaypointInput {
+  WaypointInputType type = 1;
+  string org_id = 2 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  WaypointVersionRef waypoint_version = 2;
+  WaypointVersionRef waypoint_version = 3;
+}
+
+enum WaypointInputType {
+  WAYPOINT_INPUT_TYPE_UNSPECIFIED = 0;
+  WAYPOINT_INPUT_TYPE_ORG_SERVER = 1;
+  WAYPOINT_INPUT_TYPE_ORG_RUNNER = 2;
 }

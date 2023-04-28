@@ -102,23 +102,23 @@ message WaypointRef {
   // project corresponds to the short id of the app
   string project = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   // workspace corresponds to the short id of the
   string workspace = 2 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 
   string app = 3 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 
   // singleton id is an identifier that maps to the job, ensuring it's only attempted once
   string singleton_id = 4 [
     (validate.rules).string.min_len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 
   map<string, string> labels = 5 [(validate.rules).map = {min_pairs: 1}];
@@ -128,10 +128,7 @@ message WaypointRef {
     (tagger.tags) = "faker:\"len=26\""
   ];
 
-  string on_demand_runner_config = 7 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
-  ];
+  string on_demand_runner_config = 7 [(tagger.tags) = "faker:\"len=26\""];
 
   uint64 job_timeout_seconds = 8 [
     (validate.rules).uint64.gt = 60,

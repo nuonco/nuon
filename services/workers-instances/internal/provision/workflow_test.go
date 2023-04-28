@@ -41,12 +41,14 @@ func TestProvision(t *testing.T) {
 	env.RegisterWorkflow(CreatePlan)
 	env.OnWorkflow(CreatePlan, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+			assert.NoError(t, r.Validate())
 			return &planv1.CreatePlanResponse{Plan: planRef}, nil
 		})
 
 	env.RegisterWorkflow(ExecutePlan)
 	env.OnWorkflow(ExecutePlan, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+			assert.NoError(t, r.Validate())
 			return &executev1.ExecutePlanResponse{}, nil
 		})
 

@@ -47,6 +47,7 @@ func TestProvision(t *testing.T) {
 			assert.True(t, ok)
 
 			assert.Equal(t, req.OrgId, input.Component.OrgId)
+			assert.Equal(t, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_BUILD, input.Component.Type)
 			assert.Equal(t, req.AppId, input.Component.AppId)
 			assert.Equal(t, req.DeploymentId, input.Component.DeploymentId)
 			assert.True(t, proto.Equal(req.Component, input.Component.Component))
