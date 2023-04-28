@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/builder"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/internal/builder"
 )
 
 type RegistryConfig struct {
