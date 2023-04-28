@@ -14,6 +14,8 @@ message HelmRepoConfig {
 
   string chart_version = 3 [(validate.rules).string.min_len = 5];
 
+  // the following values are for injecting configurations into a helm chart, from artifats.
+  // TODO(jm): this should be a separate type
   optional string image_repo_values_key = 4;
   optional string image_tag_values_key = 5;
 }

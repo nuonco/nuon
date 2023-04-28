@@ -96,5 +96,6 @@ run:
     - '.*/generated/.*'
     - 'infra/'
     - '.*/node_modules/.*'
+    - 'bins/waypoint-plugin-exp/'
   timeout: 5m
   go: '1.19'

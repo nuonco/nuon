@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package executors.v1.plan.v1;
 
-import "executors/v1/plan/v1/terraform_run_type.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -11,24 +10,31 @@ option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors
 message SandboxInput {
   string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string app_id = 2 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string install_id = 3 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 
   SandboxSettings sandbox_settings = 4;
   optional string terraform_version = 5;
-  .executors.v1.plan.v1.TerraformRunType run_type = 6;
+  SandboxInputType type = 6;
 
   oneof account_settings {
+    option (tagger.oneof_tags) = "faker:\"sandboxInputAccountSettings\"";
     AWSSettings aws = 100;
   }
+}
+
+enum SandboxInputType {
+  SANDBOX_INPUT_TYPE_UNSPECIFIED = 0;
+  SANDBOX_INPUT_TYPE_PROVISION = 1;
+  SANDBOX_INPUT_TYPE_DEPROVISION = 2;
 }
 
 message AWSSettings {
