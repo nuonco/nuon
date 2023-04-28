@@ -42,6 +42,9 @@ jobs:
             nuonctl:
               - bins/nuonctl/**
 
+            waypoint-plugin-exp:
+              - bins/waypoint-plugin-exp/**
+
   tag:
     name: Determine short ref
     runs-on: ubuntu-latest
