@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package terraform.v1;
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/terraform/v1";
+
+message BuildOutput {}
