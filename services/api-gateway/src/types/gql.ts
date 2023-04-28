@@ -54,7 +54,6 @@ export type App = Node & {
   components: ComponentConnection;
   createdAt: Scalars['DateTime'];
   deployments: DeploymentConnection;
-  githubInstallId?: Maybe<Scalars['ID']>;
   id: Scalars['ID'];
   installs: InstallConnection;
   name: Scalars['String'];
@@ -98,7 +97,6 @@ export type AppEdge = {
 };
 
 export type AppInput = {
-  githubInstallId?: InputMaybe<Scalars['ID']>;
   id?: InputMaybe<Scalars['ID']>;
   name?: InputMaybe<Scalars['String']>;
   orgId?: InputMaybe<Scalars['ID']>;

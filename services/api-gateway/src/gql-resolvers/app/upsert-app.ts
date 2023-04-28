@@ -18,7 +18,6 @@ export const upsertApp: TResolverFn<
         .setId(input.id)
         .setOrgId(input.orgId)
         .setName(input.name)
-        .setGithubInstallId(input.githubInstallId)
         .setCreatedById(user?.id);
 
       clients.app.upsertApp(request, (err, res) => {
