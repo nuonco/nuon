@@ -24,4 +24,12 @@ message ComponentInput {
   string install_id = 4 [(tagger.tags) = "faker:\"shortID\""];
 
   component.v1.Component component = 5;
+  ComponentInputType type = 6;
+}
+
+enum ComponentInputType {
+  COMPONENT_INPUT_TYPE_UNSPECIFIED = 0;
+  COMPONENT_INPUT_TYPE_WAYPOINT_BUILD = 1;
+  COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE = 2;
+  COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY = 3;
 }

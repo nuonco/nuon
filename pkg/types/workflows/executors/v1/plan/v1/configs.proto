@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package executors.v1.plan.v1;
 
+import "google/protobuf/struct.proto";
 import "tagger/tagger.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
@@ -14,9 +15,11 @@ message Config {
   oneof actual {
     EnvVar env_var = 1;
     HelmValue helm_value = 2;
+    HelmValues helm_values = 3;
   }
 }
 
+// env vars represent bespoke environment variables that run in a container based deployment
 enum EnvVarType {
   ENV_VAR_TYPE_UNSPECIFIED = 0;
   ENV_VAR_TYPE_RUNNER_JOB = 1;
@@ -49,4 +52,9 @@ message HelmValue {
   string name = 2;
   bool sensitive = 3;
   string value = 4;
+}
+
+// HelmValues
+message HelmValues {
+  google.protobuf.Struct values = 1;
 }
