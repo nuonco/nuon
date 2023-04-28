@@ -1,0 +1,19 @@
+---
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/powertoolsdev/mono/pkg/types/plugins
+    except:
+      - buf.build/googleapis/googleapis
+      - buf.build/envoyproxy/protoc-gen-validate
+      - buf.build/srikrsna/protoc-gen-gotag
+      - buf.build/nuon/vendor
+plugins:
+  - plugin: buf.build/protocolbuffers/go
+    out: .
+    opt: paths=source_relative
+
+  - plugin: buf.build/bufbuild/validate-go
+    out: .
+    opt: paths=source_relative
