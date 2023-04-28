@@ -159,6 +159,23 @@ func (o org) toPath() string {
 	return fmt.Sprintf("org=%s", o.OrgID)
 }
 
+type orgComponent struct {
+	OrgID         string
+	ComponentName string
+}
+
+// OrgPath returns the prefix for an org
+func OrgComponentPath(orgID string, componentName string) string {
+	return orgComponent{
+		OrgID:         orgID,
+		ComponentName: componentName,
+	}.toPath()
+}
+
+func (o orgComponent) toPath() string {
+	return fmt.Sprintf("org=%s/component=%s", o.OrgID, o.ComponentName)
+}
+
 type sandbox struct {
 	OrgID          string
 	AppID          string

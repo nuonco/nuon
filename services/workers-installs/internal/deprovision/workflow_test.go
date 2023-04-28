@@ -48,9 +48,9 @@ func TestDeprovision_finishWithErr(t *testing.T) {
 
 	// env.RegisterWorkflow(ExecutePlan)
 	// env.OnWorkflow("ExecutePlan", mock.Anything, mock.Anything).
-	// 	Return(func(_ workflow.Context, pr *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
-	// 		return &executev1.ExecutePlanResponse{}, errChildWorkflow
-	// 	})
+	//	Return(func(_ workflow.Context, pr *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+	//		return &executev1.ExecutePlanResponse{}, errChildWorkflow
+	//	})
 
 	env.OnActivity(act.Start, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, sReq StartRequest) (StartResponse, error) {
@@ -95,7 +95,7 @@ func TestDeprovision(t *testing.T) {
 			assert.Equal(t, req.OrgId, pr.GetSandbox().OrgId)
 			assert.Equal(t, req.AppId, pr.GetSandbox().AppId)
 			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
-			assert.Equal(t, planv1.TerraformRunType_TERRAFORM_RUN_TYPE_DESTROY, pr.GetSandbox().RunType)
+			assert.Equal(t, planv1.SandboxInputType_SANDBOX_INPUT_TYPE_DEPROVISION, pr.GetSandbox().Type)
 
 			acctSettings := pr.GetSandbox().GetAws()
 			assert.Equal(t, req.AccountSettings.AwsAccountId, acctSettings.AccountId)

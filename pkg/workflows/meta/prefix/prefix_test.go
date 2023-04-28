@@ -113,6 +113,19 @@ func TestOrgPath(t *testing.T) {
 	}
 }
 
+func TestOrgComponentPath(t *testing.T) {
+	obj := generics.GetFakeObj[orgComponent]()
+
+	prefix := OrgComponentPath(obj.OrgID, obj.ComponentName)
+	expectedKVs := [][2]string{
+		{"org", obj.OrgID},
+		{"component", obj.ComponentName},
+	}
+	for _, kv := range expectedKVs {
+		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
+	}
+}
+
 func TestSandboxPath(t *testing.T) {
 	obj := generics.GetFakeObj[sandbox]()
 
