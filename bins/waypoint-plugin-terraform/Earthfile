@@ -1,0 +1,42 @@
+VERSION --use-cache-command 0.6
+
+FROM ghcr.io/powertoolsdev/ci-go-builder
+
+WORKDIR /src
+
+ARG BIN=waypoint-plugin-exp
+ARG GOCACHE=/go-cache
+ARG GOMODCACHE=/go-mod-cache
+CACHE $GOCACHE
+CACHE $GOMODCACHE
+
+code:
+    FROM ../../.+deps
+    COPY ../../pkg+code/pkg pkg
+    COPY --dir . ./bins/$BIN
+    WORKDIR bins/$BIN
+    RUN go generate ./...
+
+lint:
+    FROM +code
+
+test:
+    FROM +code
+    RUN go test ./...
+
+test-integration:
+    RUN echo "noop..."
+
+artifacts:
+    FROM +code
+    RUN mkdir -p out && \
+      go build -o ./out/waypoint-plugin-exp .
+
+    SAVE ARTIFACT out AS LOCAL ./out
+
+oci-artifacts:
+    COPY +artifacts/out/waypoint-plugin-exp /bin/waypoint-plugin-exp
+
+    ARG repo=
+    ARG image_tag=
+    SAVE IMAGE --push $repo:$image_tag
