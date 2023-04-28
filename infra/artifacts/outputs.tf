@@ -24,6 +24,7 @@ output "artifacts" {
         registry_id    = module.nuonctl.registry_id
         repository_arn = module.nuonctl.repository_arn
         is_public      = module.nuonctl.is_public
+        region         = module.waypoint_plugin_exp.is_public ? local.aws_settings.public_region : local.aws_settings.region
       }
     }
 
@@ -33,6 +34,17 @@ output "artifacts" {
         registry_id    = module.waypoint_plugin_exp.registry_id
         repository_arn = module.waypoint_plugin_exp.repository_arn
         is_public      = module.waypoint_plugin_exp.is_public
+        region         = module.waypoint_plugin_exp.is_public ? local.aws_settings.public_region : local.aws_settings.region
+      }
+    }
+
+    waypoint-plugin-terraform = {
+      ecr = {
+        repository_url = module.waypoint_plugin_terraform.repository_url
+        registry_id    = module.waypoint_plugin_terraform.registry_id
+        repository_arn = module.waypoint_plugin_terraform.repository_arn
+        is_public      = module.waypoint_plugin_terraform.is_public
+        region         = module.waypoint_plugin_exp.is_public ? local.aws_settings.public_region : local.aws_settings.region
       }
     }
   }

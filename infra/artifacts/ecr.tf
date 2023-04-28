@@ -3,7 +3,7 @@ module "nuonctl" {
 
   name = "nuonctl"
   tags = {
-    artifact = "sandbox-aws-eks"
+    artifact      = "sandbox-aws-eks"
     artifact_type = "binary"
   }
 
@@ -15,11 +15,11 @@ module "nuonctl" {
 module "helm_temporal" {
   source = "../modules/public-ecr"
 
-  name = "helm-temporal"
+  name        = "helm-temporal"
   description = "temporal helm chart from mono/charts"
-  about = "Helm chart for installing temporal"
+  about       = "Helm chart for installing temporal"
   tags = {
-    artifact = "helm-temporal"
+    artifact      = "helm-temporal"
     artifact_type = "helm-oci"
   }
 
@@ -31,12 +31,12 @@ module "helm_temporal" {
 module "helm_waypoint" {
   source = "../modules/public-ecr"
 
-  name = "helm-waypoint"
+  name        = "helm-waypoint"
   description = "waypoint helm chart from mono/charts"
-  about = "Helm chart for installing waypoint"
+  about       = "Helm chart for installing waypoint"
 
   tags = {
-    artifact = "helm-waypoint"
+    artifact      = "helm-waypoint"
     artifact_type = "helm-oci"
   }
 
@@ -46,12 +46,30 @@ module "helm_waypoint" {
 }
 
 module "waypoint_plugin_exp" {
-  source = "../modules/ecr"
+  source = "../modules/public-ecr"
 
-  name = "waypoint-plugin-exp"
+  name        = "waypoint-plugin-exp"
+  description = "nuon waypoint plugin"
+  about       = "nuon waypoint plugin"
   tags = {
-    artifact = "waypoint-plugin-exp"
-    artifact_type = "waypoint-odr-oci"
+    artifact      = "waypoint-plugin-exp"
+    artifact_type = "waypoint-plugin-odr"
+  }
+
+  providers = {
+    aws = aws.public
+  }
+}
+
+module "waypoint_plugin_terraform" {
+  source = "../modules/public-ecr"
+
+  name        = "waypoint-plugin-terraform"
+  description = "nuon waypoint plugin"
+  about       = "nuon waypoint plugin"
+  tags = {
+    artifact      = "waypoint-plugin-terraform"
+    artifact_type = "waypoint-plugin-odr"
   }
 
   providers = {
@@ -64,7 +82,7 @@ module "sandbox_aws_eks" {
 
   name = "sandbox-aws-eks"
   tags = {
-    artifact = "sandbox-aws-eks"
+    artifact      = "sandbox-aws-eks"
     artifact_type = "terraform-oci"
   }
 
@@ -78,7 +96,7 @@ module "sandbox_empty" {
 
   name = "sandbox-empty"
   tags = {
-    artifact = "sandbox-empty"
+    artifact      = "sandbox-empty"
     artifact_type = "terraform-oci"
   }
 
