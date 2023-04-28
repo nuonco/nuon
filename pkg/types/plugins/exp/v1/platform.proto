@@ -1,21 +1,18 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
-
 syntax = "proto3";
 
-package platform;
+package exp.v1;
 
-option go_package = "github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/platform";
+option go_package = "github.com/powertoolsdev/mono/pkg/types/exp/v1";
 
-import "opaqueany/any.proto";
+//NOTE(jm): this is a hashicorp proto, defined https://github.com/powertoolsdev/mono/pull/671
+import "opaqueany/v1/any.proto";
 
 // You can customise this message to change the fields for
 // the output value from your Deployment
 message Deployment {
   string id = 1;
   string name = 2;
-  opaqueany.Any resource_state = 3;
+  opaqueany.v1.Any resource_state = 3;
 }
 
 // An example proto message for a deployment resource. When you make your own
@@ -23,6 +20,7 @@ message Deployment {
 // wish to know about a resource
 message Resource {
   string name = 1;
+
   message Deployment {
     string name = 1;
   }

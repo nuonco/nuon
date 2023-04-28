@@ -1,9 +1,6 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 syntax = "proto3";
 
-package opaqueany;
+package opaqueany.v1;
 
 option go_package = "github.com/hashicorp/opaqueany";
 
@@ -45,4 +42,3 @@ message Any {
   // Must be a valid serialized protocol buffer of the above specified type.
   bytes value = 2;
 }
-

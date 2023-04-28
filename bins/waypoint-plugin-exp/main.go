@@ -5,9 +5,9 @@ package main
 
 import (
 	sdk "github.com/hashicorp/waypoint-plugin-sdk"
-	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/builder"
-	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/platform"
-	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/registry"
+	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/internal/builder"
+	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/internal/platform"
+	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/internal/registry"
 )
 
 func main() {
