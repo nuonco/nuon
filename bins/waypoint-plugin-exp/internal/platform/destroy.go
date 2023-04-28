@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	expv1 "github.com/powertoolsdev/mono/pkg/types/plugins/exp/v1"
 )
 
 // Implement the Destroyer interface
@@ -43,7 +44,7 @@ func (p *Platform) destroy(
 	ctx context.Context,
 	ui terminal.UI,
 	log hclog.Logger,
-	deployment *Deployment,
+	deployment *expv1.Deployment,
 ) error {
 	sg := ui.StepGroup()
 	defer sg.Wait()
@@ -53,7 +54,7 @@ func (p *Platform) destroy(
 	// If we don't have resource state, this state is from an older version
 	// and we need to manually recreate it.
 	if deployment.ResourceState == nil {
-		rm.Resource("deployment").SetState(&Resource_Deployment{
+		rm.Resource("deployment").SetState(&expv1.Resource_Deployment{
 			Name: deployment.Name,
 		})
 	} else {

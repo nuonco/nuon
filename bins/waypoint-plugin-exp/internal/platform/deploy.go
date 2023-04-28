@@ -8,11 +8,12 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/registry"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/framework/resource"
 	sdk "github.com/hashicorp/waypoint-plugin-sdk/proto/gen"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/internal/registry"
+	expv1 "github.com/powertoolsdev/mono/pkg/types/plugins/exp/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -70,7 +71,7 @@ func (p *Platform) resourceManager(log hclog.Logger, dcr *component.DeclaredReso
 		resource.WithDeclaredResourcesResp(dcr),
 		resource.WithResource(resource.NewResource(
 			resource.WithName("template_example"),
-			resource.WithState(&Resource_Deployment{}),
+			resource.WithState(&expv1.Resource_Deployment{}),
 			resource.WithCreate(p.resourceDeploymentCreate),
 			resource.WithDestroy(p.resourceDeploymentDestroy),
 			resource.WithStatus(p.resourceDeploymentStatus),
@@ -120,12 +121,12 @@ func (b *Platform) deploy(
 	log hclog.Logger,
 	dcr *component.DeclaredResourcesResp,
 	artifact *registry.Artifact,
-) (*Deployment, error) {
+) (*expv1.Deployment, error) {
 	u := ui.Status()
 	defer u.Close()
 	u.Update("Deploy application")
 
-	var result Deployment
+	var result *expv1.Deployment
 
 	// Create our resource manager and create deployment resources
 	rm := b.resourceManager(log, dcr)
@@ -140,11 +141,11 @@ func (b *Platform) deploy(
 	}
 
 	// Store our resource state
-	result.ResourceState = rm.State()
+	//result.ResourceState = rm.State()
 
 	u.Update("Application deployed")
 
-	return &Deployment{}, nil
+	return &expv1.Deployment{}, nil
 }
 
 // This function is the top level status command that gets invoked when Waypoint
@@ -155,7 +156,7 @@ func (d *Platform) status(
 	ji *component.JobInfo,
 	ui terminal.UI,
 	log hclog.Logger,
-	deployment *Deployment,
+	deployment *expv1.Deployment,
 ) (*sdk.StatusReport, error) {
 	sg := ui.StepGroup()
 	s := sg.Add("Checking the status of the deployment...")
@@ -165,7 +166,7 @@ func (d *Platform) status(
 	// If we don't have resource state, this state is from an older version
 	// and we need to manually recreate it.
 	if deployment.ResourceState == nil {
-		rm.Resource("deployment").SetState(&Resource_Deployment{
+		rm.Resource("deployment").SetState(&expv1.Resource_Deployment{
 			Name: deployment.Id,
 		})
 	} else {
@@ -194,7 +195,7 @@ func (b *Platform) resourceDeploymentCreate(
 	st terminal.Status,
 	ui terminal.UI,
 	artifact *registry.Artifact,
-	result *Deployment,
+	result *expv1.Deployment,
 ) error {
 	// Create your deployment resource here!
 
