@@ -54,10 +54,10 @@ jobs:
       - name: Parse artifact outputs
         working-directory: infra/artifacts
         run: |
-          repo_url=$(cat ${{ env.TF_OUT }} | jq -r .artifacts.value.${{ inputs.artifact }}.ecr.repository_url)
-          repo_arn=$(cat ${{ env.TF_OUT }} | jq -r .artifacts.value.${{ inputs.artifact }}.ecr.repository_arn)
-          is_public=$(cat ${{ env.TF_OUT }} | jq -r .artifacts.value.${{ inputs.artifact }}.ecr.is_public)
-          registry_id=$(cat ${{ env.TF_OUT }} | jq -r .artifacts.value.${{ inputs.artifact }}.ecr.registry_id)
+          repo_url=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.repository_url')
+          repo_arn=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.repository_arn')
+          is_public=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.is_public')
+          registry_id=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.registry_id')
 
           echo "ARTIFACT_ECR_REPOSITORY_URL=$repo_url" >> "$GITHUB_ENV"
           echo "ARTIFACT_ECR_REPOSITORY_ARN=$repo_arn" >> "$GITHUB_ENV"
