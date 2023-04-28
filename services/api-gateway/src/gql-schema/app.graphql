@@ -8,7 +8,6 @@ Represents a collection of general settings and information about a User's softw
 type App implements Node {
   id: ID!
   name: String!
-  githubInstallId: ID
   updatedAt: DateTime!
   createdAt: DateTime!
   components(options: ConnectionOptions): ComponentConnection!
