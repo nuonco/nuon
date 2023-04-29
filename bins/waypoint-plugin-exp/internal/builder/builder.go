@@ -22,21 +22,21 @@ type Builder struct {
 	config BuildConfig
 }
 
-// Implement Configurable
+// Config: Implement Configurable
 func (b *Builder) Config() (interface{}, error) {
 	return &b.config, nil
 }
 
-// Implement ConfigurableNotify
+// ConfigSet: Implement ConfigurableNotify
 func (b *Builder) ConfigSet(config interface{}) error {
 	c, ok := config.(*BuildConfig)
 	if !ok {
-		return fmt.Errorf("Expected type BuildConfig")
+		return fmt.Errorf("expected type BuildConfig")
 	}
 
 	_, err := os.Stat(c.Source)
 	if err != nil {
-		return fmt.Errorf("Source folder does not exist")
+		return fmt.Errorf("source folder does not exist")
 	}
 
 	return nil
@@ -68,6 +68,8 @@ func (b *Builder) BuildFunc() interface{} {
 // as an input parameter.
 // If an error is returned, Waypoint stops the execution flow and
 // returns an error to the user.
+//
+//nolint:all
 func (b *Builder) build(ctx context.Context, ui terminal.UI) (*Binary, error) {
 	u := ui.Status()
 	defer u.Close()

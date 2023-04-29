@@ -45,6 +45,9 @@ jobs:
             waypoint-plugin-exp:
               - bins/waypoint-plugin-exp/**
 
+            waypoint-plugin-terraform:
+              - bins/waypoint-plugin-terraform/**
+
   tag:
     name: Determine short ref
     runs-on: ubuntu-latest

@@ -24,7 +24,7 @@ linters-settings:
       - performance
       - style
     disabled-checks:
-      - dupImport  # https://github.com/go-critic/go-critic/issues/845
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
       - ifElseChain
       - octalLiteral
       - whyNoLint
@@ -90,12 +90,11 @@ issues:
     - path: _test\.go
       linters:
         - gomnd
-        - funlen  # some fuctions are just...big tables...
+        - funlen # some fuctions are just...big tables...
 run:
   skip-dirs:
-    - '.*/generated/.*'
-    - 'infra/'
-    - '.*/node_modules/.*'
-    - 'bins/waypoint-plugin-exp/'
+    - ".*/generated/.*"
+    - "infra/"
+    - ".*/node_modules/.*"
   timeout: 5m
-  go: '1.19'
+  go: "1.19"
