@@ -30,12 +30,12 @@ test-integration:
 artifacts:
     FROM +code
     RUN mkdir -p out && \
-      go build -o ./out/waypoint-plugin-exp .
+      go build -o ./out/$BIN .
 
     SAVE ARTIFACT out AS LOCAL ./out
 
 oci-artifacts:
-    COPY +artifacts/out/waypoint-plugin-exp /bin/waypoint-plugin-exp
+    COPY +artifacts/out/$BIN /bin/$BIN
 
     ARG repo=
     ARG image_tag=
