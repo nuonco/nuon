@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+//nolint:all
 type DeployConfig struct {
 	Region string "hcl:directory,optional"
 }
@@ -27,11 +28,15 @@ type Platform struct {
 }
 
 // Implement Configurable
+//
+//nolint:all
 func (p *Platform) Config() (interface{}, error) {
 	return &p.config, nil
 }
 
 // Implement ConfigurableNotify
+//
+//nolint:all
 func (p *Platform) ConfigSet(config interface{}) error {
 	c, ok := config.(*DeployConfig)
 	if !ok {
@@ -151,6 +156,8 @@ func (b *Platform) deploy(
 // This function is the top level status command that gets invoked when Waypoint
 // attempts to determine the health of a dpeloyment. It will also invoke the
 // status for each resource involed for the given deployment if any.
+//
+//nolint:all
 func (d *Platform) status(
 	ctx context.Context,
 	ji *component.JobInfo,

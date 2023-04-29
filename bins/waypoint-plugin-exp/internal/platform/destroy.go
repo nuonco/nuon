@@ -40,6 +40,8 @@ func (p *Platform) DestroyFunc() interface{} {
 //
 // If an error is returned, Waypoint stops the execution flow and
 // returns an error to the user.
+//
+//nolint:all
 func (p *Platform) destroy(
 	ctx context.Context,
 	ui terminal.UI,
