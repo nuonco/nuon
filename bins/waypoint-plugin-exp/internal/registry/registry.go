@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/waypoint-plugin-exp/internal/builder"
 )
 
+//nolint:all
 type RegistryConfig struct {
 	Name    string "hcl:name"
 	Version string "hcl:version"
@@ -26,6 +27,8 @@ func (r *Registry) Config() (interface{}, error) {
 }
 
 // Implement ConfigurableNotify
+//
+//nolint:all
 func (r *Registry) ConfigSet(config interface{}) error {
 	c, ok := config.(*RegistryConfig)
 	if !ok {
