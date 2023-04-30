@@ -49,3 +49,7 @@ variable "workspaces" {
   type    = list(any)
   default = ["stage", "prod"]
 }
+
+variable "project_id" {
+  type = string
+}

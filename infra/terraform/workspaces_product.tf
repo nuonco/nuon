@@ -1,3 +1,10 @@
+# product project contains all workspaces for provisioning non-service parts of the product, such as the demo account,
+# orgs, horizon and more.
+resource "tfe_project" "product" {
+  name         = "product"
+  organization = data.tfe_organization.main.name
+}
+
 module "demo" {
   source = "./modules/workspace"
 
@@ -6,6 +13,7 @@ module "demo" {
   auto_apply    = true
   dir           = "terraform"
   variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.product.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
@@ -21,6 +29,7 @@ module "horizon-prod" {
     env = "prod"
   }
   variable_sets                   = ["aws-environment-credentials", "hashicorp-cloud-platform"]
+  project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
@@ -40,6 +49,7 @@ module "infra-orgs-prod" {
     secrets_bucket_name       = "nuon-org-secrets-prod"
   }
   variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   allowed_remote_state_workspaces = [
     module.orgs-api-prod.workspace_id,
@@ -68,6 +78,7 @@ module "infra-orgs-stage" {
     secrets_bucket_name       = "nuon-org-secrets-stage"
   }
   variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   allowed_remote_state_workspaces = [
     module.orgs-api-stage.workspace_id,
@@ -88,6 +99,7 @@ module "waypoint" {
   auto_apply                      = true
   dir                             = "infra"
   variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
@@ -100,6 +112,7 @@ module "sandboxes" {
   dir                             = "infra"
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.product.id
   allowed_remote_state_workspaces = [
     module.infra-orgs-prod.workspace_id,
     module.infra-orgs-stage.workspace_id,
@@ -115,6 +128,7 @@ module "infra-waypoint-orgs-prod" {
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.product.id
   vars = {
     env = "orgs-prod"
   }
@@ -129,6 +143,7 @@ module "infra-waypoint-orgs-stage" {
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.product.id
   vars = {
     env = "orgs-stage"
   }

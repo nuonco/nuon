@@ -1,3 +1,9 @@
+# infra project contains all workspaces for provisioning our internal infrastructure and AWS environment
+resource "tfe_project" "infra" {
+  name         = "infra"
+  organization = data.tfe_organization.main.name
+}
+
 module "apks" {
   source = "./modules/workspace"
 
@@ -6,6 +12,7 @@ module "apks" {
   auto_apply    = false
   dir           = "infra"
   variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   allowed_remote_state_workspaces = [module.ci-images.workspace_id, ]
@@ -19,6 +26,7 @@ module "infra-artifacts" {
   auto_apply    = true
   dir           = "infra/artifacts"
   variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   allowed_remote_state_workspaces = []
@@ -32,6 +40,7 @@ module "aws" {
   auto_apply    = false
   dir           = "infra/aws/cdktf.out/stacks/org"
   variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   allowed_remote_state_workspaces = ["global"]
@@ -45,6 +54,7 @@ module "aws-accounts" {
   auto_apply    = false
   dir           = "infra/aws/cdktf.out/stacks/accounts"
   variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   allowed_remote_state_workspaces = ["global"]
@@ -58,6 +68,7 @@ module "aws-sso" {
   auto_apply    = false
   dir           = "infra/aws/cdktf.out/stacks/sso"
   variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   allowed_remote_state_workspaces = ["global"]
@@ -70,6 +81,7 @@ module "chart-common" {
   repo                            = "powertoolsdev/chart-common"
   auto_apply                      = true
   dir                             = "infra"
+  project_id                      = tfe_project.infra.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
   allowed_remote_state_workspaces = ["global"]
@@ -83,6 +95,7 @@ module "ci-images" {
   auto_apply    = false
   dir           = "infra"
   variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
@@ -96,6 +109,7 @@ module "infra-datadog-orgs-prod" {
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "datadog"]
+  project_id                      = tfe_project.infra.id
   vars = {
     env = "orgs-prod"
   }
@@ -110,6 +124,7 @@ module "infra-datadog-orgs-stage" {
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "datadog"]
+  project_id                      = tfe_project.infra.id
   vars = {
     env = "orgs-stage"
   }
@@ -124,6 +139,7 @@ module "infra-datadog-prod" {
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "datadog"]
+  project_id                      = tfe_project.infra.id
   vars = {
     env = "prod"
   }
@@ -138,6 +154,7 @@ module "infra-datadog-stage" {
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "datadog"]
+  project_id                      = tfe_project.infra.id
   vars = {
     env = "stage"
   }
@@ -152,6 +169,7 @@ module "infra-eks-horizon-main" {
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  project_id                      = tfe_project.infra.id
   vars = {
     account = "horizon"
     pool    = "main"
@@ -167,6 +185,7 @@ module "infra-eks-orgs-prod-main" {
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  project_id                      = tfe_project.infra.id
   allowed_remote_state_workspaces = [
     module.infra-datadog-orgs-prod.workspace_id,
     module.infra-waypoint-orgs-prod.workspace_id,
@@ -193,6 +212,7 @@ module "infra-eks-orgs-stage-main" {
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  project_id                      = tfe_project.infra.id
   allowed_remote_state_workspaces = [
     module.infra-datadog-orgs-stage.workspace_id,
     module.infra-waypoint-orgs-stage.workspace_id,
@@ -218,6 +238,7 @@ module "infra-eks-prod-nuon" {
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  project_id                      = tfe_project.infra.id
   allowed_remote_state_workspaces = ["global"]
   vars = {
     account = "prod"
@@ -234,6 +255,7 @@ module "infra-eks-stage-nuon" {
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  project_id                      = tfe_project.infra.id
   allowed_remote_state_workspaces = ["global"]
   vars = {
     account = "stage"
@@ -250,6 +272,7 @@ module "infra-github" {
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "github-admin-powertoolsdev"]
+  project_id                      = tfe_project.infra.id
 }
 
 module "infra-temporal-prod" {
@@ -261,6 +284,7 @@ module "infra-temporal-prod" {
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.infra.id
   vars = {
     env = "prod"
   }
@@ -275,6 +299,7 @@ module "infra-temporal-stage" {
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.infra.id
   vars = {
     env = "stage"
   }
@@ -288,6 +313,7 @@ module "infra-terraform" {
   dir                             = "infra/terraform"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  project_id                      = tfe_project.infra.id
 }
 
 module "nuon-dns" {
@@ -299,6 +325,7 @@ module "nuon-dns" {
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.infra.id
 }
 
 module "powertools" {
@@ -309,4 +336,5 @@ module "powertools" {
   dir                             = "infra/powertools"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  project_id                      = tfe_project.infra.id
 }
