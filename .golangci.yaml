@@ -96,5 +96,6 @@ run:
     - ".*/generated/.*"
     - "infra/"
     - ".*/node_modules/.*"
+    - "exp/"
   timeout: 5m
   go: "1.19"
