@@ -64,7 +64,7 @@ output "waypoint" {
 
 output "bootstrap_waypoint" {
   value = {
-    domain            = "bootstrap.${nonsensitive(data.tfe_outputs.infra-eks-orgs.values.root_domain)}"
+    domain                 = "bootstrap.${nonsensitive(data.tfe_outputs.infra-eks-orgs.values.root_domain)}"
     token_secret_namespace = "waypoint"
     token_secret_template  = "waypoint-server-token"
 

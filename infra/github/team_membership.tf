@@ -28,7 +28,7 @@ locals {
     nuonbot : {
       teams : [github_team.team.name, github_team.frontend.name, ]
     },
-    pavisandhu: {
+    pavisandhu : {
       teams : [github_team.team.name, github_team.frontend.name, ]
     },
     sbnoorwd : {

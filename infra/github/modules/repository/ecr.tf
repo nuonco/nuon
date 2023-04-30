@@ -6,7 +6,7 @@ module "ecr" {
   source  = "terraform-aws-modules/ecr/aws"
   version = ">= 1.3.2"
 
-  create                                    = "${var.enable_ecr == true && var.archived == false}"
+  create                                    = var.enable_ecr == true && var.archived == false
   create_repository                         = true
   create_repository_policy                  = false
   attach_repository_policy                  = true
