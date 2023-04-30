@@ -44,6 +44,15 @@ module "demo" {
   description = "Demo repo for Nuon."
 }
 
+module "terraform-provider-echo" {
+  source = "./modules/repository"
+
+  name            = "terraform-provider-echo"
+  enable_ecr      = false
+  description     = "Demo echo module for working with private terraform cloud registries."
+  required_checks = []
+}
+
 module "graveyard" {
   source = "./modules/repository"
 
