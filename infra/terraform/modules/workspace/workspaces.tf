@@ -13,6 +13,7 @@ resource "tfe_workspace" "workspace" {
 
   global_remote_state       = local.global_remote_state
   remote_state_consumer_ids = local.global_remote_state ? [] : var.allowed_remote_state_workspaces
+  project_id                = var.project_id
 
   tag_names = ["managed-by:terraform", "${var.auto_apply ? "auto-applied" : "manually-applied"}"]
 
