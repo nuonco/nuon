@@ -11,6 +11,7 @@ import (
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 )
 
 type provisionStep struct {
@@ -70,14 +71,19 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 		if err != nil {
 			err = fmt.Errorf("unable to provision %s: %w", step.name, err)
 			w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, err)
+
+			if depErr := w.execProvisionDeprovision(ctx, req); depErr != nil {
+				l.Info("unable to start deprovision after error", zap.Error(depErr))
+			}
+
 			return resp, err
 		}
 
 		resp.Steps = append(resp.Steps, stepResp)
 		l.Info("successfully executed %s step", step.name)
 	}
-	w.sendNotification(ctx, notificationTypeProvisionSuccess, req.CanaryId, nil)
 
+	w.sendNotification(ctx, notificationTypeProvisionSuccess, req.CanaryId, nil)
 	if err := w.execProvisionDeprovision(ctx, req); err != nil {
 		err = fmt.Errorf("unable to start deprovision workflow")
 		w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, err)
