@@ -18,7 +18,7 @@ output "bucket" {
 
 output "artifacts" {
   value = {
-    helm-demo = {
+    demo = {
       ecr = {
         repository_url = module.helm_demo.repository_url
         registry_id    = module.helm_demo.registry_id
