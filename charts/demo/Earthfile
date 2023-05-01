@@ -1,0 +1,58 @@
+VERSION --use-cache-command 0.6
+
+FROM alpine:latest
+
+ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
+ARG GITHUB_ACTIONS=
+
+WORKDIR /src
+
+deps:
+  RUN apk add --update \
+    aws-cli \
+    alpine-baselayout-data \
+    binutils \
+    curl \
+    git \
+    grep \
+    helm \
+    gettext \
+    less
+
+  RUN echo "fetching latest kubernetes version" && \
+    version=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt) && \
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/$version/bin/linux/amd64/kubectl && \
+    chmod +x ./kubectl && \
+    mv ./kubectl /usr/bin/kubectl
+
+code:
+    FROM +deps
+    COPY --dir . .
+
+lint:
+    FROM +code
+    RUN echo "running helm lint" && helm lint
+
+test:
+    FROM +code
+    RUN go test ./...
+
+test-integration:
+    RUN echo "noop..."
+
+artifacts:
+    FROM +code
+    SAVE ARTIFACT out AS LOCAL ./out
+
+oci-artifacts:
+    FROM +code
+    ARG repo
+    ARG registry_url
+
+    RUN echo "logging into ecr" &&
+      aws ecr get-login-password \
+      | helm registry login --username AWS --password-stdin $registry_url
+
+    RUN echo "packaging chart..." && \
+      helm package . && \
+      helm push demo-0.1.0.tgz oci://$repo
