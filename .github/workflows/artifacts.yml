@@ -41,10 +41,10 @@ jobs:
           filters: |
             nuonctl:
               - bins/nuonctl/**
-
+            helm-demo:
+              - charts/demo/**
             waypoint-plugin-exp:
               - bins/waypoint-plugin-exp/**
-
             waypoint-plugin-terraform:
               - bins/waypoint-plugin-terraform/**
 
