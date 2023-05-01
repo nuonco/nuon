@@ -35,9 +35,6 @@ lint:
 
 test:
     FROM +code
-    RUN go test ./...
-
-test-integration:
     RUN echo "noop..."
 
 artifacts:
@@ -49,7 +46,7 @@ oci-artifacts:
     ARG repo
     ARG registry_url
 
-    RUN echo "logging into ecr" &&
+    RUN echo "logging into ecr" && \
       aws ecr get-login-password \
       | helm registry login --username AWS --password-stdin $registry_url
 

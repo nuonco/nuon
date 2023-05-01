@@ -95,6 +95,7 @@ module "mono" {
   required_checks = [
     // lints + tests + release + deploys for services and lib/infra.
     "services ✅",
+    "artifacts ✅",
     "pkg ✅",
     "infra ✅",
     "protos ✅",
