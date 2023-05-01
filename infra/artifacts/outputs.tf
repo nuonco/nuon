@@ -19,6 +19,7 @@ output "bucket" {
 output "artifacts" {
   value = {
     "charts/demo" = {
+      bucket_prefix = "demo"
       ecr = {
         repository_url = module.helm_demo.repository_url
         registry_id    = module.helm_demo.registry_id
@@ -30,6 +31,7 @@ output "artifacts" {
     }
 
     "bins/nuonctl" = {
+      bucket_prefix = "nuonctl"
       ecr = {
         repository_url = module.nuonctl.repository_url
         registry_id    = module.nuonctl.registry_id
@@ -41,6 +43,7 @@ output "artifacts" {
     }
 
     "bins/waypoint-plugin-exp" = {
+      bucket_prefix = "waypoint-plugin-exp"
       ecr = {
         repository_url = module.waypoint_plugin_exp.repository_url
         registry_id    = module.waypoint_plugin_exp.registry_id
@@ -52,6 +55,7 @@ output "artifacts" {
     }
 
     "bins/waypoint-plugin-terraform" = {
+      bucket_prefix = "waypoint-plugin-terraform"
       ecr = {
         repository_url = module.waypoint_plugin_terraform.repository_url
         registry_id    = module.waypoint_plugin_terraform.registry_id
