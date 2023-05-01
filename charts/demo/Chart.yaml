@@ -1,0 +1,9 @@
+---
+apiVersion: v2
+name: demo
+description: A Helm chart for demoing nuon
+type: application
+version: 0.1.0
+appVersion: "0.0.1"
+
+dependencies: []

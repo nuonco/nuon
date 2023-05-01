@@ -1,0 +1,3 @@
+---
+env:
+  NUON_STATIC_VALUE: "value"
