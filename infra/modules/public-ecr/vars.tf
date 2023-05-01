@@ -13,6 +13,11 @@ variable "description" {
   description = "Repository description."
 }
 
+variable "region" {
+  type        = string
+  description = "us-east-1"
+}
+
 variable "tags" {
   type        = map(any)
   description = "Tags to add to resources"

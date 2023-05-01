@@ -7,6 +7,7 @@ module "nuonctl" {
     artifact_type = "binary"
   }
 
+  region = local.aws_settings.region
   providers = {
     aws = aws.infra-shared-prod
   }
@@ -16,6 +17,7 @@ module "helm_temporal" {
   source = "../modules/public-ecr"
 
   name        = "helm-temporal"
+  region      = local.aws_settings.public_region
   description = "temporal helm chart from mono/charts"
   about       = "Helm chart for installing temporal"
   tags = {
@@ -28,10 +30,29 @@ module "helm_temporal" {
   }
 }
 
+module "helm_demo" {
+  source = "../modules/public-ecr"
+
+  name        = "helm-demo"
+  region      = local.aws_settings.public_region
+  description = "Demo helm chart"
+  about       = "Demo helm chart"
+
+  tags = {
+    artifact      = "helm-demo"
+    artifact_type = "helm-oci"
+  }
+
+  providers = {
+    aws = aws.public
+  }
+}
+
 module "helm_waypoint" {
   source = "../modules/public-ecr"
 
   name        = "helm-waypoint"
+  region      = local.aws_settings.public_region
   description = "waypoint helm chart from mono/charts"
   about       = "Helm chart for installing waypoint"
 
@@ -49,6 +70,7 @@ module "waypoint_plugin_exp" {
   source = "../modules/public-ecr"
 
   name        = "waypoint-plugin-exp"
+  region      = local.aws_settings.public_region
   description = "nuon waypoint plugin"
   about       = "nuon waypoint plugin"
   tags = {
@@ -65,6 +87,7 @@ module "waypoint_plugin_terraform" {
   source = "../modules/public-ecr"
 
   name        = "waypoint-plugin-terraform"
+  region      = local.aws_settings.public_region
   description = "nuon waypoint plugin"
   about       = "nuon waypoint plugin"
   tags = {
@@ -80,7 +103,8 @@ module "waypoint_plugin_terraform" {
 module "sandbox_aws_eks" {
   source = "../modules/ecr"
 
-  name = "sandbox-aws-eks"
+  name   = "sandbox-aws-eks"
+  region = local.aws_settings.region
   tags = {
     artifact      = "sandbox-aws-eks"
     artifact_type = "terraform-oci"
@@ -94,7 +118,8 @@ module "sandbox_aws_eks" {
 module "sandbox_empty" {
   source = "../modules/ecr"
 
-  name = "sandbox-empty"
+  name   = "sandbox-empty"
+  region = local.aws_settings.region
   tags = {
     artifact      = "sandbox-empty"
     artifact_type = "terraform-oci"
