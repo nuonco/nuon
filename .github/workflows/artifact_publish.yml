@@ -58,12 +58,14 @@ jobs:
           repo_arn=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.repository_arn')
           is_public=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.is_public')
           registry_id=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.registry_id')
+          registry_url=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.registry_url')
           region=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.region')
 
           echo "ARTIFACT_ECR_REPOSITORY_URL=$repo_url" >> "$GITHUB_ENV"
           echo "ARTIFACT_ECR_REPOSITORY_ARN=$repo_arn" >> "$GITHUB_ENV"
           echo "ARTIFACT_ECR_IS_PUBLIC=$is_public" >> "$GITHUB_ENV"
           echo "ARTIFACT_ECR_REGISTRY_ID=$registry_id" >> "$GITHUB_ENV"
+          echo "ARTIFACT_ECR_REGISTRY_URL=$registry_url" >> "$GITHUB_ENV"
           echo "ARTIFACT_REGION=$region" >> "$GITHUB_ENV"
 
       - name: Setup for CI
@@ -103,4 +105,5 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +oci-artifacts \
             --repo=${{ env.ARTIFACT_ECR_REPOSITORY_URL }} \
+            --registry_url=${{ env.ARTIFACT_ECR_REGISTRY_URL }} \
             --image_tag=${{ inputs.tag }}
