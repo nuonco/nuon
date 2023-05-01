@@ -24,14 +24,16 @@ jobs:
     uses: ./.github/workflows/artifact_lint.yml
     secrets: inherit
     with:
-      artifact: ${{ inputs.artifact }}
+      artifact: ${{ startsWith('helm-') && 'demo' || inputs.artifact }}
+      base_dir: ${{ startsWith(inputs.artifact, 'helm') && 'charts' || 'bins'}}
 
   test:
     name: 🌏 test
     uses: ./.github/workflows/artifact_test.yml
     secrets: inherit
     with:
-      artifact: ${{ inputs.artifact }}
+      artifact: ${{ startsWith('helm-') && 'demo' || inputs.artifact }}
+      base_dir: ${{ startsWith(inputs.artifact, 'helm') && 'charts' || 'bins'}}
 
   publish:
     name: 🌏 publish
@@ -42,5 +44,6 @@ jobs:
       - test
       - lint
     with:
-      artifact: ${{ inputs.artifact }}
+      artifact: ${{ startsWith('helm-') && 'demo' || inputs.artifact }}
+      base_dir: ${{ startsWith(inputs.artifact, 'helm') && 'charts' || 'bins'}}
       tag: ${{ inputs.tag }}

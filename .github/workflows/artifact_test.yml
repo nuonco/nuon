@@ -6,6 +6,9 @@ name: artifact test
       artifact:
         type: string
         required: true
+      base_dir:
+        type: string
+        required: true
 
 defaults:
   run:
@@ -34,7 +37,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Earthly test target
-        working-directory: bins/${{inputs.artifact}}
+        working-directory: ${{inputs.base_dir}}/${{inputs.artifact}}
         if: always()
         run: |
           earthly \
