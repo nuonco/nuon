@@ -6,6 +6,9 @@ name: artifact publish
       artifact:
         type: string
         required: true
+      base_dir:
+        type: string
+        required: true
       tag:
         type: string
         required: true
@@ -82,7 +85,7 @@ jobs:
           registry-type: ${{ env.ARTIFACT_ECR_IS_PUBLIC == 'true' && 'public' || 'private' }}
 
       - name: Earthly build artifacts
-        working-directory: bins/${{inputs.artifact}}
+        working-directory: ${{inputs.base_dir}}/${{inputs.artifact}}
         run: |
           earthly \
             --allow-privileged \
@@ -92,11 +95,11 @@ jobs:
             --artifact +artifacts/out
 
       - name: push artifacts to s3
-        working-directory: bins/${{inputs.artifact}}
+        working-directory: ${{inputs.base_dir}}/${{inputs.artifact}}
         run: aws s3 sync ./out s3://${{ env.TFO_BUCKET_NAME }}/${{ inputs.artifact }}/${{ inputs.tag }}/
 
       - name: Build and push oci-artifact
-        working-directory: bins/${{inputs.artifact}}
+        working-directory: ${{inputs.base_dir}}/${{inputs.artifact}}
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
