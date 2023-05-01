@@ -21,3 +21,16 @@ output "region" {
 output "is_public" {
   value = false
 }
+
+output "all" {
+  description = "mapping output of all values"
+
+  value = {
+    repository_url = module.ecr.repository_url
+    registry_id    = module.ecr.repository_registry_id
+    registry_url   = "${module.ecr.repository_registry_id}.dkr.ecr.${var.region}.amazonaws.com"
+    repository_arn = module.ecr.repository_arn
+    is_public      = false
+    region         = var.region
+  }
+}
