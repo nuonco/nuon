@@ -18,6 +18,17 @@ output "bucket" {
 
 output "artifacts" {
   value = {
+    helm-demo = {
+      ecr = {
+        repository_url = module.helm_demo.repository_url
+        registry_id    = module.helm_demo.registry_id
+        repository_arn = module.helm_demo.repository_arn
+        is_public      = module.helm_demo.is_public
+        region         = module.helm_demo.region
+        registry_url   = module.helm_demo.registry_url
+      }
+    }
+
     nuonctl = {
       ecr = {
         repository_url = module.nuonctl.repository_url
