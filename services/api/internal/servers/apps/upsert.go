@@ -23,7 +23,6 @@ func (s *server) UpsertApp(
 		ID:              converters.ToOptionalStr(req.Msg.Id),
 		Name:            req.Msg.Name,
 		OrgID:           req.Msg.OrgId,
-		GithubInstallID: converters.ToOptionalStr(req.Msg.GithubInstallId),
 		CreatedByID:     &req.Msg.CreatedById,
 	})
 	if err != nil {

@@ -29,7 +29,7 @@ func (d Deployment) AfterCreate(tx *gorm.DB) error {
 	}
 
 	if err := mgr.CreateDeployment(ctx, d.ID.String()); err != nil {
-		return fmt.Errorf("unable to create org: %w", err)
+		return fmt.Errorf("unable to create deployment: %w", err)
 	}
 
 	return nil
