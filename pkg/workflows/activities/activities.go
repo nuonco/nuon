@@ -4,6 +4,8 @@ import "github.com/go-playground/validator/v10"
 
 type Activities struct {
 	v *validator.Validate
+
+	TemporalHost string `validate:"required"`
 }
 
 func New(v *validator.Validate, opts ...activitiesOption) (*Activities, error) {
@@ -25,3 +27,10 @@ func New(v *validator.Validate, opts ...activitiesOption) (*Activities, error) {
 }
 
 type activitiesOption func(*Activities) error
+
+func WithTemporalHost(host string) activitiesOption {
+	return func(a *Activities) error {
+		a.TemporalHost = host
+		return nil
+	}
+}

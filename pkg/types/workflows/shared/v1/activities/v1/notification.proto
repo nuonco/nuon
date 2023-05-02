@@ -4,6 +4,8 @@ package shared.v1.activities.v1;
 
 import "validate/validate.proto";
 
+option go_package = "github.com/powertoolsdev/mono/pkg/types/shared/v1/activities/v1";
+
 // SendNotificationRequest is used by clients to send a notification
 message SendNotificationRequest {
   string notification = 1 [(validate.rules).string.min_len = 5];
