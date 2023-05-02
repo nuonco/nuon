@@ -50,7 +50,7 @@ artifacts:
 oci-artifacts:
     FROM +code
     # TODO: set this at the top level
-    ARG chart=helm-demo
+    ARG chart=helm-waypoint
     ARG repo
     ARG region
     ARG image_tag
