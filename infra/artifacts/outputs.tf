@@ -18,52 +18,34 @@ output "bucket" {
 
 output "artifacts" {
   value = {
+    // charts
     "charts/demo" = {
-      bucket_prefix = "demo"
-      ecr = {
-        repository_url = module.helm_demo.repository_url
-        registry_id    = module.helm_demo.registry_id
-        repository_arn = module.helm_demo.repository_arn
-        is_public      = module.helm_demo.is_public
-        region         = module.helm_demo.region
-        registry_url   = module.helm_demo.registry_url
-      }
+      bucket_prefix = "helm-demo"
+      ecr           = module.helm_demo.all
+    }
+    "charts/temporal" = {
+      bucket_prefix = "helm-temporal"
+      ecr           = module.helm_temporal.all
+    }
+    "charts/waypoint" = {
+      bucket_prefix = "helm-waypoint"
+      ecr           = module.helm_waypoint.all
     }
 
+    // binaries
     "bins/nuonctl" = {
       bucket_prefix = "nuonctl"
-      ecr = {
-        repository_url = module.nuonctl.repository_url
-        registry_id    = module.nuonctl.registry_id
-        registry_url   = module.nuonctl.registry_url
-        repository_arn = module.nuonctl.repository_arn
-        is_public      = module.nuonctl.is_public
-        region         = module.nuonctl.region
-      }
+      ecr           = module.nuonctl.all
     }
-
     "bins/waypoint-plugin-exp" = {
       bucket_prefix = "waypoint-plugin-exp"
-      ecr = {
-        repository_url = module.waypoint_plugin_exp.repository_url
-        registry_id    = module.waypoint_plugin_exp.registry_id
-        registry_url   = module.waypoint_plugin_exp.registry_url
-        repository_arn = module.waypoint_plugin_exp.repository_arn
-        is_public      = module.waypoint_plugin_exp.is_public
-        region         = module.waypoint_plugin_exp.region
-      }
+      ecr           = module.waypoint_plugin_exp.all
     }
-
     "bins/waypoint-plugin-terraform" = {
       bucket_prefix = "waypoint-plugin-terraform"
-      ecr = {
-        repository_url = module.waypoint_plugin_terraform.repository_url
-        registry_id    = module.waypoint_plugin_terraform.registry_id
-        repository_arn = module.waypoint_plugin_terraform.repository_arn
-        is_public      = module.waypoint_plugin_terraform.is_public
-        region         = module.waypoint_plugin_terraform.region
-        registry_url   = module.waypoint_plugin_terraform.registry_url
-      }
+      ecr           = module.waypoint_plugin_terraform.all
     }
+
+    // sandboxes
   }
 }
