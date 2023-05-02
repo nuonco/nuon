@@ -3,18 +3,23 @@ package activities
 import (
 	"context"
 	"fmt"
+	"time"
 
 	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
-	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
-	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1/activities/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-//nolint:all
+const (
+	PollActivityTimeout = time.Minute * 30
+	MaxActivityRetries  = 5
+	DefaultRegion       = "us-west-2"
+)
+
 func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWorkflowRequest) (*activitiesv1.PollWorkflowResponse, error) {
 	tClient, err := temporalclient.New(a.v,
 		temporalclient.WithNamespace(req.Namespace),
@@ -92,9 +97,6 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 	}
 
 	return &activitiesv1.PollWorkflowResponse{
-		Step: &canaryv1.Step{
-			// TODO(jm): fill this in
-		},
 		Response: resp,
 	}, nil
 }

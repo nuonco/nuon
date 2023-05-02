@@ -20,7 +20,7 @@ func NewAppWorkflowManager(tc temporalClient) *appWorkflowManager {
 }
 
 type AppWorkflowManager interface {
-	Provision(context.Context, *models.App) error
+	Provision(context.Context, *models.App) (string, error)
 }
 
 var _ AppWorkflowManager = (*appWorkflowManager)(nil)
@@ -29,7 +29,7 @@ type appWorkflowManager struct {
 	tc temporalClient
 }
 
-func (a *appWorkflowManager) Provision(ctx context.Context, app *models.App) error {
+func (a *appWorkflowManager) Provision(ctx context.Context, app *models.App) (string, error) {
 	orgID := shortid.ParseUUID(app.OrgID)
 	appID := shortid.ParseUUID(app.ID)
 
@@ -47,6 +47,10 @@ func (a *appWorkflowManager) Provision(ctx context.Context, app *models.App) err
 		AppId: appID,
 	}
 
-	_, err := a.tc.ExecuteWorkflow(ctx, opts, "Provision", &args)
-	return err
+	fut, err := a.tc.ExecuteWorkflow(ctx, opts, "Provision", &args)
+	if err != nil {
+		return "", err
+	}
+
+	return fut.GetID(), err
 }

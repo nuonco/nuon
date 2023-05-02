@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1/activities/v1"
+	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	workers "github.com/powertoolsdev/mono/services/workers-canary/internal"
 )
 
@@ -73,19 +74,30 @@ func (w *wkflow) pollWorkflow(ctx workflow.Context, namespace, name, workflowID 
 		WorkflowId:   workflowID,
 	}
 
-	var resp activitiesv1.PollWorkflowResponse
+	shrdAct := &sharedactivities.Activities{}
+	// set poll timeout
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		ScheduleToCloseTimeout: defaultPollActivityTimeout * defaultMaxActivityRetries,
-		StartToCloseTimeout:    defaultPollActivityTimeout,
+		ScheduleToCloseTimeout: sharedactivities.PollActivityTimeout * sharedactivities.MaxActivityRetries,
+		StartToCloseTimeout:    sharedactivities.PollActivityTimeout,
 		RetryPolicy: &temporal.RetryPolicy{
-			MaximumAttempts: defaultMaxActivityRetries,
+			MaximumAttempts: sharedactivities.MaxActivityRetries,
 		},
 	})
-	fut := workflow.ExecuteActivity(ctx, "PollWorkflow", pollReq)
-	if err := fut.Get(ctx, &resp); err != nil {
-		l.Info("unable to get poll workflow response", zap.Error(err))
-		return nil, fmt.Errorf("unable to get poll workflow response: %w", err)
+
+	var pollResp activitiesv1.PollWorkflowResponse
+	fut := workflow.ExecuteActivity(ctx, shrdAct.PollWorkflow, pollReq)
+	err := fut.Get(ctx, &pollResp)
+	if err != nil {
+		return nil, fmt.Errorf("unable to poll for workflow response: %w", err)
 	}
+
+	resp, wkflowErr := anypb.New(&pollResp)
+	if wkflowErr != nil {
+		return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
+	}
+
 	l.Info("successfully got %s.%s workflow response", namespace, name)
-	return &resp, nil
+	return &activitiesv1.PollWorkflowResponse{
+		Response: resp,
+	}, nil
 }

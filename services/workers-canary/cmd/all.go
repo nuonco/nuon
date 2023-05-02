@@ -48,7 +48,9 @@ func runAll(cmd *cobra.Command, _ []string) {
 		log.Fatalf("unable to create activities: %s", err.Error())
 	}
 
-	sharedActs, err := sharedactivities.New(v)
+	sharedActs, err := sharedactivities.New(v,
+		sharedactivities.WithTemporalHost(cfg.TemporalHost),
+	)
 	if err != nil {
 		log.Fatalf("unable to create activities: %s", err.Error())
 	}

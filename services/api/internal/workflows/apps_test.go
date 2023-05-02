@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	tclient "go.temporal.io/sdk/client"
+	tmock "go.temporal.io/sdk/mocks"
 )
 
 func Test_appWorkflowManager_Provision(t *testing.T) {
@@ -27,7 +28,9 @@ func Test_appWorkflowManager_Provision(t *testing.T) {
 		"happy path": {
 			clientFn: func() temporalClient {
 				client := &testTemporalClient{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+				workflowRun := &tmock.WorkflowRun{}
+				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(workflowRun, nil)
+				workflowRun.On("GetID", mock.Anything, mock.Anything).Return("12345")
 				return client
 			},
 			assertFn: func(t *testing.T, client temporalClient) {
@@ -64,7 +67,7 @@ func Test_appWorkflowManager_Provision(t *testing.T) {
 			client := test.clientFn()
 			mgr := NewAppWorkflowManager(client)
 
-			err := mgr.Provision(context.Background(), app)
+			_, err := mgr.Provision(context.Background(), app)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

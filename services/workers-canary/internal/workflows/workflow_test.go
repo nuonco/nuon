@@ -44,9 +44,9 @@ func TestProvision(t *testing.T) {
 			return resp, nil
 		})
 
-	env.OnActivity("PollWorkflow", mock.Anything, mock.Anything).
-		Return(func(ctx context.Context, aReq *activitiesv1.PollWorkflowRequest) (*activitiesv1.PollWorkflowResponse, error) {
-			return &activitiesv1.PollWorkflowResponse{}, nil
+	env.OnActivity(sharedActs.PollWorkflow, mock.Anything, mock.Anything).
+		Return(func(ctx context.Context, aReq *sharedactivitiesv1.PollWorkflowRequest) (*sharedactivitiesv1.PollWorkflowResponse, error) {
+			return &sharedactivitiesv1.PollWorkflowResponse{}, nil
 		})
 
 	env.OnActivity("SendNotification", mock.Anything, mock.Anything).
