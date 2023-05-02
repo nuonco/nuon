@@ -3,10 +3,7 @@ name: artifact lint
 "on":
   workflow_call:
     inputs:
-      artifact:
-        type: string
-        required: true
-      base_dir:
+      dir:
         type: string
         required: true
 
@@ -37,7 +34,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Earthly test target
-        working-directory: ${{inputs.base_dir}}/${{inputs.artifact}}
+        working-directory: ${{ inputs.dir }}
         if: always()
         run: |
           earthly \

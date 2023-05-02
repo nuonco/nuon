@@ -39,13 +39,13 @@ jobs:
         id: filter
         with:
           filters: |
-            nuonctl:
+            bins/nuonctl:
               - bins/nuonctl/**
-            helm-demo:
+            charts/demo:
               - charts/demo/**
-            waypoint-plugin-exp:
+            bins/waypoint-plugin-exp:
               - bins/waypoint-plugin-exp/**
-            waypoint-plugin-terraform:
+            bins/waypoint-plugin-terraform:
               - bins/waypoint-plugin-terraform/**
 
   tag:
@@ -70,10 +70,10 @@ jobs:
     if: ${{ needs.changes.outputs.artifacts != '[]' && needs.changes.outputs.artifacts != '' }}
     strategy:
       matrix:
-        artifact: ${{ fromJSON(needs.changes.outputs.artifacts) }}
+        dir: ${{ fromJSON(needs.changes.outputs.artifacts) }}
     uses: ./.github/workflows/artifact.yml
     with:
-      artifact: ${{matrix.artifact}}
+      dir: ${{matrix.dir}}
       publish: ${{ github.event_name != 'pull_request' }}
       tag: ${{ needs.tag.outputs.git_ref }}
     secrets: inherit
