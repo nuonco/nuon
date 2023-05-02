@@ -17,6 +17,7 @@ deps:
     grep \
     helm \
     gettext \
+    sed \
     less
 
   RUN echo "fetching latest kubernetes version" && \
@@ -31,7 +32,11 @@ code:
 
 lint:
     FROM +code
-    RUN echo "running helm lint" && helm lint
+    RUN echo "updating chart version" && \
+      sed -i "s/CHART_VERSION/0.0.1/g" Chart.yaml
+
+    RUN echo "running helm lint..." && \
+      helm lint
 
 test:
     FROM +code
@@ -39,17 +44,30 @@ test:
 
 artifacts:
     FROM +code
+    RUN mkdir -p out
     SAVE ARTIFACT out AS LOCAL ./out
 
 oci-artifacts:
     FROM +code
+    # TODO: set this at the top level
+    ARG chart=helm-demo
     ARG repo
-    ARG registry_url
+    ARG region
+    ARG image_tag
 
-    RUN echo "logging into ecr" && \
-      aws ecr get-login-password \
-      | helm registry login --username AWS --password-stdin $registry_url
-
-    RUN echo "packaging chart..." && \
+    # NOTE: the following values are set by action/setup-ci
+    RUN \
+        --secret AWS_ACCESS_KEY_ID \
+        --secret AWS_SECRET_ACCESS_KEY \
+        --secret AWS_SESSION_TOKEN \
+      \
+      echo "logging into ecr" && \
+      aws ecr-public get-login-password --region=$region \
+      | helm registry login --username AWS --password-stdin public.ecr.aws && \
+      \
+      echo "updating helm chart version" && \
+      sed -i "s/CHART_VERSION/0.0.1-${image_tag}/g" Chart.yaml && \
+      \
+      echo "packaging chart..." && \
       helm package . && \
-      helm push demo-0.1.0.tgz oci://$repo
+      helm push ${chart}-0.0.1-${image_tag}.tgz oci://public.ecr.aws/p7e3r5y0

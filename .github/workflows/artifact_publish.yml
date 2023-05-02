@@ -3,10 +3,7 @@ name: artifact publish
 "on":
   workflow_call:
     inputs:
-      artifact:
-        type: string
-        required: true
-      base_dir:
+      dir:
         type: string
         required: true
       tag:
@@ -57,18 +54,18 @@ jobs:
       - name: Parse artifact outputs
         working-directory: infra/artifacts
         run: |
-          repo_url=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.repository_url')
-          repo_arn=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.repository_arn')
-          is_public=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.is_public')
-          registry_id=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.registry_id')
-          registry_url=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.registry_url')
-          region=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.artifact }}".ecr.region')
+          repo_url=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.repository_url')
+          repo_arn=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.repository_arn')
+          is_public=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.is_public')
+          registry_id=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.registry_id')
+          bucket_prefix=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.dir }}".bucket_prefix')
+          region=$(cat ${{ env.TF_OUT }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.region')
 
           echo "ARTIFACT_ECR_REPOSITORY_URL=$repo_url" >> "$GITHUB_ENV"
           echo "ARTIFACT_ECR_REPOSITORY_ARN=$repo_arn" >> "$GITHUB_ENV"
           echo "ARTIFACT_ECR_IS_PUBLIC=$is_public" >> "$GITHUB_ENV"
           echo "ARTIFACT_ECR_REGISTRY_ID=$registry_id" >> "$GITHUB_ENV"
-          echo "ARTIFACT_ECR_REGISTRY_URL=$registry_url" >> "$GITHUB_ENV"
+          echo "ARTIFACT_BUCKET_PREFIX=$bucket_prefix" >> "$GITHUB_ENV"
           echo "ARTIFACT_REGION=$region" >> "$GITHUB_ENV"
 
       - name: Setup for CI
@@ -85,7 +82,7 @@ jobs:
           registry-type: ${{ env.ARTIFACT_ECR_IS_PUBLIC == 'true' && 'public' || 'private' }}
 
       - name: Earthly build artifacts
-        working-directory: ${{inputs.base_dir}}/${{inputs.artifact}}
+        working-directory: ${{ inputs.dir }}
         run: |
           earthly \
             --allow-privileged \
@@ -95,11 +92,11 @@ jobs:
             --artifact +artifacts/out
 
       - name: push artifacts to s3
-        working-directory: ${{inputs.base_dir}}/${{inputs.artifact}}
-        run: aws s3 sync ./out s3://${{ env.TFO_BUCKET_NAME }}/${{ inputs.artifact }}/${{ inputs.tag }}/
+        working-directory: ${{ inputs.dir }}
+        run: aws s3 sync ./out s3://${{ env.TFO_BUCKET_NAME }}/${{ env.ARTIFACT_BUCKET_PREFIX }}/${{ inputs.tag }}/
 
       - name: Build and push oci-artifact
-        working-directory: ${{inputs.base_dir}}/${{inputs.artifact}}
+        working-directory: ${{ inputs.dir }}
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
@@ -108,5 +105,5 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +oci-artifacts \
             --repo=${{ env.ARTIFACT_ECR_REPOSITORY_URL }} \
-            --registry_url=${{ env.ARTIFACT_ECR_REGISTRY_URL }} \
+            --region=${{ env.ARTIFACT_REGION }} \
             --image_tag=${{ inputs.tag }}

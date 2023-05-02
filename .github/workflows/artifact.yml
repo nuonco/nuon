@@ -3,7 +3,7 @@ name: artifact
 "on":
   workflow_call:
     inputs:
-      artifact:
+      dir:
         type: string
         required: true
       publish:
@@ -24,26 +24,23 @@ jobs:
     uses: ./.github/workflows/artifact_lint.yml
     secrets: inherit
     with:
-      artifact: ${{ startsWith(inputs.artifact, 'helm-') && 'demo' || inputs.artifact }}
-      base_dir: ${{ startsWith(inputs.artifact, 'helm') && 'charts' || 'bins'}}
+      dir: ${{ inputs.dir }}
 
   test:
     name: 🌏 test
     uses: ./.github/workflows/artifact_test.yml
     secrets: inherit
     with:
-      artifact: ${{ startsWith(inputs.artifact, 'helm-') && 'demo' || inputs.artifact }}
-      base_dir: ${{ startsWith(inputs.artifact, 'helm') && 'charts' || 'bins'}}
+      dir: ${{ inputs.dir }}
 
   publish:
     name: 🌏 publish
     uses: ./.github/workflows/artifact_publish.yml
-    if: ${{ inputs.publish }}
+    #if: ${{ inputs.publish }}
     secrets: inherit
-    needs:
-      - test
-      - lint
+    #needs:
+    #- test
+    #- lint
     with:
-      artifact: ${{ startsWith(inputs.artifact, 'helm-') && 'demo' || inputs.artifact }}
-      base_dir: ${{ startsWith(inputs.artifact, 'helm') && 'charts' || 'bins'}}
+      dir: ${{ inputs.dir }}
       tag: ${{ inputs.tag }}
