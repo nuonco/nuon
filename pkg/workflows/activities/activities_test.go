@@ -15,7 +15,9 @@ func TestNew(t *testing.T) {
 	}{
 		"happy path": {
 			optFns: func() []activitiesOption {
-				return []activitiesOption{}
+				return []activitiesOption{
+					WithTemporalHost("host"),
+				}
 			},
 			assertFn: func(t *testing.T, a *Activities) {
 			},

@@ -32,7 +32,7 @@ func Test_ActivityTriggerAppJob(t *testing.T) {
 			},
 			mockMgr: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
 				wkflowmgr := workflows.NewMockAppWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Provision(gomock.Any(), app).Return(nil)
+				wkflowmgr.EXPECT().Provision(gomock.Any(), app).Return("123456", nil)
 				return wkflowmgr
 			},
 		},
@@ -56,7 +56,7 @@ func Test_ActivityTriggerAppJob(t *testing.T) {
 			},
 			mockMgr: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
 				wkflowmgr := workflows.NewMockAppWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Provision(gomock.Any(), app).Return(err)
+				wkflowmgr.EXPECT().Provision(gomock.Any(), app).Return("", err)
 				return wkflowmgr
 			},
 			errExpected: err,
