@@ -34,3 +34,7 @@ locals {
 variable "env" {
   type = string
 }
+
+variable "github_app_key" {
+  type = string
+}
