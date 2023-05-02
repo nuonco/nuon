@@ -1,9 +1,9 @@
 ---
 apiVersion: v2
-name: demo
+name: helm-demo
 description: A Helm chart for demoing nuon
 type: application
-version: 0.1.0
+version: CHART_VERSION
 appVersion: "0.0.1"
 
 dependencies: []
