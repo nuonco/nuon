@@ -1,9 +1,54 @@
+module "shared_configs" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "shared-configs"
+  description = "shared configuration files"
+  topics      = ["archived"]
+}
+
+module "sandboxes" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "sandboxes"
+  description = "terraform modules for sandbox creation"
+  topics      = ["terraform", "archived"]
+}
+
+module "apks" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "apks"
+  description = "repo for building apks used in our images"
+  topics      = ["terraform", "archived"]
+}
+
+module "chart-common" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "chart-common"
+  description = "repo for common charts"
+  topics      = ["terraform", "helm", "archived"]
+}
+
+module "ci-images" {
+  source = "./modules/repository"
+
+  archived    = true
+  name        = "ci-images"
+  description = "repo for ci specific container images"
+  topics      = ["terraform", "archived"]
+}
+
 module "action-app-token" {
   source = "./modules/repository"
 
   name        = "action-app-token"
   description = "shared github token action"
-  topics      = ["github-actions"]
+  topics      = ["github-actions", "archived"]
   archived    = true
 }
 
@@ -12,7 +57,7 @@ module "action-pr-checks" {
 
   name        = "action-pr-checks"
   description = "shared action for checking PRs"
-  topics      = ["github-actions"]
+  topics      = ["github-actions", "archived"]
   archived    = true
 }
 
@@ -21,7 +66,7 @@ module "action-reviewdog" {
 
   name        = "action-reviewdog"
   description = "repo for shared action linting"
-  topics      = ["github-actions"]
+  topics      = ["github-actions", "archived"]
   archived    = true
 }
 
@@ -30,7 +75,7 @@ module "action-setup-ci" {
 
   name        = "action-setup-ci"
   description = "github action to set up ci"
-  topics      = ["github-actions"]
+  topics      = ["github-actions", "archived"]
   archived    = true
 }
 
@@ -39,7 +84,7 @@ module "action-setup-helm" {
 
   name        = "action-setup-helm"
   description = "github action to set up helm"
-  topics      = ["github-actions"]
+  topics      = ["github-actions", "archived"]
   archived    = true
 }
 
@@ -48,7 +93,7 @@ module "action-setup-node" {
 
   name        = "action-setup-node"
   description = "github action to set up node"
-  topics      = ["github-actions"]
+  topics      = ["github-actions", "archived"]
   archived    = true
 }
 
@@ -57,7 +102,7 @@ module "action-tf-output" {
 
   name        = "action-tf-output"
   description = "repo for terraform outputs"
-  topics      = ["github-actions"]
+  topics      = ["github-actions", "archived"]
   archived    = true
 }
 module "api" {
@@ -65,7 +110,7 @@ module "api" {
 
   name        = "api"
   description = "repo for nuon grpc api"
-  topics      = ["terraform", "helm"]
+  topics      = ["terraform", "helm", "archived"]
   enable_ecr  = true
   archived    = true
 
@@ -79,7 +124,7 @@ module "api-gateway" {
   name        = "api-gateway"
   description = "repo for the graphql api gateway"
   enable_ecr  = true
-  topics      = ["terraform", "helm"]
+  topics      = ["terraform", "helm", "archived"]
   archived    = true
 }
 
@@ -89,7 +134,7 @@ module "awesome-customer-cloud" {
   archived    = true
   name        = "awesome-customer-cloud"
   description = "experimental customer cloud repo"
-  topics      = ["experimental"]
+  topics      = ["experimental", "archived"]
 }
 
 module "go-aws-assume-role" {
@@ -98,6 +143,7 @@ module "go-aws-assume-role" {
   archived    = true
   name        = "go-aws-assume-role"
   description = "shared tooling for assuming IAM roles"
+  topics      = ["archived"]
 }
 
 module "go-common" {
@@ -106,7 +152,7 @@ module "go-common" {
   archived    = true
   name        = "go-common"
   description = "repo common shared golang"
-  topics      = ["go-lib", ]
+  topics      = ["go-lib", "archived"]
 }
 
 module "go-components" {
@@ -115,7 +161,7 @@ module "go-components" {
   archived    = true
   name        = "go-components"
   description = "repo for shared component configurations"
-  topics      = ["go-lib", "from-template-go-lib", ]
+  topics      = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-config" {
@@ -124,7 +170,7 @@ module "go-config" {
   archived    = true
   name        = "go-config"
   description = "repo for go service config"
-  topics      = ["go-lib", "from-template-go-lib", ]
+  topics      = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-fetch" {
@@ -133,7 +179,7 @@ module "go-fetch" {
   archived    = true
   name        = "go-fetch"
   description = "repo for fetching"
-  topics      = ["go-lib", "from-template-go-lib"]
+  topics      = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-generics" {
@@ -143,7 +189,7 @@ module "go-generics" {
   name        = "go-generics"
   description = "go package for shared generic functions"
 
-  topics = ["go-lib", "from-template-go-lib"]
+  topics = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-helm" {
@@ -153,7 +199,7 @@ module "go-helm" {
   name        = "go-helm"
   description = "go package for shared helm tooling"
 
-  topics = ["go-lib", "from-template-go-lib"]
+  topics = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-kube" {
@@ -163,7 +209,7 @@ module "go-kube" {
   name        = "go-kube"
   description = "go package for shared kubernetes tooling"
 
-  topics = ["go-lib", "from-template-go-lib"]
+  topics = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-sender" {
@@ -173,7 +219,7 @@ module "go-sender" {
   name        = "go-sender"
   description = "go package for shared notification tooling"
 
-  topics = ["go-lib", "from-template-go-lib"]
+  topics = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-terraform" {
@@ -183,7 +229,7 @@ module "go-terraform" {
   name        = "go-terraform"
   description = "go package for shared terraform tooling"
 
-  topics = ["go-lib", "from-template-go-lib"]
+  topics = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-shared-types" {
@@ -193,7 +239,7 @@ module "go-shared-types" {
   name        = "go-shared-types"
   description = "HACK: go package for shared types"
 
-  topics = ["go-lib", "from-template-go-lib"]
+  topics = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-uploader" {
@@ -203,7 +249,7 @@ module "go-uploader" {
   name        = "go-uploader"
   description = "go package for upload to s3 tooling"
 
-  topics = ["go-lib", "from-template-go-lib"]
+  topics = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-waypoint" {
@@ -213,7 +259,7 @@ module "go-waypoint" {
   name        = "go-waypoint"
   description = "go package for shared waypoint tooling"
 
-  topics = ["go-lib", "from-template-go-lib"]
+  topics = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "go-workflows-meta" {
@@ -223,7 +269,7 @@ module "go-workflows-meta" {
   name        = "go-workflows-meta"
   description = "go package for shared tooling for writing out workflow related metadata."
 
-  topics = ["go-lib", "from-template-go-lib"]
+  topics = ["go-lib", "from-template-go-lib", "archived"]
 }
 
 module "graphql-api" {
@@ -232,7 +278,7 @@ module "graphql-api" {
   archived    = true
   name        = "graphql-api"
   description = "repo for nuon graphql api"
-  topics      = ["terraform", "helm"]
+  topics      = ["terraform", "helm", "archived"]
   enable_ecr  = true
 
   enable_stage_environment = true
@@ -246,7 +292,7 @@ module "nuonctl" {
   name        = "nuonctl"
   description = "an experimental cli with automations and easy ways to interact with the api"
 
-  topics = ["experimental"]
+  topics = ["experimental", "archived"]
 }
 
 module "orgs-api" {
@@ -255,7 +301,7 @@ module "orgs-api" {
   archived    = true
   name        = "orgs-api"
   description = "repo for nuon orgs api, which exposes infrastructure details of orgs, installs and deployments."
-  topics      = ["terraform", "helm"]
+  topics      = ["terraform", "helm", "archived"]
   enable_ecr  = true
 
   enable_stage_environment = true
@@ -268,7 +314,7 @@ module "protos" {
   archived    = true
   name        = "protos"
   description = "mono repo of protocol buffers that power apis, workflows and internal systems - using buf.build."
-  topics      = []
+  topics      = ["archived"]
 }
 
 module "template-go-library" {
@@ -277,7 +323,7 @@ module "template-go-library" {
   archived    = true
   name        = "template-go-library"
   description = "Template for creating a new go library."
-  topics      = ["template"]
+  topics      = ["template", "archived"]
 }
 
 module "template-go-service" {
@@ -290,7 +336,7 @@ module "template-go-service" {
   enable_prod_environment  = true
   enable_stage_environment = true
 
-  topics = ["template"]
+  topics = ["template", "archived"]
 }
 
 module "workers-apps" {
@@ -303,7 +349,7 @@ module "workers-apps" {
   enable_prod_environment  = true
   enable_stage_environment = true
 
-  topics = ["helm", "terraform", "from-template-go-service"]
+  topics = ["helm", "terraform", "from-template-go-service", "archived"]
 }
 
 module "workers-deployments" {
@@ -316,7 +362,7 @@ module "workers-deployments" {
   enable_prod_environment  = true
   enable_stage_environment = true
 
-  topics = ["helm", "terraform", "from-template-go-service"]
+  topics = ["helm", "terraform", "from-template-go-service", "archived"]
 }
 
 module "workers-executors" {
@@ -329,7 +375,7 @@ module "workers-executors" {
   enable_prod_environment  = true
   enable_stage_environment = true
 
-  topics = ["helm", "terraform", "from-template-go-service"]
+  topics = ["helm", "terraform", "from-template-go-service", "archived"]
 }
 
 module "workers-installs" {
@@ -342,7 +388,7 @@ module "workers-installs" {
   enable_prod_environment  = true
   enable_stage_environment = true
 
-  topics = ["helm", "terraform", "from-template-go-service"]
+  topics = ["helm", "terraform", "from-template-go-service", "archived"]
 }
 
 module "workers-instances" {
@@ -355,7 +401,7 @@ module "workers-instances" {
   enable_prod_environment  = true
   enable_stage_environment = true
 
-  topics = ["helm", "terraform", "from-template-go-service"]
+  topics = ["helm", "terraform", "from-template-go-service", "archived"]
 }
 
 module "workers-orgs" {
@@ -368,7 +414,7 @@ module "workers-orgs" {
   enable_prod_environment  = true
   enable_stage_environment = true
 
-  topics = ["helm", "terraform", "from-template-go-service"]
+  topics = ["helm", "terraform", "from-template-go-service", "archived"]
 }
 
 module "infra-aws" {
@@ -377,7 +423,7 @@ module "infra-aws" {
   name        = "infra-aws"
   archived    = true
   description = "terraform module for managing the aws org and accounts"
-  topics      = ["terraform"]
+  topics      = ["terraform", "archived"]
 }
 
 module "infra-eks-nuon" {
@@ -386,7 +432,7 @@ module "infra-eks-nuon" {
   archived    = true
   name        = "infra-eks-nuon"
   description = "terraform module for managing EKS"
-  topics      = ["terraform"]
+  topics      = ["terraform", "archived"]
 }
 
 module "infra-github" {
@@ -395,7 +441,7 @@ module "infra-github" {
   archived    = true
   name        = "infra-github"
   description = "terraform module for managing github"
-  topics      = ["terraform"]
+  topics      = ["terraform", "archived"]
 }
 
 module "infra-grafana" {
@@ -404,7 +450,7 @@ module "infra-grafana" {
   archived    = true
   name        = "infra-grafana"
   description = "terraform module for managing grafana cloud"
-  topics      = ["terraform"]
+  topics      = ["terraform", "archived"]
 }
 
 module "infra-nuon-dns" {
@@ -413,7 +459,7 @@ module "infra-nuon-dns" {
   name        = "infra-nuon-dns"
   archived    = true
   description = "terraform module for managing the nuon.co domain"
-  topics      = ["terraform"]
+  topics      = ["terraform", "archived"]
 }
 
 module "infra-orgs" {
@@ -422,7 +468,7 @@ module "infra-orgs" {
   archived    = true
   name        = "infra-orgs"
   description = "terraform module for managing org resources, such as installations, runs and builds."
-  topics      = ["terraform"]
+  topics      = ["terraform", "archived"]
 }
 
 module "infra-powertools" {
@@ -431,7 +477,7 @@ module "infra-powertools" {
   name        = "infra-powertools"
   archived    = true
   description = "terraform module for managing the powertools.dev domain"
-  topics      = ["terraform"]
+  topics      = ["terraform", "archived"]
 }
 
 module "infra-temporal" {
@@ -440,7 +486,7 @@ module "infra-temporal" {
   name        = "infra-temporal"
   archived    = true
   description = "terraform module for managing our temporal installations"
-  topics      = ["terraform", "helm", ]
+  topics      = ["terraform", "helm", "archived"]
   enable_ecr  = true
 }
 
@@ -450,5 +496,17 @@ module "infra-terraform" {
   name        = "infra-terraform"
   archived    = true
   description = "terraform module for managing our terraform workspaces"
-  topics      = ["terraform"]
+  topics      = ["terraform", "archived"]
+}
+
+module "code-jonmorehouse" {
+  source = "./modules/repository"
+
+  name                     = "code-jonmorehouse"
+  description              = "personal workspace for @jonmorehouse"
+  enable_ecr               = false
+  enable_prod_environment  = false
+  enable_stage_environment = false
+
+  topics = ["personal-workspace", "archived"]
 }

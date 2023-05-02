@@ -1,27 +1,3 @@
-module "apks" {
-  source = "./modules/repository"
-
-  name        = "apks"
-  description = "repo for building apks used in our images"
-  topics      = ["terraform"]
-}
-
-module "chart-common" {
-  source = "./modules/repository"
-
-  name        = "chart-common"
-  description = "repo for common charts"
-  topics      = ["terraform", "helm"]
-}
-
-module "ci-images" {
-  source = "./modules/repository"
-
-  name        = "ci-images"
-  description = "repo for ci specific container images"
-  topics      = ["terraform"]
-}
-
 module "eslint-config-nuon" {
   source = "./modules/repository"
 
@@ -39,9 +15,11 @@ module "dot_github" {
 module "demo" {
   source = "./modules/repository"
 
-  name        = "demo"
-  enable_ecr  = false
-  description = "Demo repo for Nuon."
+  name            = "demo"
+  enable_ecr      = false
+  description     = "Demo repo for Nuon."
+  required_checks = ["demo ✅"]
+
 }
 
 module "terraform-provider-echo" {
@@ -117,21 +95,6 @@ module "public-docs" {
   enable_branch_protection = false
 }
 
-module "sandboxes" {
-  source = "./modules/repository"
-
-  name        = "sandboxes"
-  description = "terraform modules for sandbox creation"
-  topics      = ["terraform"]
-}
-
-module "shared_configs" {
-  source = "./modules/repository"
-
-  name        = "shared-configs"
-  description = "shared configuration files"
-}
-
 module "ui" {
   source = "./modules/repository"
 
@@ -147,14 +110,3 @@ module "waypoint" {
   topics      = ["terraform"]
 }
 
-module "code-jonmorehouse" {
-  source = "./modules/repository"
-
-  name                     = "code-jonmorehouse"
-  description              = "personal workspace for @jonmorehouse"
-  enable_ecr               = false
-  enable_prod_environment  = false
-  enable_stage_environment = false
-
-  topics = ["personal-workspace"]
-}
