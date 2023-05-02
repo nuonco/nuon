@@ -11,12 +11,12 @@ import (
 
 type App struct {
 	Model
-	CreatedByID     string
-	Name            string
-	OrgID           uuid.UUID
-	GithubInstallID string
-	Components      []Component `faker:"-"`
-	Installs        []Install   `faker:"-"`
+	CreatedByID string
+	Name        string
+	OrgID       uuid.UUID
+	Org         Org         `faker:"-"`
+	Components  []Component `faker:"-"`
+	Installs    []Install   `faker:"-"`
 }
 
 func (a *App) AfterCreate(tx *gorm.DB) (err error) {
