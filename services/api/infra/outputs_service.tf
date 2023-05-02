@@ -32,8 +32,3 @@ output "db_instance_username" {
   sensitive = true
   value     = "api"
 }
-
-output "github_app_key" {
-  sensitive = true
-  value = var.github_app_key
-}
