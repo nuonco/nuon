@@ -69,9 +69,6 @@ func (a *appService) updateApp(ctx context.Context, input models.AppInput) (*mod
 	if input.Name != "" {
 		app.Name = input.Name
 	}
-	if input.GithubInstallID != nil {
-		app.GithubInstallID = *input.GithubInstallID
-	}
 
 	finalApp, err := a.repo.Update(ctx, app)
 	if err != nil {
@@ -103,9 +100,6 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 
 	var app models.App
 	app.Name = input.Name
-	if input.GithubInstallID != nil {
-		app.GithubInstallID = *input.GithubInstallID
-	}
 	app.CreatedByID = *input.CreatedByID
 	app.OrgID = orgID
 

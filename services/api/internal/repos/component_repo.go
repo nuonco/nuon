@@ -33,12 +33,15 @@ type componentRepo struct {
 }
 
 func (i componentRepo) Get(ctx context.Context, componentID uuid.UUID) (*models.Component, error) {
-	var component models.Component
+	component := models.Component{Model: models.Model{ID: componentID}}
+
 	if err := i.db.WithContext(ctx).
+		Preload("App.Org").
 		Preload(clause.Associations).
-		First(&component, "id = ?", componentID).Error; err != nil {
+		First(&component).Error; err != nil {
 		return nil, err
 	}
+	// log.Printf("component debug %+v", component)
 	return &component, nil
 }
 

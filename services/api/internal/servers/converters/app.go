@@ -10,7 +10,6 @@ func AppModelToProto(app *models.App) *appv1.App {
 	return &appv1.App{
 		Id:              app.ID.String(),
 		Name:            app.Name,
-		GithubInstallId: app.GithubInstallID,
 		OrgId:           app.OrgID.String(),
 		CreatedById:     app.CreatedByID,
 		UpdatedAt:       TimeToDatetime(app.UpdatedAt),

@@ -239,11 +239,12 @@ func (i *deploymentService) processGithubRepo(ctx context.Context, vcsCfg *vcsv1
 	connectedGithubConfig := vcsCfg.GetConnectedGithubConfig()
 	publicGitConfig := vcsCfg.GetPublicGitConfig()
 
+	i.log.Debug("processGithubRepo 1", zap.String("Org.Name", component.App.Org.Name), zap.String("Org.GithubInstallID", component.App.Org.GithubInstallID))
 	// read github_install_id from config
-	ghInstallID, parsingErr := strconv.ParseInt(deployment.Component.App.GithubInstallID, 10, 64)
+	ghInstallID, parsingErr := strconv.ParseInt(component.App.Org.GithubInstallID, 10, 64)
 	if parsingErr != nil {
 		i.log.Error("failed to parse GithubInstallID",
-			zap.String("GithubInstallID", deployment.Component.App.GithubInstallID),
+			zap.String("GithubInstallID", component.App.Org.GithubInstallID),
 			zap.String("error", parsingErr.Error()))
 		return nil, fmt.Errorf("error parsing GithubInstallID: %w", parsingErr)
 	}

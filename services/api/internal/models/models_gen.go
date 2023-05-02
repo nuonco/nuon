@@ -73,7 +73,6 @@ type AppInput struct {
 	ID              *string `json:"id" faker:"uuid_hyphenated"`
 	Name            string  `json:"name"`
 	OrgID           string  `json:"orgId" faker:"uuid_hyphenated"`
-	GithubInstallID *string `json:"githubInstallID"`
 	CreatedByID     *string `json:"createdById"`
 }
 
