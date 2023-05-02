@@ -22,7 +22,9 @@ func NewActivities(db *gorm.DB, tc tclient.Client) *activities {
 	}
 }
 
-type TriggerJobResponse struct{}
+type TriggerJobResponse struct {
+	WorkflowID string
+}
 
 func (a *activities) TriggerAppJob(ctx context.Context, appID string) (*TriggerJobResponse, error) {
 	appUUID, _ := uuid.Parse(appID)
@@ -32,9 +34,9 @@ func (a *activities) TriggerAppJob(ctx context.Context, appID string) (*TriggerJ
 		return nil, err
 	}
 
-	err = a.mgr.Provision(ctx, finalApp)
+	wrkflwID, err := a.mgr.Provision(ctx, finalApp)
 	if err != nil {
 		return nil, err
 	}
-	return &TriggerJobResponse{}, nil
+	return &TriggerJobResponse{WorkflowID: wrkflwID}, nil
 }

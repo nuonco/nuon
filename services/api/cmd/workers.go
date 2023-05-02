@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 
+	"github.com/powertoolsdev/mono/pkg/workflows/activities"
 	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	temporalclient "github.com/powertoolsdev/mono/services/api/internal/clients/temporal"
@@ -62,7 +63,10 @@ func runWorkers(cmd *cobra.Command, _ []string) {
 	deleteInstallJob := deleteinstall.New(app.v)
 	createDeploymentJob := createdeployment.New(app.v)
 
-	sharedActs, err := sharedactivities.New(app.v)
+	sharedActs, err := sharedactivities.New(app.v,
+
+		activities.WithTemporalHost(app.cfg.TemporalHost),
+	)
 	if err != nil {
 		log.Fatalf("unable to load shared activities: %s", err)
 	}
