@@ -24,13 +24,6 @@ func TestRunner(t *testing.T) {
 
 	req := generics.GetFakeObj[*runnerv1.InstallRunnerRequest]()
 
-	/*
-		validProvisionOutput := map[string]string{
-			clusterIDKey:	    "clusterid",
-			clusterEndpointKey: "https://k8s.endpoint",
-			clusterCAKey:	    "b64 encoded ca",
-		}*/
-
 	orgShortID := req.OrgId
 	serverCookie := uuid.NewString()
 	orgServerAddr := fmt.Sprintf("%s.%s:9701", orgShortID, cfg.WaypointServerRootDomain)

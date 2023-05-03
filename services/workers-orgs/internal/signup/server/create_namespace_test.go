@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 	"go.temporal.io/sdk/testsuite"
 	corev1 "k8s.io/api/core/v1"
@@ -78,7 +79,7 @@ func TestCreateNamespace(t *testing.T) {
 	}{
 		"errors if no namespace name": {
 			requestFn: func() CreateNamespaceRequest {
-				req := getFakeObj[CreateNamespaceRequest]()
+				req := generics.GetFakeObj[CreateNamespaceRequest]()
 				req.NamespaceName = ""
 				return req
 			},
@@ -88,7 +89,7 @@ func TestCreateNamespace(t *testing.T) {
 
 		"wraps client error": {
 			requestFn: func() CreateNamespaceRequest {
-				req := getFakeObj[CreateNamespaceRequest]()
+				req := generics.GetFakeObj[CreateNamespaceRequest]()
 				req.NamespaceName = "test"
 				return req
 			},
@@ -107,7 +108,7 @@ func TestCreateNamespace(t *testing.T) {
 
 		"does not error with valid request": {
 			requestFn: func() CreateNamespaceRequest {
-				req := getFakeObj[CreateNamespaceRequest]()
+				req := generics.GetFakeObj[CreateNamespaceRequest]()
 				req.NamespaceName = "test"
 				return req
 			},

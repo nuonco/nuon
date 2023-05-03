@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -32,12 +33,12 @@ func TestCreateWaypointProject_validateRequest(t *testing.T) {
 	}{
 		"happy path": {
 			reqFn: func() CreateWaypointProjectRequest {
-				return getFakeObj[CreateWaypointProjectRequest]()
+				return generics.GetFakeObj[CreateWaypointProjectRequest]()
 			},
 		},
 		"no-org-id": {
 			reqFn: func() CreateWaypointProjectRequest {
-				req := getFakeObj[CreateWaypointProjectRequest]()
+				req := generics.GetFakeObj[CreateWaypointProjectRequest]()
 				req.OrgID = ""
 				return req
 			},
@@ -45,7 +46,7 @@ func TestCreateWaypointProject_validateRequest(t *testing.T) {
 		},
 		"no-namespace-id": {
 			reqFn: func() CreateWaypointProjectRequest {
-				req := getFakeObj[CreateWaypointProjectRequest]()
+				req := generics.GetFakeObj[CreateWaypointProjectRequest]()
 				req.TokenSecretNamespace = ""
 				return req
 			},
@@ -53,7 +54,7 @@ func TestCreateWaypointProject_validateRequest(t *testing.T) {
 		},
 		"no-server-addr": {
 			reqFn: func() CreateWaypointProjectRequest {
-				req := getFakeObj[CreateWaypointProjectRequest]()
+				req := generics.GetFakeObj[CreateWaypointProjectRequest]()
 				req.OrgServerAddr = ""
 				return req
 			},

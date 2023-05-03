@@ -65,9 +65,6 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.InstallRunne
 		ScheduleToCloseTimeout: 60 * time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
-
-	// NOTE(jdt): this is just so that we can use the method names
-	// the actual struct isn't used by temporal during dispatch at all
 	act := NewActivities(nil, workers.Config{})
 
 	// get waypoint server cookie
@@ -75,6 +72,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.InstallRunne
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        orgServerAddr,
 		OrgID:                req.OrgId,
+		ClusterInfo:          clusterInfo,
 	}
 
 	gwscResp, err := getWaypointServerCookie(ctx, act, gwscReq)
@@ -111,6 +109,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.InstallRunne
 	awrReq := AdoptWaypointRunnerRequest{
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        orgServerAddr,
+		ClusterInfo:          clusterInfo,
 		OrgID:                req.OrgId,
 	}
 	_, err = adoptWaypointRunner(ctx, act, awrReq)
@@ -125,6 +124,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.InstallRunne
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        orgServerAddr,
 		OrgID:                req.OrgId,
+		ClusterInfo:          clusterInfo,
 	}
 	_, err = createServerConfigActivity(ctx, act, cscReq)
 	if err != nil {
@@ -138,6 +138,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.InstallRunne
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        orgServerAddr,
 		OrgID:                req.OrgId,
+		ClusterInfo:          clusterInfo,
 	}
 	_, err = createRunnerProfileActivity(ctx, act, crpReq)
 	if err != nil {

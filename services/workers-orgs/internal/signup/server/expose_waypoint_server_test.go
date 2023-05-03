@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 	"go.temporal.io/sdk/testsuite"
 	corev1 "k8s.io/api/core/v1"
@@ -95,7 +96,7 @@ func TestCreateService(t *testing.T) {
 	}{
 		"errors if no root domain": {
 			requestFn: func() ExposeWaypointServerRequest {
-				req := getFakeObj[ExposeWaypointServerRequest]()
+				req := generics.GetFakeObj[ExposeWaypointServerRequest]()
 				req.RootDomain = ""
 				return req
 			},
@@ -103,7 +104,7 @@ func TestCreateService(t *testing.T) {
 		},
 		"errors if no Short ID": {
 			requestFn: func() ExposeWaypointServerRequest {
-				req := getFakeObj[ExposeWaypointServerRequest]()
+				req := generics.GetFakeObj[ExposeWaypointServerRequest]()
 				req.ShortID = ""
 				return req
 			},
@@ -111,7 +112,7 @@ func TestCreateService(t *testing.T) {
 		},
 		"errors if no namespace name": {
 			requestFn: func() ExposeWaypointServerRequest {
-				req := getFakeObj[ExposeWaypointServerRequest]()
+				req := generics.GetFakeObj[ExposeWaypointServerRequest]()
 				req.NamespaceName = ""
 				return req
 			},
@@ -120,7 +121,7 @@ func TestCreateService(t *testing.T) {
 
 		"wraps client error": {
 			requestFn: func() ExposeWaypointServerRequest {
-				req := getFakeObj[ExposeWaypointServerRequest]()
+				req := generics.GetFakeObj[ExposeWaypointServerRequest]()
 				return req
 			},
 			errExpectedMsg: errOops.Error(),
@@ -136,7 +137,7 @@ func TestCreateService(t *testing.T) {
 
 		"does not error with valid request": {
 			requestFn: func() ExposeWaypointServerRequest {
-				req := getFakeObj[ExposeWaypointServerRequest]()
+				req := generics.GetFakeObj[ExposeWaypointServerRequest]()
 				return req
 			},
 			svcCreator: func(t *testing.T) testServiceCreator {
