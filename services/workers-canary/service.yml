@@ -2,5 +2,5 @@
 type: worker
 env:
   DISABLE_METRICS: true
-  TEMPORAL_NAMESPACE: canary
-  INSTANCES_TEMPORAL_NAMESPACE: instances
+local_cmd: go run . all
+run_cmd: all
