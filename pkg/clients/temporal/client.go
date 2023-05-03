@@ -2,7 +2,9 @@ package temporal
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
 	tclient "go.temporal.io/sdk/client"
 )
 
@@ -29,4 +31,29 @@ type Client interface {
 		namespace string,
 		workflowID string,
 		runID string) error
+}
+
+// getClient returns a temporal client from memory, or creates a new one and caches it
+func (t *temporal) getClient() (tclient.Client, error) {
+	t.RLock()
+	client := t.Client
+	t.RUnlock()
+	if client != nil {
+		return client, nil
+	}
+
+	// no client was found, create a new one, set it and return it
+	tc, err := tclient.Dial(tclient.Options{
+		HostPort:  t.Addr,
+		Namespace: t.Namespace,
+		Logger:    temporalzap.NewLogger(t.Logger),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to dial temporal: %w", err)
+	}
+
+	t.Lock()
+	defer t.Unlock()
+	t.Client = tc
+	return tc, nil
 }

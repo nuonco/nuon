@@ -2,9 +2,9 @@ package temporal
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 )
@@ -21,8 +21,10 @@ type temporal struct {
 	Addr      string      `validate:"required"`
 	Namespace string      `validate:"required"`
 	Logger    *zap.Logger `validate:"required"`
+	LazyLoad  bool        `validate:"required"`
 
 	tclient.Client
+	sync.RWMutex
 }
 
 func New(v *validator.Validate, opts ...temporalOption) (Client, error) {
@@ -43,16 +45,12 @@ func New(v *validator.Validate, opts ...temporalOption) (Client, error) {
 		return nil, fmt.Errorf("unable to validate temporal: %w", err)
 	}
 
-	tc, err := tclient.Dial(tclient.Options{
-		HostPort:  tmp.Addr,
-		Namespace: tmp.Namespace,
-		Logger:    temporalzap.NewLogger(logger),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to dial temporal: %w", err)
+	if !tmp.LazyLoad {
+		if _, err := tmp.getClient(); err != nil {
+			return nil, fmt.Errorf("unable to set temporal client: %w", err)
+		}
 	}
 
-	tmp.Client = tc
 	return tmp, nil
 }
 
@@ -75,6 +73,13 @@ func WithLogger(log *zap.Logger) temporalOption {
 func WithNamespace(namespace string) temporalOption {
 	return func(t *temporal) error {
 		t.Namespace = namespace
+		return nil
+	}
+}
+
+func WithLazyLoad(lazyLoad bool) temporalOption {
+	return func(t *temporal) error {
+		t.LazyLoad = lazyLoad
 		return nil
 	}
 }
