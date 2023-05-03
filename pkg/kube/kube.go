@@ -36,6 +36,7 @@ type ClusterInfo struct {
 }
 
 func ConfigForCluster(cInfo *ClusterInfo) (*rest.Config, error) {
+	fmt.Println(cInfo.CAData)
 	if err := validateClusterInfo(cInfo); err != nil {
 		return nil, err
 	}

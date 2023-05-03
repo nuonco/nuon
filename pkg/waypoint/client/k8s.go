@@ -15,7 +15,9 @@ type k8sProvider struct {
 	Address         string `validate:"required"`
 	SecretNamespace string `validate:"required"`
 	SecretName      string `validate:"required"`
-	ClusterInfo     *kube.ClusterInfo
+	SecretKey       string `validate:"required"`
+
+	ClusterInfo *kube.ClusterInfo
 
 	// internal state
 	v            *validator.Validate
@@ -46,6 +48,7 @@ func WithConfig(cfg Config) k8sProviderOption {
 		p.Address = cfg.Address
 		p.SecretNamespace = cfg.Token.Namespace
 		p.SecretName = cfg.Token.Name
+		p.SecretKey = cfg.Token.Key
 		p.ClusterInfo = cfg.ClusterInfo
 		return nil
 	}
@@ -66,6 +69,7 @@ func (p *k8sProvider) GetClient(ctx context.Context) (pb.WaypointClient, error) 
 		secret.WithNamespace(p.SecretNamespace),
 		secret.WithCluster(p.ClusterInfo),
 		secret.WithName(p.SecretName),
+		secret.WithKey(p.SecretKey),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get secret getter: %w", err)
