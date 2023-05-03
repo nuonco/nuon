@@ -53,13 +53,9 @@ func (a *Activities) InstallWaypointServer(ctx context.Context, req InstallWaypo
 		return resp, fmt.Errorf("failed to convert helm values: %w", err)
 	}
 
-	var err error
-	kCfg := a.Kubeconfig
-	if kCfg == nil {
-		kCfg, err = kube.ConfigForCluster(&req.ClusterInfo)
-		if err != nil {
-			return resp, fmt.Errorf("failed to get config for cluster: %w", err)
-		}
+	kCfg, err := a.getKubeConfig(&req.ClusterInfo)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get kube config: %w", err)
 	}
 
 	cfg := &helm.InstallConfig{

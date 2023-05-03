@@ -1,8 +1,11 @@
 package runner
 
 import (
+	"fmt"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/helm"
+	"github.com/powertoolsdev/mono/pkg/kube"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"k8s.io/client-go/rest"
 )
@@ -28,4 +31,17 @@ func NewActivities(v *validator.Validate, cfg workers.Config) *Activities {
 		helmInstaller:              helm.NewInstaller(),
 		roleBindingCreator:         &roleBindingCreatorImpl{},
 	}
+}
+
+func (a *Activities) getKubeConfig(info *kube.ClusterInfo) (*rest.Config, error) {
+	if a.Kubeconfig != nil {
+		return a.Kubeconfig, nil
+	}
+
+	kCfg, err := kube.ConfigForCluster(info)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config for cluster: %w", err)
+	}
+
+	return kCfg, nil
 }

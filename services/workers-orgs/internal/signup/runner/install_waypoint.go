@@ -86,13 +86,9 @@ func (a *Activities) InstallWaypoint(
 
 	l := activity.GetLogger(ctx)
 
-	var err error
-	kCfg := a.Kubeconfig
-	if kCfg == nil {
-		kCfg, err = kube.ConfigForCluster(&req.ClusterInfo)
-		if err != nil {
-			return resp, fmt.Errorf("failed to get config for cluster: %w", err)
-		}
+	kCfg, err := a.getKubeConfig(&req.ClusterInfo)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get kube config: %w", err)
 	}
 
 	vals, err := getWaypointRunnerValues(req)
