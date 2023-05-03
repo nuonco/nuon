@@ -2,4 +2,5 @@
 type: worker
 env:
   DISABLE_METRICS: true
-  TEMPORAL_NAMESPACE: default
+local_cmd: go run . all
+run_cmd: all
