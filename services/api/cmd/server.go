@@ -64,5 +64,4 @@ func runServer(cmd *cobra.Command, _ []string) {
 	); err != nil {
 		app.log.Fatal("error on listen and server", zap.Error(err))
 	}
-
 }

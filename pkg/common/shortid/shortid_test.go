@@ -200,7 +200,6 @@ func TestToShortID(t *testing.T) {
 }
 
 func TestToShortID_Errors(t *testing.T) {
-
 	tests := map[string]struct {
 		input       string
 		errExpected string
