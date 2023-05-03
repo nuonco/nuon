@@ -52,13 +52,34 @@ The protobufs for all the API's endpoints can be found in the `pkg/types` direct
   * `GOOSE_DRIVER=postgres GOOSE_DBSTRING="host=127.0.0.1 port=5432 user=api dbname=api sslmode=disable" goose -dir "./migrations" up`
 * run `go run . migrate status` to check the current status of DB migrations on your local DB.
 
-### How to get a psql prompt for DB work
+### How to get a psql prompt for DB work (local docker)
 
 If postgres is not already running via `docker compose`, start it from the mono root directory with `docker compose up -d`.
 
 Run `docker exec --interactive --tty mono-postgres-1 psql --username=api`
 
 You can now run SQL, DDL, or weird postgres syntax like `\d orgs` to describe the `orgs` table.
+
+### How to get a psql prompt for DB work on AWS RDS
+
+Set up this helper shell function.
+
+```bash
+nuon-api-rds-shell() {
+  PROFILE="$1"
+  DB_HOST=$(aws --profile "${PROFILE}" rds describe-db-instances | jq -r '.DBInstances[0].Endpoint.Address')
+  export PGPASSWORD=$(aws --profile "${PROFILE}" \
+    rds generate-db-auth-token \
+    --hostname "${DB_HOST}" \
+    --port 5432 \
+    --username api)
+  echo "connecting to $DB_HOST -- please make sure you are connected to twingate ..."
+  psql -h $DB_HOST -U api api
+}
+```
+* `aws-sso-util login` as needed
+* `twingate start`
+* `nuon-api-rds-shell 'stage.NuonPowerUser'`
 
 ### How to run tests locally
 
