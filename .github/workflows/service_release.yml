@@ -83,7 +83,6 @@ jobs:
             --push \
             --max-remote-cache \
             +helm-bump-and-publish \
-            --repos=nuon=${{ env.TFO_NUON_CHARTS }} \
             --chart_name=${{ inputs.service }} \
             --chart_version=v0.0.1-${{ inputs.tag }}
 
