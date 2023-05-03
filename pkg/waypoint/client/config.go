@@ -8,7 +8,7 @@ import (
 )
 
 type Token struct {
-	Namespace, Name string `validate:"required"`
+	Namespace, Name, Key string `validate:"required"`
 }
 
 type Config struct {
