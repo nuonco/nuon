@@ -13,6 +13,7 @@ const (
 	base           = 36
 	intBytes       = 8
 	shortIDLen     = 26
+	uuidLen        = 36
 	uuidBytes      = 64
 	nanoIDAlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	nanoIDLen      = 23
@@ -119,13 +120,13 @@ func ToShortID(s string) (string, error) {
 	switch len(s) {
 	case 0:
 		return "", fmt.Errorf("empty string is not a valid shortid")
-	case 26:
+	case shortIDLen:
 		uu, err := ToUUID(s)
 		if err != nil {
 			return "", fmt.Errorf("invalid shortid: %w", err)
 		}
 		return ParseUUID(uu), nil
-	case 36:
+	case uuidLen:
 		return ParseString(s)
 	default:
 		return "", fmt.Errorf("id incorrect length")
