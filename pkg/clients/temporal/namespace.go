@@ -12,7 +12,12 @@ func (t *temporal) ExecuteWorkflowInNamespace(ctx context.Context,
 	options tclient.StartWorkflowOptions,
 	workflow interface{},
 	args ...interface{}) (tclient.WorkflowRun, error) {
-	client, err := tclient.NewClientFromExisting(t.Client, tclient.Options{
+	defaultClient, err := t.getClient()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get client: %w", err)
+	}
+
+	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
 		Namespace: namespace,
 	})
 	if err != nil {
@@ -26,7 +31,12 @@ func (t *temporal) GetWorkflowInNamespace(ctx context.Context,
 	namespace string,
 	workflowID string,
 	runID string) (tclient.WorkflowRun, error) {
-	client, err := tclient.NewClientFromExisting(t.Client, tclient.Options{
+	defaultClient, err := t.getClient()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get client: %w", err)
+	}
+
+	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
 		Namespace: namespace,
 	})
 	if err != nil {
@@ -40,7 +50,12 @@ func (t *temporal) CancelWorkflowInNamespace(ctx context.Context,
 	namespace string,
 	workflowID string,
 	runID string) error {
-	client, err := tclient.NewClientFromExisting(t.Client, tclient.Options{
+	defaultClient, err := t.getClient()
+	if err != nil {
+		return fmt.Errorf("unable to get client: %w", err)
+	}
+
+	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
 		Namespace: namespace,
 	})
 	if err != nil {
