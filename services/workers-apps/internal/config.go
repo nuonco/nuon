@@ -23,6 +23,11 @@ type Config struct {
 
 	WaypointTokenNamespace   string `config:"waypoint_token_namespace" json:"waypoint_token_namespace" validate:"required"`
 	WaypointServerRootDomain string `config:"waypoint_server_root_domain" json:"waypoint_server_root_domain" validate:"required"`
+
+	OrgsK8sCAData         string `config:"orgs_k8s_ca_data"`
+	OrgsK8sPublicEndpoint string `config:"orgs_k8s_public_endpoint"`
+	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id"`
+	OrgsK8sRoleArn        string `config:"orgs_k8s_role_arn"`
 }
 
 func (c Config) Validate() error {
