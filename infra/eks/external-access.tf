@@ -18,9 +18,9 @@ data "aws_iam_policy_document" "extra_auth_map_trust_policy" {
 
     principals {
       type = "AWS"
-      identifiers = [
+      identifiers = concat(each.value.trust, [
         format("arn:aws:iam::%s:role/eks/%s", local.accounts[each.value.account].id, each.key)
-      ]
+      ])
     }
   }
 }
