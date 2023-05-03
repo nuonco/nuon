@@ -18,7 +18,12 @@ func (k *k8sSecretGetter) getClient() (kubeClientSecretGetter, error) {
 		err     error
 	)
 	if k.ClusterInfo != nil {
-		kubeCfg, err = kube.ConfigForCluster(k.ClusterInfo)
+		kubeCfg, err = kube.ConfigForCluster(&kube.ClusterInfo{
+			ID:             k.ClusterInfo.ID,
+			Endpoint:       k.ClusterInfo.Endpoint,
+			CAData:         k.ClusterInfo.CAData,
+			TrustedRoleARN: k.ClusterInfo.TrustedRoleARN,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to get cluster kube config: %w", err)
 		}
