@@ -47,13 +47,9 @@ func (a *Activities) CreateNamespace(ctx context.Context, req CreateNamespaceReq
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	var err error
-	kCfg := a.Kubeconfig
-	if kCfg == nil {
-		kCfg, err = kube.ConfigForCluster(&req.ClusterInfo)
-		if err != nil {
-			return resp, fmt.Errorf("failed to get config for cluster: %w", err)
-		}
+	kCfg, err := a.getKubeConfig(&req.ClusterInfo)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get kube config: %w", err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(kCfg)

@@ -3,10 +3,9 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"testing"
 
-	"github.com/go-faker/faker/v4"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
@@ -16,19 +15,10 @@ import (
 	"go.temporal.io/sdk/testsuite"
 )
 
-func getFakeObj[T any]() T {
-	var obj T
-	err := faker.FakeData(&obj)
-	if err != nil {
-		log.Fatalf("unable to create fake obj: %s", err)
-	}
-	return obj
-}
-
 func Test_Workflow(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	cfg := getFakeObj[workers.Config]()
+	cfg := generics.GetFakeObj[workers.Config]()
 
 	wkfl := runner.NewWorkflow(cfg)
 	env.RegisterWorkflow(wkfl.ProvisionRunner)

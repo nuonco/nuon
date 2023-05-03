@@ -64,32 +64,11 @@ func (a *Activities) BootstrapWaypointServer(
 		return resp, err
 	}
 
-	// NOTE: read/writing of tokens in the service clusters is being deprecated, and we will soon _only_ store
-	// tokens in the orgs clusters.
-	cfg := a.Kubeconfig
-	if cfg == nil {
-		cfg, err = kube.GetKubeConfig()
-		if err != nil {
-			return resp, fmt.Errorf("failed to get kube config: %w", err)
-		}
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return resp, fmt.Errorf("failed to create kube client: %w", err)
-	}
-
-	err = a.storeBootstrapToken(ctx, clientset.CoreV1().Secrets(req.TokenNamespace), req.OrgID, bootstrapToken)
-	if err != nil {
-		return resp, fmt.Errorf("failed to create namespace: %w", err)
-	}
-
-	// write token to orgs cluster
-	cfg, err = kube.ConfigForCluster(&req.ClusterInfo)
+	cfg, err := kube.ConfigForCluster(&req.ClusterInfo)
 	if err != nil {
 		return resp, fmt.Errorf("failed to get config for cluster: %w", err)
 	}
-	clientset, err = kubernetes.NewForConfig(cfg)
+	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return resp, fmt.Errorf("failed to create kube client: %w", err)
 	}

@@ -6,13 +6,15 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/mono/pkg/kube"
 	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 )
 
 type CreateServerConfigRequest struct {
-	TokenSecretNamespace string `json:"token_secret_namespace" validate:"required"`
-	OrgServerAddr        string `json:"org_server_address" validate:"required"`
-	OrgID                string `json:"org_id" validate:"required"`
+	TokenSecretNamespace string           `json:"token_secret_namespace" validate:"required"`
+	OrgServerAddr        string           `json:"org_server_address" validate:"required"`
+	OrgID                string           `json:"org_id" validate:"required"`
+	ClusterInfo          kube.ClusterInfo `json:"cluster_info" validate:"required"`
 }
 
 type CreateServerConfigResponse struct{}
@@ -31,12 +33,14 @@ func (a *Activities) CreateServerConfig(
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	provider, err := waypoint.NewOrgProvider(a.v, waypoint.WithOrgConfig(waypoint.Config{
+	provider, err := waypoint.NewK8sProvider(a.v, waypoint.WithConfig(waypoint.Config{
 		Address: req.OrgServerAddr,
 		Token: waypoint.Token{
 			Namespace: req.TokenSecretNamespace,
 			Name:      waypoint.DefaultTokenSecretName(req.OrgID),
+			Key:       waypoint.DefaultTokenSecretKey,
 		},
+		ClusterInfo: &req.ClusterInfo,
 	}))
 	if err != nil {
 		return resp, fmt.Errorf("unable to get org provider: %w", err)
