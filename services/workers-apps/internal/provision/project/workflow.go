@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/powertoolsdev/mono/pkg/kube"
 	projectv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1/project/v1"
 	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	workers "github.com/powertoolsdev/mono/services/workers-apps/internal"
@@ -31,6 +32,13 @@ func (w Workflow) ProvisionProject(ctx workflow.Context, req *projectv1.Provisio
 	ctx = workflow.WithActivityOptions(ctx, ao)
 	act := NewActivities(nil)
 
+	clusterInfo := kube.ClusterInfo{
+		ID:             w.cfg.OrgsK8sClusterID,
+		Endpoint:       w.cfg.OrgsK8sPublicEndpoint,
+		CAData:         w.cfg.OrgsK8sCAData,
+		TrustedRoleARN: w.cfg.OrgsK8sRoleArn,
+	}
+
 	pwsRequest := PingWaypointServerRequest{
 		Timeout: time.Minute * 15,
 		Addr:    waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId),
@@ -46,6 +54,7 @@ func (w Workflow) ProvisionProject(ctx workflow.Context, req *projectv1.Provisio
 		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId),
 		OrgID:                req.OrgId,
 		AppID:                req.AppId,
+		ClusterInfo:          clusterInfo,
 	}
 	cwpResp, err := execCreateWaypointProject(ctx, act, cwpRequest)
 	if err != nil {
@@ -58,6 +67,7 @@ func (w Workflow) ProvisionProject(ctx workflow.Context, req *projectv1.Provisio
 		OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId),
 		OrgID:                req.OrgId,
 		AppID:                req.AppId,
+		ClusterInfo:          clusterInfo,
 	}
 	uwwResp, err := execUpsertWaypointWorkspace(ctx, act, uwwRequest)
 	if err != nil {
