@@ -7,10 +7,14 @@ env:
   DB_USE_IAM: false
   DB_USE_SSL: false
   GIT_REF: local
-  GITHUB_APP_KEY: |
-    TODO(jm): pull secrets from k8s
   DISABLE_METRICS: true
-  TEMPORAL_NAMESPACE: default
-  TEMPORAL_HOST: localhost:7233
+env_secrets:
+  GITHUB_APP_KEY:
+    name: graphql-api-github-app-key
+    key: github_app_key
+local_env:
+  DB_HOST: localhost
+local_cmd: go run . server
+run_cmd: server
 port: 8080
 type: api
