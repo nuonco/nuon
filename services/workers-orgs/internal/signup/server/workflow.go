@@ -108,6 +108,7 @@ func (w wkflow) ProvisionServer(ctx workflow.Context, req *serverv1.ProvisionSer
 		TokenSecretNamespace: w.cfg.WaypointBootstrapTokenNamespace,
 		OrgServerAddr:        waypointServerAddr,
 		OrgID:                req.OrgId,
+		ClusterInfo:          clusterInfo,
 	})
 	if err != nil {
 		return resp, fmt.Errorf("failed to create waypoint project: %w", err)
