@@ -21,7 +21,7 @@ type temporal struct {
 	Addr      string      `validate:"required"`
 	Namespace string      `validate:"required"`
 	Logger    *zap.Logger `validate:"required"`
-	LazyLoad  bool        `validate:"required"`
+	LazyLoad  bool
 
 	tclient.Client
 	sync.RWMutex
