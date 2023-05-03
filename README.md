@@ -24,6 +24,7 @@ You need the following tools setup to work with this repo:
 * [Buf](https://buf.build)
 * [go](https://go.dev/)
 * [protoc-gen-go-grpc](https://grpc.io/docs/languages/go/quickstart/)
+* [twingate](https://www.twingate.com/)
 
 Once you have these setup, do the following to start working locally:
 
@@ -46,8 +47,6 @@ To run `nuonctl`, build the project into your `$PATH`:
 $ cd bins/nuonctl
 $ go build ~/bin/nuonctl .
 ```
-
-Note, currently `nuonctl` requires `temporal` to run. You can start `temporal` using `docker-compose up -d` in the root of the repo.
 
 Some helpful `nuonctl` commands:
 
@@ -88,9 +87,21 @@ We use 2 main libraries to assist with basic structural validation of our data a
 
 # Development Tasks How-Tos
 
+## How to: Run a service locally with nuonctl
+
+* `aws-sso-util login` as needed, typically once at the start of each work day
+* `export AWS_PROFILE='stage.NuonPowerUser'`
+* If you need access to resources in our stage VPC, run `twingate start`
+* `cd mono`
+* `nuonctl service run-local --name=orgs-api`t
+
 ## How to: debug with delve and VS Code
 
-Configure a VS Code launch configuration in `.vscode/launch.json` similar to the following:
+Our golang services can be launched with the [delve](https://github.com/go-delve/delve) debugger, which runs a network service, and VS Code can attach "remotely" to that service to set breakpoints and step through the code.
+
+Note that with the monorepo, debugging can be unusably slow if you launch VS Code from the monorepo root, so only open the directory containing the specific golang program you want to debug, for example `services/api` or `services/orgs-api` for best results.
+
+Configure a VS Code launch configuration in `services/api/.vscode/launch.json` (or the directory for the service you are working with) similar to the following:
 
 ```json
 {
@@ -112,12 +123,13 @@ Configure a VS Code launch configuration in `.vscode/launch.json` similar to the
 }
 ```
 
-Then, in a terminal shell, load whatever environment variables the given service or go project needs, and launch it under the delve debugger. Here's an example for the `orgs-api`
+Then, in a terminal shell, launch it under the delve debugger. Here's an example for the `orgs-api`
 
 ```bash
 cd services/orgs-api
-dlv debug --headless --listen 127.0.0.1:2345 . -- server
+nuonctl service exec --name=orgs-api -- dlv debug --headless --listen 127.0.0.1:2345 . -- server
 ```
+
 Delve should get prepared and stop the program just prior to `main()` (I think). It will not start the program until a remote debug client attaches to the debugger process. So don't worry if you don't see any startup log output yet.
 
 In VS Code, activate the "Run and Debug" activity from the activity bar (ctrl+shft+d). You should see a menu of launch configurations including the one we defined in our `launch.json` above. Choose that one and click the play button.
