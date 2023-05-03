@@ -8,10 +8,6 @@ locals {
   github_organization    = "powertoolsdev"
   terraform_organization = "launchpaddev"
 
-  helm_bucket_arn         = data.terraform_remote_state.chart_common.outputs.helm_bucket_arn
-  helm_bucket_url         = data.terraform_remote_state.chart_common.outputs.helm_bucket_url
-  helm_bucket_kms_key_arn = data.terraform_remote_state.chart_common.outputs.helm_bucket_kms_key_arn
-
   tags = {
     environment = var.env
     service     = local.name
