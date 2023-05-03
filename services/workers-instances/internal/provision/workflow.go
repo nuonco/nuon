@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/powertoolsdev/mono/pkg/kube"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	instancesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
@@ -109,12 +110,19 @@ func (w *wkflow) Provision(ctx workflow.Context, req *instancesv1.ProvisionReque
 	l.Debug("successfully deployed", zap.Any("plan_only", req.PlanOnly))
 
 	if !req.PlanOnly {
+		clusterInfo := kube.ClusterInfo{
+			ID:             w.cfg.OrgsK8sClusterID,
+			Endpoint:       w.cfg.OrgsK8sPublicEndpoint,
+			CAData:         w.cfg.OrgsK8sCAData,
+			TrustedRoleARN: w.cfg.OrgsK8sRoleArn,
+		}
 		shnReq := SendHostnameNotificationRequest{
 			OrgID:                req.OrgId,
 			TokenSecretNamespace: w.cfg.WaypointTokenSecretNamespace,
 			OrgServerAddr:        waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId),
 			InstallID:            req.InstallId,
 			ComponentID:          req.Component.Id,
+			ClusterInfo:          clusterInfo,
 		}
 		shnResp, err := execSendHostnameNotification(ctx, act, shnReq)
 		if err != nil {
