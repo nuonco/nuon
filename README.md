@@ -95,6 +95,13 @@ We use 2 main libraries to assist with basic structural validation of our data a
 * `cd mono`
 * `nuonctl service run-local --name=orgs-api`t
 
+
+## How to: share an org on stage with the team
+
+* `aws-sso-util login` as needed
+* grab your org id from the ui (short or long, either works)
+* `nuonctl orgs add-nuon-users --org-id <orgid>`
+
 ## How to: debug with delve and VS Code
 
 Our golang services can be launched with the [delve](https://github.com/go-delve/delve) debugger, which runs a network service, and VS Code can attach "remotely" to that service to set breakpoints and step through the code.
