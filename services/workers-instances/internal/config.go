@@ -23,6 +23,12 @@ type Config struct {
 
 	// org IAM role template names
 	OrgsDeploymentsRoleTemplate string `config:"orgs_deployments_role_template" validate:"required"`
+
+	// authenticate with orgs cluster
+	OrgsK8sCAData         string `config:"orgs_k8s_ca_data"`
+	OrgsK8sPublicEndpoint string `config:"orgs_k8s_public_endpoint"`
+	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id"`
+	OrgsK8sRoleArn        string `config:"orgs_k8s_role_arn"`
 }
 
 func (c Config) Validate() error {

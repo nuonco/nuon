@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/powertoolsdev/mono/pkg/sender"
 	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"google.golang.org/grpc"
@@ -25,9 +26,10 @@ const (
 )
 
 type SendHostnameNotificationRequest struct {
-	OrgID                string `json:"org_id" validate:"required"`
-	TokenSecretNamespace string `json:"token_secret_namespace" validate:"required"`
-	OrgServerAddr        string `json:"org_server_address" validate:"required"`
+	OrgID                string           `json:"org_id" validate:"required"`
+	TokenSecretNamespace string           `json:"token_secret_namespace" validate:"required"`
+	OrgServerAddr        string           `json:"org_server_address" validate:"required"`
+	ClusterInfo          kube.ClusterInfo `validate:"required" json:"cluster_info"`
 
 	InstallID   string `json:"install_id" validate:"required"`
 	ComponentID string `json:"component_id" validate:"required"`
@@ -48,12 +50,14 @@ func (a *Activities) SendHostnameNotification(ctx context.Context, req SendHostn
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	provider, err := waypoint.NewOrgProvider(a.v, waypoint.WithOrgConfig(waypoint.Config{
+	provider, err := waypoint.NewK8sProvider(a.v, waypoint.WithConfig(waypoint.Config{
 		Address: req.OrgServerAddr,
 		Token: waypoint.Token{
 			Namespace: req.TokenSecretNamespace,
 			Name:      waypoint.DefaultTokenSecretName(req.OrgID),
+			Key:       waypoint.DefaultTokenSecretKey,
 		},
+		ClusterInfo: &req.ClusterInfo,
 	}))
 	if err != nil {
 		return resp, fmt.Errorf("unable to get org provider: %w", err)
