@@ -14,5 +14,4 @@ func TestSandboxInputType_ToRunType(t *testing.T) {
 	assert.Equal(t,
 		SandboxInputType_SANDBOX_INPUT_TYPE_PROVISION.ToRunType(),
 		TerraformRunType_TERRAFORM_RUN_TYPE_APPLY)
-
 }
