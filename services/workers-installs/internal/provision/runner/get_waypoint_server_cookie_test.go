@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -31,6 +33,7 @@ func getFakeWaypointServerCookieRequest() GetWaypointServerCookieRequest {
 		OrgID:                uuid.NewString(),
 		TokenSecretNamespace: "default",
 		OrgServerAddr:        fmt.Sprintf("%s.nuon.co", uuid.NewString()),
+		ClusterInfo:          generics.GetFakeObj[kube.ClusterInfo](),
 	}
 }
 
@@ -65,6 +68,14 @@ func TestGetWaypointServerCookie_validateRequest(t *testing.T) {
 				return req
 			},
 			errExpected: fmt.Errorf("GetWaypointServerCookieRequest.OrgServerAddr"),
+		},
+		"no-cluster-info": {
+			reqFn: func() GetWaypointServerCookieRequest {
+				req := getFakeWaypointServerCookieRequest()
+				req.ClusterInfo = kube.ClusterInfo{}
+				return req
+			},
+			errExpected: fmt.Errorf("GetWaypointServerCookieRequest.ClusterInfo"),
 		},
 	}
 

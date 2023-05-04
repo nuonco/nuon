@@ -36,6 +36,12 @@ type Config struct {
 	InstallationsBucket       string `config:"installations_bucket" validate:"required"`
 	InstallationsBucketRegion string `config:"installations_bucket_region" validate:"required"`
 	SandboxBucket             string `config:"sandbox_bucket" validate:"required"`
+
+	// authenticate with orgs cluster
+	OrgsK8sCAData         string `config:"orgs_k8s_ca_data"`
+	OrgsK8sPublicEndpoint string `config:"orgs_k8s_public_endpoint"`
+	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id"`
+	OrgsK8sRoleArn        string `config:"orgs_k8s_role_arn"`
 }
 
 func (c Config) Validate() error {
