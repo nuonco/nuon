@@ -6,10 +6,14 @@ output "org_iam_role_name_templates" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.org_iam_role_name_templates)
 }
 
-# the following values are for interacting with the orgs k8s cluster, and while they currently are not being used should
-# be migrated too when possible.
 output "orgs_k8s" {
-  value = nonsensitive(data.tfe_outputs.infra-orgs.values.k8s)
+  sensitive = true
+  value = {
+    ca_data         = data.tfe_outputs.infra-orgs.values.k8s.ca_data
+    public_endpoint = data.tfe_outputs.infra-orgs.values.k8s.public_endpoint
+    cluster_id      = data.tfe_outputs.infra-orgs.values.k8s.cluster_id
+    role_arn        = data.tfe_outputs.infra-orgs.values.k8s.access_role_arns["eks-workers-installs"]
+  }
 }
 
 output "sandbox" {
