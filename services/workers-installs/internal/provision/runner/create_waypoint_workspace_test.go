@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/kube"
 	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 )
 
@@ -22,6 +24,7 @@ func getFakeCreateWaypointWorkspaceRequest() CreateWaypointWorkspaceRequest {
 		TokenSecretNamespace: "default",
 		OrgID:                orgID,
 		InstallID:            uuid.NewString(),
+		ClusterInfo:          generics.GetFakeObj[kube.ClusterInfo](),
 	}
 }
 

@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
@@ -26,6 +28,8 @@ func (t *testWaypointClientProjectUpserter) UpsertProject(ctx context.Context, r
 }
 
 func TestCreateWaypointProject_validateRequest(t *testing.T) {
+	clusterInfo := generics.GetFakeObj[kube.ClusterInfo]()
+
 	tests := map[string]struct {
 		reqFn       func() CreateWaypointProjectRequest
 		errExpected error
@@ -37,6 +41,7 @@ func TestCreateWaypointProject_validateRequest(t *testing.T) {
 					TokenSecretNamespace: "default",
 					OrgServerAddr:        fmt.Sprintf("%s.nuon.co", uuid.NewString()),
 					InstallID:            uuid.NewString(),
+					ClusterInfo:          clusterInfo,
 				}
 			},
 		},
@@ -47,6 +52,7 @@ func TestCreateWaypointProject_validateRequest(t *testing.T) {
 					TokenSecretNamespace: "default",
 					OrgServerAddr:        fmt.Sprintf("%s.nuon.co", uuid.NewString()),
 					InstallID:            uuid.NewString(),
+					ClusterInfo:          clusterInfo,
 				}
 			},
 			errExpected: fmt.Errorf("CreateWaypointProjectRequest.OrgID"),
@@ -58,6 +64,7 @@ func TestCreateWaypointProject_validateRequest(t *testing.T) {
 					TokenSecretNamespace: "",
 					OrgServerAddr:        fmt.Sprintf("%s.nuon.co", uuid.NewString()),
 					InstallID:            uuid.NewString(),
+					ClusterInfo:          clusterInfo,
 				}
 			},
 			errExpected: fmt.Errorf("CreateWaypointProjectRequest.TokenSecretNamespace"),
@@ -69,6 +76,7 @@ func TestCreateWaypointProject_validateRequest(t *testing.T) {
 					TokenSecretNamespace: "default",
 					OrgServerAddr:        "",
 					InstallID:            uuid.NewString(),
+					ClusterInfo:          clusterInfo,
 				}
 			},
 			errExpected: fmt.Errorf("CreateWaypointProjectRequest.OrgServerAddr"),
@@ -80,9 +88,21 @@ func TestCreateWaypointProject_validateRequest(t *testing.T) {
 					TokenSecretNamespace: "default",
 					OrgServerAddr:        fmt.Sprintf("%s.nuon.co", uuid.NewString()),
 					InstallID:            "",
+					ClusterInfo:          clusterInfo,
 				}
 			},
 			errExpected: fmt.Errorf("CreateWaypointProjectRequest.InstallID"),
+		},
+		"cluster-info": {
+			reqFn: func() CreateWaypointProjectRequest {
+				return CreateWaypointProjectRequest{
+					OrgID:                uuid.NewString(),
+					TokenSecretNamespace: "default",
+					OrgServerAddr:        fmt.Sprintf("%s.nuon.co", uuid.NewString()),
+					InstallID:            "",
+				}
+			},
+			errExpected: fmt.Errorf("CreateWaypointProjectRequest.ClusterInfo"),
 		},
 	}
 
