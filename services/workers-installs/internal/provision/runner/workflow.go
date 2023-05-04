@@ -45,12 +45,20 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 	// the actual struct isn't used by temporal during dispatch at all
 	act := NewActivities(nil, workers.Config{})
 
+	clusterInfo := kube.ClusterInfo{
+		ID:             w.cfg.OrgsK8sClusterID,
+		Endpoint:       w.cfg.OrgsK8sPublicEndpoint,
+		CAData:         w.cfg.OrgsK8sCAData,
+		TrustedRoleARN: w.cfg.OrgsK8sRoleArn,
+	}
+
 	// create waypoint project
 	cwpReq := CreateWaypointProjectRequest{
 		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
 		OrgServerAddr:        orgServerAddr,
 		OrgID:                req.OrgId,
 		InstallID:            req.InstallId,
+		ClusterInfo:          clusterInfo,
 	}
 	_, err := createWaypointProject(ctx, act, cwpReq)
 	if err != nil {
@@ -64,6 +72,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 		OrgServerAddr:        orgServerAddr,
 		OrgID:                req.OrgId,
 		InstallID:            req.InstallId,
+		ClusterInfo:          clusterInfo,
 	}
 	_, err = createWaypointWorkspace(ctx, act, cwwReq)
 	if err != nil {
@@ -76,6 +85,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
 		OrgServerAddr:        orgServerAddr,
 		OrgID:                req.OrgId,
+		ClusterInfo:          clusterInfo,
 	}
 	gwscResp, err := getWaypointServerCookie(ctx, act, gwscReq)
 	if err != nil {
@@ -116,6 +126,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 		OrgServerAddr:        orgServerAddr,
 		OrgID:                req.OrgId,
 		InstallID:            req.InstallId,
+		ClusterInfo:          clusterInfo,
 	}
 	_, err = adoptWaypointRunner(ctx, act, awrReq)
 	if err != nil {
@@ -147,6 +158,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 		InstallID:            req.InstallId,
 		OrgID:                req.OrgId,
 		AwsRegion:            req.Region,
+		ClusterInfo:          clusterInfo,
 	}
 	_, err = createWaypointRunnerProfile(ctx, act, cwrpReq)
 	if err != nil {
