@@ -22,14 +22,14 @@ func Test_ActivityTriggerOrgJob(t *testing.T) {
 		"happy path": {
 			mockMgr: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
 				wkflowmgr := workflows.NewMockOrgWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Deprovision(gomock.Any(), orgID.String()).Return(nil)
+				wkflowmgr.EXPECT().Deprovision(gomock.Any(), orgID.String()).Return("12345", nil)
 				return wkflowmgr
 			},
 		},
 		"mgr err": {
 			mockMgr: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
 				wkflowmgr := workflows.NewMockOrgWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Deprovision(gomock.Any(), orgID.String()).Return(err)
+				wkflowmgr.EXPECT().Deprovision(gomock.Any(), orgID.String()).Return("12345", err)
 				return wkflowmgr
 			},
 			errExpected: err,

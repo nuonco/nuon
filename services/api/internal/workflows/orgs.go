@@ -23,16 +23,16 @@ type orgWorkflowManager struct {
 }
 
 type OrgWorkflowManager interface {
-	Provision(context.Context, string) error
-	Deprovision(context.Context, string) error
+	Provision(context.Context, string) (string, error)
+	Deprovision(context.Context, string) (string, error)
 }
 
 var _ OrgWorkflowManager = (*orgWorkflowManager)(nil)
 
-func (o *orgWorkflowManager) Provision(ctx context.Context, orgID string) error {
+func (o *orgWorkflowManager) Provision(ctx context.Context, orgID string) (string, error) {
 	orgID, err := shortid.ParseString(orgID)
 	if err != nil {
-		return fmt.Errorf("unable to parse shortid from orgID: %w", err)
+		return "", fmt.Errorf("unable to parse shortid from orgID: %w", err)
 	}
 
 	opts := tclient.StartWorkflowOptions{
@@ -45,8 +45,12 @@ func (o *orgWorkflowManager) Provision(ctx context.Context, orgID string) error 
 	}
 	args := &orgsv1.SignupRequest{OrgId: orgID, Region: "us-west-2"}
 
-	_, err = o.tc.ExecuteWorkflow(ctx, opts, "Signup", args)
-	return err
+	workflow, err := o.tc.ExecuteWorkflow(ctx, opts, "Signup", args)
+	if err != nil {
+		return "", err
+	}
+
+	return workflow.GetID(), err
 }
 
 type orgDeprovisionArgs struct {
@@ -54,10 +58,10 @@ type orgDeprovisionArgs struct {
 	Region string `validate:"required" json:"region"`
 }
 
-func (o *orgWorkflowManager) Deprovision(ctx context.Context, orgID string) error {
+func (o *orgWorkflowManager) Deprovision(ctx context.Context, orgID string) (string, error) {
 	orgID, err := shortid.ParseString(orgID)
 	if err != nil {
-		return fmt.Errorf("unable to parse shortid from orgID: %w", err)
+		return "", fmt.Errorf("unable to parse shortid from orgID: %w", err)
 	}
 
 	opts := tclient.StartWorkflowOptions{
@@ -70,6 +74,9 @@ func (o *orgWorkflowManager) Deprovision(ctx context.Context, orgID string) erro
 	}
 	args := orgDeprovisionArgs{OrgID: orgID, Region: "us-west-2"}
 
-	_, err = o.tc.ExecuteWorkflow(ctx, opts, "Teardown", args)
-	return err
+	workflow, err := o.tc.ExecuteWorkflow(ctx, opts, "Teardown", args)
+	if err != nil {
+		return "", err
+	}
+	return workflow.GetID(), err
 }

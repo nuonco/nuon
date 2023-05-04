@@ -1,10 +1,14 @@
 package deleteorg
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
+	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1"
+	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -15,8 +19,6 @@ func New(v *validator.Validate) *wkflow {
 type wkflow struct{}
 
 func (w *wkflow) DeleteOrg(ctx workflow.Context, req *jobsv1.DeleteOrgRequest) (*jobsv1.DeleteOrgResponse, error) {
-	var resp TriggerJobResponse
-
 	act := &activities{}
 
 	activityOpts := workflow.ActivityOptions{
@@ -25,9 +27,34 @@ func (w *wkflow) DeleteOrg(ctx workflow.Context, req *jobsv1.DeleteOrgRequest) (
 
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
+	var triggerResp TriggerJobResponse
 	fut := workflow.ExecuteActivity(ctx, act.TriggerOrgJob, req.OrgId)
-	if err := fut.Get(ctx, &resp); err != nil {
+	if err := fut.Get(ctx, &triggerResp); err != nil {
 		return nil, err
+	}
+
+	shrdAct := &sharedactivities.Activities{}
+
+	pollRequest := &activitiesv1.PollWorkflowRequest{
+		Namespace:    "orgs",
+		WorkflowName: "Teardown",
+		WorkflowId:   triggerResp.WorkflowID,
+	}
+
+	// set poll timeout
+	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
+		ScheduleToCloseTimeout: sharedactivities.PollActivityTimeout * sharedactivities.MaxActivityRetries,
+		StartToCloseTimeout:    sharedactivities.PollActivityTimeout,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: sharedactivities.MaxActivityRetries,
+		},
+	})
+
+	var pollResp activitiesv1.PollWorkflowResponse
+	fut = workflow.ExecuteActivity(ctx, shrdAct.PollWorkflow, pollRequest)
+	err := fut.Get(ctx, &pollResp)
+	if err != nil {
+		return nil, fmt.Errorf("unable to poll for workflow response: %w", err)
 	}
 
 	return &jobsv1.DeleteOrgResponse{}, nil
