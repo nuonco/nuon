@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	PollActivityTimeout = time.Minute * 30
-	MaxActivityRetries  = 5
+	PollActivityTimeout = time.Minute * 1
+	MaxActivityRetries  = 50
 	DefaultRegion       = "us-west-2"
 )
 
@@ -49,15 +49,15 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 		if wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
-	//case [2]string{"orgs", "Teardown"}:
-	//var wkflowResp *orgsv1.TeardownResponse
-	//if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
-	//return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
-	//}
-	//resp, wkflowErr = anypb.New(wkflowResp)
-	//if wkflowErr != nil {
-	//return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
-	//}
+	case [2]string{"orgs", "Teardown"}:
+		var wkflowResp *orgsv1.TeardownResponse
+		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
+		}
+		resp, wkflowErr = anypb.New(wkflowResp)
+		if wkflowErr != nil {
+			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
+		}
 	case [2]string{"apps", "Provision"}:
 		var wkflowResp *appsv1.ProvisionResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
