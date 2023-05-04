@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -58,12 +57,6 @@ func (o orgService) DeleteOrg(ctx context.Context, inputID string) (bool, error)
 		return false, nil
 	}
 
-	if err := o.wkflowMgr.Deprovision(ctx, orgID.String()); err != nil {
-		o.log.Error("failed to start deprovision workflow",
-			zap.String("orgID", orgID.String()),
-			zap.String("error", err.Error()))
-		return false, fmt.Errorf("unable to start deprovision workflow: %w", err)
-	}
 	return true, nil
 }
 
