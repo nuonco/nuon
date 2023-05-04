@@ -22,7 +22,6 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 	tests := map[string]struct {
 		orgID       string
 		repoFn      func(*gomock.Controller) *repos.MockOrgRepo
-		wkflowFn    func(*gomock.Controller) *workflows.MockOrgWorkflowManager
 		errExpected error
 	}{
 		"happy path": {
@@ -32,11 +31,6 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 				repo.EXPECT().Delete(gomock.Any(), orgID).Return(true, nil)
 				return repo
 			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				mgr.EXPECT().Deprovision(gomock.Any(), orgID.String()).Return(nil)
-				return mgr
-			},
 		},
 		"delete error": {
 			orgID: orgID.String(),
@@ -44,24 +38,6 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 				repo := repos.NewMockOrgRepo(ctl)
 				repo.EXPECT().Delete(gomock.Any(), orgID).Return(false, errDeleteOrg)
 				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				return mgr
-			},
-			errExpected: errDeleteOrg,
-		},
-		"error deprovisioning": {
-			orgID: orgID.String(),
-			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
-				repo := repos.NewMockOrgRepo(ctl)
-				repo.EXPECT().Delete(gomock.Any(), orgID).Return(true, nil)
-				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				mgr.EXPECT().Deprovision(gomock.Any(), orgID.String()).Return(errDeleteOrg)
-				return mgr
 			},
 			errExpected: errDeleteOrg,
 		},
@@ -71,11 +47,9 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			repo := test.repoFn(mockCtl)
-			wkflow := test.wkflowFn(mockCtl)
 			svc := &orgService{
-				log:       zaptest.NewLogger(t),
-				repo:      repo,
-				wkflowMgr: wkflow,
+				log:  zaptest.NewLogger(t),
+				repo: repo,
 			}
 
 			deleted, err := svc.DeleteOrg(context.Background(), test.orgID)

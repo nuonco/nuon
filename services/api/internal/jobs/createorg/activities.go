@@ -17,12 +17,16 @@ func NewActivities(tc tclient.Client) *activities {
 	}
 }
 
-type TriggerJobResponse struct{}
+type TriggerJobResponse struct {
+	WorkflowID string
+}
 
 func (a *activities) TriggerJob(ctx context.Context, orgID string) (*TriggerJobResponse, error) {
-	err := a.mgr.Provision(ctx, orgID)
+	workflowID, err := a.mgr.Provision(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
-	return &TriggerJobResponse{}, nil
+	return &TriggerJobResponse{
+		WorkflowID: workflowID,
+	}, nil
 }
