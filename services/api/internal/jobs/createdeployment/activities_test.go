@@ -32,7 +32,7 @@ func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 			},
 			mockMgr: func(ctl *gomock.Controller) *workflows.MockDeploymentWorkflowManager {
 				wkflowmgr := workflows.NewMockDeploymentWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Start(gomock.Any(), deployment).Return(nil)
+				wkflowmgr.EXPECT().Start(gomock.Any(), deployment).Return("1234", nil)
 				return wkflowmgr
 			},
 		},
@@ -56,7 +56,7 @@ func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 			},
 			mockMgr: func(ctl *gomock.Controller) *workflows.MockDeploymentWorkflowManager {
 				wkflowmgr := workflows.NewMockDeploymentWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Start(gomock.Any(), deployment).Return(err)
+				wkflowmgr.EXPECT().Start(gomock.Any(), deployment).Return("", err)
 				return wkflowmgr
 			},
 			errExpected: err,

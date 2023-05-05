@@ -32,16 +32,16 @@ type deploymentWorkflowManager struct {
 }
 
 type DeploymentWorkflowManager interface {
-	Start(context.Context, *models.Deployment) error
+	Start(context.Context, *models.Deployment) (string, error)
 }
 
 var _ DeploymentWorkflowManager = (*deploymentWorkflowManager)(nil)
 
-func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *models.Deployment) error {
+func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *models.Deployment) (string, error) {
 	app := deployment.Component.App
 	shortIDs, err := shortid.ParseStrings(app.OrgID.String(), app.ID.String(), deployment.Component.ID.String(), deployment.ID.String())
 	if err != nil {
-		return fmt.Errorf("unable to parse ids to shortids: %w", err)
+		return "", fmt.Errorf("unable to parse ids to shortids: %w", err)
 	}
 	orgID, appID, componentID, deploymentID := shortIDs[0], shortIDs[1], shortIDs[2], shortIDs[3]
 
@@ -60,7 +60,7 @@ func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *model
 	var compConf componentv1.Component
 	if deployment.Component.Config != nil {
 		if err = protojson.Unmarshal([]byte(deployment.Component.Config.String()), &compConf); err != nil {
-			return fmt.Errorf("failed to unmarshal DB JSON: %w", err)
+			return "", fmt.Errorf("failed to unmarshal DB JSON: %w", err)
 		}
 	}
 	compConf.Id = componentID
@@ -78,10 +78,10 @@ func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *model
 		req.InstallIds[idx] = installID
 	}
 
-	_, err = d.tc.ExecuteWorkflow(ctx, opts, "Start", req)
+	workflow, err := d.tc.ExecuteWorkflow(ctx, opts, "Start", req)
 	if err != nil {
-		return fmt.Errorf("unable to start deployment: %w", err)
+		return "", fmt.Errorf("unable to start deployment: %w", err)
 	}
 
-	return nil
+	return workflow.GetID(), nil
 }
