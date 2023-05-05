@@ -14,6 +14,7 @@ import (
 //go:generate mockgen -destination=mock_install_repo.go -source=install_repo.go -package=repos
 type InstallRepo interface {
 	Get(context.Context, uuid.UUID) (*models.Install, error)
+	GetDeleted(context.Context, uuid.UUID) (*models.Install, error)
 	ListByApp(context.Context, uuid.UUID, *models.ConnectionOptions) ([]*models.Install, *utils.Page, error)
 	Create(context.Context, *models.Install) (*models.Install, error)
 	Update(context.Context, *models.Install) (*models.Install, error)
@@ -37,6 +38,16 @@ func (i installRepo) Get(ctx context.Context, installID uuid.UUID) (*models.Inst
 	if err := i.db.WithContext(ctx).
 		Preload(clause.Associations).
 		First(&install, "id = ?", installID).Error; err != nil {
+		return nil, err
+	}
+	return &install, nil
+}
+
+func (i installRepo) GetDeleted(ctx context.Context, installID uuid.UUID) (*models.Install, error) {
+	var install models.Install
+	if err := i.db.WithContext(ctx).
+		Preload(clause.Associations).
+		Unscoped().Where("id = ?", installID).First(&install).Error; err != nil {
 		return nil, err
 	}
 	return &install, nil
