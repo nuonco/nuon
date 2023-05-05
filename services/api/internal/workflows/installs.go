@@ -26,16 +26,16 @@ type installWorkflowManager struct {
 }
 
 type InstallWorkflowManager interface {
-	Provision(context.Context, *models.Install, string, *models.SandboxVersion) error
-	Deprovision(context.Context, *models.Install, string, *models.SandboxVersion) error
+	Provision(context.Context, *models.Install, string, *models.SandboxVersion) (string, error)
+	Deprovision(context.Context, *models.Install, string, *models.SandboxVersion) (string, error)
 }
 
 var _ InstallWorkflowManager = (*installWorkflowManager)(nil)
 
-func (i *installWorkflowManager) Provision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) error {
+func (i *installWorkflowManager) Provision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) (string, error) {
 	shortIDs, err := shortid.ParseStrings(orgID, install.AppID.String(), install.ID.String())
 	if err != nil {
-		return fmt.Errorf("unable to parse ids to shortids: %w", err)
+		return "", fmt.Errorf("unable to parse ids to shortids: %w", err)
 	}
 
 	orgID, appID, installID := shortIDs[0], shortIDs[1], shortIDs[2]
@@ -70,14 +70,17 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 		},
 	}
 
-	_, err = i.tc.ExecuteWorkflow(ctx, opts, "Provision", args)
-	return err
+	workflow, err := i.tc.ExecuteWorkflow(ctx, opts, "Provision", args)
+	if err != nil {
+		return "", err
+	}
+	return workflow.GetID(), err
 }
 
-func (i *installWorkflowManager) Deprovision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) error {
+func (i *installWorkflowManager) Deprovision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) (string, error) {
 	shortIDs, err := shortid.ParseStrings(orgID, install.AppID.String(), install.ID.String())
 	if err != nil {
-		return fmt.Errorf("unable to parse ids to shortids: %w", err)
+		return "", fmt.Errorf("unable to parse ids to shortids: %w", err)
 	}
 
 	orgID, appID, installID := shortIDs[0], shortIDs[1], shortIDs[2]
@@ -111,6 +114,9 @@ func (i *installWorkflowManager) Deprovision(ctx context.Context, install *model
 		},
 	}
 
-	_, err = i.tc.ExecuteWorkflow(ctx, opts, "Deprovision", args)
-	return err
+	workflow, err := i.tc.ExecuteWorkflow(ctx, opts, "Deprovision", args)
+	if err != nil {
+		return "", err
+	}
+	return workflow.GetID(), err
 }
