@@ -37,7 +37,7 @@ func (w *wkflow) DeleteInstall(ctx workflow.Context, req *jobsv1.DeleteInstallRe
 
 	pollRequest := &activitiesv1.PollWorkflowRequest{
 		Namespace:    "installs",
-		WorkflowName: "Provision",
+		WorkflowName: "Teardown",
 		WorkflowId:   resp.WorkflowID,
 	}
 
