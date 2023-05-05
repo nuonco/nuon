@@ -47,7 +47,7 @@ func Test_ActivityTriggerInstallDeprovJob(t *testing.T) {
 			},
 			mockMgr: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
 				wkflowmgr := workflows.NewMockInstallWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Deprovision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return(nil)
+				wkflowmgr.EXPECT().Deprovision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return("12354", nil)
 				return wkflowmgr
 			},
 		},
@@ -132,7 +132,7 @@ func Test_ActivityTriggerInstallDeprovJob(t *testing.T) {
 			},
 			mockMgr: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
 				wkflowmgr := workflows.NewMockInstallWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Deprovision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return(err)
+				wkflowmgr.EXPECT().Deprovision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return("", err)
 				return wkflowmgr
 			},
 			errExpected: err,
