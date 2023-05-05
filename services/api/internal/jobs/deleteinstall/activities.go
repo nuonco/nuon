@@ -33,7 +33,7 @@ type TriggerJobResponse struct {
 func (a *activities) TriggerInstallDeprovJob(ctx context.Context, installID string) (*TriggerJobResponse, error) {
 	installUUID, _ := uuid.Parse(installID)
 
-	install, err := a.repo.Get(ctx, installUUID)
+	install, err := a.repo.GetDeleted(ctx, installUUID)
 	if err != nil {
 		return nil, err
 	}

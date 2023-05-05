@@ -32,7 +32,7 @@ func Test_ActivityTriggerInstallDeprovJob(t *testing.T) {
 		"happy path": {
 			installRepo: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				mockRepo := repos.NewMockInstallRepo(ctl)
-				mockRepo.EXPECT().Get(gomock.Any(), installID).Return(install, nil)
+				mockRepo.EXPECT().GetDeleted(gomock.Any(), installID).Return(install, nil)
 				return mockRepo
 			},
 			appRepo: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -54,7 +54,7 @@ func Test_ActivityTriggerInstallDeprovJob(t *testing.T) {
 		"repo error": {
 			installRepo: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				mockRepo := repos.NewMockInstallRepo(ctl)
-				mockRepo.EXPECT().Get(gomock.Any(), installID).Return(nil, err)
+				mockRepo.EXPECT().GetDeleted(gomock.Any(), installID).Return(nil, err)
 				return mockRepo
 			},
 			appRepo: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -74,7 +74,7 @@ func Test_ActivityTriggerInstallDeprovJob(t *testing.T) {
 		"app repo error": {
 			installRepo: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				mockRepo := repos.NewMockInstallRepo(ctl)
-				mockRepo.EXPECT().Get(gomock.Any(), installID).Return(install, nil)
+				mockRepo.EXPECT().GetDeleted(gomock.Any(), installID).Return(install, nil)
 				return mockRepo
 			},
 			appRepo: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -95,7 +95,7 @@ func Test_ActivityTriggerInstallDeprovJob(t *testing.T) {
 		"admin repo error": {
 			installRepo: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				mockRepo := repos.NewMockInstallRepo(ctl)
-				mockRepo.EXPECT().Get(gomock.Any(), installID).Return(install, nil)
+				mockRepo.EXPECT().GetDeleted(gomock.Any(), installID).Return(install, nil)
 				return mockRepo
 			},
 			appRepo: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -117,7 +117,7 @@ func Test_ActivityTriggerInstallDeprovJob(t *testing.T) {
 		"workflow error": {
 			installRepo: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				mockRepo := repos.NewMockInstallRepo(ctl)
-				mockRepo.EXPECT().Get(gomock.Any(), installID).Return(install, nil)
+				mockRepo.EXPECT().GetDeleted(gomock.Any(), installID).Return(install, nil)
 				return mockRepo
 			},
 			appRepo: func(ctl *gomock.Controller) *repos.MockAppRepo {
