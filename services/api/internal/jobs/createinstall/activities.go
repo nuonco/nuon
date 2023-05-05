@@ -26,7 +26,9 @@ func NewActivities(db *gorm.DB, tc tclient.Client) *activities {
 	}
 }
 
-type TriggerJobResponse struct{}
+type TriggerJobResponse struct {
+	WorkflowID string
+}
 
 func (a *activities) TriggerInstallJob(ctx context.Context, installID string) (*TriggerJobResponse, error) {
 	installUUID, _ := uuid.Parse(installID)
@@ -47,9 +49,11 @@ func (a *activities) TriggerInstallJob(ctx context.Context, installID string) (*
 		return nil, err
 	}
 
-	err = a.mgr.Provision(ctx, install, app.OrgID.String(), sandboxVersion)
+	workflow, err := a.mgr.Provision(ctx, install, app.OrgID.String(), sandboxVersion)
 	if err != nil {
 		return nil, err
 	}
-	return &TriggerJobResponse{}, nil
+	return &TriggerJobResponse{
+		WorkflowID: workflow,
+	}, nil
 }
