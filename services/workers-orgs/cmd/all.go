@@ -8,12 +8,12 @@ import (
 	"github.com/powertoolsdev/mono/pkg/sender"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-orgs/internal"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/iam"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/kms"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/server"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/teardown"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/iam"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/kms"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/runner"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/server"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/signup"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/teardown"
 	"github.com/spf13/cobra"
 	tworker "go.temporal.io/sdk/worker"
 )
@@ -54,6 +54,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 	}
 
 	wkflow := signup.NewWorkflow(cfg)
+	tdWkflow := teardown.NewWorkflow(cfg)
 	runiFlow := runner.NewWorkflow(cfg)
 	srvWkflow := server.NewWorkflow(cfg)
 	iamWkflow := iam.NewWorkflow(cfg)
@@ -64,7 +65,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 	wkr, err := worker.New(v, worker.WithConfig(&cfg.Config),
 		// register workflows
 		worker.WithWorkflow(wkflow.Signup),
-		worker.WithWorkflow(teardown.Teardown),
+		worker.WithWorkflow(tdWkflow.Teardown),
 		worker.WithWorkflow(runiFlow.ProvisionRunner),
 		worker.WithWorkflow(srvWkflow.ProvisionServer),
 		worker.WithWorkflow(iamWkflow.ProvisionIAM),

@@ -8,7 +8,7 @@ import "validate/validate.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1";
 
-message ProvisionServerRequest {
+message DeprovisionServerRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
@@ -22,7 +22,7 @@ message ProvisionServerRequest {
   ];
 }
 
-message ProvisionServerResponse {
+message DeprovisionServerResponse {
   string server_address = 1 [
     (validate.rules).string.min_len = 26,
     (tagger.tags) = "faker:\"len=26\""

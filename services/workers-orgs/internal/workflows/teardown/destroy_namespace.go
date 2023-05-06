@@ -2,9 +2,9 @@ package teardown
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	"go.temporal.io/sdk/activity"
 	apimetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +12,13 @@ import (
 )
 
 type DestroyNamespaceRequest struct {
-	NamespaceName string
+	NamespaceName string           `validate:"required"`
+	ClusterInfo   kube.ClusterInfo `validate:"required"`
+}
+
+func (r DestroyNamespaceRequest) validate() error {
+	validate := validator.New()
+	return validate.Struct(r)
 }
 
 type DestroyNamespaceResponse struct{}
@@ -29,20 +35,12 @@ func (a *Activities) DestroyNamespace(ctx context.Context, req DestroyNamespaceR
 	resp := DestroyNamespaceResponse{}
 	l := activity.GetLogger(ctx)
 
-	if err := validateDestroyNamespaceRequest(req); err != nil {
-		return resp, fmt.Errorf("invalid request: %w", err)
+	kubeCfg, err := a.getKubeConfig(&req.ClusterInfo)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get kube config: %w", err)
 	}
 
-	var err error
-	cfg := a.Kubeconfig
-	if cfg == nil {
-		cfg, err = kube.GetKubeConfig()
-		if err != nil {
-			return resp, fmt.Errorf("failed to get kube config: %w", err)
-		}
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := kubernetes.NewForConfig(kubeCfg)
 	if err != nil {
 		return resp, fmt.Errorf("failed to create kube client: %w", err)
 	}
@@ -54,18 +52,6 @@ func (a *Activities) DestroyNamespace(ctx context.Context, req DestroyNamespaceR
 
 	l.Debug("finished destroying namespace", "response", resp)
 	return resp, nil
-}
-
-var (
-	ErrInvalidNamespaceName = errors.New("invalid namespace name")
-)
-
-func validateDestroyNamespaceRequest(req DestroyNamespaceRequest) error {
-	if req.NamespaceName == "" {
-		return fmt.Errorf("%w: kubernetes namespace must be specified", ErrInvalidNamespaceName)
-	}
-
-	return nil
 }
 
 type nsDestroyer struct{}

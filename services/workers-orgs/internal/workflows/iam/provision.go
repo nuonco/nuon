@@ -2,33 +2,12 @@ package iam
 
 import (
 	"fmt"
-	"time"
 
 	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
-	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/roles"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
-
-const (
-	defaultActivityTimeout time.Duration = time.Second * 10
-)
-
-func defaultIAMPath(orgID string) string {
-	return fmt.Sprintf("/orgs/%s/", orgID)
-}
-
-// NewWorkflow returns a new workflow executor
-func NewWorkflow(cfg workers.Config) wkflow {
-	return wkflow{
-		cfg: cfg,
-	}
-}
-
-type wkflow struct {
-	cfg workers.Config
-}
 
 func (w wkflow) provisionSecretsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
 	l := log.With(workflow.GetLogger(ctx))

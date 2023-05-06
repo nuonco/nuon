@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/powertoolsdev/mono/pkg/kube"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
 	"k8s.io/client-go/kubernetes"
@@ -32,9 +31,8 @@ type UninstallConfig struct {
 	Namespace   string
 	ReleaseName string
 	Logger      Logger
-
-	// These are exposed for testing. Do not use otherwise
 	Kubeconfig  *rest.Config
+
 	uninstaller uninstallRunner
 }
 
@@ -59,22 +57,11 @@ func (u *uninstaller) Uninstall(ctx context.Context, cfg *UninstallConfig) (*rel
 		l = &fmtLogger{}
 	}
 
-	var err error
-	kCfg := cfg.Kubeconfig
-	if kCfg == nil {
-		kCfg, err = kube.GetKubeConfig()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get kube config: %w", err)
-		}
-		kCfg.Burst = 1000
-	}
-
-	clientset, err := kubernetes.NewForConfig(kCfg)
+	clientset, err := kubernetes.NewForConfig(cfg.Kubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create kube client: %w", err)
+		return nil, fmt.Errorf("unable to create kube client: %w", err)
 	}
-
-	rcg := &restClientGetter{RestConfig: kCfg, Clientset: clientset}
+	rcg := &restClientGetter{RestConfig: cfg.Kubeconfig, Clientset: clientset}
 	actionLogger := func(format string, v ...interface{}) { l.Debug(format, v) }
 
 	actionConfig := new(action.Configuration)
