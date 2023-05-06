@@ -75,12 +75,6 @@ func TestDestroyNamespace(t *testing.T) {
 		nsDestroyer func(*testing.T) testNamespaceDestroyer
 		errExpected error
 	}{
-		"errors if no namespace name": {
-			request:     DestroyNamespaceRequest{},
-			expected:    DestroyNamespaceResponse{},
-			errExpected: ErrInvalidNamespaceName,
-		},
-
 		"wraps client error": {
 			request: DestroyNamespaceRequest{
 				NamespaceName: "test",

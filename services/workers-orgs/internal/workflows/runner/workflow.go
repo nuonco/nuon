@@ -41,8 +41,8 @@ type wkflow struct {
 // Runner is a workflow that creates an app install sandbox using terraform
 //
 //nolint:funlen
-func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.InstallRunnerRequest) (*runnerv1.InstallRunnerResponse, error) {
-	resp := &runnerv1.InstallRunnerResponse{}
+func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRunnerRequest) (*runnerv1.ProvisionRunnerResponse, error) {
+	resp := &runnerv1.ProvisionRunnerResponse{}
 
 	if err := req.Validate(); err != nil {
 		return resp, fmt.Errorf("unable to validate request: %w", err)

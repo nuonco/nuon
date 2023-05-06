@@ -12,10 +12,10 @@ import (
 	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/iam"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/kms"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/server"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/iam"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/kms"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/runner"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -86,8 +86,8 @@ func Test_Workflow(t *testing.T) {
 		})
 
 	env.OnWorkflow(run.ProvisionRunner, mock.Anything, mock.Anything).
-		Return(func(_ workflow.Context, r *runnerv1.InstallRunnerRequest) (*runnerv1.InstallRunnerResponse, error) {
-			var resp runnerv1.InstallRunnerResponse
+		Return(func(_ workflow.Context, r *runnerv1.ProvisionRunnerRequest) (*runnerv1.ProvisionRunnerResponse, error) {
+			var resp runnerv1.ProvisionRunnerResponse
 			assert.Nil(t, r.Validate())
 			assert.Equal(t, req.OrgId, r.OrgId)
 			return &resp, nil
