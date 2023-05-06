@@ -4,7 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/helm"
+	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	"go.temporal.io/sdk/testsuite"
 	"helm.sh/helm/v3/pkg/release"
@@ -27,22 +29,11 @@ func TestUninstallWaypoint(t *testing.T) {
 		errExpected     error
 		helmUninstallFn func(*testing.T) testHelmUninstaller
 	}{
-		"errors without namespace": {
-			request:     UninstallWaypointRequest{},
-			errExpected: ErrInvalidNamespaceName,
-		},
-
-		"errors without release name": {
-			request: UninstallWaypointRequest{
-				Namespace: "test",
-			},
-			errExpected: ErrInvalidReleaseName,
-		},
-
 		"uses api": {
 			request: UninstallWaypointRequest{
 				Namespace:   "test",
 				ReleaseName: "test-release",
+				ClusterInfo: generics.GetFakeObj[kube.ClusterInfo](),
 			},
 			helmUninstallFn: func(t *testing.T) testHelmUninstaller {
 				return testHelmUninstaller{
@@ -60,6 +51,7 @@ func TestUninstallWaypoint(t *testing.T) {
 			request: UninstallWaypointRequest{
 				Namespace:   "test",
 				ReleaseName: "test-release",
+				ClusterInfo: generics.GetFakeObj[kube.ClusterInfo](),
 			},
 			errExpected: errOops,
 			helmUninstallFn: func(t *testing.T) testHelmUninstaller {

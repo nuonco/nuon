@@ -22,7 +22,7 @@ func TestRunner(t *testing.T) {
 
 	a := NewActivities(nil, workers.Config{})
 
-	req := generics.GetFakeObj[*runnerv1.InstallRunnerRequest]()
+	req := generics.GetFakeObj[*runnerv1.ProvisionRunnerRequest]()
 
 	orgShortID := req.OrgId
 	serverCookie := uuid.NewString()
@@ -95,7 +95,7 @@ func TestRunner(t *testing.T) {
 	env.ExecuteWorkflow(wkflow.ProvisionRunner, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	var resp runnerv1.InstallRunnerResponse
+	var resp runnerv1.ProvisionRunnerResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	// idk why this is returning incorrect, i can't figure out where it's set
 	// require.Equal(t, validProvisionOutput, resp.TerraformOutputs)

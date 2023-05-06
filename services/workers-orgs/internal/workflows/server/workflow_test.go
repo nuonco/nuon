@@ -8,7 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/runner"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
