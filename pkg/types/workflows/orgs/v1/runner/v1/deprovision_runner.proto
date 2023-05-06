@@ -7,7 +7,7 @@ import "validate/validate.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/runner/v1";
 
-message InstallRunnerRequest {
+message DeprovisionRunnerRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
@@ -24,4 +24,4 @@ message InstallRunnerRequest {
   ];
 }
 
-message InstallRunnerResponse {}
+message DeprovisionRunnerResponse {}

@@ -3,9 +3,13 @@ package iam
 import "github.com/go-playground/validator/v10"
 
 type Activities struct {
-	iamPolicyCreator               iamPolicyCreator
-	iamRoleCreator                 iamRoleCreator
+	iamPolicyCreator iamPolicyCreator
+	iamPolicyDeleter iamPolicyDeleter
+	iamRoleCreator   iamRoleCreator
+	iamRoleDeleter   iamRoleDeleter
+
 	iamRolePolicyAttachmentCreator iamRolePolicyAttachmentCreator
+	iamRolePolicyAttachmentDeleter iamRolePolicyAttachmentDeleter
 
 	validator *validator.Validate
 }

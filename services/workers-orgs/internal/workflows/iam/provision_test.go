@@ -7,14 +7,14 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/runner"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 )
 
-func Test_Workflow(t *testing.T) {
+func Test_Provision(t *testing.T) {
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 	cfg := generics.GetFakeObj[workers.Config]()

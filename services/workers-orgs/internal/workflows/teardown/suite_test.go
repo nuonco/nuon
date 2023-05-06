@@ -7,7 +7,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/helm/waypoint"
 	"github.com/powertoolsdev/mono/pkg/kube"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/server"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/server"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/teardown"
 	"go.temporal.io/sdk/testsuite"
 

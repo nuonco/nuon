@@ -11,10 +11,10 @@ import (
 	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
 	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/iam"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/kms"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/runner"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/signup/server"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/iam"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/kms"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/runner"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/server"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
@@ -92,7 +92,7 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 	resp.Server = serverResp
 
 	l.Debug("installing waypoint org runner")
-	_, err = execInstallWaypointRunnerWorkflow(ctx, w.cfg, &runnerv1.InstallRunnerRequest{
+	_, err = execInstallWaypointRunnerWorkflow(ctx, w.cfg, &runnerv1.ProvisionRunnerRequest{
 		OrgId:         req.OrgId,
 		OdrIamRoleArn: iamResp.OdrRoleArn,
 		Region:        req.Region,
@@ -155,9 +155,9 @@ func sendNotification(ctx workflow.Context, act *Activities, snr SendNotificatio
 func execInstallWaypointRunnerWorkflow(
 	ctx workflow.Context,
 	cfg workers.Config,
-	iwrr *runnerv1.InstallRunnerRequest,
-) (*runnerv1.InstallRunnerResponse, error) {
-	var resp runnerv1.InstallRunnerResponse
+	iwrr *runnerv1.ProvisionRunnerRequest,
+) (*runnerv1.ProvisionRunnerResponse, error) {
+	var resp runnerv1.ProvisionRunnerResponse
 
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 10,
