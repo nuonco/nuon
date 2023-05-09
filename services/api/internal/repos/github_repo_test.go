@@ -50,13 +50,13 @@ func toPtr[T any](t T) *T {
 
 func TestRepos(t *testing.T) {
 	tests := map[string]struct {
-		input            int64
+		input            string
 		githubClient     *http.Client
 		expectedResponse []*models.Repo
 		errExpected      error
 	}{
 		"token fails": {
-			input: 1234567,
+			input: "1234567",
 			githubClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatchHandler(
 					mock.PostAppInstallationsAccessTokensByInstallationId,
@@ -72,7 +72,7 @@ func TestRepos(t *testing.T) {
 			errExpected: errors.New("received non 2xx response status \"401 Unauthorized\""),
 		},
 		"happy path with results": {
-			input: 1234567,
+			input: "1234567",
 			githubClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatch(
 					mock.PostAppInstallationsAccessTokensByInstallationId,
@@ -121,7 +121,7 @@ func TestRepos(t *testing.T) {
 			errExpected: nil,
 		},
 		"empty results works": {
-			input: 1234567,
+			input: "1234567",
 			githubClient: mock.NewMockedHTTPClient(
 				mock.WithRequestMatch(
 					mock.PostAppInstallationsAccessTokensByInstallationId,
@@ -171,7 +171,7 @@ func TestRepos(t *testing.T) {
 
 func TestGetCommit(t *testing.T) {
 	tests := map[string]struct {
-		githubInstallID  int64
+		githubInstallID  string
 		githubRepoOwner  string
 		githubRepo       string
 		githubBranch     string
@@ -180,7 +180,7 @@ func TestGetCommit(t *testing.T) {
 		errExpected      error
 	}{
 		"auth error": {
-			githubInstallID: 1234567,
+			githubInstallID: "1234567",
 			githubRepoOwner: "octocat",
 			githubRepo:      "Hello-World",
 			githubBranch:    "master",
@@ -199,7 +199,7 @@ func TestGetCommit(t *testing.T) {
 			errExpected: errors.New("received non 2xx response status \"401 Unauthorized\""),
 		},
 		"happy path": {
-			githubInstallID: 1234567,
+			githubInstallID: "1234567",
 			githubRepoOwner: "octocat",
 			githubRepo:      "Hello-World",
 			githubBranch:    "master",
@@ -265,7 +265,7 @@ func TestGetCommit(t *testing.T) {
 
 func TestGetRepo(t *testing.T) {
 	tests := map[string]struct {
-		githubInstallID  int64
+		githubInstallID  string
 		githubRepoOwner  string
 		githubRepoName   string
 		githubClient     *http.Client
@@ -273,7 +273,7 @@ func TestGetRepo(t *testing.T) {
 		errExpected      error
 	}{
 		"auth error": {
-			githubInstallID: 1234567,
+			githubInstallID: "1234567",
 			githubRepoOwner: "octocat",
 			githubRepoName:  "Hello-World",
 			githubClient: mock.NewMockedHTTPClient(
@@ -291,7 +291,7 @@ func TestGetRepo(t *testing.T) {
 			errExpected: errors.New("received non 2xx response status \"401 Unauthorized\""),
 		},
 		"happy path": {
-			githubInstallID: 1234567,
+			githubInstallID: "1234567",
 			githubRepoOwner: "octocat",
 			githubRepoName:  "Hello-World",
 			githubClient: mock.NewMockedHTTPClient(
