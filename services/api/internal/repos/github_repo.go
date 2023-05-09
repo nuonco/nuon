@@ -2,7 +2,9 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	gh "github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/google/go-github/v41/github"
@@ -14,9 +16,9 @@ import (
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_github_repo.go -source=github_repo.go -package=repos
 type GithubRepo interface {
-	Repos(context.Context, int64) ([]*models.Repo, error)
-	GetCommit(context.Context, int64, string, string, string) (*github.RepositoryCommit, error)
-	GetRepo(context.Context, int64, string, string) (*github.Repository, error)
+	Repos(context.Context, string) ([]*models.Repo, error)
+	GetCommit(context.Context, string, string, string, string) (*github.RepositoryCommit, error)
+	GetRepo(context.Context, string, string, string) (*github.Repository, error)
 }
 
 var _ GithubRepo = (*githubRepo)(nil)
@@ -35,8 +37,12 @@ func NewGithubRepo(transport *gh.AppsTransport, logger *zap.Logger, client *http
 	}
 }
 
-func (gr *githubRepo) Repos(ctx context.Context, githubInstallationID int64) ([]*models.Repo, error) {
-	installtp := gh.NewFromAppsTransport(gr.Transport, githubInstallationID)
+func (gr *githubRepo) Repos(ctx context.Context, githubInstallID string) ([]*models.Repo, error) {
+	giid, err := parseGithubInstallID(githubInstallID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid github install ID: %w", err)
+	}
+	installtp := gh.NewFromAppsTransport(gr.Transport, giid)
 
 	gr.client.Transport = installtp
 
@@ -63,10 +69,17 @@ func (gr *githubRepo) Repos(ctx context.Context, githubInstallationID int64) ([]
 	return r, nil
 }
 
-func (gr *githubRepo) GetCommit(ctx context.Context, githubInstallationID int64, ghRepoOwner, ghRepo, ghBranch string) (*github.RepositoryCommit, error) {
-	installtp := gh.NewFromAppsTransport(gr.Transport, githubInstallationID)
-	gr.client.Transport = installtp
+func (gr *githubRepo) GetCommit(ctx context.Context, githubInstallID string, ghRepoOwner, ghRepo, ghBranch string) (*github.RepositoryCommit, error) {
 	client := github.NewClient(gr.client)
+	if githubInstallID != "" {
+		giid, err := parseGithubInstallID(githubInstallID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid github install ID: %w", err)
+		}
+		installtp := gh.NewFromAppsTransport(gr.Transport, giid)
+		gr.client.Transport = installtp
+		client = github.NewClient(gr.client)
+	}
 
 	commit, _, err := client.Repositories.GetCommit(ctx, ghRepoOwner, ghRepo, ghBranch, &github.ListOptions{})
 	if err != nil {
@@ -76,15 +89,32 @@ func (gr *githubRepo) GetCommit(ctx context.Context, githubInstallationID int64,
 	return commit, err
 }
 
-func (gr *githubRepo) GetRepo(ctx context.Context, githubInstallationID int64, ghRepoOwner string, ghRepoName string) (*github.Repository, error) {
-	installtp := gh.NewFromAppsTransport(gr.Transport, githubInstallationID)
-	gr.client.Transport = installtp
+func (gr *githubRepo) GetRepo(ctx context.Context, githubInstallID string, ghRepoOwner string, ghRepoName string) (*github.Repository, error) {
+	// public repo using our generic github application credentials to call the API
 	client := github.NewClient(gr.client)
 
-	repo, _, err := client.Repositories.Get(ctx, ghRepoOwner, ghRepoName)
-	if err != nil {
-		return nil, err
+	if githubInstallID != "" {
+		// private repo using our installed github app permission to access it
+		giid, parsingErr := parseGithubInstallID(githubInstallID)
+		if parsingErr != nil {
+			gr.logger.Error("failed to parse GithubInstallID",
+				zap.String("GithubInstallID", githubInstallID),
+				zap.String("error", parsingErr.Error()))
+			return nil, fmt.Errorf("error parsing GithubInstallID during GetRepo: %s. %w", githubInstallID, parsingErr)
+		}
+
+		installtp := gh.NewFromAppsTransport(gr.Transport, giid)
+		gr.client.Transport = installtp
 	}
 
+	repo, _, err := client.Repositories.Get(ctx, ghRepoOwner, ghRepoName)
 	return repo, err
+}
+
+func parseGithubInstallID(githubInstallID string) (int64, error) {
+	giid, parsingErr := strconv.ParseInt(githubInstallID, 10, 64)
+	if parsingErr != nil {
+		return 0, fmt.Errorf("invalid GithubInstallID: %s. %w", githubInstallID, parsingErr)
+	}
+	return giid, nil
 }
