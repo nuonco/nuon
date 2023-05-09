@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	gh "github.com/bradleyfalzon/ghinstallation/v2"
@@ -141,7 +140,7 @@ func (i *deploymentService) GetInstallDeployments(ctx context.Context, ids []str
 	return deployments, pg, nil
 }
 
-func (i *deploymentService) getRepoBranch(ctx context.Context, ghRepoOwner string, ghRepoName string, ghInstallID int64) (string, error) {
+func (i *deploymentService) getRepoBranch(ctx context.Context, ghRepoOwner string, ghRepoName string, ghInstallID string) (string, error) {
 	// get repo info from github
 	ghRepo, err := repos.GithubRepo.GetRepo(i.githubRepo, ctx, ghInstallID, ghRepoOwner, ghRepoName)
 	if err != nil {
@@ -156,7 +155,7 @@ func (i *deploymentService) getRepoBranch(ctx context.Context, ghRepoOwner strin
 	return *ghRepo.DefaultBranch, nil
 }
 
-func (i *deploymentService) getCommitHash(ctx context.Context, repoOwner string, repoName string, branch string, ghInstallID int64, deployment *models.Deployment) (*models.Deployment, error) {
+func (i *deploymentService) getCommitHash(ctx context.Context, repoOwner string, repoName string, branch string, ghInstallID string, deployment *models.Deployment) (*models.Deployment, error) {
 	// get commit info from github
 	commit, err := repos.GithubRepo.GetCommit(i.githubRepo,
 		ctx,
@@ -194,7 +193,7 @@ func (i *deploymentService) getCommitHash(ctx context.Context, repoOwner string,
 	return deployment, nil
 }
 
-func (i *deploymentService) updateComponentConfig(ctx context.Context, ghInstallID int64, isPrivate bool, component *models.Component, deployment *models.Deployment) (*models.Deployment, error) {
+func (i *deploymentService) updateComponentConfig(ctx context.Context, ghInstallID string, isPrivate bool, component *models.Component, deployment *models.Deployment) (*models.Deployment, error) {
 	// unmarshal existing JSON
 	dbConfig, _ := component.Config.MarshalJSON()
 	i.log.Info("updating component configuration",
@@ -209,7 +208,7 @@ func (i *deploymentService) updateComponentConfig(ctx context.Context, ghInstall
 		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GitRef = deployment.CommitHash
 		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GithubAppKeyId = i.githubAppID
 		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GithubAppKeySecretName = i.githubAppKeySecretName
-		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GithubInstallId = fmt.Sprint(ghInstallID)
+		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GithubInstallId = ghInstallID
 	} else {
 		// for public repos set only the git_ref
 		componentConfiguration.BuildCfg.GetDockerCfg().VcsCfg.GetPublicGitConfig().GitRef = deployment.CommitHash
@@ -236,35 +235,29 @@ func (i *deploymentService) updateComponentConfig(ctx context.Context, ghInstall
 }
 
 func (i *deploymentService) processGithubRepo(ctx context.Context, vcsCfg *vcsv1.Config, deployment *models.Deployment, component *models.Component) (*models.Deployment, error) {
-	connectedGithubConfig := vcsCfg.GetConnectedGithubConfig()
-	publicGitConfig := vcsCfg.GetPublicGitConfig()
-
-	i.log.Debug("processGithubRepo 1", zap.String("Org.Name", component.App.Org.Name), zap.String("Org.GithubInstallID", component.App.Org.GithubInstallID))
-	// read github_install_id from config
-	ghInstallID, parsingErr := strconv.ParseInt(component.App.Org.GithubInstallID, 10, 64)
-	if parsingErr != nil {
-		i.log.Error("failed to parse GithubInstallID",
-			zap.String("GithubInstallID", component.App.Org.GithubInstallID),
-			zap.String("error", parsingErr.Error()))
-		return nil, fmt.Errorf("error parsing GithubInstallID: %w", parsingErr)
-	}
-
 	var repo string
-	isPrivate := true
-	if connectedGithubConfig != nil {
+	connectedGithubConfig := vcsCfg.GetConnectedGithubConfig()
+	githubInstallID := "" // start with empty string which also means public git repo
+
+	// if the component config is for a connected github repo,
+	// then we have a githubInstallID and should make github API calls using it
+	isPrivate := connectedGithubConfig != nil
+	if isPrivate {
+		// Use the githubInstallID for github API calls
 		repo = connectedGithubConfig.Repo
+		githubInstallID = component.App.Org.GithubInstallID
 	} else {
-		isPrivate = false
+		publicGitConfig := vcsCfg.GetPublicGitConfig()
 		// TODO: temporary workaround, will refactor after the component config retro
 		repo = strings.ReplaceAll(publicGitConfig.Repo, "https://github.com/", "")
 		repo = strings.ReplaceAll(repo, ".git", "")
 	}
 
 	githubInfo := strings.Split(repo, "/") // githubInfo = [RepoOwner, RepoName]
-
+	i.log.Info("querying github for repo details", zap.String("repo", repo), zap.String("githubInstallID", githubInstallID))
 	// get default branch from github
 	var defaultBranch string
-	defaultBranch, err := i.getRepoBranch(ctx, githubInfo[0], githubInfo[1], ghInstallID)
+	defaultBranch, err := i.getRepoBranch(ctx, githubInfo[0], githubInfo[1], githubInstallID)
 	if err != nil {
 		i.log.Error("failed to get github repo details",
 			zap.String("repo", repo),
@@ -274,21 +267,21 @@ func (i *deploymentService) processGithubRepo(ctx context.Context, vcsCfg *vcsv1
 	}
 
 	// get commit hash and update deployment record
-	deployment, err = i.getCommitHash(ctx, githubInfo[0], githubInfo[1], defaultBranch, ghInstallID, deployment)
+	deployment, err = i.getCommitHash(ctx, githubInfo[0], githubInfo[1], defaultBranch, githubInstallID, deployment)
 	if err != nil {
 		i.log.Error("failed to get github commit hash",
 			zap.String("repo", repo),
-			zap.Int64("ghInstallID", ghInstallID),
+			zap.String("ghInstallID", githubInstallID),
 			zap.Any("deployment", deployment),
 			zap.String("error", err.Error()))
 		return nil, err
 	}
 
 	// update component config with github info
-	deployment, err = i.updateComponentConfig(ctx, ghInstallID, isPrivate, component, deployment)
+	deployment, err = i.updateComponentConfig(ctx, githubInstallID, isPrivate, component, deployment)
 	if err != nil {
 		i.log.Error("failed to update component configuration",
-			zap.Int64("ghInstallID", ghInstallID),
+			zap.String("ghInstallID", githubInstallID),
 			zap.Any("component", component),
 			zap.Any("deployment", deployment),
 			zap.String("error", err.Error()))

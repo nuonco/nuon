@@ -14,16 +14,17 @@ func makePointerString(s string) *string {
 }
 
 type mockRepoGetter struct {
-	fakeGet func(int64) ([]*models.Repo, error)
+	fakeGet func(string) ([]*models.Repo, error)
 }
 
-func (m *mockRepoGetter) Repos(ctx context.Context, githubInstallationID int64) ([]*models.Repo, error) {
+func (m *mockRepoGetter) Repos(ctx context.Context, githubInstallationID string) ([]*models.Repo, error) {
 	if m.fakeGet != nil {
 		return m.fakeGet(githubInstallationID)
 	}
 
 	return []*models.Repo{}, nil
 }
+
 func TestServiceRepos(t *testing.T) {
 	tests := map[string]struct {
 		input            string
@@ -34,7 +35,7 @@ func TestServiceRepos(t *testing.T) {
 		"happy path": {
 			input: "1234567",
 			mockRepoGetter: &mockRepoGetter{
-				fakeGet: func(i int64) ([]*models.Repo, error) {
+				fakeGet: func(i string) ([]*models.Repo, error) {
 					return []*models.Repo{
 						{URL: makePointerString("https://api.github.com/repos/octocat/Hello-World")},
 					}, nil
@@ -48,7 +49,7 @@ func TestServiceRepos(t *testing.T) {
 		"empty results": {
 			input: "1234567",
 			mockRepoGetter: &mockRepoGetter{
-				fakeGet: func(i int64) ([]*models.Repo, error) {
+				fakeGet: func(i string) ([]*models.Repo, error) {
 					return []*models.Repo{}, nil
 				},
 			},
@@ -57,8 +58,8 @@ func TestServiceRepos(t *testing.T) {
 		"error returns up through service": {
 			input: "1234567",
 			mockRepoGetter: &mockRepoGetter{
-				fakeGet: func(i int64) ([]*models.Repo, error) {
-					return []*models.Repo{}, errors.New("API error")
+				fakeGet: func(i string) ([]*models.Repo, error) {
+					return nil, errors.New("API error")
 				},
 			},
 			errExpected: errors.New("API error"),
