@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs"
 	"gorm.io/gorm"
 )
@@ -15,7 +14,7 @@ type Install struct {
 	CreatedByID string
 
 	Name  string
-	AppID uuid.UUID
+	AppID string
 	App   App
 
 	Domain   Domain          // all the domain stuff

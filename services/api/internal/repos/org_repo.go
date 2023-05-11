@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
 	"gorm.io/gorm"
@@ -12,8 +11,8 @@ import (
 
 type OrgRepo interface {
 	Create(context.Context, *models.Org) (*models.Org, error)
-	Delete(context.Context, uuid.UUID) (bool, error)
-	Get(context.Context, uuid.UUID) (*models.Org, error)
+	Delete(context.Context, string) (bool, error)
+	Get(context.Context, string) (*models.Org, error)
 	GetPageByUser(context.Context, string, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
 }
 
@@ -40,11 +39,12 @@ func (o orgRepo) Create(ctx context.Context, org *models.Org) (*models.Org, erro
 	if err != nil {
 		return nil, err
 	}
+	//TODO 174 check if this works properly after migration to shortIDs
 	org.IsNew = org.ID != origID
 	return org, nil
 }
 
-func (o orgRepo) Get(ctx context.Context, orgID uuid.UUID) (*models.Org, error) {
+func (o orgRepo) Get(ctx context.Context, orgID string) (*models.Org, error) {
 	var org models.Org
 	err := o.db.WithContext(ctx).First(&org, "id = ?", orgID).Error
 	if err != nil {
@@ -77,9 +77,9 @@ func (o orgRepo) GetPageByUser(ctx context.Context, userID string, opts *models.
 	return orgs, &page, nil
 }
 
-func (o orgRepo) Delete(ctx context.Context, orgID uuid.UUID) (bool, error) {
+func (o orgRepo) Delete(ctx context.Context, orgID string) (bool, error) {
 	org := models.Org{
-		Model: models.Model{ID: orgID},
+		ModelV2: models.ModelV2{ID: orgID},
 	}
 	if err := o.db.WithContext(ctx).
 		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).
@@ -87,5 +87,5 @@ func (o orgRepo) Delete(ctx context.Context, orgID uuid.UUID) (bool, error) {
 		return false, err
 	}
 
-	return org.ID != uuid.Nil, nil
+	return org.ID != "", nil
 }

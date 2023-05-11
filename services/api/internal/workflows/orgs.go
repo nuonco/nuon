@@ -2,9 +2,7 @@ package workflows
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	tclient "go.temporal.io/sdk/client"
@@ -30,11 +28,6 @@ type OrgWorkflowManager interface {
 var _ OrgWorkflowManager = (*orgWorkflowManager)(nil)
 
 func (o *orgWorkflowManager) Provision(ctx context.Context, orgID string) (string, error) {
-	orgID, err := shortid.ParseString(orgID)
-	if err != nil {
-		return "", fmt.Errorf("unable to parse shortid from orgID: %w", err)
-	}
-
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: workflows.DefaultTaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
@@ -59,11 +52,6 @@ type orgDeprovisionArgs struct {
 }
 
 func (o *orgWorkflowManager) Deprovision(ctx context.Context, orgID string) (string, error) {
-	orgID, err := shortid.ParseString(orgID)
-	if err != nil {
-		return "", fmt.Errorf("unable to parse shortid from orgID: %w", err)
-	}
-
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: workflows.DefaultTaskQueue,
 		// Memo is non-indexed metadata available when listing workflows

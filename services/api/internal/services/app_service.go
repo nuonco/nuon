@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
@@ -43,13 +43,11 @@ func NewAppService(db *gorm.DB, tc tclient.Client, log *zap.Logger) *appService 
 }
 
 // GetApp: return an app by ID
-func (a *appService) GetApp(ctx context.Context, inputID string) (*models.App, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	appID, _ := uuid.Parse(inputID)
+func (a *appService) GetApp(ctx context.Context, appID string) (*models.App, error) {
 	app, err := a.repo.Get(ctx, appID)
 	if err != nil {
 		a.log.Error("failed to retrieve app",
-			zap.String("appID", appID.String()),
+			zap.String("appID", appID),
 			zap.String("error", err.Error()))
 		return nil, err
 	}
@@ -82,14 +80,11 @@ func (a *appService) updateApp(ctx context.Context, input models.AppInput) (*mod
 }
 
 func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*models.App, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	orgID, _ := uuid.Parse(input.OrgID)
-
 	// check if org exists
-	_, err := a.orgRepo.Get(ctx, orgID)
+	_, err := a.orgRepo.Get(ctx, input.OrgID)
 	if err != nil {
 		a.log.Error("failed to get org",
-			zap.String("orgID", orgID.String()),
+			zap.String("orgID", input.OrgID),
 			zap.String("error", err.Error()))
 		return nil, fmt.Errorf("failed to get org: %w", err)
 	}
@@ -99,9 +94,10 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 	}
 
 	var app models.App
+	app.ID, _ = shortid.NewNanoID("app")
 	app.Name = input.Name
 	app.CreatedByID = *input.CreatedByID
-	app.OrgID = orgID
+	app.OrgID = input.OrgID
 
 	finalApp, err := a.repo.Create(ctx, &app)
 	if err != nil {
@@ -114,26 +110,22 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 	return finalApp, nil
 }
 
-func (a *appService) DeleteApp(ctx context.Context, inputID string) (bool, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	appID, _ := uuid.Parse(inputID)
+func (a *appService) DeleteApp(ctx context.Context, appID string) (bool, error) {
 	deleted, err := a.repo.Delete(ctx, appID)
 	if err != nil {
 		a.log.Error("failed to delete app",
-			zap.String("appID", appID.String()),
+			zap.String("appID", appID),
 			zap.String("error", err.Error()))
 		return false, err
 	}
 	return deleted, nil
 }
 
-func (a appService) GetOrgApps(ctx context.Context, inputID string, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	orgID, _ := uuid.Parse(inputID)
+func (a appService) GetOrgApps(ctx context.Context, orgID string, options *models.ConnectionOptions) ([]*models.App, *utils.Page, error) {
 	app, pg, err := a.repo.GetPageByOrg(ctx, orgID, options)
 	if err != nil {
 		a.log.Error("failed to retrieve org's apps",
-			zap.String("orgID", orgID.String()),
+			zap.String("orgID", orgID),
 			zap.Any("options", *options),
 			zap.String("error", err.Error()))
 		return nil, nil, err

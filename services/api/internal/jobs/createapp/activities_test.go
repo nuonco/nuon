@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -16,7 +16,7 @@ import (
 
 func Test_ActivityTriggerAppJob(t *testing.T) {
 	err := errors.New("error")
-	appID := uuid.New()
+	appID, _ := shortid.NewNanoID("app")
 	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
@@ -71,7 +71,7 @@ func Test_ActivityTriggerAppJob(t *testing.T) {
 				mgr:  test.mockMgr(mockCtl),
 			}
 
-			_, err := act.TriggerAppJob(context.Background(), appID.String())
+			_, err := act.TriggerAppJob(context.Background(), appID)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

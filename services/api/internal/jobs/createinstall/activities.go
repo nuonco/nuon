@@ -49,7 +49,7 @@ func (a *activities) TriggerInstallJob(ctx context.Context, installID string) (*
 		return nil, err
 	}
 
-	workflow, err := a.mgr.Provision(ctx, install, app.OrgID.String(), sandboxVersion)
+	workflow, err := a.mgr.Provision(ctx, install, app.OrgID, sandboxVersion)
 	if err != nil {
 		return nil, err
 	}

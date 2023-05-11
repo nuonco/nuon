@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,10 +15,12 @@ import (
 func createApp(ctx context.Context, t *testing.T, state repoTestState) *models.App {
 	userID := uuid.NewString()
 	org := createOrg(ctx, t, state.orgRepo)
+	appID, _ := shortid.NewNanoID("app")
 	app, err := state.appRepo.Create(ctx, &models.App{
 		Name:        uuid.NewString(),
 		CreatedByID: userID,
 		OrgID:       org.ID,
+		ModelV2:     models.ModelV2{ID: appID},
 	})
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
@@ -36,11 +39,13 @@ func TestUpsertApp(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				userID := uuid.NewString()
 				org := createOrg(ctx, t, state.orgRepo)
+				appID, _ := shortid.NewNanoID("app")
 
 				appInput := &models.App{
 					Name:        uuid.NewString(),
 					CreatedByID: userID,
 					OrgID:       org.ID,
+					ModelV2:     models.ModelV2{ID: appID},
 				}
 				app, err := state.appRepo.Create(ctx, appInput)
 				assert.Nil(t, err)
@@ -53,8 +58,8 @@ func TestUpsertApp(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				origApp := createApp(ctx, t, state)
 				appInput := &models.App{
-					Model: models.Model{ID: origApp.ID},
-					Name:  origApp.Name + "a",
+					ModelV2: models.ModelV2{ID: origApp.ID},
+					Name:    origApp.Name + "a",
 				}
 				app, err := state.appRepo.Update(ctx, appInput)
 				assert.Nil(t, err)
@@ -100,8 +105,9 @@ func TestDeleteApp(t *testing.T) {
 		{
 			desc: "should error with canceled context",
 			fn: func(ctx context.Context, state repoTestState) {
+				appID, _ := shortid.NewNanoID("app")
 				state.ctxCloseFn()
-				deleted, err := state.appRepo.Delete(ctx, uuid.New())
+				deleted, err := state.appRepo.Delete(ctx, appID)
 				assert.False(t, deleted)
 				assert.NotNil(t, err)
 			},
@@ -140,7 +146,8 @@ func TestGetApp(t *testing.T) {
 		{
 			desc: "should error with not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				fetchedApp, err := state.appRepo.Get(ctx, uuid.New())
+				appID, _ := shortid.NewNanoID("app")
+				fetchedApp, err := state.appRepo.Get(ctx, appID)
 				assert.Nil(t, fetchedApp)
 				assert.NotNil(t, err)
 			},
@@ -183,7 +190,8 @@ func TestAppGetPageByOrg(t *testing.T) {
 			desc: "should error with a context canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				apps, page, err := state.appRepo.GetPageByOrg(ctx, uuid.New(), &models.ConnectionOptions{})
+				orgId, _ := shortid.NewNanoID("org")
+				apps, page, err := state.appRepo.GetPageByOrg(ctx, orgId, &models.ConnectionOptions{})
 				assert.NotNil(t, err)
 				assert.Nil(t, apps)
 				assert.Nil(t, page)

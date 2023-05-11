@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -31,7 +32,7 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 			inputFn: func() models.ComponentInput {
 				inp := generics.GetFakeObj[models.ComponentInput]()
 				inp.ID = nil
-				inp.AppID = app.ID.String()
+				inp.AppID = app.ID
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
@@ -49,7 +50,7 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 			inputFn: func() models.ComponentInput {
 				inp := generics.GetFakeObj[models.ComponentInput]()
 				inp.ID = nil
-				inp.AppID = app.ID.String()
+				inp.AppID = app.ID
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
@@ -125,28 +126,29 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 
 func TestComponentService_GetAppComponents(t *testing.T) {
 	errGetAppComponents := fmt.Errorf("error getting app components")
-	componentID := uuid.New()
+	appID, _ := shortid.NewNanoID("app")
 	component := generics.GetFakeObj[*models.Component]()
+	component.AppID = appID
 
 	tests := map[string]struct {
-		componentID string
+		appID       string
 		repoFn      func(*gomock.Controller) *repos.MockComponentRepo
 		errExpected error
 		assertFn    func(*testing.T, *models.Component)
 	}{
 		"happy path": {
-			componentID: componentID.String(),
+			appID: appID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
 				repo := repos.NewMockComponentRepo(ctl)
-				repo.EXPECT().ListByApp(gomock.Any(), componentID, &models.ConnectionOptions{}).Return([]*models.Component{component}, &utils.Page{}, nil)
+				repo.EXPECT().ListByApp(gomock.Any(), appID, &models.ConnectionOptions{}).Return([]*models.Component{component}, &utils.Page{}, nil)
 				return repo
 			},
 		},
 		"error": {
-			componentID: componentID.String(),
+			appID: appID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
 				repo := repos.NewMockComponentRepo(ctl)
-				repo.EXPECT().ListByApp(gomock.Any(), componentID, &models.ConnectionOptions{}).Return(nil, nil, errGetAppComponents)
+				repo.EXPECT().ListByApp(gomock.Any(), appID, &models.ConnectionOptions{}).Return(nil, nil, errGetAppComponents)
 				return repo
 			},
 			errExpected: errGetAppComponents,
@@ -162,7 +164,7 @@ func TestComponentService_GetAppComponents(t *testing.T) {
 				repo: repo,
 			}
 
-			components, _, err := svc.GetAppComponents(context.Background(), test.componentID, &models.ConnectionOptions{})
+			components, _, err := svc.GetAppComponents(context.Background(), test.appID, &models.ConnectionOptions{})
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

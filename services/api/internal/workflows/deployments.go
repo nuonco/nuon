@@ -39,11 +39,11 @@ var _ DeploymentWorkflowManager = (*deploymentWorkflowManager)(nil)
 
 func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *models.Deployment) (string, error) {
 	app := deployment.Component.App
-	shortIDs, err := shortid.ParseStrings(app.OrgID.String(), app.ID.String(), deployment.Component.ID.String(), deployment.ID.String())
+	shortIDs, err := shortid.ParseStrings(deployment.Component.ID.String(), deployment.ID.String())
 	if err != nil {
 		return "", fmt.Errorf("unable to parse ids to shortids: %w", err)
 	}
-	orgID, appID, componentID, deploymentID := shortIDs[0], shortIDs[1], shortIDs[2], shortIDs[3]
+	orgID, appID, componentID, deploymentID := app.OrgID, app.ID, shortIDs[0], shortIDs[1]
 
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: workflows.DefaultTaskQueue,

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"gorm.io/gorm"
@@ -14,7 +13,7 @@ import (
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_user_repo.go -source=user_repo.go -package=repos
 type UserRepo interface {
-	UpsertUserOrg(context.Context, string, uuid.UUID) (*models.UserOrg, error)
+	UpsertUserOrg(context.Context, string, string) (*models.UserOrg, error)
 }
 
 var _ UserRepo = (*userRepo)(nil)
@@ -29,7 +28,7 @@ type userRepo struct {
 	db *gorm.DB
 }
 
-func (u userRepo) UpsertUserOrg(ctx context.Context, userID string, orgID uuid.UUID) (*models.UserOrg, error) {
+func (u userRepo) UpsertUserOrg(ctx context.Context, userID string, orgID string) (*models.UserOrg, error) {
 	var uo models.UserOrg
 	uo.UserID = userID
 	uo.OrgID = orgID

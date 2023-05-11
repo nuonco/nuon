@@ -47,7 +47,7 @@ func Test_ActivityTriggerInstallJob(t *testing.T) {
 			},
 			mockMgr: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
 				wkflowmgr := workflows.NewMockInstallWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Provision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return("1234", nil)
+				wkflowmgr.EXPECT().Provision(gomock.Any(), install, app.OrgID, sandboxVersion).Return("1234", nil)
 				return wkflowmgr
 			},
 		},
@@ -132,7 +132,7 @@ func Test_ActivityTriggerInstallJob(t *testing.T) {
 			},
 			mockMgr: func(ctl *gomock.Controller) *workflows.MockInstallWorkflowManager {
 				wkflowmgr := workflows.NewMockInstallWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Provision(gomock.Any(), install, app.OrgID.String(), sandboxVersion).Return("", err)
+				wkflowmgr.EXPECT().Provision(gomock.Any(), install, app.OrgID, sandboxVersion).Return("", err)
 				return wkflowmgr
 			},
 			errExpected: err,

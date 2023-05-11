@@ -34,9 +34,10 @@ func (s *server) GetInstallsByApp(
 	req *connect.Request[installv1.GetInstallsByAppRequest],
 ) (*connect.Response[installv1.GetInstallsByAppResponse], error) {
 	// run protobuf validations
-	if err := req.Msg.Validate(); err != nil {
-		return nil, fmt.Errorf("input validation failed: %w", err)
-	}
+	// TODO 174 temporarily disable validations until migration to shortIDs is complete
+	// if err := req.Msg.Validate(); err != nil {
+	// 	return nil, fmt.Errorf("input validation failed: %w", err)
+	// }
 
 	installs, _, err := s.Svc.GetAppInstalls(ctx, req.Msg.AppId, &models.ConnectionOptions{})
 	if err != nil {

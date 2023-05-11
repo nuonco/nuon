@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
@@ -43,13 +43,10 @@ func NewOrgService(db *gorm.DB, tc tclient.Client, log *zap.Logger) *orgService 
 }
 
 func (o orgService) DeleteOrg(ctx context.Context, inputID string) (bool, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	orgID, _ := uuid.Parse(inputID)
-
-	deleted, err := o.repo.Delete(ctx, orgID)
+	deleted, err := o.repo.Delete(ctx, inputID)
 	if err != nil {
 		o.log.Error("failed to delete org",
-			zap.String("orgID", orgID.String()),
+			zap.String("orgID", inputID),
 			zap.String("error", err.Error()))
 		return false, err
 	}
@@ -61,13 +58,10 @@ func (o orgService) DeleteOrg(ctx context.Context, inputID string) (bool, error)
 }
 
 func (o *orgService) GetOrg(ctx context.Context, inputID string) (*models.Org, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	orgID, _ := uuid.Parse(inputID)
-
-	org, err := o.repo.Get(ctx, orgID)
+	org, err := o.repo.Get(ctx, inputID)
 	if err != nil {
 		o.log.Error("failed to retrieve org",
-			zap.String("orgID", orgID.String()),
+			zap.String("orgID", inputID),
 			zap.String("error", err.Error()))
 		return nil, err
 	}
@@ -80,10 +74,14 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 		Name: input.Name,
 	}
 	if input.ID != nil {
-		// parsing the uuid while ignoring the error handling since we do this at protobuf level
-		orgID, _ := uuid.Parse(*input.ID)
-		org.ID = orgID
+		org.ID = *input.ID
 	} else {
+		// TODO 174 make a canonical enum of the nanoID types and map that to the prefix strings
+		nanoID, err := shortid.NewNanoID("org")
+		if err != nil {
+			return nil, err
+		}
+		org.ID = nanoID
 		org.CreatedByID = input.OwnerID
 	}
 
@@ -107,7 +105,7 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 	if err != nil {
 		o.log.Error("failed to upsert org member",
 			zap.String("userID", input.OwnerID),
-			zap.String("orgID", org.ID.String()),
+			zap.String("orgID", org.ID),
 			zap.String("error", err.Error()))
 		return org, err
 	}

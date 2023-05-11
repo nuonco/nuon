@@ -28,6 +28,11 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 	deployment.Component.Config = byts
 	install := generics.GetFakeObj[models.Install]()
 	deployment.Component.App.Installs = []models.Install{install}
+	orgID, _ := shortid.NewNanoID("org")
+	appID, _ := shortid.NewNanoID("app")
+	deployment.Component.App.ID = appID
+	deployment.Component.AppID = appID
+	deployment.Component.App.OrgID = orgID
 
 	tests := map[string]struct {
 		clientFn    func() temporalClient
@@ -64,9 +69,8 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 				app := deployment.Component.App
 
 				assert.Equal(t, shortid.ParseUUID(deployment.ID), req.DeploymentId)
-				assert.Equal(t, shortid.ParseUUID(app.ID), req.AppId)
-				assert.Equal(t, shortid.ParseUUID(app.OrgID), req.OrgId)
-
+				assert.Equal(t, app.ID, req.AppId)
+				assert.Equal(t, app.OrgID, req.OrgId)
 				assert.Equal(t, shortid.ParseUUID(deployment.Component.ID), req.Component.Id)
 			},
 		},
