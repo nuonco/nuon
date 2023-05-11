@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
@@ -17,8 +16,7 @@ import (
 
 func Test_orgWorkflowManager_Provision(t *testing.T) {
 	errOrgProvisionTest := fmt.Errorf("error")
-	reqOrgID := uuid.New()
-	orgID := shortid.ParseUUID(reqOrgID)
+	orgID, _ := shortid.NewNanoID("org")
 
 	tests := map[string]struct {
 		clientFn    func() temporalClient
@@ -65,7 +63,7 @@ func Test_orgWorkflowManager_Provision(t *testing.T) {
 			client := test.clientFn()
 			mgr := NewOrgWorkflowManager(client)
 
-			_, err := mgr.Provision(context.Background(), reqOrgID.String())
+			_, err := mgr.Provision(context.Background(), orgID)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
@@ -78,8 +76,7 @@ func Test_orgWorkflowManager_Provision(t *testing.T) {
 
 func Test_orgWorkflowManager_Deprovision(t *testing.T) {
 	errOrgDeprovisionTest := fmt.Errorf("error")
-	reqOrgID := uuid.New()
-	orgID := shortid.ParseUUID(reqOrgID)
+	orgID, _ := shortid.NewNanoID("org")
 
 	tests := map[string]struct {
 		clientFn    func() temporalClient
@@ -126,7 +123,7 @@ func Test_orgWorkflowManager_Deprovision(t *testing.T) {
 			client := test.clientFn()
 			mgr := NewOrgWorkflowManager(client)
 
-			_, err := mgr.Deprovision(context.Background(), reqOrgID.String())
+			_, err := mgr.Deprovision(context.Background(), orgID)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -23,7 +24,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 		repoFn      func(*gomock.Controller) *repos.MockInstallRepo
 		errExpected error
 	}{
-		"create a new app": {
+		"create a new install": {
 			inputFn: func() models.InstallInput {
 				inp := generics.GetFakeObj[models.InstallInput]()
 				inp.ID = nil
@@ -35,7 +36,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 				return repo
 			},
 		},
-		"update an app": {
+		"update an install": {
 			inputFn: func() models.InstallInput {
 				inp := generics.GetFakeObj[models.InstallInput]()
 				return inp
@@ -97,7 +98,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 
 func TestInstallService_GetAppInstalls(t *testing.T) {
 	errGetAppInstalls := fmt.Errorf("error getting app installs")
-	appID := uuid.New()
+	appID, _ := shortid.NewNanoID("app")
 	install := generics.GetFakeObj[*models.Install]()
 
 	tests := map[string]struct {
@@ -107,7 +108,7 @@ func TestInstallService_GetAppInstalls(t *testing.T) {
 		assertFn    func(*testing.T, *models.Install)
 	}{
 		"happy path": {
-			appID: appID.String(),
+			appID: appID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				repo := repos.NewMockInstallRepo(ctl)
 				repo.EXPECT().ListByApp(gomock.Any(), appID, &models.ConnectionOptions{}).Return([]*models.Install{install}, nil, nil)
@@ -115,7 +116,7 @@ func TestInstallService_GetAppInstalls(t *testing.T) {
 			},
 		},
 		"error": {
-			appID: appID.String(),
+			appID: appID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				repo := repos.NewMockInstallRepo(ctl)
 				repo.EXPECT().ListByApp(gomock.Any(), appID, &models.ConnectionOptions{}).Return(nil, nil, errGetAppInstalls)

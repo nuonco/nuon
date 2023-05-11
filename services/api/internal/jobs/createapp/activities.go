@@ -3,7 +3,6 @@ package createapp
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	tclient "go.temporal.io/sdk/client"
@@ -27,9 +26,7 @@ type TriggerJobResponse struct {
 }
 
 func (a *activities) TriggerAppJob(ctx context.Context, appID string) (*TriggerJobResponse, error) {
-	appUUID, _ := uuid.Parse(appID)
-
-	finalApp, err := a.repo.Get(ctx, appUUID)
+	finalApp, err := a.repo.Get(ctx, appID)
 	if err != nil {
 		return nil, err
 	}

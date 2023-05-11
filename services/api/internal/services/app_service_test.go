@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -16,7 +16,7 @@ import (
 
 func TestAppService_GetApp(t *testing.T) {
 	errGetApp := fmt.Errorf("error getting app")
-	appID := uuid.New()
+	appID, _ := shortid.NewNanoID("app")
 	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
@@ -26,7 +26,7 @@ func TestAppService_GetApp(t *testing.T) {
 		assertFn    func(*testing.T, *models.App)
 	}{
 		"happy path": {
-			appID: appID.String(),
+			appID: appID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), appID).Return(app, nil)
@@ -34,7 +34,7 @@ func TestAppService_GetApp(t *testing.T) {
 			},
 		},
 		"error": {
-			appID: appID.String(),
+			appID: appID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), appID).Return(nil, errGetApp)
@@ -65,7 +65,7 @@ func TestAppService_GetApp(t *testing.T) {
 
 func TestAppService_GetOrgApps(t *testing.T) {
 	errGetOrgApps := fmt.Errorf("error getting apps")
-	orgID := uuid.New()
+	orgID, _ := shortid.NewNanoID("org")
 	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
@@ -75,7 +75,7 @@ func TestAppService_GetOrgApps(t *testing.T) {
 		assertFn    func(*testing.T, *models.App)
 	}{
 		"happy path": {
-			orgID: orgID.String(),
+			orgID: orgID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().GetPageByOrg(gomock.Any(), orgID, gomock.Any()).Return([]*models.App{app}, nil, nil)
@@ -83,7 +83,7 @@ func TestAppService_GetOrgApps(t *testing.T) {
 			},
 		},
 		"error": {
-			orgID: orgID.String(),
+			orgID: orgID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().GetPageByOrg(gomock.Any(), orgID, gomock.Any()).Return(nil, nil, errGetOrgApps)
@@ -128,7 +128,7 @@ func TestAppService_UpsertApp(t *testing.T) {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
 				inp.ID = nil
-				inp.OrgID = org.ID.String()
+				inp.OrgID = org.ID
 				return inp
 			},
 			orgRepoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
@@ -145,8 +145,8 @@ func TestAppService_UpsertApp(t *testing.T) {
 		"upsert happy path": {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
-				inp.ID = generics.ToPtr(app.ID.String())
-				inp.OrgID = org.ID.String()
+				inp.ID = generics.ToPtr(app.ID)
+				inp.OrgID = org.ID
 				return inp
 			},
 			orgRepoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
@@ -164,8 +164,8 @@ func TestAppService_UpsertApp(t *testing.T) {
 		"org not found": {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
-				inp.ID = generics.ToPtr(app.ID.String())
-				inp.OrgID = org.ID.String()
+				inp.ID = generics.ToPtr(app.ID)
+				inp.OrgID = org.ID
 				return inp
 			},
 			orgRepoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
@@ -182,8 +182,8 @@ func TestAppService_UpsertApp(t *testing.T) {
 		"upsert not found": {
 			inputFn: func() models.AppInput {
 				inp := generics.GetFakeObj[models.AppInput]()
-				inp.ID = generics.ToPtr(app.ID.String())
-				inp.OrgID = org.ID.String()
+				inp.ID = generics.ToPtr(app.ID)
+				inp.OrgID = org.ID
 				return inp
 			},
 			orgRepoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
@@ -224,7 +224,7 @@ func TestAppService_UpsertApp(t *testing.T) {
 
 func TestAppService_DeleteApp(t *testing.T) {
 	errDeleteApp := fmt.Errorf("error deleting app")
-	appID := uuid.New()
+	appID, _ := shortid.NewNanoID("app")
 
 	tests := map[string]struct {
 		appID       string
@@ -232,7 +232,7 @@ func TestAppService_DeleteApp(t *testing.T) {
 		errExpected error
 	}{
 		"happy path": {
-			appID: appID.String(),
+			appID: appID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Delete(gomock.Any(), appID).Return(true, nil)
@@ -240,7 +240,7 @@ func TestAppService_DeleteApp(t *testing.T) {
 			},
 		},
 		"delete error": {
-			appID: appID.String(),
+			appID: appID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				repo := repos.NewMockAppRepo(ctl)
 				repo.EXPECT().Delete(gomock.Any(), appID).Return(false, errDeleteApp)

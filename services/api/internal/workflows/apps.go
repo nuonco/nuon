@@ -3,7 +3,6 @@ package workflows
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -30,21 +29,18 @@ type appWorkflowManager struct {
 }
 
 func (a *appWorkflowManager) Provision(ctx context.Context, app *models.App) (string, error) {
-	orgID := shortid.ParseUUID(app.OrgID)
-	appID := shortid.ParseUUID(app.ID)
-
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: workflows.DefaultTaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
-			"org-id":     orgID,
-			"app-id":     appID,
+			"org-id":     app.OrgID,
+			"app-id":     app.ID,
 			"started-by": "api",
 		},
 	}
 	args := appsv1.ProvisionRequest{
-		OrgId: orgID,
-		AppId: appID,
+		OrgId: app.OrgID,
+		AppId: app.ID,
 	}
 
 	fut, err := a.tc.ExecuteWorkflow(ctx, opts, "Provision", &args)

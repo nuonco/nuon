@@ -8,7 +8,7 @@ import (
 // Org model to proto converts org domain model into org proto message
 func OrgModelToProto(org *models.Org) *orgv1.Org {
 	return &orgv1.Org{
-		Id:              org.ID.String(),
+		Id:              org.ID,
 		Name:            org.Name,
 		OwnerId:         org.CreatedByID,
 		GithubInstallId: org.GithubInstallID,

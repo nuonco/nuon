@@ -4,14 +4,13 @@ package models
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/datatypes"
 )
 
 type Component struct {
 	Model
 	Name        string
-	AppID       uuid.UUID
+	AppID       string
 	App         App `faker:"-"`
 	CreatedByID string
 	Config      datatypes.JSON `gorm:"not null;default:'{}'" json:"config"`

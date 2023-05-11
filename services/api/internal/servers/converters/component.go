@@ -23,7 +23,7 @@ func ComponentModelToProto(component *models.Component) (*componentv1.ComponentR
 		ComponentConfig: config,
 		UpdatedAt:       TimeToDatetime(component.UpdatedAt),
 		CreatedAt:       TimeToDatetime(component.CreatedAt),
-		AppId:           component.AppID.String(),
+		AppId:           component.AppID,
 	}
 
 	return res, nil
