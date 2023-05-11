@@ -7,6 +7,7 @@ ALTER TABLE installs DROP CONSTRAINT IF EXISTS fk_apps_installs;
 
 -- alter all references to orgs.id to TEXT
 ALTER TABLE apps ALTER COLUMN id TYPE TEXT;
+ALTER TABLE apps ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE components ALTER COLUMN app_id TYPE TEXT;
 ALTER TABLE installs ALTER COLUMN app_id TYPE TEXT;
 

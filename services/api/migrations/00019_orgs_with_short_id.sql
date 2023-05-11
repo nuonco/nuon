@@ -7,6 +7,7 @@ ALTER TABLE user_orgs DROP CONSTRAINT IF EXISTS fk_user_orgs_org;
 
 -- alter all references to orgs.id to TEXT
 ALTER TABLE orgs ALTER COLUMN id TYPE TEXT;
+ALTER TABLE orgs ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE apps ALTER COLUMN org_id TYPE TEXT;
 ALTER TABLE user_orgs ALTER COLUMN org_id TYPE TEXT;
 
