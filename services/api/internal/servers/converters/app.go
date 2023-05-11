@@ -8,12 +8,12 @@ import (
 // App model to proto converts app domain model into app proto message
 func AppModelToProto(app *models.App) *appv1.App {
 	return &appv1.App{
-		Id:              app.ID.String(),
-		Name:            app.Name,
-		OrgId:           app.OrgID.String(),
-		CreatedById:     app.CreatedByID,
-		UpdatedAt:       TimeToDatetime(app.UpdatedAt),
-		CreatedAt:       TimeToDatetime(app.CreatedAt),
+		Id:          app.ID,
+		Name:        app.Name,
+		OrgId:       app.OrgID,
+		CreatedById: app.CreatedByID,
+		UpdatedAt:   TimeToDatetime(app.UpdatedAt),
+		CreatedAt:   TimeToDatetime(app.CreatedAt),
 	}
 }
 

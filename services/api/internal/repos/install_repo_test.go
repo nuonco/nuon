@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -181,7 +182,8 @@ func TestInstallListByApp(t *testing.T) {
 			desc: "should error with a context canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				installs, page, err := state.installRepo.ListByApp(ctx, uuid.New(), &models.ConnectionOptions{})
+				appID, _ := shortid.NewNanoID("app")
+				installs, page, err := state.installRepo.ListByApp(ctx, appID, &models.ConnectionOptions{})
 				assert.NotNil(t, err)
 				assert.Nil(t, installs)
 				assert.Nil(t, page)

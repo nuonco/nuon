@@ -39,9 +39,10 @@ func (s *server) GetComponentsByApp(
 	req *connect.Request[componentv1.GetComponentsByAppRequest],
 ) (*connect.Response[componentv1.GetComponentsByAppResponse], error) {
 	// run protobuf validations
-	if err := req.Msg.Validate(); err != nil {
-		return nil, fmt.Errorf("input validation failed: %w", err)
-	}
+	// TODO 174 temporarily disable validations until migration to shortIDs is complete
+	// if err := req.Msg.Validate(); err != nil {
+	// 	return nil, fmt.Errorf("input validation failed: %w", err)
+	// }
 
 	components, _, err := s.Svc.GetAppComponents(ctx, req.Msg.AppId, &models.ConnectionOptions{})
 	if err != nil {

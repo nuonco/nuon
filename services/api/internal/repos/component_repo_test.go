@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -163,7 +164,8 @@ func TestComponentListByApp(t *testing.T) {
 			desc: "should error with a context canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				components, page, err := state.componentRepo.ListByApp(ctx, uuid.New(), &models.ConnectionOptions{})
+				appID, _ := shortid.NewNanoID("app")
+				components, page, err := state.componentRepo.ListByApp(ctx, appID, &models.ConnectionOptions{})
 				assert.NotNil(t, err)
 				assert.Nil(t, components)
 				assert.Nil(t, page)

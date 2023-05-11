@@ -42,7 +42,7 @@ func TestUpsertUserOrg(t *testing.T) {
 			desc: "should error with a context canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				userOrg, err := state.userRepo.UpsertUserOrg(ctx, uuid.NewString(), uuid.New())
+				userOrg, err := state.userRepo.UpsertUserOrg(ctx, uuid.NewString(), uuid.NewString())
 				assert.NotNil(t, err)
 				assert.Nil(t, userOrg)
 			},

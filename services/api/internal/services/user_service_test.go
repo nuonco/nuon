@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -16,7 +17,7 @@ import (
 
 func TestUserService_UpsertUserOrg(t *testing.T) {
 	errUpsertUserOrg := fmt.Errorf("error upserting org member")
-	orgID := uuid.New()
+	orgID, _ := shortid.NewNanoID("org")
 	userID := uuid.New()
 	userOrg := generics.GetFakeObj[*models.UserOrg]()
 
@@ -28,7 +29,7 @@ func TestUserService_UpsertUserOrg(t *testing.T) {
 		assertFn    func(*testing.T, *models.UserOrg)
 	}{
 		"happy path": {
-			orgID:  orgID.String(),
+			orgID:  orgID,
 			userID: userID.String(),
 			repoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
 				repo := repos.NewMockUserRepo(ctl)
@@ -37,7 +38,7 @@ func TestUserService_UpsertUserOrg(t *testing.T) {
 			},
 		},
 		"error": {
-			orgID:  orgID.String(),
+			orgID:  orgID,
 			userID: userID.String(),
 			repoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
 				repo := repos.NewMockUserRepo(ctl)

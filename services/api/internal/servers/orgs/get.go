@@ -15,9 +15,10 @@ func (s *server) GetOrg(
 	req *connect.Request[orgv1.GetOrgRequest],
 ) (*connect.Response[orgv1.GetOrgResponse], error) {
 	// run protobuf validations
-	if err := req.Msg.Validate(); err != nil {
-		return nil, fmt.Errorf("input validation failed: %w", err)
-	}
+	// TODO 174 temporarily disable validations until migration to shortIDs is complete
+	// if err := req.Msg.Validate(); err != nil {
+	// 	return nil, fmt.Errorf("input validation failed: %w", err)
+	// }
 
 	org, err := s.Svc.GetOrg(ctx, req.Msg.Id)
 	if err != nil {

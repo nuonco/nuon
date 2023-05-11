@@ -15,7 +15,7 @@ import (
 type InstallRepo interface {
 	Get(context.Context, uuid.UUID) (*models.Install, error)
 	GetDeleted(context.Context, uuid.UUID) (*models.Install, error)
-	ListByApp(context.Context, uuid.UUID, *models.ConnectionOptions) ([]*models.Install, *utils.Page, error)
+	ListByApp(context.Context, string, *models.ConnectionOptions) ([]*models.Install, *utils.Page, error)
 	Create(context.Context, *models.Install) (*models.Install, error)
 	Update(context.Context, *models.Install) (*models.Install, error)
 	Delete(context.Context, uuid.UUID) (bool, error)
@@ -53,11 +53,7 @@ func (i installRepo) GetDeleted(ctx context.Context, installID uuid.UUID) (*mode
 	return &install, nil
 }
 
-func (i installRepo) ListByApp(
-	ctx context.Context,
-	appID uuid.UUID,
-	options *models.ConnectionOptions,
-) ([]*models.Install, *utils.Page, error) {
+func (i installRepo) ListByApp(ctx context.Context, appID string, options *models.ConnectionOptions) ([]*models.Install, *utils.Page, error) {
 	var installs []*models.Install
 	tx := i.db.WithContext(ctx).
 		Preload(clause.Associations).

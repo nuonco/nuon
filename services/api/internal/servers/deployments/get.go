@@ -73,9 +73,10 @@ func (s *server) GetDeploymentsByApps(
 	req *connect.Request[deploymentv1.GetDeploymentsByAppsRequest],
 ) (*connect.Response[deploymentv1.GetDeploymentsByAppsResponse], error) {
 	// run protobuf validations
-	if err := req.Msg.Validate(); err != nil {
-		return nil, fmt.Errorf("input validation failed: %w", err)
-	}
+	// TODO 174 temporarily disable validations until migration to shortIDs is complete
+	// if err := req.Msg.Validate(); err != nil {
+	// 	return nil, fmt.Errorf("input validation failed: %w", err)
+	// }
 
 	// TODO: add new service to retrieve deployments by app IDs
 	deployments, _, err := s.Svc.GetAppDeployments(ctx, req.Msg.AppIds, &models.ConnectionOptions{})

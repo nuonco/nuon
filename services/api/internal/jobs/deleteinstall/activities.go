@@ -48,7 +48,7 @@ func (a *activities) TriggerInstallDeprovJob(ctx context.Context, installID stri
 		return nil, err
 	}
 
-	workflow, err := a.mgr.Deprovision(ctx, install, app.OrgID.String(), sandboxVersion)
+	workflow, err := a.mgr.Deprovision(ctx, install, app.OrgID, sandboxVersion)
 	if err != nil {
 		return nil, err
 	}

@@ -70,10 +70,10 @@ type AppEdge struct {
 }
 
 type AppInput struct {
-	ID              *string `json:"id" faker:"uuid_hyphenated"`
-	Name            string  `json:"name"`
-	OrgID           string  `json:"orgId" faker:"uuid_hyphenated"`
-	CreatedByID     *string `json:"createdById"`
+	ID          *string `json:"id" faker:"uuid_hyphenated"`
+	Name        string  `json:"name"`
+	OrgID       string  `json:"orgId"`
+	CreatedByID *string `json:"createdById"`
 }
 
 // An auto-generated type for paginating through multiple Components
@@ -258,9 +258,9 @@ type OrgEdge struct {
 }
 
 type OrgInput struct {
-	ID              *string `json:"id" faker:"uuid_hyphenated"`
+	ID              *string `json:"id"`
 	Name            string  `json:"name"`
-	OwnerID         string  `json:"ownerId" faker:"uuid_hyphenated"`
+	OwnerID         string  `json:"ownerId"`
 	GithubInstallID *string `json:"githubInstallId"`
 }
 
@@ -318,8 +318,8 @@ type UserInput struct {
 }
 
 type UserOrgInput struct {
-	UserID string `json:"userId" faker:"uuid_hyphenated"`
-	OrgID  string `json:"orgId" faker:"uuid_hyphenated"`
+	UserID string `json:"userId"`
+	OrgID  string `json:"orgId"`
 }
 
 type SandboxVersionInput struct {
