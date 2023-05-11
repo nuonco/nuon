@@ -37,8 +37,10 @@ require (
 	github.com/hashicorp/hcl/v2 v2.16.2
 	github.com/hashicorp/terraform-exec v0.18.1
 	github.com/hashicorp/waypoint v0.11.0
+	github.com/hashicorp/waypoint-plugin-sdk v0.0.0-20230412210808-dcdb2a03f714
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jaswdr/faker v1.16.0
+	github.com/kyokomi/emoji v2.2.4+incompatible
 	github.com/lib/pq v1.10.7
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mholt/archiver/v4 v4.0.0-alpha.7
@@ -118,7 +120,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cheggaaa/pb/v3 v3.1.2 // indirect
-	github.com/cloudflare/circl v1.1.0 // indirect
+	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/containerd/containerd v1.6.18 // indirect
 	github.com/creack/pty v1.1.18 // indirect
@@ -178,7 +180,6 @@ require (
 	github.com/hashicorp/opaqueany v0.0.0-20230114004030-81be31706b04 // indirect
 	github.com/hashicorp/protostructure v0.0.0-20220321173139-813f7b927cb7 // indirect
 	github.com/hashicorp/terraform-json v0.15.0 // indirect
-	github.com/hashicorp/waypoint-plugin-sdk v0.0.0-20230412210808-dcdb2a03f714 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/iancoleman/strcase v0.2.0 // indirect
@@ -197,7 +198,6 @@ require (
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/kyokomi/emoji v2.2.4+incompatible // indirect
 	github.com/lab47/vterm v0.0.0-20211107042118-80c3d2849f9c // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
