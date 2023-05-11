@@ -72,14 +72,11 @@ func (i *installService) GetInstall(ctx context.Context, inputID string) (*model
 	return install, nil
 }
 
-func (i *installService) GetAppInstalls(ctx context.Context, id string, options *models.ConnectionOptions) ([]*models.Install, *utils.Page, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	appID, _ := uuid.Parse(id)
-
+func (i *installService) GetAppInstalls(ctx context.Context, appID string, options *models.ConnectionOptions) ([]*models.Install, *utils.Page, error) {
 	installs, pg, err := i.repo.ListByApp(ctx, appID, options)
 	if err != nil {
 		i.log.Error("failed to retrieve app's installs",
-			zap.String("appID", appID.String()),
+			zap.String("appID", appID),
 			zap.Any("options", *options),
 			zap.String("error", err.Error()))
 		return nil, nil, err
@@ -126,9 +123,7 @@ func (i *installService) UpsertInstall(ctx context.Context, input models.Install
 
 	var install models.Install
 	install.Name = input.Name
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	appID, _ := uuid.Parse(input.AppID)
-	install.AppID = appID
+	install.AppID = input.AppID
 	install.CreatedByID = *input.CreatedByID
 	install.Domain = models.Domain{
 		// NOTE: this will need to be passed onto the app install job to set up the root domain once it's

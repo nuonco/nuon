@@ -29,7 +29,7 @@ func (s *server) UpsertOrgMember(
 	return connect.NewResponse(&userv1.UpsertOrgMemberResponse{
 		OrgMember: &userv1.OrgMember{
 			UserId: userOrg.UserID,
-			OrgId:  userOrg.OrgID.String(),
+			OrgId:  userOrg.OrgID,
 		},
 	}), nil
 }

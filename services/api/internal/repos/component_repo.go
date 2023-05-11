@@ -14,7 +14,7 @@ import (
 //go:generate mockgen -destination=mock_component_repo.go -source=component_repo.go -package=repos
 type ComponentRepo interface {
 	Get(context.Context, uuid.UUID) (*models.Component, error)
-	ListByApp(context.Context, uuid.UUID, *models.ConnectionOptions) ([]*models.Component, *utils.Page, error)
+	ListByApp(context.Context, string, *models.ConnectionOptions) ([]*models.Component, *utils.Page, error)
 	Create(context.Context, *models.Component) (*models.Component, error)
 	Update(context.Context, *models.Component) (*models.Component, error)
 	Delete(context.Context, uuid.UUID) (bool, error)
@@ -45,7 +45,7 @@ func (i componentRepo) Get(ctx context.Context, componentID uuid.UUID) (*models.
 	return &component, nil
 }
 
-func (i componentRepo) ListByApp(ctx context.Context, appID uuid.UUID, options *models.ConnectionOptions) ([]*models.Component, *utils.Page, error) {
+func (i componentRepo) ListByApp(ctx context.Context, appID string, options *models.ConnectionOptions) ([]*models.Component, *utils.Page, error) {
 	var components []*models.Component
 	tx := i.db.WithContext(ctx).
 		Preload(clause.Associations).

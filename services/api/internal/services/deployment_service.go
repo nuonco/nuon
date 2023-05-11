@@ -100,18 +100,11 @@ func (i *deploymentService) GetComponentDeployments(ctx context.Context, ids []s
 	return deployments, pg, nil
 }
 
-func (i *deploymentService) GetAppDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
-	uuids := make([]uuid.UUID, 0)
-	for _, v := range ids {
-		// parsing the uuid while ignoring the error handling since we do this at protobuf level
-		appID, _ := uuid.Parse(v)
-		uuids = append(uuids, appID)
-	}
-
-	deployments, pg, err := i.repo.ListByApps(ctx, uuids, options)
+func (i *deploymentService) GetAppDeployments(ctx context.Context, appIDs []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+	deployments, pg, err := i.repo.ListByApps(ctx, appIDs, options)
 	if err != nil {
 		i.log.Error("failed to retrieve apps's deployments",
-			zap.Any("appIDs", uuids),
+			zap.Any("appIDs", appIDs),
 			zap.Any("options", *options),
 			zap.String("error", err.Error()))
 		return nil, nil, err

@@ -15,7 +15,7 @@ import (
 type DeploymentRepo interface {
 	Update(context.Context, *models.Deployment) (*models.Deployment, error)
 	Get(context.Context, uuid.UUID) (*models.Deployment, error)
-	ListByApps(context.Context, []uuid.UUID, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
+	ListByApps(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
 	ListByComponents(context.Context, []uuid.UUID, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
 	ListByInstalls(context.Context, []uuid.UUID, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
 	Create(context.Context, *models.Deployment) (*models.Deployment, error)
@@ -67,7 +67,7 @@ func (i deploymentRepo) ListByComponents(ctx context.Context, componentIDs []uui
 	return deployments, &page, nil
 }
 
-func (i deploymentRepo) ListByApps(ctx context.Context, appIDs []uuid.UUID, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+func (i deploymentRepo) ListByApps(ctx context.Context, appIDs []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
 	var deployments []*models.Deployment
 
 	tx := i.db.WithContext(ctx).

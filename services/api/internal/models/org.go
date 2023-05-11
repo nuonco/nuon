@@ -9,7 +9,7 @@ import (
 )
 
 type Org struct {
-	Model
+	ModelV2
 
 	CreatedByID     string
 	Name            string `gorm:"uniqueIndex"`
@@ -25,7 +25,7 @@ func (o *Org) AfterCreate(tx *gorm.DB) (err error) {
 		return fmt.Errorf("unable to get job manager: %w", err)
 	}
 
-	if err := mgr.CreateOrg(ctx, o.ID.String()); err != nil {
+	if err := mgr.CreateOrg(ctx, o.ID); err != nil {
 		return fmt.Errorf("unable to create org: %w", err)
 	}
 
@@ -39,7 +39,7 @@ func (o *Org) AfterDelete(tx *gorm.DB) (err error) {
 		return fmt.Errorf("unable to get job manager: %w", err)
 	}
 
-	if err := mgr.DeleteOrg(ctx, o.ID.String()); err != nil {
+	if err := mgr.DeleteOrg(ctx, o.ID); err != nil {
 		return fmt.Errorf("unable to delete org: %w", err)
 	}
 
@@ -49,13 +49,13 @@ func (o *Org) AfterDelete(tx *gorm.DB) (err error) {
 func (Org) IsNode() {}
 
 func (o Org) GetID() string {
-	return o.Model.ID.String()
+	return o.ModelV2.ID
 }
 
 func (o Org) GetCreatedAt() time.Time {
-	return o.Model.CreatedAt
+	return o.ModelV2.CreatedAt
 }
 
 func (o Org) GetUpdatedAt() time.Time {
-	return o.Model.UpdatedAt
+	return o.ModelV2.UpdatedAt
 }

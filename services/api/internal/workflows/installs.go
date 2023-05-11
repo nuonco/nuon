@@ -33,12 +33,10 @@ type InstallWorkflowManager interface {
 var _ InstallWorkflowManager = (*installWorkflowManager)(nil)
 
 func (i *installWorkflowManager) Provision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) (string, error) {
-	shortIDs, err := shortid.ParseStrings(orgID, install.AppID.String(), install.ID.String())
+	installID, err := shortid.ParseString(install.ID.String())
 	if err != nil {
 		return "", fmt.Errorf("unable to parse ids to shortids: %w", err)
 	}
-
-	orgID, appID, installID := shortIDs[0], shortIDs[1], shortIDs[2]
 
 	opts := tclient.StartWorkflowOptions{
 		ID:        orgID,
@@ -49,7 +47,7 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
 			"org-id":     orgID,
-			"app-id":     appID,
+			"app-id":     install.AppID,
 			"install-id": installID,
 			"started-by": "api",
 		},
@@ -57,7 +55,7 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 
 	args := &installsv1.ProvisionRequest{
 		OrgId:     orgID,
-		AppId:     appID,
+		AppId:     install.AppID,
 		InstallId: installID,
 		AccountSettings: &installsv1.AccountSettings{
 			Region:       install.AWSSettings.Region.ToRegion(),
@@ -78,12 +76,10 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 }
 
 func (i *installWorkflowManager) Deprovision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) (string, error) {
-	shortIDs, err := shortid.ParseStrings(orgID, install.AppID.String(), install.ID.String())
+	installID, err := shortid.ParseString(install.ID.String())
 	if err != nil {
 		return "", fmt.Errorf("unable to parse ids to shortids: %w", err)
 	}
-
-	orgID, appID, installID := shortIDs[0], shortIDs[1], shortIDs[2]
 
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: workflows.DefaultTaskQueue,
@@ -93,7 +89,7 @@ func (i *installWorkflowManager) Deprovision(ctx context.Context, install *model
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
 			"org-id":     orgID,
-			"app-id":     appID,
+			"app-id":     install.AppID,
 			"install-id": installID,
 			"started-by": "api",
 		},
@@ -101,7 +97,7 @@ func (i *installWorkflowManager) Deprovision(ctx context.Context, install *model
 
 	args := &installsv1.DeprovisionRequest{
 		OrgId:     orgID,
-		AppId:     appID,
+		AppId:     install.AppID,
 		InstallId: installID,
 		AccountSettings: &installsv1.AccountSettings{
 			Region:       install.AWSSettings.Region.ToRegion(),

@@ -68,13 +68,11 @@ func (i *componentService) GetComponent(ctx context.Context, inputID string) (*m
 	return component, nil
 }
 
-func (i *componentService) GetAppComponents(ctx context.Context, ID string, options *models.ConnectionOptions) ([]*models.Component, *utils.Page, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	appID, _ := uuid.Parse(ID)
+func (i *componentService) GetAppComponents(ctx context.Context, appID string, options *models.ConnectionOptions) ([]*models.Component, *utils.Page, error) {
 	components, pg, err := i.repo.ListByApp(ctx, appID, options)
 	if err != nil {
 		i.log.Error("failed to retrieve application's components",
-			zap.String("appID", appID.String()),
+			zap.String("appID", appID),
 			zap.Any("options", *options),
 			zap.String("error", err.Error()))
 		return nil, nil, err
@@ -142,21 +140,18 @@ func (i *componentService) UpsertComponent(ctx context.Context, input models.Com
 		return i.updateComponent(ctx, input)
 	}
 
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	appID, _ := uuid.Parse(input.AppID)
-
 	// check if app exists
-	_, err := i.appRepo.Get(ctx, appID)
+	_, err := i.appRepo.Get(ctx, input.AppID)
 	if err != nil {
 		i.log.Error("failed to get app",
-			zap.String("appID", appID.String()),
+			zap.String("appID", input.AppID),
 			zap.String("error", err.Error()))
 		return nil, fmt.Errorf("failed to get app: %w", err)
 	}
 
 	var component models.Component
 	component.Name = input.Name
-	component.AppID = appID
+	component.AppID = input.AppID
 	component.CreatedByID = input.CreatedByID
 	if input.Config != nil {
 		component.Config = datatypes.JSON(input.Config)

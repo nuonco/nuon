@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -17,7 +18,7 @@ import (
 
 func TestOrgService_DeleteOrg(t *testing.T) {
 	errDeleteOrg := fmt.Errorf("error deleting org")
-	orgID := uuid.New()
+	orgID, _ := shortid.NewNanoID("org")
 
 	tests := map[string]struct {
 		orgID       string
@@ -25,7 +26,7 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 		errExpected error
 	}{
 		"happy path": {
-			orgID: orgID.String(),
+			orgID: orgID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
 				repo := repos.NewMockOrgRepo(ctl)
 				repo.EXPECT().Delete(gomock.Any(), orgID).Return(true, nil)
@@ -33,7 +34,7 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 			},
 		},
 		"delete error": {
-			orgID: orgID.String(),
+			orgID: orgID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
 				repo := repos.NewMockOrgRepo(ctl)
 				repo.EXPECT().Delete(gomock.Any(), orgID).Return(false, errDeleteOrg)
@@ -65,7 +66,7 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 
 func TestOrgService_GetOrg(t *testing.T) {
 	errGetOrg := fmt.Errorf("error getting org")
-	orgID := uuid.New()
+	orgID, _ := shortid.NewNanoID("org")
 	org := generics.GetFakeObj[*models.Org]()
 
 	tests := map[string]struct {
@@ -75,7 +76,7 @@ func TestOrgService_GetOrg(t *testing.T) {
 		assertFn    func(*testing.T, *models.Org)
 	}{
 		"happy path": {
-			orgID: orgID.String(),
+			orgID: orgID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
 				repo := repos.NewMockOrgRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), orgID).Return(org, nil)
@@ -83,7 +84,7 @@ func TestOrgService_GetOrg(t *testing.T) {
 			},
 		},
 		"error": {
-			orgID: orgID.String(),
+			orgID: orgID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockOrgRepo {
 				repo := repos.NewMockOrgRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), orgID).Return(nil, errGetOrg)
@@ -156,7 +157,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 		"upsert happy path": {
 			inputFn: func() models.OrgInput {
 				inp := generics.GetFakeObj[models.OrgInput]()
-				inp.ID = generics.ToPtr(org.ID.String())
+				inp.ID = generics.ToPtr(org.ID)
 				inp.GithubInstallID = &org.GithubInstallID
 				return inp
 			},

@@ -115,9 +115,9 @@ func TestListByApps(t *testing.T) {
 				origDeployment.Component.AppID = app.ID
 				origDeployment2.Component.AppID = app.ID
 
-				uuids := []uuid.UUID{origDeployment.Component.App.ID, origDeployment2.Component.App.ID}
+				appIDs := []string{origDeployment.Component.App.ID, origDeployment2.Component.App.ID}
 
-				deployments, page, err := state.deploymentRepo.ListByApps(ctx, uuids, &models.ConnectionOptions{})
+				deployments, page, err := state.deploymentRepo.ListByApps(ctx, appIDs, &models.ConnectionOptions{})
 				assert.NoError(t, err)
 				assert.NotNil(t, deployments)
 				assert.NotNil(t, page)
@@ -132,7 +132,7 @@ func TestListByApps(t *testing.T) {
 				deployment.Component.AppID = app.ID
 
 				state.ctxCloseFn()
-				fetchedDeployment, page, err := state.deploymentRepo.ListByApps(ctx, []uuid.UUID{deployment.Component.AppID}, &models.ConnectionOptions{})
+				fetchedDeployment, page, err := state.deploymentRepo.ListByApps(ctx, []string{deployment.Component.AppID}, &models.ConnectionOptions{})
 				assert.Error(t, err)
 				assert.Nil(t, fetchedDeployment)
 				assert.Nil(t, page)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
@@ -48,8 +47,8 @@ func Test_appWorkflowManager_Provision(t *testing.T) {
 				assert.True(t, ok)
 
 				assert.True(t, ok)
-				assert.Equal(t, shortid.ParseUUID(app.ID), req.AppId)
-				assert.Equal(t, shortid.ParseUUID(app.OrgID), req.OrgId)
+				assert.Equal(t, app.ID, req.AppId)
+				assert.Equal(t, app.OrgID, req.OrgId)
 			},
 		},
 		"error": {

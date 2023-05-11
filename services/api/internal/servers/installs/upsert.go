@@ -15,9 +15,10 @@ func (s *server) UpsertInstall(
 	req *connect.Request[installv1.UpsertInstallRequest],
 ) (*connect.Response[installv1.UpsertInstallResponse], error) {
 	// run protobuf validations
-	if err := req.Msg.Validate(); err != nil {
-		return nil, fmt.Errorf("input validation failed: %w", err)
-	}
+	// TODO 174 temporarily disable validations until migration to shortIDs is complete
+	// if err := req.Msg.Validate(); err != nil {
+	// 	return nil, fmt.Errorf("input validation failed: %w", err)
+	// }
 
 	if req.Msg.GetAwsSettings() == nil {
 		return nil, fmt.Errorf("only AWS settings are currently supported")

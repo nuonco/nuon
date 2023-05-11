@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"go.uber.org/zap"
@@ -32,9 +31,7 @@ func NewUserService(db *gorm.DB, log *zap.Logger) *userService {
 }
 
 func (u userService) UpsertUserOrg(ctx context.Context, input models.UserOrgInput) (*models.UserOrg, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	orgID, _ := uuid.Parse(input.OrgID)
-	userOrg, err := u.repo.UpsertUserOrg(ctx, input.UserID, orgID)
+	userOrg, err := u.repo.UpsertUserOrg(ctx, input.UserID, input.OrgID)
 	if err != nil {
 		u.log.Error("failed to upsert org member",
 			zap.String("userID", input.UserID),
