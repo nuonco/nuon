@@ -18,7 +18,7 @@ func createInstall(ctx context.Context, t *testing.T, state repoTestState) *mode
 	installID, _ := shortid.NewNanoID("inl")
 
 	install, err := state.installRepo.Create(ctx, &models.Install{
-		ModelV2:     models.ModelV2{ID: installID},
+		Model:       models.Model{ID: installID},
 		Name:        uuid.NewString(),
 		CreatedByID: userID,
 		AppID:       app.ID,
@@ -46,7 +46,7 @@ func TestUpsertInstall(t *testing.T) {
 				installID, _ := shortid.NewNanoID("inl")
 
 				installInput := &models.Install{
-					ModelV2:     models.ModelV2{ID: installID},
+					Model:       models.Model{ID: installID},
 					Name:        uuid.NewString(),
 					CreatedByID: userID,
 					AppID:       app.ID,

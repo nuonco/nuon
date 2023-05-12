@@ -9,7 +9,7 @@ import (
 )
 
 type Org struct {
-	ModelV2
+	Model
 
 	CreatedByID     string
 	Name            string `gorm:"uniqueIndex"`
@@ -49,13 +49,13 @@ func (o *Org) AfterDelete(tx *gorm.DB) (err error) {
 func (Org) IsNode() {}
 
 func (o Org) GetID() string {
-	return o.ModelV2.ID
+	return o.Model.ID
 }
 
 func (o Org) GetCreatedAt() time.Time {
-	return o.ModelV2.CreatedAt
+	return o.Model.CreatedAt
 }
 
 func (o Org) GetUpdatedAt() time.Time {
-	return o.ModelV2.UpdatedAt
+	return o.Model.UpdatedAt
 }
