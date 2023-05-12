@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/connect-go"
 	userv1 "github.com/powertoolsdev/mono/pkg/types/api/user/v1"
@@ -14,9 +13,10 @@ func (s *server) UpsertOrgMember(
 	req *connect.Request[userv1.UpsertOrgMemberRequest],
 ) (*connect.Response[userv1.UpsertOrgMemberResponse], error) {
 	// run protobuf validations
-	if err := req.Msg.Validate(); err != nil {
-		return nil, fmt.Errorf("input validation failed: %w", err)
-	}
+	// TODO 174 temporarily disable validations until migration to shortIDs is complete
+	// if err := req.Msg.Validate(); err != nil {
+	// 	return nil, fmt.Errorf("input validation failed: %w", err)
+	// }
 
 	userOrg, err := s.Svc.UpsertUserOrg(ctx, models.UserOrgInput{
 		UserID: req.Msg.UserId,

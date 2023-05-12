@@ -10,7 +10,7 @@ import (
 )
 
 type Install struct {
-	Model
+	ModelV2
 	CreatedByID string
 
 	Name  string
@@ -31,7 +31,7 @@ func (i Install) AfterCreate(tx *gorm.DB) error {
 		return fmt.Errorf("unable to get job manager: %w", err)
 	}
 
-	if err := mgr.CreateInstall(ctx, i.ID.String()); err != nil {
+	if err := mgr.CreateInstall(ctx, i.ID); err != nil {
 		return fmt.Errorf("unable to create org: %w", err)
 	}
 
@@ -45,7 +45,7 @@ func (i Install) BeforeDelete(tx *gorm.DB) error {
 		return fmt.Errorf("unable to get job manager: %w", err)
 	}
 
-	if err := mgr.DeleteInstall(ctx, i.ID.String()); err != nil {
+	if err := mgr.DeleteInstall(ctx, i.ID); err != nil {
 		return fmt.Errorf("unable to delete install: %w", err)
 	}
 
@@ -54,13 +54,13 @@ func (i Install) BeforeDelete(tx *gorm.DB) error {
 func (Install) IsNode() {}
 
 func (i Install) GetID() string {
-	return i.Model.ID.String()
+	return i.ModelV2.ID
 }
 
 func (i Install) GetCreatedAt() time.Time {
-	return i.Model.CreatedAt
+	return i.ModelV2.CreatedAt
 }
 
 func (i Install) GetUpdatedAt() time.Time {
-	return i.Model.UpdatedAt
+	return i.ModelV2.UpdatedAt
 }

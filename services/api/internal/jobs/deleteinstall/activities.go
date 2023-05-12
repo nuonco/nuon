@@ -3,7 +3,6 @@ package deleteinstall
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	tclient "go.temporal.io/sdk/client"
@@ -31,9 +30,7 @@ type TriggerJobResponse struct {
 }
 
 func (a *activities) TriggerInstallDeprovJob(ctx context.Context, installID string) (*TriggerJobResponse, error) {
-	installUUID, _ := uuid.Parse(installID)
-
-	install, err := a.repo.GetDeleted(ctx, installUUID)
+	install, err := a.repo.GetDeleted(ctx, installID)
 	if err != nil {
 		return nil, err
 	}

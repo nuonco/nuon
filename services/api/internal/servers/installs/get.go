@@ -15,9 +15,10 @@ func (s *server) GetInstall(
 	req *connect.Request[installv1.GetInstallRequest],
 ) (*connect.Response[installv1.GetInstallResponse], error) {
 	// run protobuf validations
-	if err := req.Msg.Validate(); err != nil {
-		return nil, fmt.Errorf("input validation failed: %w", err)
-	}
+	// TODO 174 temporarily disable validations until migration to shortIDs is complete
+	// if err := req.Msg.Validate(); err != nil {
+	// 	return nil, fmt.Errorf("input validation failed: %w", err)
+	// }
 
 	install, err := s.Svc.GetInstall(ctx, req.Msg.Id)
 	if err != nil {

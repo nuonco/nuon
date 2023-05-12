@@ -31,7 +31,7 @@ type Node interface {
 
 type AWSSettingsInput struct {
 	Region     AWSRegion `json:"region"`
-	AccountID  string    `json:"accountId" faker:"uuid_hyphenated"`
+	AccountID  string    `json:"accountId"`
 	IamRoleArn string    `json:"iamRoleArn"`
 }
 
@@ -70,7 +70,7 @@ type AppEdge struct {
 }
 
 type AppInput struct {
-	ID          *string `json:"id" faker:"uuid_hyphenated"`
+	ID          *string `json:"id"`
 	Name        string  `json:"name"`
 	OrgID       string  `json:"orgId"`
 	CreatedByID *string `json:"createdById"`
@@ -105,8 +105,8 @@ type ComponentEdge struct {
 }
 
 type ComponentInput struct {
-	AppID       string  `json:"appId" faker:"uuid_hyphenated"`
-	ID          *string `json:"id" faker:"uuid_hyphenated"`
+	AppID       string  `json:"appId"`
+	ID          *string `json:"id"`
 	Name        string  `json:"name"`
 	CreatedByID string  `json:"created_by_id"`
 	Config      []byte  `json:"component_config"`
@@ -184,7 +184,7 @@ type DeploymentEdge struct {
 }
 
 type DeploymentInput struct {
-	ComponentID string  `json:"componentId" faker:"uuid_hyphenated"`
+	ComponentID string  `json:"componentId"`
 	CreatedByID *string `json:"createdById"`
 }
 
@@ -221,9 +221,9 @@ type InstallEdge struct {
 }
 
 type InstallInput struct {
-	ID          *string           `json:"id" faker:"uuid_hyphenated"`
+	ID          *string           `json:"id"`
 	Name        string            `json:"name"`
-	AppID       string            `json:"appId" faker:"uuid_hyphenated"`
+	AppID       string            `json:"appId"`
 	CreatedByID *string           `json:"createdById"`
 	AwsSettings *AWSSettingsInput `json:"awsSettings"`
 	GcpSettings *GCPSettingsInput `json:"gcpSettings"`
@@ -307,14 +307,6 @@ type StringOperators struct {
 	In          []string `json:"in"`
 	NotIn       []string `json:"notIn"`
 	Regex       *string  `json:"regex"`
-}
-
-type UserInput struct {
-	ID         *string `json:"id" faker:"uuid_hyphenated"`
-	ExternalID string  `json:"externalId"`
-	FirstName  string  `json:"firstName"`
-	LastName   string  `json:"lastName"`
-	Email      string  `json:"email"`
 }
 
 type UserOrgInput struct {

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -18,7 +18,7 @@ func Test_ActivityTriggerInstallDeprovJob(t *testing.T) {
 	err := errors.New("error")
 	app := generics.GetFakeObj[*models.App]()
 
-	installID := uuid.New()
+	installID, _ := shortid.NewNanoID("inl")
 	install := generics.GetFakeObj[*models.Install]()
 	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
 
@@ -149,7 +149,7 @@ func Test_ActivityTriggerInstallDeprovJob(t *testing.T) {
 				mgr:       test.mockMgr(mockCtl),
 			}
 
-			_, err := act.TriggerInstallDeprovJob(context.Background(), installID.String())
+			_, err := act.TriggerInstallDeprovJob(context.Background(), installID)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

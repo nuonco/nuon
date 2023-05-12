@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -147,7 +146,7 @@ func TestInstallService_GetAppInstalls(t *testing.T) {
 
 func TestInstallService_GetInstall(t *testing.T) {
 	errGetInstall := fmt.Errorf("error getting install")
-	installID := uuid.New()
+	installID, _ := shortid.NewNanoID("inl")
 	app := generics.GetFakeObj[*models.Install]()
 
 	tests := map[string]struct {
@@ -157,7 +156,7 @@ func TestInstallService_GetInstall(t *testing.T) {
 		assertFn    func(*testing.T, *models.Install)
 	}{
 		"happy path": {
-			installID: installID.String(),
+			installID: installID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				repo := repos.NewMockInstallRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), installID).Return(app, nil)
@@ -165,7 +164,7 @@ func TestInstallService_GetInstall(t *testing.T) {
 			},
 		},
 		"error": {
-			installID: installID.String(),
+			installID: installID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				repo := repos.NewMockInstallRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), installID).Return(nil, errGetInstall)
@@ -196,7 +195,7 @@ func TestInstallService_GetInstall(t *testing.T) {
 
 func TestInstallService_DeleteInstall(t *testing.T) {
 	errDeleteInstall := fmt.Errorf("error deleting install")
-	installID := uuid.New()
+	installID, _ := shortid.NewNanoID("inl")
 
 	tests := map[string]struct {
 		installID   string
@@ -204,7 +203,7 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 		errExpected error
 	}{
 		"happy path": {
-			installID: installID.String(),
+			installID: installID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				repo := repos.NewMockInstallRepo(ctl)
 				repo.EXPECT().Delete(gomock.Any(), installID).Return(true, nil)
@@ -212,7 +211,7 @@ func TestInstallService_DeleteInstall(t *testing.T) {
 			},
 		},
 		"error deleting install": {
-			installID: installID.String(),
+			installID: installID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockInstallRepo {
 				repo := repos.NewMockInstallRepo(ctl)
 				repo.EXPECT().Delete(gomock.Any(), installID).Return(false, errDeleteInstall)

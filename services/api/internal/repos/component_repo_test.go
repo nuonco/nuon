@@ -15,10 +15,12 @@ import (
 // createComponent
 func createComponent(ctx context.Context, t *testing.T, state repoTestState) *models.Component {
 	app := createApp(ctx, t, state)
+	componentID, _ := shortid.NewNanoID("cmp")
 
 	component, err := state.componentRepo.Create(ctx, &models.Component{
-		Name:  uuid.NewString(),
-		AppID: app.ID,
+		Name:    uuid.NewString(),
+		AppID:   app.ID,
+		ModelV2: models.ModelV2{ID: componentID},
 	})
 	require.NoError(t, err)
 	assert.NotNil(t, component)
@@ -82,7 +84,8 @@ func TestDeleteComponent(t *testing.T) {
 			desc: "should error with canceled context",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				deleted, err := state.componentRepo.Delete(ctx, uuid.New())
+				componentID, _ := shortid.NewNanoID("cmp")
+				deleted, err := state.componentRepo.Delete(ctx, componentID)
 				assert.Error(t, err)
 				assert.False(t, deleted)
 			},
@@ -121,7 +124,8 @@ func TestGetComponent(t *testing.T) {
 		{
 			desc: "should error with not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				fetchedComponent, err := state.componentRepo.Get(ctx, uuid.New())
+				componentID, _ := shortid.NewNanoID("cmp")
+				fetchedComponent, err := state.componentRepo.Get(ctx, componentID)
 				assert.Error(t, err)
 				assert.Nil(t, fetchedComponent)
 			},

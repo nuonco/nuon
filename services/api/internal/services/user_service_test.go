@@ -18,7 +18,7 @@ import (
 func TestUserService_UpsertUserOrg(t *testing.T) {
 	errUpsertUserOrg := fmt.Errorf("error upserting org member")
 	orgID, _ := shortid.NewNanoID("org")
-	userID := uuid.New()
+	userID := uuid.NewString()
 	userOrg := generics.GetFakeObj[*models.UserOrg]()
 
 	tests := map[string]struct {
@@ -30,19 +30,19 @@ func TestUserService_UpsertUserOrg(t *testing.T) {
 	}{
 		"happy path": {
 			orgID:  orgID,
-			userID: userID.String(),
+			userID: userID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
 				repo := repos.NewMockUserRepo(ctl)
-				repo.EXPECT().UpsertUserOrg(gomock.Any(), userID.String(), orgID).Return(userOrg, nil)
+				repo.EXPECT().UpsertUserOrg(gomock.Any(), userID, orgID).Return(userOrg, nil)
 				return repo
 			},
 		},
 		"error": {
 			orgID:  orgID,
-			userID: userID.String(),
+			userID: userID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
 				repo := repos.NewMockUserRepo(ctl)
-				repo.EXPECT().UpsertUserOrg(gomock.Any(), userID.String(), orgID).Return(nil, errUpsertUserOrg)
+				repo.EXPECT().UpsertUserOrg(gomock.Any(), userID, orgID).Return(nil, errUpsertUserOrg)
 				return repo
 			},
 			errExpected: errUpsertUserOrg,
