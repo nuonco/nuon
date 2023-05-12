@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -67,7 +66,7 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 		"upsert not found": {
 			inputFn: func() models.ComponentInput {
 				inp := generics.GetFakeObj[models.ComponentInput]()
-				inp.ID = generics.ToPtr(component.ID.String())
+				inp.ID = generics.ToPtr(component.ID)
 				return inp
 			},
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
@@ -84,7 +83,7 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 		"upsert without component config": {
 			inputFn: func() models.ComponentInput {
 				inp := generics.GetFakeObj[models.ComponentInput]()
-				inp.ID = generics.ToPtr(component.ID.String())
+				inp.ID = generics.ToPtr(component.ID)
 				inp.Config = nil
 				return inp
 			},
@@ -177,7 +176,7 @@ func TestComponentService_GetAppComponents(t *testing.T) {
 
 func TestComponentService_GetComponent(t *testing.T) {
 	errGetComponent := fmt.Errorf("error getting component")
-	componentID := uuid.New()
+	componentID, _ := shortid.NewNanoID("cmp")
 	component := generics.GetFakeObj[*models.Component]()
 
 	tests := map[string]struct {
@@ -187,7 +186,7 @@ func TestComponentService_GetComponent(t *testing.T) {
 		assertFn    func(*testing.T, *models.Component)
 	}{
 		"happy path": {
-			componentID: componentID.String(),
+			componentID: componentID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
 				repo := repos.NewMockComponentRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), componentID).Return(component, nil)
@@ -195,7 +194,7 @@ func TestComponentService_GetComponent(t *testing.T) {
 			},
 		},
 		"error": {
-			componentID: componentID.String(),
+			componentID: componentID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
 				repo := repos.NewMockComponentRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), componentID).Return(nil, errGetComponent)
@@ -226,7 +225,7 @@ func TestComponentService_GetComponent(t *testing.T) {
 
 func TestComponentService_DeleteComponent(t *testing.T) {
 	errDeleteComponent := fmt.Errorf("error deleting component")
-	componentID := uuid.New()
+	componentID, _ := shortid.NewNanoID("cmp")
 
 	tests := map[string]struct {
 		componentID string
@@ -234,7 +233,7 @@ func TestComponentService_DeleteComponent(t *testing.T) {
 		errExpected error
 	}{
 		"happy path": {
-			componentID: componentID.String(),
+			componentID: componentID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
 				repo := repos.NewMockComponentRepo(ctl)
 				repo.EXPECT().Delete(gomock.Any(), componentID).Return(true, nil)
@@ -242,7 +241,7 @@ func TestComponentService_DeleteComponent(t *testing.T) {
 			},
 		},
 		"delete error": {
-			componentID: componentID.String(),
+			componentID: componentID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockComponentRepo {
 				repo := repos.NewMockComponentRepo(ctl)
 				repo.EXPECT().Delete(gomock.Any(), componentID).Return(false, errDeleteComponent)

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +43,8 @@ func TestUpsertUserOrg(t *testing.T) {
 			desc: "should error with a context canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				userOrg, err := state.userRepo.UpsertUserOrg(ctx, uuid.NewString(), uuid.NewString())
+				orgID, _ := shortid.NewNanoID("org")
+				userOrg, err := state.userRepo.UpsertUserOrg(ctx, uuid.NewString(), orgID)
 				assert.NotNil(t, err)
 				assert.Nil(t, userOrg)
 			},

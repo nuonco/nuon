@@ -2,9 +2,7 @@ package workflows
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -33,11 +31,6 @@ type InstallWorkflowManager interface {
 var _ InstallWorkflowManager = (*installWorkflowManager)(nil)
 
 func (i *installWorkflowManager) Provision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) (string, error) {
-	installID, err := shortid.ParseString(install.ID.String())
-	if err != nil {
-		return "", fmt.Errorf("unable to parse ids to shortids: %w", err)
-	}
-
 	opts := tclient.StartWorkflowOptions{
 		ID:        orgID,
 		TaskQueue: workflows.DefaultTaskQueue,
@@ -48,7 +41,7 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 		Memo: map[string]interface{}{
 			"org-id":     orgID,
 			"app-id":     install.AppID,
-			"install-id": installID,
+			"install-id": install.ID,
 			"started-by": "api",
 		},
 	}
@@ -56,7 +49,7 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 	args := &installsv1.ProvisionRequest{
 		OrgId:     orgID,
 		AppId:     install.AppID,
-		InstallId: installID,
+		InstallId: install.ID,
 		AccountSettings: &installsv1.AccountSettings{
 			Region:       install.AWSSettings.Region.ToRegion(),
 			AwsAccountId: "548377525120",
@@ -76,11 +69,6 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 }
 
 func (i *installWorkflowManager) Deprovision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) (string, error) {
-	installID, err := shortid.ParseString(install.ID.String())
-	if err != nil {
-		return "", fmt.Errorf("unable to parse ids to shortids: %w", err)
-	}
-
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: workflows.DefaultTaskQueue,
 		RetryPolicy: &temporal.RetryPolicy{
@@ -90,7 +78,7 @@ func (i *installWorkflowManager) Deprovision(ctx context.Context, install *model
 		Memo: map[string]interface{}{
 			"org-id":     orgID,
 			"app-id":     install.AppID,
-			"install-id": installID,
+			"install-id": install.ID,
 			"started-by": "api",
 		},
 	}
@@ -98,7 +86,7 @@ func (i *installWorkflowManager) Deprovision(ctx context.Context, install *model
 	args := &installsv1.DeprovisionRequest{
 		OrgId:     orgID,
 		AppId:     install.AppID,
-		InstallId: installID,
+		InstallId: install.ID,
 		AccountSettings: &installsv1.AccountSettings{
 			Region:       install.AWSSettings.Region.ToRegion(),
 			AwsAccountId: "548377525120",

@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
 	"gorm.io/gorm"
@@ -14,10 +13,10 @@ import (
 //go:generate mockgen -destination=mock_deployment_repo.go -source=deployment_repo.go -package=repos
 type DeploymentRepo interface {
 	Update(context.Context, *models.Deployment) (*models.Deployment, error)
-	Get(context.Context, uuid.UUID) (*models.Deployment, error)
+	Get(context.Context, string) (*models.Deployment, error)
 	ListByApps(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
-	ListByComponents(context.Context, []uuid.UUID, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
-	ListByInstalls(context.Context, []uuid.UUID, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
+	ListByComponents(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
+	ListByInstalls(context.Context, []string, *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error)
 	Create(context.Context, *models.Deployment) (*models.Deployment, error)
 }
 
@@ -33,7 +32,7 @@ type deploymentRepo struct {
 	db *gorm.DB
 }
 
-func (i deploymentRepo) Get(ctx context.Context, id uuid.UUID) (*models.Deployment, error) {
+func (i deploymentRepo) Get(ctx context.Context, id string) (*models.Deployment, error) {
 	var deployment models.Deployment
 	if err := i.db.WithContext(ctx).
 		Preload("Component.App").
@@ -45,7 +44,7 @@ func (i deploymentRepo) Get(ctx context.Context, id uuid.UUID) (*models.Deployme
 	return &deployment, nil
 }
 
-func (i deploymentRepo) ListByComponents(ctx context.Context, componentIDs []uuid.UUID, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+func (i deploymentRepo) ListByComponents(ctx context.Context, componentIDs []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
 	var deployments []*models.Deployment
 	tx := i.db.WithContext(ctx).
 		Where("component_id IN ?", componentIDs).
@@ -93,7 +92,7 @@ func (i deploymentRepo) ListByApps(ctx context.Context, appIDs []string, options
 	return deployments, &page, nil
 }
 
-func (i deploymentRepo) ListByInstalls(ctx context.Context, installIDs []uuid.UUID, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+func (i deploymentRepo) ListByInstalls(ctx context.Context, installIDs []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
 	var deployments []*models.Deployment
 
 	tx := i.db.WithContext(ctx).

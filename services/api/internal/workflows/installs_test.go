@@ -23,8 +23,7 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
 
 	orgID, _ := shortid.NewNanoID("org")
-	installID, err := shortid.ParseString(install.ID.String())
-	assert.NoError(t, err)
+	install.ID, _ = shortid.NewNanoID("inl")
 
 	tests := map[string]struct {
 		clientFn    func() temporalClient
@@ -54,7 +53,7 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 				assert.True(t, ok)
 
 				assert.Equal(t, orgID, req.OrgId)
-				assert.Equal(t, installID, req.InstallId)
+				assert.Equal(t, install.ID, req.InstallId)
 				assert.Equal(t, install.AppID, req.AppId)
 				// validate account settings
 				assert.Equal(t, install.AWSSettings.Region.ToRegion(), req.AccountSettings.Region)
@@ -97,8 +96,7 @@ func Test_installWorkflowManager_Deprovision(t *testing.T) {
 	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
 
 	orgID, _ := shortid.NewNanoID("org")
-	installID, err := shortid.ParseString(install.ID.String())
-	assert.NoError(t, err)
+	install.ID, _ = shortid.NewNanoID("inl")
 
 	tests := map[string]struct {
 		clientFn    func() temporalClient
@@ -123,7 +121,7 @@ func Test_installWorkflowManager_Deprovision(t *testing.T) {
 				assert.True(t, ok)
 
 				assert.Equal(t, orgID, req.OrgId)
-				assert.Equal(t, installID, req.InstallId)
+				assert.Equal(t, install.ID, req.InstallId)
 				assert.Equal(t, install.AppID, req.AppId)
 				// validate account settings
 				assert.Equal(t, install.AWSSettings.Region.ToRegion(), req.AccountSettings.Region)

@@ -3,7 +3,6 @@ package createdeployment
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	tclient "go.temporal.io/sdk/client"
@@ -27,9 +26,7 @@ type TriggerJobResponse struct {
 }
 
 func (a *activities) TriggerDeploymentJob(ctx context.Context, deploymentID string) (*TriggerJobResponse, error) {
-	deploymentUUID, _ := uuid.Parse(deploymentID)
-
-	deployment, err := a.repo.Get(ctx, deploymentUUID)
+	deployment, err := a.repo.Get(ctx, deploymentID)
 	if err != nil {
 		return nil, err
 	}

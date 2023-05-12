@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	gh "github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	componentConfig "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -65,14 +65,11 @@ func NewDeploymentService(db *gorm.DB,
 	}
 }
 
-func (i *deploymentService) GetDeployment(ctx context.Context, inputID string) (*models.Deployment, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	deploymentID, _ := uuid.Parse(inputID)
-
+func (i *deploymentService) GetDeployment(ctx context.Context, deploymentID string) (*models.Deployment, error) {
 	deployment, err := i.repo.Get(ctx, deploymentID)
 	if err != nil {
 		i.log.Error("failed to retrieve deployment",
-			zap.String("deploymentID", deploymentID.String()),
+			zap.String("deploymentID", deploymentID),
 			zap.String("error", err.Error()))
 		return nil, err
 	}
@@ -80,18 +77,11 @@ func (i *deploymentService) GetDeployment(ctx context.Context, inputID string) (
 	return deployment, nil
 }
 
-func (i *deploymentService) GetComponentDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
-	uuids := make([]uuid.UUID, 0)
-	for _, v := range ids {
-		// parsing the uuid while ignoring the error handling since we do this at protobuf level
-		componentID, _ := uuid.Parse(v)
-		uuids = append(uuids, componentID)
-	}
-
-	deployments, pg, err := i.repo.ListByComponents(ctx, uuids, options)
+func (i *deploymentService) GetComponentDeployments(ctx context.Context, componentIDs []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+	deployments, pg, err := i.repo.ListByComponents(ctx, componentIDs, options)
 	if err != nil {
 		i.log.Error("failed to retrieve component's deployments",
-			zap.Any("componentIDs", uuids),
+			zap.Any("componentIDs", componentIDs),
 			zap.Any("options", *options),
 			zap.String("error", err.Error()))
 		return nil, nil, err
@@ -113,18 +103,11 @@ func (i *deploymentService) GetAppDeployments(ctx context.Context, appIDs []stri
 	return deployments, pg, nil
 }
 
-func (i *deploymentService) GetInstallDeployments(ctx context.Context, ids []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
-	uuids := make([]uuid.UUID, 0)
-	for _, v := range ids {
-		// parsing the uuid while ignoring the error handling since we do this at protobuf level
-		installID, _ := uuid.Parse(v)
-		uuids = append(uuids, installID)
-	}
-
-	deployments, pg, err := i.repo.ListByInstalls(ctx, uuids, options)
+func (i *deploymentService) GetInstallDeployments(ctx context.Context, installIDs []string, options *models.ConnectionOptions) ([]*models.Deployment, *utils.Page, error) {
+	deployments, pg, err := i.repo.ListByInstalls(ctx, installIDs, options)
 	if err != nil {
 		i.log.Error("failed to retrieve install's deployments",
-			zap.Any("installIDs", uuids),
+			zap.Any("installIDs", installIDs),
 			zap.Any("options", *options),
 			zap.String("error", err.Error()))
 		return nil, nil, err
@@ -285,18 +268,17 @@ func (i *deploymentService) processGithubRepo(ctx context.Context, vcsCfg *vcsv1
 }
 
 func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.DeploymentInput) (*models.Deployment, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	componentID, _ := uuid.Parse(input.ComponentID)
-	component, err := i.componentRepo.Get(ctx, componentID)
+	component, err := i.componentRepo.Get(ctx, input.ComponentID)
 	if err != nil {
-		i.log.Error("failed to get component", zap.String("componentID", componentID.String()), zap.String("error", err.Error()))
+		i.log.Error("failed to get component", zap.String("componentID", input.ComponentID), zap.String("error", err.Error()))
 		return nil, fmt.Errorf("failed to get component: %w", err)
 	}
 
 	deployment := &models.Deployment{
-		ComponentID: componentID,
+		ComponentID: input.ComponentID,
 		CreatedByID: *input.CreatedByID,
 	}
+	deployment.ID, _ = shortid.NewNanoID("dpl")
 	deployment, err = i.repo.Create(ctx, deployment)
 	if err != nil {
 		i.log.Error("failed to create deployment",
