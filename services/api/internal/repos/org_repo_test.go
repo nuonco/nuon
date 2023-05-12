@@ -18,7 +18,7 @@ func createOrg(ctx context.Context, t *testing.T, orgRepo OrgRepo) *models.Org {
 	org, err := orgRepo.Create(ctx, &models.Org{
 		Name:        uuid.NewString(),
 		CreatedByID: uuid.NewString(),
-		ModelV2:     models.ModelV2{ID: id},
+		Model:       models.Model{ID: id},
 	})
 	assert.Nil(t, err)
 	return org
@@ -36,7 +36,7 @@ func TestCreateOrg(t *testing.T) {
 			desc: "should create org successfully",
 			fn: func(ctx context.Context, state repoTestState) {
 				orgInput := models.Org{
-					ModelV2:         models.ModelV2{ID: id},
+					Model:           models.Model{ID: id},
 					Name:            uuid.NewString(),
 					GithubInstallID: fmt.Sprintf("%d", faker.New().UInt32()),
 				}

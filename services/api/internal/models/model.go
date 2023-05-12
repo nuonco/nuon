@@ -3,13 +3,12 @@ package models
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs"
 	"gorm.io/gorm"
 )
 
 type Model struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	ID        string `gorm:"primary_key;"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
@@ -29,5 +28,5 @@ type IDer interface {
 }
 
 func (m *Model) GetID() string {
-	return m.ID.String()
+	return m.ID
 }

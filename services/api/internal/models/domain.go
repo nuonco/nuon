@@ -1,7 +1,7 @@
 package models
 
 type Domain struct {
-	ModelV2
+	Model
 
 	InstallID     string
 	Domain        string

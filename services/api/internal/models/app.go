@@ -9,7 +9,7 @@ import (
 )
 
 type App struct {
-	ModelV2
+	Model
 	CreatedByID string
 	Name        string
 	OrgID       string
@@ -35,13 +35,13 @@ func (a *App) AfterCreate(tx *gorm.DB) (err error) {
 func (App) IsNode() {}
 
 func (a App) GetID() string {
-	return a.ModelV2.ID
+	return a.Model.ID
 }
 
 func (a App) GetCreatedAt() time.Time {
-	return a.ModelV2.CreatedAt
+	return a.Model.CreatedAt
 }
 
 func (a App) GetUpdatedAt() time.Time {
-	return a.ModelV2.UpdatedAt
+	return a.Model.UpdatedAt
 }

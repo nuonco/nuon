@@ -10,7 +10,7 @@ import (
 )
 
 type Deployment struct {
-	ModelV2
+	Model
 
 	ComponentID string
 	Component   Component `fake:"skip"`
@@ -37,13 +37,13 @@ func (d Deployment) AfterCreate(tx *gorm.DB) error {
 func (Deployment) IsNode() {}
 
 func (d Deployment) GetID() string {
-	return d.ModelV2.ID
+	return d.Model.ID
 }
 
 func (d Deployment) GetCreatedAt() time.Time {
-	return d.ModelV2.CreatedAt
+	return d.Model.CreatedAt
 }
 
 func (d Deployment) GetUpdatedAt() time.Time {
-	return d.ModelV2.UpdatedAt
+	return d.Model.UpdatedAt
 }

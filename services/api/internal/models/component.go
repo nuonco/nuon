@@ -8,7 +8,7 @@ import (
 )
 
 type Component struct {
-	ModelV2
+	Model
 	Name        string
 	AppID       string
 	App         App `faker:"-"`
@@ -20,13 +20,13 @@ type Component struct {
 func (Component) IsNode() {}
 
 func (c Component) GetID() string {
-	return c.ModelV2.ID
+	return c.Model.ID
 }
 
 func (c Component) GetCreatedAt() time.Time {
-	return c.ModelV2.CreatedAt
+	return c.Model.CreatedAt
 }
 
 func (c Component) GetUpdatedAt() time.Time {
-	return c.ModelV2.UpdatedAt
+	return c.Model.UpdatedAt
 }
