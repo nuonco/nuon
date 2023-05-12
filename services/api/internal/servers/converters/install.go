@@ -8,7 +8,7 @@ import (
 // Install model to proto converts install domain model into install proto message
 func InstallModelToProto(install *models.Install) *installv1.Install {
 	return &installv1.Install{
-		Id:   install.ID.String(),
+		Id:   install.ID,
 		Name: install.Name,
 		Settings: &installv1.Install_AwsSettings{
 			AwsSettings: &installv1.AwsSettings{

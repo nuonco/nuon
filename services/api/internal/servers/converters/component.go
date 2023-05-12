@@ -17,7 +17,7 @@ func ComponentModelToProto(component *models.Component) (*componentv1.ComponentR
 	}
 
 	res := &componentv1.ComponentRef{
-		Id:              component.ID.String(),
+		Id:              component.ID,
 		Name:            component.Name,
 		CreatedById:     component.CreatedByID,
 		ComponentConfig: config,

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
@@ -39,11 +38,7 @@ var _ DeploymentWorkflowManager = (*deploymentWorkflowManager)(nil)
 
 func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *models.Deployment) (string, error) {
 	app := deployment.Component.App
-	shortIDs, err := shortid.ParseStrings(deployment.Component.ID.String(), deployment.ID.String())
-	if err != nil {
-		return "", fmt.Errorf("unable to parse ids to shortids: %w", err)
-	}
-	orgID, appID, componentID, deploymentID := app.OrgID, app.ID, shortIDs[0], shortIDs[1]
+	orgID, appID, componentID, deploymentID := app.OrgID, app.ID, deployment.Component.ID, deployment.ID
 
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: workflows.DefaultTaskQueue,
@@ -59,7 +54,7 @@ func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *model
 
 	var compConf componentv1.Component
 	if deployment.Component.Config != nil {
-		if err = protojson.Unmarshal([]byte(deployment.Component.Config.String()), &compConf); err != nil {
+		if err := protojson.Unmarshal([]byte(deployment.Component.Config.String()), &compConf); err != nil {
 			return "", fmt.Errorf("failed to unmarshal DB JSON: %w", err)
 		}
 	}
@@ -74,8 +69,7 @@ func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *model
 		Component:    &compConf,
 	}
 	for idx, install := range app.Installs {
-		installID := shortid.ParseUUID(install.ID)
-		req.InstallIds[idx] = installID
+		req.InstallIds[idx] = install.ID
 	}
 
 	workflow, err := d.tc.ExecuteWorkflow(ctx, opts, "Start", req)

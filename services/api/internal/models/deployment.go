@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs"
 	"gorm.io/gorm"
 )
 
 type Deployment struct {
-	Model
+	ModelV2
 
-	ComponentID uuid.UUID
+	ComponentID string
 	Component   Component `fake:"skip"`
 	CreatedByID string
 
@@ -28,7 +27,7 @@ func (d Deployment) AfterCreate(tx *gorm.DB) error {
 		return fmt.Errorf("unable to get job manager: %w", err)
 	}
 
-	if err := mgr.CreateDeployment(ctx, d.ID.String()); err != nil {
+	if err := mgr.CreateDeployment(ctx, d.ID); err != nil {
 		return fmt.Errorf("unable to create deployment: %w", err)
 	}
 
@@ -38,13 +37,13 @@ func (d Deployment) AfterCreate(tx *gorm.DB) error {
 func (Deployment) IsNode() {}
 
 func (d Deployment) GetID() string {
-	return d.Model.ID.String()
+	return d.ModelV2.ID
 }
 
 func (d Deployment) GetCreatedAt() time.Time {
-	return d.Model.CreatedAt
+	return d.ModelV2.CreatedAt
 }
 
 func (d Deployment) GetUpdatedAt() time.Time {
-	return d.Model.UpdatedAt
+	return d.ModelV2.UpdatedAt
 }

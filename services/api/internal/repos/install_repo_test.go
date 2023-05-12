@@ -15,8 +15,10 @@ import (
 func createInstall(ctx context.Context, t *testing.T, state repoTestState) *models.Install {
 	app := createApp(ctx, t, state)
 	userID := uuid.NewString()
+	installID, _ := shortid.NewNanoID("inl")
 
 	install, err := state.installRepo.Create(ctx, &models.Install{
+		ModelV2:     models.ModelV2{ID: installID},
 		Name:        uuid.NewString(),
 		CreatedByID: userID,
 		AppID:       app.ID,
@@ -41,8 +43,10 @@ func TestUpsertInstall(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				app := createApp(ctx, t, state)
 				userID := uuid.NewString()
+				installID, _ := shortid.NewNanoID("inl")
 
 				installInput := &models.Install{
+					ModelV2:     models.ModelV2{ID: installID},
 					Name:        uuid.NewString(),
 					CreatedByID: userID,
 					AppID:       app.ID,
@@ -89,7 +93,8 @@ func TestDeleteInstall(t *testing.T) {
 			desc: "should error with canceled context",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				deleted, err := state.installRepo.Delete(ctx, uuid.New())
+				installID, _ := shortid.NewNanoID("inl")
+				deleted, err := state.installRepo.Delete(ctx, installID)
 				assert.False(t, deleted)
 				assert.NotNil(t, err)
 			},
@@ -128,7 +133,8 @@ func TestGetInstall(t *testing.T) {
 		{
 			desc: "should error with not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				fetchedInstall, err := state.installRepo.Get(ctx, uuid.New())
+				installID, _ := shortid.NewNanoID("inl")
+				fetchedInstall, err := state.installRepo.Get(ctx, installID)
 				assert.Nil(t, fetchedInstall)
 				assert.NotNil(t, err)
 			},

@@ -4,8 +4,6 @@ package models
 import (
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 // ToRegion converts the enum to a compatible region for AWS operations
@@ -17,9 +15,9 @@ func (a AWSRegion) ToRegion() string {
 }
 
 type AWSSettings struct {
-	Model
+	ModelV2
 
-	InstallID uuid.UUID
+	InstallID string
 
 	Region     AWSRegion `faker:"-"`
 	IamRoleArn string
@@ -31,13 +29,13 @@ func (AWSSettings) IsInstallSettings() {}
 func (AWSSettings) IsNode() {}
 
 func (aws AWSSettings) GetID() string {
-	return aws.Model.ID.String()
+	return aws.ModelV2.ID
 }
 
 func (aws AWSSettings) GetCreatedAt() time.Time {
-	return aws.Model.CreatedAt
+	return aws.ModelV2.CreatedAt
 }
 
 func (aws AWSSettings) GetUpdatedAt() time.Time {
-	return aws.Model.UpdatedAt
+	return aws.ModelV2.UpdatedAt
 }

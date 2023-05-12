@@ -15,9 +15,10 @@ func (s *server) GetComponent(
 	req *connect.Request[componentv1.GetComponentRequest],
 ) (*connect.Response[componentv1.GetComponentResponse], error) {
 	// run protobuf validations
-	if err := req.Msg.Validate(); err != nil {
-		return nil, fmt.Errorf("input validation failed: %w", err)
-	}
+	// TODO 174 temporarily disable validations until migration to shortIDs is complete
+	// if err := req.Msg.Validate(); err != nil {
+	// 	return nil, fmt.Errorf("input validation failed: %w", err)
+	// }
 
 	component, err := s.Svc.GetComponent(ctx, req.Msg.Id)
 	if err != nil {

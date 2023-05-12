@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -17,7 +16,7 @@ import (
 
 func TestDeploymentService_GetComponentDeployments(t *testing.T) {
 	errGetComponentDeployments := fmt.Errorf("error getting component deployments")
-	componentID := uuid.New()
+	componentID, _ := shortid.NewNanoID("cmp")
 	deployment := generics.GetFakeObj[*models.Deployment]()
 
 	tests := map[string]struct {
@@ -27,22 +26,22 @@ func TestDeploymentService_GetComponentDeployments(t *testing.T) {
 		assertFn     func(*testing.T, *models.Deployment)
 	}{
 		"happy path": {
-			componentIDs: []string{componentID.String()},
+			componentIDs: []string{componentID},
 			repoFn: func(ctl *gomock.Controller) *repos.MockDeploymentRepo {
 				repo := repos.NewMockDeploymentRepo(ctl)
 				deployments := []*models.Deployment{deployment}
 				repo.EXPECT().
-					ListByComponents(gomock.Any(), []uuid.UUID{componentID}, &models.ConnectionOptions{}).
+					ListByComponents(gomock.Any(), []string{componentID}, &models.ConnectionOptions{}).
 					Return(deployments, nil, nil)
 				return repo
 			},
 		},
 		"error": {
-			componentIDs: []string{componentID.String()},
+			componentIDs: []string{componentID},
 			repoFn: func(ctl *gomock.Controller) *repos.MockDeploymentRepo {
 				repo := repos.NewMockDeploymentRepo(ctl)
 				repo.EXPECT().
-					ListByComponents(gomock.Any(), []uuid.UUID{componentID}, &models.ConnectionOptions{}).
+					ListByComponents(gomock.Any(), []string{componentID}, &models.ConnectionOptions{}).
 					Return(nil, nil, errGetComponentDeployments)
 				return repo
 			},
@@ -125,7 +124,7 @@ func TestDeploymentService_GetAppDeployments(t *testing.T) {
 
 func TestDeploymentService_GetInstallDeployments(t *testing.T) {
 	errGetInstallDeployments := fmt.Errorf("error getting install deployments")
-	installID := uuid.New()
+	installID, _ := shortid.NewNanoID("inl")
 	deployment := generics.GetFakeObj[*models.Deployment]()
 
 	tests := map[string]struct {
@@ -135,22 +134,22 @@ func TestDeploymentService_GetInstallDeployments(t *testing.T) {
 		assertFn    func(*testing.T, *models.Deployment)
 	}{
 		"happy path": {
-			installIDs: []string{installID.String()},
+			installIDs: []string{installID},
 			repoFn: func(ctl *gomock.Controller) *repos.MockDeploymentRepo {
 				repo := repos.NewMockDeploymentRepo(ctl)
 				deployments := []*models.Deployment{deployment}
 				repo.EXPECT().
-					ListByInstalls(gomock.Any(), []uuid.UUID{installID}, &models.ConnectionOptions{}).
+					ListByInstalls(gomock.Any(), []string{installID}, &models.ConnectionOptions{}).
 					Return(deployments, nil, nil)
 				return repo
 			},
 		},
 		"error": {
-			installIDs: []string{installID.String()},
+			installIDs: []string{installID},
 			repoFn: func(ctl *gomock.Controller) *repos.MockDeploymentRepo {
 				repo := repos.NewMockDeploymentRepo(ctl)
 				repo.EXPECT().
-					ListByInstalls(gomock.Any(), []uuid.UUID{installID}, &models.ConnectionOptions{}).
+					ListByInstalls(gomock.Any(), []string{installID}, &models.ConnectionOptions{}).
 					Return(nil, nil, errGetInstallDeployments)
 				return repo
 			},
@@ -179,7 +178,7 @@ func TestDeploymentService_GetInstallDeployments(t *testing.T) {
 
 func TestDeploymentService_GetDeployment(t *testing.T) {
 	errGetDeployment := fmt.Errorf("error getting app")
-	deploymentID := uuid.New()
+	deploymentID, _ := shortid.NewNanoID("dpl")
 	app := generics.GetFakeObj[*models.Deployment]()
 
 	tests := map[string]struct {
@@ -189,7 +188,7 @@ func TestDeploymentService_GetDeployment(t *testing.T) {
 		assertFn     func(*testing.T, *models.Deployment)
 	}{
 		"happy path": {
-			deploymentID: deploymentID.String(),
+			deploymentID: deploymentID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockDeploymentRepo {
 				repo := repos.NewMockDeploymentRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), deploymentID).Return(app, nil)
@@ -197,7 +196,7 @@ func TestDeploymentService_GetDeployment(t *testing.T) {
 			},
 		},
 		"error": {
-			deploymentID: deploymentID.String(),
+			deploymentID: deploymentID,
 			repoFn: func(ctl *gomock.Controller) *repos.MockDeploymentRepo {
 				repo := repos.NewMockDeploymentRepo(ctl)
 				repo.EXPECT().Get(gomock.Any(), deploymentID).Return(nil, errGetDeployment)

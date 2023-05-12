@@ -1,12 +1,10 @@
 // gcp_settings.go
 package models
 
-import "github.com/google/uuid"
-
 type GCPSettings struct {
-	Model
+	ModelV2
 
-	InstallID uuid.UUID
+	InstallID string
 	Install   Install
 }
 

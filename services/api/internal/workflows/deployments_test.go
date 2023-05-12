@@ -30,6 +30,10 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 	deployment.Component.App.Installs = []models.Install{install}
 	orgID, _ := shortid.NewNanoID("org")
 	appID, _ := shortid.NewNanoID("app")
+	deploymentID, _ := shortid.NewNanoID("dpl")
+	componentID, _ := shortid.NewNanoID("cmp")
+	deployment.ID = deploymentID
+	deployment.Component.ID = componentID
 	deployment.Component.App.ID = appID
 	deployment.Component.AppID = appID
 	deployment.Component.App.OrgID = orgID
@@ -68,10 +72,10 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 				// make sure all ids are correcctly set
 				app := deployment.Component.App
 
-				assert.Equal(t, shortid.ParseUUID(deployment.ID), req.DeploymentId)
+				assert.Equal(t, deployment.ID, req.DeploymentId)
 				assert.Equal(t, app.ID, req.AppId)
 				assert.Equal(t, app.OrgID, req.OrgId)
-				assert.Equal(t, shortid.ParseUUID(deployment.Component.ID), req.Component.Id)
+				assert.Equal(t, deployment.Component.ID, req.Component.Id)
 			},
 		},
 		"error": {
