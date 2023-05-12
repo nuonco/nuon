@@ -20,7 +20,7 @@ func createApp(ctx context.Context, t *testing.T, state repoTestState) *models.A
 		Name:        uuid.NewString(),
 		CreatedByID: userID,
 		OrgID:       org.ID,
-		ModelV2:     models.ModelV2{ID: appID},
+		Model:       models.Model{ID: appID},
 	})
 	assert.Nil(t, err)
 	assert.NotNil(t, app)
@@ -45,7 +45,7 @@ func TestUpsertApp(t *testing.T) {
 					Name:        uuid.NewString(),
 					CreatedByID: userID,
 					OrgID:       org.ID,
-					ModelV2:     models.ModelV2{ID: appID},
+					Model:       models.Model{ID: appID},
 				}
 				app, err := state.appRepo.Create(ctx, appInput)
 				assert.Nil(t, err)
@@ -58,8 +58,8 @@ func TestUpsertApp(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				origApp := createApp(ctx, t, state)
 				appInput := &models.App{
-					ModelV2: models.ModelV2{ID: origApp.ID},
-					Name:    origApp.Name + "a",
+					Model: models.Model{ID: origApp.ID},
+					Name:  origApp.Name + "a",
 				}
 				app, err := state.appRepo.Update(ctx, appInput)
 				assert.Nil(t, err)

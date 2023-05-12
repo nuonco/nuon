@@ -10,7 +10,7 @@ import (
 )
 
 type Install struct {
-	ModelV2
+	Model
 	CreatedByID string
 
 	Name  string
@@ -54,13 +54,13 @@ func (i Install) BeforeDelete(tx *gorm.DB) error {
 func (Install) IsNode() {}
 
 func (i Install) GetID() string {
-	return i.ModelV2.ID
+	return i.Model.ID
 }
 
 func (i Install) GetCreatedAt() time.Time {
-	return i.ModelV2.CreatedAt
+	return i.Model.CreatedAt
 }
 
 func (i Install) GetUpdatedAt() time.Time {
-	return i.ModelV2.UpdatedAt
+	return i.Model.UpdatedAt
 }

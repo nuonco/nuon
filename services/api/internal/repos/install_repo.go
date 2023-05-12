@@ -77,28 +77,28 @@ func (i installRepo) ListByApp(ctx context.Context, appID string, options *model
 
 func (i installRepo) Delete(ctx context.Context, installID string) (bool, error) {
 	if err := i.db.WithContext(ctx).
-		Model(&models.Install{ModelV2: models.ModelV2{ID: installID}}).
+		Model(&models.Install{Model: models.Model{ID: installID}}).
 		Association("Domain").
 		Delete(); err != nil {
 		return false, err
 	}
 
 	if err := i.db.WithContext(ctx).
-		Model(&models.Install{ModelV2: models.ModelV2{ID: installID}}).
+		Model(&models.Install{Model: models.Model{ID: installID}}).
 		Association("AWSSettings").
 		Delete(); err != nil {
 		return false, err
 	}
 
 	if err := i.db.WithContext(ctx).
-		Model(&models.Install{ModelV2: models.ModelV2{ID: installID}}).
+		Model(&models.Install{Model: models.Model{ID: installID}}).
 		Association("GCPSettings").
 		Delete(); err != nil {
 		return false, err
 	}
 
 	install := models.Install{
-		ModelV2: models.ModelV2{ID: installID},
+		Model: models.Model{ID: installID},
 	}
 	if err := i.db.WithContext(ctx).
 		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).

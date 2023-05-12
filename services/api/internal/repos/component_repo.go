@@ -32,7 +32,7 @@ type componentRepo struct {
 }
 
 func (i componentRepo) Get(ctx context.Context, componentID string) (*models.Component, error) {
-	component := models.Component{ModelV2: models.ModelV2{ID: componentID}}
+	component := models.Component{Model: models.Model{ID: componentID}}
 
 	if err := i.db.WithContext(ctx).
 		Preload("App.Org").

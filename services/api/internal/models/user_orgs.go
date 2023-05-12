@@ -1,7 +1,7 @@
 package models
 
 type UserOrg struct {
-	ModelV2
+	Model
 
 	UserID string
 	OrgID  string `gorm:"primaryKey"`

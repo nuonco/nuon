@@ -221,7 +221,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 		//},
 		//wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
 		//mgr := workflows.NewMockOrgWorkflowManager(ctl)
-		////mgr.EXPECT().Provision(gomock.Any(), org.ID.String()).Return(nil)
+		////mgr.EXPECT().Provision(gomock.Any(), org.ID).Return(nil)
 		//return mgr
 		//},
 		//errExpected: errUpsertOrg,
