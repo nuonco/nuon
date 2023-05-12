@@ -13,9 +13,10 @@ func (s *server) DeleteInstall(
 	req *connect.Request[installv1.DeleteInstallRequest],
 ) (*connect.Response[installv1.DeleteInstallResponse], error) {
 	// run protobuf validations
-	if err := req.Msg.Validate(); err != nil {
-		return nil, fmt.Errorf("input validation failed: %w", err)
-	}
+	// TODO 174 temporarily disable validations until migration to shortIDs is complete
+	// if err := req.Msg.Validate(); err != nil {
+	// 	return nil, fmt.Errorf("input validation failed: %w", err)
+	// }
 
 	deleted, err := s.Svc.DeleteInstall(ctx, req.Msg.Id)
 	if err != nil {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	componentConfig "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -41,26 +41,22 @@ func NewComponentService(db *gorm.DB, log *zap.Logger) ComponentService {
 	}
 }
 
-func (i *componentService) DeleteComponent(ctx context.Context, inputID string) (bool, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	componentID, _ := uuid.Parse(inputID)
+func (i *componentService) DeleteComponent(ctx context.Context, componentID string) (bool, error) {
 	deleted, err := i.repo.Delete(ctx, componentID)
 	if err != nil {
 		i.log.Error("failed to delete component",
-			zap.String("componentID", componentID.String()),
+			zap.String("componentID", componentID),
 			zap.String("error", err.Error()))
 		return false, err
 	}
 	return deleted, nil
 }
 
-func (i *componentService) GetComponent(ctx context.Context, inputID string) (*models.Component, error) {
-	// parsing the uuid while ignoring the error handling since we do this at protobuf level
-	componentID, _ := uuid.Parse(inputID)
+func (i *componentService) GetComponent(ctx context.Context, componentID string) (*models.Component, error) {
 	component, err := i.repo.Get(ctx, componentID)
 	if err != nil {
 		i.log.Error("failed to retrieve component",
-			zap.String("componentID", componentID.String()),
+			zap.String("componentID", componentID),
 			zap.String("error", err.Error()))
 		return nil, err
 	}
@@ -150,6 +146,7 @@ func (i *componentService) UpsertComponent(ctx context.Context, input models.Com
 	}
 
 	var component models.Component
+	component.ID, _ = shortid.NewNanoID("cmp")
 	component.Name = input.Name
 	component.AppID = input.AppID
 	component.CreatedByID = input.CreatedByID

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,9 +13,11 @@ import (
 
 func createDeployment(ctx context.Context, t *testing.T, state repoTestState) *models.Deployment {
 	component := createComponent(ctx, t, state)
+	deploymentID, _ := shortid.NewNanoID("dpl")
 
 	deployment, err := state.deploymentRepo.Create(ctx, &models.Deployment{
 		ComponentID: component.ID,
+		ModelV2:     models.ModelV2{ID: deploymentID},
 	})
 	require.NoError(t, err)
 	assert.NotNil(t, deployment)
@@ -53,7 +55,8 @@ func TestGetDeployment(t *testing.T) {
 		{
 			desc: "should error with not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				fetchedDeployment, err := state.deploymentRepo.Get(ctx, uuid.New())
+				deploymentID, _ := shortid.NewNanoID("dpl")
+				fetchedDeployment, err := state.deploymentRepo.Get(ctx, deploymentID)
 				assert.Error(t, err)
 				assert.Nil(t, fetchedDeployment)
 			},
@@ -74,9 +77,9 @@ func TestListByComponents(t *testing.T) {
 				origDeployment := createDeployment(ctx, t, state)
 				origDeployment2 := createDeployment(ctx, t, state)
 
-				uuids := []uuid.UUID{origDeployment.ComponentID, origDeployment2.ComponentID}
+				componentIDs := []string{origDeployment.ComponentID, origDeployment2.ComponentID}
 
-				deployments, page, err := state.deploymentRepo.ListByComponents(ctx, uuids, &models.ConnectionOptions{})
+				deployments, page, err := state.deploymentRepo.ListByComponents(ctx, componentIDs, &models.ConnectionOptions{})
 				assert.NoError(t, err)
 				assert.NotNil(t, deployments)
 				assert.NotNil(t, page)
@@ -89,7 +92,7 @@ func TestListByComponents(t *testing.T) {
 				deployment := createDeployment(ctx, t, state)
 
 				state.ctxCloseFn()
-				fetchedDeployment, page, err := state.deploymentRepo.ListByComponents(ctx, []uuid.UUID{deployment.ComponentID}, &models.ConnectionOptions{})
+				fetchedDeployment, page, err := state.deploymentRepo.ListByComponents(ctx, []string{deployment.ComponentID}, &models.ConnectionOptions{})
 				assert.Error(t, err)
 				assert.Nil(t, fetchedDeployment)
 				assert.Nil(t, page)
@@ -164,9 +167,9 @@ func TestListByInstalls(t *testing.T) {
 				_, _ = state.componentRepo.Update(ctx, &origDeployment.Component)
 				_, _ = state.componentRepo.Update(ctx, &origDeployment2.Component)
 
-				uuids := []uuid.UUID{install.ID, install2.ID}
+				installIDs := []string{install.ID, install2.ID}
 
-				deployments, page, err := state.deploymentRepo.ListByInstalls(ctx, uuids, &models.ConnectionOptions{})
+				deployments, page, err := state.deploymentRepo.ListByInstalls(ctx, installIDs, &models.ConnectionOptions{})
 				assert.NoError(t, err)
 				assert.NotNil(t, deployments)
 				assert.NotNil(t, page)
@@ -181,7 +184,7 @@ func TestListByInstalls(t *testing.T) {
 				deployment.Component.AppID = install.AppID
 
 				state.ctxCloseFn()
-				fetchedDeployment, page, err := state.deploymentRepo.ListByInstalls(ctx, []uuid.UUID{install.ID}, &models.ConnectionOptions{})
+				fetchedDeployment, page, err := state.deploymentRepo.ListByInstalls(ctx, []string{install.ID}, &models.ConnectionOptions{})
 				assert.Error(t, err)
 				assert.Nil(t, fetchedDeployment)
 				assert.Nil(t, page)
