@@ -2,7 +2,7 @@
 package models
 
 type GCPSettings struct {
-	ModelV2
+	Model
 
 	InstallID string
 	Install   Install

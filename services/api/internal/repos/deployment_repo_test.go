@@ -17,7 +17,7 @@ func createDeployment(ctx context.Context, t *testing.T, state repoTestState) *m
 
 	deployment, err := state.deploymentRepo.Create(ctx, &models.Deployment{
 		ComponentID: component.ID,
-		ModelV2:     models.ModelV2{ID: deploymentID},
+		Model:       models.Model{ID: deploymentID},
 	})
 	require.NoError(t, err)
 	assert.NotNil(t, deployment)

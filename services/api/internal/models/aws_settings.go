@@ -15,7 +15,7 @@ func (a AWSRegion) ToRegion() string {
 }
 
 type AWSSettings struct {
-	ModelV2
+	Model
 
 	InstallID string
 
@@ -29,13 +29,13 @@ func (AWSSettings) IsInstallSettings() {}
 func (AWSSettings) IsNode() {}
 
 func (aws AWSSettings) GetID() string {
-	return aws.ModelV2.ID
+	return aws.Model.ID
 }
 
 func (aws AWSSettings) GetCreatedAt() time.Time {
-	return aws.ModelV2.CreatedAt
+	return aws.Model.CreatedAt
 }
 
 func (aws AWSSettings) GetUpdatedAt() time.Time {
-	return aws.ModelV2.UpdatedAt
+	return aws.Model.UpdatedAt
 }
