@@ -3,6 +3,7 @@ syntax = "proto3";
 package app.v1;
 
 import "google/type/datetime.proto";
+import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 message App {
@@ -15,7 +16,10 @@ message App {
 }
 
 message GetAppRequest {
-  string id = 1 [(validate.rules).string.uuid = true];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message GetAppResponse {
@@ -23,7 +27,10 @@ message GetAppResponse {
 }
 
 message GetAppsByOrgRequest {
-  string org_id = 1 [(validate.rules).string.uuid = true];
+  string org_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message GetAppsByOrgResponse {
@@ -31,7 +38,10 @@ message GetAppsByOrgResponse {
 }
 
 message DeleteAppRequest {
-  string id = 1 [(validate.rules).string.uuid = true];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message DeleteAppResponse {
@@ -39,15 +49,15 @@ message DeleteAppResponse {
 }
 
 message UpsertAppRequest {
-  string id = 1 [(validate.rules).string = {
-    uuid: true,
-    ignore_empty: true
-  }];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
   string name = 2;
-  string org_id = 3 [(validate.rules).string = {
-    uuid: true,
-    ignore_empty: true
-  }];
+  string org_id = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
   string created_by_id = 5;
 }
 

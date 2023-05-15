@@ -13,10 +13,9 @@ func (s *server) DeleteComponent(
 	req *connect.Request[componentv1.DeleteComponentRequest],
 ) (*connect.Response[componentv1.DeleteComponentResponse], error) {
 	// run protobuf validations
-	// TODO 174 temporarily disable validations until migration to shortIDs is complete
-	// if err := req.Msg.Validate(); err != nil {
-	// 	return nil, fmt.Errorf("input validation failed: %w", err)
-	// }
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
 
 	deleted, err := s.Svc.DeleteComponent(ctx, req.Msg.Id)
 	if err != nil {

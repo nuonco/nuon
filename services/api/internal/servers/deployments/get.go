@@ -15,10 +15,9 @@ func (s *server) GetDeployment(
 	req *connect.Request[deploymentv1.GetDeploymentRequest],
 ) (*connect.Response[deploymentv1.GetDeploymentResponse], error) {
 	// run protobuf validations
-	// TODO 174 temporarily disable validations until migration to shortIDs is complete
-	// if err := req.Msg.Validate(); err != nil {
-	// 	return nil, fmt.Errorf("input validation failed: %w", err)
-	// }
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
 
 	deployment, err := s.Svc.GetDeployment(ctx, req.Msg.Id)
 	if err != nil {
@@ -35,10 +34,9 @@ func (s *server) GetDeploymentsByInstalls(
 	req *connect.Request[deploymentv1.GetDeploymentsByInstallsRequest],
 ) (*connect.Response[deploymentv1.GetDeploymentsByInstallsResponse], error) {
 	// run protobuf validations
-	// TODO 174 temporarily disable validations until migration to shortIDs is complete
-	// if err := req.Msg.Validate(); err != nil {
-	// 	return nil, fmt.Errorf("input validation failed: %w", err)
-	// }
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
 
 	// TODO: add new service to retrieve deployments by install IDs
 	deployments, _, err := s.Svc.GetInstallDeployments(ctx, req.Msg.InstallIds, &models.ConnectionOptions{})
@@ -56,10 +54,9 @@ func (s *server) GetDeploymentsByComponents(
 	req *connect.Request[deploymentv1.GetDeploymentsByComponentsRequest],
 ) (*connect.Response[deploymentv1.GetDeploymentsByComponentsResponse], error) {
 	// run protobuf validations
-	// TODO 174 temporarily disable validations until migration to shortIDs is complete
-	// if err := req.Msg.Validate(); err != nil {
-	// 	return nil, fmt.Errorf("input validation failed: %w", err)
-	// }
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
 
 	deployments, _, err := s.Svc.GetComponentDeployments(ctx, req.Msg.ComponentIds, &models.ConnectionOptions{})
 	if err != nil {
@@ -76,10 +73,9 @@ func (s *server) GetDeploymentsByApps(
 	req *connect.Request[deploymentv1.GetDeploymentsByAppsRequest],
 ) (*connect.Response[deploymentv1.GetDeploymentsByAppsResponse], error) {
 	// run protobuf validations
-	// TODO 174 temporarily disable validations until migration to shortIDs is complete
-	// if err := req.Msg.Validate(); err != nil {
-	// 	return nil, fmt.Errorf("input validation failed: %w", err)
-	// }
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
 
 	// TODO: add new service to retrieve deployments by app IDs
 	deployments, _, err := s.Svc.GetAppDeployments(ctx, req.Msg.AppIds, &models.ConnectionOptions{})
