@@ -43,11 +43,17 @@ message GetComponentsByAppResponse {
 
 message UpsertComponentRequest {
   string app_id = 1 [
-    (validate.rules).string.len = 26,
+    (validate.rules).string = {
+      len: 26,
+      ignore_empty: true
+    },
     (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
   string id = 2 [
-    (validate.rules).string.len = 26,
+    (validate.rules).string = {
+      len: 26,
+      ignore_empty: true
+    },
     (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
   string name = 3;
