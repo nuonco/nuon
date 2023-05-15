@@ -24,15 +24,15 @@ func TestRunner(t *testing.T) {
 
 	req := generics.GetFakeObj[*runnerv1.ProvisionRunnerRequest]()
 
-	orgShortID := req.OrgId
+	orgID := req.OrgId
 	serverCookie := uuid.NewString()
-	orgServerAddr := fmt.Sprintf("%s.%s:9701", orgShortID, cfg.WaypointServerRootDomain)
+	orgServerAddr := fmt.Sprintf("%s.%s:9701", orgID, cfg.WaypointServerRootDomain)
 
 	env.OnActivity(a.GetWaypointServerCookie, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, gwscReq GetWaypointServerCookieRequest) (GetWaypointServerCookieResponse, error) {
 			assert.Nil(t, gwscReq.validate())
 
-			require.Equal(t, orgShortID, gwscReq.OrgID)
+			require.Equal(t, orgID, gwscReq.OrgID)
 			require.Equal(t, orgServerAddr, gwscReq.OrgServerAddr)
 			require.Equal(t, cfg.WaypointBootstrapTokenNamespace, gwscReq.TokenSecretNamespace)
 			return GetWaypointServerCookieResponse{Cookie: serverCookie}, nil
@@ -43,9 +43,9 @@ func TestRunner(t *testing.T) {
 			assert.Nil(t, iwr.validate())
 			assert.Nil(t, iwr.RunnerConfig.Validate())
 
-			require.Equal(t, orgShortID, iwr.Namespace)
-			require.Equal(t, fmt.Sprintf("wp-%s-runner", orgShortID), iwr.ReleaseName)
-			require.Equal(t, orgShortID, iwr.RunnerConfig.ID)
+			require.Equal(t, orgID, iwr.Namespace)
+			require.Equal(t, fmt.Sprintf("wp-%s-runner", orgID), iwr.ReleaseName)
+			require.Equal(t, orgID, iwr.RunnerConfig.ID)
 			require.Equal(t, serverCookie, iwr.RunnerConfig.Cookie)
 			require.Equal(t, orgServerAddr, iwr.RunnerConfig.ServerAddr)
 			require.Equal(t, req.OdrIamRoleArn, iwr.RunnerConfig.OdrIAMRoleArn)
@@ -56,7 +56,7 @@ func TestRunner(t *testing.T) {
 		Return(func(_ context.Context, awrReq AdoptWaypointRunnerRequest) (AdoptWaypointRunnerResponse, error) {
 			assert.Nil(t, awrReq.validate())
 
-			require.Equal(t, orgShortID, awrReq.OrgID)
+			require.Equal(t, orgID, awrReq.OrgID)
 			require.Equal(t, orgServerAddr, awrReq.OrgServerAddr)
 			require.Equal(t, cfg.WaypointBootstrapTokenNamespace, awrReq.TokenSecretNamespace)
 			return AdoptWaypointRunnerResponse{}, nil
@@ -65,7 +65,7 @@ func TestRunner(t *testing.T) {
 		Return(func(_ context.Context, cscReq CreateServerConfigRequest) (CreateServerConfigResponse, error) {
 			assert.NoError(t, cscReq.validate())
 
-			require.Equal(t, orgShortID, cscReq.OrgID)
+			require.Equal(t, orgID, cscReq.OrgID)
 			require.Equal(t, orgServerAddr, cscReq.OrgServerAddr)
 			require.Equal(t, cfg.WaypointBootstrapTokenNamespace, cscReq.TokenSecretNamespace)
 			return CreateServerConfigResponse{}, nil
@@ -74,7 +74,7 @@ func TestRunner(t *testing.T) {
 		Return(func(_ context.Context, crpReq CreateRunnerProfileRequest) (CreateRunnerProfileResponse, error) {
 			assert.NoError(t, crpReq.validate())
 
-			require.Equal(t, orgShortID, crpReq.OrgID)
+			require.Equal(t, orgID, crpReq.OrgID)
 			require.Equal(t, orgServerAddr, crpReq.OrgServerAddr)
 			require.Equal(t, cfg.WaypointBootstrapTokenNamespace, crpReq.TokenSecretNamespace)
 			return CreateRunnerProfileResponse{}, nil
@@ -84,10 +84,10 @@ func TestRunner(t *testing.T) {
 		Return(func(_ context.Context, crbReq CreateRoleBindingRequest) (CreateRoleBindingResponse, error) {
 			assert.Nil(t, crbReq.validate())
 
-			require.Equal(t, orgShortID, crbReq.OrgID)
+			require.Equal(t, orgID, crbReq.OrgID)
 			require.Equal(t, orgServerAddr, crbReq.OrgServerAddr)
 			require.Equal(t, cfg.WaypointBootstrapTokenNamespace, crbReq.TokenSecretNamespace)
-			require.Equal(t, orgShortID, crbReq.NamespaceName)
+			require.Equal(t, orgID, crbReq.NamespaceName)
 			return CreateRoleBindingResponse{}, nil
 		})
 

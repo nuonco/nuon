@@ -30,8 +30,8 @@ message WorkflowInfo {
 // Request represents a workflow execution
 message Request {
   string workflow_id = 1 [
-    (validate.rules).string.uuid = true,
-    (tagger.tags) = "faker:\"uuid_hyphenated\""
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
 
   RequestRef request = 2 [(tagger.tags) = "faker:\"-\""];

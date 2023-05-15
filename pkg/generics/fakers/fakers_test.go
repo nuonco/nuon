@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
 	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
 	"github.com/stretchr/testify/assert"
@@ -22,10 +21,7 @@ func TestGetFakeObj(t *testing.T) {
 	var obj testFakeObj
 	err := faker.FakeData(&obj)
 	assert.NoError(t, err)
-
-	parsed, err := shortid.ToUUID(obj.ShortID)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, parsed)
+	assert.Equal(t, len(obj.ShortID), 26)
 
 	err = obj.BuildConfig.Validate()
 	assert.NoError(t, err)
