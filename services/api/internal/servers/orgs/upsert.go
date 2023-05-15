@@ -15,10 +15,9 @@ func (s *server) UpsertOrg(
 	req *connect.Request[orgv1.UpsertOrgRequest],
 ) (*connect.Response[orgv1.UpsertOrgResponse], error) {
 	// run protobuf validations
-	// TODO 174 temporarily disable validations until migration to shortIDs is complete
-	// if err := req.Msg.Validate(); err != nil {
-	// 	return nil, fmt.Errorf("input validation failed: %w", err)
-	// }
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
 
 	org, err := s.Svc.UpsertOrg(ctx, models.OrgInput{
 		ID:              converters.ToOptionalStr(req.Msg.Id),

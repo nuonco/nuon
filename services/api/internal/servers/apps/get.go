@@ -15,10 +15,9 @@ func (s *server) GetApp(
 	req *connect.Request[appv1.GetAppRequest],
 ) (*connect.Response[appv1.GetAppResponse], error) {
 	// run protobuf validations
-	// TODO 174 temporarily disable validations until migration to shortIDs is complete
-	// if err := req.Msg.Validate(); err != nil {
-	// 	return nil, fmt.Errorf("input validation failed: %w", err)
-	// }
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
 
 	app, err := s.Svc.GetApp(ctx, req.Msg.Id)
 	if err != nil {
@@ -35,10 +34,9 @@ func (s *server) GetAppsByOrg(
 	req *connect.Request[appv1.GetAppsByOrgRequest],
 ) (*connect.Response[appv1.GetAppsByOrgResponse], error) {
 	// run protobuf validations
-	// TODO 174 temporarily disable validations until migration to shortIDs is complete
-	// if err := req.Msg.Validate(); err != nil {
-	// 	return nil, fmt.Errorf("input validation failed: %w", err)
-	// }
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
 
 	apps, _, err := s.Svc.GetOrgApps(ctx, req.Msg.OrgId, &models.ConnectionOptions{})
 	if err != nil {
