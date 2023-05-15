@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package user.v1;
 
+import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 message OrgMember {
@@ -11,7 +12,10 @@ message OrgMember {
 
 message UpsertOrgMemberRequest {
   string user_id = 1;
-  string org_id = 2 [(validate.rules).string.uuid = true];
+  string org_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message UpsertOrgMemberResponse {

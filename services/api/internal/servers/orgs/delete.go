@@ -13,10 +13,9 @@ func (s *server) DeleteOrg(
 	req *connect.Request[orgv1.DeleteOrgRequest],
 ) (*connect.Response[orgv1.DeleteOrgResponse], error) {
 	// run protobuf validations
-	// TODO 174 temporarily disable validations until migration to shortIDs is complete
-	// if err := req.Msg.Validate(); err != nil {
-	// 	return nil, fmt.Errorf("input validation failed: %w", err)
-	// }
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
 
 	deleted, err := s.Svc.DeleteOrg(ctx, req.Msg.Id)
 	if err != nil {

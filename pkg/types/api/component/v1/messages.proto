@@ -4,6 +4,7 @@ package component.v1;
 
 import "component/v1/component.proto";
 import "google/type/datetime.proto";
+import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 message ComponentRef {
@@ -19,7 +20,10 @@ message ComponentRef {
 }
 
 message GetComponentRequest {
-  string id = 1 [(validate.rules).string.uuid = true];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message GetComponentResponse {
@@ -27,7 +31,10 @@ message GetComponentResponse {
 }
 
 message GetComponentsByAppRequest {
-  string app_id = 1 [(validate.rules).string.uuid = true];
+  string app_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message GetComponentsByAppResponse {
@@ -35,14 +42,14 @@ message GetComponentsByAppResponse {
 }
 
 message UpsertComponentRequest {
-  string app_id = 1 [(validate.rules).string = {
-    uuid: true,
-    ignore_empty: true
-  }];
-  string id = 2 [(validate.rules).string = {
-    uuid: true,
-    ignore_empty: true
-  }];
+  string app_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
+  string id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
   string name = 3;
   string created_by_id = 4;
 
@@ -54,7 +61,10 @@ message UpsertComponentResponse {
 }
 
 message DeleteComponentRequest {
-  string id = 1 [(validate.rules).string.uuid = true];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message DeleteComponentResponse {
