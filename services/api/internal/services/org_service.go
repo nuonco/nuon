@@ -75,6 +75,7 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 	}
 	if input.ID != nil {
 		org.ID = *input.ID
+		org.IsNew = false
 	} else {
 		// TODO 174 make a canonical enum of the nanoID types and map that to the prefix strings
 		nanoID, err := shortid.NewNanoID("org")
@@ -82,6 +83,7 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 			return nil, err
 		}
 		org.ID = nanoID
+		org.IsNew = true
 		org.CreatedByID = input.OwnerID
 	}
 
