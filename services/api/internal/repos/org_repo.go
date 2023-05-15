@@ -31,7 +31,6 @@ type orgRepo struct {
 }
 
 func (o orgRepo) Create(ctx context.Context, org *models.Org) (*models.Org, error) {
-	origID := org.ID
 	err := o.db.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		UpdateAll: true,
@@ -39,8 +38,6 @@ func (o orgRepo) Create(ctx context.Context, org *models.Org) (*models.Org, erro
 	if err != nil {
 		return nil, err
 	}
-	//TODO 174 check if this works properly after migration to shortIDs
-	org.IsNew = org.ID != origID
 	return org, nil
 }
 
