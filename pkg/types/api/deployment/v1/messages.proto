@@ -3,6 +3,7 @@ syntax = "proto3";
 package deployment.v1;
 
 import "google/type/datetime.proto";
+import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 message Deployment {
@@ -18,7 +19,10 @@ message Deployment {
 }
 
 message GetDeploymentRequest {
-  string id = 1 [(validate.rules).string.uuid = true];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message GetDeploymentResponse {
@@ -26,7 +30,7 @@ message GetDeploymentResponse {
 }
 
 message GetDeploymentsByAppsRequest {
-  repeated string app_ids = 1 [(validate.rules).repeated.items.string.uuid = true];
+  repeated string app_ids = 1 [(validate.rules).repeated.items.string.len = 26];
 }
 
 message GetDeploymentsByAppsResponse {
@@ -34,7 +38,7 @@ message GetDeploymentsByAppsResponse {
 }
 
 message GetDeploymentsByComponentsRequest {
-  repeated string component_ids = 1 [(validate.rules).repeated.items.string.uuid = true];
+  repeated string component_ids = 1 [(validate.rules).repeated.items.string.len = 26];
 }
 
 message GetDeploymentsByComponentsResponse {
@@ -42,7 +46,7 @@ message GetDeploymentsByComponentsResponse {
 }
 
 message GetDeploymentsByInstallsRequest {
-  repeated string install_ids = 1 [(validate.rules).repeated.items.string.uuid = true];
+  repeated string install_ids = 1 [(validate.rules).repeated.items.string.len = 26];
 }
 
 message GetDeploymentsByInstallsResponse {
@@ -50,7 +54,10 @@ message GetDeploymentsByInstallsResponse {
 }
 
 message CreateDeploymentRequest {
-  string component_id = 1 [(validate.rules).string.uuid = true];
+  string component_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
   string created_by_id = 2;
 }
 

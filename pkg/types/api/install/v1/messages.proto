@@ -3,6 +3,7 @@ syntax = "proto3";
 package install.v1;
 
 import "google/type/datetime.proto";
+import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 message Install {
@@ -38,7 +39,10 @@ message GcpSettings {
 }
 
 message GetInstallRequest {
-  string id = 1 [(validate.rules).string.uuid = true];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message GetInstallResponse {
@@ -46,7 +50,10 @@ message GetInstallResponse {
 }
 
 message GetInstallsByAppRequest {
-  string app_id = 1 [(validate.rules).string.uuid = true];
+  string app_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message GetInstallsByAppResponse {
@@ -54,7 +61,10 @@ message GetInstallsByAppResponse {
 }
 
 message DeleteInstallRequest {
-  string id = 1 [(validate.rules).string.uuid = true];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message DeleteInstallResponse {
@@ -62,15 +72,15 @@ message DeleteInstallResponse {
 }
 
 message UpsertInstallRequest {
-  string id = 1 [(validate.rules).string = {
-    uuid: true,
-    ignore_empty: true
-  }];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
   string name = 2;
-  string app_id = 3 [(validate.rules).string = {
-    uuid: true,
-    ignore_empty: true
-  }];
+  string app_id = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
   string created_by_id = 4;
 
   oneof settings {

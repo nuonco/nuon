@@ -15,10 +15,9 @@ func (s *server) UpsertApp(
 	req *connect.Request[appv1.UpsertAppRequest],
 ) (*connect.Response[appv1.UpsertAppResponse], error) {
 	// run protobuf validations
-	// TODO 174 temporarily disable validations until migration to shortIDs is complete
-	// if err := req.Msg.Validate(); err != nil {
-	// 	return nil, fmt.Errorf("input validation failed: %w", err)
-	// }
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
 
 	app, err := s.Svc.UpsertApp(ctx, models.AppInput{
 		ID:          converters.ToOptionalStr(req.Msg.Id),

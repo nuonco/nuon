@@ -3,6 +3,7 @@ syntax = "proto3";
 package org.v1;
 
 import "google/type/datetime.proto";
+import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 message Org {
@@ -23,7 +24,10 @@ message GetOrgsByMemberResponse {
 }
 
 message GetOrgRequest {
-  string id = 1 [(validate.rules).string.uuid = true];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message GetOrgResponse {
@@ -31,10 +35,10 @@ message GetOrgResponse {
 }
 
 message UpsertOrgRequest {
-  string id = 1 [(validate.rules).string = {
-    uuid: true,
-    ignore_empty: true
-  }];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
   string name = 2;
   string owner_id = 3;
   string github_install_id = 4;
@@ -45,7 +49,10 @@ message UpsertOrgResponse {
 }
 
 message DeleteOrgRequest {
-  string id = 1 [(validate.rules).string.uuid = true];
+  string id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+  ];
 }
 
 message DeleteOrgResponse {
