@@ -17,7 +17,10 @@ message SandboxVersion {
 
 message UpsertSandboxVersionRequest {
   string id = 1 [
-    (validate.rules).string.len = 26,
+    (validate.rules).string = {
+      len: 26,
+      ignore_empty: true
+    },
     (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
   string sandbox_name = 2 [(validate.rules).string.min_len = 3];

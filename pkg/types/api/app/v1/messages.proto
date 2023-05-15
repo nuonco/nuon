@@ -50,12 +50,18 @@ message DeleteAppResponse {
 
 message UpsertAppRequest {
   string id = 1 [
-    (validate.rules).string.len = 26,
+    (validate.rules).string = {
+      len: 26,
+      ignore_empty: true
+    },
     (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
   string name = 2;
   string org_id = 3 [
-    (validate.rules).string.len = 26,
+    (validate.rules).string = {
+      len: 26,
+      ignore_empty: true
+    },
     (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
   string created_by_id = 5;
