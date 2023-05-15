@@ -18,7 +18,8 @@ import (
 func TestProvisionInstances(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
 	req := generics.GetFakeObj[*instancesv1.ProvisionRequest]()
-	req.InstallIds = []string{shortid.New()}
+	installID, _ := shortid.NewNanoID("inl")
+	req.InstallIds = []string{installID}
 	wkflow := NewWorkflow(cfg)
 	testSuite := &testsuite.WorkflowTestSuite{}
 
