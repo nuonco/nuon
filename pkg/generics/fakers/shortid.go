@@ -7,5 +7,6 @@ import (
 )
 
 func fakeShortID(v reflect.Value) (interface{}, error) {
-	return shortid.New(), nil
+	fakeNanoID, _ := shortid.NewNanoID("") //prefix=def
+	return fakeNanoID, nil
 }
