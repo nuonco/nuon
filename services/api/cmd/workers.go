@@ -14,7 +14,6 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/deleteinstall"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/deleteorg"
 	"github.com/spf13/cobra"
-	tworker "go.temporal.io/sdk/worker"
 )
 
 var runWorkerCmd = &cobra.Command{
@@ -93,7 +92,7 @@ func runWorkers(cmd *cobra.Command, _ []string) {
 		log.Fatalf("unable to initialize worker: %s", err.Error())
 	}
 
-	interruptCh := tworker.InterruptCh()
+	interruptCh := make(chan interface{})
 	err = wkr.Run(interruptCh)
 	if err != nil {
 		log.Fatalf("unable to run worker: %v", err)
