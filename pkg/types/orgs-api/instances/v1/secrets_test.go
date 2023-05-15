@@ -10,12 +10,17 @@ import (
 )
 
 func TestAsRef(t *testing.T) {
+	orgID, _ := shortid.NewNanoID("org")
+	appID, _ := shortid.NewNanoID("app")
+	compID, _ := shortid.NewNanoID("cmp")
+	installID, _ := shortid.NewNanoID("inl")
+	secretID, _ := shortid.NewNanoID("sec")
 	secret := Secret{
-		OrgId:       shortid.New(),
-		AppId:       shortid.New(),
-		ComponentId: shortid.New(),
-		InstallId:   shortid.New(),
-		Id:          shortid.New(),
+		OrgId:       orgID,
+		AppId:       appID,
+		ComponentId: compID,
+		InstallId:   installID,
+		Id:          secretID,
 		Key:         "key1",
 		Value:       "value1",
 	}
@@ -27,11 +32,11 @@ func TestAsRef(t *testing.T) {
 }
 
 func TestS3Path(t *testing.T) {
-	orgID := shortid.New()
-	appID := shortid.New()
-	compID := shortid.New()
-	installID := shortid.New()
-	secretID := shortid.New()
+	orgID, _ := shortid.NewNanoID("org")
+	appID, _ := shortid.NewNanoID("app")
+	compID, _ := shortid.NewNanoID("cmp")
+	installID, _ := shortid.NewNanoID("inl")
+	secretID, _ := shortid.NewNanoID("sec")
 	secretRef := SecretRef{
 		OrgId:       orgID,
 		AppId:       appID,
