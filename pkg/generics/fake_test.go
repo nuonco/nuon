@@ -3,7 +3,6 @@ package generics
 import (
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics/fakers"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,12 +15,5 @@ type testFakeObj struct {
 func TestGetFakeObj(t *testing.T) {
 	fakers.Register()
 	obj := GetFakeObj[testFakeObj]()
-
-	parsed, err := shortid.ToUUID(obj.ValidShortID)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, parsed)
-
-	parsed, err = shortid.ToUUID(obj.InvalidShortID)
-	assert.Error(t, err)
-	assert.Empty(t, parsed)
+	assert.Equal(t, len(obj.ValidShortID), 26)
 }

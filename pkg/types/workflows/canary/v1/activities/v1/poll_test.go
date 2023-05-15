@@ -11,10 +11,11 @@ import (
 
 func Test_PollWorkflowRequest(t *testing.T) {
 	t.Run("test a poll workflow request", func(t *testing.T) {
+		workflowID, _ := shortid.NewNanoID("")
 		req := &PollWorkflowRequest{
 			Namespace:    "orgs",
 			WorkflowName: "Provision",
-			WorkflowId:   shortid.New(),
+			WorkflowId:   workflowID,
 		}
 		err := req.Validate()
 		assert.NoError(t, err)

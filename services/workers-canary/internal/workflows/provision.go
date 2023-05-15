@@ -33,7 +33,8 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 			return req.CanaryId
 		}
 
-		return shortid.New()
+		newCanaryID, _ := shortid.NewNanoID("") //prefix=def
+		return newCanaryID
 	})
 
 	var canaryID string

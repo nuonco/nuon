@@ -27,8 +27,9 @@ func Test_StartWorkflowRequest(t *testing.T) {
 
 func Test_StartWorkflowResponse(t *testing.T) {
 	t.Run("test workflow with valid id", func(t *testing.T) {
+		workflowID, _ := shortid.NewNanoID("")
 		obj := &StartWorkflowResponse{
-			WorkflowId: shortid.New(),
+			WorkflowId: workflowID,
 		}
 		err := obj.Validate()
 		assert.NoError(t, err)
