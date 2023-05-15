@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultActivityTimeout = time.Second * 5
+	defaultActivityTimeout = time.Minute
 	defaultDeployTimeout   = time.Minute * 15
 )
 

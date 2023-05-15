@@ -2,5 +2,9 @@
 type: worker
 env:
   DISABLE_METRICS: true
+env_secrets:
+  DEPLOYMENT_BOTS_SLACK_WEBHOOK_URL:
+    name: deployment-bots-slack-webhook-url
+    key: slack_webhook_url
 local_cmd: go run . all
 run_cmd: all
