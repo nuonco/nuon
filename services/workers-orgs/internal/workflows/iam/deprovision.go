@@ -48,8 +48,8 @@ func (w *wkflow) execDeprovisionRole(ctx workflow.Context,
 	req *iamv1.DeprovisionIAMRequest,
 	nameFn func(string) string) error {
 
-	arnPrefix := strings.Replace(w.cfg.OrgsAccountRootARN, "root", "", 1)
-	policyARN := fmt.Sprintf("%s/orgs/%s/%s", arnPrefix, req.OrgId, nameFn(req.OrgId))
+	arnPrefix := strings.Replace(w.cfg.OrgsAccountRootARN, ":root", "", 1)
+	policyARN := fmt.Sprintf("%s:policy/orgs/%s/%s", arnPrefix, req.OrgId, nameFn(req.OrgId))
 
 	deleteAttachmentReq := DeleteIAMRolePolicyAttachmentRequest{
 		AssumeRoleARN: w.cfg.OrgsIAMAccessRoleArn,

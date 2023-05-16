@@ -5,8 +5,9 @@ import "github.com/go-playground/validator/v10"
 type Activities struct {
 	iamPolicyCreator iamPolicyCreator
 	iamPolicyDeleter iamPolicyDeleter
-	iamRoleCreator   iamRoleCreator
-	iamRoleDeleter   iamRoleDeleter
+
+	iamRoleCreator iamRoleCreator
+	iamRoleDeleter iamRoleDeleter
 
 	iamRolePolicyAttachmentCreator iamRolePolicyAttachmentCreator
 	iamRolePolicyAttachmentDeleter iamRolePolicyAttachmentDeleter
@@ -19,6 +20,11 @@ func NewActivities() *Activities {
 		iamPolicyCreator:               &iamPolicyCreatorImpl{},
 		iamRoleCreator:                 &iamRoleCreatorImpl{},
 		iamRolePolicyAttachmentCreator: &iamRolePolicyAttachmentCreatorImpl{},
-		validator:                      validator.New(),
+
+		iamRolePolicyAttachmentDeleter: &iamRolePolicyAttachmentDeleterImpl{},
+		iamPolicyDeleter:               &iamPolicyDeleterImpl{},
+		iamRoleDeleter:                 &iamRoleDeleterImpl{},
+
+		validator: validator.New(),
 	}
 }
