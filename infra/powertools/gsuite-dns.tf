@@ -31,6 +31,6 @@ resource "google_dns_record_set" "spf" {
   ttl          = 86400
   rrdatas = [
     "\"v=spf1 include:_spf.google.com ~all\"",
-    "google-site-verification=ESTIshJxUp9wpeJMMCP0IK4w0xTVKRN9tSLJ9049frE"
+    "google-site-verification=j2-T8MkeRE1eR84uBi0jzr0oMNQ0IjaUzysabFPRw1k"
   ]
 }
