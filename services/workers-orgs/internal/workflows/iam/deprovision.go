@@ -7,6 +7,7 @@ import (
 	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/roles"
 	"go.temporal.io/sdk/workflow"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // DeprovisionIAM is a workflow that deprovisions all IAM for an org
@@ -22,23 +23,33 @@ func (w wkflow) DeprovisionIAM(ctx workflow.Context, req *iamv1.DeprovisionIAMRe
 	act := NewActivities()
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
-	nameFns := []func(string) string{
-		roles.DeploymentsIAMName,
-		roles.InstallationsIAMName,
-		roles.InstallerIAMName,
-		roles.InstancesIAMName,
-		roles.OdrIAMName,
-		roles.OrgsIAMName,
-		roles.SecretsIAMName,
+	status := make(map[string]interface{})
+	nameFns := map[string]func(string) string{
+		"deployments":   roles.DeploymentsIAMName,
+		"installations": roles.InstallationsIAMName,
+		"installer":     roles.InstallerIAMName,
+		"instances":     roles.InstancesIAMName,
+		"odr":           roles.OdrIAMName,
+		"orgs":          roles.OrgsIAMName,
+		"secrets":       roles.SecretsIAMName,
 	}
-	for _, nameFn := range nameFns {
+	for step, nameFn := range nameFns {
 		if err := w.execDeprovisionRole(ctx,
 			act,
 			req,
 			nameFn); err != nil {
-			return resp, fmt.Errorf("unable to delete IAM role: %w", err)
+
+			status[step] = fmt.Errorf("unable to delete IAM role: %w", err).Error()
+			continue
 		}
+		status[step] = "ok"
 	}
+
+	respStruct, err := structpb.NewStruct(status)
+	if err != nil {
+		return resp, fmt.Errorf("unable to convert struct to proto: %w", err)
+	}
+	resp.Status = respStruct
 
 	return resp, nil
 }
