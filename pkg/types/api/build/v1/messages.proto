@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package build.v1;
+
+import "google/type/datetime.proto";
+import "validate/validate.proto";
+
+message Build {
+  string id = 1 [(validate.rules).string.len = 26];
+  string git_ref = 2;
+  string component_id = 4 [(validate.rules).string.len = 26];
+  string created_by_id = 5;
+
+  google.type.DateTime updated_at = 7;
+  google.type.DateTime created_at = 8;
+}
+
+message StartBuildRequest {
+  string git_ref = 1;
+  string component_id = 2 [(validate.rules).string.len = 26];
+  string created_by_id = 3;
+}
+
+message StartBuildResponse {
+  Build build = 1;
+}
+
+message CancelBuildRequest {
+  string id = 1 [(validate.rules).string.len = 26];
+}
+
+message CancelBuildResponse {
+  Build build = 1;
+}
+
+message QueryBuildsRequest {
+  string git_ref = 1;
+  string component_id = 2 [(validate.rules).string.len = 26];
+  string created_by_id = 3;
+}
+
+message QueryBuildsResponse {
+  repeated Build builds = 1;
+}
