@@ -5,6 +5,7 @@ package build.v1;
 import "build/v1/docker.proto";
 import "build/v1/external_image.proto";
 import "build/v1/noop.proto";
+import "build/v1/terraform_module.proto";
 import "google/protobuf/duration.proto";
 import "validate/validate.proto";
 
@@ -19,5 +20,6 @@ message Config {
     build.v1.DockerConfig docker_cfg = 2;
     build.v1.ExternalImageConfig external_image_cfg = 3;
     build.v1.NoopConfig noop = 4;
+    build.v1.TerraformModuleConfig terraform_module = 5;
   }
 }
