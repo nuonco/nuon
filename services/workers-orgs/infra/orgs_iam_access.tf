@@ -10,6 +10,9 @@ data "aws_iam_policy_document" "orgs_account_iam_access" {
       "iam:TagRole",
       "iam:TagPolicy",
       "iam:AttachRolePolicy",
+      "iam:DeletePolicy",
+      "iam:DeleteRole",
+      "iam:DetachRolePolicy",
     ]
     resources = ["*", ]
   }
