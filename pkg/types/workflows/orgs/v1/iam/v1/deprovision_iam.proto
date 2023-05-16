@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package orgs.v1.iam.v1;
 
+import "google/protobuf/struct.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -14,4 +15,6 @@ message DeprovisionIAMRequest {
   ];
 }
 
-message DeprovisionIAMResponse {}
+message DeprovisionIAMResponse {
+  google.protobuf.Struct status = 1;
+}
