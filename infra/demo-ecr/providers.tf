@@ -5,9 +5,9 @@ locals {
   }
 
   aws_settings = {
-    region        = "us-west-2"
-    demo_region = "us-east-1"
-    account_name  = "demo"
+    region       = "us-west-2"
+    demo_region  = "us-east-1"
+    account_name = "demo"
   }
 }
 

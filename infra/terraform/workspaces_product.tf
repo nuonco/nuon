@@ -5,6 +5,22 @@ resource "tfe_project" "product" {
   organization = data.tfe_organization.main.name
 }
 
+module "demo-ecr" {
+  source = "./modules/workspace"
+
+  name          = "demo"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "infra/demo-ecr"
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.product.id
+  vars = {
+    ecr_repo_name = "demo-ecr"
+  }
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+}
+
 module "demo" {
   source = "./modules/workspace"
 

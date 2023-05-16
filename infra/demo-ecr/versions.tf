@@ -4,7 +4,7 @@ terraform {
   backend "remote" {
     organization = "launchpaddev"
     workspaces {
-      name = "infra-mob-ecr"
+      name = "demo-ecr"
     }
   }
 
