@@ -7,6 +7,7 @@ import (
 	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	temporalclient "github.com/powertoolsdev/mono/services/api/internal/clients/temporal"
+	"github.com/powertoolsdev/mono/services/api/internal/jobs/build"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/createapp"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/createdeployment"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/createinstall"
@@ -36,6 +37,8 @@ func runWorkers(cmd *cobra.Command, _ []string) {
 	createAppJob := createapp.New(app.v)
 	createOrgJob := createorg.New(app.v)
 	deleteOrgJob := deleteorg.New(app.v)
+	buildJob := build.New(app.v)
+
 	orgsTc, err := temporalclient.New(temporalclient.WithConfig(app.cfg), temporalclient.WithNamespace("orgs"))
 	if err != nil {
 		log.Fatalf("unable to create orgs temporal client for background activities: %s", err)
@@ -52,12 +55,17 @@ func runWorkers(cmd *cobra.Command, _ []string) {
 	if err != nil {
 		log.Fatalf("unable to create deployments temporal client for background activities: %s", err)
 	}
+	buildsTc, err := temporalclient.New(temporalclient.WithConfig(app.cfg), temporalclient.WithNamespace("builds"))
+	if err != nil {
+		log.Fatalf("unable to create builds temporal client for background activities: %s", err)
+	}
 	createOrgActivites := createorg.NewActivities(orgsTc)
 	deleteOrgActivites := deleteorg.NewActivities(orgsTc)
 	createAppActivites := createapp.NewActivities(app.db, appsTc)
 	createInstallActivites := createinstall.NewActivities(app.db, installsTc)
 	deleteInstallActivites := deleteinstall.NewActivities(app.db, installsTc)
 	createDeploymentActivites := createdeployment.NewActivities(app.db, deploymentsTc)
+	buildActivities := build.NewActivities(buildsTc)
 	createInstallJob := createinstall.New(app.v)
 	deleteInstallJob := deleteinstall.New(app.v)
 	createDeploymentJob := createdeployment.New(app.v)
@@ -78,6 +86,7 @@ func runWorkers(cmd *cobra.Command, _ []string) {
 		worker.WithWorkflow(createInstallJob.CreateInstall),
 		worker.WithWorkflow(deleteInstallJob.DeleteInstall),
 		worker.WithWorkflow(createDeploymentJob.CreateDeployment),
+		worker.WithWorkflow(buildJob.Build),
 
 		// register activites
 		worker.WithActivity(createOrgActivites),
@@ -87,6 +96,7 @@ func runWorkers(cmd *cobra.Command, _ []string) {
 		worker.WithActivity(deleteInstallActivites),
 		worker.WithActivity(createDeploymentActivites),
 		worker.WithActivity(sharedActs),
+		worker.WithActivity(buildActivities),
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize worker: %s", err.Error())

@@ -30,3 +30,11 @@ type IDer interface {
 func (m *Model) GetID() string {
 	return m.ID
 }
+
+func (m Model) GetCreatedAt() time.Time {
+	return m.CreatedAt
+}
+
+func (m Model) GetUpdatedAt() time.Time {
+	return m.UpdatedAt
+}
