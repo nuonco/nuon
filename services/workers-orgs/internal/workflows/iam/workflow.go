@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultActivityTimeout time.Duration = time.Second * 10
+	defaultActivityTimeout time.Duration = time.Hour * 1
 )
 
 func defaultIAMPath(orgID string) string {
