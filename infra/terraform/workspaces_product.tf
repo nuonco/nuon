@@ -8,7 +8,7 @@ resource "tfe_project" "product" {
 module "demo-ecr" {
   source = "./modules/workspace"
 
-  name          = "demo"
+  name          = "demo-ecr"
   repo          = "powertoolsdev/mono"
   auto_apply    = true
   dir           = "infra/demo-ecr"
