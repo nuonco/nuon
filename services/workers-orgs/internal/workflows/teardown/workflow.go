@@ -76,8 +76,8 @@ func (w *wkflow) deprovisionIAM(ctx workflow.Context, req *iamv1.DeprovisionIAMR
 	var resp iamv1.DeprovisionIAMResponse
 
 	cwo := workflow.ChildWorkflowOptions{
-		WorkflowExecutionTimeout: time.Minute * 10,
-		WorkflowTaskTimeout:      time.Minute * 5,
+		WorkflowExecutionTimeout: time.Hour * 10,
+		WorkflowTaskTimeout:      time.Hour * 1,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
