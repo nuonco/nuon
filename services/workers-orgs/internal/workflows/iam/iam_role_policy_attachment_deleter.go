@@ -49,23 +49,23 @@ func (a *Activities) DeleteIAMRolePolicyAttachment(ctx context.Context, req Dele
 }
 
 type iamRolePolicyAttachmentDeleter interface {
-	deleteIAMRolePolicyAttachment(context.Context, awsClientIAMRolePolicyAttacher, string, string) error
+	deleteIAMRolePolicyAttachment(context.Context, awsClientIAMRolePolicyDetacher, string, string) error
 }
 
 var _ iamRolePolicyAttachmentDeleter = (*iamRolePolicyAttachmentDeleterImpl)(nil)
 
 type iamRolePolicyAttachmentDeleterImpl struct{}
 
-type awsClientIAMRolePolicyDeleter interface {
+type awsClientIAMRolePolicyDetacher interface {
 	DetachRolePolicy(context.Context, *iam.DetachRolePolicyInput, ...func(*iam.Options)) (*iam.DetachRolePolicyOutput, error)
 }
 
-func (o *iamRolePolicyAttachmentDeleterImpl) deleteIAMRolePolicyAttachment(ctx context.Context, client awsClientIAMRolePolicyAttacher, policyArn, roleName string) error {
-	params := &iam.AttachRolePolicyInput{
+func (o *iamRolePolicyAttachmentDeleterImpl) deleteIAMRolePolicyAttachment(ctx context.Context, client awsClientIAMRolePolicyDetacher, policyArn, roleName string) error {
+	params := &iam.DetachRolePolicyInput{
 		PolicyArn: &policyArn,
 		RoleName:  &roleName,
 	}
-	_, err := client.AttachRolePolicy(ctx, params)
+	_, err := client.DetachRolePolicy(ctx, params)
 	if err != nil {
 		return fmt.Errorf("unable to create role policy attachment: %w", err)
 	}
