@@ -11,6 +11,7 @@ import (
 
 func TestNew(t *testing.T) {
 	registryID := uuid.NewString()
+	repository := fmt.Sprintf("%s.dkr.ecr.test", registryID)
 	assumeRoleArn := uuid.NewString()
 	assumeRoleSessionName := uuid.NewString()
 
@@ -40,6 +41,20 @@ func TestNew(t *testing.T) {
 					WithImageURL(fakeEcrImageURL),
 					WithAssumeRoleArn(assumeRoleArn),
 					WithAssumeRoleSessionName(assumeRoleSessionName),
+				}
+			},
+			assertFn: func(t *testing.T, ecr *ecrAuthorizer) {
+				assert.NotEmpty(t, ecr.RegistryID)
+				assert.Equal(t, assumeRoleArn, ecr.AssumeRoleArn)
+				assert.Equal(t, assumeRoleSessionName, ecr.AssumeRoleSessionName)
+			},
+		},
+		"happy path repository": {
+			optFns: func() []Option {
+				return []Option{
+					WithAssumeRoleArn(assumeRoleArn),
+					WithAssumeRoleSessionName(assumeRoleSessionName),
+					WithRepository(repository),
 				}
 			},
 			assertFn: func(t *testing.T, ecr *ecrAuthorizer) {
