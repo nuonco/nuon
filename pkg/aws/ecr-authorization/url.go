@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// parseImageURL returns the registryID from an oci image url
+// parseImageURL returns the registryID from an oci image url or repository url
 //
 // eg: the following string will return  766121324316
 // 766121324316.dkr.ecr.us-west-2.amazonaws.com/<repo-name>:latest
