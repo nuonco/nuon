@@ -6,6 +6,7 @@ import (
 
 	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/roles"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -19,6 +20,9 @@ func (w wkflow) DeprovisionIAM(ctx workflow.Context, req *iamv1.DeprovisionIAMRe
 
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: defaultActivityTimeout,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 2,
+		},
 	}
 	act := NewActivities()
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
@@ -54,6 +58,15 @@ func (w wkflow) DeprovisionIAM(ctx workflow.Context, req *iamv1.DeprovisionIAMRe
 	return resp, nil
 }
 
+func firstError(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (w *wkflow) execDeprovisionRole(ctx workflow.Context,
 	act *Activities,
 	req *iamv1.DeprovisionIAMRequest,
@@ -67,30 +80,21 @@ func (w *wkflow) execDeprovisionRole(ctx workflow.Context,
 		PolicyArn:     policyARN,
 		RoleName:      nameFn(req.OrgId),
 	}
-	err := execDeleteIAMRolePolicyAttachment(ctx, act, deleteAttachmentReq)
-	if err != nil {
-		return fmt.Errorf("unable to delete IAM role policy attachment: %w", err)
-	}
+	attachmentErr := execDeleteIAMRolePolicyAttachment(ctx, act, deleteAttachmentReq)
 
 	deleteRoleReq := DeleteIAMRoleRequest{
 		AssumeRoleARN: w.cfg.OrgsIAMAccessRoleArn,
 		RoleName:      nameFn(req.OrgId),
 	}
-	_, err = execDeleteIAMRole(ctx, act, deleteRoleReq)
-	if err != nil {
-		return fmt.Errorf("unable to delete IAM role: %w", err)
-	}
+	_, roleErr := execDeleteIAMRole(ctx, act, deleteRoleReq)
 
 	deletePolicyReq := DeleteIAMPolicyRequest{
 		AssumeRoleARN: w.cfg.OrgsIAMAccessRoleArn,
 		PolicyARN:     policyARN,
 	}
-	_, err = execDeleteIAMPolicy(ctx, act, deletePolicyReq)
-	if err != nil {
-		return fmt.Errorf("unable to delete IAM policy: %w", err)
-	}
+	_, policyErr := execDeleteIAMPolicy(ctx, act, deletePolicyReq)
 
-	return nil
+	return firstError(attachmentErr, roleErr, policyErr)
 }
 
 func execDeleteIAMPolicy(
