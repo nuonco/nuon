@@ -11,7 +11,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zaptest"
 )
@@ -124,7 +123,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 		inputFn     func() models.OrgInput
 		repoFn      func(*gomock.Controller) *repos.MockOrgRepo
 		userRepoFn  func(*gomock.Controller) *repos.MockUserRepo
-		wkflowFn    func(*gomock.Controller) *workflows.MockOrgWorkflowManager
 		errExpected error
 	}{
 		"create happy path": {
@@ -149,10 +147,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 				repo.EXPECT().UpsertUserOrg(gomock.Any(), userID, org.ID).Return(&models.UserOrg{}, nil)
 				return repo
 			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				return mgr
-			},
 		},
 		"upsert happy path": {
 			inputFn: func() models.OrgInput {
@@ -172,10 +166,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 				repo := repos.NewMockUserRepo(ctl)
 				return repo
 			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				return mgr
-			},
 		},
 		"repo error": {
 			inputFn: func() models.OrgInput {
@@ -191,10 +181,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 			userRepoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {
 				repo := repos.NewMockUserRepo(ctl)
 				return repo
-			},
-			wkflowFn: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				mgr := workflows.NewMockOrgWorkflowManager(ctl)
-				return mgr
 			},
 			errExpected: errUpsertOrg,
 		},
@@ -236,7 +222,6 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 				log:            zaptest.NewLogger(t),
 				repo:           test.repoFn(mockCtl),
 				userOrgUpdater: test.userRepoFn(mockCtl),
-				wkflowMgr:      test.wkflowFn(mockCtl),
 			}
 
 			ctx := context.Background()

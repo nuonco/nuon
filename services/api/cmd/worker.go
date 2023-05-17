@@ -13,18 +13,18 @@ var runWorkerCmd = &cobra.Command{
 	Short: "run worker",
 	Run:   runWorker,
 }
-var workerDomain string
 
 //nolint:gochecknoinits
 func init() {
 	rootCmd.AddCommand(runWorkerCmd)
-
-	flags := runWorkerCmd.Flags()
-	flags.String("domain", "", "which domain to run, or all for all")
-	runWorkerCmd.PersistentFlags().StringVar(&workerDomain, "domain", "all", "worker domain")
 }
 
-func runWorker(cmd *cobra.Command, _ []string) {
+func runWorker(cmd *cobra.Command, args []string) {
+	if len(args) != 1 {
+		log.Fatalf("no domain passed: please pass one of apps|orgs|deploys|builds etc")
+	}
+	workerDomain := args[0]
+
 	app, err := newApp(cmd.Flags())
 	if err != nil {
 		log.Fatalf("unable to load server: %s", err)
