@@ -1,20 +1,37 @@
 ---
 replicaCount: 2
-args:
-  - server
+command: ["/bin/service", "server"]
 
 workers:
-  command: workers
-  replicaCount: 3
+  - name: workers-apps
+    minReplicas: 1
+    maxReplicas: 1
+    command: ["/bin/service", "worker", "apps"]
+  - name: workers-builds
+    minReplicas: 1
+    maxReplicas: 1
+    command: ["/bin/service", "worker", "builds"]
+  - name: workers-installs
+    minReplicas: 1
+    maxReplicas: 1
+    command: ["/bin/service", "worker", "installs"]
+  - name: workers-deploys
+    minReplicas: 1
+    maxReplicas: 1
+    command: ["/bin/service", "worker", "deploys"]
+  - name: workers-orgs
+    minReplicas: 1
+    maxReplicas: 1
+    command: ["/bin/service", "worker", "orgs"]
 
 configmap:
   enabled: true
   values:
     TEMPORAL_HOST: temporal-frontend-headless.temporal.svc.cluster.local:7233
-    DB_USE_SSL: 'true'
+    DB_USE_SSL: "true"
     DB_SSL_MODE: verify-full
-    DB_USE_ZAP: 'true'
-    DB_USE_IAM: 'true'
+    DB_USE_ZAP: "true"
+    DB_USE_IAM: "true"
     DB_MIGRATIONS_PATH: /migrations
 
 envSecrets:
@@ -93,7 +110,6 @@ probes:
       periodSeconds: 10
       timeoutSeconds: 1
       failureThreshold: 3
-
 
 resources:
   limits:

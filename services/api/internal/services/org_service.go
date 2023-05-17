@@ -7,7 +7,6 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -28,7 +27,6 @@ type orgService struct {
 	log            *zap.Logger
 	repo           repos.OrgRepo
 	userOrgUpdater repos.UserRepo
-	wkflowMgr      workflows.OrgWorkflowManager
 }
 
 func NewOrgService(db *gorm.DB, tc tclient.Client, log *zap.Logger) *orgService {
@@ -38,7 +36,6 @@ func NewOrgService(db *gorm.DB, tc tclient.Client, log *zap.Logger) *orgService 
 		log:            log,
 		repo:           orgRepo,
 		userOrgUpdater: userRepo,
-		wkflowMgr:      workflows.NewOrgWorkflowManager(tc),
 	}
 }
 
