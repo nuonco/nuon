@@ -95,27 +95,7 @@ func runWorkers(cmd *cobra.Command, _ []string) {
 		log.Fatalf("unable to initialize worker: %s", err.Error())
 	}
 	interruptCh := make(chan interface{})
-	err = wkr.Run(interruptCh)
-	if err != nil {
-		log.Fatalf("unable to run worker: %v", err)
-	}
-
-	buildCfg := worker.Config{
-		Env:                             app.cfg.Config.Env,
-		ServiceName:                     app.cfg.Config.ServiceName,
-		TemporalHost:                    app.cfg.Config.TemporalHost,
-		TemporalNamespace:               "builds",
-		TemporalTaskQueue:               app.cfg.Config.TemporalTaskQueue,
-		TemporalMaxConcurrentActivities: app.cfg.Config.TemporalMaxConcurrentActivities,
-		HostIP:                          app.cfg.Config.HostIP,
-		LogLevel:                        app.cfg.Config.LogLevel,
-	}
-	buildsWorker, err := worker.New(app.v, worker.WithConfig(&buildCfg), worker.WithWorkflow(buildJob.Build),
-		worker.WithActivity(buildActivities))
-	if err != nil {
-		log.Fatalf("unable to initialize worker: %s", err.Error())
-	}
-	err = buildsWorker.Run(interruptCh)
+	wkr.Run(interruptCh)
 	if err != nil {
 		log.Fatalf("unable to run worker: %v", err)
 	}
