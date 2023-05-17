@@ -1,57 +1,90 @@
 package build
 
 import (
-	"github.com/go-playground/validator/v10"
-	buildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
+	"time"
+
 	"go.temporal.io/sdk/workflow"
+	"gorm.io/gorm"
+
+	buildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1/build/v1"
+	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
+	"github.com/powertoolsdev/mono/services/api/internal/jobs/build/activities"
+	"github.com/powertoolsdev/mono/services/api/internal/models"
 )
 
-func New(v *validator.Validate) *wkflow {
-	return &wkflow{}
+type wkflow struct {
+	cfg Config
 }
 
-type wkflow struct{}
+func New(cfg Config) *wkflow {
+	return &wkflow{
+		cfg: cfg,
+	}
+}
 
-func (w *wkflow) Build(ctx workflow.Context, req *buildv1.StartBuildRequest) (*buildv1.StartBuildResponse, error) {
-	resp := buildv1.StartBuildResponse{}
-	/*
-		act := &activities{}
+func (w *wkflow) Build(wfctx workflow.Context, req *buildv1.BuildRequest, db *gorm.DB) (*buildv1.BuildResponse, error) {
+	resp := &buildv1.BuildResponse{}
+	l := workflow.GetLogger(wfctx)
 
-		activityOpts := workflow.ActivityOptions{
-			ScheduleToCloseTimeout: time.Second * 5,
-		}
+	// TODO(jm): handle noop builds better
+	if req.Component.BuildCfg.GetNoop() != nil {
+		return resp, nil
+	}
 
-		ctx = workflow.WithActivityOptions(ctx, activityOpts)
+	createPlanReq := &planv1.CreatePlanRequest{}
+	// This call with nil is kind of a hacky way to get references to the activity methods,
+	// but is not really for code execution since the activity invocations happens
+	// over the wire and we can't serialize anything other than pure data arguments
+	a := activities.New(nil)
+	fut := workflow.ExecuteActivity(wfctx, a.CreatePlanRequest, req)
+	if err := fut.Get(wfctx, &createPlanReq); err != nil {
+		return nil, err
+	}
 
-		var triggerResp TriggerJobResponse
-		fut := workflow.ExecuteActivity(ctx, act.TriggerAppJob, req.AppId)
-		if err := fut.Get(ctx, &triggerResp); err != nil {
-			return nil, fmt.Errorf("unable to trigger workflow response: %w", err)
-		}
+	l.Debug("executing create plan workflow")
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 10,
+		WorkflowTaskTimeout:      time.Minute * 1,
+		TaskQueue:                workflows.ExecutorsTaskQueue,
+	}
+	ctx := workflow.WithChildOptions(wfctx, cwo)
 
-		shrdAct := &sharedactivities.Activities{}
+	planRef := &planv1.PlanRef{}
+	fut = workflow.ExecuteChildWorkflow(ctx, "CreatePlan", createPlanReq)
+	if err := fut.Get(ctx, &planRef); err != nil {
+		return nil, err
+	}
+	l.Debug("successfully created plan: %v", planRef)
 
-		pollRequest := &activitiesv1.PollWorkflowRequest{
-			Namespace:    "apps",
-			WorkflowName: "Provision",
-			WorkflowId:   triggerResp.WorkflowID,
-		}
+	// set struct field for overall workflow response later
+	resp.PlanRef = planRef
 
-		// set poll timeout
-		ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-			ScheduleToCloseTimeout: sharedactivities.PollActivityTimeout * sharedactivities.MaxActivityRetries,
-			StartToCloseTimeout:    sharedactivities.PollActivityTimeout,
-			RetryPolicy: &temporal.RetryPolicy{
-				MaximumAttempts: sharedactivities.MaxActivityRetries,
-			},
-		})
+	l.Debug("executing execute plan workflow")
+	cwo = workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+		TaskQueue:                workflows.ExecutorsTaskQueue,
+	}
+	ctx = workflow.WithChildOptions(wfctx, cwo)
 
-		var pollResp activitiesv1.PollWorkflowResponse
-		fut = workflow.ExecuteActivity(ctx, shrdAct.PollWorkflow, pollRequest)
-		err := fut.Get(ctx, &pollResp)
-		if err != nil {
-			return nil, fmt.Errorf("unable to poll for workflow response: %w", err)
-		}
-	*/
-	return &resp, nil
+	execPlanResp := &executev1.ExecutePlanResponse{}
+	fut = workflow.ExecuteChildWorkflow(ctx, "ExecutePlan", executev1.ExecutePlanRequest{Plan: planRef})
+	if err := fut.Get(ctx, &execPlanResp); err != nil {
+		return nil, err
+	}
+	l.Debug("successfully executed: %v", execPlanResp)
+
+	artifact := &models.Artifact{}
+	// This call with nil is kind of a hacky way to get references to the activity methods,
+	// but is not really for code execution since the activity invocations happens
+	// over the wire and we can't serialize anything other than pure data arguments
+	fut = workflow.ExecuteActivity(wfctx, a.InsertArtifact, artifact)
+	if err := fut.Get(wfctx, &artifact); err != nil {
+		return nil, err
+	}
+
+	// TODO we probably want to add the new artifactid to the response struct
+	return resp, nil
 }
