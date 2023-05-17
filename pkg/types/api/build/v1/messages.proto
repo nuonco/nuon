@@ -29,14 +29,10 @@ message CancelBuildRequest {
   string id = 1 [(validate.rules).string.len = 26];
 }
 
-message CancelBuildResponse {
-  Build build = 1;
-}
+message CancelBuildResponse {}
 
 message QueryBuildsRequest {
-  string git_ref = 1;
-  string component_id = 2 [(validate.rules).string.len = 26];
-  string created_by_id = 3;
+  string component_id = 1 [(validate.rules).string.len = 26];
 }
 
 message QueryBuildsResponse {
