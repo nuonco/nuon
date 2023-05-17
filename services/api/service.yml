@@ -16,12 +16,12 @@ env_secrets:
 local_env:
   DB_HOST: localhost
 local_cmds:
-  - 'go run . worker --domain=builds'
-  - 'go run . worker --domain=apps'
-  - 'go run . worker --domain=installs'
-  - 'go run . worker --domain=orgs'
-  - 'go run . worker --domain=deploys'
-  - 'go run . server'
+  - "go run . worker builds"
+  - "go run . worker apps"
+  - "go run . worker installs"
+  - "go run . worker orgs"
+  - "go run . worker deploys"
+  - "go run . server"
 run_cmd: server
 port: 8080
 type: api
