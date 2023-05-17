@@ -56,7 +56,11 @@ func (s *server) StartBuild(
 		ComponentId: req.Msg.ComponentId,
 		CreatedById: req.Msg.CreatedById,
 	}
-	_, err = tclient.Client(*s.temporalClient).ExecuteWorkflow(ctx, opts, workflowName, &args)
+	tclientBuilds, err := tclient.NewClientFromExisting(*s.temporalClient, tclient.Options{Namespace: "builds"})
+	if err != nil {
+		return nil, fmt.Errorf("error during StartBuild. Cannot create temporal client: %w", err)
+	}
+	_, err = tclientBuilds.ExecuteWorkflow(ctx, opts, workflowName, &args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start build: %w", err)
 	}
