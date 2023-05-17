@@ -3,11 +3,11 @@ package cmd
 import (
 	"log"
 
-	"github.com/powertoolsdev/mono/pkg/workflows/activities"
 	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	temporalclient "github.com/powertoolsdev/mono/services/api/internal/clients/temporal"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/build"
+	buildactivities "github.com/powertoolsdev/mono/services/api/internal/jobs/build/activities"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/createapp"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/createdeployment"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/createinstall"
@@ -37,8 +37,7 @@ func runWorkers(cmd *cobra.Command, _ []string) {
 	createAppJob := createapp.New(app.v)
 	createOrgJob := createorg.New(app.v)
 	deleteOrgJob := deleteorg.New(app.v)
-	buildJob := build.New(app.v)
-
+	buildJob := build.New(build.Config{Config: app.cfg.Config})
 	orgsTc, err := temporalclient.New(temporalclient.WithConfig(app.cfg), temporalclient.WithNamespace("orgs"))
 	if err != nil {
 		log.Fatalf("unable to create orgs temporal client for background activities: %s", err)
@@ -55,25 +54,19 @@ func runWorkers(cmd *cobra.Command, _ []string) {
 	if err != nil {
 		log.Fatalf("unable to create deployments temporal client for background activities: %s", err)
 	}
-	buildsTc, err := temporalclient.New(temporalclient.WithConfig(app.cfg), temporalclient.WithNamespace("builds"))
-	if err != nil {
-		log.Fatalf("unable to create builds temporal client for background activities: %s", err)
-	}
 	createOrgActivites := createorg.NewActivities(orgsTc)
 	deleteOrgActivites := deleteorg.NewActivities(orgsTc)
 	createAppActivites := createapp.NewActivities(app.db, appsTc)
 	createInstallActivites := createinstall.NewActivities(app.db, installsTc)
 	deleteInstallActivites := deleteinstall.NewActivities(app.db, installsTc)
 	createDeploymentActivites := createdeployment.NewActivities(app.db, deploymentsTc)
-	buildActivities := build.NewActivities(buildsTc)
+	buildActivities := buildactivities.New(app.db)
+
 	createInstallJob := createinstall.New(app.v)
 	deleteInstallJob := deleteinstall.New(app.v)
 	createDeploymentJob := createdeployment.New(app.v)
 
-	sharedActs, err := sharedactivities.New(app.v,
-
-		activities.WithTemporalHost(app.cfg.TemporalHost),
-	)
+	sharedActs, err := sharedactivities.New(app.v, sharedactivities.WithTemporalHost(app.cfg.TemporalHost))
 	if err != nil {
 		log.Fatalf("unable to load shared activities: %s", err)
 	}
@@ -101,9 +94,28 @@ func runWorkers(cmd *cobra.Command, _ []string) {
 	if err != nil {
 		log.Fatalf("unable to initialize worker: %s", err.Error())
 	}
-
 	interruptCh := make(chan interface{})
 	err = wkr.Run(interruptCh)
+	if err != nil {
+		log.Fatalf("unable to run worker: %v", err)
+	}
+
+	buildCfg := worker.Config{
+		Env:                             app.cfg.Config.Env,
+		ServiceName:                     app.cfg.Config.ServiceName,
+		TemporalHost:                    app.cfg.Config.TemporalHost,
+		TemporalNamespace:               "builds",
+		TemporalTaskQueue:               app.cfg.Config.TemporalTaskQueue,
+		TemporalMaxConcurrentActivities: app.cfg.Config.TemporalMaxConcurrentActivities,
+		HostIP:                          app.cfg.Config.HostIP,
+		LogLevel:                        app.cfg.Config.LogLevel,
+	}
+	buildsWorker, err := worker.New(app.v, worker.WithConfig(&buildCfg), worker.WithWorkflow(buildJob.Build),
+		worker.WithActivity(buildActivities))
+	if err != nil {
+		log.Fatalf("unable to initialize worker: %s", err.Error())
+	}
+	err = buildsWorker.Run(interruptCh)
 	if err != nil {
 		log.Fatalf("unable to run worker: %v", err)
 	}
