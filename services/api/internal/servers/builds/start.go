@@ -38,7 +38,9 @@ func (s *server) StartBuild(
 		return nil, err
 	}
 
+	// start build workflow
 	opts := tclient.StartWorkflowOptions{
+		ID:        buildID,
 		TaskQueue: workflows.DefaultTaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
@@ -54,14 +56,10 @@ func (s *server) StartBuild(
 		ComponentId: req.Msg.ComponentId,
 		CreatedById: req.Msg.CreatedById,
 	}
-
-	// TODO: stop returning unexported types from constructors
-	run, err := tclient.Client(*s.temporalClient).ExecuteWorkflow(ctx, opts, workflowName, &args)
+	_, err = tclient.Client(*s.temporalClient).ExecuteWorkflow(ctx, opts, workflowName, &args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start build: %w", err)
 	}
-
-	fmt.Printf("started run: %v\n", run)
 
 	return connect.NewResponse(&buildv1.StartBuildResponse{
 		Build: build.ToProto(),
