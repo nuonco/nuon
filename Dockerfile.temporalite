@@ -18,11 +18,13 @@ EXPOSE 8233
 ENTRYPOINT ["/temporalite", \
             "start",\
             "--ephemeral", \
-	    "-n", "api", \
-	    "-n", "apps", \
-	    "-n", "canary", \
+            "-n", "api", \
+            "-n", "builds", \
+            "-n", "apps", \
+            "-n", "canary", \
             "-n", "default", \
-	    "-n", "deployments", \
+            "-n", "deployments", \
+            "-n", "deploys", \
             "-n", "installs", \
             "-n", "instances", \
             "-n", "orgs", \
