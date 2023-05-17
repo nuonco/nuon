@@ -13,51 +13,6 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/deleteorg"
 )
 
-func (a *app) loadWorkers(domain string) ([]worker.Worker, error) {
-	workers := make([]worker.Worker, 0)
-	if domain == "apps" || domain == "all" {
-		wkr, err := a.appsWorker()
-		if err != nil {
-			return nil, fmt.Errorf("unable to load apps worker: %w", err)
-		}
-		workers = append(workers, wkr)
-	}
-
-	if domain == "builds" || domain == "all" {
-		wkr, err := a.buildsWorker()
-		if err != nil {
-			return nil, fmt.Errorf("unable to load builds worker: %w", err)
-		}
-		workers = append(workers, wkr)
-	}
-
-	if domain == "deploys" || domain == "all" {
-		wkr, err := a.deploysWorker()
-		if err != nil {
-			return nil, fmt.Errorf("unable to load deploys worker: %w", err)
-		}
-		workers = append(workers, wkr)
-	}
-
-	if domain == "installs" || domain == "all" {
-		wkr, err := a.installsWorker()
-		if err != nil {
-			return nil, fmt.Errorf("unable to load installs worker: %w", err)
-		}
-		workers = append(workers, wkr)
-	}
-
-	if domain == "orgs" || domain == "all" {
-		wkr, err := a.orgsWorker()
-		if err != nil {
-			return nil, fmt.Errorf("unable to load orgs worker: %w", err)
-		}
-		workers = append(workers, wkr)
-	}
-
-	return workers, nil
-}
-
 func (a *app) buildsWorker() (worker.Worker, error) {
 	wkflow := build.New(build.Config{Config: a.cfg.Config})
 	acts := buildactivities.New(a.db)
