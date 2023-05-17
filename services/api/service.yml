@@ -15,7 +15,7 @@ env_secrets:
     key: github_app_key
 local_env:
   DB_HOST: localhost
-local_cmd: go run . server
+local_cmd: go run . worker --domain=all
 run_cmd: server
 port: 8080
 type: api
