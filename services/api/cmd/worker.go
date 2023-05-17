@@ -3,9 +3,9 @@ package cmd
 import (
 	"log"
 
+	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	"github.com/spf13/cobra"
-	worker "go.temporal.io/sdk/worker"
-	"golang.org/x/sync/errgroup"
+	tworker "go.temporal.io/sdk/worker"
 )
 
 var runWorkerCmd = &cobra.Command{
@@ -30,21 +30,29 @@ func runWorker(cmd *cobra.Command, _ []string) {
 		log.Fatalf("unable to load server: %s", err)
 	}
 
-	workers, err := app.loadWorkers(workerDomain)
+	var initFn func() (worker.Worker, error)
+	switch workerDomain {
+	case "apps":
+		initFn = app.appsWorker
+	case "builds":
+		initFn = app.buildsWorker
+	case "installs":
+		initFn = app.installsWorker
+	case "orgs":
+		initFn = app.orgsWorker
+	case "deploys":
+		initFn = app.deploysWorker
+	default:
+		log.Fatalf("unknown domain: %s", workerDomain)
+	}
+
+	wkr, err := initFn()
 	if err != nil {
-		log.Fatalf("unable to load workers: %s", err)
+		log.Fatalf("unable to initialize %s worker: %s", workerDomain, err)
 	}
 
-	interruptCh := worker.InterruptCh()
-	g := new(errgroup.Group)
-	for _, wkr := range workers {
-		wkr := wkr
-		g.Go(func() error {
-			return wkr.Run(interruptCh)
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		log.Fatalf("unable to wait for workers: %s", err)
+	interruptCh := tworker.InterruptCh()
+	if err := wkr.Run(interruptCh); err != nil {
+		log.Fatalf("worker exited: %s", err)
 	}
 }
