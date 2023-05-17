@@ -6,7 +6,6 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	buildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
-	"github.com/powertoolsdev/mono/services/api/internal/models"
 )
 
 func (s *server) CancelBuild(
@@ -18,12 +17,7 @@ func (s *server) CancelBuild(
 		return nil, fmt.Errorf("input validation failed: %w", err)
 	}
 
-	// use gorm model to create build record
-	// use temporal client to start build workflow
-	fmt.Println("CREATE BUILD")
-	build := models.Build{}
+	fmt.Println("CANCEL BUILD")
 
-	return connect.NewResponse(&buildv1.CancelBuildResponse{
-		Build: build.ToProto(),
-	}), nil
+	return connect.NewResponse(&buildv1.CancelBuildResponse{}), nil
 }
