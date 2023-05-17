@@ -12,7 +12,14 @@ type worker struct {
 	Config     *Config       `validate:"required,dive"`
 	Workflows  []interface{} `validate:"required,gt=0"`
 	Activities []interface{} `validate:"required,gt=0"`
+	Namespace  string        `validate:"required"`
 }
+
+type Worker interface {
+	Run(<-chan interface{}) error
+}
+
+var _ Worker = (*worker)(nil)
 
 func New(v *validator.Validate, opts ...workerOption) (*worker, error) {
 	wkr := &worker{
@@ -41,6 +48,14 @@ type workerOption func(*worker) error
 func WithConfig(cfg *Config) workerOption {
 	return func(w *worker) error {
 		w.Config = cfg
+		w.Namespace = cfg.TemporalNamespace
+		return nil
+	}
+}
+
+func WithNamespace(ns string) workerOption {
+	return func(w *worker) error {
+		w.Namespace = ns
 		return nil
 	}
 }

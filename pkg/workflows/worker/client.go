@@ -16,7 +16,7 @@ func (w *worker) getClient() (client.Client, func(), error) {
 
 	c, err := client.Dial(client.Options{
 		HostPort:  w.Config.TemporalHost,
-		Namespace: w.Config.TemporalNamespace,
+		Namespace: w.Namespace,
 		Logger:    temporalzap.NewLogger(l),
 	})
 	if err != nil {
