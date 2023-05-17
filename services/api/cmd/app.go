@@ -43,6 +43,7 @@ type app struct {
 	gh           *ghinstallation.AppsTransport
 	log          *zap.Logger
 	interceptors []connect.Interceptor
+	tc           temporal.Client
 }
 
 func newApp(flags *pflag.FlagSet) (*app, error) {
@@ -68,6 +69,7 @@ func newApp(flags *pflag.FlagSet) (*app, error) {
 		v:   v,
 		cfg: &cfg,
 		log: l,
+		tc:  tClient,
 		interceptors: []connect.Interceptor{
 			interceptors.LoggerInterceptor(),
 			interceptors.NewTemporalClientInterceptor(tClient),

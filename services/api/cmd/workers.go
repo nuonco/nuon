@@ -1,102 +1,154 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 
-	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
-	temporalclient "github.com/powertoolsdev/mono/services/api/internal/clients/temporal"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/build"
 	buildactivities "github.com/powertoolsdev/mono/services/api/internal/jobs/build/activities"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/createapp"
-	"github.com/powertoolsdev/mono/services/api/internal/jobs/createdeployment"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/createinstall"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/createorg"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/deleteinstall"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/deleteorg"
-	"github.com/spf13/cobra"
 )
 
-var runWorkerCmd = &cobra.Command{
-	Use:   "workers",
-	Short: "run background workers",
-	Run:   runWorkers,
+func (a *app) loadWorkers(domain string) ([]worker.Worker, error) {
+	workers := make([]worker.Worker, 0)
+	if domain == "apps" || domain == "all" {
+		wkr, err := a.appsWorker()
+		if err != nil {
+			return nil, fmt.Errorf("unable to load apps worker: %w", err)
+		}
+		workers = append(workers, wkr)
+	}
+
+	if domain == "builds" || domain == "all" {
+		wkr, err := a.buildsWorker()
+		if err != nil {
+			return nil, fmt.Errorf("unable to load builds worker: %w", err)
+		}
+		workers = append(workers, wkr)
+	}
+
+	if domain == "deploys" || domain == "all" {
+		wkr, err := a.deploysWorker()
+		if err != nil {
+			return nil, fmt.Errorf("unable to load deploys worker: %w", err)
+		}
+		workers = append(workers, wkr)
+	}
+
+	if domain == "installs" || domain == "all" {
+		wkr, err := a.installsWorker()
+		if err != nil {
+			return nil, fmt.Errorf("unable to load installs worker: %w", err)
+		}
+		workers = append(workers, wkr)
+	}
+
+	if domain == "orgs" || domain == "all" {
+		wkr, err := a.orgsWorker()
+		if err != nil {
+			return nil, fmt.Errorf("unable to load orgs worker: %w", err)
+		}
+		workers = append(workers, wkr)
+	}
+
+	return workers, nil
 }
 
-//nolint:gochecknoinits
-func init() {
-	rootCmd.AddCommand(runWorkerCmd)
-}
+func (a *app) buildsWorker() (worker.Worker, error) {
+	wkflow := build.New(build.Config{Config: a.cfg.Config})
+	acts := buildactivities.New(a.db)
 
-func runWorkers(cmd *cobra.Command, _ []string) {
-	app, err := newApp(cmd.Flags())
-	if err != nil {
-		log.Fatalf("unable to load worker: %s", err)
-	}
+	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
+		worker.WithNamespace("builds"),
 
-	createAppJob := createapp.New(app.v)
-	createOrgJob := createorg.New(app.v)
-	deleteOrgJob := deleteorg.New(app.v)
-	buildJob := build.New(build.Config{Config: app.cfg.Config})
-	orgsTc, err := temporalclient.New(temporalclient.WithConfig(app.cfg), temporalclient.WithNamespace("orgs"))
-	if err != nil {
-		log.Fatalf("unable to create orgs temporal client for background activities: %s", err)
-	}
-	appsTc, err := temporalclient.New(temporalclient.WithConfig(app.cfg), temporalclient.WithNamespace("apps"))
-	if err != nil {
-		log.Fatalf("unable to create apps temporal client for background activities: %s", err)
-	}
-	installsTc, err := temporalclient.New(temporalclient.WithConfig(app.cfg), temporalclient.WithNamespace("installs"))
-	if err != nil {
-		log.Fatalf("unable to create installs temporal client for background activities: %s", err)
-	}
-	deploymentsTc, err := temporalclient.New(temporalclient.WithConfig(app.cfg), temporalclient.WithNamespace("deployments"))
-	if err != nil {
-		log.Fatalf("unable to create deployments temporal client for background activities: %s", err)
-	}
-	createOrgActivites := createorg.NewActivities(orgsTc)
-	deleteOrgActivites := deleteorg.NewActivities(orgsTc)
-	createAppActivites := createapp.NewActivities(app.db, appsTc)
-	createInstallActivites := createinstall.NewActivities(app.db, installsTc)
-	deleteInstallActivites := deleteinstall.NewActivities(app.db, installsTc)
-	createDeploymentActivites := createdeployment.NewActivities(app.db, deploymentsTc)
-	buildActivities := buildactivities.New(app.db)
+		worker.WithWorkflow(wkflow.Build),
 
-	createInstallJob := createinstall.New(app.v)
-	deleteInstallJob := deleteinstall.New(app.v)
-	createDeploymentJob := createdeployment.New(app.v)
-
-	sharedActs, err := sharedactivities.New(app.v, sharedactivities.WithTemporalHost(app.cfg.TemporalHost))
-	if err != nil {
-		log.Fatalf("unable to load shared activities: %s", err)
-	}
-
-	wkr, err := worker.New(app.v, worker.WithConfig(&app.cfg.Config),
-		// register workflows
-		worker.WithWorkflow(createAppJob.CreateApp),
-		worker.WithWorkflow(createOrgJob.CreateOrg),
-		worker.WithWorkflow(deleteOrgJob.DeleteOrg),
-		worker.WithWorkflow(createInstallJob.CreateInstall),
-		worker.WithWorkflow(deleteInstallJob.DeleteInstall),
-		worker.WithWorkflow(createDeploymentJob.CreateDeployment),
-		worker.WithWorkflow(buildJob.Build),
-
-		// register activites
-		worker.WithActivity(createOrgActivites),
-		worker.WithActivity(deleteOrgActivites),
-		worker.WithActivity(createAppActivites),
-		worker.WithActivity(createInstallActivites),
-		worker.WithActivity(deleteInstallActivites),
-		worker.WithActivity(createDeploymentActivites),
-		worker.WithActivity(sharedActs),
-		worker.WithActivity(buildActivities),
+		worker.WithActivity(acts),
 	)
 	if err != nil {
-		log.Fatalf("unable to initialize worker: %s", err.Error())
+		return nil, fmt.Errorf("unable to create builds worker: %w", err)
 	}
-	interruptCh := make(chan interface{})
-	wkr.Run(interruptCh)
+
+	return wkr, nil
+}
+
+func (a *app) deploysWorker() (worker.Worker, error) {
+	// TODO(jm): change this to the correct worker once it lands
+	createWkflow := createapp.New(a.v)
+	createActs := createapp.NewActivities(a.db, a.tc)
+
+	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
+		worker.WithWorkflow(createWkflow.CreateApp),
+		worker.WithNamespace("apps"),
+		worker.WithActivity(createActs),
+	)
 	if err != nil {
-		log.Fatalf("unable to run worker: %v", err)
+		return nil, fmt.Errorf("unable to create apps worker: %w", err)
 	}
+
+	return wkr, nil
+}
+
+func (a *app) appsWorker() (worker.Worker, error) {
+	createWkflow := createapp.New(a.v)
+	createActs := createapp.NewActivities(a.db, a.tc)
+
+	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
+		worker.WithWorkflow(createWkflow.CreateApp),
+		worker.WithNamespace("apps"),
+		worker.WithActivity(createActs),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create apps worker: %w", err)
+	}
+
+	return wkr, nil
+}
+
+func (a *app) orgsWorker() (worker.Worker, error) {
+	createWkflow := createorg.New(a.v)
+	deleteWkflow := deleteorg.New(a.v)
+	createActs := createorg.NewActivities(a.tc)
+	deleteActs := deleteorg.NewActivities(a.tc)
+
+	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
+		worker.WithNamespace("orgs"),
+
+		worker.WithWorkflow(createWkflow.CreateOrg),
+		worker.WithWorkflow(deleteWkflow.DeleteOrg),
+
+		worker.WithActivity(createActs),
+		worker.WithActivity(deleteActs),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create orgs worker: %w", err)
+	}
+
+	return wkr, nil
+}
+
+func (a *app) installsWorker() (worker.Worker, error) {
+	createWkflow := createinstall.New(a.v)
+	deleteWkflow := deleteinstall.New(a.v)
+	createActs := createinstall.NewActivities(a.db, a.tc)
+	deleteActs := deleteinstall.NewActivities(a.db, a.tc)
+
+	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
+		worker.WithNamespace("installs"),
+
+		worker.WithWorkflow(createWkflow.CreateInstall),
+		worker.WithWorkflow(deleteWkflow.DeleteInstall),
+
+		worker.WithActivity(createActs),
+		worker.WithActivity(deleteActs),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create installs worker: %w", err)
+	}
+
+	return wkr, nil
 }
