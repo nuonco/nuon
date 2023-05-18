@@ -8,7 +8,7 @@ import (
 )
 
 func (m *manager) CreateDeployment(ctx context.Context, deploymentID string) error {
-	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "CreateDeployment", &jobsv1.CreateDeploymentRequest{
+	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "deployments", m.Opts, "CreateDeployment", &jobsv1.CreateDeploymentRequest{
 		DeploymentId: deploymentID,
 	})
 	if err != nil {
