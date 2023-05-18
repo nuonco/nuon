@@ -25,6 +25,7 @@ test("parseBuildConfigInput should return a build config for an external image",
         "tag": "latest",
       },
       "noop": undefined,
+      "terraformModule": undefined,
       "timeout": undefined,
     }
   `);
@@ -56,6 +57,7 @@ test("parseBuildConfigInput should return a build config for a private ECR exter
         "tag": "latest",
       },
       "noop": undefined,
+      "terraformModule": undefined,
       "timeout": undefined,
     }
   `);
@@ -79,6 +81,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
       "dockerCfg": {
         "buildArgsList": [],
         "dockerfile": "Dockerfile",
+        "envVars": undefined,
         "target": "",
         "vcsCfg": {
           "connectedGithubConfig": {
@@ -94,6 +97,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
       },
       "externalImageCfg": undefined,
       "noop": undefined,
+      "terraformModule": undefined,
       "timeout": undefined,
     }
   `);
@@ -116,6 +120,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
       "dockerCfg": {
         "buildArgsList": [],
         "dockerfile": "Dockerfile",
+        "envVars": undefined,
         "target": "",
         "vcsCfg": {
           "connectedGithubConfig": undefined,
@@ -128,6 +133,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
       },
       "externalImageCfg": undefined,
       "noop": undefined,
+      "terraformModule": undefined,
       "timeout": undefined,
     }
   `);
@@ -157,6 +163,7 @@ test("parseDeployConfigInput should return a deploy config for a basic k8s deplo
         "memRequest": "",
       },
       "helmRepo": undefined,
+      "terraformModuleConfig": undefined,
       "timeout": undefined,
     }
   `);
@@ -183,6 +190,7 @@ test("parseDeployConfigInput should return a deploy config for a helm repo deplo
         "imageRepoValuesKey": "httpbin/blah",
         "imageTagValuesKey": "latest",
       },
+      "terraformModuleConfig": undefined,
       "timeout": undefined,
     }
   `);
@@ -217,6 +225,7 @@ test("parseConfigInput should return a component config", () => {
           "tag": "",
         },
         "noop": undefined,
+        "terraformModule": undefined,
         "timeout": undefined,
       },
       "deployCfg": {
@@ -233,6 +242,7 @@ test("parseConfigInput should return a component config", () => {
           "memRequest": "",
         },
         "helmRepo": undefined,
+        "terraformModuleConfig": undefined,
         "timeout": undefined,
       },
       "id": "",
