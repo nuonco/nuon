@@ -8,7 +8,7 @@ import (
 )
 
 func (m *manager) CreateInstall(ctx context.Context, installID string) error {
-	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "CreateInstall", &jobsv1.CreateInstallRequest{
+	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "installs", m.Opts, "CreateInstall", &jobsv1.CreateInstallRequest{
 		InstallId: installID,
 	})
 	if err != nil {
@@ -19,7 +19,7 @@ func (m *manager) CreateInstall(ctx context.Context, installID string) error {
 }
 
 func (m *manager) DeleteInstall(ctx context.Context, installID string) error {
-	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "DeleteInstall", &jobsv1.DeleteInstallRequest{
+	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "installs", m.Opts, "DeleteInstall", &jobsv1.DeleteInstallRequest{
 		InstallId: installID,
 	})
 	if err != nil {

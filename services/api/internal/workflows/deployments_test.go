@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
-	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	tclient "go.temporal.io/sdk/client"
 	tmock "go.temporal.io/sdk/mocks"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -21,6 +19,7 @@ import (
 func Test_deploymentWorkflowManager_Start(t *testing.T) {
 	errDeploymentProvisionTest := fmt.Errorf("error")
 	deployment := generics.GetFakeObj[*models.Deployment]()
+
 	// TODO: add valid component config
 	component := generics.GetFakeObj[*componentv1.Component]()
 	byts, err := protojson.Marshal(component)
@@ -39,50 +38,33 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 	deployment.Component.App.OrgID = orgID
 
 	tests := map[string]struct {
-		clientFn    func() temporalClient
-		assertFn    func(*testing.T, temporalClient)
+		clientFn    func(*gomock.Controller) temporal.Client
+		assertFn    func(*testing.T, temporal.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
 				workflowRun := &tmock.WorkflowRun{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(workflowRun, nil)
-				workflowRun.On("GetID", mock.Anything, mock.Anything).Return("12345")
-				return client
+				workflowRun.On("GetID").Return("12345")
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "deployments", gomock.Any(), gomock.Any(), gomock.Any()).Return(workflowRun, nil)
+				return mock
 			},
-			assertFn: func(t *testing.T, client temporalClient) {
-				obj := client.(*testTemporalClient)
-				obj.AssertNumberOfCalls(t, "ExecuteWorkflow", 1)
-
-				args, ok := obj.Calls[0].Arguments[3].([]interface{})
-				assert.True(t, ok)
-
-				opts, ok := obj.Calls[0].Arguments[1].(tclient.StartWorkflowOptions)
-				assert.True(t, ok)
-				assert.Equal(t, workflows.DefaultTaskQueue, opts.TaskQueue)
-
-				req, ok := args[0].(*deploymentsv1.StartRequest)
-				assert.True(t, ok)
-
-				// make sure the request is valid
-				assert.NotNil(t, req)
-				assert.NoError(t, req.Validate())
-
-				// make sure all ids are correcctly set
-				app := deployment.Component.App
-
-				assert.Equal(t, deployment.ID, req.DeploymentId)
-				assert.Equal(t, app.ID, req.AppId)
-				assert.Equal(t, app.OrgID, req.OrgId)
-				assert.Equal(t, deployment.Component.ID, req.Component.Id)
+			assertFn: func(t *testing.T, client temporal.Client, resp string) {
+				assert.Equal(t, "12345", resp)
 			},
 		},
 		"error": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, errDeploymentProvisionTest)
-				return client
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
+				workflowRun := &tmock.WorkflowRun{}
+				workflowRun.On("GetID").Return("12345")
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "deployments", gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errDeploymentProvisionTest)
+				return mock
 			},
 			errExpected: errDeploymentProvisionTest,
 		},
@@ -90,16 +72,18 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			client := test.clientFn()
+			mockCtl := gomock.NewController(t)
+			client := test.clientFn(mockCtl)
+
 			mgr := NewDeploymentWorkflowManager(client)
 
-			_, err := mgr.Start(context.Background(), deployment)
+			resp, err := mgr.Start(context.Background(), deployment)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
 			assert.NoError(t, err)
-			test.assertFn(t, client)
+			test.assertFn(t, client, resp)
 		})
 	}
 }

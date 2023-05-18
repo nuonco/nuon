@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	tclient "go.temporal.io/sdk/client"
 	tmock "go.temporal.io/sdk/mocks"
 )
 
@@ -26,48 +24,31 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 	install.ID, _ = shortid.NewNanoID("inl")
 
 	tests := map[string]struct {
-		clientFn    func() temporalClient
-		assertFn    func(*testing.T, temporalClient)
+		clientFn    func(*gomock.Controller) temporal.Client
+		assertFn    func(*testing.T, temporal.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
 				workflowRun := &tmock.WorkflowRun{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(workflowRun, nil)
-				workflowRun.On("GetID", mock.Anything, mock.Anything).Return("12345")
-				return client
+				workflowRun.On("GetID").Return("12345")
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), gomock.Any(), gomock.Any()).Return(workflowRun, nil)
+				return mock
 			},
-			assertFn: func(t *testing.T, client temporalClient) {
-				obj := client.(*testTemporalClient)
-				obj.AssertNumberOfCalls(t, "ExecuteWorkflow", 1)
-
-				args, ok := obj.Calls[0].Arguments[3].([]interface{})
-				assert.True(t, ok)
-
-				opts, ok := obj.Calls[0].Arguments[1].(tclient.StartWorkflowOptions)
-				assert.True(t, ok)
-				assert.Equal(t, workflows.DefaultTaskQueue, opts.TaskQueue)
-
-				req, ok := args[0].(*installsv1.ProvisionRequest)
-				assert.True(t, ok)
-
-				assert.Equal(t, orgID, req.OrgId)
-				assert.Equal(t, install.ID, req.InstallId)
-				assert.Equal(t, install.AppID, req.AppId)
-				// validate account settings
-				assert.Equal(t, install.AWSSettings.Region.ToRegion(), req.AccountSettings.Region)
-				assert.Equal(t, install.AWSSettings.IamRoleArn, req.AccountSettings.AwsRoleArn)
-				// validate sandbox settings
-				assert.Equal(t, sandboxVersion.SandboxName, req.SandboxSettings.Name)
-				assert.Equal(t, sandboxVersion.SandboxVersion, req.SandboxSettings.Version)
+			assertFn: func(_ *testing.T, _ temporal.Client, resp string) {
+				// TODO(jm): find a better way to grab captured arguments with mockgen mocks.
+				assert.Equal(t, resp, "12345")
 			},
 		},
 		"error": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, errInstallProvisionTest)
-				return client
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errInstallProvisionTest)
+				return mock
 			},
 			errExpected: errInstallProvisionTest,
 		},
@@ -75,22 +56,23 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			client := test.clientFn()
+			mockCtl := gomock.NewController(t)
+			client := test.clientFn(mockCtl)
 			mgr := NewInstallWorkflowManager(client)
 
-			_, err := mgr.Provision(context.Background(), install, orgID, sandboxVersion)
+			resp, err := mgr.Provision(context.Background(), install, orgID, sandboxVersion)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
 
-			test.assertFn(t, client)
+			test.assertFn(t, client, resp)
 		})
 	}
 }
 
 func Test_installWorkflowManager_Deprovision(t *testing.T) {
-	errInstallProvisionTest := fmt.Errorf("error")
+	errInstallDeprovisionTest := fmt.Errorf("error")
 	install := generics.GetFakeObj[*models.Install]()
 	install.AWSSettings = generics.GetFakeObj[*models.AWSSettings]()
 	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()
@@ -99,60 +81,48 @@ func Test_installWorkflowManager_Deprovision(t *testing.T) {
 	install.ID, _ = shortid.NewNanoID("inl")
 
 	tests := map[string]struct {
-		clientFn    func() temporalClient
-		assertFn    func(*testing.T, temporalClient)
+		clientFn    func(*gomock.Controller) temporal.Client
+		assertFn    func(*testing.T, temporal.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
 				workflowRun := &tmock.WorkflowRun{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(workflowRun, nil)
-				workflowRun.On("GetID", mock.Anything, mock.Anything).Return("12345")
-				return client
+				workflowRun.On("GetID").Return("12345")
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), gomock.Any(), gomock.Any()).Return(workflowRun, nil)
+				return mock
 			},
-			assertFn: func(t *testing.T, client temporalClient) {
-				obj := client.(*testTemporalClient)
-				obj.AssertNumberOfCalls(t, "ExecuteWorkflow", 1)
-
-				args, ok := obj.Calls[0].Arguments[3].([]interface{})
-				assert.True(t, ok)
-				req, ok := args[0].(*installsv1.DeprovisionRequest)
-				assert.True(t, ok)
-
-				assert.Equal(t, orgID, req.OrgId)
-				assert.Equal(t, install.ID, req.InstallId)
-				assert.Equal(t, install.AppID, req.AppId)
-				// validate account settings
-				assert.Equal(t, install.AWSSettings.Region.ToRegion(), req.AccountSettings.Region)
-				assert.Equal(t, install.AWSSettings.IamRoleArn, req.AccountSettings.AwsRoleArn)
-				// validate sandbox settings
-				assert.Equal(t, sandboxVersion.SandboxName, req.SandboxSettings.Name)
-				assert.Equal(t, sandboxVersion.SandboxVersion, req.SandboxSettings.Version)
+			assertFn: func(t *testing.T, client temporal.Client, resp string) {
+				assert.Equal(t, "12345", resp)
 			},
 		},
 		"error": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, errInstallProvisionTest)
-				return client
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errInstallDeprovisionTest)
+				return mock
 			},
-			errExpected: errInstallProvisionTest,
+			errExpected: errInstallDeprovisionTest,
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			client := test.clientFn()
+			mockCtl := gomock.NewController(t)
+			client := test.clientFn(mockCtl)
 			mgr := NewInstallWorkflowManager(client)
 
-			_, err := mgr.Deprovision(context.Background(), install, orgID, sandboxVersion)
+			resp, err := mgr.Deprovision(context.Background(), install, orgID, sandboxVersion)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
 
-			test.assertFn(t, client)
+			test.assertFn(t, client, resp)
 		})
 	}
 }

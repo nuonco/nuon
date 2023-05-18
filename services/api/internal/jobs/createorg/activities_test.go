@@ -43,7 +43,7 @@ func Test_ActivityTriggerOrgJob(t *testing.T) {
 				mgr: test.mockMgr(mockCtl),
 			}
 
-			_, err := act.TriggerJob(context.Background(), orgID)
+			_, err := act.TriggerOrgProvision(context.Background(), orgID)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

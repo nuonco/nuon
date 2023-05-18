@@ -16,7 +16,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	tclient "go.temporal.io/sdk/client"
 	"gorm.io/gorm"
 )
@@ -40,7 +39,6 @@ type deploymentService struct {
 	repo                   repos.DeploymentRepo
 	componentRepo          repos.ComponentRepo
 	githubRepo             repos.GithubRepo
-	wkflowMgr              workflows.DeploymentWorkflowManager
 	githubAppID            string
 	githubAppKeySecretName string
 	log                    *zap.Logger
@@ -56,7 +54,6 @@ func NewDeploymentService(db *gorm.DB,
 	log *zap.Logger) *deploymentService {
 	return &deploymentService{
 		repo:                   repos.NewDeploymentRepo(db),
-		wkflowMgr:              workflows.NewDeploymentWorkflowManager(temporalClient),
 		componentRepo:          repos.NewComponentRepo(db),
 		githubRepo:             repos.NewGithubRepo(tsprt, &zap.Logger{}, &http.Client{}),
 		githubAppID:            githubAppID,

@@ -149,7 +149,7 @@ func Test_ActivityTriggerInstallDeprovJob(t *testing.T) {
 				mgr:       test.mockMgr(mockCtl),
 			}
 
-			_, err := act.TriggerInstallDeprovJob(context.Background(), installID)
+			_, err := act.TriggerInstallDeprovision(context.Background(), installID)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
