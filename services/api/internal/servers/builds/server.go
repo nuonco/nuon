@@ -7,17 +7,16 @@ import (
 	ghinstallation "github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/bufbuild/connect-go"
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/types/api/build/v1/buildv1connect"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	"github.com/powertoolsdev/mono/services/api/internal/clients/github"
-	"github.com/powertoolsdev/mono/services/api/internal/clients/temporal"
-	tclient "go.temporal.io/sdk/client"
 	"gorm.io/gorm"
 )
 
 type server struct {
 	v               *validator.Validate
-	temporalClient  *tclient.Client
+	temporalClient  temporal.Client
 	githubTransport *ghinstallation.AppsTransport
 	db              *gorm.DB
 
@@ -61,13 +60,9 @@ func WithInterceptors(int ...connect.Interceptor) serverOption {
 	}
 }
 
-func WithTemporalClient(config *internal.Config) serverOption {
+func WithTemporalClient(temporalClient temporal.Client) serverOption {
 	return func(s *server) error {
-		client, err := temporal.New(temporal.WithConfig(config), temporal.WithNamespace("builds"))
-		if err != nil {
-			return fmt.Errorf("unable to create temporal client: %w", err)
-		}
-		s.temporalClient = &client
+		s.temporalClient = temporalClient
 		return nil
 	}
 }
