@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	buildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
+	apibuildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/servers/converters"
 
@@ -23,7 +23,7 @@ func New(db *gorm.DB) *activities {
 	return &activities{db: db}
 }
 
-func (a *activities) CreatePlanRequest(ctx context.Context, req *buildv1.StartBuildRequest) (*planv1.CreatePlanRequest, error) {
+func (a *activities) CreatePlanRequest(ctx context.Context, req *apibuildv1.StartBuildRequest) (*planv1.CreatePlanRequest, error) {
 	// TODO fix up logger here
 	componentService := services.NewComponentService(a.db, zap.L())
 	component, err := componentService.GetComponent(ctx, req.ComponentId)
