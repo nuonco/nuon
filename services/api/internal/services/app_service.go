@@ -8,7 +8,6 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -26,19 +25,17 @@ type AppService interface {
 var _ AppService = (*appService)(nil)
 
 type appService struct {
-	log         *zap.Logger
-	orgRepo     repos.OrgRepo
-	repo        repos.AppRepo
-	workflowMgr workflows.AppWorkflowManager
+	log     *zap.Logger
+	orgRepo repos.OrgRepo
+	repo    repos.AppRepo
 }
 
 func NewAppService(db *gorm.DB, tc tclient.Client, log *zap.Logger) *appService {
 	repo := repos.NewAppRepo(db)
 	return &appService{
-		log:         log,
-		orgRepo:     repos.NewOrgRepo(db),
-		repo:        repo,
-		workflowMgr: workflows.NewAppWorkflowManager(tc),
+		log:     log,
+		orgRepo: repos.NewOrgRepo(db),
+		repo:    repo,
 	}
 }
 

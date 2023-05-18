@@ -28,7 +28,7 @@ func (w *wkflow) CreateOrg(ctx workflow.Context, req *jobsv1.CreateOrgRequest) (
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
 	var resp TriggerJobResponse
-	fut := workflow.ExecuteActivity(ctx, act.TriggerJob, req.OrgId)
+	fut := workflow.ExecuteActivity(ctx, act.TriggerOrgProvision, req.OrgId)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return nil, err
 	}

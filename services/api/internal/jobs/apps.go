@@ -8,7 +8,7 @@ import (
 )
 
 func (m *manager) CreateApp(ctx context.Context, appID string) error {
-	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "CreateApp", &jobsv1.CreateAppRequest{
+	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "apps", m.Opts, "CreateApp", &jobsv1.CreateAppRequest{
 		AppId: appID,
 	})
 	if err != nil {

@@ -29,7 +29,7 @@ func TestDeleteOrgWorkflow(t *testing.T) {
 	sharedActs, _ := sharedactivities.New(v)
 	env.RegisterActivity(sharedActs)
 
-	env.OnActivity(a.TriggerOrgJob, mock.Anything, mock.Anything).
+	env.OnActivity(a.TriggerOrgDeprovision, mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, s string) (*TriggerJobResponse, error) {
 			assert.Equal(t, req.OrgId, s)
 			return &TriggerJobResponse{}, nil

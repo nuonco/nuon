@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	tclient "go.temporal.io/sdk/client"
 	tmock "go.temporal.io/sdk/mocks"
 )
 
@@ -20,42 +18,34 @@ func Test_appWorkflowManager_Provision(t *testing.T) {
 	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
-		clientFn    func() temporalClient
-		assertFn    func(*testing.T, temporalClient)
+		clientFn    func(*gomock.Controller) temporal.Client
+		assertFn    func(*testing.T, temporal.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
 				workflowRun := &tmock.WorkflowRun{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(workflowRun, nil)
-				workflowRun.On("GetID", mock.Anything, mock.Anything).Return("12345")
-				return client
+				workflowRun.On("GetID").Return("12345")
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "apps", gomock.Any(), gomock.Any(), gomock.Any()).Return(workflowRun, nil)
+				return mock
 			},
-			assertFn: func(t *testing.T, client temporalClient) {
-				obj := client.(*testTemporalClient)
-				obj.AssertNumberOfCalls(t, "ExecuteWorkflow", 1)
-
-				args, ok := obj.Calls[0].Arguments[3].([]interface{})
-				assert.True(t, ok)
-
-				opts, ok := obj.Calls[0].Arguments[1].(tclient.StartWorkflowOptions)
-				assert.True(t, ok)
-				assert.Equal(t, workflows.DefaultTaskQueue, opts.TaskQueue)
-
-				req, ok := args[0].(*appsv1.ProvisionRequest)
-				assert.True(t, ok)
-
-				assert.True(t, ok)
-				assert.Equal(t, app.ID, req.AppId)
-				assert.Equal(t, app.OrgID, req.OrgId)
+			assertFn: func(_ *testing.T, _ temporal.Client, resp string) {
+				// TODO(jm): find a better way to grab captured arguments with mockgen mocks.
+				assert.Equal(t, resp, "12345")
 			},
 		},
 		"error": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, errAppProvisionTest)
-				return client
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
+				workflowRun := &tmock.WorkflowRun{}
+				workflowRun.On("GetID", gomock.Any(), gomock.Any()).Return("12345")
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "apps", gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errAppProvisionTest)
+				return mock
 			},
 			errExpected: errAppProvisionTest,
 		},
@@ -63,16 +53,17 @@ func Test_appWorkflowManager_Provision(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			client := test.clientFn()
-			mgr := NewAppWorkflowManager(client)
+			mockCtl := gomock.NewController(t)
+			client := test.clientFn(mockCtl)
 
-			_, err := mgr.Provision(context.Background(), app)
+			mgr := NewAppWorkflowManager(client)
+			resp, err := mgr.Provision(context.Background(), app)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
 
-			test.assertFn(t, client)
+			test.assertFn(t, client, resp)
 		})
 	}
 }

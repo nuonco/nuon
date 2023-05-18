@@ -29,7 +29,7 @@ func (w *wkflow) DeleteInstall(ctx workflow.Context, req *jobsv1.DeleteInstallRe
 
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
-	fut := workflow.ExecuteActivity(ctx, act.TriggerInstallDeprovJob, req.InstallId)
+	fut := workflow.ExecuteActivity(ctx, act.TriggerInstallDeprovision, req.InstallId)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return nil, err
 	}

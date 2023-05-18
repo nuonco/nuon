@@ -3,6 +3,7 @@ package workflows
 import (
 	"context"
 
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	tclient "go.temporal.io/sdk/client"
@@ -10,14 +11,14 @@ import (
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_orgs.go -source=orgs.go -package=workflows
-func NewOrgWorkflowManager(tc temporalClient) *orgWorkflowManager {
+func NewOrgWorkflowManager(tc temporal.Client) *orgWorkflowManager {
 	return &orgWorkflowManager{
 		tc: tc,
 	}
 }
 
 type orgWorkflowManager struct {
-	tc temporalClient
+	tc temporal.Client
 }
 
 type OrgWorkflowManager interface {
@@ -38,7 +39,7 @@ func (o *orgWorkflowManager) Provision(ctx context.Context, orgID string) (strin
 	}
 	args := &orgsv1.SignupRequest{OrgId: orgID, Region: "us-west-2"}
 
-	workflow, err := o.tc.ExecuteWorkflow(ctx, opts, "Signup", args)
+	workflow, err := o.tc.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Signup", args)
 	if err != nil {
 		return "", err
 	}
@@ -62,7 +63,7 @@ func (o *orgWorkflowManager) Deprovision(ctx context.Context, orgID string) (str
 	}
 	args := orgDeprovisionArgs{OrgID: orgID, Region: "us-west-2"}
 
-	workflow, err := o.tc.ExecuteWorkflow(ctx, opts, "Teardown", args)
+	workflow, err := o.tc.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Teardown", args)
 	if err != nil {
 		return "", err
 	}
