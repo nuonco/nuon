@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	buildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1/build/v1"
@@ -24,13 +25,13 @@ func New(cfg Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Build(wfctx workflow.Context, req *buildv1.BuildRequest, db *gorm.DB) (*buildv1.BuildResponse, error) {
-	resp := &buildv1.BuildResponse{}
+func (w *wkflow) Build(wfctx workflow.Context, req *buildv1.BuildRequest, db *gorm.DB) (*planv1.PlanRef, error) {
+	planRef := &planv1.PlanRef{}
 	l := workflow.GetLogger(wfctx)
 
 	// TODO(jm): handle noop builds better
 	if req.Component.BuildCfg.GetNoop() != nil {
-		return resp, nil
+		return planRef, nil
 	}
 
 	createPlanReq := &planv1.CreatePlanRequest{}
@@ -51,15 +52,11 @@ func (w *wkflow) Build(wfctx workflow.Context, req *buildv1.BuildRequest, db *go
 	}
 	ctx := workflow.WithChildOptions(wfctx, cwo)
 
-	planRef := &planv1.PlanRef{}
 	fut = workflow.ExecuteChildWorkflow(ctx, "CreatePlan", createPlanReq)
 	if err := fut.Get(ctx, &planRef); err != nil {
 		return nil, err
 	}
 	l.Debug("successfully created plan: %v", planRef)
-
-	// set struct field for overall workflow response later
-	resp.PlanRef = planRef
 
 	l.Debug("executing execute plan workflow")
 	cwo = workflow.ChildWorkflowOptions{
@@ -74,7 +71,7 @@ func (w *wkflow) Build(wfctx workflow.Context, req *buildv1.BuildRequest, db *go
 	if err := fut.Get(ctx, &execPlanResp); err != nil {
 		return nil, err
 	}
-	l.Debug("successfully executed: %v", execPlanResp)
+	l.Debug("successfully executed: %v", execPlanResp, zap.Any("outputs", execPlanResp.Outputs))
 
 	artifact := &models.Artifact{}
 	// This call with nil is kind of a hacky way to get references to the activity methods,
@@ -86,5 +83,5 @@ func (w *wkflow) Build(wfctx workflow.Context, req *buildv1.BuildRequest, db *go
 	}
 
 	// TODO we probably want to add the new artifactid to the response struct
-	return resp, nil
+	return planRef, nil
 }
