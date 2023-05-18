@@ -95,7 +95,7 @@ func (s *app) registerDeploymentsServer(mux *http.ServeMux) error {
 
 func (s *app) registerBuildsServer(mux *http.ServeMux) error {
 	_, err := buildsserver.New(s.v,
-		buildsserver.WithTemporalClient(s.cfg),
+		buildsserver.WithTemporalClient(s.tc),
 		buildsserver.WithGithubClient(s.cfg),
 		buildsserver.WithInterceptors(s.interceptors...),
 		buildsserver.WithHTTPMux(mux),

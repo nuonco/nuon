@@ -50,17 +50,14 @@ func (s *server) StartBuild(
 			"started-by":    "api",
 		},
 	}
-	workflowName := "Build"
 	args := buildv1.StartBuildRequest{
 		GitRef:      req.Msg.GitRef,
 		ComponentId: req.Msg.ComponentId,
 		CreatedById: req.Msg.CreatedById,
 	}
-	tclientBuilds, err := tclient.NewClientFromExisting(*s.temporalClient, tclient.Options{Namespace: "builds"})
-	if err != nil {
-		return nil, fmt.Errorf("error during StartBuild. Cannot create temporal client: %w", err)
-	}
-	_, err = tclientBuilds.ExecuteWorkflow(ctx, opts, workflowName, &args)
+	workflow := "Build"
+	namespace := "builds"
+	_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, workflow, &args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start build: %w", err)
 	}
