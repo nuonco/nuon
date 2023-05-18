@@ -50,14 +50,9 @@ func (s *server) StartBuild(
 			"started-by":    "api",
 		},
 	}
-	args := buildv1.StartBuildRequest{
-		GitRef:      req.Msg.GitRef,
-		ComponentId: req.Msg.ComponentId,
-		CreatedById: req.Msg.CreatedById,
-	}
 	workflow := "Build"
 	namespace := "builds"
-	_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, workflow, &args)
+	_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, workflow, &req.Msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start build: %w", err)
 	}
