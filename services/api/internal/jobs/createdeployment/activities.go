@@ -3,9 +3,9 @@ package createdeployment
 import (
 	"context"
 
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/workflows"
-	tclient "go.temporal.io/sdk/client"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +14,7 @@ type activities struct {
 	mgr  workflows.DeploymentWorkflowManager
 }
 
-func NewActivities(db *gorm.DB, tc tclient.Client) *activities {
+func NewActivities(db *gorm.DB, tc temporal.Client) *activities {
 	return &activities{
 		repo: repos.NewDeploymentRepo(db),
 		mgr:  workflows.NewDeploymentWorkflowManager(tc),

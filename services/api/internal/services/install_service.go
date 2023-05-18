@@ -7,7 +7,6 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -29,7 +28,6 @@ type installService struct {
 	appRepo   repos.AppRepo
 	log       *zap.Logger
 	repo      repos.InstallRepo
-	wkflowMgr workflows.InstallWorkflowManager
 }
 
 func NewInstallService(db *gorm.DB, temporalClient tclient.Client, log *zap.Logger) *installService {
@@ -38,7 +36,6 @@ func NewInstallService(db *gorm.DB, temporalClient tclient.Client, log *zap.Logg
 		appRepo:   repos.NewAppRepo(db),
 		log:       log,
 		repo:      repos.NewInstallRepo(db),
-		wkflowMgr: workflows.NewInstallWorkflowManager(temporalClient),
 	}
 }
 

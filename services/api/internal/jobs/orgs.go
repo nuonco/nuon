@@ -8,7 +8,7 @@ import (
 )
 
 func (m *manager) CreateOrg(ctx context.Context, orgID string) error {
-	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "CreateOrg", &jobsv1.CreateOrgRequest{
+	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "orgs", m.Opts, "CreateOrg", &jobsv1.CreateOrgRequest{
 		OrgId: orgID,
 	})
 	if err != nil {
@@ -19,7 +19,7 @@ func (m *manager) CreateOrg(ctx context.Context, orgID string) error {
 }
 
 func (m *manager) DeleteOrg(ctx context.Context, orgID string) error {
-	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, m.Namespace, m.Opts, "DeleteOrg", &jobsv1.DeleteOrgRequest{
+	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "orgs", m.Opts, "DeleteOrg", &jobsv1.DeleteOrgRequest{
 		OrgId: orgID,
 	})
 	if err != nil {

@@ -3,6 +3,7 @@ package workflows
 import (
 	"context"
 
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -12,7 +13,7 @@ import (
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_apps.go -source=apps.go -package=workflows
-func NewAppWorkflowManager(tc temporalClient) *appWorkflowManager {
+func NewAppWorkflowManager(tc temporal.Client) *appWorkflowManager {
 	return &appWorkflowManager{
 		tc: tc,
 	}
@@ -25,7 +26,7 @@ type AppWorkflowManager interface {
 var _ AppWorkflowManager = (*appWorkflowManager)(nil)
 
 type appWorkflowManager struct {
-	tc temporalClient
+	tc temporal.Client
 }
 
 func (a *appWorkflowManager) Provision(ctx context.Context, app *models.App) (string, error) {
@@ -43,7 +44,7 @@ func (a *appWorkflowManager) Provision(ctx context.Context, app *models.App) (st
 		AppId: app.ID,
 	}
 
-	fut, err := a.tc.ExecuteWorkflow(ctx, opts, "Provision", &args)
+	fut, err := a.tc.ExecuteWorkflowInNamespace(ctx, "apps", opts, "Provision", &args)
 	if err != nil {
 		return "", err
 	}

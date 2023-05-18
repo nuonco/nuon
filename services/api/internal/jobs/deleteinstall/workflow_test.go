@@ -29,7 +29,7 @@ func TestCreateAppWorkflow(t *testing.T) {
 	sharedActs, _ := sharedactivities.New(v)
 	env.RegisterActivity(sharedActs)
 
-	env.OnActivity(a.TriggerInstallDeprovJob, mock.Anything, mock.Anything).
+	env.OnActivity(a.TriggerInstallDeprovision, mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, s string) (*TriggerJobResponse, error) {
 			assert.Equal(t, req.InstallId, s)
 			return &TriggerJobResponse{}, nil

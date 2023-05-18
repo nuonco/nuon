@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
@@ -20,14 +21,14 @@ const (
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_deployments.go -source=deployments.go -package=workflows
-func NewDeploymentWorkflowManager(tclient temporalClient) *deploymentWorkflowManager {
+func NewDeploymentWorkflowManager(tclient temporal.Client) *deploymentWorkflowManager {
 	return &deploymentWorkflowManager{
 		tc: tclient,
 	}
 }
 
 type deploymentWorkflowManager struct {
-	tc temporalClient
+	tc temporal.Client
 }
 
 type DeploymentWorkflowManager interface {
@@ -72,7 +73,7 @@ func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *model
 		req.InstallIds[idx] = install.ID
 	}
 
-	workflow, err := d.tc.ExecuteWorkflow(ctx, opts, "Start", req)
+	workflow, err := d.tc.ExecuteWorkflowInNamespace(ctx, "deployments", opts, "Start", req)
 	if err != nil {
 		return "", fmt.Errorf("unable to start deployment: %w", err)
 	}

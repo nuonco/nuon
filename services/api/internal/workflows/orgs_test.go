@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
-	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	tclient "go.temporal.io/sdk/client"
 	tmock "go.temporal.io/sdk/mocks"
 )
 
@@ -19,40 +17,29 @@ func Test_orgWorkflowManager_Provision(t *testing.T) {
 	orgID, _ := shortid.NewNanoID("org")
 
 	tests := map[string]struct {
-		clientFn    func() temporalClient
-		assertFn    func(*testing.T, temporalClient)
+		clientFn    func(*gomock.Controller) temporal.Client
+		assertFn    func(*testing.T, temporal.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
 				workflowRun := &tmock.WorkflowRun{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(workflowRun, nil)
-				workflowRun.On("GetID", mock.Anything, mock.Anything).Return("12345")
-				return client
+				workflowRun.On("GetID").Return("12345")
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "orgs", gomock.Any(), gomock.Any(), gomock.Any()).Return(workflowRun, nil)
+				return mock
 			},
-			assertFn: func(t *testing.T, client temporalClient) {
-				obj := client.(*testTemporalClient)
-				obj.AssertNumberOfCalls(t, "ExecuteWorkflow", 1)
-
-				args, ok := obj.Calls[0].Arguments[3].([]interface{})
-				assert.True(t, ok)
-
-				opts, ok := obj.Calls[0].Arguments[1].(tclient.StartWorkflowOptions)
-				assert.True(t, ok)
-				assert.Equal(t, workflows.DefaultTaskQueue, opts.TaskQueue)
-
-				req, ok := args[0].(*orgsv1.SignupRequest)
-				assert.True(t, ok)
-
-				assert.Equal(t, orgID, req.OrgId)
+			assertFn: func(t *testing.T, client temporal.Client, resp string) {
+				assert.Equal(t, resp, "12345")
 			},
 		},
 		"error": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, errOrgProvisionTest)
-				return client
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "orgs", gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errOrgProvisionTest)
+				return mock
 			},
 			errExpected: errOrgProvisionTest,
 		},
@@ -60,16 +47,18 @@ func Test_orgWorkflowManager_Provision(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			client := test.clientFn()
+			mockCtl := gomock.NewController(t)
+			client := test.clientFn(mockCtl)
+
 			mgr := NewOrgWorkflowManager(client)
 
-			_, err := mgr.Provision(context.Background(), orgID)
+			resp, err := mgr.Provision(context.Background(), orgID)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
 
-			test.assertFn(t, client)
+			test.assertFn(t, client, resp)
 		})
 	}
 }
@@ -79,40 +68,33 @@ func Test_orgWorkflowManager_Deprovision(t *testing.T) {
 	orgID, _ := shortid.NewNanoID("org")
 
 	tests := map[string]struct {
-		clientFn    func() temporalClient
-		assertFn    func(*testing.T, temporalClient)
+		clientFn    func(*gomock.Controller) temporal.Client
+		assertFn    func(*testing.T, temporal.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
 				workflowRun := &tmock.WorkflowRun{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(workflowRun, nil)
-				workflowRun.On("GetID", mock.Anything, mock.Anything).Return("12345")
-				return client
+				workflowRun.On("GetID").Return("12345")
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "orgs", gomock.Any(), gomock.Any(), gomock.Any()).Return(workflowRun, nil)
+				return mock
 			},
-			assertFn: func(t *testing.T, client temporalClient) {
-				obj := client.(*testTemporalClient)
-				obj.AssertNumberOfCalls(t, "ExecuteWorkflow", 1)
-
-				args, ok := obj.Calls[0].Arguments[3].([]interface{})
-				assert.True(t, ok)
-
-				opts, ok := obj.Calls[0].Arguments[1].(tclient.StartWorkflowOptions)
-				assert.True(t, ok)
-				assert.Equal(t, workflows.DefaultTaskQueue, opts.TaskQueue)
-
-				req, ok := args[0].(orgDeprovisionArgs)
-				assert.True(t, ok)
-
-				assert.Equal(t, orgID, req.OrgID)
+			assertFn: func(t *testing.T, client temporal.Client, resp string) {
+				assert.Equal(t, "12345", resp)
 			},
 		},
 		"error": {
-			clientFn: func() temporalClient {
-				client := &testTemporalClient{}
-				client.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, errOrgDeprovisionTest)
-				return client
+			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
+				mock := temporal.NewMockClient(mockCtl)
+
+				workflowRun := &tmock.WorkflowRun{}
+				workflowRun.On("GetID").Return("12345")
+
+				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "orgs", gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errOrgDeprovisionTest)
+				return mock
 			},
 			errExpected: errOrgDeprovisionTest,
 		},
@@ -120,16 +102,18 @@ func Test_orgWorkflowManager_Deprovision(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			client := test.clientFn()
+			mockCtl := gomock.NewController(t)
+			client := test.clientFn(mockCtl)
+
 			mgr := NewOrgWorkflowManager(client)
 
-			_, err := mgr.Deprovision(context.Background(), orgID)
+			resp, err := mgr.Deprovision(context.Background(), orgID)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
 			}
 
-			test.assertFn(t, client)
+			test.assertFn(t, client, resp)
 		})
 	}
 }

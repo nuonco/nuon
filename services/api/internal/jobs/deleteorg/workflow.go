@@ -28,7 +28,7 @@ func (w *wkflow) DeleteOrg(ctx workflow.Context, req *jobsv1.DeleteOrgRequest) (
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
 	var triggerResp TriggerJobResponse
-	fut := workflow.ExecuteActivity(ctx, act.TriggerOrgJob, req.OrgId)
+	fut := workflow.ExecuteActivity(ctx, act.TriggerOrgDeprovision, req.OrgId)
 	if err := fut.Get(ctx, &triggerResp); err != nil {
 		return nil, err
 	}

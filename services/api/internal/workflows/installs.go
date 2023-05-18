@@ -3,6 +3,7 @@ package workflows
 import (
 	"context"
 
+	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -13,14 +14,14 @@ import (
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_installs.go -source=installs.go -package=workflows
 
-func NewInstallWorkflowManager(tclient temporalClient) *installWorkflowManager {
+func NewInstallWorkflowManager(tclient temporalclient.Client) *installWorkflowManager {
 	return &installWorkflowManager{
 		tc: tclient,
 	}
 }
 
 type installWorkflowManager struct {
-	tc temporalClient
+	tc temporalclient.Client
 }
 
 type InstallWorkflowManager interface {
@@ -61,7 +62,7 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 		},
 	}
 
-	workflow, err := i.tc.ExecuteWorkflow(ctx, opts, "Provision", args)
+	workflow, err := i.tc.ExecuteWorkflowInNamespace(ctx, "installs", opts, "Provision", args)
 	if err != nil {
 		return "", err
 	}
@@ -98,7 +99,7 @@ func (i *installWorkflowManager) Deprovision(ctx context.Context, install *model
 		},
 	}
 
-	workflow, err := i.tc.ExecuteWorkflow(ctx, opts, "Deprovision", args)
+	workflow, err := i.tc.ExecuteWorkflowInNamespace(ctx, "installs", opts, "Deprovision", args)
 	if err != nil {
 		return "", err
 	}

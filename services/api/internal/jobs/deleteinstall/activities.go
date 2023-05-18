@@ -3,9 +3,9 @@ package deleteinstall
 import (
 	"context"
 
+	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/workflows"
-	tclient "go.temporal.io/sdk/client"
 	"gorm.io/gorm"
 )
 
@@ -16,7 +16,7 @@ type activities struct {
 	mgr       workflows.InstallWorkflowManager
 }
 
-func NewActivities(db *gorm.DB, tc tclient.Client) *activities {
+func NewActivities(db *gorm.DB, tc temporal.Client) *activities {
 	return &activities{
 		repo:      repos.NewInstallRepo(db),
 		adminRepo: repos.NewAdminRepo(db),
@@ -29,7 +29,7 @@ type TriggerJobResponse struct {
 	WorkflowID string
 }
 
-func (a *activities) TriggerInstallDeprovJob(ctx context.Context, installID string) (*TriggerJobResponse, error) {
+func (a *activities) TriggerInstallDeprovision(ctx context.Context, installID string) (*TriggerJobResponse, error) {
 	install, err := a.repo.GetDeleted(ctx, installID)
 	if err != nil {
 		return nil, err
