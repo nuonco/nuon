@@ -15,7 +15,7 @@ const (
 	shortIDLen     = 26
 	uuidLen        = 36
 	uuidBytes      = 64
-	nanoIDAlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	nanoIDAlphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
 	nanoIDLen      = 23
 )
 
