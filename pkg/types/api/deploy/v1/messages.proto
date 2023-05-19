@@ -16,7 +16,7 @@ message Deploy {
 
 message StartDeployRequest {
   string build_id = 1 [(validate.rules).string.len = 26];
-  repeated string install_ids = 2 [(validate.rules).repeated.items.string.len = 26];
+  string install_id = 2 [(validate.rules).string.len = 26];
 }
 
 message StartDeployResponse {
