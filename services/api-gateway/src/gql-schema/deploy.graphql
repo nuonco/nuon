@@ -19,7 +19,7 @@ type Deploy {
 
 input DeployInput {
   buildId: ID!
-  installIds: [ID!]
+  installId: ID!
 }
 
 ##############################################################################
