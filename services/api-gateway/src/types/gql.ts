@@ -97,6 +97,7 @@ export type AppEdge = {
 };
 
 export type AppInput = {
+  githubInstallId?: InputMaybe<Scalars['ID']>;
   id?: InputMaybe<Scalars['ID']>;
   name?: InputMaybe<Scalars['String']>;
   orgId?: InputMaybe<Scalars['ID']>;
@@ -119,10 +120,25 @@ export type BasicDeployConfigInput = {
   port: Scalars['Int'];
 };
 
+/** Represents information about a build */
+export type Build = {
+  __typename?: 'Build';
+  componentId: Scalars['ID'];
+  createdAt: Scalars['DateTime'];
+  gitRef: Scalars['String'];
+  id: Scalars['ID'];
+  updatedAt: Scalars['DateTime'];
+};
+
 export type BuildConfigInput = {
   dockerBuildConfig?: InputMaybe<DockerBuildInput>;
   externalImageConfig?: InputMaybe<ExternalImageInput>;
   noop?: InputMaybe<Scalars['Boolean']>;
+};
+
+export type BuildInput = {
+  componentId: Scalars['ID'];
+  gitRef?: InputMaybe<Scalars['String']>;
 };
 
 /** Represents a collection of general settings and information about a piece of a App */
@@ -220,10 +236,25 @@ export type ConnectionOptions = {
   last?: InputMaybe<Scalars['Int']>;
 };
 
+/** Represents information about a deploy */
+export type Deploy = {
+  __typename?: 'Deploy';
+  buildId: Scalars['ID'];
+  createdAt: Scalars['DateTime'];
+  id: Scalars['ID'];
+  installId: Scalars['ID'];
+  updatedAt: Scalars['DateTime'];
+};
+
 export type DeployConfigInput = {
   basicDeployConfig?: InputMaybe<BasicDeployConfigInput>;
   helmRepoDeployConfig?: InputMaybe<HelmRepoDeployConfigInput>;
   noop?: InputMaybe<Scalars['Boolean']>;
+};
+
+export type DeployInput = {
+  buildId: Scalars['ID'];
+  installIds?: InputMaybe<Array<Scalars['ID']>>;
 };
 
 /** Represents a collection of general settings and information about a deployed piece of an App */
@@ -383,6 +414,7 @@ export type KeyValuePair = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  cancelBuild: Scalars['Boolean'];
   createDeployment?: Maybe<Deployment>;
   deleteApp: Scalars['Boolean'];
   deleteComponent: Scalars['Boolean'];
@@ -390,11 +422,18 @@ export type Mutation = {
   deleteOrg: Scalars['Boolean'];
   deleteSecrets: Scalars['Boolean'];
   echo: Scalars['String'];
+  startBuild: Build;
+  startDeploy: Deploy;
   upsertApp?: Maybe<App>;
   upsertComponent?: Maybe<Component>;
   upsertInstall?: Maybe<Install>;
   upsertOrg?: Maybe<Org>;
   upsertSecrets: Scalars['Boolean'];
+};
+
+
+export type MutationCancelBuildArgs = {
+  id: Scalars['ID'];
 };
 
 
@@ -430,6 +469,16 @@ export type MutationDeleteSecretsArgs = {
 
 export type MutationEchoArgs = {
   word: Scalars['String'];
+};
+
+
+export type MutationStartBuildArgs = {
+  input: BuildInput;
+};
+
+
+export type MutationStartDeployArgs = {
+  input: DeployInput;
 };
 
 
@@ -550,8 +599,10 @@ export type Query = {
   __typename?: 'Query';
   app?: Maybe<App>;
   apps: AppConnection;
+  builds?: Maybe<Array<Build>>;
   component?: Maybe<Component>;
   components: ComponentConnection;
+  deploy: Deploy;
   deployment?: Maybe<Deployment>;
   deploymentStatus: Status;
   deployments: DeploymentConnection;
@@ -580,6 +631,11 @@ export type QueryAppsArgs = {
 };
 
 
+export type QueryBuildsArgs = {
+  componentId: Scalars['ID'];
+};
+
+
 export type QueryComponentArgs = {
   id: Scalars['ID'];
 };
@@ -588,6 +644,11 @@ export type QueryComponentArgs = {
 export type QueryComponentsArgs = {
   appId: Scalars['ID'];
   options?: InputMaybe<ConnectionOptions>;
+};
+
+
+export type QueryDeployArgs = {
+  id: Scalars['ID'];
 };
 
 
