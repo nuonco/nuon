@@ -28,7 +28,7 @@ const mockClients = {
   build: mockBuildServiceClient,
 };
 
-test("startBuild resolver should return true on successful mutation", async () => {
+test("startBuild resolver should return a build on successful mutation", async () => {
   const spec = await startBuild(
     undefined,
     { input: { componentId: "test-component-id", gitRef: "test-git-ref" } },

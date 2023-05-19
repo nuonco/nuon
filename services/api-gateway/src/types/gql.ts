@@ -254,7 +254,7 @@ export type DeployConfigInput = {
 
 export type DeployInput = {
   buildId: Scalars['ID'];
-  installIds?: InputMaybe<Array<Scalars['ID']>>;
+  installId: Scalars['ID'];
 };
 
 /** Represents a collection of general settings and information about a deployed piece of an App */
