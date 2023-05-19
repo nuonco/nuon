@@ -44,7 +44,7 @@ func New(v *validator.Validate, opts ...managerOption) (*manager, error) {
 		Opts: tclient.StartWorkflowOptions{
 			WorkflowExecutionTimeout: defaultWorkflowExecutionTimeout,
 			WorkflowRunTimeout:       defaultWorkflowRunTimeout,
-			TaskQueue:                workflows.DefaultTaskQueue,
+			TaskQueue:                workflows.APITaskQueue,
 			Memo: map[string]interface{}{
 				"started-by": "default",
 			},

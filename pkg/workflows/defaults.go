@@ -5,5 +5,8 @@ package workflows
 // high-priority/low-priority queue in the future.
 const DefaultTaskQueue string = "main"
 
+// the api task queue is for api jobs
+const APITaskQueue string = "api"
+
 // each namespace has it's own queue for executors.
 const ExecutorsTaskQueue string = "executors"
