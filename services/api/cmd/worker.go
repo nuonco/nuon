@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 
+	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	"github.com/spf13/cobra"
 	tworker "go.temporal.io/sdk/worker"
@@ -29,8 +30,13 @@ func runWorker(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("unable to load server: %s", err)
 	}
+	sharedActs, err := sharedactivities.New(app.v,
+		sharedactivities.WithTemporalHost(app.cfg.TemporalHost))
+	if err != nil {
+		log.Fatalf("error during worker setup: %s", err)
+	}
 
-	var initFn func() (worker.Worker, error)
+	var initFn func(sa *sharedactivities.Activities) (worker.Worker, error)
 	switch workerDomain {
 	case "apps":
 		initFn = app.appsWorker
@@ -46,7 +52,7 @@ func runWorker(cmd *cobra.Command, args []string) {
 		log.Fatalf("unknown domain: %s", workerDomain)
 	}
 
-	wkr, err := initFn()
+	wkr, err := initFn(sharedActs)
 	if err != nil {
 		log.Fatalf("unable to initialize %s worker: %s", workerDomain, err)
 	}
