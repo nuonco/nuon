@@ -1,5 +1,6 @@
 import merge from "lodash.merge";
 import { appResolvers } from "./app";
+import { buildResolvers } from "./build";
 import { componentResolvers } from "./component";
 import { deploymentResolvers } from "./deployment";
 import { generalResolvers } from "./general";
@@ -11,6 +12,7 @@ import { userResolvers } from "./user";
 
 export const resolvers = merge(
   appResolvers,
+  buildResolvers,
   componentResolvers,
   deploymentResolvers,
   generalResolvers,

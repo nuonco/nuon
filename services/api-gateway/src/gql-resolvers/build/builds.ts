@@ -1,0 +1,25 @@
+import { QueryBuildsRequest } from "@buf/nuon_apis.grpc_node/build/v1/messages_pb";
+import { GraphQLError } from "graphql";
+import type { Query, QueryBuildsArgs, TResolverFn } from "../../types";
+
+export const builds: TResolverFn<QueryBuildsArgs, Query["builds"]> = (
+  _,
+  { componentId },
+  { clients }
+) =>
+  new Promise((resolve, reject) => {
+    if (clients.build) {
+      const request = new QueryBuildsRequest().setComponentId(componentId);
+
+      clients.build.getBuilds(request, (err, res) => {
+        if (err) {
+          reject(new GraphQLError(err?.message));
+        } else {
+          const { buildsList } = res.toObject();
+          resolve(buildsList || []);
+        }
+      });
+    } else {
+      reject(new GraphQLError("Service isn't available"));
+    }
+  });
