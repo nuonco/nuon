@@ -41,7 +41,7 @@ func (s *server) StartBuild(
 	// start build workflow
 	opts := tclient.StartWorkflowOptions{
 		ID:        buildID,
-		TaskQueue: workflows.DefaultTaskQueue,
+		TaskQueue: workflows.APITaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
 			"git-ref":       req.Msg.GitRef,
