@@ -1,21 +1,12 @@
-# template-go-library
+# Terraform
 
-This is a template for creating a new go library.
+This package exposes the ability to work with `terraform` locally.
 
-## Usage
+## Concepts
 
-When you create a new repository in `infra-github` set the `template` field to `template-go-library`:
-
-```terraform
-module "my-go-library" {
-  source = "./modules/repository"
-
-  name          = "my-go-library"
-  description   = "Go library"
-  topics        = ["go-lib", ]
-  from_template = "template-go-library"
-}
-```
-
-Once you have created your repository, be sure to make an initial release and tag, named `v0.0.1`. This is required because each release of a library will look up the previous tag and use it to create the _next_ tag.
-
+* `workspace` - stolen from `terraform cloud`, a workspace represents the environment for running terraform, and various
+  commands.
+* `variables` - used to set input variables into a terraform workspace
+* `backend` - used to configure a backend
+* `run` - a run is a single plan, delete, or apply
+* `archive` -  represents a set of source or other files
