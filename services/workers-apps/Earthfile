@@ -40,6 +40,16 @@ build:
     SAVE ARTIFACT bin/service /service
     SAVE IMAGE --push $GHCR_IMAGE:build
 
+iamauthenticator:
+    WORKDIR /tmp
+    # iam authenticator download url
+    ARG version=0.6.2
+    RUN curl \
+            -Lo aws-iam-authenticator \
+            "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
+        && chmod +x aws-iam-authenticator
+    SAVE ARTIFACT aws-iam-authenticator
+
 docker:
     FROM alpine:3.16
     ARG EARTHLY_GIT_ORIGIN_URL
@@ -58,6 +68,8 @@ docker:
       zip
 
     COPY +build/service /bin/service
+    COPY +iamauthenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+
     ENTRYPOINT ["/bin/service", "all"]
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
