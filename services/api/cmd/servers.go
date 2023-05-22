@@ -9,7 +9,6 @@ import (
 	ghinstallation "github.com/bradleyfalzon/ghinstallation/v2"
 	grpcreflect "github.com/bufbuild/connect-grpcreflect-go"
 	githubclient "github.com/powertoolsdev/mono/services/api/internal/clients/github"
-	temporalclient "github.com/powertoolsdev/mono/services/api/internal/clients/temporal"
 	adminserver "github.com/powertoolsdev/mono/services/api/internal/servers/admin"
 	appsserver "github.com/powertoolsdev/mono/services/api/internal/servers/apps"
 	buildsserver "github.com/powertoolsdev/mono/services/api/internal/servers/builds"
@@ -24,12 +23,8 @@ import (
 )
 
 func (s *app) registerAppsServer(mux *http.ServeMux) error {
-	appsTc, err := temporalclient.New(temporalclient.WithConfig(s.cfg), temporalclient.WithNamespace("apps"))
-	if err != nil {
-		return fmt.Errorf("unable to create temporal client: %w", err)
-	}
-	appSvc := services.NewAppService(s.db, appsTc, s.log)
-	_, err = appsserver.New(s.v,
+	appSvc := services.NewAppService(s.db, s.tc, s.log)
+	_, err := appsserver.New(s.v,
 		appsserver.WithService(appSvc),
 		appsserver.WithInterceptors(s.interceptors...),
 		appsserver.WithHTTPMux(mux),
@@ -70,17 +65,12 @@ func (s *app) registerComponentsServer(mux *http.ServeMux) error {
 }
 
 func (s *app) registerDeploymentsServer(mux *http.ServeMux) error {
-	deploymentsTc, err := temporalclient.New(temporalclient.WithConfig(s.cfg), temporalclient.WithNamespace("deployments"))
-	if err != nil {
-		return fmt.Errorf("unable to create temporal client: %w", err)
-	}
-
 	ghTransport, err := githubclient.New(githubclient.WithConfig(s.cfg))
 	if err != nil {
 		return fmt.Errorf("unable to github client: %w", err)
 	}
 
-	deploymentsSvc := services.NewDeploymentService(s.db, deploymentsTc, ghTransport, s.cfg.GithubAppID, s.cfg.GithubAppKeySecretName, s.log)
+	deploymentsSvc := services.NewDeploymentService(s.db, s.tc, ghTransport, s.cfg.GithubAppID, s.cfg.GithubAppKeySecretName, s.log)
 	_, err = deploymentsserver.New(s.v,
 		deploymentsserver.WithService(deploymentsSvc),
 		deploymentsserver.WithInterceptors(s.interceptors...),
@@ -134,12 +124,8 @@ func (s *app) registerGithubServer(mux *http.ServeMux) error {
 }
 
 func (s *app) registerInstallsServer(mux *http.ServeMux) error {
-	installsTc, err := temporalclient.New(temporalclient.WithConfig(s.cfg), temporalclient.WithNamespace("installs"))
-	if err != nil {
-		return fmt.Errorf("unable to create temporal client: %w", err)
-	}
-	installSvc := services.NewInstallService(s.db, installsTc, s.log)
-	_, err = installsserver.New(s.v,
+	installSvc := services.NewInstallService(s.db, s.tc, s.log)
+	_, err := installsserver.New(s.v,
 		installsserver.WithService(installSvc),
 		installsserver.WithInterceptors(s.interceptors...),
 		installsserver.WithHTTPMux(mux),
@@ -151,12 +137,8 @@ func (s *app) registerInstallsServer(mux *http.ServeMux) error {
 }
 
 func (s *app) registerOrgsServer(mux *http.ServeMux) error {
-	orgsTc, err := temporalclient.New(temporalclient.WithConfig(s.cfg), temporalclient.WithNamespace("orgs"))
-	if err != nil {
-		return fmt.Errorf("unable to create temporal client: %w", err)
-	}
-	orgSvc := services.NewOrgService(s.db, orgsTc, s.log)
-	_, err = orgsserver.New(s.v,
+	orgSvc := services.NewOrgService(s.db, s.tc, s.log)
+	_, err := orgsserver.New(s.v,
 		orgsserver.WithService(orgSvc),
 		orgsserver.WithInterceptors(s.interceptors...),
 		orgsserver.WithHTTPMux(mux),
