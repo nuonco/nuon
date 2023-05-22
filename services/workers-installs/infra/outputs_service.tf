@@ -7,12 +7,12 @@ output "org_iam_role_name_templates" {
 }
 
 output "orgs_k8s" {
-  sensitive = true
+  sensitive = false
   value = {
-    ca_data         = data.tfe_outputs.infra-orgs.values.k8s.ca_data
-    public_endpoint = data.tfe_outputs.infra-orgs.values.k8s.public_endpoint
-    cluster_id      = data.tfe_outputs.infra-orgs.values.k8s.cluster_id
-    role_arn        = data.tfe_outputs.infra-orgs.values.k8s.access_role_arns["eks-workers-installs"]
+    ca_data         = nonsensitive(data.tfe_outputs.infra-orgs.values.k8s.ca_data)
+    public_endpoint = nonsensitive(data.tfe_outputs.infra-orgs.values.k8s.public_endpoint)
+    cluster_id      = nonsensitive(data.tfe_outputs.infra-orgs.values.k8s.cluster_id)
+    role_arn        = nonsensitive(data.tfe_outputs.infra-orgs.values.k8s.access_role_arns["eks-workers-installs"])
   }
 }
 
