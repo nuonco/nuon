@@ -60,6 +60,7 @@ func newApp(flags *pflag.FlagSet) (*app, error) {
 
 	tClient, err := temporal.New(v,
 		temporal.WithAddr(cfg.TemporalHost),
+		temporal.WithLogger(l),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize temporal: %w", err)

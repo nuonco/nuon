@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
 	tclient "go.temporal.io/sdk/client"
 )
 
@@ -19,6 +20,7 @@ func (t *temporal) ExecuteWorkflowInNamespace(ctx context.Context,
 
 	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
 		Namespace: namespace,
+		Logger:    temporalzap.NewLogger(t.Logger),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
@@ -38,6 +40,7 @@ func (t *temporal) GetWorkflowInNamespace(ctx context.Context,
 
 	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
 		Namespace: namespace,
+		Logger:    temporalzap.NewLogger(t.Logger),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
@@ -57,6 +60,7 @@ func (t *temporal) CancelWorkflowInNamespace(ctx context.Context,
 
 	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
 		Namespace: namespace,
+		Logger:    temporalzap.NewLogger(t.Logger),
 	})
 	if err != nil {
 		return fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
