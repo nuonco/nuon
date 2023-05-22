@@ -2,5 +2,6 @@
 type: worker
 env:
   DISABLE_METRICS: true
-local_cmd: go run . all
+local_cmds:
+  - go run . all
 run_cmd: all
