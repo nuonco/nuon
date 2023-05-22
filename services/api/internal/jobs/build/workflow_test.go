@@ -37,7 +37,7 @@ func TestBuildErrorOnCreatePlanRequest(t *testing.T) {
 	env := testSuite.NewTestWorkflowEnvironment()
 
 	sbReq := generics.GetFakeObj[*apibuildv1.StartBuildRequest]()
-	a := activities.New(nil)
+	a := activities.New(nil, "", "")
 	env.OnActivity(a.CreatePlanRequest, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, sbReq *apibuildv1.StartBuildRequest) (*planv1.CreatePlanRequest, error) {
 			return nil, fmt.Errorf("unit test error")

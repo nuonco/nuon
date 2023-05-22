@@ -16,7 +16,7 @@ import (
 
 func (a *app) buildsWorker(sa *sharedactivities.Activities) (worker.Worker, error) {
 	wkflow := build.New(build.Config{Config: a.cfg.Config})
-	acts := buildactivities.New(a.db)
+	acts := buildactivities.New(a.db, a.cfg.GithubAppID, a.cfg.GithubAppKeySecretName)
 
 	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
 		worker.WithNamespace("builds"),

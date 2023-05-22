@@ -32,7 +32,7 @@ func (w *wkflow) Build(wfctx workflow.Context, req *apibuildv1.StartBuildRequest
 	// This call with nil is kind of a hacky way to get references to the activity methods,
 	// but is not really for code execution since the activity invocations happens
 	// over the wire and we can't serialize anything other than pure data arguments
-	a := activities.New(nil)
+	a := activities.New(nil, "", "")
 	activityOpts := workflow.ActivityOptions{ScheduleToCloseTimeout: time.Second * 5}
 
 	wfctx = workflow.WithActivityOptions(wfctx, activityOpts)
