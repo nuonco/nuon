@@ -8,4 +8,4 @@ CREATE TABLE artifacts (
 );
 
 -- +goose Down
-DROP TABLE artifacts;
+DROP TABLE IF EXISTS artifacts;

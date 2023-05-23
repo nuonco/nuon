@@ -17,6 +17,7 @@ message PollWorkflowRequest {
         "installs",
         "instances",
         "orgs"
+        "builds"
       ]
     },
     (tagger.tags) = "faker:\"oneof: instances\""

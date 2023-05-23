@@ -4,6 +4,7 @@ package shared.v1;
 
 import "apps/v1/provision.proto";
 import "deployments/v1/start.proto";
+import "executors/v1/plan/v1/plan.proto";
 import "installs/v1/deprovision.proto";
 import "installs/v1/provision.proto";
 import "instances/v1/provision.proto";
@@ -51,5 +52,7 @@ message RequestRef {
     instances.v1.ProvisionRequest instance_provision = 6;
 
     apps.v1.ProvisionRequest app_provision = 7;
+
+    executors.v1.plan.v1.Plan executors_plan = 8;
   }
 }

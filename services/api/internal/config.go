@@ -60,6 +60,17 @@ type Config struct {
 	GithubAppID            string `config:"github_app_id"`
 	GithubAppKey           string `config:"github_app_key"`
 	GithubAppKeySecretName string `config:"github_app_key_secret_name"`
+
+	// org IAM role template names
+	OrgsDeploymentsRoleTemplate   string `config:"orgs_deployments_role_template" validate:"required"`
+	OrgsInstallerRoleTemplate     string `config:"orgs_installer_role_template" validate:"required"`
+	OrgsInstallationsRoleTemplate string `config:"orgs_installations_role_template" validate:"required"`
+	OrgsInstancesRoleTemplate     string `config:"orgs_instances_role_template" validate:"required"`
+	OrgsOdrRoleTemplate           string `config:"orgs_odr_role_template" validate:"required"`
+	OrgsOrgsRoleTemplate          string `config:"orgs_orgs_role_template" validate:"required"`
+
+	// bucket configurations
+	DeploymentsBucket string `config:"deployments_bucket" validate:"required"`
 }
 
 func (c Config) Validate() error {
