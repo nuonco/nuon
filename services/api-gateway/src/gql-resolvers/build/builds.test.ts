@@ -9,7 +9,7 @@ const mockBuild = {
 };
 
 const mockBuildServiceClient = {
-  getBuilds: jest
+  queryBuilds: jest
     .fn()
     .mockImplementationOnce((req, cb) => {
       cb(undefined, {
