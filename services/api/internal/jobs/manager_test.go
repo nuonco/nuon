@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/stretchr/testify/assert"
 )

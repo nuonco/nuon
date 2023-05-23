@@ -12,7 +12,11 @@ deps:
   - remote: buf.build
     owner: nuon
     repository: components
-    commit: 44b1b387bbda4a5e908d10c08a4913f0
+    commit: 0920f1e1bea240b3b75c0e61bfd3f3a9
+  - remote: buf.build
+    owner: nuon
+    repository: workflows
+    commit: 4476d8e5ac1542ddb534c88ff8f81e55
   - remote: buf.build
     owner: srikrsna
     repository: protoc-gen-gotag

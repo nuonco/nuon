@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	tclient "go.temporal.io/sdk/client"
@@ -24,6 +24,7 @@ type Manager interface {
 	CreateApp(context.Context, string) error
 	CreateInstall(context.Context, string) error
 	CreateDeployment(context.Context, string) error
+	StartDeploy(context.Context, string) (string, error)
 }
 
 var _ Manager = (*manager)(nil)
