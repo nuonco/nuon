@@ -1,0 +1,303 @@
+package startdeploy
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/go-playground/validator/v10"
+	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
+	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
+	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
+	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
+	meta "github.com/powertoolsdev/mono/pkg/workflows/meta"
+	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
+	"github.com/powertoolsdev/mono/services/api/internal/jobs/startdeploy/activities"
+	"go.temporal.io/sdk/temporal"
+	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
+)
+
+func New(v *validator.Validate, cfg Config) *wkflow {
+	return &wkflow{
+		cfg: cfg,
+	}
+}
+
+type wkflow struct {
+	cfg Config
+}
+
+func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployRequest) (*jobsv1.StartDeployResponse, error) {
+	act := activities.NewActivities(nil, nil)
+	activityOpts := workflow.ActivityOptions{
+		ScheduleToCloseTimeout: time.Second * 5,
+	}
+
+	ctx = workflow.WithActivityOptions(ctx, activityOpts)
+
+	var idResp activities.GetIDsResponse
+	fut := workflow.ExecuteActivity(ctx, act.GetIDs, req.DeployId)
+	err := fut.Get(ctx, &idResp)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get deploy ids: %w", err)
+	}
+
+	shrdAct := &sharedactivities.Activities{}
+
+	// poll install workflow future
+	pollInstallRequest := &activitiesv1.PollWorkflowRequest{
+		Namespace:    "installs",
+		WorkflowName: "Provision",
+		WorkflowId:   idResp.InstallID,
+	}
+
+	// set poll timeout
+	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
+		ScheduleToCloseTimeout: sharedactivities.PollActivityTimeout * sharedactivities.MaxActivityRetries,
+		StartToCloseTimeout:    sharedactivities.PollActivityTimeout,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: sharedactivities.MaxActivityRetries,
+		},
+	})
+
+	var pollResp activitiesv1.PollWorkflowResponse
+	fut = workflow.ExecuteActivity(ctx, shrdAct.PollWorkflow, pollInstallRequest)
+	err = fut.Get(ctx, &pollResp)
+	if err != nil {
+		return nil, fmt.Errorf("unable to poll for workflow response: %w", err)
+	}
+	// TODO(cp): connect install workflow
+	// poll build workflow future
+	pollBuildRequest := &activitiesv1.PollWorkflowRequest{
+		Namespace:    "builds",
+		WorkflowName: "Build",
+		WorkflowId:   idResp.BuildID,
+	}
+
+	planRef := &planv1.PlanRef{}
+	fut = workflow.ExecuteActivity(ctx, shrdAct.PollWorkflow, pollBuildRequest)
+	err = fut.Get(ctx, &planRef)
+	if err != nil {
+		return nil, fmt.Errorf("unable to poll for workflow response: %w", err)
+	}
+
+	resp := &jobsv1.StartDeployResponse{
+		BuildPlan: planRef,
+	}
+
+	// fetch plans from S3 (build)
+	// planRef should have S3 path to fetch from
+	plan := &planv1.Plan{}
+	fut = workflow.ExecuteActivity(ctx, act.FetchBuildPlanJob, planRef)
+	if err = fut.Get(ctx, &plan); err != nil {
+		return nil, fmt.Errorf("unable to trigger workflow response: %w", err)
+	}
+
+	// start the executors part of the workflows for syncing and deploying
+	if err := w.startWorkflow(ctx, plan); err != nil {
+		err = fmt.Errorf("unable to start workflow: %w", err)
+		w.finishWorkflow(ctx, plan, resp, err)
+		return resp, err
+	}
+	// call child workflow workers-instances
+	imageSyncPlanRef, err := w.planAndExec(ctx, plan, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE)
+	if err != nil {
+		err = fmt.Errorf("unable to sync image: %w", err)
+		w.finishWorkflow(ctx, plan, resp, err)
+		return resp, nil
+	}
+
+	resp.ImageSyncPlan = imageSyncPlanRef
+
+	// deploy instance
+	deployPlanRef, err := w.planAndExec(ctx, plan, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY)
+	if err != nil {
+		return resp, nil
+	}
+
+	resp.DeployPlan = deployPlanRef
+
+	// upsert instance
+	var upsertInstanceResp activities.UpsertInstanceResponse
+	fut = workflow.ExecuteActivity(ctx, act.UpsertInstanceJob, req.DeployId)
+	if err := fut.Get(ctx, &upsertInstanceResp); err != nil {
+		return nil, fmt.Errorf("unable to trigger workflow response: %w", err)
+	}
+	return resp, nil
+}
+
+func (w *wkflow) startWorkflow(ctx workflow.Context, plan *planv1.Plan) error {
+	wpPlan := plan.GetWaypointPlan()
+	info := workflow.GetInfo(ctx)
+
+	startReq := &sharedv1.StartActivityRequest{
+		MetadataBucket:              w.cfg.DeploymentsBucket,
+		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, wpPlan.Metadata.OrgId),
+		MetadataBucketPrefix:        prefix.InstancePath(wpPlan.Metadata.OrgId, wpPlan.Metadata.AppId, wpPlan.Component.Id, wpPlan.Metadata.DeploymentId, wpPlan.Metadata.InstallId),
+		WorkflowInfo: &sharedv1.WorkflowInfo{
+			Id: info.WorkflowExecution.ID,
+		},
+	}
+
+	if _, err := execStart(ctx, startReq); err != nil {
+		return fmt.Errorf("unable to start workflow: %w", err)
+	}
+
+	return nil
+}
+
+func (w *wkflow) planAndExec(
+	ctx workflow.Context,
+	buildPlan *planv1.Plan, // this will take BuildPlan from S3
+	typ planv1.ComponentInputType) (*planv1.PlanRef, error) {
+
+	waypointPlan := buildPlan.GetWaypointPlan()
+	l := workflow.GetLogger(ctx)
+
+	planReq := &planv1.CreatePlanRequest{
+		Input: &planv1.CreatePlanRequest_Component{
+			Component: &planv1.ComponentInput{
+				OrgId:     waypointPlan.Metadata.OrgShortId,
+				AppId:     waypointPlan.Metadata.AppShortId,
+				InstallId: waypointPlan.Metadata.InstallShortId,
+				Component: waypointPlan.Component,
+				Type:      typ,
+			},
+		},
+	}
+	planResp, err := execCreatePlan(ctx, planReq)
+	if err != nil {
+		err = fmt.Errorf("unable to create %s plan: %w", typ, err)
+		w.finishWorkflow(ctx, buildPlan, nil, err)
+		return nil, err
+	}
+	l.Debug("finished creating", zap.Any("plan_type", typ))
+
+	execReq := &executev1.ExecutePlanRequest{
+		Plan: planResp.Plan,
+	}
+	_, err = execExecutePlan(ctx, execReq)
+	if err != nil {
+		err = fmt.Errorf("unable to execute %s plan: %w", typ, err)
+		w.finishWorkflow(ctx, buildPlan, nil, err)
+		return nil, err
+	}
+	l.Debug("finished executing %s plan", typ)
+	return planResp.Plan, nil
+}
+
+func execCreatePlan(
+	ctx workflow.Context,
+	req *planv1.CreatePlanRequest,
+) (*planv1.CreatePlanResponse, error) {
+	resp := &planv1.CreatePlanResponse{}
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing create plan workflow")
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+		TaskQueue:                workflows.ExecutorsTaskQueue,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	fut := workflow.ExecuteChildWorkflow(ctx, "CreatePlan", req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func execExecutePlan(
+	ctx workflow.Context,
+	req *executev1.ExecutePlanRequest,
+) (*executev1.ExecutePlanResponse, error) {
+	resp := &executev1.ExecutePlanResponse{}
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing execute plan workflow")
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+		TaskQueue:                workflows.ExecutorsTaskQueue,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	fut := workflow.ExecuteChildWorkflow(ctx, "ExecutePlan", req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+// finishWorkflow calls the finish step
+func (w *wkflow) finishWorkflow(ctx workflow.Context, req *planv1.Plan, resp *jobsv1.StartDeployResponse, workflowErr error) {
+	plan := req.GetWaypointPlan()
+	var err error
+	defer func() {
+		if err == nil {
+			return
+		}
+
+		l := workflow.GetLogger(ctx)
+		l.Debug("unable to finish workflow: %w", err)
+	}()
+
+	status := sharedv1.ResponseStatus_RESPONSE_STATUS_OK
+	errMessage := ""
+	if workflowErr != nil {
+		status = sharedv1.ResponseStatus_RESPONSE_STATUS_ERROR
+		errMessage = workflowErr.Error()
+	}
+
+	finishReq := &sharedv1.FinishActivityRequest{
+		MetadataBucket:              w.cfg.DeploymentsBucket,
+		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, plan.Metadata.OrgId),
+		MetadataBucketPrefix:        prefix.InstancePath(plan.Metadata.OrgId, plan.Metadata.AppId, plan.Component.Id, plan.Metadata.DeploymentId, plan.Metadata.InstallId),
+		Status:                      status,
+		ErrorMessage:                errMessage,
+	}
+
+	// exec activity
+	_, err = execFinish(ctx, finishReq)
+	if err != nil {
+		err = fmt.Errorf("unable to execute finish activity: %w", err)
+	}
+}
+
+func execStart(
+	ctx workflow.Context,
+	req *sharedv1.StartActivityRequest,
+) (*sharedv1.StartActivityResponse, error) {
+	l := workflow.GetLogger(ctx)
+	resp := &sharedv1.StartActivityResponse{}
+
+	act := meta.NewStartActivity()
+	l.Debug("executing start activity", "request", req)
+	fut := workflow.ExecuteActivity(ctx, act.StartRequest, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+func execFinish(
+	ctx workflow.Context,
+	req *sharedv1.FinishActivityRequest,
+) (*sharedv1.FinishActivityResponse, error) {
+	l := workflow.GetLogger(ctx)
+	resp := &sharedv1.FinishActivityResponse{}
+
+	act := meta.NewFinishActivity()
+	l.Debug("executing finish activity", "request", req)
+	fut := workflow.ExecuteActivity(ctx, act.FinishRequest, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+	return resp, nil
+}

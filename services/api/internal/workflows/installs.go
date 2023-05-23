@@ -33,7 +33,7 @@ var _ InstallWorkflowManager = (*installWorkflowManager)(nil)
 
 func (i *installWorkflowManager) Provision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) (string, error) {
 	opts := tclient.StartWorkflowOptions{
-		ID:        orgID,
+		ID:        install.ID,
 		TaskQueue: workflows.DefaultTaskQueue,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 1,
