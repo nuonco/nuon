@@ -75,6 +75,7 @@ module "infra-orgs-prod" {
     module.workers-executors-prod.workspace_id,
     module.workers-deployments-prod.workspace_id,
     module.workers-orgs-prod.workspace_id,
+    module.api-prod.workspace_id,
   ]
 }
 
@@ -104,6 +105,7 @@ module "infra-orgs-stage" {
     module.workers-executors-stage.workspace_id,
     module.workers-deployments-stage.workspace_id,
     module.workers-orgs-stage.workspace_id,
+    module.api-stage.workspace_id,
   ]
 }
 
