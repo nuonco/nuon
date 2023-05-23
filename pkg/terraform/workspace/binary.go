@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// LoadBinary installs the binary using the provided binary
 func (w *workspace) LoadBinary(ctx context.Context) error {
 	if err := w.Binary.Init(ctx); err != nil {
 		return fmt.Errorf("unable to initialize binary: %w", err)
