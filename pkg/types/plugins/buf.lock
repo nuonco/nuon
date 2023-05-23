@@ -5,24 +5,19 @@ deps:
     owner: envoyproxy
     repository: protoc-gen-validate
     commit: 6607b10f00ed4a3d98f906807131c44a
-    digest: shake256:acc7b2ededb2f88d296862943a003b157bdb68ec93ed13dcd8566b2d06e47993ea6daf12013b9655658aaf6bbdb141cf65bfe400ce2870f4654b0a5b45e57c09
   - remote: buf.build
     owner: googleapis
     repository: googleapis
-    commit: 5ae7f88519b04fe1965da0f8a375a088
-    digest: shake256:27d9fcdc0e3eb957449dc3d17e2d24c7ce59c3c483ecf128818183c336dfd28595ecd13771fb3172247775caf7707c4076dd8e70c5ac2cbcac170df35e4d0028
+    commit: cc916c31859748a68fd229a3c8d7a2e8
   - remote: buf.build
     owner: nuon
     repository: components
     commit: 1662a23e18694eab9a10d0b4b4396241
-    digest: shake256:92ce38c9e9741c4721ccfa6275edb96037746f7bacfa1d239cf3d868f5e75b205b230ed66af97bc34478edb506daa57bcb4c49de9a68792138a032d087f654f6
   - remote: buf.build
     owner: nuon
     repository: vendor
     commit: 071377b2fbaa4770a5dd1688e6b60596
-    digest: shake256:5729723838a19d4efb5b387f56d88d36e932c98cf12fe94419c2059483822a84ee110aa045bd7b8065310e00189b279024c75c90bcda880ec7dc1c4e6898827b
   - remote: buf.build
     owner: srikrsna
     repository: protoc-gen-gotag
     commit: 7a85d3ad2e7642c198480e92bf730c14
-    digest: shake256:059f136681cd47abe2d6e83d20b9594071c481572d16cebfafbc81ba3d3e7924aef6974f99da53d67a01d033e30b7bf57985a206b4e856fc82508545de84a70c
