@@ -28,6 +28,7 @@ pkg/types/**/**pb.validate.go
 pkg/types/**/**connect.go
 # generated mocks
 *mock*.go
+*_gen.go
 go.work
 .gen
 
