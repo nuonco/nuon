@@ -11,7 +11,7 @@ export const builds: TResolverFn<QueryBuildsArgs, Query["builds"]> = (
     if (clients.build) {
       const request = new QueryBuildsRequest().setComponentId(componentId);
 
-      clients.build.getBuilds(request, (err, res) => {
+      clients.build.queryBuilds(request, (err, res) => {
         if (err) {
           reject(new GraphQLError(err?.message));
         } else {

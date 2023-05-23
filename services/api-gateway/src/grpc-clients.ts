@@ -1,4 +1,5 @@
 import { AppsServiceClient } from "@buf/nuon_apis.grpc_node/app/v1/service_grpc_pb";
+import { BuildsServiceClient } from "@buf/nuon_apis.grpc_node/build/v1/service_grpc_pb";
 import { ComponentsServiceClient } from "@buf/nuon_apis.grpc_node/component/v1/service_grpc_pb";
 import { DeploymentsServiceClient } from "@buf/nuon_apis.grpc_node/deployment/v1/service_grpc_pb";
 import { GithubServiceClient } from "@buf/nuon_apis.grpc_node/github/v1/service_grpc_pb";
@@ -18,6 +19,7 @@ export type TServiceClients = Record<string, any>;
 
 const CLIENT_CLASSES: TClientClasses = {
   app: AppsServiceClient,
+  build: BuildsServiceClient,
   component: ComponentsServiceClient,
   deployment: DeploymentsServiceClient,
   deploymentStatus: DeploymentsStatusServiceClient,
