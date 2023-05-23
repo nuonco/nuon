@@ -13,6 +13,7 @@ import (
 	appsserver "github.com/powertoolsdev/mono/services/api/internal/servers/apps"
 	buildsserver "github.com/powertoolsdev/mono/services/api/internal/servers/builds"
 	componentsserver "github.com/powertoolsdev/mono/services/api/internal/servers/components"
+	deployserver "github.com/powertoolsdev/mono/services/api/internal/servers/deploy"
 	deploymentsserver "github.com/powertoolsdev/mono/services/api/internal/servers/deployments"
 	githubserver "github.com/powertoolsdev/mono/services/api/internal/servers/github"
 	installsserver "github.com/powertoolsdev/mono/services/api/internal/servers/installs"
@@ -93,6 +94,18 @@ func (s *app) registerBuildsServer(mux *http.ServeMux) error {
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize builds server: %w", err)
+	}
+
+	return nil
+}
+func (s *app) registerDeployServer(mux *http.ServeMux) error {
+	_, err := deployserver.New(s.v,
+		deployserver.WithInterceptors(s.interceptors...),
+		deployserver.WithHTTPMux(mux),
+		deployserver.WithDB(s.db),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to initialize deploy server: %w", err)
 	}
 
 	return nil
@@ -204,12 +217,16 @@ func (s *app) registerAllServers(mux *http.ServeMux) error {
 		return fmt.Errorf("unable to register components: %w", err)
 	}
 
-	if err := s.registerDeploymentsServer(mux); err != nil {
+	/*if err := s.registerDeploymentsServer(mux); err != nil {
 		return fmt.Errorf("unable to register deployments: %w", err)
-	}
+	}*/
 
 	if err := s.registerBuildsServer(mux); err != nil {
 		return fmt.Errorf("unable to register deployments: %w", err)
+	}
+
+	if err := s.registerDeployServer(mux); err != nil {
+		return fmt.Errorf("unable to register deploys: %w", err)
 	}
 
 	if err := s.registerGithubServer(mux); err != nil {

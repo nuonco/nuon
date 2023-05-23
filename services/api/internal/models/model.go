@@ -19,10 +19,6 @@ func (m *Model) GetJobsManager() (jobs.Manager, error) {
 	return nil, nil
 }
 
-func (m *Model) BeforeCreate(tx *gorm.DB) (err error) {
-	return
-}
-
 type IDer interface {
 	GetID() string
 }

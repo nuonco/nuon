@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
+	metaactivities "github.com/powertoolsdev/mono/pkg/workflows/meta"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/build"
 	buildactivities "github.com/powertoolsdev/mono/services/api/internal/jobs/build/activities"
@@ -12,12 +13,13 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/createorg"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/deleteinstall"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/deleteorg"
+	"github.com/powertoolsdev/mono/services/api/internal/jobs/startdeploy"
+	startdeployacts "github.com/powertoolsdev/mono/services/api/internal/jobs/startdeploy/activities"
 )
 
 func (a *app) buildsWorker(sa *sharedactivities.Activities) (worker.Worker, error) {
 	wkflow := build.New(build.Config{Config: a.cfg.Config})
 	acts := buildactivities.New(a.db, a.cfg.GithubAppID, a.cfg.GithubAppKeySecretName)
-
 	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
 		worker.WithNamespace("builds"),
 		worker.WithWorkflow(wkflow.Build),
@@ -32,15 +34,21 @@ func (a *app) buildsWorker(sa *sharedactivities.Activities) (worker.Worker, erro
 }
 
 func (a *app) deploysWorker(sa *sharedactivities.Activities) (worker.Worker, error) {
-	// TODO(jm): change this to the correct worker once it lands
-	createWkflow := createapp.New(a.v)
-	createActs := createapp.NewActivities(a.db, a.tc)
-
+	cfg := startdeploy.Config{
+		OrgsDeploymentsRoleTemplate: a.cfg.OrgsDeploymentsRoleTemplate,
+		DeploymentsBucket:           a.cfg.DeploymentsBucket,
+	}
+	startDeployWkflow := startdeploy.New(a.v, cfg)
+	startdeployActs := startdeployacts.NewActivities(a.v, a.db)
+	metaStartActivity := metaactivities.NewStartActivity()
+	metaEndActivity := metaactivities.NewFinishActivity()
 	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
-		worker.WithWorkflow(createWkflow.CreateApp),
-		worker.WithNamespace("apps"),
-		worker.WithActivity(createActs),
+		worker.WithWorkflow(startDeployWkflow.StartDeploy),
+		worker.WithNamespace("deploys"),
+		worker.WithActivity(startdeployActs),
 		worker.WithActivity(sa),
+		worker.WithActivity(metaStartActivity),
+		worker.WithActivity(metaEndActivity),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create apps worker: %w", err)
