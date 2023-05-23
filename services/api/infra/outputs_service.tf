@@ -32,3 +32,7 @@ output "db_instance_username" {
   sensitive = true
   value     = "api"
 }
+
+output "org_iam_role_name_templates" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.org_iam_role_name_templates)
+}
