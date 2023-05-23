@@ -9,6 +9,7 @@ const (
 	defaultVariablesFilename string = "variables.json"
 )
 
+// LoadVariables initializes a variable set
 func (w *workspace) LoadVariables(ctx context.Context) error {
 	if err := w.Variables.Init(ctx); err != nil {
 		return fmt.Errorf("unable to init variables: %w", err)

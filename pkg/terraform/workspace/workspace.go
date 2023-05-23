@@ -15,17 +15,7 @@ import (
 // backend, the binary and more.
 //
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
-//go:generate mockgen -destination=workspace_mock.go -source=workspace.go -package=workspace
-type Workspace interface {
-	// Walk iterates through all files in the workspace
-
-	// Write allows you to write a file into the workspace
-
-	// Exec allows you to run a command in the workspace
-
-	// Cleanup cleans up the workspace, deleting everything
-}
-
+//go:generate mockgen -destination=interface_mock.go -source=interface.go -package=workspace
 var _ Workspace = (*workspace)(nil)
 
 type workspace struct {

@@ -9,6 +9,7 @@ const (
 	defaultBackendConfigFilename = "backend.json"
 )
 
+// LoadBackend loads the backend from the provided plugin
 func (w *workspace) LoadBackend(ctx context.Context) error {
 	if err := w.Backend.Init(ctx); err != nil {
 		return fmt.Errorf("unable to initialize backend: %w", err)
