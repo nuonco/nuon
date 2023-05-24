@@ -19,10 +19,10 @@ test("getNodeFields should return node object with formated dates", () => {
 
   expect(spec).toMatchInlineSnapshot(`
     {
-      "createdAt": "1999-12-31T08:15:30.000",
+      "createdAt": "1999-12-31T08:15:30.000+00:00",
       "id": "test-id",
       "name": "test-node",
-      "updatedAt": "1999-12-31T08:15:30.000",
+      "updatedAt": "1999-12-31T08:15:30.000+00:00",
     }
   `);
 });

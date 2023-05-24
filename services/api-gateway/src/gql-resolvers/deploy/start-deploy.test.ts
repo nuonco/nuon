@@ -2,10 +2,10 @@ import { startDeploy } from "./start-deploy";
 
 const mockDeploy = {
   buildId: "test-build-id",
-  createdAt: "1999-12-31T08:15:30.000",
+  createdAt: "1999-12-31T08:15:30.000+00:00",
   id: "test-id",
   installId: "test-install-id",
-  updatedAt: "1999-12-31T08:15:30.000",
+  updatedAt: "1999-12-31T08:15:30.000+00:00",
 };
 
 const mockDeployServiceClient = {
