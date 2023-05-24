@@ -55,10 +55,10 @@ test("apps resolver should return App connection", async () => {
       {
         cursor: "test-id",
         node: {
-          createdAt: "1999-12-31T08:15:30.000",
+          createdAt: "1999-12-31T08:15:30.000+00:00",
           id: "test-id",
           name: "test-node",
-          updatedAt: "1999-12-31T08:15:30.000",
+          updatedAt: "1999-12-31T08:15:30.000+00:00",
         },
       },
     ],
