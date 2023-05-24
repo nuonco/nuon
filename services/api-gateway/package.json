@@ -27,7 +27,7 @@
   "dependencies": {
     "@buf/nuon_apis.grpc_node": "^1.12.4-20230523214550-7c287c826720.1",
     "@buf/nuon_components.grpc_node": "^1.12.4-20230517163600-44b1b387bbda.1",
-    "@buf/nuon_orgs-api.grpc_node": "^1.12.4-20230412215718-8c825f3597c3.1",
+    "@buf/nuon_orgs-api.grpc_node": "^1.12.4-20230523155632-ec6def99b28c.1",
     "@buf/nuon_shared.grpc_node": "^1.12.4-20230222160615-5961d81e9464.1",
     "@grpc/grpc-js": "^1.8.14",
     "cors": "^2.8.5",
