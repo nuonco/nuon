@@ -49,10 +49,10 @@ test("component resolver should return component object on successful query", as
       buildConfig: null,
       deployConfig: null,
     },
-    createdAt: "1999-12-31T08:15:30.000",
+    createdAt: "1999-12-31T08:15:30.000+00:00",
     id: "test-id",
     name: "test-node",
-    updatedAt: "1999-12-31T08:15:30.000",
+    updatedAt: "1999-12-31T08:15:30.000+00:00",
   });
 });
 

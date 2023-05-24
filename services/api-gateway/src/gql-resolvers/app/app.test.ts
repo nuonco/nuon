@@ -44,10 +44,10 @@ test("app resolver should return app object on successful query", async () => {
   );
 
   expect(spec).toEqual({
-    createdAt: "1999-12-31T08:15:30.000",
+    createdAt: "1999-12-31T08:15:30.000+00:00",
     id: "test-id",
     name: "test-node",
-    updatedAt: "1999-12-31T08:15:30.000",
+    updatedAt: "1999-12-31T08:15:30.000+00:00",
   });
 });
 

@@ -7,6 +7,7 @@ import (
 )
 
 func TimeToDatetime(ts time.Time) *datetime.DateTime {
+	ts = ts.In(time.UTC)
 	return &datetime.DateTime{
 		Year:       int32(ts.Year()),
 		Month:      int32(ts.Month()),

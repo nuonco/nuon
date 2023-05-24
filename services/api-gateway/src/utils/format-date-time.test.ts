@@ -11,7 +11,7 @@ test("formatDateTime should take a DateTime object & return a ISO date string", 
     year: 1999,
   } as TDateTimeObject);
 
-  expect(spec).toMatchInlineSnapshot(`"1999-12-31T08:15:30.000"`);
+  expect(spec).toMatchInlineSnapshot(`"1999-12-31T08:15:30.000+00:00"`);
 });
 
 test("formatDateTime should take a DateTime object & return a ISO date string when having UTC offset", () => {
@@ -28,7 +28,7 @@ test("formatDateTime should take a DateTime object & return a ISO date string wh
     year: 1999,
   } as TDateTimeObject);
 
-  expect(spec).toMatchInlineSnapshot(`"1999-12-31T08:15:30.000"`);
+  expect(spec).toMatchInlineSnapshot(`"1999-12-31T08:15:30.000Z"`);
 });
 
 test("formatDateTime should return a current ISO date string when given undefined", () => {
