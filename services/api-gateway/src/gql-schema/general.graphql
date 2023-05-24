@@ -15,6 +15,11 @@ type KeyValuePair {
   value: String!
 }
 
+input KeyValuePairInput {
+  key: String!
+  value: String!
+}
+
 """
 Returns information about pagination in a connection, in accordance with the Relay specification
 """
