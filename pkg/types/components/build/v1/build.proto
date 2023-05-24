@@ -20,6 +20,6 @@ message Config {
     build.v1.DockerConfig docker_cfg = 2;
     build.v1.ExternalImageConfig external_image_cfg = 3;
     build.v1.NoopConfig noop = 4;
-    build.v1.TerraformModuleConfig terraform_module = 5;
+    build.v1.TerraformModuleConfig terraform_module_cfg = 5;
   }
 }
