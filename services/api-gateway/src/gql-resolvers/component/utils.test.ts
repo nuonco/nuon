@@ -1,4 +1,9 @@
-import { formatComponent, getConfig, getVcsConfig } from "./utils";
+import {
+  formatComponent,
+  getConfig,
+  getEnvVarsConfig,
+  getVcsConfig,
+} from "./utils";
 
 const mockDateTimeObject = {
   day: 31,
@@ -58,6 +63,23 @@ test("getVcsConfig should take a raw grpc component & return the correct vcs con
       "repo": "test-repo",
     }
   `);
+});
+
+test("getEnvVarsConfig should take a raw grpc component & return the correct environment variables config object", () => {
+  const spec = getEnvVarsConfig({
+    envVarsConfig: {
+      key: "test-key",
+      value: "test-value",
+    },
+  });
+
+  expect(spec).toMatchInlineSnapshot(`
+      {
+        "__typename": "KeyValuePair",
+        "key": "test-key",
+        "value": "test-value",
+      }
+    `);
 });
 
 test("getConfig should take a raw grpc component config & return the correct config object", () => {
@@ -134,11 +156,59 @@ test("getConfig should take a raw grpc component config & return the correct con
   `);
 });
 
+test("getConfig should take a raw grpc component config & return the correct config object - terraform", () => {
+  const spec = getConfig({
+    buildCfg: {
+      terraformModule: {
+        envVarsConfig: {
+          key: "test-env-var-key",
+          val: "test-env-var-val",
+        },
+        vcsCfg: {
+          connectedGithubConfig: {
+            branch: "main",
+            directory: "/",
+            repo: "test-repo",
+          },
+        },
+      },
+    },
+    deployCfg: {
+      terraformModuleConfig: {
+        terraformVersion: 1,
+      },
+    },
+  });
+
+  expect(spec).toMatchInlineSnapshot(`
+    {
+      "__typename": "ComponentConfig",
+      "buildConfig": {
+        "__typename": "TerraformBuildConfig",
+        "envVarsConfig": {
+          "__typename": "KeyValuePair",
+          "key": "test-env-var-key",
+          "val": "test-env-var-val",
+        },
+        "vcsConfig": {
+          "__typename": "ConnectedGithubConfig",
+          "branch": "main",
+          "directory": "/",
+          "repo": "test-repo",
+        },
+      },
+      "deployConfig": {
+        "__typename": "TerraformDeployConfig",
+        "terraformVersion": "TERRAFORM_VERSION_LATEST",
+      },
+    }
+  `);
+});
+
 test("formatComponent should return a GQL component with correct date format & vcs config field", () => {
   const spec = formatComponent(mockComponent);
 
-  expect(spec).toMatchInlineSnapshot(
-    `
+  expect(spec).toMatchInlineSnapshot(`
     {
       "config": {
         "__typename": "ComponentConfig",
@@ -150,6 +220,5 @@ test("formatComponent should return a GQL component with correct date format & v
       "name": "test-node",
       "updatedAt": "1999-12-31T08:15:30.000",
     }
-  `
-  );
+  `);
 });
