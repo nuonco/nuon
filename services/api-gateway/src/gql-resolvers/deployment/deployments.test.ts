@@ -94,9 +94,9 @@ test("deployments resolver should return Deployment connection for appIds", asyn
       {
         cursor: "test-id",
         node: {
-          createdAt: "1999-12-31T08:15:30.000",
+          createdAt: "1999-12-31T08:15:30.000+00:00",
           id: "test-id",
-          updatedAt: "1999-12-31T08:15:30.000",
+          updatedAt: "1999-12-31T08:15:30.000+00:00",
         },
       },
     ],
@@ -122,9 +122,9 @@ test("deployments resolver should return Deployment connection for componentIds"
       {
         cursor: "test-id",
         node: {
-          createdAt: "1999-12-31T08:15:30.000",
+          createdAt: "1999-12-31T08:15:30.000+00:00",
           id: "test-id",
-          updatedAt: "1999-12-31T08:15:30.000",
+          updatedAt: "1999-12-31T08:15:30.000+00:00",
         },
       },
     ],
@@ -150,9 +150,9 @@ test("deployments resolver should return Deployment connection for installIds", 
       {
         cursor: "test-id",
         node: {
-          createdAt: "1999-12-31T08:15:30.000",
+          createdAt: "1999-12-31T08:15:30.000+00:00",
           id: "test-id",
-          updatedAt: "1999-12-31T08:15:30.000",
+          updatedAt: "1999-12-31T08:15:30.000+00:00",
         },
       },
     ],

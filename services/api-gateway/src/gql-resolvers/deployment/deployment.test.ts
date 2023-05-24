@@ -43,9 +43,9 @@ test("deployment resolver should return deployment object on successful query", 
   );
 
   expect(spec).toEqual({
-    createdAt: "1999-12-31T08:15:30.000",
+    createdAt: "1999-12-31T08:15:30.000+00:00",
     id: "test-id",
-    updatedAt: "1999-12-31T08:15:30.000",
+    updatedAt: "1999-12-31T08:15:30.000+00:00",
   });
 });
 

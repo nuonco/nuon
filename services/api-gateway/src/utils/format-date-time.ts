@@ -14,9 +14,7 @@ export function formatDateTime(dateObject: TDateTimeObject): string {
           dateObject?.hours,
           dateObject?.minutes,
           dateObject?.seconds
-        )
-          .toLocal()
-          .toISO({ includeOffset: false });
+        ).toISO({ includeOffset: true });
       }
     }
   }
@@ -28,5 +26,5 @@ export function formatDateTime(dateObject: TDateTimeObject): string {
     month: dateObject?.month,
     seconds: dateObject?.seconds,
     year: dateObject?.year,
-  }).toISO({ includeOffset: false });
+  }).toISO({ includeOffset: true });
 }
