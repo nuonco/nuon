@@ -22,6 +22,7 @@ local_cmds:
   - "go run . worker orgs"
   - "go run . worker deploys"
   - "go run . server"
-run_cmd: server
+earthly_cmd: server
 port: 8080
 type: api
+inject_support_role_credentials: true
