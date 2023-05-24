@@ -20,5 +20,7 @@ local_env:
         { "name": "installStatus", "url": "localhost:8081" },
         { "name": "instance", "url": "localhost:8081" }
     ]
-local_cmd: npm run dev
-run_cmd: npm api
+local_cmds:
+  - npm run dev
+earthly_cmd: npm api
+inject_support_role_credentials: true
