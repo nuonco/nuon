@@ -1,5 +1,15 @@
-import type { Component, ComponentConfig, VcsConfig } from "../../types";
+import type {
+  Component,
+  ComponentConfig,
+  KeyValuePair,
+  VcsConfig,
+} from "../../types";
 import { getNodeFields } from "../../utils";
+
+const ETerraformVersion = {
+  0: "TERRAFORM_VERSION_UNSPECIFIED",
+  1: "TERRAFORM_VERSION_LATEST",
+};
 
 export function getVcsConfig(config): VcsConfig {
   let vcsConfig = null;
@@ -18,6 +28,18 @@ export function getVcsConfig(config): VcsConfig {
   }
 
   return vcsConfig;
+}
+
+export function getEnvVarsConfig(config): KeyValuePair {
+  let envVarsConfig = null;
+
+  if (config?.envVarsConfig) {
+    envVarsConfig = {
+      __typename: "KeyValuePair",
+      ...config?.envVarsConfig,
+    };
+  }
+  return envVarsConfig;
 }
 
 export function getConfig(config): ComponentConfig {
@@ -55,10 +77,26 @@ export function getConfig(config): ComponentConfig {
 
     if (config?.buildCfg?.dockerCfg) {
       const vcsConfig = getVcsConfig(config?.buildCfg?.dockerCfg);
+      const envVarsConfig = getEnvVarsConfig(config?.buildCfg?.dockerCfg);
 
       buildConfig = {
         __typename: "DockerBuildConfig",
         ...config?.buildCfg?.dockerCfg,
+        envVarsConfig,
+        vcsConfig,
+      };
+    }
+
+    if (config?.buildCfg?.terraformModule) {
+      const vcsConfig = getVcsConfig(config?.buildCfg?.terraformModule);
+      const envVarsConfig = getEnvVarsConfig(config?.buildCfg?.terraformModule);
+
+      delete config?.buildCfg?.terraformModule?.vcsCfg;
+
+      buildConfig = {
+        __typename: "TerraformBuildConfig",
+        ...config?.buildCfg?.terraformModule,
+        envVarsConfig,
         vcsConfig,
       };
     }
@@ -82,6 +120,20 @@ export function getConfig(config): ComponentConfig {
       deployConfig = {
         __typename: "HelmRepoDeployConfig",
         ...helmRepo,
+      };
+    }
+
+    if (config?.deployCfg?.terraformModuleConfig) {
+      const { terraformModuleConfig } = config?.deployCfg;
+
+      if (terraformModuleConfig?.terraformVersion) {
+        terraformModuleConfig.terraformVersion =
+          ETerraformVersion[terraformModuleConfig.terraformVersion];
+      }
+
+      deployConfig = {
+        __typename: "TerraformDeployConfig",
+        ...terraformModuleConfig,
       };
     }
   }
