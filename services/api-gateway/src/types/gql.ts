@@ -134,6 +134,7 @@ export type BuildConfigInput = {
   dockerBuildConfig?: InputMaybe<DockerBuildInput>;
   externalImageConfig?: InputMaybe<ExternalImageInput>;
   noop?: InputMaybe<Scalars['Boolean']>;
+  terraformBuildConfig?: InputMaybe<TerraformBuildInput>;
 };
 
 export type BuildInput = {
@@ -160,7 +161,7 @@ export type ComponentDeploymentsArgs = {
 };
 
 /** Represents all the component build configurations */
-export type ComponentBuildConfig = DockerBuildConfig | ExternalImageConfig | NoopConfig;
+export type ComponentBuildConfig = DockerBuildConfig | ExternalImageConfig | NoopConfig | TerraformBuildConfig;
 
 /** Represents all configuration for the  component */
 export type ComponentConfig = {
@@ -184,7 +185,7 @@ export type ComponentConnection = Connection & {
 };
 
 /** Represents all the component deployment configurations */
-export type ComponentDeployConfig = BasicDeployConfig | HelmRepoDeployConfig | NoopConfig;
+export type ComponentDeployConfig = BasicDeployConfig | HelmRepoDeployConfig | NoopConfig | TerraformDeployConfig;
 
 /** An auto-generated type which holds one Component and a cursor during pagination */
 export type ComponentEdge = {
@@ -250,6 +251,7 @@ export type DeployConfigInput = {
   basicDeployConfig?: InputMaybe<BasicDeployConfigInput>;
   helmRepoDeployConfig?: InputMaybe<HelmRepoDeployConfigInput>;
   noop?: InputMaybe<Scalars['Boolean']>;
+  terraformDeployConfig?: InputMaybe<TerraformDeployConfigInput>;
 };
 
 export type DeployInput = {
@@ -292,12 +294,16 @@ export type DockerBuildConfig = {
   buildArgs?: Maybe<Array<KeyValuePair>>;
   /** Name of Dockerfile used to build image */
   dockerfile: Scalars['String'];
+  /** Environment variables */
+  envVarsConfig?: Maybe<Array<KeyValuePair>>;
   /** Version control system configuration */
   vcsConfig?: Maybe<VcsConfig>;
 };
 
 export type DockerBuildInput = {
+  buildArgs?: InputMaybe<Array<KeyValuePairInput>>;
   dockerfile: Scalars['String'];
+  envVarsConfig?: InputMaybe<Array<KeyValuePairInput>>;
   vcsConfig: VcsConfigInput;
 };
 
@@ -408,6 +414,11 @@ export type Instance = {
 /** Represents a key value pair */
 export type KeyValuePair = {
   __typename?: 'KeyValuePair';
+  key: Scalars['String'];
+  value: Scalars['String'];
+};
+
+export type KeyValuePairInput = {
   key: Scalars['String'];
   value: Scalars['String'];
 };
@@ -792,6 +803,158 @@ export enum Status {
   Provisioning = 'PROVISIONING',
   Unknown = 'UNKNOWN',
   Unspecified = 'UNSPECIFIED'
+}
+
+/** Represents a Terraform module build configuration */
+export type TerraformBuildConfig = {
+  __typename?: 'TerraformBuildConfig';
+  /** Environment variables for the build */
+  envVarsConfig?: Maybe<Array<Maybe<KeyValuePair>>>;
+  /** Version control system configuration */
+  vcsConfig?: Maybe<VcsConfig>;
+};
+
+export type TerraformBuildInput = {
+  envVarsConfig?: InputMaybe<Array<KeyValuePairInput>>;
+  vcsConfig: VcsConfigInput;
+};
+
+/** Represents a terraform module deployment configuration */
+export type TerraformDeployConfig = {
+  __typename?: 'TerraformDeployConfig';
+  terraformVersion?: Maybe<TerraformVersion>;
+};
+
+export type TerraformDeployConfigInput = {
+  terraformVersion?: InputMaybe<TerraformVersion>;
+};
+
+export enum TerraformVersion {
+  TerraformVersion_0_8_8 = 'TERRAFORM_VERSION_0_8_8',
+  TerraformVersion_0_9_1 = 'TERRAFORM_VERSION_0_9_1',
+  TerraformVersion_0_9_2 = 'TERRAFORM_VERSION_0_9_2',
+  TerraformVersion_0_9_3 = 'TERRAFORM_VERSION_0_9_3',
+  TerraformVersion_0_9_4 = 'TERRAFORM_VERSION_0_9_4',
+  TerraformVersion_0_9_5 = 'TERRAFORM_VERSION_0_9_5',
+  TerraformVersion_0_9_6 = 'TERRAFORM_VERSION_0_9_6',
+  TerraformVersion_0_9_7 = 'TERRAFORM_VERSION_0_9_7',
+  TerraformVersion_0_9_9 = 'TERRAFORM_VERSION_0_9_9',
+  TerraformVersion_0_9_10 = 'TERRAFORM_VERSION_0_9_10',
+  TerraformVersion_0_9_11 = 'TERRAFORM_VERSION_0_9_11',
+  TerraformVersion_0_10_1 = 'TERRAFORM_VERSION_0_10_1',
+  TerraformVersion_0_10_2 = 'TERRAFORM_VERSION_0_10_2',
+  TerraformVersion_0_10_3 = 'TERRAFORM_VERSION_0_10_3',
+  TerraformVersion_0_10_4 = 'TERRAFORM_VERSION_0_10_4',
+  TerraformVersion_0_10_5 = 'TERRAFORM_VERSION_0_10_5',
+  TerraformVersion_0_10_6 = 'TERRAFORM_VERSION_0_10_6',
+  TerraformVersion_0_10_7 = 'TERRAFORM_VERSION_0_10_7',
+  TerraformVersion_0_10_8 = 'TERRAFORM_VERSION_0_10_8',
+  TerraformVersion_0_11_1 = 'TERRAFORM_VERSION_0_11_1',
+  TerraformVersion_0_11_2 = 'TERRAFORM_VERSION_0_11_2',
+  TerraformVersion_0_11_3 = 'TERRAFORM_VERSION_0_11_3',
+  TerraformVersion_0_11_4 = 'TERRAFORM_VERSION_0_11_4',
+  TerraformVersion_0_11_5 = 'TERRAFORM_VERSION_0_11_5',
+  TerraformVersion_0_11_6 = 'TERRAFORM_VERSION_0_11_6',
+  TerraformVersion_0_11_7 = 'TERRAFORM_VERSION_0_11_7',
+  TerraformVersion_0_11_8 = 'TERRAFORM_VERSION_0_11_8',
+  TerraformVersion_0_11_9 = 'TERRAFORM_VERSION_0_11_9',
+  TerraformVersion_0_11_10 = 'TERRAFORM_VERSION_0_11_10',
+  TerraformVersion_0_11_11 = 'TERRAFORM_VERSION_0_11_11',
+  TerraformVersion_0_11_12 = 'TERRAFORM_VERSION_0_11_12',
+  TerraformVersion_0_11_13 = 'TERRAFORM_VERSION_0_11_13',
+  TerraformVersion_0_11_14 = 'TERRAFORM_VERSION_0_11_14',
+  TerraformVersion_0_11_15 = 'TERRAFORM_VERSION_0_11_15',
+  TerraformVersion_0_12_1 = 'TERRAFORM_VERSION_0_12_1',
+  TerraformVersion_0_12_2 = 'TERRAFORM_VERSION_0_12_2',
+  TerraformVersion_0_12_3 = 'TERRAFORM_VERSION_0_12_3',
+  TerraformVersion_0_12_4 = 'TERRAFORM_VERSION_0_12_4',
+  TerraformVersion_0_12_5 = 'TERRAFORM_VERSION_0_12_5',
+  TerraformVersion_0_12_6 = 'TERRAFORM_VERSION_0_12_6',
+  TerraformVersion_0_12_7 = 'TERRAFORM_VERSION_0_12_7',
+  TerraformVersion_0_12_8 = 'TERRAFORM_VERSION_0_12_8',
+  TerraformVersion_0_12_9 = 'TERRAFORM_VERSION_0_12_9',
+  TerraformVersion_0_12_10 = 'TERRAFORM_VERSION_0_12_10',
+  TerraformVersion_0_12_11 = 'TERRAFORM_VERSION_0_12_11',
+  TerraformVersion_0_12_12 = 'TERRAFORM_VERSION_0_12_12',
+  TerraformVersion_0_12_13 = 'TERRAFORM_VERSION_0_12_13',
+  TerraformVersion_0_12_14 = 'TERRAFORM_VERSION_0_12_14',
+  TerraformVersion_0_12_15 = 'TERRAFORM_VERSION_0_12_15',
+  TerraformVersion_0_12_16 = 'TERRAFORM_VERSION_0_12_16',
+  TerraformVersion_0_12_17 = 'TERRAFORM_VERSION_0_12_17',
+  TerraformVersion_0_12_18 = 'TERRAFORM_VERSION_0_12_18',
+  TerraformVersion_0_12_19 = 'TERRAFORM_VERSION_0_12_19',
+  TerraformVersion_0_12_20 = 'TERRAFORM_VERSION_0_12_20',
+  TerraformVersion_0_12_21 = 'TERRAFORM_VERSION_0_12_21',
+  TerraformVersion_0_12_22 = 'TERRAFORM_VERSION_0_12_22',
+  TerraformVersion_0_12_23 = 'TERRAFORM_VERSION_0_12_23',
+  TerraformVersion_0_12_24 = 'TERRAFORM_VERSION_0_12_24',
+  TerraformVersion_0_12_25 = 'TERRAFORM_VERSION_0_12_25',
+  TerraformVersion_0_12_26 = 'TERRAFORM_VERSION_0_12_26',
+  TerraformVersion_0_12_27 = 'TERRAFORM_VERSION_0_12_27',
+  TerraformVersion_0_12_28 = 'TERRAFORM_VERSION_0_12_28',
+  TerraformVersion_0_12_29 = 'TERRAFORM_VERSION_0_12_29',
+  TerraformVersion_0_12_30 = 'TERRAFORM_VERSION_0_12_30',
+  TerraformVersion_0_12_31 = 'TERRAFORM_VERSION_0_12_31',
+  TerraformVersion_0_13_1 = 'TERRAFORM_VERSION_0_13_1',
+  TerraformVersion_0_13_2 = 'TERRAFORM_VERSION_0_13_2',
+  TerraformVersion_0_13_3 = 'TERRAFORM_VERSION_0_13_3',
+  TerraformVersion_0_13_4 = 'TERRAFORM_VERSION_0_13_4',
+  TerraformVersion_0_13_5 = 'TERRAFORM_VERSION_0_13_5',
+  TerraformVersion_0_13_6 = 'TERRAFORM_VERSION_0_13_6',
+  TerraformVersion_0_13_7 = 'TERRAFORM_VERSION_0_13_7',
+  TerraformVersion_0_14_1 = 'TERRAFORM_VERSION_0_14_1',
+  TerraformVersion_0_14_2 = 'TERRAFORM_VERSION_0_14_2',
+  TerraformVersion_0_14_3 = 'TERRAFORM_VERSION_0_14_3',
+  TerraformVersion_0_14_4 = 'TERRAFORM_VERSION_0_14_4',
+  TerraformVersion_0_14_5 = 'TERRAFORM_VERSION_0_14_5',
+  TerraformVersion_0_14_6 = 'TERRAFORM_VERSION_0_14_6',
+  TerraformVersion_0_14_7 = 'TERRAFORM_VERSION_0_14_7',
+  TerraformVersion_0_14_8 = 'TERRAFORM_VERSION_0_14_8',
+  TerraformVersion_0_14_9 = 'TERRAFORM_VERSION_0_14_9',
+  TerraformVersion_0_14_10 = 'TERRAFORM_VERSION_0_14_10',
+  TerraformVersion_0_14_11 = 'TERRAFORM_VERSION_0_14_11',
+  TerraformVersion_0_15_1 = 'TERRAFORM_VERSION_0_15_1',
+  TerraformVersion_0_15_2 = 'TERRAFORM_VERSION_0_15_2',
+  TerraformVersion_0_15_3 = 'TERRAFORM_VERSION_0_15_3',
+  TerraformVersion_0_15_4 = 'TERRAFORM_VERSION_0_15_4',
+  TerraformVersion_0_15_5 = 'TERRAFORM_VERSION_0_15_5',
+  TerraformVersion_1_0_1 = 'TERRAFORM_VERSION_1_0_1',
+  TerraformVersion_1_0_2 = 'TERRAFORM_VERSION_1_0_2',
+  TerraformVersion_1_0_3 = 'TERRAFORM_VERSION_1_0_3',
+  TerraformVersion_1_0_4 = 'TERRAFORM_VERSION_1_0_4',
+  TerraformVersion_1_0_5 = 'TERRAFORM_VERSION_1_0_5',
+  TerraformVersion_1_0_6 = 'TERRAFORM_VERSION_1_0_6',
+  TerraformVersion_1_0_7 = 'TERRAFORM_VERSION_1_0_7',
+  TerraformVersion_1_0_8 = 'TERRAFORM_VERSION_1_0_8',
+  TerraformVersion_1_0_9 = 'TERRAFORM_VERSION_1_0_9',
+  TerraformVersion_1_0_10 = 'TERRAFORM_VERSION_1_0_10',
+  TerraformVersion_1_0_11 = 'TERRAFORM_VERSION_1_0_11',
+  TerraformVersion_1_2_1 = 'TERRAFORM_VERSION_1_2_1',
+  TerraformVersion_1_2_2 = 'TERRAFORM_VERSION_1_2_2',
+  TerraformVersion_1_2_3 = 'TERRAFORM_VERSION_1_2_3',
+  TerraformVersion_1_2_4 = 'TERRAFORM_VERSION_1_2_4',
+  TerraformVersion_1_2_5 = 'TERRAFORM_VERSION_1_2_5',
+  TerraformVersion_1_2_6 = 'TERRAFORM_VERSION_1_2_6',
+  TerraformVersion_1_2_7 = 'TERRAFORM_VERSION_1_2_7',
+  TerraformVersion_1_2_8 = 'TERRAFORM_VERSION_1_2_8',
+  TerraformVersion_1_2_9 = 'TERRAFORM_VERSION_1_2_9',
+  TerraformVersion_1_3_1 = 'TERRAFORM_VERSION_1_3_1',
+  TerraformVersion_1_3_2 = 'TERRAFORM_VERSION_1_3_2',
+  TerraformVersion_1_3_3 = 'TERRAFORM_VERSION_1_3_3',
+  TerraformVersion_1_3_4 = 'TERRAFORM_VERSION_1_3_4',
+  TerraformVersion_1_3_5 = 'TERRAFORM_VERSION_1_3_5',
+  TerraformVersion_1_3_6 = 'TERRAFORM_VERSION_1_3_6',
+  TerraformVersion_1_3_7 = 'TERRAFORM_VERSION_1_3_7',
+  TerraformVersion_1_3_8 = 'TERRAFORM_VERSION_1_3_8',
+  TerraformVersion_1_3_9 = 'TERRAFORM_VERSION_1_3_9',
+  TerraformVersion_1_4_1 = 'TERRAFORM_VERSION_1_4_1',
+  TerraformVersion_1_4_2 = 'TERRAFORM_VERSION_1_4_2',
+  TerraformVersion_1_4_3 = 'TERRAFORM_VERSION_1_4_3',
+  TerraformVersion_1_4_4 = 'TERRAFORM_VERSION_1_4_4',
+  TerraformVersion_1_4_5 = 'TERRAFORM_VERSION_1_4_5',
+  TerraformVersion_1_4_6 = 'TERRAFORM_VERSION_1_4_6',
+  TerraformVersionLatest = 'TERRAFORM_VERSION_LATEST',
+  TerraformVersionUnspecified = 'TERRAFORM_VERSION_UNSPECIFIED'
 }
 
 /** Represents the data about a Org member's Nuon account */

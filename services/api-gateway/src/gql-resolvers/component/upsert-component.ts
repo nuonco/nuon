@@ -2,12 +2,17 @@ import { UpsertComponentRequest } from "@buf/nuon_apis.grpc_node/component/v1/me
 import { Config as BuildConfig } from "@buf/nuon_components.grpc_node/build/v1/build_pb";
 import { DockerConfig } from "@buf/nuon_components.grpc_node/build/v1/docker_pb";
 import {
+  EnvVar,
+  EnvVars,
+} from "@buf/nuon_components.grpc_node/build/v1/env_vars_pb";
+import {
   AWSIAMAuthCfg,
   ExternalImageAuthConfig,
   ExternalImageConfig,
   PublicAuthCfg,
 } from "@buf/nuon_components.grpc_node/build/v1/external_image_pb";
 import { NoopConfig as NoopBuildConfig } from "@buf/nuon_components.grpc_node/build/v1/noop_pb";
+import { TerraformModuleConfig as TerraformBuildConfig } from "@buf/nuon_components.grpc_node/build/v1/terraform_module_pb";
 import { Component } from "@buf/nuon_components.grpc_node/component/v1/component_pb";
 import { BasicConfig as BasicDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/basic_pb";
 import {
@@ -15,6 +20,7 @@ import {
   ListenerConfig,
 } from "@buf/nuon_components.grpc_node/deploy/v1/config_pb";
 import { HelmRepoConfig as HelmRepoDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/helm_repo_pb";
+import { TerraformModuleConfig as TerraformDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/terraform_module_pb";
 import { Config as VcsConfig } from "@buf/nuon_components.grpc_node/vcs/v1/config_pb";
 import { ConnectedGithubConfig } from "@buf/nuon_components.grpc_node/vcs/v1/connected_github_pb";
 import { PublicGitConfig } from "@buf/nuon_components.grpc_node/vcs/v1/public_git_pb";
@@ -23,11 +29,19 @@ import type {
   BuildConfigInput,
   ComponentConfigInput,
   DeployConfigInput,
+  KeyValuePairInput,
   Mutation,
   MutationUpsertComponentArgs,
   TResolverFn,
 } from "../../types";
 import { formatComponent } from "./utils";
+
+export function parseKeyValuePairInput(input: KeyValuePairInput[]) {
+  return input.map(({ key, value }) => {
+    const envVar = new EnvVar().setKey(key).setValue(value);
+    return envVar;
+  });
+}
 
 export function parseBuildConfigInput(
   buildConfig: BuildConfigInput
@@ -63,8 +77,17 @@ export function parseBuildConfigInput(
   }
 
   if (buildConfig?.dockerBuildConfig) {
-    const { dockerfile, vcsConfig: vcsInput } = buildConfig?.dockerBuildConfig;
+    const {
+      dockerfile,
+      envVarsConfig: envVarsConfigInput,
+      vcsConfig: vcsInput,
+    } = buildConfig?.dockerBuildConfig;
+    const envVarsConfig = new EnvVars();
     const vcsConfig = new VcsConfig();
+
+    if (envVarsConfigInput?.length > 0) {
+      envVarsConfig.setEnvVarsList(parseKeyValuePairInput(envVarsConfigInput));
+    }
 
     if (vcsInput?.connectedGithub) {
       const connectedGithubCfg = new ConnectedGithubConfig()
@@ -82,9 +105,41 @@ export function parseBuildConfigInput(
 
     const dockerCfg = new DockerConfig()
       .setDockerfile(dockerfile)
+      .setEnvVars(envVarsConfig)
       .setVcsCfg(vcsConfig);
 
     buildCfg.setDockerCfg(dockerCfg);
+  }
+
+  if (buildConfig?.terraformBuildConfig) {
+    const { envVarsConfig: envVarsConfigInput, vcsConfig: vcsInput } =
+      buildConfig?.terraformBuildConfig;
+    const envVarsConfig = new EnvVars();
+    const vcsConfig = new VcsConfig();
+
+    if (vcsInput?.connectedGithub) {
+      const connectedGithubCfg = new ConnectedGithubConfig()
+        .setRepo(vcsInput?.connectedGithub?.repo)
+        .setDirectory(vcsInput?.connectedGithub?.directory);
+
+      vcsConfig.setConnectedGithubConfig(connectedGithubCfg);
+    } else if (vcsInput?.publicGit) {
+      const publicGitCfg = new PublicGitConfig()
+        .setRepo(vcsInput?.publicGit?.repo)
+        .setDirectory(vcsInput?.publicGit?.directory);
+
+      vcsConfig.setPublicGitConfig(publicGitCfg);
+    }
+
+    if (envVarsConfigInput?.length > 0) {
+      envVarsConfig.setEnvVarsList(parseKeyValuePairInput(envVarsConfigInput));
+    }
+
+    const terraformBuildConfig = new TerraformBuildConfig()
+      .setEnvVars(envVarsConfig)
+      .setVcsCfg(vcsConfig);
+
+    buildCfg.setTerraformModule(terraformBuildConfig);
   }
 
   return buildCfg;
@@ -124,6 +179,13 @@ export function parseDeployConfigInput(
       .setImageTagValuesKey(imageTagValuesKey);
 
     deployCfg.setHelmRepo(helmRepoDeployCfg);
+  }
+
+  if (deployConfig?.terraformDeployConfig) {
+    const terraformDeployCfg = new TerraformDeployConfig().setTerraformVersion(
+      1 //deployConfig?.terraformDeployConfig
+    );
+    deployCfg.setTerraformModuleConfig(terraformDeployCfg);
   }
 
   return deployCfg;

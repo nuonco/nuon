@@ -1,4 +1,4 @@
-import { AwsRegion } from "../../types";
+import { AwsRegion, TerraformVersion } from "../../types";
 import {
   parseBuildConfigInput,
   parseConfigInput,
@@ -81,7 +81,9 @@ test("parseBuildConfigInput should return a build config for a docker build with
       "dockerCfg": {
         "buildArgsList": [],
         "dockerfile": "Dockerfile",
-        "envVars": undefined,
+        "envVars": {
+          "envVarsList": [],
+        },
         "target": "",
         "vcsCfg": {
           "connectedGithubConfig": {
@@ -103,10 +105,16 @@ test("parseBuildConfigInput should return a build config for a docker build with
   `);
 });
 
-test("parseBuildConfigInput should return a build config for a docker build with public git repo", () => {
+test("parseBuildConfigInput should return a build config for a docker build with public git repo and one environment variable", () => {
   const spec = parseBuildConfigInput({
     dockerBuildConfig: {
       dockerfile: "Dockerfile",
+      envVarsConfig: [
+        {
+          key: "env-var-key",
+          value: "env-var-value",
+        },
+      ],
       vcsConfig: {
         publicGit: {
           directory: "/",
@@ -120,7 +128,14 @@ test("parseBuildConfigInput should return a build config for a docker build with
       "dockerCfg": {
         "buildArgsList": [],
         "dockerfile": "Dockerfile",
-        "envVars": undefined,
+        "envVars": {
+          "envVarsList": [
+            {
+              "key": "env-var-key",
+              "value": "env-var-value",
+            },
+          ],
+        },
         "target": "",
         "vcsCfg": {
           "connectedGithubConfig": undefined,
@@ -134,6 +149,51 @@ test("parseBuildConfigInput should return a build config for a docker build with
       "externalImageCfg": undefined,
       "noop": undefined,
       "terraformModule": undefined,
+      "timeout": undefined,
+    }
+  `);
+});
+
+test("parseBuildConfigInput should return a build config for a terraform build with public git repo and one environment variable", () => {
+  const spec = parseBuildConfigInput({
+    terraformBuildConfig: {
+      envVarsConfig: [
+        {
+          key: "env-var-key",
+          value: "env-var-value",
+        },
+      ],
+      vcsConfig: {
+        publicGit: {
+          directory: "/",
+          repo: "org/repo",
+        },
+      },
+    },
+  });
+  expect(spec.toObject()).toMatchInlineSnapshot(`
+    {
+      "dockerCfg": undefined,
+      "externalImageCfg": undefined,
+      "noop": undefined,
+      "terraformModule": {
+        "envVars": {
+          "envVarsList": [
+            {
+              "key": "env-var-key",
+              "value": "env-var-value",
+            },
+          ],
+        },
+        "vcsCfg": {
+          "connectedGithubConfig": undefined,
+          "publicGitConfig": {
+            "directory": "/",
+            "gitRef": "",
+            "repo": "org/repo",
+          },
+        },
+      },
       "timeout": undefined,
     }
   `);
@@ -191,6 +251,25 @@ test("parseDeployConfigInput should return a deploy config for a helm repo deplo
         "imageTagValuesKey": "latest",
       },
       "terraformModuleConfig": undefined,
+      "timeout": undefined,
+    }
+  `);
+});
+
+test("parseDeployConfigInput should return a deploy config for a terraform deployment", () => {
+  const spec = parseDeployConfigInput({
+    terraformDeployConfig: {
+      terraformVersion: TerraformVersion.TerraformVersionLatest,
+    },
+  });
+
+  expect(spec.toObject()).toMatchInlineSnapshot(`
+    {
+      "basic": undefined,
+      "helmRepo": undefined,
+      "terraformModuleConfig": {
+        "terraformVersion": 1,
+      },
       "timeout": undefined,
     }
   `);
