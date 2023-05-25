@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -66,38 +67,58 @@ func (o *orgService) GetOrg(ctx context.Context, inputID string) (*models.Org, e
 	return org, nil
 }
 
-func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*models.Org, error) {
-	org := &models.Org{
-		Name: input.Name,
-	}
-	if input.ID != nil {
-		org.ID = *input.ID
-		org.IsNew = false
-	} else {
-		// TODO 174 make a canonical enum of the nanoID types and map that to the prefix strings
-		nanoID, err := shortid.NewNanoID("org")
-		if err != nil {
-			return nil, err
-		}
-		org.ID = nanoID
-		org.IsNew = true
-		org.CreatedByID = input.OwnerID
+func (o *orgService) updateOrg(ctx context.Context, input models.OrgInput) (*models.Org, error) {
+	org, err := o.GetOrg(ctx, *input.ID)
+	if err != nil {
+		o.log.Error("failed to retrieve org",
+			zap.Any("input", input),
+			zap.String("error", err.Error()))
+		return nil, fmt.Errorf("failed to retrieve org: %w", err)
 	}
 
+	org.IsNew = false
 	if input.GithubInstallID != nil {
 		org.GithubInstallID = *input.GithubInstallID
 	}
+	if input.Name != "" {
+		org.Name = input.Name
+	}
 
-	org, err := o.repo.Create(ctx, org)
+	updatedOrg, err := o.repo.Update(ctx, org)
 	if err != nil {
-		o.log.Error("failed to upsert org",
+		o.log.Error("failed to update org",
 			zap.Any("org", org),
 			zap.String("error", err.Error()))
 		return nil, err
 	}
+	return updatedOrg, nil
+}
 
-	if !org.IsNew {
-		return org, nil
+func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*models.Org, error) {
+	if input.ID != nil {
+		return o.updateOrg(ctx, input)
+	}
+
+	org := &models.Org{
+		CreatedByID: input.OwnerID,
+		IsNew:       true,
+		Name:        input.Name,
+	}
+	nanoID, err := shortid.NewNanoID("org")
+	if err != nil {
+		return nil, err
+	}
+	org.ID = nanoID
+	if input.GithubInstallID != nil {
+		org.GithubInstallID = *input.GithubInstallID
+	}
+
+	org, err = o.repo.Create(ctx, org)
+	if err != nil {
+		o.log.Error("failed to create org",
+			zap.Any("org", org),
+			zap.String("error", err.Error()))
+		return nil, err
 	}
 
 	_, err = o.userOrgUpdater.UpsertUserOrg(ctx, input.OwnerID, org.ID)

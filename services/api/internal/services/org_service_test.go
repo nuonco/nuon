@@ -113,7 +113,7 @@ func TestOrgService_GetOrg(t *testing.T) {
 }
 
 func TestOrgService_UpsertOrg(t *testing.T) {
-	errUpsertOrg := fmt.Errorf("error upserting app")
+	errUpsertOrg := fmt.Errorf("error upserting org")
 	org := generics.GetFakeObj[*models.Org]()
 	org.IsNew = false
 	org.GithubInstallID = "1234567890"
@@ -148,7 +148,7 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 				return repo
 			},
 		},
-		"upsert happy path": {
+		"update happy path": {
 			inputFn: func() models.OrgInput {
 				inp := generics.GetFakeObj[models.OrgInput]()
 				inp.ID = generics.ToPtr(org.ID)
@@ -159,7 +159,8 @@ func TestOrgService_UpsertOrg(t *testing.T) {
 				repo := repos.NewMockOrgRepo(ctl)
 				returnedOrg := generics.GetFakeObj[*models.Org]()
 				returnedOrg.IsNew = false
-				repo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(returnedOrg, nil)
+				repo.EXPECT().Get(gomock.Any(), gomock.Any()).Return(returnedOrg, nil)
+				repo.EXPECT().Update(gomock.Any(), gomock.Any()).Return(returnedOrg, nil)
 				return repo
 			},
 			userRepoFn: func(ctl *gomock.Controller) *repos.MockUserRepo {

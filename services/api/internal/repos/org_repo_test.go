@@ -24,7 +24,7 @@ func createOrg(ctx context.Context, t *testing.T, orgRepo OrgRepo) *models.Org {
 	return org
 }
 
-func TestCreateOrg(t *testing.T) {
+func TestUpsertOrg(t *testing.T) {
 	id, _ := shortid.NewNanoID("org")
 	integration := os.Getenv("INTEGRATION")
 	if integration == "" {
@@ -48,7 +48,7 @@ func TestCreateOrg(t *testing.T) {
 			},
 		},
 		{
-			desc: "should set isNew properly",
+			desc: "should set isNew properly for new orgs",
 			fn: func(ctx context.Context, state repoTestState) {
 				orgInput := models.Org{
 					Name: uuid.NewString(),
@@ -65,6 +65,21 @@ func TestCreateOrg(t *testing.T) {
 			},
 		},
 		{
+			desc: "should update an org successfully",
+			fn: func(ctx context.Context, state repoTestState) {
+				org := createOrg(ctx, t, state.orgRepo)
+				org.Name += "abc"
+				org.GithubInstallID = fmt.Sprintf("%d", faker.New().UInt32())
+				org, err := state.orgRepo.Update(ctx, org)
+				assert.Nil(t, err)
+
+				fetchedOrg, err := state.orgRepo.Get(ctx, org.ID)
+				assert.Nil(t, err)
+				assert.Equal(t, org.Name, fetchedOrg.Name)
+				assert.Equal(t, org.GithubInstallID, fetchedOrg.GithubInstallID)
+			},
+		},
+		{
 			desc: "should error when context is canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
@@ -72,31 +87,6 @@ func TestCreateOrg(t *testing.T) {
 					Name: uuid.NewString(),
 				})
 				assert.NotNil(t, err)
-			},
-		},
-	})
-}
-
-func TestUpsertOrg(t *testing.T) {
-	integration := os.Getenv("INTEGRATION")
-	if integration == "" {
-		t.Skip("INTEGRATION=true must be set in environment to run.")
-	}
-
-	execRepoTests(t, []repoTest{
-		{
-			desc: "should upsert an org successfully",
-			fn: func(ctx context.Context, state repoTestState) {
-				org := createOrg(ctx, t, state.orgRepo)
-				org.Name += "abc"
-				org.GithubInstallID = fmt.Sprintf("%d", faker.New().UInt32())
-				org, err := state.orgRepo.Create(ctx, org)
-				assert.Nil(t, err)
-
-				fetchedOrg, err := state.orgRepo.Get(ctx, org.ID)
-				assert.Nil(t, err)
-				assert.Equal(t, org.Name, fetchedOrg.Name)
-				assert.Equal(t, org.GithubInstallID, fetchedOrg.GithubInstallID)
 			},
 		},
 	})
