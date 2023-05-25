@@ -18,11 +18,18 @@ func (s *server) QueryBuilds(
 		return nil, fmt.Errorf("input validation failed: %w", err)
 	}
 
-	// use temporal client to get build by ID
-	fmt.Println("GET BUILD")
-	buildModels := []models.Build{}
+	// use gorm model to retrieve builds
+	rows, err := s.db.Model(&models.Build{}).Where("component_id = ?", req.Msg.ComponentId).Rows()
+	if err != nil {
+		return nil, fmt.Errorf("retrieving builds failed: %w", err)
+	}
+	defer rows.Close()
+
+	// iterate through rows and convert to proto
 	builds := []*buildv1.Build{}
-	for _, build := range buildModels {
+	for rows.Next() {
+		var build *models.Build
+		s.db.ScanRows(rows, &build)
 		builds = append(builds, build.ToProto())
 	}
 
