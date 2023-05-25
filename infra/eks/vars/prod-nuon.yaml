@@ -4,3 +4,10 @@ managed_node_group:
   max_size: 3
   desired_size: 2
 tier: stable
+auth_map_additions:
+  - name: eks-workers-executors
+    account: prod
+    groups:
+      - "system:masters"
+    trust:
+      - "arn:aws:iam::814326426574:role/nuon-internal-support-prod"
