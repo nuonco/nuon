@@ -48,7 +48,7 @@ test("install resolver should return install object on successful query", async 
   );
 
   expect(spec).toEqual({
-    createdAt: "1999-12-31T08:15:30.000+00:00",
+    createdAt: "1999-12-31T08:15:30.000Z",
     id: "test-id",
     name: "test-node",
     settings: {
@@ -56,7 +56,7 @@ test("install resolver should return install object on successful query", async 
       region: "US_EAST_1",
       role: "test:role",
     },
-    updatedAt: "1999-12-31T08:15:30.000+00:00",
+    updatedAt: "1999-12-31T08:15:30.000Z",
   });
 });
 

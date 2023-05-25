@@ -44,10 +44,10 @@ test("org resolver should return org object on successful query", async () => {
   );
 
   expect(spec).toEqual({
-    createdAt: "1999-12-31T08:15:30.000+00:00",
+    createdAt: "1999-12-31T08:15:30.000Z",
     id: "test-id",
     name: "test-node",
-    updatedAt: "1999-12-31T08:15:30.000+00:00",
+    updatedAt: "1999-12-31T08:15:30.000Z",
   });
 });
 
