@@ -1,6 +1,7 @@
 import { QueryBuildsRequest } from "@buf/nuon_apis.grpc_node/build/v1/messages_pb";
 import { GraphQLError } from "graphql";
 import type { Query, QueryBuildsArgs, TResolverFn } from "../../types";
+import { getNodeFields } from "../../utils";
 
 export const builds: TResolverFn<QueryBuildsArgs, Query["builds"]> = (
   _,
@@ -16,7 +17,7 @@ export const builds: TResolverFn<QueryBuildsArgs, Query["builds"]> = (
           reject(new GraphQLError(err?.message));
         } else {
           const { buildsList } = res.toObject();
-          resolve(buildsList || []);
+          resolve(buildsList.reverse().map(getNodeFields) || []);
         }
       });
     } else {
