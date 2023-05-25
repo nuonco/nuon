@@ -4,4 +4,3 @@ env:
   DISABLE_METRICS: true
 local_cmds: go run . all
 earthly_cmd: all
-inject_support_role_credentials: true
