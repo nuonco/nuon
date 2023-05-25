@@ -52,7 +52,7 @@ func (s *server) StartBuild(
 	}
 	workflow := "Build"
 	namespace := "builds"
-	_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, workflow, &req.Msg)
+	_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, workflow, &req.Msg, buildID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start build: %w", err)
 	}
