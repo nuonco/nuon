@@ -159,11 +159,12 @@ func (w *wkflow) planAndExec(
 	planReq := &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
-				OrgId:     waypointPlan.Metadata.OrgShortId,
-				AppId:     waypointPlan.Metadata.AppShortId,
-				InstallId: waypointPlan.Metadata.InstallShortId,
-				Component: waypointPlan.Component,
-				Type:      typ,
+				OrgId:        waypointPlan.Metadata.OrgShortId,
+				AppId:        waypointPlan.Metadata.AppShortId,
+				InstallId:    waypointPlan.Metadata.InstallShortId,
+				Component:    waypointPlan.Component,
+				DeploymentId: waypointPlan.Metadata.DeploymentShortId,
+				Type:         typ,
 			},
 		},
 	}
