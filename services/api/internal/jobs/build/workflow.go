@@ -23,11 +23,11 @@ func New(cfg *internal.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Build(ctx workflow.Context, req *apibuildv1.StartBuildRequest) (*planv1.PlanRef, error) {
+func (w *wkflow) Build(ctx workflow.Context, req *apibuildv1.StartBuildRequest, buildID string) (*planv1.PlanRef, error) {
 	l := workflow.GetLogger(ctx)
 
 	l.Info("creating plan create request")
-	createPlanReq, err := execCreatePlanRequest(ctx, req)
+	createPlanReq, err := execCreatePlanRequest(ctx, req, buildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create plan request: %w", err)
 	}
@@ -56,6 +56,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *apibuildv1.StartBuildRequest) 
 func execCreatePlanRequest(
 	ctx workflow.Context,
 	req *apibuildv1.StartBuildRequest,
+	buildID string,
 ) (*planv1.CreatePlanRequest, error) {
 	resp := &planv1.CreatePlanRequest{}
 	l := workflow.GetLogger(ctx)
@@ -68,7 +69,7 @@ func execCreatePlanRequest(
 	ctx = workflow.WithActivityOptions(ctx, opts)
 
 	l.Info("executing create plan request activity")
-	fut := workflow.ExecuteActivity(ctx, a.CreatePlanRequest, req)
+	fut := workflow.ExecuteActivity(ctx, a.CreatePlanRequest, req, buildID)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}

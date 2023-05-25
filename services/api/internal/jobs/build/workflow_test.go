@@ -42,6 +42,7 @@ func TestProvision(t *testing.T) {
 		},
 	}
 	planRef := generics.GetFakeObj[*planv1.PlanRef]()
+	buildID := "blduOGobEltmV4wNIYk5AU4t8d"
 
 	// set up our temporal test suite
 	testSuite := &testsuite.WorkflowTestSuite{}
@@ -51,8 +52,8 @@ func TestProvision(t *testing.T) {
 	env.RegisterActivity(act)
 
 	// mock out activities and workflows
-	env.OnActivity("CreatePlanRequest", mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r *apibuildv1.StartBuildRequest) (*planv1.CreatePlanRequest, error) {
+	env.OnActivity("CreatePlanRequest", mock.Anything, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r *apibuildv1.StartBuildRequest, buildID string) (*planv1.CreatePlanRequest, error) {
 			assert.NoError(t, r.Validate())
 			return createPlanReq, nil
 		})
@@ -78,7 +79,7 @@ func TestProvision(t *testing.T) {
 		})
 
 	// execute workflow
-	env.ExecuteWorkflow(wkflow.Build, req)
+	env.ExecuteWorkflow(wkflow.Build, req, buildID)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
 
