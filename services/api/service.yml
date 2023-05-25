@@ -25,4 +25,3 @@ local_cmds:
 earthly_cmd: server
 port: 8080
 type: api
-inject_support_role_credentials: true
