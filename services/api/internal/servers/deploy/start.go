@@ -36,5 +36,4 @@ func (s *server) StartDeploy(
 	return connect.NewResponse(&deployv1.StartDeployResponse{
 		Deploy: deploy.ToProto(),
 	}), nil
-
 }

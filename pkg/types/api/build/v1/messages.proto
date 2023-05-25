@@ -3,6 +3,7 @@ syntax = "proto3";
 package build.v1;
 
 import "google/type/datetime.proto";
+import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 message Build {
@@ -17,7 +18,10 @@ message Build {
 
 message StartBuildRequest {
   string git_ref = 1;
-  string component_id = 2 [(validate.rules).string.len = 26];
+  string component_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
   string created_by_id = 3;
 }
 
