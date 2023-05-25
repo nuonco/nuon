@@ -11,7 +11,6 @@ type UpsertInstanceResponse struct {
 }
 
 func (a *activities) UpsertInstanceJob(ctx context.Context, deployID string) (*UpsertInstanceResponse, error) {
-
 	deploy, err := a.deployRepo.Get(ctx, deployID)
 	if err != nil {
 		return nil, err

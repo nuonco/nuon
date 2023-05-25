@@ -190,8 +190,8 @@ func TestAppGetPageByOrg(t *testing.T) {
 			desc: "should error with a context canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				orgId, _ := shortid.NewNanoID("org")
-				apps, page, err := state.appRepo.GetPageByOrg(ctx, orgId, &models.ConnectionOptions{})
+				orgID, _ := shortid.NewNanoID("org")
+				apps, page, err := state.appRepo.GetPageByOrg(ctx, orgID, &models.ConnectionOptions{})
 				assert.NotNil(t, err)
 				assert.Nil(t, apps)
 				assert.Nil(t, page)
