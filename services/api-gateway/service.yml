@@ -21,6 +21,6 @@ local_env:
         { "name": "instance", "url": "localhost:8081" }
     ]
 local_cmds:
-  - npm run dev
-earthly_cmd: npm api
-inject_support_role_credentials: true
+  # NOTE(jm): this should just be using `node dev` but doesn't appear to be working properly
+  - ./node_modules/.bin/nodemon src/main.ts
+earthly_cmd: npm dev
