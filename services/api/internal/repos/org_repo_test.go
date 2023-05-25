@@ -126,8 +126,8 @@ func TestDeleteOrg(t *testing.T) {
 		{
 			desc: "should return false if not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				orgId, _ := shortid.NewNanoID("org")
-				deleted, err := state.orgRepo.Delete(ctx, orgId)
+				orgID, _ := shortid.NewNanoID("org")
+				deleted, err := state.orgRepo.Delete(ctx, orgID)
 				assert.Nil(t, err)
 				assert.False(t, deleted)
 			},
@@ -164,8 +164,8 @@ func TestGetOrg(t *testing.T) {
 		{
 			desc: "should return an error if not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				orgId, _ := shortid.NewNanoID("org")
-				org, err := state.orgRepo.Get(ctx, orgId)
+				orgID, _ := shortid.NewNanoID("org")
+				org, err := state.orgRepo.Get(ctx, orgID)
 				assert.Nil(t, org)
 				assert.NotNil(t, err)
 			},

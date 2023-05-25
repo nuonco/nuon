@@ -23,11 +23,11 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/services"
 )
 
-func (s *app) registerAppsServer(mux *http.ServeMux) error {
-	appSvc := services.NewAppService(s.db, s.tc, s.log)
-	_, err := appsserver.New(s.v,
+func (a *app) registerAppsServer(mux *http.ServeMux) error {
+	appSvc := services.NewAppService(a.db, a.tc, a.log)
+	_, err := appsserver.New(a.v,
 		appsserver.WithService(appSvc),
-		appsserver.WithInterceptors(s.interceptors...),
+		appsserver.WithInterceptors(a.interceptors...),
 		appsserver.WithHTTPMux(mux),
 	)
 	if err != nil {
@@ -37,11 +37,11 @@ func (s *app) registerAppsServer(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *app) registerAdminServer(mux *http.ServeMux) error {
-	adminSvc := services.NewAdminService(s.db, s.log)
-	_, err := adminserver.New(s.v,
+func (a *app) registerAdminServer(mux *http.ServeMux) error {
+	adminSvc := services.NewAdminService(a.db, a.log)
+	_, err := adminserver.New(a.v,
 		adminserver.WithService(adminSvc),
-		adminserver.WithInterceptors(s.interceptors...),
+		adminserver.WithInterceptors(a.interceptors...),
 		adminserver.WithHTTPMux(mux),
 	)
 	if err != nil {
@@ -51,11 +51,11 @@ func (s *app) registerAdminServer(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *app) registerComponentsServer(mux *http.ServeMux) error {
-	componentsSvc := services.NewComponentService(s.db, s.log)
-	_, err := componentsserver.New(s.v,
+func (a *app) registerComponentsServer(mux *http.ServeMux) error {
+	componentsSvc := services.NewComponentService(a.db, a.log)
+	_, err := componentsserver.New(a.v,
 		componentsserver.WithService(componentsSvc),
-		componentsserver.WithInterceptors(s.interceptors...),
+		componentsserver.WithInterceptors(a.interceptors...),
 		componentsserver.WithHTTPMux(mux),
 	)
 	if err != nil {
@@ -65,16 +65,16 @@ func (s *app) registerComponentsServer(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *app) registerDeploymentsServer(mux *http.ServeMux) error {
-	ghTransport, err := githubclient.New(githubclient.WithConfig(s.cfg))
+func (a *app) registerDeploymentsServer(mux *http.ServeMux) error {
+	ghTransport, err := githubclient.New(githubclient.WithConfig(a.cfg))
 	if err != nil {
 		return fmt.Errorf("unable to github client: %w", err)
 	}
 
-	deploymentsSvc := services.NewDeploymentService(s.db, s.tc, ghTransport, s.cfg.GithubAppID, s.cfg.GithubAppKeySecretName, s.log)
-	_, err = deploymentsserver.New(s.v,
+	deploymentsSvc := services.NewDeploymentService(a.db, a.tc, ghTransport, a.cfg.GithubAppID, a.cfg.GithubAppKeySecretName, a.log)
+	_, err = deploymentsserver.New(a.v,
 		deploymentsserver.WithService(deploymentsSvc),
-		deploymentsserver.WithInterceptors(s.interceptors...),
+		deploymentsserver.WithInterceptors(a.interceptors...),
 		deploymentsserver.WithHTTPMux(mux),
 	)
 	if err != nil {
@@ -84,13 +84,13 @@ func (s *app) registerDeploymentsServer(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *app) registerBuildsServer(mux *http.ServeMux) error {
-	_, err := buildsserver.New(s.v,
-		buildsserver.WithTemporalClient(s.tc),
-		buildsserver.WithGithubClient(s.cfg),
-		buildsserver.WithInterceptors(s.interceptors...),
+func (a *app) registerBuildsServer(mux *http.ServeMux) error {
+	_, err := buildsserver.New(a.v,
+		buildsserver.WithTemporalClient(a.tc),
+		buildsserver.WithGithubClient(a.cfg),
+		buildsserver.WithInterceptors(a.interceptors...),
 		buildsserver.WithHTTPMux(mux),
-		buildsserver.WithDBClient(s.db),
+		buildsserver.WithDBClient(a.db),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize builds server: %w", err)
@@ -98,11 +98,11 @@ func (s *app) registerBuildsServer(mux *http.ServeMux) error {
 
 	return nil
 }
-func (s *app) registerDeployServer(mux *http.ServeMux) error {
-	_, err := deployserver.New(s.v,
-		deployserver.WithInterceptors(s.interceptors...),
+func (a *app) registerDeployServer(mux *http.ServeMux) error {
+	_, err := deployserver.New(a.v,
+		deployserver.WithInterceptors(a.interceptors...),
 		deployserver.WithHTTPMux(mux),
-		deployserver.WithDB(s.db),
+		deployserver.WithDB(a.db),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to initialize deploy server: %w", err)
@@ -111,22 +111,22 @@ func (s *app) registerDeployServer(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *app) registerGithubServer(mux *http.ServeMux) error {
+func (a *app) registerGithubServer(mux *http.ServeMux) error {
 	// get github app details from config
-	githubAppID, err := strconv.ParseInt(s.cfg.GithubAppID, 10, 64)
+	githubAppID, err := strconv.ParseInt(a.cfg.GithubAppID, 10, 64)
 	if err != nil {
 		return fmt.Errorf("unable to parse github app id: %w", err)
 	}
 
-	appstp, err := ghinstallation.NewAppsTransport(http.DefaultTransport, githubAppID, []byte(s.cfg.GithubAppKey))
+	appstp, err := ghinstallation.NewAppsTransport(http.DefaultTransport, githubAppID, []byte(a.cfg.GithubAppKey))
 	if err != nil {
 		return fmt.Errorf("unable to parse github app id: %w", err)
 	}
-	githubSvc := services.NewGithubService(appstp, s.log)
+	githubSvc := services.NewGithubService(appstp, a.log)
 
-	_, err = githubserver.New(s.v,
+	_, err = githubserver.New(a.v,
 		githubserver.WithService(githubSvc),
-		githubserver.WithInterceptors(s.interceptors...),
+		githubserver.WithInterceptors(a.interceptors...),
 		githubserver.WithHTTPMux(mux),
 	)
 	if err != nil {
@@ -136,11 +136,11 @@ func (s *app) registerGithubServer(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *app) registerInstallsServer(mux *http.ServeMux) error {
-	installSvc := services.NewInstallService(s.db, s.tc, s.log)
-	_, err := installsserver.New(s.v,
+func (a *app) registerInstallsServer(mux *http.ServeMux) error {
+	installSvc := services.NewInstallService(a.db, a.tc, a.log)
+	_, err := installsserver.New(a.v,
 		installsserver.WithService(installSvc),
-		installsserver.WithInterceptors(s.interceptors...),
+		installsserver.WithInterceptors(a.interceptors...),
 		installsserver.WithHTTPMux(mux),
 	)
 	if err != nil {
@@ -149,11 +149,11 @@ func (s *app) registerInstallsServer(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *app) registerOrgsServer(mux *http.ServeMux) error {
-	orgSvc := services.NewOrgService(s.db, s.tc, s.log)
-	_, err := orgsserver.New(s.v,
+func (a *app) registerOrgsServer(mux *http.ServeMux) error {
+	orgSvc := services.NewOrgService(a.db, a.tc, a.log)
+	_, err := orgsserver.New(a.v,
 		orgsserver.WithService(orgSvc),
-		orgsserver.WithInterceptors(s.interceptors...),
+		orgsserver.WithInterceptors(a.interceptors...),
 		orgsserver.WithHTTPMux(mux),
 	)
 	if err != nil {
@@ -162,11 +162,11 @@ func (s *app) registerOrgsServer(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *app) registerUsersServer(mux *http.ServeMux) error {
-	userSvc := services.NewUserService(s.db, s.log)
-	_, err := usersserver.New(s.v,
+func (a *app) registerUsersServer(mux *http.ServeMux) error {
+	userSvc := services.NewUserService(a.db, a.log)
+	_, err := usersserver.New(a.v,
 		usersserver.WithService(userSvc),
-		usersserver.WithInterceptors(s.interceptors...),
+		usersserver.WithInterceptors(a.interceptors...),
 		usersserver.WithHTTPMux(mux),
 	)
 	if err != nil {
@@ -176,10 +176,10 @@ func (s *app) registerUsersServer(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *app) registerStatusServer(mux *http.ServeMux) error {
-	_, err := statusserver.New(s.v,
-		statusserver.WithGitRef(s.cfg.GitRef),
-		statusserver.WithInterceptors(s.interceptors...),
+func (a *app) registerStatusServer(mux *http.ServeMux) error {
+	_, err := statusserver.New(a.v,
+		statusserver.WithGitRef(a.cfg.GitRef),
+		statusserver.WithInterceptors(a.interceptors...),
 		statusserver.WithHTTPMux(mux),
 	)
 	if err != nil {
@@ -188,7 +188,7 @@ func (s *app) registerStatusServer(mux *http.ServeMux) error {
 	return nil
 }
 
-func (s *app) registerLoadbalancerHealthCheck(mux *http.ServeMux) {
+func (a *app) registerLoadbalancerHealthCheck(mux *http.ServeMux) {
 	mux.Handle("/_ping", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(http.StatusOK)
 		if _, err := rw.Write([]byte("{\"status\": \"ok\"}")); err != nil {
@@ -197,59 +197,59 @@ func (s *app) registerLoadbalancerHealthCheck(mux *http.ServeMux) {
 	}))
 }
 
-func (s *app) registerReflectServer(mux *http.ServeMux) {
+func (a *app) registerReflectServer(mux *http.ServeMux) {
 	reflector := grpcreflect.NewStaticReflector(srvs...)
 
 	mux.Handle(grpcreflect.NewHandlerV1(reflector))
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 }
 
-func (s *app) registerAllServers(mux *http.ServeMux) error {
-	if err := s.registerAppsServer(mux); err != nil {
+func (a *app) registerAllServers(mux *http.ServeMux) error {
+	if err := a.registerAppsServer(mux); err != nil {
 		return fmt.Errorf("unable to register apps: %w", err)
 	}
 
-	if err := s.registerAdminServer(mux); err != nil {
+	if err := a.registerAdminServer(mux); err != nil {
 		return fmt.Errorf("unable to register admin: %w", err)
 	}
 
-	if err := s.registerComponentsServer(mux); err != nil {
+	if err := a.registerComponentsServer(mux); err != nil {
 		return fmt.Errorf("unable to register components: %w", err)
 	}
 
-	/*if err := s.registerDeploymentsServer(mux); err != nil {
-		return fmt.Errorf("unable to register deployments: %w", err)
-	}*/
-
-	if err := s.registerBuildsServer(mux); err != nil {
+	if err := a.registerDeploymentsServer(mux); err != nil {
 		return fmt.Errorf("unable to register deployments: %w", err)
 	}
 
-	if err := s.registerDeployServer(mux); err != nil {
+	if err := a.registerBuildsServer(mux); err != nil {
+		return fmt.Errorf("unable to register deployments: %w", err)
+	}
+
+	if err := a.registerDeployServer(mux); err != nil {
 		return fmt.Errorf("unable to register deploys: %w", err)
 	}
 
-	if err := s.registerGithubServer(mux); err != nil {
+	if err := a.registerGithubServer(mux); err != nil {
 		return fmt.Errorf("unable to register github: %w", err)
 	}
 
-	if err := s.registerInstallsServer(mux); err != nil {
+	if err := a.registerInstallsServer(mux); err != nil {
 		return fmt.Errorf("unable to register installs: %w", err)
 	}
 
-	if err := s.registerOrgsServer(mux); err != nil {
+	if err := a.registerOrgsServer(mux); err != nil {
 		return fmt.Errorf("unable to register orgs: %w", err)
 	}
 
-	if err := s.registerUsersServer(mux); err != nil {
+	if err := a.registerUsersServer(mux); err != nil {
 		return fmt.Errorf("unable to register users: %w", err)
 	}
 
-	if err := s.registerStatusServer(mux); err != nil {
+	if err := a.registerStatusServer(mux); err != nil {
 		return fmt.Errorf("unable to register status: %w", err)
 	}
 
-	s.registerLoadbalancerHealthCheck(mux)
-	s.registerReflectServer(mux)
+	a.registerLoadbalancerHealthCheck(mux)
+	a.registerReflectServer(mux)
 	return nil
 }
