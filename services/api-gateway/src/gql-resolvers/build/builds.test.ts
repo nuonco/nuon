@@ -1,11 +1,20 @@
 import { builds } from "./builds";
 
+const mockDateTimeObject = {
+  day: 31,
+  hours: 8,
+  minutes: 15,
+  month: 12,
+  seconds: 30,
+  year: 1999,
+};
+
 const mockBuild = {
   componentId: "test-component-id",
-  createdAt: "1999-12-31T08:15:30.000Z",
+  createdAt: mockDateTimeObject,
   gitRef: "test-git-ref",
   id: "test-id",
-  updatedAt: "1999-12-31T08:15:30.000Z",
+  updatedAt: mockDateTimeObject,
 };
 
 const mockBuildServiceClient = {
