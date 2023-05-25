@@ -2,10 +2,10 @@ import { builds } from "./builds";
 
 const mockBuild = {
   componentId: "test-component-id",
-  createdAt: "1999-12-31T08:15:30.000+00:00",
+  createdAt: "1999-12-31T08:15:30.000Z",
   gitRef: "test-git-ref",
   id: "test-id",
-  updatedAt: "1999-12-31T08:15:30.000+00:00",
+  updatedAt: "1999-12-31T08:15:30.000Z",
 };
 
 const mockBuildServiceClient = {
@@ -45,10 +45,10 @@ test("builds resolver should return list of builds", async () => {
   expect(spec).toEqual([
     {
       componentId: "test-component-id",
-      createdAt: "1999-12-31T08:15:30.000+00:00",
+      createdAt: "1999-12-31T08:15:30.000Z",
       gitRef: "test-git-ref",
       id: "test-id",
-      updatedAt: "1999-12-31T08:15:30.000+00:00",
+      updatedAt: "1999-12-31T08:15:30.000Z",
     },
   ]);
 });

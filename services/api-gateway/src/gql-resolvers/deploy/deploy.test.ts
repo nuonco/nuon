@@ -2,10 +2,10 @@ import { deploy } from "./deploy";
 
 const mockDeploy = {
   buildId: "test-build-id",
-  createdAt: "1999-12-31T08:15:30.000+00:00",
+  createdAt: "1999-12-31T08:15:30.000Z",
   id: "test-id",
   installId: "test-install-id",
-  updatedAt: "1999-12-31T08:15:30.000+00:00",
+  updatedAt: "1999-12-31T08:15:30.000Z",
 };
 
 const mockDeployServiceClient = {
@@ -33,10 +33,10 @@ test("deploy resolver should return a single deploy", async () => {
 
   expect(spec).toEqual({
     buildId: "test-build-id",
-    createdAt: "1999-12-31T08:15:30.000+00:00",
+    createdAt: "1999-12-31T08:15:30.000Z",
     id: "test-id",
     installId: "test-install-id",
-    updatedAt: "1999-12-31T08:15:30.000+00:00",
+    updatedAt: "1999-12-31T08:15:30.000Z",
   });
 });
 
