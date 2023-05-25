@@ -59,7 +59,7 @@ test("installs resolver should return Install connection", async () => {
       {
         cursor: "test-id",
         node: {
-          createdAt: "1999-12-31T08:15:30.000+00:00",
+          createdAt: "1999-12-31T08:15:30.000Z",
           id: "test-id",
           name: "test-node",
           settings: {
@@ -67,7 +67,7 @@ test("installs resolver should return Install connection", async () => {
             region: "US_EAST_1",
             role: "test:role",
           },
-          updatedAt: "1999-12-31T08:15:30.000+00:00",
+          updatedAt: "1999-12-31T08:15:30.000Z",
         },
       },
     ],
