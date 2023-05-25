@@ -14,6 +14,7 @@ type OrgRepo interface {
 	Delete(context.Context, string) (bool, error)
 	Get(context.Context, string) (*models.Org, error)
 	GetPageByUser(context.Context, string, *models.ConnectionOptions) ([]*models.Org, *utils.Page, error)
+	Update(context.Context, *models.Org) (*models.Org, error)
 }
 
 var _ OrgRepo = (*orgRepo)(nil)
@@ -31,13 +32,20 @@ type orgRepo struct {
 }
 
 func (o orgRepo) Create(ctx context.Context, org *models.Org) (*models.Org, error) {
-	err := o.db.WithContext(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "id"}},
-		UpdateAll: true,
-	}).Create(org).Error
-	if err != nil {
+	if err := o.db.WithContext(ctx).Create(org).Error; err != nil {
 		return nil, err
 	}
+
+	return org, nil
+}
+
+func (o orgRepo) Update(ctx context.Context, org *models.Org) (*models.Org, error) {
+	if err := o.db.WithContext(ctx).
+		Session(&gorm.Session{FullSaveAssociations: true}).
+		Updates(org).Error; err != nil {
+		return nil, err
+	}
+
 	return org, nil
 }
 
