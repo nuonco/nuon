@@ -97,7 +97,7 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 	}
 
 	// start the executors part of the workflows for syncing and deploying
-	if err := w.startWorkflow(ctx, plan); err != nil {
+	if err = w.startWorkflow(ctx, plan); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
 		w.finishWorkflow(ctx, plan, resp, err)
 		return resp, err
@@ -153,7 +153,6 @@ func (w *wkflow) planAndExec(
 	ctx workflow.Context,
 	buildPlan *planv1.Plan, // this will take BuildPlan from S3
 	typ planv1.ComponentInputType) (*planv1.PlanRef, error) {
-
 	waypointPlan := buildPlan.GetWaypointPlan()
 	l := workflow.GetLogger(ctx)
 
@@ -236,6 +235,8 @@ func execExecutePlan(
 }
 
 // finishWorkflow calls the finish step
+//
+//nolint:all
 func (w *wkflow) finishWorkflow(ctx workflow.Context, req *planv1.Plan, resp *jobsv1.StartDeployResponse, workflowErr error) {
 	plan := req.GetWaypointPlan()
 	var err error

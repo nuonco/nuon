@@ -2,19 +2,20 @@ package build
 
 import (
 	"context"
-	"fmt"
 	"testing"
-
-	"go.temporal.io/sdk/testsuite"
-	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	apibuildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	"github.com/powertoolsdev/mono/services/api/internal"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/build/activities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/workflow"
+	"google.golang.org/protobuf/proto"
 )
 
 // NOTE(jm): unfortunately, the only way to register these workflows in the test env is to do it using the same exact
@@ -28,67 +29,62 @@ func ExecutePlan(workflow.Context, *executev1.ExecutePlanRequest) (*executev1.Ex
 	return nil, nil
 }
 
-// This test is still WIP
-func TestBuildErrorOnCreatePlanRequest(t *testing.T) {
+func TestProvision(t *testing.T) {
+	cfg := generics.GetFakeObj[*internal.Config]()
+	wkflow := New(cfg)
+	act := activities.New(nil, "", "")
 
-	cfg := generics.GetFakeObj[Config]()
-	wf := New(cfg)
+	// the following fields are used for returning stubbed data
+	req := generics.GetFakeObj[*apibuildv1.StartBuildRequest]()
+	createPlanReq := &planv1.CreatePlanRequest{
+		Input: &planv1.CreatePlanRequest_Component{
+			Component: generics.GetFakeObj[*planv1.ComponentInput](),
+		},
+	}
+	planRef := generics.GetFakeObj[*planv1.PlanRef]()
+
+	// set up our temporal test suite
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
+	env.RegisterWorkflow(CreatePlan)
+	env.RegisterWorkflow(ExecutePlan)
+	env.RegisterActivity(act)
 
-	sbReq := generics.GetFakeObj[*apibuildv1.StartBuildRequest]()
-	a := activities.New(nil, "", "")
-	env.OnActivity(a.CreatePlanRequest, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, sbReq *apibuildv1.StartBuildRequest) (*planv1.CreatePlanRequest, error) {
-			return nil, fmt.Errorf("unit test error")
+	// mock out activities and workflows
+	env.OnActivity("CreatePlanRequest", mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r *apibuildv1.StartBuildRequest) (*planv1.CreatePlanRequest, error) {
+			assert.NoError(t, r.Validate())
+			return createPlanReq, nil
+		})
+	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
+		Return(func(_ workflow.Context, r *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+			resp := &planv1.CreatePlanResponse{
+				Plan: planRef,
+			}
+
+			input, ok := r.Input.(*planv1.CreatePlanRequest_Component)
+			assert.True(t, ok)
+			assert.NotNil(t, input)
+
+			return resp, nil
 		})
 
-	// exec and assert workflow
-	env.ExecuteWorkflow(wf.Build, sbReq, nil)
-	assert.True(t, env.IsWorkflowCompleted())
-	assert.Error(t, env.GetWorkflowError())
-	assert.ErrorContains(t, env.GetWorkflowError(), "unit test error")
+	env.OnWorkflow("ExecutePlan", mock.Anything, mock.Anything).
+		Return(func(_ workflow.Context, r *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+			resp := &executev1.ExecutePlanResponse{}
+			assert.True(t, proto.Equal(planRef, r.Plan))
+			assert.Nil(t, r.Validate())
+			return resp, nil
+		})
 
-	/*
-		// register child workflows
-		env.RegisterWorkflow(CreatePlan)
-		env.OnWorkflow(CreatePlan, mock.Anything, mock.Anything).
-			Return(func(ctx workflow.Context, r *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
-				assert.NoError(t, r.Validate())
-				return &planv1.CreatePlanResponse{Plan: planRef}, nil
-			})
+	// execute workflow
+	env.ExecuteWorkflow(wkflow.Build, req)
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
 
-		env.RegisterWorkflow(ExecutePlan)
-		env.OnWorkflow(ExecutePlan, mock.Anything, mock.Anything).
-			Return(func(ctx workflow.Context, r *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
-				assert.NoError(t, r.Validate())
-				return &executev1.ExecutePlanResponse{}, nil
-			})
-
-		// register activities
-		a := NewActivities(nil, nil)
-		env.OnActivity(a.SendHostnameNotification, mock.Anything, mock.Anything).
-			Return(func(_ context.Context, shnReq SendHostnameNotificationRequest) (SendHostnameNotificationResponse, error) {
-				var resp SendHostnameNotificationResponse
-				assert.Nil(t, shnReq.validate())
-				return resp, nil
-			})
-		env.OnActivity(a.StartProvisionRequest, mock.Anything, mock.Anything).
-			Return(func(_ context.Context, r *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
-				return &sharedv1.StartActivityResponse{}, nil
-			})
-		env.OnActivity(a.FinishProvisionRequest, mock.Anything, mock.Anything).
-			Return(func(_ context.Context, r *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
-				return &sharedv1.FinishActivityResponse{}, nil
-			})
-
-		// exec and assert workflow
-		env.ExecuteWorkflow(wf.Provision, req)
-		require.True(t, env.IsWorkflowCompleted())
-		require.NoError(t, env.GetWorkflowError())
-
-		resp := &instancesv1.ProvisionResponse{}
-		require.NoError(t, env.GetWorkflowResult(&resp))
-		require.NotNil(t, resp)
-	*/
+	// TODO(jm): this needs to use the correct build response
+	resp := &planv1.PlanRef{}
+	require.NoError(t, env.GetWorkflowResult(&resp))
+	require.NotNil(t, resp)
+	assert.True(t, proto.Equal(planRef, resp))
 }

@@ -37,6 +37,7 @@ var srvs []string = []string{
 	"user.v1.UserService",
 }
 
+//nolint:all
 func runServer(cmd *cobra.Command, _ []string) {
 	app, err := newApp(cmd.Flags())
 	if err != nil {

@@ -25,5 +25,4 @@ func (s *server) GetDeploy(
 	return connect.NewResponse(&deployv1.GetDeployResponse{
 		Deploy: deploy.ToProto(),
 	}), nil
-
 }

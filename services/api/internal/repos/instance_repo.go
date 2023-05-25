@@ -52,7 +52,6 @@ func (i instanceRepo) Create(ctx context.Context, instances []*models.Instance) 
 }
 
 func (i instanceRepo) Delete(ctx context.Context, instanceID uuid.UUID) (bool, error) {
-
 	var instance models.Instance
 	if err := i.db.WithContext(ctx).
 		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).

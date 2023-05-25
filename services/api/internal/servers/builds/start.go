@@ -34,7 +34,7 @@ func (s *server) StartBuild(
 		ComponentID: req.Msg.ComponentId,
 		CreatedByID: req.Msg.CreatedById,
 	}
-	if err := s.db.WithContext(ctx).Create(&build).Error; err != nil {
+	if err = s.db.WithContext(ctx).Create(&build).Error; err != nil {
 		return nil, err
 	}
 
