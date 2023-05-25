@@ -49,7 +49,7 @@ func New(db *gorm.DB, githubAppID, githubAppKeySecretName string) *activities {
 	}
 }
 
-func (a *activities) CreatePlanRequest(ctx context.Context, req *apibuildv1.StartBuildRequest) (*planv1.CreatePlanRequest, error) {
+func (a *activities) CreatePlanRequest(ctx context.Context, req *apibuildv1.StartBuildRequest, buildID string) (*planv1.CreatePlanRequest, error) {
 	// TODO fix up logger here
 	component, err := a.componentService.GetComponent(ctx, req.ComponentId)
 	if err != nil {
@@ -65,11 +65,10 @@ func (a *activities) CreatePlanRequest(ctx context.Context, req *apibuildv1.Star
 	planReq := &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
-				Type:  planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_BUILD,
-				OrgId: component.App.OrgID,
-				AppId: component.AppID,
-				// TODO adjust these structs accordingly. No deploymentid relevant to this anymore.
-				DeploymentId: "dplfakeforcevalidation1234", // I think this can be empty
+				Type:         planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_BUILD,
+				OrgId:        component.App.OrgID,
+				AppId:        component.AppID,
+				DeploymentId: buildID,
 				Component: &componentv1.Component{
 					Id:        component.ID,
 					BuildCfg:  dbConfig.BuildCfg,
