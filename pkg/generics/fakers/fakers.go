@@ -6,8 +6,14 @@ import (
 
 func Register() {
 	_ = faker.AddProvider("shortID", fakeShortID)
+
+	// components
 	_ = faker.AddProvider("buildConfig", fakeBuildConfig)
 	_ = faker.AddProvider("deployConfig", fakeDeployConfig)
+
+	// plans
 	_ = faker.AddProvider("planConfigs", fakePlanConfigs)
 	_ = faker.AddProvider("sandboxInputAccountSettings", fakeSandboxInputAccountSettings)
+	_ = faker.AddProvider("envVars", fakeEnvVars)
+	_ = faker.AddProvider("waypointVariables", fakeEnvVars)
 }

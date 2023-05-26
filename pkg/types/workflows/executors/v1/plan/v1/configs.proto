@@ -7,22 +7,25 @@ import "tagger/tagger.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
 
+// Configs is a high level container for a list of configs.
 message Configs {
   repeated Config configs = 1 [(tagger.tags) = "faker:\"planConfigs\""];
 }
 
+// Config represents a single config
 message Config {
   oneof actual {
     EnvVar env_var = 1;
     HelmValue helm_value = 2;
-    HelmValues helm_values = 3;
+    HelmValuesMap helm_values_map = 3;
+    WaypointVariable waypoint_variable = 4;
   }
 }
 
 // env vars represent bespoke environment variables that run in a container based deployment
 enum EnvVarType {
   ENV_VAR_TYPE_UNSPECIFIED = 0;
-  ENV_VAR_TYPE_RUNNER_JOB = 1;
+  ENV_VAR_TYPE_BUILD = 1;
   ENV_VAR_TYPE_DEPLOY = 2;
 }
 
@@ -33,6 +36,11 @@ message EnvVar {
   bool sensitive = 2;
   string name = 3;
   string value = 4;
+}
+
+// EnvVars is a list of env vars, and exposes methods to convert to maps etc.
+message EnvVars {
+  repeated EnvVar env = 4 [(tagger.tags) = "faker:\"envVars\""];
 }
 
 // HelmValueType represents the different types of helm values, as some come from secrets and some are from builtin.
@@ -54,7 +62,18 @@ message HelmValue {
   string value = 4;
 }
 
-// HelmValues
-message HelmValues {
+// HelmValues are a map of helm values, like you would encode from yaml.
+message HelmValuesMap {
   google.protobuf.Struct values = 1;
+}
+
+// WaypointVariables are used to set waypoint job variables, for things like interpolating a config, etc.
+message WaypointVariable {
+  string name = 1;
+  string value = 2;
+}
+
+// WaypointVariables is a list of waypoint vars, and exposes methods to convert to maps etc.
+message WaypointVariables {
+  repeated WaypointVariable variables = 4 [(tagger.tags) = "faker:\"waypointVariables\""];
 }
