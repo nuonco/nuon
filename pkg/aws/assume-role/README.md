@@ -1,21 +1,46 @@
-# template-go-library
+# assume role
 
-This is a template for creating a new go library.
+This package allows you to quickly and easily assume an IAM role within code.
+
+Throughout most of our services, we heavily lock down functionality and try to create dedicated roles for most things. Furthermore, all of our org infrastructure is isolated with IAM roles.
+
 
 ## Usage
 
-When you create a new repository in `infra-github` set the `template` field to `template-go-library`:
+To create a session and get credentials, do the following:
 
-```terraform
-module "my-go-library" {
-  source = "./modules/repository"
+```go
+v := validator.New()
 
-  name          = "my-go-library"
-  description   = "Go library"
-  topics        = ["go-lib", ]
-  from_template = "template-go-library"
+assumer, err := assumerole.New(s.v,
+  assumerole.WithRoleARN(s.AssumeRoleARN),
+  assumerole.WithRoleSessionName(s.AssumeRoleSessionName))
+if err != nil {
+  return nil, fmt.Errorf("unable to create role assumer: %w", err)
 }
+
+cfg, err := assumer.LoadConfigWithAssumedRole(ctx)
+if err != nil {
+  return nil, fmt.Errorf("unable to assume role: %w", err)
+}
+
+s3Client := s3.NewFromConfig(cfg)
 ```
 
-Once you have created your repository, be sure to make an initial release and tag, named `v0.0.1`. This is required because each release of a library will look up the previous tag and use it to create the _next_ tag.
+You can also create an options function and pass it around, to make weaving parameters throughout code easier:
 
+```go
+opts := assumerole.Options{
+  RoleARN: "role-arn",
+  RoleSessionName: "session",
+}
+
+v := validator.New()
+
+assumer, err := assumerole.New(s.v,
+  assumerole.WithRoleARN(s.AssumeRoleARN),
+  assumerole.WithRoleSessionName(s.AssumeRoleSessionName))
+if err != nil {
+  return nil, fmt.Errorf("unable to create role assumer: %w", err)
+}
+```
