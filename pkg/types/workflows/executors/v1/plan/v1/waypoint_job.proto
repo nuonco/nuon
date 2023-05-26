@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "executors/v1/plan/v1/configs.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+enum WaypointJobType {
+  WAYPOINT_JOB_TYPE_UNSPECIFIED = 0;
+  WAYPOINT_JOB_TYPE_BUILD = 1;
+  WAYPOINT_JOB_TYPE_DEPLOY_ARTIFACT = 2;
+  WAYPOINT_JOB_TYPE_DEPLOY = 3;
+}
+
+message WaypointJob {
+  // singleton id is an identifier that maps to the job, ensuring it's only attempted once
+  string singleton_id = 1 [
+    (validate.rules).string.min_len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  map<string, string> labels = 2 [(validate.rules).map = {min_pairs: 1}];
+
+  uint64 job_timeout_seconds = 3 [
+    (validate.rules).uint64.gt = 60,
+    (tagger.tags) = "faker:\"oneof:120\""
+  ];
+
+  string hcl_config = 4 [(validate.rules).string.min_bytes = 1];
+  string hcl_config_format = 5 [(validate.rules).string.min_bytes = 1];
+
+  WaypointJobType job_type = 6;
+
+  repeated WaypointVariable variables = 7 [(tagger.tags) = "faker:\"waypointVariables\""];
+}

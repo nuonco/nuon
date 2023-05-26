@@ -20,7 +20,7 @@ func fakePlanConfigs(v reflect.Value) (interface{}, error) {
 		{
 			Actual: &planv1.Config_EnvVar{
 				EnvVar: &planv1.EnvVar{
-					Type:  planv1.EnvVarType_ENV_VAR_TYPE_RUNNER_JOB,
+					Type:  planv1.EnvVarType_ENV_VAR_TYPE_BUILD,
 					Name:  "NUON_TEST_KEY",
 					Value: "NUON_TEST_VALUE",
 				},

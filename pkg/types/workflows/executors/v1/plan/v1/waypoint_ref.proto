@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+// WaypointRef represents all of the information required for the build
+message WaypointRef {
+  // project corresponds to the short id of the app
+  string project = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  // workspace corresponds to the short id of the
+  string workspace = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  string app = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+}
