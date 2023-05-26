@@ -6,6 +6,9 @@ import "component/v1/component.proto";
 import "executors/v1/plan/v1/configs.proto";
 import "executors/v1/plan/v1/git_source.proto";
 import "executors/v1/plan/v1/metadata.proto";
+import "executors/v1/plan/v1/waypoint_job.proto";
+import "executors/v1/plan/v1/waypoint_ref.proto";
+import "executors/v1/plan/v1/waypoint_runner.proto";
 import "executors/v1/plan/v1/waypoint_server.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
@@ -18,17 +21,12 @@ message WaypointPlan {
   WaypointServerRef waypoint_server = 2;
   ECRRepositoryRef ecr_repository_ref = 3;
   WaypointRef waypoint_ref = 4;
-  Outputs outputs = 5;
-  component.v1.Component component = 6;
-  GitSource git_source = 7;
-  Configs configs = 8;
-}
-
-enum WaypointJobType {
-  WAYPOINT_JOB_TYPE_UNSPECIFIED = 0;
-  WAYPOINT_JOB_TYPE_BUILD = 1;
-  WAYPOINT_JOB_TYPE_DEPLOY_ARTIFACT = 2;
-  WAYPOINT_JOB_TYPE_DEPLOY = 3;
+  WaypointJob waypoint_job = 5;
+  WaypointRunner waypoint_runner = 6;
+  Outputs outputs = 7;
+  component.v1.Component component = 8;
+  GitSource git_source = 9;
+  Configs configs = 10;
 }
 
 // ECRRepositoryRef contains all of the information for referencing the app's ECR repo. Note, that all ECR repos are
@@ -95,48 +93,4 @@ message Outputs {
   string logs_key = 4 [(validate.rules).string.min_bytes = 1];
   string events_key = 5 [(validate.rules).string.min_bytes = 1];
   string artifact_key = 6 [(validate.rules).string.min_bytes = 1];
-}
-
-// WaypointRef represents all of the information required for the build
-message WaypointRef {
-  // project corresponds to the short id of the app
-  string project = 1 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
-  ];
-  // workspace corresponds to the short id of the
-  string workspace = 2 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
-  ];
-
-  string app = 3 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
-  ];
-
-  // singleton id is an identifier that maps to the job, ensuring it's only attempted once
-  string singleton_id = 4 [
-    (validate.rules).string.min_len = 26,
-    (tagger.tags) = "faker:\"shortID\""
-  ];
-
-  map<string, string> labels = 5 [(validate.rules).map = {min_pairs: 1}];
-
-  string runner_id = 6 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"len=26\""
-  ];
-
-  string on_demand_runner_config = 7 [(tagger.tags) = "faker:\"len=26\""];
-
-  uint64 job_timeout_seconds = 8 [
-    (validate.rules).uint64.gt = 60,
-    (tagger.tags) = "faker:\"oneof:120\""
-  ];
-
-  string hcl_config = 9 [(validate.rules).string.min_bytes = 1];
-  string hcl_config_format = 10 [(validate.rules).string.min_bytes = 1];
-
-  WaypointJobType job_type = 11;
 }
