@@ -1,23 +1,26 @@
 package iam
 
 import (
-	"context"
 	"fmt"
 
-	aws "github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/sts"
-	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/go-playground/validator/v10"
 )
+
+type Settings struct {
+	RoleARN         string `validate:"required"`
+	RoleSessionName string `validate:"required"`
+}
+
+func (s Settings) Validate(v *validator.Validate) error {
+	return v.Struct(s)
+}
 
 type assumer struct {
 	RoleARN         string `validate:"required"`
 	RoleSessionName string `validate:"required"`
 
 	// internal state
-	validator *validator.Validate
+	v *validator.Validate
 }
 
 type assumerOptions func(*assumer) error
@@ -29,17 +32,30 @@ func New(v *validator.Validate, opts ...assumerOptions) (*assumer, error) {
 	if v == nil {
 		return nil, fmt.Errorf("error instantiating assumer: validator is nil")
 	}
-	a.validator = v
+	a.v = v
 
 	for _, opt := range opts {
 		if err := opt(a); err != nil {
 			return nil, err
 		}
 	}
-	if err := a.validator.Struct(a); err != nil {
+	if err := a.v.Struct(a); err != nil {
 		return nil, err
 	}
 	return a, nil
+}
+
+// WithSettings sets settings to use this to assume roles
+func WithSettings(s Settings) assumerOptions {
+	return func(a *assumer) error {
+		if err := s.Validate(a.v); err != nil {
+			return fmt.Errorf("settings are invalid: %w", err)
+		}
+
+		a.RoleARN = s.RoleARN
+		a.RoleSessionName = s.RoleSessionName
+		return nil
+	}
 }
 
 // WithRoleARN sets the ARN of the role to assume
@@ -56,47 +72,4 @@ func WithRoleSessionName(s string) assumerOptions {
 		a.RoleSessionName = s
 		return nil
 	}
-}
-
-// LoadConfigWithAssumedRole loads an AWS config using the default credential provider chain
-// to assume the provided role with the provided session name
-func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		return aws.Config{}, fmt.Errorf("failed to get default config: %w", err)
-	}
-
-	stsClient := sts.NewFromConfig(cfg)
-	creds, err := a.assumeIamRole(ctx, stsClient)
-	if err != nil {
-		return aws.Config{}, fmt.Errorf("failed to assume role: %w", err)
-	}
-
-	credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId, *creds.SecretAccessKey, *creds.SessionToken)
-	cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(credsProvider))
-	if err != nil {
-		return aws.Config{}, fmt.Errorf("failed to get config with STS creds: %w", err)
-	}
-
-	return cfg, nil
-}
-
-type awsClientIamRoleAssumer interface {
-	AssumeRole(ctx context.Context,
-		params *sts.AssumeRoleInput,
-		optFns ...func(*sts.Options)) (*sts.AssumeRoleOutput, error)
-}
-
-func (a *assumer) assumeIamRole(ctx context.Context, client awsClientIamRoleAssumer) (*sts_types.Credentials, error) {
-	// TODO(jdt): expose and/or set some of the additional fields - external ID, source identity, tags, duration, etc...
-	params := &sts.AssumeRoleInput{
-		RoleArn:         &a.RoleARN,
-		RoleSessionName: &a.RoleSessionName,
-	}
-	resp, err := client.AssumeRole(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Credentials, nil
 }
