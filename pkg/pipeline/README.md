@@ -1,6 +1,6 @@
 # Pipeline
 
-`pkg` Pipeline exposes a primitive for running pipelines of go functions, to compose steps of functions
+`pkg` Pipeline exposes a primitive for running pipelines of go functions, to compose steps of functions, and to simply logic of complex chains.
 
 ## Background + why?
 
@@ -48,7 +48,6 @@ without pipeline, you have long methods that run many different things. Adding r
 With pipeline:
 
 ```go
-
 func (w *Workspace) buildPipeline(ctx context.Context) (*pipeline.Pipeline, error) {
   pipe, err := pipeline.New(w.v)
   if err != nil {
@@ -57,17 +56,19 @@ func (w *Workspace) buildPipeline(ctx context.Context) (*pipeline.Pipeline, erro
 
   pipe.AddStep(&pipeline.Step{
     Name: "init root",
-    Fn: w.initRoot,
+    ExecFn: w.initRoot,
   })
 
   pipe.AddStep(&pipeline.Step{
     Name: "init backend",
-    Fn: w.initBackend,
+    ExecFn: execs.MapInit(w.initBackend),
+    CallbackFn: callbacks.MapNoop,
   })
 
   pipe.AddStep(&pipeline.Step{
     Name: "init archive",
-    Fn: w.initArchive,
+    ExecFn: execs.MapInit(w.initArchive),
+    CallbackFn: callbacks.MapNoop,
   })
 
   ...
@@ -77,9 +78,17 @@ func (w *Workspace) buildPipeline(ctx context.Context) (*pipeline.Pipeline, erro
 
 This has a few benefits: it makes testing easier (you can test the pipeline without running it, to ensure ordering, steps), and it allows you to simplify your code.
 
+## Mappers
+
+This package exposes two subpackages with mappers in them: `exec` and `callbacks`. We define common mappers for common function signatures here.
+
+Generally speaking, if you are composing your pipelines properly the mapper functions should either be here already, or be easily added. In special cases, you can just implement them where you build your pipeline, as well.
+
 ## Pipelines vs temporal
 
-This package is designed to be used outside of the context of `temporal`. While we use temporal to design workflows that call activities using the sdk, this package is designed for running pipelines of functions within a single
+Temporal is a tool that we use to execute durable workflows, across different nodes with retries, etc.
+
+This package is designed for more granular, and low level usage. In a future state, we would use this to design out large activities, or even to build workflows themselves.
 
 ## Future use cases + roadmap
 
@@ -94,4 +103,3 @@ We plan on adding the following features:
 * ability to share a log session between steps + upload output
 * ability to retry steps
 * custom mappers
-* dry-run
