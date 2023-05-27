@@ -1,28 +1,25 @@
-package mappers
+package exec
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/powertoolsdev/mono/pkg/pipeline"
+	"go.uber.org/zap"
 )
 
-// execInitFn is a function that just does an init, and does not return output
-type execInitFn func(context.Context) error
-
-func (p execInitFn) exec(ctx context.Context, l *log.Logger, ui terminal.UI) ([]byte, error) {
-	err := p(ctx)
-	return nil, err
+func MapTerraformPlan(fn execPlanFn) pipeline.ExecFn {
+	return fn.exec
 }
 
 // execPlanFn is a function that returns a terraform plan as a response
 type execPlanFn func(context.Context) (*tfjson.Plan, error)
 
-func (p execPlanFn) exec(ctx context.Context, l *log.Logger, ui terminal.UI) ([]byte, error) {
+func (p execPlanFn) exec(ctx context.Context, l *zap.Logger, ui terminal.UI) ([]byte, error) {
 	plan, err := p(ctx)
 	if err != nil {
 		return nil, err
@@ -36,10 +33,14 @@ func (p execPlanFn) exec(ctx context.Context, l *log.Logger, ui terminal.UI) ([]
 	return byts, nil
 }
 
+func MapTerraformOutput(fn execOutputFn) pipeline.ExecFn {
+	return fn.exec
+}
+
 // execOutputFn is a function that returns terraform outputs as a response
 type execOutputFn func(context.Context) (map[string]tfexec.OutputMeta, error)
 
-func (p execOutputFn) exec(ctx context.Context, l *log.Logger, ui terminal.UI) ([]byte, error) {
+func (p execOutputFn) exec(ctx context.Context, l *zap.Logger, ui terminal.UI) ([]uint8, error) {
 	output, err := p(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to exec: %w", err)
@@ -53,10 +54,14 @@ func (p execOutputFn) exec(ctx context.Context, l *log.Logger, ui terminal.UI) (
 	return byts, nil
 }
 
+func MapTerraformState(fn execStateFn) pipeline.ExecFn {
+	return fn.exec
+}
+
 // execStateFn is a function that returns terraform state as response
 type execStateFn func(context.Context) (*tfjson.State, error)
 
-func (p execStateFn) exec(ctx context.Context, l *log.Logger, ui terminal.UI) ([]byte, error) {
+func (p execStateFn) exec(ctx context.Context, l *zap.Logger, ui terminal.UI) ([]uint8, error) {
 	state, err := p(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get state: %w", err)
