@@ -1,11 +1,11 @@
 package pipeline
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
-	"github.com/powertoolsdev/mono/pkg/pipeline/mappers"
+	"go.uber.org/zap"
 )
 
 // Pipeline is a type that is used to execute various commands in succession, with fail/retry logic as well as callbacks
@@ -15,23 +15,47 @@ import (
 // This is designed so that types that need to run these types of workflows can decouple the building of the steps +
 // logic, from the actual execution of it.
 type Pipeline struct {
-	v *validator.Validate
+	v *validator.Validate `validate:"required"`
 
-	Steps []*Step `validate:"required,gt=1"`
+	Steps []*Step `validate_steps:"required,gt=1"`
 
-	// TODO(jm): support both a logger, as well as a UI for running these types of steps.
-	log    *log.Logger
-	ui     terminal.UI
-	mapper mappers.Mapper
+	Log *zap.Logger `validate:"required"`
+	UI  terminal.UI `validate:"required"`
 }
 
-func New(v *validator.Validate) (*Pipeline, error) {
-	return &Pipeline{
+type pipelineOption func(*Pipeline) error
+
+func New(v *validator.Validate, opts ...pipelineOption) (*Pipeline, error) {
+	p := &Pipeline{
 		v:     v,
 		Steps: make([]*Step, 0),
 
-		log:    nil,
-		ui:     nil,
-		mapper: mappers.NewDefaultMapper(),
-	}, nil
+		Log: nil,
+		UI:  nil,
+	}
+
+	for idx, opt := range opts {
+		if err := opt(p); err != nil {
+			return nil, fmt.Errorf("unable to apply option %d: %w", idx, err)
+		}
+	}
+	if err := p.v.Struct(p); err != nil {
+		return nil, fmt.Errorf("unable to validate pipeline: %w", err)
+	}
+
+	return p, nil
+}
+
+func WithUI(ui terminal.UI) pipelineOption {
+	return func(p *Pipeline) error {
+		p.UI = ui
+		return nil
+	}
+}
+
+func WithLogger(l *zap.Logger) pipelineOption {
+	return func(p *Pipeline) error {
+		p.Log = l
+		return nil
+	}
 }

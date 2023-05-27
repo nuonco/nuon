@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/pipeline"
-	"github.com/powertoolsdev/mono/pkg/pipeline/callbacks"
+	callbackmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/callbacks"
+	execmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/exec"
 )
 
 func (r *run) Apply(ctx context.Context) error {
@@ -30,44 +31,43 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 
 	pipe.AddStep(&pipeline.Step{
 		Name:       "initialize workspace",
-		ExecFn:     r.Workspace.Init,
-		CallbackFn: callbacks.Noop,
+		ExecFn:     execmappers.MapInit(r.Workspace.Init),
+		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
 		Name:       "load archive",
-		ExecFn:     r.Workspace.LoadArchive,
-		CallbackFn: callbacks.Noop,
+		ExecFn:     execmappers.MapInit(r.Workspace.LoadArchive),
+		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
 		Name:       "load backend",
-		ExecFn:     r.Workspace.LoadBackend,
-		CallbackFn: callbacks.Noop,
+		ExecFn:     execmappers.MapInit(r.Workspace.LoadBackend),
+		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
 		Name:       "load binary",
-		ExecFn:     r.Workspace.LoadBinary,
-		CallbackFn: callbacks.Noop,
+		ExecFn:     execmappers.MapInit(r.Workspace.LoadBinary),
+		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
 		Name:       "load variables",
-		ExecFn:     r.Workspace.LoadVariables,
-		CallbackFn: callbacks.Noop,
+		ExecFn:     execmappers.MapInit(r.Workspace.LoadVariables),
+		CallbackFn: callbackmappers.Noop,
 	})
-
 	pipe.AddStep(&pipeline.Step{
 		Name:       "apply",
-		ExecFn:     r.Workspace.Apply,
-		CallbackFn: callbacks.Noop,
+		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.Apply),
+		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get output",
-		ExecFn:     r.Workspace.Output,
-		CallbackFn: callbacks.Noop,
+		ExecFn:     execmappers.MapTerraformOutput(r.Workspace.Output),
+		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get state",
-		ExecFn:     r.Workspace.Show,
-		CallbackFn: callbacks.Noop,
+		ExecFn:     execmappers.MapTerraformState(r.Workspace.Show),
+		CallbackFn: callbackmappers.Noop,
 	})
 
 	return pipe, nil
