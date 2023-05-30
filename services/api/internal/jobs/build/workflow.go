@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	apibuildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
+	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
@@ -23,11 +23,11 @@ func New(cfg *internal.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Build(ctx workflow.Context, req *apibuildv1.StartBuildRequest, buildID string) (*planv1.PlanRef, error) {
+func (w *wkflow) Build(ctx workflow.Context, req *workflowbuildv1.BuildRequest) (*planv1.PlanRef, error) {
 	l := workflow.GetLogger(ctx)
 
 	l.Info("creating plan create request")
-	createPlanReq, err := execCreatePlanRequest(ctx, req, buildID)
+	createPlanReq, err := execCreatePlanRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create plan request: %w", err)
 	}
@@ -55,8 +55,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *apibuildv1.StartBuildRequest, 
 // execCreatePlanRequest returns a plan request that can be passed to a workflow
 func execCreatePlanRequest(
 	ctx workflow.Context,
-	req *apibuildv1.StartBuildRequest,
-	buildID string,
+	req *workflowbuildv1.BuildRequest,
 ) (*planv1.CreatePlanRequest, error) {
 	resp := &planv1.CreatePlanRequest{}
 	l := workflow.GetLogger(ctx)
@@ -69,7 +68,7 @@ func execCreatePlanRequest(
 	ctx = workflow.WithActivityOptions(ctx, opts)
 
 	l.Info("executing create plan request activity")
-	fut := workflow.ExecuteActivity(ctx, a.CreatePlanRequest, req, buildID)
+	fut := workflow.ExecuteActivity(ctx, a.CreatePlanRequest, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}

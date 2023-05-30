@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	apibuildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -49,7 +49,7 @@ func New(db *gorm.DB, githubAppID, githubAppKeySecretName string) *activities {
 	}
 }
 
-func (a *activities) CreatePlanRequest(ctx context.Context, req *apibuildv1.StartBuildRequest, buildID string) (*planv1.CreatePlanRequest, error) {
+func (a *activities) CreatePlanRequest(ctx context.Context, req *workflowbuildv1.BuildRequest) (*planv1.CreatePlanRequest, error) {
 	// TODO fix up logger here
 	component, err := a.componentService.GetComponent(ctx, req.ComponentId)
 	if err != nil {
@@ -68,7 +68,7 @@ func (a *activities) CreatePlanRequest(ctx context.Context, req *apibuildv1.Star
 				Type:         planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_BUILD,
 				OrgId:        component.App.OrgID,
 				AppId:        component.AppID,
-				DeploymentId: buildID,
+				DeploymentId: req.BuildId,
 				Component: &componentv1.Component{
 					Id:        component.ID,
 					BuildCfg:  dbConfig.BuildCfg,
