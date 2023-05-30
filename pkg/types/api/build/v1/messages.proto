@@ -35,7 +35,6 @@ message GetBuildRequest {
 
 message GetBuildResponse {
   Build build = 1;
-  string status = 2;
 }
 
 message CancelBuildRequest {
