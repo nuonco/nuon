@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	apibuildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
+	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/services/api/internal"
@@ -35,14 +35,13 @@ func TestProvision(t *testing.T) {
 	act := activities.New(nil, "", "")
 
 	// the following fields are used for returning stubbed data
-	req := generics.GetFakeObj[*apibuildv1.StartBuildRequest]()
+	req := generics.GetFakeObj[*workflowbuildv1.BuildRequest]()
 	createPlanReq := &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: generics.GetFakeObj[*planv1.ComponentInput](),
 		},
 	}
 	planRef := generics.GetFakeObj[*planv1.PlanRef]()
-	buildID := "blduOGobEltmV4wNIYk5AU4t8d"
 
 	// set up our temporal test suite
 	testSuite := &testsuite.WorkflowTestSuite{}
@@ -53,7 +52,7 @@ func TestProvision(t *testing.T) {
 
 	// mock out activities and workflows
 	env.OnActivity("CreatePlanRequest", mock.Anything, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r *apibuildv1.StartBuildRequest, buildID string) (*planv1.CreatePlanRequest, error) {
+		Return(func(_ context.Context, r *workflowbuildv1.BuildRequest) (*planv1.CreatePlanRequest, error) {
 			assert.NoError(t, r.Validate())
 			return createPlanReq, nil
 		})
@@ -79,7 +78,7 @@ func TestProvision(t *testing.T) {
 		})
 
 	// execute workflow
-	env.ExecuteWorkflow(wkflow.Build, req, buildID)
+	env.ExecuteWorkflow(wkflow.Build, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
 

@@ -6,7 +6,8 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
-	buildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
+	apibuildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
+	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	tclient "go.temporal.io/sdk/client"
@@ -14,8 +15,8 @@ import (
 
 func (s *server) StartBuild(
 	ctx context.Context,
-	req *connect.Request[buildv1.StartBuildRequest],
-) (*connect.Response[buildv1.StartBuildResponse], error) {
+	req *connect.Request[apibuildv1.StartBuildRequest],
+) (*connect.Response[apibuildv1.StartBuildResponse], error) {
 	// run protobuf validations
 	if err := req.Msg.Validate(); err != nil {
 		return nil, fmt.Errorf("input validation failed: %w", err)
@@ -39,6 +40,8 @@ func (s *server) StartBuild(
 	}
 
 	// start build workflow
+	workflow := "Build"
+	namespace := "builds"
 	opts := tclient.StartWorkflowOptions{
 		ID:        buildID,
 		TaskQueue: workflows.APITaskQueue,
@@ -50,14 +53,17 @@ func (s *server) StartBuild(
 			"started-by":    "api",
 		},
 	}
-	workflow := "Build"
-	namespace := "builds"
-	_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, workflow, &req.Msg, buildID)
+	args := workflowbuildv1.BuildRequest{
+		BuildId:     buildID,
+		GitRef:      req.Msg.GitRef,
+		ComponentId: req.Msg.ComponentId,
+	}
+	_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, workflow, &args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start build: %w", err)
 	}
 
-	return connect.NewResponse(&buildv1.StartBuildResponse{
+	return connect.NewResponse(&apibuildv1.StartBuildResponse{
 		Build: build.ToProto(),
 	}), nil
 }
