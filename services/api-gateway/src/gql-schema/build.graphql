@@ -26,6 +26,7 @@ input BuildInput {
 # Build Query types
 ##############################################################################
 extend type Query {
+  build(id: ID!): Build
   builds(componentId: ID!): [Build!]
 }
 

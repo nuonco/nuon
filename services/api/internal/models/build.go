@@ -16,7 +16,7 @@ type Build struct {
 	GitRef      string `json:"git_ref"`
 }
 
-// TODO: why do we need this?
+// QueryBuilds and GetBuild are using it to convert the Build model to proto format
 func (b Build) ToProto() *buildv1.Build {
 	return &buildv1.Build{
 		Id:          b.ID,

@@ -9,6 +9,26 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 )
 
+func (s *server) GetBuild(
+	ctx context.Context,
+	req *connect.Request[buildv1.GetBuildRequest],
+) (*connect.Response[buildv1.GetBuildResponse], error) {
+	// run protobuf validations
+	if err := req.Msg.Validate(); err != nil {
+		return nil, fmt.Errorf("input validation failed: %w", err)
+	}
+
+	// retrieve build from DB
+	var build models.Build
+	if err := s.db.WithContext(ctx).First(&build, "id = ?", req.Msg.Id).Error; err != nil {
+		return nil, fmt.Errorf("retrieving build failed: %w", err)
+	}
+
+	return connect.NewResponse(&buildv1.GetBuildResponse{
+		Build: build.ToProto(),
+	}), nil
+}
+
 func (s *server) QueryBuilds(
 	ctx context.Context,
 	req *connect.Request[buildv1.QueryBuildsRequest],
