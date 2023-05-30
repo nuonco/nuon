@@ -29,6 +29,15 @@ message StartBuildResponse {
   Build build = 1;
 }
 
+message GetBuildRequest {
+  string id = 1 [(validate.rules).string.len = 26];
+}
+
+message GetBuildResponse {
+  Build build = 1;
+  string status = 2;
+}
+
 message CancelBuildRequest {
   string id = 1 [(validate.rules).string.len = 26];
 }
