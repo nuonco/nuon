@@ -4,10 +4,4 @@ package terraform.v1;
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/terraform/v1";
 
-message ArchiveFile {
-  string filename = 1;
-}
-
-message BuildOutput {
-  repeated ArchiveFile string = 1;
-}
+message Deployment {}
