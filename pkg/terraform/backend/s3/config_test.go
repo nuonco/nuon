@@ -84,7 +84,7 @@ func Test_s3_ConfigFile(t *testing.T) {
 
 			backend := test.backendFn(t)
 
-			cfg, err := backend.GetConfigFile(ctx)
+			cfg, err := backend.ConfigFile(ctx)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

@@ -1,14 +1,21 @@
 package registry
 
-import "github.com/go-playground/validator/v10"
+import (
+	"github.com/go-playground/validator/v10"
+	"github.com/hashicorp/waypoint-plugin-sdk/component"
+)
 
-func New() *Registry {
+var _ component.Registry = (*Registry)(nil)
+var _ component.RegistryAccess = (*Registry)(nil)
+
+func New(v *validator.Validate) (*Registry, error) {
 	return &Registry{
-		v: validator.New(),
-	}
+		v: v,
+	}, nil
 }
 
 type Registry struct {
+	v *validator.Validate
+
 	config Config
-	v      *validator.Validate
 }
