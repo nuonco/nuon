@@ -1,0 +1,66 @@
+package workflows
+
+import (
+	"context"
+	"fmt"
+
+	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	tclient "go.temporal.io/sdk/client"
+)
+
+// TODO(jm): eventually rename this workflow to Provision
+func (wfClient *workflowsClient) TriggerOrgSignup(ctx context.Context, req *orgsv1.SignupRequest) error {
+	opts := tclient.StartWorkflowOptions{
+		TaskQueue: DefaultTaskQueue,
+		Memo: map[string]interface{}{
+			"org-id":     req.OrgId,
+			"started-by": "nuonctl",
+		},
+	}
+
+	_, err := wfClient.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Signup", req)
+	if err != nil {
+		return fmt.Errorf("unable to start deployment: %w", err)
+	}
+
+	return nil
+}
+
+func (wfClient *workflowsClient) TriggerOrgTeardown(ctx context.Context, req *orgsv1.TeardownRequest) error {
+	opts := tclient.StartWorkflowOptions{
+		TaskQueue: DefaultTaskQueue,
+		Memo: map[string]interface{}{
+			"org-id":     req.OrgId,
+			"started-by": "nuonctl",
+		},
+	}
+
+	_, err := wfClient.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Teardown", req)
+	if err != nil {
+		return fmt.Errorf("unable to start teardown: %w", err)
+	}
+
+	return nil
+}
+
+func (wfClient *workflowsClient) ExecOrgSignup(ctx context.Context, req *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error) {
+	opts := tclient.StartWorkflowOptions{
+		TaskQueue: DefaultTaskQueue,
+		Memo: map[string]interface{}{
+			"org-id":     req.OrgId,
+			"started-by": "nuonctl",
+		},
+	}
+
+	resp := &orgsv1.SignupResponse{}
+	fut, err := wfClient.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Signup", req)
+	if err != nil {
+		return nil, fmt.Errorf("unable to start signup: %w", err)
+	}
+
+	if err := fut.Get(ctx, resp); err != nil {
+		return nil, fmt.Errorf("unable to get response: %w", err)
+	}
+
+	return resp, nil
+}
