@@ -6,7 +6,7 @@ import "executors/v1/plan/v1/plan_ref.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1/build/v1";
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1";
 
 // BuildRequest is a child workflow request for the plan phase
 message BuildRequest {
@@ -23,5 +23,5 @@ message BuildRequest {
 
 // BuildResponse is a child workflow response for the plan phase
 message BuildResponse {
-  .executors.v1.plan.v1.PlanRef plan_ref = 1;
+  .executors.v1.plan.v1.PlanRef build_plan = 1;
 }

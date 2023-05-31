@@ -23,7 +23,7 @@ func New(cfg *internal.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Build(ctx workflow.Context, req *workflowbuildv1.BuildRequest) (*planv1.PlanRef, error) {
+func (w *wkflow) Build(ctx workflow.Context, req *workflowbuildv1.BuildRequest) (*workflowbuildv1.BuildResponse, error) {
 	l := workflow.GetLogger(ctx)
 
 	l.Info("creating plan create request")
@@ -49,7 +49,11 @@ func (w *wkflow) Build(ctx workflow.Context, req *workflowbuildv1.BuildRequest) 
 		return nil, fmt.Errorf("unable to create plan: %w", err)
 	}
 
-	return createPlanResp.Plan, nil
+	res := &workflowbuildv1.BuildResponse{
+		BuildPlan: createPlanResp.Plan,
+	}
+
+	return res, nil
 }
 
 // execCreatePlanRequest returns a plan request that can be passed to a workflow

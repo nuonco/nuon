@@ -82,9 +82,8 @@ func TestProvision(t *testing.T) {
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
 
-	// TODO(jm): this needs to use the correct build response
-	resp := &planv1.PlanRef{}
+	resp := &workflowbuildv1.BuildResponse{}
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
-	assert.True(t, proto.Equal(planRef, resp))
+	assert.True(t, proto.Equal(planRef, resp.BuildPlan))
 }
