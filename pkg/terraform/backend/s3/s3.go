@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/terraform/backend"
 )
 
 // BucketConfig configures where the state is pushed too
@@ -40,6 +41,8 @@ type s3 struct {
 	IAM         *IAMConfig
 	Credentials *Credentials
 }
+
+var _ backend.Backend = (*s3)(nil)
 
 type s3Option func(*s3) error
 
