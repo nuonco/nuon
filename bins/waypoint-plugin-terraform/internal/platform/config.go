@@ -7,14 +7,11 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-//
 // NOTE(jm): this plugin is not 100% what we want, as the original idea was that we would simply use the `docker-pull`
 // plugin to automatically pull a plugin from the vendor's account and push into the local customer's ECR. However, I
 // don't think that will work, and all around we probably should have an `oci-pull` plugin do this and avoid the
 // complexity that using `docker-pull` brings. However, to get this working we don't need either -- we just pull the
 // plugin here, directly.
-//
-
 type AWSAuthRoleARN struct {
 	RoleARN         string `hcl:"role_arn,optional" validate:"required"`
 	RoleSessionName string `hcl:"role_session_name,optional" validate:"required"`
