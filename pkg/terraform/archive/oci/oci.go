@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
+	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content/file"
 )
 
 // Package oci exposes an archive that loads a terraform archive from an oci artifact
@@ -14,21 +16,22 @@ var _ archive.Archive = (*oci)(nil)
 type oci struct {
 	v *validator.Validate
 
-	// RoleARN is used to load the oci artifact, and assumes that the user name is AWS (because all of our
-	// repos/uses are ECR).
-	AuthToken string
+	Image *Image `validate:"required"`
+	Auth  *Auth  `validate:"required"`
 
-	// TODO(jm): we will eventually load oci archives using an IAM role, to fetch from the local repo, but for now
-	// we don't support that, so we just fetch using the hard coded credentials.
-	RoleARN         string
-	RoleSessionName string
+	store *file.Store
+
+	// the following fields are exposed to make this more easily tested
+	testSrc oras.ReadOnlyTarget
+	tmpDir  string
 }
 
 type ociOption func(*oci) error
 
 func New(v *validator.Validate, opts ...ociOption) (*oci, error) {
 	s := &oci{
-		v: v,
+		v:      v,
+		tmpDir: defaultStorePath,
 	}
 
 	for idx, opt := range opts {
@@ -43,18 +46,22 @@ func New(v *validator.Validate, opts ...ociOption) (*oci, error) {
 	return s, nil
 }
 
-// WithRoleArn sets the bucket role
-func WithRoleARN(arn string) ociOption {
-	return func(s *oci) error {
-		s.RoleARN = arn
+// WithAuth sets the iam role and ecr token to use with this archive
+func WithAuth(auth *Auth) ociOption {
+	return func(o *oci) error {
+		if err := auth.Validate(o.v); err != nil {
+			return fmt.Errorf("invalid auth: %w", err)
+		}
+
+		o.Auth = auth
 		return nil
 	}
 }
 
-// WithRoleSessionName sets the role session name
-func WithRoleSessionName(name string) ociOption {
-	return func(s *oci) error {
-		s.RoleSessionName = name
+// WithImage sets the image
+func WithImage(img *Image) ociOption {
+	return func(o *oci) error {
+		o.Image = img
 		return nil
 	}
 }

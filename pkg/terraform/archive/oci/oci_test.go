@@ -1,6 +1,7 @@
 package oci
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
@@ -9,7 +10,8 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	expected := generics.GetFakeObj[oci]()
+	auth := generics.GetFakeObj[*Auth]()
+	img := generics.GetFakeObj[*Image]()
 	v := validator.New()
 
 	tests := map[string]struct {
@@ -20,14 +22,30 @@ func TestNew(t *testing.T) {
 		"happy path": {
 			optsFn: func() []ociOption {
 				return []ociOption{
-					WithRoleSessionName(expected.RoleSessionName),
-					WithRoleARN(expected.RoleARN),
+					WithAuth(auth),
+					WithImage(img),
 				}
 			},
 			assertFn: func(t *testing.T, s *oci) {
-				assert.Equal(t, expected.RoleARN, s.RoleARN)
-				assert.Equal(t, expected.RoleSessionName, s.RoleSessionName)
+				assert.Equal(t, auth, s.Auth)
+				assert.Equal(t, img, s.Image)
 			},
+		},
+		"missing auth": {
+			optsFn: func() []ociOption {
+				return []ociOption{
+					WithImage(img),
+				}
+			},
+			errExpected: fmt.Errorf("Auth"),
+		},
+		"missing image": {
+			optsFn: func() []ociOption {
+				return []ociOption{
+					WithAuth(auth),
+				}
+			},
+			errExpected: fmt.Errorf("Image"),
 		},
 	}
 
