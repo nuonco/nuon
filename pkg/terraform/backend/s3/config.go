@@ -13,7 +13,7 @@ type backendConfig struct {
 	*IAMConfig
 }
 
-func (s *s3) GetConfigFile(ctx context.Context) ([]byte, error) {
+func (s *s3) ConfigFile(ctx context.Context) ([]byte, error) {
 	byts, err := json.Marshal(backendConfig{
 		s.Bucket,
 		s.Credentials,

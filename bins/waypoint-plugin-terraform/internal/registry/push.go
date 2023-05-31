@@ -21,7 +21,7 @@ func (r *Registry) Push(
 	img *terraformv1.BuildOutput,
 	ui terminal.UI,
 	src *component.Source,
-) (*Image, error) {
+) (*terraformv1.Artifact, error) {
 	u := ui.Status()
 	defer u.Close()
 
@@ -57,7 +57,7 @@ func (r *Registry) Push(
 	}
 	u.Step(terminal.StatusOK, "successfully pushed artifact")
 
-	return &Image{
+	return &terraformv1.Artifact{
 		Image: r.config.Repository,
 		Tag:   r.config.Tag,
 	}, nil

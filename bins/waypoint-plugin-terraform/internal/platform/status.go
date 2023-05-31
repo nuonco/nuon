@@ -1,0 +1,25 @@
+package platform
+
+import (
+	"context"
+
+	"github.com/hashicorp/waypoint-plugin-sdk/component"
+	sdk "github.com/hashicorp/waypoint-plugin-sdk/proto/gen"
+	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	terraformv1 "github.com/powertoolsdev/mono/pkg/types/plugins/terraform/v1"
+)
+
+func (p *Platform) StatusFunc() interface{} {
+	return p.status
+}
+
+func (p *Platform) status(
+	ctx context.Context,
+	ji *component.JobInfo,
+	deploy *terraformv1.Deployment,
+	ui terminal.UI,
+) (*sdk.StatusReport, error) {
+	//
+
+	return nil, nil
+}
