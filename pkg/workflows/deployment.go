@@ -8,26 +8,34 @@ import (
 	tclient "go.temporal.io/sdk/client"
 )
 
-func (wfClient *workflowsClient) TriggerDeploymentStart(ctx context.Context, req *deploymentsv1.StartRequest) error {
+func (w *workflowsClient) TriggerDeploymentStart(ctx context.Context, req *deploymentsv1.StartRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: DefaultTaskQueue,
 	}
 
-	_, err := wfClient.TemporalClient.ExecuteWorkflow(ctx, opts, "Start", req)
+	wfRun, err := w.TemporalClient.ExecuteWorkflow(ctx, opts, "Start", req)
 	if err != nil {
-		return fmt.Errorf("unable to start deployment: %w", err)
+		return "", fmt.Errorf("unable to start deployment: %w", err)
 	}
 
-	return nil
+	return wfRun.GetID(), nil
 }
 
-func (wfClient *workflowsClient) ExecDeploymentStart(ctx context.Context, req *deploymentsv1.StartRequest) (*deploymentsv1.StartResponse, error) {
+func (w *workflowsClient) ExecDeploymentStart(ctx context.Context, req *deploymentsv1.StartRequest) (*deploymentsv1.StartResponse, error) {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: DefaultTaskQueue,
+		// Memo is non-indexed metadata available when listing workflows
+		Memo: map[string]interface{}{
+			"org-id":        req.OrgId,
+			"app-id":        req.AppId,
+			"deployment-id": req.DeploymentId,
+			"component-id":  req.Component.Id,
+			"started-by":    "api",
+		},
 	}
 
 	resp := &deploymentsv1.StartResponse{}
-	fut, err := wfClient.TemporalClient.ExecuteWorkflow(ctx, opts, "Start", req)
+	fut, err := w.TemporalClient.ExecuteWorkflow(ctx, opts, "Start", req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to start deployment: %w", err)
 	}

@@ -3,7 +3,7 @@ package createapp
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	pkgWorkflows "github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	"gorm.io/gorm"
@@ -14,10 +14,10 @@ type activities struct {
 	mgr  workflows.AppWorkflowManager
 }
 
-func NewActivities(db *gorm.DB, tc temporal.Client) *activities {
+func NewActivities(db *gorm.DB, workflowsClient pkgWorkflows.Client) *activities {
 	return &activities{
 		repo: repos.NewAppRepo(db),
-		mgr:  workflows.NewAppWorkflowManager(tc),
+		mgr:  workflows.NewAppWorkflowManager(workflowsClient),
 	}
 }
 

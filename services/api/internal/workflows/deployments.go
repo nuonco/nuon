@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
-	tclient "go.temporal.io/sdk/client"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -21,14 +19,12 @@ const (
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_deployments.go -source=deployments.go -package=workflows
-func NewDeploymentWorkflowManager(tclient temporal.Client) *deploymentWorkflowManager {
-	return &deploymentWorkflowManager{
-		tc: tclient,
-	}
+func NewDeploymentWorkflowManager(workflowsClient workflows.Client) *deploymentWorkflowManager {
+	return &deploymentWorkflowManager{workflowsClient}
 }
 
 type deploymentWorkflowManager struct {
-	tc temporal.Client
+	workflowsClient workflows.Client
 }
 
 type DeploymentWorkflowManager interface {
@@ -40,19 +36,6 @@ var _ DeploymentWorkflowManager = (*deploymentWorkflowManager)(nil)
 func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *models.Deployment) (string, error) {
 	app := deployment.Component.App
 	orgID, appID, componentID, deploymentID := app.OrgID, app.ID, deployment.Component.ID, deployment.ID
-
-	opts := tclient.StartWorkflowOptions{
-		TaskQueue: workflows.DefaultTaskQueue,
-		// Memo is non-indexed metadata available when listing workflows
-		Memo: map[string]interface{}{
-			"org-id":        orgID,
-			"app-id":        appID,
-			"deployment-id": deploymentID,
-			"component-id":  componentID,
-			"started-by":    "api",
-		},
-	}
-
 	var compConf componentv1.Component
 	if deployment.Component.Config != nil {
 		if err := protojson.Unmarshal([]byte(deployment.Component.Config.String()), &compConf); err != nil {
@@ -73,10 +56,10 @@ func (d *deploymentWorkflowManager) Start(ctx context.Context, deployment *model
 		req.InstallIds[idx] = install.ID
 	}
 
-	workflow, err := d.tc.ExecuteWorkflowInNamespace(ctx, "deployments", opts, "Start", req)
+	workflowID, err := d.workflowsClient.TriggerDeploymentStart(ctx, req)
 	if err != nil {
 		return "", fmt.Errorf("unable to start deployment: %w", err)
 	}
 
-	return workflow.GetID(), nil
+	return workflowID, nil
 }

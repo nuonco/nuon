@@ -3,7 +3,7 @@ package deleteinstall
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	pkgWorkflows "github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	"gorm.io/gorm"
@@ -16,12 +16,12 @@ type activities struct {
 	mgr       workflows.InstallWorkflowManager
 }
 
-func NewActivities(db *gorm.DB, tc temporal.Client) *activities {
+func NewActivities(db *gorm.DB, workflowsClient pkgWorkflows.Client) *activities {
 	return &activities{
 		repo:      repos.NewInstallRepo(db),
 		adminRepo: repos.NewAdminRepo(db),
 		appRepo:   repos.NewAppRepo(db),
-		mgr:       workflows.NewInstallWorkflowManager(tc),
+		mgr:       workflows.NewInstallWorkflowManager(workflowsClient),
 	}
 }
 
