@@ -8,25 +8,12 @@ import (
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	ecrauthorization "github.com/powertoolsdev/mono/pkg/aws/ecr-authorization"
+	terraformv1 "github.com/powertoolsdev/mono/pkg/types/plugins/terraform/v1"
 )
 
 const (
 	defaultRoleSessionName string = "noun-terraform-plugin"
 )
-
-// TODO(jm): convert this to a protocol buffer and/or return the docker
-//
-// NOTE: between this, and the mapper to map the image into a docker.Image, we should be able to support using this
-// registry with the `docker-pull` build plugin, to sync images.
-type AccessInfo struct {
-	Image string
-	Tag   string
-	Auth  struct {
-		Username      string
-		Password      string
-		ServerAddress string
-	}
-}
 
 // AccessInfoFunc
 func (r *Registry) AccessInfoFunc() interface{} {
@@ -37,7 +24,7 @@ func (r *Registry) AccessInfo(ctx context.Context,
 	log hclog.Logger,
 	ui terminal.UI,
 	src *component.Source,
-) (*AccessInfo, error) {
+) (*terraformv1.AccessInfo, error) {
 	authProvider, err := ecrauthorization.New(r.v,
 		ecrauthorization.WithAssumeRoleArn(r.config.RoleARN),
 		ecrauthorization.WithAssumeRoleSessionName(defaultRoleSessionName),
@@ -56,20 +43,16 @@ func (r *Registry) AccessInfo(ctx context.Context,
 	return accessInfo, nil
 }
 
-func (r *Registry) getAccessInfo(ctx context.Context, client ecrauthorization.Client) (*AccessInfo, error) {
+func (r *Registry) getAccessInfo(ctx context.Context, client ecrauthorization.Client) (*terraformv1.AccessInfo, error) {
 	authorization, err := client.GetAuthorization(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get authorization: %w", err)
 	}
 
-	return &AccessInfo{
+	return &terraformv1.AccessInfo{
 		Image: r.config.Repository,
 		Tag:   r.config.Tag,
-		Auth: struct {
-			Username      string
-			Password      string
-			ServerAddress string
-		}{
+		Auth: &terraformv1.Auth{
 			Username:      authorization.Username,
 			Password:      authorization.RegistryToken,
 			ServerAddress: authorization.ServerAddress,

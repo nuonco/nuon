@@ -8,11 +8,10 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/pipeline"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap/zaptest"
 )
 
 func Test_execInitFn_exec(t *testing.T) {
-	l := zaptest.NewLogger(t)
+	l := NewMockhcLog(nil)
 	ui := NewMockui(nil)
 	errInit := fmt.Errorf("error init")
 
