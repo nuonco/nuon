@@ -39,6 +39,14 @@ func (s *server) StartBuild(
 		return nil, err
 	}
 
+	// fetch org and app IDs for workflow
+	component := models.Component{}
+	s.db.Model(&build).Association("Component").Find(&component)
+	app := models.App{}
+	s.db.Model(&component).Association("App").Find(&app)
+	org := models.Org{}
+	s.db.Model(&app).Association("Org").Find(&org)
+
 	// start build workflow
 	workflow := "Build"
 	namespace := "builds"
@@ -51,12 +59,16 @@ func (s *server) StartBuild(
 			"component-id":  req.Msg.ComponentId,
 			"created-by-id": req.Msg.CreatedById,
 			"started-by":    "api",
+			"org-id":        org.ID,
+			"app-id":        app.ID,
 		},
 	}
 	args := workflowbuildv1.BuildRequest{
 		BuildId:     buildID,
 		GitRef:      req.Msg.GitRef,
 		ComponentId: req.Msg.ComponentId,
+		OrgId:       org.ID,
+		AppId:       app.ID,
 	}
 	_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, workflow, &args)
 	if err != nil {

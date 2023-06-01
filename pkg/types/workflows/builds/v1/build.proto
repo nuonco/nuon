@@ -19,6 +19,15 @@ message BuildRequest {
     (tagger.tags) = "faker:\"shortID\""
   ];
   string git_ref = 3;
+
+  string org_id = 4 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string app_id = 5 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
 }
 
 // BuildResponse is a child workflow response for the plan phase
