@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/powertoolsdev/mono/pkg/pipeline"
-	"go.uber.org/zap"
 )
 
 func MapTerraformPlan(fn execPlanFn) pipeline.ExecFn {
@@ -19,7 +19,7 @@ func MapTerraformPlan(fn execPlanFn) pipeline.ExecFn {
 // execPlanFn is a function that returns a terraform plan as a response
 type execPlanFn func(context.Context) (*tfjson.Plan, error)
 
-func (p execPlanFn) exec(ctx context.Context, l *zap.Logger, ui terminal.UI) ([]byte, error) {
+func (p execPlanFn) exec(ctx context.Context, log hclog.Logger, ui terminal.UI) ([]byte, error) {
 	plan, err := p(ctx)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func MapTerraformOutput(fn execOutputFn) pipeline.ExecFn {
 // execOutputFn is a function that returns terraform outputs as a response
 type execOutputFn func(context.Context) (map[string]tfexec.OutputMeta, error)
 
-func (p execOutputFn) exec(ctx context.Context, l *zap.Logger, ui terminal.UI) ([]uint8, error) {
+func (p execOutputFn) exec(ctx context.Context, l hclog.Logger, ui terminal.UI) ([]uint8, error) {
 	output, err := p(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to exec: %w", err)
@@ -61,7 +61,7 @@ func MapTerraformState(fn execStateFn) pipeline.ExecFn {
 // execStateFn is a function that returns terraform state as response
 type execStateFn func(context.Context) (*tfjson.State, error)
 
-func (p execStateFn) exec(ctx context.Context, l *zap.Logger, ui terminal.UI) ([]uint8, error) {
+func (p execStateFn) exec(ctx context.Context, l hclog.Logger, ui terminal.UI) ([]uint8, error) {
 	state, err := p(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get state: %w", err)
