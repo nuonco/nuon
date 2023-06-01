@@ -18,7 +18,7 @@ func (r *Registry) PushFunc() interface{} {
 func (r *Registry) Push(
 	ctx context.Context,
 	log hclog.Logger,
-	img *terraformv1.BuildOutput,
+	bld *terraformv1.BuildOutput,
 	ui terminal.UI,
 	src *component.Source,
 ) (*terraformv1.Artifact, error) {
@@ -58,7 +58,8 @@ func (r *Registry) Push(
 	u.Step(terminal.StatusOK, "successfully pushed artifact")
 
 	return &terraformv1.Artifact{
-		Image: r.config.Repository,
-		Tag:   r.config.Tag,
+		Image:  r.config.Repository,
+		Tag:    r.config.Tag,
+		Labels: bld.Labels,
 	}, nil
 }
