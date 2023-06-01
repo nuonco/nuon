@@ -51,7 +51,10 @@ func (b *Builder) build(ctx context.Context,
 		return nil, fmt.Errorf("unable to close store: %w", err)
 	}
 
-	return &terraformv1.BuildOutput{}, nil
+	return &terraformv1.BuildOutput{
+		Files:  srcFiles,
+		Labels: b.config.Labels,
+	}, nil
 }
 
 func (b *Builder) buildODR(

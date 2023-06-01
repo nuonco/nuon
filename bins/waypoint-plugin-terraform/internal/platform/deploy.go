@@ -17,7 +17,6 @@ func (p *Platform) DeployFunc() interface{} {
 func (p *Platform) deploy(
 	ctx context.Context,
 	ji *component.JobInfo,
-	// artifact is the output of the push function, for the registry
 	artifact *terraformv1.Artifact,
 	ui terminal.UI,
 ) (*terraformv1.Deployment, error) {
