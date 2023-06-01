@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-playground/validator/v10"
 	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 
 // uploader is the interface for uploading data into output runs directory
@@ -41,6 +42,13 @@ func NewS3Uploader(v *validator.Validate, opts ...uploaderOptions) (*s3Uploader,
 }
 
 type uploaderOptions func(*s3Uploader)
+
+// WithCredentials sets the credentials
+func WithCredentials(creds *credentials.Config) uploaderOptions {
+	return func(obj *s3Uploader) {
+		obj.creds = creds
+	}
+}
 
 // WithAssumeRoleARN sets the ARN of the role to assume
 func WithAssumeRoleARN(s string) uploaderOptions {
@@ -79,9 +87,18 @@ type s3Uploader struct {
 	// assumeRoleARN is an optional role which will be assumed if passed in
 	assumeRoleARN         string
 	assumeRoleSessionName string
+	creds                 *credentials.Config
 }
 
 func (s *s3Uploader) loadAWSConfig(ctx context.Context) (aws.Config, error) {
+	if s.creds != nil {
+		cfg, err := credentials.Fetch(ctx, s.creds)
+		if err != nil {
+			return aws.Config{}, fmt.Errorf("unable to fetch credentials using config: %w", err)
+		}
+		return cfg, nil
+	}
+
 	if s.assumeRoleARN == "" {
 		cfg, err := config.LoadDefaultConfig(ctx)
 		if err != nil {

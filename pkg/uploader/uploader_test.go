@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/generics"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -115,6 +117,7 @@ func Test_upload(t *testing.T) {
 func TestNewS3Uploader(t *testing.T) {
 	bucketName := "test-nuon-uploads"
 	bucketPrefix := "test-prefix"
+	creds := generics.GetFakeObj[*credentials.Config]()
 
 	tests := map[string]struct {
 		initFn      func() (*s3Uploader, error)
@@ -134,7 +137,8 @@ func TestNewS3Uploader(t *testing.T) {
 		},
 		"initializes with bucket": {
 			initFn: func() (*s3Uploader, error) {
-				return NewS3Uploader(validator.New(), WithBucketName(bucketName))
+				return NewS3Uploader(validator.New(),
+					WithBucketName(bucketName))
 			},
 			assertFn: func(t *testing.T, obj Uploader) {
 				s3Obj, ok := obj.(*s3Uploader)
@@ -144,7 +148,9 @@ func TestNewS3Uploader(t *testing.T) {
 		},
 		"sets prefix correctly": {
 			initFn: func() (*s3Uploader, error) {
-				return NewS3Uploader(validator.New(), WithBucketName(bucketName), WithPrefix(bucketPrefix))
+				return NewS3Uploader(validator.New(),
+					WithBucketName(bucketName),
+					WithPrefix(bucketPrefix))
 			},
 			assertFn: func(t *testing.T, obj Uploader) {
 				s3Obj, ok := obj.(*s3Uploader)
@@ -154,13 +160,27 @@ func TestNewS3Uploader(t *testing.T) {
 		},
 		"sets assume role correctly": {
 			initFn: func() (*s3Uploader, error) {
-				return NewS3Uploader(validator.New(), WithBucketName(bucketName), WithAssumeRoleARN("test-role-arn"))
+				return NewS3Uploader(validator.New(),
+					WithBucketName(bucketName),
+					WithAssumeRoleARN("test-role-arn"))
 			},
 			assertFn: func(t *testing.T, obj Uploader) {
 				s3Obj, ok := obj.(*s3Uploader)
 				assert.True(t, ok)
 				assert.Equal(t, bucketName, s3Obj.Bucket)
 				assert.Equal(t, "test-role-arn", s3Obj.assumeRoleARN)
+			},
+		},
+		"sets credentials": {
+			initFn: func() (*s3Uploader, error) {
+				return NewS3Uploader(validator.New(),
+					WithBucketName(bucketName),
+					WithCredentials(creds))
+			},
+			assertFn: func(t *testing.T, obj Uploader) {
+				s3Obj, ok := obj.(*s3Uploader)
+				assert.True(t, ok)
+				assert.Equal(t, creds, s3Obj.creds)
 			},
 		},
 	}

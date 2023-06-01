@@ -1,6 +1,24 @@
 package platform
 
-func (d *Platform) DestroyFunc() interface{} {
-	//return d.destroy
-	return nil
+import (
+	"context"
+
+	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/waypoint-plugin-sdk/component"
+	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	terraformv1 "github.com/powertoolsdev/mono/pkg/types/plugins/terraform/v1"
+)
+
+func (p *Platform) DestroyFunc() interface{} {
+	return p.destroy
+}
+
+func (p *Platform) destroy(
+	ctx context.Context,
+	ji *component.JobInfo,
+	artifact *terraformv1.Artifact,
+	ui terminal.UI,
+	log hclog.Logger,
+) (*terraformv1.Deployment, error) {
+	return p.execRun(ctx, runTypeDestroy, ji, artifact, ui, log)
 }
