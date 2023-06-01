@@ -12,7 +12,14 @@ import (
 
 // GetWorkspace returns a valid workspace for working with this plugin
 func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
-	arch, err := ociarchive.New(p.v)
+	arch, err := ociarchive.New(p.v, ociarchive.WithAuth(&ociarchive.Auth{
+		Username: p.Cfg.Archive.Username,
+		Token:    p.Cfg.Archive.AuthToken,
+	}), ociarchive.WithImage(&ociarchive.Image{
+		Registry: p.Cfg.Archive.RegistryURL,
+		Repo:     p.Cfg.Archive.Repo,
+		Tag:      p.Cfg.Archive.Tag,
+	}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create archive: %w", err)
 	}
