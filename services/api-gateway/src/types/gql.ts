@@ -613,6 +613,7 @@ export type Query = {
   app?: Maybe<App>;
   apps: AppConnection;
   build?: Maybe<Build>;
+  buildStatus: Status;
   builds?: Maybe<Array<Build>>;
   component?: Maybe<Component>;
   components: ComponentConnection;
@@ -647,6 +648,14 @@ export type QueryAppsArgs = {
 
 export type QueryBuildArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryBuildStatusArgs = {
+  appId: Scalars['ID']['input'];
+  buildId: Scalars['ID']['input'];
+  componentId: Scalars['ID']['input'];
+  orgId: Scalars['ID']['input'];
 };
 
 
