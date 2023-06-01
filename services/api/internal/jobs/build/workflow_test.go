@@ -2,12 +2,15 @@ package build
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/build/activities"
 	"github.com/stretchr/testify/assert"
@@ -51,6 +54,32 @@ func TestProvision(t *testing.T) {
 	env.RegisterActivity(act)
 
 	// mock out activities and workflows
+	env.OnActivity(act.StartStartRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
+			resp := &sharedv1.StartActivityResponse{}
+			assert.Nil(t, r.Validate())
+			assert.Equal(t, cfg.DeploymentsBucket, r.MetadataBucket)
+
+			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, req.OrgId)
+			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
+			expectedPrefix := prefix.DeploymentPath(req.OrgId, req.AppId, req.ComponentId, req.BuildId)
+			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
+			return resp, nil
+		})
+
+	env.OnActivity(act.FinishStartRequest, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r *sharedv1.FinishActivityRequest) (*sharedv1.FinishActivityResponse, error) {
+			resp := &sharedv1.FinishActivityResponse{}
+			assert.Nil(t, r.Validate())
+			assert.Equal(t, cfg.DeploymentsBucket, r.MetadataBucket)
+
+			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, req.OrgId)
+			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
+			expectedPrefix := prefix.DeploymentPath(req.OrgId, req.AppId, req.ComponentId, req.BuildId)
+			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
+			return resp, nil
+		})
+
 	env.OnActivity("CreatePlanRequest", mock.Anything, mock.Anything, mock.Anything).
 		Return(func(_ context.Context, r *workflowbuildv1.BuildRequest) (*planv1.CreatePlanRequest, error) {
 			assert.NoError(t, r.Validate())

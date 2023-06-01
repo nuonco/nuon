@@ -7,7 +7,7 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 )
 
-func (a *activities) InsertArtifact(ctx context.Context, artifact *models.Artifact) (*models.Artifact, error) {
+func (a *Activities) InsertArtifact(ctx context.Context, artifact *models.Artifact) (*models.Artifact, error) {
 	if err := artifact.NewID(); err != nil {
 		return nil, fmt.Errorf("StartBuild.InsertArtifact unable to make nanoid: %w", err)
 	}
