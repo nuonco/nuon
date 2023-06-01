@@ -24,20 +24,18 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 		return nil, fmt.Errorf("unable to create archive: %w", err)
 	}
 
-	back, err := s3backend.New(p.v, s3backend.WithCredentials(&s3backend.Credentials{
-		AWSAccessKeyID:     p.Cfg.Backend.Auth.AccessKeyID,
-		AWSSecretAccessKey: p.Cfg.Backend.Auth.SecretAccessKey,
-		AWSSessionToken:    p.Cfg.Backend.Auth.SessionToken,
-	}), s3backend.WithBucketConfig(&s3backend.BucketConfig{
-		Name:   p.Cfg.Backend.Bucket,
-		Key:    p.Cfg.Backend.StateKey,
-		Region: "us-west-2",
-	}))
+	back, err := s3backend.New(p.v, s3backend.WithCredentials(&p.Cfg.Backend.Auth),
+		s3backend.WithBucketConfig(&s3backend.BucketConfig{
+			Name:   p.Cfg.Backend.Bucket,
+			Key:    p.Cfg.Backend.StateKey,
+			Region: p.Cfg.Backend.Region,
+		}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create backend: %w", err)
 	}
 
-	bin, err := remotebinary.New(p.v, remotebinary.WithVersion(p.Cfg.TerraformVersion))
+	bin, err := remotebinary.New(p.v,
+		remotebinary.WithVersion(p.Cfg.TerraformVersion))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create backend: %w", err)
 	}

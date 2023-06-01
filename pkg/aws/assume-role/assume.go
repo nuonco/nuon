@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 // LoadConfigWithAssumedRole loads an AWS config using the default credential provider chain
@@ -44,6 +45,7 @@ func (a *assumer) assumeIamRole(ctx context.Context, client awsClientIamRoleAssu
 	params := &sts.AssumeRoleInput{
 		RoleArn:         &a.RoleARN,
 		RoleSessionName: &a.RoleSessionName,
+		DurationSeconds: generics.ToPtr(int32(a.RoleSessionDuration.Seconds())),
 	}
 	resp, err := client.AssumeRole(ctx, params)
 	if err != nil {

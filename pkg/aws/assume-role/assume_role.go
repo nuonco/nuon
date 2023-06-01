@@ -2,13 +2,19 @@ package iam
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 )
 
+const (
+	defaultRoleSessionDuration time.Duration = time.Hour
+)
+
 type Settings struct {
-	RoleARN         string `validate:"required"`
-	RoleSessionName string `validate:"required"`
+	RoleARN             string `validate:"required"`
+	RoleSessionName     string `validate:"required"`
+	RoleSessionDuration time.Duration
 }
 
 func (s Settings) Validate(v *validator.Validate) error {
@@ -16,8 +22,9 @@ func (s Settings) Validate(v *validator.Validate) error {
 }
 
 type assumer struct {
-	RoleARN         string `validate:"required"`
-	RoleSessionName string `validate:"required"`
+	RoleARN             string `validate:"required"`
+	RoleSessionName     string `validate:"required"`
+	RoleSessionDuration time.Duration
 
 	// internal state
 	v *validator.Validate
@@ -27,7 +34,9 @@ type assumerOptions func(*assumer) error
 
 // New creates a new, validated assumer with the given options
 func New(v *validator.Validate, opts ...assumerOptions) (*assumer, error) {
-	a := &assumer{}
+	a := &assumer{
+		RoleSessionDuration: defaultRoleSessionDuration,
+	}
 
 	if v == nil {
 		return nil, fmt.Errorf("error instantiating assumer: validator is nil")
@@ -54,6 +63,11 @@ func WithSettings(s Settings) assumerOptions {
 
 		a.RoleARN = s.RoleARN
 		a.RoleSessionName = s.RoleSessionName
+
+		if s.RoleSessionDuration > 0 {
+			a.RoleSessionDuration = s.RoleSessionDuration
+		}
+
 		return nil
 	}
 }

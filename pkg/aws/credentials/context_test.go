@@ -117,7 +117,7 @@ func TestEnsureContext(t *testing.T) {
 			assertFn: func(t *testing.T, cfg *Config, ctx context.Context) {
 				val := ctx.Value(ContextKey{cfg.CacheID})
 				assert.NotNil(t, val)
-				awsCfg, ok := val.(*aws.Config)
+				awsCfg, ok := val.(aws.Config)
 				assert.True(t, ok)
 				creds, err := awsCfg.Credentials.Retrieve(ctx)
 				assert.NoError(t, err)
