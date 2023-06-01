@@ -8,6 +8,8 @@ import (
 type BuildConfig struct {
 	OutputName string `hcl:"output_name,optional"`
 	Source     string `hcl:"source,optional"`
+
+	Labels map[string]string `hacl:"labels,optional"`
 }
 
 // Implement Configurable

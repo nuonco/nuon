@@ -2,6 +2,15 @@ syntax = "proto3";
 
 package terraform.v1;
 
+import "terraform/v1/artifact.proto";
+
 option go_package = "github.com/powertoolsdev/mono/pkg/types/terraform/v1";
 
-message Deployment {}
+message Deployment {
+  string bucket = 1;
+  string prefix = 2;
+  string state_key = 3;
+
+  Artifact artifact = 4;
+  map<string, string> labels = 5;
+}
