@@ -23,7 +23,7 @@ const (
 	defaultBuildTimeout time.Duration = time.Minute * 5
 )
 
-type activities struct {
+type Activities struct {
 	db                     *gorm.DB
 	githubAppID            string
 	githubAppKeySecretName string
@@ -31,7 +31,7 @@ type activities struct {
 	componentRepo          repos.ComponentRepo
 }
 
-func New(db *gorm.DB, githubAppID, githubAppKeySecretName string) *activities {
+func New(db *gorm.DB, githubAppID, githubAppKeySecretName string) *Activities {
 	// TODO fix up logger here
 	componentService := services.NewComponentService(db, zap.L())
 
@@ -40,7 +40,7 @@ func New(db *gorm.DB, githubAppID, githubAppKeySecretName string) *activities {
 	// The service has one, but doesn't expose it.
 	componentRepo := repos.NewComponentRepo(db)
 
-	return &activities{
+	return &Activities{
 		db:                     db,
 		githubAppID:            githubAppID,
 		githubAppKeySecretName: githubAppKeySecretName,
@@ -49,7 +49,7 @@ func New(db *gorm.DB, githubAppID, githubAppKeySecretName string) *activities {
 	}
 }
 
-func (a *activities) CreatePlanRequest(ctx context.Context, req *workflowbuildv1.BuildRequest) (*planv1.CreatePlanRequest, error) {
+func (a *Activities) CreatePlanRequest(ctx context.Context, req *workflowbuildv1.BuildRequest) (*planv1.CreatePlanRequest, error) {
 	// TODO fix up logger here
 	component, err := a.componentService.GetComponent(ctx, req.ComponentId)
 	if err != nil {
@@ -82,7 +82,7 @@ func (a *activities) CreatePlanRequest(ctx context.Context, req *workflowbuildv1
 }
 
 // AddVcsConfig populates the component's build config with vcs config data, if the component has a build config.
-func (a *activities) addVcsConfig(component *models.Component, gitRef, ghInstallID string) (*componentv1.Component, error) {
+func (a *Activities) addVcsConfig(component *models.Component, gitRef, ghInstallID string) (*componentv1.Component, error) {
 	dbConfig := &componentv1.Component{}
 	if err := protojson.Unmarshal([]byte(component.Config.String()), dbConfig); err != nil {
 		return nil, err

@@ -4,6 +4,7 @@ data "aws_iam_policy_document" "api" {
     actions = [
       "s3:ListBucket",
       "s3:*Object",
+      "sts:AssumeRole",
     ]
     resources = ["*", ]
   }
