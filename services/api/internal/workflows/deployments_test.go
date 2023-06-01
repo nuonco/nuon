@@ -6,13 +6,12 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
-	tmock "go.temporal.io/sdk/mocks"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -38,32 +37,24 @@ func Test_deploymentWorkflowManager_Start(t *testing.T) {
 	deployment.Component.App.OrgID = orgID
 
 	tests := map[string]struct {
-		clientFn    func(*gomock.Controller) temporal.Client
-		assertFn    func(*testing.T, temporal.Client, string)
+		clientFn    func(*gomock.Controller) workflows.Client
+		assertFn    func(*testing.T, workflows.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
-				mock := temporal.NewMockClient(mockCtl)
-
-				workflowRun := &tmock.WorkflowRun{}
-				workflowRun.On("GetID").Return("12345")
-
-				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "deployments", gomock.Any(), gomock.Any(), gomock.Any()).Return(workflowRun, nil)
+			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
+				mock := workflows.NewMockClient(mockCtl)
+				mock.EXPECT().TriggerDeploymentStart(gomock.Any(), gomock.Any()).Return("12345", nil)
 				return mock
 			},
-			assertFn: func(t *testing.T, client temporal.Client, resp string) {
+			assertFn: func(t *testing.T, client workflows.Client, resp string) {
 				assert.Equal(t, "12345", resp)
 			},
 		},
 		"error": {
-			clientFn: func(mockCtl *gomock.Controller) temporal.Client {
-				mock := temporal.NewMockClient(mockCtl)
-
-				workflowRun := &tmock.WorkflowRun{}
-				workflowRun.On("GetID").Return("12345")
-
-				mock.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "deployments", gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errDeploymentProvisionTest)
+			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
+				mock := workflows.NewMockClient(mockCtl)
+				mock.EXPECT().TriggerDeploymentStart(gomock.Any(), gomock.Any()).Return("", errDeploymentProvisionTest)
 				return mock
 			},
 			errExpected: errDeploymentProvisionTest,

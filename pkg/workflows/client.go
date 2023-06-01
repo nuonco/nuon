@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
@@ -21,17 +22,19 @@ type Client interface {
 	UnscheduleCanaryProvision(context.Context, string) error
 	TriggerCanaryDeprovision(context.Context, *canaryv1.DeprovisionRequest) error
 
-	TriggerDeploymentStart(context.Context, *deploymentsv1.StartRequest) error
+	TriggerDeploymentStart(context.Context, *deploymentsv1.StartRequest) (string, error)
 	ExecDeploymentStart(context.Context, *deploymentsv1.StartRequest) (*deploymentsv1.StartResponse, error)
 
-	TriggerInstallProvision(context.Context, *installsv1.ProvisionRequest) error
-	TriggerInstallDeprovision(context.Context, *installsv1.DeprovisionRequest) error
+	TriggerInstallProvision(context.Context, *installsv1.ProvisionRequest) (string, error)
+	TriggerInstallDeprovision(context.Context, *installsv1.DeprovisionRequest) (string, error)
 
-	TriggerOrgSignup(context.Context, *orgsv1.SignupRequest) error
+	TriggerOrgSignup(context.Context, *orgsv1.SignupRequest) (string, error)
 	ExecOrgSignup(context.Context, *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error)
-	TriggerOrgTeardown(context.Context, *orgsv1.TeardownRequest) error
+	TriggerOrgTeardown(context.Context, *orgsv1.TeardownRequest) (string, error)
 
 	ExecCreatePlan(ctx context.Context, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error)
+
+	TriggerAppProvision(context.Context, *appsv1.ProvisionRequest) (string, error)
 }
 
 type workflowsClient struct {

@@ -3,7 +3,7 @@ package createorg
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	pkgWorkflows "github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 )
 
@@ -11,9 +11,9 @@ type activities struct {
 	mgr workflows.OrgWorkflowManager
 }
 
-func NewActivities(tc temporal.Client) *activities {
+func NewActivities(workflowsClient pkgWorkflows.Client) *activities {
 	return &activities{
-		mgr: workflows.NewOrgWorkflowManager(tc),
+		mgr: workflows.NewOrgWorkflowManager(workflowsClient),
 	}
 }
 

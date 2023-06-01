@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/stretchr/testify/assert"
+	tmock "go.temporal.io/sdk/mocks"
 )
 
 func Test_repo_TriggerInstallDeprovision(t *testing.T) {
@@ -22,7 +23,9 @@ func Test_repo_TriggerInstallDeprovision(t *testing.T) {
 		"happy path": {
 			client: func(t *testing.T, mockCtl *gomock.Controller) temporal.Client {
 				client := temporal.NewMockClient(mockCtl)
-				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), "Deprovision", gomock.Any()).Return(nil, nil)
+				workflowRun := &tmock.WorkflowRun{}
+				workflowRun.On("GetID").Return("12345")
+				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), "Deprovision", gomock.Any()).Return(workflowRun, nil)
 				return client
 			},
 		},
@@ -46,7 +49,7 @@ func Test_repo_TriggerInstallDeprovision(t *testing.T) {
 				TemporalClient: client,
 			}
 
-			err := repo.TriggerInstallDeprovision(ctx, req)
+			_, err := repo.TriggerInstallDeprovision(ctx, req)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
@@ -66,7 +69,9 @@ func Test_repo_TriggerInstallProvision(t *testing.T) {
 		"happy path": {
 			client: func(t *testing.T, mockCtl *gomock.Controller) temporal.Client {
 				client := temporal.NewMockClient(mockCtl)
-				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), "Provision", gomock.Any()).Return(nil, nil)
+				workflowRun := &tmock.WorkflowRun{}
+				workflowRun.On("GetID").Return("12345")
+				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(), "installs", gomock.Any(), "Provision", gomock.Any()).Return(workflowRun, nil)
 				return client
 			},
 		},
@@ -90,7 +95,7 @@ func Test_repo_TriggerInstallProvision(t *testing.T) {
 				TemporalClient: client,
 			}
 
-			err := repo.TriggerInstallProvision(ctx, req)
+			_, err := repo.TriggerInstallProvision(ctx, req)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
