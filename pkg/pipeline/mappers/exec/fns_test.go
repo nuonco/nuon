@@ -3,6 +3,7 @@ package exec
 import (
 	"context"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
@@ -12,6 +13,10 @@ import (
 //go:generate mockgen -destination=fns_mock_test.go -source=fns_test.go -package=exec
 type ui interface {
 	terminal.UI
+}
+
+type hcLog interface {
+	hclog.Logger
 }
 
 type testExecFns interface {

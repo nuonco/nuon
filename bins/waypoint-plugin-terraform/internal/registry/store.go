@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	terraformv1 "github.com/powertoolsdev/mono/pkg/types/plugins/terraform/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/registry/remote"
@@ -25,7 +26,7 @@ func (r *Registry) getStore() (*file.Store, error) {
 	return fs, nil
 }
 
-func (r *Registry) pushArtifact(ctx context.Context, store *file.Store, accessInfo *AccessInfo) error {
+func (r *Registry) pushArtifact(ctx context.Context, store *file.Store, accessInfo *terraformv1.AccessInfo) error {
 	repo, err := remote.NewRepository(accessInfo.Image)
 	if err != nil {
 		return fmt.Errorf("unable to get repository: %w", err)

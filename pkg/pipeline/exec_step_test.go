@@ -7,18 +7,17 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	gomock "github.com/golang/mock/gomock"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=exec_step_mock_test.go -source=exec_step_test.go -package=pipeline
 type testStepFunctions interface {
-	ValidExecFn(context.Context, *zap.Logger, terminal.UI) ([]byte, error)
-	ValidCallbackFn(context.Context, *zap.Logger, terminal.UI, []byte) error
+	ValidExecFn(context.Context, hclog.Logger, terminal.UI) ([]byte, error)
+	ValidCallbackFn(context.Context, hclog.Logger, terminal.UI, []byte) error
 }
 
 func TestPipeline_execStep(t *testing.T) {
@@ -27,8 +26,8 @@ func TestPipeline_execStep(t *testing.T) {
 	stepName := generics.GetFakeObj[string]()
 
 	v := validator.New()
-	l := zaptest.NewLogger(t)
 	ui := NewMockui(nil)
+	l := NewMockhcLog(nil)
 
 	tests := map[string]struct {
 		stepFn      func(*gomock.Controller, context.Context) *Step

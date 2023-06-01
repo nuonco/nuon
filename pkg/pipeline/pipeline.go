@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
-	"go.uber.org/zap"
 )
 
 // Pipeline is a type that is used to execute various commands in succession, with fail/retry logic as well as callbacks
@@ -19,8 +19,8 @@ type Pipeline struct {
 
 	Steps []*Step `validate_steps:"required,gt=1"`
 
-	Log *zap.Logger `validate:"required"`
-	UI  terminal.UI `validate:"required"`
+	Log hclog.Logger `validate:"required"`
+	UI  terminal.UI  `validate:"required"`
 }
 
 type pipelineOption func(*Pipeline) error
@@ -53,7 +53,7 @@ func WithUI(ui terminal.UI) pipelineOption {
 	}
 }
 
-func WithLogger(l *zap.Logger) pipelineOption {
+func WithLogger(l hclog.Logger) pipelineOption {
 	return func(p *Pipeline) error {
 		p.Log = l
 		return nil

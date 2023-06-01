@@ -6,15 +6,14 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap/zaptest"
 )
 
 func TestPipeline_AddStep(t *testing.T) {
 	v := validator.New()
-	l := zaptest.NewLogger(t)
 	ui := NewMockui(nil)
+	l := NewMockhcLog(nil)
 
-	t.Run("successfully adds test to internal", func(t *testing.T) {
+	t.Run("successfully adds step", func(t *testing.T) {
 		pipe, err := New(v, WithLogger(l),
 			WithUI(ui),
 		)

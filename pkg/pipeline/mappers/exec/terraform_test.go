@@ -11,11 +11,10 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/powertoolsdev/mono/pkg/pipeline"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap/zaptest"
 )
 
 func TestTerraform(t *testing.T) {
-	l := zaptest.NewLogger(t)
+	l := NewMockhcLog(nil)
 	ui := NewMockui(nil)
 	terraformErr := fmt.Errorf("error terraform mapper")
 

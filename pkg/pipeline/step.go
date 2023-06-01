@@ -3,15 +3,15 @@ package pipeline
 import (
 	"context"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
-	"go.uber.org/zap"
 )
 
 // ExecFn is a function used to execute a step
-type ExecFn func(context.Context, *zap.Logger, terminal.UI) ([]byte, error)
+type ExecFn func(context.Context, hclog.Logger, terminal.UI) ([]byte, error)
 
 // CallbackFn is a function used to send the outputs of an exec, as a callback
-type CallbackFn func(context.Context, *zap.Logger, terminal.UI, []byte) error
+type CallbackFn func(context.Context, hclog.Logger, terminal.UI, []byte) error
 
 type Step struct {
 	Name       string     `validate:"required"`
