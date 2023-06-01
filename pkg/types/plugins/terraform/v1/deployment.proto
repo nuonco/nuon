@@ -7,10 +7,11 @@ import "terraform/v1/artifact.proto";
 option go_package = "github.com/powertoolsdev/mono/pkg/types/terraform/v1";
 
 message Deployment {
-  string bucket = 1;
-  string prefix = 2;
+  string output_bucket = 1;
+  string output_prefix = 2;
   string state_key = 3;
+  string state_bucket = 4;
 
-  Artifact artifact = 4;
-  map<string, string> labels = 5;
+  Artifact artifact = 5;
+  map<string, string> labels = 6;
 }

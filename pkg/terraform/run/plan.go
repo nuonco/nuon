@@ -26,10 +26,9 @@ func (r *run) Plan(ctx context.Context) error {
 func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 	pipe, err := pipeline.New(r.v)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get destroy pipeline: %w", err)
+		return nil, fmt.Errorf("unable to create pipeline: %w", err)
 	}
 
-	// initialize steps to load the workspace
 	pipe.AddStep(&pipeline.Step{
 		Name:       "initialize workspace",
 		ExecFn:     execmappers.MapInit(r.Workspace.Init),
@@ -55,21 +54,53 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		ExecFn:     execmappers.MapInit(r.Workspace.LoadVariables),
 		CallbackFn: callbackmappers.Noop,
 	})
+
+	planCb, err := callbackmappers.NewS3Callback(r.v,
+		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
+		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
+			Bucket:       r.OutputSettings.Bucket,
+			BucketPrefix: r.OutputSettings.Prefix,
+			Filename:     "plan.json",
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create plan cb: %w", err)
+	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "plan",
 		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.Plan),
-		CallbackFn: callbackmappers.Noop,
+		CallbackFn: planCb,
 	})
+
+	outputCb, err := callbackmappers.NewS3Callback(r.v,
+		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
+		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
+			Bucket:       r.OutputSettings.Bucket,
+			BucketPrefix: r.OutputSettings.Prefix,
+			Filename:     "output.json",
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create output cb: %w", err)
+	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get output",
 		ExecFn:     execmappers.MapTerraformOutput(r.Workspace.Output),
-		CallbackFn: callbackmappers.Noop,
+		CallbackFn: outputCb,
 	})
+
+	stateCb, err := callbackmappers.NewS3Callback(r.v,
+		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
+		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
+			Bucket:       r.OutputSettings.Bucket,
+			BucketPrefix: r.OutputSettings.Prefix,
+			Filename:     "state.json",
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create output cb: %w", err)
+	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get state",
 		ExecFn:     execmappers.MapTerraformState(r.Workspace.Show),
-		CallbackFn: callbackmappers.Noop,
+		CallbackFn: stateCb,
 	})
-
 	return pipe, nil
 }

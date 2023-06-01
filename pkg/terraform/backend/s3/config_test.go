@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,8 +14,12 @@ import (
 func Test_s3_ConfigFile(t *testing.T) {
 	v := validator.New()
 	bucketCfg := generics.GetFakeObj[*BucketConfig]()
-	iamCfg := generics.GetFakeObj[*IAMConfig]()
-	creds := generics.GetFakeObj[*Credentials]()
+
+	staticCreds := generics.GetFakeObj[*credentials.Config]()
+	staticCreds.AssumeRoleConfig = credentials.AssumeRoleConfig{}
+
+	assumeCreds := generics.GetFakeObj[*credentials.Config]()
+	assumeCreds.StaticCredentials = credentials.StaticCredentials{}
 
 	tests := map[string]struct {
 		backendFn   func(*testing.T) *s3
@@ -23,7 +28,9 @@ func Test_s3_ConfigFile(t *testing.T) {
 	}{
 		"creds backend": {
 			backendFn: func(t *testing.T) *s3 {
-				s, err := New(v, WithBucketConfig(bucketCfg), WithCredentials(creds))
+				s, err := New(v,
+					WithBucketConfig(bucketCfg),
+					WithCredentials(staticCreds))
 				assert.NoError(t, err)
 				return s
 			},
@@ -32,9 +39,9 @@ func Test_s3_ConfigFile(t *testing.T) {
 				err := json.Unmarshal(byts, &resp)
 				assert.NoError(t, err)
 
-				assert.Equal(t, resp["access_key"], creds.AWSAccessKeyID)
-				assert.Equal(t, resp["secret_key"], creds.AWSSecretAccessKey)
-				assert.Equal(t, resp["token"], creds.AWSSessionToken)
+				assert.Equal(t, resp["access_key"], staticCreds.AccessKeyID)
+				assert.Equal(t, resp["secret_key"], staticCreds.SecretAccessKey)
+				assert.Equal(t, resp["token"], staticCreds.SessionToken)
 
 				assert.Equal(t, resp["bucket"], bucketCfg.Name)
 				assert.Equal(t, resp["key"], bucketCfg.Key)
@@ -51,7 +58,10 @@ func Test_s3_ConfigFile(t *testing.T) {
 		},
 		"iam backend": {
 			backendFn: func(t *testing.T) *s3 {
-				s, err := New(v, WithBucketConfig(bucketCfg), WithIAMConfig(iamCfg))
+				s, err := New(v,
+					WithBucketConfig(bucketCfg),
+					WithCredentials(assumeCreds),
+				)
 				assert.NoError(t, err)
 				return s
 			},
@@ -60,8 +70,8 @@ func Test_s3_ConfigFile(t *testing.T) {
 				err := json.Unmarshal(byts, &resp)
 				assert.NoError(t, err)
 
-				assert.Equal(t, resp["role_arn"], iamCfg.RoleARN)
-				assert.Equal(t, resp["session_name"], iamCfg.SessionName)
+				assert.Equal(t, resp["role_arn"], assumeCreds.RoleARN)
+				assert.Equal(t, resp["session_name"], assumeCreds.SessionName)
 
 				assert.Equal(t, resp["bucket"], bucketCfg.Name)
 				assert.Equal(t, resp["key"], bucketCfg.Key)

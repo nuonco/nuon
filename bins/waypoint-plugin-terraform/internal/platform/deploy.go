@@ -2,11 +2,10 @@ package platform
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
-	"github.com/powertoolsdev/mono/pkg/terraform/run"
 	terraformv1 "github.com/powertoolsdev/mono/pkg/types/plugins/terraform/v1"
 )
 
@@ -19,15 +18,12 @@ func (p *Platform) deploy(
 	ji *component.JobInfo,
 	artifact *terraformv1.Artifact,
 	ui terminal.UI,
+	log hclog.Logger,
 ) (*terraformv1.Deployment, error) {
-	tfRun, err := run.New(p.v, run.WithWorkspace(p.Workspace))
-	if err != nil {
-		return nil, fmt.Errorf("unable to create run: %w", err)
+	runTyp := runTypeApply
+	if p.Cfg.PlanOnly {
+		runTyp = runTypePlan
 	}
 
-	if err := tfRun.Apply(ctx); err != nil {
-		return nil, fmt.Errorf("unable to apply terraform: %w", err)
-	}
-
-	return nil, nil
+	return p.execRun(ctx, runTyp, ji, artifact, ui, log)
 }

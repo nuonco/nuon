@@ -27,19 +27,19 @@ func EnsureContext(ctx context.Context, cfg *Config) (context.Context, error) {
 }
 
 // FromContext fetches credentials from the context
-func FromContext(ctx context.Context, cfg *Config) (*aws.Config, error) {
+func FromContext(ctx context.Context, cfg *Config) (aws.Config, error) {
 	if cfg.CacheID == "" {
-		return nil, fmt.Errorf("no cache id set")
+		return aws.Config{}, fmt.Errorf("no cache id set")
 	}
 
 	val := ctx.Value(ContextKey{cfg.CacheID})
 	if val == nil {
-		return nil, fmt.Errorf("credentials not found: %s", cfg.CacheID)
+		return aws.Config{}, fmt.Errorf("credentials not found: %s", cfg.CacheID)
 	}
 
-	creds, ok := val.(*aws.Config)
+	creds, ok := val.(aws.Config)
 	if !ok {
-		return nil, fmt.Errorf("invalid credentials found in context: %T", val)
+		return aws.Config{}, fmt.Errorf("invalid credentials found in context: %T", val)
 	}
 
 	return creds, nil
