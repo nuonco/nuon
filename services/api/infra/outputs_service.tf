@@ -36,3 +36,8 @@ output "db_instance_username" {
 output "org_iam_role_name_templates" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.org_iam_role_name_templates)
 }
+
+output "buckets" {
+  description = "buckets used to store vendor data"
+  value       = nonsensitive(data.tfe_outputs.infra-orgs.values.buckets)
+}
