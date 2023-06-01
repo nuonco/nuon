@@ -8,7 +8,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 )
 
-func (wfClient *workflowsClient) ScheduleCanaryProvision(ctx context.Context, id, schedule string, req *canaryv1.ProvisionRequest) error {
+func (w *workflowsClient) ScheduleCanaryProvision(ctx context.Context, id, schedule string, req *canaryv1.ProvisionRequest) error {
 	opts := tclient.StartWorkflowOptions{
 		ID:           id,
 		CronSchedule: schedule,
@@ -19,7 +19,7 @@ func (wfClient *workflowsClient) ScheduleCanaryProvision(ctx context.Context, id
 		},
 	}
 
-	_, err := wfClient.TemporalClient.ExecuteWorkflowInNamespace(ctx, "canary", opts, "Provision", req)
+	_, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "canary", opts, "Provision", req)
 	if err != nil {
 		return fmt.Errorf("unable to provision canary: %w", err)
 	}
@@ -27,15 +27,15 @@ func (wfClient *workflowsClient) ScheduleCanaryProvision(ctx context.Context, id
 	return nil
 }
 
-func (wfClient *workflowsClient) UnscheduleCanaryProvision(ctx context.Context, id string) error {
-	if err := wfClient.TemporalClient.CancelWorkflowInNamespace(ctx, "canary", id, ""); err != nil {
+func (w *workflowsClient) UnscheduleCanaryProvision(ctx context.Context, id string) error {
+	if err := w.TemporalClient.CancelWorkflowInNamespace(ctx, "canary", id, ""); err != nil {
 		return fmt.Errorf("unable to provision canary: %w", err)
 	}
 
 	return nil
 }
 
-func (wfClient *workflowsClient) TriggerCanaryProvision(ctx context.Context, req *canaryv1.ProvisionRequest) error {
+func (w *workflowsClient) TriggerCanaryProvision(ctx context.Context, req *canaryv1.ProvisionRequest) error {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: DefaultTaskQueue,
 		Memo: map[string]interface{}{
@@ -44,7 +44,7 @@ func (wfClient *workflowsClient) TriggerCanaryProvision(ctx context.Context, req
 		},
 	}
 
-	_, err := wfClient.TemporalClient.ExecuteWorkflowInNamespace(ctx, "canary", opts, "Provision", req)
+	_, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "canary", opts, "Provision", req)
 	if err != nil {
 		return fmt.Errorf("unable to provision canary: %w", err)
 	}
@@ -52,7 +52,7 @@ func (wfClient *workflowsClient) TriggerCanaryProvision(ctx context.Context, req
 	return nil
 }
 
-func (wfClient *workflowsClient) TriggerCanaryDeprovision(ctx context.Context, req *canaryv1.DeprovisionRequest) error {
+func (w *workflowsClient) TriggerCanaryDeprovision(ctx context.Context, req *canaryv1.DeprovisionRequest) error {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: DefaultTaskQueue,
 		Memo: map[string]interface{}{
@@ -61,7 +61,7 @@ func (wfClient *workflowsClient) TriggerCanaryDeprovision(ctx context.Context, r
 		},
 	}
 
-	_, err := wfClient.TemporalClient.ExecuteWorkflowInNamespace(ctx, "canary", opts, "Deprovision", req)
+	_, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "canary", opts, "Deprovision", req)
 	if err != nil {
 		return fmt.Errorf("unable to provision canary: %w", err)
 	}

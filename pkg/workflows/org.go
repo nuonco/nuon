@@ -9,7 +9,7 @@ import (
 )
 
 // TODO(jm): eventually rename this workflow to Provision
-func (wfClient *workflowsClient) TriggerOrgSignup(ctx context.Context, req *orgsv1.SignupRequest) error {
+func (w *workflowsClient) TriggerOrgSignup(ctx context.Context, req *orgsv1.SignupRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: DefaultTaskQueue,
 		Memo: map[string]interface{}{
@@ -18,15 +18,15 @@ func (wfClient *workflowsClient) TriggerOrgSignup(ctx context.Context, req *orgs
 		},
 	}
 
-	_, err := wfClient.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Signup", req)
+	workflowRun, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Signup", req)
 	if err != nil {
-		return fmt.Errorf("unable to start deployment: %w", err)
+		return "", fmt.Errorf("unable to start deployment: %w", err)
 	}
 
-	return nil
+	return workflowRun.GetID(), nil
 }
 
-func (wfClient *workflowsClient) TriggerOrgTeardown(ctx context.Context, req *orgsv1.TeardownRequest) error {
+func (w *workflowsClient) TriggerOrgTeardown(ctx context.Context, req *orgsv1.TeardownRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: DefaultTaskQueue,
 		Memo: map[string]interface{}{
@@ -35,15 +35,15 @@ func (wfClient *workflowsClient) TriggerOrgTeardown(ctx context.Context, req *or
 		},
 	}
 
-	_, err := wfClient.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Teardown", req)
+	workflowRun, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Teardown", req)
 	if err != nil {
-		return fmt.Errorf("unable to start teardown: %w", err)
+		return "", fmt.Errorf("unable to start teardown: %w", err)
 	}
 
-	return nil
+	return workflowRun.GetID(), nil
 }
 
-func (wfClient *workflowsClient) ExecOrgSignup(ctx context.Context, req *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error) {
+func (w *workflowsClient) ExecOrgSignup(ctx context.Context, req *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error) {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: DefaultTaskQueue,
 		Memo: map[string]interface{}{
@@ -53,7 +53,7 @@ func (wfClient *workflowsClient) ExecOrgSignup(ctx context.Context, req *orgsv1.
 	}
 
 	resp := &orgsv1.SignupResponse{}
-	fut, err := wfClient.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Signup", req)
+	fut, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Signup", req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to start signup: %w", err)
 	}
