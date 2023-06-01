@@ -3,7 +3,7 @@ package createorg
 import (
 	"context"
 
-	pkgWorkflows "github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 )
 
@@ -11,7 +11,7 @@ type activities struct {
 	mgr workflows.OrgWorkflowManager
 }
 
-func NewActivities(workflowsClient pkgWorkflows.Client) *activities {
+func NewActivities(workflowsClient workflowsclient.Client) *activities {
 	return &activities{
 		mgr: workflows.NewOrgWorkflowManager(workflowsClient),
 	}

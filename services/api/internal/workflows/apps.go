@@ -4,13 +4,13 @@ import (
 	"context"
 
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_apps.go -source=apps.go -package=workflows
-func NewAppWorkflowManager(workflowsClient workflows.Client) *appWorkflowManager {
+func NewAppWorkflowManager(workflowsClient workflowsclient.Client) *appWorkflowManager {
 	return &appWorkflowManager{
 		workflowsClient: workflowsClient,
 	}
@@ -23,7 +23,7 @@ type AppWorkflowManager interface {
 var _ AppWorkflowManager = (*appWorkflowManager)(nil)
 
 type appWorkflowManager struct {
-	workflowsClient workflows.Client
+	workflowsClient workflowsclient.Client
 }
 
 func (a *appWorkflowManager) Provision(ctx context.Context, app *models.App) (string, error) {

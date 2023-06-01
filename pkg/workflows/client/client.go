@@ -1,4 +1,4 @@
-package workflows
+package client
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
-//go:generate mockgen -destination=mock_client.go -source=client.go -package=workflows
+//go:generate mockgen -destination=mock_client.go -source=client.go -package=client
 type Client interface {
 	TriggerCanaryProvision(context.Context, *canaryv1.ProvisionRequest) error
 	ScheduleCanaryProvision(context.Context, string, string, *canaryv1.ProvisionRequest) error
