@@ -3,25 +3,20 @@ package workflows
 import (
 	"context"
 
-	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
-	tclient "go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/temporal"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_installs.go -source=installs.go -package=workflows
 
-func NewInstallWorkflowManager(tclient temporalclient.Client) *installWorkflowManager {
-	return &installWorkflowManager{
-		tc: tclient,
-	}
+func NewInstallWorkflowManager(workflowsClient workflows.Client) *installWorkflowManager {
+	return &installWorkflowManager{workflowsClient}
 }
 
 type installWorkflowManager struct {
-	tc temporalclient.Client
+	workflowsClient workflows.Client
 }
 
 type InstallWorkflowManager interface {
@@ -32,21 +27,6 @@ type InstallWorkflowManager interface {
 var _ InstallWorkflowManager = (*installWorkflowManager)(nil)
 
 func (i *installWorkflowManager) Provision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) (string, error) {
-	opts := tclient.StartWorkflowOptions{
-		ID:        install.ID,
-		TaskQueue: workflows.DefaultTaskQueue,
-		RetryPolicy: &temporal.RetryPolicy{
-			MaximumAttempts: 1,
-		},
-		// Memo is non-indexed metadata available when listing workflows
-		Memo: map[string]interface{}{
-			"org-id":     orgID,
-			"app-id":     install.AppID,
-			"install-id": install.ID,
-			"started-by": "api",
-		},
-	}
-
 	args := &installsv1.ProvisionRequest{
 		OrgId:     orgID,
 		AppId:     install.AppID,
@@ -62,28 +42,14 @@ func (i *installWorkflowManager) Provision(ctx context.Context, install *models.
 		},
 	}
 
-	workflow, err := i.tc.ExecuteWorkflowInNamespace(ctx, "installs", opts, "Provision", args)
+	workflowID, err := i.workflowsClient.TriggerInstallProvision(ctx, args)
 	if err != nil {
 		return "", err
 	}
-	return workflow.GetID(), err
+	return workflowID, err
 }
 
 func (i *installWorkflowManager) Deprovision(ctx context.Context, install *models.Install, orgID string, sandboxVersion *models.SandboxVersion) (string, error) {
-	opts := tclient.StartWorkflowOptions{
-		TaskQueue: workflows.DefaultTaskQueue,
-		RetryPolicy: &temporal.RetryPolicy{
-			MaximumAttempts: 1,
-		},
-		// Memo is non-indexed metadata available when listing workflows
-		Memo: map[string]interface{}{
-			"org-id":     orgID,
-			"app-id":     install.AppID,
-			"install-id": install.ID,
-			"started-by": "api",
-		},
-	}
-
 	args := &installsv1.DeprovisionRequest{
 		OrgId:     orgID,
 		AppId:     install.AppID,
@@ -99,9 +65,9 @@ func (i *installWorkflowManager) Deprovision(ctx context.Context, install *model
 		},
 	}
 
-	workflow, err := i.tc.ExecuteWorkflowInNamespace(ctx, "installs", opts, "Deprovision", args)
+	workflowID, err := i.workflowsClient.TriggerInstallDeprovision(ctx, args)
 	if err != nil {
 		return "", err
 	}
-	return workflow.GetID(), err
+	return workflowID, err
 }
