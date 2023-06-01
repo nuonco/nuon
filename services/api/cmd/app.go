@@ -51,10 +51,14 @@ type app struct {
 func newApp(flags *pflag.FlagSet) (*app, error) {
 	var cfg internal.Config
 	if err := config.LoadInto(flags, &cfg); err != nil {
-		return nil, fmt.Errorf("unable to load config: %s", err)
+		return nil, fmt.Errorf("unable to load config: %w", err)
 	}
 
 	v := validator.New()
+	if err := v.Struct(cfg); err != nil {
+		return nil, fmt.Errorf("unable to validate config: %w", err)
+	}
+
 	l, err := initializeLogger(&cfg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize logger: %w", err)
