@@ -88,6 +88,21 @@ func TestDeploymentPath(t *testing.T) {
 	assert.NotContains(t, prefix, "phase=")
 }
 
+func TestBuildPath(t *testing.T) {
+	obj := generics.GetFakeObj[build]()
+
+	prefix := BuildPath(obj.OrgID, obj.AppID, obj.ComponentID, obj.BuildID)
+	expectedKVs := [][2]string{
+		{"org", obj.OrgID},
+		{"app", obj.AppID},
+		{"component", obj.ComponentID},
+		{"build", obj.BuildID},
+	}
+	for _, kv := range expectedKVs {
+		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
+	}
+}
+
 func TestAppPath(t *testing.T) {
 	obj := generics.GetFakeObj[app]()
 
