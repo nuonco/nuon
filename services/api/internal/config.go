@@ -3,7 +3,7 @@ package internal
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 )
 
@@ -25,7 +25,7 @@ func init() {
 
 	// defaults for temporal
 	config.RegisterDefault("temporal_namespace", "api")
-	config.RegisterDefault("temporal_task_queue", workflows.APITaskQueue)
+	config.RegisterDefault("temporal_task_queue", workflowsclient.APITaskQueue)
 
 	// default for github
 	config.RegisterDefault("github_app_id", "261597")

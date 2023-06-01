@@ -7,7 +7,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,23 +16,23 @@ func Test_orgWorkflowManager_Provision(t *testing.T) {
 	orgID, _ := shortid.NewNanoID("org")
 
 	tests := map[string]struct {
-		clientFn    func(*gomock.Controller) workflows.Client
-		assertFn    func(*testing.T, workflows.Client, string)
+		clientFn    func(*gomock.Controller) workflowsclient.Client
+		assertFn    func(*testing.T, workflowsclient.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
-				mock := workflows.NewMockClient(mockCtl)
+			clientFn: func(mockCtl *gomock.Controller) workflowsclient.Client {
+				mock := workflowsclient.NewMockClient(mockCtl)
 				mock.EXPECT().TriggerOrgSignup(gomock.Any(), gomock.Any()).Return("12345", nil)
 				return mock
 			},
-			assertFn: func(t *testing.T, client workflows.Client, resp string) {
+			assertFn: func(t *testing.T, client workflowsclient.Client, resp string) {
 				assert.Equal(t, resp, "12345")
 			},
 		},
 		"error": {
-			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
-				mock := workflows.NewMockClient(mockCtl)
+			clientFn: func(mockCtl *gomock.Controller) workflowsclient.Client {
+				mock := workflowsclient.NewMockClient(mockCtl)
 				mock.EXPECT().TriggerOrgSignup(gomock.Any(), gomock.Any()).Return("", errOrgProvisionTest)
 				return mock
 			},
@@ -63,23 +63,23 @@ func Test_orgWorkflowManager_Deprovision(t *testing.T) {
 	orgID, _ := shortid.NewNanoID("org")
 
 	tests := map[string]struct {
-		clientFn    func(*gomock.Controller) workflows.Client
-		assertFn    func(*testing.T, workflows.Client, string)
+		clientFn    func(*gomock.Controller) workflowsclient.Client
+		assertFn    func(*testing.T, workflowsclient.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
-				mock := workflows.NewMockClient(mockCtl)
+			clientFn: func(mockCtl *gomock.Controller) workflowsclient.Client {
+				mock := workflowsclient.NewMockClient(mockCtl)
 				mock.EXPECT().TriggerOrgTeardown(gomock.Any(), gomock.Any()).Return("12345", nil)
 				return mock
 			},
-			assertFn: func(t *testing.T, client workflows.Client, resp string) {
+			assertFn: func(t *testing.T, client workflowsclient.Client, resp string) {
 				assert.Equal(t, "12345", resp)
 			},
 		},
 		"error": {
-			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
-				mock := workflows.NewMockClient(mockCtl)
+			clientFn: func(mockCtl *gomock.Controller) workflowsclient.Client {
+				mock := workflowsclient.NewMockClient(mockCtl)
 				mock.EXPECT().TriggerOrgTeardown(gomock.Any(), gomock.Any()).Return("", errOrgDeprovisionTest)
 				return mock
 			},
