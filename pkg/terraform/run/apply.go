@@ -54,20 +54,53 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		ExecFn:     execmappers.MapInit(r.Workspace.LoadVariables),
 		CallbackFn: callbackmappers.Noop,
 	})
+
+	applyCb, err := callbackmappers.NewS3Callback(r.v,
+		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
+		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
+			Bucket:       r.OutputSettings.Bucket,
+			BucketPrefix: r.OutputSettings.Prefix,
+			Filename:     "apply.json",
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create apply cb: %w", err)
+	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "apply",
 		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.Apply),
-		CallbackFn: callbackmappers.Noop,
+		CallbackFn: applyCb,
 	})
+
+	outputCb, err := callbackmappers.NewS3Callback(r.v,
+		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
+		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
+			Bucket:       r.OutputSettings.Bucket,
+			BucketPrefix: r.OutputSettings.Prefix,
+			Filename:     "output.json",
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create output cb: %w", err)
+	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get output",
 		ExecFn:     execmappers.MapTerraformOutput(r.Workspace.Output),
-		CallbackFn: callbackmappers.Noop,
+		CallbackFn: outputCb,
 	})
+
+	stateCb, err := callbackmappers.NewS3Callback(r.v,
+		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
+		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
+			Bucket:       r.OutputSettings.Bucket,
+			BucketPrefix: r.OutputSettings.Prefix,
+			Filename:     "state.json",
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create output cb: %w", err)
+	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get state",
 		ExecFn:     execmappers.MapTerraformState(r.Workspace.Show),
-		CallbackFn: callbackmappers.Noop,
+		CallbackFn: stateCb,
 	})
 
 	return pipe, nil

@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,6 +28,7 @@ func TestNew(t *testing.T) {
 	wkspace := workspace.NewMockWorkspace(nil)
 	ui := NewMockui(nil)
 	log := NewMockhcLog(nil)
+	outputSettings := generics.GetFakeObj[*OutputSettings]()
 
 	tests := map[string]struct {
 		errExpected error
@@ -39,6 +41,7 @@ func TestNew(t *testing.T) {
 					WithWorkspace(wkspace),
 					WithLogger(log),
 					WithUI(ui),
+					WithOutputSettings(outputSettings),
 				}
 			},
 			assertFn: func(t *testing.T, e *run) {
@@ -50,6 +53,7 @@ func TestNew(t *testing.T) {
 				return []runOption{
 					WithLogger(log),
 					WithUI(ui),
+					WithOutputSettings(outputSettings),
 				}
 			},
 			errExpected: fmt.Errorf("Workspace"),
@@ -58,6 +62,7 @@ func TestNew(t *testing.T) {
 			optsFn: func() []runOption {
 				return []runOption{
 					WithWorkspace(wkspace),
+					WithOutputSettings(outputSettings),
 					WithLogger(log),
 				}
 			},
@@ -68,9 +73,20 @@ func TestNew(t *testing.T) {
 				return []runOption{
 					WithWorkspace(wkspace),
 					WithUI(ui),
+					WithOutputSettings(outputSettings),
 				}
 			},
 			errExpected: fmt.Errorf("Log"),
+		},
+		"missing output settings": {
+			optsFn: func() []runOption {
+				return []runOption{
+					WithWorkspace(wkspace),
+					WithUI(ui),
+					WithLogger(log),
+				}
+			},
+			errExpected: fmt.Errorf("OutputSettings"),
 		},
 	}
 

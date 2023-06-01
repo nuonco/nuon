@@ -4,20 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 
 // backendConfig represents the full backend configuration
 type backendConfig struct {
 	*BucketConfig
-	*Credentials
-	*IAMConfig
+	*credentials.Config
 }
 
 func (s *s3) ConfigFile(ctx context.Context) ([]byte, error) {
 	byts, err := json.Marshal(backendConfig{
 		s.Bucket,
 		s.Credentials,
-		s.IAM,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create config file: %w", err)

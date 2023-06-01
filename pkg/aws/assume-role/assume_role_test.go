@@ -3,6 +3,7 @@ package iam
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
@@ -24,9 +25,28 @@ func TestNew(t *testing.T) {
 				WithRoleARN("valid:role-arn"),
 				WithRoleSessionName("valid:session-name"),
 			},
-			expected: &assumer{RoleARN: "valid:role-arn", RoleSessionName: "valid:session-name"},
+			expected: &assumer{
+				RoleARN:             "valid:role-arn",
+				RoleSessionName:     "valid:session-name",
+				RoleSessionDuration: defaultRoleSessionDuration,
+			},
 		},
 		"happy path with settings": {
+			v: v,
+			opts: []assumerOptions{
+				WithSettings(Settings{
+					RoleARN:             "valid:role-arn",
+					RoleSessionName:     "valid:session-name",
+					RoleSessionDuration: time.Minute,
+				}),
+			},
+			expected: &assumer{
+				RoleARN:             "valid:role-arn",
+				RoleSessionName:     "valid:session-name",
+				RoleSessionDuration: time.Minute,
+			},
+		},
+		"happy path with settings with default session timeout": {
 			v: v,
 			opts: []assumerOptions{
 				WithSettings(Settings{
@@ -34,7 +54,11 @@ func TestNew(t *testing.T) {
 					RoleSessionName: "valid:session-name",
 				}),
 			},
-			expected: &assumer{RoleARN: "valid:role-arn", RoleSessionName: "valid:session-name"},
+			expected: &assumer{
+				RoleARN:             "valid:role-arn",
+				RoleSessionName:     "valid:session-name",
+				RoleSessionDuration: defaultRoleSessionDuration,
+			},
 		},
 		"invalid settings": {
 			v: v,

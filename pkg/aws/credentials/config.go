@@ -10,17 +10,17 @@ import (
 
 // AssumeRoleConfig is used for assuming an IAM role
 type AssumeRoleConfig struct {
-	ARN            string        `hcl:"role_arn,optional" validate:"required"`
-	SessionName    string        `hcl:"role_session_name,optional" validate:"required"`
-	SessionTimeout time.Duration `hcl:"role_session_name" validate:"optional"`
+	RoleARN         string        `hcl:"role_arn,optional" validate:"required" json:"role_arn,omitempty"`
+	SessionName     string        `hcl:"role_session_name,optional" validate:"required" json:"session_name,omitempty"`
+	SessionDuration time.Duration `hcl:"role_session_duration" json:"-"`
 }
 
 // StaticCredentials are used to create credentials ahead of time, and pass them around for use. Specifically, we do
 // this for creating credentials with an IAM role in our infra, so a plugin can push data back.
 type StaticCredentials struct {
-	AccessKeyID     string `hcl:"access_key_id,optional" validate:"required"`
-	SecretAccessKey string `hcl:"secret_access_key,optional" validate:"required"`
-	SessionToken    string `hcl:"session_token,optional" validate:"required"`
+	AccessKeyID     string `hcl:"access_key_id,optional" validate:"required" json:"access_key,omitempty"`
+	SecretAccessKey string `hcl:"secret_access_key,optional" validate:"required" json:"secret_key,omitempty"`
+	SessionToken    string `hcl:"session_token,optional" validate:"required" json:"token,omitempty"`
 }
 
 type Config struct {

@@ -7,8 +7,15 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
 )
+
+type OutputSettings struct {
+	Credentials *credentials.Config `validate:"required,dive"`
+	Bucket      string              `validate:"required"`
+	Prefix      string              `validate:"required"`
+}
 
 // Run accepts a workspace, and executes the provided command in it, uploading outputs to the correct place, afterwards.
 //
@@ -25,9 +32,10 @@ var _ Run = (*run)(nil)
 type run struct {
 	v *validator.Validate
 
-	Workspace workspace.Workspace `validate:"required"`
-	UI        terminal.UI         `validate:"required"`
-	Log       hclog.Logger        `validate:"required"`
+	Workspace      workspace.Workspace `validate:"required"`
+	UI             terminal.UI         `validate:"required"`
+	Log            hclog.Logger        `validate:"required"`
+	OutputSettings *OutputSettings     `validate:"required,dive"`
 }
 
 type runOption func(*run) error
@@ -47,6 +55,18 @@ func New(v *validator.Validate, opts ...runOption) (*run, error) {
 	}
 
 	return r, nil
+}
+
+func WithOutputSettings(settings *OutputSettings) runOption {
+	return func(r *run) error {
+		r.OutputSettings = settings
+
+		if err := r.v.Struct(settings); err != nil {
+			return fmt.Errorf("unable to validate settings: %w", err)
+		}
+
+		return nil
+	}
 }
 
 func WithWorkspace(w workspace.Workspace) runOption {
