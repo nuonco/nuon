@@ -126,6 +126,33 @@ func DeploymentPath(orgID, appID, componentName, deploymentID string) string {
 	}.toPath()
 }
 
+type build struct {
+	OrgID       string
+	AppID       string
+	ComponentID string
+	BuildID     string
+}
+
+func (b build) toPath() string {
+	base := fmt.Sprintf("org=%s/app=%s/component=%s/build=%s",
+		b.OrgID,
+		b.AppID,
+		b.ComponentID,
+		b.BuildID)
+
+	return base
+}
+
+// BuildPath returns the prefix for a build
+func BuildPath(orgID, appID, componentID, buildID string) string {
+	return build{
+		OrgID:       orgID,
+		AppID:       appID,
+		ComponentID: componentID,
+		BuildID:     buildID,
+	}.toPath()
+}
+
 type app struct {
 	OrgID string
 	AppID string
