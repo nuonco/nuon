@@ -8,7 +8,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,24 +23,24 @@ func Test_installWorkflowManager_Provision(t *testing.T) {
 	install.ID, _ = shortid.NewNanoID("inl")
 
 	tests := map[string]struct {
-		clientFn    func(*gomock.Controller) workflows.Client
-		assertFn    func(*testing.T, workflows.Client, string)
+		clientFn    func(*gomock.Controller) workflowsclient.Client
+		assertFn    func(*testing.T, workflowsclient.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
-				mock := workflows.NewMockClient(mockCtl)
+			clientFn: func(mockCtl *gomock.Controller) workflowsclient.Client {
+				mock := workflowsclient.NewMockClient(mockCtl)
 				mock.EXPECT().TriggerInstallProvision(gomock.Any(), gomock.Any()).Return("12345", nil)
 				return mock
 			},
-			assertFn: func(_ *testing.T, _ workflows.Client, resp string) {
+			assertFn: func(_ *testing.T, _ workflowsclient.Client, resp string) {
 				// TODO(jm): find a better way to grab captured arguments with mockgen mocks.
 				assert.Equal(t, resp, "12345")
 			},
 		},
 		"error": {
-			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
-				mock := workflows.NewMockClient(mockCtl)
+			clientFn: func(mockCtl *gomock.Controller) workflowsclient.Client {
+				mock := workflowsclient.NewMockClient(mockCtl)
 				mock.EXPECT().TriggerInstallProvision(gomock.Any(), gomock.Any()).Return("", errInstallProvisionTest)
 				return mock
 			},
@@ -75,23 +75,23 @@ func Test_installWorkflowManager_Deprovision(t *testing.T) {
 	install.ID, _ = shortid.NewNanoID("inl")
 
 	tests := map[string]struct {
-		clientFn    func(*gomock.Controller) workflows.Client
-		assertFn    func(*testing.T, workflows.Client, string)
+		clientFn    func(*gomock.Controller) workflowsclient.Client
+		assertFn    func(*testing.T, workflowsclient.Client, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
-				mock := workflows.NewMockClient(mockCtl)
+			clientFn: func(mockCtl *gomock.Controller) workflowsclient.Client {
+				mock := workflowsclient.NewMockClient(mockCtl)
 				mock.EXPECT().TriggerInstallDeprovision(gomock.Any(), gomock.Any()).Return("12345", nil)
 				return mock
 			},
-			assertFn: func(t *testing.T, client workflows.Client, resp string) {
+			assertFn: func(t *testing.T, client workflowsclient.Client, resp string) {
 				assert.Equal(t, "12345", resp)
 			},
 		},
 		"error": {
-			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
-				mock := workflows.NewMockClient(mockCtl)
+			clientFn: func(mockCtl *gomock.Controller) workflowsclient.Client {
+				mock := workflowsclient.NewMockClient(mockCtl)
 
 				mock.EXPECT().TriggerInstallDeprovision(gomock.Any(), gomock.Any()).Return("", errInstallDeprovisionTest)
 				return mock

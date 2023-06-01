@@ -9,7 +9,7 @@ import (
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
@@ -183,7 +183,7 @@ func (w *wkflow) execProvisionDeprovision(ctx workflow.Context, req *canaryv1.Pr
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Hour * 24,
 		WorkflowTaskTimeout:      time.Hour,
-		TaskQueue:                workflows.DefaultTaskQueue,
+		TaskQueue:                workflowsclient.DefaultTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 

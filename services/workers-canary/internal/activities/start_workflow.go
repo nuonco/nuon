@@ -6,7 +6,7 @@ import (
 
 	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
 	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1/activities/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	tclient "go.temporal.io/sdk/client"
 )
 
@@ -25,7 +25,7 @@ func (a *Activities) StartWorkflow(ctx context.Context, req *activitiesv1.StartW
 
 	// trigger workflow
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: workflows.DefaultTaskQueue,
+		TaskQueue: workflowsclient.DefaultTaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
 			"started-by": "workers-canary",

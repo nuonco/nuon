@@ -10,8 +10,8 @@ import (
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
 	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	meta "github.com/powertoolsdev/mono/pkg/workflows/meta"
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/startdeploy/activities"
@@ -200,7 +200,7 @@ func execCreatePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
-		TaskQueue:                workflows.ExecutorsTaskQueue,
+		TaskQueue:                workflowsclient.ExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -223,7 +223,7 @@ func execExecutePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
-		TaskQueue:                workflows.ExecutorsTaskQueue,
+		TaskQueue:                workflowsclient.ExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 

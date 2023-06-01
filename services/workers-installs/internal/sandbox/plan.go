@@ -4,7 +4,7 @@ import (
 	"time"
 
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -13,7 +13,7 @@ func Plan(ctx workflow.Context, cpr *planv1.CreatePlanRequest) (*planv1.CreatePl
 
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 5,
-		TaskQueue:                workflows.ExecutorsTaskQueue,
+		TaskQueue:                workflowsclient.ExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 	fut := workflow.ExecuteChildWorkflow(ctx, "CreatePlan", cpr)

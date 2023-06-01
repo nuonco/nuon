@@ -4,19 +4,19 @@ import (
 	"context"
 
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_installs.go -source=installs.go -package=workflows
 
-func NewInstallWorkflowManager(workflowsClient workflows.Client) *installWorkflowManager {
+func NewInstallWorkflowManager(workflowsClient workflowsclient.Client) *installWorkflowManager {
 	return &installWorkflowManager{workflowsClient}
 }
 
 type installWorkflowManager struct {
-	workflowsClient workflows.Client
+	workflowsClient workflowsclient.Client
 }
 
 type InstallWorkflowManager interface {

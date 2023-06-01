@@ -7,7 +7,7 @@ import (
 	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/build/activities"
 	"go.temporal.io/sdk/workflow"
@@ -91,7 +91,7 @@ func execCreatePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
-		TaskQueue:                workflows.ExecutorsTaskQueue,
+		TaskQueue:                workflowsclient.ExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -114,7 +114,7 @@ func execExecutePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
-		TaskQueue:                workflows.ExecutorsTaskQueue,
+		TaskQueue:                workflowsclient.ExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
