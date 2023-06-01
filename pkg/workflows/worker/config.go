@@ -2,7 +2,7 @@ package worker
 
 import (
 	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 )
 
 const (
@@ -11,7 +11,7 @@ const (
 
 //nolint:gochecknoinits
 func init() {
-	config.RegisterDefault("temporal_task_queue", workflows.DefaultTaskQueue)
+	config.RegisterDefault("temporal_task_queue", workflowsclient.DefaultTaskQueue)
 	config.RegisterDefault("temporal_host", "localhost:7233")
 	config.RegisterDefault("temporal_max_concurrent_activities", defaultMaxConcurrentActivities)
 }

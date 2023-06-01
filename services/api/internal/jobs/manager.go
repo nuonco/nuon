@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/clients/temporal"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	tclient "go.temporal.io/sdk/client"
 )
 
@@ -45,7 +45,7 @@ func New(v *validator.Validate, opts ...managerOption) (*manager, error) {
 		Opts: tclient.StartWorkflowOptions{
 			WorkflowExecutionTimeout: defaultWorkflowExecutionTimeout,
 			WorkflowRunTimeout:       defaultWorkflowRunTimeout,
-			TaskQueue:                workflows.APITaskQueue,
+			TaskQueue:                workflowsclient.APITaskQueue,
 			Memo: map[string]interface{}{
 				"started-by": "default",
 			},

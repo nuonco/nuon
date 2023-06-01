@@ -6,7 +6,7 @@ import (
 
 	provisionv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	tclient "go.temporal.io/sdk/client"
 )
 
@@ -53,7 +53,7 @@ func (i *instanceProvisioner) startWorkflow(
 	req *provisionv1.ProvisionRequest,
 ) error {
 	opts := tclient.StartWorkflowOptions{
-		TaskQueue: workflows.DefaultTaskQueue,
+		TaskQueue: workflowsclient.DefaultTaskQueue,
 		Memo: map[string]interface{}{
 			"org-id":        req.OrgId,
 			"app-id":        req.AppId,

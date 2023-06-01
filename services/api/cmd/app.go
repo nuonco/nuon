@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/interceptors"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	databaseclient "github.com/powertoolsdev/mono/services/api/internal/clients/database"
 	githubclient "github.com/powertoolsdev/mono/services/api/internal/clients/github"
@@ -45,7 +45,7 @@ type app struct {
 	log             *zap.Logger
 	interceptors    []connect.Interceptor
 	tc              temporal.Client
-	workflowsClient workflows.Client
+	workflowsClient workflowsclient.Client
 }
 
 func newApp(flags *pflag.FlagSet) (*app, error) {
@@ -68,7 +68,7 @@ func newApp(flags *pflag.FlagSet) (*app, error) {
 		return nil, fmt.Errorf("unable to initialize temporal: %w", err)
 	}
 
-	workflowsClient, err := workflows.NewClient(v, workflows.WithClient(tClient))
+	workflowsClient, err := workflowsclient.NewClient(v, workflowsclient.WithClient(tClient))
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize workflows client: %w", err)
 	}

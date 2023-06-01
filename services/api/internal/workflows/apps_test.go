@@ -7,7 +7,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,13 +17,13 @@ func Test_appWorkflowManager_Provision(t *testing.T) {
 	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
-		clientFn    func(*gomock.Controller) workflows.Client
+		clientFn    func(*gomock.Controller) workflowsclient.Client
 		assertFn    func(*testing.T, string)
 		errExpected error
 	}{
 		"happy path": {
-			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
-				mock := workflows.NewMockClient(mockCtl)
+			clientFn: func(mockCtl *gomock.Controller) workflowsclient.Client {
+				mock := workflowsclient.NewMockClient(mockCtl)
 				mock.EXPECT().TriggerAppProvision(gomock.Any(), gomock.Any()).Return("12345", nil)
 				return mock
 			},
@@ -33,8 +33,8 @@ func Test_appWorkflowManager_Provision(t *testing.T) {
 			},
 		},
 		"error": {
-			clientFn: func(mockCtl *gomock.Controller) workflows.Client {
-				mock := workflows.NewMockClient(mockCtl)
+			clientFn: func(mockCtl *gomock.Controller) workflowsclient.Client {
+				mock := workflowsclient.NewMockClient(mockCtl)
 				mock.EXPECT().TriggerAppProvision(gomock.Any(), gomock.Any()).Return("", errAppProvisionTest)
 				return mock
 			},

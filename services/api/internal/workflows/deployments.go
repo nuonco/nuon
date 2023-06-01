@@ -7,7 +7,7 @@ import (
 
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
-	"github.com/powertoolsdev/mono/pkg/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -19,12 +19,12 @@ const (
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_deployments.go -source=deployments.go -package=workflows
-func NewDeploymentWorkflowManager(workflowsClient workflows.Client) *deploymentWorkflowManager {
+func NewDeploymentWorkflowManager(workflowsClient workflowsclient.Client) *deploymentWorkflowManager {
 	return &deploymentWorkflowManager{workflowsClient}
 }
 
 type deploymentWorkflowManager struct {
-	workflowsClient workflows.Client
+	workflowsClient workflowsclient.Client
 }
 
 type DeploymentWorkflowManager interface {
