@@ -8,7 +8,14 @@ import (
 )
 
 const (
-	defaultRoleSessionDuration time.Duration = time.Hour
+	// by default, the maximum number of time that you can assume a role, via a chained assume (like we do in all of
+	// our processes), is 3600 seconds. However, due to rounding issues, when this was originally set to time.Hour,
+	// this failed because it would come out as slightly larger than 3600 seconds and aws would reject the role
+	// assume step.
+	defaultRoleSessionDuration time.Duration = time.Second * 3600
+
+	// max session duration, as defined by aws
+	maxSessionDuration time.Duration = time.Second * 3600
 )
 
 type Settings struct {
@@ -51,6 +58,12 @@ func New(v *validator.Validate, opts ...assumerOptions) (*assumer, error) {
 	if err := a.v.Struct(a); err != nil {
 		return nil, err
 	}
+
+	// ensure that the role duration is not greater than 1 hour.
+	if a.RoleSessionDuration > maxSessionDuration {
+		return nil, fmt.Errorf("role session duration must be less than %d", maxSessionDuration)
+	}
+
 	return a, nil
 }
 
