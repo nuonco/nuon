@@ -95,6 +95,17 @@ func TestNew(t *testing.T) {
 			},
 			errExpected: fmt.Errorf("Field validation for 'RoleSessionName'"),
 		},
+		"session duration is too large": {
+			v: v,
+			opts: []assumerOptions{
+				WithSettings(Settings{
+					RoleARN:             "valid:role-arn",
+					RoleSessionName:     "valid:session-name",
+					RoleSessionDuration: time.Hour * 2,
+				}),
+			},
+			errExpected: fmt.Errorf("role session duration"),
+		},
 	}
 
 	for name, test := range tests {
