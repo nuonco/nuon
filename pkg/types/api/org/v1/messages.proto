@@ -40,7 +40,7 @@ message UpsertOrgRequest {
       len: 26,
       ignore_empty: true
     },
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"-\""
   ];
   string name = 2;
   string owner_id = 3;

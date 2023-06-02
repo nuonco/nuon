@@ -20,4 +20,7 @@ func Register() {
 	// pkg/pipeline
 	_ = faker.AddProvider("pipelineCallbackFn", fakePipelineCallbackFn)
 	_ = faker.AddProvider("pipelineExecFn", fakePipelineExecFn)
+
+	// api fakers
+	_ = faker.AddProvider("apiInstallAWSSettings", fakeAPIInstallAWSSettings)
 }
