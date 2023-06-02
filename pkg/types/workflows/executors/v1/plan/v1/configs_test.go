@@ -41,6 +41,10 @@ func TestEnvVars_ToMap(t *testing.T) {
 				"key": "value-2",
 			},
 		},
+		"handles nil": {
+			vars:     nil,
+			expected: nil,
+		},
 	}
 
 	for name, test := range tests {
@@ -85,6 +89,10 @@ func TestWaypointVariables_ToMap(t *testing.T) {
 			expected: map[string]string{
 				"key": "value-2",
 			},
+		},
+		"handles nil": {
+			vars:     nil,
+			expected: nil,
 		},
 	}
 
