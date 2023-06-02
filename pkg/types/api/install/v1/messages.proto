@@ -77,7 +77,7 @@ message UpsertInstallRequest {
       len: 26,
       ignore_empty: true
     },
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"-\""
   ];
   string name = 2;
   string app_id = 3 [
@@ -90,6 +90,7 @@ message UpsertInstallRequest {
   string created_by_id = 4;
 
   oneof settings {
+    option (tagger.oneof_tags) = "faker:\"apiInstallAWSSettings\"";
     AwsSettings aws_settings = 5;
     GcpSettings gcp_settings = 6;
   }

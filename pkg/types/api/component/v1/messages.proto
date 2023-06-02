@@ -47,14 +47,14 @@ message UpsertComponentRequest {
       len: 26,
       ignore_empty: true
     },
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string id = 2 [
     (validate.rules).string = {
       len: 26,
       ignore_empty: true
     },
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"-\""
   ];
   string name = 3;
   string created_by_id = 4;
@@ -69,7 +69,7 @@ message UpsertComponentResponse {
 message DeleteComponentRequest {
   string id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
