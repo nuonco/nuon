@@ -87,6 +87,7 @@ func (i componentRepo) Create(ctx context.Context, component *models.Component) 
 
 func (i componentRepo) Update(ctx context.Context, component *models.Component) (*models.Component, error) {
 	if err := i.db.WithContext(ctx).
+		Omit(clause.Associations).
 		Session(&gorm.Session{FullSaveAssociations: true}).
 		Updates(component).Error; err != nil {
 		return nil, err
