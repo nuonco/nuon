@@ -74,6 +74,9 @@ type AppInput struct {
 	Name        string  `json:"name"`
 	OrgID       string  `json:"orgId"`
 	CreatedByID *string `json:"createdById"`
+
+	// OverrideID is used to override the id when creating an object, and should only be used locally.
+	OverrideID *string `json:"overrideId"`
 }
 
 // An auto-generated type for paginating through multiple Components
@@ -262,6 +265,9 @@ type OrgInput struct {
 	Name            string  `json:"name"`
 	OwnerID         string  `json:"ownerId"`
 	GithubInstallID *string `json:"githubInstallId"`
+
+	// OverrideID is used to override the id when creating an object, and should only be used locally.
+	OverrideID *string `json:"overrideId"`
 }
 
 // Returns information about pagination in a connection, in accordance with the Relay specification

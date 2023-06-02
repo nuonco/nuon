@@ -96,6 +96,10 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 	app.CreatedByID = *input.CreatedByID
 	app.OrgID = input.OrgID
 
+	if input.OverrideID != nil {
+		app.ID = *input.OverrideID
+	}
+
 	finalApp, err := a.repo.Create(ctx, &app)
 	if err != nil {
 		a.log.Error("failed to insert app",
