@@ -28,12 +28,12 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 	w.sendNotification(ctx, notificationTypeDeprovisionStart, req.CanaryId, nil)
 	steps := []deprovisionStep{
 		{
-			"org",
-			w.deprovisionOrg,
-		},
-		{
 			"install",
 			w.deprovisionInstall,
+		},
+		{
+			"org",
+			w.deprovisionOrg,
 		},
 		//{
 		//"docker-pull-deployment",
