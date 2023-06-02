@@ -8,7 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
+	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +27,7 @@ func Test_ActivityTriggerInstallJob(t *testing.T) {
 		installRepo func(*gomock.Controller) *repos.MockInstallRepo
 		appRepo     func(*gomock.Controller) *repos.MockAppRepo
 		adminRepo   func(*gomock.Controller) *repos.MockAdminRepo
-		mockWfc     func(*gomock.Controller) workflowsclient.Client
+		mockWfc     func(*gomock.Controller) wfc.Client
 		errExpected error
 	}{
 		"happy path": {
@@ -46,8 +46,8 @@ func Test_ActivityTriggerInstallJob(t *testing.T) {
 				mockRepo.EXPECT().GetLatestSandboxVersion(gomock.Any()).Return(sandboxVersion, nil)
 				return mockRepo
 			},
-			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
-				mockWfc := workflowsclient.NewMockClient(ctl)
+			mockWfc: func(ctl *gomock.Controller) wfc.Client {
+				mockWfc := wfc.NewMockClient(ctl)
 				mockWfc.EXPECT().TriggerInstallProvision(gomock.Any(), gomock.Any()).Return("1234", nil)
 				return mockWfc
 			},
@@ -66,8 +66,8 @@ func Test_ActivityTriggerInstallJob(t *testing.T) {
 				mockRepo := repos.NewMockAdminRepo(ctl)
 				return mockRepo
 			},
-			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
-				return workflowsclient.NewMockClient(ctl)
+			mockWfc: func(ctl *gomock.Controller) wfc.Client {
+				return wfc.NewMockClient(ctl)
 			},
 			errExpected: err,
 		},
@@ -86,8 +86,8 @@ func Test_ActivityTriggerInstallJob(t *testing.T) {
 				mockRepo := repos.NewMockAdminRepo(ctl)
 				return mockRepo
 			},
-			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
-				return workflowsclient.NewMockClient(ctl)
+			mockWfc: func(ctl *gomock.Controller) wfc.Client {
+				return wfc.NewMockClient(ctl)
 			},
 			errExpected: err,
 		},
@@ -107,8 +107,8 @@ func Test_ActivityTriggerInstallJob(t *testing.T) {
 				mockRepo.EXPECT().GetLatestSandboxVersion(gomock.Any()).Return(nil, err)
 				return mockRepo
 			},
-			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
-				return workflowsclient.NewMockClient(ctl)
+			mockWfc: func(ctl *gomock.Controller) wfc.Client {
+				return wfc.NewMockClient(ctl)
 			},
 			errExpected: err,
 		},
@@ -128,8 +128,8 @@ func Test_ActivityTriggerInstallJob(t *testing.T) {
 				mockRepo.EXPECT().GetLatestSandboxVersion(gomock.Any()).Return(sandboxVersion, nil)
 				return mockRepo
 			},
-			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
-				mockWfc := workflowsclient.NewMockClient(ctl)
+			mockWfc: func(ctl *gomock.Controller) wfc.Client {
+				mockWfc := wfc.NewMockClient(ctl)
 				mockWfc.EXPECT().TriggerInstallProvision(gomock.Any(), gomock.Any()).Return("", err)
 				return mockWfc
 			},

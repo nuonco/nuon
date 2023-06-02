@@ -3,7 +3,7 @@ package createinstall
 import (
 	"context"
 
-	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
+	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 
 	"gorm.io/gorm"
@@ -13,10 +13,10 @@ type activities struct {
 	repo      repos.InstallRepo
 	adminRepo repos.AdminRepo
 	appRepo   repos.AppRepo
-	wfc       workflowsclient.Client
+	wfc       wfc.Client
 }
 
-func NewActivities(db *gorm.DB, workflowsClient workflowsclient.Client) *activities {
+func NewActivities(db *gorm.DB, workflowsClient wfc.Client) *activities {
 	return &activities{
 		repo:      repos.NewInstallRepo(db),
 		adminRepo: repos.NewAdminRepo(db),

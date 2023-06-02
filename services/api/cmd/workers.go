@@ -59,7 +59,7 @@ func (a *app) deploysWorker(sa *sharedactivities.Activities) (worker.Worker, err
 
 func (a *app) appsWorker(sa *sharedactivities.Activities) (worker.Worker, error) {
 	createWkflow := createapp.New(a.v)
-	createActs := createapp.NewActivities(a.db, a.workflowsClient)
+	createActs := createapp.NewActivities(a.db, a.wfc)
 
 	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
 		worker.WithWorkflow(createWkflow.CreateApp),
@@ -77,8 +77,8 @@ func (a *app) appsWorker(sa *sharedactivities.Activities) (worker.Worker, error)
 func (a *app) orgsWorker(sa *sharedactivities.Activities) (worker.Worker, error) {
 	createWkflow := createorg.New(a.v)
 	deleteWkflow := deleteorg.New(a.v)
-	createActs := createorg.NewActivities(a.workflowsClient)
-	deleteActs := deleteorg.NewActivities(a.workflowsClient)
+	createActs := createorg.NewActivities(a.wfc)
+	deleteActs := deleteorg.NewActivities(a.wfc)
 
 	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
 		worker.WithNamespace("orgs"),
@@ -100,8 +100,8 @@ func (a *app) orgsWorker(sa *sharedactivities.Activities) (worker.Worker, error)
 func (a *app) installsWorker(sa *sharedactivities.Activities) (worker.Worker, error) {
 	createWkflow := createinstall.New(a.v)
 	deleteWkflow := deleteinstall.New(a.v)
-	createActs := createinstall.NewActivities(a.db, a.workflowsClient)
-	deleteActs := deleteinstall.NewActivities(a.db, a.workflowsClient)
+	createActs := createinstall.NewActivities(a.db, a.wfc)
+	deleteActs := deleteinstall.NewActivities(a.db, a.wfc)
 
 	wkr, err := worker.New(a.v, worker.WithConfig(&a.cfg.Config),
 		worker.WithNamespace("installs"),

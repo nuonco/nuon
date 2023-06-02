@@ -8,7 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	apibuildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
 	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
-	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
+	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	tclient "go.temporal.io/sdk/client"
 )
@@ -52,7 +52,7 @@ func (s *server) StartBuild(
 	namespace := "builds"
 	opts := tclient.StartWorkflowOptions{
 		ID:        buildID,
-		TaskQueue: workflowsclient.APITaskQueue,
+		TaskQueue: wfc.APITaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{
 			"git-ref":       req.Msg.GitRef,

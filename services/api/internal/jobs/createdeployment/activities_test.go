@@ -8,7 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
+	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +22,7 @@ func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 	deployment.Component.Config = datatypes.JSON(`{"deployCfg": {}}`)
 	tests := map[string]struct {
 		deploymentRepo func(*gomock.Controller) *repos.MockDeploymentRepo
-		mockWfc        func(*gomock.Controller) workflowsclient.Client
+		mockWfc        func(*gomock.Controller) wfc.Client
 		errExpected    error
 	}{
 		"happy path": {
@@ -31,8 +31,8 @@ func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 				mockRepo.EXPECT().Get(gomock.Any(), deploymentID).Return(deployment, nil)
 				return mockRepo
 			},
-			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
-				wkflowmgr := workflowsclient.NewMockClient(ctl)
+			mockWfc: func(ctl *gomock.Controller) wfc.Client {
+				wkflowmgr := wfc.NewMockClient(ctl)
 				wkflowmgr.EXPECT().TriggerDeploymentStart(gomock.Any(), gomock.Any()).Return("1234", nil)
 				return wkflowmgr
 			},
@@ -43,8 +43,8 @@ func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 				mockRepo.EXPECT().Get(gomock.Any(), deploymentID).Return(nil, err)
 				return mockRepo
 			},
-			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
-				mockWfc := workflowsclient.NewMockClient(ctl)
+			mockWfc: func(ctl *gomock.Controller) wfc.Client {
+				mockWfc := wfc.NewMockClient(ctl)
 				return mockWfc
 			},
 			errExpected: err,
@@ -55,8 +55,8 @@ func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 				mockRepo.EXPECT().Get(gomock.Any(), deploymentID).Return(deployment, nil)
 				return mockRepo
 			},
-			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
-				mockWfc := workflowsclient.NewMockClient(ctl)
+			mockWfc: func(ctl *gomock.Controller) wfc.Client {
+				mockWfc := wfc.NewMockClient(ctl)
 				mockWfc.EXPECT().TriggerDeploymentStart(gomock.Any(), gomock.Any()).Return("", err)
 				return mockWfc
 			},
