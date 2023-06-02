@@ -6,6 +6,7 @@ import (
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
@@ -48,6 +49,7 @@ func (a appRepo) Create(ctx context.Context, app *models.App) (*models.App, erro
 
 func (a appRepo) Update(ctx context.Context, app *models.App) (*models.App, error) {
 	if err := a.db.WithContext(ctx).
+		Omit(clause.Associations).
 		Session(&gorm.Session{FullSaveAssociations: true}).
 		Updates(app).Error; err != nil {
 		return nil, err
