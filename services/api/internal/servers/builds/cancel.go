@@ -6,6 +6,7 @@ import (
 
 	"github.com/bufbuild/connect-go"
 	buildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
+	"github.com/powertoolsdev/mono/services/api/internal/models"
 )
 
 func (s *server) CancelBuild(
@@ -17,7 +18,16 @@ func (s *server) CancelBuild(
 		return nil, fmt.Errorf("input validation failed: %w", err)
 	}
 
-	fmt.Println("CANCEL BUILD")
+	//verify that build exists
+	var build models.Build
+	if err := s.db.WithContext(ctx).First(&build, "id = ?", req.Msg.Id).Error; err != nil {
+		return nil, fmt.Errorf("retrieve build failed: %w", err)
+	}
+
+	// use temporal client to cancel workflow execution
+	if err := s.temporalClient.CancelWorkflowInNamespace(ctx, "builds", build.ID, ""); err != nil {
+		return nil, fmt.Errorf("cancel build failed: %s", err)
+	}
 
 	return connect.NewResponse(&buildv1.CancelBuildResponse{}), nil
 }
