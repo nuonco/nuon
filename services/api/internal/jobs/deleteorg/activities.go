@@ -3,17 +3,17 @@ package deleteorg
 import (
 	"context"
 
+	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 )
 
 type activities struct {
-	mgr workflows.OrgWorkflowManager
+	wfc workflowsclient.Client
 }
 
 func NewActivities(workflowsClient workflowsclient.Client) *activities {
 	return &activities{
-		mgr: workflows.NewOrgWorkflowManager(workflowsClient),
+		wfc: workflowsClient,
 	}
 }
 
@@ -22,7 +22,8 @@ type TriggerJobResponse struct {
 }
 
 func (a *activities) TriggerOrgDeprovision(ctx context.Context, orgID string) (*TriggerJobResponse, error) {
-	workflowID, err := a.mgr.Deprovision(ctx, orgID)
+	req := &orgsv1.TeardownRequest{OrgId: orgID, Region: "us-west-2"}
+	workflowID, err := a.wfc.TriggerOrgTeardown(ctx, req)
 	if err != nil {
 		return nil, err
 	}

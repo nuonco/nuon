@@ -8,9 +8,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,9 +20,9 @@ func Test_ActivityTriggerAppJob(t *testing.T) {
 	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
-		appRepo     func(*gomock.Controller) *repos.MockAppRepo
-		mockMgr     func(*gomock.Controller) *workflows.MockAppWorkflowManager
-		errExpected error
+		appRepo             func(*gomock.Controller) *repos.MockAppRepo
+		mockWorkflowsClient func(*gomock.Controller) workflowsclient.Client
+		errExpected         error
 	}{
 		"happy path": {
 			appRepo: func(ctl *gomock.Controller) *repos.MockAppRepo {
@@ -30,10 +30,10 @@ func Test_ActivityTriggerAppJob(t *testing.T) {
 				mockRepo.EXPECT().Get(gomock.Any(), appID).Return(app, nil)
 				return mockRepo
 			},
-			mockMgr: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
-				wkflowmgr := workflows.NewMockAppWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Provision(gomock.Any(), app).Return("123456", nil)
-				return wkflowmgr
+			mockWorkflowsClient: func(ctl *gomock.Controller) workflowsclient.Client {
+				mockWfc := workflowsclient.NewMockClient(ctl)
+				mockWfc.EXPECT().TriggerAppProvision(gomock.Any(), app.ToProvisionRequest()).Return("123456", nil)
+				return mockWfc
 			},
 		},
 		"repo err": {
@@ -42,22 +42,21 @@ func Test_ActivityTriggerAppJob(t *testing.T) {
 				mockRepo.EXPECT().Get(gomock.Any(), appID).Return(nil, err)
 				return mockRepo
 			},
-			mockMgr: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
-				wkflowmgr := workflows.NewMockAppWorkflowManager(ctl)
-				return wkflowmgr
+			mockWorkflowsClient: func(ctl *gomock.Controller) workflowsclient.Client {
+				return workflowsclient.NewMockClient(ctl)
 			},
 			errExpected: err,
 		},
-		"mgr err": {
+		"workflow err": {
 			appRepo: func(ctl *gomock.Controller) *repos.MockAppRepo {
 				mockRepo := repos.NewMockAppRepo(ctl)
 				mockRepo.EXPECT().Get(gomock.Any(), appID).Return(app, nil)
 				return mockRepo
 			},
-			mockMgr: func(ctl *gomock.Controller) *workflows.MockAppWorkflowManager {
-				wkflowmgr := workflows.NewMockAppWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Provision(gomock.Any(), app).Return("", err)
-				return wkflowmgr
+			mockWorkflowsClient: func(ctl *gomock.Controller) workflowsclient.Client {
+				mockWfc := workflowsclient.NewMockClient(ctl)
+				mockWfc.EXPECT().TriggerAppProvision(gomock.Any(), app.ToProvisionRequest()).Return("", err)
+				return mockWfc
 			},
 			errExpected: err,
 		},
@@ -67,8 +66,8 @@ func Test_ActivityTriggerAppJob(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			act := &activities{
-				repo: test.appRepo(mockCtl),
-				mgr:  test.mockMgr(mockCtl),
+				repo:            test.appRepo(mockCtl),
+				workflowsClient: test.mockWorkflowsClient(mockCtl),
 			}
 
 			_, err := act.TriggerAppJob(context.Background(), appID)
