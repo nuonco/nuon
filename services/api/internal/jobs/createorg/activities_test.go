@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
-	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
+	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,19 +16,19 @@ func Test_ActivityTriggerOrgJob(t *testing.T) {
 	orgID, _ := shortid.NewNanoID("org")
 
 	tests := map[string]struct {
-		mockWfc     func(*gomock.Controller) workflowsclient.Client
+		mockWfc     func(*gomock.Controller) wfc.Client
 		errExpected error
 	}{
 		"happy path": {
-			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
-				mockWfc := workflowsclient.NewMockClient(ctl)
+			mockWfc: func(ctl *gomock.Controller) wfc.Client {
+				mockWfc := wfc.NewMockClient(ctl)
 				mockWfc.EXPECT().TriggerOrgSignup(gomock.Any(), gomock.Any()).Return("123456", nil)
 				return mockWfc
 			},
 		},
 		"workflow err": {
-			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
-				mockWfc := workflowsclient.NewMockClient(ctl)
+			mockWfc: func(ctl *gomock.Controller) wfc.Client {
+				mockWfc := wfc.NewMockClient(ctl)
 				mockWfc.EXPECT().TriggerOrgSignup(gomock.Any(), gomock.Any()).Return("", err)
 				return mockWfc
 			},
