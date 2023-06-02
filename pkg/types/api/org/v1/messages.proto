@@ -45,6 +45,7 @@ message UpsertOrgRequest {
   string name = 2;
   string owner_id = 3;
   string github_install_id = 4;
+  string override_id = 5;
 }
 
 message UpsertOrgResponse {
