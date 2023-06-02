@@ -86,7 +86,7 @@ func (s *starterImpl) writeRequestFile(ctx context.Context, client starterUpload
 	}
 
 	if err := client.UploadBlob(ctx, byts, startRequestFilename); err != nil {
-		return fmt.Errorf("unable to upload plan: %w", err)
+		return fmt.Errorf("unable to upload workflow request: %w", err)
 	}
 
 	return nil
