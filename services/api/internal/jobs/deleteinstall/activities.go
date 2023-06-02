@@ -5,7 +5,6 @@ import (
 
 	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	"gorm.io/gorm"
 )
 
@@ -13,15 +12,15 @@ type activities struct {
 	repo      repos.InstallRepo
 	adminRepo repos.AdminRepo
 	appRepo   repos.AppRepo
-	mgr       workflows.InstallWorkflowManager
+	wfc       workflowsclient.Client
 }
 
-func NewActivities(db *gorm.DB, workflowsClient workflowsclient.Client) *activities {
+func NewActivities(db *gorm.DB, wfc workflowsclient.Client) *activities {
 	return &activities{
 		repo:      repos.NewInstallRepo(db),
 		adminRepo: repos.NewAdminRepo(db),
 		appRepo:   repos.NewAppRepo(db),
-		mgr:       workflows.NewInstallWorkflowManager(workflowsClient),
+		wfc:       wfc,
 	}
 }
 
@@ -45,11 +44,12 @@ func (a *activities) TriggerInstallDeprovision(ctx context.Context, installID st
 		return nil, err
 	}
 
-	workflow, err := a.mgr.Deprovision(ctx, install, app.OrgID, sandboxVersion)
+	req := install.ToDeprovisionRequest(app.OrgID, sandboxVersion)
+	workflowID, err := a.wfc.TriggerInstallDeprovision(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &TriggerJobResponse{
-		WorkflowID: workflow,
+		WorkflowID: workflowID,
 	}, nil
 }

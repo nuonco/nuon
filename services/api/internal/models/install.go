@@ -5,8 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs"
 	"gorm.io/gorm"
+)
+
+const (
+	NUON_AWS_ACCOUNT_ID = "548377525120"
 )
 
 type Install struct {
@@ -63,4 +68,38 @@ func (i Install) GetCreatedAt() time.Time {
 
 func (i Install) GetUpdatedAt() time.Time {
 	return i.Model.UpdatedAt
+}
+
+func (i Install) ToProvisionRequest(orgID string, sandboxVersion *SandboxVersion) *installsv1.ProvisionRequest {
+	return &installsv1.ProvisionRequest{
+		OrgId:     orgID,
+		AppId:     i.AppID,
+		InstallId: i.ID,
+		AccountSettings: &installsv1.AccountSettings{
+			Region:       i.AWSSettings.Region.ToRegion(),
+			AwsAccountId: NUON_AWS_ACCOUNT_ID,
+			AwsRoleArn:   i.AWSSettings.IamRoleArn,
+		},
+		SandboxSettings: &installsv1.SandboxSettings{
+			Name:    sandboxVersion.SandboxName,
+			Version: sandboxVersion.SandboxVersion,
+		},
+	}
+}
+
+func (i Install) ToDeprovisionRequest(orgID string, sandboxVersion *SandboxVersion) *installsv1.DeprovisionRequest {
+	return &installsv1.DeprovisionRequest{
+		OrgId:     orgID,
+		AppId:     i.AppID,
+		InstallId: i.ID,
+		AccountSettings: &installsv1.AccountSettings{
+			Region:       i.AWSSettings.Region.ToRegion(),
+			AwsAccountId: NUON_AWS_ACCOUNT_ID,
+			AwsRoleArn:   i.AWSSettings.IamRoleArn,
+		},
+		SandboxSettings: &installsv1.SandboxSettings{
+			Name:    sandboxVersion.SandboxName,
+			Version: sandboxVersion.SandboxVersion,
+		},
+	}
 }

@@ -8,20 +8,21 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/datatypes"
 )
 
 func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 	err := errors.New("error")
 	deploymentID, _ := shortid.NewNanoID("dpl")
 	deployment := generics.GetFakeObj[*models.Deployment]()
-
+	deployment.Component.Config = datatypes.JSON(`{"deployCfg": {}}`)
 	tests := map[string]struct {
 		deploymentRepo func(*gomock.Controller) *repos.MockDeploymentRepo
-		mockMgr        func(*gomock.Controller) *workflows.MockDeploymentWorkflowManager
+		mockWfc        func(*gomock.Controller) workflowsclient.Client
 		errExpected    error
 	}{
 		"happy path": {
@@ -30,9 +31,9 @@ func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 				mockRepo.EXPECT().Get(gomock.Any(), deploymentID).Return(deployment, nil)
 				return mockRepo
 			},
-			mockMgr: func(ctl *gomock.Controller) *workflows.MockDeploymentWorkflowManager {
-				wkflowmgr := workflows.NewMockDeploymentWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Start(gomock.Any(), deployment).Return("1234", nil)
+			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
+				wkflowmgr := workflowsclient.NewMockClient(ctl)
+				wkflowmgr.EXPECT().TriggerDeploymentStart(gomock.Any(), gomock.Any()).Return("1234", nil)
 				return wkflowmgr
 			},
 		},
@@ -42,9 +43,9 @@ func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 				mockRepo.EXPECT().Get(gomock.Any(), deploymentID).Return(nil, err)
 				return mockRepo
 			},
-			mockMgr: func(ctl *gomock.Controller) *workflows.MockDeploymentWorkflowManager {
-				wkflowmgr := workflows.NewMockDeploymentWorkflowManager(ctl)
-				return wkflowmgr
+			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
+				mockWfc := workflowsclient.NewMockClient(ctl)
+				return mockWfc
 			},
 			errExpected: err,
 		},
@@ -54,10 +55,10 @@ func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 				mockRepo.EXPECT().Get(gomock.Any(), deploymentID).Return(deployment, nil)
 				return mockRepo
 			},
-			mockMgr: func(ctl *gomock.Controller) *workflows.MockDeploymentWorkflowManager {
-				wkflowmgr := workflows.NewMockDeploymentWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Start(gomock.Any(), deployment).Return("", err)
-				return wkflowmgr
+			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
+				mockWfc := workflowsclient.NewMockClient(ctl)
+				mockWfc.EXPECT().TriggerDeploymentStart(gomock.Any(), gomock.Any()).Return("", err)
+				return mockWfc
 			},
 			errExpected: err,
 		},
@@ -68,7 +69,7 @@ func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			act := &activities{
 				repo: test.deploymentRepo(mockCtl),
-				mgr:  test.mockMgr(mockCtl),
+				wfc:  test.mockWfc(mockCtl),
 			}
 
 			_, err := act.TriggerDeploymentJob(context.Background(), deploymentID)
