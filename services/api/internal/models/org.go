@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs"
 	"gorm.io/gorm"
 )
@@ -58,4 +59,18 @@ func (o Org) GetCreatedAt() time.Time {
 
 func (o Org) GetUpdatedAt() time.Time {
 	return o.Model.UpdatedAt
+}
+
+func (o Org) ToProvisionRequest() *orgsv1.SignupRequest {
+	return &orgsv1.SignupRequest{
+		OrgId:  o.ID,
+		Region: "us-west-2",
+	}
+}
+
+func (o Org) ToDeprovisionRequest() *orgsv1.TeardownRequest {
+	return &orgsv1.TeardownRequest{
+		OrgId:  o.ID,
+		Region: "us-west-2",
+	}
 }

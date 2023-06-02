@@ -3,18 +3,16 @@ package createorg
 import (
 	"context"
 
+	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
 )
 
 type activities struct {
-	mgr workflows.OrgWorkflowManager
+	wfc workflowsclient.Client
 }
 
-func NewActivities(workflowsClient workflowsclient.Client) *activities {
-	return &activities{
-		mgr: workflows.NewOrgWorkflowManager(workflowsClient),
-	}
+func NewActivities(wfc workflowsclient.Client) *activities {
+	return &activities{wfc}
 }
 
 type TriggerJobResponse struct {
@@ -22,7 +20,7 @@ type TriggerJobResponse struct {
 }
 
 func (a *activities) TriggerOrgProvision(ctx context.Context, orgID string) (*TriggerJobResponse, error) {
-	workflowID, err := a.mgr.Provision(ctx, orgID)
+	workflowID, err := a.wfc.TriggerOrgSignup(ctx, &orgsv1.SignupRequest{OrgId: orgID})
 	if err != nil {
 		return nil, err
 	}
