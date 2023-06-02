@@ -113,6 +113,11 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 		org.GithubInstallID = *input.GithubInstallID
 	}
 
+	// overrideID is used to override the ID set on this object, and should only be used locally during development.
+	if input.OverrideID != nil {
+		org.ID = *input.OverrideID
+	}
+
 	org, err = o.repo.Create(ctx, org)
 	if err != nil {
 		o.log.Error("failed to create org",

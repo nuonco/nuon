@@ -65,6 +65,8 @@ message UpsertAppRequest {
     (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
   ];
   string created_by_id = 5;
+
+  string override_id = 6;
 }
 
 message UpsertAppResponse {
