@@ -54,7 +54,7 @@ message UpsertAppRequest {
       len: 26,
       ignore_empty: true
     },
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"-\" shortid:\"ensure\""
   ];
   string name = 2;
   string org_id = 3 [
