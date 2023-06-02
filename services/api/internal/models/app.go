@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs"
 	"gorm.io/gorm"
 )
@@ -44,4 +45,11 @@ func (a App) GetCreatedAt() time.Time {
 
 func (a App) GetUpdatedAt() time.Time {
 	return a.Model.UpdatedAt
+}
+
+func (a App) ToProvisionRequest() *appsv1.ProvisionRequest {
+	return &appsv1.ProvisionRequest{
+		OrgId: a.OrgID,
+		AppId: a.ID,
+	}
 }

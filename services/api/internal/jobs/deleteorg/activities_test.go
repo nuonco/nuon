@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/common/shortid"
-	"github.com/powertoolsdev/mono/services/api/internal/workflows"
+	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,21 +16,21 @@ func Test_ActivityTriggerOrgJob(t *testing.T) {
 	orgID, _ := shortid.NewNanoID("org")
 
 	tests := map[string]struct {
-		mockMgr     func(*gomock.Controller) *workflows.MockOrgWorkflowManager
+		mockWfc     func(*gomock.Controller) workflowsclient.Client
 		errExpected error
 	}{
 		"happy path": {
-			mockMgr: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				wkflowmgr := workflows.NewMockOrgWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Deprovision(gomock.Any(), orgID).Return("12345", nil)
-				return wkflowmgr
+			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
+				mockWfc := workflowsclient.NewMockClient(ctl)
+				mockWfc.EXPECT().TriggerOrgTeardown(gomock.Any(), gomock.Any()).Return("12345", nil)
+				return mockWfc
 			},
 		},
 		"mgr err": {
-			mockMgr: func(ctl *gomock.Controller) *workflows.MockOrgWorkflowManager {
-				wkflowmgr := workflows.NewMockOrgWorkflowManager(ctl)
-				wkflowmgr.EXPECT().Deprovision(gomock.Any(), orgID).Return("12345", err)
-				return wkflowmgr
+			mockWfc: func(ctl *gomock.Controller) workflowsclient.Client {
+				mockWfc := workflowsclient.NewMockClient(ctl)
+				mockWfc.EXPECT().TriggerOrgTeardown(gomock.Any(), gomock.Any()).Return("12345", err)
+				return mockWfc
 			},
 			errExpected: err,
 		},
@@ -40,7 +40,7 @@ func Test_ActivityTriggerOrgJob(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			act := &activities{
-				mgr: test.mockMgr(mockCtl),
+				wfc: test.mockWfc(mockCtl),
 			}
 
 			_, err := act.TriggerOrgDeprovision(context.Background(), orgID)
