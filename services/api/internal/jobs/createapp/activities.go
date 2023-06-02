@@ -3,20 +3,20 @@ package createapp
 import (
 	"context"
 
-	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
+	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"gorm.io/gorm"
 )
 
 type activities struct {
-	repo            repos.AppRepo
-	workflowsClient workflowsclient.Client
+	repo repos.AppRepo
+	wfc  wfc.Client
 }
 
-func NewActivities(db *gorm.DB, workflowsClient workflowsclient.Client) *activities {
+func NewActivities(db *gorm.DB, workflowsClient wfc.Client) *activities {
 	return &activities{
-		repo:            repos.NewAppRepo(db),
-		workflowsClient: workflowsClient,
+		repo: repos.NewAppRepo(db),
+		wfc:  workflowsClient,
 	}
 }
 
@@ -30,7 +30,7 @@ func (a *activities) TriggerAppJob(ctx context.Context, appID string) (*TriggerJ
 		return nil, err
 	}
 
-	workflowID, err := a.workflowsClient.TriggerAppProvision(ctx, app.ToProvisionRequest())
+	workflowID, err := a.wfc.TriggerAppProvision(ctx, app.ToProvisionRequest())
 	if err != nil {
 		return nil, err
 	}

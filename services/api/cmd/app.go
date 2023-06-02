@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/clients/temporal"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/interceptors"
-	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
+	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	databaseclient "github.com/powertoolsdev/mono/services/api/internal/clients/database"
 	githubclient "github.com/powertoolsdev/mono/services/api/internal/clients/github"
@@ -38,14 +38,14 @@ func initializeLogger(cfg *internal.Config) (*zap.Logger, error) {
 }
 
 type app struct {
-	v               *validator.Validate
-	cfg             *internal.Config
-	db              *gorm.DB
-	gh              *ghinstallation.AppsTransport
-	log             *zap.Logger
-	interceptors    []connect.Interceptor
-	tc              temporal.Client
-	workflowsClient workflowsclient.Client
+	v            *validator.Validate
+	cfg          *internal.Config
+	db           *gorm.DB
+	gh           *ghinstallation.AppsTransport
+	log          *zap.Logger
+	interceptors []connect.Interceptor
+	tc           temporal.Client
+	wfc          wfc.Client
 }
 
 func newApp(flags *pflag.FlagSet) (*app, error) {
@@ -72,17 +72,17 @@ func newApp(flags *pflag.FlagSet) (*app, error) {
 		return nil, fmt.Errorf("unable to initialize temporal: %w", err)
 	}
 
-	workflowsClient, err := workflowsclient.NewClient(v, workflowsclient.WithClient(tClient))
+	wfc, err := wfc.NewClient(v, wfc.WithClient(tClient))
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize workflows client: %w", err)
 	}
 
 	srv := &app{
-		v:               v,
-		cfg:             &cfg,
-		log:             l,
-		tc:              tClient,
-		workflowsClient: workflowsClient,
+		v:   v,
+		cfg: &cfg,
+		log: l,
+		tc:  tClient,
+		wfc: wfc,
 		interceptors: []connect.Interceptor{
 			interceptors.LoggerInterceptor(),
 			interceptors.NewTemporalClientInterceptor(tClient),

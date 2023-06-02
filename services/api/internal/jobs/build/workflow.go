@@ -5,11 +5,10 @@ import (
 	"time"
 
 	buildsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
-	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
-	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
+	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/build/activities"
@@ -37,7 +36,7 @@ func New(cfg *internal.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Build(ctx workflow.Context, req *workflowbuildv1.BuildRequest) (*workflowbuildv1.BuildResponse, error) {
+func (w *wkflow) Build(ctx workflow.Context, req *buildsv1.BuildRequest) (*buildsv1.BuildResponse, error) {
 	l := workflow.GetLogger(ctx)
 	ctx = configureActivityOptions(ctx)
 
@@ -69,7 +68,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *workflowbuildv1.BuildRequest) 
 		return nil, fmt.Errorf("unable to create plan: %w", err)
 	}
 
-	res := &workflowbuildv1.BuildResponse{
+	res := &buildsv1.BuildResponse{
 		BuildPlan: createPlanResp.Plan,
 	}
 
@@ -80,7 +79,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *workflowbuildv1.BuildRequest) 
 // execCreatePlanRequest returns a plan request that can be passed to a workflow
 func execCreatePlanRequest(
 	ctx workflow.Context,
-	req *workflowbuildv1.BuildRequest,
+	req *buildsv1.BuildRequest,
 ) (*planv1.CreatePlanRequest, error) {
 	resp := &planv1.CreatePlanRequest{}
 	l := workflow.GetLogger(ctx)
@@ -112,7 +111,7 @@ func execCreatePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
-		TaskQueue:                workflowsclient.ExecutorsTaskQueue,
+		TaskQueue:                wfc.ExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -135,7 +134,7 @@ func execExecutePlan(
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
-		TaskQueue:                workflowsclient.ExecutorsTaskQueue,
+		TaskQueue:                wfc.ExecutorsTaskQueue,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
