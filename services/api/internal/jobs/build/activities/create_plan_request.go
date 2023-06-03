@@ -6,6 +6,7 @@ import (
 	"time"
 
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -88,29 +89,23 @@ func (a *Activities) addVcsConfig(component *models.Component, gitRef, ghInstall
 		return nil, err
 	}
 
-	if dbConfig.BuildCfg != nil {
-		isPrivate := false
-		dockerCfg := dbConfig.BuildCfg.GetDockerCfg()
-		if dockerCfg != nil {
-			vcsCfg := dockerCfg.GetVcsCfg()
-			connectedGithubConfig := vcsCfg.GetConnectedGithubConfig()
-			if connectedGithubConfig != nil {
-				isPrivate = true
-			}
-		}
-
-		if isPrivate {
-			// for private repos set: git_ref, github_app_key_id, github_app_key_secret_name, github_install_id
-			dbConfig.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GitRef = gitRef
-			dbConfig.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GithubAppKeyId = a.githubAppID
-			dbConfig.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GithubAppKeySecretName = a.githubAppKeySecretName
-			dbConfig.BuildCfg.GetDockerCfg().VcsCfg.GetConnectedGithubConfig().GithubInstallId = ghInstallID
-		} else {
-			// for public repos set only the git_ref
-			dbConfig.BuildCfg.GetDockerCfg().VcsCfg.GetPublicGitConfig().GitRef = gitRef
-		}
+	if dbConfig.BuildCfg == nil {
+		return nil, fmt.Errorf("build config was nil")
 	}
 
+	vcsCfg := dbConfig.BuildCfg.GetVcsCfg()
+	if vcsCfg != nil {
+		switch vcs := vcsCfg.Cfg.(type) {
+		case *vcsv1.Config_ConnectedGithubConfig:
+			vcs.ConnectedGithubConfig.GitRef = gitRef
+			vcs.ConnectedGithubConfig.GithubAppKeyId = a.githubAppID
+			vcs.ConnectedGithubConfig.GithubAppKeySecretName = a.githubAppKeySecretName
+			vcs.ConnectedGithubConfig.GithubInstallId = ghInstallID
+		case *vcsv1.Config_PublicGitConfig:
+			vcs.PublicGitConfig.GitRef = gitRef
+		default:
+		}
+	}
 	dbConfig.DeployCfg.Timeout = durationpb.New(defaultBuildTimeout)
 
 	return dbConfig, nil
