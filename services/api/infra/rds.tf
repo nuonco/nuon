@@ -3,7 +3,7 @@
 ################################################################################
 module "security_group_rds" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+  version = "~> 5.0"
 
   name        = local.name
   description = "RDS security group for ${local.name} in ${var.env}"
