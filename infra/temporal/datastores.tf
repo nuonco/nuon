@@ -10,7 +10,7 @@ locals {
 ################################################################################
 module "security_group_rds" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+  version = "~> 5.0"
 
   name        = local.name
   description = "RDS security group for ${local.name}"
@@ -148,7 +148,7 @@ resource "aws_route53_record" "replica" {
 module "security_group_elasticache" {
   count   = local.vars.elasticache.enabled ? 1 : 0
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+  version = "~> 5.0"
 
   name        = local.name
   description = "elasticache security group for ${local.name}"
@@ -220,7 +220,7 @@ locals {
 module "security_group_elasticsearch" {
   count   = local.vars.elasticsearch.enabled ? 1 : 0
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+  version = "~> 5.0"
 
   name        = local.name
   description = "elasticsearch security group for ${local.name}"
