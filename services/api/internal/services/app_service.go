@@ -93,8 +93,11 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 	var app models.App
 	app.ID, _ = shortid.NewNanoID("app")
 	app.Name = input.Name
-	app.CreatedByID = *input.CreatedByID
 	app.OrgID = input.OrgID
+
+	if input.CreatedByID != nil {
+		app.CreatedByID = *input.CreatedByID
+	}
 
 	if input.OverrideID != nil {
 		app.ID = *input.OverrideID
