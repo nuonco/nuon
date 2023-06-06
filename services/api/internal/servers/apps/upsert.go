@@ -23,8 +23,8 @@ func (s *server) UpsertApp(
 		ID:          converters.ToOptionalStr(req.Msg.Id),
 		Name:        req.Msg.Name,
 		OrgID:       req.Msg.OrgId,
-		CreatedByID: &req.Msg.CreatedById,
-		OverrideID:  &req.Msg.OverrideId,
+		CreatedByID: converters.ToOptionalStr(req.Msg.CreatedById),
+		OverrideID:  converters.ToOptionalStr(req.Msg.OverrideId),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to upsert app: %w", err)
