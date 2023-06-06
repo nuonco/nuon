@@ -248,8 +248,7 @@ func TestNewNanoID(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			result, err := NewNanoID(test.inputPrefix)
-			assert.NoError(t, err)
+			result := NewNanoID(test.inputPrefix)
 			assert.Len(t, result, 26)
 			assert.Regexp(t, regexp.MustCompile("^[a-z0-9]*$"), result[3:])
 			if test.inputPrefix == "" {

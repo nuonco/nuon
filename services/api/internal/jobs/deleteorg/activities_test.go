@@ -6,14 +6,14 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_ActivityTriggerOrgJob(t *testing.T) {
 	err := errors.New("error")
-	orgID, _ := shortid.NewNanoID("org")
+	orgID := domains.NewOrgID()
 
 	tests := map[string]struct {
 		mockWfc     func(*gomock.Controller) wfc.Client

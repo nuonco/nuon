@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -125,7 +125,7 @@ func TestComponentService_UpsertComponent(t *testing.T) {
 
 func TestComponentService_GetAppComponents(t *testing.T) {
 	errGetAppComponents := fmt.Errorf("error getting app components")
-	appID, _ := shortid.NewNanoID("app")
+	appID := domains.NewAppID()
 	component := generics.GetFakeObj[*models.Component]()
 	component.AppID = appID
 
@@ -176,7 +176,7 @@ func TestComponentService_GetAppComponents(t *testing.T) {
 
 func TestComponentService_GetComponent(t *testing.T) {
 	errGetComponent := fmt.Errorf("error getting component")
-	componentID, _ := shortid.NewNanoID("cmp")
+	componentID := domains.NewComponentID()
 	component := generics.GetFakeObj[*models.Component]()
 
 	tests := map[string]struct {
@@ -225,7 +225,7 @@ func TestComponentService_GetComponent(t *testing.T) {
 
 func TestComponentService_DeleteComponent(t *testing.T) {
 	errDeleteComponent := fmt.Errorf("error deleting component")
-	componentID, _ := shortid.NewNanoID("cmp")
+	componentID := domains.NewComponentID()
 
 	tests := map[string]struct {
 		componentID string

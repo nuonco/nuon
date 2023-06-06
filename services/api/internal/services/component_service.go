@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	componentConfig "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -146,7 +146,7 @@ func (i *componentService) UpsertComponent(ctx context.Context, input models.Com
 	}
 
 	var component models.Component
-	component.ID, _ = shortid.NewNanoID("cmp")
+	component.ID = domains.NewComponentID()
 	component.Name = input.Name
 	component.AppID = input.AppID
 	component.CreatedByID = input.CreatedByID

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +24,7 @@ func createSandboxVersion(ctx context.Context, t *testing.T, state repoTestState
 
 func TestGetSandboxVersionByID(t *testing.T) {
 	integration := os.Getenv("INTEGRATION")
-	id, _ := shortid.NewNanoID("snb")
+	id := domains.NewSandboxID()
 	if integration == "" {
 		t.Skip("INTEGRATION=true must be set in environment to run.")
 	}
@@ -124,7 +124,7 @@ func TestUpsertSandboxVersion(t *testing.T) {
 					SandboxVersion: "1.0",
 					TfVersion:      "10.1",
 				}
-				id, _ := shortid.NewNanoID("snb")
+				id := domains.NewSandboxID()
 				sandboxVersion.ID = id
 				updatedSandboxVersion, err := state.adminRepo.UpsertSandboxVersion(ctx, sandboxVersion)
 				require.Error(t, err)

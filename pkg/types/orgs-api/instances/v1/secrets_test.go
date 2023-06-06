@@ -5,16 +5,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAsRef(t *testing.T) {
-	orgID, _ := shortid.NewNanoID("org")
-	appID, _ := shortid.NewNanoID("app")
-	compID, _ := shortid.NewNanoID("cmp")
-	installID, _ := shortid.NewNanoID("inl")
-	secretID, _ := shortid.NewNanoID("sec")
+	orgID := domains.NewOrgID()
+	appID := domains.NewAppID()
+	compID := domains.NewComponentID()
+	installID := domains.NewInstallID()
+	secretID := domains.NewSecretID()
 	secret := Secret{
 		OrgId:       orgID,
 		AppId:       appID,
@@ -32,11 +32,11 @@ func TestAsRef(t *testing.T) {
 }
 
 func TestS3Path(t *testing.T) {
-	orgID, _ := shortid.NewNanoID("org")
-	appID, _ := shortid.NewNanoID("app")
-	compID, _ := shortid.NewNanoID("cmp")
-	installID, _ := shortid.NewNanoID("inl")
-	secretID, _ := shortid.NewNanoID("sec")
+	orgID := domains.NewOrgID()
+	appID := domains.NewAppID()
+	compID := domains.NewComponentID()
+	installID := domains.NewInstallID()
+	secretID := domains.NewSecretID()
 	secretRef := SecretRef{
 		OrgId:       orgID,
 		AppId:       appID,

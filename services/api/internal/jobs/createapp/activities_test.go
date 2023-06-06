@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -16,7 +16,7 @@ import (
 
 func Test_ActivityTriggerAppJob(t *testing.T) {
 	err := errors.New("error")
-	appID, _ := shortid.NewNanoID("app")
+	appID := domains.NewAppID()
 	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {

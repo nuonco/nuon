@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -33,7 +33,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 			return req.CanaryId
 		}
 
-		newCanaryID, _ := shortid.NewNanoID("") //prefix=def
+		newCanaryID := domains.NewCanaryID() //prefix=def
 		return newCanaryID
 	})
 

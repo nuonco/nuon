@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,7 +15,7 @@ import (
 // createComponent
 func createComponent(ctx context.Context, t *testing.T, state repoTestState) *models.Component {
 	app := createApp(ctx, t, state)
-	componentID, _ := shortid.NewNanoID("cmp")
+	componentID := domains.NewComponentID()
 
 	component, err := state.componentRepo.Create(ctx, &models.Component{
 		Name:  uuid.NewString(),
@@ -84,7 +84,7 @@ func TestDeleteComponent(t *testing.T) {
 			desc: "should error with canceled context",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				componentID, _ := shortid.NewNanoID("cmp")
+				componentID := domains.NewComponentID()
 				deleted, err := state.componentRepo.Delete(ctx, componentID)
 				assert.Error(t, err)
 				assert.False(t, deleted)
@@ -124,7 +124,7 @@ func TestGetComponent(t *testing.T) {
 		{
 			desc: "should error with not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				componentID, _ := shortid.NewNanoID("cmp")
+				componentID := domains.NewComponentID()
 				fetchedComponent, err := state.componentRepo.Get(ctx, componentID)
 				assert.Error(t, err)
 				assert.Nil(t, fetchedComponent)
@@ -168,7 +168,7 @@ func TestComponentListByApp(t *testing.T) {
 			desc: "should error with a context canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				appID, _ := shortid.NewNanoID("app")
+				appID := domains.NewAppID()
 				components, page, err := state.componentRepo.ListByApp(ctx, appID, &models.ConnectionOptions{})
 				assert.NotNil(t, err)
 				assert.Nil(t, components)

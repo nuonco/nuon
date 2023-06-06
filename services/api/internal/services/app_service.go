@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
@@ -91,7 +91,7 @@ func (a *appService) UpsertApp(ctx context.Context, input models.AppInput) (*mod
 	}
 
 	var app models.App
-	app.ID, _ = shortid.NewNanoID("app")
+	app.ID = domains.NewAppID()
 	app.Name = input.Name
 	app.OrgID = input.OrgID
 
