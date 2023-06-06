@@ -24,7 +24,7 @@ func (s *server) UpsertOrg(
 		Name:            req.Msg.Name,
 		OwnerID:         req.Msg.OwnerId,
 		GithubInstallID: converters.ToOptionalStr(req.Msg.GithubInstallId),
-		OverrideID:      &req.Msg.OverrideId,
+		OverrideID:      converters.ToOptionalStr(req.Msg.OverrideId),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to upsert org: %w", err)
