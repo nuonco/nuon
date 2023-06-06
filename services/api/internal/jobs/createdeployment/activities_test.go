@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -17,7 +17,7 @@ import (
 
 func Test_ActivityTriggerDeploymentJob(t *testing.T) {
 	err := errors.New("error")
-	deploymentID, _ := shortid.NewNanoID("dpl")
+	deploymentID := domains.NewDeploymentID()
 	deployment := generics.GetFakeObj[*models.Deployment]()
 	deployment.Component.Config = datatypes.JSON(`{"deployCfg": {}}`)
 	tests := map[string]struct {

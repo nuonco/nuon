@@ -3,7 +3,7 @@ package activitiesv1
 import (
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"github.com/stretchr/testify/assert"
 	anypb "google.golang.org/protobuf/types/known/anypb"
@@ -11,11 +11,10 @@ import (
 
 func Test_PollWorkflowRequest(t *testing.T) {
 	t.Run("test a poll workflow request", func(t *testing.T) {
-		workflowID, _ := shortid.NewNanoID("")
 		req := &PollWorkflowRequest{
 			Namespace:    "orgs",
 			WorkflowName: "Provision",
-			WorkflowId:   workflowID,
+			WorkflowId:   domains.NewCanaryID(),
 		}
 		err := req.Validate()
 		assert.NoError(t, err)

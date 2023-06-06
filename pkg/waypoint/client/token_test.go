@@ -8,7 +8,7 @@ import (
 )
 
 func TestDefaultTokenSecretName(t *testing.T) {
-	id, _ := shortid.NewNanoID("") //prefix=def
+	id := shortid.NewNanoID("") //prefix=def
 	token := DefaultTokenSecretName(id)
 	assert.Contains(t, token, id)
 }

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +15,7 @@ import (
 func createInstall(ctx context.Context, t *testing.T, state repoTestState) *models.Install {
 	app := createApp(ctx, t, state)
 	userID := uuid.NewString()
-	installID, _ := shortid.NewNanoID("inl")
+	installID := domains.NewInstallID()
 
 	install, err := state.installRepo.Create(ctx, &models.Install{
 		Model:       models.Model{ID: installID},
@@ -43,7 +43,7 @@ func TestUpsertInstall(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				app := createApp(ctx, t, state)
 				userID := uuid.NewString()
-				installID, _ := shortid.NewNanoID("inl")
+				installID := domains.NewInstallID()
 
 				installInput := &models.Install{
 					Model:       models.Model{ID: installID},
@@ -93,7 +93,7 @@ func TestDeleteInstall(t *testing.T) {
 			desc: "should error with canceled context",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				installID, _ := shortid.NewNanoID("inl")
+				installID := domains.NewInstallID()
 				deleted, err := state.installRepo.Delete(ctx, installID)
 				assert.False(t, deleted)
 				assert.NotNil(t, err)
@@ -133,7 +133,7 @@ func TestGetInstall(t *testing.T) {
 		{
 			desc: "should error with not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				installID, _ := shortid.NewNanoID("inl")
+				installID := domains.NewInstallID()
 				fetchedInstall, err := state.installRepo.Get(ctx, installID)
 				assert.Nil(t, fetchedInstall)
 				assert.NotNil(t, err)
@@ -188,7 +188,7 @@ func TestInstallListByApp(t *testing.T) {
 			desc: "should error with a context canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				appID, _ := shortid.NewNanoID("app")
+				appID := domains.NewAppID()
 				installs, page, err := state.installRepo.ListByApp(ctx, appID, &models.ConnectionOptions{})
 				assert.NotNil(t, err)
 				assert.Nil(t, installs)

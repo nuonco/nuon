@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -97,7 +97,7 @@ func TestInstallService_UpsertInstall(t *testing.T) {
 
 func TestInstallService_GetAppInstalls(t *testing.T) {
 	errGetAppInstalls := fmt.Errorf("error getting app installs")
-	appID, _ := shortid.NewNanoID("app")
+	appID := domains.NewAppID()
 	install := generics.GetFakeObj[*models.Install]()
 
 	tests := map[string]struct {
@@ -146,7 +146,7 @@ func TestInstallService_GetAppInstalls(t *testing.T) {
 
 func TestInstallService_GetInstall(t *testing.T) {
 	errGetInstall := fmt.Errorf("error getting install")
-	installID, _ := shortid.NewNanoID("inl")
+	installID := domains.NewInstallID()
 	app := generics.GetFakeObj[*models.Install]()
 
 	tests := map[string]struct {
@@ -195,7 +195,7 @@ func TestInstallService_GetInstall(t *testing.T) {
 
 func TestInstallService_DeleteInstall(t *testing.T) {
 	errDeleteInstall := fmt.Errorf("error deleting install")
-	installID, _ := shortid.NewNanoID("inl")
+	installID := domains.NewInstallID()
 
 	tests := map[string]struct {
 		installID   string

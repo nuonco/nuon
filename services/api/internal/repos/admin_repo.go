@@ -3,7 +3,7 @@ package repos
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"gorm.io/gorm"
 )
@@ -60,11 +60,7 @@ func (a adminRepo) UpsertSandboxVersion(ctx context.Context, sandboxVersion *mod
 			return nil, err
 		}
 	} else {
-		nanoID, err := shortid.NewNanoID("snb")
-		if err != nil {
-			return nil, err
-		}
-		sandboxVersion.ID = nanoID
+		sandboxVersion.ID = domains.NewSandboxID()
 	}
 
 	// upsert sandbox

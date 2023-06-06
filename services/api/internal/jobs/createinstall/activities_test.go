@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -18,7 +18,7 @@ func Test_ActivityTriggerInstallJob(t *testing.T) {
 	err := errors.New("error")
 	app := generics.GetFakeObj[*models.App]()
 
-	installID, _ := shortid.NewNanoID("inl")
+	installID := domains.NewInstallID()
 	install := generics.GetFakeObj[*models.Install]()
 	install.AWSSettings = &models.AWSSettings{Region: models.AWSRegionUsEast1}
 	sandboxVersion := generics.GetFakeObj[*models.SandboxVersion]()

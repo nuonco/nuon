@@ -87,16 +87,16 @@ func New() string {
 }
 
 // NewNanoID returns a new nanoID
-func NewNanoID(prefix string) (string, error) {
+func NewNanoID(prefix string) string {
 	id, err := gonanoid.Generate(nanoIDAlphabet, nanoIDLen)
 	if err != nil {
-		return "", err
+		panic(err)
 	}
 	if prefix != "" {
-		return prefix + id, nil
+		return prefix + id
 	}
 	// adding a default prefix value in case none is provided as input
-	return "def" + id, nil
+	return "def" + id
 }
 
 // ParseStrings parses a list of string UUIDs into a list of shortids, failing all if any fail

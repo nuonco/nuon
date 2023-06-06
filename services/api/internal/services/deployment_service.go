@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	gh "github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	componentConfig "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
@@ -275,7 +275,7 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.
 		ComponentID: input.ComponentID,
 		CreatedByID: *input.CreatedByID,
 	}
-	deployment.ID, _ = shortid.NewNanoID("dpl")
+	deployment.ID = domains.NewDeploymentID()
 	deployment, err = i.repo.Create(ctx, deployment)
 	if err != nil {
 		i.log.Error("failed to create deployment",
