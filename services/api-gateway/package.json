@@ -29,7 +29,7 @@
     "@buf/nuon_components.grpc_node": "^1.12.4-20230517163600-44b1b387bbda.1",
     "@buf/nuon_orgs-api.grpc_node": "^1.12.4-20230601085147-161d1c188566.1",
     "@buf/nuon_shared.grpc_node": "^1.12.4-20230523155643-9fc424bb3775.1",
-    "@grpc/grpc-js": "^1.8.14",
+    "@grpc/grpc-js": "^1.8.15",
     "cors": "^2.8.5",
     "dotenv": "^16.1.4",
     "envalid": "^7.3.1",
