@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -17,7 +17,7 @@ import (
 
 func TestOrgService_DeleteOrg(t *testing.T) {
 	errDeleteOrg := fmt.Errorf("error deleting org")
-	orgID, _ := shortid.NewNanoID("org")
+	orgID := domains.NewOrgID()
 
 	tests := map[string]struct {
 		orgID       string
@@ -65,7 +65,7 @@ func TestOrgService_DeleteOrg(t *testing.T) {
 
 func TestOrgService_GetOrg(t *testing.T) {
 	errGetOrg := fmt.Errorf("error getting org")
-	orgID, _ := shortid.NewNanoID("org")
+	orgID := domains.NewOrgID()
 	org := generics.GetFakeObj[*models.Org]()
 
 	tests := map[string]struct {

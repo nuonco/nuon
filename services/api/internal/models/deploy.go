@@ -4,7 +4,7 @@ package models
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	deployv1 "github.com/powertoolsdev/mono/pkg/types/api/deploy/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs"
 	"gorm.io/gorm"
@@ -22,11 +22,7 @@ type Deploy struct {
 
 func (d *Deploy) NewID() error {
 	if d.ID == "" {
-		id, err := shortid.NewNanoID("dpl")
-		if err != nil {
-			return fmt.Errorf("unable to make nanoid for artifact: %w", err)
-		}
-		d.ID = id
+		d.ID = domains.NewDeploymentID()
 	}
 	return nil
 }

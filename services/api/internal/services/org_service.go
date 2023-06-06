@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
 	"github.com/powertoolsdev/mono/services/api/internal/utils"
@@ -104,11 +104,7 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 		IsNew:       true,
 		Name:        input.Name,
 	}
-	nanoID, err := shortid.NewNanoID("org")
-	if err != nil {
-		return nil, err
-	}
-	org.ID = nanoID
+	org.ID = domains.NewOrgID()
 	if input.GithubInstallID != nil {
 		org.GithubInstallID = *input.GithubInstallID
 	}
@@ -118,7 +114,7 @@ func (o *orgService) UpsertOrg(ctx context.Context, input models.OrgInput) (*mod
 		org.ID = *input.OverrideID
 	}
 
-	org, err = o.repo.Create(ctx, org)
+	org, err := o.repo.Create(ctx, org)
 	if err != nil {
 		o.log.Error("failed to create org",
 			zap.Any("org", org),

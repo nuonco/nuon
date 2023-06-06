@@ -6,8 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -17,8 +16,8 @@ import (
 
 func TestUserService_UpsertUserOrg(t *testing.T) {
 	errUpsertUserOrg := fmt.Errorf("error upserting org member")
-	orgID, _ := shortid.NewNanoID("org")
-	userID := uuid.NewString()
+	orgID := domains.NewOrgID()
+	userID := domains.NewUserID()
 	userOrg := generics.GetFakeObj[*models.UserOrg]()
 
 	tests := map[string]struct {

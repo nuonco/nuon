@@ -8,13 +8,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jaswdr/faker"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func createOrg(ctx context.Context, t *testing.T, orgRepo OrgRepo) *models.Org {
-	id, _ := shortid.NewNanoID("org")
+	id := domains.NewOrgID()
 	org, err := orgRepo.Create(ctx, &models.Org{
 		Name:        uuid.NewString(),
 		CreatedByID: uuid.NewString(),
@@ -25,7 +25,7 @@ func createOrg(ctx context.Context, t *testing.T, orgRepo OrgRepo) *models.Org {
 }
 
 func TestUpsertOrg(t *testing.T) {
-	id, _ := shortid.NewNanoID("org")
+	id := domains.NewOrgID()
 	integration := os.Getenv("INTEGRATION")
 	if integration == "" {
 		t.Skip("INTEGRATION=true must be set in environment to run.")
@@ -126,7 +126,7 @@ func TestDeleteOrg(t *testing.T) {
 		{
 			desc: "should return false if not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				orgID, _ := shortid.NewNanoID("org")
+				orgID := domains.NewOrgID()
 				deleted, err := state.orgRepo.Delete(ctx, orgID)
 				assert.Nil(t, err)
 				assert.False(t, deleted)
@@ -164,7 +164,7 @@ func TestGetOrg(t *testing.T) {
 		{
 			desc: "should return an error if not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				orgID, _ := shortid.NewNanoID("org")
+				orgID := domains.NewOrgID()
 				org, err := state.orgRepo.Get(ctx, orgID)
 				assert.Nil(t, org)
 				assert.NotNil(t, err)

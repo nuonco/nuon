@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	instancesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1/instances/v1"
 	provisionv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"
@@ -18,7 +18,7 @@ import (
 func TestProvisionInstances(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
 	req := generics.GetFakeObj[*instancesv1.ProvisionRequest]()
-	installID, _ := shortid.NewNanoID("inl")
+	installID := domains.NewInstallID()
 	req.InstallIds = []string{installID}
 	wkflow := NewWorkflow(cfg)
 	testSuite := &testsuite.WorkflowTestSuite{}
