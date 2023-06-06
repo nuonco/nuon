@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -16,7 +16,7 @@ import (
 
 func TestAppService_GetApp(t *testing.T) {
 	errGetApp := fmt.Errorf("error getting app")
-	appID, _ := shortid.NewNanoID("app")
+	appID := domains.NewAppID()
 	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
@@ -65,7 +65,7 @@ func TestAppService_GetApp(t *testing.T) {
 
 func TestAppService_GetOrgApps(t *testing.T) {
 	errGetOrgApps := fmt.Errorf("error getting apps")
-	orgID, _ := shortid.NewNanoID("org")
+	orgID := domains.NewOrgID()
 	app := generics.GetFakeObj[*models.App]()
 
 	tests := map[string]struct {
@@ -224,7 +224,7 @@ func TestAppService_UpsertApp(t *testing.T) {
 
 func TestAppService_DeleteApp(t *testing.T) {
 	errDeleteApp := fmt.Errorf("error deleting app")
-	appID, _ := shortid.NewNanoID("app")
+	appID := domains.NewAppID()
 
 	tests := map[string]struct {
 		appID       string

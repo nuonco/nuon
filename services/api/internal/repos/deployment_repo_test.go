@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,7 +13,7 @@ import (
 
 func createDeployment(ctx context.Context, t *testing.T, state repoTestState) *models.Deployment {
 	component := createComponent(ctx, t, state)
-	deploymentID, _ := shortid.NewNanoID("dpl")
+	deploymentID := domains.NewDeploymentID()
 
 	deployment, err := state.deploymentRepo.Create(ctx, &models.Deployment{
 		ComponentID: component.ID,
@@ -55,7 +55,7 @@ func TestGetDeployment(t *testing.T) {
 		{
 			desc: "should error with not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				deploymentID, _ := shortid.NewNanoID("dpl")
+				deploymentID := domains.NewDeploymentID()
 				fetchedDeployment, err := state.deploymentRepo.Get(ctx, deploymentID)
 				assert.Error(t, err)
 				assert.Nil(t, fetchedDeployment)

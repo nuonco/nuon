@@ -1,9 +1,7 @@
 package models
 
 import (
-	"fmt"
-
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 )
 
 type Instance struct {
@@ -21,11 +19,7 @@ type Instance struct {
 
 func (i *Instance) NewID() error {
 	if i.ID == "" {
-		id, err := shortid.NewNanoID("ins")
-		if err != nil {
-			return fmt.Errorf("unable to make nanoid for instance: %w", err)
-		}
-		i.ID = id
+		i.ID = domains.NewInstanceID()
 	}
 	return nil
 }

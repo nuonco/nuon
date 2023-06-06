@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	apibuildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
 	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
@@ -23,10 +23,7 @@ func (s *server) StartBuild(
 	}
 
 	// use gorm model to record that we're starting a build
-	buildID, err := shortid.NewNanoID("bld")
-	if err != nil {
-		return nil, err
-	}
+	buildID := domains.NewBuildID()
 	build := models.Build{
 		Model: models.Model{
 			ID: buildID,
@@ -35,7 +32,7 @@ func (s *server) StartBuild(
 		ComponentID: req.Msg.ComponentId,
 		CreatedByID: req.Msg.CreatedById,
 	}
-	if err = s.db.WithContext(ctx).Create(&build).Error; err != nil {
+	if err := s.db.WithContext(ctx).Create(&build).Error; err != nil {
 		return nil, err
 	}
 
@@ -70,7 +67,7 @@ func (s *server) StartBuild(
 		OrgId:       org.ID,
 		AppId:       app.ID,
 	}
-	_, err = s.temporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, workflow, &args)
+	_, err := s.temporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, workflow, &args)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start build: %w", err)
 	}

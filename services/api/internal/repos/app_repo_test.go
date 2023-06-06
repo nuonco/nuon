@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +15,7 @@ import (
 func createApp(ctx context.Context, t *testing.T, state repoTestState) *models.App {
 	userID := uuid.NewString()
 	org := createOrg(ctx, t, state.orgRepo)
-	appID, _ := shortid.NewNanoID("app")
+	appID := domains.NewAppID()
 	app, err := state.appRepo.Create(ctx, &models.App{
 		Name:        uuid.NewString(),
 		CreatedByID: userID,
@@ -39,7 +39,7 @@ func TestUpsertApp(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				userID := uuid.NewString()
 				org := createOrg(ctx, t, state.orgRepo)
-				appID, _ := shortid.NewNanoID("app")
+				appID := domains.NewAppID()
 
 				appInput := &models.App{
 					Name:        uuid.NewString(),
@@ -105,7 +105,7 @@ func TestDeleteApp(t *testing.T) {
 		{
 			desc: "should error with canceled context",
 			fn: func(ctx context.Context, state repoTestState) {
-				appID, _ := shortid.NewNanoID("app")
+				appID := domains.NewAppID()
 				state.ctxCloseFn()
 				deleted, err := state.appRepo.Delete(ctx, appID)
 				assert.False(t, deleted)
@@ -146,7 +146,7 @@ func TestGetApp(t *testing.T) {
 		{
 			desc: "should error with not found",
 			fn: func(ctx context.Context, state repoTestState) {
-				appID, _ := shortid.NewNanoID("app")
+				appID := domains.NewAppID()
 				fetchedApp, err := state.appRepo.Get(ctx, appID)
 				assert.Nil(t, fetchedApp)
 				assert.NotNil(t, err)
@@ -190,7 +190,7 @@ func TestAppGetPageByOrg(t *testing.T) {
 			desc: "should error with a context canceled",
 			fn: func(ctx context.Context, state repoTestState) {
 				state.ctxCloseFn()
-				orgID, _ := shortid.NewNanoID("org")
+				orgID := domains.NewOrgID()
 				apps, page, err := state.appRepo.GetPageByOrg(ctx, orgID, &models.ConnectionOptions{})
 				assert.NotNil(t, err)
 				assert.Nil(t, apps)

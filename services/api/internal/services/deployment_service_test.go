@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"
@@ -16,7 +16,7 @@ import (
 
 func TestDeploymentService_GetComponentDeployments(t *testing.T) {
 	errGetComponentDeployments := fmt.Errorf("error getting component deployments")
-	componentID, _ := shortid.NewNanoID("cmp")
+	componentID := domains.NewComponentID()
 	deployment := generics.GetFakeObj[*models.Deployment]()
 
 	tests := map[string]struct {
@@ -70,7 +70,7 @@ func TestDeploymentService_GetComponentDeployments(t *testing.T) {
 
 func TestDeploymentService_GetAppDeployments(t *testing.T) {
 	errGetAppDeployments := fmt.Errorf("error getting app deployments")
-	appID, _ := shortid.NewNanoID("app")
+	appID := domains.NewAppID()
 	deployment := generics.GetFakeObj[*models.Deployment]()
 
 	tests := map[string]struct {
@@ -124,7 +124,7 @@ func TestDeploymentService_GetAppDeployments(t *testing.T) {
 
 func TestDeploymentService_GetInstallDeployments(t *testing.T) {
 	errGetInstallDeployments := fmt.Errorf("error getting install deployments")
-	installID, _ := shortid.NewNanoID("inl")
+	installID := domains.NewInstallID()
 	deployment := generics.GetFakeObj[*models.Deployment]()
 
 	tests := map[string]struct {
@@ -178,7 +178,7 @@ func TestDeploymentService_GetInstallDeployments(t *testing.T) {
 
 func TestDeploymentService_GetDeployment(t *testing.T) {
 	errGetDeployment := fmt.Errorf("error getting app")
-	deploymentID, _ := shortid.NewNanoID("dpl")
+	deploymentID := domains.NewDeploymentID()
 	app := generics.GetFakeObj[*models.Deployment]()
 
 	tests := map[string]struct {

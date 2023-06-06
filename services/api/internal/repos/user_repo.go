@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/clients/temporal"
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -33,7 +33,7 @@ func (u userRepo) UpsertUserOrg(ctx context.Context, userID string, orgID string
 	var uo models.UserOrg
 	uo.UserID = userID
 	uo.OrgID = orgID
-	uo.ID, _ = shortid.NewNanoID("usr")
+	uo.ID = domains.NewUserID()
 
 	fmt.Println(ctx.Value(temporal.ContextKey{}))
 	if err := u.db.WithContext(ctx).
