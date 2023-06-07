@@ -21,7 +21,7 @@ message UpsertSandboxVersionRequest {
       len: 26,
       ignore_empty: true
     },
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string sandbox_name = 2 [(validate.rules).string.min_len = 3];
   string sandbox_version = 3 [(validate.rules).string.min_len = 3];
