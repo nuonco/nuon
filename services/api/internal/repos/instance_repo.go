@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -12,9 +11,9 @@ import (
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_instance_repo.go -source=instance_repo.go -package=repos
 type InstanceRepo interface {
-	Get(context.Context, uuid.UUID) (*models.Instance, error)
+	Get(context.Context, string) (*models.Instance, error)
 	Create(context.Context, []*models.Instance) ([]*models.Instance, error)
-	Delete(context.Context, uuid.UUID) (bool, error)
+	Delete(context.Context, string) (bool, error)
 }
 
 var _ InstanceRepo = (*instanceRepo)(nil)
@@ -29,7 +28,7 @@ type instanceRepo struct {
 	db *gorm.DB
 }
 
-func (i instanceRepo) Get(ctx context.Context, instanceID uuid.UUID) (*models.Instance, error) {
+func (i instanceRepo) Get(ctx context.Context, instanceID string) (*models.Instance, error) {
 	var instance models.Instance
 	if err := i.db.WithContext(ctx).
 		Preload(clause.Associations).
@@ -51,7 +50,7 @@ func (i instanceRepo) Create(ctx context.Context, instances []*models.Instance) 
 	return instances, nil
 }
 
-func (i instanceRepo) Delete(ctx context.Context, instanceID uuid.UUID) (bool, error) {
+func (i instanceRepo) Delete(ctx context.Context, instanceID string) (bool, error) {
 	var instance models.Instance
 	if err := i.db.WithContext(ctx).
 		Clauses(clause.Returning{Columns: []clause.Column{{Name: "id"}}}).
