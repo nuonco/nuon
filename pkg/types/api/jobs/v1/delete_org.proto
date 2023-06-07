@@ -8,7 +8,7 @@ import "validate/validate.proto";
 message DeleteOrgRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 

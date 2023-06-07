@@ -10,7 +10,7 @@ option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors
 message Metadata {
   string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string org_short_id = 2 [
     (validate.rules).string.len = 26,
@@ -18,7 +18,7 @@ message Metadata {
   ];
   string app_id = 3 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string app_short_id = 4 [
     (validate.rules).string.len = 26,
@@ -26,7 +26,7 @@ message Metadata {
   ];
   string deployment_id = 5 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string deployment_short_id = 6 [
     (validate.rules).string.len = 26,

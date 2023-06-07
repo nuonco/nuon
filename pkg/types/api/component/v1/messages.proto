@@ -22,7 +22,7 @@ message ComponentRef {
 message GetComponentRequest {
   string id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
@@ -33,7 +33,7 @@ message GetComponentResponse {
 message GetComponentsByAppRequest {
   string app_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 

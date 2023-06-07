@@ -33,7 +33,7 @@ message WorkflowInfo {
 message Request {
   string workflow_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 
   RequestRef request = 2 [(tagger.tags) = "faker:\"-\""];

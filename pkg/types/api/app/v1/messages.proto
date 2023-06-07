@@ -18,7 +18,7 @@ message App {
 message GetAppRequest {
   string id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
@@ -29,7 +29,7 @@ message GetAppResponse {
 message GetAppsByOrgRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
@@ -40,7 +40,7 @@ message GetAppsByOrgResponse {
 message DeleteAppRequest {
   string id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
@@ -54,7 +54,7 @@ message UpsertAppRequest {
       len: 26,
       ignore_empty: true
     },
-    (tagger.tags) = "faker:\"-\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"-\""
   ];
   string name = 2;
   string org_id = 3 [
@@ -62,7 +62,7 @@ message UpsertAppRequest {
       len: 26,
       ignore_empty: true
     },
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string created_by_id = 5;
 

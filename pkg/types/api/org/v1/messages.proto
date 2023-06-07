@@ -26,7 +26,7 @@ message GetOrgsByMemberResponse {
 message GetOrgRequest {
   string id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
@@ -55,7 +55,7 @@ message UpsertOrgResponse {
 message DeleteOrgRequest {
   string id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
