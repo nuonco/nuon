@@ -9,7 +9,7 @@ import "validate/validate.proto";
 message StartDeployRequest {
   string deploy_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
