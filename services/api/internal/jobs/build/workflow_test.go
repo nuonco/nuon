@@ -62,7 +62,7 @@ func TestProvision(t *testing.T) {
 
 			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, req.OrgId)
 			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
-			expectedPrefix := prefix.DeploymentPath(req.OrgId, req.AppId, req.ComponentId, req.BuildId)
+			expectedPrefix := prefix.BuildPath(req.OrgId, req.AppId, req.ComponentId, req.BuildId)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
@@ -75,7 +75,7 @@ func TestProvision(t *testing.T) {
 
 			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, req.OrgId)
 			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
-			expectedPrefix := prefix.DeploymentPath(req.OrgId, req.AppId, req.ComponentId, req.BuildId)
+			expectedPrefix := prefix.BuildPath(req.OrgId, req.AppId, req.ComponentId, req.BuildId)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
