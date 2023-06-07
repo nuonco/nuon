@@ -264,5 +264,5 @@ func getS3PrefixFromRequest(req *buildsv1.BuildRequest) string {
 
 // getS3Prefix returns the prefix to be used for the plan and it's encompassed files
 func getS3Prefix(orgID, appID, componentID, deploymentID string) string {
-	return prefix.DeploymentPath(orgID, appID, componentID, deploymentID)
+	return prefix.BuildPath(orgID, appID, componentID, deploymentID)
 }
