@@ -9,19 +9,19 @@ import "validate/validate.proto";
 message GetInfoRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string app_id = 2 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string component_id = 3 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string deployment_id = 4 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 

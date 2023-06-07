@@ -41,7 +41,7 @@ message GcpSettings {
 message GetInstallRequest {
   string id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
@@ -52,7 +52,7 @@ message GetInstallResponse {
 message GetInstallsByAppRequest {
   string app_id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
@@ -63,7 +63,7 @@ message GetInstallsByAppResponse {
 message DeleteInstallRequest {
   string id = 1 [
     (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
 }
 
@@ -85,7 +85,7 @@ message UpsertInstallRequest {
       len: 26,
       ignore_empty: true
     },
-    (tagger.tags) = "faker:\"shortID\" shortid:\"ensure\""
+    (tagger.tags) = "faker:\"shortID\""
   ];
   string created_by_id = 4;
 
