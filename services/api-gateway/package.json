@@ -41,7 +41,7 @@
     "install": "^0.13.0",
     "lodash.merge": "^4.6.2",
     "luxon": "^3.3.0",
-    "npm": "^9.6.7",
+    "npm": "^9.7.1",
     "pino": "^8.14.1"
   },
   "devDependencies": {
