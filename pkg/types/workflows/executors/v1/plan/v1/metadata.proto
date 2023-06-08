@@ -12,28 +12,18 @@ message Metadata {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
-  string org_short_id = 2 [
+  string app_id = 2 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
-  string app_id = 3 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
-  ];
-  string app_short_id = 4 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
-  ];
-  string deployment_id = 5 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
-  ];
-  string deployment_short_id = 6 [
+  string deployment_id = 3 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
 
   // TODO(jm): make these optional + enforce validations if set
-  string install_id = 7 [(tagger.tags) = "faker:\"uuid_hyphenated\""];
-  string install_short_id = 8 [(tagger.tags) = "faker:\"shortID\""];
+  string install_id = 4 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
 }
