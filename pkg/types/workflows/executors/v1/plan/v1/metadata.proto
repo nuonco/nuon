@@ -21,9 +21,11 @@ message Metadata {
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  // TODO(jm): make these optional + enforce validations if set
   string install_id = 4 [
-    (validate.rules).string.len = 26,
+    (validate.rules).string = {
+      len: 26,
+      ignore_empty: true
+    },
     (tagger.tags) = "faker:\"shortID\""
   ];
 }
