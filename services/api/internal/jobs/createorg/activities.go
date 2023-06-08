@@ -7,6 +7,10 @@ import (
 	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 )
 
+const (
+	defaultOrgRegion string = "us-west-2"
+)
+
 type activities struct {
 	wfc wfc.Client
 }
@@ -20,7 +24,10 @@ type TriggerJobResponse struct {
 }
 
 func (a *activities) TriggerOrgProvision(ctx context.Context, orgID string) (*TriggerJobResponse, error) {
-	workflowID, err := a.wfc.TriggerOrgSignup(ctx, &orgsv1.SignupRequest{OrgId: orgID})
+	workflowID, err := a.wfc.TriggerOrgSignup(ctx, &orgsv1.SignupRequest{
+		OrgId:  orgID,
+		Region: defaultOrgRegion,
+	})
 	if err != nil {
 		return nil, err
 	}

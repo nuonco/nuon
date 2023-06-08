@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
+	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +23,12 @@ func Test_ActivityTriggerOrgJob(t *testing.T) {
 		"happy path": {
 			mockWfc: func(ctl *gomock.Controller) wfc.Client {
 				mockWfc := wfc.NewMockClient(ctl)
-				mockWfc.EXPECT().TriggerOrgSignup(gomock.Any(), gomock.Any()).Return("123456", nil)
+				mockWfc.EXPECT().TriggerOrgSignup(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, req *orgsv1.SignupRequest) (string, error) {
+						err := req.Validate()
+						assert.NoError(t, err)
+						return "123456", nil
+					})
 				return mockWfc
 			},
 		},
