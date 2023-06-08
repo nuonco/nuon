@@ -8,6 +8,7 @@ import (
 )
 
 func (m *manager) CreateOrg(ctx context.Context, orgID string) error {
+	m.Opts.ID = orgID
 	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "orgs", m.Opts, "CreateOrg", &jobsv1.CreateOrgRequest{
 		OrgId: orgID,
 	})
