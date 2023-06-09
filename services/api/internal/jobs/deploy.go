@@ -8,6 +8,7 @@ import (
 )
 
 func (m *manager) StartDeploy(ctx context.Context, deployID string) (string, error) {
+	m.Opts.ID = deployID
 	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "deploys", m.Opts, "StartDeploy", &jobsv1.StartDeployRequest{
 		DeployId: deployID,
 	})

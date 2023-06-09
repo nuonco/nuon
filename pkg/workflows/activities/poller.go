@@ -7,8 +7,8 @@ import (
 
 	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
+	buildsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1/activities/v1"
@@ -96,7 +96,7 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
 	case [2]string{"builds", "Build"}:
-		var wkflowResp *planv1.PlanRef
+		var wkflowResp *buildsv1.BuildResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
