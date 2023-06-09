@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
+	buildsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
+	deploysv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deploys/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
@@ -15,7 +17,6 @@ import (
 	meta "github.com/powertoolsdev/mono/pkg/workflows/meta"
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/startdeploy/activities"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
@@ -47,29 +48,30 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 
 	shrdAct := &sharedactivities.Activities{}
 
-	// poll install workflow future
-	pollInstallRequest := &activitiesv1.PollWorkflowRequest{
-		Namespace:    "installs",
-		WorkflowName: "Provision",
-		WorkflowId:   idResp.InstallID,
-	}
+	/*
+		// poll install workflow future
+		pollInstallRequest := &activitiesv1.PollWorkflowRequest{
+			Namespace:    "installs",
+			WorkflowName: "Provision",
+			WorkflowId:   idResp.InstallID,
+		}
 
-	// set poll timeout
-	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		ScheduleToCloseTimeout: sharedactivities.PollActivityTimeout * sharedactivities.MaxActivityRetries,
-		StartToCloseTimeout:    sharedactivities.PollActivityTimeout,
-		RetryPolicy: &temporal.RetryPolicy{
-			MaximumAttempts: sharedactivities.MaxActivityRetries,
-		},
-	})
+		// set poll timeout
+		ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
+			ScheduleToCloseTimeout: sharedactivities.PollActivityTimeout * sharedactivities.MaxActivityRetries,
+			StartToCloseTimeout:    sharedactivities.PollActivityTimeout,
+			RetryPolicy: &temporal.RetryPolicy{
+				MaximumAttempts: sharedactivities.MaxActivityRetries,
+			},
+		})
 
-	var pollResp activitiesv1.PollWorkflowResponse
-	fut = workflow.ExecuteActivity(ctx, shrdAct.PollWorkflow, pollInstallRequest)
-	err = fut.Get(ctx, &pollResp)
-	if err != nil {
-		return nil, fmt.Errorf("unable to poll for workflow response: %w", err)
-	}
-	// TODO(cp): connect install workflow
+		var pollResp activitiesv1.PollWorkflowResponse
+		fut = workflow.ExecuteActivity(ctx, shrdAct.PollWorkflow, pollInstallRequest)
+		err = fut.Get(ctx, &pollResp)
+		if err != nil {
+			return nil, fmt.Errorf("unable to poll for workflow response: %w", err)
+		}
+	*/
 	// poll build workflow future
 	pollBuildRequest := &activitiesv1.PollWorkflowRequest{
 		Namespace:    "builds",
@@ -77,27 +79,42 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 		WorkflowId:   idResp.BuildID,
 	}
 
-	planRef := &planv1.PlanRef{}
+	var pollResp activitiesv1.PollWorkflowResponse
 	fut = workflow.ExecuteActivity(ctx, shrdAct.PollWorkflow, pollBuildRequest)
-	err = fut.Get(ctx, &planRef)
+	err = fut.Get(ctx, &pollResp)
 	if err != nil {
 		return nil, fmt.Errorf("unable to poll for workflow response: %w", err)
 	}
 
+	buildResp, err := pollResp.Response.UnmarshalNew()
+	if err != nil {
+		return nil, fmt.Errorf("error formatting build response from poll: %w", err)
+	}
+
+	buildMsg, ok := buildResp.(*buildsv1.BuildResponse)
+	if !ok {
+		return nil, fmt.Errorf("error creating build response: %t", ok)
+	}
+
 	resp := &jobsv1.StartDeployResponse{
-		BuildPlan: planRef,
+		BuildPlan: buildMsg.BuildPlan,
 	}
 
 	// fetch plans from S3 (build)
 	// planRef should have S3 path to fetch from
 	plan := &planv1.Plan{}
-	fut = workflow.ExecuteActivity(ctx, act.FetchBuildPlanJob, planRef)
+	fut = workflow.ExecuteActivity(ctx, act.FetchBuildPlanJob, resp.BuildPlan)
 	if err = fut.Get(ctx, &plan); err != nil {
 		return nil, fmt.Errorf("unable to trigger workflow response: %w", err)
 	}
 
+	//we need to add the installId to the plan
+	switch plan := plan.Actual.(type) {
+	case *planv1.Plan_WaypointPlan:
+		plan.WaypointPlan.Metadata.InstallId = idResp.InstallID
+	}
 	// start the executors part of the workflows for syncing and deploying
-	if err = w.startWorkflow(ctx, plan); err != nil {
+	if err = w.startWorkflow(ctx, plan, idResp); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
 		w.finishWorkflow(ctx, plan, resp, err)
 		return resp, err
@@ -129,14 +146,26 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 	return resp, nil
 }
 
-func (w *wkflow) startWorkflow(ctx workflow.Context, plan *planv1.Plan) error {
+func (w *wkflow) startWorkflow(ctx workflow.Context, plan *planv1.Plan, ids activities.GetIDsResponse) error {
 	wpPlan := plan.GetWaypointPlan()
 	info := workflow.GetInfo(ctx)
+
+	req := &deploysv1.DeployRequest{
+		DeployId: ids.DeployID,
+		BuildId:  ids.BuildID,
+		OrgId:    wpPlan.Metadata.OrgId,
+		AppId:    wpPlan.Metadata.AppId,
+	}
 
 	startReq := &sharedv1.StartActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
 		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, wpPlan.Metadata.OrgId),
 		MetadataBucketPrefix:        prefix.InstancePath(wpPlan.Metadata.OrgId, wpPlan.Metadata.AppId, wpPlan.Component.Id, wpPlan.Metadata.DeploymentId, wpPlan.Metadata.InstallId),
+		RequestRef: &sharedv1.RequestRef{
+			Request: &sharedv1.RequestRef_DeployRequest{
+				DeployRequest: req,
+			},
+		},
 		WorkflowInfo: &sharedv1.WorkflowInfo{
 			Id: info.WorkflowExecution.ID,
 		},

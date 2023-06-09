@@ -25,9 +25,9 @@ func NewActivities(v *validator.Validate, db *gorm.DB) *activities {
 }
 
 type GetIDsResponse struct {
-	DeployID  string
-	InstallID string
-	BuildID   string
+	DeployID  string `faker:"shortID"`
+	InstallID string `faker:"shortID"`
+	BuildID   string `faker:"shortID"`
 }
 
 func (a *activities) GetIDs(ctx context.Context, deployID string) (*GetIDsResponse, error) {

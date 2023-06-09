@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package deploys.v1;
+
+import "executors/v1/plan/v1/plan_ref.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/deploys/v1";
+
+// BuildRequest is a child workflow request for the plan phase
+message DeployRequest {
+  string deploy_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string build_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string org_id = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  string app_id = 4 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+}
+
+// BuildResponse is a child workflow response for the plan phase
+message DeployResponse {
+  .executors.v1.plan.v1.PlanRef deploy_plan = 1;
+}
