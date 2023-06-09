@@ -20,6 +20,8 @@ bin/
 # filter out deployment and infra
 **/k8s/charts/
 **/.terraform
+**/terraform.tfvars
+**/terraform.tfvars.json
 
 # Go files
 # generated protobufs
