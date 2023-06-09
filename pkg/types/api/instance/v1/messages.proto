@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package instance.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+message Instance {
+  string id = 1;
+  string deploy_id = 2;
+  string build_id = 3;
+}
+
+message GetInstancesByInstallRequest {
+  string install_id = 1 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+}
+
+message GetInstancesByInstallResponse {
+  repeated Instance instances = 1;
+}
