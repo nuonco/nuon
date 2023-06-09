@@ -37,9 +37,10 @@ artifacts:
     SAVE ARTIFACT out AS LOCAL ./out
 
 oci-artifacts:
+    ARG repo=
+    ARG image_tag=
+
     FROM public.ecr.aws/p7e3r5y0/waypoint-odr:$ODR_VERSION
     COPY +artifacts/out/$BIN /bin/$BIN
 
-    ARG repo=
-    ARG image_tag=
     SAVE IMAGE --push $repo:$image_tag
