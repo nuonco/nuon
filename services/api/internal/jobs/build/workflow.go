@@ -60,16 +60,17 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildsv1.BuildRequest) (*build
 		return nil, fmt.Errorf("unable to create plan: %w", err)
 	}
 
+	res := &buildsv1.BuildResponse{
+		BuildPlan: createPlanResp.Plan,
+	}
+
 	l.Info("executing plan")
 	_, err = execExecutePlan(ctx, &executev1.ExecutePlanRequest{
 		Plan: createPlanResp.Plan,
 	})
 	if err != nil {
+		w.finishWorkflow(ctx, req, res, err)
 		return nil, fmt.Errorf("unable to create plan: %w", err)
-	}
-
-	res := &buildsv1.BuildResponse{
-		BuildPlan: createPlanResp.Plan,
 	}
 
 	w.finishWorkflow(ctx, req, res, nil)
