@@ -9,6 +9,7 @@ message Instance {
   string id = 1;
   string deploy_id = 2;
   string build_id = 3;
+  string component_id = 4;
 }
 
 message GetInstancesByInstallRequest {
