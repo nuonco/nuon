@@ -116,6 +116,7 @@ type repoTestState struct {
 	orgRepo        orgRepo
 	componentRepo  componentRepo
 	deploymentRepo deploymentRepo
+	deployRepo     deployRepo
 
 	db         *gorm.DB
 	ctxCloseFn func()
@@ -150,6 +151,7 @@ func execRepoTest(t *testing.T, test repoTest) {
 		installRepo:    NewInstallRepo(db),
 		componentRepo:  NewComponentRepo(db),
 		deploymentRepo: NewDeploymentRepo(db),
+		deployRepo:     NewDeployRepo(db),
 		ctxCloseFn:     ctxCloseFn,
 	}
 
