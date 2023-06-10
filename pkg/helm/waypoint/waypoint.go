@@ -8,7 +8,7 @@ import (
 
 const (
 	waypointImageRepository string = "public.ecr.aws/p7e3r5y0/waypoint"
-	waypointVersion         string = "v0.0.5"
+	waypointVersion         string = "v0.0.7"
 )
 
 // Values represent all of the possible values for a helm installation
@@ -101,7 +101,7 @@ type Values struct {
 		Annotations       map[string]string `mapstructure:"annotations,omitempty"`
 		NodeSelector      interface{}       `mapstructure:"nodeSelector,omitempty"`
 		ServiceAccount    struct {
-			Create      bool              `mapstructure:"create,omitempty"`
+			Create      bool              `mapstructure:"create"`
 			Name        string            `mapstructure:"name,omitempty"`
 			Annotations map[string]string `mapstructure:"annotations,omitempty"`
 		} `mapstructure:"serviceAccount,omitempty"`
@@ -157,6 +157,9 @@ func NewDefaultInstallValues() *Values {
 // NewDefaultInstallValues returns a values set with defaults for installing a runner in a sandbox
 func NewDefaultOrgRunnerValues() *Values {
 	var vals Values
+	vals.Server.Enabled = false
+	vals.Server.ServiceAccount.Create = false
+
 	vals.Runner.Enabled = true
 	vals.Runner.Replicas = 1
 	vals.Runner.Server.TLS = true
@@ -182,6 +185,7 @@ func NewDefaultOrgServerValues() *Values {
 	vals.Server.Image.Tag = waypointVersion
 
 	vals.Runner.Enabled = false
+	vals.Runner.ServiceAccount.Create = false
 
 	vals.UI.Service.Enabled = true
 	vals.UI.Service.Type = "ClusterIP"
