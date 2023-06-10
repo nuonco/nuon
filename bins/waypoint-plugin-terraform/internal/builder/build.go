@@ -26,6 +26,7 @@ func (b *Builder) build(ctx context.Context,
 	u := ui.Status()
 	defer u.Close()
 
+	log.Info("initialized build - log")
 	u.Update("initialized build")
 	srcFiles, err := b.getSourceFiles(ctx, src.Path)
 	if err != nil {
