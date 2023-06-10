@@ -30,6 +30,10 @@ func NewDeploymentID() string {
 	return shortid.NewNanoID("dpl")
 }
 
+func NewDeployID() string {
+	return shortid.NewNanoID("dpl")
+}
+
 func NewDomainID() string {
 	return shortid.NewNanoID("dom")
 }

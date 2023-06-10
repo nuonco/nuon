@@ -15,6 +15,9 @@ type Instance struct {
 
 	BuildID string
 	Build   Build `faker:"-"`
+
+	ComponentID string
+	Component   Component `faker:"-"`
 }
 
 func (i *Instance) NewID() error {

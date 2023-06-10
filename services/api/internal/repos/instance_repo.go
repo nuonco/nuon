@@ -41,7 +41,7 @@ func (i instanceRepo) Get(ctx context.Context, instanceID string) (*models.Insta
 func (i instanceRepo) Create(ctx context.Context, instances []*models.Instance) ([]*models.Instance, error) {
 	if err := i.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "build_id"}, {Name: "install_id"}},
+			Columns:   []clause.Column{{Name: "component_id"}, {Name: "install_id"}},
 			DoUpdates: clause.AssignmentColumns([]string{"deploy_id", "install_id"}),
 		}).Create(instances).Error; err != nil {
 		return nil, err
