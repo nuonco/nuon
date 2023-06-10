@@ -65,10 +65,10 @@ jobs:
     if: ${{ needs.changes.outputs.sandboxes != '[]' && needs.changes.outputs.sandboxes != '' }}
     strategy:
       matrix:
-        name: ["aws-eks", "empty"]
+        sandbox: [empty, aws-eks]
     uses: ./.github/workflows/sandbox.yml
     with:
-      name: ${{matrix.name}}
+      sandbox: ${{ matrix.sandbox }}
       tag: ${{ needs.tag.outputs.git_ref }}
     secrets: inherit
 
