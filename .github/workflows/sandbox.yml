@@ -17,9 +17,6 @@ permissions:
   issues: read
   packages: write
   pull-requests: write
-concurrency:
-  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
-  cancel-in-progress: true
 
 jobs:
   validate:
@@ -38,13 +35,6 @@ jobs:
         working-directory: sandboxes/${{ matrix.sandbox }}
         run: |
           terraform init -backend=false
-
-      # reviewdog
-      - name: Lint
-        if: always()
-        uses: powertoolsdev/action-reviewdog@main
-        with:
-          terraform_dir: sandboxes/${{matrix.sandbox}}
 
   release:
     name: Release
@@ -104,10 +94,10 @@ jobs:
       - name: Update slack
         uses: rtCamp/action-slack-notify@master
         env:
-          SLACK_MESSAGE: 'Successfully released *sandbox-${{matrix.sandbox}}* :white_check_mark: - `${{matrix.tag}}`'
-          SLACK_TITLE: 'Sandbox release :airplane:'
-          SLACK_USERNAME: 'Deploys'
+          SLACK_MESSAGE: "Successfully released *sandbox-${{matrix.sandbox}}* :white_check_mark: - `${{matrix.tag}}`"
+          SLACK_TITLE: "Sandbox release :airplane:"
+          SLACK_USERNAME: "Deploys"
           SLACK_ICON: "[icon URL]"
-          SLACK_COLOR: '#228B22'
+          SLACK_COLOR: "#228B22"
           SLACK_WEBHOOK: ${{ secrets.STAGE_DEPLOYS_SLACK_WEBHOOK_URL }}
           MSG_MINIMAL: true
