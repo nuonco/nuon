@@ -9,10 +9,13 @@ import (
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
+	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 )
+
+const defaultAgent = "unknown"
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_client.go -source=client.go -package=client
@@ -33,6 +36,7 @@ type Client interface {
 	TriggerOrgTeardown(context.Context, *orgsv1.TeardownRequest) (string, error)
 
 	ExecCreatePlan(ctx context.Context, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error)
+	ExecExecutePlan(ctx context.Context, req *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error)
 
 	TriggerAppProvision(context.Context, *appsv1.ProvisionRequest) (string, error)
 }
@@ -41,6 +45,7 @@ type workflowsClient struct {
 	v *validator.Validate
 
 	TemporalClient temporal.Client `validate:"required"`
+	Agent          string          `validate:"required"`
 }
 
 var _ Client = (*workflowsClient)(nil)
@@ -48,7 +53,8 @@ var _ Client = (*workflowsClient)(nil)
 // New returns a default repo with the default orgcontext getter
 func NewClient(v *validator.Validate, opts ...workflowsClientOption) (*workflowsClient, error) {
 	r := &workflowsClient{
-		v: v,
+		v:     v,
+		Agent: defaultAgent,
 	}
 	for idx, opt := range opts {
 		if err := opt(r); err != nil {
@@ -68,6 +74,13 @@ type workflowsClientOption func(*workflowsClient) error
 func WithClient(tclient temporal.Client) workflowsClientOption {
 	return func(r *workflowsClient) error {
 		r.TemporalClient = tclient
+		return nil
+	}
+}
+
+func WithAgent(agent string) workflowsClientOption {
+	return func(r *workflowsClient) error {
+		r.Agent = agent
 		return nil
 	}
 }
