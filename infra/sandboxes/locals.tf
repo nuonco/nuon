@@ -4,13 +4,14 @@ locals {
   }
 
   name                = "sandboxes"
+  repo                = "mono"
   region              = "us-west-2"
-  github_repository   = local.name
+  github_repository   = local.repo
   github_organization = "powertoolsdev"
 
   tags = {
     environment = "shared"
-    service     = local.name
-    terraform   = local.name
+    service     = local.repo
+    terraform   = local.repo
   }
 }
