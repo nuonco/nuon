@@ -11,6 +11,11 @@ import (
 func (w *workflowsClient) TriggerDeploymentStart(ctx context.Context, req *deploymentsv1.StartRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: DefaultTaskQueue,
+		Memo: map[string]interface{}{
+			"org-id":     req.OrgId,
+			"app-id":     req.AppId,
+			"started-by": w.Agent,
+		},
 	}
 
 	wfRun, err := w.TemporalClient.ExecuteWorkflow(ctx, opts, "Start", req)
@@ -30,7 +35,7 @@ func (w *workflowsClient) ExecDeploymentStart(ctx context.Context, req *deployme
 			"app-id":        req.AppId,
 			"deployment-id": req.DeploymentId,
 			"component-id":  req.Component.Id,
-			"started-by":    "api",
+			"started-by":    w.Agent,
 		},
 	}
 

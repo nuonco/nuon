@@ -120,7 +120,7 @@ func Test_ScheduleCanaryProvision(t *testing.T) {
 					TaskQueue:    DefaultTaskQueue,
 					Memo: map[string]interface{}{
 						"canary-id":  req.CanaryId,
-						"started-by": "nuonctl",
+						"started-by": defaultAgent,
 					},
 				}
 				client.EXPECT().ExecuteWorkflowInNamespace(gomock.Any(),
@@ -153,6 +153,7 @@ func Test_ScheduleCanaryProvision(t *testing.T) {
 			client := test.newTClient(t, mockCtl)
 			wfClient := &workflowsClient{
 				TemporalClient: client,
+				Agent:          defaultAgent,
 			}
 
 			err := wfClient.ScheduleCanaryProvision(ctx, workflowID, schedule, req)
@@ -198,6 +199,7 @@ func Test_TriggerCanaryUnschedule(t *testing.T) {
 			tclient := test.newTClient(t, mockCtl)
 			wfClient := &workflowsClient{
 				TemporalClient: tclient,
+				Agent:          defaultAgent,
 			}
 
 			err := wfClient.UnscheduleCanaryProvision(ctx, workflowID)
