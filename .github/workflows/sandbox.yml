@@ -3,7 +3,7 @@ name: sandbox
 "on":
   workflow_call:
     inputs:
-      name:
+      sandbox:
         type: string
         required: true
       tag:
@@ -11,12 +11,103 @@ name: sandbox
         required: true
     outputs: {}
 
-defaults:
-  run:
-    shell: bash
+permissions:
+  contents: write
+  id-token: write
+  issues: read
+  packages: write
+  pull-requests: write
+concurrency:
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
+  cancel-in-progress: true
 
 jobs:
-  steps:
-    publish:
-      - uses: martialonline/workflow-status@v3
-        id: check
+  validate:
+    name: Validate sandbox
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Init terraform
+        if: always()
+        shell: bash
+        working-directory: sandboxes/${{ matrix.sandbox }}
+        run: |
+          terraform init -backend=false
+
+      # reviewdog
+      - name: Lint
+        if: always()
+        uses: powertoolsdev/action-reviewdog@main
+        with:
+          terraform_dir: sandboxes/${{matrix.sandbox}}
+
+  release:
+    name: Release
+    strategy:
+      matrix:
+        sandbox: [empty, aws-eks]
+    needs:
+      - validate
+    if: github.event_name != 'pull_request'
+    env:
+      TF_OUT: ${{ github.workspace }}/tf-out.json
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_KEY }}
+
+      - name: Get terraform outputs
+        shell: bash
+        working-directory: infra/sandboxes
+        run: |
+          terraform init
+          terraform-bin output -json > ${{ env.TF_OUT }}
+
+      - name: Parse output
+        uses: powertoolsdev/action-tf-output@main
+        with:
+          file: ${{ env.TF_OUT }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.TFO_GH_ROLE_ARN }}
+          aws-region: ${{ env.TFO_REGION }}
+
+      - name: Create artifact
+        uses: a7ul/tar-action@v1.1.3
+        with:
+          command: c
+          cwd: sandboxes/${{ matrix.sandbox }}
+          files: |
+            .
+          outPath: /tmp/sandbox.tar.gz
+
+      - name: Push artifact to s3
+        run: >-
+          aws
+          s3
+          cp
+          /tmp/sandbox.tar.gz
+          ${{ env.TFO_SANDBOXES_URL }}/${{ matrix.sandbox }}_${{ matrix.tag }}.tar.gz
+
+      - name: Update slack
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_MESSAGE: 'Successfully released *sandbox-${{matrix.sandbox}}* :white_check_mark: - `${{matrix.tag}}`'
+          SLACK_TITLE: 'Sandbox release :airplane:'
+          SLACK_USERNAME: 'Deploys'
+          SLACK_ICON: "[icon URL]"
+          SLACK_COLOR: '#228B22'
+          SLACK_WEBHOOK: ${{ secrets.STAGE_DEPLOYS_SLACK_WEBHOOK_URL }}
+          MSG_MINIMAL: true
