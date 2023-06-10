@@ -77,6 +77,7 @@ module "mono" {
     "pkg ✅",
     "infra ✅",
     "protos ✅",
+    "sandboxes ✅",
 
     // linting and various hygiene checks
     "pull_request ✅",

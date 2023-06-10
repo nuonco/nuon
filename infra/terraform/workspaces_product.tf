@@ -125,9 +125,9 @@ module "sandboxes" {
   source = "./modules/workspace"
 
   name                            = "sandboxes"
-  repo                            = "powertoolsdev/sandboxes"
+  repo                            = "powertoolsdev/mono"
   auto_apply                      = true
-  dir                             = "infra"
+  dir                             = "infra/sandboxes"
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id

@@ -1,0 +1,22 @@
+---
+name: sandbox
+"on":
+  workflow_call:
+    inputs:
+      name:
+        type: string
+        required: true
+      tag:
+        type: string
+        required: true
+    outputs: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  steps:
+    publish:
+      - uses: martialonline/workflow-status@v3
+        id: check
