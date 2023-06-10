@@ -32,15 +32,12 @@ jobs:
       - name: Init terraform
         if: always()
         shell: bash
-        working-directory: sandboxes/${{ matrix.sandbox }}
+        working-directory: sandboxes/${{input.sandbox }}
         run: |
           terraform init -backend=false
 
   release:
     name: Release
-    strategy:
-      matrix:
-        sandbox: [empty, aws-eks]
     needs:
       - validate
     if: github.event_name != 'pull_request'
@@ -78,7 +75,7 @@ jobs:
         uses: a7ul/tar-action@v1.1.3
         with:
           command: c
-          cwd: sandboxes/${{ matrix.sandbox }}
+          cwd: sandboxes/${{ input.sandbox }}
           files: |
             .
           outPath: /tmp/sandbox.tar.gz
@@ -89,12 +86,12 @@ jobs:
           s3
           cp
           /tmp/sandbox.tar.gz
-          ${{ env.TFO_SANDBOXES_URL }}/${{ matrix.sandbox }}_${{ matrix.tag }}.tar.gz
+          ${{ env.TFO_SANDBOXES_URL }}/${{ input.sandbox }}_${{ input.tag }}.tar.gz
 
       - name: Update slack
         uses: rtCamp/action-slack-notify@master
         env:
-          SLACK_MESSAGE: "Successfully released *sandbox-${{matrix.sandbox}}* :white_check_mark: - `${{matrix.tag}}`"
+          SLACK_MESSAGE: "Successfully released *sandbox-${{ input.sandbox }}* :white_check_mark: - `${{input.tag}}`"
           SLACK_TITLE: "Sandbox release :airplane:"
           SLACK_USERNAME: "Deploys"
           SLACK_ICON: "[icon URL]"
