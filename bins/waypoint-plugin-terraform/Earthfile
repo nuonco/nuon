@@ -31,16 +31,24 @@ test-integration:
 
 artifacts:
     FROM +code
+
+    ARG GOOS=linux
+    ARG GOARCH=amd64
+
     RUN mkdir -p out && \
       go build -o ./out/$BIN .
 
+    RUN chmod +x ./out/$BIN
     SAVE ARTIFACT out AS LOCAL ./out
 
 oci-artifacts:
+    FROM public.ecr.aws/p7e3r5y0/waypoint-odr:$ODR_VERSION
+
     ARG repo=
     ARG image_tag=
 
-    FROM public.ecr.aws/p7e3r5y0/waypoint-odr:$ODR_VERSION
-    COPY +artifacts/out/$BIN /bin/$BIN
+    # note waypoint plugins need to be loaded from a specific path on disk
+    ENV XDG_CONFIG_HOME=/home/waypoint/.config
+    COPY +artifacts/out/$BIN /home/waypoint/.config/waypoint/plugins/$BIN
 
     SAVE IMAGE --push $repo:$image_tag

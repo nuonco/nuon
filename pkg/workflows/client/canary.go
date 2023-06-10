@@ -15,7 +15,7 @@ func (w *workflowsClient) ScheduleCanaryProvision(ctx context.Context, id, sched
 		TaskQueue:    DefaultTaskQueue,
 		Memo: map[string]interface{}{
 			"canary-id":  req.CanaryId,
-			"started-by": "nuonctl",
+			"started-by": w.Agent,
 		},
 	}
 
@@ -40,7 +40,7 @@ func (w *workflowsClient) TriggerCanaryProvision(ctx context.Context, req *canar
 		TaskQueue: DefaultTaskQueue,
 		Memo: map[string]interface{}{
 			"canary-id":  req.CanaryId,
-			"started-by": "nuonctl",
+			"started-by": w.Agent,
 		},
 	}
 
@@ -57,7 +57,7 @@ func (w *workflowsClient) TriggerCanaryDeprovision(ctx context.Context, req *can
 		TaskQueue: DefaultTaskQueue,
 		Memo: map[string]interface{}{
 			"canary-id":  req.CanaryId,
-			"started-by": "nuonctl",
+			"started-by": w.Agent,
 		},
 	}
 

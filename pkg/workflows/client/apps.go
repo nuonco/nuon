@@ -14,7 +14,7 @@ func (w *workflowsClient) TriggerAppProvision(ctx context.Context, req *appsv1.P
 		Memo: map[string]interface{}{
 			"org-id":     req.OrgId,
 			"app-id":     req.AppId,
-			"started-by": "api",
+			"started-by": w.Agent,
 		},
 	}
 

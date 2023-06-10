@@ -19,7 +19,7 @@ func (w *workflowsClient) TriggerInstallProvision(ctx context.Context, req *inst
 			"org-id":     req.OrgId,
 			"app-id":     req.AppId,
 			"install-id": req.InstallId,
-			"started-by": "api",
+			"started-by": w.Agent,
 		},
 	}
 
@@ -41,7 +41,7 @@ func (w *workflowsClient) TriggerInstallDeprovision(ctx context.Context, req *in
 			"org-id":     req.OrgId,
 			"app-id":     req.AppId,
 			"install-id": req.InstallId,
-			"started-by": "api",
+			"started-by": w.Agent,
 		},
 	}
 
