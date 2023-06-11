@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 
 //
@@ -20,9 +21,9 @@ var _ Client = (*ecrAuthorizer)(nil)
 type ecrAuthorizer struct {
 	v *validator.Validate `validate:"required"`
 
-	RegistryID            string `validate:"required"`
-	AssumeRoleArn         string `validate:"required"`
-	AssumeRoleSessionName string `validate:"required"`
+	RegistryID string `validate:"required"`
+
+	Credentials *credentials.Config `validate:"required"`
 }
 
 type Option func(*ecrAuthorizer) error
@@ -53,22 +54,6 @@ func WithRegistryID(registryID string) Option {
 	}
 }
 
-// WithAssumeRoleArn is used to set the iam role arn to auth with
-func WithAssumeRoleArn(roleArn string) Option {
-	return func(ecr *ecrAuthorizer) error {
-		ecr.AssumeRoleArn = roleArn
-		return nil
-	}
-}
-
-// WithAssumeRoleSessionName is used to set the session name
-func WithAssumeRoleSessionName(sessionName string) Option {
-	return func(ecr *ecrAuthorizer) error {
-		ecr.AssumeRoleSessionName = sessionName
-		return nil
-	}
-}
-
 // WithImageURL is used to determine the regsitry id
 func WithImageURL(url string) Option {
 	return func(ecr *ecrAuthorizer) error {
@@ -78,6 +63,14 @@ func WithImageURL(url string) Option {
 		}
 
 		ecr.RegistryID = registryID
+		return nil
+	}
+}
+
+// WithCredentials is used to set the credentials that will be used by this
+func WithCredentials(creds *credentials.Config) Option {
+	return func(ecr *ecrAuthorizer) error {
+		ecr.Credentials = creds
 		return nil
 	}
 }
