@@ -33,6 +33,16 @@ func Fetch(ctx context.Context, cfg *Config) (aws.Config, error) {
 func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 	v := validator.New()
 
+	// if default credentials are set, just use the machine's credentials
+	if c.Default {
+		awsCfg, err := config.LoadDefaultConfig(context.TODO())
+		if err != nil {
+			return aws.Config{}, fmt.Errorf("unable to load static credentials: %w", err)
+		}
+
+		return awsCfg, nil
+	}
+
 	// if static credentials are set, prefer those
 	if c.StaticCredentials != (StaticCredentials{}) {
 		provider := credentials.NewStaticCredentialsProvider(

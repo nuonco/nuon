@@ -6,14 +6,15 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
 	registryID := uuid.NewString()
 	repository := fmt.Sprintf("%s.dkr.ecr.test", registryID)
-	assumeRoleArn := uuid.NewString()
-	assumeRoleSessionName := uuid.NewString()
+	credentials := generics.GetFakeObj[*credentials.Config]()
 
 	tests := map[string]struct {
 		optFns      func() []Option
@@ -24,14 +25,12 @@ func TestNew(t *testing.T) {
 			optFns: func() []Option {
 				return []Option{
 					WithRegistryID(registryID),
-					WithAssumeRoleArn(assumeRoleArn),
-					WithAssumeRoleSessionName(assumeRoleSessionName),
+					WithCredentials(credentials),
 				}
 			},
 			assertFn: func(t *testing.T, ecr *ecrAuthorizer) {
 				assert.Equal(t, registryID, ecr.RegistryID)
-				assert.Equal(t, assumeRoleArn, ecr.AssumeRoleArn)
-				assert.Equal(t, assumeRoleSessionName, ecr.AssumeRoleSessionName)
+				assert.Equal(t, credentials, ecr.Credentials)
 			},
 		},
 		"happy path image": {
@@ -39,28 +38,24 @@ func TestNew(t *testing.T) {
 				return []Option{
 					WithRegistryID(registryID),
 					WithImageURL(fakeEcrImageURL),
-					WithAssumeRoleArn(assumeRoleArn),
-					WithAssumeRoleSessionName(assumeRoleSessionName),
+					WithCredentials(credentials),
 				}
 			},
 			assertFn: func(t *testing.T, ecr *ecrAuthorizer) {
 				assert.NotEmpty(t, ecr.RegistryID)
-				assert.Equal(t, assumeRoleArn, ecr.AssumeRoleArn)
-				assert.Equal(t, assumeRoleSessionName, ecr.AssumeRoleSessionName)
+				assert.Equal(t, credentials, ecr.Credentials)
 			},
 		},
 		"happy path repository": {
 			optFns: func() []Option {
 				return []Option{
-					WithAssumeRoleArn(assumeRoleArn),
-					WithAssumeRoleSessionName(assumeRoleSessionName),
+					WithCredentials(credentials),
 					WithRepository(repository),
 				}
 			},
 			assertFn: func(t *testing.T, ecr *ecrAuthorizer) {
 				assert.NotEmpty(t, ecr.RegistryID)
-				assert.Equal(t, assumeRoleArn, ecr.AssumeRoleArn)
-				assert.Equal(t, assumeRoleSessionName, ecr.AssumeRoleSessionName)
+				assert.Equal(t, credentials, ecr.Credentials)
 			},
 		},
 		"invalid image": {
@@ -68,34 +63,23 @@ func TestNew(t *testing.T) {
 				return []Option{
 					WithRegistryID(registryID),
 					WithImageURL(uuid.NewString()),
-					WithAssumeRoleArn(assumeRoleArn),
+					WithCredentials(credentials),
 				}
 			},
 			errExpected: fmt.Errorf("invalid ecr image url"),
 		},
-		"missing assume role session name": {
+		"missing credentials": {
 			optFns: func() []Option {
 				return []Option{
-					WithRegistryID(registryID),
-					WithAssumeRoleArn(assumeRoleArn),
+					WithRepository(repository),
 				}
 			},
-			errExpected: fmt.Errorf("ecrAuthorizer.AssumeRoleSessionName"),
-		},
-		"missing assume role arn": {
-			optFns: func() []Option {
-				return []Option{
-					WithRegistryID(registryID),
-					WithAssumeRoleSessionName(assumeRoleSessionName),
-				}
-			},
-			errExpected: fmt.Errorf("ecrAuthorizer.AssumeRoleArn"),
+			errExpected: fmt.Errorf("ecrAuthorizer.Credentials"),
 		},
 		"missing registry id": {
 			optFns: func() []Option {
 				return []Option{
-					WithAssumeRoleArn(assumeRoleArn),
-					WithAssumeRoleSessionName(assumeRoleSessionName),
+					WithCredentials(credentials),
 				}
 			},
 			errExpected: fmt.Errorf("ecrAuthorizer.RegistryID"),
