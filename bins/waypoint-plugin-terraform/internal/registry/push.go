@@ -34,8 +34,7 @@ func (r *Registry) Push(
 	u.Step(terminal.StatusOK, "successfully opened store")
 
 	authProvider, err := ecrauthorization.New(r.v,
-		ecrauthorization.WithAssumeRoleArn(r.config.RoleARN),
-		ecrauthorization.WithAssumeRoleSessionName(defaultRoleSessionName),
+		ecrauthorization.WithCredentials(&r.config.Auth),
 		ecrauthorization.WithRepository(r.config.Repository),
 	)
 	if err != nil {

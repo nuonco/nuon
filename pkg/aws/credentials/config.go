@@ -23,9 +23,14 @@ type StaticCredentials struct {
 	SessionToken    string `hcl:"session_token,optional" validate:"required" json:"token,omitempty"`
 }
 
+type DefaultCredentials struct {
+	Default bool `hcl:"default"`
+}
+
 type Config struct {
 	StaticCredentials
 	AssumeRoleConfig
+	DefaultCredentials
 
 	// when cache ID is set, these credentials will be reused, up to the duration of the sessionTimeout (or default)
 	CacheID string `hcl:"cache_id"`
