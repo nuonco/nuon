@@ -8,7 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	ecr_types "github.com/aws/aws-sdk-go-v2/service/ecr/types"
-	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 
 //
@@ -21,16 +21,9 @@ type Authorization struct {
 }
 
 func (e *ecrAuthorizer) GetAuthorization(ctx context.Context) (*Authorization, error) {
-	assumer, err := assumerole.New(e.v,
-		assumerole.WithRoleARN(e.AssumeRoleArn),
-		assumerole.WithRoleSessionName(e.AssumeRoleSessionName))
-
+	cfg, err := credentials.Fetch(ctx, e.Credentials)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create role assumer: %w", err)
-	}
-	cfg, err := assumer.LoadConfigWithAssumedRole(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to assume role: %w", err)
+		return nil, fmt.Errorf("unable to get credentials: %w", err)
 	}
 
 	ecrClient := ecr.NewFromConfig(cfg)

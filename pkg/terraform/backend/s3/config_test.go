@@ -35,7 +35,7 @@ func Test_s3_ConfigFile(t *testing.T) {
 				return s
 			},
 			assertFn: func(t *testing.T, byts []byte) {
-				var resp map[string]string
+				var resp map[string]interface{}
 				err := json.Unmarshal(byts, &resp)
 				assert.NoError(t, err)
 
