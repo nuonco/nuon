@@ -23,8 +23,8 @@ func TestFromContext(t *testing.T) {
 		"happy path - creds in context": {
 			cfgFn: func() *Config {
 				return &Config{
-					StaticCredentials: staticCreds,
-					CacheID:           cacheID,
+					Static:  staticCreds,
+					CacheID: cacheID,
 				}
 			},
 			ctxFn: func(t *testing.T, ctx context.Context, cfg *Config) context.Context {
@@ -41,8 +41,8 @@ func TestFromContext(t *testing.T) {
 		"error - no creds in context": {
 			cfgFn: func() *Config {
 				return &Config{
-					StaticCredentials: staticCreds,
-					CacheID:           cacheID,
+					Static:  staticCreds,
+					CacheID: cacheID,
 				}
 			},
 			ctxFn: func(t *testing.T, ctx context.Context, cfg *Config) context.Context {
@@ -53,8 +53,8 @@ func TestFromContext(t *testing.T) {
 		"error - invalid object in context": {
 			cfgFn: func() *Config {
 				return &Config{
-					StaticCredentials: staticCreds,
-					CacheID:           cacheID,
+					Static:  staticCreds,
+					CacheID: cacheID,
 				}
 			},
 			ctxFn: func(t *testing.T, ctx context.Context, cfg *Config) context.Context {
@@ -66,7 +66,7 @@ func TestFromContext(t *testing.T) {
 		"error - no cache id": {
 			cfgFn: func() *Config {
 				return &Config{
-					StaticCredentials: staticCreds,
+					Static: staticCreds,
 				}
 			},
 			ctxFn: func(t *testing.T, ctx context.Context, cfg *Config) context.Context {
@@ -110,8 +110,8 @@ func TestEnsureContext(t *testing.T) {
 		"happy path - creds are set": {
 			cfgFn: func() *Config {
 				return &Config{
-					StaticCredentials: staticCreds,
-					CacheID:           cacheID,
+					Static:  staticCreds,
+					CacheID: cacheID,
 				}
 			},
 			assertFn: func(t *testing.T, cfg *Config, ctx context.Context) {
@@ -129,7 +129,7 @@ func TestEnsureContext(t *testing.T) {
 		"error - no cache ID set": {
 			cfgFn: func() *Config {
 				return &Config{
-					StaticCredentials: staticCreds,
+					Static: staticCreds,
 				}
 			},
 			errExpected: fmt.Errorf("no cache id set"),
