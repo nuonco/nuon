@@ -3,6 +3,7 @@ package credentials
 import (
 	"context"
 	"fmt"
+	"time"
 
 	aws "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -34,7 +35,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 	v := validator.New()
 
 	// if default credentials are set, just use the machine's credentials
-	if c.Default {
+	if c.UseDefault {
 		awsCfg, err := config.LoadDefaultConfig(context.TODO())
 		if err != nil {
 			return aws.Config{}, fmt.Errorf("unable to load static credentials: %w", err)
@@ -44,11 +45,11 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 	}
 
 	// if static credentials are set, prefer those
-	if c.StaticCredentials != (StaticCredentials{}) {
+	if c.Static != (StaticCredentials{}) {
 		provider := credentials.NewStaticCredentialsProvider(
-			c.AccessKeyID,
-			c.SecretAccessKey,
-			c.SessionToken)
+			c.Static.AccessKeyID,
+			c.Static.SecretAccessKey,
+			c.Static.SessionToken)
 
 		awsCfg, err := config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(provider))
 		if err != nil {
@@ -58,9 +59,9 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 	}
 
 	assumer, err := assumerole.New(v, assumerole.WithSettings(assumerole.Settings{
-		RoleARN:             c.RoleARN,
-		RoleSessionName:     c.SessionName,
-		RoleSessionDuration: c.SessionDuration,
+		RoleARN:             c.AssumeRole.RoleARN,
+		RoleSessionName:     c.AssumeRole.SessionName,
+		RoleSessionDuration: time.Second * time.Duration(c.AssumeRole.SessionDurationSeconds),
 	}))
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("unable to create role assumer: %w", err)

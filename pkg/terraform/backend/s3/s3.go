@@ -10,9 +10,9 @@ import (
 
 // BucketConfig configures where the state is pushed too
 type BucketConfig struct {
-	Name   string `json:"bucket" validate:"required"`
-	Key    string `json:"key" validate:"required"`
-	Region string `json:"region" validate:"required"`
+	Name   string `mapstructure:"bucket" validate:"required"`
+	Key    string `mapstructure:"key" validate:"required"`
+	Region string `mapstructure:"region" validate:"required"`
 }
 
 type s3 struct {

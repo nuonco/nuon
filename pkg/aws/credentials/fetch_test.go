@@ -22,8 +22,8 @@ func TestFetch(t *testing.T) {
 		"happy path - creds in context": {
 			configFn: func() *Config {
 				return &Config{
-					StaticCredentials: staticCreds,
-					CacheID:           cacheID,
+					Static:  staticCreds,
+					CacheID: cacheID,
 				}
 			},
 			ctxFn: func(t *testing.T, ctx context.Context, cfg *Config) context.Context {
@@ -40,7 +40,7 @@ func TestFetch(t *testing.T) {
 		"happy path - no creds in context": {
 			configFn: func() *Config {
 				return &Config{
-					StaticCredentials: staticCreds,
+					Static: staticCreds,
 				}
 			},
 			ctxFn: func(t *testing.T, ctx context.Context, cfg *Config) context.Context {
