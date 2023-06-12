@@ -25,9 +25,17 @@ func (s *server) CancelBuild(
 	}
 
 	// use temporal client to cancel workflow execution
-	if err := s.temporalClient.CancelWorkflowInNamespace(ctx, "builds", build.ID, ""); err != nil {
+	if err := s.cancelWorkflow(ctx, build.ID); err != nil {
 		return nil, fmt.Errorf("cancel build failed: %s", err)
 	}
 
 	return connect.NewResponse(&buildv1.CancelBuildResponse{}), nil
+}
+
+func (s *server) cancelWorkflow(ctx context.Context, buildID string) error {
+	// use temporal client to cancel workflow execution
+	if err := s.temporalClient.CancelWorkflowInNamespace(ctx, "builds", buildID, ""); err != nil {
+		return err
+	}
+	return nil
 }
