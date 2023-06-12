@@ -18,7 +18,7 @@ local_env:
         { "name": "orgStatus", "url": "localhost:8081" },
         { "name": "deploymentStatus", "url": "localhost:8081" },
         { "name": "installStatus", "url": "localhost:8081" },
-        { "name": "instance", "url": "localhost:8081" },
+        { "name": "instanceStatus", "url": "localhost:8081" },
         { "name": "build", "url": "localhost:8081" },
         { "name": "deploy", "url": "localhost:8081" },
         { "name": "buildStatus", "url": "localhost:8081" }

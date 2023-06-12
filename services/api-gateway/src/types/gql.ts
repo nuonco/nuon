@@ -407,8 +407,8 @@ export type InstallInput = {
 export type InstallSettings = AwsSettings | GcpSettings;
 
 /** Represents a collection of general info about deployed piece of software on an Install */
-export type Instance = {
-  __typename?: 'Instance';
+export type InstanceStatus = {
+  __typename?: 'InstanceStatus';
   hostname?: Maybe<Scalars['String']['output']>;
   status: Status;
 };
@@ -624,7 +624,7 @@ export type Query = {
   install?: Maybe<Install>;
   installStatus: Status;
   installs: InstallConnection;
-  instance: Instance;
+  instanceStatus: InstanceStatus;
   me?: Maybe<User>;
   org?: Maybe<Org>;
   orgStatus: Status;
@@ -719,7 +719,7 @@ export type QueryInstallsArgs = {
 };
 
 
-export type QueryInstanceArgs = {
+export type QueryInstanceStatusArgs = {
   appId: Scalars['ID']['input'];
   componentId: Scalars['ID']['input'];
   deploymentId: Scalars['ID']['input'];

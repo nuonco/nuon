@@ -4,7 +4,7 @@
 """
 Represents a collection of general info about deployed piece of software on an Install
 """
-type Instance {
+type InstanceStatus {
   hostname: String
   status: Status!
 }
@@ -58,13 +58,13 @@ extend type Query {
     installIds: [ID]
     options: ConnectionOptions
   ): DeploymentConnection!
-  instance(
+  instanceStatus(
     appId: ID!
     componentId: ID!
     deploymentId: ID!
     installId: ID!
     orgId: ID!
-  ): Instance!
+  ): InstanceStatus!
   deploymentStatus(
     appId: ID!
     componentId: ID!
