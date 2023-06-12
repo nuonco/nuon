@@ -15,8 +15,8 @@
     "start": "node dist/src/main.js",
     "prestart": "npm run build",
     "test": "run-s test:*",
-    "test:unit": "jest src/",
-    "test:integration": "jest test/integration/",
+    "test:unit": "jest ./src/",
+    "test:integration": "jest ./test/integration/",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "keywords": [
