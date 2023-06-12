@@ -93,3 +93,47 @@ func TestCreateInstance(t *testing.T) {
 		},
 	})
 }
+
+func TestListByInstall(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
+	execRepoTests(t, []repoTest{
+		{
+			desc: "should list instances successfully",
+			fn: func(ctx context.Context, state repoTestState) {
+				instances := createInstance(ctx, t, state)
+				secondInstance := createInstance(ctx, t, state)
+				secondInstance[0].InstallID = instances[0].InstallID
+				instances = append(instances, secondInstance[0])
+
+				res, err := state.instanceRepo.ListByInstall(ctx, instances[0].InstallID)
+				assert.Nil(t, err)
+				assert.NotNil(t, res)
+				assert.Equal(t, len(instances), len(res))
+			},
+		},
+		{
+			desc: "should error with canceled context",
+			fn: func(ctx context.Context, state repoTestState) {
+				instances := createInstance(ctx, t, state)
+				instance := instances[0]
+
+				state.ctxCloseFn()
+				fetchedInstall, err := state.instanceRepo.ListByInstall(ctx, instance.InstallID)
+				assert.Nil(t, fetchedInstall)
+				assert.NotNil(t, err)
+			},
+		},
+		{
+			desc: "should error with not found",
+			fn: func(ctx context.Context, state repoTestState) {
+				fetchedInstance, err := state.instanceRepo.ListByInstall(ctx, domains.NewInstallID())
+				assert.Nil(t, fetchedInstance)
+				assert.NotNil(t, err)
+			},
+		},
+	})
+}
