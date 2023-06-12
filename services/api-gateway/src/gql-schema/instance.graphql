@@ -7,8 +7,11 @@ Represents information about an instance
 """
 type Instance {
   id: ID!
+  build: Build
   buildId: ID!
+  component: Component
   componentId: ID!
+  deploy: Deploy
   deployId: ID!
   updatedAt: DateTime!
   createdAt: DateTime!
