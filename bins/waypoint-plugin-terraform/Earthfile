@@ -7,7 +7,7 @@ WORKDIR /src
 ARG BIN=waypoint-plugin-terraform
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
-ARG ODR_VERSION=v0.0.5
+ARG ODR_VERSION=v0.0.7
 
 CACHE $GOCACHE
 CACHE $GOMODCACHE

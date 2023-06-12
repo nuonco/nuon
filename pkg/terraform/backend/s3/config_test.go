@@ -16,10 +16,10 @@ func Test_s3_ConfigFile(t *testing.T) {
 	bucketCfg := generics.GetFakeObj[*BucketConfig]()
 
 	staticCreds := generics.GetFakeObj[*credentials.Config]()
-	staticCreds.AssumeRoleConfig = credentials.AssumeRoleConfig{}
+	staticCreds.AssumeRole = credentials.AssumeRoleConfig{}
 
 	assumeCreds := generics.GetFakeObj[*credentials.Config]()
-	assumeCreds.StaticCredentials = credentials.StaticCredentials{}
+	assumeCreds.Static = credentials.StaticCredentials{}
 
 	tests := map[string]struct {
 		backendFn   func(*testing.T) *s3
@@ -39,9 +39,9 @@ func Test_s3_ConfigFile(t *testing.T) {
 				err := json.Unmarshal(byts, &resp)
 				assert.NoError(t, err)
 
-				assert.Equal(t, resp["access_key"], staticCreds.AccessKeyID)
-				assert.Equal(t, resp["secret_key"], staticCreds.SecretAccessKey)
-				assert.Equal(t, resp["token"], staticCreds.SessionToken)
+				assert.Equal(t, staticCreds.Static.AccessKeyID, resp["access_key"])
+				assert.Equal(t, staticCreds.Static.SecretAccessKey, resp["secret_key"])
+				assert.Equal(t, staticCreds.Static.SessionToken, resp["token"])
 
 				assert.Equal(t, resp["bucket"], bucketCfg.Name)
 				assert.Equal(t, resp["key"], bucketCfg.Key)
@@ -70,8 +70,8 @@ func Test_s3_ConfigFile(t *testing.T) {
 				err := json.Unmarshal(byts, &resp)
 				assert.NoError(t, err)
 
-				assert.Equal(t, resp["role_arn"], assumeCreds.RoleARN)
-				assert.Equal(t, resp["session_name"], assumeCreds.SessionName)
+				assert.Equal(t, resp["role_arn"], assumeCreds.AssumeRole.RoleARN)
+				assert.Equal(t, resp["session_name"], assumeCreds.AssumeRole.SessionName)
 
 				assert.Equal(t, resp["bucket"], bucketCfg.Name)
 				assert.Equal(t, resp["key"], bucketCfg.Key)
