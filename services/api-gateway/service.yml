@@ -12,15 +12,16 @@ local_env:
         { "name": "org", "url": "localhost:8080" },
         { "name": "app", "url": "localhost:8080" },
         { "name": "install", "url": "localhost:8080" },
+        { "name": "instance", "url": "localhost:8080" },
         { "name": "component", "url": "localhost:8080" },
         { "name": "deployment", "url": "localhost:8080" },
         { "name": "github", "url": "localhost:8080" },
+        { "name": "build", "url": "localhost:8080" },
+        { "name": "deploy", "url": "localhost:8080" },
         { "name": "orgStatus", "url": "localhost:8081" },
         { "name": "deploymentStatus", "url": "localhost:8081" },
         { "name": "installStatus", "url": "localhost:8081" },
         { "name": "instanceStatus", "url": "localhost:8081" },
-        { "name": "build", "url": "localhost:8081" },
-        { "name": "deploy", "url": "localhost:8081" },
         { "name": "buildStatus", "url": "localhost:8081" }
     ]
 local_cmds:
