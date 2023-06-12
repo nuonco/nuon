@@ -5,6 +5,7 @@ import { DeployServiceClient } from "@buf/nuon_apis.grpc_node/deploy/v1/service_
 import { DeploymentsServiceClient } from "@buf/nuon_apis.grpc_node/deployment/v1/service_grpc_pb";
 import { GithubServiceClient } from "@buf/nuon_apis.grpc_node/github/v1/service_grpc_pb";
 import { InstallsServiceClient } from "@buf/nuon_apis.grpc_node/install/v1/service_grpc_pb";
+import { InstancesServiceClient } from "@buf/nuon_apis.grpc_node/instance/v1/service_grpc_pb";
 import { OrgsServiceClient } from "@buf/nuon_apis.grpc_node/org/v1/service_grpc_pb";
 import { BuildsServiceClient as BuildsStatusServiceClient } from "@buf/nuon_orgs-api.grpc_node/builds/v1/service_grpc_pb";
 import { DeploymentsServiceClient as DeploymentsStatusServiceClient } from "@buf/nuon_orgs-api.grpc_node/deployments/v1/service_grpc_pb";
@@ -30,6 +31,7 @@ const CLIENT_CLASSES: TClientClasses = {
   github: GithubServiceClient,
   install: InstallsServiceClient,
   installStatus: InstallsStatusServiceClient,
+  instance: InstancesServiceClient,
   instanceStatus: InstancesStatusServiceClient,
   org: OrgsServiceClient,
   orgStatus: OrgsStatusServiceClient,

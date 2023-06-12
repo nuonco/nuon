@@ -1,0 +1,22 @@
+##############################################################################
+# Instance GQL types
+##############################################################################
+
+"""
+Represents information about an instance
+"""
+type Instance {
+  id: ID!
+  buildId: ID!
+  componentId: ID!
+  deployId: ID!
+  updatedAt: DateTime!
+  createdAt: DateTime!
+}
+
+##############################################################################
+# Build Query types
+##############################################################################
+extend type Query {
+  instances(installId: ID!): [Instance!]
+}
