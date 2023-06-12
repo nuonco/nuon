@@ -30,7 +30,7 @@ const mockSecretServiceClient = {
 };
 
 const mockClients = {
-  instance: mockSecretServiceClient,
+  instanceStatus: mockSecretServiceClient,
 };
 
 test("secrets resolver should return list of secrets", async () => {

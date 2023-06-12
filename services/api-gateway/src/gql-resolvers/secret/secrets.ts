@@ -8,14 +8,14 @@ export const secrets: TResolverFn<QuerySecretsArgs, Query["secrets"]> = (
   { clients }
 ) =>
   new Promise((resolve, reject) => {
-    if (clients.instance) {
+    if (clients.instanceStatus) {
       const request = new GetSecretsRequest()
         .setAppId(appId)
         .setComponentId(componentId)
         .setInstallId(installId)
         .setOrgId(orgId);
 
-      clients.instance.getSecrets(request, (err, res) => {
+      clients.instanceStatus.getSecrets(request, (err, res) => {
         if (err) {
           reject(new GraphQLError(err?.message));
         } else {

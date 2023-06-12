@@ -2,7 +2,7 @@ import { createDeployment } from "./create-deployment";
 import { deployment } from "./deployment";
 import { deploymentStatus } from "./deployment-status";
 import { deployments } from "./deployments";
-import { instance } from "./instance";
+import { instanceStatus } from "./instance-status";
 
 export const deploymentResolvers = {
   Mutation: {
@@ -12,6 +12,6 @@ export const deploymentResolvers = {
     deployment,
     deployments,
     deploymentStatus,
-    instance,
+    instanceStatus,
   },
 };

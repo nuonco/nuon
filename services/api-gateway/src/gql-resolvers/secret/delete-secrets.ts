@@ -27,12 +27,12 @@ export const deleteSecrets: TResolverFn<
   Mutation["deleteSecrets"]
 > = (_, { input }, { clients }) =>
   new Promise((resolve, reject) => {
-    if (clients.instance) {
+    if (clients.instanceStatus) {
       const request = new DeleteSecretsRequest().setSecretRefsList(
         parseSecretInput(input)
       );
 
-      clients.instance.deleteSecrets(request, (err) => {
+      clients.instanceStatus.deleteSecrets(request, (err) => {
         if (err) {
           reject(new GraphQLError(err?.message));
         } else {
