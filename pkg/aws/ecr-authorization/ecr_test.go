@@ -68,14 +68,6 @@ func TestNew(t *testing.T) {
 			},
 			errExpected: fmt.Errorf("invalid ecr image url"),
 		},
-		"missing credentials": {
-			optFns: func() []Option {
-				return []Option{
-					WithRepository(repository),
-				}
-			},
-			errExpected: fmt.Errorf("ecrAuthorizer.Credentials"),
-		},
 		"missing registry id": {
 			optFns: func() []Option {
 				return []Option{

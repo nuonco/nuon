@@ -23,7 +23,7 @@ type ecrAuthorizer struct {
 
 	RegistryID string `validate:"required"`
 
-	Credentials *credentials.Config `validate:"required"`
+	Credentials *credentials.Config `validate:"-"`
 }
 
 type Option func(*ecrAuthorizer) error
