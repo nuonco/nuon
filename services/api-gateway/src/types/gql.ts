@@ -406,6 +406,17 @@ export type InstallInput = {
 /** Represents cloud target settings for AWS or GCP */
 export type InstallSettings = AwsSettings | GcpSettings;
 
+/** Represents information about an instance */
+export type Instance = {
+  __typename?: 'Instance';
+  buildId: Scalars['ID']['output'];
+  componentId: Scalars['ID']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  deployId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
 /** Represents a collection of general info about deployed piece of software on an Install */
 export type InstanceStatus = {
   __typename?: 'InstanceStatus';
@@ -625,6 +636,7 @@ export type Query = {
   installStatus: Status;
   installs: InstallConnection;
   instanceStatus: InstanceStatus;
+  instances?: Maybe<Array<Instance>>;
   me?: Maybe<User>;
   org?: Maybe<Org>;
   orgStatus: Status;
@@ -725,6 +737,11 @@ export type QueryInstanceStatusArgs = {
   deploymentId: Scalars['ID']['input'];
   installId: Scalars['ID']['input'];
   orgId: Scalars['ID']['input'];
+};
+
+
+export type QueryInstancesArgs = {
+  installId: Scalars['ID']['input'];
 };
 
 
