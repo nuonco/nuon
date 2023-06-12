@@ -31,12 +31,12 @@ export const upsertSecrets: TResolverFn<
   Mutation["upsertSecrets"]
 > = (_, { input }, { clients }) =>
   new Promise((resolve, reject) => {
-    if (clients.instance) {
+    if (clients.instanceStatus) {
       const request = new UpsertSecretsRequest().setSecretsList(
         parseSecretInput(input)
       );
 
-      clients.instance.upsertSecrets(request, (err) => {
+      clients.instanceStatus.upsertSecrets(request, (err) => {
         if (err) {
           reject(new GraphQLError(err?.message));
         } else {

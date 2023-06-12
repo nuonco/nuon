@@ -15,7 +15,7 @@ const mockSecretServiceClient = {
 };
 
 const mockClients = {
-  instance: mockSecretServiceClient,
+  instanceStatus: mockSecretServiceClient,
 };
 
 const mockNewSecret = {
