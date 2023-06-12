@@ -17,6 +17,7 @@ import (
 	deploymentsserver "github.com/powertoolsdev/mono/services/api/internal/servers/deployments"
 	githubserver "github.com/powertoolsdev/mono/services/api/internal/servers/github"
 	installsserver "github.com/powertoolsdev/mono/services/api/internal/servers/installs"
+	instancesserver "github.com/powertoolsdev/mono/services/api/internal/servers/instances"
 	orgsserver "github.com/powertoolsdev/mono/services/api/internal/servers/orgs"
 	statusserver "github.com/powertoolsdev/mono/services/api/internal/servers/status"
 	usersserver "github.com/powertoolsdev/mono/services/api/internal/servers/users"
@@ -149,6 +150,19 @@ func (a *app) registerInstallsServer(mux *http.ServeMux) error {
 	return nil
 }
 
+func (a *app) registerInstancesServer(mux *http.ServeMux) error {
+	instanceSvc := services.NewInstanceService(a.db, a.log)
+	_, err := instancesserver.New(a.v,
+		instancesserver.WithService(instanceSvc),
+		instancesserver.WithInterceptors(a.interceptors...),
+		instancesserver.WithHTTPMux(mux),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to initialize instances server: %w", err)
+	}
+	return nil
+}
+
 func (a *app) registerOrgsServer(mux *http.ServeMux) error {
 	orgSvc := services.NewOrgService(a.db, a.tc, a.log)
 	_, err := orgsserver.New(a.v,
@@ -235,6 +249,10 @@ func (a *app) registerAllServers(mux *http.ServeMux) error {
 
 	if err := a.registerInstallsServer(mux); err != nil {
 		return fmt.Errorf("unable to register installs: %w", err)
+	}
+
+	if err := a.registerInstancesServer(mux); err != nil {
+		return fmt.Errorf("unable to register instances: %w", err)
 	}
 
 	if err := a.registerOrgsServer(mux); err != nil {
