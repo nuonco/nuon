@@ -1,4 +1,4 @@
-import { instance } from "./instance";
+import { instanceStatus } from "./instance-status";
 
 const mockInfo = {
   response: {
@@ -11,7 +11,7 @@ const mockStatus = {
   status: 1,
 };
 
-const mockOrgStatusServiceClient = {
+const mockInstanceStatusServiceClient = {
   getInfo: jest.fn().mockImplementationOnce((req, cb) => {
     cb(undefined, {
       toObject: jest.fn().mockReturnValue(mockInfo),
@@ -25,11 +25,11 @@ const mockOrgStatusServiceClient = {
 };
 
 const mockClients = {
-  instance: mockOrgStatusServiceClient,
+  instanceStatus: mockInstanceStatusServiceClient,
 };
 
 test("instance resolver should return instance object on successful query", async () => {
-  const spec = await instance(
+  const spec = await instanceStatus(
     undefined,
     {
       appId: "test-id",
@@ -42,7 +42,7 @@ test("instance resolver should return instance object on successful query", asyn
   );
 
   expect(spec).toEqual({
-    __typename: "Instance",
+    __typename: "InstanceStatus",
     hostname: "test.com",
     status: "ACTIVE",
   });
@@ -50,7 +50,7 @@ test("instance resolver should return instance object on successful query", asyn
 
 test("instance resolver should return error if service client doesn't exist", async () => {
   await expect(
-    instance(
+    instanceStatus(
       undefined,
       {
         appId: "test-id",
