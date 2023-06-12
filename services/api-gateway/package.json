@@ -25,7 +25,7 @@
   "author": "Nat Hamilton <nhamilton@powertools.dev>",
   "license": "UNLICENSED",
   "dependencies": {
-    "@buf/nuon_apis.grpc_node": "^1.12.4-20230609110514-7415e94cc38e.1",
+    "@buf/nuon_apis.grpc_node": "^1.12.4-20230609140950-b023357ebfe5.1",
     "@buf/nuon_components.grpc_node": "^1.12.4-20230517163600-44b1b387bbda.1",
     "@buf/nuon_orgs-api.grpc_node": "^1.12.4-20230607142352-ba767b3b3e83.1",
     "@buf/nuon_shared.grpc_node": "^1.12.4-20230523155643-9fc424bb3775.1",
