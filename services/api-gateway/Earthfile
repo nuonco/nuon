@@ -47,7 +47,6 @@ lint:
 
 test:
   FROM +deps
-  COPY --dir test test
   RUN echo "running unit tests..." && \
     npm run test:unit
 

@@ -2,9 +2,35 @@ import "dotenv/config";
 import supertest from "supertest";
 import { initServer } from "../../src/server";
 
-const request = supertest(initServer());
+const mockDateTimeObject = {
+  day: 31,
+  hours: 8,
+  minutes: 15,
+  month: 12,
+  seconds: 30,
+  year: 1999,
+};
 
-test("upsertComponent mutation should return null", async () => {
+const mockComponent = {
+  createdAt: mockDateTimeObject,
+  id: "test-id",
+  name: "test-node",
+  updatedAt: mockDateTimeObject,
+};
+
+const request = supertest(
+  initServer({
+    component: {
+      upsertComponent: jest.fn().mockImplementation((req, cb) => {
+        cb(undefined, {
+          toObject: jest.fn().mockReturnValue({ component: mockComponent }),
+        });
+      }),
+    },
+  })
+);
+
+test("upsertComponent mutation should return a new component", async () => {
   const spec = await request
     .post("/graphql")
     .set("Authorization", `Bearer ${process.env.TEST_TOKEN}`)
@@ -22,7 +48,7 @@ test("upsertComponent mutation should return null", async () => {
       variables: {
         input: {
           appId: "app-id",
-          name: "Test component",
+          name: "test-node",
         },
       },
     })
@@ -30,7 +56,10 @@ test("upsertComponent mutation should return null", async () => {
 
   expect(JSON.parse(spec.text)).toEqual({
     data: {
-      upsertComponent: null,
+      upsertComponent: {
+        id: "test-id",
+        name: "test-node",
+      },
     },
   });
 });
