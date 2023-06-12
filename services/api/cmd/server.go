@@ -33,6 +33,7 @@ var srvs []string = []string{
 	"deployment.v1.DeploymentService",
 	"github.v1.GithubService",
 	"install.v1.InstallService",
+	"instance.v1.InstanceService",
 	"org.v1.OrgService",
 	"user.v1.UserService",
 }
