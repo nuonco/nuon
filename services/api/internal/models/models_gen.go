@@ -230,6 +230,7 @@ type InstallInput struct {
 	CreatedByID *string           `json:"createdById"`
 	AwsSettings *AWSSettingsInput `json:"awsSettings"`
 	GcpSettings *GCPSettingsInput `json:"gcpSettings"`
+	OverrideID  *string           `json:"overrideId"`
 }
 
 // An auto-generated type for paginating through multiple Orgs
