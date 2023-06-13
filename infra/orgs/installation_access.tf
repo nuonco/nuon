@@ -22,6 +22,9 @@ data "aws_iam_policy_document" "install_k8s_trust_policy_external" {
         # NOTE(jdt): may want to restrict this to just a readonly / support role in the future
         tolist(data.aws_iam_roles.nuon_sso_roles_external.arns),
         tolist(data.aws_iam_roles.nuon_sso_roles_workload.arns),
+        [
+          module.support_role.iam_role_arn
+        ],
 
         # TODO: remove this and _only_ allow access to the installations role via org specific IAM roles
         [
