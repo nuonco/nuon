@@ -18,7 +18,6 @@ func createInstance(ctx context.Context, t *testing.T, state repoTestState) []*m
 		ComponentID: deploy.Build.ComponentID,
 		InstallID:   deploy.InstallID,
 		BuildID:     deploy.BuildID,
-		DeployID:    deploy.ID,
 	}})
 	assert.Nil(t, err)
 	assert.NotNil(t, instance)
@@ -66,6 +65,47 @@ func TestGetInstance(t *testing.T) {
 	})
 }
 
+func TestGetByInstallAndComponentInstance(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
+	execRepoTests(t, []repoTest{
+		{
+			desc: "should get an instance successfully",
+			fn: func(ctx context.Context, state repoTestState) {
+				instances := createInstance(ctx, t, state)
+				instance := instances[0]
+
+				instance, err := state.instanceRepo.GetByInstallAndComponent(ctx, instance.InstallID, instance.ComponentID)
+				assert.Nil(t, err)
+				assert.NotNil(t, instance)
+			},
+		},
+		{
+			desc: "should error with canceled context",
+			fn: func(ctx context.Context, state repoTestState) {
+				instances := createInstance(ctx, t, state)
+				instance := instances[0]
+
+				state.ctxCloseFn()
+				instance, err := state.instanceRepo.GetByInstallAndComponent(ctx, instance.InstallID, instance.ComponentID)
+				assert.Nil(t, instance)
+				assert.NotNil(t, err)
+			},
+		},
+		{
+			desc: "should error with not found",
+			fn: func(ctx context.Context, state repoTestState) {
+				instance, err := state.instanceRepo.Get(ctx, domains.NewInstanceID())
+				assert.Nil(t, instance)
+				assert.NotNil(t, err)
+			},
+		},
+	})
+}
+
 func TestCreateInstance(t *testing.T) {
 	integration := os.Getenv("INTEGRATION")
 	if integration == "" {
@@ -81,14 +121,14 @@ func TestCreateInstance(t *testing.T) {
 
 				deploy := createDeploy(ctx, t, state)
 
-				instance.DeployID = deploy.ID
+				instance.BuildID = deploy.BuildID
 
 				instancesUpdate, err := state.instanceRepo.Create(ctx, []*models.Instance{instance})
 				instanceUpdate := instancesUpdate[0]
 				assert.Nil(t, err)
 				assert.NotNil(t, instanceUpdate)
 				assert.Equal(t, instance.ID, instanceUpdate.ID)
-				assert.Equal(t, instance.DeployID, instanceUpdate.DeployID)
+				assert.Equal(t, instance.BuildID, instanceUpdate.BuildID)
 			},
 		},
 	})

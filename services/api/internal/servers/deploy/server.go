@@ -13,9 +13,10 @@ import (
 )
 
 type server struct {
-	v    *validator.Validate
-	repo repos.DeployRepo
-	mgr  jobs.Manager
+	v            *validator.Validate
+	repo         repos.DeployRepo
+	instanceRepo repos.InstanceRepo
+	mgr          jobs.Manager
 
 	Interceptors []connect.Interceptor `validate:"required"`
 }
@@ -53,6 +54,7 @@ func WithHTTPMux(mux *http.ServeMux) serverOption {
 func WithDB(db *gorm.DB) serverOption {
 	return func(s *server) error {
 		s.repo = repos.NewDeployRepo(db)
+		s.instanceRepo = repos.NewInstanceRepo(db)
 		return nil
 	}
 }

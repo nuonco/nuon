@@ -18,19 +18,17 @@ func (a *activities) UpsertInstanceJob(ctx context.Context, deployID string) (*U
 
 	instance := &models.Instance{
 		BuildID:     deploy.BuildID,
-		DeployID:    deploy.ID,
 		InstallID:   deploy.InstallID,
 		ComponentID: deploy.Build.ComponentID,
 	}
 
-	err = instance.NewID()
-	if err != nil {
-		return nil, err
-	}
+	instance.NewID()
 
-	_, err = a.instanceRepo.Create(ctx, []*models.Instance{instance})
+	instances, err := a.instanceRepo.Create(ctx, []*models.Instance{instance})
 	if err != nil {
 		return nil, err
 	}
-	return &UpsertInstanceResponse{}, nil
+	return &UpsertInstanceResponse{
+		InstanceID: instances[0].ID,
+	}, nil
 }

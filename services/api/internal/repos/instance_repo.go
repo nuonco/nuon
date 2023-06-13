@@ -12,6 +12,7 @@ import (
 //go:generate mockgen -destination=mock_instance_repo.go -source=instance_repo.go -package=repos
 type InstanceRepo interface {
 	Get(context.Context, string) (*models.Instance, error)
+	GetByInstallAndComponent(context.Context, string, string) (*models.Instance, error)
 	Create(context.Context, []*models.Instance) ([]*models.Instance, error)
 	Delete(context.Context, string) (bool, error)
 	ListByInstall(context.Context, string) ([]*models.Instance, error)
@@ -39,11 +40,21 @@ func (i instanceRepo) Get(ctx context.Context, instanceID string) (*models.Insta
 	return &instance, nil
 }
 
+func (i instanceRepo) GetByInstallAndComponent(ctx context.Context, installID string, componentID string) (*models.Instance, error) {
+	var instance models.Instance
+	if err := i.db.WithContext(ctx).
+		Preload(clause.Associations).
+		First(&instance, "install_id = ? AND component_id = ?", installID, componentID).Error; err != nil {
+		return nil, err
+	}
+	return &instance, nil
+}
+
 func (i instanceRepo) Create(ctx context.Context, instances []*models.Instance) ([]*models.Instance, error) {
 	if err := i.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "component_id"}, {Name: "install_id"}},
-			DoUpdates: clause.AssignmentColumns([]string{"deploy_id", "install_id"}),
+			DoUpdates: clause.AssignmentColumns([]string{"build_id"}),
 		}).Create(instances).Error; err != nil {
 		return nil, err
 	}
