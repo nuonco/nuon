@@ -45,7 +45,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 	}
 
 	// if static credentials are set, prefer those
-	if c.Static != (StaticCredentials{}) {
+	if c.Static != nil {
 		provider := credentials.NewStaticCredentialsProvider(
 			c.Static.AccessKeyID,
 			c.Static.SecretAccessKey,

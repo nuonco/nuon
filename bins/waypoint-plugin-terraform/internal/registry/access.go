@@ -38,7 +38,6 @@ func (r *Registry) AccessInfo(ctx context.Context,
 		return nil, fmt.Errorf("unable to get access info: %w", err)
 	}
 
-	// fetch ecr credentials here
 	return accessInfo, nil
 }
 
