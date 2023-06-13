@@ -11,7 +11,7 @@ import (
 )
 
 func TestFromContext(t *testing.T) {
-	staticCreds := generics.GetFakeObj[StaticCredentials]()
+	staticCreds := generics.GetFakeObj[*StaticCredentials]()
 	cacheID := generics.GetFakeObj[string]()
 
 	tests := map[string]struct {
@@ -99,7 +99,7 @@ func TestFromContext(t *testing.T) {
 }
 
 func TestEnsureContext(t *testing.T) {
-	staticCreds := generics.GetFakeObj[StaticCredentials]()
+	staticCreds := generics.GetFakeObj[*StaticCredentials]()
 	cacheID := generics.GetFakeObj[string]()
 
 	tests := map[string]struct {

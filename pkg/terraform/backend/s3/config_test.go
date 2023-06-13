@@ -16,10 +16,17 @@ func Test_s3_ConfigFile(t *testing.T) {
 	bucketCfg := generics.GetFakeObj[*BucketConfig]()
 
 	staticCreds := generics.GetFakeObj[*credentials.Config]()
-	staticCreds.AssumeRole = credentials.AssumeRoleConfig{}
+	staticCreds.UseDefault = false
+	staticCreds.AssumeRole = nil
 
 	assumeCreds := generics.GetFakeObj[*credentials.Config]()
-	assumeCreds.Static = credentials.StaticCredentials{}
+	staticCreds.UseDefault = false
+	assumeCreds.Static = nil
+
+	defaultCreds := generics.GetFakeObj[*credentials.Config]()
+	defaultCreds.UseDefault = true
+	defaultCreds.Static = nil
+	defaultCreds.AssumeRole = nil
 
 	tests := map[string]struct {
 		backendFn   func(*testing.T) *s3
@@ -82,6 +89,37 @@ func Test_s3_ConfigFile(t *testing.T) {
 				_, ok = resp["secret_key"]
 				assert.False(t, ok)
 				_, ok = resp["token"]
+				assert.False(t, ok)
+			},
+			errExpected: nil,
+		},
+		"default backend": {
+			backendFn: func(t *testing.T) *s3 {
+				s, err := New(v,
+					WithBucketConfig(bucketCfg),
+					WithCredentials(defaultCreds),
+				)
+				assert.NoError(t, err)
+				return s
+			},
+			assertFn: func(t *testing.T, byts []byte) {
+				var resp map[string]interface{}
+				err := json.Unmarshal(byts, &resp)
+				assert.NoError(t, err)
+
+				assert.Equal(t, resp["bucket"], bucketCfg.Name)
+				assert.Equal(t, resp["key"], bucketCfg.Key)
+				assert.Equal(t, resp["region"], bucketCfg.Region)
+
+				_, ok := resp["access_key"]
+				assert.False(t, ok)
+				_, ok = resp["secret_key"]
+				assert.False(t, ok)
+				_, ok = resp["token"]
+				assert.False(t, ok)
+				_, ok = resp["role_arn"]
+				assert.False(t, ok)
+				_, ok = resp["session_name"]
 				assert.False(t, ok)
 			},
 			errExpected: nil,

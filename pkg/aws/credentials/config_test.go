@@ -24,8 +24,6 @@ func TestConfig_parsing(t *testing.T) {
 		"happy path - default": {
 			hcl: `use_default = true`,
 			output: Config{
-				Static:     StaticCredentials{},
-				AssumeRole: AssumeRoleConfig{},
 				UseDefault: true,
 			},
 			errExpected: nil,
@@ -39,12 +37,11 @@ static {
 }`,
 
 			output: Config{
-				Static: StaticCredentials{
+				Static: &StaticCredentials{
 					AccessKeyID:     "access-key",
 					SecretAccessKey: "secret-key",
 					SessionToken:    "session-token",
 				},
-				AssumeRole: AssumeRoleConfig{},
 			},
 			errExpected: nil,
 		},
@@ -57,7 +54,7 @@ assume_role {
 }`,
 
 			output: Config{
-				AssumeRole: AssumeRoleConfig{
+				AssumeRole: &AssumeRoleConfig{
 					RoleARN:                "role-arn",
 					SessionName:            "session-name",
 					SessionDurationSeconds: 60,
@@ -73,7 +70,7 @@ assume_role {
 }`,
 
 			output: Config{
-				AssumeRole: AssumeRoleConfig{
+				AssumeRole: &AssumeRoleConfig{
 					RoleARN:                "role-arn",
 					SessionName:            "session-name",
 					SessionDurationSeconds: 0,
@@ -169,14 +166,14 @@ func TestConfig_Validate(t *testing.T) {
 		"happy path - static": {
 			configFn: func() *Config {
 				cfg := generics.GetFakeObj[*Config]()
-				cfg.AssumeRole = AssumeRoleConfig{}
+				cfg.AssumeRole = nil
 				return cfg
 			},
 		},
 		"happy path - assume role": {
 			configFn: func() *Config {
 				cfg := generics.GetFakeObj[*Config]()
-				cfg.Static = StaticCredentials{}
+				cfg.Static = nil
 				return cfg
 			},
 		},
@@ -222,7 +219,7 @@ func TestConfig_MarshalJSON(t *testing.T) {
 		"happy path - static": {
 			configFn: func() *Config {
 				return &Config{
-					Static: StaticCredentials{
+					Static: &StaticCredentials{
 						AccessKeyID:     "access-key",
 						SecretAccessKey: "secret-access-key",
 						SessionToken:    "session-token",
@@ -230,16 +227,19 @@ func TestConfig_MarshalJSON(t *testing.T) {
 				}
 			},
 			assertFn: func(t *testing.T, val map[string]interface{}) {
-				assert.Equal(t, 3, len(val))
-				assert.Equal(t, "access-key", val["access_key"])
-				assert.Equal(t, "secret-access-key", val["secret_key"])
-				assert.Equal(t, "session-token", val["token"])
+				static := val["static"].(map[string]interface{})
+
+				assert.Equal(t, 3, len(static))
+
+				assert.Equal(t, "access-key", static["access_key"])
+				assert.Equal(t, "secret-access-key", static["secret_key"])
+				assert.Equal(t, "session-token", static["token"])
 			},
 		},
 		"happy path - assume_role": {
 			configFn: func() *Config {
 				return &Config{
-					AssumeRole: AssumeRoleConfig{
+					AssumeRole: &AssumeRoleConfig{
 						RoleARN:                "role-arn",
 						SessionName:            "session-name",
 						SessionDurationSeconds: 5,
@@ -247,10 +247,12 @@ func TestConfig_MarshalJSON(t *testing.T) {
 				}
 			},
 			assertFn: func(t *testing.T, val map[string]interface{}) {
-				assert.Equal(t, 3, len(val))
-				assert.Equal(t, "role-arn", val["role_arn"])
-				assert.Equal(t, "session-name", val["session_name"])
-				assert.Equal(t, 5.0, val["session_duration_seconds"])
+				assume := val["assume_role"].(map[string]interface{})
+				assert.Equal(t, 3, len(assume))
+
+				assert.Equal(t, "role-arn", assume["role_arn"])
+				assert.Equal(t, "session-name", assume["session_name"])
+				assert.Equal(t, 5.0, assume["session_duration_seconds"])
 			},
 		},
 	}

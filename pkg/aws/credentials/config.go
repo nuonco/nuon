@@ -25,9 +25,9 @@ type StaticCredentials struct {
 }
 
 type Config struct {
-	Static     StaticCredentials `hcl:"static,block" mapstructure:",squash"`
-	AssumeRole AssumeRoleConfig  `hcl:"assume_role,block" mapstructure:",squash"`
-	UseDefault bool              `hcl:"use_default,optional" mapstructure:"use_default,omitempty"`
+	Static     *StaticCredentials `hcl:"static,block" mapstructure:"static,omitempty"`
+	AssumeRole *AssumeRoleConfig  `hcl:"assume_role,block" mapstructure:"assume_role,omitempty"`
+	UseDefault bool               `hcl:"use_default,optional" mapstructure:"use_default,omitempty"`
 
 	// when cache ID is set, these credentials will be reused, up to the duration of the sessionTimeout (or default)
 	CacheID string `hcl:"cache_id,optional" json:"cache_id,omitempty" mapstructure:"cache_id,omitempty"`
