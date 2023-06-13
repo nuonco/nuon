@@ -25,14 +25,22 @@ func (r *Registry) Push(
 	u := ui.Status()
 	defer u.Close()
 
-	u.Update("initialized push")
-	store, err := r.getStore()
+	u.Step(terminal.StatusOK, "fetching source files")
+	srcFiles, err := r.getSourceFiles(ctx, src.Path)
 	if err != nil {
-		u.Step(terminal.StatusError, "unable to get store")
-		return nil, fmt.Errorf("unable to get store: %w", err)
+		u.Step(terminal.StatusError, "unable to get source files")
+		return nil, fmt.Errorf("unable to get source files: %w", err)
 	}
-	u.Step(terminal.StatusOK, "successfully opened store")
+	u.Step(terminal.StatusOK, "fetched source files")
 
+	u.Step(terminal.StatusOK, fmt.Sprintf("packing %d files", len(srcFiles)))
+	if err := r.packDirectory(ctx, log, srcFiles); err != nil {
+		u.Step(terminal.StatusError, "unable to pack files")
+		return nil, fmt.Errorf("unable to pack files: %w", err)
+	}
+	u.Step(terminal.StatusOK, "packed store")
+
+	u.Update("initialized push")
 	authProvider, err := ecrauthorization.New(r.v,
 		ecrauthorization.WithCredentials(&r.config.Auth),
 		ecrauthorization.WithRepository(r.config.Repository),
@@ -48,9 +56,9 @@ func (r *Registry) Push(
 		u.Step(terminal.StatusError, "unable to get access info")
 		return nil, fmt.Errorf("unable to get access info: %w", err)
 	}
-	u.Step(terminal.StatusOK, "successfully fetched access info")
+	u.Step(terminal.StatusOK, fmt.Sprintf("successfully fetched access info %v", accessInfo))
 
-	if err := r.pushArtifact(ctx, store, accessInfo); err != nil {
+	if err := r.pushArtifact(ctx, accessInfo); err != nil {
 		u.Step(terminal.StatusError, "unable to push artifact")
 		return nil, fmt.Errorf("unable to push artifact: %w", err)
 	}
