@@ -8,6 +8,7 @@ import (
 )
 
 func (m *manager) CreateApp(ctx context.Context, appID string) error {
+	m.Opts.ID = appID
 	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "apps", m.Opts, "CreateApp", &jobsv1.CreateAppRequest{
 		AppId: appID,
 	})
