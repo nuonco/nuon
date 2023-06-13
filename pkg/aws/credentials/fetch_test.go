@@ -10,7 +10,7 @@ import (
 )
 
 func TestFetch(t *testing.T) {
-	staticCreds := generics.GetFakeObj[StaticCredentials]()
+	staticCreds := generics.GetFakeObj[*StaticCredentials]()
 	cacheID := generics.GetFakeObj[string]()
 
 	tests := map[string]struct {

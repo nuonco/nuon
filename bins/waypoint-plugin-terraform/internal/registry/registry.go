@@ -3,14 +3,16 @@ package registry
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
+	"oras.land/oras-go/v2/content/file"
 )
 
 var _ component.Registry = (*Registry)(nil)
 var _ component.RegistryAccess = (*Registry)(nil)
 
-func New(v *validator.Validate) (*Registry, error) {
+func New(v *validator.Validate, store *file.Store) (*Registry, error) {
 	return &Registry{
-		v: v,
+		v:     v,
+		Store: store,
 	}, nil
 }
 
@@ -18,4 +20,5 @@ type Registry struct {
 	v *validator.Validate
 
 	config Config
+	Store  *file.Store
 }

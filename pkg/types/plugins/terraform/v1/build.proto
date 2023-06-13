@@ -7,4 +7,5 @@ option go_package = "github.com/powertoolsdev/mono/pkg/types/terraform/v1";
 message BuildOutput {
   repeated string files = 1;
   map<string, string> labels = 2;
+  string tag = 3;
 }

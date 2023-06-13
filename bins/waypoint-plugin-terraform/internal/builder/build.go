@@ -35,23 +35,26 @@ func (b *Builder) build(ctx context.Context,
 	}
 	u.Step(terminal.StatusOK, "fetched source files")
 
-	store, err := b.getStore()
-	if err != nil {
-		u.Step(terminal.StatusError, "unable to get store")
-		return nil, fmt.Errorf("unable to get store: %w", err)
-	}
-	u.Step(terminal.StatusOK, "created store")
+	// push build to local docker
+	u.Step(terminal.StatusOK, "noop build")
+	return &terraformv1.BuildOutput{
+		Files:  srcFiles,
+		Labels: b.config.Labels,
+	}, nil
 
-	if err := b.packDirectory(ctx, store, srcFiles); err != nil {
+	// TODO(jm): figure out how to reuse the oras cli
+	log.Info("packing %d files", len(srcFiles))
+	for _, fp := range srcFiles {
+		u.Step(terminal.StatusOK, fmt.Sprintf("packing source file %s", fp))
+	}
+	u.Step(terminal.StatusOK, fmt.Sprintf("packing %d files", len(srcFiles)))
+	if err := b.packDirectory(ctx, log, srcFiles); err != nil {
 		u.Step(terminal.StatusError, "unable to pack files")
 		return nil, fmt.Errorf("unable to pack files: %w", err)
 	}
 	u.Step(terminal.StatusOK, "packed store")
 
-	if err := store.Close(); err != nil {
-		return nil, fmt.Errorf("unable to close store: %w", err)
-	}
-
+	// push build to local docker
 	return &terraformv1.BuildOutput{
 		Files:  srcFiles,
 		Labels: b.config.Labels,
