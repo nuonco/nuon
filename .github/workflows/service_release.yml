@@ -28,7 +28,7 @@ jobs:
       id-token: write
     outputs:
       image_tag: ${{ inputs.tag }}
-    timeout-minutes: 7
+    timeout-minutes: 10
     steps:
       - name: Generate token
         id: generate_token
