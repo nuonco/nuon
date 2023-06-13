@@ -137,12 +137,8 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 
 	resp.DeployPlan = deployPlanRef
 
-	// upsert instance
-	var upsertInstanceResp activities.UpsertInstanceResponse
-	fut = workflow.ExecuteActivity(ctx, act.UpsertInstanceJob, req.DeployId)
-	if err := fut.Get(ctx, &upsertInstanceResp); err != nil {
-		return nil, fmt.Errorf("unable to trigger workflow response: %w", err)
-	}
+	//for now we don't update deploy, but if we need to update the Deploy with
+	//a status, we can do so here (or in the finishWorkflow function)
 	return resp, nil
 }
 

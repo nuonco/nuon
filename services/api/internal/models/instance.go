@@ -10,9 +10,6 @@ type Instance struct {
 	InstallID string
 	Install   Install `faker:"-"`
 
-	DeployID string
-	Deploy   Deploy `faker:"-"`
-
 	BuildID string
 	Build   Build `faker:"-"`
 
@@ -20,9 +17,8 @@ type Instance struct {
 	Component   Component `faker:"-"`
 }
 
-func (i *Instance) NewID() error {
+func (i *Instance) NewID() {
 	if i.ID == "" {
 		i.ID = domains.NewInstanceID()
 	}
-	return nil
 }
