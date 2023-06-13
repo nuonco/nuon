@@ -5,8 +5,10 @@ RUN mkdir -p /go/bin && \
      apk add --no-cache curl
 
 # Download and extract Temporalite
-RUN arch="$(apk --print-arch | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')"; \
-    curl -L "https://github.com/temporalio/temporalite/releases/download/v0.3.0/temporalite_0.3.0_linux_${arch}.tar.gz" | \
+ARG TARGETPLATFORM
+ARG TARGETARCH
+RUN echo "building for ${TARGETPLATFORM}_${TARGETARCH}" && \
+    curl -L "https://github.com/temporalio/temporalite/releases/download/v0.3.0/temporalite_0.3.0_linux_${TARGETARCH}.tar.gz" | \
     tar -xz -C /go/bin && \
     ls /go/bin
 
