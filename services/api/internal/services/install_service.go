@@ -114,6 +114,10 @@ func (i *installService) UpsertInstall(ctx context.Context, input models.Install
 
 	var install models.Install
 	install.ID = domains.NewInstallID()
+	if input.OverrideID != nil {
+		install.ID = *input.OverrideID
+	}
+
 	install.Name = input.Name
 	install.AppID = input.AppID
 	install.CreatedByID = *input.CreatedByID

@@ -31,6 +31,7 @@ func (s *server) UpsertInstall(
 			Region:     converters.ProtoToAwsRegion(req.Msg.GetAwsSettings().Region),
 			IamRoleArn: req.Msg.GetAwsSettings().Role,
 		},
+		OverrideID: converters.ToOptionalStr(req.Msg.OverrideId),
 	}
 
 	install, err := s.Svc.UpsertInstall(ctx, params)
