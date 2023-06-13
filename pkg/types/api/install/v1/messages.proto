@@ -94,6 +94,9 @@ message UpsertInstallRequest {
     AwsSettings aws_settings = 5;
     GcpSettings gcp_settings = 6;
   }
+
+  // override_id is only used during dev, to set a well known ID when seeding data
+  string override_id = 7;
 }
 
 message UpsertInstallResponse {
