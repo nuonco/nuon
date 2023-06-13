@@ -19,8 +19,8 @@ type Deploy struct {
 	InstallID string
 	Install   Install
 
-	ComponentID string
-	Component   Component
+	InstanceID string
+	Instance   Instance
 }
 
 func (d *Deploy) NewID() error {
