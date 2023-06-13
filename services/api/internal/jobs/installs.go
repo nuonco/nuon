@@ -8,6 +8,7 @@ import (
 )
 
 func (m *manager) CreateInstall(ctx context.Context, installID string) error {
+	m.Opts.ID = installID
 	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "installs", m.Opts, "CreateInstall", &jobsv1.CreateInstallRequest{
 		InstallId: installID,
 	})
