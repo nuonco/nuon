@@ -48,7 +48,6 @@ func (i deployRepo) Create(ctx context.Context, deploy *models.Deploy) (*models.
 
 func (i deployRepo) Update(ctx context.Context, deploy *models.Deploy) (*models.Deploy, error) {
 	if err := i.db.WithContext(ctx).
-		Session(&gorm.Session{FullSaveAssociations: true}).
 		Updates(deploy).Error; err != nil {
 		return nil, err
 	}

@@ -11,7 +11,6 @@ func InstanceModelToProto(instance *models.Instance) *instancev1.Instance {
 		Id:          instance.ID,
 		BuildId:     instance.BuildID,
 		ComponentId: instance.ComponentID,
-		DeployId:    instance.DeployID,
 	}
 }
 
