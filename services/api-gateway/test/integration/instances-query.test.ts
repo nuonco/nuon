@@ -13,9 +13,7 @@ const mockDateTimeObject = {
 
 const mockInstance = {
   createdAt: mockDateTimeObject,
-  buildId: "build-id",
   componentId: "component-id",
-  deployId: "deploy-id",
   id: "test-id",
   updatedAt: mockDateTimeObject,
 };
@@ -41,9 +39,9 @@ const mockDeploy = {
 const request = supertest(
   initServer({
     build: {
-      getBuild: jest.fn().mockImplementation((req, cb) => {
+      listBuildsByInstance: jest.fn().mockImplementation((req, cb) => {
         cb(undefined, {
-          toObject: jest.fn().mockReturnValue({ build: mockBuild }),
+          toObject: jest.fn().mockReturnValue({ buildsList: [mockBuild] }),
         });
       }),
     },
@@ -55,9 +53,9 @@ const request = supertest(
       }),
     },
     deploy: {
-      getDeploy: jest.fn().mockImplementation((req, cb) => {
+      getDeploysByInstance: jest.fn().mockImplementation((req, cb) => {
         cb(undefined, {
-          toObject: jest.fn().mockReturnValue({ deploy: mockDeploy }),
+          toObject: jest.fn().mockReturnValue({ deploysList: [mockDeploy] }),
         });
       }),
     },

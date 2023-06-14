@@ -25,7 +25,7 @@ test("parseBuildConfigInput should return a build config for an external image",
         "tag": "latest",
       },
       "noop": undefined,
-      "terraformModule": undefined,
+      "terraformModuleCfg": undefined,
       "timeout": undefined,
     }
   `);
@@ -57,7 +57,7 @@ test("parseBuildConfigInput should return a build config for a private ECR exter
         "tag": "latest",
       },
       "noop": undefined,
-      "terraformModule": undefined,
+      "terraformModuleCfg": undefined,
       "timeout": undefined,
     }
   `);
@@ -99,7 +99,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
       },
       "externalImageCfg": undefined,
       "noop": undefined,
-      "terraformModule": undefined,
+      "terraformModuleCfg": undefined,
       "timeout": undefined,
     }
   `);
@@ -148,7 +148,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
       },
       "externalImageCfg": undefined,
       "noop": undefined,
-      "terraformModule": undefined,
+      "terraformModuleCfg": undefined,
       "timeout": undefined,
     }
   `);
@@ -176,7 +176,7 @@ test("parseBuildConfigInput should return a build config for a terraform build w
       "dockerCfg": undefined,
       "externalImageCfg": undefined,
       "noop": undefined,
-      "terraformModule": {
+      "terraformModuleCfg": {
         "envVars": {
           "envVarsList": [
             {
@@ -304,7 +304,7 @@ test("parseConfigInput should return a component config", () => {
           "tag": "",
         },
         "noop": undefined,
-        "terraformModule": undefined,
+        "terraformModuleCfg": undefined,
         "timeout": undefined,
       },
       "deployCfg": {

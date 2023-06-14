@@ -19,6 +19,7 @@ type Deploy {
 
 input DeployInput {
   buildId: ID!
+  componentId: ID!
   installId: ID!
 }
 
@@ -26,7 +27,7 @@ input DeployInput {
 # Deploy Query types
 ##############################################################################
 extend type Query {
-  deploy(id: ID!): Deploy!
+  deploy(id: ID, instanceId: ID): Deploy!
 }
 
 ##############################################################################
