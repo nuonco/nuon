@@ -27,7 +27,6 @@ func (s *server) StartDeploy(
 
 	if instance == nil {
 		instance = &models.Instance{
-			BuildID:     req.Msg.BuildId,
 			InstallID:   req.Msg.InstallId,
 			ComponentID: req.Msg.ComponentId,
 		}

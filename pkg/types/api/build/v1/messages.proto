@@ -47,6 +47,9 @@ message QueryBuildsRequest {
   string component_id = 1 [(validate.rules).string.len = 26];
 }
 
+message ListBuildsByInstanceRequest {
+  string instance_id = 1 [(validate.rules).string.len = 26];
+}
 message QueryBuildsResponse {
   repeated Build builds = 1;
 }

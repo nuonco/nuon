@@ -8,8 +8,8 @@ import (
 // Instance model to proto converts instance domain model into instance proto message
 func InstanceModelToProto(instance *models.Instance) *instancev1.Instance {
 	return &instancev1.Instance{
-		Id:          instance.ID,
-		BuildId:     instance.BuildID,
+		Id:          instance.Model.ID,
+		InstallId:   instance.InstallID,
 		ComponentId: instance.ComponentID,
 	}
 }
