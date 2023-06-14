@@ -7,4 +7,5 @@ import "deploy/v1/messages.proto";
 service DeployService {
   rpc GetDeploy(deploy.v1.GetDeployRequest) returns (deploy.v1.GetDeployResponse) {}
   rpc StartDeploy(deploy.v1.StartDeployRequest) returns (deploy.v1.StartDeployResponse) {}
+  rpc GetDeploysByInstance(deploy.v1.GetDeploysByInstanceRequest) returns (deploy.v1.GetDeploysByInstanceResponse) {}
 }
