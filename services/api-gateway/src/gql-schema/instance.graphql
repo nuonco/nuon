@@ -7,7 +7,6 @@ Represents information about an instance
 """
 type Instance {
   id: ID!
-  build: Build
   component: Component
   componentId: ID!
   deploy: Deploy
