@@ -410,7 +410,6 @@ export type InstallSettings = AwsSettings | GcpSettings;
 /** Represents information about an instance */
 export type Instance = {
   __typename?: 'Instance';
-  build?: Maybe<Build>;
   component?: Maybe<Component>;
   componentId: Scalars['ID']['output'];
   createdAt: Scalars['DateTime']['output'];
@@ -661,8 +660,7 @@ export type QueryAppsArgs = {
 
 
 export type QueryBuildArgs = {
-  id?: InputMaybe<Scalars['ID']['input']>;
-  instanceId?: InputMaybe<Scalars['ID']['input']>;
+  id: Scalars['ID']['input'];
 };
 
 
