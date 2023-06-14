@@ -47,13 +47,3 @@ output "odr_iam_role_arn" {
   description = "iam role arn of the odr's IAM role which grants permissions to ECR"
   value       = module.odr_iam_role.iam_role_arn
 }
-
-output "odr_iam" {
-  description = "iam roles for ODRs to assume, based on what they need to do in the sandbox"
-  value = {
-    default           = module.odr_default_iam_role.iam_role_arn
-    sync_artifacts    = module.odr_sync_artifacts_iam_role.iam_role_arn
-    terraform_apply   = module.odr_terraform_apply_iam_role.iam_role_arn
-    terraform_destroy = module.odr_terraform_destroy_iam_role.iam_role_arn
-  }
-}
