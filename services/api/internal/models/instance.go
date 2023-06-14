@@ -5,13 +5,10 @@ import (
 )
 
 type Instance struct {
-	ID string
+	Model
 
 	InstallID string
 	Install   Install `faker:"-"`
-
-	BuildID string
-	Build   Build `faker:"-"`
 
 	ComponentID string
 	Component   Component `faker:"-"`

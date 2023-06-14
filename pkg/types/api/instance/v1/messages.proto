@@ -8,7 +8,7 @@ import "validate/validate.proto";
 
 message Instance {
   string id = 1;
-  string build_id = 2;
+  string install_id = 2;
   string component_id = 3;
   google.type.DateTime created_at = 4;
   google.type.DateTime updated_at = 5;

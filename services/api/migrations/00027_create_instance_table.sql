@@ -9,6 +9,7 @@ CREATE TABLE instances (
 	build_id text NULL,
   component_id text NULL,
 	created_at timestamptz NULL,
+	updated_at timestamptz NULL,
 	deleted_at timestamptz NULL,
 	CONSTRAINT instances_pkey PRIMARY KEY (id)
 );

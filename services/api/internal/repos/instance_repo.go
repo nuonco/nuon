@@ -51,11 +51,7 @@ func (i instanceRepo) GetByInstallAndComponent(ctx context.Context, installID st
 }
 
 func (i instanceRepo) Create(ctx context.Context, instances []*models.Instance) ([]*models.Instance, error) {
-	if err := i.db.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "component_id"}, {Name: "install_id"}},
-			DoUpdates: clause.AssignmentColumns([]string{"build_id"}),
-		}).Create(instances).Error; err != nil {
+	if err := i.db.WithContext(ctx).Create(instances).Error; err != nil {
 		return nil, err
 	}
 

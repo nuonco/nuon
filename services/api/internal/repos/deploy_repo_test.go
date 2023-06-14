@@ -112,3 +112,48 @@ func TestUpdateDeploy(t *testing.T) {
 		},
 	})
 }
+
+func TestListByInstance(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
+	execRepoTests(t, []repoTest{
+		{
+			desc: "should get all deploys successfully when no limit is set",
+			fn: func(ctx context.Context, state repoTestState) {
+				origDeploy := createDeploy(ctx, t, state)
+
+				deploys, page, err := state.deployRepo.ListByInstance(ctx, origDeploy.InstanceID, &models.ConnectionOptions{})
+				assert.Nil(t, err)
+				assert.NotEmpty(t, page)
+				assert.NotEmpty(t, deploys)
+
+				// NOTE(jm): until we've fixed all bugs cleaning up all database objects from previous
+				// runs, we can't guarantee this will be the only app in the list
+				// assert.Equal(t, apps[0].ID, origApp.ID)
+				// assert.Equals(t, len(apps), 1)
+				found := false
+				for _, deploy := range deploys {
+					if deploy.ID == origDeploy.ID {
+						found = true
+						break
+					}
+				}
+				assert.True(t, found)
+			},
+		},
+		{
+			desc: "should error with a context canceled",
+			fn: func(ctx context.Context, state repoTestState) {
+				state.ctxCloseFn()
+				instanceID := domains.NewInstanceID()
+				deploys, page, err := state.deployRepo.ListByInstance(ctx, instanceID, &models.ConnectionOptions{})
+				assert.NotNil(t, err)
+				assert.Nil(t, deploys)
+				assert.Nil(t, page)
+			},
+		},
+	})
+}
