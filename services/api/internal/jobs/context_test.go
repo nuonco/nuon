@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	"github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -104,6 +104,33 @@ func Test_workspace_cleanup(t *testing.T) {
 			},
 			errExpected: nil,
 		},
+		"disable cleanup does not cleanup": {
+			workspaceFn: func(t *testing.T) *workspace {
+				w, err := New(v,
+					WithBackend(back),
+					WithArchive(arch),
+					WithVariables(vars),
+					WithBinary(bin),
+					WithDisableCleanup(true),
+				)
+				assert.NoError(t, err)
+
+				err = w.createRoot()
+				assert.NoError(t, err)
+
+				err = w.writeFile("test.txt", []byte("hello world"), defaultFilePermissions)
+				assert.NoError(t, err)
+
+				err = w.writeFile("test/test.txt", []byte("hello world"), defaultFilePermissions)
+				assert.NoError(t, err)
+				return w
+			},
+			assertFn: func(t *testing.T, w *workspace) {
+				_, err := os.Stat(w.root)
+				assert.NoError(t, err)
+			},
+			errExpected: nil,
+		},
 	}
 
 	for name, test := range tests {

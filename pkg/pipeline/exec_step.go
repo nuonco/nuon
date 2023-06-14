@@ -6,6 +6,7 @@ import (
 )
 
 func (p *Pipeline) execStep(ctx context.Context, step *Step) error {
+	p.Log.Info("executing step ", "name", step.Name)
 	if err := p.v.Struct(step); err != nil {
 		return fmt.Errorf("unable to validate step: %w", err)
 	}

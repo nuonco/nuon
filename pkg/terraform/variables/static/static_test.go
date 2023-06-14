@@ -4,11 +4,20 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
 	v := validator.New()
+
+	envVars := generics.GetFakeObj[map[string]string]()
+	fileVars := map[string]interface{}{
+		"key": "value",
+		"map": map[string]interface{}{
+			"key": "value",
+		},
+	}
 
 	tests := map[string]struct {
 		errExpected error
@@ -17,9 +26,14 @@ func TestNew(t *testing.T) {
 	}{
 		"happy path": {
 			optsFn: func() []varsOption {
-				return []varsOption{}
+				return []varsOption{
+					WithEnvVars(envVars),
+					WithFileVars(fileVars),
+				}
 			},
-			assertFn: func(t *testing.T, s *vars) {
+			assertFn: func(t *testing.T, v *vars) {
+				assert.Equal(t, envVars, v.EnvVars)
+				assert.Equal(t, fileVars, v.FileVars)
 			},
 		},
 	}

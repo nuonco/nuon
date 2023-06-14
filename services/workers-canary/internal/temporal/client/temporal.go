@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
+	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 )

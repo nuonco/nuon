@@ -7,7 +7,7 @@ import (
 	ghinstallation "github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/bufbuild/connect-go"
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	"github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/powertoolsdev/mono/pkg/types/api/build/v1/buildv1connect"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	"github.com/powertoolsdev/mono/services/api/internal/clients/github"

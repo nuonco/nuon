@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/stretchr/testify/assert"
 )
 

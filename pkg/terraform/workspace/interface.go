@@ -21,6 +21,8 @@ type Workspace interface {
 	Init(ctx context.Context) error
 	//LoadVariables is used to load the variables into the environment
 	LoadVariables(ctx context.Context) error
+	// Root returns the root directory
+	Root() string
 
 	// the following commands are used to run terraform operations against a workspace
 	Apply(ctx context.Context) (*tfjson.Plan, error)

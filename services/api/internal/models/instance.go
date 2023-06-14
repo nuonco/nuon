@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type Instance struct {
