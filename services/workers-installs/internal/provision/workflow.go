@@ -2,6 +2,7 @@ package provision
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -94,6 +95,9 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		return resp, err
 	}
 
+	// convert terraform outputs to map and add to response
+	resp.TerraformOutputs = toMap(tfOutputs)
+
 	prReq := &runnerv1.ProvisionRunnerRequest{
 		OrgId:         req.OrgId,
 		AppId:         req.AppId,
@@ -139,4 +143,16 @@ func execProvisionRunner(
 	}
 
 	return resp, nil
+}
+
+func toMap(tfOutputs sandbox.TerraformOutputs) map[string]string {
+	v := reflect.ValueOf(tfOutputs)
+	typeOfS := v.Type()
+	vals := make(map[string]string, 0)
+
+	for i := 0; i < v.NumField(); i++ {
+		vals[typeOfS.Field(i).Name] = v.Field(i).Interface().(string)
+
+	}
+	return vals
 }
