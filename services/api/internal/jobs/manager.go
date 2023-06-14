@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	"github.com/powertoolsdev/mono/pkg/temporal/client"
 	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	tclient "go.temporal.io/sdk/client"
 )

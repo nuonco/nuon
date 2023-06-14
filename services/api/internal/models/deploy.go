@@ -4,7 +4,7 @@ package models
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	deployv1 "github.com/powertoolsdev/mono/pkg/types/api/deploy/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs"
 	"gorm.io/gorm"

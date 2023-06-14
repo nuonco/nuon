@@ -9,8 +9,8 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/aws/s3uploader"
 	"github.com/powertoolsdev/mono/pkg/pipeline"
-	"github.com/powertoolsdev/mono/pkg/uploader"
 )
 
 func NewS3Callback(v *validator.Validate, opts ...s3CallbackOption) (pipeline.CallbackFn, error) {
@@ -52,9 +52,9 @@ func (s *s3Callback) callback(ctx context.Context,
 	log hclog.Logger,
 	ui terminal.UI,
 	byts []byte) error {
-	u, err := uploader.NewS3Uploader(s.v,
-		uploader.WithCredentials(s.Credentials),
-		uploader.WithBucketName(s.Bucket),
+	u, err := s3uploader.NewS3Uploader(s.v,
+		s3uploader.WithCredentials(s.Credentials),
+		s3uploader.WithBucketName(s.Bucket),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to get uploader: %w", err)

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/aws/s3uploader"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
-	"github.com/powertoolsdev/mono/pkg/uploader"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -40,11 +40,11 @@ func (s *startActivity) StartRequest(ctx context.Context, req *sharedv1.StartAct
 	}
 
 	// create upload client
-	uploadClient, err := uploader.NewS3Uploader(s.v,
-		uploader.WithBucketName(req.MetadataBucket),
-		uploader.WithPrefix(req.MetadataBucketPrefix),
-		uploader.WithAssumeSessionName(req.MetadataBucket),
-		uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleArn))
+	uploadClient, err := s3uploader.NewS3Uploader(s.v,
+		s3uploader.WithBucketName(req.MetadataBucket),
+		s3uploader.WithPrefix(req.MetadataBucketPrefix),
+		s3uploader.WithAssumeSessionName(req.MetadataBucket),
+		s3uploader.WithAssumeRoleARN(req.MetadataBucketAssumeRoleArn))
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to get uploader: %w", err)

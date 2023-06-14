@@ -1,6 +1,6 @@
 package domains
 
-import "github.com/powertoolsdev/mono/pkg/common/shortid"
+import "github.com/powertoolsdev/mono/pkg/shortid"
 
 func NewAppID() string {
 	return shortid.NewNanoID("app")

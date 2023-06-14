@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	"github.com/powertoolsdev/mono/pkg/temporal/client"
 )
 
 func NewTemporalClientInterceptor(client temporal.Client) connect.UnaryInterceptorFunc {

@@ -21,10 +21,11 @@ var _ Workspace = (*workspace)(nil)
 type workspace struct {
 	v *validator.Validate
 
-	Archive   archive.Archive     `validate:"required"`
-	Backend   backend.Backend     `validate:"required"`
-	Variables variables.Variables `validate:"required"`
-	Binary    binary.Binary       `validate:"required"`
+	Archive        archive.Archive     `validate:"required"`
+	Backend        backend.Backend     `validate:"required"`
+	Variables      variables.Variables `validate:"required"`
+	Binary         binary.Binary       `validate:"required"`
+	DisableCleanup bool
 
 	// internal vars for managing the workspace
 	tmpDirRoot string
@@ -77,6 +78,13 @@ func WithVariables(vars variables.Variables) workspaceOption {
 func WithBinary(bin binary.Binary) workspaceOption {
 	return func(w *workspace) error {
 		w.Binary = bin
+		return nil
+	}
+}
+
+func WithDisableCleanup(disable bool) workspaceOption {
+	return func(w *workspace) error {
+		w.DisableCleanup = disable
 		return nil
 	}
 }
