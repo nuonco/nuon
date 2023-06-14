@@ -14,6 +14,7 @@ export const startDeploy: TResolverFn<
     if (clients.deploy) {
       const request = new StartDeployRequest()
         .setBuildId(input.buildId)
+        .setComponentId(input.componentId)
         .setInstallId(input.installId);
 
       clients.deploy.startDeploy(request, (err, res) => {

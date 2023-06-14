@@ -258,6 +258,7 @@ export type DeployConfigInput = {
 
 export type DeployInput = {
   buildId: Scalars['ID']['input'];
+  componentId: Scalars['ID']['input'];
   installId: Scalars['ID']['input'];
 };
 
@@ -409,10 +410,11 @@ export type InstallSettings = AwsSettings | GcpSettings;
 /** Represents information about an instance */
 export type Instance = {
   __typename?: 'Instance';
-  buildId: Scalars['ID']['output'];
+  build?: Maybe<Build>;
+  component?: Maybe<Component>;
   componentId: Scalars['ID']['output'];
   createdAt: Scalars['DateTime']['output'];
-  deployId: Scalars['ID']['output'];
+  deploy?: Maybe<Deploy>;
   id: Scalars['ID']['output'];
   updatedAt: Scalars['DateTime']['output'];
 };
@@ -659,7 +661,8 @@ export type QueryAppsArgs = {
 
 
 export type QueryBuildArgs = {
-  id: Scalars['ID']['input'];
+  id?: InputMaybe<Scalars['ID']['input']>;
+  instanceId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -688,7 +691,8 @@ export type QueryComponentsArgs = {
 
 
 export type QueryDeployArgs = {
-  id: Scalars['ID']['input'];
+  id?: InputMaybe<Scalars['ID']['input']>;
+  instanceId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
