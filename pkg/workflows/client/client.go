@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	"github.com/powertoolsdev/mono/pkg/temporal/client"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"

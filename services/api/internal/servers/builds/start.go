@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	apibuildv1 "github.com/powertoolsdev/mono/pkg/types/api/build/v1"
 	workflowbuildv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"

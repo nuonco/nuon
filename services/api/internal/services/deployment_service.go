@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	gh "github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	componentConfig "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"

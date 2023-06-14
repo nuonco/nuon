@@ -12,6 +12,9 @@ var _ variables.Variables = (*vars)(nil)
 
 type vars struct {
 	v *validator.Validate
+
+	EnvVars  map[string]string
+	FileVars map[string]interface{}
 }
 
 type varsOption func(*vars) error
@@ -31,4 +34,18 @@ func New(v *validator.Validate, opts ...varsOption) (*vars, error) {
 	}
 
 	return s, nil
+}
+
+func WithEnvVars(envVars map[string]string) varsOption {
+	return func(v *vars) error {
+		v.EnvVars = envVars
+		return nil
+	}
+}
+
+func WithFileVars(fileVars map[string]interface{}) varsOption {
+	return func(v *vars) error {
+		v.FileVars = fileVars
+		return nil
+	}
 }

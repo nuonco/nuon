@@ -3,7 +3,7 @@ package fakers
 import (
 	"reflect"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/shortid"
 )
 
 func fakeShortID(v reflect.Value) (interface{}, error) {

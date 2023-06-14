@@ -13,6 +13,10 @@ const (
 	defaultFileExecPermissions fs.FileMode = 0777
 )
 
+func (w *workspace) Root() string {
+	return w.root
+}
+
 // createRoot creates a new root directory for the workspace
 func (w *workspace) createRoot() error {
 	dir, err := os.MkdirTemp(w.tmpDirRoot, "workspace")
@@ -43,6 +47,10 @@ func (w *workspace) writeFile(path string, byts []byte, perms fs.FileMode) error
 
 // cleanup cleans up the root directory and all contents
 func (w *workspace) cleanup() error {
+	if w.DisableCleanup {
+		return nil
+	}
+
 	if err := os.RemoveAll(w.root); err != nil {
 		return fmt.Errorf("unable to remove %s: %w", w.root, err)
 	}

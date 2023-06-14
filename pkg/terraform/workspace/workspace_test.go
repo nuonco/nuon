@@ -39,6 +39,25 @@ func TestNew(t *testing.T) {
 				assert.Equal(t, vars, s.Variables)
 				assert.Equal(t, arch, s.Archive)
 				assert.Equal(t, bin, s.Binary)
+				assert.False(t, s.DisableCleanup)
+			},
+		},
+		"disable cleanup": {
+			optsFn: func() []workspaceOption {
+				return []workspaceOption{
+					WithBackend(back),
+					WithArchive(arch),
+					WithVariables(vars),
+					WithBinary(bin),
+					WithDisableCleanup(true),
+				}
+			},
+			assertFn: func(t *testing.T, s *workspace) {
+				assert.Equal(t, back, s.Backend)
+				assert.Equal(t, vars, s.Variables)
+				assert.Equal(t, arch, s.Archive)
+				assert.Equal(t, bin, s.Binary)
+				assert.True(t, s.DisableCleanup)
 			},
 		},
 		"missing archive": {

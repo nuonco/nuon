@@ -3,7 +3,7 @@ package worker
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
+	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 	"go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 )

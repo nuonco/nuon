@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	componentConfig "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/powertoolsdev/mono/services/api/internal/repos"

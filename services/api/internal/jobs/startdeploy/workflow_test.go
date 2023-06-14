@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"

@@ -1,15 +1,28 @@
 package static
 
-import "context"
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+)
 
 func (v *vars) Init(context.Context) error {
 	return nil
 }
 
 func (v *vars) GetEnv(context.Context) (map[string]string, error) {
-	return nil, nil
+	return v.EnvVars, nil
 }
 
 func (v *vars) GetFile(context.Context) ([]byte, error) {
-	return []byte(nil), nil
+	if v.FileVars == nil {
+		return nil, nil
+	}
+
+	byts, err := json.Marshal(v.FileVars)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create file vars: %w", err)
+	}
+
+	return byts, nil
 }

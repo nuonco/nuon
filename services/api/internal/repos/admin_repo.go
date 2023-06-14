@@ -3,7 +3,7 @@ package repos
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"gorm.io/gorm"
 )

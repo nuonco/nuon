@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid/domains"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	instancesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1/instances/v1"
 	provisionv1 "github.com/powertoolsdev/mono/pkg/types/workflows/instances/v1"

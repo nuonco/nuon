@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	temporalclient "github.com/powertoolsdev/mono/pkg/clients/temporal"
+	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	buildsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
