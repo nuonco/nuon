@@ -2,11 +2,11 @@ package provision
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/mitchellh/mapstructure"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -96,7 +96,13 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	}
 
 	// convert terraform outputs to map and add to response
-	resp.TerraformOutputs = toMap(tfOutputs)
+	tfOutputsMap, err := toMap(tfOutputs)
+	if err != nil {
+		err = fmt.Errorf("unable to decode to stringmap: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, err
+	}
+	resp.TerraformOutputs = tfOutputsMap
 
 	prReq := &runnerv1.ProvisionRunnerRequest{
 		OrgId:         req.OrgId,
@@ -145,14 +151,11 @@ func execProvisionRunner(
 	return resp, nil
 }
 
-func toMap(tfOutputs sandbox.TerraformOutputs) map[string]string {
-	v := reflect.ValueOf(tfOutputs)
-	typeOfS := v.Type()
-	vals := make(map[string]string, 0)
-
-	for i := 0; i < v.NumField(); i++ {
-		vals[typeOfS.Field(i).Name] = v.Field(i).Interface().(string)
-
+func toMap(tfOutputs sandbox.TerraformOutputs) (map[string]string, error) {
+	var output map[string]string
+	if err := mapstructure.Decode(tfOutputs, &output); err != nil {
+		return nil, err
 	}
-	return vals
+
+	return output, nil
 }
