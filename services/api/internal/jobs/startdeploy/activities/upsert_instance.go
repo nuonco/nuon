@@ -17,7 +17,6 @@ func (a *activities) UpsertInstanceJob(ctx context.Context, deployID string) (*U
 	}
 
 	instance := &models.Instance{
-		BuildID:     deploy.BuildID,
 		InstallID:   deploy.InstallID,
 		ComponentID: deploy.Build.ComponentID,
 	}

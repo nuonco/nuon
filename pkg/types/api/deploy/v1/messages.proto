@@ -31,3 +31,11 @@ message GetDeployRequest {
 message GetDeployResponse {
   Deploy deploy = 1;
 }
+
+message GetDeploysByInstanceRequest {
+  string instance_id = 1 [(validate.rules).string.len = 26];
+}
+
+message GetDeploysByInstanceResponse {
+  repeated Deploy deploys = 1;
+}
