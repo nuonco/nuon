@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/common/temporalzap"
+	"github.com/powertoolsdev/mono/pkg/temporal/temporalzap"
 	tclient "go.temporal.io/sdk/client"
 )
 

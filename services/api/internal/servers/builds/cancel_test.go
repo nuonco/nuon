@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
-	temporal "github.com/powertoolsdev/mono/pkg/clients/temporal"
+	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	"github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/stretchr/testify/assert"
 )
 

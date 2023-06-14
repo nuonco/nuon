@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	io "io"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
@@ -27,7 +28,11 @@ func TestPipeline_execStep(t *testing.T) {
 
 	v := validator.New()
 	ui := NewMockui(nil)
-	l := NewMockhcLog(nil)
+	l := hclog.New(&hclog.LoggerOptions{
+		Output: io.Discard,
+		Name:   "exp",
+		Level:  hclog.LevelFromString("DEBUG"),
+	})
 
 	tests := map[string]struct {
 		stepFn      func(*gomock.Controller, context.Context) *Step

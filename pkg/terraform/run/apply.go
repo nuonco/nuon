@@ -24,7 +24,10 @@ func (r *run) Apply(ctx context.Context) error {
 
 func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 	// initialize steps to load the workspace
-	pipe, err := pipeline.New(r.v)
+	pipe, err := pipeline.New(r.v,
+		pipeline.WithLogger(r.Log),
+		pipeline.WithUI(r.UI),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create pipeline: %w", err)
 	}

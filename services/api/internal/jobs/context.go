@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/clients/temporal"
+	"github.com/powertoolsdev/mono/pkg/temporal/client"
 )
 
 // FromContext returns a new job manager from the provided context

@@ -3,7 +3,7 @@ package client
 import (
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/common/shortid"
+	"github.com/powertoolsdev/mono/pkg/shortid"
 	"github.com/stretchr/testify/assert"
 )
 
