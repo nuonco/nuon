@@ -26,7 +26,7 @@ input BuildInput {
 # Build Query types
 ##############################################################################
 extend type Query {
-  build(id: ID, instanceId: ID): Build
+  build(id: ID!): Build
   builds(componentId: ID!): [Build!]
   buildStatus(appId: ID!, buildId: ID!, componentId: ID!, orgId: ID!): Status!
 }
