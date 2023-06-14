@@ -9,4 +9,5 @@ service BuildsService {
   rpc GetBuild(build.v1.GetBuildRequest) returns (build.v1.GetBuildResponse) {}
   rpc QueryBuilds(build.v1.QueryBuildsRequest) returns (build.v1.QueryBuildsResponse) {}
   rpc StartBuild(build.v1.StartBuildRequest) returns (build.v1.StartBuildResponse) {}
+  rpc ListBuildsByInstance(build.v1.ListBuildsByInstanceRequest) returns (build.v1.ListBuildsByInstanceResponse) {}
 }

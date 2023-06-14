@@ -61,7 +61,7 @@ func (s *server) QueryBuilds(
 func (s *server) ListBuildsByInstance(
 	ctx context.Context,
 	req *connect.Request[buildv1.ListBuildsByInstanceRequest],
-) (*connect.Response[buildv1.QueryBuildsResponse], error) {
+) (*connect.Response[buildv1.ListBuildsByInstanceResponse], error) {
 	// run protobuf validations
 	if err := req.Msg.Validate(); err != nil {
 		return nil, fmt.Errorf("input validation failed: %w", err)
@@ -82,7 +82,7 @@ func (s *server) ListBuildsByInstance(
 		builds = append(builds, build.ToProto())
 	}
 
-	return connect.NewResponse(&buildv1.QueryBuildsResponse{
+	return connect.NewResponse(&buildv1.ListBuildsByInstanceResponse{
 		Builds: builds,
 	}), nil
 }
