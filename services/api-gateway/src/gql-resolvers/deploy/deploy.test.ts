@@ -1,11 +1,20 @@
 import { deploy } from "./deploy";
 
+const mockDateTimeObject = {
+  day: 31,
+  hours: 8,
+  minutes: 15,
+  month: 12,
+  seconds: 30,
+  year: 1999,
+};
+
 const mockDeploy = {
   buildId: "test-build-id",
-  createdAt: "1999-12-31T08:15:30.000Z",
+  createdAt: mockDateTimeObject,
   id: "test-id",
   installId: "test-install-id",
-  updatedAt: "1999-12-31T08:15:30.000Z",
+  updatedAt: mockDateTimeObject,
 };
 
 const mockDeployServiceClient = {

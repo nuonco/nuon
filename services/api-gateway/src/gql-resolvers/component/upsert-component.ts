@@ -139,7 +139,7 @@ export function parseBuildConfigInput(
       .setEnvVars(envVarsConfig)
       .setVcsCfg(vcsConfig);
 
-    buildCfg.setTerraformModule(terraformBuildConfig);
+    buildCfg.setTerraformModuleCfg(terraformBuildConfig);
   }
 
   return buildCfg;
