@@ -3,6 +3,7 @@ package sandbox
 import (
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -24,12 +25,22 @@ type TerraformOutputs struct {
 	EcrRegistryURL                  string `mapstructure:"ecr_registry_url"`
 }
 
+func (t *TerraformOutputs) Validate() error {
+	validate := validator.New()
+	return validate.Struct(t)
+}
+
 func ParseTerraformOutputs(outputs *structpb.Struct) (TerraformOutputs, error) {
 	m := outputs.AsMap()
 
 	var tfOutputs TerraformOutputs
 	if err := mapstructure.Decode(m, &tfOutputs); err != nil {
 		return tfOutputs, fmt.Errorf("invalid terraform outputs: %w", err)
+	}
+
+	err := tfOutputs.Validate()
+	if err != nil {
+		return tfOutputs, fmt.Errorf("terraform output error: %w", err)
 	}
 
 	return tfOutputs, nil
