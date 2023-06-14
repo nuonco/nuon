@@ -18,12 +18,6 @@ const mockInstance = {
   updatedAt: mockDateTimeObject,
 };
 
-const mockBuild = {
-  createdAt: mockDateTimeObject,
-  id: "build-id",
-  updatedAt: mockDateTimeObject,
-};
-
 const mockComponent = {
   createdAt: mockDateTimeObject,
   id: "component-id",
@@ -38,13 +32,6 @@ const mockDeploy = {
 
 const request = supertest(
   initServer({
-    build: {
-      listBuildsByInstance: jest.fn().mockImplementation((req, cb) => {
-        cb(undefined, {
-          toObject: jest.fn().mockReturnValue({ buildsList: [mockBuild] }),
-        });
-      }),
-    },
     component: {
       getComponent: jest.fn().mockImplementation((req, cb) => {
         cb(undefined, {
@@ -78,10 +65,7 @@ test("Instances query should return hydrated instances", async () => {
     .send({
       query: `
         query Instances($installId: ID!) {
-          instances(installId: $installId) {
-            build {
-              id
-            }
+          instances(installId: $installId) {          
             component {
               id
             }
@@ -102,9 +86,6 @@ test("Instances query should return hydrated instances", async () => {
     data: {
       instances: [
         {
-          build: {
-            id: "build-id",
-          },
           component: {
             id: "component-id",
           },
