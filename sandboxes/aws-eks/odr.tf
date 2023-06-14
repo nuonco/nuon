@@ -2,17 +2,11 @@ data "aws_iam_policy_document" "odr" {
   statement {
     effect = "Allow"
     actions = [
-      "ecr:*",
+      "*",
     ]
-    resources = [module.ecr.repository_arn]
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
-      "ecr:GetAuthorizationToken",
+    resources = [
+      "*",
     ]
-    resources = ["*", ]
   }
 }
 
