@@ -3,11 +3,12 @@ package workspace
 import (
 	"context"
 	"fmt"
-	"log"
+	"io"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
 	gomock "github.com/golang/mock/gomock"
+	"github.com/hashicorp/go-hclog"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
@@ -26,6 +27,10 @@ func Test_LoadBinary(t *testing.T) {
 	errLoadBinary := fmt.Errorf("error")
 	execPath := generics.GetFakeObj[string]()
 
+	lg := hclog.New(&hclog.LoggerOptions{
+		Output: io.Discard,
+	})
+
 	tests := map[string]struct {
 		binaryFn    func(*gomock.Controller) binary.Binary
 		assertFn    func(*testing.T, *workspace)
@@ -40,7 +45,7 @@ func Test_LoadBinary(t *testing.T) {
 					gomock.Any(),
 					gomock.Any(),
 					gomock.Any()).DoAndReturn(
-					func(ctx context.Context, lg *log.Logger, path string) (string, error) {
+					func(ctx context.Context, lg hclog.Logger, path string) (string, error) {
 						return execPath, nil
 					})
 				return mock
@@ -86,10 +91,10 @@ func Test_LoadBinary(t *testing.T) {
 			)
 			assert.NoError(t, err)
 
-			err = wkspace.Init(ctx)
+			err = wkspace.InitRoot(ctx)
 			assert.NoError(t, err)
 
-			err = wkspace.LoadBinary(ctx)
+			err = wkspace.LoadBinary(ctx, lg)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

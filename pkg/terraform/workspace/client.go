@@ -2,16 +2,29 @@ package workspace
 
 import (
 	"context"
+	"fmt"
 	"io"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=client_mock_test.go -source=client.go -package=workspace
-type printfer interface {
-	Printf(format string, v ...interface{})
+
+func (w *workspace) getClient(ctx context.Context, log hclog.Logger) (Terraform, error) {
+	tf, err := tfexec.NewTerraform(w.root, w.execPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get terraform client: %w", err)
+	}
+
+	if err := tf.SetEnv(w.envVars); err != nil {
+		return nil, fmt.Errorf("unable to set environment variables: %w", err)
+	}
+
+	tf.SetLogger(log.StandardLogger(nil))
+	return tf, nil
 }
 
 // Terraform represents the client that terraform exposes in `tfexec`. We interface it here, so we can mock it and
@@ -23,7 +36,6 @@ type Terraform interface {
 	// result in ErrManualEnvVar being returned.
 	SetEnv(env map[string]string) error
 	// SetLogger specifies a logger for tfexec to use.
-	SetLogger(logger printfer)
 	// SetStdout specifies a writer to stream stdout to for every command.
 	//
 	// This should be used for information or logging purposes only, not control
@@ -70,6 +82,7 @@ type Terraform interface {
 	WorkingDir() string
 	// ExecPath returns the path to the Terraform executable.
 	ExecPath() string
+	Init(ctx context.Context, opts ...tfexec.InitOption) error
 	// Apply represents the terraform apply subcommand.
 	Apply(ctx context.Context, opts ...tfexec.ApplyOption) error
 	// ApplyJSON represents the terraform apply subcommand with the `-json` flag.

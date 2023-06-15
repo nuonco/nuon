@@ -20,6 +20,7 @@ func (o *oci) getSrc() (oras.ReadOnlyTarget, error) {
 		return o.testSrc, nil
 	}
 
+	fmt.Println(o.Image.RepoURL())
 	repo, err := remote.NewRepository(o.Image.RepoURL())
 	if err != nil {
 		return nil, fmt.Errorf("unable to get repository: %w", err)

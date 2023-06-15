@@ -21,9 +21,11 @@ type hcLog interface {
 
 type testExecFns interface {
 	Init(context.Context) error
+	InitLog(context.Context, hclog.Logger) error
+	BytesLog(context.Context, hclog.Logger) ([]byte, error)
 
 	// terraform functions
-	TerraformOutput(context.Context) (map[string]tfexec.OutputMeta, error)
-	TerraformState(context.Context) (*tfjson.State, error)
-	TerraformPlan(context.Context) (*tfjson.Plan, error)
+	TerraformOutput(context.Context, hclog.Logger) (map[string]tfexec.OutputMeta, error)
+	TerraformState(context.Context, hclog.Logger) (*tfjson.State, error)
+	TerraformPlan(context.Context, hclog.Logger) (*tfjson.Plan, error)
 }

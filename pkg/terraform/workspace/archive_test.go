@@ -87,7 +87,7 @@ func Test_LoadArchive(t *testing.T) {
 			)
 			assert.NoError(t, err)
 
-			err = wkspace.Init(ctx)
+			err = wkspace.InitRoot(ctx)
 			assert.NoError(t, err)
 
 			err = wkspace.LoadArchive(ctx)

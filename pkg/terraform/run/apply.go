@@ -34,7 +34,7 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 
 	pipe.AddStep(&pipeline.Step{
 		Name:       "initialize workspace",
-		ExecFn:     execmappers.MapInit(r.Workspace.Init),
+		ExecFn:     execmappers.MapInit(r.Workspace.InitRoot),
 		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
@@ -49,7 +49,7 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 	})
 	pipe.AddStep(&pipeline.Step{
 		Name:       "load binary",
-		ExecFn:     execmappers.MapInit(r.Workspace.LoadBinary),
+		ExecFn:     execmappers.MapInitLog(r.Workspace.LoadBinary),
 		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
@@ -70,7 +70,7 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "apply",
-		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.Apply),
+		ExecFn:     execmappers.MapBytesLog(r.Workspace.Apply),
 		CallbackFn: applyCb,
 	})
 
