@@ -50,11 +50,3 @@ message QueryBuildsRequest {
 message QueryBuildsResponse {
   repeated Build builds = 1;
 }
-
-message ListBuildsByInstanceRequest {
-  string instance_id = 1 [(validate.rules).string.len = 26];
-}
-
-message ListBuildsByInstanceResponse {
-  repeated Build builds = 1;
-}
