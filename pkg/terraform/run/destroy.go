@@ -34,7 +34,7 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 
 	pipe.AddStep(&pipeline.Step{
 		Name:       "initialize workspace",
-		ExecFn:     execmappers.MapInit(r.Workspace.Init),
+		ExecFn:     execmappers.MapInitLog(r.Workspace.Init),
 		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
@@ -49,7 +49,7 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 	})
 	pipe.AddStep(&pipeline.Step{
 		Name:       "load binary",
-		ExecFn:     execmappers.MapInit(r.Workspace.LoadBinary),
+		ExecFn:     execmappers.MapInitLog(r.Workspace.LoadBinary),
 		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
@@ -70,7 +70,7 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "destroy",
-		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.Destroy),
+		ExecFn:     execmappers.MapBytesLog(r.Workspace.Destroy),
 		CallbackFn: destroyCb,
 	})
 

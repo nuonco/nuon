@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/hc-install/product"
 	"github.com/hashicorp/hc-install/releases"
 )
 
-func (r *remote) Install(ctx context.Context, lg *log.Logger, dir string) (string, error) {
-	installer := r.getInstaller(lg, dir)
+func (r *remote) Install(ctx context.Context, lg hclog.Logger, dir string) (string, error) {
+	binLog := lg.StandardLogger(nil)
+	installer := r.getInstaller(binLog, dir)
 	execPath, err := installer.Install(ctx)
 	if err != nil {
 		return "", fmt.Errorf("unable to install: %w", err)
@@ -25,7 +27,7 @@ func (r *remote) getInstaller(lg *log.Logger, dir string) *releases.ExactVersion
 		Version:    r.Version,
 		InstallDir: dir,
 	}
-	installer.SetLogger(lg)
 
+	installer.SetLogger(lg)
 	return installer
 }
