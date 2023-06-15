@@ -159,7 +159,7 @@ test("getConfig should take a raw grpc component config & return the correct con
 test("getConfig should take a raw grpc component config & return the correct config object - terraform", () => {
   const spec = getConfig({
     buildCfg: {
-      terraformModule: {
+      terraformModuleCfg: {
         envVarsConfig: {
           key: "test-env-var-key",
           val: "test-env-var-val",

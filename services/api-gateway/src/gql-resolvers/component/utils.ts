@@ -87,15 +87,17 @@ export function getConfig(config): ComponentConfig {
       };
     }
 
-    if (config?.buildCfg?.terraformModule) {
-      const vcsConfig = getVcsConfig(config?.buildCfg?.terraformModule);
-      const envVarsConfig = getEnvVarsConfig(config?.buildCfg?.terraformModule);
+    if (config?.buildCfg?.terraformModuleCfg) {
+      const vcsConfig = getVcsConfig(config?.buildCfg?.terraformModuleCfg);
+      const envVarsConfig = getEnvVarsConfig(
+        config?.buildCfg?.terraformModuleCfg
+      );
 
-      delete config?.buildCfg?.terraformModule?.vcsCfg;
+      delete config?.buildCfg?.terraformModuleCfg?.vcsCfg;
 
       buildConfig = {
         __typename: "TerraformBuildConfig",
-        ...config?.buildCfg?.terraformModule,
+        ...config?.buildCfg?.terraformModuleCfg,
         envVarsConfig,
         vcsConfig,
       };
