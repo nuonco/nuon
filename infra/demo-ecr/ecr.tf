@@ -1,5 +1,5 @@
 module "repo" {
-  source = "../modules/ecr"
+  source = "./modules/ecr"
 
   name = var.ecr_repo_name
   tags = {

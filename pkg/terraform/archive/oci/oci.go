@@ -3,8 +3,11 @@ package oci
 // package oci exposes methods for working with oci archives
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
@@ -31,7 +34,7 @@ type ociOption func(*oci) error
 func New(v *validator.Validate, opts ...ociOption) (*oci, error) {
 	s := &oci{
 		v:      v,
-		tmpDir: defaultStorePath,
+		tmpDir: filepath.Join(os.TempDir(), fmt.Sprintf("oci-archive-%s", uuid.NewString())),
 	}
 
 	for idx, opt := range opts {

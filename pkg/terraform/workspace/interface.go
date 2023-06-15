@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-exec/tfexec"
+	"github.com/hashicorp/go-hclog"
 	tfjson "github.com/hashicorp/terraform-json"
 )
 
@@ -16,19 +17,21 @@ type Workspace interface {
 	// LoadBackend loads the backend from the provided plugin
 	LoadBackend(ctx context.Context) error
 	// LoadBinary installs the binary using the provided binary
-	LoadBinary(ctx context.Context) error
-	// Init: initializes workspace should be called before any other load functions
-	Init(ctx context.Context) error
+	LoadBinary(ctx context.Context, log hclog.Logger) error
+	// InitRoot: initializes workspace should be called before any other load functions
+	InitRoot(ctx context.Context) error
 	//LoadVariables is used to load the variables into the environment
 	LoadVariables(ctx context.Context) error
 	// Root returns the root directory
 	Root() string
 
 	// the following commands are used to run terraform operations against a workspace
-	Apply(ctx context.Context) (*tfjson.Plan, error)
-	Destroy(ctx context.Context) (*tfjson.Plan, error)
-	Plan(ctx context.Context) (*tfjson.Plan, error)
-	Output(ctx context.Context) (map[string]tfexec.OutputMeta, error)
-	Show(ctx context.Context) (*tfjson.State, error)
+	Apply(context.Context, hclog.Logger) ([]byte, error)
+	Destroy(context.Context, hclog.Logger) ([]byte, error)
+	Init(context.Context, hclog.Logger) error
+	Refresh(context.Context, hclog.Logger) ([]byte, error)
+	Plan(context.Context, hclog.Logger) ([]byte, error)
+	Output(context.Context, hclog.Logger) (map[string]tfexec.OutputMeta, error)
+	Show(context.Context, hclog.Logger) (*tfjson.State, error)
 }
 
