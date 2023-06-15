@@ -40,3 +40,12 @@ $ go generate ./...
 ```
 
 Alternatively, if you have the `buf` cli present you can use `buf fmt` `buf lint` from within this folder.
+
+### Buf registry and npm packages
+We use the Buf registry to generate npm packages that are used by the api-gateway. Because we have several packages that reference each other and Buf creates a lock file for these references we can end up with broken npm packages. Best way to avoid this is whenever you make a change to a set of protos is to run `buf mod update` within each proto package in this order:
+
+1. components
+2. workflows
+3. apis
+
+This will guarantee that the generated npm packages are all correct.
