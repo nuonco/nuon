@@ -99,7 +99,7 @@ func Test_LoadVariables(t *testing.T) {
 			)
 			assert.NoError(t, err)
 
-			err = wkspace.Init(ctx)
+			err = wkspace.InitRoot(ctx)
 			assert.NoError(t, err)
 
 			err = wkspace.LoadVariables(ctx)

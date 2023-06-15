@@ -17,10 +17,10 @@ func MapTerraformPlan(fn execPlanFn) pipeline.ExecFn {
 }
 
 // execPlanFn is a function that returns a terraform plan as a response
-type execPlanFn func(context.Context) (*tfjson.Plan, error)
+type execPlanFn func(context.Context, hclog.Logger) (*tfjson.Plan, error)
 
 func (p execPlanFn) exec(ctx context.Context, log hclog.Logger, ui terminal.UI) ([]byte, error) {
-	plan, err := p(ctx)
+	plan, err := p(ctx, log)
 	if err != nil {
 		return nil, err
 	}
@@ -38,10 +38,10 @@ func MapTerraformOutput(fn execOutputFn) pipeline.ExecFn {
 }
 
 // execOutputFn is a function that returns terraform outputs as a response
-type execOutputFn func(context.Context) (map[string]tfexec.OutputMeta, error)
+type execOutputFn func(context.Context, hclog.Logger) (map[string]tfexec.OutputMeta, error)
 
 func (p execOutputFn) exec(ctx context.Context, l hclog.Logger, ui terminal.UI) ([]uint8, error) {
-	output, err := p(ctx)
+	output, err := p(ctx, l)
 	if err != nil {
 		return nil, fmt.Errorf("unable to exec: %w", err)
 	}
@@ -59,10 +59,10 @@ func MapTerraformState(fn execStateFn) pipeline.ExecFn {
 }
 
 // execStateFn is a function that returns terraform state as response
-type execStateFn func(context.Context) (*tfjson.State, error)
+type execStateFn func(context.Context, hclog.Logger) (*tfjson.State, error)
 
 func (p execStateFn) exec(ctx context.Context, l hclog.Logger, ui terminal.UI) ([]uint8, error) {
-	state, err := p(ctx)
+	state, err := p(ctx, l)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get state: %w", err)
 	}

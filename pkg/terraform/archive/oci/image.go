@@ -9,5 +9,5 @@ type Image struct {
 }
 
 func (i Image) RepoURL() string {
-	return fmt.Sprintf("%s/%s", i.Registry, i.Tag)
+	return fmt.Sprintf("%s/%s", i.Registry, i.Repo)
 }

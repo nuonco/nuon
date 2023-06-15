@@ -34,7 +34,7 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 
 	pipe.AddStep(&pipeline.Step{
 		Name:       "initialize workspace",
-		ExecFn:     execmappers.MapInit(r.Workspace.Init),
+		ExecFn:     execmappers.MapInit(r.Workspace.InitRoot),
 		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
@@ -49,7 +49,7 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 	})
 	pipe.AddStep(&pipeline.Step{
 		Name:       "load binary",
-		ExecFn:     execmappers.MapInit(r.Workspace.LoadBinary),
+		ExecFn:     execmappers.MapInitLog(r.Workspace.LoadBinary),
 		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
@@ -57,7 +57,11 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		ExecFn:     execmappers.MapInit(r.Workspace.LoadVariables),
 		CallbackFn: callbackmappers.Noop,
 	})
-
+	pipe.AddStep(&pipeline.Step{
+		Name:       "init",
+		ExecFn:     execmappers.MapInitLog(r.Workspace.Init),
+		CallbackFn: callbackmappers.Noop,
+	})
 	planCb, err := callbackmappers.NewS3Callback(r.v,
 		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
 		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
@@ -70,7 +74,7 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "plan",
-		ExecFn:     execmappers.MapTerraformPlan(r.Workspace.Plan),
+		ExecFn:     execmappers.MapBytesLog(r.Workspace.Plan),
 		CallbackFn: planCb,
 	})
 

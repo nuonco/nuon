@@ -11,6 +11,6 @@ func TestImage_RepoURL(t *testing.T) {
 	img := generics.GetFakeObj[Image]()
 
 	repoURL := img.RepoURL()
+	assert.Contains(t, repoURL, img.Repo)
 	assert.Contains(t, repoURL, img.Registry)
-	assert.Contains(t, repoURL, img.Tag)
 }

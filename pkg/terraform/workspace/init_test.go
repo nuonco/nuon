@@ -52,7 +52,7 @@ func Test_workspace_Init(t *testing.T) {
 			ctx := context.Background()
 
 			wkspace := test.workspaceFn(t)
-			err := wkspace.Init(ctx)
+			err := wkspace.InitRoot(ctx)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
