@@ -43,7 +43,7 @@ export const deploy: TResolverFn<QueryDeployArgs, Query["deploy"]> = (
           } else {
             const { deploysList } = res.toObject();
             const recentDeploy = deploysList.reverse()[0];
-            resolve(getNodeFields(recentDeploy));
+            resolve(recentDeploy ? getNodeFields(recentDeploy) : null);
           }
         });
       }
