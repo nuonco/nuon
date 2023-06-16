@@ -3,7 +3,6 @@ package builder
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -16,13 +15,18 @@ const (
 	defaultTag          string = "latest"
 )
 
-func (b *Builder) packDirectory(ctx context.Context, log hclog.Logger, filePaths []string) error {
+type fileRef struct {
+	absPath string
+	relPath string
+}
+
+func (b *Builder) packDirectory(ctx context.Context, log hclog.Logger, filePaths []fileRef) error {
 	fileDescriptors := make([]v1.Descriptor, len(filePaths))
-	for idx, fp := range filePaths {
-		log.Info("packing %s", fp)
-		fileDescriptor, err := b.Store.Add(ctx, filepath.Base(fp), defaultFileType, fp)
+	for idx, f := range filePaths {
+		log.Error("packing %s %s", f.absPath, f.relPath)
+		fileDescriptor, err := b.Store.Add(ctx, f.relPath, defaultFileType, f.absPath)
 		if err != nil {
-			return fmt.Errorf("unable to pack %s: %w", fp, err)
+			return fmt.Errorf("unable to pack %s: %w", f.absPath, err)
 		}
 
 		fileDescriptors[idx] = fileDescriptor
