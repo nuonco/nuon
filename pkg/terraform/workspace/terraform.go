@@ -1,16 +1,16 @@
 package workspace
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
+	"github.com/powertoolsdev/mono/pkg/terraform/workspace/output"
 )
 
-// TODO(jm): rename this
 func (w *workspace) Init(ctx context.Context, log hclog.Logger) error {
 	client, err := w.getClient(ctx, log)
 	if err != nil {
@@ -36,20 +36,29 @@ func (w *workspace) Apply(ctx context.Context, log hclog.Logger) ([]byte, error)
 		return nil, err
 	}
 
-	return w.apply(ctx, client)
+	return w.apply(ctx, client, log)
 }
 
-func (w *workspace) apply(ctx context.Context, client Terraform) ([]byte, error) {
-	buf := new(bytes.Buffer)
+func (w *workspace) apply(ctx context.Context, client Terraform, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+
 	if err := client.ApplyJSON(ctx,
-		buf,
+		writer,
 		tfexec.Refresh(true),
 		tfexec.VarFile(defaultVariablesFilename),
 	); err != nil {
 		return nil, fmt.Errorf("error running apply: %w", err)
 	}
 
-	return buf.Bytes(), nil
+	return out.Bytes()
 }
 
 func (w *workspace) Destroy(ctx context.Context, log hclog.Logger) ([]byte, error) {
@@ -62,16 +71,28 @@ func (w *workspace) Destroy(ctx context.Context, log hclog.Logger) ([]byte, erro
 }
 
 func (w *workspace) destroy(ctx context.Context, client Terraform) ([]byte, error) {
-	buf := new(bytes.Buffer)
+	log := hclog.New(&hclog.LoggerOptions{
+		Output: io.Discard,
+		Level:  hclog.LevelFromString("DEBUG"),
+	})
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
 	if err := client.DestroyJSON(ctx,
-		buf,
+		writer,
 		tfexec.Refresh(true),
 		tfexec.VarFile(defaultVariablesFilename),
 	); err != nil {
 		return nil, fmt.Errorf("error running destroy: %w", err)
 	}
 
-	return buf.Bytes(), nil
+	return out.Bytes()
 }
 
 func (w *workspace) Plan(ctx context.Context, log hclog.Logger) ([]byte, error) {
@@ -80,18 +101,28 @@ func (w *workspace) Plan(ctx context.Context, log hclog.Logger) ([]byte, error) 
 		return nil, err
 	}
 
-	return w.plan(ctx, client)
+	return w.plan(ctx, client, log)
 }
 
-func (w *workspace) plan(ctx context.Context, client Terraform) ([]byte, error) {
-	if _, err := client.Plan(ctx,
+func (w *workspace) plan(ctx context.Context, client Terraform, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
+	if _, err := client.PlanJSON(ctx,
+		writer,
 		tfexec.Refresh(true),
 		tfexec.VarFile(defaultVariablesFilename),
 	); err != nil {
 		return nil, fmt.Errorf("unable to plan: %w", err)
 	}
 
-	return nil, nil
+	return out.Bytes()
 }
 
 func (w *workspace) Refresh(ctx context.Context, log hclog.Logger) ([]byte, error) {
@@ -100,20 +131,28 @@ func (w *workspace) Refresh(ctx context.Context, log hclog.Logger) ([]byte, erro
 		return nil, err
 	}
 
-	return w.refresh(ctx, client)
+	return w.refresh(ctx, client, log)
 }
 
-func (w *workspace) refresh(ctx context.Context, client Terraform) ([]byte, error) {
-	buf := new(bytes.Buffer)
+func (w *workspace) refresh(ctx context.Context, client Terraform, log hclog.Logger) ([]byte, error) {
+	out, err := output.New(w.v, output.WithLogger(log))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output: %w", err)
+	}
+
+	writer, err := out.Writer()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get writer: %w", err)
+	}
 
 	if err := client.RefreshJSON(ctx,
-		buf,
+		writer,
 		tfexec.VarFile(defaultVariablesFilename),
 	); err != nil {
 		return nil, fmt.Errorf("unable to execute refresh: %w", err)
 	}
 
-	return buf.Bytes(), nil
+	return out.Bytes()
 }
 
 func (w *workspace) Output(ctx context.Context, log hclog.Logger) (map[string]tfexec.OutputMeta, error) {
