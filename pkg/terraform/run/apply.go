@@ -58,6 +58,12 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 
+	pipe.AddStep(&pipeline.Step{
+		Name:       "init",
+		ExecFn:     execmappers.MapInitLog(r.Workspace.Init),
+		CallbackFn: callbackmappers.Noop,
+	})
+
 	applyCb, err := callbackmappers.NewS3Callback(r.v,
 		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
 		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
