@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
@@ -20,25 +21,17 @@ type Downloader interface {
 type s3Downloader struct {
 	v *validator.Validate `validate:"required"`
 
-	Bucket                string `validate:"required"`
-	AssumeRoleARN         string `validate:"required"`
-	AssumeRoleSessionName string `validate:"required"`
+	Bucket      string              `validate:"required"`
+	Credentials *credentials.Config `validate:"-"`
 }
 
 var _ Downloader = (*s3Downloader)(nil)
 
 type downloaderOption func(*s3Downloader) error
 
-func WithAssumeRoleARN(roleARN string) downloaderOption {
+func WithCredentials(cfg *credentials.Config) downloaderOption {
 	return func(s *s3Downloader) error {
-		s.AssumeRoleARN = roleARN
-		return nil
-	}
-}
-
-func WithAssumeRoleSessionName(sessionName string) downloaderOption {
-	return func(s *s3Downloader) error {
-		s.AssumeRoleSessionName = sessionName
+		s.Credentials = cfg
 		return nil
 	}
 }
