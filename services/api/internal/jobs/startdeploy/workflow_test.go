@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/shortid"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/shortid"
 	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	buildsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
@@ -140,7 +140,7 @@ func TestStartDeploy(t *testing.T) {
 
 			expectedRoleARN := fmt.Sprintf(cfg.OrgsDeploymentsRoleTemplate, deployReq.OrgId)
 			assert.Equal(t, expectedRoleARN, r.MetadataBucketAssumeRoleArn)
-			expectedPrefix := prefix.InstancePath(deployReq.OrgId, deployReq.AppId, id, wpMetadata.DeploymentId, wpMetadata.InstallId)
+			expectedPrefix := prefix.InstancePath(deployReq.OrgId, deployReq.AppId, id, wpMetadata.DeploymentId, idResp.InstallID)
 			assert.Equal(t, expectedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
 		})
