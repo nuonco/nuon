@@ -13,8 +13,7 @@ import (
 
 func (s *s3) Unpack(ctx context.Context, cb archive.Callback) error {
 	downloader, err := s3downloader.New(s.BucketName,
-		s3downloader.WithAssumeRoleARN(s.RoleARN),
-		s3downloader.WithAssumeRoleSessionName(s.RoleSessionName),
+		s3downloader.WithCredentials(s.Credentials),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to get s3downloader: %w", err)

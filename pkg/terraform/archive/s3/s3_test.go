@@ -21,8 +21,7 @@ func TestNew(t *testing.T) {
 		"happy path": {
 			optsFn: func() []s3Option {
 				return []s3Option{
-					WithRoleSessionName(expected.RoleSessionName),
-					WithRoleARN(expected.RoleARN),
+					WithCredentials(expected.Credentials),
 					WithBucketName(expected.BucketName),
 					WithBucketKey(expected.Key),
 				}
@@ -30,35 +29,13 @@ func TestNew(t *testing.T) {
 			assertFn: func(t *testing.T, s *s3) {
 				assert.Equal(t, expected.BucketName, s.BucketName)
 				assert.Equal(t, expected.Key, s.Key)
-				assert.Equal(t, expected.RoleARN, s.RoleARN)
-				assert.Equal(t, expected.RoleSessionName, s.RoleSessionName)
+				assert.Equal(t, expected.Credentials, s.Credentials)
 			},
-		},
-		"missing role arn": {
-			optsFn: func() []s3Option {
-				return []s3Option{
-					WithRoleSessionName(expected.RoleSessionName),
-					WithBucketName(expected.BucketName),
-					WithBucketKey(expected.Key),
-				}
-			},
-			errExpected: fmt.Errorf("RoleARN"),
-		},
-		"missing role session name": {
-			optsFn: func() []s3Option {
-				return []s3Option{
-					WithRoleARN(expected.RoleARN),
-					WithBucketName(expected.BucketName),
-					WithBucketKey(expected.Key),
-				}
-			},
-			errExpected: fmt.Errorf("RoleSessionName"),
 		},
 		"missing bucket name": {
 			optsFn: func() []s3Option {
 				return []s3Option{
-					WithRoleSessionName(expected.RoleSessionName),
-					WithRoleARN(expected.RoleARN),
+					WithCredentials(expected.Credentials),
 					WithBucketKey(expected.Key),
 				}
 			},
@@ -67,8 +44,7 @@ func TestNew(t *testing.T) {
 		"missing bucket key": {
 			optsFn: func() []s3Option {
 				return []s3Option{
-					WithRoleSessionName(expected.RoleSessionName),
-					WithRoleARN(expected.RoleARN),
+					WithCredentials(expected.Credentials),
 					WithBucketName(expected.BucketName),
 				}
 			},
