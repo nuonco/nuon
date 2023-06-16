@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-func (b *Builder) getSourceFiles(ctx context.Context, root string) ([]string, error) {
-	fps := make([]string, 0)
+func (b *Builder) getSourceFiles(ctx context.Context, root string) ([]fileRef, error) {
+	fps := make([]fileRef, 0)
 
+	if !strings.HasSuffix(root, "/") {
+		root = root + "/"
+	}
 	if err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -19,7 +23,10 @@ func (b *Builder) getSourceFiles(ctx context.Context, root string) ([]string, er
 			return nil
 		}
 
-		fps = append(fps, path)
+		fps = append(fps, fileRef{
+			absPath: path,
+			relPath: strings.TrimPrefix(path, root),
+		})
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("unable to walk %s: %w", root, err)
