@@ -38,7 +38,7 @@ func (b *Builder) build(ctx context.Context,
 	// push build to local docker
 	u.Step(terminal.StatusOK, "noop build")
 	return &terraformv1.BuildOutput{
-		Files:  srcFiles,
+		//Files:	srcFiles,
 		Labels: b.config.Labels,
 	}, nil
 
@@ -56,7 +56,7 @@ func (b *Builder) build(ctx context.Context,
 
 	// push build to local docker
 	return &terraformv1.BuildOutput{
-		Files:  srcFiles,
+		//Files:	srcFiles,
 		Labels: b.config.Labels,
 	}, nil
 }

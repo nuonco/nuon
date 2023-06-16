@@ -52,6 +52,27 @@ func Test_LoadArchive(t *testing.T) {
 			},
 			errExpected: nil,
 		},
+		"happy path - creates directory": {
+			archiveFn: func(mockCtl *gomock.Controller) archive.Archive {
+				mock := archive.NewMockArchive(mockCtl)
+
+				mock.EXPECT().Init(gomock.Any()).Return(nil)
+				mock.EXPECT().Unpack(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, cb archive.Callback) error {
+					r := io.NopCloser(strings.NewReader("hello world"))
+					err := cb(ctx, "modules/test.txt", r)
+					assert.NoError(t, err)
+					return nil
+				})
+				return mock
+			},
+			assertFn: func(t *testing.T, w *workspace) {
+				fp := filepath.Join(w.root, "modules/test.txt")
+				stat, err := os.Stat(fp)
+				assert.NoError(t, err)
+				assert.Equal(t, stat.Mode(), defaultFilePermissions)
+			},
+			errExpected: nil,
+		},
 		"error on init": {
 			archiveFn: func(mockCtl *gomock.Controller) archive.Archive {
 				mock := archive.NewMockArchive(mockCtl)
