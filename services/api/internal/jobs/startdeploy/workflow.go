@@ -48,30 +48,6 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 
 	shrdAct := &sharedactivities.Activities{}
 
-	/*
-		// poll install workflow future
-		pollInstallRequest := &activitiesv1.PollWorkflowRequest{
-			Namespace:    "installs",
-			WorkflowName: "Provision",
-			WorkflowId:   idResp.InstallID,
-		}
-
-		// set poll timeout
-		ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-			ScheduleToCloseTimeout: sharedactivities.PollActivityTimeout * sharedactivities.MaxActivityRetries,
-			StartToCloseTimeout:    sharedactivities.PollActivityTimeout,
-			RetryPolicy: &temporal.RetryPolicy{
-				MaximumAttempts: sharedactivities.MaxActivityRetries,
-			},
-		})
-
-		var pollResp activitiesv1.PollWorkflowResponse
-		fut = workflow.ExecuteActivity(ctx, shrdAct.PollWorkflow, pollInstallRequest)
-		err = fut.Get(ctx, &pollResp)
-		if err != nil {
-			return nil, fmt.Errorf("unable to poll for workflow response: %w", err)
-		}
-	*/
 	// poll build workflow future
 	pollBuildRequest := &activitiesv1.PollWorkflowRequest{
 		Namespace:    "builds",
@@ -136,6 +112,7 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 	}
 
 	resp.DeployPlan = deployPlanRef
+	w.finishWorkflow(ctx, plan, resp, err)
 
 	//for now we don't update deploy, but if we need to update the Deploy with
 	//a status, we can do so here (or in the finishWorkflow function)
