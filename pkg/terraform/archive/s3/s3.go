@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 )
 
@@ -13,10 +14,10 @@ var _ archive.Archive = (*s3)(nil)
 type s3 struct {
 	v *validator.Validate
 
-	BucketName      string `validate:"required"`
-	Key             string `validate:"required"`
-	RoleARN         string `validate:"required"`
-	RoleSessionName string `validate:"required"`
+	BucketName string `validate:"required"`
+	Key        string `validate:"required"`
+
+	Credentials *credentials.Config
 }
 
 type s3Option func(*s3) error
@@ -54,18 +55,10 @@ func WithBucketKey(bucketKey string) s3Option {
 	}
 }
 
-// WithRoleArn sets the bucket role
-func WithRoleARN(arn string) s3Option {
+// WithCredentials sets the credentials config
+func WithCredentials(cfg *credentials.Config) s3Option {
 	return func(s *s3) error {
-		s.RoleARN = arn
-		return nil
-	}
-}
-
-// WithRoleSessionName sets the role session name
-func WithRoleSessionName(name string) s3Option {
-	return func(s *s3) error {
-		s.RoleSessionName = name
+		s.Credentials = cfg
 		return nil
 	}
 }

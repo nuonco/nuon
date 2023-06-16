@@ -5,18 +5,13 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 
 func (s *s3Downloader) getClient(ctx context.Context) (*s3.Client, error) {
-	assumer, err := assumerole.New(s.v, assumerole.WithRoleARN(s.AssumeRoleARN), assumerole.WithRoleSessionName(s.AssumeRoleSessionName))
+	cfg, err := credentials.Fetch(ctx, s.Credentials)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create role assumer: %w", err)
-	}
-
-	cfg, err := assumer.LoadConfigWithAssumedRole(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to assume role: %w", err)
+		return nil, fmt.Errorf("unable to fetch credentials: %w", err)
 	}
 
 	return s3.NewFromConfig(cfg), nil

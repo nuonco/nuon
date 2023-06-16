@@ -1,15 +1,17 @@
 package s3downloader
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
 	bucketName := uuid.NewString()
+	creds := generics.GetFakeObj[*credentials.Config]()
 
 	tests := map[string]struct {
 		optFns      func() []downloaderOption
@@ -19,31 +21,24 @@ func TestNew(t *testing.T) {
 		"happy path": {
 			optFns: func() []downloaderOption {
 				return []downloaderOption{
-					WithAssumeRoleARN("test-role-arn"),
-					WithAssumeRoleSessionName("test-role-session-name"),
+					WithCredentials(creds),
 				}
 			},
 			assertFn: func(t *testing.T, d *s3Downloader) {
-				assert.Equal(t, "test-role-arn", d.AssumeRoleARN)
-				assert.Equal(t, "test-role-session-name", d.AssumeRoleSessionName)
+				assert.Equal(t, creds, d.Credentials)
 				assert.Equal(t, bucketName, d.Bucket)
 			},
 		},
-		"missing assume role arn": {
+		"happy path creds": {
 			optFns: func() []downloaderOption {
 				return []downloaderOption{
-					WithAssumeRoleSessionName("test-role-session-name"),
+					WithCredentials(creds),
 				}
 			},
-			errExpected: fmt.Errorf("s3Downloader.AssumeRoleARN"),
-		},
-		"missing session name": {
-			optFns: func() []downloaderOption {
-				return []downloaderOption{
-					WithAssumeRoleARN("test-role-arn"),
-				}
+			assertFn: func(t *testing.T, d *s3Downloader) {
+				assert.Equal(t, creds, d.Credentials)
+				assert.Equal(t, bucketName, d.Bucket)
 			},
-			errExpected: fmt.Errorf("s3Downloader.AssumeRoleSessionName"),
 		},
 	}
 
