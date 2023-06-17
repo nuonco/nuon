@@ -3,6 +3,7 @@ package builder
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
+	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	"oras.land/oras-go/v2/content/file"
 )
 
@@ -12,7 +13,7 @@ var _ component.Builder = (*Builder)(nil)
 
 type Builder struct {
 	v      *validator.Validate
-	config BuildConfig
+	config configs.TerraformBuild
 	Store  *file.Store `validate:"required"`
 }
 

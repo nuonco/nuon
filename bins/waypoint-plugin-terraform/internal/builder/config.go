@@ -2,14 +2,9 @@ package builder
 
 import (
 	"fmt"
+
+	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 )
-
-type BuildConfig struct {
-	OutputName string `hcl:"output_name,optional"`
-
-	Labels    map[string]string `hacl:"labels,optional"`
-	Variables map[string]string `hcl:"variables,optional"`
-}
 
 // Implement Configurable
 func (b *Builder) Config() (interface{}, error) {
@@ -18,7 +13,7 @@ func (b *Builder) Config() (interface{}, error) {
 
 // Implement ConfigurableNotify
 func (b *Builder) ConfigSet(config interface{}) error {
-	_, ok := config.(*BuildConfig)
+	_, ok := config.(*configs.TerraformBuild)
 	if !ok {
 		return fmt.Errorf("expected type BuildConfig")
 	}
