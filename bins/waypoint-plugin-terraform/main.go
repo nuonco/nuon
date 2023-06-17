@@ -30,6 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to get store: %s", err)
 	}
+	store.AllowPathTraversalOnWrite = true
 
 	platformPlugin, err := platform.New(v, store)
 	if err != nil {
