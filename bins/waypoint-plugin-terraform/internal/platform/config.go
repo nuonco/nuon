@@ -41,7 +41,8 @@ type Config struct {
 		Prefix string             `hcl:"prefix"`
 	} `hcl:"outputs,block"`
 
-	Labels map[string]string `hcl:"labels,optional"`
+	Labels    map[string]string `hcl:"labels,optional"`
+	Variables map[string]string `hcl:"variables,optional"`
 }
 
 // Config returns a pointer to the config, so that the plugin SDK can serialize into it.
