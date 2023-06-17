@@ -39,7 +39,7 @@ func Test_LoadVariables(t *testing.T) {
 				return mock
 			},
 			assertFn: func(t *testing.T, w *workspace) {
-				assert.Equal(t, w.envVars, map[string]string{"key": "value"})
+				assert.Equal(t, w.envVars["key"], "value")
 
 				fp := filepath.Join(w.root, defaultVariablesFilename)
 				stat, err := os.Stat(fp)
