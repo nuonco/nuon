@@ -7,7 +7,8 @@ import (
 )
 
 var _ component.Builder = (*Builder)(nil)
-var _ component.BuilderODR = (*Builder)(nil)
+
+//var _ component.BuilderODR = (*Builder)(nil)
 
 type Builder struct {
 	v      *validator.Validate

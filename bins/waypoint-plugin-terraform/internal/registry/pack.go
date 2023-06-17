@@ -1,29 +1,20 @@
-package builder
+package registry
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	oras "oras.land/oras-go/v2"
+	"oras.land/oras-go/v2"
 )
 
-const (
-	defaultFileType     string = "file/terraform"
-	defaultArtifactType string = "artifact/terraform"
-	defaultTag          string = "latest"
-)
-
-type fileRef struct {
-	absPath string
-	relPath string
-}
-
-func (b *Builder) packDirectory(ctx context.Context, log hclog.Logger, filePaths []fileRef) error {
+func (b *Registry) packDirectory(ctx context.Context, log hclog.Logger, status terminal.Status, filePaths []fileRef) error {
 	fileDescriptors := make([]v1.Descriptor, len(filePaths))
+
 	for idx, f := range filePaths {
-		log.Error("packing %s %s", f.absPath, f.relPath)
+		status.Step(terminal.StatusOK, fmt.Sprintf("%d packing %s as %s", idx, f.absPath, f.relPath))
 		fileDescriptor, err := b.Store.Add(ctx, f.relPath, defaultFileType, f.absPath)
 		if err != nil {
 			return fmt.Errorf("unable to pack %s: %w", f.absPath, err)
@@ -42,6 +33,7 @@ func (b *Builder) packDirectory(ctx context.Context, log hclog.Logger, filePaths
 	if err := b.Store.Tag(ctx, descriptor, defaultTag); err != nil {
 		return fmt.Errorf("unable to tag manifest: %w", err)
 	}
+	status.Step(terminal.StatusOK, fmt.Sprintf("tagged %s", defaultTag))
 	log.Info("tagged %s", defaultTag)
 
 	desc, err := b.Store.Resolve(ctx, defaultTag)

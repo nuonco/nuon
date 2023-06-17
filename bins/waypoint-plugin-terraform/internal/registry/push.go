@@ -22,9 +22,8 @@ func (r *Registry) Push(
 	ui terminal.UI,
 	src *component.Source,
 ) (*terraformv1.Artifact, error) {
+	// fetch the source files
 	u := ui.Status()
-	defer u.Close()
-
 	u.Step(terminal.StatusOK, "fetching source files")
 	srcFiles, err := r.getSourceFiles(ctx, src.Path)
 	if err != nil {
@@ -32,15 +31,19 @@ func (r *Registry) Push(
 		return nil, fmt.Errorf("unable to get source files: %w", err)
 	}
 	u.Step(terminal.StatusOK, "fetched source files")
+	u.Close()
 
+	// pack the source files
+	u = ui.Status()
 	u.Step(terminal.StatusOK, fmt.Sprintf("packing %d files", len(srcFiles)))
-	if err := r.packDirectory(ctx, log, srcFiles); err != nil {
+	if err := r.packDirectory(ctx, log, u, srcFiles); err != nil {
 		u.Step(terminal.StatusError, "unable to pack files")
 		return nil, fmt.Errorf("unable to pack files: %w", err)
 	}
 	u.Step(terminal.StatusOK, "packed store")
+	u.Close()
 
-	u.Update("initialized push")
+	u = ui.Status()
 	authProvider, err := ecrauthorization.New(r.v,
 		ecrauthorization.WithCredentials(&r.config.Auth),
 		ecrauthorization.WithRepository(r.config.Repository),
@@ -49,7 +52,6 @@ func (r *Registry) Push(
 		u.Step(terminal.StatusError, "unable to get auth provider")
 		return nil, fmt.Errorf("unable to get auth provider: %w", err)
 	}
-	u.Step(terminal.StatusOK, "successfully fetched access info")
 
 	accessInfo, err := r.getAccessInfo(ctx, authProvider)
 	if err != nil {
@@ -63,6 +65,7 @@ func (r *Registry) Push(
 		return nil, fmt.Errorf("unable to push artifact: %w", err)
 	}
 	u.Step(terminal.StatusOK, "successfully pushed artifact")
+	u.Close()
 
 	return &terraformv1.Artifact{
 		Image:  r.config.Repository,
