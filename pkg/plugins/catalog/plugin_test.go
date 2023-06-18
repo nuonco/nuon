@@ -1,0 +1,114 @@
+package catalog
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestToPluginType(t *testing.T) {
+	tests := map[string]struct {
+		name        string
+		typ         PluginType
+		errExpected error
+	}{
+		"default": {
+			name: "default",
+			typ:  PluginTypeDefault,
+		},
+		"terraform": {
+			name: "terraform",
+			typ:  PluginTypeTerraform,
+		},
+		"exp": {
+			name: "exp",
+			typ:  PluginTypeExp,
+		},
+		"helm": {
+			name: "helm",
+			typ:  PluginTypeHelm,
+		},
+		"invalid": {
+			name:        "invalid",
+			errExpected: fmt.Errorf("invalid"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			pluginTyp, err := ToPluginType(test.name)
+
+			if test.errExpected != nil {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, test.errExpected.Error())
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, test.typ, pluginTyp)
+		})
+	}
+}
+
+func TestPluginType_RepositoryName(t *testing.T) {
+	tests := map[string]struct {
+		typ      PluginType
+		expected string
+	}{
+		"default": {
+			typ:      PluginTypeDefault,
+			expected: "waypoint-odr",
+		},
+		"terraform": {
+			typ:      PluginTypeTerraform,
+			expected: "waypoint-plugin-terraform",
+		},
+		"exp": {
+			typ:      PluginTypeExp,
+			expected: "waypoint-plugin-exp",
+		},
+		"helm": {
+			typ:      PluginTypeHelm,
+			expected: "waypoint-plugin-helm",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			val := test.typ.RepositoryName()
+			assert.Equal(t, test.expected, val)
+		})
+	}
+}
+
+func TestPluginType_ImageURL(t *testing.T) {
+	tests := map[string]struct {
+		typ      PluginType
+		expected string
+	}{
+		"default": {
+			typ:      PluginTypeDefault,
+			expected: "public.ecr.aws/p7e3r5y0/waypoint-odr",
+		},
+		"terraform": {
+			typ:      PluginTypeTerraform,
+			expected: "public.ecr.aws/p7e3r5y0/waypoint-plugin-terraform",
+		},
+		"exp": {
+			typ:      PluginTypeExp,
+			expected: "public.ecr.aws/p7e3r5y0/waypoint-plugin-exp",
+		},
+		"helm": {
+			typ:      PluginTypeHelm,
+			expected: "public.ecr.aws/p7e3r5y0/waypoint-plugin-helm",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			val := test.typ.ImageURL()
+			assert.Equal(t, test.expected, val)
+		})
+	}
+}
