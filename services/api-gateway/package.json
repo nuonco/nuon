@@ -47,7 +47,7 @@
   "devDependencies": {
     "@graphql-codegen/add": "^5.0.0",
     "@graphql-codegen/cli": "^4.0.1",
-    "@graphql-codegen/typescript": "^4.0.0",
+    "@graphql-codegen/typescript": "^4.0.1",
     "@graphql-eslint/eslint-plugin": "^3.19.1",
     "@powertoolsdev/eslint-config-nuon": "^1.0.1",
     "@types/cors": "^2.8.13",
