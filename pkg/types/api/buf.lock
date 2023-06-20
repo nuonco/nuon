@@ -19,8 +19,8 @@ deps:
   - remote: buf.build
     owner: nuon
     repository: workflows
-    commit: 4d66af4f58f5411e892ebd424e19f8d9
-    digest: shake256:e1099e6738c4d7ea464af456baa8f54265df119618afa8244d7a3578ca89f79b7a5ee560ec98478ddead29fad57f7bcad000cd23a13551328c07bfb201d383b8
+    commit: c414e076541f4da4a31faee3289ba9b0
+    digest: shake256:ed1cfa33bdc86a673373049f23694f62e067c063b4a57830d5d21a37df5ad4d91454b4f9ab432e5d4b49ed4858363f4a317fcdb83f519b2284637b981a3f296e
   - remote: buf.build
     owner: srikrsna
     repository: protoc-gen-gotag
