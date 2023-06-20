@@ -263,8 +263,15 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *planv1.Plan, resp *jo
 		MetadataBucket:              w.cfg.DeploymentsBucket,
 		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, plan.Metadata.OrgId),
 		MetadataBucketPrefix:        prefix.InstancePath(plan.Metadata.OrgId, plan.Metadata.AppId, plan.Component.Id, plan.Metadata.DeploymentId, plan.Metadata.InstallId),
-		Status:                      status,
-		ErrorMessage:                errMessage,
+		ResponseRef: &sharedv1.ResponseRef{
+			Response: &sharedv1.ResponseRef_DeployResponse{
+				DeployResponse: &deploysv1.DeployResponse{
+					DeployPlan: resp.DeployPlan,
+				},
+			},
+		},
+		Status:       status,
+		ErrorMessage: errMessage,
 	}
 
 	// exec activity
