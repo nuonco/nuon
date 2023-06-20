@@ -28,7 +28,9 @@ message DeployRequest {
   ];
 }
 
-// BuildResponse is a child workflow response for the plan phase
+// DeployResponse is a child workflow response for the plan phase
 message DeployResponse {
-  .executors.v1.plan.v1.PlanRef deploy_plan = 1;
+  .executors.v1.plan.v1.PlanRef build_plan = 1;
+  .executors.v1.plan.v1.PlanRef image_sync_plan = 2;
+  .executors.v1.plan.v1.PlanRef deploy_plan = 3;
 }

@@ -72,7 +72,13 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 		return nil, fmt.Errorf("error creating build response: %t", ok)
 	}
 
+	// we have some proto duplications that will be cleaned up in the workflow
+	// pkg refactor
 	resp := &jobsv1.StartDeployResponse{
+		BuildPlan: buildMsg.BuildPlan,
+	}
+
+	finishResp := &deploysv1.DeployResponse{
 		BuildPlan: buildMsg.BuildPlan,
 	}
 
@@ -92,27 +98,30 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 	// start the executors part of the workflows for syncing and deploying
 	if err = w.startWorkflow(ctx, plan, idResp); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
-		w.finishWorkflow(ctx, plan, resp, err)
+		w.finishWorkflow(ctx, plan, finishResp, err)
 		return resp, err
 	}
 	// call child workflow workers-instances
 	imageSyncPlanRef, err := w.planAndExec(ctx, plan, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE)
 	if err != nil {
 		err = fmt.Errorf("unable to sync image: %w", err)
-		w.finishWorkflow(ctx, plan, resp, err)
+		w.finishWorkflow(ctx, plan, finishResp, err)
 		return resp, nil
 	}
 
 	resp.ImageSyncPlan = imageSyncPlanRef
+	finishResp.ImageSyncPlan = imageSyncPlanRef
 
 	// deploy instance
 	deployPlanRef, err := w.planAndExec(ctx, plan, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY)
 	if err != nil {
+		w.finishWorkflow(ctx, plan, finishResp, err)
 		return resp, nil
 	}
 
 	resp.DeployPlan = deployPlanRef
-	w.finishWorkflow(ctx, plan, resp, err)
+	finishResp.DeployPlan = deployPlanRef
+	w.finishWorkflow(ctx, plan, finishResp, err)
 
 	//for now we don't update deploy, but if we need to update the Deploy with
 	//a status, we can do so here (or in the finishWorkflow function)
@@ -240,7 +249,7 @@ func execExecutePlan(
 // finishWorkflow calls the finish step
 //
 //nolint:all
-func (w *wkflow) finishWorkflow(ctx workflow.Context, req *planv1.Plan, resp *jobsv1.StartDeployResponse, workflowErr error) {
+func (w *wkflow) finishWorkflow(ctx workflow.Context, req *planv1.Plan, resp *deploysv1.DeployResponse, workflowErr error) {
 	plan := req.GetWaypointPlan()
 	var err error
 	defer func() {
@@ -265,9 +274,7 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *planv1.Plan, resp *jo
 		MetadataBucketPrefix:        prefix.InstancePath(plan.Metadata.OrgId, plan.Metadata.AppId, plan.Component.Id, plan.Metadata.DeploymentId, plan.Metadata.InstallId),
 		ResponseRef: &sharedv1.ResponseRef{
 			Response: &sharedv1.ResponseRef_DeployResponse{
-				DeployResponse: &deploysv1.DeployResponse{
-					DeployPlan: resp.DeployPlan,
-				},
+				DeployResponse: resp,
 			},
 		},
 		Status:       status,
