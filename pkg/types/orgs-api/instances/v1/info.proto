@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package instances.v1;
 
-import "instances/v1/provision.proto";
+import "deploys/v1/deploy.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -35,5 +35,7 @@ message GetInfoResponse {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
-  instances.v1.ProvisionResponse response = 2;
+  deploys.v1.DeployResponse response = 2;
+
+  string hostname = 3;
 }
