@@ -18,7 +18,7 @@ locals {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 4.0"
+  version = "~> 3.0"
 
   name = local.vars.id
   cidr = local.networks["sandbox"]["cidr"]

@@ -22,6 +22,8 @@ bin/
 **/.terraform
 **/terraform.tfvars
 **/terraform.tfvars.json
+**/config.*.tfbackend
+**/tfplan
 
 # Go files
 # generated protobufs

@@ -4,9 +4,7 @@ data "aws_iam_policy_document" "odr" {
     actions = [
       "*",
     ]
-    resources = [
-      "*",
-    ]
+    resources = ["*"]
   }
 }
 
