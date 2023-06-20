@@ -79,7 +79,7 @@ We use 2 main libraries to assist with basic structural validation of our data a
   - We can declare validations directly in our `.proto` source files
   - The list of built-in validations we can use is [in validate.proto here](https://github.com/bufbuild/protoc-gen-validate/blob/main/validate/validate.proto)
   - The syntax can be tricky. Study existing examples in code.
-  - Use `buf lint` and `buf build` locally to check your syntax
+  - Use `(cd pkg/types && buf lint && buf build)` locally to check your syntax
 - In regular go source code, we use [go-playground validator v10](https://pkg.go.dev/github.com/go-playground/validator/v10#section-documentation)
   - These we can use in `.go` source files as golang struct tags
   - golang structs get a generated method `.Validate()` we can use to trigger the validation
