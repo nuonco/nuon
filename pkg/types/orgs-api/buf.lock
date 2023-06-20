@@ -5,23 +5,29 @@ deps:
     owner: envoyproxy
     repository: protoc-gen-validate
     commit: 6607b10f00ed4a3d98f906807131c44a
+    digest: shake256:acc7b2ededb2f88d296862943a003b157bdb68ec93ed13dcd8566b2d06e47993ea6daf12013b9655658aaf6bbdb141cf65bfe400ce2870f4654b0a5b45e57c09
   - remote: buf.build
     owner: googleapis
     repository: googleapis
     commit: cc916c31859748a68fd229a3c8d7a2e8
+    digest: shake256:469b049d0eb04203d5272062636c078decefc96fec69739159c25d85349c50c34c7706918a8b216c5c27f76939df48452148cff8c5c3ae77fa6ba5c25c1b8bf8
   - remote: buf.build
     owner: nuon
     repository: components
-    commit: 44b1b387bbda4a5e908d10c08a4913f0
+    commit: 5d912c2f3d614c768095721d705563ea
+    digest: shake256:f993e36e9134a2e19f6bf2f994314e35584f1cc17ea2377950235c1a784ebdf36b0931b10b105bf2b36921e3ff7cb1ecef81c59be080d195ce208e3b18f2bc2f
   - remote: buf.build
     owner: nuon
     repository: deployments
     commit: 34ce5f77b60140a4a40ff468c3d1fe9a
+    digest: shake256:b9b59d8f477f1ec7189e2f8097d5662dd80da0d5a617c843e0777fb8caf643583adb14daa6ec19ee640b1f783a82758650de8e24da173179249d610b5d360ae3
   - remote: buf.build
     owner: nuon
     repository: workflows
-    commit: d08935800c764a169a0645321d0b7f63
+    commit: c414e076541f4da4a31faee3289ba9b0
+    digest: shake256:ed1cfa33bdc86a673373049f23694f62e067c063b4a57830d5d21a37df5ad4d91454b4f9ab432e5d4b49ed4858363f4a317fcdb83f519b2284637b981a3f296e
   - remote: buf.build
     owner: srikrsna
     repository: protoc-gen-gotag
     commit: 7a85d3ad2e7642c198480e92bf730c14
+    digest: shake256:059f136681cd47abe2d6e83d20b9594071c481572d16cebfafbc81ba3d3e7924aef6974f99da53d67a01d033e30b7bf57985a206b4e856fc82508545de84a70c
