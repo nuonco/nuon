@@ -5,6 +5,7 @@ package shared.v1;
 import "apps/v1/provision.proto";
 import "builds/v1/build.proto";
 import "deployments/v1/start.proto";
+import "deploys/v1/deploy.proto";
 import "google/protobuf/any.proto";
 import "installs/v1/deprovision.proto";
 import "installs/v1/provision.proto";
@@ -56,5 +57,7 @@ message ResponseRef {
     apps.v1.ProvisionResponse apps_provision = 7;
 
     builds.v1.BuildResponse build_response = 8;
+
+    deploys.v1.DeployResponse deploy_response = 9;
   }
 }
