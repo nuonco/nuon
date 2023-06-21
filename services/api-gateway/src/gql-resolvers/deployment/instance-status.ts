@@ -7,13 +7,13 @@ import { STATUS_ENUM } from "../../utils";
 export const instanceStatus: TResolverFn<
   QueryInstanceStatusArgs,
   Query["instanceStatus"]
-> = (_, { appId, componentId, deploymentId, installId, orgId }, { clients }) =>
+> = (_, { appId, buildId, componentId, installId, orgId }, { clients }) =>
   new Promise((resolve, reject) => {
     if (clients.instanceStatus) {
       const infoRequest = new GetInfoRequest()
         .setAppId(appId)
         .setComponentId(componentId)
-        .setDeploymentId(deploymentId)
+        .setDeploymentId(buildId)
         .setInstallId(installId)
         .setOrgId(orgId);
 
@@ -24,7 +24,7 @@ export const instanceStatus: TResolverFn<
           const statusRequest = new GetStatusRequest()
             .setAppId(appId)
             .setComponentId(componentId)
-            .setDeploymentId(deploymentId)
+            .setDeploymentId(buildId)
             .setInstallId(installId)
             .setOrgId(orgId);
 
