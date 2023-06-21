@@ -1,9 +1,7 @@
 import { instanceStatus } from "./instance-status";
 
 const mockInfo = {
-  response: {
-    hostname: "test.com",
-  },
+  hostname: "test.com",
 };
 
 const mockStatus = {
