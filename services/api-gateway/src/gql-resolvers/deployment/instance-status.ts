@@ -36,7 +36,7 @@ export const instanceStatus: TResolverFn<
               } else {
                 resolve({
                   __typename: "InstanceStatus",
-                  hostname: infoRes.toObject()?.response?.hostname,
+                  hostname: infoRes.toObject()?.hostname,
                   status: STATUS_ENUM[statusRes.toObject()?.status],
                 });
               }
