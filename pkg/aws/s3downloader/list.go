@@ -44,7 +44,6 @@ func (s *s3Downloader) listPrefix(ctx context.Context, client s3Lister, prefix s
 
 	keys := make([]string, 0)
 
-	var key string
 	for {
 		resp, err := client.ListObjectsV2(ctx, req)
 		if err != nil {
@@ -55,11 +54,10 @@ func (s *s3Downloader) listPrefix(ctx context.Context, client s3Lister, prefix s
 			keys = append(keys, *obj.Key)
 		}
 
-		if key != "" || resp.ContinuationToken == nil {
+		if resp.NextContinuationToken == nil {
 			break
 		}
-
-		req.ContinuationToken = resp.ContinuationToken
+		req.ContinuationToken = resp.NextContinuationToken
 	}
 
 	return keys, nil

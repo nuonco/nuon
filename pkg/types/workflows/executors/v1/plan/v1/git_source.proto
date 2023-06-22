@@ -7,7 +7,7 @@ import "tagger/tagger.proto";
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
 
 message GitSource {
-  string url = 1 [(tagger.tags) = "faker:\"oneof:https://token:github.com/jonmorehouse/empty\""];
+  string url = 1 [(tagger.tags) = "faker:\"oneof:https_//token_github.com/jonmorehouse/empty\""];
   string ref = 2 [(tagger.tags) = "faker:\"oneof:d4cd4da\""];
   string path = 3;
   int32 recurse_submodules = 4;

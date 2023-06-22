@@ -2,10 +2,19 @@ syntax = "proto3";
 
 package executors.v1.plan.v1.activities.v1;
 
+import "executors/v1/plan/v1/component_input.proto";
 import "executors/v1/plan/v1/plan_ref.proto";
+import "executors/v1/plan/v1/sandbox_input.proto";
+import "executors/v1/plan/v1/waypoint_input.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1/activities/v1";
 
 message CreatePlanResponse {
   .executors.v1.plan.v1.PlanRef plan = 1;
+}
+
+message CreatePlanRequest {
+  .executors.v1.plan.v1.ComponentInput component_input = 1;
+  .executors.v1.plan.v1.SandboxInput sandbox_input = 2;
+  .executors.v1.plan.v1.WaypointInput waypoint_input = 3;
 }

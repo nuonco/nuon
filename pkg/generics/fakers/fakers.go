@@ -15,7 +15,7 @@ func Register() {
 	_ = faker.AddProvider("planConfigs", fakePlanConfigs)
 	_ = faker.AddProvider("sandboxInputAccountSettings", fakeSandboxInputAccountSettings)
 	_ = faker.AddProvider("envVars", fakeEnvVars)
-	_ = faker.AddProvider("waypointVariables", fakeEnvVars)
+	_ = faker.AddProvider("waypointVariables", fakeWaypointVariables)
 
 	// pkg/pipeline
 	_ = faker.AddProvider("pipelineCallbackFn", fakePipelineCallbackFn)
