@@ -36,13 +36,22 @@ func (p *Platform) execRun(
 	ctx context.Context,
 	runTyp runType,
 	ji *component.JobInfo,
-	artifact *terraformv1.Artifact,
 	ui terminal.UI,
 	log hclog.Logger,
 ) (*terraformv1.Deployment, error) {
+	stdout, _, err := ui.OutputWriters()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output writers")
+	}
+
+	runLog := hclog.New(&hclog.LoggerOptions{
+		Name:   "terraform",
+		Output: stdout,
+	})
+
 	tfRun, err := run.New(p.v, run.WithWorkspace(p.Workspace),
 		run.WithUI(ui),
-		run.WithLogger(log),
+		run.WithLogger(runLog),
 		run.WithOutputSettings(&run.OutputSettings{
 			Credentials: &p.Cfg.Outputs.Auth,
 			Bucket:      p.Cfg.Outputs.Bucket,
@@ -70,7 +79,6 @@ func (p *Platform) execRun(
 		OutputPrefix: p.Cfg.Outputs.Prefix,
 		StateKey:     p.Cfg.Backend.StateKey,
 		StateBucket:  p.Cfg.Backend.Bucket,
-		Artifact:     artifact,
 		Labels:       p.Cfg.Labels,
 	}, nil
 }

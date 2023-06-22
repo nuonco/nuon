@@ -36,7 +36,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 
 	// if default credentials are set, just use the machine's credentials
 	if c.UseDefault {
-		awsCfg, err := config.LoadDefaultConfig(context.TODO())
+		awsCfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(c.Region))
 		if err != nil {
 			return aws.Config{}, fmt.Errorf("unable to load static credentials: %w", err)
 		}
@@ -51,7 +51,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 			c.Static.SecretAccessKey,
 			c.Static.SessionToken)
 
-		awsCfg, err := config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(provider))
+		awsCfg, err := config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(provider), config.WithRegion(c.Region))
 		if err != nil {
 			return aws.Config{}, fmt.Errorf("unable to load static credentials: %w", err)
 		}

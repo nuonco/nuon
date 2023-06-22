@@ -4,12 +4,16 @@ package build.v1;
 
 import "build/v1/env_vars.proto";
 import "tagger/tagger.proto";
+import "validate/validate.proto";
 import "vcs/v1/config.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/build/v1";
 
 // TerraformModule config uses the waypoint build to create an artifact for a terraform module
 message TerraformModuleConfig {
-  vcs.v1.Config vcs_cfg = 1 [(tagger.tags) = "faker:\"-\""];
-  build.v1.EnvVars env_vars = 2;
+  vcs.v1.Config vcs_cfg = 1 [
+    (validate.rules).message.required = true,
+    (tagger.tags) = "faker:\"-\""
+  ];
+  build.v1.EnvVars env_vars = 2 [(validate.rules).message.required = true];
 }

@@ -19,5 +19,8 @@ func (p *Platform) status(
 	deploy *terraformv1.Deployment,
 	ui terminal.UI,
 ) (*sdk.StatusReport, error) {
-	return nil, nil
+	return &sdk.StatusReport{
+		Health:        sdk.StatusReport_ALIVE,
+		HealthMessage: "ok",
+	}, nil
 }
