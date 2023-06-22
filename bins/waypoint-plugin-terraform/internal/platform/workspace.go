@@ -40,7 +40,12 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 		return nil, fmt.Errorf("unable to create backend: %w", err)
 	}
 
-	vars, err := staticvars.New(p.v)
+	cfgVars := make(map[string]interface{})
+	for k, v := range p.Cfg.Variables {
+		cfgVars[k] = v
+	}
+
+	vars, err := staticvars.New(p.v, staticvars.WithFileVars(cfgVars))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create variable set: %w", err)
 	}

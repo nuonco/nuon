@@ -7,7 +7,7 @@ WORKDIR /src
 ARG BIN=waypoint-plugin-terraform
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
-ARG ODR_VERSION=v0.0.7
+ARG ODR_VERSION=v0.1.0
 
 CACHE $GOCACHE
 CACHE $GOMODCACHE
@@ -42,7 +42,7 @@ artifacts:
     SAVE ARTIFACT out AS LOCAL ./out
 
 oci-artifacts:
-    FROM public.ecr.aws/p7e3r5y0/waypoint-odr:$ODR_VERSION
+    FROM public.ecr.aws/p7e3r5y0/waypoint-odr-base:$ODR_VERSION
 
     ARG repo=
     ARG image_tag=
