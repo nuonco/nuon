@@ -5,6 +5,33 @@ import (
 	"path/filepath"
 )
 
+type instanceState struct {
+	OrgID       string
+	AppID       string
+	ComponentID string
+	InstallID   string
+}
+
+func (i instanceState) toPath() string {
+	base := fmt.Sprintf("org=%s/app=%s/component=%s/install=%s",
+		i.OrgID,
+		i.AppID,
+		i.ComponentID,
+		i.InstallID)
+	return base
+}
+
+// InstanceStatePath returns the prefix for an instance's state - meaning long lived files that need to persist through
+// runs, such as a terraform state file.
+func InstanceStatePath(orgID, appID, componentID, installID string) string {
+	return instanceState{
+		OrgID:       orgID,
+		AppID:       appID,
+		ComponentID: componentID,
+		InstallID:   installID,
+	}.toPath()
+}
+
 type instance struct {
 	OrgID        string
 	AppID        string

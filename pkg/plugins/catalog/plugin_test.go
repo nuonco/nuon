@@ -29,6 +29,10 @@ func TestToPluginType(t *testing.T) {
 			name: "helm",
 			typ:  PluginTypeHelm,
 		},
+		"noop": {
+			name: "noop",
+			typ:  PluginTypeNoop,
+		},
 		"invalid": {
 			name:        "invalid",
 			errExpected: fmt.Errorf("invalid"),
@@ -68,6 +72,10 @@ func TestPluginType_RepositoryName(t *testing.T) {
 			typ:      PluginTypeExp,
 			expected: "waypoint-plugin-exp",
 		},
+		"noop": {
+			typ:      PluginTypeNoop,
+			expected: "waypoint-plugin-noop",
+		},
 		"helm": {
 			typ:      PluginTypeHelm,
 			expected: "waypoint-plugin-helm",
@@ -98,6 +106,10 @@ func TestPluginType_ImageURL(t *testing.T) {
 		"exp": {
 			typ:      PluginTypeExp,
 			expected: "public.ecr.aws/p7e3r5y0/waypoint-plugin-exp",
+		},
+		"noop": {
+			typ:      PluginTypeNoop,
+			expected: "public.ecr.aws/p7e3r5y0/waypoint-plugin-noop",
 		},
 		"helm": {
 			typ:      PluginTypeHelm,
