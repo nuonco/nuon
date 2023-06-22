@@ -8,7 +8,7 @@ import (
 type Apps[B, D any] struct {
 	Project string `hcl:"project"`
 
-	App App[B, D] `hcl:"use,block"`
+	App App[B, D] `hcl:"app,block"`
 }
 
 func (a *Apps[B, D]) ToHCL() []byte {

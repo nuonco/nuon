@@ -16,7 +16,6 @@ func (p *Platform) DeployFunc() interface{} {
 func (p *Platform) deploy(
 	ctx context.Context,
 	ji *component.JobInfo,
-	artifact *terraformv1.Artifact,
 	ui terminal.UI,
 	log hclog.Logger,
 ) (*terraformv1.Deployment, error) {
@@ -25,5 +24,5 @@ func (p *Platform) deploy(
 		runTyp = runTypePlan
 	}
 
-	return p.execRun(ctx, runTyp, ji, artifact, ui, log)
+	return p.execRun(ctx, runTyp, ji, ui, log)
 }

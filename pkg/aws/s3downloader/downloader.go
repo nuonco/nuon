@@ -15,6 +15,7 @@ type Downloader interface {
 
 	ListPrefix(context.Context, string) ([]string, error)
 	ListAll(context.Context) ([]string, error)
+	FindKeys(context.Context, string, string) ([]string, error)
 }
 
 // s3Downloader implements the downloader interface and exposes the abilty to get and list prefixes
