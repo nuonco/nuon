@@ -7,7 +7,7 @@ func DefaultNoopBuild() Build[NoopBuild, Registry[NoopRegistry]] {
 		},
 		Registry: Registry[NoopRegistry]{
 			Use: NoopRegistry{
-				Plugin: "aws-ecr",
+				Plugin: "noop",
 			},
 		},
 	}

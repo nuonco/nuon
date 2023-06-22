@@ -27,6 +27,7 @@ var pluginTypeNames map[PluginType]string = map[PluginType]string{
 	PluginTypeHelm:      "helm",
 	PluginTypeExp:       "exp",
 	PluginTypeDev:       "dev",
+	PluginTypeNoop:      "noop",
 }
 
 type PluginType int
@@ -37,6 +38,7 @@ const (
 	PluginTypeExp
 	PluginTypeDev
 	PluginTypeUnknown
+	PluginTypeNoop
 
 	// NOTE(jm): we currently do not publish a helm plugin, but will be doing so once terraform is	finished, so
 	// just adding for now to help drive this architecturally.
@@ -65,6 +67,8 @@ func (p PluginType) RepositoryName() string {
 		return "dev-public"
 	case PluginTypeExp:
 		return "waypoint-plugin-exp"
+	case PluginTypeNoop:
+		return "waypoint-plugin-noop"
 	case PluginTypeHelm:
 		return "waypoint-plugin-helm"
 	default:
