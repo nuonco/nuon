@@ -1,19 +1,13 @@
 package configs
 
-func DefaultNoopBuild() Build[NoopBuild, Registry[DockerRegistry]] {
-	return Build[NoopBuild, Registry[DockerRegistry]]{
+func DefaultNoopBuild() Build[NoopBuild, Registry[NoopRegistry]] {
+	return Build[NoopBuild, Registry[NoopRegistry]]{
 		Use: NoopBuild{
-			Plugin: "docker-pull",
-
-			Image:             "hashicorpdemoapp/public-api",
-			Tag:               "v0.0.5",
-			DisableEntrypoint: true,
+			Plugin: "noop",
 		},
-		Registry: Registry[DockerRegistry]{
-			Use: DockerRegistry{
-				Plugin:     "aws-ecr",
-				Repository: "nuon.local",
-				Tag:        "latest",
+		Registry: Registry[NoopRegistry]{
+			Use: NoopRegistry{
+				Plugin: "aws-ecr",
 			},
 		},
 	}
@@ -21,8 +15,4 @@ func DefaultNoopBuild() Build[NoopBuild, Registry[DockerRegistry]] {
 
 type NoopBuild struct {
 	Plugin string `hcl:"plugin,label"`
-
-	Image             string `hcl:"image"`
-	Tag               string `hcl:"tag"`
-	DisableEntrypoint bool   `hcl:"disable_entrypoint"`
 }
