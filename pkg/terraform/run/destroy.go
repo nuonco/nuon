@@ -34,7 +34,7 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 
 	pipe.AddStep(&pipeline.Step{
 		Name:       "initialize workspace",
-		ExecFn:     execmappers.MapInitLog(r.Workspace.Init),
+		ExecFn:     execmappers.MapInit(r.Workspace.InitRoot),
 		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
@@ -55,6 +55,11 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 	pipe.AddStep(&pipeline.Step{
 		Name:       "load variables",
 		ExecFn:     execmappers.MapInit(r.Workspace.LoadVariables),
+		CallbackFn: callbackmappers.Noop,
+	})
+	pipe.AddStep(&pipeline.Step{
+		Name:       "init",
+		ExecFn:     execmappers.MapInitLog(r.Workspace.Init),
 		CallbackFn: callbackmappers.Noop,
 	})
 
