@@ -3,7 +3,6 @@ package workspace
 import (
 	"context"
 	"fmt"
-	"io"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/terraform-exec/tfexec"
@@ -67,14 +66,10 @@ func (w *workspace) Destroy(ctx context.Context, log hclog.Logger) ([]byte, erro
 		return nil, err
 	}
 
-	return w.destroy(ctx, client)
+	return w.destroy(ctx, client, log)
 }
 
-func (w *workspace) destroy(ctx context.Context, client Terraform) ([]byte, error) {
-	log := hclog.New(&hclog.LoggerOptions{
-		Output: io.Discard,
-		Level:  hclog.LevelFromString("DEBUG"),
-	})
+func (w *workspace) destroy(ctx context.Context, client Terraform, log hclog.Logger) ([]byte, error) {
 	out, err := output.New(w.v, output.WithLogger(log))
 	if err != nil {
 		return nil, fmt.Errorf("unable to get output: %w", err)
