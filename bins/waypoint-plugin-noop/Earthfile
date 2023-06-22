@@ -1,0 +1,54 @@
+VERSION --use-cache-command 0.6
+
+FROM ghcr.io/powertoolsdev/ci-go-builder
+
+WORKDIR /src
+
+ARG BIN=waypoint-plugin-noop
+ARG GOCACHE=/go-cache
+ARG GOMODCACHE=/go-mod-cache
+ARG ODR_VERSION=v0.1.0
+
+CACHE $GOCACHE
+CACHE $GOMODCACHE
+
+code:
+    FROM ../../.+deps
+    COPY ../../pkg+code/pkg pkg
+    COPY --dir . ./bins/$BIN
+    WORKDIR bins/$BIN
+    RUN go generate ./...
+
+lint:
+    FROM +code
+
+test:
+    FROM +code
+    RUN go test ./...
+
+test-integration:
+    RUN echo "noop..."
+
+artifacts:
+    FROM +code
+
+    ARG GOOS=linux
+    ARG GOARCH=amd64
+
+    RUN mkdir -p out && \
+      go build -o ./out/$BIN .
+
+    RUN chmod +x ./out/$BIN
+    SAVE ARTIFACT out AS LOCAL ./out
+
+oci-artifacts:
+    FROM public.ecr.aws/p7e3r5y0/waypoint-odr-base:$ODR_VERSION
+
+    ARG repo=
+    ARG image_tag=
+
+    # note waypoint plugins need to be loaded from a specific path on disk
+    ENV XDG_CONFIG_HOME=/home/waypoint/.config
+    COPY +artifacts/out/$BIN /home/waypoint/.config/waypoint/plugins/$BIN
+
+    SAVE IMAGE --push $repo:$image_tag
