@@ -3,5 +3,5 @@ output "info" {
 }
 
 output "name" {
-  value = var.name
+  value = var.ecr_repo_name
 }
