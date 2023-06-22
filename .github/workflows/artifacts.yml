@@ -41,14 +41,18 @@ jobs:
           filters: |
             bins/nuonctl:
               - bins/nuonctl/**
+
             charts/demo:
               - charts/demo/**
             charts/temporal:
               - charts/temporal/**
             charts/waypoint:
               - charts/waypoint/**
+
             bins/waypoint-plugin-exp:
               - bins/waypoint-plugin-exp/**
+            bins/waypoint-plugin-noop:
+              - bins/waypoint-plugin-noop/**
             bins/waypoint-plugin-terraform:
               - bins/waypoint-plugin-terraform/**
 
