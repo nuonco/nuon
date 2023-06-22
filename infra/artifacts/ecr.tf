@@ -83,6 +83,23 @@ module "waypoint_plugin_exp" {
   }
 }
 
+module "waypoint_plugin_noop" {
+  source = "../modules/public-ecr"
+
+  name        = "waypoint-plugin-noop"
+  region      = local.aws_settings.public_region
+  description = "nuon waypoint plugin"
+  about       = "nuon waypoint plugin"
+  tags = {
+    artifact      = "waypoint-plugin-noop"
+    artifact_type = "waypoint-plugin-odr"
+  }
+
+  providers = {
+    aws = aws.public
+  }
+}
+
 module "waypoint_plugin_terraform" {
   source = "../modules/public-ecr"
 

@@ -45,7 +45,9 @@ output "artifacts" {
       bucket_prefix = "waypoint-plugin-terraform"
       ecr           = module.waypoint_plugin_terraform.all
     }
-
-    // sandboxes
+    "bins/waypoint-plugin-noop" = {
+      bucket_prefix = "waypoint-plugin-noop"
+      ecr           = module.waypoint_plugin_noop.all
+    }
   }
 }
