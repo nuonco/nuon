@@ -1,9 +1,7 @@
 data "aws_iam_policy_document" "odr" {
   statement {
-    effect = "Allow"
-    actions = [
-      "*",
-    ]
+    effect    = "Allow"
+    actions   = ["*"]
     resources = ["*"]
   }
 }
