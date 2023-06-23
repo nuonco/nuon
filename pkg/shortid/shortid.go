@@ -132,3 +132,8 @@ func ToShortID(s string) (string, error) {
 		return "", fmt.Errorf("id incorrect length")
 	}
 }
+
+func RegisterFakes() {
+	// no-op to force the package's init function to run
+	// so fields tagged with faker:"shortID" don't cause a panic
+}
