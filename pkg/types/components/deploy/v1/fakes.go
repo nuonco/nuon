@@ -1,25 +1,29 @@
-package fakers
+package deployv1
 
 import (
 	"reflect"
 	"time"
 
-	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
+	"github.com/go-faker/faker/v4"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func fakeDeployConfig(v reflect.Value) (interface{}, error) {
-	return &deployv1.Config{
+	return &Config{
 		//nolint:all
 		Timeout: durationpb.New(time.Second * 10),
-		Cfg: &deployv1.Config_Basic{
-			Basic: &deployv1.BasicConfig{
+		Cfg: &Config_Basic{
+			Basic: &BasicConfig{
 				InstanceCount: 1,
-				ListenerCfg: &deployv1.ListenerConfig{
+				ListenerCfg: &ListenerConfig{
 					ListenPort:      80,
 					HealthCheckPath: "/",
 				},
 			},
 		},
 	}, nil
+}
+
+func init() {
+	_ = faker.AddProvider("deployConfig", fakeDeployConfig)
 }
