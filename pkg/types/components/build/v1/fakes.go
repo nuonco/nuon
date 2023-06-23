@@ -1,16 +1,16 @@
-package fakers
+package buildv1
 
 import (
 	"reflect"
 
-	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
+	"github.com/go-faker/faker/v4"
 	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 )
 
 func fakeBuildConfig(v reflect.Value) (interface{}, error) {
-	return &buildv1.Config{
-		Cfg: &buildv1.Config_DockerCfg{
-			DockerCfg: &buildv1.DockerConfig{
+	return &Config{
+		Cfg: &Config_DockerCfg{
+			DockerCfg: &DockerConfig{
 				Dockerfile: "Dockerfile",
 				VcsCfg: &vcsv1.Config{
 					Cfg: &vcsv1.Config_PublicGitConfig{
@@ -24,4 +24,8 @@ func fakeBuildConfig(v reflect.Value) (interface{}, error) {
 			},
 		},
 	}, nil
+}
+
+func init() {
+	_ = faker.AddProvider("buildConfig", fakeBuildConfig)
 }
