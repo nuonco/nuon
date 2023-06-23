@@ -1,4 +1,4 @@
-package fakers
+package pipeline
 
 import (
 	"context"
