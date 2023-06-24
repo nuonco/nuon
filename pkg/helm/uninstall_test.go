@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/release"
@@ -88,8 +89,7 @@ func TestUninstall(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			u := &uninstaller{}
-			cfg := UninstallConfig{}
-			fkr.Struct().Fill(cfg)
+			cfg := generics.GetFakeObj[UninstallConfig]()
 			cfg.Kubeconfig = &rest.Config{}
 
 			if test.uninstallRunnerFn != nil {

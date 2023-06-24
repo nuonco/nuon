@@ -6,6 +6,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/rest"
 
@@ -208,9 +209,7 @@ func TestInstall(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			i := &installer{}
-			cfg := InstallConfig{}
-			fkr.Struct().Fill(cfg)
-			fkr.Struct().Fill(&cfg.Chart)
+			cfg := generics.GetFakeObj[InstallConfig]()
 			cfg.Kubeconfig = &rest.Config{}
 
 			if test.installRunnerFn != nil {

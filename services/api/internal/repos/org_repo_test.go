@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jaswdr/faker"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/api/internal/models"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +38,7 @@ func TestUpsertOrg(t *testing.T) {
 				orgInput := models.Org{
 					Model:           models.Model{ID: id},
 					Name:            uuid.NewString(),
-					GithubInstallID: fmt.Sprintf("%d", faker.New().UInt32()),
+					GithubInstallID: fmt.Sprintf("%d", generics.GetFakeObj[uint32]()),
 				}
 
 				org, err := state.orgRepo.Create(ctx, &orgInput)
@@ -69,7 +69,7 @@ func TestUpsertOrg(t *testing.T) {
 			fn: func(ctx context.Context, state repoTestState) {
 				org := createOrg(ctx, t, state.orgRepo)
 				org.Name += "abc"
-				org.GithubInstallID = fmt.Sprintf("%d", faker.New().UInt32())
+				org.GithubInstallID = fmt.Sprintf("%d", generics.GetFakeObj[uint32]())
 				org, err := state.orgRepo.Update(ctx, org)
 				assert.Nil(t, err)
 

@@ -40,7 +40,6 @@ require (
 	github.com/hashicorp/waypoint v0.11.0
 	github.com/hashicorp/waypoint-plugin-sdk v0.0.0-20230412210808-dcdb2a03f714
 	github.com/jackc/pgx/v5 v5.3.1
-	github.com/jaswdr/faker v1.16.0
 	github.com/kyokomi/emoji v2.2.4+incompatible
 	github.com/lib/pq v1.10.7
 	github.com/matoous/go-nanoid/v2 v2.0.0
