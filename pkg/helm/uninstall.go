@@ -30,10 +30,10 @@ func (w *helmUninstaller) uninstall(ctx context.Context, client *action.Uninstal
 type UninstallConfig struct {
 	Namespace   string
 	ReleaseName string
-	Logger      Logger
-	Kubeconfig  *rest.Config
+	Logger      Logger       `faker:"-"`
+	Kubeconfig  *rest.Config `faker:"-"`
 
-	uninstaller uninstallRunner
+	uninstaller uninstallRunner `faker:"-"`
 }
 
 func helmUninstallIgnore(err error) bool {
