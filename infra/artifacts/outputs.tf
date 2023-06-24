@@ -41,13 +41,17 @@ output "artifacts" {
       bucket_prefix = "waypoint-plugin-exp"
       ecr           = module.waypoint_plugin_exp.all
     }
-    "bins/waypoint-plugin-terraform" = {
-      bucket_prefix = "waypoint-plugin-terraform"
-      ecr           = module.waypoint_plugin_terraform.all
-    }
     "bins/waypoint-plugin-noop" = {
       bucket_prefix = "waypoint-plugin-noop"
       ecr           = module.waypoint_plugin_noop.all
+    }
+    "bins/waypoint-plugin-oci" = {
+      bucket_prefix = "waypoint-plugin-oci"
+      ecr           = module.waypoint_plugin_oci.all
+    }
+    "bins/waypoint-plugin-terraform" = {
+      bucket_prefix = "waypoint-plugin-terraform"
+      ecr           = module.waypoint_plugin_terraform.all
     }
   }
 }
