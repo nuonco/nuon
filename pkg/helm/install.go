@@ -72,13 +72,13 @@ type InstallConfig struct {
 	ReleaseName string
 	Chart       *Chart
 	Atomic      bool
-	Values      map[string]interface{}
-	Logger      Logger
+	Values      map[string]interface{} `faker:"-"`
+	Logger      Logger                 `faker:"-"`
 
 	// These are exposed for testing. Do not use otherwise
 	CreateNamespace bool
-	Kubeconfig      *rest.Config
-	installer       installRunner
+	Kubeconfig      *rest.Config  `faker:"-"`
+	installer       installRunner `faker:"-"`
 }
 
 type installer struct{}
