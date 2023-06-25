@@ -18,9 +18,6 @@ locals {
       teams : [github_team.team.name, github_team.backend.name, github_team.frontend.name, ]
       role : "admin"
     },
-    mpaktiti : {
-      teams : [github_team.team.name, github_team.backend.name, ]
-    },
     nnnnat : {
       teams : [github_team.team.name, github_team.frontend.name, ]
       role : "admin"
