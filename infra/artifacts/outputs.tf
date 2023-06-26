@@ -41,6 +41,10 @@ output "artifacts" {
       bucket_prefix = "waypoint-plugin-exp"
       ecr           = module.waypoint_plugin_exp.all
     }
+    "bins/waypoint-plugin-helm" = {
+      bucket_prefix = "waypoint-plugin-helm"
+      ecr           = module.waypoint_plugin_helm.all
+    }
     "bins/waypoint-plugin-noop" = {
       bucket_prefix = "waypoint-plugin-noop"
       ecr           = module.waypoint_plugin_noop.all
