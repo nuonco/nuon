@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package helm.v1;
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/helm/v1";
+
+message AccessInfo {}
