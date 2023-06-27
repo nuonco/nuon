@@ -53,6 +53,7 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
       module.waypoint_plugin_helm.repository_arn,
       module.waypoint_plugin_noop.repository_arn,
       module.waypoint_plugin_oci.repository_arn,
+      module.waypoint_plugin_oci_sync.repository_arn,
       module.waypoint_plugin_terraform.repository_arn,
     ]
   }

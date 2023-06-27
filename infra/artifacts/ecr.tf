@@ -134,6 +134,23 @@ module "waypoint_plugin_oci" {
   }
 }
 
+module "waypoint_plugin_oci_sync" {
+  source = "../modules/public-ecr"
+
+  name        = "waypoint-plugin-oci-sync"
+  region      = local.aws_settings.public_region
+  description = "nuon waypoint oci sync plugin"
+  about       = "nuon waypoint oci sync plugin"
+  tags = {
+    artifact      = "waypoint-plugin-oci-sync"
+    artifact_type = "waypoint-plugin-odr"
+  }
+
+  providers = {
+    aws = aws.public
+  }
+}
+
 module "waypoint_plugin_terraform" {
   source = "../modules/public-ecr"
 

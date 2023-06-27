@@ -53,6 +53,10 @@ output "artifacts" {
       bucket_prefix = "waypoint-plugin-oci"
       ecr           = module.waypoint_plugin_oci.all
     }
+    "bins/waypoint-plugin-oci-sync" = {
+      bucket_prefix = "waypoint-plugin-oci-sync"
+      ecr           = module.waypoint_plugin_oci_sync.all
+    }
     "bins/waypoint-plugin-terraform" = {
       bucket_prefix = "waypoint-plugin-terraform"
       ecr           = module.waypoint_plugin_terraform.all
