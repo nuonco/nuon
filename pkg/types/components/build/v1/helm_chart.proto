@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package build.v1;
+
+import "build/v1/env_vars.proto";
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+import "vcs/v1/config.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/build/v1";
+
+// HelmChart config uses the waypoint build to create an artifact for a helm chart in a connected repository
+message HelmChartConfig {
+  vcs.v1.Config vcs_cfg = 1 [
+    (validate.rules).message.required = true,
+    (tagger.tags) = "faker:\"-\""
+  ];
+
+  string chart_name = 2 [(validate.rules).string.min_len = 5];
+  build.v1.EnvVars env_vars = 3 [(validate.rules).message.required = true];
+}
