@@ -10,6 +10,8 @@ func (c *Config) GetVcsCfg() *vcsv1.Config {
 		return cfg.DockerCfg.GetVcsCfg()
 	case *Config_TerraformModuleCfg:
 		return cfg.TerraformModuleCfg.GetVcsCfg()
+	case *Config_HelmChartCfg:
+		return cfg.HelmChartCfg.GetVcsCfg()
 	case *Config_ExternalImageCfg:
 	case *Config_Noop:
 	default:
