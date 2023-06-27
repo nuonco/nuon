@@ -7,6 +7,10 @@ import (
 	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 )
 
+func init() {
+	_ = faker.AddProvider("buildConfig", fakeBuildConfig)
+}
+
 func fakeBuildConfig(v reflect.Value) (interface{}, error) {
 	return &Config{
 		Cfg: &Config_DockerCfg{
@@ -24,8 +28,4 @@ func fakeBuildConfig(v reflect.Value) (interface{}, error) {
 			},
 		},
 	}, nil
-}
-
-func init() {
-	_ = faker.AddProvider("buildConfig", fakeBuildConfig)
 }

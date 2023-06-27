@@ -24,6 +24,7 @@ test("parseBuildConfigInput should return a build config for an external image",
         "ociImageUrl": "some-place.io/test/image",
         "tag": "latest",
       },
+      "helmChartCfg": undefined,
       "noop": undefined,
       "terraformModuleCfg": undefined,
       "timeout": undefined,
@@ -56,6 +57,7 @@ test("parseBuildConfigInput should return a build config for a private ECR exter
         "ociImageUrl": "some-place.io/test/image",
         "tag": "latest",
       },
+      "helmChartCfg": undefined,
       "noop": undefined,
       "terraformModuleCfg": undefined,
       "timeout": undefined,
@@ -98,6 +100,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
         },
       },
       "externalImageCfg": undefined,
+      "helmChartCfg": undefined,
       "noop": undefined,
       "terraformModuleCfg": undefined,
       "timeout": undefined,
@@ -147,6 +150,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
         },
       },
       "externalImageCfg": undefined,
+      "helmChartCfg": undefined,
       "noop": undefined,
       "terraformModuleCfg": undefined,
       "timeout": undefined,
@@ -175,6 +179,7 @@ test("parseBuildConfigInput should return a build config for a terraform build w
     {
       "dockerCfg": undefined,
       "externalImageCfg": undefined,
+      "helmChartCfg": undefined,
       "noop": undefined,
       "terraformModuleCfg": {
         "envVars": {
@@ -222,7 +227,9 @@ test("parseDeployConfigInput should return a deploy config for a basic k8s deplo
         "memLimit": "",
         "memRequest": "",
       },
+      "helmChart": undefined,
       "helmRepo": undefined,
+      "noop": undefined,
       "terraformModuleConfig": undefined,
       "timeout": undefined,
     }
@@ -243,6 +250,7 @@ test("parseDeployConfigInput should return a deploy config for a helm repo deplo
   expect(spec.toObject()).toMatchInlineSnapshot(`
     {
       "basic": undefined,
+      "helmChart": undefined,
       "helmRepo": {
         "chartName": "httpbin",
         "chartRepo": "rgnu/httpbin",
@@ -250,6 +258,7 @@ test("parseDeployConfigInput should return a deploy config for a helm repo deplo
         "imageRepoValuesKey": "httpbin/blah",
         "imageTagValuesKey": "latest",
       },
+      "noop": undefined,
       "terraformModuleConfig": undefined,
       "timeout": undefined,
     }
@@ -266,7 +275,9 @@ test("parseDeployConfigInput should return a deploy config for a terraform deplo
   expect(spec.toObject()).toMatchInlineSnapshot(`
     {
       "basic": undefined,
+      "helmChart": undefined,
       "helmRepo": undefined,
+      "noop": undefined,
       "terraformModuleConfig": {
         "terraformVersion": 1,
       },
@@ -303,6 +314,7 @@ test("parseConfigInput should return a component config", () => {
           "ociImageUrl": "test.io/test/iagme",
           "tag": "",
         },
+        "helmChartCfg": undefined,
         "noop": undefined,
         "terraformModuleCfg": undefined,
         "timeout": undefined,
@@ -320,7 +332,9 @@ test("parseConfigInput should return a component config", () => {
           "memLimit": "",
           "memRequest": "",
         },
+        "helmChart": undefined,
         "helmRepo": undefined,
+        "noop": undefined,
         "terraformModuleConfig": undefined,
         "timeout": undefined,
       },
