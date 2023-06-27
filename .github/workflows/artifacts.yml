@@ -51,8 +51,12 @@ jobs:
 
             bins/waypoint-plugin-exp:
               - bins/waypoint-plugin-exp/**
+            bins/waypoint-plugin-helm:
+              - bins/waypoint-plugin-helm/**
             bins/waypoint-plugin-noop:
               - bins/waypoint-plugin-noop/**
+            bins/waypoint-plugin-oci:
+              - bins/waypoint-plugin-oci/**
             bins/waypoint-plugin-terraform:
               - bins/waypoint-plugin-terraform/**
 
