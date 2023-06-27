@@ -99,11 +99,30 @@ type ExternalImageConfig {
 }
 
 """
+Represents a connected Helm Chart build configuration
+"""
+type HelmBuildConfig {
+  """
+  Name of the Helm Chart to build
+  """
+  chartName: String!
+  """
+  Version control system configuration
+  """
+  vcsConfig: VcsConfig
+  """
+  Environment variables
+  """
+  envVarsConfig: [KeyValuePair!]
+}
+
+"""
 Represents all the component build configurations
 """
 union ComponentBuildConfig =
     ExternalImageConfig
   | DockerBuildConfig
+  | HelmBuildConfig
   | NoopConfig
   | TerraformBuildConfig
 
@@ -135,6 +154,16 @@ type HelmRepoDeployConfig {
 
   imageRepoValuesKey: String
   imageTagValuesKey: String
+}
+
+"""
+Represents a connected Helm Chart deployment configuration
+"""
+type HelmDeployConfig {
+  """
+  Temp noop until we know the required deploy config fields
+  """
+  noop: Boolean
 }
 
 enum TerraformVersion {
@@ -277,6 +306,7 @@ Represents all the component deployment configurations
 """
 union ComponentDeployConfig =
     BasicDeployConfig
+  | HelmDeployConfig
   | HelmRepoDeployConfig
   | NoopConfig
   | TerraformDeployConfig
@@ -377,10 +407,17 @@ input ExternalImageInput {
   authConfig: AWSAuthConfigInput
 }
 
+input HelmBuildInput {
+  chartName: String!
+  vcsConfig: VcsConfigInput!
+  envVarsConfig: [KeyValuePairInput!]
+}
+
 input BuildConfigInput {
   noop: Boolean
   dockerBuildConfig: DockerBuildInput
   externalImageConfig: ExternalImageInput
+  helmBuildConfig: HelmBuildInput
   terraformBuildConfig: TerraformBuildInput
 }
 
@@ -399,6 +436,10 @@ input HelmRepoDeployConfigInput {
   imageTagValuesKey: String
 }
 
+input HelmDeployInput {
+  noop: Boolean
+}
+
 input TerraformDeployConfigInput {
   terraformVersion: TerraformVersion
 }
@@ -406,6 +447,7 @@ input TerraformDeployConfigInput {
 input DeployConfigInput {
   noop: Boolean
   basicDeployConfig: BasicDeployConfigInput
+  helmDeployConfig: HelmDeployInput
   helmRepoDeployConfig: HelmRepoDeployConfigInput
   terraformDeployConfig: TerraformDeployConfigInput
 }
