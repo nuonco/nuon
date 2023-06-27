@@ -3,7 +3,9 @@ syntax = "proto3";
 package deploy.v1;
 
 import "deploy/v1/basic.proto";
+import "deploy/v1/helm_chart.proto";
 import "deploy/v1/helm_repo.proto";
+import "deploy/v1/noop.proto";
 import "deploy/v1/terraform_module.proto";
 import "google/protobuf/duration.proto";
 import "validate/validate.proto";
@@ -20,5 +22,7 @@ message Config {
     BasicConfig basic = 2;
     HelmRepoConfig helm_repo = 3;
     TerraformModuleConfig terraform_module_config = 4;
+    HelmChartConfig helm_chart = 5;
+    NoopConfig noop = 6;
   }
 }

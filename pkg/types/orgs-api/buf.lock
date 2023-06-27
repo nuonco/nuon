@@ -14,8 +14,8 @@ deps:
   - remote: buf.build
     owner: nuon
     repository: components
-    commit: 70548668347a4a36a2757e478e155010
-    digest: shake256:8ad82045c53fac929173eeb2c484737e4642a1e56dd2c36a727f8355c4f30442c797a8e317a12d8a9d1b0c496289c9b1e4da48d0d51d245ee2a368849c28d94f
+    commit: 8db1384aab764ca9b4cd8db436686bd2
+    digest: shake256:8424f286c8b99716c1bb06f6d813764fa073a0d05932f706a9c72d235cf601b3b6ba486d034dd01a4a5f54c2cc8e6a9a323b2c381919a2f7b8dba0d898b44566
   - remote: buf.build
     owner: nuon
     repository: deployments
@@ -24,8 +24,8 @@ deps:
   - remote: buf.build
     owner: nuon
     repository: workflows
-    commit: e19ec9d62bc34f0d931dc3705576f80b
-    digest: shake256:11200631d983355dece8bdf9bdabb80362dfb91ba67c48e60e1939874c94d998483492d2be842e8971978f892cfd6bc6b459e4edb5bbe2eb0996aa51307bd299
+    commit: 165135edc60a4d3f874b6b8ce11662b2
+    digest: shake256:f18b08d206707181b9fe2eeac9a7b360d067f66293afa017655baad1661c8ed118ece833d2723dbfb3688c8132387949878561ec630b112b5bdecb4924692fed
   - remote: buf.build
     owner: srikrsna
     repository: protoc-gen-gotag
