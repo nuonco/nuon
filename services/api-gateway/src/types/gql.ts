@@ -135,6 +135,7 @@ export type Build = {
 export type BuildConfigInput = {
   dockerBuildConfig?: InputMaybe<DockerBuildInput>;
   externalImageConfig?: InputMaybe<ExternalImageInput>;
+  helmBuildConfig?: InputMaybe<HelmBuildInput>;
   noop?: InputMaybe<Scalars['Boolean']['input']>;
   terraformBuildConfig?: InputMaybe<TerraformBuildInput>;
 };
@@ -163,7 +164,7 @@ export type ComponentDeploymentsArgs = {
 };
 
 /** Represents all the component build configurations */
-export type ComponentBuildConfig = DockerBuildConfig | ExternalImageConfig | NoopConfig | TerraformBuildConfig;
+export type ComponentBuildConfig = DockerBuildConfig | ExternalImageConfig | HelmBuildConfig | NoopConfig | TerraformBuildConfig;
 
 /** Represents all configuration for the  component */
 export type ComponentConfig = {
@@ -187,7 +188,7 @@ export type ComponentConnection = Connection & {
 };
 
 /** Represents all the component deployment configurations */
-export type ComponentDeployConfig = BasicDeployConfig | HelmRepoDeployConfig | NoopConfig | TerraformDeployConfig;
+export type ComponentDeployConfig = BasicDeployConfig | HelmDeployConfig | HelmRepoDeployConfig | NoopConfig | TerraformDeployConfig;
 
 /** An auto-generated type which holds one Component and a cursor during pagination */
 export type ComponentEdge = {
@@ -251,6 +252,7 @@ export type Deploy = {
 
 export type DeployConfigInput = {
   basicDeployConfig?: InputMaybe<BasicDeployConfigInput>;
+  helmDeployConfig?: InputMaybe<HelmDeployInput>;
   helmRepoDeployConfig?: InputMaybe<HelmRepoDeployConfigInput>;
   noop?: InputMaybe<Scalars['Boolean']['input']>;
   terraformDeployConfig?: InputMaybe<TerraformDeployConfigInput>;
@@ -334,6 +336,34 @@ export type GcpSettings = {
 
 export type GcpSettingsInput = {
   bogus: Scalars['String']['input'];
+};
+
+/** Represents a connected Helm Chart build configuration */
+export type HelmBuildConfig = {
+  __typename?: 'HelmBuildConfig';
+  /** Name of the Helm Chart to build */
+  chartName: Scalars['String']['output'];
+  /** Environment variables */
+  envVarsConfig?: Maybe<Array<KeyValuePair>>;
+  /** Version control system configuration */
+  vcsConfig?: Maybe<VcsConfig>;
+};
+
+export type HelmBuildInput = {
+  chartName: Scalars['String']['input'];
+  envVarsConfig?: InputMaybe<Array<KeyValuePairInput>>;
+  vcsConfig: VcsConfigInput;
+};
+
+/** Represents a connected Helm Chart deployment configuration */
+export type HelmDeployConfig = {
+  __typename?: 'HelmDeployConfig';
+  /** Temp noop until we know the required deploy config fields */
+  noop?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type HelmDeployInput = {
+  noop?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 /** Represents a public helm chart deployment configuration */
