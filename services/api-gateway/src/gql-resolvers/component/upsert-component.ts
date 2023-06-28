@@ -11,6 +11,7 @@ import {
   ExternalImageConfig,
   PublicAuthCfg,
 } from "@buf/nuon_components.grpc_node/build/v1/external_image_pb";
+import { HelmChartConfig } from "@buf/nuon_components.grpc_node/build/v1/helm_chart_pb";
 import { NoopConfig as NoopBuildConfig } from "@buf/nuon_components.grpc_node/build/v1/noop_pb";
 import { TerraformModuleConfig as TerraformBuildConfig } from "@buf/nuon_components.grpc_node/build/v1/terraform_module_pb";
 import { Component } from "@buf/nuon_components.grpc_node/component/v1/component_pb";
@@ -20,6 +21,7 @@ import {
   ListenerConfig,
 } from "@buf/nuon_components.grpc_node/deploy/v1/config_pb";
 import { HelmRepoConfig as HelmRepoDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/helm_repo_pb";
+import { NoopConfig as NoopDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/noop_pb";
 import { TerraformModuleConfig as TerraformDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/terraform_module_pb";
 import { Config as VcsConfig } from "@buf/nuon_components.grpc_node/vcs/v1/config_pb";
 import { ConnectedGithubConfig } from "@buf/nuon_components.grpc_node/vcs/v1/connected_github_pb";
@@ -111,6 +113,41 @@ export function parseBuildConfigInput(
     buildCfg.setDockerCfg(dockerCfg);
   }
 
+  if (buildConfig?.helmBuildConfig) {
+    const {
+      chartName,
+      envVarsConfig: envVarsConfigInput,
+      vcsConfig: vcsInput,
+    } = buildConfig?.helmBuildConfig;
+    const envVarsConfig = new EnvVars();
+    const vcsConfig = new VcsConfig();
+
+    if (vcsInput?.connectedGithub) {
+      const connectedGithubCfg = new ConnectedGithubConfig()
+        .setRepo(vcsInput?.connectedGithub?.repo)
+        .setDirectory(vcsInput?.connectedGithub?.directory);
+
+      vcsConfig.setConnectedGithubConfig(connectedGithubCfg);
+    } else if (vcsInput?.publicGit) {
+      const publicGitCfg = new PublicGitConfig()
+        .setRepo(vcsInput?.publicGit?.repo)
+        .setDirectory(vcsInput?.publicGit?.directory);
+
+      vcsConfig.setPublicGitConfig(publicGitCfg);
+    }
+
+    if (envVarsConfigInput?.length > 0) {
+      envVarsConfig.setEnvVarsList(parseKeyValuePairInput(envVarsConfigInput));
+    }
+
+    const helmBuildConfig = new HelmChartConfig()
+      .setChartName(chartName)
+      .setEnvVars(envVarsConfig)
+      .setVcsCfg(vcsConfig);
+
+    buildCfg.setHelmChartCfg(helmBuildConfig);
+  }
+
   if (buildConfig?.terraformBuildConfig) {
     const { envVarsConfig: envVarsConfigInput, vcsConfig: vcsInput } =
       buildConfig?.terraformBuildConfig;
@@ -149,6 +186,12 @@ export function parseDeployConfigInput(
   deployConfig: DeployConfigInput
 ): Record<string, unknown> | any {
   const deployCfg = new DeployConfig();
+
+  if (deployConfig?.noop) {
+    const noopCfg = new NoopDeployConfig();
+
+    deployCfg.setNoop(noopCfg);
+  }
 
   if (deployConfig?.basicDeployConfig) {
     const { healthCheckPath, instanceCount, port } =
