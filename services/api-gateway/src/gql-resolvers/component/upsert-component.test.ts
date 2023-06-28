@@ -158,9 +158,60 @@ test("parseBuildConfigInput should return a build config for a docker build with
   `);
 });
 
-test("parseBuildConfigInput should return a build config for a terraform build with public git repo and one environment variable", () => {
+test("parseBuildConfigInput should return a build config for a docker build with public git repo and one environment variable", () => {
   const spec = parseBuildConfigInput({
-    terraformBuildConfig: {
+    dockerBuildConfig: {
+      dockerfile: "Dockerfile",
+      envVarsConfig: [
+        {
+          key: "env-var-key",
+          value: "env-var-value",
+        },
+      ],
+      vcsConfig: {
+        publicGit: {
+          directory: "/",
+          repo: "org/repo",
+        },
+      },
+    },
+  });
+  expect(spec.toObject()).toMatchInlineSnapshot(`
+    {
+      "dockerCfg": {
+        "buildArgsList": [],
+        "dockerfile": "Dockerfile",
+        "envVars": {
+          "envVarsList": [
+            {
+              "key": "env-var-key",
+              "value": "env-var-value",
+            },
+          ],
+        },
+        "target": "",
+        "vcsCfg": {
+          "connectedGithubConfig": undefined,
+          "publicGitConfig": {
+            "directory": "/",
+            "gitRef": "",
+            "repo": "org/repo",
+          },
+        },
+      },
+      "externalImageCfg": undefined,
+      "helmChartCfg": undefined,
+      "noop": undefined,
+      "terraformModuleCfg": undefined,
+      "timeout": undefined,
+    }
+  `);
+});
+
+test("parseBuildConfigInput should return a build config for a helm chart build with public git repo and one environment variable", () => {
+  const spec = parseBuildConfigInput({
+    helmBuildConfig: {
+      chartName: "test-chart",
       envVarsConfig: [
         {
           key: "env-var-key",
@@ -179,9 +230,8 @@ test("parseBuildConfigInput should return a build config for a terraform build w
     {
       "dockerCfg": undefined,
       "externalImageCfg": undefined,
-      "helmChartCfg": undefined,
-      "noop": undefined,
-      "terraformModuleCfg": {
+      "helmChartCfg": {
+        "chartName": "test-chart",
         "envVars": {
           "envVarsList": [
             {
@@ -199,6 +249,8 @@ test("parseBuildConfigInput should return a build config for a terraform build w
           },
         },
       },
+      "noop": undefined,
+      "terraformModuleCfg": undefined,
       "timeout": undefined,
     }
   `);
