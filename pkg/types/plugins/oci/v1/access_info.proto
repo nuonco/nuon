@@ -4,4 +4,16 @@ package oci.v1;
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/oci/v1";
 
-message AccessInfo {}
+message AccessInfo {
+  // image is the full url path you can use doing something such as `docker-pull`
+  string image = 1;
+  // tag is usually a git short ref (bb30db16), or a semver tag (v0.0.1) or latest
+  string tag = 2;
+  Auth auth = 3;
+}
+
+message Auth {
+  string username = 1;
+  string password = 2;
+  string server_address = 3;
+}

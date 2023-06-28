@@ -21,7 +21,8 @@ var _ Client = (*ecrAuthorizer)(nil)
 type ecrAuthorizer struct {
 	v *validator.Validate `validate:"required"`
 
-	RegistryID string `validate:"required"`
+	RegistryID string `validate:"required_unless=UseDefault true"`
+	UseDefault bool
 
 	Credentials *credentials.Config `validate:"-"`
 }
@@ -67,6 +68,14 @@ func WithImageURL(url string) Option {
 	}
 }
 
+// WithUseDefault is used to fetch the default registry
+func WithUseDefault(useDefault bool) Option {
+	return func(ecr *ecrAuthorizer) error {
+		ecr.UseDefault = useDefault
+		return nil
+	}
+}
+
 // WithCredentials is used to set the credentials that will be used by this
 func WithCredentials(creds *credentials.Config) Option {
 	return func(ecr *ecrAuthorizer) error {
@@ -75,7 +84,7 @@ func WithCredentials(creds *credentials.Config) Option {
 	}
 }
 
-// WithRepository is used to set the registry id by parsing the repsoitry url
+// WithRepository is used to set the registry id by parsing the repository url
 func WithRepository(repository string) Option {
 	return func(ecr *ecrAuthorizer) error {
 		registryID, err := parseImageURL(repository)
