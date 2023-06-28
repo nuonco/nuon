@@ -65,7 +65,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-06-28T19:25:56.261Z"
+      "value": "2023-06-28T19:56:50.272Z"
     },
     "canary-gh-oidc-provider": {
       "description": "The Github OIDC provider for the canary account",
@@ -2525,7 +2525,7 @@
         "provider": "aws.horizon-us-east-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "horizon-us-east-1-L-34B43A08": {
         "//": {
@@ -2549,7 +2549,7 @@
         "provider": "aws.horizon-us-east-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "horizon-us-east-2-L-34B43A08": {
         "//": {
@@ -2573,7 +2573,7 @@
         "provider": "aws.horizon-us-west-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "horizon-us-west-1-L-34B43A08": {
         "//": {
@@ -2597,7 +2597,7 @@
         "provider": "aws.horizon-us-west-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "horizon-us-west-2-L-34B43A08": {
         "//": {
@@ -2621,7 +2621,7 @@
         "provider": "aws.infra-shared-prod-us-east-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "infra-shared-prod-us-east-1-L-34B43A08": {
         "//": {
@@ -2645,7 +2645,7 @@
         "provider": "aws.infra-shared-prod-us-east-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "infra-shared-prod-us-east-2-L-34B43A08": {
         "//": {
@@ -2669,7 +2669,7 @@
         "provider": "aws.infra-shared-prod-us-west-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "infra-shared-prod-us-west-1-L-34B43A08": {
         "//": {
@@ -2693,7 +2693,7 @@
         "provider": "aws.infra-shared-prod-us-west-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "infra-shared-prod-us-west-2-L-34B43A08": {
         "//": {
@@ -2717,7 +2717,7 @@
         "provider": "aws.infra-shared-stage-us-east-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "infra-shared-stage-us-east-1-L-34B43A08": {
         "//": {
@@ -2741,7 +2741,7 @@
         "provider": "aws.infra-shared-stage-us-east-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "infra-shared-stage-us-east-2-L-34B43A08": {
         "//": {
@@ -2765,7 +2765,7 @@
         "provider": "aws.infra-shared-stage-us-west-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "infra-shared-stage-us-west-1-L-34B43A08": {
         "//": {
@@ -2789,7 +2789,7 @@
         "provider": "aws.infra-shared-stage-us-west-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "infra-shared-stage-us-west-2-L-34B43A08": {
         "//": {
@@ -2813,7 +2813,7 @@
         "provider": "aws.orgs-prod-us-east-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "orgs-prod-us-east-1-L-34B43A08": {
         "//": {
@@ -2837,7 +2837,7 @@
         "provider": "aws.orgs-prod-us-east-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "orgs-prod-us-east-2-L-34B43A08": {
         "//": {
@@ -2861,7 +2861,7 @@
         "provider": "aws.orgs-prod-us-west-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "orgs-prod-us-west-1-L-34B43A08": {
         "//": {
@@ -2885,7 +2885,7 @@
         "provider": "aws.orgs-prod-us-west-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "orgs-prod-us-west-2-L-34B43A08": {
         "//": {
@@ -3005,7 +3005,7 @@
         "provider": "aws.prod-us-east-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "prod-us-east-1-L-34B43A08": {
         "//": {
@@ -3029,7 +3029,7 @@
         "provider": "aws.prod-us-east-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "prod-us-east-2-L-34B43A08": {
         "//": {
@@ -3053,7 +3053,7 @@
         "provider": "aws.prod-us-west-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "prod-us-west-1-L-34B43A08": {
         "//": {
@@ -3077,7 +3077,7 @@
         "provider": "aws.prod-us-west-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "prod-us-west-2-L-34B43A08": {
         "//": {
@@ -3101,7 +3101,7 @@
         "provider": "aws.stage-us-east-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "stage-us-east-1-L-34B43A08": {
         "//": {
@@ -3125,7 +3125,7 @@
         "provider": "aws.stage-us-east-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "stage-us-east-2-L-34B43A08": {
         "//": {
@@ -3149,7 +3149,7 @@
         "provider": "aws.stage-us-west-1",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "stage-us-west-1-L-34B43A08": {
         "//": {
@@ -3173,7 +3173,7 @@
         "provider": "aws.stage-us-west-2",
         "quota_code": "L-1216C47A",
         "service_code": "ec2",
-        "value": 32
+        "value": 512
       },
       "stage-us-west-2-L-34B43A08": {
         "//": {
