@@ -116,7 +116,8 @@ export class Accounts extends TerraformStack {
           clientIdList: ["sts.amazonaws.com"],
           provider: defaultRegionalProvider,
           thumbprintList: [
-            "6938FD4D98BAB03FAADB97B34396831E3780AEA1".toLowerCase(),
+            "6938fd4d98bab03faadb97b34396831e3780aea1",
+            "1c58a3a8518e8759bf075b76b750d4f2df264fcd",
           ],
           url: "https://token.actions.githubusercontent.com",
         }

@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "synth": "cdktf synth",
+    "synth": "cdktf get && cdktf synth",
     "compile": "tsc --pretty",
     "fmt": "prettier --write main.ts lib/**",
     "lint": "eslint main.ts lib/**/*.ts",

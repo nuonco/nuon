@@ -71,7 +71,7 @@
   "output": {
     "sso-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-04-27T16:00:45.194Z"
+      "value": "2023-06-28T19:25:56.174Z"
     }
   },
   "provider": {

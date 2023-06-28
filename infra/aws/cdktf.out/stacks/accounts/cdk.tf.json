@@ -65,7 +65,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-04-27T16:00:45.246Z"
+      "value": "2023-06-28T19:25:56.261Z"
     },
     "canary-gh-oidc-provider": {
       "description": "The Github OIDC provider for the canary account",
@@ -1386,7 +1386,8 @@
         ],
         "provider": "aws.canary",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1402,7 +1403,8 @@
         ],
         "provider": "aws.demo",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1418,7 +1420,8 @@
         ],
         "provider": "aws.external",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1434,7 +1437,8 @@
         ],
         "provider": "aws.horizon",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1450,7 +1454,8 @@
         ],
         "provider": "aws.infra-shared-prod",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1466,7 +1471,8 @@
         ],
         "provider": "aws.infra-shared-stage",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1482,7 +1488,8 @@
         ],
         "provider": "aws.orgs-prod",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1498,7 +1505,8 @@
         ],
         "provider": "aws.orgs-stage",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1514,7 +1522,8 @@
         ],
         "provider": "aws.prod",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1530,7 +1539,8 @@
         ],
         "provider": "aws.public",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1546,7 +1556,8 @@
         ],
         "provider": "aws.sandbox-ja",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1562,7 +1573,8 @@
         ],
         "provider": "aws.sandbox-jm",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       },
@@ -1578,7 +1590,8 @@
         ],
         "provider": "aws.stage",
         "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1"
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
         ],
         "url": "https://token.actions.githubusercontent.com"
       }
