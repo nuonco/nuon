@@ -12,8 +12,8 @@ This directory is where we create and maintain guides for doing different develo
 ### development guides
 
 - [working in the mono repo](./working-in-mono.md)
-- [developing a waypoint plugin](./developing-waypoint-plugin.md)
-- [running services locally](./running_locally.md)
+- [developing a waypoint plugin](./developing_waypoint_plugins.md)
+- [running services locally](./running_services_locally.md)
 - [short IDs](./short_ids.md)
 - [debugging with delve](./debugging_with_delve.md)
 
@@ -21,3 +21,10 @@ This directory is where we create and maintain guides for doing different develo
 
 - [adding a new service](./add_a_new_service.md)
 - [adding a new artifact](./add_a_new_artifact.md)
+
+## todo
+
+- [ ] debugging plans
+- [ ] nuonctl basics
+- [ ] contributing to `nuonctl`
+- [ ] plugin architecture basics

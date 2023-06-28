@@ -41,6 +41,14 @@ $ nctl scripts exec build-plugin waypoint-plugin-noop
 
 **NOTE:** this backdoor always uses the most recent dev plugin. If someone else is debugging plugins at the same time, please communicate with them.
 
+## Execute a plan
+
+You can execute any plan by running `plan-and-execute`.
+
+```bash
+$ nuonctl deploys --sync=false --install-id=<install-id> --build-id=<build-id> plan-and-execute
+```
+
 ## Debugging
 
 There are three ways to debug jobs running:
