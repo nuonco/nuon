@@ -156,6 +156,55 @@ test("getConfig should take a raw grpc component config & return the correct con
   `);
 });
 
+test("getConfig should take a raw grpc component config & return the correct config object - helm chart", () => {
+  const spec = getConfig({
+    buildCfg: {
+      helmChartCfg: {
+        chartName: "test-chart",
+        envVarsConfig: {
+          key: "test-env-var-key",
+          val: "test-env-var-val",
+        },
+        vcsCfg: {
+          connectedGithubConfig: {
+            branch: "main",
+            directory: "/",
+            repo: "test-repo",
+          },
+        },
+      },
+    },
+    deployCfg: {
+      noop: {},
+    },
+  });
+
+  expect(spec).toMatchInlineSnapshot(`
+    {
+      "__typename": "ComponentConfig",
+      "buildConfig": {
+        "__typename": "HelmBuildConfig",
+        "chartName": "test-chart",
+        "envVarsConfig": {
+          "__typename": "KeyValuePair",
+          "key": "test-env-var-key",
+          "val": "test-env-var-val",
+        },
+        "vcsConfig": {
+          "__typename": "ConnectedGithubConfig",
+          "branch": "main",
+          "directory": "/",
+          "repo": "test-repo",
+        },
+      },
+      "deployConfig": {
+        "__typename": "NoopConfig",
+        "noop": true,
+      },
+    }
+  `);
+});
+
 test("getConfig should take a raw grpc component config & return the correct config object - terraform", () => {
   const spec = getConfig({
     buildCfg: {
