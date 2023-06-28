@@ -15,7 +15,7 @@ It seems that each plugin is initialized in a separate process. For instance, yo
 
 ## Plugin initialization
 
-You can find the initialization code for picking plugins [here]().
+You can find the initialization code for picking plugins [here](https://github.com/hashicorp/waypoint/blob/main/internal/plugin/discover.go#L29-L77).
 
 Generally the way it works:
 
