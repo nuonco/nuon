@@ -175,7 +175,7 @@ test("getConfig should take a raw grpc component config & return the correct con
       },
     },
     deployCfg: {
-      noop: {},
+      helmChart: {},
     },
   });
 
@@ -198,7 +198,7 @@ test("getConfig should take a raw grpc component config & return the correct con
         },
       },
       "deployConfig": {
-        "__typename": "NoopConfig",
+        "__typename": "HelmDeployConfig",
         "noop": true,
       },
     }
