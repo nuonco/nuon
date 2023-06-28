@@ -20,6 +20,6 @@ func (r *Registry) Push(
 	ui terminal.UI,
 	src *component.Source,
 ) (*ociv1.Artifact, error) {
-	ui.Output("pushing noop build...")
+	ui.Output("noop - pushes happen within build step using AccessInfo")
 	return &ociv1.Artifact{}, nil
 }
