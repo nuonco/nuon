@@ -33,6 +33,14 @@ func TestToPluginType(t *testing.T) {
 			name: "noop",
 			typ:  PluginTypeNoop,
 		},
+		"oci": {
+			name: "oci",
+			typ:  PluginTypeOci,
+		},
+		"oci-sync": {
+			name: "oci-sync",
+			typ:  PluginTypeOciSync,
+		},
 		"invalid": {
 			name:        "invalid",
 			errExpected: fmt.Errorf("invalid"),
@@ -76,6 +84,14 @@ func TestPluginType_RepositoryName(t *testing.T) {
 			typ:      PluginTypeNoop,
 			expected: "waypoint-plugin-noop",
 		},
+		"oci": {
+			typ:      PluginTypeOci,
+			expected: "waypoint-plugin-oci",
+		},
+		"oci-sync": {
+			typ:      PluginTypeOciSync,
+			expected: "waypoint-plugin-oci-sync",
+		},
 		"helm": {
 			typ:      PluginTypeHelm,
 			expected: "waypoint-plugin-helm",
@@ -114,6 +130,14 @@ func TestPluginType_ImageURL(t *testing.T) {
 		"helm": {
 			typ:      PluginTypeHelm,
 			expected: "public.ecr.aws/p7e3r5y0/waypoint-plugin-helm",
+		},
+		"oci": {
+			typ:      PluginTypeOci,
+			expected: "public.ecr.aws/p7e3r5y0/waypoint-plugin-oci",
+		},
+		"oci-sync": {
+			typ:      PluginTypeOciSync,
+			expected: "public.ecr.aws/p7e3r5y0/waypoint-plugin-oci-sync",
 		},
 	}
 

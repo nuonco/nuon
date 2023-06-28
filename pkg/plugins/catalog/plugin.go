@@ -26,6 +26,8 @@ var pluginTypeNames map[PluginType]string = map[PluginType]string{
 	PluginTypeTerraform: "terraform",
 	PluginTypeHelm:      "helm",
 	PluginTypeExp:       "exp",
+	PluginTypeOci:       "oci",
+	PluginTypeOciSync:   "oci-sync",
 	PluginTypeDev:       "dev",
 	PluginTypeNoop:      "noop",
 }
@@ -39,9 +41,8 @@ const (
 	PluginTypeDev
 	PluginTypeUnknown
 	PluginTypeNoop
-
-	// NOTE(jm): we currently do not publish a helm plugin, but will be doing so once terraform is	finished, so
-	// just adding for now to help drive this architecturally.
+	PluginTypeOci
+	PluginTypeOciSync
 	PluginTypeHelm
 )
 
@@ -71,6 +72,10 @@ func (p PluginType) RepositoryName() string {
 		return "waypoint-plugin-noop"
 	case PluginTypeHelm:
 		return "waypoint-plugin-helm"
+	case PluginTypeOci:
+		return "waypoint-plugin-oci"
+	case PluginTypeOciSync:
+		return "waypoint-plugin-oci-sync"
 	default:
 	}
 	return ""
