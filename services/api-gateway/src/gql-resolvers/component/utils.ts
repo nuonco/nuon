@@ -87,6 +87,20 @@ export function getConfig(config): ComponentConfig {
       };
     }
 
+    if (config?.buildCfg?.helmChartCfg) {
+      const vcsConfig = getVcsConfig(config?.buildCfg?.helmChartCfg);
+      const envVarsConfig = getEnvVarsConfig(config?.buildCfg?.helmChartCfg);
+
+      delete config?.buildCfg?.helmChartCfg?.vcsCfg;
+
+      buildConfig = {
+        __typename: "HelmBuildConfig",
+        ...config?.buildCfg?.helmChartCfg,
+        envVarsConfig,
+        vcsConfig,
+      };
+    }
+
     if (config?.buildCfg?.terraformModuleCfg) {
       const vcsConfig = getVcsConfig(config?.buildCfg?.terraformModuleCfg);
       const envVarsConfig = getEnvVarsConfig(
@@ -105,6 +119,13 @@ export function getConfig(config): ComponentConfig {
   }
 
   if (config?.deployCfg) {
+    if (config?.deployCfg?.noop) {
+      deployConfig = {
+        __typename: "NoopConfig",
+        noop: true,
+      };
+    }
+
     if (config?.deployCfg?.basic) {
       const { basic } = config?.deployCfg;
 
