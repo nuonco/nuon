@@ -146,6 +146,14 @@ export function getConfig(config): ComponentConfig {
       };
     }
 
+    if (config?.deployCfg?.helmChart) {
+      // TODO(nnnnat): temp until we know the fields for the helm chart deploy config
+      deployConfig = {
+        __typename: "HelmDeployConfig",
+        noop: true,
+      };
+    }
+
     if (config?.deployCfg?.terraformModuleConfig) {
       const { terraformModuleConfig } = config?.deployCfg;
 

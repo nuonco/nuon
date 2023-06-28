@@ -20,6 +20,7 @@ import {
   Config as DeployConfig,
   ListenerConfig,
 } from "@buf/nuon_components.grpc_node/deploy/v1/config_pb";
+import { HelmChartConfig as HelmDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/helm_chart_pb";
 import { HelmRepoConfig as HelmRepoDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/helm_repo_pb";
 import { NoopConfig as NoopDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/noop_pb";
 import { TerraformModuleConfig as TerraformDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/terraform_module_pb";
@@ -204,6 +205,13 @@ export function parseDeployConfigInput(
       .setListenerCfg(listenerCfg);
 
     deployCfg.setBasic(basicDeployCfg);
+  }
+
+  if (deployConfig?.helmDeployConfig) {
+    // TODO(nnnnat): temp until we know the required fields
+    const helmDeployCfg = new HelmDeployConfig();
+
+    deployCfg.setHelmChart(helmDeployCfg);
   }
 
   if (deployConfig?.helmRepoDeployConfig) {

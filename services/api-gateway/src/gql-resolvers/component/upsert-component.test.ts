@@ -317,6 +317,25 @@ test("parseDeployConfigInput should return a deploy config for a helm repo deplo
   `);
 });
 
+test("parseDeployConfigInput should return a deploy config for a helm chart deployment", () => {
+  const spec = parseDeployConfigInput({
+    helmDeployConfig: {
+      noop: true,
+    },
+  });
+
+  expect(spec.toObject()).toMatchInlineSnapshot(`
+    {
+      "basic": undefined,
+      "helmChart": {},
+      "helmRepo": undefined,
+      "noop": undefined,
+      "terraformModuleConfig": undefined,
+      "timeout": undefined,
+    }
+  `);
+});
+
 test("parseDeployConfigInput should return a deploy config for a terraform deployment", () => {
   const spec = parseDeployConfigInput({
     terraformDeployConfig: {
