@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package k8s;
+
+option go_package = "waypoint-plugin-helm/internal/platforms";
+
+import "opaqueany/any.proto";
+
+message Deployment {
+  string id = 1;
+  string name = 2;
+  opaqueany.Any resource_state = 3;
+}
+
+message Release {
+  // service_name is the name of the service in Kubernetes
+  string service_name = 2;
+  string Url = 1;
+  opaqueany.Any resource_state = 3;
+}
+
+// Resource contains the internal resource states.
+message Resource {
+  message Autoscale {
+    // represents a horizontal pod autoscaler, if requested to be created
+    string name = 1;
+  }
+  message Deployment {
+    string name = 1;
+  }
+  message Service {
+    string name = 1;
+  }
+  message Ingress {
+    string name = 1;
+  }
+}
+
+// This represents the state of the TaskLaunch implementation.
+message TaskInfo {
+  string id = 1;
+}
