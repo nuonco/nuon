@@ -58,6 +58,18 @@ func TestNew(t *testing.T) {
 				assert.Equal(t, credentials, ecr.Credentials)
 			},
 		},
+		"happy path use default": {
+			optFns: func() []Option {
+				return []Option{
+					WithUseDefault(true),
+					WithCredentials(credentials),
+				}
+			},
+			assertFn: func(t *testing.T, ecr *ecrAuthorizer) {
+				assert.Equal(t, credentials, ecr.Credentials)
+				assert.True(t, ecr.UseDefault)
+			},
+		},
 		"invalid image": {
 			optFns: func() []Option {
 				return []Option{
@@ -68,13 +80,13 @@ func TestNew(t *testing.T) {
 			},
 			errExpected: fmt.Errorf("invalid ecr image url"),
 		},
-		"missing registry id": {
+		"not use default or image": {
 			optFns: func() []Option {
 				return []Option{
 					WithCredentials(credentials),
 				}
 			},
-			errExpected: fmt.Errorf("ecrAuthorizer.RegistryID"),
+			errExpected: fmt.Errorf("RegistryID"),
 		},
 	}
 

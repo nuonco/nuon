@@ -19,5 +19,6 @@ func (b *Builder) build(ctx context.Context,
 	src *component.Source,
 	log hclog.Logger) (*ociv1.BuildOutput, error) {
 	ui.Output("executing noop build...")
+
 	return &ociv1.BuildOutput{}, nil
 }
