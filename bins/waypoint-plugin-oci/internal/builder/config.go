@@ -8,7 +8,7 @@ import (
 
 // Implement Configurable
 func (b *Builder) Config() (interface{}, error) {
-	return &b.config, nil
+	return &b.cfg, nil
 }
 
 // Implement ConfigurableNotify

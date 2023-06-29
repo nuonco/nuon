@@ -46,7 +46,7 @@ From there, it uses https://github.com/hashicorp/go-argmapper to dynamically cal
 
 Waypoint allows you to use protos between plugins. A good example of this is using the `docker.Image` proto that is the response of the `docker` build plugin as an input elsewhere.
 
-The waypoint maps these plugins under the hood is using actual proto reflection. It doesn't just match the fields for equality, it actually needs to be able to ensure they are the same type.
+The way waypoint maps these plugins under the hood is using actual proto reflection. It doesn't just match the fields for equality, it actually needs to be able to ensure they are the same type.
 
 ## Entrypoint is unneeded for us
 
