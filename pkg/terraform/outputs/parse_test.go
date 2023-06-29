@@ -29,6 +29,7 @@ func TestParseJSONL(t *testing.T) {
 				{Path: []string{"hostname"}, Type: "string", String: "example.com"},
 				{Path: []string{"tls"}, Type: "boolean", Bool: true},
 				{Path: []string{"CACHE_SIZE"}, Type: "number", Float64: 1024},
+				{Path: []string{"nada"}, Type: "null"},
 			},
 		},
 		"JSON with array": {
@@ -38,6 +39,8 @@ func TestParseJSONL(t *testing.T) {
 				{Path: []string{"sample_array_mixed", "[0]"}, Type: "boolean", Bool: true},
 				{Path: []string{"sample_array_mixed", "[1]"}, Type: "number", Float64: 42.42},
 				{Path: []string{"sample_array_mixed", "[2]"}, Type: "string", String: "cheese"},
+				{Path: []string{"sample_array_mixed", "[3]"}, Type: "null"},
+				{Path: []string{"sample_array_mixed", "[4]"}, Type: "boolean", Bool: false},
 			},
 		},
 		"JSON with object": {
@@ -72,19 +75,15 @@ func TestParseJSONL(t *testing.T) {
 				{Path: []string{"server", "tls"}, Type: "boolean", Bool: true},
 			},
 		},
+		"invalid JSONL": {
+			jsonl:    []byte("this is not json\nnor is this"),
+			expected: []Output{},
+		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			actual, err := ParseJSONL(test.jsonl)
-			assert.NoError(t, err)
+			actual := ParseJSONL(test.jsonl)
 			assert.EqualValues(t, test.expected, actual)
 		})
 	}
-}
-
-func TestParseInvalidJSON(t *testing.T) {
-	// gjson ignores invalid lines
-	outputs, err := ParseJSONL([]byte("this is not json\nnor is this"))
-	assert.NoError(t, err)
-	assert.Len(t, outputs, 0)
 }
