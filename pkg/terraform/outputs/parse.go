@@ -104,9 +104,11 @@ func sortKeys(input map[string]gjson.Result) []string {
 }
 
 // This is the primary recursive parsing function
-func parseValue(path []string, gValue gjson.Result) ([]Output, error) {
+func parseValue(path []string, gValue gjson.Result) []Output {
 	outputs := []Output{}
 	switch getValueType(gValue) {
+	case valueTypeNull:
+		fallthrough
 	case valueTypeBoolean:
 		fallthrough
 	case valueTypeNumber:
@@ -123,10 +125,7 @@ func parseValue(path []string, gValue gjson.Result) ([]Output, error) {
 		gMap := gValue.Map()
 		for _, key := range sortKeys(gMap) {
 			// This recursive call achieves the nesting and flattening
-			nestedOutputs, err := parseValue(append(path, key), gMap[key])
-			if err != nil {
-				return nil, fmt.Errorf("parse error at path: %+v, key %s: %w", path, key, err)
-			}
+			nestedOutputs := parseValue(append(path, key), gMap[key])
 			outputs = append(outputs, nestedOutputs...)
 		}
 	case valueTypeArray:
@@ -134,15 +133,11 @@ func parseValue(path []string, gValue gjson.Result) ([]Output, error) {
 		for index, nestedValue := range gValue.Array() {
 			position := fmt.Sprintf("[%d]", index)
 			// This recursive call achieves the nesting and flattening
-			nestedOutputs, err := parseValue(append(path, position), nestedValue)
-			if err != nil {
-				return nil, fmt.Errorf("parse error at path: %+v, key %s: %w", path, position, err)
-			}
+			nestedOutputs := parseValue(append(path, position), nestedValue)
 			outputs = append(outputs, nestedOutputs...)
 		}
-
 	}
-	return outputs, nil
+	return outputs
 }
 
 // ParseJSONL parses terraform output [jsonl](https://jsonlines.org/) format
@@ -150,37 +145,23 @@ func parseValue(path []string, gValue gjson.Result) ([]Output, error) {
 // and represents a tree of terraform output values
 // as a flat slice of Output structs with slice path keys
 // denoting the location in the tree structure.
-func ParseJSONL(jsonl []byte) ([]Output, error) {
+func ParseJSONL(jsonl []byte) []Output {
 	outputs := []Output{}
-	oops := []error{}
 	gjson.ForEachLine(string(jsonl), func(line gjson.Result) bool {
 		// filter to find just the outputs and extract just the metadata wrapper object
 		wrapperMaps := gjson.GetMany(line.String(), `..#(type="outputs").outputs`)
-		for outputNumber, wrapperMap := range wrapperMaps {
-			// outputNumber is not necessarily line number in the .jsonl file
-			// because we skip past irrelevant values such as UI messages.
-			// Parsing error messages are not really going to be able to pinpoint
-			// errors for you, but we'll at least try to help.
-
+		for _, wrapperMap := range wrapperMaps {
 			// wrapperMap is the outer map of key name to object metadata
 			// all terraform outputs are named so everything gets represented
 			// in this top level object with the output name as the key
 			// and value is an object of metadata about the value plus the actual value
 			for _, key := range sortKeys(wrapperMap.Map()) {
 				valueObj := wrapperMap.Map()[key]
-				lineOutputs, err := parseValue([]string{key}, valueObj.Get("value"))
-				if err != nil {
-					oops = append(oops, fmt.Errorf("parsing error at output %d: %w", outputNumber, err))
-					return false
-				}
+				lineOutputs := parseValue([]string{key}, valueObj.Get("value"))
 				outputs = append(outputs, lineOutputs...)
 			}
 		}
 		return true
 	})
-	if len(oops) > 0 {
-		// TODO build compound error
-		return outputs, oops[0]
-	}
-	return outputs, nil
+	return outputs
 }
