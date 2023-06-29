@@ -1,0 +1,19 @@
+{
+  "outputs": {
+    "server": {
+      "sensitive": false,
+      "type": [
+        "object",
+        {
+          "barkey": "boolean",
+          "fookey": "string"
+        }
+      ],
+      "value": {
+        "barkey": true,
+        "fookey": "FOOVALUE"
+      }
+    }
+  },
+  "type": "outputs"
+}
