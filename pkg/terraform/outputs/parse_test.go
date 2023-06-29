@@ -24,7 +24,7 @@ func TestParseJSONL(t *testing.T) {
 		"JSONL with flat scalar outputs": {
 			jsonl: load("testdata/outputs_flat.jsonl"),
 			expected: []Output{
-				{Path: []string{"apiKey1"}, Type: "string", String: "aaa"},
+				{Path: []string{"apiKey1"}, Type: "string", String: "aaa", Sensitive: true},
 				{Path: []string{"apiKey2"}, Type: "string", String: "bbb"},
 				{Path: []string{"hostname"}, Type: "string", String: "example.com"},
 				{Path: []string{"tls"}, Type: "boolean", Bool: true},
@@ -54,7 +54,7 @@ func TestParseJSONL(t *testing.T) {
 		"JSON with nested array": {
 			jsonl: load("testdata/outputs_nested_array.json"),
 			expected: []Output{
-				{Path: []string{"sample_nested_array"}, Type: "array"},
+				{Path: []string{"sample_nested_array"}, Type: "array", Sensitive: true},
 				{Path: []string{"sample_nested_array", "[0]"}, Type: "boolean", Bool: true},
 				{Path: []string{"sample_nested_array", "[1]"}, Type: "number", Float64: 42.42},
 				{Path: []string{"sample_nested_array", "[2]"}, Type: "array"},
