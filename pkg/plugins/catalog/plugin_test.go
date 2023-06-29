@@ -63,6 +63,49 @@ func TestToPluginType(t *testing.T) {
 	}
 }
 
+func TestPluginType_DevRepositoryName(t *testing.T) {
+	tests := map[string]struct {
+		typ      PluginType
+		expected string
+	}{
+		"default": {
+			typ:      PluginTypeDefault,
+			expected: "waypoint-odr",
+		},
+		"terraform": {
+			typ:      PluginTypeTerraform,
+			expected: "dev-waypoint-plugin-terraform",
+		},
+		"exp": {
+			typ:      PluginTypeExp,
+			expected: "dev-waypoint-plugin-exp",
+		},
+		"noop": {
+			typ:      PluginTypeNoop,
+			expected: "dev-waypoint-plugin-noop",
+		},
+		"oci": {
+			typ:      PluginTypeOci,
+			expected: "dev-waypoint-plugin-oci",
+		},
+		"oci-sync": {
+			typ:      PluginTypeOciSync,
+			expected: "dev-waypoint-plugin-oci-sync",
+		},
+		"helm": {
+			typ:      PluginTypeHelm,
+			expected: "dev-waypoint-plugin-helm",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			val := test.typ.DevRepositoryName()
+			assert.Equal(t, test.expected, val)
+		})
+	}
+}
+
 func TestPluginType_RepositoryName(t *testing.T) {
 	tests := map[string]struct {
 		typ      PluginType
