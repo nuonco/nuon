@@ -22,11 +22,34 @@ func (b *Builder) buildODR(
 	ctx context.Context,
 	ui terminal.UI,
 	src *component.Source,
-	log hclog.Logger,
+	sysLog hclog.Logger,
 	accessInfo *ociv1.AccessInfo,
 ) (*ociv1.BuildOutput, error) {
-	ui.Output("starting odr build")
-	ui.Output("got access info credentials: %v", accessInfo)
+	// create a logger with the output of the ui
+	stdout, _, err := ui.OutputWriters()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output writers: %w", err)
+	}
+
+	log := hclog.New(&hclog.LoggerOptions{
+		Name:   "waypoint-plugin-oci",
+		Output: stdout,
+	})
+
+	log.Info("starting odr build for chart", "path", src.Path)
+	b.chartDir = src.Path
+
+	packagePath, err := b.packageChart(log)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get source files: %w", err)
+	}
+	log.Info("successfully packaged chart", "path", packagePath)
+
+	log.Info("pushing chart", "repo", accessInfo.Image)
+	if err := b.pushChart(log, packagePath, accessInfo); err != nil {
+		return nil, fmt.Errorf("unable to push chart: %w", err)
+	}
+	log.Info("successfully pushed chart", "path", packagePath)
 
 	return &ociv1.BuildOutput{}, nil
 }
