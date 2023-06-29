@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
@@ -47,13 +48,14 @@ func (r *Registry) getAccessInfo(ctx context.Context, client ecrauthorization.Cl
 		return nil, fmt.Errorf("unable to get authorization: %w", err)
 	}
 
+	serverAddr := strings.TrimPrefix(authorization.ServerAddress, "https://")
 	return &ociv1.AccessInfo{
 		Image: r.config.Repository,
 		Tag:   r.config.Tag,
 		Auth: &ociv1.Auth{
 			Username:      authorization.Username,
 			Password:      authorization.RegistryToken,
-			ServerAddress: authorization.ServerAddress,
+			ServerAddress: serverAddr,
 		},
 	}, nil
 }
