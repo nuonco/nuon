@@ -17,10 +17,6 @@ func (c *catalog) GetAll(ctx context.Context, typ PluginType) ([]*Plugin, error)
 		return nil, fmt.Errorf("unable to get ecrpublic client: %w", err)
 	}
 
-	if c.DevOverride {
-		typ = PluginTypeDev
-	}
-
 	plugins, err := c.getAll(ctx, client, typ)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get latest: %w", err)
@@ -32,8 +28,13 @@ func (c *catalog) GetAll(ctx context.Context, typ PluginType) ([]*Plugin, error)
 func (c *catalog) getAll(ctx context.Context, client ecrpublicClient, typ PluginType) ([]*Plugin, error) {
 	images := make([]ecrpublic_types.ImageTagDetail, 0)
 
+	repoName := typ.RepositoryName()
+	if c.DevOverride {
+		repoName = typ.DevRepositoryName()
+	}
+
 	input := &ecrpublic.DescribeImageTagsInput{
-		RepositoryName: generics.ToPtr(typ.RepositoryName()),
+		RepositoryName: generics.ToPtr(repoName),
 	}
 	for {
 		resp, err := client.DescribeImageTags(ctx, input)

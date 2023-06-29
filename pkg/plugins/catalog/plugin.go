@@ -81,6 +81,14 @@ func (p PluginType) RepositoryName() string {
 	return ""
 }
 
+func (p PluginType) DevRepositoryName() string {
+	if p == PluginTypeDefault {
+		return p.RepositoryName()
+	}
+
+	return "dev-" + p.RepositoryName()
+}
+
 // Plugin is used to return the information needed to use a plugin for an ODR
 type Plugin struct {
 	ImageURL       string    `validate:"required"`
