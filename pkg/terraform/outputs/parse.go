@@ -22,6 +22,9 @@ type Output struct {
 	// "null", "boolean", "number", "string", "array", "object"
 	Type string
 
+	// Whether this value is security/privacy sensitive
+	Sensitive bool
+
 	// For this type of dynamically typed data in golang,
 	// there's naming conventions we could attempt to follow
 	// from either gjson or go standard library reflect package perhaps.
@@ -158,6 +161,9 @@ func ParseJSONL(jsonl []byte) []Output {
 			for _, key := range sortKeys(wrapperMap.Map()) {
 				valueObj := wrapperMap.Map()[key]
 				lineOutputs := parseValue([]string{key}, valueObj.Get("value"))
+				if valueObj.Get("sensitive").Bool() {
+					lineOutputs[0].Sensitive = true
+				}
 				outputs = append(outputs, lineOutputs...)
 			}
 		}
