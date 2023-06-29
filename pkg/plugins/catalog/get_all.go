@@ -53,11 +53,16 @@ func (c *catalog) getAll(ctx context.Context, client ecrpublicClient, typ Plugin
 	})
 
 	plugins := make([]*Plugin, len(images))
+
+	imgURL := typ.ImageURL()
+	if c.DevOverride {
+		imgURL = typ.DevImageURL()
+	}
 	for idx, img := range images {
 		plugins[idx] = &Plugin{
 			Tag:            *img.ImageTag,
-			ImageURL:       typ.ImageURL(),
-			RepositoryName: typ.RepositoryName(),
+			ImageURL:       imgURL,
+			RepositoryName: repoName,
 			CreatedAt:      *img.CreatedAt,
 		}
 	}
