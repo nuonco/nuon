@@ -8,13 +8,17 @@
         [
           "boolean",
           "number",
-          "string"
+          "string",
+          "string",
+          "boolean"
         ]
       ],
       "value": [
         true,
         42.42,
-        "cheese"
+        "cheese",
+        null,
+        false
       ]
     }
   }
