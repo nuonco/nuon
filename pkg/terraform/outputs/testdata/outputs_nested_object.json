@@ -1,0 +1,42 @@
+{
+  "outputs": {
+    "server": {
+      "sensitive": false,
+      "type": [
+        "object",
+        {
+          "bind": "string",
+          "tls": "boolean",
+          "allow_hosts": [
+            "tuple",
+            [
+              "string",
+              "string"
+            ]
+          ]
+        }
+      ],
+      "value": {
+        "bind": "127.0.0.1",
+        "tls": true,
+        "allow_hosts": [
+          "example.com",
+          "example.org"
+        ]
+      }
+    },
+    "client": {
+      "sensitive": false,
+      "type": [
+        "object",
+        {
+          "theme": "string"
+        }
+      ],
+      "value": {
+        "theme": "dark"
+      }
+    }
+  },
+  "type": "outputs"
+}

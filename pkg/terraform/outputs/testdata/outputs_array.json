@@ -1,0 +1,21 @@
+{
+  "type": "outputs",
+  "outputs": {
+    "sample_array_mixed": {
+      "sensitive": false,
+      "type": [
+        "tuple",
+        [
+          "boolean",
+          "number",
+          "string"
+        ]
+      ],
+      "value": [
+        true,
+        42.42,
+        "cheese"
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "type": "outputs",
+  "outputs": {
+    "sample_nested_array": {
+      "sensitive": false,
+      "type": [
+        "tuple",
+        [
+          "boolean",
+          "number",
+          ["tuple", ["string", "number"]]
+        ]
+      ],
+      "value": [
+        true,
+        42.42,
+        ["nested", 17],
+      ]
+    }
+  }
+}
