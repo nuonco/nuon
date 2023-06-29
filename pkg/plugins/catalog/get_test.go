@@ -15,6 +15,7 @@ import (
 
 func Test_catalog_getLatest(t *testing.T) {
 	cat := generics.GetFakeObj[*catalog]()
+	cat.DevOverride = false
 	pluginTyp := PluginTypeTerraform
 	imageTag := generics.GetFakeObj[ecrpublic_types.ImageTagDetail]()
 	errGetLatest := fmt.Errorf("error getting latest")
