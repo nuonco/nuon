@@ -51,6 +51,11 @@ func (p PluginType) ImageURL() string {
 	return fmt.Sprintf(imageURLTemplate, p.RepositoryName())
 }
 
+// DevImageURL returns the image url to access this using our default, public ecr repo
+func (p PluginType) DevImageURL() string {
+	return fmt.Sprintf(imageURLTemplate, p.DevRepositoryName())
+}
+
 func (p PluginType) String() string {
 	return pluginTypeNames[p]
 }
@@ -63,9 +68,6 @@ func (p PluginType) RepositoryName() string {
 		return "waypoint-odr"
 	case PluginTypeTerraform:
 		return "waypoint-plugin-terraform"
-	case PluginTypeDev:
-		// TODO(jm): rename this
-		return "dev-public"
 	case PluginTypeExp:
 		return "waypoint-plugin-exp"
 	case PluginTypeNoop:
