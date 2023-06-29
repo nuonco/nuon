@@ -39,18 +39,32 @@ func (b *Builder) buildODR(
 	log.Info("starting odr build for chart", "path", src.Path)
 	b.chartDir = src.Path
 
+	log.Info("packaging chart")
 	packagePath, err := b.packageChart(log)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get source files: %w", err)
 	}
 	log.Info("successfully packaged chart", "path", packagePath)
 
-	log.Info("pushing chart", "repo", accessInfo.Image)
-	if err := b.pushChart(log, packagePath, accessInfo); err != nil {
-		return nil, fmt.Errorf("unable to push chart: %w", err)
+	log.Info("creating archive with packaged chart")
+	if err := b.packArchive(ctx, log, []fileRef{
+		{
+			absPath: packagePath,
+			relPath: "chart.tgz",
+		},
+	}); err != nil {
+		return nil, fmt.Errorf("unable to pack archive with helm archive: %w", err)
 	}
-	log.Info("successfully pushed chart", "path", packagePath)
+	log.Info("successfully packed archive", "repo", accessInfo.Image)
 
+	log.Info("pushing archive with packaged chart")
+	if err := b.pushArchive(ctx, accessInfo); err != nil {
+		return nil, fmt.Errorf("unable to pack archive with helm archive: %w", err)
+	}
+	log.Info("successfully packed archive", "repo", accessInfo.Image)
+
+	log.Info("pushing archive", "repo", accessInfo.Image)
+	log.Info("successfully pushed chart", "path", packagePath)
 	return &ociv1.BuildOutput{}, nil
 }
 
