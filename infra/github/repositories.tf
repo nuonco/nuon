@@ -12,6 +12,16 @@ module "dot_github" {
   description = "shared issues / github config"
 }
 
+module "company" {
+  source = "./modules/repository"
+
+  name            = "company"
+  enable_ecr      = false
+  description     = "All things Nuon 🚀"
+  required_checks = []
+
+}
+
 module "demo" {
   source = "./modules/repository"
 
