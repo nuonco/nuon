@@ -30,7 +30,7 @@ module "security_group_rds" {
 
 module "subnet_group" {
   source  = "terraform-aws-modules/rds/aws//modules/db_subnet_group"
-  version = "~> 5.0"
+  version = "~> 6.0"
 
   name        = local.name
   description = "Subnet group for ${local.name}"
@@ -42,7 +42,7 @@ module "subnet_group" {
 ################################################################################
 module "primary" {
   source  = "terraform-aws-modules/rds/aws"
-  version = "~> 5.0"
+  version = "~> 6.0"
 
   identifier = "primary-${local.name}"
 
@@ -95,7 +95,7 @@ resource "aws_route53_record" "primary" {
 module "replica" {
   count   = local.vars.rds.enable_replica ? 1 : 0
   source  = "terraform-aws-modules/rds/aws"
-  version = "~> 5.0"
+  version = "~> 6.0"
 
   identifier = "replica-${local.name}"
 
