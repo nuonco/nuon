@@ -3,8 +3,58 @@ package domains
 import (
 	"testing"
 
+	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 )
+
+type testFakeObj struct {
+	AppID         string `faker:"appID"`
+	ArtifactID    string `faker:"artifactID"`
+	AWSSettingsID string `faker:"awsSettingsID"`
+	BuildID       string `faker:"buildID"`
+	CanaryID      string `faker:"canaryID"`
+	ComponentID   string `faker:"componentID"`
+	DeployID      string `faker:"deployID"`
+	DeploymentID  string `faker:"deploymentID"`
+	InstallID     string `faker:"installID"`
+	InstanceID    string `faker:"instanceID"`
+	OrgID         string `faker:"orgID"`
+	SandboxID     string `faker:"sandboxID"`
+	SecretID      string `faker:"secretID"`
+	UserID        string `faker:"userID"`
+}
+
+func TestFakerStructTags(t *testing.T) {
+	var obj testFakeObj
+	err := faker.FakeData(&obj)
+	assert.NoError(t, err)
+	assert.Len(t, obj.AppID, 26)
+	assert.Equal(t, "app", obj.AppID[:3])
+	assert.Len(t, obj.ArtifactID, 26)
+	assert.Equal(t, "art", obj.ArtifactID[:3])
+	assert.Len(t, obj.AWSSettingsID, 26)
+	assert.Equal(t, "aws", obj.AWSSettingsID[:3])
+	assert.Len(t, obj.BuildID, 26)
+	assert.Equal(t, "bld", obj.BuildID[:3])
+	assert.Len(t, obj.CanaryID, 26)
+	assert.Equal(t, "can", obj.CanaryID[:3])
+	assert.Len(t, obj.ComponentID, 26)
+	assert.Equal(t, "cmp", obj.ComponentID[:3])
+	assert.Len(t, obj.DeploymentID, 26)
+	assert.Equal(t, "dpl", obj.DeploymentID[:3])
+	assert.Len(t, obj.InstallID, 26)
+	assert.Equal(t, "inl", obj.InstallID[:3])
+	assert.Len(t, obj.InstanceID, 26)
+	assert.Equal(t, "ins", obj.InstanceID[:3])
+	assert.Len(t, obj.OrgID, 26)
+	assert.Equal(t, "org", obj.OrgID[:3])
+	assert.Len(t, obj.SandboxID, 26)
+	assert.Equal(t, "snb", obj.SandboxID[:3])
+	assert.Len(t, obj.SecretID, 26)
+	assert.Equal(t, "sec", obj.SecretID[:3])
+	assert.Len(t, obj.UserID, 26)
+	assert.Equal(t, "usr", obj.UserID[:3])
+}
 
 func TestNewAppID(t *testing.T) {
 	t.Run("get valid ID for App", func(t *testing.T) {
