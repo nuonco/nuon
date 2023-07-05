@@ -28,7 +28,7 @@ func (r *Registry) AccessInfo(ctx context.Context,
 ) (*ociv1.AccessInfo, error) {
 	authProvider, err := ecrauthorization.New(r.v,
 		ecrauthorization.WithCredentials(&r.config.Auth),
-		ecrauthorization.WithRepository(r.config.Repository),
+		ecrauthorization.WithUseDefault(true),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get auth provider: %w", err)
