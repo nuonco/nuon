@@ -10,6 +10,10 @@ import (
 	ociv1 "github.com/powertoolsdev/mono/pkg/types/plugins/oci/v1"
 )
 
+const (
+	defaultChartPackageFilename string = "chart.tgz"
+)
+
 func (b *Builder) BuildFunc() interface{} {
 	return b.build
 }
@@ -50,7 +54,7 @@ func (b *Builder) buildODR(
 	if err := b.packArchive(ctx, log, []fileRef{
 		{
 			absPath: packagePath,
-			relPath: "chart.tgz",
+			relPath: defaultChartPackageFilename,
 		},
 	}); err != nil {
 		return nil, fmt.Errorf("unable to pack archive with helm archive: %w", err)
