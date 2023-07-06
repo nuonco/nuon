@@ -51,4 +51,8 @@ oci-artifacts:
     ENV XDG_CONFIG_HOME=/home/waypoint/.config
     COPY +artifacts/out/$BIN /home/waypoint/.config/waypoint/plugins/$BIN
 
+    # NOTE: we need both the OCI and NOOP plugins, as they are used in the same context as helm.
+    COPY ../waypoint-plugin-oci+artifacts/out/waypoint-plugin-oci /home/waypoint/.config/waypoint/plugins/
+    COPY ../waypoint-plugin-noop+artifacts/out/waypoint-plugin-noop /home/waypoint/.config/waypoint/plugins/
+
     SAVE IMAGE --push $repo:$image_tag
