@@ -13,7 +13,11 @@ import { InstallsServiceClient as InstallsStatusServiceClient } from "@buf/nuon_
 import { InstancesServiceClient as InstancesStatusServiceClient } from "@buf/nuon_orgs-api.grpc_node/instances/v1/service_grpc_pb";
 import { OrgsServiceClient as OrgsStatusServiceClient } from "@buf/nuon_orgs-api.grpc_node/orgs/v1/service_grpc_pb";
 import { StatusServiceClient } from "@buf/nuon_shared.grpc_node/status/v1/service_grpc_pb";
-import { credentials } from "@grpc/grpc-js";
+import {
+  status as ESTATUS,
+  InterceptingCall,
+  credentials,
+} from "@grpc/grpc-js";
 import { env, logger } from "./utils";
 
 // TODO(nnnnat): needs correct grpc clients typing
@@ -47,7 +51,49 @@ export function initServiceClients(
   return services.reduce((acc, { name, url }) => {
     const client = clients[name];
     if (client) {
-      acc[name] = new client(url, credentials.createInsecure());
+      acc[name] = new client(url, credentials.createInsecure(), {
+        interceptors: [
+          (options, nextCall) =>
+            new InterceptingCall(nextCall(options), {
+              cancel(next) {
+                next();
+              },
+              halfClose(next) {
+                next();
+              },
+              sendMessage(message, next) {
+                logger.debug(`${name} client sent message: ${message}`);
+                next(message);
+              },
+              start(meta, listener, next) {
+                next(meta, {
+                  onReceiveMessage(message, next) {
+                    logger.debug(`${name} client received message: ${message}`);
+                    next(message);
+                  },
+                  onReceiveMetadata(metadata, next) {
+                    logger.debug(
+                      `${name} client received metadata: ${JSON.stringify(
+                        metadata?.toJSON()
+                      )}`
+                    );
+                    next(metadata);
+                  },
+                  onReceiveStatus(status, next) {
+                    if (status?.code !== ESTATUS.OK) {
+                      logger.error(`${name} client: ${status.details}`);
+                    } else {
+                      logger.debug(
+                        `${name} client received status: ${status.code}`
+                      );
+                    }
+                    next(status);
+                  },
+                });
+              },
+            }),
+        ],
+      });
     }
 
     return acc;
