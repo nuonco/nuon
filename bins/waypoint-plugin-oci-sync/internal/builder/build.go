@@ -2,6 +2,7 @@ package builder
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
@@ -18,7 +19,6 @@ func (b *Builder) build(ctx context.Context,
 	ui terminal.UI,
 	src *component.Source,
 	log hclog.Logger) (*ociv1.BuildOutput, error) {
-	ui.Output("executing noop build...")
-
-	return &ociv1.BuildOutput{}, nil
+	// NOTE: we only use an ODR build because we need the `accessInfo` to be injected
+	return nil, fmt.Errorf("only ODR builds supported by this plugin")
 }
