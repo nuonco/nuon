@@ -10,7 +10,7 @@ var _ component.Builder = (*Builder)(nil)
 
 type Builder struct {
 	v      *validator.Validate
-	config configs.OCIArchiveBuild
+	config configs.OCISyncBuild
 }
 
 func New(v *validator.Validate) (*Builder, error) {

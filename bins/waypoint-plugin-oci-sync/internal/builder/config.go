@@ -13,9 +13,9 @@ func (b *Builder) Config() (interface{}, error) {
 
 // Implement ConfigurableNotify
 func (b *Builder) ConfigSet(config interface{}) error {
-	_, ok := config.(*configs.NoopBuild)
+	_, ok := config.(*configs.OCISyncBuild)
 	if !ok {
-		return fmt.Errorf("expected type NoopBuild")
+		return fmt.Errorf("expected type BuildConfig")
 	}
 
 	return nil
