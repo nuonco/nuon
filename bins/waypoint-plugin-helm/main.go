@@ -5,16 +5,16 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	sdk "github.com/hashicorp/waypoint-plugin-sdk"
-	"github.com/powertoolsdev/mono/bins/waypoint-plugin-helm/internal/builder"
+	"github.com/powertoolsdev/mono/bins/waypoint-plugin-helm/internal/platform/helm"
 	"github.com/powertoolsdev/mono/bins/waypoint-plugin-helm/internal/registry"
 )
 
 func main() {
 	v := validator.New()
 
-	buildPlugin, err := builder.New(v)
+	helmPlugin, err := helm.New(v)
 	if err != nil {
-		log.Fatalf("unable to initialize build plugin: %s", err)
+		log.Fatalf("unable to create helm plugin: %s", err)
 	}
 
 	registryPlugin, err := registry.New(v)
@@ -23,11 +23,8 @@ func main() {
 	}
 
 	sdk.Main(sdk.WithComponents(
-		buildPlugin,
+		helmPlugin,
 		registryPlugin,
 	),
-	// NOTE(jm): eventually, we are going to move the oci plugin stuff into it's own, and expose an OCI artifact
-	// properly.
-	//sdk.WithMappers(registry.ImageMapper),
 	)
 }
