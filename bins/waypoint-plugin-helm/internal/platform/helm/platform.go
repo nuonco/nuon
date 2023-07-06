@@ -2,19 +2,29 @@ package helm
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/docs"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	ecrauthorization "github.com/powertoolsdev/mono/pkg/aws/ecr-authorization"
 	"helm.sh/helm/v3/pkg/action"
+	"oras.land/oras-go/v2/content/file"
 )
 
 // Platform is the Platform implementation
 type Platform struct {
 	config Config
+
+	// created on initialization of the plugin struct
+	v      *validator.Validate
+	tmpDir string
+	store  *file.Store
+	auth   *ecrauthorization.Authorization
 }
 
 // Config implements Configurable
@@ -44,10 +54,28 @@ func (p *Platform) Deploy(
 	deployConfig *component.DeploymentConfig,
 	ui terminal.UI,
 ) (*Deployment, error) {
+	stdout, _, err := ui.OutputWriters()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get output writers")
+	}
+	deployLog := hclog.New(&hclog.LoggerOptions{
+		Name:   "helm",
+		Output: stdout,
+	})
+
 	sg := ui.StepGroup()
 	defer sg.Wait()
 	s := sg.Add("")
 	defer func() { s.Abort() }()
+
+	s.Update("unpacking archive...")
+	archivePath, err := p.unpackArchive(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unpack archive: %w", err)
+	}
+	s.Done()
+	deployLog.Info(fmt.Sprintf("using archive at %s", archivePath))
+	p.config.Repository = archivePath
 
 	s.Update("Initializing Helm...")
 	settings, err := p.settingsInit()
@@ -217,6 +245,13 @@ func (p *Platform) Generation(
 //
 // For docs on the fields, please see the Documentation function.
 type Config struct {
+	// TODO(jm): this should be a proper type
+	Archive struct {
+		Repo     string `hcl:"string"`
+		Tag      string `hcl:"string"`
+		Filename string `hcl:"string"`
+	} `hcl:"archive"`
+
 	Name       string   `hcl:"name,attr"`
 	Repository string   `hcl:"repository,optional"`
 	Chart      string   `hcl:"chart,attr"`
