@@ -56,13 +56,7 @@ type awsECRClient interface {
 
 // getAuthorizationData: returns authentication data for connecting to an ECR repo
 func (e *ecrAuthorizer) getAuthorizationData(ctx context.Context, client awsECRClient) (*ecr_types.AuthorizationData, error) {
-	registryIDs := make([]string, 0)
-	if e.RegistryID != "" {
-		registryIDs = append(registryIDs, e.RegistryID)
-	}
-	params := &ecr.GetAuthorizationTokenInput{
-		RegistryIds: registryIDs,
-	}
+	params := &ecr.GetAuthorizationTokenInput{}
 
 	resp, err := client.GetAuthorizationToken(ctx, params)
 	if err != nil {

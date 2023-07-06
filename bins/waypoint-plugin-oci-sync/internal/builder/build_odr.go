@@ -20,43 +20,43 @@ func (b *Builder) buildODR(
 	ctx context.Context,
 	ui terminal.UI,
 	src *component.Source,
-	log hclog.Logger,
-	customerAccessInfo *ociv1.AccessInfo,
+	_ hclog.Logger,
+	accessInfo *ociv1.AccessInfo,
 ) (*ociv1.BuildOutput, error) {
-	// set up
-	sg := ui.StepGroup()
-	defer sg.Wait()
-	step := sg.Add("Setting up to sync OCI arifact from vendor repo to customer repo")
-	defer func() {
-		if step != nil {
-			step.Abort()
-		}
-	}()
-	step.Done()
-
-	step = sg.Add("Getting vendor repo")
-	vendorRepo, err := getRepo(b.config.Auth.RegistryURL, b.config.Auth.Username, b.config.Auth.AuthToken)
+	// create a logger with the output of the ui
+	stdout, _, err := ui.OutputWriters()
 	if err != nil {
-		step.Update(terminal.StatusError, "unable to get vendor repo")
+		return nil, fmt.Errorf("unable to get output writers: %w", err)
+	}
+
+	log := hclog.New(&hclog.LoggerOptions{
+		Name:   "waypoint-plugin-oci-sync",
+		Output: stdout,
+	})
+
+	log.Info("Setting up to sync OCI arifact from vendor repo to customer repo")
+	log.Info("received access info", "accessInfo", accessInfo)
+
+	log.Info("Getting vendor repo")
+	vendorRepo, err := b.getSrcRepo()
+	if err != nil {
+		log.Info("unable to get vendor repo")
 		return nil, fmt.Errorf("unable to get vendor repo: %w", err)
 	}
-	step.Done()
 
-	step = sg.Add("Getting customer repo")
-	customerRepo, err := getRepo(customerAccessInfo.Image, customerAccessInfo.Auth.Username, customerAccessInfo.Auth.Password)
+	log.Info("Getting customer repo")
+	customerRepo, err := b.getDstRepo(accessInfo)
 	if err != nil {
-		step.Update(terminal.StatusError, "unable to get customer repo")
+		log.Info("unable to get customer repo")
 		return nil, fmt.Errorf("unable to get customer repo: %w", err)
 	}
-	step.Done()
 
-	step = sg.Add("Copying OCI artifact from vendor repo to customer repo")
+	log.Info("Copying OCI artifact from vendor repo to customer repo")
 	err = b.copy(ctx, vendorRepo, customerRepo)
 	if err != nil {
-		step.Update(terminal.StatusError, "unable to copy oci artifact from vendor repo to customer repo")
+		log.Info("unable to copy oci artifact from vendor repo to customer repo")
 		return nil, fmt.Errorf("unable to copy oci artifact from vendor repo to customer repo: %w", err)
 	}
-	step.Done()
 
 	return &ociv1.BuildOutput{}, nil
 }
