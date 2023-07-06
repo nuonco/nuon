@@ -12,19 +12,21 @@ import (
 	"github.com/hashicorp/waypoint-plugin-sdk/docs"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	ecrauthorization "github.com/powertoolsdev/mono/pkg/aws/ecr-authorization"
+	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	"helm.sh/helm/v3/pkg/action"
 	"oras.land/oras-go/v2/content/file"
 )
 
 // Platform is the Platform implementation
 type Platform struct {
-	config Config
+	config configs.HelmRepoDeploy
 
 	// created on initialization of the plugin struct
 	v      *validator.Validate
 	tmpDir string
 	store  *file.Store
 	auth   *ecrauthorization.Authorization
+	log    hclog.Logger
 }
 
 // Config implements Configurable
@@ -62,6 +64,7 @@ func (p *Platform) Deploy(
 		Name:   "helm",
 		Output: stdout,
 	})
+	p.log = deployLog
 
 	sg := ui.StepGroup()
 	defer sg.Wait()
@@ -71,11 +74,12 @@ func (p *Platform) Deploy(
 	s.Update("unpacking archive...")
 	archivePath, err := p.unpackArchive(ctx)
 	if err != nil {
+		deployLog.Info("unable to unpack archive", "error", err)
 		return nil, fmt.Errorf("unable to unpack archive: %w", err)
 	}
 	s.Done()
 	deployLog.Info(fmt.Sprintf("using archive at %s", archivePath))
-	p.config.Repository = archivePath
+	p.config.Chart = archivePath
 
 	s.Update("Initializing Helm...")
 	settings, err := p.settingsInit()
@@ -241,39 +245,8 @@ func (p *Platform) Generation(
 	return []byte(p.config.Name), nil
 }
 
-// Config is the configuration structure for the Platform.
-//
-// For docs on the fields, please see the Documentation function.
-type Config struct {
-	// TODO(jm): this should be a proper type
-	Archive struct {
-		Repo     string `hcl:"string"`
-		Tag      string `hcl:"string"`
-		Filename string `hcl:"string"`
-	} `hcl:"archive"`
-
-	Name       string   `hcl:"name,attr"`
-	Repository string   `hcl:"repository,optional"`
-	Chart      string   `hcl:"chart,attr"`
-	Version    string   `hcl:"version,optional"`
-	Devel      bool     `hcl:"devel,optional"`
-	Values     []string `hcl:"values,optional"`
-	Set        []*struct {
-		Name  string `hcl:"name,attr"`
-		Value string `hcl:"value,attr"`
-		Type  string `hcl:"type,optional"`
-	} `hcl:"set,block"`
-	Driver    string `hcl:"driver,optional"`
-	Namespace string `hcl:"namespace,optional"`
-
-	KubeconfigPath  string `hcl:"kubeconfig,optional"`
-	Context         string `hcl:"context,optional"`
-	CreateNamespace bool   `hcl:"create_namespace,optional"`
-	SkipCRDs        bool   `hcl:"skip_crds,optional"`
-}
-
 func (p *Platform) Documentation() (*docs.Documentation, error) {
-	doc, err := docs.New(docs.FromConfig(&Config{}), docs.FromFunc(p.DeployFunc()))
+	doc, err := docs.New(docs.FromConfig(&configs.HelmRepoDeploy{}), docs.FromFunc(p.DeployFunc()))
 	if err != nil {
 		return nil, err
 	}

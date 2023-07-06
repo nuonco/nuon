@@ -92,7 +92,7 @@ func (p *Platform) chartValues() (map[string]interface{}, error) {
 	}
 
 	// Next get all our set configs
-	for _, set := range p.config.Set {
+	for _, set := range p.config.HelmSet {
 		name := set.Name
 		value := set.Value
 		valueType := set.Type
