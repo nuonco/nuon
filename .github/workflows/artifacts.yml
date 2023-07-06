@@ -57,6 +57,8 @@ jobs:
               - bins/waypoint-plugin-noop/**
             bins/waypoint-plugin-oci:
               - bins/waypoint-plugin-oci/**
+            bins/waypoint-plugin-oci-sync:
+              - bins/waypoint-plugin-oci-sync/**
             bins/waypoint-plugin-terraform:
               - bins/waypoint-plugin-terraform/**
 
