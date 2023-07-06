@@ -9,8 +9,11 @@ import (
 var _ component.Builder = (*Builder)(nil)
 
 type Builder struct {
-	v      *validator.Validate
+	v *validator.Validate
+
 	config configs.OCISyncBuild
+
+	registryConfig configs.OCIRegistry
 }
 
 func New(v *validator.Validate) (*Builder, error) {

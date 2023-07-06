@@ -27,29 +27,7 @@ func Test_ecrAuthorizer_getAuthorizationData(t *testing.T) {
 			registryID: defaultRegistryID,
 			clientFn: func(mockCtl *gomock.Controller) awsECRClient {
 				mock := NewMockawsECRClient(mockCtl)
-				req := &ecr.GetAuthorizationTokenInput{
-					RegistryIds: []string{defaultRegistryID},
-				}
-				resp := &ecr.GetAuthorizationTokenOutput{
-					AuthorizationData: []ecr_types.AuthorizationData{
-						authData,
-					},
-				}
-				mock.EXPECT().GetAuthorizationToken(gomock.Any(), req, gomock.Any()).Return(resp, nil)
-				return mock
-			},
-			assertFn: func(t *testing.T, resp *ecr_types.AuthorizationData) {
-				assert.Equal(t, authData, *resp)
-			},
-			errExpected: nil,
-		},
-		"happy path - no registry id": {
-			registryID: "",
-			clientFn: func(mockCtl *gomock.Controller) awsECRClient {
-				mock := NewMockawsECRClient(mockCtl)
-				req := &ecr.GetAuthorizationTokenInput{
-					RegistryIds: []string{},
-				}
+				req := &ecr.GetAuthorizationTokenInput{}
 				resp := &ecr.GetAuthorizationTokenOutput{
 					AuthorizationData: []ecr_types.AuthorizationData{
 						authData,
@@ -67,9 +45,7 @@ func Test_ecrAuthorizer_getAuthorizationData(t *testing.T) {
 			registryID: defaultRegistryID,
 			clientFn: func(mockCtl *gomock.Controller) awsECRClient {
 				mock := NewMockawsECRClient(mockCtl)
-				req := &ecr.GetAuthorizationTokenInput{
-					RegistryIds: []string{defaultRegistryID},
-				}
+				req := &ecr.GetAuthorizationTokenInput{}
 				mock.EXPECT().GetAuthorizationToken(gomock.Any(), req, gomock.Any()).Return(nil, testErr)
 				return mock
 			},
@@ -79,9 +55,7 @@ func Test_ecrAuthorizer_getAuthorizationData(t *testing.T) {
 			registryID: defaultRegistryID,
 			clientFn: func(mockCtl *gomock.Controller) awsECRClient {
 				mock := NewMockawsECRClient(mockCtl)
-				req := &ecr.GetAuthorizationTokenInput{
-					RegistryIds: []string{defaultRegistryID},
-				}
+				req := &ecr.GetAuthorizationTokenInput{}
 				resp := &ecr.GetAuthorizationTokenOutput{
 					AuthorizationData: []ecr_types.AuthorizationData{},
 				}
