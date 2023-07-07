@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/tidwall/gjson"
 )
 
@@ -97,7 +98,7 @@ func scalarValueToOutput(gValue gjson.Result) Output {
 // assuming and relying on deterministc order
 // but our []Output slice is not a go library API
 // so we sort for reduction of global chaos
-func sortKeys(input map[string]gjson.Result) []string {
+func sortKeys[T gjson.Result | tfexec.OutputMeta](input map[string]T) []string {
 	keys := make([]string, 0, len(input))
 	for k := range input {
 		keys = append(keys, k)
@@ -126,7 +127,7 @@ func parseValue(path []string, gValue gjson.Result) []Output {
 	case valueTypeObject:
 		outputs = append(outputs, Output{Path: path, Type: "object"})
 		gMap := gValue.Map()
-		for _, key := range sortKeys(gMap) {
+		for _, key := range sortKeys[gjson.Result](gMap) {
 			// This recursive call achieves the nesting and flattening
 			nestedOutputs := parseValue(append(path, key), gMap[key])
 			outputs = append(outputs, nestedOutputs...)
@@ -169,5 +170,20 @@ func ParseJSONL(jsonl []byte) []Output {
 		}
 		return true
 	})
+	return outputs
+}
+
+// ParseTfOutputMeta parses terraform output format
+// and represents a tree of terraform output values
+// as a flat slice of Output structs with slice path keys
+// denoting the location in the tree structure.
+func ParseTfOutputMeta(tfom map[string]tfexec.OutputMeta) []Output {
+	outputs := []Output{}
+	for _, key := range sortKeys(tfom) {
+		valueObj := tfom[key]
+		lineOutputs := parseValue([]string{key}, gjson.ParseBytes(valueObj.Value))
+		lineOutputs[0].Sensitive = valueObj.Sensitive
+		outputs = append(outputs, lineOutputs...)
+	}
 	return outputs
 }
