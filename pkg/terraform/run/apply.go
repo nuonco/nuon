@@ -4,10 +4,36 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/terraform-exec/tfexec"
+	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/powertoolsdev/mono/pkg/pipeline"
 	callbackmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/callbacks"
 	execmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/exec"
+	tfo "github.com/powertoolsdev/mono/pkg/terraform/outputs"
+	compout "github.com/powertoolsdev/mono/pkg/types/plugins/component/v1"
+	"google.golang.org/protobuf/proto"
 )
+
+func terraformToNuon(tfOutput map[string]tfexec.OutputMeta) *compout.Outputs {
+	outputs := &compout.Outputs{}
+	for _, goOut := range tfo.ParseTfOutputMeta(tfOutput) {
+		pbOut := compout.Value{
+			Path:      goOut.Path,
+			Sensitive: goOut.Sensitive,
+		}
+		switch goOut.Type {
+		case "boolean":
+			pbOut.Scalar = &compout.Value_Bool{Bool: goOut.Bool}
+		case "number":
+			pbOut.Scalar = &compout.Value_Double{Double: goOut.Float64}
+		case "string":
+			pbOut.Scalar = &compout.Value_String_{String_: goOut.String}
+		}
+		outputs.Values = append(outputs.Values, &pbOut)
+	}
+	return outputs
+}
 
 func (r *run) Apply(ctx context.Context) error {
 	pipe, err := r.getApplyPipeline()
@@ -94,6 +120,28 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		Name:       "get output",
 		ExecFn:     execmappers.MapTerraformOutput(r.Workspace.Output),
 		CallbackFn: outputCb,
+	})
+
+	nuonOutputCb, err := callbackmappers.NewS3Callback(r.v,
+		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
+		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
+			Bucket:       r.OutputSettings.Bucket,
+			BucketPrefix: r.OutputSettings.Prefix,
+			Filename:     "output-nuon.pb",
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create nuon output cb: %w", err)
+	}
+	pipe.AddStep(&pipeline.Step{
+		Name: "get nuon format output",
+		ExecFn: func(ctx context.Context, l hclog.Logger, ui terminal.UI) ([]byte, error) {
+			tfOutput, err := r.Workspace.Output(ctx, l)
+			if err != nil {
+				return nil, err
+			}
+			return proto.Marshal(terraformToNuon(tfOutput))
+		},
+		CallbackFn: nuonOutputCb,
 	})
 
 	stateCb, err := callbackmappers.NewS3Callback(r.v,
