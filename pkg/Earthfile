@@ -31,5 +31,11 @@ lint:
 
 GEN:
     COMMAND
+    # TODO(jm): create a better way to share the GQL schema, that doesn't require importing a service like this. Should
+    # the schema just live in some type of top level directory?
+    COPY ../services/api-gateway+gql-schema/services /src/services
+
+    # NOTE: put any additional methods in here for specific earthfiles
     DO ./types+BUF_LOGIN
+
     RUN go generate ./...

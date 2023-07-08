@@ -11,6 +11,10 @@ ARG GITHUB_ACTIONS=
 ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 
+gql-schema:
+  COPY --dir src/gql-schema /services/api-gateway/src/
+  SAVE ARTIFACT /services
+
 deps:
     RUN apk add --update build-base \
       make \
