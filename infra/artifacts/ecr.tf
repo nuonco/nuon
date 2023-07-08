@@ -3,7 +3,7 @@ module "nuonctl" {
 
   name = "nuonctl"
   tags = {
-    artifact      = "sandbox-aws-eks"
+    artifact      = "nuonctl"
     artifact_type = "binary"
   }
 
@@ -193,6 +193,21 @@ module "sandbox_empty" {
     artifact_type = "terraform-oci"
   }
 
+  providers = {
+    aws = aws.infra-shared-prod
+  }
+}
+
+module "terraform_provider_nuon" {
+  source = "../modules/ecr"
+
+  name = "terraform-provider-nuon"
+  tags = {
+    artifact      = "terraform-provider-nuon"
+    artifact_type = "binary"
+  }
+
+  region = local.aws_settings.region
   providers = {
     aws = aws.infra-shared-prod
   }
