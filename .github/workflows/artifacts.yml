@@ -41,9 +41,8 @@ jobs:
           filters: |
             bins/nuonctl:
               - bins/nuonctl/**
-            # TODO(jm): enable this after initial pr
-            #bins/terraform-provider-nuon:
-              #- bins/terraform-provider-nuon/**
+            bins/terraform-provider-nuon:
+              - bins/terraform-provider-nuon/**
 
             charts/demo:
               - charts/demo/**
