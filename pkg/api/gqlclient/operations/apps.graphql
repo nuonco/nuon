@@ -1,0 +1,25 @@
+query getApp($id: ID!) {
+  app(id: $id) {
+    id
+    name
+  }
+}
+
+query getApps($id: ID!) {
+  apps(orgId: $id, options: {}) {
+    totalCount
+
+    pageInfo {
+      endCursor
+      startCursor
+    }
+
+    edges {
+      cursor
+      node {
+        id
+        name
+     }
+    }
+  }
+}

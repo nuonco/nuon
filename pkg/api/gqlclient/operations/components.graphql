@@ -1,0 +1,38 @@
+query getComponent($id: ID!) {
+  component(id: $id) {
+    id
+    name
+    updatedAt
+    config {
+      deployConfig {
+        ... on BasicDeployConfig {
+          healthCheckPath
+          instanceCount
+          port
+        }
+      }
+    }
+    app {
+      id
+    }
+  }
+}
+
+query getComponents($id: ID!) {
+  components(appId: $id) {
+    totalCount
+
+    pageInfo {
+      endCursor
+      startCursor
+    }
+
+    edges {
+      cursor
+      node {
+        id
+        name
+      }
+    }
+  }
+}
