@@ -1,0 +1,25 @@
+query getOrg($id: ID!) {
+  org(id: $id) {
+    id
+    name
+  }
+}
+
+query getOrgs($id: ID!) {
+  orgs(memberId: $id, options: {}) {
+    totalCount
+
+    pageInfo {
+      endCursor
+      startCursor
+    }
+
+    edges {
+      cursor
+      node {
+        id
+        name
+     }
+    }
+  }
+}
