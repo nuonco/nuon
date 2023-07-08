@@ -1,0 +1,25 @@
+query getInstall($id: ID!) {
+  install(id: $id) {
+    id
+    name
+  }
+}
+
+query getInstalls($id: ID!) {
+  installs(appId: $id, options: {}) {
+    totalCount
+
+    pageInfo {
+      endCursor
+      startCursor
+    }
+
+    edges {
+      cursor
+      node {
+        id
+        name
+     }
+    }
+  }
+}
