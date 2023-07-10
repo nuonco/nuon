@@ -143,7 +143,6 @@ export function parseBuildConfigInput(
 
     const helmBuildConfig = new HelmChartConfig()
       .setChartName(chartName)
-      .setEnvVars(envVarsConfig)
       .setVcsCfg(vcsConfig);
 
     buildCfg.setHelmChartCfg(helmBuildConfig);
