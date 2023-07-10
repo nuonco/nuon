@@ -12,7 +12,7 @@ terraform {
     }
   }
 
-  backend "s3" {}
+  # backend "s3" {}
 }
 
 provider "aws" {
@@ -42,4 +42,9 @@ module "database" {
   username                    = "admin"
   allocated_storage           = 5
   manage_master_user_password = true
+
+  create_db_subnet_group = true
+  # we should be able to handle this with connected components once that's done
+  # hard-coding for now just to get this deployed
+  subnet_ids = ["subnet-03c07e109a44a50a9", "subnet-0df0f518a9c5b9d90"]
 }
