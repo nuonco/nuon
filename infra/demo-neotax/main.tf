@@ -39,7 +39,7 @@ module "database" {
   family                      = "postgres14"
   instance_class              = "db.t4g.micro"
   multi_az                    = true
-  username                    = "admin"
+  username                    = "neotax"
   allocated_storage           = 5
   manage_master_user_password = true
 
