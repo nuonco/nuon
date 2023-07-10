@@ -14,8 +14,8 @@ deps:
   - remote: buf.build
     owner: nuon
     repository: components
-    commit: 8db1384aab764ca9b4cd8db436686bd2
-    digest: shake256:8424f286c8b99716c1bb06f6d813764fa073a0d05932f706a9c72d235cf601b3b6ba486d034dd01a4a5f54c2cc8e6a9a323b2c381919a2f7b8dba0d898b44566
+    commit: 892ed2029545437aa47c5c95d16eb99a
+    digest: shake256:090e29ac8a432aaf36ad5ed5139492a1471bd2a9d6a5d372cb07dcd42afd81c216d21d2b2ccab8e79a568cb22f18828a37e7b332cc90dd6d7a17bec5677fc119
   - remote: buf.build
     owner: nuon
     repository: workflows
