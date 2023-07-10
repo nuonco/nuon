@@ -110,10 +110,6 @@ type HelmBuildConfig {
   Version control system configuration
   """
   vcsConfig: VcsConfig
-  """
-  Environment variables
-  """
-  envVarsConfig: [KeyValuePair!]
 }
 
 """
@@ -410,7 +406,6 @@ input ExternalImageInput {
 input HelmBuildInput {
   chartName: String!
   vcsConfig: VcsConfigInput!
-  envVarsConfig: [KeyValuePairInput!]
 }
 
 input BuildConfigInput {
