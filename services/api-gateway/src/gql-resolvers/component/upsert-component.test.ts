@@ -232,14 +232,6 @@ test("parseBuildConfigInput should return a build config for a helm chart build 
       "externalImageCfg": undefined,
       "helmChartCfg": {
         "chartName": "test-chart",
-        "envVars": {
-          "envVarsList": [
-            {
-              "key": "env-var-key",
-              "value": "env-var-value",
-            },
-          ],
-        },
         "vcsCfg": {
           "connectedGithubConfig": undefined,
           "publicGitConfig": {
