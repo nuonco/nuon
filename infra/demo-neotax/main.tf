@@ -22,7 +22,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Terraform   = "true"
+      Terraform = "true"
     }
   }
 }
@@ -39,5 +39,7 @@ module "database" {
   family                      = "postgres14"
   instance_class              = "db.t4g.micro"
   multi_az                    = true
+  username                    = "admin"
+  allocated_storage           = 5
   manage_master_user_password = true
 }
