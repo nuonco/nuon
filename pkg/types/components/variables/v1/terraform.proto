@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package variables.v1;
+
+import "tagger/tagger.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/variables/v1";
+
+// TerraformVariables are variables that are passed into a terraform file
+message TerraformVariable {
+  string name = 1;
+  string value = 2;
+  bool sensitive = 3;
+}
+
+// TerraforVariables is a list of terraform vars, and exposes methods to convert to maps etc.
+message TerraformVariables {
+  repeated TerraformVariable variables = 1 [(tagger.tags) = "faker:\"terraformVariables\""];
+}

@@ -1,9 +1,9 @@
-package planv1
+package variablesv1
 
-func (c *Configs) EnvVars() *EnvVars {
+func (c *Variables) EnvVars() *EnvVars {
 	cfgs := make([]*EnvVar, 0)
 
-	for _, cfg := range c.Configs {
+	for _, cfg := range c.Variables {
 		actual := cfg.GetEnvVar()
 		if actual != nil {
 			cfgs = append(cfgs, actual)
@@ -15,10 +15,10 @@ func (c *Configs) EnvVars() *EnvVars {
 	}
 }
 
-func (c *Configs) HelmValues() *HelmValues {
+func (c *Variables) HelmValues() *HelmValues {
 	cfgs := make([]*HelmValue, 0)
 
-	for _, cfg := range c.Configs {
+	for _, cfg := range c.Variables {
 		actual := cfg.GetHelmValue()
 		if actual != nil {
 			cfgs = append(cfgs, actual)
@@ -30,10 +30,10 @@ func (c *Configs) HelmValues() *HelmValues {
 	}
 }
 
-func (c *Configs) HelmValueMaps() []*HelmValuesMap {
+func (c *Variables) HelmValueMaps() []*HelmValuesMap {
 	cfgs := make([]*HelmValuesMap, 0)
 
-	for _, cfg := range c.Configs {
+	for _, cfg := range c.Variables {
 		actual := cfg.GetHelmValuesMap()
 		if actual != nil {
 			cfgs = append(cfgs, actual)
@@ -43,10 +43,10 @@ func (c *Configs) HelmValueMaps() []*HelmValuesMap {
 	return cfgs
 }
 
-func (c *Configs) WaypointVariables() *WaypointVariables {
+func (c *Variables) WaypointVariables() *WaypointVariables {
 	cfgs := make([]*WaypointVariable, 0)
 
-	for _, cfg := range c.Configs {
+	for _, cfg := range c.Variables {
 		actual := cfg.GetWaypointVariable()
 		if actual != nil {
 			cfgs = append(cfgs, actual)
@@ -58,10 +58,10 @@ func (c *Configs) WaypointVariables() *WaypointVariables {
 	}
 }
 
-func (c *Configs) TerraformVariables() *TerraformVariables {
+func (c *Variables) TerraformVariables() *TerraformVariables {
 	cfgs := make([]*TerraformVariable, 0)
 
-	for _, cfg := range c.Configs {
+	for _, cfg := range c.Variables {
 		actual := cfg.GetTerraformVariable()
 		if actual != nil {
 			cfgs = append(cfgs, actual)

@@ -6,14 +6,12 @@ import "validate/validate.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1";
 
+// NOTE: HelmRepoConfig is deprecated, and will be removed in a future iteration.
 // HelmRepoConfig enables a customer to install a helm repository
 message HelmRepoConfig {
   string chart_repo = 1 [(validate.rules).string.min_len = 5];
-
   string chart_name = 2 [(validate.rules).string.min_len = 5];
-
   string chart_version = 3 [(validate.rules).string.min_len = 5];
-
   // the following values are for injecting configurations into a helm chart, from artifats.
   // TODO(jm): this should be a separate type
   optional string image_repo_values_key = 4;

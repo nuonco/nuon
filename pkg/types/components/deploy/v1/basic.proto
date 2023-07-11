@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package deploy.v1;
 
+import "variables/v1/env.proto";
+
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1";
 
 // ContainerConfig is a first pass at exposing how we'd like to be able to run a container for a user. It leverages the
@@ -25,6 +27,8 @@ message BasicConfig {
   optional string cpu_limit = 7;
   optional string mem_request = 8;
   optional string mem_limit = 9;
+
+  variables.v1.EnvVars env_vars = 10;
 }
 
 message ListenerConfig {

@@ -2,10 +2,11 @@ syntax = "proto3";
 
 package deploy.v1;
 
+import "variables/v1/helm.proto";
+
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1";
 
 // HelmChartConfig enables a customer to install a helm chart from a repository.
 message HelmChartConfig {
-  // TODO(jm): add support for configuring helm charts with user values once we start on
-  // https://github.com/powertoolsdev/mono/milestone/7
+  variables.v1.HelmValues values = 1;
 }

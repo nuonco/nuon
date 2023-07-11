@@ -1,4 +1,4 @@
-package planv1
+package variablesv1
 
 import (
 	"testing"
@@ -155,16 +155,16 @@ func TestTerraformVariables_ToMap(t *testing.T) {
 	}
 }
 
-func TestConfigs_EnvVars(t *testing.T) {
+func TestVariables_EnvVars(t *testing.T) {
 	tests := map[string]struct {
-		configsFn func() []*Config
+		configsFn func() []*Variable
 		assertFn  func(*testing.T, *EnvVars)
 	}{
 		"happy path": {
-			configsFn: func() []*Config {
-				return []*Config{
+			configsFn: func() []*Variable {
+				return []*Variable{
 					{
-						Actual: &Config_TerraformVariable{
+						Actual: &Variable_TerraformVariable{
 							TerraformVariable: &TerraformVariable{
 								Name:  "terraform",
 								Value: "terraform",
@@ -172,7 +172,7 @@ func TestConfigs_EnvVars(t *testing.T) {
 						},
 					},
 					{
-						Actual: &Config_EnvVar{
+						Actual: &Variable_EnvVar{
 							EnvVar: &EnvVar{
 								Sensitive: true,
 								Name:      "env-var",
@@ -192,7 +192,7 @@ func TestConfigs_EnvVars(t *testing.T) {
 			},
 		},
 		"nil": {
-			configsFn: func() []*Config {
+			configsFn: func() []*Variable {
 				return nil
 			},
 			assertFn: func(t *testing.T, res *EnvVars) {
@@ -204,8 +204,8 @@ func TestConfigs_EnvVars(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			cfgs := &Configs{
-				Configs: test.configsFn(),
+			cfgs := &Variables{
+				Variables: test.configsFn(),
 			}
 			res := cfgs.EnvVars()
 			test.assertFn(t, res)
@@ -213,16 +213,16 @@ func TestConfigs_EnvVars(t *testing.T) {
 	}
 }
 
-func TestConfigs_HelmValues(t *testing.T) {
+func TestVariables_HelmValues(t *testing.T) {
 	tests := map[string]struct {
-		configsFn func() []*Config
+		configsFn func() []*Variable
 		assertFn  func(*testing.T, *HelmValues)
 	}{
 		"happy path": {
-			configsFn: func() []*Config {
-				return []*Config{
+			configsFn: func() []*Variable {
+				return []*Variable{
 					{
-						Actual: &Config_TerraformVariable{
+						Actual: &Variable_TerraformVariable{
 							TerraformVariable: &TerraformVariable{
 								Name:  "terraform",
 								Value: "terraform",
@@ -230,7 +230,7 @@ func TestConfigs_HelmValues(t *testing.T) {
 						},
 					},
 					{
-						Actual: &Config_HelmValue{
+						Actual: &Variable_HelmValue{
 							HelmValue: &HelmValue{
 								Name:  "helm",
 								Value: "helm",
@@ -248,7 +248,7 @@ func TestConfigs_HelmValues(t *testing.T) {
 			},
 		},
 		"nil": {
-			configsFn: func() []*Config {
+			configsFn: func() []*Variable {
 				return nil
 			},
 			assertFn: func(t *testing.T, res *HelmValues) {
@@ -260,8 +260,8 @@ func TestConfigs_HelmValues(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			cfgs := &Configs{
-				Configs: test.configsFn(),
+			cfgs := &Variables{
+				Variables: test.configsFn(),
 			}
 			res := cfgs.HelmValues()
 			test.assertFn(t, res)
@@ -269,16 +269,16 @@ func TestConfigs_HelmValues(t *testing.T) {
 	}
 }
 
-func TestConfigs_HelmValueMaps(t *testing.T) {
+func TestVariables_HelmValueMaps(t *testing.T) {
 	tests := map[string]struct {
-		configsFn func() []*Config
+		configsFn func() []*Variable
 		assertFn  func(*testing.T, []*HelmValuesMap)
 	}{
 		"happy path": {
-			configsFn: func() []*Config {
-				return []*Config{
+			configsFn: func() []*Variable {
+				return []*Variable{
 					{
-						Actual: &Config_TerraformVariable{
+						Actual: &Variable_TerraformVariable{
 							TerraformVariable: &TerraformVariable{
 								Name:  "terraform",
 								Value: "terraform",
@@ -286,7 +286,7 @@ func TestConfigs_HelmValueMaps(t *testing.T) {
 						},
 					},
 					{
-						Actual: &Config_HelmValuesMap{
+						Actual: &Variable_HelmValuesMap{
 							HelmValuesMap: &HelmValuesMap{
 								Values: &structpb.Struct{
 									Fields: map[string]*structpb.Value{
@@ -310,7 +310,7 @@ func TestConfigs_HelmValueMaps(t *testing.T) {
 			},
 		},
 		"nil": {
-			configsFn: func() []*Config {
+			configsFn: func() []*Variable {
 				return nil
 			},
 			assertFn: func(t *testing.T, res []*HelmValuesMap) {
@@ -322,8 +322,8 @@ func TestConfigs_HelmValueMaps(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			cfgs := &Configs{
-				Configs: test.configsFn(),
+			cfgs := &Variables{
+				Variables: test.configsFn(),
 			}
 			res := cfgs.HelmValueMaps()
 			test.assertFn(t, res)
@@ -331,16 +331,16 @@ func TestConfigs_HelmValueMaps(t *testing.T) {
 	}
 }
 
-func TestConfigs_WaypointVariables(t *testing.T) {
+func TestVariables_WaypointVariables(t *testing.T) {
 	tests := map[string]struct {
-		configsFn func() []*Config
+		configsFn func() []*Variable
 		assertFn  func(*testing.T, *WaypointVariables)
 	}{
 		"happy path": {
-			configsFn: func() []*Config {
-				return []*Config{
+			configsFn: func() []*Variable {
+				return []*Variable{
 					{
-						Actual: &Config_TerraformVariable{
+						Actual: &Variable_TerraformVariable{
 							TerraformVariable: &TerraformVariable{
 								Name:  "terraform",
 								Value: "terraform",
@@ -348,7 +348,7 @@ func TestConfigs_WaypointVariables(t *testing.T) {
 						},
 					},
 					{
-						Actual: &Config_WaypointVariable{
+						Actual: &Variable_WaypointVariable{
 							WaypointVariable: &WaypointVariable{
 								Name:  "helm",
 								Value: "helm",
@@ -366,7 +366,7 @@ func TestConfigs_WaypointVariables(t *testing.T) {
 			},
 		},
 		"nil": {
-			configsFn: func() []*Config {
+			configsFn: func() []*Variable {
 				return nil
 			},
 			assertFn: func(t *testing.T, res *WaypointVariables) {
@@ -378,8 +378,8 @@ func TestConfigs_WaypointVariables(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			cfgs := &Configs{
-				Configs: test.configsFn(),
+			cfgs := &Variables{
+				Variables: test.configsFn(),
 			}
 			res := cfgs.WaypointVariables()
 			test.assertFn(t, res)
@@ -387,16 +387,16 @@ func TestConfigs_WaypointVariables(t *testing.T) {
 	}
 }
 
-func TestConfigs_TerraformVariables(t *testing.T) {
+func TestVariables_TerraformVariables(t *testing.T) {
 	tests := map[string]struct {
-		configsFn func() []*Config
+		configsFn func() []*Variable
 		assertFn  func(*testing.T, *TerraformVariables)
 	}{
 		"happy path": {
-			configsFn: func() []*Config {
-				return []*Config{
+			configsFn: func() []*Variable {
+				return []*Variable{
 					{
-						Actual: &Config_TerraformVariable{
+						Actual: &Variable_TerraformVariable{
 							TerraformVariable: &TerraformVariable{
 								Name:  "terraform",
 								Value: "terraform",
@@ -404,7 +404,7 @@ func TestConfigs_TerraformVariables(t *testing.T) {
 						},
 					},
 					{
-						Actual: &Config_WaypointVariable{
+						Actual: &Variable_WaypointVariable{
 							WaypointVariable: &WaypointVariable{
 								Name:  "helm",
 								Value: "helm",
@@ -422,7 +422,7 @@ func TestConfigs_TerraformVariables(t *testing.T) {
 			},
 		},
 		"nil": {
-			configsFn: func() []*Config {
+			configsFn: func() []*Variable {
 				return nil
 			},
 			assertFn: func(t *testing.T, res *TerraformVariables) {
@@ -434,8 +434,8 @@ func TestConfigs_TerraformVariables(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			cfgs := &Configs{
-				Configs: test.configsFn(),
+			cfgs := &Variables{
+				Variables: test.configsFn(),
 			}
 			res := cfgs.TerraformVariables()
 			test.assertFn(t, res)

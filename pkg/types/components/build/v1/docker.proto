@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package build.v1;
 
-import "build/v1/env_vars.proto";
 import "tagger/tagger.proto";
+import "variables/v1/env.proto";
 import "vcs/v1/config.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/build/v1";
@@ -21,7 +21,7 @@ message DockerConfig {
 
   vcs.v1.Config vcs_cfg = 5 [(tagger.tags) = "faker:\"-\""];
 
-  build.v1.EnvVars env_vars = 6;
+  variables.v1.EnvVars env_vars = 6;
 }
 
 message DockerBuildArg {
