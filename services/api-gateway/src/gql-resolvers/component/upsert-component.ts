@@ -2,10 +2,6 @@ import { UpsertComponentRequest } from "@buf/nuon_apis.grpc_node/component/v1/me
 import { Config as BuildConfig } from "@buf/nuon_components.grpc_node/build/v1/build_pb";
 import { DockerConfig } from "@buf/nuon_components.grpc_node/build/v1/docker_pb";
 import {
-  EnvVar,
-  EnvVars,
-} from "@buf/nuon_components.grpc_node/build/v1/env_vars_pb";
-import {
   AWSIAMAuthCfg,
   ExternalImageAuthConfig,
   ExternalImageConfig,
@@ -32,19 +28,11 @@ import type {
   BuildConfigInput,
   ComponentConfigInput,
   DeployConfigInput,
-  KeyValuePairInput,
   Mutation,
   MutationUpsertComponentArgs,
   TResolverFn,
 } from "../../types";
 import { formatComponent } from "./utils";
-
-export function parseKeyValuePairInput(input: KeyValuePairInput[]) {
-  return input.map(({ key, value }) => {
-    const envVar = new EnvVar().setKey(key).setValue(value);
-    return envVar;
-  });
-}
 
 export function parseBuildConfigInput(
   buildConfig: BuildConfigInput
@@ -80,17 +68,8 @@ export function parseBuildConfigInput(
   }
 
   if (buildConfig?.dockerBuildConfig) {
-    const {
-      dockerfile,
-      envVarsConfig: envVarsConfigInput,
-      vcsConfig: vcsInput,
-    } = buildConfig?.dockerBuildConfig;
-    const envVarsConfig = new EnvVars();
+    const { dockerfile, vcsConfig: vcsInput } = buildConfig?.dockerBuildConfig;
     const vcsConfig = new VcsConfig();
-
-    if (envVarsConfigInput?.length > 0) {
-      envVarsConfig.setEnvVarsList(parseKeyValuePairInput(envVarsConfigInput));
-    }
 
     if (vcsInput?.connectedGithub) {
       const connectedGithubCfg = new ConnectedGithubConfig()
@@ -108,19 +87,13 @@ export function parseBuildConfigInput(
 
     const dockerCfg = new DockerConfig()
       .setDockerfile(dockerfile)
-      .setEnvVars(envVarsConfig)
       .setVcsCfg(vcsConfig);
 
     buildCfg.setDockerCfg(dockerCfg);
   }
 
   if (buildConfig?.helmBuildConfig) {
-    const {
-      chartName,
-      envVarsConfig: envVarsConfigInput,
-      vcsConfig: vcsInput,
-    } = buildConfig?.helmBuildConfig;
-    const envVarsConfig = new EnvVars();
+    const { chartName, vcsConfig: vcsInput } = buildConfig?.helmBuildConfig;
     const vcsConfig = new VcsConfig();
 
     if (vcsInput?.connectedGithub) {
@@ -135,10 +108,6 @@ export function parseBuildConfigInput(
         .setDirectory(vcsInput?.publicGit?.directory);
 
       vcsConfig.setPublicGitConfig(publicGitCfg);
-    }
-
-    if (envVarsConfigInput?.length > 0) {
-      envVarsConfig.setEnvVarsList(parseKeyValuePairInput(envVarsConfigInput));
     }
 
     const helmBuildConfig = new HelmChartConfig()
@@ -149,9 +118,7 @@ export function parseBuildConfigInput(
   }
 
   if (buildConfig?.terraformBuildConfig) {
-    const { envVarsConfig: envVarsConfigInput, vcsConfig: vcsInput } =
-      buildConfig?.terraformBuildConfig;
-    const envVarsConfig = new EnvVars();
+    const { vcsConfig: vcsInput } = buildConfig?.terraformBuildConfig;
     const vcsConfig = new VcsConfig();
 
     if (vcsInput?.connectedGithub) {
@@ -168,13 +135,9 @@ export function parseBuildConfigInput(
       vcsConfig.setPublicGitConfig(publicGitCfg);
     }
 
-    if (envVarsConfigInput?.length > 0) {
-      envVarsConfig.setEnvVarsList(parseKeyValuePairInput(envVarsConfigInput));
-    }
-
-    const terraformBuildConfig = new TerraformBuildConfig()
-      .setEnvVars(envVarsConfig)
-      .setVcsCfg(vcsConfig);
+    const terraformBuildConfig = new TerraformBuildConfig().setVcsCfg(
+      vcsConfig
+    );
 
     buildCfg.setTerraformModuleCfg(terraformBuildConfig);
   }

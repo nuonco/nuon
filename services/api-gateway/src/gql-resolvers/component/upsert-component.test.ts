@@ -83,9 +83,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
       "dockerCfg": {
         "buildArgsList": [],
         "dockerfile": "Dockerfile",
-        "envVars": {
-          "envVarsList": [],
-        },
+        "envVars": undefined,
         "target": "",
         "vcsCfg": {
           "connectedGithubConfig": {
@@ -131,14 +129,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
       "dockerCfg": {
         "buildArgsList": [],
         "dockerfile": "Dockerfile",
-        "envVars": {
-          "envVarsList": [
-            {
-              "key": "env-var-key",
-              "value": "env-var-value",
-            },
-          ],
-        },
+        "envVars": undefined,
         "target": "",
         "vcsCfg": {
           "connectedGithubConfig": undefined,
@@ -181,14 +172,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
       "dockerCfg": {
         "buildArgsList": [],
         "dockerfile": "Dockerfile",
-        "envVars": {
-          "envVarsList": [
-            {
-              "key": "env-var-key",
-              "value": "env-var-value",
-            },
-          ],
-        },
+        "envVars": undefined,
         "target": "",
         "vcsCfg": {
           "connectedGithubConfig": undefined,
@@ -263,6 +247,7 @@ test("parseDeployConfigInput should return a deploy config for a basic k8s deplo
         "argsList": [],
         "cpuLimit": "",
         "cpuRequest": "",
+        "envVars": undefined,
         "instanceCount": 1,
         "listenerCfg": {
           "healthCheckPath": "/test",
@@ -319,7 +304,9 @@ test("parseDeployConfigInput should return a deploy config for a helm chart depl
   expect(spec.toObject()).toMatchInlineSnapshot(`
     {
       "basic": undefined,
-      "helmChart": {},
+      "helmChart": {
+        "values": undefined,
+      },
       "helmRepo": undefined,
       "noop": undefined,
       "terraformModuleConfig": undefined,
@@ -343,6 +330,7 @@ test("parseDeployConfigInput should return a deploy config for a terraform deplo
       "noop": undefined,
       "terraformModuleConfig": {
         "terraformVersion": 1,
+        "vars": undefined,
       },
       "timeout": undefined,
     }
@@ -387,6 +375,7 @@ test("parseConfigInput should return a component config", () => {
           "argsList": [],
           "cpuLimit": "",
           "cpuRequest": "",
+          "envVars": undefined,
           "instanceCount": 2,
           "listenerCfg": {
             "healthCheckPath": "/test",
