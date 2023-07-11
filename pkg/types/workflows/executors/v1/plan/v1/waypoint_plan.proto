@@ -3,7 +3,6 @@ syntax = "proto3";
 package executors.v1.plan.v1;
 
 import "component/v1/component.proto";
-import "executors/v1/plan/v1/configs.proto";
 import "executors/v1/plan/v1/git_source.proto";
 import "executors/v1/plan/v1/metadata.proto";
 import "executors/v1/plan/v1/waypoint_job.proto";
@@ -12,6 +11,7 @@ import "executors/v1/plan/v1/waypoint_runner.proto";
 import "executors/v1/plan/v1/waypoint_server.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
+import "variables/v1/variables.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
 
@@ -26,7 +26,7 @@ message WaypointPlan {
   Outputs outputs = 7;
   component.v1.Component component = 8;
   GitSource git_source = 9;
-  Configs configs = 10;
+  variables.v1.Variables variables = 10;
 }
 
 // ECRRepositoryRef contains all of the information for referencing the app's ECR repo. Note, that all ECR repos are

@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package build.v1;
 
-import "build/v1/env_vars.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 import "vcs/v1/config.proto";
@@ -15,5 +14,4 @@ message TerraformModuleConfig {
     (validate.rules).message.required = true,
     (tagger.tags) = "faker:\"-\""
   ];
-  build.v1.EnvVars env_vars = 2 [(validate.rules).message.required = true];
 }
