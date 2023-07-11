@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package variables.v1;
+
+import "google/protobuf/struct.proto";
+import "tagger/tagger.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/variables/v1";
+
+// HelmValues is a list of waypoint vars, and exposes methods to convert to maps etc.
+message HelmValues {
+  repeated HelmValue values = 1 [(tagger.tags) = "faker:\"helmValues\""];
+}
+
+// HelmValue is a user provided helm value that comes from secrets
+message HelmValue {
+  string name = 2;
+  bool sensitive = 3;
+  string value = 4;
+}
+
+// HelmValues are a map of helm values, like you would encode from yaml.
+message HelmValuesMap {
+  google.protobuf.Struct values = 1 [(tagger.tags) = "faker:\"helmValuesMap\""];
+}

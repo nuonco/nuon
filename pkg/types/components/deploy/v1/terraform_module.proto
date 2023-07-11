@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package deploy.v1;
 
+import "variables/v1/terraform.proto";
+
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1";
 
 // the following are the supported terraform versions that a user can select
@@ -148,4 +150,5 @@ enum TerraformVersion {
 // TerraformModuleConfig enables a customer to provision a terraform module in their customer's cloud account
 message TerraformModuleConfig {
   TerraformVersion terraform_version = 1;
+  variables.v1.TerraformVariables vars = 2;
 }

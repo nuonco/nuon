@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package variables.v1;
+
+import "tagger/tagger.proto";
+import "variables/v1/variable.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/variables/v1";
+
+// Configs is a high level container for a list of configs.
+message Variables {
+  repeated variables.v1.Variable variables = 1 [(tagger.tags) = "faker:\"variables\""];
+}
