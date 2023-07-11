@@ -25,37 +25,14 @@ func TestTerraformModuleConfig_Validate(t *testing.T) {
 							},
 						},
 					},
-					EnvVars: &EnvVars{
-						EnvVars: []*EnvVar{
-							{Key: "key", Value: "value"},
-						},
-					},
 				}
 			},
 		},
 		"error no vcs config": {
 			cfgFn: func() *TerraformModuleConfig {
-				return &TerraformModuleConfig{
-					EnvVars: &EnvVars{},
-				}
+				return &TerraformModuleConfig{}
 			},
 			errExpected: fmt.Errorf("VcsCfg: value is required"),
-		},
-		"error no env vars": {
-			cfgFn: func() *TerraformModuleConfig {
-				return &TerraformModuleConfig{
-					VcsCfg: &vcsv1.Config{
-						Cfg: &vcsv1.Config_PublicGitConfig{
-							PublicGitConfig: &vcsv1.PublicGitConfig{
-								Repo:      "repo",
-								Directory: "dir",
-								GitRef:    "main",
-							},
-						},
-					},
-				}
-			},
-			errExpected: fmt.Errorf("EnvVars: value is required"),
 		},
 	}
 

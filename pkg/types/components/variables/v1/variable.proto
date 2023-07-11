@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package variables.v1;
+
+import "variables/v1/env.proto";
+import "variables/v1/helm.proto";
+import "variables/v1/terraform.proto";
+import "variables/v1/waypoint.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/variables/v1";
+
+// Variable represents a single variable
+message Variable {
+  oneof actual {
+    variables.v1.EnvVar env_var = 1;
+    variables.v1.HelmValue helm_value = 2;
+    variables.v1.HelmValuesMap helm_values_map = 3;
+    variables.v1.WaypointVariable waypoint_variable = 4;
+    variables.v1.TerraformVariable terraform_variable = 5;
+  }
+}

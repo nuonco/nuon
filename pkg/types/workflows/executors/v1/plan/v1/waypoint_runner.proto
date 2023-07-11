@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package executors.v1.plan.v1;
 
-import "executors/v1/plan/v1/configs.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
+import "variables/v1/waypoint.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
 
@@ -21,5 +21,5 @@ message WaypointRunner {
   ];
 
   string image_url = 3 [(validate.rules).string.min_len = 5];
-  EnvVars env_vars = 4;
+  variables.v1.WaypointVariables variables = 6;
 }

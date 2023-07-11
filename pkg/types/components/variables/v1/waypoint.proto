@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package variables.v1;
+
+import "tagger/tagger.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/variables/v1";
+
+// WaypointVariables are used to set waypoint job variables, for things like interpolating a config, etc.
+message WaypointVariable {
+  string name = 1;
+  string value = 2;
+}
+
+// WaypointVariables
+message WaypointVariables {
+  repeated WaypointVariable variables = 1 [(tagger.tags) = "faker:\"waypointVariables\""];
+}
