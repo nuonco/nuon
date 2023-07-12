@@ -14,8 +14,16 @@ message InstanceConnection {
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  string deploy_id = 2 [
+  string install_id = 2 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
+
+  string deploy_id = 3 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  // component name is used to interpolate what the customer would be setting when looking up a field
+  string component_name = 4;
 }
