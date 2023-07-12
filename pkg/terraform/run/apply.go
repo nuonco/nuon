@@ -126,7 +126,7 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
 		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
 			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.JobPrefix,
+			BucketPrefix: r.OutputSettings.InstancePrefix,
 			Filename:     "output-nuon.pb",
 		}))
 	if err != nil {
