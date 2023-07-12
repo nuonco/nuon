@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid"
 	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	connectionsv1 "github.com/powertoolsdev/mono/pkg/types/components/connections/v1"
 	buildsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	deploysv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deploys/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
@@ -58,6 +59,17 @@ func TestStartDeploy(t *testing.T) {
 			},
 		},
 	}
+	planConnection := &planv1.Plan{
+		Actual: &planv1.Plan_WaypointPlan{
+			WaypointPlan: &planv1.WaypointPlan{
+				Metadata: wpMetadata,
+				Component: &componentv1.Component{
+					Id:          id,
+					Connections: &connectionsv1.Connections{},
+				},
+			},
+		},
+	}
 
 	deployReq := &deploysv1.DeployRequest{
 		DeployId: idResp.DeployID,
@@ -94,6 +106,11 @@ func TestStartDeploy(t *testing.T) {
 			assert.Equal(t, planRef.BucketKey, planref.BucketKey)
 			assert.Equal(t, planRef.BucketAssumeRoleArn, planref.BucketAssumeRoleArn)
 			return plan, nil
+		})
+
+	env.OnActivity(a.AddConnectionsToPlan, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, plan *planv1.Plan) (*planv1.Plan, error) {
+			return planConnection, nil
 		})
 
 	env.OnActivity(a.UpsertInstanceJob, mock.Anything, mock.Anything).
