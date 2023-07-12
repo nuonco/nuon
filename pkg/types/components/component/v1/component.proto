@@ -3,6 +3,7 @@ syntax = "proto3";
 package component.v1;
 
 import "build/v1/build.proto";
+import "connections/v1/connections.proto";
 import "deploy/v1/config.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
@@ -18,4 +19,5 @@ message Component {
 
   build.v1.Config build_cfg = 2 [(tagger.tags) = "faker:\"buildConfig\""];
   deploy.v1.Config deploy_cfg = 3 [(tagger.tags) = "faker:\"deployConfig\""];
+  connections.v1.Connections connections = 4;
 }
