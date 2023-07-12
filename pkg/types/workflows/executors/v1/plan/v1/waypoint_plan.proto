@@ -83,7 +83,16 @@ message Outputs {
     (tagger.tags) = "faker:\"len=10\""
   ];
 
+  // This is now deprecated in favor of job_prefix but retained for compatibility
   string bucket_prefix = 2 [(validate.rules).string.min_bytes = 1];
+
+  // This path is for data specific to a given job run.
+  // It has "write once" semantics and is immutable.
+  string job_prefix = 7 [(validate.rules).string.min_bytes = 1];
+
+  // This is a "fixed" path to get the most recent outputs for this component instance.
+  // The files under this path are mutable and get overwritten with each new deployment.
+  string instance_prefix = 8 [(validate.rules).string.min_bytes = 1];
 
   string bucket_assume_role_arn = 3 [
     (validate.rules).string.min_len = 20,

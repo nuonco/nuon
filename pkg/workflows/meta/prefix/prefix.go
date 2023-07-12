@@ -32,6 +32,10 @@ func InstanceStatePath(orgID, appID, componentID, installID string) string {
 	}.toPath()
 }
 
+// InstanceOutputPath returns the prefix for an instance's output - meaning long lived files that need to persist through
+// runs, such as component output values.
+var InstanceOutputPath = InstanceStatePath
+
 type instance struct {
 	OrgID        string
 	AppID        string
