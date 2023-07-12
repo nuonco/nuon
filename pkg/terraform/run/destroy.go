@@ -67,7 +67,7 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
 		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
 			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.Prefix,
+			BucketPrefix: r.OutputSettings.JobPrefix,
 			Filename:     "apply.json",
 		}))
 	if err != nil {
@@ -83,7 +83,7 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
 		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
 			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.Prefix,
+			BucketPrefix: r.OutputSettings.JobPrefix,
 			Filename:     "output.json",
 		}))
 	if err != nil {
@@ -99,7 +99,7 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
 		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
 			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.Prefix,
+			BucketPrefix: r.OutputSettings.JobPrefix,
 			Filename:     "state.json",
 		}))
 	if err != nil {

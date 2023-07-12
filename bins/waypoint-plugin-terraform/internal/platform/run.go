@@ -53,9 +53,10 @@ func (p *Platform) execRun(
 		run.WithUI(ui),
 		run.WithLogger(runLog),
 		run.WithOutputSettings(&run.OutputSettings{
-			Credentials: &p.Cfg.Outputs.Auth,
-			Bucket:      p.Cfg.Outputs.Bucket,
-			Prefix:      p.Cfg.Outputs.Prefix,
+			Credentials:    &p.Cfg.Outputs.Auth,
+			Bucket:         p.Cfg.Outputs.Bucket,
+			JobPrefix:      p.Cfg.Outputs.JobPrefix,
+			InstancePrefix: p.Cfg.Outputs.InstancePrefix,
 		}),
 	)
 	if err != nil {
@@ -75,10 +76,8 @@ func (p *Platform) execRun(
 	}
 
 	return &terraformv1.Deployment{
-		OutputBucket: p.Cfg.Outputs.Bucket,
-		OutputPrefix: p.Cfg.Outputs.Prefix,
-		StateKey:     p.Cfg.Backend.StateKey,
-		StateBucket:  p.Cfg.Backend.Bucket,
-		Labels:       p.Cfg.Labels,
+		StateKey:    p.Cfg.Backend.StateKey,
+		StateBucket: p.Cfg.Backend.Bucket,
+		Labels:      p.Cfg.Labels,
 	}, nil
 }
