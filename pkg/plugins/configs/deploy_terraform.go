@@ -23,9 +23,10 @@ type TerraformDeployBackend struct {
 }
 
 type TerraformDeployOutputs struct {
-	Bucket string             `hcl:"bucket" validate:"required"`
-	Auth   credentials.Config `hcl:"aws_auth" validate:"required"`
-	Prefix string             `hcl:"prefix" validate:"required"`
+	Bucket         string             `hcl:"bucket" validate:"required"`
+	Auth           credentials.Config `hcl:"aws_auth" validate:"required"`
+	JobPrefix      string             `hcl:"job_prefix" validate:"required"`
+	InstancePrefix string             `hcl:"instance_prefix" validate:"required"`
 }
 
 type TerraformDeploy struct {
