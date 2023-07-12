@@ -28,7 +28,7 @@ message BasicConfig {
   optional string mem_request = 8;
   optional string mem_limit = 9;
 
-  variables.v1.EnvVars env_vars = 10;
+  variables.v1.EnvVars env_vars = 11;
 }
 
 message ListenerConfig {
