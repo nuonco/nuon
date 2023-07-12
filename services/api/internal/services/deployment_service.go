@@ -172,7 +172,11 @@ func (i *deploymentService) updateComponentConfig(ctx context.Context, ghInstall
 	i.log.Info("updating component configuration",
 		zap.String("component configuration", string(dbConfig)))
 	componentConfiguration := &componentConfig.Component{}
-	if err := protojson.Unmarshal(dbConfig, componentConfiguration); err != nil {
+
+	unmarshaller := protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}
+	if err := unmarshaller.Unmarshal(dbConfig, componentConfiguration); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal input JSON: %w", err)
 	}
 
@@ -286,7 +290,10 @@ func (i *deploymentService) CreateDeployment(ctx context.Context, input *models.
 
 	// retrieve commits if the component configuration contains github info
 	dbConfig := &componentConfig.Component{}
-	if err = protojson.Unmarshal([]byte(component.Config.String()), dbConfig); err != nil {
+	unmarshaller := protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}
+	if err = unmarshaller.Unmarshal([]byte(component.Config.String()), dbConfig); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal DB JSON: %w", err)
 	}
 	if dbConfig.BuildCfg != nil {

@@ -61,7 +61,10 @@ func (d Deployment) ToStartRequest() (*deploymentsv1.StartRequest, error) {
 	orgID, appID, componentID, deploymentID := app.OrgID, app.ID, d.Component.ID, d.ID
 	var compConf componentv1.Component
 	if d.Component.Config != nil {
-		if err := protojson.Unmarshal([]byte(d.Component.Config.String()), &compConf); err != nil {
+		unmarshaller := protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		}
+		if err := unmarshaller.Unmarshal([]byte(d.Component.Config.String()), &compConf); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal DB JSON: %w", err)
 		}
 	}

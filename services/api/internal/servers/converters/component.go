@@ -12,7 +12,10 @@ import (
 // Component model to proto converts component domain model into component proto message
 func ComponentModelToProto(component *models.Component) (*componentv1.ComponentRef, error) {
 	config := &componentConfig.Component{}
-	if err := protojson.Unmarshal([]byte(component.Config.String()), config); err != nil {
+	unmarshaller := protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}
+	if err := unmarshaller.Unmarshal([]byte(component.Config.String()), config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 
