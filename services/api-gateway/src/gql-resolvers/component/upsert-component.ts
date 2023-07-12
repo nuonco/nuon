@@ -20,6 +20,10 @@ import { HelmChartConfig as HelmDeployConfig } from "@buf/nuon_components.grpc_n
 import { HelmRepoConfig as HelmRepoDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/helm_repo_pb";
 import { NoopConfig as NoopDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/noop_pb";
 import { TerraformModuleConfig as TerraformDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/terraform_module_pb";
+import {
+  HelmValue,
+  HelmValues,
+} from "@buf/nuon_components.grpc_node/variables/v1/helm_pb";
 import { Config as VcsConfig } from "@buf/nuon_components.grpc_node/vcs/v1/config_pb";
 import { ConnectedGithubConfig } from "@buf/nuon_components.grpc_node/vcs/v1/connected_github_pb";
 import { PublicGitConfig } from "@buf/nuon_components.grpc_node/vcs/v1/public_git_pb";
@@ -172,6 +176,20 @@ export function parseDeployConfigInput(
   if (deployConfig?.helmDeployConfig) {
     // TODO(nnnnat): temp until we know the required fields
     const helmDeployCfg = new HelmDeployConfig();
+
+    if (deployConfig?.helmDeployConfig?.values) {
+      const { values } = deployConfig?.helmDeployConfig;
+      const helmValues = new HelmValues().setValuesList(
+        values.map(({ key, sensitive, value }) => {
+          return new HelmValue()
+            .setName(key)
+            .setValue(value)
+            .setSensitive(sensitive);
+        })
+      );
+
+      helmDeployCfg.setValues(helmValues);
+    }
 
     deployCfg.setHelmChart(helmDeployCfg);
   }

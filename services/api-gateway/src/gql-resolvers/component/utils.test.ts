@@ -175,7 +175,22 @@ test("getConfig should take a raw grpc component config & return the correct con
       },
     },
     deployCfg: {
-      helmChart: {},
+      helmChart: {
+        values: {
+          valuesList: [
+            {
+              name: "key",
+              sensitive: false,
+              value: "value",
+            },
+            {
+              name: "key",
+              sensitive: true,
+              value: "value",
+            },
+          ],
+        },
+      },
     },
   });
 
@@ -200,6 +215,20 @@ test("getConfig should take a raw grpc component config & return the correct con
       "deployConfig": {
         "__typename": "HelmDeployConfig",
         "noop": true,
+        "values": [
+          {
+            "__typename": "KeyValuePair",
+            "key": "key",
+            "sensitive": false,
+            "value": "value",
+          },
+          {
+            "__typename": "KeyValuePair",
+            "key": "key",
+            "sensitive": true,
+            "value": "value",
+          },
+        ],
       },
     }
   `);

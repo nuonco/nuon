@@ -110,12 +110,6 @@ test("parseBuildConfigInput should return a build config for a docker build with
   const spec = parseBuildConfigInput({
     dockerBuildConfig: {
       dockerfile: "Dockerfile",
-      envVarsConfig: [
-        {
-          key: "env-var-key",
-          value: "env-var-value",
-        },
-      ],
       vcsConfig: {
         publicGit: {
           directory: "/",
@@ -153,12 +147,6 @@ test("parseBuildConfigInput should return a build config for a docker build with
   const spec = parseBuildConfigInput({
     dockerBuildConfig: {
       dockerfile: "Dockerfile",
-      envVarsConfig: [
-        {
-          key: "env-var-key",
-          value: "env-var-value",
-        },
-      ],
       vcsConfig: {
         publicGit: {
           directory: "/",
@@ -196,12 +184,6 @@ test("parseBuildConfigInput should return a build config for a helm chart build 
   const spec = parseBuildConfigInput({
     helmBuildConfig: {
       chartName: "test-chart",
-      envVarsConfig: [
-        {
-          key: "env-var-key",
-          value: "env-var-value",
-        },
-      ],
       vcsConfig: {
         publicGit: {
           directory: "/",
@@ -298,6 +280,18 @@ test("parseDeployConfigInput should return a deploy config for a helm chart depl
   const spec = parseDeployConfigInput({
     helmDeployConfig: {
       noop: true,
+      values: [
+        {
+          key: "key",
+          sensitive: false,
+          value: "value",
+        },
+        {
+          key: "key",
+          sensitive: true,
+          value: "value",
+        },
+      ],
     },
   });
 
@@ -305,7 +299,20 @@ test("parseDeployConfigInput should return a deploy config for a helm chart depl
     {
       "basic": undefined,
       "helmChart": {
-        "values": undefined,
+        "values": {
+          "valuesList": [
+            {
+              "name": "key",
+              "sensitive": false,
+              "value": "value",
+            },
+            {
+              "name": "key",
+              "sensitive": true,
+              "value": "value",
+            },
+          ],
+        },
       },
       "helmRepo": undefined,
       "noop": undefined,

@@ -12,11 +12,13 @@ Represents a key value pair
 """
 type KeyValuePair {
   key: String!
+  sensitive: Boolean
   value: String!
 }
 
 input KeyValuePairInput {
   key: String!
+  sensitive: Boolean
   value: String!
 }
 
