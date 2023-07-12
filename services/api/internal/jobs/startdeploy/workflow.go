@@ -90,6 +90,11 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 		return nil, fmt.Errorf("unable to trigger workflow response: %w", err)
 	}
 
+	fut = workflow.ExecuteActivity(ctx, act.AddConnectionsToPlan, plan)
+	if err = fut.Get(ctx, &plan); err != nil {
+		return nil, fmt.Errorf("unable to add connections to plan: %w", err)
+	}
+
 	//we need to add the installId to the plan
 	switch plan := plan.Actual.(type) {
 	case *planv1.Plan_WaypointPlan:
