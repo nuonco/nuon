@@ -160,6 +160,7 @@ type HelmDeployConfig {
   Temp noop until we know the required deploy config fields
   """
   noop: Boolean
+  values: [KeyValuePair!]
 }
 
 enum TerraformVersion {
@@ -433,6 +434,7 @@ input HelmRepoDeployConfigInput {
 
 input HelmDeployInput {
   noop: Boolean
+  values: [KeyValuePairInput!]
 }
 
 input TerraformDeployConfigInput {
