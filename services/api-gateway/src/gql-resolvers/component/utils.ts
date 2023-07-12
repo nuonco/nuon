@@ -151,6 +151,15 @@ export function getConfig(config): ComponentConfig {
       deployConfig = {
         __typename: "HelmDeployConfig",
         noop: true,
+        values:
+          config?.deployCfg?.helmChart?.values?.valuesList?.map(
+            ({ name, sensitive, value }) => ({
+              __typename: "KeyValuePair",
+              key: name,
+              sensitive,
+              value,
+            })
+          ) || null,
       };
     }
 
