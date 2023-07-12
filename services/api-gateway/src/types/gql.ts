@@ -343,15 +343,12 @@ export type HelmBuildConfig = {
   __typename?: 'HelmBuildConfig';
   /** Name of the Helm Chart to build */
   chartName: Scalars['String']['output'];
-  /** Environment variables */
-  envVarsConfig?: Maybe<Array<KeyValuePair>>;
   /** Version control system configuration */
   vcsConfig?: Maybe<VcsConfig>;
 };
 
 export type HelmBuildInput = {
   chartName: Scalars['String']['input'];
-  envVarsConfig?: InputMaybe<Array<KeyValuePairInput>>;
   vcsConfig: VcsConfigInput;
 };
 
@@ -360,10 +357,12 @@ export type HelmDeployConfig = {
   __typename?: 'HelmDeployConfig';
   /** Temp noop until we know the required deploy config fields */
   noop?: Maybe<Scalars['Boolean']['output']>;
+  values?: Maybe<Array<KeyValuePair>>;
 };
 
 export type HelmDeployInput = {
   noop?: InputMaybe<Scalars['Boolean']['input']>;
+  values?: InputMaybe<Array<KeyValuePairInput>>;
 };
 
 /** Represents a public helm chart deployment configuration */
@@ -459,11 +458,13 @@ export type InstanceStatus = {
 export type KeyValuePair = {
   __typename?: 'KeyValuePair';
   key: Scalars['String']['output'];
+  sensitive?: Maybe<Scalars['Boolean']['output']>;
   value: Scalars['String']['output'];
 };
 
 export type KeyValuePairInput = {
   key: Scalars['String']['input'];
+  sensitive?: InputMaybe<Scalars['Boolean']['input']>;
   value: Scalars['String']['input'];
 };
 
