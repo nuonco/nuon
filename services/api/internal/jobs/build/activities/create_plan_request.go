@@ -85,7 +85,10 @@ func (a *Activities) CreatePlanRequest(ctx context.Context, req *workflowbuildv1
 // AddVcsConfig populates the component's build config with vcs config data, if the component has a build config.
 func (a *Activities) addVcsConfig(component *models.Component, gitRef, ghInstallID string) (*componentv1.Component, error) {
 	dbConfig := &componentv1.Component{}
-	if err := protojson.Unmarshal([]byte(component.Config.String()), dbConfig); err != nil {
+	unmarshaller := protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}
+	if err := unmarshaller.Unmarshal([]byte(component.Config.String()), dbConfig); err != nil {
 		return nil, err
 	}
 

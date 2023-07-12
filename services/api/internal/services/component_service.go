@@ -77,6 +77,9 @@ func (i *componentService) GetAppComponents(ctx context.Context, appID string, o
 }
 
 func (i *componentService) updateComponent(ctx context.Context, input models.ComponentInput) (*models.Component, error) {
+	unmarshalOpts := protojson.UnmarshalOptions{
+		DiscardUnknown: true,
+	}
 	component, err := i.GetComponent(ctx, *input.ID)
 	if err != nil {
 		i.log.Error("failed to retrieve component",
@@ -96,11 +99,11 @@ func (i *componentService) updateComponent(ctx context.Context, input models.Com
 
 		// convert to structs
 		databaseConfig := &componentConfig.Component{}
-		if err = protojson.Unmarshal([]byte(component.Config.String()), databaseConfig); err != nil {
+		if err = unmarshalOpts.Unmarshal([]byte(component.Config.String()), databaseConfig); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal DB JSON: %w", err)
 		}
 		inputConfig := &componentConfig.Component{}
-		if err = protojson.Unmarshal(input.Config, inputConfig); err != nil {
+		if err = unmarshalOpts.Unmarshal(input.Config, inputConfig); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal input JSON: %w", err)
 		}
 
