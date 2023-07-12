@@ -16,6 +16,7 @@ type InstanceRepo interface {
 	Create(context.Context, []*models.Instance) ([]*models.Instance, error)
 	Delete(context.Context, string) (bool, error)
 	ListByInstall(context.Context, string) ([]*models.Instance, error)
+	ListByComponent(context.Context, string) ([]*models.Instance, error)
 }
 
 var _ InstanceRepo = (*instanceRepo)(nil)
@@ -71,6 +72,25 @@ func (i instanceRepo) Delete(ctx context.Context, instanceID string) (bool, erro
 func (i instanceRepo) ListByInstall(ctx context.Context, installID string) ([]*models.Instance, error) {
 	// use gorm model to retrieve builds
 	rows, err := i.db.Model(&models.Instance{}).Where("install_id = ?", installID).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// iterate through rows and convert to model
+	var instances []*models.Instance
+	for rows.Next() {
+		var instance *models.Instance
+		i.db.ScanRows(rows, &instance)
+		instances = append(instances, instance)
+	}
+
+	return instances, nil
+}
+
+func (i instanceRepo) ListByComponent(ctx context.Context, componentID string) ([]*models.Instance, error) {
+	// use gorm model to retrieve builds
+	rows, err := i.db.Model(&models.Instance{}).Where("component_id = ?", componentID).Rows()
 	if err != nil {
 		return nil, err
 	}
