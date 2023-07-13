@@ -11,7 +11,7 @@ import (
 )
 
 // GetOrgSignupRequest returns a provision request for an org
-func (r *repo) GetOrgProvisionRequest(ctx context.Context, orgID string) (*orgsv1.SignupRequest, error) {
+func (r *client) GetOrgProvisionRequest(ctx context.Context, orgID string) (*orgsv1.SignupRequest, error) {
 	creds := r.orgsCredentials(ctx)
 	client, err := s3downloader.New(r.Settings.OrgsBucket, s3downloader.WithCredentials(creds))
 	if err != nil {
@@ -37,7 +37,7 @@ func (r *repo) GetOrgProvisionRequest(ctx context.Context, orgID string) (*orgsv
 	return orgReq, nil
 }
 
-func (r *repo) GetOrgProvisionResponse(ctx context.Context, orgID string) (*orgsv1.SignupResponse, error) {
+func (r *client) GetOrgProvisionResponse(ctx context.Context, orgID string) (*orgsv1.SignupResponse, error) {
 	creds := r.orgsCredentials(ctx)
 	client, err := s3downloader.New(r.Settings.OrgsBucket, s3downloader.WithCredentials(creds))
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 )
 
 // GetInstallProvisionRequest returns a provision request for an app
-func (r *repo) GetInstallProvisionRequest(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionRequest, error) {
+func (r *client) GetInstallProvisionRequest(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionRequest, error) {
 	creds := r.installsCredentials(ctx)
 	client, err := s3downloader.New(r.Settings.InstallsBucket, s3downloader.WithCredentials(creds))
 	if err != nil {
@@ -37,7 +37,7 @@ func (r *repo) GetInstallProvisionRequest(ctx context.Context, orgID, appID, ins
 	return appReq, nil
 }
 
-func (r *repo) GetInstallProvisionResponse(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionResponse, error) {
+func (r *client) GetInstallProvisionResponse(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionResponse, error) {
 	creds := r.installsCredentials(ctx)
 	client, err := s3downloader.New(r.Settings.InstallsBucket, s3downloader.WithCredentials(creds))
 	if err != nil {
