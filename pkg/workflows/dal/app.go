@@ -11,7 +11,7 @@ import (
 )
 
 // GetAppProvisionRequest returns a provision request for an app
-func (r *repo) GetAppProvisionRequest(ctx context.Context, orgID, appID string) (*appsv1.ProvisionRequest, error) {
+func (r *client) GetAppProvisionRequest(ctx context.Context, orgID, appID string) (*appsv1.ProvisionRequest, error) {
 	creds := r.getAppsCredentials(ctx)
 	client, err := s3downloader.New(r.Settings.AppsBucket, s3downloader.WithCredentials(creds))
 	if err != nil {
@@ -37,7 +37,7 @@ func (r *repo) GetAppProvisionRequest(ctx context.Context, orgID, appID string) 
 	return appReq, nil
 }
 
-func (r *repo) GetAppProvisionResponse(ctx context.Context, orgID, appID string) (*appsv1.ProvisionResponse, error) {
+func (r *client) GetAppProvisionResponse(ctx context.Context, orgID, appID string) (*appsv1.ProvisionResponse, error) {
 	creds := r.getAppsCredentials(ctx)
 	client, err := s3downloader.New(r.Settings.AppsBucket, s3downloader.WithCredentials(creds))
 	if err != nil {

@@ -6,7 +6,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	plugincomponentv1 "github.com/powertoolsdev/mono/pkg/types/plugins/component/v1"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
+	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 )
@@ -18,7 +20,7 @@ var (
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_dal.go -source=dal.go -package=dal
-type Repo interface {
+type Client interface {
 	// workflow request and responses
 	GetInstallProvisionRequest(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionRequest, error)
 	GetInstallProvisionResponse(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionResponse, error)
@@ -30,9 +32,15 @@ type Repo interface {
 	GetAppProvisionResponse(ctx context.Context, orgID, appID string) (*appsv1.ProvisionResponse, error)
 
 	// executors
+	GetInstanceSyncPlan(ctx context.Context, orgID, appID, componentID, deployID, installID string) (*planv1.Plan, error)
+	GetInstanceDeployPlan(ctx context.Context, orgID, appID, componentID, deployID, installID string) (*planv1.Plan, error)
+	GetBuildPlan(ctx context.Context, orgID, appID, componentID, buildID string) (*planv1.Plan, error)
+
+	// component specifics
+	GetInstanceOutputs(ctx context.Context, orgID, appID, componentID, installID string) (*plugincomponentv1.Outputs, error)
 }
 
-type repo struct {
+type client struct {
 	v *validator.Validate
 
 	Settings Settings `validate:"required"`
@@ -40,11 +48,11 @@ type repo struct {
 	OrgId    string `validate:"unless Auth 1"`
 }
 
-var _ Repo = (*repo)(nil)
+var _ Client = (*client)(nil)
 
 // New returns a default repo with the default orgcontext getter
-func New(v *validator.Validate, opts ...repoOption) (*repo, error) {
-	r := &repo{
+func New(v *validator.Validate, opts ...repoOption) (*client, error) {
+	r := &client{
 		v: v,
 	}
 	for idx, opt := range opts {
@@ -60,7 +68,7 @@ func New(v *validator.Validate, opts ...repoOption) (*repo, error) {
 	return r, nil
 }
 
-type repoOption func(*repo) error
+type repoOption func(*client) error
 
 type Settings struct {
 	InstallsBucket                string
@@ -78,7 +86,7 @@ type Settings struct {
 
 // WithAuth is used to override the authentication, and use something like static credentials for instance
 func WithAuth(auth *credentials.Config) repoOption {
-	return func(r *repo) error {
+	return func(r *client) error {
 		r.Auth = auth
 		return nil
 	}
@@ -86,7 +94,7 @@ func WithAuth(auth *credentials.Config) repoOption {
 
 // WithOrgId is used to set the org id, which will be used to create IAM roles
 func WithOrgID(orgID string) repoOption {
-	return func(r *repo) error {
+	return func(r *client) error {
 		r.OrgId = orgID
 		return nil
 	}
@@ -94,7 +102,7 @@ func WithOrgID(orgID string) repoOption {
 
 // WithSettings adds the settings into the dal
 func WithSettings(set Settings) repoOption {
-	return func(r *repo) error {
+	return func(r *client) error {
 		r.Settings = set
 		return nil
 	}
