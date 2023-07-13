@@ -14,10 +14,6 @@ Represents a Terraform module build configuration
 """
 type TerraformBuildConfig {
   """
-  Environment variables for the build
-  """
-  envVarsConfig: [KeyValuePair]
-  """
   Version control system configuration
   """
   vcsConfig: VcsConfig
@@ -296,6 +292,7 @@ Represents a terraform module deployment configuration
 """
 type TerraformDeployConfig {
   terraformVersion: TerraformVersion
+  vars: [KeyValuePair!]
 }
 
 """
@@ -390,7 +387,6 @@ input DockerBuildInput {
 
 input TerraformBuildInput {
   vcsConfig: VcsConfigInput!
-  envVarsConfig: [KeyValuePairInput!]
 }
 
 input AWSAuthConfigInput {
@@ -439,6 +435,7 @@ input HelmDeployInput {
 
 input TerraformDeployConfigInput {
   terraformVersion: TerraformVersion
+  vars: [KeyValuePairInput!]
 }
 
 input DeployConfigInput {

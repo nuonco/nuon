@@ -875,14 +875,11 @@ export enum Status {
 /** Represents a Terraform module build configuration */
 export type TerraformBuildConfig = {
   __typename?: 'TerraformBuildConfig';
-  /** Environment variables for the build */
-  envVarsConfig?: Maybe<Array<Maybe<KeyValuePair>>>;
   /** Version control system configuration */
   vcsConfig?: Maybe<VcsConfig>;
 };
 
 export type TerraformBuildInput = {
-  envVarsConfig?: InputMaybe<Array<KeyValuePairInput>>;
   vcsConfig: VcsConfigInput;
 };
 
@@ -890,10 +887,12 @@ export type TerraformBuildInput = {
 export type TerraformDeployConfig = {
   __typename?: 'TerraformDeployConfig';
   terraformVersion?: Maybe<TerraformVersion>;
+  vars?: Maybe<Array<KeyValuePair>>;
 };
 
 export type TerraformDeployConfigInput = {
   terraformVersion?: InputMaybe<TerraformVersion>;
+  vars?: InputMaybe<Array<KeyValuePairInput>>;
 };
 
 export enum TerraformVersion {

@@ -2,6 +2,7 @@ import type {
   Component,
   ComponentConfig,
   KeyValuePair,
+  TerraformDeployConfig,
   VcsConfig,
 } from "../../types";
 import { getNodeFields } from "../../utils";
@@ -103,16 +104,11 @@ export function getConfig(config): ComponentConfig {
 
     if (config?.buildCfg?.terraformModuleCfg) {
       const vcsConfig = getVcsConfig(config?.buildCfg?.terraformModuleCfg);
-      const envVarsConfig = getEnvVarsConfig(
-        config?.buildCfg?.terraformModuleCfg
-      );
-
       delete config?.buildCfg?.terraformModuleCfg?.vcsCfg;
 
       buildConfig = {
         __typename: "TerraformBuildConfig",
         ...config?.buildCfg?.terraformModuleCfg,
-        envVarsConfig,
         vcsConfig,
       };
     }
@@ -164,12 +160,21 @@ export function getConfig(config): ComponentConfig {
     }
 
     if (config?.deployCfg?.terraformModuleConfig) {
-      const { terraformModuleConfig } = config?.deployCfg;
-
-      if (terraformModuleConfig?.terraformVersion) {
-        terraformModuleConfig.terraformVersion =
-          ETerraformVersion[terraformModuleConfig.terraformVersion];
-      }
+      const terraformModuleConfig: TerraformDeployConfig = {
+        terraformVersion:
+          ETerraformVersion[
+            config?.deployCfg?.terraformModuleConfig?.terraformVersion
+          ],
+        vars:
+          config?.deployCfg?.terraformModuleConfig?.vars?.variablesList?.map(
+            ({ name, sensitive, value }) => ({
+              __typename: "KeyValuePair",
+              key: name,
+              sensitive,
+              value,
+            })
+          ) || null,
+      };
 
       deployConfig = {
         __typename: "TerraformDeployConfig",
