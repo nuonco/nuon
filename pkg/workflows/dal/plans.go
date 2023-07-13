@@ -3,11 +3,16 @@ package dal
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 	"google.golang.org/protobuf/proto"
+)
+
+const (
+	defaultPlanFilename string = "plan.pb"
 )
 
 func (r *client) GetInstanceSyncPlan(ctx context.Context, orgID, appID, componentID, deployID, installID string) (*planv1.Plan, error) {
@@ -17,7 +22,9 @@ func (r *client) GetInstanceSyncPlan(ctx context.Context, orgID, appID, componen
 		return nil, fmt.Errorf("unable to get downloader: %w", err)
 	}
 
-	bucketKey := prefix.InstancePhasePath(orgID, appID, componentID, deployID, installID, "sync-container-image")
+	bucketDir := prefix.InstancePhasePath(orgID, appID, componentID, deployID, installID, "sync")
+	bucketKey := filepath.Join(bucketDir, defaultPlanFilename)
+
 	plan, err := r.getPlan(ctx, client, bucketKey)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get plan: %w", err)
@@ -33,7 +40,8 @@ func (r *client) GetInstanceDeployPlan(ctx context.Context, orgID, appID, compon
 		return nil, fmt.Errorf("unable to get downloader: %w", err)
 	}
 
-	bucketKey := prefix.InstancePhasePath(orgID, appID, componentID, deployID, installID, "deploy")
+	bucketDir := prefix.InstancePhasePath(orgID, appID, componentID, deployID, installID, "deploy")
+	bucketKey := filepath.Join(bucketDir, defaultPlanFilename)
 	plan, err := r.getPlan(ctx, client, bucketKey)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get plan: %w", err)
@@ -49,7 +57,8 @@ func (r *client) GetBuildPlan(ctx context.Context, orgID, appID, componentID, bu
 		return nil, fmt.Errorf("unable to get downloader: %w", err)
 	}
 
-	bucketKey := prefix.BuildPath(orgID, appID, componentID, buildID)
+	bucketDir := prefix.BuildPath(orgID, appID, componentID, buildID)
+	bucketKey := filepath.Join(bucketDir, defaultPlanFilename)
 	plan, err := r.getPlan(ctx, client, bucketKey)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get plan: %w", err)
