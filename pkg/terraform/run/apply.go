@@ -11,24 +11,24 @@ import (
 	callbackmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/callbacks"
 	execmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/exec"
 	tfo "github.com/powertoolsdev/mono/pkg/terraform/outputs"
-	compout "github.com/powertoolsdev/mono/pkg/types/plugins/component/v1"
+	componentv1 "github.com/powertoolsdev/mono/pkg/types/plugins/component/v1"
 	"google.golang.org/protobuf/proto"
 )
 
-func terraformToNuon(tfOutput map[string]tfexec.OutputMeta) *compout.Outputs {
-	outputs := &compout.Outputs{}
+func terraformToNuon(tfOutput map[string]tfexec.OutputMeta) *componentv1.Outputs {
+	outputs := &componentv1.Outputs{}
 	for _, goOut := range tfo.ParseTfOutputMeta(tfOutput) {
-		pbOut := compout.Value{
+		pbOut := componentv1.Value{
 			Path:      goOut.Path,
 			Sensitive: goOut.Sensitive,
 		}
 		switch goOut.Type {
 		case "boolean":
-			pbOut.Scalar = &compout.Value_Bool{Bool: goOut.Bool}
+			pbOut.Scalar = &componentv1.Value_Bool{Bool: goOut.Bool}
 		case "number":
-			pbOut.Scalar = &compout.Value_Double{Double: goOut.Float64}
+			pbOut.Scalar = &componentv1.Value_Double{Double: goOut.Float64}
 		case "string":
-			pbOut.Scalar = &compout.Value_String_{String_: goOut.String}
+			pbOut.Scalar = &componentv1.Value_String_{String_: goOut.String}
 		}
 		outputs.Values = append(outputs.Values, &pbOut)
 	}
