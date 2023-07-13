@@ -238,10 +238,6 @@ test("getConfig should take a raw grpc component config & return the correct con
   const spec = getConfig({
     buildCfg: {
       terraformModuleCfg: {
-        envVarsConfig: {
-          key: "test-env-var-key",
-          val: "test-env-var-val",
-        },
         vcsCfg: {
           connectedGithubConfig: {
             branch: "main",
@@ -254,6 +250,14 @@ test("getConfig should take a raw grpc component config & return the correct con
     deployCfg: {
       terraformModuleConfig: {
         terraformVersion: 1,
+        vars: {
+          variablesList: [
+            {
+              key: "test-env-var-key",
+              val: "test-env-var-val",
+            },
+          ],
+        },
       },
     },
   });
@@ -263,11 +267,6 @@ test("getConfig should take a raw grpc component config & return the correct con
       "__typename": "ComponentConfig",
       "buildConfig": {
         "__typename": "TerraformBuildConfig",
-        "envVarsConfig": {
-          "__typename": "KeyValuePair",
-          "key": "test-env-var-key",
-          "val": "test-env-var-val",
-        },
         "vcsConfig": {
           "__typename": "ConnectedGithubConfig",
           "branch": "main",
@@ -278,6 +277,14 @@ test("getConfig should take a raw grpc component config & return the correct con
       "deployConfig": {
         "__typename": "TerraformDeployConfig",
         "terraformVersion": "TERRAFORM_VERSION_LATEST",
+        "vars": [
+          {
+            "__typename": "KeyValuePair",
+            "key": undefined,
+            "sensitive": undefined,
+            "value": undefined,
+          },
+        ],
       },
     }
   `);
