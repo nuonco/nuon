@@ -13,7 +13,7 @@ const (
 	defaultSessionNameTmpl string        = "workflows-dal-%s-%s"
 )
 
-func (r *repo) getAppsCredentials(ctx context.Context) *credentials.Config {
+func (r *client) getAppsCredentials(ctx context.Context) *credentials.Config {
 	if r.Auth != nil {
 		return r.Auth
 	}
@@ -26,7 +26,7 @@ func (r *repo) getAppsCredentials(ctx context.Context) *credentials.Config {
 	}
 }
 
-func (r *repo) deploymentsCredentials(ctx context.Context) *credentials.Config {
+func (r *client) deploymentsCredentials(ctx context.Context) *credentials.Config {
 	if r.Auth != nil {
 		return r.Auth
 	}
@@ -39,7 +39,7 @@ func (r *repo) deploymentsCredentials(ctx context.Context) *credentials.Config {
 	}
 }
 
-func (r *repo) installsCredentials(ctx context.Context) *credentials.Config {
+func (r *client) installsCredentials(ctx context.Context) *credentials.Config {
 	if r.Auth != nil {
 		return r.Auth
 	}
@@ -52,7 +52,7 @@ func (r *repo) installsCredentials(ctx context.Context) *credentials.Config {
 	}
 }
 
-func (r *repo) orgsCredentials(ctx context.Context) *credentials.Config {
+func (r *client) orgsCredentials(ctx context.Context) *credentials.Config {
 	if r.Auth != nil {
 		return r.Auth
 	}
