@@ -24,6 +24,10 @@ import {
   HelmValue,
   HelmValues,
 } from "@buf/nuon_components.grpc_node/variables/v1/helm_pb";
+import {
+  TerraformVariable,
+  TerraformVariables,
+} from "@buf/nuon_components.grpc_node/variables/v1/terraform_pb";
 import { Config as VcsConfig } from "@buf/nuon_components.grpc_node/vcs/v1/config_pb";
 import { ConnectedGithubConfig } from "@buf/nuon_components.grpc_node/vcs/v1/connected_github_pb";
 import { PublicGitConfig } from "@buf/nuon_components.grpc_node/vcs/v1/public_git_pb";
@@ -216,6 +220,21 @@ export function parseDeployConfigInput(
     const terraformDeployCfg = new TerraformDeployConfig().setTerraformVersion(
       1 //deployConfig?.terraformDeployConfig
     );
+
+    if (deployConfig?.terraformDeployConfig?.vars) {
+      const { vars } = deployConfig?.terraformDeployConfig;
+      const terraformVars = new TerraformVariables().setVariablesList(
+        vars.map(({ key, sensitive, value }) => {
+          return new TerraformVariable()
+            .setName(key)
+            .setValue(value)
+            .setSensitive(sensitive);
+        })
+      );
+
+      terraformDeployCfg.setVars(terraformVars);
+    }
+
     deployCfg.setTerraformModuleConfig(terraformDeployCfg);
   }
 

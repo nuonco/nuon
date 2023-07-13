@@ -326,6 +326,17 @@ test("parseDeployConfigInput should return a deploy config for a terraform deplo
   const spec = parseDeployConfigInput({
     terraformDeployConfig: {
       terraformVersion: TerraformVersion.TerraformVersionLatest,
+      vars: [
+        {
+          key: "TEST",
+          value: "test",
+        },
+        {
+          key: "TEST",
+          sensitive: true,
+          value: "test",
+        },
+      ],
     },
   });
 
@@ -337,7 +348,20 @@ test("parseDeployConfigInput should return a deploy config for a terraform deplo
       "noop": undefined,
       "terraformModuleConfig": {
         "terraformVersion": 1,
-        "vars": undefined,
+        "vars": {
+          "variablesList": [
+            {
+              "name": "TEST",
+              "sensitive": false,
+              "value": "test",
+            },
+            {
+              "name": "TEST",
+              "sensitive": true,
+              "value": "test",
+            },
+          ],
+        },
       },
       "timeout": undefined,
     }
@@ -377,6 +401,7 @@ test("parseConfigInput should return a component config", () => {
         "terraformModuleCfg": undefined,
         "timeout": undefined,
       },
+      "connections": undefined,
       "deployCfg": {
         "basic": {
           "argsList": [],
