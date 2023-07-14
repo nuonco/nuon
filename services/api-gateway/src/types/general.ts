@@ -22,3 +22,8 @@ export type TResolverFn<A, O, I = undefined> = (
   args?: A,
   ctx?: IGQLContext
 ) => Promise<Partial<O>> | Partial<O>;
+
+export type TgRPCMessage = { toObject: () => Record<string, unknown> } & Record<
+  string,
+  unknown
+>;

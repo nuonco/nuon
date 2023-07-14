@@ -137,18 +137,6 @@ type BasicDeployConfig {
 }
 
 """
-Represents a public helm chart deployment configuration
-"""
-type HelmRepoDeployConfig {
-  chartName: String!
-  chartRepo: String!
-  chartVersion: String!
-
-  imageRepoValuesKey: String
-  imageTagValuesKey: String
-}
-
-"""
 Represents a connected Helm Chart deployment configuration
 """
 type HelmDeployConfig {
@@ -301,7 +289,6 @@ Represents all the component deployment configurations
 union ComponentDeployConfig =
     BasicDeployConfig
   | HelmDeployConfig
-  | HelmRepoDeployConfig
   | NoopConfig
   | TerraformDeployConfig
 
@@ -419,15 +406,6 @@ input BasicDeployConfigInput {
   port: Int!
 }
 
-input HelmRepoDeployConfigInput {
-  chartName: String!
-  chartRepo: String!
-  chartVersion: String!
-
-  imageRepoValuesKey: String
-  imageTagValuesKey: String
-}
-
 input HelmDeployInput {
   noop: Boolean
   values: [KeyValuePairInput!]
@@ -442,7 +420,6 @@ input DeployConfigInput {
   noop: Boolean
   basicDeployConfig: BasicDeployConfigInput
   helmDeployConfig: HelmDeployInput
-  helmRepoDeployConfig: HelmRepoDeployConfigInput
   terraformDeployConfig: TerraformDeployConfigInput
 }
 
