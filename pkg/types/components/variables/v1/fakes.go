@@ -3,15 +3,18 @@ package variablesv1
 import (
 	"reflect"
 
-	"github.com/go-faker/faker/v4"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
-func init() {
-	_ = faker.AddProvider("variables", fakeVariables)
-	_ = faker.AddProvider("envVars", fakeEnvVars)
-	_ = faker.AddProvider("helmValues", fakeHelmValues)
-	_ = faker.AddProvider("terraformVariables", fakeTerraformVariables)
-	_ = faker.AddProvider("waypointVariables", fakeWaypointVariables)
+func fakeIntermediateData(reflect.Value) (interface{}, error) {
+	data := map[string]interface{}{
+		"key": "value",
+		"obj": map[string]interface{}{
+			"key": "value",
+		},
+	}
+
+	return structpb.NewStruct(data)
 }
 
 func fakeVariables(v reflect.Value) (interface{}, error) {

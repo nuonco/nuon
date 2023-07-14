@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 func Test_fakeVariables(t *testing.T) {
@@ -71,4 +72,17 @@ func Test_fakeTerraformVariables(t *testing.T) {
 		err = envVar.Validate()
 		assert.NoError(t, err)
 	}
+}
+
+func Test_fakeIntermediateData(t *testing.T) {
+	resp, err := fakeIntermediateData(reflect.ValueOf("anything"))
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+
+	obj, ok := resp.(*structpb.Struct)
+	assert.True(t, ok)
+
+	vals := obj.AsMap()
+	assert.Equal(t, "value", vals["key"])
+	assert.Equal(t, "value", vals["obj"].(map[string]interface{})["key"])
 }
