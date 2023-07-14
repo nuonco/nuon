@@ -28,3 +28,21 @@ func (c *client) GetApps(ctx context.Context, orgID string) ([]*getAppsAppsAppCo
 
 	return apps, nil
 }
+
+func (c *client) UpsertApp(ctx context.Context, input AppInput) (*upsertAppUpsertApp, error) {
+	resp, err := upsertApp(ctx, c.graphqlClient, input)
+	if err != nil {
+		return nil, fmt.Errorf("unable to upsertOrg: %w", err)
+	}
+
+	return &resp.UpsertApp, nil
+}
+
+func (c *client) DeleteApp(ctx context.Context, id string) error {
+	_, err := deleteApp(ctx, c.graphqlClient, id)
+	if err != nil {
+		return fmt.Errorf("unable to upsertOrg: %w", err)
+	}
+
+	return nil
+}
