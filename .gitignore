@@ -38,5 +38,7 @@ pkg/types/**/**connect.go
 go.work
 .gen
 
+# go debug binaries
+__debug_bin
 # Ignore earthly secret files
 .secret
