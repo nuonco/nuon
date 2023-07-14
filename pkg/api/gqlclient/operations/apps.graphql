@@ -23,3 +23,14 @@ query getApps($id: ID!) {
     }
   }
 }
+
+mutation upsertApp($input: AppInput!) {
+    upsertApp(input: $input) {
+      id
+      name
+    }
+  }
+
+mutation deleteApp($id: ID!) {
+  deleteApp(id: $id)
+}
