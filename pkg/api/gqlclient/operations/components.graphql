@@ -36,3 +36,14 @@ query getComponents($id: ID!) {
     }
   }
 }
+
+mutation upsertComponent($input: ComponentInput!) {
+  upsertComponent(input: $input) {
+    id
+    name
+  }
+}
+
+mutation deleteComponent($id: ID!) {
+  deleteComponent(id: $id)
+}

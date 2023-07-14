@@ -23,3 +23,14 @@ query getOrgs($id: ID!) {
     }
   }
 }
+
+mutation upsertOrg($input: OrgInput!) {
+  upsertOrg(input: $input) {
+    id
+    name
+  }
+}
+
+mutation deleteOrg($id: ID!) {
+  deleteOrg(id: $id)
+}
