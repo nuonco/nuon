@@ -1,9 +1,5 @@
 package variablesv1
 
-func (e *HelmValue) GetValueNeedEd() string {
-	return e.Value
-}
-
 func (e *HelmValue) SetValue(val string) {
 	e.Value = val
 }
