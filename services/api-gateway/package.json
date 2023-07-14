@@ -26,7 +26,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@buf/nuon_apis.grpc_node": "^1.12.4-20230710195658-8567901c50ac.1",
-    "@buf/nuon_components.grpc_node": "^1.12.4-20230517163600-44b1b387bbda.1",
+    "@buf/nuon_components.grpc_node": "^1.12.4-20230714010028-88d4c5de231c.2",
     "@buf/nuon_orgs-api.grpc_node": "^1.12.4-20230713143450-50e37bf7641c.2",
     "@buf/nuon_shared.grpc_node": "^1.12.4-20230523155643-9fc424bb3775.1",
     "@grpc/grpc-js": "^1.8.18",
