@@ -2,12 +2,17 @@ syntax = "proto3";
 
 package variables.v1;
 
+import "google/protobuf/struct.proto";
 import "tagger/tagger.proto";
 import "variables/v1/variable.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/variables/v1";
 
-// Configs is a high level container for a list of configs.
+// Variables represents a set of vars that will be used as inputs into deploys, builds etc.
 message Variables {
   repeated variables.v1.Variable variables = 1 [(tagger.tags) = "faker:\"variables\""];
+
+  // the following fields are for debugging purposes only.
+  repeated variables.v1.Variable inputs = 2 [(tagger.tags) = "faker:\"variables\""];
+  google.protobuf.Struct intermediate_data = 3 [(tagger.tags) = "faker:\"intermediateData\""];
 }
