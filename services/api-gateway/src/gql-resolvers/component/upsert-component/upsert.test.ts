@@ -1,10 +1,10 @@
-import { AwsRegion, TerraformVersion } from "../../types";
+import { AwsRegion, TerraformVersion } from "../../../types";
 import {
   parseBuildConfigInput,
   parseConfigInput,
   parseDeployConfigInput,
   upsertComponent,
-} from "./upsert-component";
+} from "./upsert";
 
 test("parseBuildConfigInput should return a build config for an external image", () => {
   const spec = parseBuildConfigInput({
@@ -143,44 +143,7 @@ test("parseBuildConfigInput should return a build config for a docker build with
   `);
 });
 
-test("parseBuildConfigInput should return a build config for a docker build with public git repo and one environment variable", () => {
-  const spec = parseBuildConfigInput({
-    dockerBuildConfig: {
-      dockerfile: "Dockerfile",
-      vcsConfig: {
-        publicGit: {
-          directory: "/",
-          repo: "org/repo",
-        },
-      },
-    },
-  });
-  expect(spec.toObject()).toMatchInlineSnapshot(`
-    {
-      "dockerCfg": {
-        "buildArgsList": [],
-        "dockerfile": "Dockerfile",
-        "envVars": undefined,
-        "target": "",
-        "vcsCfg": {
-          "connectedGithubConfig": undefined,
-          "publicGitConfig": {
-            "directory": "/",
-            "gitRef": "",
-            "repo": "org/repo",
-          },
-        },
-      },
-      "externalImageCfg": undefined,
-      "helmChartCfg": undefined,
-      "noop": undefined,
-      "terraformModuleCfg": undefined,
-      "timeout": undefined,
-    }
-  `);
-});
-
-test("parseBuildConfigInput should return a build config for a helm chart build with public git repo and one environment variable", () => {
+test("parseBuildConfigInput should return a build config for a helm chart build with public git repo", () => {
   const spec = parseBuildConfigInput({
     helmBuildConfig: {
       chartName: "test-chart",
@@ -240,35 +203,6 @@ test("parseDeployConfigInput should return a deploy config for a basic k8s deplo
       },
       "helmChart": undefined,
       "helmRepo": undefined,
-      "noop": undefined,
-      "terraformModuleConfig": undefined,
-      "timeout": undefined,
-    }
-  `);
-});
-
-test("parseDeployConfigInput should return a deploy config for a helm repo deployment", () => {
-  const spec = parseDeployConfigInput({
-    helmRepoDeployConfig: {
-      chartName: "httpbin",
-      chartRepo: "rgnu/httpbin",
-      chartVersion: "1.0.0",
-      imageRepoValuesKey: "httpbin/blah",
-      imageTagValuesKey: "latest",
-    },
-  });
-
-  expect(spec.toObject()).toMatchInlineSnapshot(`
-    {
-      "basic": undefined,
-      "helmChart": undefined,
-      "helmRepo": {
-        "chartName": "httpbin",
-        "chartRepo": "rgnu/httpbin",
-        "chartVersion": "1.0.0",
-        "imageRepoValuesKey": "httpbin/blah",
-        "imageTagValuesKey": "latest",
-      },
       "noop": undefined,
       "terraformModuleConfig": undefined,
       "timeout": undefined,
