@@ -188,7 +188,7 @@ export type ComponentConnection = Connection & {
 };
 
 /** Represents all the component deployment configurations */
-export type ComponentDeployConfig = BasicDeployConfig | HelmDeployConfig | HelmRepoDeployConfig | NoopConfig | TerraformDeployConfig;
+export type ComponentDeployConfig = BasicDeployConfig | HelmDeployConfig | NoopConfig | TerraformDeployConfig;
 
 /** An auto-generated type which holds one Component and a cursor during pagination */
 export type ComponentEdge = {
@@ -253,7 +253,6 @@ export type Deploy = {
 export type DeployConfigInput = {
   basicDeployConfig?: InputMaybe<BasicDeployConfigInput>;
   helmDeployConfig?: InputMaybe<HelmDeployInput>;
-  helmRepoDeployConfig?: InputMaybe<HelmRepoDeployConfigInput>;
   noop?: InputMaybe<Scalars['Boolean']['input']>;
   terraformDeployConfig?: InputMaybe<TerraformDeployConfigInput>;
 };
@@ -363,24 +362,6 @@ export type HelmDeployConfig = {
 export type HelmDeployInput = {
   noop?: InputMaybe<Scalars['Boolean']['input']>;
   values?: InputMaybe<Array<KeyValuePairInput>>;
-};
-
-/** Represents a public helm chart deployment configuration */
-export type HelmRepoDeployConfig = {
-  __typename?: 'HelmRepoDeployConfig';
-  chartName: Scalars['String']['output'];
-  chartRepo: Scalars['String']['output'];
-  chartVersion: Scalars['String']['output'];
-  imageRepoValuesKey?: Maybe<Scalars['String']['output']>;
-  imageTagValuesKey?: Maybe<Scalars['String']['output']>;
-};
-
-export type HelmRepoDeployConfigInput = {
-  chartName: Scalars['String']['input'];
-  chartRepo: Scalars['String']['input'];
-  chartVersion: Scalars['String']['input'];
-  imageRepoValuesKey?: InputMaybe<Scalars['String']['input']>;
-  imageTagValuesKey?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Represents a collection of general settings and information about a cloud target */
