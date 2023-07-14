@@ -28,3 +28,21 @@ func (c *client) GetOrgs(ctx context.Context, userID string) ([]*getOrgsOrgsOrgC
 
 	return orgs, nil
 }
+
+func (c *client) UpsertOrg(ctx context.Context, input OrgInput) (*upsertOrgUpsertOrg, error) {
+	resp, err := upsertOrg(ctx, c.graphqlClient, input)
+	if err != nil {
+		return nil, fmt.Errorf("unable to upsertOrg: %w", err)
+	}
+
+	return &resp.UpsertOrg, nil
+}
+
+func (c *client) DeleteOrg(ctx context.Context, id string) error {
+	_, err := deleteOrg(ctx, c.graphqlClient, id)
+	if err != nil {
+		return fmt.Errorf("unable to upsertOrg: %w", err)
+	}
+
+	return nil
+}

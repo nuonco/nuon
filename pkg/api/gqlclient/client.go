@@ -17,10 +17,14 @@ type Client interface {
 	// orgs
 	GetOrg(ctx context.Context, orgID string) (*getOrgOrg, error)
 	GetOrgs(ctx context.Context, orgID string) ([]*getOrgsOrgsOrgConnectionEdgesOrgEdgeNodeOrg, error)
+	UpsertOrg(ctx context.Context, input OrgInput) (*upsertOrgUpsertOrg, error)
+	DeleteOrg(ctx context.Context, orgID string) error
 
 	// apps
 	GetApp(ctx context.Context, appID string) (*getAppApp, error)
 	GetApps(ctx context.Context, orgID string) ([]*getAppsAppsAppConnectionEdgesAppEdgeNodeApp, error)
+	UpsertApp(ctx context.Context, input AppInput) (*upsertAppUpsertApp, error)
+	DeleteApp(ctx context.Context, appID string) error
 
 	// installs
 	GetInstall(ctx context.Context, installID string) (*getInstallInstall, error)
