@@ -10,7 +10,6 @@ managed:
       - buf.build/srikrsna/protoc-gen-gotag
       - buf.build/nuon/components
       - buf.build/nuon/workflows
-      - buf.build/nuon/deployments
 plugins:
   - plugin: buf.build/protocolbuffers/go
     out: .

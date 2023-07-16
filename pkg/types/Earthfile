@@ -12,32 +12,16 @@ ARG REPO=
 ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/$EARTHLY_GIT_PROJECT_NAME
 
-# NOTE(jm): we are planning on deprecating usage of buf schema registry, and this will go away.
-ARG BUF_USER=jonmorehouse
-ARG BUF_TOKEN=4c51e8481ed34404b7ab6a0c62dc7b2db82757d8f86e4caa853750973e2c5083
-
 proto:
     FROM bufbuild/buf
     WORKDIR /work
-    COPY --dir $REPO/ .
+    COPY --dir . .
     WORKDIR $REPO
-    DO +BUF_LOGIN
 
 push-proto:
-    FROM +proto
-    RUN buf push
+  RUN "printf noop"
 
 lint:
     FROM +proto
-    DO +BUF_LOGIN
     RUN sh -c "buf lint && buf format -d --exit-code" \
             || sh -c "printf '%s\n' 'Buf Format changes exist in current branch' >&2 && exit 1"
-
-################################### UDCs ######################################
-
-BUF_LOGIN:
-  COMMAND
-  RUN echo $BUF_TOKEN \
-     | buf registry login --username $BUF_USER --token-stdin
-
-################################### LOCAL #####################################
