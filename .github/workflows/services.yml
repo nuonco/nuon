@@ -42,8 +42,10 @@ jobs:
           filters: |
             api:
               - services/api/**
+              - pkg/types/**
             api-gateway:
               - services/api-gateway/**
+              - pkg/types/**
             orgs-api:
               - services/orgs-api/**
             workers-apps:
