@@ -1,0 +1,57 @@
+---
+# this file is where we define the rules for what changes trigger CI runs. Each service or artifact should have an entry
+# in this file, and a list of directories/rules that should trigger changes for it.
+#
+# our CI system uses the https://github.com/dorny/paths-filter github action for looking up changes.
+
+# to add a new directory that triggers a CI run for a service, update the list entry
+services: |
+  api:
+    - services/api/**
+    - pkg/types/**
+  api-gateway:
+    - services/api-gateway/**
+    - pkg/types/**
+  orgs-api:
+    - services/orgs-api/**
+  workers-apps:
+    - services/workers-apps/**
+  workers-canary:
+    - services/workers-canary/**
+  workers-deployments:
+    - services/workers-deployments/**
+  workers-executors:
+    - services/workers-executors/**
+  workers-installs:
+    - services/workers-installs/**
+  workers-instances:
+    - services/workers-instances/**
+  workers-orgs:
+    - services/workers-orgs/**
+
+# to add a new directory that triggers a CI run for an artifact, update the list entry
+artifacts: |
+  bins/nuonctl:
+    - bins/nuonctl/**
+  bins/terraform-provider-nuon:
+    - bins/terraform-provider-nuon/**
+
+  charts/demo:
+    - charts/demo/**
+  charts/temporal:
+    - charts/temporal/**
+  charts/waypoint:
+    - charts/waypoint/**
+
+  bins/waypoint-plugin-exp:
+    - bins/waypoint-plugin-exp/**
+  bins/waypoint-plugin-helm:
+    - bins/waypoint-plugin-helm/**
+  bins/waypoint-plugin-noop:
+    - bins/waypoint-plugin-noop/**
+  bins/waypoint-plugin-oci:
+    - bins/waypoint-plugin-oci/**
+  bins/waypoint-plugin-oci-sync:
+    - bins/waypoint-plugin-oci-sync/**
+  bins/waypoint-plugin-terraform:
+    - bins/waypoint-plugin-terraform/**
