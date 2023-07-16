@@ -36,32 +36,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: read ci triggers file
+        uses: pietrobolcato/action-read-yaml@1.0.0
+        id: ci_triggers
+        with:
+          config: ci-triggers.yml
+
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          filters: |
-            api:
-              - services/api/**
-              - pkg/types/**
-            api-gateway:
-              - services/api-gateway/**
-              - pkg/types/**
-            orgs-api:
-              - services/orgs-api/**
-            workers-apps:
-              - services/workers-apps/**
-            workers-canary:
-              - services/workers-canary/**
-            workers-deployments:
-              - services/workers-deployments/**
-            workers-executors:
-              - services/workers-executors/**
-            workers-installs:
-              - services/workers-installs/**
-            workers-instances:
-              - services/workers-instances/**
-            workers-orgs:
-              - services/workers-orgs/**
+          filters: ${{ steps.ci_triggers.outputs['services'] }}
+
   tag:
     name: Determine short ref
     runs-on: ubuntu-latest
