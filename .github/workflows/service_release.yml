@@ -54,7 +54,6 @@ jobs:
         uses: powertoolsdev/mono/actions/setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           clone_token: ${{ steps.generate_token.outputs.token }}
           aws_role: ${{ env.TFO_GH_ROLE_ARN }}

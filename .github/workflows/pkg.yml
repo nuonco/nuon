@@ -68,7 +68,6 @@ jobs:
         uses: powertoolsdev/mono/actions/setup-ci@main
         with:
           clone_token: ${{ steps.generate_token.outputs.token }}
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
 
       - name: Lint
         run: |
@@ -101,7 +100,6 @@ jobs:
         uses: powertoolsdev/mono/actions/setup-ci@main
         with:
           clone_token: ${{ steps.generate_token.outputs.token }}
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
 
       - name: Test
         run: |
@@ -136,7 +134,6 @@ jobs:
         uses: powertoolsdev/action-setup-ci@main
         with:
           clone_token: ${{ steps.generate_token.outputs.token }}
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
 
       - name: cache
         run: |

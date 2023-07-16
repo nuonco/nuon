@@ -64,7 +64,6 @@ jobs:
         uses: powertoolsdev/action-setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
 
       - name: Lint
         run: |
@@ -75,41 +74,6 @@ jobs:
             +lint \
             --REPO=${{matrix.repo}} \
 
-  release:
-    name: 🚀 release
-    needs:
-      - changes
-      - lint
-    if: ${{ needs.changes.outputs.protos == 'true' && github.event_name != 'pull_request' }}
-    defaults:
-      run:
-        working-directory: pkg/types
-    strategy:
-      matrix:
-        repo:
-          - api
-          - components
-          - orgs-api
-          - shared
-          - workflows
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Setup for CI
-        uses: powertoolsdev/action-setup-ci@main
-        with:
-          tfcloud_token: ${{ secrets.TF_API_KEY }}
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
-
-      - name: Push protos
-        run: |
-          earthly \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            +push-proto \
-            --REPO=${{matrix.repo}} \
-
   update_status:
     name: update status
     if: github.event_name == 'pull_request' && always()
@@ -117,7 +81,6 @@ jobs:
     needs:
       - changes
       - lint
-      - release
     steps:
       - uses: martialonline/workflow-status@v3
         id: check

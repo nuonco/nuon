@@ -6,3 +6,5 @@ directories:
   - orgs-api
   - shared
   - workflows
+  - plugins
+  - vendor

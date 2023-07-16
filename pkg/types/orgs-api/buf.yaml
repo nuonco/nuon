@@ -6,7 +6,6 @@ deps:
   - buf.build/envoyproxy/protoc-gen-validate
   - buf.build/srikrsna/protoc-gen-gotag
   - buf.build/nuon/components
-  - buf.build/nuon/deployments
   - buf.build/nuon/workflows
 lint:
   use:

@@ -35,6 +35,4 @@ lint:
 
 GEN:
     COMMAND
-    # TODO(jm): this should be able to go away
-    DO ./types+BUF_LOGIN
     RUN go generate ./...

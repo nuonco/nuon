@@ -48,7 +48,6 @@ jobs:
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
           clone_token: ${{ steps.generate_token.outputs.token }}
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           aws_role: ${{ env.TFO_GH_ROLE_ARN }}
           aws_region: ${{ env.TFO_REGION }}
