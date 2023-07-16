@@ -37,6 +37,7 @@ deps:
     npm ci
 
   COPY --dir src src
+  COPY ../../pkg+code/pkg/types/build src/build
 
 test-integration:
   RUN echo "noop..."

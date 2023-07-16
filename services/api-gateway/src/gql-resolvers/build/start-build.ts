@@ -1,5 +1,5 @@
-import { StartBuildRequest } from "@buf/nuon_apis.grpc_node/build/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { StartBuildRequest } from "../../build/api/build/v1/messages_pb";
 import type {
   Mutation,
   MutationStartBuildArgs,

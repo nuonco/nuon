@@ -1,5 +1,5 @@
-import { GetComponentsByAppRequest } from "@buf/nuon_apis.grpc_node/component/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { GetComponentsByAppRequest } from "../../build/api/component/v1/messages_pb";
 import type { Query, QueryComponentsArgs, TResolverFn } from "../../types";
 import { formatComponent } from "./utils";
 

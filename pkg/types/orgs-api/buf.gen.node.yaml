@@ -1,0 +1,20 @@
+---
+version: v1
+managed:
+  enabled: true
+plugins:
+  - plugin: buf.build/protocolbuffers/js:v3.21.2
+    opt: import_style=commonjs,binary
+    out: ../build/orgs-api
+
+  - name: grpc
+    path: ../../../node_modules/.bin/grpc_tools_node_protoc_plugin
+    opt: grpc_js
+    out: ../build/orgs-api
+    strategy: all
+
+  # experimental
+  - plugin: es
+    opt: target=ts
+    out: ../../../services/api-gateway/src/build/orgs-api-es
+    path: ../../../node_modules/.bin/protoc-gen-es

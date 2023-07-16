@@ -1,6 +1,6 @@
-import { Config as VcsConfig } from "@buf/nuon_components.grpc_node/vcs/v1/config_pb";
-import { ConnectedGithubConfig } from "@buf/nuon_components.grpc_node/vcs/v1/connected_github_pb";
-import { PublicGitConfig } from "@buf/nuon_components.grpc_node/vcs/v1/public_git_pb";
+import { Config as VcsConfig } from "../../../build/components/vcs/v1/config_pb";
+import { ConnectedGithubConfig } from "../../../build/components/vcs/v1/connected_github_pb";
+import { PublicGitConfig } from "../../../build/components/vcs/v1/public_git_pb";
 import type { TgRPCMessage, VcsConfigInput } from "../../../types";
 
 export function initVcsConfig(vcsInput: VcsConfigInput): TgRPCMessage {

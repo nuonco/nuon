@@ -1,8 +1,8 @@
-import { HelmChartConfig as HelmDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/helm_chart_pb";
+import { HelmChartConfig as HelmDeployConfig } from "../../../build/components/deploy/v1/helm_chart_pb";
 import {
   HelmValue,
   HelmValues,
-} from "@buf/nuon_components.grpc_node/variables/v1/helm_pb";
+} from "../../../build/components/variables/v1/helm_pb";
 import { HelmDeployInput, TgRPCMessage } from "../../../types";
 
 export function initHelmDeployConfig(

@@ -1,6 +1,6 @@
-import { UpsertComponentRequest } from "@buf/nuon_apis.grpc_node/component/v1/messages_pb";
-import { Component } from "@buf/nuon_components.grpc_node/component/v1/component_pb";
 import { GraphQLError } from "graphql";
+import { UpsertComponentRequest } from "../../../build/api/component/v1/messages_pb";
+import { Component } from "../../../build/components/component/v1/component_pb";
 import type {
   ComponentConfigInput,
   Mutation,

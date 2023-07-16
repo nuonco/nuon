@@ -1,5 +1,5 @@
-import { StartDeployRequest } from "@buf/nuon_apis.grpc_node/deploy/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { StartDeployRequest } from "../../build/api/deploy/v1/messages_pb";
 import type {
   Mutation,
   MutationStartDeployArgs,

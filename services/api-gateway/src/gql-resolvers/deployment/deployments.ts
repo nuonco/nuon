@@ -1,9 +1,9 @@
+import { GraphQLError } from "graphql";
 import {
   GetDeploymentsByAppsRequest,
   GetDeploymentsByComponentsRequest,
   GetDeploymentsByInstallsRequest,
-} from "@buf/nuon_apis.grpc_node/deployment/v1/messages_pb";
-import { GraphQLError } from "graphql";
+} from "../../build/api/deployment/v1/messages_pb";
 import type {
   Deployment,
   Query,

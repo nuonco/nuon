@@ -14,7 +14,11 @@ ARG GHCR_IMAGE=ghcr.io/powertoolsdev/mono-pkg:cache
 code:
     FROM ../.+deps
     COPY --dir . ./pkg
+    # TODO(jm): create a better way to share the GQL schema, that doesn't require importing a service like this. Should
+    # the schema just live in some type of top level directory?
+    COPY ../services/api-gateway+gql-schema/services /src/services
     DO +GEN
+
     SAVE ARTIFACT pkg
     SAVE IMAGE --push $GHCR_IMAGE
 
@@ -31,11 +35,6 @@ lint:
 
 GEN:
     COMMAND
-    # TODO(jm): create a better way to share the GQL schema, that doesn't require importing a service like this. Should
-    # the schema just live in some type of top level directory?
-    COPY ../services/api-gateway+gql-schema/services /src/services
-
-    # NOTE: put any additional methods in here for specific earthfiles
+    # TODO(jm): this should be able to go away
     DO ./types+BUF_LOGIN
-
     RUN go generate ./...

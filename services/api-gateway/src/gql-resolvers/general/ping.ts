@@ -1,5 +1,5 @@
-import { PingRequest } from "@buf/nuon_shared.grpc_node/status/v1/ping_pb";
 import { GraphQLError } from "graphql";
+import { PingRequest } from "../../build/shared/status/v1/ping_pb";
 import type { Query, TResolverFn } from "../../types";
 
 export const ping: TResolverFn<undefined, Query["ping"]> = (

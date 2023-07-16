@@ -1,5 +1,5 @@
-import { CancelBuildRequest } from "@buf/nuon_apis.grpc_node/build/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { CancelBuildRequest } from "../../build/api/build/v1/messages_pb";
 import type {
   Mutation,
   MutationCancelBuildArgs,

@@ -1,4 +1,4 @@
-import { Config as BuildConfig } from "@buf/nuon_components.grpc_node/build/v1/build_pb";
+import { Config as BuildConfig } from "../../../build/components/build/v1/build_pb";
 import type { BuildConfigInput, TgRPCMessage } from "../../../types";
 import { initDockerBuildConfig } from "./docker-build-config";
 import { initExternalImageConfig } from "./external-image-config";

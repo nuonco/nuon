@@ -1,8 +1,8 @@
+import { GraphQLError } from "graphql";
 import {
   GetDeployRequest,
   GetDeploysByInstanceRequest,
-} from "@buf/nuon_apis.grpc_node/deploy/v1/messages_pb";
-import { GraphQLError } from "graphql";
+} from "../../build/api/deploy/v1/messages_pb";
 import type { Deploy, Query, QueryDeployArgs, TResolverFn } from "../../types";
 import { getNodeFields } from "../../utils";
 

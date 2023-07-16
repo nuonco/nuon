@@ -1,5 +1,5 @@
-import { UpsertOrgRequest } from "@buf/nuon_apis.grpc_node/org/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { UpsertOrgRequest } from "../../build/api/org/v1/messages_pb";
 import type {
   Mutation,
   MutationUpsertOrgArgs,
