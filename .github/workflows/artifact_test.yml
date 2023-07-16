@@ -30,7 +30,6 @@ jobs:
         with:
           clone_token: ${{ secrets.GITHUB_TOKEN }}
           setup_helm: "false"
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Earthly test target

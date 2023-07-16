@@ -12,10 +12,6 @@ We try to maintain a consistent set of tools and a similar workflow for all serv
     * Setup AWS SSO util.
     * Set up an AWS profile config at `~/.aws/config (not sure where we get this from.)
 * Install [docker](https://www.docker.com/get-started/) **OR** [podman](https://podman.io/)
-* Sign up for [buf.build](https://buf.build/)
-    * Create a buf token using the buf web interface
-    * Store your `BUF_TOKEN` in your password manager
-    * Store your `BUF_USER` username for use later
 * Install the nuonctl CLI tool.
     * From `/mono/bins/nuonctl`, run `go install .`.
 
@@ -30,8 +26,7 @@ And then configure your local environment.
 ```sh
 export AWS_DEFAULT_PROFILE=stage.NuonPowerUser
 export AWS_REGION='us-west-2'
-export EARTHLY_SECRETS="BUF_TOKEN=CHANGEME_PUT_YOUR_REAL_BUF_TOKEN_HERE,GITHUB_TOKEN=CHANGEME_PUT_YOUR_REAL_GITHUB_PERSONAL_ACCESS_TOKEN_HERE"
-export EARTHLY_BUILD_ARGS='BUF_USER=CHANGEME_PUT_YOUR_REAL_BUF_USERNAME_HERE'
+export EARTHLY_SECRETS="GITHUB_TOKEN=CHANGEME_PUT_YOUR_REAL_GITHUB_PERSONAL_ACCESS_TOKEN_HERE"
 ```
 
 Now that all the dependencies are installed, configured & running, you should be able to run any service locally using nuonctl.
