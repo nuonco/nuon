@@ -1,23 +1,23 @@
-import { AppsServiceClient } from "@buf/nuon_apis.grpc_node/app/v1/service_grpc_pb";
-import { BuildsServiceClient } from "@buf/nuon_apis.grpc_node/build/v1/service_grpc_pb";
-import { ComponentsServiceClient } from "@buf/nuon_apis.grpc_node/component/v1/service_grpc_pb";
-import { DeployServiceClient } from "@buf/nuon_apis.grpc_node/deploy/v1/service_grpc_pb";
-import { DeploymentsServiceClient } from "@buf/nuon_apis.grpc_node/deployment/v1/service_grpc_pb";
-import { GithubServiceClient } from "@buf/nuon_apis.grpc_node/github/v1/service_grpc_pb";
-import { InstallsServiceClient } from "@buf/nuon_apis.grpc_node/install/v1/service_grpc_pb";
-import { InstancesServiceClient } from "@buf/nuon_apis.grpc_node/instance/v1/service_grpc_pb";
-import { OrgsServiceClient } from "@buf/nuon_apis.grpc_node/org/v1/service_grpc_pb";
-import { BuildsServiceClient as BuildsStatusServiceClient } from "@buf/nuon_orgs-api.grpc_node/builds/v1/service_grpc_pb";
-import { DeploymentsServiceClient as DeploymentsStatusServiceClient } from "@buf/nuon_orgs-api.grpc_node/deployments/v1/service_grpc_pb";
-import { InstallsServiceClient as InstallsStatusServiceClient } from "@buf/nuon_orgs-api.grpc_node/installs/v1/service_grpc_pb";
-import { InstancesServiceClient as InstancesStatusServiceClient } from "@buf/nuon_orgs-api.grpc_node/instances/v1/service_grpc_pb";
-import { OrgsServiceClient as OrgsStatusServiceClient } from "@buf/nuon_orgs-api.grpc_node/orgs/v1/service_grpc_pb";
-import { StatusServiceClient } from "@buf/nuon_shared.grpc_node/status/v1/service_grpc_pb";
 import {
   status as ESTATUS,
   InterceptingCall,
   credentials,
 } from "@grpc/grpc-js";
+import { AppsServiceClient } from "./build/api/app/v1/service_grpc_pb";
+import { BuildsServiceClient } from "./build/api/build/v1/service_grpc_pb";
+import { ComponentsServiceClient } from "./build/api/component/v1/service_grpc_pb";
+import { DeployServiceClient } from "./build/api/deploy/v1/service_grpc_pb";
+import { DeploymentsServiceClient } from "./build/api/deployment/v1/service_grpc_pb";
+import { GithubServiceClient } from "./build/api/github/v1/service_grpc_pb";
+import { InstallsServiceClient } from "./build/api/install/v1/service_grpc_pb";
+import { InstancesServiceClient } from "./build/api/instance/v1/service_grpc_pb";
+import { OrgsServiceClient } from "./build/api/org/v1/service_grpc_pb";
+import { BuildsServiceClient as BuildsStatusServiceClient } from "./build/orgs-api/builds/v1/service_grpc_pb";
+import { DeploymentsServiceClient as DeploymentsStatusServiceClient } from "./build/orgs-api/deployments/v1/service_grpc_pb";
+import { InstallsServiceClient as InstallsStatusServiceClient } from "./build/orgs-api/installs/v1/service_grpc_pb";
+import { InstancesServiceClient as InstancesStatusServiceClient } from "./build/orgs-api/instances/v1/service_grpc_pb";
+import { OrgsServiceClient as OrgsStatusServiceClient } from "./build/orgs-api/orgs/v1/service_grpc_pb";
+import { StatusServiceClient } from "./build/shared/status/v1/service_grpc_pb";
 import { env, logger } from "./utils";
 
 // TODO(nnnnat): needs correct grpc clients typing

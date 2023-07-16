@@ -3,7 +3,7 @@ import {
   ExternalImageAuthConfig,
   ExternalImageConfig,
   PublicAuthCfg,
-} from "@buf/nuon_components.grpc_node/build/v1/external_image_pb";
+} from "../../../build/components/build/v1/external_image_pb";
 import type { ExternalImageInput, TgRPCMessage } from "../../../types";
 
 export function initExternalImageConfig(

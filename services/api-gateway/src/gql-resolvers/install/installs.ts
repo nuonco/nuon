@@ -1,5 +1,5 @@
-import { GetInstallsByAppRequest } from "@buf/nuon_apis.grpc_node/install/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { GetInstallsByAppRequest } from "../../build/api/install/v1/messages_pb";
 import type { Query, QueryInstallsArgs, TResolverFn } from "../../types";
 import { formatInstall } from "./utils";
 

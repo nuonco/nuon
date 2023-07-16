@@ -1,5 +1,5 @@
-import { DeleteComponentRequest } from "@buf/nuon_apis.grpc_node/component/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { DeleteComponentRequest } from "../../build/api/component/v1/messages_pb";
 import type {
   Mutation,
   MutationDeleteComponentArgs,

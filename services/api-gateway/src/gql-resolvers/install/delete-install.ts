@@ -1,5 +1,5 @@
-import { DeleteInstallRequest } from "@buf/nuon_apis.grpc_node/install/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { DeleteInstallRequest } from "../../build/api/install/v1/messages_pb";
 import type {
   Mutation,
   MutationDeleteInstallArgs,

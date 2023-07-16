@@ -1,5 +1,5 @@
-import { BasicConfig as BasicDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/basic_pb";
-import { ListenerConfig } from "@buf/nuon_components.grpc_node/deploy/v1/config_pb";
+import { BasicConfig as BasicDeployConfig } from "../../../build/components/deploy/v1/basic_pb";
+import { ListenerConfig } from "../../../build/components/deploy/v1/config_pb";
 import type { BasicDeployConfigInput, TgRPCMessage } from "../../../types";
 
 export function initBasicDeployConfig(

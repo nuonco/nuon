@@ -1,5 +1,5 @@
-import { GetStatusRequest } from "@buf/nuon_orgs-api.grpc_node/deployments/v1/status_pb";
 import { GraphQLError } from "graphql";
+import { GetStatusRequest } from "../../build/orgs-api/deployments/v1/status_pb";
 import type {
   Query,
   QueryDeploymentStatusArgs,

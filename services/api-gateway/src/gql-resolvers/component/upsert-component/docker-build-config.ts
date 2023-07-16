@@ -1,4 +1,4 @@
-import { DockerConfig } from "@buf/nuon_components.grpc_node/build/v1/docker_pb";
+import { DockerConfig } from "../../../build/components/build/v1/docker_pb";
 import type { DockerBuildInput, TgRPCMessage } from "../../../types";
 import { initVcsConfig } from "./vcs-config";
 

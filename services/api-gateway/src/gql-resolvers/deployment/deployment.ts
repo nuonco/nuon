@@ -1,5 +1,5 @@
-import { GetDeploymentRequest } from "@buf/nuon_apis.grpc_node/deployment/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { GetDeploymentRequest } from "../../build/api/deployment/v1/messages_pb";
 import type {
   Deployment,
   Query,
