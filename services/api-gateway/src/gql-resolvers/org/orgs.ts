@@ -1,5 +1,5 @@
-import { GetOrgsByMemberRequest } from "@buf/nuon_apis.grpc_node/org/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { GetOrgsByMemberRequest } from "../../build/api/org/v1/messages_pb";
 import type { Org, Query, QueryOrgsArgs, TResolverFn } from "../../types";
 import { getNodeFields } from "../../utils";
 

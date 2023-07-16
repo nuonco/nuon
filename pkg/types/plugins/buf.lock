@@ -14,8 +14,8 @@ deps:
   - remote: buf.build
     owner: nuon
     repository: vendor
-    commit: 23ca93c81c69494aa4df601326512ff2
-    digest: shake256:a7c9b3ae4444e01398c53d7adb2e5aa3fd0f17073ce87ed99c8e440e8a34db1f2b11cebd1a54eb7dd87b1855f6062425aa04e7d1692a9731a90cf5db44bcc305
+    commit: 6ea510a42b464321847ad3fcbe1d1ff7
+    digest: shake256:4b8ece70f3c10dd1fd3584b716127e024f970e60afc4aeeb4758e73d9f85f7464c6c43750288d7bf5ab33a226ae444007efa77cb5960ed32ea3ee33210ddd471
   - remote: buf.build
     owner: srikrsna
     repository: protoc-gen-gotag

@@ -1,5 +1,5 @@
-import { GetAppRequest } from "@buf/nuon_apis.grpc_node/app/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { GetAppRequest } from "../../build/api/app/v1/messages_pb";
 import type { App, Query, QueryAppArgs, TResolverFn } from "../../types";
 import { getNodeFields } from "../../utils";
 

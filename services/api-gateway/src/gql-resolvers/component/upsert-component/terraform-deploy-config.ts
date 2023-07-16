@@ -1,8 +1,8 @@
-import { TerraformModuleConfig as TerraformDeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/terraform_module_pb";
+import { TerraformModuleConfig as TerraformDeployConfig } from "../../../build/components/deploy/v1/terraform_module_pb";
 import {
   TerraformVariable,
   TerraformVariables,
-} from "@buf/nuon_components.grpc_node/variables/v1/terraform_pb";
+} from "../../../build/components/variables/v1/terraform_pb";
 import type { TerraformDeployConfigInput, TgRPCMessage } from "../../../types";
 
 export function initTerraformDeployConfig(

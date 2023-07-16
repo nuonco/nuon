@@ -1,8 +1,8 @@
+import { GraphQLError } from "graphql";
 import {
   DeleteSecretsRequest,
   SecretRef,
-} from "@buf/nuon_orgs-api.grpc_node/instances/v1/secrets_pb";
-import { GraphQLError } from "graphql";
+} from "../../build/orgs-api/instances/v1/secrets_pb";
 import type {
   Mutation,
   MutationDeleteSecretsArgs,

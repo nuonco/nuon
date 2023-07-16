@@ -1,5 +1,5 @@
-import { DeleteAppRequest } from "@buf/nuon_apis.grpc_node/app/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { DeleteAppRequest } from "../../build/api/app/v1/messages_pb";
 import type { Mutation, MutationDeleteAppArgs, TResolverFn } from "../../types";
 
 export const deleteApp: TResolverFn<

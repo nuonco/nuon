@@ -4,10 +4,11 @@
   "description": "Nuon's GraphQL API gateway",
   "main": "src/main.ts",
   "scripts": {
-    "build": "run-s clean compile-ts copy-gql",
+    "build": "run-s clean compile-ts copy-gql copy-build",
     "clean": "rimraf dist/",
     "compile-ts": "tsc -p tsconfig.build.json",
     "copy-gql": "cp src/gql-schema/*.graphql dist/src/gql-schema/",
+    "copy-build": "cp -r src/build/* dist/src/build/",
     "dev": "nodemon src/main.ts",
     "fmt": "prettier --write src",
     "generate-gql-types": "graphql-codegen --config codegen.ts",
@@ -25,10 +26,6 @@
   "author": "Nat Hamilton <nhamilton@powertools.dev>",
   "license": "UNLICENSED",
   "dependencies": {
-    "@buf/nuon_apis.grpc_node": "^1.12.4-20230713143451-dc377ea52eb9.2",
-    "@buf/nuon_components.grpc_node": "^1.12.4-20230714010028-88d4c5de231c.2",
-    "@buf/nuon_orgs-api.grpc_node": "^1.12.4-20230713143450-50e37bf7641c.2",
-    "@buf/nuon_shared.grpc_node": "^1.12.4-20230523155643-9fc424bb3775.2",
     "@grpc/grpc-js": "^1.8.18",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

@@ -1,4 +1,4 @@
-import { Config as DeployConfig } from "@buf/nuon_components.grpc_node/deploy/v1/config_pb";
+import { Config as DeployConfig } from "../../../build/components/deploy/v1/config_pb";
 import type { DeployConfigInput, TgRPCMessage } from "../../../types";
 import { initBasicDeployConfig } from "./basic-deploy-config";
 import { initHelmDeployConfig } from "./helm-deploy-config";

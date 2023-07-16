@@ -1,5 +1,5 @@
-import { DeleteOrgRequest } from "@buf/nuon_apis.grpc_node/org/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { DeleteOrgRequest } from "../../build/api/org/v1/messages_pb";
 import type { Mutation, MutationDeleteOrgArgs, TResolverFn } from "../../types";
 
 export const deleteOrg: TResolverFn<

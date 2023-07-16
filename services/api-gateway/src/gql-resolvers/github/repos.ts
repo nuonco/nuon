@@ -1,5 +1,5 @@
-import { GetReposRequest } from "@buf/nuon_apis.grpc_node/github/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { GetReposRequest } from "../../build/api/github/v1/messages_pb";
 import type { Query, QueryReposArgs, TResolverFn } from "../../types";
 
 export const repos: TResolverFn<QueryReposArgs, Query["repos"]> = (
