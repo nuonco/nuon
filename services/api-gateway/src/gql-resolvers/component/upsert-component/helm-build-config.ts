@@ -1,4 +1,4 @@
-import { HelmChartConfig } from "@buf/nuon_components.grpc_node/build/v1/helm_chart_pb";
+import { HelmChartConfig } from "../../../build/components/build/v1/helm_chart_pb";
 import type { HelmBuildInput, TgRPCMessage } from "../../../types";
 import { initVcsConfig } from "./vcs-config";
 

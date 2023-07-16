@@ -1,5 +1,5 @@
-import { GetInstancesByInstallRequest } from "@buf/nuon_apis.grpc_node/instance/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { GetInstancesByInstallRequest } from "../../build/api/instance/v1/messages_pb";
 import type { Query, QueryInstancesArgs, TResolverFn } from "../../types";
 import { getNodeFields } from "../../utils";
 

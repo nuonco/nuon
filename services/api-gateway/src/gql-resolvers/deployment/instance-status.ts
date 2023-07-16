@@ -1,6 +1,6 @@
-import { GetInfoRequest } from "@buf/nuon_orgs-api.grpc_node/instances/v1/info_pb";
-import { GetStatusRequest } from "@buf/nuon_orgs-api.grpc_node/instances/v1/status_pb";
 import { GraphQLError } from "graphql";
+import { GetInfoRequest } from "../../build/orgs-api/instances/v1/info_pb";
+import { GetStatusRequest } from "../../build/orgs-api/instances/v1/status_pb";
 import type { Query, QueryInstanceStatusArgs, TResolverFn } from "../../types";
 import { STATUS_ENUM } from "../../utils";
 

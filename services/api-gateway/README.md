@@ -6,7 +6,9 @@ Nuon's GraphQL API gateway
 
 ### Private npm packages
 
-Before working with this project you'll need to create a personal access token for [GitHub](https://www.notion.so/nuon/Private-Github-Packages-8a51fd28b14f4673bd2b0848099ad811) & [Buf](https://www.notion.so/nuon/Private-Buf-Packages-4deda30863714c08bd08c0043d7cd42c). Once you've got these tokens you'll be able to download this project's private dependencies using `npm install`. To build & run this project as an OCI image refer to this doc on using [Earthly](https://www.notion.so/nuon/npm-6e3177b76f4e4df9ab9500b8d7fe5d28?pvs=4#8eb796e83c784931bc0b6d668bd6e060).
+Before working with this project you'll need to create a personal access token for [GitHub](https://www.notion.so/nuon/Private-Github-Packages-8a51fd28b14f4673bd2b0848099ad811)
+
+Once you've got these tokens you'll be able to download this project's private dependencies using `npm install`. To build & run this project as an OCI image refer to this doc on using [Earthly](https://www.notion.so/nuon/npm-6e3177b76f4e4df9ab9500b8d7fe5d28?pvs=4#8eb796e83c784931bc0b6d668bd6e060).
 
 ### .env config
 
@@ -22,7 +24,6 @@ You should update the following environment variables in the file:
   SERVICES=[{"name":"status","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"org","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"app","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"install","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"component","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"deployment","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"github","url":"api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"instanceStatus","url":"orgs-api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"orgStatus","url":"orgs-api.nuon.us-west-2.stage.nuon.cloud:80"},{"name":"installStatus","url":"orgs-api.nuon.us-west-2.stage.nuon.cloud:80"}, {"name":"instance","url":"api.nuon.us-west-2.stage.nuon.cloud:80"}]
   ```
 - `NUON_NPM_GITHUB_TOKEN`: your github personal access token you generated earlier
-- `NPM_BUF_TOKEN`: your buf token you generated earlier
 
 Make sure you do not source this `.env` file. Upon startup the gateway will read this file and set the appropriate environment variables.
 
@@ -32,20 +33,9 @@ Now that you've installed the deps & configured the `.env` you can start the gat
 
 ## Updating buf dependencies
 
-When changes to our protobufs happen we'll need to manually update the dependencies for the gateway. To do this you'll need to `export BUF_TOKEN` your Buf token in the terminal then run `npm update` or `npm update {buf-package}`, this should update the `package-lock.json` file with the latest version of the grpc lib.
+We no longer use the buf schema registry for dependencies. All dependency clients from protobufs are automatically generated into the `src/build` directory when you run `go generate ./...` in the root of the mono repo.
 
-**Buf dependencies list**
-
-- APIs `npm update @buf/nuon_apis.grpc_node`;
-- Components `npm update @buf/nuon_components.grpc_node`;
-- orgs-api `npm update @buf/nuon_orgs-api.grpc_node`;
-- shared: `npm update @buf/nuon_shared.grpc_node`;
-
-Note that sometimes we have to update nested dependencies. An example is the Components package which is used both by the gateway directly and by the package APIs. In this case you would have to update both packages: Components and APIs. To do that you should:
-
-1. update the Components package here with `npm update @buf/nuon_components.grpc_node`
-1. update the APIs package by going to the [API protos repo](https://github.com/powertoolsdev/mono/tree/main/pkg/types/api), running `buf mod update`, and committing the changes to the `buf.lock` file
-1. once the APIs package changes are deployed, update the APIs package here with `npm update @buf/nuon_apis.grpc_node`
+Please refer to the wiki entry on code generation for more.
 
 ## Updating GQL types
 
@@ -55,7 +45,9 @@ Whenever the GQL schema changes you'll need to regenerate the types to Typescrip
 
 To add a new resolver we usually have to: update the package that contains the new grpc service, add the GQL schema for the query or mutation, list the query or mutation to the index file, write the resolver code, and add unit tests.
 
-1. Add the GQL schema for the new resolver. This might require to update a package first in order to get the latest protos. Let's say we want to add a new query to retrieve all components for an organization. If this is a new GRPC service then we would have to first upgrade the API package (`npm update @buf/nuon_apis.grpc_node`) and then we would add something like this to the file `src/gql-schema/component.graphql`:
+1. Add the GQL schema for the new resolver. This might require to update a package first in order to get the latest protos. Let's say we want to add a new query to retrieve all components for an organization.
+
+If this is a new GRPC service then we would have to add something like this to the file `src/gql-schema/component.graphql`:
 
 ```graphql
 extend type Query {
@@ -112,6 +104,6 @@ export const components: TResolverFn<
   });
 ```
 
-To find the names of the methods to call (`GetComponentsByOrgRequest`, `getComponentsByOrg`) you will have to manually check the `pb` files of the imported package. For example, `@buf/nuon_apis.grpc_node/component/v1/messages_pb`.
+To find the names of the methods to call (`GetComponentsByOrgRequest`, `getComponentsByOrg`) you will have to manually check the `pb` files of the imported package. For example, `./src/build/components/component/v1/messages_pb`.
 
 Test your new resolver with Altair and if all is ok continue with writing unit tests for it.

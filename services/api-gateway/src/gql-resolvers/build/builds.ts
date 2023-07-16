@@ -1,5 +1,5 @@
-import { QueryBuildsRequest } from "@buf/nuon_apis.grpc_node/build/v1/messages_pb";
 import { GraphQLError } from "graphql";
+import { QueryBuildsRequest } from "../../build/api/build/v1/messages_pb";
 import type { Query, QueryBuildsArgs, TResolverFn } from "../../types";
 import { getNodeFields } from "../../utils";
 
