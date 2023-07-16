@@ -44,7 +44,6 @@ jobs:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
           clone_token: ${{ steps.generate_token.outputs.token }}
           setup_helm: "false"
-          buf_auth_token: ${{ secrets.BUF_AUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup terraform environment

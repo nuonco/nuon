@@ -24,14 +24,6 @@ Objects represent core objects which can be shared throughout our system. They a
 
 **NOTE:** object protos are designed to be shared and are safe to import by services.
 
-#### importing objects protos
-
-To be able to import for example `components` protos to the `api` protos you need to do the following first in your local env:
-- generate a [buf token](https://buf.build/settings/user)
-- set the token as the value of the environment variable `BUF_TOKEN` (manually or as part of the `.netrc` file)
-
-If these steps are not done first when you try to `go generate` you will get the error `Failure: repository "buf.build/nuon/components" was not found`.
-
 ## usage
 
 Protos are generated during both CI and locally. They should no longer be checked into source control. To generate locally, run:
@@ -49,4 +41,3 @@ We use the Buf registry to generate npm packages that are used by the api-gatewa
 3. apis
 
 This will guarantee that the generated npm packages are all correct.
-
