@@ -3,14 +3,15 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/powertoolsdev/mono/pkg/types/plugins
+    default: github.com/powertoolsdev/mono/pkg/types/waypoint
     except:
       - buf.build/googleapis/googleapis
       - buf.build/envoyproxy/protoc-gen-validate
       - buf.build/srikrsna/protoc-gen-gotag
+      - buf.build/nuon/components
       - buf.build/nuon/external
 plugins:
-  - plugin: gotag
+  - plugin: buf.build/protocolbuffers/go
     out: .
-    opt:
-      - paths=source_relative
+    opt: paths=source_relative
+

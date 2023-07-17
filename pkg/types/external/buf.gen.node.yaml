@@ -5,16 +5,16 @@ managed:
 plugins:
   - plugin: buf.build/protocolbuffers/js:v3.21.2
     opt: import_style=commonjs,binary
-    out: ../../../services/api-gateway/src/build/vendor
+    out: ../build/external
 
   - name: grpc
     path: ../../../node_modules/.bin/grpc_tools_node_protoc_plugin
     opt: grpc_js
-    out: ../../../services/api-gateway/src/build/vendor
+    out: ../build/external
     strategy: all
 
   # experimental
   - plugin: es
     opt: target=ts
-    out: ../../../services/api-gateway/src/build/vendor-es
+    out: ../build/external-es
     path: ../../../node_modules/.bin/protoc-gen-es

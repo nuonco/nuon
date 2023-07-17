@@ -3,7 +3,7 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/powertoolsdev/mono/pkg/types/vendor
+    default: github.com/powertoolsdev/mono/pkg/types/external
     except:
       - buf.build/googleapis/googleapis
       - buf.build/envoyproxy/protoc-gen-validate

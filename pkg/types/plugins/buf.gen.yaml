@@ -8,7 +8,7 @@ managed:
       - buf.build/googleapis/googleapis
       - buf.build/envoyproxy/protoc-gen-validate
       - buf.build/srikrsna/protoc-gen-gotag
-      - buf.build/nuon/vendor
+      - buf.build/nuon/external
 plugins:
   - plugin: buf.build/protocolbuffers/go
     out: .
