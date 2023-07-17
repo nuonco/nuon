@@ -2,10 +2,9 @@ syntax = "proto3";
 
 package exp.v1;
 
-//NOTE(jm): this is a hashicorp proto, defined https://github.com/powertoolsdev/mono/pull/671
 import "opaqueany/v1/any.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/exp/v1";
+option go_package = "github.com/powertoolsdev/mono/pkg/types/plugins/exp/v1";
 
 // You can customise this message to change the fields for
 // the output value from your Deployment
