@@ -6,11 +6,11 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	plugincomponentv1 "github.com/powertoolsdev/mono/pkg/types/plugins/component/v1"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 )
 
 var (
@@ -37,7 +37,7 @@ type Client interface {
 	GetBuildPlan(ctx context.Context, orgID, appID, componentID, buildID string) (*planv1.Plan, error)
 
 	// component specifics
-	GetInstanceOutputs(ctx context.Context, orgID, appID, componentID, installID string) (*plugincomponentv1.Outputs, error)
+	GetInstanceOutputs(ctx context.Context, orgID, appID, componentID, installID string) (*structpb.Struct, error)
 }
 
 type client struct {

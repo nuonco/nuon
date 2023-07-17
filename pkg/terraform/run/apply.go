@@ -5,35 +5,13 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/powertoolsdev/mono/pkg/pipeline"
 	callbackmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/callbacks"
 	execmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/exec"
 	tfo "github.com/powertoolsdev/mono/pkg/terraform/outputs"
-	componentv1 "github.com/powertoolsdev/mono/pkg/types/plugins/component/v1"
 	"google.golang.org/protobuf/proto"
 )
-
-func terraformToNuon(tfOutput map[string]tfexec.OutputMeta) *componentv1.Outputs {
-	outputs := &componentv1.Outputs{}
-	for _, goOut := range tfo.ParseTfOutputMeta(tfOutput) {
-		pbOut := componentv1.Value{
-			Path:      goOut.Path,
-			Sensitive: goOut.Sensitive,
-		}
-		switch goOut.Type {
-		case "boolean":
-			pbOut.Scalar = &componentv1.Value_Bool{Bool: goOut.Bool}
-		case "number":
-			pbOut.Scalar = &componentv1.Value_Double{Double: goOut.Float64}
-		case "string":
-			pbOut.Scalar = &componentv1.Value_String_{String_: goOut.String}
-		}
-		outputs.Values = append(outputs.Values, &pbOut)
-	}
-	return outputs
-}
 
 func (r *run) Apply(ctx context.Context) error {
 	pipe, err := r.getApplyPipeline()
@@ -127,7 +105,7 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
 			Bucket:       r.OutputSettings.Bucket,
 			BucketPrefix: r.OutputSettings.InstancePrefix,
-			Filename:     "output-nuon.pb",
+			Filename:     "output-nuon-v2.pb",
 		}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create nuon output cb: %w", err)
@@ -139,7 +117,11 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 			if err != nil {
 				return nil, err
 			}
-			return proto.Marshal(terraformToNuon(tfOutput))
+			pbs, err := tfo.TFOutputMetaToStructPB(tfOutput)
+			if err != nil {
+				return nil, err
+			}
+			return proto.Marshal(pbs)
 		},
 		CallbackFn: nuonOutputCb,
 	})
