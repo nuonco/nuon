@@ -1,7 +1,3 @@
-output "info" {
-  value = module.repo.all
-}
-
 // outputs below here are for testing all possible
 // types and nesting for output parsing code
 output "sample_scalar_boolean" {
