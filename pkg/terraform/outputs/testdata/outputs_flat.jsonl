@@ -1,3 +1,0 @@
-{"type":"outputs","outputs":{"apiKey1":{"value":"aaa","type":"string","sensitive":true},"apiKey2":{"value":"bbb","type":"string","sensitive":false}}}
-{"type":"outputs","outputs":{"hostname":{"value":"example.com","type":"string","sensitive":false},"tls":{"value":true,"type":"boolean","sensitive":false}}}
-{"type":"outputs","outputs":{"CACHE_SIZE":{"value":1024,"type":"number","sensitive":false}, "nada":{"value":null,"type":"number","sensitive":false}}}
