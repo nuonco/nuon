@@ -20,7 +20,8 @@ Repository services represent services that we expose, this means that their typ
 
 Objects represent core objects which can be shared throughout our system. They are not "owned" by a single service but rather shared amongst different protos and services.
 
-* vendor - vendored protos from upstreams
+* external - vendored protos from upstreams. (Note: we can't call this vendor, as it will conflict with go's vendor
+  directory).
 * shared - shared types
 * components - component definitions
 

@@ -1,7 +1,8 @@
 ---
 version: v1
-name: buf.build/nuon/vendor
+name: buf.build/nuon/waypoint
 deps:
+  - buf.build/nuon/external
   - buf.build/googleapis/googleapis
   - buf.build/envoyproxy/protoc-gen-validate
   - buf.build/srikrsna/protoc-gen-gotag
