@@ -134,6 +134,10 @@ type BasicDeployConfig {
   Container port
   """
   port: Int!
+  """
+  Environment variables
+  """
+  envVars: [KeyValuePair!]
 }
 
 """
@@ -404,6 +408,7 @@ input BasicDeployConfigInput {
   healthCheckPath: String!
   instanceCount: Int!
   port: Int!
+  envVars: [KeyValuePairInput!]
 }
 
 input HelmDeployInput {
