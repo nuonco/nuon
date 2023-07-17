@@ -91,6 +91,20 @@ test("getConfig should take a raw grpc component config & return the correct con
     },
     deployCfg: {
       basic: {
+        envVars: {
+          envList: [
+            {
+              name: "test",
+              sensitive: false,
+              value: "test",
+            },
+            {
+              name: "test",
+              sensitive: true,
+              value: "test",
+            },
+          ],
+        },
         instanceCount: 2,
         listenerCfg: {
           healthCheckPath: "/readyz",
@@ -110,6 +124,20 @@ test("getConfig should take a raw grpc component config & return the correct con
       },
       "deployConfig": {
         "__typename": "BasicDeployConfig",
+        "envVars": [
+          {
+            "__typename": "KeyValuePair",
+            "key": "test",
+            "sensitive": false,
+            "value": "test",
+          },
+          {
+            "__typename": "KeyValuePair",
+            "key": "test",
+            "sensitive": true,
+            "value": "test",
+          },
+        ],
         "healthCheckPath": "/readyz",
         "instanceCount": 2,
         "port": undefined,
