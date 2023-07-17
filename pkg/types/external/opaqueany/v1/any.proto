@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package opaqueany.v1;
 
-option go_package = "github.com/hashicorp/opaqueany";
+option go_package = "github.com/powertoolsdev/mono/pkg/types/external/opaqueany/v1";
 
 // This is just like google's Any but isn't wired into all the rules around
 // dereferesing so it can safely be passed into programs that don't have

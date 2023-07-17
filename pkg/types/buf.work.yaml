@@ -7,4 +7,5 @@ directories:
   - shared
   - workflows
   - plugins
-  - vendor
+  - external
+  - waypoint

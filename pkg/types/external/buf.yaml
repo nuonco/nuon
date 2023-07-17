@@ -1,11 +1,10 @@
 ---
 version: v1
-name: buf.build/nuon/plugins
+name: buf.build/nuon/external
 deps:
   - buf.build/googleapis/googleapis
   - buf.build/envoyproxy/protoc-gen-validate
   - buf.build/srikrsna/protoc-gen-gotag
-  - buf.build/nuon/external
 lint:
   use:
     - DEFAULT
