@@ -127,6 +127,15 @@ export function getConfig(config): ComponentConfig {
 
       deployConfig = {
         __typename: "BasicDeployConfig",
+        envVars:
+          config?.deployCfg?.basic?.envVars?.envList?.map(
+            ({ name, sensitive, value }) => ({
+              __typename: "KeyValuePair",
+              key: name,
+              sensitive,
+              value,
+            })
+          ) || null,
         healthCheckPath: basic?.listenerCfg?.healthCheckPath,
         instanceCount: basic?.instanceCount,
         port: basic?.listenerCfg?.listenPort,
