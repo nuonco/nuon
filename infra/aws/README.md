@@ -95,10 +95,6 @@ The primary production account.
 Intended for shared infrastructure used by multiple "production" accounts.
 Currently, our helm chart and ECR repositories live there.
 
-#### `horizon`
-
-Intended for running the Hashicorp Horizon URL service.
-
 #### `orgs-stage`
 
 Intended to run and store all org infrastructure, such as waypoint servers and runners + build artifacts.
