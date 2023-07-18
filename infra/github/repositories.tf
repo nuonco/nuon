@@ -19,7 +19,6 @@ module "company" {
   enable_ecr      = false
   description     = "All things Nuon 🚀"
   required_checks = []
-
 }
 
 module "demo" {
@@ -29,7 +28,6 @@ module "demo" {
   enable_ecr      = false
   description     = "Demo repo for Nuon."
   required_checks = ["demo ✅"]
-
 }
 
 module "terraform-provider-echo" {
@@ -46,16 +44,6 @@ module "graveyard" {
 
   name        = "graveyard"
   description = "dead code"
-}
-
-module "horizon" {
-  source = "./modules/repository"
-
-  name        = "horizon"
-  description = "repo for managing our horizon based url service"
-  topics      = ["terraform"]
-
-  extra_ecr_repos = ["hashicorp-horizon", "hashicorp-waypoint-hzn"]
 }
 
 module "mono" {
@@ -120,4 +108,3 @@ module "waypoint" {
   description = "Our internal fork of hashicorp/waypoint."
   topics      = ["terraform"]
 }
-

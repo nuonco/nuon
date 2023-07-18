@@ -494,19 +494,17 @@ module "infra-terraform" {
   source = "./modules/repository"
 
   name        = "infra-terraform"
-  archived    = true
   description = "terraform module for managing our terraform workspaces"
   topics      = ["terraform", "archived"]
 }
 
-module "code-jonmorehouse" {
+module "horizon" {
   source = "./modules/repository"
 
-  name                     = "code-jonmorehouse"
-  description              = "personal workspace for @jonmorehouse"
-  enable_ecr               = false
-  enable_prod_environment  = false
-  enable_stage_environment = false
+  name        = "horizon"
+  description = "repo for managing our horizon based url service"
+  topics      = ["terraform"]
+  archived    = true
 
-  topics = ["personal-workspace", "archived"]
+  extra_ecr_repos = ["hashicorp-horizon", "hashicorp-waypoint-hzn"]
 }
