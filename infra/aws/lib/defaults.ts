@@ -71,13 +71,13 @@ export const desiredOrgStructure: orgStructure = [
             quotaCode:
               quota_code.RUNNING_ON_DEMAND_STANDARD_A_C_D_H_I_M_R_T_Z_INSTANCES,
             serviceCode: service_code.EC2,
-            value: 256,
+            value: 512,
           },
           {
             quotaCode:
               quota_code.ALL_STANDARD_A_C_D_H_I_M_R_T_Z_SPOT_INSTANCE_REQUESTS,
             serviceCode: service_code.EC2,
-            value: 256,
+            value: 512,
           },
         ],
       },
@@ -94,7 +94,7 @@ export const desiredOrgStructure: orgStructure = [
         quotaCode:
           quota_code.ALL_STANDARD_A_C_D_H_I_M_R_T_Z_SPOT_INSTANCE_REQUESTS,
         serviceCode: service_code.EC2,
-        value: 32,
+        value: 512,
       },
     ],
     name: "workloads",
