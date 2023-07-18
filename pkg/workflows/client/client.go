@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/temporal/client"
+	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
@@ -35,8 +35,8 @@ type Client interface {
 	ExecOrgSignup(context.Context, *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error)
 	TriggerOrgTeardown(context.Context, *orgsv1.TeardownRequest) (string, error)
 
-	ExecCreatePlan(ctx context.Context, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error)
-	ExecExecutePlan(ctx context.Context, req *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error)
+	ExecCreatePlan(ctx context.Context, namespace string, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error)
+	ExecExecutePlan(ctx context.Context, namespace string, req *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error)
 
 	TriggerAppProvision(context.Context, *appsv1.ProvisionRequest) (string, error)
 }
