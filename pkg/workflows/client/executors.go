@@ -9,7 +9,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 )
 
-func (w *workflowsClient) ExecCreatePlan(ctx context.Context, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+func (w *workflowsClient) ExecCreatePlan(ctx context.Context, namespace string, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: ExecutorsTaskQueue,
 		Memo: map[string]interface{}{
@@ -18,7 +18,7 @@ func (w *workflowsClient) ExecCreatePlan(ctx context.Context, req *planv1.Create
 	}
 
 	resp := &planv1.CreatePlanResponse{}
-	fut, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "CreatePlan", req)
+	fut, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, "CreatePlan", req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create plan: %w", err)
 	}
@@ -30,7 +30,7 @@ func (w *workflowsClient) ExecCreatePlan(ctx context.Context, req *planv1.Create
 	return resp, nil
 }
 
-func (w *workflowsClient) ExecExecutePlan(ctx context.Context, req *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+func (w *workflowsClient) ExecExecutePlan(ctx context.Context, namespace string, req *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
 	opts := tclient.StartWorkflowOptions{
 		TaskQueue: ExecutorsTaskQueue,
 		Memo: map[string]interface{}{
@@ -39,7 +39,7 @@ func (w *workflowsClient) ExecExecutePlan(ctx context.Context, req *executev1.Ex
 	}
 
 	resp := &executev1.ExecutePlanResponse{}
-	fut, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "ExecutePlan", req)
+	fut, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, namespace, opts, "ExecutePlan", req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute plan: %w", err)
 	}
