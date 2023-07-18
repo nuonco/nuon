@@ -160,22 +160,6 @@ module "infra-datadog-stage" {
   }
 }
 
-module "infra-eks-horizon-main" {
-  source = "./modules/workspace"
-
-  name                            = "infra-eks-horizon-main"
-  repo                            = "powertoolsdev/mono"
-  dir                             = "infra/eks"
-  auto_apply                      = false
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
-  project_id                      = tfe_project.infra.id
-  vars = {
-    account = "horizon"
-    pool    = "main"
-  }
-}
-
 module "infra-eks-orgs-prod-main" {
   source = "./modules/workspace"
 

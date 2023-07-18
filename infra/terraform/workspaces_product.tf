@@ -18,21 +18,6 @@ module "demo" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
-module "horizon-prod" {
-  source = "./modules/workspace"
-
-  name       = "horizon-prod"
-  repo       = "powertoolsdev/horizon"
-  auto_apply = false
-  dir        = "infra"
-  vars = {
-    env = "prod"
-  }
-  variable_sets                   = ["aws-environment-credentials", "hashicorp-cloud-platform"]
-  project_id                      = tfe_project.product.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
 module "infra-orgs-prod" {
   source = "./modules/workspace"
 
