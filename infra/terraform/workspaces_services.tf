@@ -156,36 +156,6 @@ module "workers-apps-stage" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
-module "workers-deployments-prod" {
-  source = "./modules/workspace"
-
-  name       = "workers-deployments-prod"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/workers-deployments/infra"
-  vars = {
-    env = "prod"
-  }
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.services.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
-module "workers-deployments-stage" {
-  source = "./modules/workspace"
-
-  name       = "workers-deployments-stage"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/workers-deployments/infra"
-  vars = {
-    env = "stage"
-  }
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.services.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
 module "workers-executors-prod" {
   source = "./modules/workspace"
 
@@ -208,36 +178,6 @@ module "workers-executors-stage" {
   repo       = "powertoolsdev/mono"
   auto_apply = true
   dir        = "services/workers-executors/infra"
-  vars = {
-    env = "stage"
-  }
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.services.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
-module "workers-instances-prod" {
-  source = "./modules/workspace"
-
-  name       = "workers-instances-prod"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/workers-instances/infra"
-  vars = {
-    env = "prod"
-  }
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.services.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
-module "workers-instances-stage" {
-  source = "./modules/workspace"
-
-  name       = "workers-instances-stage"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/workers-instances/infra"
   vars = {
     env = "stage"
   }

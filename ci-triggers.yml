@@ -18,14 +18,10 @@ services: |
     - services/workers-apps/**
   workers-canary:
     - services/workers-canary/**
-  workers-deployments:
-    - services/workers-deployments/**
   workers-executors:
     - services/workers-executors/**
   workers-installs:
     - services/workers-installs/**
-  workers-instances:
-    - services/workers-instances/**
   workers-orgs:
     - services/workers-orgs/**
 
