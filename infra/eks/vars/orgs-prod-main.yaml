@@ -12,12 +12,6 @@ auth_map_additions:
       - "system:masters"
     trust:
       - "arn:aws:iam::814326426574:role/nuon-internal-support-prod"
-  - name: eks-workers-deployments
-    account: prod
-    groups:
-      - "system:masters"
-    trust:
-      - "arn:aws:iam::814326426574:role/nuon-internal-support-prod"
   - name: eks-workers-executors
     account: prod
     groups:
@@ -25,12 +19,6 @@ auth_map_additions:
     trust:
       - "arn:aws:iam::814326426574:role/nuon-internal-support-prod"
   - name: eks-workers-installs
-    account: prod
-    groups:
-      - "system:masters"
-    trust:
-      - "arn:aws:iam::814326426574:role/nuon-internal-support-prod"
-  - name: eks-workers-instances
     account: prod
     groups:
       - "system:masters"
