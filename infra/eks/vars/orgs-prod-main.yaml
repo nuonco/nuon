@@ -1,5 +1,11 @@
 ---
 auth_map_additions:
+  - name: eks-api-gateway
+    account: prod
+    groups:
+      - "system:masters"
+    trust:
+      - "arn:aws:iam::814326426574:role/nuon-internal-support-prod"
   - name: eks-orgs-api
     account: prod
     groups:
