@@ -12,7 +12,6 @@
         "canary-gh-oidc-provider": "canary-gh-oidc-provider",
         "demo-gh-oidc-provider": "demo-gh-oidc-provider",
         "external-gh-oidc-provider": "external-gh-oidc-provider",
-        "horizon-gh-oidc-provider": "horizon-gh-oidc-provider",
         "infra-shared-prod-gh-oidc-provider": "infra-shared-prod-gh-oidc-provider",
         "infra-shared-stage-gh-oidc-provider": "infra-shared-stage-gh-oidc-provider",
         "orgs-prod-gh-oidc-provider": "orgs-prod-gh-oidc-provider",
@@ -65,7 +64,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-06-28T19:56:50.272Z"
+      "value": "2023-07-18T00:26:28.330Z"
     },
     "canary-gh-oidc-provider": {
       "description": "The Github OIDC provider for the canary account",
@@ -78,10 +77,6 @@
     "external-gh-oidc-provider": {
       "description": "The Github OIDC provider for the external account",
       "value": "${aws_iam_openid_connect_provider.external-github-oidc-provider}"
-    },
-    "horizon-gh-oidc-provider": {
-      "description": "The Github OIDC provider for the horizon account",
-      "value": "${aws_iam_openid_connect_provider.horizon-github-oidc-provider}"
     },
     "infra-shared-prod-gh-oidc-provider": {
       "description": "The Github OIDC provider for the infra-shared-prod account",
@@ -984,91 +979,6 @@
         "region": "us-west-2"
       },
       {
-        "alias": "horizon",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accounthorizonid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "horizon-us-east-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accounthorizonid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-1"
-      },
-      {
-        "alias": "horizon-us-east-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accounthorizonid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-east-2"
-      },
-      {
-        "alias": "horizon-us-west-1",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accounthorizonid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-1"
-      },
-      {
-        "alias": "horizon-us-west-2",
-        "assume_role": [
-          {
-            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accounthorizonid}:role/OrganizationAccountAccessRole"
-          }
-        ],
-        "default_tags": [
-          {
-            "tags": {
-              "environment": "management",
-              "terraform": "infra-aws"
-            }
-          }
-        ],
-        "region": "us-west-2"
-      },
-      {
         "alias": "sandbox-jm",
         "assume_role": [
           {
@@ -1272,16 +1182,6 @@
         "account_alias": "nuon-external",
         "provider": "aws.external"
       },
-      "horizon-iam-alias": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-iam-alias",
-            "uniqueId": "horizon-iam-alias"
-          }
-        },
-        "account_alias": "nuon-horizon",
-        "provider": "aws.horizon"
-      },
       "infra-shared-prod-iam-alias": {
         "//": {
           "metadata": {
@@ -1419,23 +1319,6 @@
           "sts.amazonaws.com"
         ],
         "provider": "aws.external",
-        "thumbprint_list": [
-          "6938fd4d98bab03faadb97b34396831e3780aea1",
-          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
-        ],
-        "url": "https://token.actions.githubusercontent.com"
-      },
-      "horizon-github-oidc-provider": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-github-oidc-provider",
-            "uniqueId": "horizon-github-oidc-provider"
-          }
-        },
-        "client_id_list": [
-          "sts.amazonaws.com"
-        ],
-        "provider": "aws.horizon",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
           "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
@@ -1644,22 +1527,6 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.external"
-      },
-      "horizon-terraform-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-terraform-role",
-            "uniqueId": "horizon-terraform-role"
-          }
-        },
-        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
-        "description": "Terraform role to assume",
-        "managed_policy_arns": [
-          "arn:aws:iam::aws:policy/AdministratorAccess"
-        ],
-        "name": "terraform",
-        "path": "/",
-        "provider": "aws.horizon"
       },
       "infra-shared-prod-terraform-role": {
         "//": {
@@ -1896,36 +1763,6 @@
         },
         "aws_service_name": "spot.amazonaws.com",
         "provider": "aws.external"
-      },
-      "horizon-opensearch-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-opensearch-service-linked-role",
-            "uniqueId": "horizon-opensearch-service-linked-role"
-          }
-        },
-        "aws_service_name": "opensearchservice.amazonaws.com",
-        "provider": "aws.horizon"
-      },
-      "horizon-spot-fleet-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-spot-fleet-service-linked-role",
-            "uniqueId": "horizon-spot-fleet-service-linked-role"
-          }
-        },
-        "aws_service_name": "spotfleet.amazonaws.com",
-        "provider": "aws.horizon"
-      },
-      "horizon-spot-service-linked-role": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-spot-service-linked-role",
-            "uniqueId": "horizon-spot-service-linked-role"
-          }
-        },
-        "aws_service_name": "spot.amazonaws.com",
-        "provider": "aws.horizon"
       },
       "infra-shared-prod-opensearch-service-linked-role": {
         "//": {
@@ -2241,20 +2078,6 @@
         "type": "NS",
         "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
       },
-      "horizon-ns-delegation": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-ns-delegation",
-            "uniqueId": "horizon-ns-delegation"
-          }
-        },
-        "name": "horizon.nuon.co",
-        "provider": "aws",
-        "records": "${aws_route53_zone.horizon-hosted-zone.name_servers}",
-        "ttl": 300,
-        "type": "NS",
-        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
-      },
       "infra-shared-prod-ns-delegation": {
         "//": {
           "metadata": {
@@ -2413,16 +2236,6 @@
         "name": "external.nuon.co",
         "provider": "aws.external"
       },
-      "horizon-hosted-zone": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-hosted-zone",
-            "uniqueId": "horizon-hosted-zone"
-          }
-        },
-        "name": "horizon.nuon.co",
-        "provider": "aws.horizon"
-      },
       "infra-shared-prod-hosted-zone": {
         "//": {
           "metadata": {
@@ -2515,102 +2328,6 @@
       }
     },
     "aws_servicequotas_service_quota": {
-      "horizon-us-east-1-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-us-east-1-L-1216C47A",
-            "uniqueId": "horizon-us-east-1-L-1216C47A"
-          }
-        },
-        "provider": "aws.horizon-us-east-1",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 512
-      },
-      "horizon-us-east-1-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-us-east-1-L-34B43A08",
-            "uniqueId": "horizon-us-east-1-L-34B43A08"
-          }
-        },
-        "provider": "aws.horizon-us-east-1",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "horizon-us-east-2-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-us-east-2-L-1216C47A",
-            "uniqueId": "horizon-us-east-2-L-1216C47A"
-          }
-        },
-        "provider": "aws.horizon-us-east-2",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 512
-      },
-      "horizon-us-east-2-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-us-east-2-L-34B43A08",
-            "uniqueId": "horizon-us-east-2-L-34B43A08"
-          }
-        },
-        "provider": "aws.horizon-us-east-2",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "horizon-us-west-1-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-us-west-1-L-1216C47A",
-            "uniqueId": "horizon-us-west-1-L-1216C47A"
-          }
-        },
-        "provider": "aws.horizon-us-west-1",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 512
-      },
-      "horizon-us-west-1-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-us-west-1-L-34B43A08",
-            "uniqueId": "horizon-us-west-1-L-34B43A08"
-          }
-        },
-        "provider": "aws.horizon-us-west-1",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
-      "horizon-us-west-2-L-1216C47A": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-us-west-2-L-1216C47A",
-            "uniqueId": "horizon-us-west-2-L-1216C47A"
-          }
-        },
-        "provider": "aws.horizon-us-west-2",
-        "quota_code": "L-1216C47A",
-        "service_code": "ec2",
-        "value": 512
-      },
-      "horizon-us-west-2-L-34B43A08": {
-        "//": {
-          "metadata": {
-            "path": "accounts/horizon-us-west-2-L-34B43A08",
-            "uniqueId": "horizon-us-west-2-L-34B43A08"
-          }
-        },
-        "provider": "aws.horizon-us-west-2",
-        "quota_code": "L-34B43A08",
-        "service_code": "ec2",
-        "value": 32
-      },
       "infra-shared-prod-us-east-1-L-1216C47A": {
         "//": {
           "metadata": {

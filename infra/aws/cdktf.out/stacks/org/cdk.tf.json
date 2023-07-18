@@ -11,7 +11,6 @@
         "cross-stack-output-aws_organizations_account.canary.id": "cross-stack-output-aws_organizations_accountcanaryid",
         "cross-stack-output-aws_organizations_account.demo.id": "cross-stack-output-aws_organizations_accountdemoid",
         "cross-stack-output-aws_organizations_account.external.id": "cross-stack-output-aws_organizations_accountexternalid",
-        "cross-stack-output-aws_organizations_account.horizon.id": "cross-stack-output-aws_organizations_accounthorizonid",
         "cross-stack-output-aws_organizations_account.infra-shared-prod.id": "cross-stack-output-aws_organizations_accountinfra-shared-prodid",
         "cross-stack-output-aws_organizations_account.infra-shared-stage.id": "cross-stack-output-aws_organizations_accountinfra-shared-stageid",
         "cross-stack-output-aws_organizations_account.orgs-prod.id": "cross-stack-output-aws_organizations_accountorgs-prodid",
@@ -108,10 +107,6 @@
       "sensitive": true,
       "value": "${aws_organizations_account.external.id}"
     },
-    "cross-stack-output-aws_organizations_accounthorizonid": {
-      "sensitive": true,
-      "value": "${aws_organizations_account.horizon.id}"
-    },
     "cross-stack-output-aws_organizations_accountinfra-shared-prodid": {
       "sensitive": true,
       "value": "${aws_organizations_account.infra-shared-prod.id}"
@@ -150,7 +145,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-06-28T19:56:50.159Z"
+      "value": "2023-07-18T00:26:28.267Z"
     }
   },
   "provider": {
@@ -223,24 +218,6 @@
         },
         "name": "external",
         "parent_id": "${aws_organizations_organizational_unit.meta.id}"
-      },
-      "horizon": {
-        "//": {
-          "metadata": {
-            "path": "org/horizon",
-            "uniqueId": "horizon"
-          }
-        },
-        "close_on_deletion": true,
-        "email": "aws-accounts+horizon@powertools.dev",
-        "iam_user_access_to_billing": "ALLOW",
-        "lifecycle": {
-          "ignore_changes": [
-            "iam_user_access_to_billing"
-          ]
-        },
-        "name": "horizon",
-        "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
       },
       "infra-shared-prod": {
         "//": {
@@ -552,17 +529,6 @@
         "name": "external-environment-tag-policy",
         "type": "TAG_POLICY"
       },
-      "env_tag_policy_horizon": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_horizon",
-            "uniqueId": "env_tag_policy_horizon"
-          }
-        },
-        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"horizon\",\"stage\",\"prod\"]}}}}",
-        "name": "horizon-environment-tag-policy",
-        "type": "TAG_POLICY"
-      },
       "env_tag_policy_infra-shared-prod": {
         "//": {
           "metadata": {
@@ -703,16 +669,6 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_external.id}",
         "target_id": "${aws_organizations_account.external.id}"
-      },
-      "env_tag_policy_attach_horizon": {
-        "//": {
-          "metadata": {
-            "path": "org/env_tag_policy_attach_horizon",
-            "uniqueId": "env_tag_policy_attach_horizon"
-          }
-        },
-        "policy_id": "${aws_organizations_policy.env_tag_policy_horizon.id}",
-        "target_id": "${aws_organizations_account.horizon.id}"
       },
       "env_tag_policy_attach_infra-shared-prod": {
         "//": {
