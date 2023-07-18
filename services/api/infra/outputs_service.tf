@@ -23,11 +23,6 @@ output "db_instance_admin_username" {
   value     = module.primary.db_instance_username
 }
 
-output "db_instance_admin_password" {
-  sensitive = true
-  value     = module.primary.db_instance_password
-}
-
 output "db_instance_username" {
   sensitive = true
   value     = "api"
