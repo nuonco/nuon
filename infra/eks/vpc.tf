@@ -4,15 +4,6 @@ locals {
     # this leaves 2 /17's
     # public subnets are taken from the first /17
     # private_subnets are taken from the second half
-    horizon-main = {
-      cidr = "10.128.0.0/16"
-      # public subnets do not need to be as big so we evenly break down a /24
-      # 10.128.0.192/26 finishes  the /24 segementation
-      # you can see the math for this /16 here https://www.davidc.net/sites/default/subnets/subnets.html?network=10.128.0.0&mask=16&division=23.ff3100
-      public_subnets  = ["10.128.0.0/26", "10.128.0.64/26", "10.128.0.128/26"]
-      private_subnets = ["10.128.128.0/24", "10.128.129.0/24", "10.128.130.0/24"]
-    }
-
     ci-nuon = {
       cidr            = "10.129.0.0/16"
       public_subnets  = ["10.129.0.0/26", "10.129.0.64/26", "10.129.0.128/26"]
@@ -43,12 +34,8 @@ locals {
       private_subnets = ["10.134.128.0/24", "10.134.129.0/24", "10.134.130.0/24"]
     }
 
-    sandbox-mhernandez = {
-      cidr            = "10.135.0.0/16"
-      public_subnets  = ["10.135.0.0/26", "10.135.0.64/26", "10.135.0.128/26"]
-      private_subnets = ["10.135.128.0/24", "10.135.129.0/24", "10.135.130.0/24"]
-    }
-    # to create a new environment with a new network add a segement exactly the same as the one above but bump the /16 octet up by on
+    # to create a new environment with a new network add a segement exactly the same as the one above but bump the /16
+    # octet up by one
   }
 }
 

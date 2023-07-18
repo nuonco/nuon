@@ -82,7 +82,6 @@ export const desiredOrgStructure: orgStructure = [
         ],
       },
       { additionalEnvTags: ["prod"], name: "orgs-prod" },
-      { additionalEnvTags: ["stage", "prod"], name: "horizon" },
     ],
     defaultQuotas: [
       {
