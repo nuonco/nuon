@@ -40,9 +40,7 @@ module "infra-orgs-prod" {
     module.orgs-api-prod.workspace_id,
     module.workers-apps-prod.workspace_id,
     module.workers-installs-prod.workspace_id,
-    module.workers-instances-prod.workspace_id,
     module.workers-executors-prod.workspace_id,
-    module.workers-deployments-prod.workspace_id,
     module.workers-orgs-prod.workspace_id,
     module.api-prod.workspace_id,
   ]
@@ -70,9 +68,7 @@ module "infra-orgs-stage" {
     module.orgs-api-stage.workspace_id,
     module.workers-apps-stage.workspace_id,
     module.workers-installs-stage.workspace_id,
-    module.workers-instances-stage.workspace_id,
     module.workers-executors-stage.workspace_id,
-    module.workers-deployments-stage.workspace_id,
     module.workers-orgs-stage.workspace_id,
     module.api-stage.workspace_id,
   ]
