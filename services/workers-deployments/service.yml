@@ -1,7 +1,0 @@
----
-type: worker
-env:
-  DISABLE_METRICS: true
-local_cmds:
-  - go run . all
-earthly_cmd: all
