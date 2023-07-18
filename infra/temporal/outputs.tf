@@ -63,12 +63,6 @@ output "db_instance_username" {
   sensitive   = true
 }
 
-output "db_instance_password" {
-  description = "The database password (this password may be old, because Terraform doesn't track it after initial creation)"
-  value       = module.primary.db_instance_password
-  sensitive   = true
-}
-
 output "db_instance_domain" {
   description = "The ID of the Directory Service Active Directory domain the instance is joined to"
   value       = module.primary.db_instance_domain
@@ -182,12 +176,6 @@ output "replica_db_instance_name" {
 output "replica_db_instance_username" {
   description = "The master username for the database"
   value       = try(module.replica[0].db_instance_username, "")
-  sensitive   = true
-}
-
-output "replica_db_instance_password" {
-  description = "The database password (this password may be old, because Terraform doesn't track it after initial creation)"
-  value       = try(module.replica[0].db_instance_password, "")
   sensitive   = true
 }
 

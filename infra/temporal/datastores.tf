@@ -10,7 +10,9 @@ locals {
 ################################################################################
 module "security_group_rds" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 5.0"
+  # NOTE: the module was updated to 6.x.x and that causes issues with how we use this, because it removes support for
+  # using the master database key. We use the key to provision both replicas, as well as the helm chart.
+  version = "= 5.1.0"
 
   name        = local.name
   description = "RDS security group for ${local.name}"
@@ -30,7 +32,7 @@ module "security_group_rds" {
 
 module "subnet_group" {
   source  = "terraform-aws-modules/rds/aws//modules/db_subnet_group"
-  version = "~> 6.0"
+  version = "= 5.9.0"
 
   name        = local.name
   description = "Subnet group for ${local.name}"
@@ -42,7 +44,7 @@ module "subnet_group" {
 ################################################################################
 module "primary" {
   source  = "terraform-aws-modules/rds/aws"
-  version = "~> 6.0"
+  version = "= 5.9.0"
 
   identifier = "primary-${local.name}"
 
@@ -95,13 +97,12 @@ resource "aws_route53_record" "primary" {
 module "replica" {
   count   = local.vars.rds.enable_replica ? 1 : 0
   source  = "terraform-aws-modules/rds/aws"
-  version = "~> 6.0"
+  version = "= 5.9.0"
 
   identifier = "replica-${local.name}"
 
   # Source database. For cross-region use db_instance_arn
   replicate_source_db    = module.primary.db_instance_id
-  create_random_password = false
 
   engine               = local.vars.rds.engine
   engine_version       = local.vars.rds.engine_version
