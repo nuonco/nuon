@@ -12,26 +12,29 @@ server:
   # The image to use for the installation.
   image:
     repository: "public.ecr.aws/p7e3r5y0/waypoint"
-    tag: "v0.0.5"
+    tag: "v0.0.8"
     pullPolicy: IfNotPresent
     # tag: "latest"
     # pullPolicy: Always
 
   # Arguments to pass to the `waypoint server run` command. Will overwrite default options.
-  runArgs: ["-vv"]
+  runArgs: ["-vvv"]
 
+  domain: waypoint.orgs-stage.nuon.co
   certs:
     # The name of the Kubernetes secret of type "kubernetes.io/tls" that
     # contains the TLS certificate and key to use for the server API.
     # If this is not set, then a self-signed certificate will be generated
     # and used per instance.
-    secretName: null
+    secretName: waypoint-tls
 
     # certName and keyName are the names of the files within the secret for
     # the TLS cert and private key, respectively. These have reasonable
     # defaults but can be customized if necessary.
     certName: tls.crt
     keyName: tls.key
+    # clusterIssuerName is the issuer name that is used
+    clusterIssuerName: public-issuer
 
   # This configures the Waypoint Statefulset to create a PVC for data storage.
   storage:
@@ -98,10 +101,6 @@ server:
     # to the service.
     annotations: {}
 
-  public_service:
-    enabled: true
-    domain: waypoint.orgs-stage.nuon.co
-
 runner:
   # If not set to true, the Waypoint runner will not be installed. At least
   # one static runner must exist in a Waypoint cluster for on-demand runners
@@ -121,7 +120,7 @@ runner:
   # The image to use for the installation.
   image:
     repository: "public.ecr.aws/p7e3r5y0/waypoint"
-    tag: "v0.0.5"
+    tag: "v0.0.8"
     pullPolicy: IfNotPresent
     # tag: "latest"
     # pullPolicy: Always
@@ -136,7 +135,7 @@ runner:
   server:
     addr: ""
     tls: true
-    tlsSkipVerify: true
+    tlsSkipVerify: false
 
     # Cookie must be specified for runner adoption. The cookie can be retrieved
     # using the `waypoint server cookie` CLI command or the API.

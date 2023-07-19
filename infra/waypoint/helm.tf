@@ -17,9 +17,7 @@ resource "helm_release" "waypoint" {
     file(local.waypoint.value_file),
     yamlencode({
       server = {
-        public_service = {
-          domain = "waypoint.${var.env}.${local.vars.public_root_domain}"
-        }
+        domain = "waypoint.${var.env}.${local.vars.public_root_domain}"
       }
     })
   ]

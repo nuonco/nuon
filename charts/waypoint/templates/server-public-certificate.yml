@@ -1,0 +1,20 @@
+{{- if (eq (.Values.server.enabled | toString) "true") }}
+# Headless service for Waypoint server statefulset.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "waypoint.fullname" . }}-server-public
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm.sh/chart: {{ include "waypoint.chart" . }}
+    app.kubernetes.io/name: {{ include "waypoint.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  secretName: {{ .Values.server.certs.secretName }}
+  dnsNames:
+    - {{ .Values.server.domain }}
+  issuerRef:
+    name: {{ .Values.server.certs.clusterIssuerName }}
+    kind: ClusterIssuer
+{{- end }}
