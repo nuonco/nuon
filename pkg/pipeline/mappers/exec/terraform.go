@@ -10,6 +10,8 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/powertoolsdev/mono/pkg/pipeline"
+	tfo "github.com/powertoolsdev/mono/pkg/terraform/outputs"
+	"google.golang.org/protobuf/proto"
 )
 
 func MapTerraformPlan(fn execPlanFn) pipeline.ExecFn {
@@ -52,6 +54,24 @@ func (p execOutputFn) exec(ctx context.Context, l hclog.Logger, ui terminal.UI) 
 	}
 
 	return byts, nil
+}
+
+func MapStructOutput(fn execOutputFn) pipeline.ExecFn {
+	return fn.mapStruct
+}
+
+func (p execOutputFn) mapStruct(ctx context.Context, l hclog.Logger, ui terminal.UI) ([]uint8, error) {
+	tfOutput, err := p(ctx, l)
+	if err != nil {
+		return nil, fmt.Errorf("unable to exec: %w", err)
+	}
+
+	protoStruct, err := tfo.TFOutputMetaToStructPB(tfOutput)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert TF output to structpb: %w", err)
+	}
+
+	return proto.Marshal(protoStruct)
 }
 
 func MapTerraformState(fn execStateFn) pipeline.ExecFn {

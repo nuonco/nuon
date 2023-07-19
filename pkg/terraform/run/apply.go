@@ -4,13 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/powertoolsdev/mono/pkg/pipeline"
 	callbackmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/callbacks"
 	execmappers "github.com/powertoolsdev/mono/pkg/pipeline/mappers/exec"
-	tfo "github.com/powertoolsdev/mono/pkg/terraform/outputs"
-	"google.golang.org/protobuf/proto"
 )
 
 func (r *run) Apply(ctx context.Context) error {
@@ -100,30 +96,20 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: outputCb,
 	})
 
-	nuonOutputCb, err := callbackmappers.NewS3Callback(r.v,
+	structOutputCb, err := callbackmappers.NewS3Callback(r.v,
 		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
 		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
 			Bucket:       r.OutputSettings.Bucket,
 			BucketPrefix: r.OutputSettings.InstancePrefix,
-			Filename:     "output-nuon-v2.pb",
+			Filename:     "output-struct-v1.pb",
 		}))
 	if err != nil {
-		return nil, fmt.Errorf("unable to create nuon output cb: %w", err)
+		return nil, fmt.Errorf("unable to create output cb: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
-		Name: "get nuon format output",
-		ExecFn: func(ctx context.Context, l hclog.Logger, ui terminal.UI) ([]byte, error) {
-			tfOutput, err := r.Workspace.Output(ctx, l)
-			if err != nil {
-				return nil, err
-			}
-			pbs, err := tfo.TFOutputMetaToStructPB(tfOutput)
-			if err != nil {
-				return nil, err
-			}
-			return proto.Marshal(pbs)
-		},
-		CallbackFn: nuonOutputCb,
+		Name:       "get struct output",
+		ExecFn:     execmappers.MapStructOutput(r.Workspace.Output),
+		CallbackFn: structOutputCb,
 	})
 
 	stateCb, err := callbackmappers.NewS3Callback(r.v,
