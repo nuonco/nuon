@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package server.v1;
+package hashicorp.waypoint;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/rpc/status.proto";
 import "opaqueany/v1/any.proto";
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/waypoint/server/v1";
+option go_package = "github.com/powertoolsdev/mono/pkg/types/waypoint/hashicorp.waypoint";
 
 /********************************************************************
 * PERMANENTLY RESERVED FIELD NUMBERS
@@ -1021,7 +1021,7 @@ message Ref {
 
   // Component references a component.
   message Component {
-    server.v1.Component.Type type = 1;
+    hashicorp.waypoint.Component.Type type = 1;
     string name = 2;
   }
 
