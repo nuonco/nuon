@@ -3,7 +3,8 @@ locals {
     email = "dns@nuon.co"
     // prod issuer
     // https://acme-v02.api.letsencrypt.org/directory
-    server               = "https://acme-staging-v02.api.letsencrypt.org/directory"
+    // https://acme-staging-v02.api.letsencrypt.org/directory"
+    server               = "https://acme-v02.api.letsencrypt.org/directory"
     public_issuer_name   = "public-issuer"
     internal_issuer_name = "internal-issuer"
   }
