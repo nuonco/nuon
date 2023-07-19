@@ -3,7 +3,6 @@ package exec
 import (
 	context "context"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
@@ -17,7 +16,6 @@ import (
 func TestTerraform(t *testing.T) {
 	l := NewMockhcLog(nil)
 	ui := NewMockui(nil)
-	terraformErr := fmt.Errorf("error terraform mapper")
 
 	tests := map[string]struct {
 		execFn      func(*gomock.Controller) pipeline.ExecFn
@@ -41,10 +39,32 @@ func TestTerraform(t *testing.T) {
 		"output - error": {
 			execFn: func(mockCtl *gomock.Controller) pipeline.ExecFn {
 				mock := NewMocktestExecFns(mockCtl)
-				mock.EXPECT().TerraformOutput(gomock.Any(), l).Return(nil, terraformErr)
+				mock.EXPECT().TerraformOutput(gomock.Any(), l).Return(nil, assert.AnError)
 				return MapTerraformOutput(mock.TerraformOutput)
 			},
-			errExpected: terraformErr,
+			errExpected: assert.AnError,
+		},
+		"struct output - happy path": {
+			execFn: func(mockCtl *gomock.Controller) pipeline.ExecFn {
+				mock := NewMocktestExecFns(mockCtl)
+				mock.EXPECT().TerraformOutput(gomock.Any(), l).DoAndReturn(func(ctx context.Context, log hclog.Logger) (map[string]tfexec.OutputMeta, error) {
+					return map[string]tfexec.OutputMeta{
+						"apiKey": {Sensitive: true, Type: []byte("string"), Value: []byte(`"ak_123456"`)},
+					}, nil
+				})
+				return MapStructOutput(mock.TerraformOutput)
+			},
+			assertFn: func(t *testing.T, byts []byte) {
+				assert.NotEmpty(t, byts)
+			},
+		},
+		"struct output - error": {
+			execFn: func(mockCtl *gomock.Controller) pipeline.ExecFn {
+				mock := NewMocktestExecFns(mockCtl)
+				mock.EXPECT().TerraformOutput(gomock.Any(), l).Return(nil, assert.AnError)
+				return MapTerraformOutput(mock.TerraformOutput)
+			},
+			errExpected: assert.AnError,
 		},
 		"state - happy path": {
 			execFn: func(mockCtl *gomock.Controller) pipeline.ExecFn {
@@ -67,10 +87,10 @@ func TestTerraform(t *testing.T) {
 		"state - error": {
 			execFn: func(mockCtl *gomock.Controller) pipeline.ExecFn {
 				mock := NewMocktestExecFns(mockCtl)
-				mock.EXPECT().TerraformState(gomock.Any(), l).Return(nil, terraformErr)
+				mock.EXPECT().TerraformState(gomock.Any(), l).Return(nil, assert.AnError)
 				return MapTerraformState(mock.TerraformState)
 			},
-			errExpected: terraformErr,
+			errExpected: assert.AnError,
 		},
 		"plan - happy path": {
 			execFn: func(mockCtl *gomock.Controller) pipeline.ExecFn {
@@ -93,10 +113,10 @@ func TestTerraform(t *testing.T) {
 		"plan - error": {
 			execFn: func(mockCtl *gomock.Controller) pipeline.ExecFn {
 				mock := NewMocktestExecFns(mockCtl)
-				mock.EXPECT().TerraformPlan(gomock.Any(), l).Return(nil, terraformErr)
+				mock.EXPECT().TerraformPlan(gomock.Any(), l).Return(nil, assert.AnError)
 				return MapTerraformPlan(mock.TerraformPlan)
 			},
-			errExpected: terraformErr,
+			errExpected: assert.AnError,
 		},
 	}
 
@@ -106,7 +126,6 @@ func TestTerraform(t *testing.T) {
 			mockCtl, ctx := gomock.WithContext(ctx, t)
 
 			execFn := test.execFn(mockCtl)
-
 			byts, err := execFn(ctx, l, ui)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
