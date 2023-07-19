@@ -10,7 +10,7 @@ import (
 func (a *activities) AddConnectionsToPlan(ctx context.Context, buildPlan *planv1.Plan) (*planv1.Plan, error) {
 	waypointPlan := buildPlan.GetWaypointPlan()
 
-	instances, err := a.instanceRepo.ListByComponent(ctx, waypointPlan.Component.Id)
+	instances, err := a.instanceRepo.ListByInstall(ctx, waypointPlan.Metadata.InstallId)
 	if err != nil {
 		return nil, err
 	}
