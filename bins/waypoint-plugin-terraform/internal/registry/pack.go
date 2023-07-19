@@ -20,7 +20,9 @@ func (b *Registry) packDirectory(ctx context.Context, log hclog.Logger, status t
 			return fmt.Errorf("unable to pack %s: %w", f.absPath, err)
 		}
 
-		fileDescriptors[idx] = fileDescriptor
+		if fileDescriptor.Size > 0 {
+			fileDescriptors[idx] = fileDescriptor
+		}
 	}
 
 	descriptor, err := oras.Pack(ctx, b.Store, defaultArtifactType, fileDescriptors, oras.PackOptions{
