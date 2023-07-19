@@ -13,4 +13,3 @@ resource "aws_route53_zone" "internal_private" {
     vpc_id = module.vpc.vpc_id
   }
 }
-

@@ -71,5 +71,4 @@ resource "helm_release" "alb-ingress-controller" {
     kubectl_manifest.karpenter_provisioner,
     helm_release.cert_manager
   ]
-
 }

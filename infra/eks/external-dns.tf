@@ -13,9 +13,6 @@ locals {
   }
 }
 
-data "aws_route53_zone" "env_root" {
-  name = "${var.account}.nuon.co"
-}
 
 module "external_dns_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"

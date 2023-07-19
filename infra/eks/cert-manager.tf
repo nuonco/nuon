@@ -11,8 +11,17 @@ module "cert_manager_irsa" {
 
   role_name = "cert-manager-${local.workspace_trimmed}"
 
-  attach_cert_manager_policy    = true
-  cert_manager_hosted_zone_arns = [aws_route53_zone.internal_private.arn, ]
+  attach_cert_manager_policy = true
+
+  # NOTE: the UI does not show an ARN, but the ARN is really just the hosted zone ID, alongside the global resource
+  # identifier for this resource:
+  # eg: arn:aws:route53:::hostedzone/Z00748353R29S9L6C7JJV
+  cert_manager_hosted_zone_arns = [
+    # setup permissions for both our internal dns zone and public zone
+    aws_route53_zone.internal_private.arn,
+    # public zone
+    data.aws_route53_zone.env_root.arn,
+  ]
 
   oidc_providers = {
     ex = {
@@ -41,6 +50,10 @@ resource "helm_release" "cert_manager" {
     value = module.cert_manager_irsa.iam_role_arn
   }
 
+  set {
+    name  = "securityContext.fsGroup"
+    value = "1001"
+  }
 
   depends_on = [
     kubectl_manifest.karpenter_provisioner,
