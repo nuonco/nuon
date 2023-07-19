@@ -121,3 +121,9 @@ output "sandbox" {
     key    = nonsensitive(data.tfe_outputs.sandboxes.values.key)
   }
 }
+
+output "account" {
+  value = {
+    id = local.org_account_id
+  }
+}
