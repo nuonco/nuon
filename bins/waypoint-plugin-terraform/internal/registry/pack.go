@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
@@ -14,15 +15,20 @@ func (b *Registry) packDirectory(ctx context.Context, log hclog.Logger, status t
 	fileDescriptors := make([]v1.Descriptor, len(filePaths))
 
 	for idx, f := range filePaths {
+		fi, err := os.Stat(f.absPath)
+		if err != nil {
+			return fmt.Errorf("failed to stat %s: %w", f.absPath, err)
+		}
+		if fi.Size() == 0 {
+			continue
+		}
 		status.Step(terminal.StatusOK, fmt.Sprintf("%d packing %s as %s", idx, f.absPath, f.relPath))
 		fileDescriptor, err := b.Store.Add(ctx, f.relPath, defaultFileType, f.absPath)
 		if err != nil {
 			return fmt.Errorf("unable to pack %s: %w", f.absPath, err)
 		}
 
-		if fileDescriptor.Size > 0 {
-			fileDescriptors[idx] = fileDescriptor
-		}
+		fileDescriptors[idx] = fileDescriptor
 	}
 
 	descriptor, err := oras.Pack(ctx, b.Store, defaultArtifactType, fileDescriptors, oras.PackOptions{
