@@ -1,4 +1,4 @@
-{{- if (eq (.Values.server.public_service.enabled | toString) "true") }}
+{{- if (eq (.Values.server.enabled | toString) "true") }}
 # Headless service for Waypoint server statefulset.
 apiVersion: v1
 kind: Service
@@ -14,7 +14,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=false
-    external-dns.alpha.kubernetes.io/hostname: {{ .Values.server.public_service.domain }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.server.domain }}
 spec:
   type: LoadBalancer
   loadBalancerClass: service.k8s.aws/nlb
