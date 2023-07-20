@@ -31,9 +31,9 @@ type Client interface {
 	TriggerInstallProvision(context.Context, *installsv1.ProvisionRequest) (string, error)
 	TriggerInstallDeprovision(context.Context, *installsv1.DeprovisionRequest) (string, error)
 
-	TriggerOrgSignup(context.Context, *orgsv1.SignupRequest) (string, error)
-	ExecOrgSignup(context.Context, *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error)
-	TriggerOrgTeardown(context.Context, *orgsv1.TeardownRequest) (string, error)
+	TriggerOrgSignup(context.Context, *orgsv1.ProvisionRequest) (string, error)
+	ExecOrgSignup(context.Context, *orgsv1.ProvisionRequest) (*orgsv1.ProvisionResponse, error)
+	TriggerOrgTeardown(context.Context, *orgsv1.DeprovisionRequest) (string, error)
 
 	ExecCreatePlan(ctx context.Context, namespace string, req *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error)
 	ExecExecutePlan(ctx context.Context, namespace string, req *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error)

@@ -29,6 +29,7 @@ data "aws_iam_policy_document" "orgs_account_kms_access_trust" {
       type = "AWS"
       identifiers = [
         module.iam_eks_role.iam_role_arn,
+        data.tfe_outputs.infra-orgs.values.iam_roles.support.arn,
       ]
     }
   }

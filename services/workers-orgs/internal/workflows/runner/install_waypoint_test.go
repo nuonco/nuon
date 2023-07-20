@@ -69,15 +69,6 @@ func TestInstallWaypoint(t *testing.T) {
 			errExpected: fmt.Errorf("Name"),
 		},
 
-		"errors without chart url": {
-			requestFn: func() InstallWaypointRequest {
-				req := generics.GetFakeObj[InstallWaypointRequest]()
-				req.Chart.URL = ""
-				return req
-			},
-			errExpected: fmt.Errorf("URL"),
-		},
-
 		"errors without chart version": {
 			requestFn: func() InstallWaypointRequest {
 				req := generics.GetFakeObj[InstallWaypointRequest]()

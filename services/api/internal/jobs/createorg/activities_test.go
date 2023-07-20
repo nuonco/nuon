@@ -24,7 +24,7 @@ func Test_ActivityTriggerOrgJob(t *testing.T) {
 			mockWfc: func(ctl *gomock.Controller) wfc.Client {
 				mockWfc := wfc.NewMockClient(ctl)
 				mockWfc.EXPECT().TriggerOrgSignup(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(ctx context.Context, req *orgsv1.SignupRequest) (string, error) {
+					DoAndReturn(func(ctx context.Context, req *orgsv1.ProvisionRequest) (string, error) {
 						err := req.Validate()
 						assert.NoError(t, err)
 						return "123456", nil

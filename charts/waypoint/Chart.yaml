@@ -1,5 +1,5 @@
 apiVersion: v2
-name: helm-waypoint
+name: waypoint
 description: Official Helm Chart for HashiCorp Waypoint
 type: application
 version: 0.0.1

@@ -59,7 +59,7 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 
 func (w *wkflow) deprovisionOrg(ctx workflow.Context, canaryReq *canaryv1.DeprovisionRequest) (*canaryv1.Step, error) {
 	l := workflow.GetLogger(ctx)
-	wkflowReq := &orgsv1.TeardownRequest{
+	wkflowReq := &orgsv1.DeprovisionRequest{
 		OrgId:  canaryReq.CanaryId,
 		Region: defaultRegion,
 	}

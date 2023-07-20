@@ -317,6 +317,8 @@ ui:
     #      - chart-example.local
 
 bootstrap:
+  enabled: true
+
   # Definition of the serviceAccount used to bootstrap Waypoint.
   serviceAccount:
     # Specifies whether a service account should be created

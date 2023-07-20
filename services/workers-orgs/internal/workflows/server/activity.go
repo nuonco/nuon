@@ -12,7 +12,6 @@ import (
 type Activities struct {
 	v *validator.Validate
 	namespaceCreator
-	serviceCreator
 	helmInstaller installer
 	waypointServerPinger
 	waypointServerBootstrapper
@@ -26,7 +25,6 @@ func NewActivities(v *validator.Validate) *Activities {
 		v: v,
 
 		namespaceCreator:           &nsCreator{},
-		serviceCreator:             &svcCreator{},
 		helmInstaller:              helm.NewInstaller(),
 		waypointServerPinger:       &wpServerPinger{},
 		waypointServerBootstrapper: &wpServerBootstrapper{},

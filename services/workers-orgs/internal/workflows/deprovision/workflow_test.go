@@ -1,4 +1,4 @@
-package teardown
+package deprovision
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func Test_Workflow(t *testing.T) {
 
 	a := NewActivities()
 
-	req := generics.GetFakeObj[*orgsv1.TeardownRequest]()
+	req := generics.GetFakeObj[*orgsv1.DeprovisionRequest]()
 	wkflow := NewWorkflow(cfg)
 	iamWkflow := iam.NewWorkflow(cfg)
 	env.RegisterWorkflow(iamWkflow.DeprovisionIAM)
@@ -48,10 +48,10 @@ func Test_Workflow(t *testing.T) {
 			return UninstallWaypointResponse{}, nil
 		})
 
-	env.ExecuteWorkflow(wkflow.Teardown, req)
+	env.ExecuteWorkflow(wkflow.Deprovision, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	var resp *orgsv1.TeardownResponse
+	var resp *orgsv1.DeprovisionResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	require.NotNil(t, resp)
 }

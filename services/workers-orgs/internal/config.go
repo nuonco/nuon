@@ -9,6 +9,10 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "orgs")
+	config.RegisterDefault("waypoint_chart_dir", "/charts/waypoint")
+
+	// TODO REMOVE THIS!!!
+	config.RegisterDefault("orgs_account_id", "766121324316")
 }
 
 type Config struct {
@@ -43,14 +47,19 @@ type Config struct {
 	WorkersIAMRoleARNPrefix string `config:"workers_iam_role_arn_prefix" validate:"required"`
 	SupportIAMRoleARN       string `config:"support_iam_role_arn" validate:"required"`
 	OrgsAccountRootARN      string `config:"orgs_account_root_arn" json:"orgs_account_root_arn"`
+	OrgsAccountID           string `config:"orgs_account_id" json:"orgs_account_id"`
 
 	// configs needed to create an IAM role for the ODR runner in the orgs account
 	OrgsIAMOidcProviderURL string `config:"orgs_iam_oidc_provider_url" validate:"required"`
 	OrgsIAMOidcProviderArn string `config:"orgs_iam_oidc_provider_arn" validate:"required"`
 	OrgsECRRegistryArn     string `config:"orgs_ecr_registry_arn" validate:"required"`
 
+	// configs for accessing the sandbox buckets
 	SandboxBucketARN string `config:"sandbox_bucket_arn" validate:"required"`
 	SandboxKeyARN    string `config:"sandbox_key_arn" validate:"required"`
+
+	// We embed the waypoint chart locally, and use it from main here.
+	WaypointChartDir string `config:"waypoint_chart_dir"`
 }
 
 func (c Config) Validate() error {

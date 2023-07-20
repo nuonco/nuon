@@ -96,7 +96,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 
 func (w *wkflow) provisionOrg(ctx workflow.Context, req *canaryv1.ProvisionRequest) (*canaryv1.Step, error) {
 	l := workflow.GetLogger(ctx)
-	wkflowReq := &orgsv1.SignupRequest{
+	wkflowReq := &orgsv1.ProvisionRequest{
 		OrgId:  req.CanaryId,
 		Region: defaultRegion,
 	}

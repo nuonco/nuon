@@ -1,4 +1,4 @@
-{{- if (eq (.Values.server.enabled | toString) "true") }}
+{{- if (eq (.Values.bootstrap.enabled | toString) "true") }}
 apiVersion: batch/v1
 kind: Job
 metadata:

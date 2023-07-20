@@ -10,8 +10,8 @@ import "google/protobuf/any.proto";
 import "installs/v1/deprovision.proto";
 import "installs/v1/provision.proto";
 import "instances/v1/provision.proto";
-import "orgs/v1/signup.proto";
-import "orgs/v1/teardown.proto";
+import "orgs/v1/deprovision.proto";
+import "orgs/v1/provision.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -49,8 +49,8 @@ message ResponseRef {
     installs.v1.ProvisionResponse install_provision = 2;
     installs.v1.DeprovisionResponse install_deprovision = 3;
 
-    orgs.v1.SignupResponse org_signup = 4;
-    orgs.v1.TeardownResponse org_teardown = 5;
+    orgs.v1.ProvisionResponse org_signup = 4;
+    orgs.v1.DeprovisionResponse org_teardown = 5;
 
     instances.v1.ProvisionResponse instance_provision = 6;
 

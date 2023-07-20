@@ -1,4 +1,4 @@
-package signup
+package provision
 
 type Activities struct {
 	notifier

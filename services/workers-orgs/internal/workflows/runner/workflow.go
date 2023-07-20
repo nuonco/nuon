@@ -8,6 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/helm"
 	waypointhelm "github.com/powertoolsdev/mono/pkg/helm/waypoint"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/runner/v1"
@@ -84,10 +85,15 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 	l.Debug("successfully fetched waypoint server cookie")
 
 	// install waypoint
+	chart := &helm.Chart{
+		Name:    waypointhelm.DefaultChart.Name,
+		Version: waypointhelm.DefaultChart.Version,
+		Dir:     w.cfg.WaypointChartDir,
+	}
 	iwReq := InstallWaypointRequest{
 		Namespace:   req.OrgId,
 		ReleaseName: fmt.Sprintf("wp-%s-runner", req.OrgId),
-		Chart:       &waypointhelm.DefaultChart,
+		Chart:       chart,
 		Atomic:      false,
 		OrgID:       req.OrgId,
 		ClusterInfo: clusterInfo,

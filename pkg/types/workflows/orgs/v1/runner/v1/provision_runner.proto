@@ -22,6 +22,8 @@ message ProvisionRunnerRequest {
     },
     (tagger.tags) = "faker:\"oneof: us-west-2\""
   ];
+
+  bool reprovision = 4 [(tagger.tags) = "faker:\"-\""];
 }
 
 message ProvisionRunnerResponse {}
