@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/powertoolsdev/mono/pkg/helm"
 	"github.com/powertoolsdev/mono/pkg/helm/waypoint"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
+	"github.com/powertoolsdev/mono/pkg/waypoint/client"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
@@ -41,7 +43,8 @@ func (w wkflow) ProvisionServer(ctx workflow.Context, req *serverv1.ProvisionSer
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	waypointServerAddr := fmt.Sprintf("%s.%s:%d", req.OrgId, w.cfg.WaypointServerRootDomain, defaultWaypointServerPort)
+	serverDomain := client.DefaultOrgServerDomain(w.cfg.WaypointServerRootDomain, req.OrgId)
+	waypointServerAddr := client.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId)
 	clusterInfo := kube.ClusterInfo{
 		ID:             w.cfg.OrgsK8sClusterID,
 		Endpoint:       w.cfg.OrgsK8sPublicEndpoint,
@@ -61,26 +64,22 @@ func (w wkflow) ProvisionServer(ctx workflow.Context, req *serverv1.ProvisionSer
 	}
 
 	l.Debug("installing waypoint server")
+	chart := &helm.Chart{
+		Name:    waypoint.DefaultChart.Name,
+		Version: waypoint.DefaultChart.Version,
+		Dir:     w.cfg.WaypointChartDir,
+	}
 	_, err = installWaypointServer(ctx, act, InstallWaypointServerRequest{
 		Namespace:   req.OrgId,
 		ReleaseName: fmt.Sprintf("wp-%s", req.OrgId),
-		Chart:       &waypoint.DefaultChart,
+		Domain:      serverDomain,
+		OrgID:       req.OrgId,
+		Chart:       chart,
 		Atomic:      false,
 		ClusterInfo: clusterInfo,
 	})
 	if err != nil {
 		return resp, fmt.Errorf("failed to install waypoint: %w", err)
-	}
-
-	l.Debug("exposing waypoint server publicly")
-	_, err = exposeWaypointServer(ctx, act, ExposeWaypointServerRequest{
-		NamespaceName: req.OrgId,
-		RootDomain:    w.cfg.WaypointServerRootDomain,
-		ShortID:       req.OrgId,
-		ClusterInfo:   clusterInfo,
-	})
-	if err != nil {
-		return resp, fmt.Errorf("failed to expose waypoint: %w", err)
 	}
 
 	l.Debug("pinging waypoint server until it responds")
@@ -181,28 +180,6 @@ func installWaypointServer(
 	}
 	l.Debug("executing install waypoint activity")
 	fut := workflow.ExecuteActivity(ctx, act.InstallWaypointServer, iwr)
-
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-func exposeWaypointServer(
-	ctx workflow.Context,
-	act *Activities,
-	ewsr ExposeWaypointServerRequest,
-) (ExposeWaypointServerResponse, error) {
-	var resp ExposeWaypointServerResponse
-
-	l := workflow.GetLogger(ctx)
-
-	if err := ewsr.validate(); err != nil {
-		return resp, err
-	}
-	l.Debug("executing expose waypoint server activity")
-	fut := workflow.ExecuteActivity(ctx, act.ExposeWaypointServer, ewsr)
 
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err

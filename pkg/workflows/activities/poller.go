@@ -42,7 +42,7 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 	)
 	switch [2]string{req.Namespace, req.WorkflowName} {
 	case [2]string{"orgs", "Signup"}:
-		var wkflowResp *orgsv1.SignupResponse
+		var wkflowResp *orgsv1.ProvisionResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
@@ -51,7 +51,7 @@ func (a *Activities) PollWorkflow(ctx context.Context, req *activitiesv1.PollWor
 			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}
 	case [2]string{"orgs", "Teardown"}:
-		var wkflowResp *orgsv1.TeardownResponse
+		var wkflowResp *orgsv1.DeprovisionResponse
 		if wkflowErr = wkflow.Get(ctx, &wkflowResp); wkflowErr != nil {
 			return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
 		}

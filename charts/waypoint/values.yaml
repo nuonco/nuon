@@ -19,6 +19,9 @@ server:
   # Arguments to pass to the `waypoint server run` command. Will overwrite default options.
   runArgs: ["-vv"]
 
+  # domain is used to control what domain the public service is tied too, as well as certs
+  domain: ""
+
   certs:
     # The name of the Kubernetes secret of type "kubernetes.io/tls" that
     # contains the TLS certificate and key to use for the server API.
@@ -31,6 +34,8 @@ server:
     # defaults but can be customized if necessary.
     certName: tls.crt
     keyName: tls.key
+    # the name of the cluster issuer to use
+    clusterIssuerName: public-issuer
 
   # This configures the Waypoint Statefulset to create a PVC for data storage.
   storage:
@@ -96,10 +101,6 @@ server:
     # YAML-formatted multi-line templated string map of the annotations to apply
     # to the service.
     annotations: {}
-
-  public_service:
-    enabled: false
-    domain: ""
 
 runner:
   # If not set to true, the Waypoint runner will not be installed. At least
@@ -308,6 +309,7 @@ ui:
     #      - chart-example.local
 
 bootstrap:
+  enabled: false
   # Definition of the serviceAccount used to bootstrap Waypoint.
   serviceAccount:
     # Specifies whether a service account should be created

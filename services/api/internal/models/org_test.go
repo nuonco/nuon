@@ -11,7 +11,7 @@ import (
 func TestOrg_ToProvisionRequest(t *testing.T) {
 	org := generics.GetFakeObj[*Org]()
 	org.ID = "org1234567890123456798012"
-	expected := orgsv1.SignupRequest{
+	expected := orgsv1.ProvisionRequest{
 		OrgId:  org.ID,
 		Region: "us-west-2",
 	}
@@ -23,7 +23,7 @@ func TestOrg_ToProvisionRequest(t *testing.T) {
 func TestOrg_ToDeprovisionRequest(t *testing.T) {
 	org := generics.GetFakeObj[*Org]()
 	org.ID = "org1234567890123456798012"
-	expected := orgsv1.TeardownRequest{
+	expected := orgsv1.DeprovisionRequest{
 		OrgId:  org.ID,
 		Region: "us-west-2",
 	}

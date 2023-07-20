@@ -1,4 +1,4 @@
-package signup
+package provision
 
 import (
 	"fmt"
@@ -29,8 +29,8 @@ func NewWorkflow(cfg workers.Config) *wkflow {
 	}
 }
 
-func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv1.SignupResponse, error) {
-	resp := &orgsv1.SignupResponse{}
+func (w *wkflow) Provision(ctx workflow.Context, req *orgsv1.ProvisionRequest) (*orgsv1.ProvisionResponse, error) {
+	resp := &orgsv1.ProvisionResponse{}
 
 	if err := req.Validate(); err != nil {
 		return resp, fmt.Errorf("unable to validate request: %w", err)
@@ -43,7 +43,6 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
 	waypointServerAddr := waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId)
-
 	act := NewActivities(nil)
 
 	if err := w.startWorkflow(ctx, req); err != nil {
@@ -58,7 +57,8 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 
 	l.Debug("provisioning iam for org")
 	iamResp, err := execProvisionIAMWorkflow(ctx, w.cfg, &iamv1.ProvisionIAMRequest{
-		OrgId: req.OrgId,
+		OrgId:       req.OrgId,
+		Reprovision: req.Reprovision,
 	})
 	if err != nil {
 		err = fmt.Errorf("failed to provision iam: %w", err)
@@ -71,6 +71,7 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 	kmsResp, err := execProvisionKMSWorkflow(ctx, w.cfg, &kmsv1.ProvisionKMSRequest{
 		OrgId:             req.OrgId,
 		SecretsIamRoleArn: iamResp.SecretsRoleArn,
+		Reprovision:       req.Reprovision,
 	})
 	if err != nil {
 		err = fmt.Errorf("failed to provision kms: %w", err)
@@ -81,8 +82,9 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 
 	l.Debug("provisioning waypoint org server")
 	serverResp, err := execProvisionWaypointServerWorkflow(ctx, w.cfg, &serverv1.ProvisionServerRequest{
-		OrgId:  req.OrgId,
-		Region: req.Region,
+		OrgId:       req.OrgId,
+		Region:      req.Region,
+		Reprovision: req.Reprovision,
 	})
 	if err != nil {
 		err = fmt.Errorf("failed to install runner: %w", err)
@@ -96,6 +98,7 @@ func (w *wkflow) Signup(ctx workflow.Context, req *orgsv1.SignupRequest) (*orgsv
 		OrgId:         req.OrgId,
 		OdrIamRoleArn: iamResp.OdrRoleArn,
 		Region:        req.Region,
+		Reprovision:   req.Reprovision,
 	})
 	if err != nil {
 		err = fmt.Errorf("failed to install runner: %w", err)

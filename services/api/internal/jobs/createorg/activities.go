@@ -24,7 +24,7 @@ type TriggerJobResponse struct {
 }
 
 func (a *activities) TriggerOrgProvision(ctx context.Context, orgID string) (*TriggerJobResponse, error) {
-	workflowID, err := a.wfc.TriggerOrgSignup(ctx, &orgsv1.SignupRequest{
+	workflowID, err := a.wfc.TriggerOrgSignup(ctx, &orgsv1.ProvisionRequest{
 		OrgId:  orgID,
 		Region: defaultOrgRegion,
 	})

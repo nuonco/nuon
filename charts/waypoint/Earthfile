@@ -26,9 +26,14 @@ deps:
     chmod +x ./kubectl && \
     mv ./kubectl /usr/bin/kubectl
 
+chart:
+    COPY --dir . chart
+    SAVE ARTIFACT chart
+
 code:
     FROM +deps
     COPY --dir . .
+    SAVE ARTIFACT .
 
 lint:
     FROM +code

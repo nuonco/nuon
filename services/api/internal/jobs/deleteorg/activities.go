@@ -22,7 +22,7 @@ type TriggerJobResponse struct {
 }
 
 func (a *activities) TriggerOrgDeprovision(ctx context.Context, orgID string) (*TriggerJobResponse, error) {
-	req := &orgsv1.TeardownRequest{OrgId: orgID, Region: "us-west-2"}
+	req := &orgsv1.DeprovisionRequest{OrgId: orgID, Region: "us-west-2"}
 	workflowID, err := a.wfc.TriggerOrgTeardown(ctx, req)
 	if err != nil {
 		return nil, err

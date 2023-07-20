@@ -61,15 +61,15 @@ func (o Org) GetUpdatedAt() time.Time {
 	return o.Model.UpdatedAt
 }
 
-func (o Org) ToProvisionRequest() *orgsv1.SignupRequest {
-	return &orgsv1.SignupRequest{
+func (o Org) ToProvisionRequest() *orgsv1.ProvisionRequest {
+	return &orgsv1.ProvisionRequest{
 		OrgId:  o.ID,
 		Region: "us-west-2",
 	}
 }
 
-func (o Org) ToDeprovisionRequest() *orgsv1.TeardownRequest {
-	return &orgsv1.TeardownRequest{
+func (o Org) ToDeprovisionRequest() *orgsv1.DeprovisionRequest {
+	return &orgsv1.DeprovisionRequest{
 		OrgId:  o.ID,
 		Region: "us-west-2",
 	}
