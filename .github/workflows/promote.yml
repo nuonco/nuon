@@ -73,10 +73,8 @@ jobs:
           - orgs-api
           - workers-apps
           - workers-canary
-          - workers-deployments
           - workers-executors
           - workers-installs
-          - workers-instances
           - workers-orgs
     uses: ./.github/workflows/service.yml
     with:
