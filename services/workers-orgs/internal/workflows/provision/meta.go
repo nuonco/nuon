@@ -1,4 +1,4 @@
-package signup
+package provision
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w *wkflow) startWorkflow(ctx workflow.Context, req *orgsv1.SignupRequest) error {
+func (w *wkflow) startWorkflow(ctx workflow.Context, req *orgsv1.ProvisionRequest) error {
 	info := workflow.GetInfo(ctx)
 	prefix := prefix.OrgPath(req.OrgId)
 
@@ -33,7 +33,7 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, req *orgsv1.SignupRequest) 
 	return nil
 }
 
-func metaRequestFromReq(req *orgsv1.SignupRequest) *sharedv1.RequestRef {
+func metaRequestFromReq(req *orgsv1.ProvisionRequest) *sharedv1.RequestRef {
 	return &sharedv1.RequestRef{
 		Request: &sharedv1.RequestRef_OrgSignup{
 			OrgSignup: req,
@@ -41,7 +41,7 @@ func metaRequestFromReq(req *orgsv1.SignupRequest) *sharedv1.RequestRef {
 	}
 }
 
-func metaResponseFromResponse(resp *orgsv1.SignupResponse) *sharedv1.ResponseRef {
+func metaResponseFromResponse(resp *orgsv1.ProvisionResponse) *sharedv1.ResponseRef {
 	return &sharedv1.ResponseRef{
 		Response: &sharedv1.ResponseRef_OrgSignup{
 			OrgSignup: resp,
@@ -61,7 +61,7 @@ func (a *Activities) StartSignupRequest(ctx context.Context, req *sharedv1.Start
 }
 
 // finishWorkflow calls the finish step
-func (w *wkflow) finishWorkflow(ctx workflow.Context, req *orgsv1.SignupRequest, resp *orgsv1.SignupResponse, workflowErr error) {
+func (w *wkflow) finishWorkflow(ctx workflow.Context, req *orgsv1.ProvisionRequest, resp *orgsv1.ProvisionResponse, workflowErr error) {
 	var err error
 	defer func() {
 		if err == nil {

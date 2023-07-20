@@ -25,8 +25,8 @@ type Client interface {
 	GetInstallProvisionRequest(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionRequest, error)
 	GetInstallProvisionResponse(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionResponse, error)
 
-	GetOrgProvisionRequest(ctx context.Context, orgID string) (*orgsv1.SignupRequest, error)
-	GetOrgProvisionResponse(ctx context.Context, orgID string) (*orgsv1.SignupResponse, error)
+	GetOrgProvisionRequest(ctx context.Context, orgID string) (*orgsv1.ProvisionRequest, error)
+	GetOrgProvisionResponse(ctx context.Context, orgID string) (*orgsv1.ProvisionResponse, error)
 
 	GetAppProvisionRequest(ctx context.Context, orgID, appID string) (*appsv1.ProvisionRequest, error)
 	GetAppProvisionResponse(ctx context.Context, orgID, appID string) (*appsv1.ProvisionResponse, error)

@@ -12,6 +12,8 @@ message ProvisionIAMRequest {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"len=26\""
   ];
+
+  bool reprovision = 2 [(tagger.tags) = "faker:\"-\""];
 }
 
 message ProvisionIAMResponse {

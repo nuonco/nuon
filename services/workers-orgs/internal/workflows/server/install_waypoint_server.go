@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
@@ -16,6 +15,8 @@ import (
 
 type InstallWaypointServerRequest struct {
 	Namespace   string      `json:"namespace" validate:"required"`
+	OrgID       string      `json:"org_id" validate:"required"`
+	Domain      string      `json:"domain" validate:"required"`
 	ReleaseName string      `json:"release_name" validate:"required"`
 	Chart       *helm.Chart `json:"chart" validate:"required"`
 	Atomic      bool        `json:"atomic"`
@@ -48,6 +49,10 @@ func (a *Activities) InstallWaypointServer(ctx context.Context, req InstallWaypo
 	l := activity.GetLogger(ctx)
 
 	values := waypoint.NewDefaultOrgServerValues()
+	// set values
+	values.Server.Domain = req.Domain
+	values.Server.Certs.SecretName = fmt.Sprintf("tls-%s", req.OrgID)
+
 	var vals map[string]interface{}
 	if err := mapstructure.Decode(values, &vals); err != nil {
 		return resp, fmt.Errorf("failed to convert helm values: %w", err)
@@ -76,8 +81,3 @@ func (a *Activities) InstallWaypointServer(ctx context.Context, req InstallWaypo
 	l.Debug("finished installing waypoint", "response", resp)
 	return resp, nil
 }
-
-var (
-	ErrInvalidReleaseName = errors.New("invalid release name")
-	ErrInvalidChart       = errors.New("invalid chart")
-)

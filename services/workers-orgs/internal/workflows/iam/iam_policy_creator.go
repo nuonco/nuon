@@ -15,6 +15,7 @@ type CreateIAMPolicyRequest struct {
 	AssumeRoleARN string `validate:"required" json:"assume_role_arn"`
 
 	PolicyName     string `validate:"required" json:"policy_name"`
+	PolicyARN      string `validate:"required" json:"policy_arn"`
 	PolicyPath     string `validate:"required" json:"policy_path"`
 	PolicyDocument string `validate:"required" json:"policy_document"`
 
@@ -47,11 +48,16 @@ func (a *Activities) CreateIAMPolicy(ctx context.Context, req CreateIAMPolicyReq
 
 	client := iam.NewFromConfig(cfg)
 	policyArn, err := a.iamPolicyCreator.createIAMPolicy(ctx, client, req)
-	if err != nil {
+	if err == nil {
+		resp.PolicyArn = policyArn
+		return resp, nil
+	}
+	if !isEntityExistsException(err) {
 		return resp, fmt.Errorf("unable to create odr IAM policy: %w", err)
 	}
 
-	resp.PolicyArn = policyArn
+	// default case where the policy exists already
+	resp.PolicyArn = req.PolicyARN
 	return resp, nil
 }
 

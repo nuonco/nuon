@@ -63,7 +63,8 @@ func (l *chrtLoader) load(name string, client action.ChartPathOptions) (*chart.C
 
 type Chart struct {
 	Name    string `json:"name" validate:"required"`
-	URL     string `json:"url" validate:"required"`
+	URL     string `json:"url"`
+	Dir     string `json:"dir"`
 	Version string `json:"version" validate:"required"`
 }
 
@@ -133,7 +134,12 @@ func (i *installer) Install(ctx context.Context, config *InstallConfig) (*releas
 		return nil, fmt.Errorf("failed to initialize helm config: %w", err)
 	}
 
-	r, err := config.installer.install(ctx, client, config.Chart.Name, config.Values)
+	inputName := config.Chart.Name
+	if config.Chart.Dir != "" {
+		inputName = config.Chart.Dir
+	}
+
+	r, err := config.installer.install(ctx, client, inputName, config.Values)
 	if err != nil {
 		return nil, fmt.Errorf("failed to install release: %w", err)
 	}

@@ -20,6 +20,8 @@ message ProvisionServerRequest {
     },
     (tagger.tags) = "faker:\"oneof: us-west-2\""
   ];
+
+  bool reprovision = 3 [(tagger.tags) = "faker:\"-\""];
 }
 
 message ProvisionServerResponse {

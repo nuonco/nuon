@@ -25,10 +25,7 @@ ENTRYPOINT ["/temporalite", \
             "-n", "builds", \
             "-n", "apps", \
             "-n", "canary", \
-            "-n", "default", \
-            "-n", "deployments", \
-            "-n", "deploys", \
+	    "-n", "deploys", \
             "-n", "installs", \
-            "-n", "instances", \
-            "-n", "orgs", \
+	    "-n", "orgs", \
             "--ip" , "0.0.0.0"]
