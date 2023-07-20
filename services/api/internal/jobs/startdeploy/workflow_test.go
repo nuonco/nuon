@@ -71,6 +71,11 @@ func TestStartDeploy(t *testing.T) {
 		},
 	}
 
+	// we need to add the installId to the plan
+	switch planConnection := planConnection.Actual.(type) {
+	case *planv1.Plan_WaypointPlan:
+		planConnection.WaypointPlan.Metadata.InstallId = idResp.InstallID
+	}
 	deployReq := &deploysv1.DeployRequest{
 		DeployId: idResp.DeployID,
 		BuildId:  idResp.BuildID,
