@@ -1,4 +1,4 @@
-package signup
+package provision
 
 import (
 	"context"
@@ -43,7 +43,7 @@ func Test_Workflow(t *testing.T) {
 	wf := NewWorkflow(cfg)
 	a := NewActivities(nil)
 
-	req := generics.GetFakeObj[*orgsv1.SignupRequest]()
+	req := generics.GetFakeObj[*orgsv1.ProvisionRequest]()
 	iamResp := generics.GetFakeObj[*iamv1.ProvisionIAMResponse]()
 	kmsResp := generics.GetFakeObj[*kmsv1.ProvisionKMSResponse]()
 	serverResp := generics.GetFakeObj[*serverv1.ProvisionServerResponse]()
@@ -93,12 +93,12 @@ func Test_Workflow(t *testing.T) {
 			return &resp, nil
 		})
 
-	env.ExecuteWorkflow(wf.Signup, req)
+	env.ExecuteWorkflow(wf.Provision, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
 
 	// assert response
-	var resp orgsv1.SignupResponse
+	var resp orgsv1.ProvisionResponse
 	require.NoError(t, env.GetWorkflowResult(&resp))
 	assert.True(t, proto.Equal(resp.IamRoles, iamResp))
 	assert.True(t, proto.Equal(resp.Server, serverResp))

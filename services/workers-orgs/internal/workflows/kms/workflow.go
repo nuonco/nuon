@@ -30,16 +30,29 @@ type wkflow struct {
 func (w wkflow) ProvisionKMS(ctx workflow.Context, req *kmsv1.ProvisionKMSRequest) (*kmsv1.ProvisionKMSResponse, error) {
 	l := log.With(workflow.GetLogger(ctx))
 	act := NewActivities()
-	resp := &kmsv1.ProvisionKMSResponse{}
-
-	if err := req.Validate(); err != nil {
-		return resp, fmt.Errorf("unable to validate request: %w", err)
-	}
-
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: defaultActivityTimeout,
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
+	resp := &kmsv1.ProvisionKMSResponse{}
+	if err := req.Validate(); err != nil {
+		return resp, fmt.Errorf("unable to validate request: %w", err)
+	}
+
+	if req.Reprovision {
+		l.Info("reprovisioning, so assuming that kms key exists")
+		getKeyReq := &GetKMSKeyRequest{
+			AssumeRoleARN: w.cfg.OrgsKMSAccessRoleArn,
+			KeyARN:        fmt.Sprintf("alias/org-%s", req.OrgId),
+		}
+		keyResp, err := execGetKMSKey(ctx, act, getKeyReq)
+		if err != nil {
+			return resp, fmt.Errorf("unable to get kms key: %w", err)
+		}
+		resp.KmsKeyArn = keyResp.KeyArn
+		resp.KmsKeyId = keyResp.KeyID
+		return resp, nil
+	}
 
 	ckkReq := CreateKMSKeyRequest{
 		AssumeRoleARN: w.cfg.OrgsKMSAccessRoleArn,
@@ -136,4 +149,22 @@ func execCreateKMSKeyAlias(
 	}
 
 	return nil
+}
+
+func execGetKMSKey(
+	ctx workflow.Context,
+	act *Activities,
+	req *GetKMSKeyRequest,
+) (*GetKMSKeyResponse, error) {
+	l := workflow.GetLogger(ctx)
+
+	l.Debug("executing get kms key activity")
+	fut := workflow.ExecuteActivity(ctx, act.GetKMSKey, req)
+
+	var resp GetKMSKeyResponse
+	if err := fut.Get(ctx, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
 }

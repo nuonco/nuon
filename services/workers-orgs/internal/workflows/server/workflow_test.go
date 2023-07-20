@@ -45,15 +45,6 @@ func Test_Workflow(t *testing.T) {
 			return InstallWaypointServerResponse{}, nil
 		})
 
-	env.OnActivity(a.ExposeWaypointServer, mock.Anything, mock.Anything).
-		Return(func(ctx context.Context, ewsr ExposeWaypointServerRequest) (ExposeWaypointServerResponse, error) {
-			err := ewsr.validate()
-			assert.Nil(t, err)
-			require.Equal(t, req.OrgId, ewsr.NamespaceName)
-			require.Equal(t, req.OrgId, ewsr.ShortID)
-			return ExposeWaypointServerResponse{}, nil
-		})
-
 	env.OnActivity(a.PingWaypointServer, mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, pwsr PingWaypointServerRequest) (PingWaypointServerResponse, error) {
 			err := validatePingWaypointServerRequest(pwsr)

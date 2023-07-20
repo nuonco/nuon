@@ -8,12 +8,12 @@ import (
 	"github.com/powertoolsdev/mono/pkg/sender"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-orgs/internal"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/deprovision"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/iam"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/kms"
+	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/provision"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/runner"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/server"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/signup"
-	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/teardown"
 	"github.com/spf13/cobra"
 	tworker "go.temporal.io/sdk/worker"
 )
@@ -53,8 +53,8 @@ func runAll(cmd *cobra.Command, _ []string) {
 		}
 	}
 
-	wkflow := signup.NewWorkflow(cfg)
-	tdWkflow := teardown.NewWorkflow(cfg)
+	wkflow := provision.NewWorkflow(cfg)
+	tdWkflow := deprovision.NewWorkflow(cfg)
 	runiFlow := runner.NewWorkflow(cfg)
 	srvWkflow := server.NewWorkflow(cfg)
 	iamWkflow := iam.NewWorkflow(cfg)
@@ -64,8 +64,8 @@ func runAll(cmd *cobra.Command, _ []string) {
 	v := validator.New()
 	wkr, err := worker.New(v, worker.WithConfig(&cfg.Config),
 		// register workflows
-		worker.WithWorkflow(wkflow.Signup),
-		worker.WithWorkflow(tdWkflow.Teardown),
+		worker.WithWorkflow(wkflow.Provision),
+		worker.WithWorkflow(tdWkflow.Deprovision),
 		worker.WithWorkflow(iamWkflow.DeprovisionIAM),
 		worker.WithWorkflow(runiFlow.ProvisionRunner),
 		worker.WithWorkflow(srvWkflow.ProvisionServer),
@@ -73,9 +73,9 @@ func runAll(cmd *cobra.Command, _ []string) {
 		worker.WithWorkflow(kmsWkflow.ProvisionKMS),
 
 		// register activities
-		worker.WithActivity(signup.NewActivities(n)),
+		worker.WithActivity(provision.NewActivities(n)),
 		worker.WithActivity(runner.NewActivities(v, cfg)),
-		worker.WithActivity(teardown.NewActivities()),
+		worker.WithActivity(deprovision.NewActivities()),
 		worker.WithActivity(server.NewActivities(v)),
 		worker.WithActivity(iam.NewActivities()),
 		worker.WithActivity(kms.NewActivities()),

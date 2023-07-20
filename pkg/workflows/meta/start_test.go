@@ -29,7 +29,7 @@ func Test_starterImpl_writeRequestFile(t *testing.T) {
 	req := generics.GetFakeObj[*sharedv1.Request]()
 	req.Request = &sharedv1.RequestRef{
 		Request: &sharedv1.RequestRef_OrgSignup{
-			OrgSignup: generics.GetFakeObj[*orgsv1.SignupRequest](),
+			OrgSignup: generics.GetFakeObj[*orgsv1.ProvisionRequest](),
 		},
 	}
 
@@ -102,7 +102,7 @@ func Test_starterImpl_getRequest(t *testing.T) {
 	startReq := generics.GetFakeObj[*sharedv1.StartActivityRequest]()
 	startReq.RequestRef = &sharedv1.RequestRef{
 		Request: &sharedv1.RequestRef_OrgSignup{
-			OrgSignup: generics.GetFakeObj[*orgsv1.SignupRequest](),
+			OrgSignup: generics.GetFakeObj[*orgsv1.ProvisionRequest](),
 		},
 	}
 

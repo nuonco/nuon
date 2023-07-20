@@ -1,4 +1,4 @@
-package teardown
+package deprovision
 
 import (
 	"fmt"
@@ -24,8 +24,8 @@ type wkflow struct {
 	cfg internal.Config
 }
 
-func (w *wkflow) Teardown(ctx workflow.Context, req *orgsv1.TeardownRequest) (*orgsv1.TeardownResponse, error) {
-	resp := &orgsv1.TeardownResponse{}
+func (w *wkflow) Deprovision(ctx workflow.Context, req *orgsv1.DeprovisionRequest) (*orgsv1.DeprovisionResponse, error) {
+	resp := &orgsv1.DeprovisionResponse{}
 
 	l := log.With(workflow.GetLogger(ctx))
 	ao := workflow.ActivityOptions{

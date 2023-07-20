@@ -2,22 +2,32 @@ syntax = "proto3";
 
 package orgs.v1;
 
+import "orgs/v1/iam/v1/provision_iam.proto";
+import "orgs/v1/kms/v1/provision_kms.proto";
+import "orgs/v1/server/v1/provision_server.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1";
 
-message TeardownRequest {
+message ProvisionRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
+
   string region = 2 [
     (validate.rules).string = {
       in: ["us-west-2"]
     },
     (tagger.tags) = "faker:\"oneof: us-west-2\""
   ];
+
+  bool reprovision = 3 [(tagger.tags) = "faker:\"-\""];
 }
 
-message TeardownResponse {}
+message ProvisionResponse {
+  orgs.v1.iam.v1.ProvisionIAMResponse iam_roles = 1;
+  orgs.v1.server.v1.ProvisionServerResponse server = 2;
+  orgs.v1.kms.v1.ProvisionKMSResponse kms = 3;
+}

@@ -19,6 +19,7 @@ const (
 type CreateIAMRoleRequest struct {
 	AssumeRoleARN string `validate:"required" json:"assume_role_arn"`
 
+	RoleARN             string      `validate:"required" json:"role_arn"`
 	RoleName            string      `validate:"required" json:"role_name"`
 	RolePath            string      `validate:"required" json:"role_path"`
 	TrustPolicyDocument string      `validate:"required" json:"trust_policy_document"`
@@ -46,11 +47,15 @@ func (a *Activities) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest
 
 	client := iam.NewFromConfig(cfg)
 	roleArn, err := a.iamRoleCreator.createIAMRole(ctx, client, req)
-	if err != nil {
+	if err == nil {
+		resp.RoleArn = roleArn
+		return resp, nil
+	}
+	if !isEntityExistsException(err) {
 		return resp, fmt.Errorf("unable to create odr IAM role: %w", err)
 	}
-	resp.RoleArn = roleArn
 
+	resp.RoleArn = req.RoleARN
 	return resp, nil
 }
 

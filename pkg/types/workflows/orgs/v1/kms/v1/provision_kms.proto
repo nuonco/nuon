@@ -17,6 +17,8 @@ message ProvisionKMSRequest {
     (validate.rules).string.min_len = 20,
     (tagger.tags) = "faker:\"len=26\""
   ];
+
+  bool reprovision = 3 [(tagger.tags) = "faker:\"-\""];
 }
 
 message ProvisionKMSResponse {

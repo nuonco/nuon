@@ -8,7 +8,7 @@ import (
 
 const (
 	waypointImageRepository string = "public.ecr.aws/p7e3r5y0/waypoint"
-	waypointVersion         string = "v0.0.7"
+	waypointVersion         string = "v0.0.8"
 )
 
 // Values represent all of the possible values for a helm installation
@@ -22,10 +22,12 @@ type Values struct {
 		} `mapstructure:"image,omitempty"`
 
 		RunArgs []string `mapstructure:"runArgs,omitempty"`
+		Domain  string   `mapstructure:"domain,omitempty"`
 		Certs   struct {
-			SecretName interface{} `mapstructure:"secretName,omitempty"`
-			CertName   string      `mapstructure:"certName,omitempty"`
-			KeyName    string      `mapstructure:"keyName,omitempty"`
+			SecretName        interface{} `mapstructure:"secretName,omitempty"`
+			CertName          string      `mapstructure:"certName,omitempty"`
+			KeyName           string      `mapstructure:"keyName,omitempty"`
+			ClusterIssuerName string      `mapstructure:"clusterIssuerName,omitempty"`
 		} `mapstructure:"certs,omitempty"`
 
 		Storage struct {
