@@ -12,6 +12,8 @@ type Instance struct {
 
 	ComponentID string
 	Component   Component `faker:"-"`
+
+	Deploys []*Deploy `faker:"-"`
 }
 
 func (i *Instance) NewID() {

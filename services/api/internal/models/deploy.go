@@ -20,7 +20,6 @@ type Deploy struct {
 	Install   Install
 
 	InstanceID string
-	Instance   Instance
 }
 
 func (d *Deploy) NewID() error {

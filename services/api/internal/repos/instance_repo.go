@@ -35,6 +35,10 @@ func (i instanceRepo) Get(ctx context.Context, instanceID string) (*models.Insta
 	var instance models.Instance
 	if err := i.db.WithContext(ctx).
 		Preload(clause.Associations).
+		Preload("Deploys",
+			func(db *gorm.DB) *gorm.DB {
+				return db.Order("deploys.created_at DESC")
+			}).
 		First(&instance, "id = ?", instanceID).Error; err != nil {
 		return nil, err
 	}
@@ -73,6 +77,10 @@ func (i instanceRepo) ListByInstall(ctx context.Context, installID string) ([]*m
 	var instances []*models.Instance
 	i.db.WithContext(ctx).
 		Preload(clause.Associations).
+		Preload("Deploys",
+			func(db *gorm.DB) *gorm.DB {
+				return db.Order("deploys.created_at DESC")
+			}).
 		Where("install_id = ?", installID).
 		Find(&instances)
 
@@ -83,6 +91,10 @@ func (i instanceRepo) ListByComponent(ctx context.Context, componentID string) (
 	var instances []*models.Instance
 	i.db.WithContext(ctx).
 		Preload(clause.Associations).
+		Preload("Deploys",
+			func(db *gorm.DB) *gorm.DB {
+				return db.Order("deploys.created_at DESC")
+			}).
 		Where("component_id = ?", componentID).
 		Find(&instances)
 
