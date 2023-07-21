@@ -17,7 +17,7 @@ const (
 
 func (r *client) GetInstanceOutputs(ctx context.Context, orgID, appID, componentID, installID string) (*structpb.Struct, error) {
 	creds := r.deploymentsCredentials(ctx)
-	client, err := s3downloader.New(r.Settings.InstallsBucket, s3downloader.WithCredentials(creds))
+	client, err := s3downloader.New(r.Settings.DeploymentsBucket, s3downloader.WithCredentials(creds))
 	if err != nil {
 		return nil, fmt.Errorf("unable to get downloader: %w", err)
 	}
