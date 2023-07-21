@@ -113,9 +113,9 @@ func TestStartDeploy(t *testing.T) {
 			return plan, nil
 		})
 
-	env.OnActivity(a.AddConnectionsToPlan, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, plan *planv1.Plan) (*planv1.Plan, error) {
-			return planConnection, nil
+	env.OnActivity(a.AddConnectionsToPlan, mock.Anything, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, componentID string, installID string) (*connectionsv1.Connections, error) {
+			return &connectionsv1.Connections{}, nil
 		})
 
 	env.OnActivity(a.UpsertInstanceJob, mock.Anything, mock.Anything).
