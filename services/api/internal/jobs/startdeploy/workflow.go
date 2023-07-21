@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
+	connectionsv1 "github.com/powertoolsdev/mono/pkg/types/components/connections/v1"
 	buildsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/builds/v1"
 	deploysv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deploys/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
@@ -90,14 +91,17 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 		return nil, fmt.Errorf("unable to trigger workflow response: %w", err)
 	}
 
-	//we need to add the installId to the plan
+	// we need to add the installId and connections to the plan
 	switch plan := plan.Actual.(type) {
 	case *planv1.Plan_WaypointPlan:
+		connections := &connectionsv1.Connections{}
+		fut = workflow.ExecuteActivity(ctx, act.AddConnectionsToPlan, plan.WaypointPlan.Component.Id, idResp.InstallID)
+		if err = fut.Get(ctx, &connections); err != nil {
+			return nil, fmt.Errorf("unable to add connections to plan: %w", err)
+		}
+
 		plan.WaypointPlan.Metadata.InstallId = idResp.InstallID
-	}
-	fut = workflow.ExecuteActivity(ctx, act.AddConnectionsToPlan, plan)
-	if err = fut.Get(ctx, &plan); err != nil {
-		return nil, fmt.Errorf("unable to add connections to plan: %w", err)
+		plan.WaypointPlan.Component.Connections = connections
 	}
 
 	// start the executors part of the workflows for syncing and deploying
