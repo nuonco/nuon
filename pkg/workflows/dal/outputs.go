@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultTerraformOutputFilename string = "output-nuon.pb"
+	defaultTerraformOutputFilename string = "output-struct-v1.pb"
 )
 
 func (r *client) GetInstanceOutputs(ctx context.Context, orgID, appID, componentID, installID string) (*structpb.Struct, error) {
