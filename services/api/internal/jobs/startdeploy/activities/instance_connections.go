@@ -17,6 +17,11 @@ func (a *activities) AddConnectionsToPlan(ctx context.Context, buildPlan *planv1
 
 	instanceConnections := []*connectionsv1.InstanceConnection{}
 	for _, instance := range instances {
+		if instance.ComponentID == waypointPlan.Component.Id {
+			// do not connect the component we are currently deploying
+			// to itself
+			continue
+		}
 		connection := &connectionsv1.InstanceConnection{
 			DeployId:      instance.Deploys[0].BuildID,
 			ComponentId:   instance.ComponentID,
