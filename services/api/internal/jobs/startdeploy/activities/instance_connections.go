@@ -18,7 +18,7 @@ func (a *activities) AddConnectionsToPlan(ctx context.Context, buildPlan *planv1
 	instanceConnections := []*connectionsv1.InstanceConnection{}
 	for _, instance := range instances {
 		connection := &connectionsv1.InstanceConnection{
-			DeployId:      waypointPlan.Metadata.DeploymentId,
+			DeployId:      instance.Deploys[0].ID,
 			ComponentId:   instance.ComponentID,
 			ComponentName: instance.Component.Name,
 			InstallId:     instance.InstallID,
