@@ -4,20 +4,17 @@ import (
 	"context"
 
 	connectionsv1 "github.com/powertoolsdev/mono/pkg/types/components/connections/v1"
-	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 )
 
-func (a *activities) AddConnectionsToPlan(ctx context.Context, buildPlan *planv1.Plan) (*planv1.Plan, error) {
-	waypointPlan := buildPlan.GetWaypointPlan()
-
-	instances, err := a.instanceRepo.ListByInstall(ctx, waypointPlan.Metadata.InstallId)
+func (a *activities) AddConnectionsToPlan(ctx context.Context, componentID string, installID string) (*connectionsv1.Connections, error) {
+	instances, err := a.instanceRepo.ListByInstall(ctx, installID)
 	if err != nil {
 		return nil, err
 	}
 
 	instanceConnections := []*connectionsv1.InstanceConnection{}
 	for _, instance := range instances {
-		if instance.ComponentID == waypointPlan.Component.Id {
+		if instance.ComponentID == componentID {
 			// do not connect the component we are currently deploying
 			// to itself
 			continue
@@ -31,13 +28,5 @@ func (a *activities) AddConnectionsToPlan(ctx context.Context, buildPlan *planv1
 		instanceConnections = append(instanceConnections, connection)
 	}
 
-	waypointPlan.Component.Connections = &connectionsv1.Connections{
-		Instances: instanceConnections,
-	}
-
-	buildPlan.Actual = &planv1.Plan_WaypointPlan{
-		WaypointPlan: waypointPlan,
-	}
-
-	return buildPlan, nil
+	return &connectionsv1.Connections{Instances: instanceConnections}, nil
 }
