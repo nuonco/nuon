@@ -508,3 +508,14 @@ module "horizon" {
 
   extra_ecr_repos = ["hashicorp-horizon", "hashicorp-waypoint-hzn"]
 }
+
+module "public-docs" {
+  source = "./modules/repository"
+
+  name        = "public-docs"
+  description = "public documentation"
+  topics      = ["archived"]
+  archived = true
+
+  enable_branch_protection = false
+}

@@ -84,16 +84,6 @@ module "mono" {
   ]
 }
 
-module "public-docs" {
-  source = "./modules/repository"
-
-  name        = "public-docs"
-  description = "public documentation"
-  topics      = []
-
-  enable_branch_protection = false
-}
-
 module "ui" {
   source = "./modules/repository"
 
