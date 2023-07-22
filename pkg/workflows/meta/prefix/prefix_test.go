@@ -159,9 +159,9 @@ func TestOrgComponentPath(t *testing.T) {
 }
 
 func TestSandboxPath(t *testing.T) {
-	obj := generics.GetFakeObj[sandbox]()
+	obj := generics.GetFakeObj[installation]()
 
-	prefix := SandboxPath(obj.OrgID, obj.AppID, obj.InstallID, obj.SandboxName, obj.SandboxVersion)
+	prefix := InstallationPath(obj.OrgID, obj.AppID, obj.InstallID, obj.SandboxName, obj.SandboxVersion)
 	expectedKVs := [][2]string{
 		{"org", obj.OrgID},
 		{"app", obj.AppID},

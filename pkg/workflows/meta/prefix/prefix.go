@@ -234,7 +234,29 @@ func (o orgComponent) toPath() string {
 	return fmt.Sprintf("org=%s/component=%s", o.OrgID, o.ComponentName)
 }
 
-type sandbox struct {
+type installationStatic struct {
+	OrgID     string
+	AppID     string
+	InstallID string
+}
+
+func InstallationStaticPath(orgID, appID, installID string) string {
+	return installationStatic{
+		OrgID:     orgID,
+		AppID:     appID,
+		InstallID: installID,
+	}.toPath()
+}
+
+func (s installationStatic) toPath() string {
+	return fmt.Sprintf("org=%s/app=%s/install=%s",
+		s.OrgID,
+		s.AppID,
+		s.InstallID,
+	)
+}
+
+type installation struct {
 	OrgID          string
 	AppID          string
 	InstallID      string
@@ -242,8 +264,8 @@ type sandbox struct {
 	SandboxVersion string
 }
 
-func SandboxPath(orgID, appID, installID, sandboxName, sandboxVersion string) string {
-	return sandbox{
+func InstallationPath(orgID, appID, installID, sandboxName, sandboxVersion string) string {
+	return installation{
 		OrgID:          orgID,
 		AppID:          appID,
 		InstallID:      installID,
@@ -252,7 +274,7 @@ func SandboxPath(orgID, appID, installID, sandboxName, sandboxVersion string) st
 	}.toPath()
 }
 
-func (s sandbox) toPath() string {
+func (s installation) toPath() string {
 	return fmt.Sprintf("org=%s/app=%s/install=%s/sandbox=%s/version=%s",
 		s.OrgID,
 		s.AppID,
