@@ -10,6 +10,7 @@ resource "tfe_workspace" "workspace" {
   queue_all_runs    = false
   working_directory = var.dir
   trigger_prefixes  = var.dir != "" ? [var.dir] : []
+  terraform_version = var.terraform_version
 
   global_remote_state       = local.global_remote_state
   remote_state_consumer_ids = local.global_remote_state ? [] : var.allowed_remote_state_workspaces

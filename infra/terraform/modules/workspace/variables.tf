@@ -53,3 +53,8 @@ variable "workspaces" {
 variable "project_id" {
   type = string
 }
+
+variable "terraform_version" {
+  type    = string
+  default = "1.5.3"
+}
