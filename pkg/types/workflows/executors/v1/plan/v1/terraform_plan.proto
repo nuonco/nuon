@@ -2,6 +2,9 @@ syntax = "proto3";
 
 package executors.v1.plan.v1;
 
+import "executors/v1/plan/v1/s3_object.proto";
+import "executors/v1/plan/v1/terraform_module.proto";
+import "executors/v1/plan/v1/terraform_outputs.proto";
 import "executors/v1/plan/v1/terraform_run_type.proto";
 import "google/protobuf/struct.proto";
 import "tagger/tagger.proto";
@@ -10,31 +13,11 @@ import "validate/validate.proto";
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
 
 message TerraformPlan {
-  string id = 1;
-  Object module = 2;
-  Object backend = 3;
+  string id = 1 [(validate.rules).string.min_len = 1];
+  .executors.v1.plan.v1.TerraformModule module = 2 [(tagger.tags) = "faker:\"-\""];
+  .executors.v1.plan.v1.S3Object backend = 3;
   google.protobuf.Struct vars = 4 [(tagger.tags) = "faker:\"-\""];
   .executors.v1.plan.v1.TerraformRunType run_type = 5;
   string terraform_version = 6;
-  map<string, Object> outputs = 7;
-}
-
-message Object {
-  string bucket = 1 [
-    (validate.rules).string.min_len = 1,
-    (tagger.tags) = "faker:\"len=10\""
-  ];
-
-  string key = 2 [(validate.rules).string.min_bytes = 1];
-
-  string region = 3;
-
-  AssumeRoleDetails assume_role_details = 4;
-}
-
-message AssumeRoleDetails {
-  string assume_arn = 1 [
-    (validate.rules).string.min_len = 20,
-    (tagger.tags) = "faker:\"len=25\""
-  ];
+  .executors.v1.plan.v1.TerraformOutputs outputs = 7 [(tagger.tags) = "faker:\"-\""];
 }

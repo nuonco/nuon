@@ -43,6 +43,10 @@ func (s *s3) unpack(ctx context.Context, r io.Reader, fn archive.Callback) error
 
 	tar := archiver.Tar{}
 	if err := tar.Extract(ctx, reader, nil, func(ctx context.Context, f archiver.File) error {
+		if f.IsDir() {
+			return nil
+		}
+
 		inputFile, err := f.Open()
 		if err != nil {
 			return fmt.Errorf("unable to open file from tar: %w", err)

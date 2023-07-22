@@ -10,9 +10,9 @@ import "opaqueany/v1/any.proto";
 option go_package = "github.com/powertoolsdev/mono/pkg/types/waypoint/hashicorp.waypoint";
 
 /********************************************************************
-* PERMANENTLY RESERVED FIELD NUMBERS
-* 100000000 - inline keepalives
-********************************************************************/
+ * PERMANENTLY RESERVED FIELD NUMBERS
+ * 100000000 - inline keepalives
+ ********************************************************************/
 
 // The service that is implemented for the server backend.
 service Waypoint {
@@ -100,7 +100,7 @@ service Waypoint {
 
   // DestroyProject deletes a project from the database as well as (optionally)
   // destroys all resources created within a project
-  rpc DestroyProject(DestroyProjectRequest) returns (google.protobuf.Empty) {};
+  rpc DestroyProject(DestroyProjectRequest) returns (google.protobuf.Empty) {}
 
   // GetApplication returns one application on the project.
   rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
@@ -485,8 +485,8 @@ service Waypoint {
 }
 
 /********************************************************************
-* UI
-********************************************************************/
+ * UI
+ ********************************************************************/
 message UI {
   message ListProjectsRequest {
     PaginationRequest pagination = 1;
@@ -641,10 +641,9 @@ message UI {
   }
 }
 
-
 /********************************************************************
-* Server Info
-********************************************************************/
+ * Server Info
+ ********************************************************************/
 
 message GetVersionInfoResponse {
   VersionInfo info = 1;
@@ -681,8 +680,8 @@ message VersionInfo {
 }
 
 /********************************************************************
-* Basic Data Model
-********************************************************************/
+ * Basic Data Model
+ ********************************************************************/
 
 message Application {
   Ref.Project project = 2;
@@ -973,8 +972,8 @@ message User {
 }
 
 /********************************************************************
-* Shared Messages
-********************************************************************/
+ * Shared Messages
+ ********************************************************************/
 
 // Ref contains shared messages used for references to other resources.
 //
@@ -1236,7 +1235,7 @@ message Operation {
     PENDING = 1;
     CREATED = 3;
     DESTROYED = 4;
-  };
+  }
 }
 
 // OperationOrder is a shared message type used for controlling the order
@@ -1344,8 +1343,8 @@ enum ResourceCategoryDisplayHint {
 }
 
 /********************************************************************
-* Tasks
-********************************************************************/
+ * Tasks
+ ********************************************************************/
 
 // TaskLaunchInfo gets stored on the job/operation when queued for execution.
 // It details various options required for the task it will launch.
@@ -1486,8 +1485,8 @@ message ErrorDetail {
 }
 
 /********************************************************************
-* User
-********************************************************************/
+ * User
+ ********************************************************************/
 
 message GetUserRequest {
   // User to get. If this is not set then the currently logged in
@@ -1519,8 +1518,8 @@ message DeleteUserRequest {
 }
 
 /********************************************************************
-* Auth Methods
-********************************************************************/
+ * Auth Methods
+ ********************************************************************/
 
 // AuthMethod is a mechanism for authenticating to the Waypoint server.
 // An AuthMethod deals with AuthN only: it provides identity and trades
@@ -1692,8 +1691,8 @@ message CompleteOIDCAuthResponse {
 }
 
 /********************************************************************
-* Queueing
-********************************************************************/
+ * Queueing
+ ********************************************************************/
 
 message QueueJobRequest {
   // The job to queue. See the Job message documentation for more details
@@ -1710,7 +1709,6 @@ message QueueJobResponse {
   // to check on the status, cancel, etc.
   string job_id = 1;
 }
-
 
 message CancelJobRequest {
   // The job to cancel
@@ -2354,7 +2352,6 @@ message Job {
 
   message StatusReportOp {
     oneof target {
-
       // The deployment that should be associated with this status report
       // operation
       Deployment deployment = 1;
@@ -2425,8 +2422,7 @@ message Job {
   // InitOp triggers an init action for a project (the equivalent of `waypoint
   // init`). The job will fail if there is no data source configured for the
   // project. As with `waypoint init`, this operation is idempotent.
-  message InitOp {
-  }
+  message InitOp {}
 
   message InitResult {
     // NOTE(jgwhite): In the future I think we may want to communicate what
@@ -2507,7 +2503,6 @@ message Documentation {
     string description = 3;
   }
 }
-
 
 message GetJobRequest {
   // ID of the job to request.
@@ -2709,8 +2704,8 @@ message GetJobStreamResponse {
 }
 
 /********************************************************************
-* Runner
-********************************************************************/
+ * Runner
+ ********************************************************************/
 
 message Runner {
   // id is a unique ID generated by the runner. This should be a UUID or some
@@ -2803,7 +2798,7 @@ message Runner {
 
     // Explicitly rejected. Runner will error immediately on startup.
     REJECTED = 3;
-  };
+  }
 
   message ODR {
     string profile_id = 1;
@@ -3008,8 +3003,8 @@ message ForgetRunnerRequest {
 }
 
 /********************************************************************
-* Server
-********************************************************************/
+ * Server
+ ********************************************************************/
 
 message SetServerConfigRequest {
   ServerConfig config = 1;
@@ -3049,8 +3044,8 @@ message ServerConfig {
 }
 
 /********************************************************************
-* Hostnames
-********************************************************************/
+ * Hostnames
+ ********************************************************************/
 
 message CreateHostnameRequest {
   // hostname to register. This may be empty to autogenerate a hostname.
@@ -3107,8 +3102,8 @@ message Hostname {
 }
 
 /********************************************************************
-* Workspaces
-********************************************************************/
+ * Workspaces
+ ********************************************************************/
 
 message ListWorkspacesRequest {
   // scope of the workspaces to list. If this isn't set, it defaults to
@@ -3152,8 +3147,8 @@ message UpsertWorkspaceResponse {
 }
 
 /********************************************************************
-* Projects & Apps
-********************************************************************/
+ * Projects & Apps
+ ********************************************************************/
 
 message UpsertProjectRequest {
   // Project to upsert. See the message for what fields to set.
@@ -3213,8 +3208,8 @@ message UpsertApplicationResponse {
 }
 
 /********************************************************************
-* Build
-********************************************************************/
+ * Build
+ ********************************************************************/
 
 message UpsertBuildRequest {
   // Build to upsert. If an ID is not set, this will be an insert operation.
@@ -3322,8 +3317,8 @@ message Artifact {
 }
 
 /********************************************************************
-* OnDemand Runners
-********************************************************************/
+ * OnDemand Runners
+ ********************************************************************/
 message OnDemandRunnerConfig {
   // id is the unique ID of the runner config
   string id = 1;
@@ -3391,8 +3386,8 @@ message ListOnDemandRunnerConfigsResponse {
 }
 
 /********************************************************************
-* Registry
-********************************************************************/
+ * Registry
+ ********************************************************************/
 
 message UpsertPushedArtifactRequest {
   // artifact to upsert. If the id in the artifact is empty, then this
@@ -3504,8 +3499,8 @@ message PushedArtifact {
 }
 
 /********************************************************************
-* Platform
-********************************************************************/
+ * Platform
+ ********************************************************************/
 
 message GetDeploymentRequest {
   Ref.Operation ref = 1;
@@ -3533,7 +3528,7 @@ message UpsertDeploymentRequest {
     UNSET = 0;
     TRUE = 1;
     FALSE = 2;
-  };
+  }
 }
 
 message UpsertDeploymentResponse {
@@ -3695,10 +3690,9 @@ message DeploymentExpanded {
   StatusReport latest_status_report = 2;
 }
 
-
 /********************************************************************
-* Instances
-********************************************************************/
+ * Instances
+ ********************************************************************/
 
 message ListInstancesRequest {
   oneof scope {
@@ -3765,8 +3759,8 @@ message Instance {
 }
 
 /********************************************************************
-* Release Management
-********************************************************************/
+ * Release Management
+ ********************************************************************/
 
 message UpsertReleaseRequest {
   // release to upsert. If the id in the artifact is empty, then this
@@ -3936,8 +3930,8 @@ message ReleaseExpanded {
 }
 
 /********************************************************************
-* Trigger URLs
-********************************************************************/
+ * Trigger URLs
+ ********************************************************************/
 
 // The Trigger message is a representation of a URL that can be requested
 // for invoking specific lifecycle operations on a projects applications. These
@@ -4061,8 +4055,8 @@ message ListTriggerResponse {
 }
 
 /********************************************************************
-* Status Reports
-********************************************************************/
+ * Status Reports
+ ********************************************************************/
 
 message UpsertStatusReportRequest {
   // status report to upsert. If the id in the deployment is empty, then this
@@ -4276,8 +4270,8 @@ message StatusReport {
 }
 
 /********************************************************************
-* Logs
-********************************************************************/
+ * Logs
+ ********************************************************************/
 
 message GetLogStreamRequest {
   oneof scope {
@@ -4326,8 +4320,8 @@ message LogBatch {
 }
 
 /********************************************************************
-* Config
-********************************************************************/
+ * Config
+ ********************************************************************/
 
 // ConfigVars represent configuration variables for applications and runners.
 // Configuration variables can be exposed via env vars, files, and more. They
@@ -4495,8 +4489,8 @@ message ConfigGetResponse {
 }
 
 /********************************************************************
-* Config Sources
-********************************************************************/
+ * Config Sources
+ ********************************************************************/
 
 message ConfigSource {
   // delete may be set to true on SetConfigSource to delete this config source.
@@ -4567,8 +4561,8 @@ message GetConfigSourceResponse {
 }
 
 /********************************************************************
-* Exec
-********************************************************************/
+ * Exec
+ ********************************************************************/
 
 message ExecStreamRequest {
   oneof event {
@@ -4654,8 +4648,8 @@ message ExecStreamResponse {
 }
 
 /********************************************************************
-* Entrypoint
-********************************************************************/
+ * Entrypoint
+ ********************************************************************/
 
 message EntrypointConfigRequest {
   // id of the deployment that this instance is a part of
@@ -4798,8 +4792,8 @@ message EntrypointExecResponse {
 }
 
 /********************************************************************
-* Pipelines
-********************************************************************/
+ * Pipelines
+ ********************************************************************/
 
 message Pipeline {
   // Unique ID for this pipeline.
@@ -5082,8 +5076,8 @@ message ConfigSyncPipelineResponse {
 }
 
 /********************************************************************
-* Token
-********************************************************************/
+ * Token
+ ********************************************************************/
 
 // The outer structure of the token that is directly Marshaled and
 // ASCII armored.
@@ -5327,8 +5321,8 @@ message ConvertInviteTokenRequest {
 }
 
 /********************************************************************
-* Snapshot/Restore
-********************************************************************/
+ * Snapshot/Restore
+ ********************************************************************/
 
 message CreateSnapshotResponse {
   oneof event {
@@ -5427,8 +5421,8 @@ message Snapshot {
 }
 
 /********************************************************************
-* Waypoint.hcl Helpers
-********************************************************************/
+ * Waypoint.hcl Helpers
+ ********************************************************************/
 
 // Hcl is a message used to encapsulate the contents of an HCL
 // file. Note that this was introduced later so there are some message types
@@ -5459,8 +5453,8 @@ message WaypointHclFmtResponse {
 }
 
 /********************************************************************
-* Util/Meta
-********************************************************************/
+ * Util/Meta
+ ********************************************************************/
 
 // InlineKeepalive is a message intended to be sent down existing grpc streams
 // to induce traffic and prevent them from being idle terminated by load
@@ -5484,17 +5478,17 @@ message PaginationRequest {
   // of available results is larger than `page_size`, a `next_page_token` is
   // returned which can be used to get the next page of results in subsequent
   // requests. A value of zero will cause `page_size` to be defaulted.
-  uint32 page_size = 1  [json_name="page_size"];
+  uint32 page_size = 1 [json_name = "page_size"];
 
   // Specifies a page token to use to retrieve the next page. Set this to the
   // `next_page_token` returned by previous list requests to get the next page of
   // results. If set, `previous_page_token` must not be set.
-  string next_page_token = 2 [json_name="next_page_token"];
+  string next_page_token = 2 [json_name = "next_page_token"];
 
   // Specifies a page token to use to retrieve the previous page. Set this to
   // the `previous_page_token` returned by previous list requests to get the
   // previous page of results. If set, `next_page_token` must not be set.
-  string previous_page_token = 3 [json_name="previous_page_token"];
+  string previous_page_token = 3 [json_name = "previous_page_token"];
 }
 
 // PaginationResponse is the response holding the page tokens for a paginated
@@ -5504,12 +5498,12 @@ message PaginationResponse {
   // If the number of results is larger than `page_size`, use the
   // `next_page_token` as a value for the query parameter `next_page_token` in
   // the next request. The value will become empty when there are no more pages.
-  string next_page_token = 1 [json_name="next_page_token"];
+  string next_page_token = 1 [json_name = "next_page_token"];
 
   // This token allows you to get the previous page of results for list
   // requests. If the number of results is larger than `page_size`, use the
   // `previous_page_token` as a value for the query parameter
   // `previous_page_token` in the next request. The value will become empty when
   // there are no more pages.
-  string previous_page_token = 2 [json_name="previous_page_token"];
+  string previous_page_token = 2 [json_name = "previous_page_token"];
 }

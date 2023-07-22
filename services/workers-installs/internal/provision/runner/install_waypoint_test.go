@@ -43,15 +43,6 @@ func TestInstallWaypoint(t *testing.T) {
 			errExpected: fmt.Errorf("Namespace"),
 		},
 
-		"errors without release name": {
-			reqFn: func() InstallWaypointRequest {
-				req := generics.GetFakeObj[InstallWaypointRequest]()
-				req.ReleaseName = ""
-				return req
-			},
-			errExpected: fmt.Errorf("ReleaseName"),
-		},
-
 		"errors without chart": {
 			reqFn: func() InstallWaypointRequest {
 				req := generics.GetFakeObj[InstallWaypointRequest]()
@@ -68,15 +59,6 @@ func TestInstallWaypoint(t *testing.T) {
 				return req
 			},
 			errExpected: fmt.Errorf("Name"),
-		},
-
-		"errors without chart url": {
-			reqFn: func() InstallWaypointRequest {
-				req := generics.GetFakeObj[InstallWaypointRequest]()
-				req.Chart.URL = ""
-				return req
-			},
-			errExpected: fmt.Errorf("URL"),
 		},
 
 		"errors without chart version": {
