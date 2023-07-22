@@ -38,13 +38,9 @@ provider "aws" {
 
 provider "aws" {
   region = local.regions.horizon
-  alias  = "horizon"
+  alias  = "public"
 
   assume_role {
-    role_arn = "arn:aws:iam::${local.accounts.horizon.id}:role/terraform"
-  }
-
-  default_tags {
-    tags = merge({ env : "horizon" }, local.tags)
+    role_arn = "arn:aws:iam::${local.accounts.public.id}:role/terraform"
   }
 }
