@@ -27,3 +27,11 @@ output "waypoint_server" {
 output "orgs_iam_roles" {
   value = nonsensitive(data.tfe_outputs.infra-orgs.values.iam_roles)
 }
+
+output "public_dns_access_role_arn" {
+  value = module.public_dns_access_role.iam_role_arn
+}
+
+output "public_domain" {
+  value = nonsensitive(data.tfe_outputs.infra-orgs.values.public_domain)
+}
