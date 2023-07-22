@@ -1,0 +1,6 @@
+---
+public_domain: stage.nuon.run
+deployments_bucket_name: nuon-org-deployments-stage
+installations_bucket_name: nuon-org-installations-stage
+orgs_bucket_name: nuon-orgs-stage
+secrets_bucket_name: nuon-org-secrets-stage

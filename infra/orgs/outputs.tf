@@ -127,3 +127,12 @@ output "account" {
     id = local.org_account_id
   }
 }
+
+# the public domain is used for creating domains for installs, within an org.
+output "public_domain" {
+  value = {
+    nameservers = data.aws_route53_zone.public_domain.name_servers
+    domain      = data.aws_route53_zone.public_domain.name
+    zone_id     = data.aws_route53_zone.public_domain.id
+  }
+}

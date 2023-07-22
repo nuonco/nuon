@@ -1,7 +1,7 @@
 resource "aws_kms_key" "org_installations_bucket" {
   provider = aws.orgs
 
-  description = "KMS key for ${var.installations_bucket_name}"
+  description = "KMS key for ${local.vars.installations_bucket_name}"
   policy      = data.aws_iam_policy_document.org_installations_bucket_key_policy.json
 
   deletion_window_in_days = 7
@@ -10,7 +10,7 @@ resource "aws_kms_key" "org_installations_bucket" {
 resource "aws_kms_alias" "org_installations_bucket" {
   provider = aws.orgs
 
-  name          = "alias/bucket-key-${var.installations_bucket_name}"
+  name          = "alias/bucket-key-${local.vars.installations_bucket_name}"
   target_key_id = aws_kms_key.org_installations_bucket.key_id
 }
 
@@ -91,7 +91,7 @@ data "aws_iam_policy_document" "org_installations_bucket_policy" {
     actions = [
       "s3:ListBucket",
     ]
-    resources = ["arn:aws:s3:::${var.installations_bucket_name}", ]
+    resources = ["arn:aws:s3:::${local.vars.installations_bucket_name}", ]
     principals {
       type        = "AWS"
       identifiers = ["*", ]
@@ -108,7 +108,7 @@ data "aws_iam_policy_document" "org_installations_bucket_policy" {
     actions = [
       "s3:*Object",
     ]
-    resources = ["arn:aws:s3:::${var.installations_bucket_name}/*", ]
+    resources = ["arn:aws:s3:::${local.vars.installations_bucket_name}/*", ]
     principals {
       type        = "AWS"
       identifiers = ["*", ]
@@ -128,7 +128,7 @@ module "org_installations_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = ">= v3.2.4"
 
-  bucket = var.installations_bucket_name
+  bucket = local.vars.installations_bucket_name
   versioning = {
     enabled = true
   }
@@ -156,4 +156,3 @@ module "org_installations_bucket" {
     ],
   }
 }
-

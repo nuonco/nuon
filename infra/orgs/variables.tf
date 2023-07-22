@@ -4,9 +4,7 @@ locals {
   }
 
   additional_install_role_eks_principals = [
-    "eks-workers-deployments",
     "eks-workers-installs",
-    "eks-workers-instances",
     "eks-workers-orgs",
   ]
 
@@ -23,22 +21,7 @@ locals {
     service     = local.name
     terraform   = "${local.name}-${var.env}"
   }
-}
-
-variable "installations_bucket_name" {
-  type = string
-}
-
-variable "deployments_bucket_name" {
-  type = string
-}
-
-variable "orgs_bucket_name" {
-  type = string
-}
-
-variable "secrets_bucket_name" {
-  type = string
+  vars = yamldecode(file("vars/${var.env}.yaml"))
 }
 
 variable "env" {

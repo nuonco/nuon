@@ -1,0 +1,6 @@
+---
+public_domain: nuon.run
+deployments_bucket_name: nuon-org-deployments-prod
+installations_bucket_name: nuon-org-installations-prod
+orgs_bucket_name: nuon-orgs-prod
+secrets_bucket_name: nuon-org-secrets-prod

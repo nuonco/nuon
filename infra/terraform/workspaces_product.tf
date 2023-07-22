@@ -27,11 +27,6 @@ module "infra-orgs-prod" {
   auto_apply = false
   vars = {
     env = "prod"
-
-    deployments_bucket_name   = "nuon-org-deployments-prod"
-    installations_bucket_name = "nuon-org-installations-prod"
-    orgs_bucket_name          = "nuon-orgs-prod"
-    secrets_bucket_name       = "nuon-org-secrets-prod"
   }
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id
@@ -55,11 +50,6 @@ module "infra-orgs-stage" {
   auto_apply = true
   vars = {
     env = "stage"
-
-    deployments_bucket_name   = "nuon-org-deployments-stage"
-    installations_bucket_name = "nuon-org-installations-stage"
-    orgs_bucket_name          = "nuon-orgs-stage"
-    secrets_bucket_name       = "nuon-org-secrets-stage"
   }
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id

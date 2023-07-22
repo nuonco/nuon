@@ -56,3 +56,16 @@ provider "aws" {
     tags = local.tags
   }
 }
+
+provider "aws" {
+  region = local.region
+  alias  = "public"
+
+  assume_role {
+    role_arn = "arn:aws:iam::${local.accounts["public"].id}:role/terraform"
+  }
+
+  default_tags {
+    tags = local.tags
+  }
+}
