@@ -46,10 +46,15 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		return resp, err
 	}
 
+	runTyp := planv1.SandboxInputType_SANDBOX_INPUT_TYPE_PROVISION
+	if req.PlanOnly {
+		runTyp = planv1.SandboxInputType_SANDBOX_INPUT_TYPE_PROVISION_PLAN
+	}
+
 	cpReq := planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Sandbox{
 			Sandbox: &planv1.SandboxInput{
-				Type:      planv1.SandboxInputType_SANDBOX_INPUT_TYPE_PROVISION,
+				Type:      runTyp,
 				OrgId:     req.OrgId,
 				AppId:     req.AppId,
 				InstallId: req.InstallId,
@@ -74,18 +79,17 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		return resp, err
 	}
 
-	if req.PlanOnly {
-		l.Info("skipping the rest of the workflow - plan only")
-		w.finishWorkflow(ctx, req, resp, nil)
-		return resp, nil
-	}
-
 	seReq := executev1.ExecutePlanRequest{Plan: spr.Plan}
 	ser, err := sandbox.Execute(ctx, &seReq)
 	if err != nil {
 		err = fmt.Errorf("unable to execute sandbox: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
+	}
+	if req.PlanOnly {
+		l.Info("skipping the rest of the workflow - plan only")
+		w.finishWorkflow(ctx, req, resp, nil)
+		return resp, nil
 	}
 
 	tfOutputs, err := sandbox.ParseTerraformOutputs(ser.GetTerraformOutputs())
