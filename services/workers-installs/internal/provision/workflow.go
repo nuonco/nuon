@@ -54,10 +54,11 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	cpReq := planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Sandbox{
 			Sandbox: &planv1.SandboxInput{
-				Type:      runTyp,
-				OrgId:     req.OrgId,
-				AppId:     req.AppId,
-				InstallId: req.InstallId,
+				Type:             runTyp,
+				OrgId:            req.OrgId,
+				AppId:            req.AppId,
+				InstallId:        req.InstallId,
+				TerraformVersion: req.SandboxSettings.TerraformVersion,
 				SandboxSettings: &planv1.SandboxSettings{
 					Name:    req.SandboxSettings.Name,
 					Version: req.SandboxSettings.Version},
@@ -68,6 +69,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 						RoleArn:   req.AccountSettings.AwsRoleArn,
 					},
 				},
+				RootDomain: fmt.Sprintf("%s.%s", req.InstallId, w.cfg.PublicDomain),
 			},
 		},
 	}
