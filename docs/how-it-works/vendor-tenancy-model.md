@@ -1,53 +1,37 @@
-# Vendor tenancy model
+# Vendor Tenancy Model
+Nuon provides a single-tenant environment with complete isolation between vendors for all parts of the application. The IMS which manages vendor installations, build agent, install agents, and ECR registry are never shared or accessible between tenants. See below for details on how each part of the system is isolated for security. 
 
-We have built Nuon to be single-tenant and have designed the platform itself so tenants can run all or part of it in their own cloud.
+## Infrastructure Management Server
 
-#### Infrastructure
+Each vendor has its own dedicated IMS, which powers that vendor’s build agent and the install agents for all customers. The IMS is never shared between vendors. This means that the IMS powering a vendor’s installs never serves another vendor. Also, the IMS is designed never to have direct access to a customer’s account.
 
-When a tenant signs up for Nuon, we provision the following infrastructure, which is used to power components and installations:
+## Build Agent
 
-* infrastructure management server
-* build agent
-* ECR repository
-* IAM roles + policies
+Each vendor has its own build agent, responsible for performing all builds. This is the only part of the system that has access to a vendor’s private GitHub repository, ECR registry, or other sensitive information. The build agent communicates only with the vendor’s dedicated IMS for accessing jobs. This agent never performs builds for another vendor and is the only part of the system with permission to push images to the vendor’s ECR registry.
 
-Nuon is designed for isolation between tenants for all parts of the application. The server which manages tenant installations, the agents creating artifacts for components, and the permissions locking down all infra and its state, are isolated between tenants.
+## ECR Registry for Vendor
 
-#### Infrastructure management server
+The ECR registry for any vendor is only writable by that vendor’s build agent. Furthermore, all  artifacts deployed into a customer’s cloud are first synced to the vendor’s ECR registry. Syncs happen before deployments so the lineage of any container running in a customer’s account can be tracked and verified. This is important in some situations, e.g., when you deploy a public image and that image has been changed without you or your customer knowing.
 
-Each tenant has their own server, which controls all of the installs. This server is responsible for telling agents what to do (which images to sync, which components to deploy, etc.) and storing long-lived telemetry and job data for each tenant’s installations.
+## Sandbox
 
-The infrastructure management server is _**never**_ shared between tenants — this means that the server powering a tenant’s installations _**never**_ serves another tenant’s installs. Since the server is responsible for telling each agent what to do, it must be isolated from other tenants. It is also designed never to have access to an install directly — all provisioning happens inside the install with its agent.
+Each Nuon install is sandboxed in a customer's cloud, and isolated from all other infrastructure in that cloud. From a security perspective, isolating installs within a sandbox minimizes the impact on a customer's infrastructure, and makes integration with other systems easier. Sandboxes are designed to run in the most regulated environments and incorporate best practices around security, network posture, and hardening of the runtime at every level.
 
-The infrastructure management server can be run in a tenant’s own cloud account.
+## ECR Registry for Customer
 
-#### Build agent
+Each customer account has an ECR registry reserved for that customer only. The ECR registry associated with a customer's account never stores artifacts for any other customer.
 
-Each tenant has a build agent responsible for creating deployable OCI artifacts. Each tenant’s build agent is isolated, meaning that the agent building one tenant’s components is **never** used to build another tenant’s components.
+Whenever a component is deployed, all OCI artifacts (container images, Helm charts, and Terraform modules) are synced from the vendor’s ECR registry to the install’s ECR registry. This serves two purposes:
 
-The tenant’s infrastructure management server manages the build agent. The server tells the agent **what** to build. (This is the same for all agents for a tenant).
+-   **Security** - by syncing the images first into the install’s ECR registry, there is no need for the install agent to have long-lived access to the vendor’s ECR registry. In addition, the install agent can be restricted to only running images within the same account.
+-   **Reliability** - Nuon is designed to support a vendor with thousands or millions of installs. Having all installs rely one vendor ECR registry ensures that the application components are deployed in exactly the same way.
 
-Since each build agent is deployed for a single tenant, we can lock down the tenant’s ECR repository to **only** be writable by the tenant’s build agent. Furthermore, when a build needs access to a private Github repository, ECR repository, or otherwise sensitive system, **only** the agent accesses it.
+The install agent only requires access to a vendor’s ECR registry when deploying a component. A one-time use token is created for the install to access the ECR registry and retrieve a specific artifact. If the vendor’s ECR registry is unavailable during the initial sync, the deployment will not complete. This ensures that an ECR outage for a vendor doesn’t create downtime for an install.
 
-The build agent can be run in a tenant’s cloud account.
+## Install Agent
 
-#### ECR Repository
+Each customer account has its own install agent, responsible for managing the lifecycle of components in that install. This install agent runs locally in the customer account, and is never shared with any other customer’s account. It is the only part of the system that has permission to provision infrastructure in a customer’s cloud.
 
-Each tenant has an isolated ECR repository reserved for that tenant **only**. The repository powering a tenant’s component artifacts _**never**_ stores artifacts for another tenant.
+The install agent communicates with the dedicated IMS for its vendor and maintains a single outbound connection to it. Each job executes in its own container independently, and runs in the compute cluster provisioned by the sandbox.
 
-The ECR repository is **only** writable by a tenant’s agent. Furthermore, _**all**_ software artifacts deployed into a customer’s cloud are **first** synchronized to the tenant’s ECR repository — even public artifacts. Syncs happen before deployments so that the lineage of any container running in a customer’s account can be tracked and verified (for instance, if you deploy a public image, that image can be changed without you or your customer knowing).
-
-All OCI artifacts (terraform modules, helm charts, and container images) are synchronized to the install’s ECR repository whenever a component is deployed. The two reasons are:
-
-* Permissions — by syncing the images **first** into the install’s ECR repository, there is no need for long-lived access to the tenant’s ECR repo by an install. Furthermore, the install can be locked down to **only** allow running images in the same account.
-* Reliability — Nuon is designed so a tenant can have thousands or millions of installs. If the install relies directly on a single tenant ECR repository, that means whenever a container is scheduled, the ECR repository must be active; otherwise, the install will not continue working.
-
-During deployments is the **only** time that an install needs access to a tenant’s ECR repository. If the ECR repository is unavailable for the initial sync, the deployment will not go out — meaning that an ECR outage for a tenant will not create downtime for an install. A one-time use token is created for the install to access the ECR repository and “pull” a specific artifact.
-
-The ECR repo for a tenant can be provisioned in a tenant’s own cloud.
-
-### Nuon on your cloud
-
-Today you can manually run most parts of Nuon in your cloud account. This means our team will help you install an infra management server, setup an agent, and provide the correct permissions.
-
-Part of our Q2 roadmap is running Nuon in your own cloud — anyone can connect their own cloud to run Nuon on their own in minutes.
+Each vendor’s IMS server does a one-time setup of the install for any customer. After the initial setup, the customer’s install becomes self-managing, and cross-account IAM access is no longer needed.
