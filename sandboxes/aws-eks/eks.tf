@@ -42,12 +42,10 @@ module "eks" {
 
   manage_aws_auth_configmap = true
 
-  # TODO(jdt): These shouldn't be `system:masters`
-  # We should create a role with the correct permissions instead of giving "god mode"
   aws_auth_roles = [
-    # Allow the install role to have access to create resources
+    # allow external roles to access the cluster.
     {
-      rolearn  = var.install_role_arn
+      rolearn  = var.external_access_role_arns[0],
       username = "install:{{SessionName}}"
       groups = [
         "system:masters",

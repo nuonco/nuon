@@ -17,4 +17,9 @@ message SandboxSettings {
     (validate.rules).string.min_len = 1,
     (tagger.tags) = "faker:\"len=5\""
   ];
+
+  string terraform_version = 3 [
+    (validate.rules).string.min_len = 1,
+    (tagger.tags) = "faker:\"len=5\""
+  ];
 }

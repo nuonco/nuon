@@ -27,7 +27,7 @@ resource "helm_release" "alb-ingress-controller" {
   name       = "eks"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
-  version    = "1.4.5"
+  version    = "1.4.7"
 
   set {
     name  = "enableCertManager"

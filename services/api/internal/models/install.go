@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	NUON_AWS_ACCOUNT_ID = "548377525120"
+	NUON_AWS_ACCOUNT_ID     = "548377525120"
+	defaultTerraformVersion = "1.5.3"
 )
 
 type Install struct {
@@ -81,8 +82,9 @@ func (i Install) ToProvisionRequest(orgID string, sandboxVersion *SandboxVersion
 			AwsRoleArn:   i.AWSSettings.IamRoleArn,
 		},
 		SandboxSettings: &installsv1.SandboxSettings{
-			Name:    sandboxVersion.SandboxName,
-			Version: sandboxVersion.SandboxVersion,
+			Name:             sandboxVersion.SandboxName,
+			Version:          sandboxVersion.SandboxVersion,
+			TerraformVersion: defaultTerraformVersion,
 		},
 	}
 }
@@ -98,8 +100,9 @@ func (i Install) ToDeprovisionRequest(orgID string, sandboxVersion *SandboxVersi
 			AwsRoleArn:   i.AWSSettings.IamRoleArn,
 		},
 		SandboxSettings: &installsv1.SandboxSettings{
-			Name:    sandboxVersion.SandboxName,
-			Version: sandboxVersion.SandboxVersion,
+			Name:             sandboxVersion.SandboxName,
+			Version:          sandboxVersion.SandboxVersion,
+			TerraformVersion: defaultTerraformVersion,
 		},
 	}
 }
