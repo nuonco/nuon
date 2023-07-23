@@ -10,7 +10,7 @@ import (
 	shared "github.com/powertoolsdev/mono/services/workers-installs/internal"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/deprovision"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/provision"
-	"github.com/powertoolsdev/mono/services/workers-installs/internal/provision/runner"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
 	"github.com/spf13/cobra"
 	tworker "go.temporal.io/sdk/worker"
 )
