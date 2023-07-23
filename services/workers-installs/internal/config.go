@@ -42,6 +42,11 @@ type Config struct {
 	OrgsK8sPublicEndpoint string `config:"orgs_k8s_public_endpoint"`
 	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id"`
 	OrgsK8sRoleArn        string `config:"orgs_k8s_role_arn"`
+
+	// PublicDomain configuration
+	PublicDomain           string `config:"public_domain"`
+	PublicDomainZoneID     string `config:"public_domain_domain_zone_id"`
+	PublicDNSAccessRoleARN string `config:"public_dns_access_role_arn"`
 }
 
 func (c Config) Validate() error {

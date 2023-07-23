@@ -81,6 +81,7 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 						RoleArn:   req.AccountSettings.AwsRoleArn,
 					},
 				},
+				RootDomain: fmt.Sprintf("%s.%s", req.InstallId, w.cfg.PublicDomain),
 			},
 		},
 	}

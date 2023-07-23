@@ -47,3 +47,19 @@ output "odr_iam_role_arn" {
   description = "iam role arn of the odr's IAM role which grants permissions to ECR"
   value       = module.odr_iam_role.iam_role_arn
 }
+
+output "public_domain" {
+  value = {
+    nameservers = aws_route53_zone.public.name_servers
+    name = aws_route53_zone.public.name
+    zone_id     = aws_route53_zone.public.id
+  }
+}
+
+output "internal_domain" {
+  value = {
+    nameservers = aws_route53_zone.internal.name_servers
+    name = aws_route53_zone.internal.name
+    zone_id     = aws_route53_zone.internal.id
+  }
+}
