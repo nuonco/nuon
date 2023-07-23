@@ -92,6 +92,7 @@ docker:
     BUILD +iamauthenticator
     COPY +build/service /bin/service
     COPY +iamauthenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+    COPY ../../charts/waypoint+chart/chart /charts/waypoint
     RUN apk add --update --no-cache \
         git \
         zip

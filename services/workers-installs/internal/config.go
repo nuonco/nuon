@@ -9,6 +9,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "installs")
+	config.RegisterDefault("waypoint_chart_dir", "/charts/waypoint")
 }
 
 // Config exposes a set of configuration options for the install domain
@@ -47,6 +48,9 @@ type Config struct {
 	PublicDomain           string `config:"public_domain"`
 	PublicDomainZoneID     string `config:"public_domain_domain_zone_id"`
 	PublicDNSAccessRoleARN string `config:"public_dns_access_role_arn"`
+
+	// We embed the waypoint chart locally, and use it from main here.
+	WaypointChartDir string `config:"waypoint_chart_dir"`
 }
 
 func (c Config) Validate() error {

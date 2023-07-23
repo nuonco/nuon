@@ -6,7 +6,8 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/pkg/helm/waypoint"
+	"github.com/powertoolsdev/mono/pkg/helm"
+	waypointhelm "github.com/powertoolsdev/mono/pkg/helm/waypoint"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
@@ -94,11 +95,16 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 	}
 
 	// install waypoint
+	chart := &helm.Chart{
+		Name:    waypointhelm.DefaultChart.Name,
+		Version: waypointhelm.DefaultChart.Version,
+		Dir:     w.cfg.WaypointChartDir,
+	}
 	iwReq := InstallWaypointRequest{
 		InstallID:       req.InstallId,
 		Namespace:       req.InstallId,
 		ReleaseName:     fmt.Sprintf("wp-%s", req.InstallId),
-		Chart:           &waypoint.DefaultChart,
+		Chart:           chart,
 		Atomic:          false,
 		CreateNamespace: true,
 		ClusterInfo: kube.ClusterInfo{
