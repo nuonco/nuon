@@ -10,9 +10,6 @@ import (
 func init() {
 	config.RegisterDefault("temporal_namespace", "orgs")
 	config.RegisterDefault("waypoint_chart_dir", "/charts/waypoint")
-
-	// TODO REMOVE THIS!!!
-	config.RegisterDefault("orgs_account_id", "766121324316")
 }
 
 type Config struct {
