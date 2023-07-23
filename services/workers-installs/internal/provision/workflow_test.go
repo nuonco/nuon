@@ -21,7 +21,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/powertoolsdev/mono/services/workers-installs/internal"
-	"github.com/powertoolsdev/mono/services/workers-installs/internal/provision/runner"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/sandbox"
 )
 

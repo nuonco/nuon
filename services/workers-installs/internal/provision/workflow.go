@@ -12,7 +12,7 @@ import (
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
-	"github.com/powertoolsdev/mono/services/workers-installs/internal/provision/runner"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/sandbox"
 )
 
