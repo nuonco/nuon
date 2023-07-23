@@ -12,7 +12,10 @@ module "cert_manager_irsa" {
   role_name = "cert-manager-${local.vars.id}"
 
   attach_cert_manager_policy    = true
-  cert_manager_hosted_zone_arns = [aws_route53_zone.internal_private.arn, ]
+  cert_manager_hosted_zone_arns = [
+    aws_route53_zone.internal.arn,
+    aws_route53_zone.public.arn,
+  ]
 
   oidc_providers = {
     k8s = {
@@ -29,7 +32,7 @@ resource "helm_release" "cert_manager" {
   name       = "cert-manager"
   repository = "https://charts.jetstack.io"
   chart      = "cert-manager"
-  version    = "v1.10.0"
+  version    = "v1.11.0"
 
   set {
     name  = "installCRDs"
@@ -39,5 +42,20 @@ resource "helm_release" "cert_manager" {
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = module.cert_manager_irsa.iam_role_arn
+  }
+
+  set {
+    name  = "securityContext.fsGroup"
+    value = "1001"
+  }
+
+  depends_on = [
+    module.eks
+  ]
+
+  lifecycle {
+    # destroying the release removes the CRDs and any custom resources
+    # which would remove all certs issued by cert-manager
+    prevent_destroy = true
   }
 }

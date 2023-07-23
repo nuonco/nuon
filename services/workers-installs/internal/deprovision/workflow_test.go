@@ -81,6 +81,7 @@ func TestDeprovision(t *testing.T) {
 	assert.NoError(t, cfg.Validate())
 	req := generics.GetFakeObj[*installsv1.DeprovisionRequest]()
 	assert.NoError(t, req.Validate())
+
 	planref := generics.GetFakeObj[*planv1.PlanRef]()
 
 	testSuite := &testsuite.WorkflowTestSuite{}

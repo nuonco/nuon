@@ -22,13 +22,15 @@ message SandboxInput {
   ];
 
   SandboxSettings sandbox_settings = 4;
-  optional string terraform_version = 5;
+  string terraform_version = 5;
   SandboxInputType type = 6;
 
   oneof account_settings {
     option (tagger.oneof_tags) = "faker:\"sandboxInputAccountSettings\"";
     AWSSettings aws = 100;
   }
+
+  string root_domain = 7 [(validate.rules).string.min_len = 1];
 }
 
 enum SandboxInputType {
