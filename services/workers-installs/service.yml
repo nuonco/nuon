@@ -6,4 +6,11 @@ local_cmds:
   - go run . all
 local_env:
   WAYPOINT_CHART_DIR: ../../charts/waypoint
+env_secrets:
+  ORG_BOTS_SLACK_WEBHOOK_URL:
+    name: org-bots-slack-webhook-url
+    key: slack_webhook_url
+  INSTALLATION_BOTS_SLACK_WEBHOOK_URL:
+    name: installation-bots-slack-webhook-url
+    key: slack_webhook_url
 earthly_cmd: all

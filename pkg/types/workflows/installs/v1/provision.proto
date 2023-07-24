@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package installs.v1;
 
+import "google/protobuf/struct.proto";
 import "installs/v1/account_settings.proto";
 import "installs/v1/sandbox_settings.proto";
 import "tagger/tagger.proto";
@@ -32,5 +33,5 @@ message ProvisionRequest {
 
 // StartResponse returns the response from a deployment workflow
 message ProvisionResponse {
-  map<string, string> terraform_outputs = 1;
+  google.protobuf.Struct terraform_outputs = 1 [(tagger.tags) = "faker:\"fakeTerraformOutputs\""];
 }
