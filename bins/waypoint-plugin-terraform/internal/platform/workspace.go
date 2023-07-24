@@ -37,7 +37,7 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 	bin, err := remotebinary.New(p.v,
 		remotebinary.WithVersion(p.Cfg.TerraformVersion))
 	if err != nil {
-		return nil, fmt.Errorf("unable to create backend: %w", err)
+		return nil, fmt.Errorf("unable to create binary: %w", err)
 	}
 
 	cfgVars := make(map[string]interface{})
