@@ -6,12 +6,14 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/mitchellh/mapstructure"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	dnsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/dns/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
+	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/dns"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/sandbox"
 )
@@ -94,32 +96,35 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		return resp, nil
 	}
 
-	tfOutputs, err := sandbox.ParseTerraformOutputs(ser.GetTerraformOutputs())
+	resp.TerraformOutputs = ser.GetTerraformOutputs()
+	tfOutputs, err := awseks.ParseTerraformOutputs(ser.GetTerraformOutputs())
 	if err != nil {
 		err = fmt.Errorf("invalid sandbox outputs: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
 
-	// convert terraform outputs to map and add to response
-	tfOutputsMap, err := toMap(tfOutputs)
+	dnsReq := &dnsv1.ProvisionDNSRequest{
+		Domain:      tfOutputs.PublicDomain.Name,
+		Nameservers: awseks.ToStringSlice(tfOutputs.PublicDomain.Nameservers),
+	}
+	_, err = execProvisionDNS(ctx, w.cfg, dnsReq)
 	if err != nil {
-		err = fmt.Errorf("unable to decode to stringmap: %w", err)
+		err = fmt.Errorf("unable to provision dns: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
-	resp.TerraformOutputs = tfOutputsMap
 
 	prReq := &runnerv1.ProvisionRunnerRequest{
 		OrgId:         req.OrgId,
 		AppId:         req.AppId,
 		InstallId:     req.InstallId,
-		OdrIamRoleArn: tfOutputs.OdrIAMRoleArn,
+		OdrIamRoleArn: tfOutputs.Runner.DefaultIAMRoleARN,
 		Region:        req.AccountSettings.Region,
 		ClusterInfo: &runnerv1.KubeClusterInfo{
-			Id:             tfOutputs.ClusterID,
-			Endpoint:       tfOutputs.ClusterEndpoint,
-			CaData:         tfOutputs.ClusterCA,
+			Id:             tfOutputs.Cluster.Name,
+			Endpoint:       tfOutputs.Cluster.Endpoint,
+			CaData:         tfOutputs.Cluster.CertificateAuthorityData,
 			TrustedRoleArn: w.cfg.NuonAccessRoleArn,
 		},
 	}
@@ -157,11 +162,25 @@ func execProvisionRunner(
 	return resp, nil
 }
 
-func toMap(tfOutputs sandbox.TerraformOutputs) (map[string]string, error) {
-	var output map[string]string
-	if err := mapstructure.Decode(tfOutputs, &output); err != nil {
-		return nil, err
+func execProvisionDNS(
+	ctx workflow.Context,
+	cfg workers.Config,
+	req *dnsv1.ProvisionDNSRequest,
+) (*dnsv1.ProvisionDNSResponse, error) {
+	resp := &dnsv1.ProvisionDNSResponse{}
+
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: time.Minute * 10,
+		WorkflowTaskTimeout:      time.Minute * 5,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	wkflow := dns.NewWorkflow(cfg)
+	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionDNS, req)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
 	}
 
-	return output, nil
+	return resp, nil
 }

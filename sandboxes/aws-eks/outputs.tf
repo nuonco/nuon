@@ -1,51 +1,55 @@
-output "cluster_arn" {
-  description = "The Amazon Resource Name (ARN) of the cluster"
-  value       = module.eks.cluster_arn
+output "runner" {
+  value = {
+    default_iam_role_arn = module.odr_iam_role.iam_role_arn
+  }
 }
 
-output "cluster_certificate_authority_data" {
-  description = "Base64 encoded certificate data required to communicate with the cluster"
-  value       = module.eks.cluster_certificate_authority_data
+output "cluster" {
+  // NOTE: these are declared here -
+  // https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest?tab=outputs
+  value = {
+    arn = module.eks.cluster_arn
+    certificate_authority_data = module.eks.cluster_certificate_authority_data
+    endpoint = module.eks.cluster_endpoint
+    name = module.eks.cluster_name
+    platform_version = module.eks.cluster_platform_version
+    status = module.eks.cluster_status
+  }
 }
 
-output "cluster_endpoint" {
-  description = "Endpoint for your Kubernetes API server"
-  value       = module.eks.cluster_endpoint
+output "vpc" {
+  // NOTE: these are declared here -
+  // https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest?tab=outputs
+  value = {
+    name = module.vpc.name
+    id = module.vpc.vpc_id
+    cidr = module.vpc.vpc_cidr_block
+    azs = module.vpc.azs
+
+    private_subnet_cidr_blocks = module.vpc.private_subnets_cidr_blocks
+    private_subnet_ids = module.vpc.private_subnets
+
+    public_subnets_cidr_blocks = module.vpc.public_subnets_cidr_blocks
+    public_subnet_ids = module.vpc.public_subnets
+  }
 }
 
-output "cluster_name" {
-  description = "The name of the EKS cluster. Will block on cluster creation until the cluster is really ready"
-  value       = module.eks.cluster_name
+output "account" {
+  value = {
+    id = data.aws_caller_identity.current.account_id
+    region = var.region
+  }
 }
 
-output "cluster_platform_version" {
-  description = "Platform version for the cluster"
-  value       = module.eks.cluster_platform_version
-}
 
-output "cluster_status" {
-  description = "Status of the EKS cluster. One of `CREATING`, `ACTIVE`, `DELETING`, `FAILED`"
-  value       = module.eks.cluster_status
-}
-
-output "ecr_registry_id" {
-  description = "The ECR registry information"
-  value       = module.ecr.repository_registry_id
-}
-
-output "ecr_registry_arn" {
-  description = "The ECR registry information"
-  value       = module.ecr.repository_arn
-}
-
-output "ecr_registry_url" {
-  description = "The ECR registry information"
-  value       = module.ecr.repository_url
-}
-
-output "odr_iam_role_arn" {
-  description = "iam role arn of the odr's IAM role which grants permissions to ECR"
-  value       = module.odr_iam_role.iam_role_arn
+output "ecr" {
+  value = {
+    repository_url = module.ecr.repository_url
+    repository_arn = module.ecr.repository_arn
+    repository_name = local.vars.id
+    registry_id = module.ecr.repository_registry_id
+    registry_url = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com"
+  }
 }
 
 output "public_domain" {
