@@ -18,8 +18,8 @@ type Config struct {
 
 	// NOTE: these webhook urls are scoped at the project level, but are workflow specific. This is because we
 	// create a slack notifier object at the cmd level and pass it to each individual workflow
-	InstallationBotsSlackWebhookURL string `config:"installation_bots_slack_webhook_url"`
-	OrgBotsSlackWebhookURL          string `config:"org_bots_slack_webhook_url"`
+	InstallationBotsSlackWebhookURL string `config:"installation_bots_slack_webhook_url" validate:"required"`
+	OrgBotsSlackWebhookURL          string `config:"org_bots_slack_webhook_url" validate:"required"`
 
 	// NuonAccessRoleArn is the role that we add to the sandbox EKS allowed roles so we can do other operations
 	// against it
@@ -39,18 +39,18 @@ type Config struct {
 	SandboxBucket             string `config:"sandbox_bucket" validate:"required"`
 
 	// authenticate with orgs cluster
-	OrgsK8sCAData         string `config:"orgs_k8s_ca_data"`
-	OrgsK8sPublicEndpoint string `config:"orgs_k8s_public_endpoint"`
-	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id"`
-	OrgsK8sRoleArn        string `config:"orgs_k8s_role_arn"`
+	OrgsK8sCAData         string `config:"orgs_k8s_ca_data" validate:"required"`
+	OrgsK8sPublicEndpoint string `config:"orgs_k8s_public_endpoint" validate:"required"`
+	OrgsK8sClusterID      string `config:"orgs_k8s_cluster_id" validate:"required"`
+	OrgsK8sRoleArn        string `config:"orgs_k8s_role_arn" validate:"required"`
 
 	// PublicDomain configuration
-	PublicDomain           string `config:"public_domain"`
-	PublicDomainZoneID     string `config:"public_domain_domain_zone_id"`
-	PublicDNSAccessRoleARN string `config:"public_dns_access_role_arn"`
+	PublicDomain           string `config:"public_domain" validate:"required"`
+	PublicDomainZoneID     string `config:"public_domain_zone_id" validate:"required"`
+	PublicDNSAccessRoleARN string `config:"public_dns_access_role_arn" validate:"required"`
 
 	// We embed the waypoint chart locally, and use it from main here.
-	WaypointChartDir string `config:"waypoint_chart_dir"`
+	WaypointChartDir string `config:"waypoint_chart_dir" validate:"required"`
 }
 
 func (c Config) Validate() error {

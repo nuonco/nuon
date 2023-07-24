@@ -10,9 +10,11 @@ import (
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	dnsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/dns/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
+	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/testsuite"
@@ -21,8 +23,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/powertoolsdev/mono/services/workers-installs/internal"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/dns"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
-	"github.com/powertoolsdev/mono/services/workers-installs/internal/sandbox"
 )
 
 // NOTE(jm): unfortunately, the only way to register these workflows in the test env is to do it using the same exact
@@ -123,11 +125,14 @@ func TestProvision(t *testing.T) {
 	env := testSuite.NewTestWorkflowEnvironment()
 
 	rWkflow := runner.NewWorkflow(cfg)
+	dnsWkflow := dns.NewWorkflow(cfg)
 	env.RegisterWorkflow(rWkflow.ProvisionRunner)
+	env.RegisterWorkflow(dnsWkflow.ProvisionDNS)
 	env.RegisterWorkflow(CreatePlan)
 	env.RegisterWorkflow(ExecutePlan)
 
-	provisionOutputs := generics.GetFakeObj[sandbox.TerraformOutputs]()
+	provisionOutputs := generics.GetFakeObj[awseks.TerraformOutputs]()
+	assert.NoError(t, provisionOutputs.Validate())
 
 	act := NewActivities(internal.Config{}, nil)
 	// Mock activity implementation
@@ -170,6 +175,16 @@ func TestProvision(t *testing.T) {
 			}, nil
 		})
 
+	env.OnWorkflow(dnsWkflow.ProvisionDNS, mock.Anything, mock.Anything).
+		Return(func(ctx workflow.Context, r *dnsv1.ProvisionDNSRequest) (*dnsv1.ProvisionDNSResponse, error) {
+			resp := &dnsv1.ProvisionDNSResponse{}
+
+			assert.Nil(t, r.Validate())
+			assert.Equal(t, r.Nameservers, awseks.ToStringSlice(provisionOutputs.PublicDomain.Nameservers))
+			assert.Equal(t, r.Domain, provisionOutputs.PublicDomain.Name)
+			return resp, nil
+		})
+
 	env.OnWorkflow(rWkflow.ProvisionRunner, mock.Anything, mock.Anything).
 		Return(func(ctx workflow.Context, r *runnerv1.ProvisionRunnerRequest) (*runnerv1.ProvisionRunnerResponse, error) {
 			resp := &runnerv1.ProvisionRunnerResponse{}
@@ -178,7 +193,7 @@ func TestProvision(t *testing.T) {
 			assert.Equal(t, req.OrgId, r.OrgId)
 			assert.Equal(t, req.AppId, r.AppId)
 			assert.Equal(t, req.InstallId, r.InstallId)
-			assert.Equal(t, provisionOutputs.OdrIAMRoleArn, r.OdrIamRoleArn)
+			assert.Equal(t, provisionOutputs.Runner.DefaultIAMRoleARN, r.OdrIamRoleArn)
 			return resp, nil
 		})
 
@@ -234,7 +249,9 @@ func TestProvision_plan_only(t *testing.T) {
 	env := testSuite.NewTestWorkflowEnvironment()
 
 	rWkflow := runner.NewWorkflow(cfg)
+	dnsWkflow := dns.NewWorkflow(cfg)
 	env.RegisterWorkflow(rWkflow.ProvisionRunner)
+	env.RegisterWorkflow(dnsWkflow.ProvisionDNS)
 	env.RegisterWorkflow(CreatePlan)
 	env.RegisterWorkflow(ExecutePlan)
 
