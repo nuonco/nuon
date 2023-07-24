@@ -12,3 +12,11 @@ resource "aws_route53_zone" "public" {
 
   force_destroy = true
 }
+
+resource "aws_route53_record" "caa" {
+  zone_id = aws_route53_zone.public.zone_id
+  name = var.public_root_domain
+  type = "CAA"
+  ttl = 300
+  records = [ "0 issue \"letsencrypt.org\""]
+}
