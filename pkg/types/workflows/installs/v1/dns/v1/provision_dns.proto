@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package installs.v1.dns.v1;
+
+import "tagger/tagger.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/dns/v1";
+
+// ProvisionDNSRequest represents a workflow input for creating a deployment
+message ProvisionDNSRequest {
+  string domain = 1 [
+    (validate.rules).string.min_len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+  repeated string nameservers = 2;
+}
+
+// StartResponse returns the response from a deployment workflow
+message ProvisionDNSResponse {}
