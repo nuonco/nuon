@@ -13,6 +13,14 @@ type Deploy {
   createdAt: DateTime!
 }
 
+"""
+Represents a deploy log output
+"""
+type DeployLog {
+  deployId: ID!
+  logs: [JSON]!
+}
+
 ##############################################################################
 # Deploy inputs
 ##############################################################################
@@ -28,6 +36,7 @@ input DeployInput {
 ##############################################################################
 extend type Query {
   deploy(id: ID, instanceId: ID): Deploy!
+  deployLog(deployId: ID!, orgId: ID!): DeployLog!
 }
 
 ##############################################################################

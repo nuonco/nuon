@@ -2,6 +2,8 @@
 # General GQL types
 ##############################################################################
 
+scalar JSON
+
 """
 Represents an ISO 8601-encoded date and time string. For example, 3:50 pm on September 7, 2019 in the time zone of UTC (Coordinated Universal Time) is represented as '2019-09-07T15:50:00Z'
 """

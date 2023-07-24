@@ -13,6 +13,14 @@ type Build {
   createdAt: DateTime!
 }
 
+"""
+Represents a build log output
+"""
+type BuildLog {
+  buildId: ID!
+  logs: [JSON]!
+}
+
 ##############################################################################
 # Build inputs
 ##############################################################################
@@ -28,6 +36,7 @@ input BuildInput {
 extend type Query {
   build(id: ID!): Build
   builds(componentId: ID!): [Build!]
+  buildLog(buildId: ID!, orgId: ID!): BuildLog!
   buildStatus(appId: ID!, buildId: ID!, componentId: ID!, orgId: ID!): Status!
 }
 
