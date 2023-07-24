@@ -8,7 +8,7 @@ import (
 
 const (
 	waypointImageRepository string = "public.ecr.aws/p7e3r5y0/waypoint"
-	waypointVersion         string = "v0.0.8"
+	waypointVersion         string = "v0.1.0"
 )
 
 // Values represent all of the possible values for a helm installation
@@ -200,5 +200,5 @@ var DefaultChart = helm.Chart{
 	// NOTE(jdt): I don't really care for this but I don't want to keep copying this around
 	Name:    "waypoint",
 	URL:     "https://helm.releases.hashicorp.com",
-	Version: "0.1.18",
+	Version: "0.1.19",
 }
