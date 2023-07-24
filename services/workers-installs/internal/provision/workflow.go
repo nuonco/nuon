@@ -6,12 +6,12 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	dnsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/dns/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
-	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/dns"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
@@ -63,7 +63,8 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 				TerraformVersion: req.SandboxSettings.TerraformVersion,
 				SandboxSettings: &planv1.SandboxSettings{
 					Name:    req.SandboxSettings.Name,
-					Version: req.SandboxSettings.Version},
+					Version: req.SandboxSettings.Version,
+				},
 				AccountSettings: &planv1.SandboxInput_Aws{
 					Aws: &planv1.AWSSettings{
 						Region:    req.AccountSettings.Region,
