@@ -15,6 +15,7 @@ export type Scalars = {
   Float: { input: number; output: number; }
   /** Represents an ISO 8601-encoded date and time string. For example, 3:50 pm on September 7, 2019 in the time zone of UTC (Coordinated Universal Time) is represented as '2019-09-07T15:50:00Z' */
   DateTime: { input: any; output: any; }
+  JSON: { input: any; output: any; }
 };
 
 /** Represents the AWS Authentication configuration used to access the vendor's OCI image */
@@ -148,6 +149,13 @@ export type BuildInput = {
   gitRef?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Represents a build log output */
+export type BuildLog = {
+  __typename?: 'BuildLog';
+  buildId: Scalars['ID']['output'];
+  logs: Array<Maybe<Scalars['JSON']['output']>>;
+};
+
 /** Represents a collection of general settings and information about a piece of a App */
 export type Component = Node & {
   __typename?: 'Component';
@@ -264,6 +272,13 @@ export type DeployInput = {
   buildId: Scalars['ID']['input'];
   componentId: Scalars['ID']['input'];
   installId: Scalars['ID']['input'];
+};
+
+/** Represents a deploy log output */
+export type DeployLog = {
+  __typename?: 'DeployLog';
+  deployId: Scalars['ID']['output'];
+  logs: Array<Maybe<Scalars['JSON']['output']>>;
 };
 
 /** Represents a collection of general settings and information about a deployed piece of an App */
@@ -640,11 +655,13 @@ export type Query = {
   app?: Maybe<App>;
   apps: AppConnection;
   build?: Maybe<Build>;
+  buildLog: BuildLog;
   buildStatus: Status;
   builds?: Maybe<Array<Build>>;
   component?: Maybe<Component>;
   components: ComponentConnection;
   deploy: Deploy;
+  deployLog: DeployLog;
   deployment?: Maybe<Deployment>;
   deploymentStatus: Status;
   deployments: DeploymentConnection;
@@ -679,6 +696,12 @@ export type QueryBuildArgs = {
 };
 
 
+export type QueryBuildLogArgs = {
+  buildId: Scalars['ID']['input'];
+  orgId: Scalars['ID']['input'];
+};
+
+
 export type QueryBuildStatusArgs = {
   appId: Scalars['ID']['input'];
   buildId: Scalars['ID']['input'];
@@ -706,6 +729,12 @@ export type QueryComponentsArgs = {
 export type QueryDeployArgs = {
   id?: InputMaybe<Scalars['ID']['input']>;
   instanceId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+export type QueryDeployLogArgs = {
+  deployId: Scalars['ID']['input'];
+  orgId: Scalars['ID']['input'];
 };
 
 
