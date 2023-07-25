@@ -15,7 +15,7 @@ data "aws_iam_policy_document" "public_dns_access" {
 resource "aws_iam_policy" "public_dns_access_policy" {
   provider = aws.public
 
-  name   = "${local.name}-public-account-dns-access"
+  name   = "${local.name}-${var.env}-public-account-dns-access"
   policy = data.aws_iam_policy_document.public_dns_access.json
 }
 
@@ -41,14 +41,13 @@ module "public_dns_access_role" {
     aws = aws.public
   }
 
-
   source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
   version = ">= 5.1.0"
 
   create_role       = true
   role_requires_mfa = false
 
-  role_name                = "${local.name}-public-dns-access"
+  role_name                = "${local.name}-${var.env}-public-dns-access"
   custom_role_trust_policy = data.aws_iam_policy_document.public_dns_access_trust.json
   custom_role_policy_arns  = [aws_iam_policy.public_dns_access_policy.arn, ]
 }
