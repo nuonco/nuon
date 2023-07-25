@@ -20,7 +20,7 @@ func (a *activities) AddConnectionsToPlan(ctx context.Context, componentID strin
 			continue
 		}
 		connection := &connectionsv1.InstanceConnection{
-			DeployId:      instance.Deploys[0].BuildID,
+			DeployId:      instance.Deploys[0].ID,
 			ComponentId:   instance.ComponentID,
 			ComponentName: instance.Component.Name,
 			InstallId:     instance.InstallID,

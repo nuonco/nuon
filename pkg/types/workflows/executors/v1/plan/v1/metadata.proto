@@ -16,12 +16,24 @@ message Metadata {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
-  string deployment_id = 3 [
-    (validate.rules).string.len = 26,
+
+  string install_id = 4 [
+    (validate.rules).string = {
+      len: 26,
+      ignore_empty: true
+    },
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  string install_id = 4 [
+  string build_id = 5 [
+    (validate.rules).string = {
+      len: 26,
+      ignore_empty: true
+    },
+    (tagger.tags) = "faker:\"shortID\""
+  ];
+
+  string deploy_id = 6 [
     (validate.rules).string = {
       len: 26,
       ignore_empty: true
