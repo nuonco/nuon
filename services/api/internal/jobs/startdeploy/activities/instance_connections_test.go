@@ -81,7 +81,7 @@ func Test_AddConnectionsToPlan(t *testing.T) {
 			for _, con := range actual.Instances {
 				actualIDs = append(actualIDs, con.ComponentId)
 				assert.Equal(t, instance2.InstallID, con.InstallId)
-				assert.Equal(t, instance2.Deploys[0].BuildID, con.DeployId)
+				assert.Equal(t, instance2.Deploys[0].ID, con.DeployId)
 				assert.Equal(t, instance2.ComponentID, con.ComponentId)
 				assert.Equal(t, instance2.Component.Name, con.ComponentName)
 			}

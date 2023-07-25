@@ -37,21 +37,22 @@ func InstanceStatePath(orgID, appID, componentID, installID string) string {
 var InstanceOutputPath = InstanceStatePath
 
 type instance struct {
-	OrgID        string
-	AppID        string
-	ComponentID  string
-	DeploymentID string
-	InstallID    string
-	Phase        string
+	OrgID       string
+	AppID       string
+	ComponentID string
+	DeployID    string
+	InstallID   string
+	Phase       string
 }
 
 func (i instance) toPath() string {
-	base := fmt.Sprintf("org=%s/app=%s/component=%s/deployment=%s/install=%s",
+	base := fmt.Sprintf("org=%s/app=%s/component=%s/install=%s/deploy=%s",
 		i.OrgID,
 		i.AppID,
 		i.ComponentID,
-		i.DeploymentID,
-		i.InstallID)
+		i.InstallID,
+		i.DeployID,
+	)
 	if i.Phase != "" {
 		base = filepath.Join(base, fmt.Sprintf("phase=%s", i.Phase))
 	}
@@ -60,25 +61,25 @@ func (i instance) toPath() string {
 }
 
 // InstancePath returns the prefix for an instance
-func InstancePath(orgID, appID, componentID, deploymentID, installID string) string {
+func InstancePath(orgID, appID, componentID, deployID, installID string) string {
 	return instance{
-		OrgID:        orgID,
-		AppID:        appID,
-		ComponentID:  componentID,
-		DeploymentID: deploymentID,
-		InstallID:    installID,
+		OrgID:       orgID,
+		AppID:       appID,
+		ComponentID: componentID,
+		DeployID:    deployID,
+		InstallID:   installID,
 	}.toPath()
 }
 
 // InstancePhasePath returns the prefix for an instance's phase
-func InstancePhasePath(orgID, appID, componentName, deploymentID, installID, phase string) string {
+func InstancePhasePath(orgID, appID, componentName, deployID, installID, phase string) string {
 	return instance{
-		OrgID:        orgID,
-		AppID:        appID,
-		ComponentID:  componentName,
-		DeploymentID: deploymentID,
-		InstallID:    installID,
-		Phase:        phase,
+		OrgID:       orgID,
+		AppID:       appID,
+		ComponentID: componentName,
+		DeployID:    deployID,
+		InstallID:   installID,
+		Phase:       phase,
 	}.toPath()
 }
 
@@ -112,48 +113,6 @@ func InstallPath(orgID, appID, installID string) string {
 		OrgID:     orgID,
 		AppID:     appID,
 		InstallID: installID,
-	}.toPath()
-}
-
-type deployment struct {
-	OrgID         string
-	AppID         string
-	ComponentName string
-	DeploymentID  string
-	Phase         string
-}
-
-func (d deployment) toPath() string {
-	base := fmt.Sprintf("org=%s/app=%s/component=%s/deployment=%s",
-		d.OrgID,
-		d.AppID,
-		d.ComponentName,
-		d.DeploymentID)
-	if d.Phase != "" {
-		base = filepath.Join(base, fmt.Sprintf("phase=%s", d.Phase))
-	}
-
-	return base
-}
-
-// DeploymentPhasePath returns the prefix for a deployment
-func DeploymentPhasePath(orgID, appID, componentName, deploymentID, phase string) string {
-	return deployment{
-		OrgID:         orgID,
-		AppID:         appID,
-		ComponentName: componentName,
-		DeploymentID:  deploymentID,
-		Phase:         phase,
-	}.toPath()
-}
-
-// DeploymentPath returns the prefix for a deployment
-func DeploymentPath(orgID, appID, componentName, deploymentID string) string {
-	return deployment{
-		OrgID:         orgID,
-		AppID:         appID,
-		ComponentName: componentName,
-		DeploymentID:  deploymentID,
 	}.toPath()
 }
 

@@ -60,8 +60,8 @@ extend type Query {
   ): DeploymentConnection!
   instanceStatus(
     appId: ID!
-    buildId: ID!
     componentId: ID!
+    deployId: ID!
     installId: ID!
     orgId: ID!
   ): InstanceStatus!

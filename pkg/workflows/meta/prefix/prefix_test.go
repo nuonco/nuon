@@ -11,11 +11,11 @@ import (
 func TestInstancePath(t *testing.T) {
 	obj := generics.GetFakeObj[instance]()
 
-	prefix := InstancePath(obj.OrgID, obj.AppID, obj.ComponentID, obj.DeploymentID, obj.InstallID)
+	prefix := InstancePath(obj.OrgID, obj.AppID, obj.ComponentID, obj.DeployID, obj.InstallID)
 	expectedKVs := [][2]string{
 		{"org", obj.OrgID},
 		{"app", obj.AppID},
-		{"deployment", obj.DeploymentID},
+		{"deploy", obj.DeployID},
 		{"component", obj.ComponentID},
 		{"install", obj.InstallID},
 	}
@@ -38,18 +38,18 @@ func TestInstanceOutputPath(t *testing.T) {
 	for _, kv := range expectedKVs {
 		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
 	}
-	assert.NotContains(t, prefix, "deployment=")
+	assert.NotContains(t, prefix, "deploy=")
 	assert.NotContains(t, prefix, "phase=")
 }
 
 func TestInstancePhasePath(t *testing.T) {
 	obj := generics.GetFakeObj[instance]()
 
-	prefix := InstancePhasePath(obj.OrgID, obj.AppID, obj.ComponentID, obj.DeploymentID, obj.InstallID, obj.Phase)
+	prefix := InstancePhasePath(obj.OrgID, obj.AppID, obj.ComponentID, obj.DeployID, obj.InstallID, obj.Phase)
 	expectedKVs := [][2]string{
 		{"org", obj.OrgID},
 		{"app", obj.AppID},
-		{"deployment", obj.DeploymentID},
+		{"deploy", obj.DeployID},
 		{"component", obj.ComponentID},
 		{"install", obj.InstallID},
 		{"phase", obj.Phase},
@@ -71,38 +71,6 @@ func TestInstallPath(t *testing.T) {
 	for _, kv := range expectedKVs {
 		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
 	}
-}
-
-func TestDeploymentPhasePath(t *testing.T) {
-	obj := generics.GetFakeObj[deployment]()
-
-	prefix := DeploymentPhasePath(obj.OrgID, obj.AppID, obj.ComponentName, obj.DeploymentID, obj.Phase)
-	expectedKVs := [][2]string{
-		{"org", obj.OrgID},
-		{"app", obj.AppID},
-		{"deployment", obj.DeploymentID},
-		{"component", obj.ComponentName},
-		{"phase", obj.Phase},
-	}
-	for _, kv := range expectedKVs {
-		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
-	}
-}
-
-func TestDeploymentPath(t *testing.T) {
-	obj := generics.GetFakeObj[deployment]()
-
-	prefix := DeploymentPath(obj.OrgID, obj.AppID, obj.ComponentName, obj.DeploymentID)
-	expectedKVs := [][2]string{
-		{"org", obj.OrgID},
-		{"app", obj.AppID},
-		{"deployment", obj.DeploymentID},
-		{"component", obj.ComponentName},
-	}
-	for _, kv := range expectedKVs {
-		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))
-	}
-	assert.NotContains(t, prefix, "phase=")
 }
 
 func TestBuildPath(t *testing.T) {

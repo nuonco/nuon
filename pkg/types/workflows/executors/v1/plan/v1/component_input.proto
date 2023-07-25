@@ -17,11 +17,9 @@ message ComponentInput {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
-  string deployment_id = 3 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
-  ];
   string install_id = 4 [(tagger.tags) = "faker:\"shortID\""];
+  string build_id = 7 [(tagger.tags) = "faker:\"shortID\""];
+  string deploy_id = 8 [(tagger.tags) = "faker:\"shortID\""];
 
   component.v1.Component component = 5;
   ComponentInputType type = 6;
