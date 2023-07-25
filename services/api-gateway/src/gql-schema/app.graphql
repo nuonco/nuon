@@ -13,6 +13,7 @@ type App implements Node {
   components(options: ConnectionOptions): ComponentConnection!
   deployments(options: ConnectionOptions): DeploymentConnection!
   installs(options: ConnectionOptions): InstallConnection!
+  org: Org!
 }
 
 """

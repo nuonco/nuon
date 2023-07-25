@@ -42,6 +42,7 @@ type Install implements Node {
   name: String!
   settings: InstallSettings!
   updatedAt: DateTime!
+  app: App!
   deployments(options: ConnectionOptions): DeploymentConnection!
   components(options: ConnectionOptions): ComponentConnection!
 }
