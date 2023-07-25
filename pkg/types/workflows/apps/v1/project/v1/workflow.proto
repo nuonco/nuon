@@ -8,13 +8,11 @@ import "validate/validate.proto";
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1/project/v1";
 
 message ProvisionProjectRequest {
-  bool dry_run = 1;
-
-  string org_id = 2 [
+  string org_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
-  string app_id = 3 [
+  string app_id = 2 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
