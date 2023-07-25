@@ -49,6 +49,8 @@ func TestStartDeploy(t *testing.T) {
 	planRef := generics.GetFakeObj[*planv1.PlanRef]()
 	id := shortid.NewNanoID("cmp")
 	wpMetadata := generics.GetFakeObj[*planv1.Metadata]()
+	wpMetadata.DeployId = idResp.DeployID
+	wpMetadata.DeployId = idResp.DeployID
 	plan := &planv1.Plan{
 		Actual: &planv1.Plan_WaypointPlan{
 			WaypointPlan: &planv1.WaypointPlan{
