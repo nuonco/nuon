@@ -31,8 +31,8 @@ test("instance resolver should return instance object on successful query", asyn
     undefined,
     {
       appId: "test-id",
-      buildId: "test-id",
       componentId: "test-id",
+      deployId: "test-id",
       installId: "test-id",
       orgId: "test-id",
     },
@@ -52,8 +52,8 @@ test("instance resolver should return error if service client doesn't exist", as
       undefined,
       {
         appId: "test-id",
-        buildId: "test-id",
         componentId: "test-id",
+        deployId: "test-id",
         installId: "test-id",
         orgId: "test-id",
       },

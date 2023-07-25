@@ -43,3 +43,4 @@ __debug_bin
 # Ignore earthly secret files
 .secret
 services/api-gateway/src/build/
+pkg/types/build/
