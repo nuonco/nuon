@@ -52,7 +52,7 @@ func (b *Builder) buildODR(
 	}
 
 	log.Info("Copying OCI artifact from vendor repo to customer repo")
-	err = b.copy(ctx, vendorRepo, customerRepo)
+	err = b.copy(ctx, vendorRepo, customerRepo, accessInfo.Tag)
 	if err != nil {
 		log.Info("unable to copy oci artifact from vendor repo to customer repo")
 		return nil, fmt.Errorf("unable to copy oci artifact from vendor repo to customer repo: %w", err)
