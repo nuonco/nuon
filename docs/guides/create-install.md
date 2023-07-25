@@ -15,7 +15,7 @@ Nuon will start provisioning the install, which can take 15-20 minutes. Once itâ
 
 ## Add Variables to an Install
 
-Once you've created an install, you can specify variables for every component that will be deployed to this Install. Depending on the component configuration, these variables will either be used as Helm values or as environment variables.
+Once you've created an install, you can specify variables for every component that will be deployed to this Install. Depending on the component configuration, these variables will be used as Terraform variables, environment variables, or Helm values.
 
 To add a variable to an install:
 
