@@ -32,7 +32,7 @@ message GetStatusRequest {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
-  string deployment_id = 4 [
+  string deploy_id = 4 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];

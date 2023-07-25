@@ -779,8 +779,8 @@ export type QueryInstallsArgs = {
 
 export type QueryInstanceStatusArgs = {
   appId: Scalars['ID']['input'];
-  buildId: Scalars['ID']['input'];
   componentId: Scalars['ID']['input'];
+  deployId: Scalars['ID']['input'];
   installId: Scalars['ID']['input'];
   orgId: Scalars['ID']['input'];
 };

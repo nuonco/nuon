@@ -111,7 +111,7 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 		return resp, err
 	}
 	// call child workflow workers-instances
-	imageSyncPlanRef, err := w.planAndExec(ctx, plan, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE)
+	imageSyncPlanRef, err := w.planAndExec(ctx, plan, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE, idResp.BuildID, idResp.DeployID)
 	if err != nil {
 		err = fmt.Errorf("unable to sync image: %w", err)
 		w.finishWorkflow(ctx, plan, finishResp, err)
@@ -122,7 +122,7 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 	finishResp.ImageSyncPlan = imageSyncPlanRef
 
 	// deploy instance
-	deployPlanRef, err := w.planAndExec(ctx, plan, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY)
+	deployPlanRef, err := w.planAndExec(ctx, plan, planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY, idResp.BuildID, idResp.DeployID)
 	if err != nil {
 		w.finishWorkflow(ctx, plan, finishResp, err)
 		return resp, nil
@@ -151,7 +151,7 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, plan *planv1.Plan, ids acti
 	startReq := &sharedv1.StartActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
 		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, wpPlan.Metadata.OrgId),
-		MetadataBucketPrefix:        prefix.InstancePath(wpPlan.Metadata.OrgId, wpPlan.Metadata.AppId, wpPlan.Component.Id, wpPlan.Metadata.DeploymentId, wpPlan.Metadata.InstallId),
+		MetadataBucketPrefix:        prefix.InstancePath(wpPlan.Metadata.OrgId, wpPlan.Metadata.AppId, wpPlan.Component.Id, ids.DeployID, wpPlan.Metadata.InstallId),
 		RequestRef: &sharedv1.RequestRef{
 			Request: &sharedv1.RequestRef_DeployRequest{
 				DeployRequest: req,
@@ -172,19 +172,24 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, plan *planv1.Plan, ids acti
 func (w *wkflow) planAndExec(
 	ctx workflow.Context,
 	buildPlan *planv1.Plan, // this will take BuildPlan from S3
-	typ planv1.ComponentInputType) (*planv1.PlanRef, error) {
+	typ planv1.ComponentInputType,
+	buildID string,
+	deployID string,
+
+) (*planv1.PlanRef, error) {
 	waypointPlan := buildPlan.GetWaypointPlan()
 	l := workflow.GetLogger(ctx)
 
 	planReq := &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
-				OrgId:        waypointPlan.Metadata.OrgId,
-				AppId:        waypointPlan.Metadata.AppId,
-				InstallId:    waypointPlan.Metadata.InstallId,
-				Component:    waypointPlan.Component,
-				DeploymentId: waypointPlan.Metadata.DeploymentId,
-				Type:         typ,
+				OrgId:     waypointPlan.Metadata.OrgId,
+				AppId:     waypointPlan.Metadata.AppId,
+				InstallId: waypointPlan.Metadata.InstallId,
+				Component: waypointPlan.Component,
+				BuildId:   buildID,
+				DeployId:  deployID,
+				Type:      typ,
 			},
 		},
 	}
@@ -280,7 +285,7 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *planv1.Plan, resp *de
 	finishReq := &sharedv1.FinishActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
 		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, plan.Metadata.OrgId),
-		MetadataBucketPrefix:        prefix.InstancePath(plan.Metadata.OrgId, plan.Metadata.AppId, plan.Component.Id, plan.Metadata.DeploymentId, plan.Metadata.InstallId),
+		MetadataBucketPrefix:        prefix.InstancePath(plan.Metadata.OrgId, plan.Metadata.AppId, plan.Component.Id, plan.Metadata.DeployId, plan.Metadata.InstallId),
 		ResponseRef: &sharedv1.ResponseRef{
 			Response: &sharedv1.ResponseRef_DeployResponse{
 				DeployResponse: resp,
