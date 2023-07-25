@@ -55,7 +55,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildsv1.BuildRequest) (*build
 	}
 
 	l.Info("creating plan")
-	createPlanResp, err := execCreatePlan(ctx, createPlanReq)
+	createPlanResp, err := execCreatePlan(ctx, createPlanReq, req.BuildId)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create plan: %w", err)
 	}
@@ -67,7 +67,7 @@ func (w *wkflow) Build(ctx workflow.Context, req *buildsv1.BuildRequest) (*build
 	l.Info("executing plan")
 	_, err = execExecutePlan(ctx, &executev1.ExecutePlanRequest{
 		Plan: createPlanResp.Plan,
-	})
+	}, req.BuildId)
 	if err != nil {
 		w.finishWorkflow(ctx, req, res, err)
 		return nil, fmt.Errorf("unable to create plan: %w", err)
@@ -104,12 +104,14 @@ func execCreatePlanRequest(
 func execCreatePlan(
 	ctx workflow.Context,
 	req *planv1.CreatePlanRequest,
+	buildID string,
 ) (*planv1.CreatePlanResponse, error) {
 	resp := &planv1.CreatePlanResponse{}
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("executing create plan workflow")
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-create-plan", buildID),
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
 		TaskQueue:                wfc.ExecutorsTaskQueue,
@@ -127,12 +129,14 @@ func execCreatePlan(
 func execExecutePlan(
 	ctx workflow.Context,
 	req *executev1.ExecutePlanRequest,
+	buildID string,
 ) (*executev1.ExecutePlanResponse, error) {
 	resp := &executev1.ExecutePlanResponse{}
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("executing execute plan workflow")
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-execute-plan", buildID),
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
 		TaskQueue:                wfc.ExecutorsTaskQueue,

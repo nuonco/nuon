@@ -175,11 +175,16 @@ func (w *wkflow) planAndExec(
 	typ planv1.ComponentInputType,
 	buildID string,
 	deployID string,
-
 ) (*planv1.PlanRef, error) {
 	waypointPlan := buildPlan.GetWaypointPlan()
 	l := workflow.GetLogger(ctx)
-
+	prefix := ""
+	switch typ {
+	case planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE:
+		prefix = fmt.Sprintf("%s-sync", deployID)
+	case planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY:
+		prefix = fmt.Sprintf("%s-deploy", deployID)
+	}
 	planReq := &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
@@ -193,7 +198,7 @@ func (w *wkflow) planAndExec(
 			},
 		},
 	}
-	planResp, err := execCreatePlan(ctx, planReq)
+	planResp, err := execCreatePlan(ctx, planReq, prefix)
 	if err != nil {
 		err = fmt.Errorf("unable to create %s plan: %w", typ, err)
 		w.finishWorkflow(ctx, buildPlan, nil, err)
@@ -204,7 +209,8 @@ func (w *wkflow) planAndExec(
 	execReq := &executev1.ExecutePlanRequest{
 		Plan: planResp.Plan,
 	}
-	_, err = execExecutePlan(ctx, execReq)
+
+	_, err = execExecutePlan(ctx, execReq, prefix)
 	if err != nil {
 		err = fmt.Errorf("unable to execute %s plan: %w", typ, err)
 		w.finishWorkflow(ctx, buildPlan, nil, err)
@@ -217,12 +223,14 @@ func (w *wkflow) planAndExec(
 func execCreatePlan(
 	ctx workflow.Context,
 	req *planv1.CreatePlanRequest,
+	deployPrefix string,
 ) (*planv1.CreatePlanResponse, error) {
 	resp := &planv1.CreatePlanResponse{}
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("executing create plan workflow")
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-create-plan", deployPrefix),
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
 		TaskQueue:                wfc.ExecutorsTaskQueue,
@@ -240,12 +248,14 @@ func execCreatePlan(
 func execExecutePlan(
 	ctx workflow.Context,
 	req *executev1.ExecutePlanRequest,
+	deployPrefix string,
 ) (*executev1.ExecutePlanResponse, error) {
 	resp := &executev1.ExecutePlanResponse{}
 	l := workflow.GetLogger(ctx)
 
 	l.Debug("executing execute plan workflow")
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-deploy-plan", deployPrefix),
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
 		TaskQueue:                wfc.ExecutorsTaskQueue,
