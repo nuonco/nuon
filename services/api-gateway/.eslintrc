@@ -1,4 +1,5 @@
 {
+  "ignorePatterns": ["src/build"],
   "overrides": [
     {
       "files": ["*.ts"],

@@ -42,4 +42,4 @@ go.work
 __debug_bin
 # Ignore earthly secret files
 .secret
-build/
+services/api-gateway/src/build/
