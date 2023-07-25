@@ -4,13 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	ecr_types "github.com/aws/aws-sdk-go-v2/service/ecr/types"
-	"github.com/aws/aws-sdk-go-v2/service/sts"
-	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -38,27 +35,32 @@ func (a *Activities) CreateRepository(ctx context.Context, req CreateRepositoryR
 		return resp, fmt.Errorf("failed to validate request: %w", err)
 	}
 
-	cfg, err := config.LoadDefaultConfig(ctx)
+	awsCfg, err := credentials.Fetch(ctx, &credentials.Config{
+		AssumeRole: &credentials.AssumeRoleConfig{
+			RoleARN:     req.OrgsEcrAccessRoleArn,
+			SessionName: "workers-apps",
+		},
+	})
 	if err != nil {
-		return resp, fmt.Errorf("failed to get default config: %w", err)
+		return resp, fmt.Errorf("unable to fetch credentials: %w", err)
 	}
 
-	stsClient := sts.NewFromConfig(cfg)
-	creds, err := a.assumeIamRole(ctx, req.OrgsEcrAccessRoleArn, stsClient)
-	if err != nil {
-		return resp, fmt.Errorf("failed to assume role: %w", err)
-	}
-
-	credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId, *creds.SecretAccessKey, *creds.SessionToken)
-	cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(credsProvider))
-	if err != nil {
-		return resp, fmt.Errorf("failed to get config with STS creds: %w", err)
-	}
-
-	ecrClient := ecr.NewFromConfig(cfg)
+	ecrClient := ecr.NewFromConfig(awsCfg)
 	repo, err := a.createECRRepo(ctx, req, ecrClient)
-	if err != nil {
+	if err == nil {
+		resp.RegistryID = *repo.RegistryId
+		resp.RepositoryName = *repo.RepositoryName
+		resp.RepositoryArn = *repo.RepositoryArn
+		resp.RepositoryURI = *repo.RepositoryUri
+		return resp, nil
+	}
+	if !isEntityExistsException(err) {
 		return resp, fmt.Errorf("failed to create ecr repo: %w", err)
+	}
+
+	repo, err = a.getECRRepo(ctx, req, ecrClient)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get ecr repo: %w", err)
 	}
 
 	resp.RegistryID = *repo.RegistryId
@@ -69,40 +71,42 @@ func (a *Activities) CreateRepository(ctx context.Context, req CreateRepositoryR
 }
 
 type repositoryCreator interface {
-	assumeIamRole(context.Context, string, awsClientIamRoleAssumer) (*sts_types.Credentials, error)
-	createECRRepo(context.Context, CreateRepositoryRequest, awsClientEcrRepoCreator) (*ecr_types.Repository, error)
+	createECRRepo(context.Context, CreateRepositoryRequest, awsClientECR) (*ecr_types.Repository, error)
+	getECRRepo(context.Context, CreateRepositoryRequest, awsClientECR) (*ecr_types.Repository, error)
 }
 
 type repositoryCreatorImpl struct{}
 
 var _ repositoryCreator = (*repositoryCreatorImpl)(nil)
 
-type awsClientIamRoleAssumer interface {
-	AssumeRole(ctx context.Context,
-		params *sts.AssumeRoleInput,
-		optFns ...func(*sts.Options)) (*sts.AssumeRoleOutput, error)
-}
-
-type awsClientEcrRepoCreator interface {
+type awsClientECR interface {
 	CreateRepository(context.Context,
 		*ecr.CreateRepositoryInput,
 		...func(*ecr.Options)) (*ecr.CreateRepositoryOutput, error)
+
+	DescribeRepositories(context.Context,
+		*ecr.DescribeRepositoriesInput,
+		...func(*ecr.Options)) (*ecr.DescribeRepositoriesOutput, error)
 }
 
-func (r *repositoryCreatorImpl) assumeIamRole(ctx context.Context, roleArn string, client awsClientIamRoleAssumer) (*sts_types.Credentials, error) {
-	params := &sts.AssumeRoleInput{
-		RoleArn:         &roleArn,
-		RoleSessionName: generics.ToPtr("workers-apps-create-repo"),
+func (r *repositoryCreatorImpl) getECRRepo(ctx context.Context, req CreateRepositoryRequest, client awsClientECR) (*ecr_types.Repository, error) {
+	params := &ecr.DescribeRepositoriesInput{
+		RepositoryNames: []string{
+			req.OrgID + "/" + req.AppID,
+		},
 	}
-	resp, err := client.AssumeRole(ctx, params)
+	resp, err := client.DescribeRepositories(ctx, params)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to describe repositories: %w", err)
+	}
+	if len(resp.Repositories) != 1 {
+		return nil, fmt.Errorf("no repositories returned")
 	}
 
-	return resp.Credentials, nil
+	return &resp.Repositories[0], nil
 }
 
-func (r *repositoryCreatorImpl) createECRRepo(ctx context.Context, req CreateRepositoryRequest, client awsClientEcrRepoCreator) (*ecr_types.Repository, error) {
+func (r *repositoryCreatorImpl) createECRRepo(ctx context.Context, req CreateRepositoryRequest, client awsClientECR) (*ecr_types.Repository, error) {
 	params := &ecr.CreateRepositoryInput{
 		RepositoryName:     generics.ToPtr(req.OrgID + "/" + req.AppID),
 		ImageTagMutability: ecr_types.ImageTagMutabilityImmutable,

@@ -29,7 +29,6 @@ func (w Workflow) Provision(ctx workflow.Context, req *appv1.ProvisionRequest) (
 	resp := appv1.ProvisionResponse{}
 
 	if err := req.Validate(); err != nil {
-		//%TODO(cp): add zap logger to workflow
 		return nil, fmt.Errorf("unable to validate request: %w", err)
 	}
 
@@ -46,8 +45,8 @@ func (w Workflow) Provision(ctx workflow.Context, req *appv1.ProvisionRequest) (
 	}
 
 	prRequest := &repov1.ProvisionRepositoryRequest{
-		OrgId: req.OrgId,
-		AppId: req.AppId,
+		OrgId:	     req.OrgId,
+		AppId:	     req.AppId,
 	}
 	prResp, err := execProvisionRepository(ctx, w.cfg, prRequest)
 	if err != nil {
@@ -85,7 +84,7 @@ func execProvisionRepository(
 	l.Debug("executing provision repository child workflow")
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 60,
-		WorkflowTaskTimeout:      time.Minute * 30,
+		WorkflowTaskTimeout:	  time.Minute * 30,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -110,7 +109,7 @@ func execProvisionProject(
 	l.Debug("executing provision project child workflow")
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowExecutionTimeout: time.Minute * 20,
-		WorkflowTaskTimeout:      time.Minute * 10,
+		WorkflowTaskTimeout:	  time.Minute * 10,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
