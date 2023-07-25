@@ -101,6 +101,7 @@ func (w *wkflow) StartDeploy(ctx workflow.Context, req *jobsv1.StartDeployReques
 		}
 
 		plan.WaypointPlan.Metadata.InstallId = idResp.InstallID
+		plan.WaypointPlan.Metadata.DeployId = idResp.DeployID
 		plan.WaypointPlan.Component.Connections = connections
 	}
 
@@ -295,7 +296,11 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *planv1.Plan, resp *de
 	finishReq := &sharedv1.FinishActivityRequest{
 		MetadataBucket:              w.cfg.DeploymentsBucket,
 		MetadataBucketAssumeRoleArn: fmt.Sprintf(w.cfg.OrgsDeploymentsRoleTemplate, plan.Metadata.OrgId),
-		MetadataBucketPrefix:        prefix.InstancePath(plan.Metadata.OrgId, plan.Metadata.AppId, plan.Component.Id, plan.Metadata.DeployId, plan.Metadata.InstallId),
+		MetadataBucketPrefix: prefix.InstancePath(plan.Metadata.OrgId,
+			plan.Metadata.AppId,
+			plan.Component.Id,
+			plan.Metadata.DeployId,
+			plan.Metadata.InstallId),
 		ResponseRef: &sharedv1.ResponseRef{
 			Response: &sharedv1.ResponseRef_DeployResponse{
 				DeployResponse: resp,
