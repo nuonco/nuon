@@ -4,6 +4,14 @@ locals {
   }
 }
 
+variable "private_subnet_one" {
+  type = string
+}
+
+variable "private_subnet_two" {
+  type = string
+}
+
 terraform {
   required_providers {
     aws = {
@@ -46,5 +54,5 @@ module "database" {
   create_db_subnet_group = true
   # we should be able to handle this with connected components once that's done
   # hard-coding for now just to get this deployed
-  subnet_ids = ["subnet-03dcc39942d660bdb", "subnet-026e68c3d83e15f90"]
+  subnet_ids = [var.private_subnet_one, var.private_subnet_two]
 }
