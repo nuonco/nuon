@@ -26,7 +26,7 @@
   "author": "Nat Hamilton <nhamilton@powertools.dev>",
   "license": "UNLICENSED",
   "dependencies": {
-    "@grpc/grpc-js": "^1.8.19",
+    "@grpc/grpc-js": "^1.8.20",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "envalid": "^7.3.1",
