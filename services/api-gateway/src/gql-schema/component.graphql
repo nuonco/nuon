@@ -317,8 +317,8 @@ type Component implements Node {
   name: String!
   updatedAt: DateTime!
   config: ComponentConfig
-  deployments(options: ConnectionOptions): DeploymentConnection!
   app: App
+  builds: [Build]!
 }
 
 """
