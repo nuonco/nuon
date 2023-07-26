@@ -7,7 +7,9 @@ Represents information about a deploy
 """
 type Deploy {
   id: ID!
+  build: Build!
   buildId: ID!
+  install: Install!
   installId: ID!
   updatedAt: DateTime!
   createdAt: DateTime!
