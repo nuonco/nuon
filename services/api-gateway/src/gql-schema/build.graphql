@@ -8,6 +8,7 @@ Represents information about a build
 type Build {
   id: ID!
   gitRef: String!
+  component: Component!
   componentId: ID!
   updatedAt: DateTime!
   createdAt: DateTime!
