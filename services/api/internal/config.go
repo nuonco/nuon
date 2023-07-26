@@ -28,7 +28,6 @@ func init() {
 	config.RegisterDefault("temporal_task_queue", wfc.APITaskQueue)
 
 	// default for github
-	config.RegisterDefault("github_app_id", "261597")
 	config.RegisterDefault("github_app_key_secret_name", "graphql-api-github-app-key")
 }
 
