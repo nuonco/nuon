@@ -15,6 +15,7 @@ env_secrets:
     key: github_app_key
 local_env:
   DB_HOST: localhost
+  GITHUB_APP_IP: !!string 261597
 local_cmds:
   - "go run . worker builds"
   - "go run . worker apps"
