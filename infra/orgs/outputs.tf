@@ -34,7 +34,7 @@ output "org_iam_role_name_templates" {
 
 output "api" {
   value = {
-    url = nonsensitive("orgs-api.${data.tfe_outputs.infra-eks.values.private_zone}"),
+    url = nonsensitive("http://orgs-api.${data.tfe_outputs.infra-eks.values.private_zone}"),
   }
 }
 
