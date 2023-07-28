@@ -1,0 +1,13 @@
+query getInstanceStatus($orgId: ID!,
+                        $appId:ID!,
+                        $componentId: ID!,
+                        $installId: ID!,
+                        $deployId: ID!) {
+  instanceStatus(appId: $appId,
+                 componentId: $componentId,
+                 deployId: $deployId,
+                 installId: $installId,
+                 orgId: $orgId) {
+    status
+  }
+}
