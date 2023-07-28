@@ -128,6 +128,7 @@ func execProvisionWaypointServerWorkflow(
 
 	l.Debug("executing install waypoint workflow")
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-provision-server", req.OrgId),
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
 	}
@@ -163,6 +164,7 @@ func execInstallWaypointRunnerWorkflow(
 	var resp runnerv1.ProvisionRunnerResponse
 
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-provision-runner", iwrr.OrgId),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
 	}
@@ -186,6 +188,7 @@ func execProvisionIAMWorkflow(
 	var resp iamv1.ProvisionIAMResponse
 
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-provision-iam", req.OrgId),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
 	}
@@ -209,6 +212,7 @@ func execProvisionKMSWorkflow(
 	var resp kmsv1.ProvisionKMSResponse
 
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-provision-kms", req.OrgId),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
 	}

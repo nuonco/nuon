@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	tclient "go.temporal.io/sdk/client"
@@ -9,6 +10,7 @@ import (
 
 func (w *workflowsClient) TriggerAppProvision(ctx context.Context, req *appsv1.ProvisionRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
+		ID:        fmt.Sprintf("%s-provision", req.AppId),
 		TaskQueue: DefaultTaskQueue,
 		// Memo is non-indexed metadata available when listing workflows
 		Memo: map[string]interface{}{

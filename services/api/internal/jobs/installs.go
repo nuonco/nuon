@@ -20,6 +20,7 @@ func (m *manager) CreateInstall(ctx context.Context, installID string) error {
 }
 
 func (m *manager) DeleteInstall(ctx context.Context, installID string) error {
+	m.Opts.ID = installID
 	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "installs", m.Opts, "DeleteInstall", &jobsv1.DeleteInstallRequest{
 		InstallId: installID,
 	})
