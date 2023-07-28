@@ -11,6 +11,7 @@ import (
 // TODO(jm): eventually rename this workflow to Provision
 func (w *workflowsClient) TriggerOrgSignup(ctx context.Context, req *orgsv1.ProvisionRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
+		ID:        fmt.Sprintf("%s-provision", req.OrgId),
 		TaskQueue: DefaultTaskQueue,
 		Memo: map[string]interface{}{
 			"org-id":     req.OrgId,
@@ -20,7 +21,7 @@ func (w *workflowsClient) TriggerOrgSignup(ctx context.Context, req *orgsv1.Prov
 
 	workflowRun, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "orgs", opts, "Provision", req)
 	if err != nil {
-		return "", fmt.Errorf("unable to start deployment: %w", err)
+		return "", fmt.Errorf("unable to get response: %w", err)
 	}
 
 	return workflowRun.GetID(), nil
@@ -28,6 +29,7 @@ func (w *workflowsClient) TriggerOrgSignup(ctx context.Context, req *orgsv1.Prov
 
 func (w *workflowsClient) TriggerOrgTeardown(ctx context.Context, req *orgsv1.DeprovisionRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
+		ID:        fmt.Sprintf("%s-deprovision", req.OrgId),
 		TaskQueue: DefaultTaskQueue,
 		Memo: map[string]interface{}{
 			"org-id":     req.OrgId,
@@ -45,6 +47,7 @@ func (w *workflowsClient) TriggerOrgTeardown(ctx context.Context, req *orgsv1.De
 
 func (w *workflowsClient) ExecOrgSignup(ctx context.Context, req *orgsv1.ProvisionRequest) (*orgsv1.ProvisionResponse, error) {
 	opts := tclient.StartWorkflowOptions{
+		ID:        fmt.Sprintf("%s-provision", req.OrgId),
 		TaskQueue: DefaultTaskQueue,
 		Memo: map[string]interface{}{
 			"org-id":     req.OrgId,
