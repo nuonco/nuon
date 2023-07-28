@@ -76,6 +76,7 @@ func (w *wkflow) deprovisionIAM(ctx workflow.Context, req *iamv1.DeprovisionIAMR
 	var resp iamv1.DeprovisionIAMResponse
 
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-deprovision-iam", req.OrgId),
 		WorkflowExecutionTimeout: time.Hour * 10,
 		WorkflowTaskTimeout:      time.Hour * 1,
 	}
