@@ -20,6 +20,7 @@ func (m *manager) CreateOrg(ctx context.Context, orgID string) error {
 }
 
 func (m *manager) DeleteOrg(ctx context.Context, orgID string) error {
+	m.Opts.ID = orgID
 	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "orgs", m.Opts, "DeleteOrg", &jobsv1.DeleteOrgRequest{
 		OrgId: orgID,
 	})

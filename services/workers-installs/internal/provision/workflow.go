@@ -109,7 +109,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		Domain:      tfOutputs.PublicDomain.Name,
 		Nameservers: awseks.ToStringSlice(tfOutputs.PublicDomain.Nameservers),
 	}
-	_, err = execProvisionDNS(ctx, w.cfg, dnsReq)
+	_, err = execProvisionDNS(ctx, w.cfg, dnsReq, req.InstallId)
 	if err != nil {
 		err = fmt.Errorf("unable to provision dns: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
@@ -148,6 +148,7 @@ func execProvisionRunner(
 	resp := &runnerv1.ProvisionRunnerResponse{}
 
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-provision-runner", iwrr.InstallId),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
 	}
@@ -167,10 +168,12 @@ func execProvisionDNS(
 	ctx workflow.Context,
 	cfg workers.Config,
 	req *dnsv1.ProvisionDNSRequest,
+	installID string,
 ) (*dnsv1.ProvisionDNSResponse, error) {
 	resp := &dnsv1.ProvisionDNSResponse{}
 
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-provision-dns", installID),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
 	}

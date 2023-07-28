@@ -11,6 +11,7 @@ import (
 
 func (w *workflowsClient) TriggerInstallProvision(ctx context.Context, req *installsv1.ProvisionRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
+		ID:        fmt.Sprintf("%s-provision", req.InstallId),
 		TaskQueue: DefaultTaskQueue,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 1,
@@ -33,6 +34,7 @@ func (w *workflowsClient) TriggerInstallProvision(ctx context.Context, req *inst
 
 func (w *workflowsClient) TriggerInstallDeprovision(ctx context.Context, req *installsv1.DeprovisionRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
+		ID:        fmt.Sprintf("%s-deprovision", req.InstallId),
 		TaskQueue: DefaultTaskQueue,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 1,
