@@ -1,8 +1,38 @@
+fragment installFields on Install {
+  id
+  name
+  app {
+    id
+    org {
+      id
+    }
+  }
+  settings {
+    ... on AWSSettings {
+      role
+      region
+    }
+  }
+}
+
 query getInstall($id: ID!) {
   install(id: $id) {
-    id
-    name
+    ...installFields
   }
+}
+
+query getInstallStatus($orgId: ID!, $appId: ID!, $installId: ID!) {
+  installStatus(appId: $appId, installId: $installId, orgId: $orgId)
+}
+
+mutation upsertInstall($input: InstallInput!) {
+  upsertInstall(input: $input) {
+    ...installFields
+  }
+}
+
+mutation deleteInstall($id: ID!) {
+  deleteInstall(id: $id)
 }
 
 query getInstalls($id: ID!) {
@@ -17,8 +47,7 @@ query getInstalls($id: ID!) {
     edges {
       cursor
       node {
-        id
-        name
+        ...installFields
      }
     }
   }

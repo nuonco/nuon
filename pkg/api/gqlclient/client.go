@@ -15,27 +15,48 @@ import (
 //go:generate mockgen -destination=client_mock.go -source=client.go -package=gqlclient
 type Client interface {
 	// orgs
-	GetOrg(ctx context.Context, orgID string) (*getOrgOrg, error)
-	GetOrgs(ctx context.Context, orgID string) ([]*getOrgsOrgsOrgConnectionEdgesOrgEdgeNodeOrg, error)
-	UpsertOrg(ctx context.Context, input OrgInput) (*upsertOrgUpsertOrg, error)
+	GetOrg(ctx context.Context, orgID string) (*Org, error)
+	GetOrgs(ctx context.Context, orgID string) ([]*Org, error)
+	UpsertOrg(ctx context.Context, input OrgInput) (*Org, error)
 	DeleteOrg(ctx context.Context, orgID string) error
 
 	// apps
-	GetApp(ctx context.Context, appID string) (*getAppApp, error)
-	GetApps(ctx context.Context, orgID string) ([]*getAppsAppsAppConnectionEdgesAppEdgeNodeApp, error)
-	UpsertApp(ctx context.Context, input AppInput) (*upsertAppUpsertApp, error)
-	DeleteApp(ctx context.Context, appID string) error
-
-	// installs
-	GetInstall(ctx context.Context, installID string) (*getInstallInstall, error)
-	GetInstalls(ctx context.Context, appID string) ([]*getInstallsInstallsInstallConnectionEdgesInstallEdgeNodeInstall, error)
+	GetApp(ctx context.Context, appID string) (*App, error)
+	GetApps(ctx context.Context, orgID string) ([]*App, error)
+	UpsertApp(ctx context.Context, input AppInput) (*App, error)
+	DeleteApp(ctx context.Context, appID string) (bool, error)
 
 	// components
-	GetComponent(ctx context.Context, componentID string) (*getComponentComponent, error)
-	GetComponents(ctx context.Context, appID string) ([]*getComponentsComponentsComponentConnectionEdgesComponentEdgeNodeComponent, error)
+	GetComponent(ctx context.Context, componentID string) (*Component, error)
+	UpsertComponent(ctx context.Context, input ComponentInput) (*Component, error)
+	DeleteComponent(ctx context.Context, id string) (bool, error)
+	GetComponents(ctx context.Context, appID string) ([]*Component, error)
+
+	// builds
+	GetBuild(ctx context.Context, installID string) (*Build, error)
+	GetBuilds(ctx context.Context, componentID string) ([]*Build, error)
+	StartBuild(ctx context.Context, input BuildInput) (*Build, error)
+	CancelBuild(ctx context.Context, installID string) (bool, error)
+	GetBuildStatus(ctx context.Context, buildID string) (Status, error)
+
+	// installs
+	GetInstall(ctx context.Context, installID string) (*Install, error)
+	GetInstalls(ctx context.Context, appID string) ([]*Install, error)
+	UpsertInstall(ctx context.Context, input InstallInput) (*Install, error)
+	DeleteInstall(ctx context.Context, installID string) (bool, error)
+	GetInstallStatus(ctx context.Context, orgID, appID, installID string) (Status, error)
+
+	// deploys
+	StartDeploy(ctx context.Context, input DeployInput) (*Deploy, error)
+	GetDeploy(ctx context.Context, deployID string) (*Deploy, error)
+
+	// instance
+	GetInstanceStatus(ctx context.Context, installID, componentID, deployID string) (Status, error)
 
 	// users
 	GetCurrentUser(ctx context.Context) (*getCurrentUserMeUser, error)
+	GetConnectedRepos(ctx context.Context, orgID string) ([]*ConnectedRepo, error)
+	GetConnectedRepo(ctx context.Context, orgID string, repoName string) (*ConnectedRepo, error)
 }
 
 var _ Client = (*client)(nil)

@@ -12,6 +12,6 @@ func (c *client) GetCurrentUser(ctx context.Context) (*getCurrentUserMeUser, err
 		return nil, fmt.Errorf("unable to get current user: %w", err)
 	}
 
-	return &resp.Me, nil
+	return resp.Me, nil
 
 }

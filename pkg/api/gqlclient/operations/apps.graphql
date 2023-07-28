@@ -1,7 +1,14 @@
+fragment appFields on App {
+  id
+  name
+  org {
+    id
+  }
+}
+
 query getApp($id: ID!) {
   app(id: $id) {
-    id
-    name
+      ...appFields
   }
 }
 
@@ -17,8 +24,7 @@ query getApps($id: ID!) {
     edges {
       cursor
       node {
-        id
-        name
+        ...appFields
      }
     }
   }
@@ -26,8 +32,7 @@ query getApps($id: ID!) {
 
 mutation upsertApp($input: AppInput!) {
     upsertApp(input: $input) {
-      id
-      name
+      ...appFields
     }
   }
 
