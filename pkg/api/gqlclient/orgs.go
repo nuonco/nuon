@@ -5,37 +5,46 @@ import (
 	"fmt"
 )
 
-func (c *client) GetOrg(ctx context.Context, orgID string) (*getOrgOrg, error) {
+type Org struct {
+	orgFields
+}
+
+func (c *client) GetOrg(ctx context.Context, orgID string) (*Org, error) {
 	resp, err := getOrg(ctx, c.graphqlClient, orgID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get org: %w", err)
 	}
 
-	return &resp.Org, nil
+	return &Org{
+		resp.Org.orgFields,
+	}, nil
 }
 
-func (c *client) GetOrgs(ctx context.Context, userID string) ([]*getOrgsOrgsOrgConnectionEdgesOrgEdgeNodeOrg, error) {
+func (c *client) GetOrgs(ctx context.Context, userID string) ([]*Org, error) {
 	resp, err := getOrgs(ctx, c.graphqlClient, userID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get apps: %w", err)
 	}
 
-	orgs := make([]*getOrgsOrgsOrgConnectionEdgesOrgEdgeNodeOrg, 0)
+	orgs := make([]*Org, 0)
 	for _, org := range resp.Orgs.Edges {
-		o := org
-		orgs = append(orgs, &o.Node)
+		orgs = append(orgs, &Org{
+			org.Node.orgFields,
+		})
 	}
 
 	return orgs, nil
 }
 
-func (c *client) UpsertOrg(ctx context.Context, input OrgInput) (*upsertOrgUpsertOrg, error) {
-	resp, err := upsertOrg(ctx, c.graphqlClient, input)
+func (c *client) UpsertOrg(ctx context.Context, input OrgInput) (*Org, error) {
+	resp, err := upsertOrg(ctx, c.graphqlClient, &input)
 	if err != nil {
 		return nil, fmt.Errorf("unable to upsertOrg: %w", err)
 	}
 
-	return &resp.UpsertOrg, nil
+	return &Org{
+		resp.UpsertOrg.orgFields,
+	}, nil
 }
 
 func (c *client) DeleteOrg(ctx context.Context, id string) error {

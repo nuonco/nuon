@@ -87,7 +87,14 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 
 func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewExampleResource,
+		NewAppResource,
+		NewInstallResource,
+		NewContainerImageComponentResource,
+		NewDockerBuildComponentResource,
+		NewHelmChartComponentResource,
+		NewTerraformModuleComponentResource,
+		NewDeployResource,
+		NewBuildResource,
 	}
 }
 
@@ -95,6 +102,9 @@ func (p *Provider) DataSources(ctx context.Context) []func() datasource.DataSour
 	return []func() datasource.DataSource{
 		NewAppDataSource,
 		NewOrgDataSource,
+		NewConnectedRepoDataSource,
+		NewConnectedReposDataSource,
+		NewInstallDataSource,
 	}
 }
 

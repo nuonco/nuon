@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
 )
 
@@ -59,10 +58,7 @@ func (d *OrgDataSource) Configure(ctx context.Context, req datasource.ConfigureR
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected gqlclient.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
+		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -76,13 +72,9 @@ func (d *OrgDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 		return
 	}
 
-	tflog.Trace(ctx, "fetching org by id")
 	orgResp, err := d.client.GetOrg(ctx, data.Id.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to get org",
-			fmt.Sprintf("Please make sure your org_id (%s) is correct, and that the auth token has permissions for this org.", data.Id.String()),
-		)
+		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get org")
 		return
 	}
 	data.Name = types.StringValue(orgResp.Name)

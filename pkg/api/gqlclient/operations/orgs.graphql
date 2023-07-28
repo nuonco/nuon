@@ -1,7 +1,11 @@
+fragment orgFields on Org {
+  id
+  name
+}
+
 query getOrg($id: ID!) {
   org(id: $id) {
-    id
-    name
+    ...orgFields
   }
 }
 
@@ -17,8 +21,7 @@ query getOrgs($id: ID!) {
     edges {
       cursor
       node {
-        id
-        name
+        ...orgFields
      }
     }
   }
@@ -26,8 +29,7 @@ query getOrgs($id: ID!) {
 
 mutation upsertOrg($input: OrgInput!) {
   upsertOrg(input: $input) {
-    id
-    name
+    ...orgFields
   }
 }
 
