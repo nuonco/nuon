@@ -23,7 +23,7 @@ export const deployLog: TResolverFn<QueryDeployLogArgs, Query["deployLog"]> = (
 
           // init job stream request
           const request = new GetJobStreamRequest().setJobId(
-            `sync-${deployId}`
+            `deploy-${deployId}`
           );
           const jobStreamCall = wpClient.getJobStream(request, metadata);
 
