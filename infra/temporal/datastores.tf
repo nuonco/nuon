@@ -44,7 +44,7 @@ module "subnet_group" {
 ################################################################################
 module "primary" {
   source  = "terraform-aws-modules/rds/aws"
-  version = "~> 5.9.0"
+  version = "~> 6.1.0"
 
   identifier = "primary-${local.name}"
 
