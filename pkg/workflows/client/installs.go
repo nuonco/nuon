@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	enumspb "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 )
@@ -22,6 +23,7 @@ func (w *workflowsClient) TriggerInstallProvision(ctx context.Context, req *inst
 			"install-id": req.InstallId,
 			"started-by": w.Agent,
 		},
+		WorkflowIDReusePolicy: enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 
 	workflowRun, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "installs", opts, "Provision", req)
@@ -45,6 +47,7 @@ func (w *workflowsClient) TriggerInstallDeprovision(ctx context.Context, req *in
 			"install-id": req.InstallId,
 			"started-by": w.Agent,
 		},
+		WorkflowIDReusePolicy: enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 
 	workflowRun, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "installs", opts, "Deprovision", req)
