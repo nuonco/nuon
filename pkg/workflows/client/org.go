@@ -5,14 +5,16 @@ import (
 	"fmt"
 
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	enumspb "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 )
 
 // TODO(jm): eventually rename this workflow to Provision
 func (w *workflowsClient) TriggerOrgSignup(ctx context.Context, req *orgsv1.ProvisionRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
-		ID:        fmt.Sprintf("%s-provision", req.OrgId),
-		TaskQueue: DefaultTaskQueue,
+		ID:                    fmt.Sprintf("%s-provision", req.OrgId),
+		TaskQueue:             DefaultTaskQueue,
+		WorkflowIDReusePolicy: enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		Memo: map[string]interface{}{
 			"org-id":     req.OrgId,
 			"started-by": "nuonctl",
@@ -29,8 +31,9 @@ func (w *workflowsClient) TriggerOrgSignup(ctx context.Context, req *orgsv1.Prov
 
 func (w *workflowsClient) TriggerOrgTeardown(ctx context.Context, req *orgsv1.DeprovisionRequest) (string, error) {
 	opts := tclient.StartWorkflowOptions{
-		ID:        fmt.Sprintf("%s-deprovision", req.OrgId),
-		TaskQueue: DefaultTaskQueue,
+		ID:                    fmt.Sprintf("%s-deprovision", req.OrgId),
+		TaskQueue:             DefaultTaskQueue,
+		WorkflowIDReusePolicy: enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		Memo: map[string]interface{}{
 			"org-id":     req.OrgId,
 			"started-by": "nuonctl",

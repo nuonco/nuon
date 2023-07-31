@@ -5,10 +5,12 @@ import (
 	"fmt"
 
 	jobsv1 "github.com/powertoolsdev/mono/pkg/types/api/jobs/v1"
+	enumspb "go.temporal.io/api/enums/v1"
 )
 
 func (m *manager) StartDeploy(ctx context.Context, deployID string) (string, error) {
 	m.Opts.ID = deployID
+	m.Opts.WorkflowIDReusePolicy = enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING
 	_, err := m.Client.ExecuteWorkflowInNamespace(ctx, "deploys", m.Opts, "StartDeploy", &jobsv1.StartDeployRequest{
 		DeployId: deployID,
 	})

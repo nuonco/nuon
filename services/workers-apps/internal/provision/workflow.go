@@ -13,6 +13,7 @@ import (
 	workers "github.com/powertoolsdev/mono/services/workers-apps/internal"
 	"github.com/powertoolsdev/mono/services/workers-apps/internal/provision/project"
 	"github.com/powertoolsdev/mono/services/workers-apps/internal/provision/repository"
+	enumspb "go.temporal.io/api/enums/v1"
 )
 
 type Workflow struct {
@@ -86,6 +87,7 @@ func execProvisionRepository(
 		WorkflowID:               fmt.Sprintf("%s-provision-repository", req.AppId),
 		WorkflowExecutionTimeout: time.Minute * 60,
 		WorkflowTaskTimeout:      time.Minute * 30,
+		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -112,6 +114,7 @@ func execProvisionProject(
 		WorkflowID:               fmt.Sprintf("%s-provision-project", req.AppId),
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
+		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 

@@ -16,6 +16,7 @@ import (
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/dns"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/sandbox"
+	enumspb "go.temporal.io/api/enums/v1"
 )
 
 // NewWorkflow returns a new workflow executor
@@ -151,6 +152,7 @@ func execProvisionRunner(
 		WorkflowID:               fmt.Sprintf("%s-provision-runner", iwrr.InstallId),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
+		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -176,6 +178,7 @@ func execProvisionDNS(
 		WorkflowID:               fmt.Sprintf("%s-provision-dns", installID),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
+		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
