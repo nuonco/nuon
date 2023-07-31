@@ -15,6 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/kms"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/runner"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/server"
+	enumspb "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 )
@@ -131,6 +132,7 @@ func execProvisionWaypointServerWorkflow(
 		WorkflowID:               fmt.Sprintf("%s-provision-server", req.OrgId),
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
+		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -167,6 +169,7 @@ func execInstallWaypointRunnerWorkflow(
 		WorkflowID:               fmt.Sprintf("%s-provision-runner", iwrr.OrgId),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
+		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -191,6 +194,7 @@ func execProvisionIAMWorkflow(
 		WorkflowID:               fmt.Sprintf("%s-provision-iam", req.OrgId),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
+		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -215,6 +219,7 @@ func execProvisionKMSWorkflow(
 		WorkflowID:               fmt.Sprintf("%s-provision-kms", req.OrgId),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
+		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 

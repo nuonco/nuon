@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
+	enumspb "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 )
 
@@ -18,6 +19,7 @@ func (w *workflowsClient) TriggerAppProvision(ctx context.Context, req *appsv1.P
 			"app-id":     req.AppId,
 			"started-by": w.Agent,
 		},
+		WorkflowIDReusePolicy: enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 
 	wfRun, err := w.TemporalClient.ExecuteWorkflowInNamespace(ctx, "apps", opts, "Provision", req)

@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	"github.com/powertoolsdev/mono/services/api/internal/jobs/build/activities"
+	enumspb "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -115,6 +116,7 @@ func execCreatePlan(
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
 		TaskQueue:                wfc.ExecutorsTaskQueue,
+		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -140,6 +142,7 @@ func execExecutePlan(
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
 		TaskQueue:                wfc.ExecutorsTaskQueue,
+		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
