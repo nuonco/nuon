@@ -51,3 +51,9 @@ artifacts: |
     - bins/waypoint-plugin-oci-sync/**
   bins/waypoint-plugin-terraform:
     - bins/waypoint-plugin-terraform/**
+
+# TODO: uncomment after artifacts terraform lands
+#sandboxes/aws-eks:
+#- sandboxes/aws-eks/**
+#sandboxes/empty:
+#- sandboxes/empty/**
