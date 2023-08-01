@@ -15,5 +15,5 @@ artifacts:
     COPY --dir artifacts ./out
     SAVE ARTIFACT out AS LOCAL ./out
 
-artifacts-oci:
+oci-artifacts:
     RUN echo "noop..."

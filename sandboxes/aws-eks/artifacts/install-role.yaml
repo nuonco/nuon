@@ -25,6 +25,8 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
+              - route53:ChangeResourceRecordSets
+              - iam:CreatePolicyVersion
               - ec2:AllocateAddress
               - ec2:AssociateRouteTable
               - ec2:AttachInternetGateway
