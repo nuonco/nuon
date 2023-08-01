@@ -15,7 +15,19 @@ module "code-jordanacosta" {
   source = "./modules/repository"
 
   name                     = "code-jordanacosta"
-  description              = "personal workspace for @jonmorehouse"
+  description              = "personal workspace for @jordanacosta"
+  enable_ecr               = false
+  enable_prod_environment  = false
+  enable_stage_environment = false
+
+  topics = ["personal-workspace"]
+}
+
+module "code-focusaurus" {
+  source = "./modules/repository"
+
+  name                     = "code-focusaurus"
+  description              = "personal workspace for @focusaurus"
   enable_ecr               = false
   enable_prod_environment  = false
   enable_stage_environment = false
