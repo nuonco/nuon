@@ -1,12 +1,12 @@
 // build any docker image from source and run it in a customer's cloud account
 resource "nuon_docker_build_component" "public_docker" {
-  name = "public-docker-build"
+  name = "Public Repo Docker Build"
   app_id = nuon_app.main.id
 
   dockerfile = "Dockerfile"
 
   public_repo = {
-    directory = "/"
+    directory = "."
     repo = "https://github.com/jonmorehouse/go-httpbin.git"
     branch = "main"
   }
@@ -36,7 +36,7 @@ resource "nuon_docker_build_component" "public_docker" {
 
 // build a docker image and sync it into your customer's cloud account
 resource "nuon_docker_build_component" "private_docker" {
-  name = "private-docker-build"
+  name = "Private Repo Docker Build (sync only)"
   app_id = nuon_app.main.id
 
   dockerfile = "Dockerfile"

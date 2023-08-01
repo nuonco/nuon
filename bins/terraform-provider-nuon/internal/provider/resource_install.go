@@ -179,13 +179,13 @@ func (r *InstallResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 type installAWSSettings interface {
 	GetRole() string
-	GetRegion() string
+	GetRegion() gqlclient.AWSRegion
 }
 
 func (r *InstallResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data *InstallResourceModel
 
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -204,12 +204,18 @@ func (r *InstallResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	if installResp.GetSettings().(installAWSSettings).GetRegion() != data.Region.ValueString() {
+	region, err := stringToAPIRegion(data.Region.ValueString())
+	if err != nil {
+		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "invalid input region")
+		return
+	}
+	if installResp.GetSettings().(installAWSSettings).GetRegion() != region {
 		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "AWS Region changed")
 		return
 	}
 
 	data.ID = types.StringValue(installResp.Id)
+	data.Name = types.StringValue(installResp.Name)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 

@@ -43,7 +43,7 @@ type HelmValue struct {
 func (e HelmValue) toKeyValueInput() *gqlclient.KeyValuePairInput {
 	return &gqlclient.KeyValuePairInput{
 		Key:   e.Name.ValueString(),
-		Value: e.Name.ValueString(),
+		Value: e.Value.ValueString(),
 	}
 }
 

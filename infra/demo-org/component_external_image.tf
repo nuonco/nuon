@@ -1,6 +1,6 @@
 // run any image in ECR in a customer's cloud account
 resource "nuon_container_image_component" "ecr_external" {
-  name = "tf-managed-ecr-external"
+  name = "ECR Image"
   app_id = nuon_app.main.id
 
   public = {
@@ -34,7 +34,7 @@ resource "nuon_container_image_component" "ecr_external" {
 
 // sync any container image into your customer's cloud account
 resource "nuon_container_image_component" "public_sync_only" {
-  name = "tf-managed-docker-hub"
+  name = "Docker Hub (sync only)"
   app_id = nuon_app.main.id
 
   public = {

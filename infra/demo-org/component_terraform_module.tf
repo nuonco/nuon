@@ -8,7 +8,7 @@ locals {
 // The terraform _actually_ runs inside of your customer's cloud account, so you can do things like manage internal
 // resources etc.
 resource "nuon_terraform_module_component" "demo-ecr" {
-  name = "terraform-ecr-demo"
+  name = "Terraform Infra"
   app_id = nuon_app.main.id
 
   connected_repo = {
@@ -25,5 +25,10 @@ resource "nuon_terraform_module_component" "demo-ecr" {
       name = ev.key
       value = ev.value
     }
+  }
+
+  var {
+    name = "ecr_repo_name"
+    value = "{{.nuon.app_id}}"
   }
 }
