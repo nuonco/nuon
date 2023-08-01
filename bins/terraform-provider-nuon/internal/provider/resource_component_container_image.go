@@ -206,6 +206,8 @@ func (r *ContainerImageComponentResource) Create(ctx context.Context, req resour
 		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "upsert component")
 		return
 	}
+
+	tflog.Trace(ctx, "got ID -- "+compResp.Id)
 	data.ID = types.StringValue(compResp.Id)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
