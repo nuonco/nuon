@@ -1,0 +1,13 @@
+VERSION --use-cache-command 0.6
+
+FROM ghcr.io/powertoolsdev/ci-go-builder
+
+WORKDIR /src
+
+artifacts:
+    RUN mkdir -p out
+    COPY --dir artifacts ./out
+    SAVE ARTIFACT out AS LOCAL ./out
+
+artifacts-oci:
+    RUN echo "noop..."
