@@ -229,6 +229,9 @@ func (r *InstallResource) Delete(ctx context.Context, req resource.DeleteRequest
 		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete install")
 		return
 	}
+
+	tflog.Trace(ctx, "waiting 1 minute to ensure install starts deprovisioning before any other resources get deleted")
+	time.Sleep(time.Minute)
 }
 
 func (r *InstallResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
