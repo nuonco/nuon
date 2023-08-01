@@ -65,5 +65,15 @@ output "artifacts" {
       bucket_prefix = "waypoint-plugin-terraform"
       ecr           = module.waypoint_plugin_terraform.all
     }
+
+    // sandboxes
+    "sandboxes/aws-eks" = {
+      bucket_prefix = "sandbox/aws-eks"
+      ecr           = module.sandbox_aws_eks.all
+    }
+    "sandboxes/empty" = {
+      bucket_prefix = "sandbox/empty"
+      ecr           = module.sandbox_empty.all
+    }
   }
 }
