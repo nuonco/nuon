@@ -134,7 +134,6 @@ func (r *DockerBuildComponentResource) getConfigInput(data *DockerBuildComponent
 		cfg.BuildConfig.DockerBuildConfig.VcsConfig = data.ConnectedRepo.getVCSConfig()
 	}
 
-	cfg.BuildConfig.DockerBuildConfig.VcsConfig = nil
 	return cfg, nil
 }
 
