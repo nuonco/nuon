@@ -4,6 +4,12 @@ FROM ghcr.io/powertoolsdev/ci-go-builder
 
 WORKDIR /src
 
+lint:
+    RUN echo "noop..."
+
+test:
+    RUN echo "noop..."
+
 artifacts:
     RUN mkdir -p out
     COPY --dir artifacts ./out
