@@ -85,7 +85,7 @@ test("initServer should return an Express server with middleware & healthz route
   expect(mockLogger.debug).toBeCalledWith("Initializing server");
   expect(mockExpressFunction).toBeCalled();
   expect(testServer.use).toBeCalledTimes(3);
-  expect(testServer.get).toBeCalledTimes(2);
+  expect(testServer.get).toBeCalledTimes(3);
 });
 
 test("serverListenHandler should call logger.info with port information", () => {

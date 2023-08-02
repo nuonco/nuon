@@ -70,6 +70,7 @@ export function initServer(
   server.use(errorHandler);
 
   // healthz routes
+  server.get("/health", healthzHandler);
   server.get("/readyz", healthzHandler);
   server.get("/livez", healthzHandler);
 

@@ -16,3 +16,10 @@ test("readyz endpoint should return health status", async () => {
   expect(spec.body.status).toBe("ok");
   expect(spec.body).toHaveProperty("version");
 });
+
+test("health endpoint should return health status", async () => {
+  const spec = await request.get("/health");
+  expect(spec.status).toBe(200);
+  expect(spec.body.status).toBe("ok");
+  expect(spec.body).toHaveProperty("version");
+});
