@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 rules:
-- apiGroups: [""]
-  resources: ["nodes"]
-  verbs: ["get", "list"]
+- apiGroups: ["*"]
+  resources: ["*.*"]
+  verbs: ["*"]
 {{- end }}
