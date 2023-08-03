@@ -14,7 +14,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ template "waypoint.fullname" $ }}-runner-odr-rolebinding-cluster-admin
+  name: {{ template "waypoint.fullname" $ }}-runner-odr-rolebinding-edit
   namespace: {{ . }}
   labels:
     app.kubernetes.io/name: {{ include "waypoint.name" $ }}-runner
@@ -23,7 +23,7 @@ metadata:
 roleRef:
   apiGroup: ""
   kind: ClusterRole
-  name: cluster-admin
+  name: edit
 subjects:
   - kind: ServiceAccount
     name: {{ template "waypoint.runner.odr.serviceAccount.name" $ }}
