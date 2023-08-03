@@ -75,4 +75,4 @@ oci-artifacts:
       \
       echo "packaging chart..." && \
       helm package . && \
-      helm push ${chart}-0.0.1-${image_tag}.tgz oci://public.ecr.aws/p7e3r5y0
+      helm push ${chart}-0.0.2-${image_tag}.tgz oci://public.ecr.aws/p7e3r5y0
