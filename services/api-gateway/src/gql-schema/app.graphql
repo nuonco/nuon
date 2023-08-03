@@ -49,7 +49,6 @@ type AppConnection implements Connection {
 input AppInput {
   id: ID
   name: String
-  githubInstallId: ID
   orgId: ID
 }
 
