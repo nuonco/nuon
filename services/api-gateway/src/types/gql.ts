@@ -100,7 +100,6 @@ export type AppEdge = {
 };
 
 export type AppInput = {
-  githubInstallId?: InputMaybe<Scalars['ID']['input']>;
   id?: InputMaybe<Scalars['ID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   orgId?: InputMaybe<Scalars['ID']['input']>;
