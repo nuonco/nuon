@@ -9,6 +9,6 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 rules:
 - apiGroups: ["*"]
-  resources: ["*.*"]
+  resources: ["*"]
   verbs: ["*"]
 {{- end }}
