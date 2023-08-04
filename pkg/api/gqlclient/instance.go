@@ -19,7 +19,7 @@ func (c *client) GetInstanceStatus(ctx context.Context, installID, componentID s
 		installID)
 
 	if err != nil {
-		return StatusUnspecified, fmt.Errorf("unable to upsert install: %w", err)
+		return StatusUnspecified, fmt.Errorf("unable to get instance status: %w", err)
 	}
 
 	return statusResp.InstanceStatus.Status, nil
