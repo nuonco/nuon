@@ -8,6 +8,6 @@ query getInstanceStatus($orgId: ID!,
                  deployId: $deployId,
                  installId: $installId,
                  orgId: $orgId) {
-    status
-  }
+  status
+                 }
 }
