@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
-	"github.com/powertoolsdev/mono/pkg/helm"
-	"github.com/powertoolsdev/mono/pkg/helm/waypoint"
+	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"github.com/powertoolsdev/mono/pkg/kube"
+	waypointhelm "github.com/powertoolsdev/mono/pkg/waypoint/helm"
 	"go.temporal.io/sdk/activity"
 	"helm.sh/helm/v3/pkg/release"
 )
@@ -50,7 +50,7 @@ func getWaypointRunnerValues(req InstallWaypointRequest) (map[string]interface{}
 		return nil, err
 	}
 
-	values := waypoint.NewDefaultInstallValues()
+	values := waypointhelm.NewDefaultInstallValues()
 	values.Runner.Enabled = true
 	values.Runner.ID = req.RunnerConfig.ID
 	values.Runner.Server.Addr = req.RunnerConfig.ServerAddr

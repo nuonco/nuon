@@ -16,10 +16,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
-type installRunner interface {
-	install(context.Context, *action.Install, string, map[string]interface{}) (*release.Release, error)
-}
-
 type chartLoader interface {
 	load(string, action.ChartPathOptions) (*chart.Chart, error)
 }
@@ -28,19 +24,8 @@ type helmInstallRunner struct {
 	chartLoader
 }
 
-var _ installRunner = (*helmInstallRunner)(nil)
-
-func (h *helmInstallRunner) install(ctx context.Context, client *action.Install, chartName string, values map[string]interface{}) (*release.Release, error) {
-	chrt, err := h.load(chartName, client.ChartPathOptions)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load chart: %w", err)
-	}
-
-	rel, err := client.RunWithContext(ctx, chrt, values)
-	if err != nil && !isIgnoredInstallError(err) {
-		return nil, fmt.Errorf("failed to install chart: %w", err)
-	}
-	return rel, nil
+func isHasNoDeployedReleasesError(err error) bool {
+	return strings.Contains(err.Error(), "has no deployed releases")
 }
 
 func isIgnoredInstallError(err error) bool {
@@ -78,8 +63,7 @@ type InstallConfig struct {
 
 	// These are exposed for testing. Do not use otherwise
 	CreateNamespace bool
-	Kubeconfig      *rest.Config  `faker:"-"`
-	installer       installRunner `faker:"-"`
+	Kubeconfig      *rest.Config `faker:"-"`
 }
 
 type installer struct{}
@@ -89,10 +73,6 @@ func NewInstaller() *installer {
 }
 
 func (i *installer) Install(ctx context.Context, config *InstallConfig) (*release.Release, error) {
-	if config.installer == nil {
-		config.installer = &helmInstallRunner{&chrtLoader{}}
-	}
-
 	l := config.Logger
 	if l == nil {
 		l = &fmtLogger{}
@@ -114,22 +94,17 @@ func (i *installer) Install(ctx context.Context, config *InstallConfig) (*releas
 	}
 
 	actionConfig := new(action.Configuration)
-	client := action.NewInstall(actionConfig)
-
-	// TODO(jdt): set timeout based on activity timeout?
-	// client.Timeout = ?
-	client.Atomic = config.Atomic
-	client.Namespace = config.Namespace
-	client.RepoURL = config.Chart.URL
-	client.Version = config.Chart.Version
-	client.ReleaseName = config.ReleaseName
-	client.CreateNamespace = config.CreateNamespace
-	client.Replace = true
+	upgr := action.NewUpgrade(actionConfig)
+	upgr.Atomic = config.Atomic
+	upgr.Namespace = config.Namespace
+	upgr.RepoURL = config.Chart.URL
+	upgr.Version = config.Chart.Version
+	upgr.ResetValues = true
 
 	rcg := &restClientGetter{RestConfig: kCfg, Clientset: clientset}
 	actionLogger := func(format string, v ...interface{}) { l.Debug(fmt.Sprintf(format, v...)) }
 
-	err = actionConfig.Init(rcg, client.Namespace, helmDriver, actionLogger)
+	err = actionConfig.Init(rcg, upgr.Namespace, helmDriver, actionLogger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize helm config: %w", err)
 	}
@@ -139,9 +114,32 @@ func (i *installer) Install(ctx context.Context, config *InstallConfig) (*releas
 		inputName = config.Chart.Dir
 	}
 
-	r, err := config.installer.install(ctx, client, inputName, config.Values)
+	// locate the chart
+	path, err := upgr.LocateChart(inputName, cli.New())
 	if err != nil {
-		return nil, fmt.Errorf("failed to install release: %w", err)
+		return nil, fmt.Errorf("failed to locate chart: %w", err)
 	}
-	return r, nil
+
+	chrt, err := loader.Load(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load chart: %w", err)
+	}
+
+	rel, err := upgr.RunWithContext(ctx, config.ReleaseName, chrt, config.Values)
+	if err != nil && isHasNoDeployedReleasesError(err) {
+		inst := action.NewInstall(actionConfig)
+
+		inst.CreateNamespace = true
+		inst.Atomic = config.Atomic
+		inst.Namespace = config.Namespace
+		inst.RepoURL = config.Chart.URL
+		inst.Version = config.Chart.Version
+		inst.ReleaseName = config.ReleaseName
+		inst.Replace = true
+		return inst.RunWithContext(ctx, chrt, config.Values)
+	}
+	if err != nil && !isIgnoredInstallError(err) {
+		return nil, fmt.Errorf("failed to upgrade chart: %w", err)
+	}
+	return rel, nil
 }
