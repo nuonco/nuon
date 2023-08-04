@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	s3fetch "github.com/powertoolsdev/mono/pkg/fetch/s3"
+	s3fetch "github.com/powertoolsdev/mono/pkg/deprecated/fetch/s3"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"google.golang.org/protobuf/proto"
 )

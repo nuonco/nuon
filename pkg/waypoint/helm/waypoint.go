@@ -1,10 +1,4 @@
-package waypoint
-
-import (
-	_ "embed"
-
-	"github.com/powertoolsdev/mono/pkg/helm"
-)
+package helm
 
 const (
 	waypointImageRepository string = "public.ecr.aws/p7e3r5y0/waypoint"
@@ -194,11 +188,4 @@ func NewDefaultOrgServerValues() *Values {
 	vals.Bootstrap.ServiceAccount.Create = false
 
 	return &vals
-}
-
-var DefaultChart = helm.Chart{
-	// NOTE(jdt): I don't really care for this but I don't want to keep copying this around
-	Name:    "waypoint",
-	URL:     "https://helm.releases.hashicorp.com",
-	Version: "0.1.19",
 }
