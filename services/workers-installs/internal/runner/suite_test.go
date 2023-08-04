@@ -5,7 +5,7 @@ package runner_test
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/helm/waypoint"
+	"github.com/powertoolsdev/mono/pkg/waypoint/helm"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
 	"github.com/services/workers-installs/internal/runner"

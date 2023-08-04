@@ -2,7 +2,7 @@ package runner
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/helm"
+	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"k8s.io/client-go/rest"
 
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"

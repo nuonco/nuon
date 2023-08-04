@@ -1,4 +1,4 @@
-package waypoint
+package helm
 
 import (
 	_ "embed"
