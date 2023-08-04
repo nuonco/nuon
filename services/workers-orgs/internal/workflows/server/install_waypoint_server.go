@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
-	"github.com/powertoolsdev/mono/pkg/helm"
-	"github.com/powertoolsdev/mono/pkg/helm/waypoint"
+	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"github.com/powertoolsdev/mono/pkg/kube"
+	waypointhelm "github.com/powertoolsdev/mono/pkg/waypoint/helm"
 	"go.temporal.io/sdk/activity"
 	"helm.sh/helm/v3/pkg/release"
 )
@@ -48,7 +48,7 @@ func (a *Activities) InstallWaypointServer(ctx context.Context, req InstallWaypo
 
 	l := activity.GetLogger(ctx)
 
-	values := waypoint.NewDefaultOrgServerValues()
+	values := waypointhelm.NewDefaultOrgServerValues()
 	// set values
 	values.Server.Domain = req.Domain
 	values.Server.Certs.SecretName = fmt.Sprintf("tls-%s", req.OrgID)

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/helm"
+	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	"go.temporal.io/sdk/testsuite"

@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/helm"
-	"github.com/powertoolsdev/mono/pkg/helm/waypoint"
+	waypointhelm "github.com/powertoolsdev/mono/pkg/waypoint/helm"
 	"github.com/stretchr/testify/assert"
 	"go.temporal.io/sdk/testsuite"
 	"helm.sh/helm/v3/pkg/release"
@@ -79,7 +79,6 @@ func TestInstallWaypointServer(t *testing.T) {
 		"uses api": {
 			requestFn: func() InstallWaypointServerRequest {
 				req := generics.GetFakeObj[InstallWaypointServerRequest]()
-				req.Chart = &waypoint.DefaultChart
 				req.ReleaseName = "test-release"
 				return req
 			},
@@ -88,7 +87,6 @@ func TestInstallWaypointServer(t *testing.T) {
 					fn: func(ctx context.Context, cfg *helm.InstallConfig) (*release.Release, error) {
 						assert.NotNil(t, cfg)
 						assert.Equal(t, "test-release", cfg.ReleaseName)
-						assert.Equal(t, "waypoint", cfg.Chart.Name)
 						return &release.Release{Name: cfg.ReleaseName}, nil
 					},
 				}
@@ -98,7 +96,6 @@ func TestInstallWaypointServer(t *testing.T) {
 		"uses the correct values": {
 			requestFn: func() InstallWaypointServerRequest {
 				req := generics.GetFakeObj[InstallWaypointServerRequest]()
-				req.Chart = &waypoint.DefaultChart
 				return req
 			},
 			helmInstallFn: func(t *testing.T) testHelmInstaller {
@@ -106,7 +103,7 @@ func TestInstallWaypointServer(t *testing.T) {
 					fn: func(ctx context.Context, cfg *helm.InstallConfig) (*release.Release, error) {
 						assert.NotNil(t, cfg)
 
-						var vals waypoint.Values
+						var vals waypointhelm.Values
 						err := mapstructure.Decode(cfg.Values, &vals)
 						assert.Nil(t, err)
 						assert.True(t, vals.Server.Enabled)

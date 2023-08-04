@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/helm"
-	"github.com/powertoolsdev/mono/pkg/helm/waypoint"
+	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client"
@@ -64,9 +63,10 @@ func (w wkflow) ProvisionServer(ctx workflow.Context, req *serverv1.ProvisionSer
 	}
 
 	l.Debug("installing waypoint server")
+	wpChart, err := helm.LoadChart(w.cfg.WaypointChartDir)
 	chart := &helm.Chart{
-		Name:    waypoint.DefaultChart.Name,
-		Version: waypoint.DefaultChart.Version,
+		Name:    wpChart.Metadata.Name + "-server",
+		Version: wpChart.Metadata.Version,
 		Dir:     w.cfg.WaypointChartDir,
 	}
 	_, err = installWaypointServer(ctx, act, InstallWaypointServerRequest{
