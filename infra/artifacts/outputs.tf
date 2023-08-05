@@ -18,6 +18,12 @@ output "bucket" {
 
 output "artifacts" {
   value = {
+    // e2e
+    "services/e2e" = {
+      bucket_prefix = "e2e"
+      ecr           = module.e2e.all
+    }
+
     // charts
     "charts/demo" = {
       bucket_prefix = "helm-demo"

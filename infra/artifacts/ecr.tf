@@ -13,6 +13,22 @@ module "nuonctl" {
   }
 }
 
+module "e2e" {
+  source = "../modules/public-ecr"
+
+  name = "e2e"
+  tags = {
+    artifact      = "e2e"
+  }
+  description = "E2E image for testing nuon with an introspection api."
+  about       = "E2E image for testing nuon with an introspection api."
+
+  region = local.aws_settings.region
+  providers = {
+    aws = aws.public
+  }
+}
+
 module "helm_temporal" {
   source = "../modules/public-ecr"
 
