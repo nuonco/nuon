@@ -1,0 +1,9 @@
+---
+apiVersion: v2
+name: e2e
+description: A helm chart for deploying the e2e worker + api
+type: application
+version: v0.0.2
+appVersion: "0.0.1"
+
+dependencies: []

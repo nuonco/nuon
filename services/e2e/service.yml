@@ -1,0 +1,34 @@
+---
+env: {}
+
+# this is a special service, as we use it only locally + in the test case. Thus, we do not want to use either the
+# support role, nor any configmaps in stage (they don't exist)
+local_only: true
+disable_support_role_credentials: true
+
+# when this is running in an actual nuon install, these env vars will be loaded dynamically using helm. However, for
+# testing this locally we set the following hard coded ones to help verify the endpoints
+local_env:
+  # mimic nuon built in vars
+  NUON_APP_ID: app-id
+  NUON_ORG_ID: org-id
+
+  # mimic terraform outputs
+  TERRAFORM_S3_BUCKET_NAME: e2e-test
+
+  # mimic sandbox details
+  SANDBOX_VERSION: c287513d
+  SANDBOX_TYPE: aws-eks
+
+  # mimic sandboxes
+  SECRET_TEST: test-secret
+
+  DEFAULT_VALUE: default-value
+
+local_cmds:
+  - "go run ./api"
+  - "go run ./worker"
+
+earthly_cmd: server
+port: 8080
+type: api
