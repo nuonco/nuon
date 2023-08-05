@@ -30,27 +30,27 @@ func (f fmtLogger) Debug(msg string, keyvals ...interface{}) {
 // Helm has this silly interface for k8s clients. It's painful to use in-cluster.
 // This is lightly modified from https://github.com/hashicorp/waypoint/blob/main/builtin/k8s/helm/rest.go
 
-// restClientGetter is a RESTClientGetter interface implementation for the
+// RestClientGetter is a RESTClientGetter interface implementation for the
 // Helm Go packages.
-type restClientGetter struct {
+type RestClientGetter struct {
 	RestConfig *rest.Config
 	Clientset  kubernetes.Interface
 }
 
-var _ genericclioptions.RESTClientGetter = (*restClientGetter)(nil)
+var _ genericclioptions.RESTClientGetter = (*RestClientGetter)(nil)
 
 // ToRESTConfig implemented interface method
-func (k *restClientGetter) ToRESTConfig() (*rest.Config, error) {
+func (k *RestClientGetter) ToRESTConfig() (*rest.Config, error) {
 	return k.RestConfig, nil
 }
 
 // ToDiscoveryClient implemented interface method
-func (k *restClientGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
+func (k *RestClientGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
 	return memcached.NewMemCacheClient(k.Clientset.Discovery()), nil
 }
 
 // ToRESTMapper implemented interface method
-func (k *restClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
+func (k *RestClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
 	discoveryClient, err := k.ToDiscoveryClient()
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (k *restClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
 }
 
 // ToRawKubeConfigLoader implemented interface method
-func (k *restClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
+func (k *RestClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
 	// Build our config and client
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),

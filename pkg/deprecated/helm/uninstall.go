@@ -61,7 +61,7 @@ func (u *uninstaller) Uninstall(ctx context.Context, cfg *UninstallConfig) (*rel
 	if err != nil {
 		return nil, fmt.Errorf("unable to create kube client: %w", err)
 	}
-	rcg := &restClientGetter{RestConfig: cfg.Kubeconfig, Clientset: clientset}
+	rcg := &RestClientGetter{RestConfig: cfg.Kubeconfig, Clientset: clientset}
 	actionLogger := func(format string, v ...interface{}) { l.Debug(format, v) }
 
 	actionConfig := new(action.Configuration)
