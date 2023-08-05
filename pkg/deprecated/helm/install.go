@@ -101,7 +101,7 @@ func (i *installer) Install(ctx context.Context, config *InstallConfig) (*releas
 	upgr.Version = config.Chart.Version
 	upgr.ResetValues = true
 
-	rcg := &restClientGetter{RestConfig: kCfg, Clientset: clientset}
+	rcg := &RestClientGetter{RestConfig: kCfg, Clientset: clientset}
 	actionLogger := func(format string, v ...interface{}) { l.Debug(fmt.Sprintf(format, v...)) }
 
 	err = actionConfig.Init(rcg, upgr.Namespace, helmDriver, actionLogger)
