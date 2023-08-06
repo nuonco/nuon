@@ -87,7 +87,7 @@ func (r *HelmChartComponentResource) Configure(ctx context.Context, req resource
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -132,7 +132,7 @@ func (r *HelmChartComponentResource) Create(ctx context.Context, req resource.Cr
 	tflog.Trace(ctx, "creating component")
 	cfgInput, err := r.getConfigInput(data)
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "create component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component")
 		return
 	}
 
@@ -143,7 +143,7 @@ func (r *HelmChartComponentResource) Create(ctx context.Context, req resource.Cr
 		Config: cfgInput,
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "create component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component")
 		return
 	}
 	data.ID = types.StringValue(compResp.Id)
@@ -160,7 +160,7 @@ func (r *HelmChartComponentResource) Read(ctx context.Context, req resource.Read
 
 	compResp, err := r.client.GetComponent(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component")
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
@@ -177,12 +177,12 @@ func (r *HelmChartComponentResource) Delete(ctx context.Context, req resource.De
 
 	deleted, err := r.client.DeleteComponent(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
 
 	if !deleted {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
 }
@@ -198,7 +198,7 @@ func (r *HelmChartComponentResource) Update(ctx context.Context, req resource.Up
 	tflog.Trace(ctx, "updating component "+data.ID.ValueString())
 	cfgInput, err := r.getConfigInput(data)
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "update component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
 
@@ -209,7 +209,7 @@ func (r *HelmChartComponentResource) Update(ctx context.Context, req resource.Up
 		Config: cfgInput,
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "update component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
 

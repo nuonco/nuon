@@ -86,7 +86,7 @@ func (d *ConnectedReposDataSource) Configure(ctx context.Context, req datasource
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure data source")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure data source")
 		return
 	}
 

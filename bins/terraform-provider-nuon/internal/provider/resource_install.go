@@ -86,7 +86,7 @@ func (r *InstallResource) Configure(ctx context.Context, req resource.ConfigureR
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -105,7 +105,7 @@ func (r *InstallResource) Create(ctx context.Context, req resource.CreateRequest
 	tflog.Trace(ctx, "creating install")
 	region, err := stringToAPIRegion(data.Region.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "create install")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create install")
 		return
 	}
 
@@ -118,7 +118,7 @@ func (r *InstallResource) Create(ctx context.Context, req resource.CreateRequest
 		},
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "create install")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create install")
 		return
 	}
 	data.ID = types.StringValue(installResp.Id)
@@ -137,7 +137,7 @@ func (r *InstallResource) Create(ctx context.Context, req resource.CreateRequest
 				data.ID.ValueString(),
 			)
 			if err != nil {
-				writeDiagnosticsErr(ctx, resp.Diagnostics, err, "poll status")
+				writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "poll status")
 				return nil, string(gqlclient.StatusUnknown), err
 			}
 			return status, string(status), nil
@@ -148,13 +148,13 @@ func (r *InstallResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 	statusRaw, err := stateConf.WaitForState()
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get install")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get install")
 		return
 	}
 
 	status, ok := statusRaw.(gqlclient.Status)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("invalid install %s", status), "create install")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("invalid install %s", status), "create install")
 		return
 	}
 }
@@ -169,7 +169,7 @@ func (r *InstallResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 	installResp, err := r.client.GetInstall(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get install")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get install")
 		return
 	}
 	data.Name = types.StringValue(installResp.Name)
@@ -195,22 +195,22 @@ func (r *InstallResource) Update(ctx context.Context, req resource.UpdateRequest
 		Name: data.Name.ValueString(),
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "update install")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update install")
 		return
 	}
 
 	if installResp.GetSettings().(installAWSSettings).GetRole() != data.IAMRoleARN.ValueString() {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "IAM Role ARN changed")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "IAM Role ARN changed")
 		return
 	}
 
 	region, err := stringToAPIRegion(data.Region.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "invalid input region")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "invalid input region")
 		return
 	}
 	if installResp.GetSettings().(installAWSSettings).GetRegion() != region {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "AWS Region changed")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "AWS Region changed")
 		return
 	}
 
@@ -228,11 +228,11 @@ func (r *InstallResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 	deleted, err := r.client.DeleteInstall(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete install")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete install")
 		return
 	}
 	if !deleted {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete install")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete install")
 		return
 	}
 

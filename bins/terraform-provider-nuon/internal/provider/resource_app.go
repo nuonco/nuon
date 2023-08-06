@@ -70,7 +70,7 @@ func (r *AppResource) Configure(ctx context.Context, req resource.ConfigureReque
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -92,7 +92,7 @@ func (r *AppResource) Create(ctx context.Context, req resource.CreateRequest, re
 		OrgId: data.OrgID.ValueString(),
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "create app")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create app")
 		return
 	}
 	data.Name = types.StringValue(appResp.Name)
@@ -114,7 +114,7 @@ func (r *AppResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 
 	appResp, err := r.client.GetApp(ctx, data.Id.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get app")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get app")
 		return
 	}
 
@@ -136,7 +136,7 @@ func (r *AppResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		Name: data.Name.ValueString(),
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "upsert app")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "upsert app")
 		return
 	}
 
@@ -161,7 +161,7 @@ func (r *AppResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 		return
 	}
 	if !deleted {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete app")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete app")
 		return
 	}
 

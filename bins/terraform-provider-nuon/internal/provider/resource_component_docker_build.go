@@ -97,7 +97,7 @@ func (r *DockerBuildComponentResource) Configure(ctx context.Context, req resour
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -146,7 +146,7 @@ func (r *DockerBuildComponentResource) Create(ctx context.Context, req resource.
 
 	cfgInput, err := r.getConfigInput(data)
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get component config")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component config")
 		return
 	}
 
@@ -157,7 +157,7 @@ func (r *DockerBuildComponentResource) Create(ctx context.Context, req resource.
 		Config: cfgInput,
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "upsert component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "upsert component")
 		return
 	}
 	data.ID = types.StringValue(compResp.Id)
@@ -174,7 +174,7 @@ func (r *DockerBuildComponentResource) Read(ctx context.Context, req resource.Re
 
 	compResp, err := r.client.GetComponent(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component")
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
@@ -191,12 +191,12 @@ func (r *DockerBuildComponentResource) Delete(ctx context.Context, req resource.
 
 	deleted, err := r.client.DeleteComponent(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
 
 	if !deleted {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
 }
@@ -212,7 +212,7 @@ func (r *DockerBuildComponentResource) Update(ctx context.Context, req resource.
 	tflog.Trace(ctx, "updating component "+data.ID.ValueString())
 	cfgInput, err := r.getConfigInput(data)
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "update component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
 
@@ -223,7 +223,7 @@ func (r *DockerBuildComponentResource) Update(ctx context.Context, req resource.
 		Config: cfgInput,
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get app")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get app")
 		return
 	}
 
