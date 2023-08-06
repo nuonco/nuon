@@ -23,7 +23,7 @@ module "e2e" {
   description = "E2E image for testing nuon with an introspection api."
   about       = "E2E image for testing nuon with an introspection api."
 
-  region = local.aws_settings.region
+  region      = local.aws_settings.public_region
   providers = {
     aws = aws.public
   }
