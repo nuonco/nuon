@@ -47,6 +47,9 @@ test-integration:
 
 artifacts:
     RUN echo "noop..."
+    RUN mkdir -p out && \
+      touch out/.ignore
+    SAVE ARTIFACT out AS LOCAL ./out
 
 oci-artifacts:
     ARG repo=
