@@ -59,7 +59,7 @@ func (d *AppDataSource) Configure(ctx context.Context, req datasource.ConfigureR
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -76,7 +76,7 @@ func (d *AppDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 	tflog.Trace(ctx, "fetching app by id")
 	appResp, err := d.client.GetApp(ctx, data.Id.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get app")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get app")
 		return
 	}
 	data.Name = types.StringValue(appResp.Name)

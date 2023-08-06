@@ -80,7 +80,7 @@ func (r *DeployResource) Configure(ctx context.Context, req resource.ConfigureRe
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -103,7 +103,7 @@ func (r *DeployResource) Create(ctx context.Context, req resource.CreateRequest,
 		InstallId:   data.InstallID.ValueString(),
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "start deploy")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "start deploy")
 		return
 	}
 	data.ID = types.StringValue(buildResp.Id)
@@ -131,13 +131,13 @@ func (r *DeployResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 	statusRaw, err := stateConf.WaitForState()
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "poll deploy")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "poll deploy")
 		return
 	}
 
 	status, ok := statusRaw.(gqlclient.Status)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("invalid deploy status %s", status), "poll deploy")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("invalid deploy status %s", status), "poll deploy")
 		return
 	}
 }
@@ -152,7 +152,7 @@ func (r *DeployResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 	buildResp, err := r.client.GetDeploy(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component")
 		return
 	}
 	data.ID = types.StringValue(buildResp.Id)
