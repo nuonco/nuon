@@ -64,7 +64,7 @@ func (r *ContainerImageComponentResource) Configure(ctx context.Context, req res
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 	r.client = client
@@ -192,7 +192,7 @@ func (r *ContainerImageComponentResource) Create(ctx context.Context, req resour
 
 	cfgInput, err := r.getConfigInput(data)
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "map component configuration")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "map component configuration")
 		return
 	}
 
@@ -203,7 +203,7 @@ func (r *ContainerImageComponentResource) Create(ctx context.Context, req resour
 		Config: cfgInput,
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "upsert component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "upsert component")
 		return
 	}
 
@@ -224,7 +224,7 @@ func (r *ContainerImageComponentResource) Read(ctx context.Context, req resource
 
 	compResp, err := r.client.GetComponent(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component")
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
@@ -241,11 +241,11 @@ func (r *ContainerImageComponentResource) Delete(ctx context.Context, req resour
 
 	deleted, err := r.client.DeleteComponent(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
 	if !deleted {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
 }
@@ -261,7 +261,7 @@ func (r *ContainerImageComponentResource) Update(ctx context.Context, req resour
 	tflog.Trace(ctx, "updating component "+data.ID.ValueString())
 	cfgInput, err := r.getConfigInput(data)
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "update component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
 
@@ -272,7 +272,7 @@ func (r *ContainerImageComponentResource) Update(ctx context.Context, req resour
 		Config: cfgInput,
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "update component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
 

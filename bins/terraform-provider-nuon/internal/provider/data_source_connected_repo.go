@@ -79,7 +79,7 @@ func (d *ConnectedRepoDataSource) Configure(ctx context.Context, req datasource.
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -96,7 +96,7 @@ func (d *ConnectedRepoDataSource) Read(ctx context.Context, req datasource.ReadR
 	tflog.Trace(ctx, "fetching connected repo")
 	repoResp, err := d.client.GetConnectedRepo(ctx, data.OrgId.ValueString(), data.Name.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get connected repo")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get connected repo")
 		return
 	}
 

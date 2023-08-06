@@ -73,7 +73,7 @@ func (r *BuildResource) Configure(ctx context.Context, req resource.ConfigureReq
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -94,7 +94,7 @@ func (r *BuildResource) Create(ctx context.Context, req resource.CreateRequest, 
 		ComponentId: data.ComponentID.ValueString(),
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "create build")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create build")
 		return
 	}
 	data.ID = types.StringValue(buildResp.Id)
@@ -109,7 +109,7 @@ func (r *BuildResource) Create(ctx context.Context, req resource.CreateRequest, 
 				data.ID.ValueString(),
 			)
 			if err != nil {
-				writeDiagnosticsErr(ctx, resp.Diagnostics, err, "poll app")
+				writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "poll app")
 				return nil, string(gqlclient.StatusUnknown), err
 			}
 			return status, string(status), nil
@@ -120,13 +120,13 @@ func (r *BuildResource) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 	statusRaw, err := stateConf.WaitForState()
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "polling build")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "polling build")
 		return
 	}
 
 	status, ok := statusRaw.(gqlclient.Status)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, fmt.Sprintf("build status %s", status))
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, fmt.Sprintf("build status %s", status))
 		return
 	}
 }
@@ -141,7 +141,7 @@ func (r *BuildResource) Read(ctx context.Context, req resource.ReadRequest, resp
 
 	buildResp, err := r.client.GetBuild(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get build")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get build")
 		return
 	}
 	data.ID = types.StringValue(buildResp.Id)
@@ -174,11 +174,11 @@ func (r *BuildResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 
 	deleted, err := r.client.CancelBuild(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete build")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete build")
 		return
 	}
 	if !deleted {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "cancel build")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "cancel build")
 		return
 	}
 }

@@ -58,7 +58,7 @@ func (d *InstallDataSource) Configure(ctx context.Context, req datasource.Config
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -74,7 +74,7 @@ func (d *InstallDataSource) Read(ctx context.Context, req datasource.ReadRequest
 
 	installResp, err := d.client.GetInstall(ctx, data.Id.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get install")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get install")
 		return
 	}
 	data.Name = types.StringValue(installResp.Name)

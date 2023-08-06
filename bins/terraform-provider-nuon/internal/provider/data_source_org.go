@@ -58,7 +58,7 @@ func (d *OrgDataSource) Configure(ctx context.Context, req datasource.ConfigureR
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -74,7 +74,7 @@ func (d *OrgDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	orgResp, err := d.client.GetOrg(ctx, data.Id.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get org")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get org")
 		return
 	}
 	data.Name = types.StringValue(orgResp.Name)

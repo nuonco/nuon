@@ -87,7 +87,7 @@ func (r *TerraformModuleComponentResource) Configure(ctx context.Context, req re
 
 	client, ok := req.ProviderData.(gqlclient.Client)
 	if !ok {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
 		return
 	}
 
@@ -130,7 +130,7 @@ func (r *TerraformModuleComponentResource) Create(ctx context.Context, req resou
 	tflog.Trace(ctx, "creating component")
 	cfgInput, err := r.getConfigInput(data)
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "create component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component")
 		return
 	}
 
@@ -141,7 +141,7 @@ func (r *TerraformModuleComponentResource) Create(ctx context.Context, req resou
 		Config: cfgInput,
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "create component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component")
 		return
 	}
 	data.ID = types.StringValue(compResp.Id)
@@ -160,7 +160,7 @@ func (r *TerraformModuleComponentResource) Read(ctx context.Context, req resourc
 
 	compResp, err := r.client.GetComponent(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "get component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component")
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
@@ -177,12 +177,12 @@ func (r *TerraformModuleComponentResource) Delete(ctx context.Context, req resou
 
 	deleted, err := r.client.DeleteComponent(ctx, data.ID.ValueString())
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
 
 	if !deleted {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "delete component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
 }
@@ -198,7 +198,7 @@ func (r *TerraformModuleComponentResource) Update(ctx context.Context, req resou
 	tflog.Trace(ctx, "updating component "+data.ID.ValueString())
 	cfgInput, err := r.getConfigInput(data)
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "update component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
 
@@ -209,7 +209,7 @@ func (r *TerraformModuleComponentResource) Update(ctx context.Context, req resou
 		Config: cfgInput,
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, resp.Diagnostics, err, "update component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
 
