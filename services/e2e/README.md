@@ -10,3 +10,4 @@ Please read more in the [E2E service wiki](../../wiki/e2e-service).
 * `api` - an introspection api that exposes details about the install when running
 * `worker` - a basic background worker
 * `terraform` - terraform resources
+
