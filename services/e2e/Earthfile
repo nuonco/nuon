@@ -1,0 +1,58 @@
+VERSION --use-cache-command 0.6
+
+FROM ghcr.io/powertoolsdev/ci-go-builder
+
+WORKDIR /src
+
+ARG NAME=e2e
+ARG GOCACHE=/go-cache
+ARG GOMODCACHE=/go-mod-cache
+
+CACHE $GOCACHE
+CACHE $GOMODCACHE
+
+code:
+    FROM ../../.+deps
+    COPY --dir . ./services/$NAME
+    WORKDIR services/$NAME
+    RUN go generate ./...
+
+build:
+    FROM +code
+    RUN echo "building api..." && \
+        cd api && \
+        go \
+        -ldflags="-X 'github.com/powertoolsdev/mono/pkg/config.Version=$EARTHLY_TARGET_TAG_DOCKER'" \
+        build \
+        .
+
+    RUN echo "building worker..." && \
+        go \
+        build \
+        -o ./out/worker \
+        ./worker
+
+    RUN ls ./out
+    SAVE ARTIFACT ./out
+
+lint:
+    RUN echo "noop..."
+
+test:
+    FROM +code
+    RUN go test ./...
+
+test-integration:
+    RUN echo "noop..."
+
+artifacts:
+    RUN echo "noop..."
+
+oci-artifacts:
+    ARG repo=
+    ARG image_tag=
+
+    COPY +build/out/api /bin/api
+    COPY +build/out/worker /bin/worker
+
+    SAVE IMAGE --push $repo:$image_tag

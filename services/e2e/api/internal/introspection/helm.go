@@ -5,12 +5,9 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/pkg/helm"
-	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/release"
-	"k8s.io/client-go/kubernetes"
 )
 
 const helmDescription = "Returns details about the helm charts installed, and their values."
@@ -85,28 +82,4 @@ func (s *svc) getHelmHandler(ctx context.Context) (*helmResponse, error) {
 	}
 
 	return resp, nil
-}
-
-func (s *svc) getHelmCfg(ctx context.Context, namespace string) (*action.Configuration, error) {
-	l := zap.L()
-	actionLogger := func(format string, v ...interface{}) { l.Debug(fmt.Sprintf(format, v...)) }
-
-	kubeCfg, err := s.getKubeConfig(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get kube config: %w", err)
-	}
-
-	clientset, err := kubernetes.NewForConfig(kubeCfg)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get kube config: %w", err)
-	}
-
-	rcg := &helm.RestClientGetter{RestConfig: kubeCfg, Clientset: clientset}
-	actionCfg := new(action.Configuration)
-	err = actionCfg.Init(rcg, namespace, "secret", actionLogger)
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize action config: %w", err)
-	}
-
-	return actionCfg, nil
 }

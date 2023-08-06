@@ -27,6 +27,9 @@ services: |
 
 # to add a new directory that triggers a CI run for an artifact, update the list entry
 artifacts: |
+  services/e2e:
+    - services/e2e/**
+
   bins/nuonctl:
     - bins/nuonctl/**
   bins/terraform-provider-nuon:
