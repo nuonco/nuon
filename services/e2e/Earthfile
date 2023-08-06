@@ -13,6 +13,7 @@ CACHE $GOMODCACHE
 
 code:
     FROM ../../.+deps
+    COPY ../../pkg+code/pkg pkg
     COPY --dir . ./services/$NAME
     WORKDIR services/$NAME
     RUN go generate ./...
@@ -20,11 +21,10 @@ code:
 build:
     FROM +code
     RUN echo "building api..." && \
-        cd api && \
         go \
-        -ldflags="-X 'github.com/powertoolsdev/mono/pkg/config.Version=$EARTHLY_TARGET_TAG_DOCKER'" \
         build \
-        .
+        -o ./out/api \
+        ./api
 
     RUN echo "building worker..." && \
         go \
