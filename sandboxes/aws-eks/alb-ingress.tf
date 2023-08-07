@@ -24,7 +24,7 @@ resource "helm_release" "alb-ingress-controller" {
   namespace        = "kube-system"
   create_namespace = true
 
-  name       = "eks"
+  name       = "alb-ingress-controller"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
   version    = "1.4.7"
