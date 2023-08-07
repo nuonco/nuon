@@ -14,7 +14,7 @@ type EnvVar struct {
 func (e EnvVar) toKeyValueInput() *gqlclient.KeyValuePairInput {
 	return &gqlclient.KeyValuePairInput{
 		Key:   e.Name.ValueString(),
-		Value: e.Name.ValueString(),
+		Value: e.Value.ValueString(),
 	}
 }
 
@@ -89,6 +89,6 @@ func terraformVariableSharedBlock() schema.ListNestedBlock {
 func (e TerraformVariable) toKeyValueInput() *gqlclient.KeyValuePairInput {
 	return &gqlclient.KeyValuePairInput{
 		Key:   e.Name.ValueString(),
-		Value: e.Name.ValueString(),
+		Value: e.Value.ValueString(),
 	}
 }
