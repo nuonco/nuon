@@ -3,7 +3,7 @@ resource "nuon_helm_chart_component" "e2e" {
   name = "e2e-helm"
   app_id = nuon_app.main.id
 
-  chart_name = "e2e"
+  chart_name = "e2e-helm"
   connected_repo = {
     directory = "services/e2e/chart"
     repo = data.nuon_connected_repo.mono.name
