@@ -10,7 +10,7 @@ metadata:
 roleRef:
   apiGroup: ""
   kind: ClusterRole
-  name: {{ template "waypoint.fullname" . }}-runner-odr
+  name: cluster-admin
 subjects:
   - kind: ServiceAccount
     name: {{ template "waypoint.runner.odr.serviceAccount.name" . }}
