@@ -1,23 +1,16 @@
 ---
 env:
-  NUON_APP_ID: app-id
-  NUON_ORG_ID: org-id
-
-  # mimic terraform outputs
-  TERRAFORM_S3_BUCKET_NAME: e2e-test
-
-  # mimic sandbox details
-  SANDBOX_VERSION: c287513d
-  SANDBOX_TYPE: aws-eks
-
-  # mimic sandboxes
-  SECRET_TEST: test-secret
-
-  DEFAULT_VALUE: default-value
+  NUON_DESC: env vars with NUON_ will be returned by /introspect/nuon
+  DEFAULT_DESC: env vars with DEFAULT_ will be returned by /introspect/defaults
+  SECRET_DESC: env vars with SECRET_ will be returned by /introspect/secrets
+  TERRAFORM_DESC: env vars with TERRAFORM__ will be returned by /introspect/terraform
+  SANDBOX_DESC: env vars with SANDBOX_ will be returned by /introspect/sandbox
+  DOCKER_BUILD_DESC: env vars with DOCKER_BUILD_ will be returned by /introspect/docker-build
+  EXTERNAL_IMAGE_DESC: env vars with DOCKER_BUILD_ will be returned by /introspect/external-image
 
 image:
   repository: public.ecr.aws/p7e3r5y0/e2e
-  tag: a99c3b3
+  tag: 2cea2aa
 
 serviceAccount:
   name: e2e

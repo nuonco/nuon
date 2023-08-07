@@ -23,7 +23,14 @@ local_env:
   # mimic sandboxes
   SECRET_TEST: test-secret
 
+  # default value
   DEFAULT_VALUE: default-value
+
+  # docker build
+  DOCKER_BUILD_VALUE: docker-build-value
+
+  # external image value
+  EXTERNAL_IMAGE_VALUE: external-image-value
 
 local_cmds:
   - "go run ./api"

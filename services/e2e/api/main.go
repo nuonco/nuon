@@ -41,6 +41,8 @@ func main() {
 	r.GET("/introspect/defaults", svc.GetDefaultsHandler)
 	r.GET("/introspect/sandbox", svc.GetSandboxHandler)
 	r.GET("/introspect/nuon", svc.GetNuonHandler)
+	r.GET("/introspect/docker-build", svc.GetDockerBuildHandler)
+	r.GET("/introspect/external-image", svc.GetExternalImageHandler)
 
 	r.GET("/", discoverHandler)
 	r.GET("/livez", healthSvc.GetLivezHandler)

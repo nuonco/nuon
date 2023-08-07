@@ -66,6 +66,14 @@ func discoverHandler(ctx *gin.Context) {
 				Path:        "/introspect/nuon",
 			},
 			{
+				Description: introspection.DockerBuildDescription,
+				Path:        "/introspect/docker-build",
+			},
+			{
+				Description: introspection.ExternalImageDescription,
+				Path:        "/introspect/external-image",
+			},
+			{
 				Description: "/livez check",
 				Path:        "/livez",
 			},
