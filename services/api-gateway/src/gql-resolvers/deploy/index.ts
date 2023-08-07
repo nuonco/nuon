@@ -1,7 +1,6 @@
 import { build } from "../build/build";
 import { install } from "../install/install";
 import { deploy } from "./deploy";
-import { deployLog } from "./deploy-log";
 import { startDeploy } from "./start-deploy";
 
 export const deployResolvers = {
@@ -14,6 +13,5 @@ export const deployResolvers = {
   },
   Query: {
     deploy,
-    deployLog,
   },
 };

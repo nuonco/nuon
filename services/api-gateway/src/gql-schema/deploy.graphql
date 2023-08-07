@@ -38,7 +38,6 @@ input DeployInput {
 ##############################################################################
 extend type Query {
   deploy(id: ID, instanceId: ID): Deploy!
-  deployLog(deployId: ID!, orgId: ID!): DeployLog!
 }
 
 ##############################################################################
