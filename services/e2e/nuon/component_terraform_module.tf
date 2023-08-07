@@ -10,10 +10,10 @@ resource "nuon_terraform_module_component" "e2e" {
 
   var {
     name = "install_id"
-    value = "{{.nuon.install_id}}"
+    value = "{{.nuon.install.id}}"
   }
   var {
     name = "region"
-    value = "{{.nuon.install.sandbox.outputs.account_region}}"
+    value = "{{.nuon.install.sandbox.outputs.account.region}}"
   }
 }

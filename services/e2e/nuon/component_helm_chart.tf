@@ -26,9 +26,9 @@ locals {
     "env.DEFAULT_VALUE" = "set-by-terraform-provider-as-default"
 
     // nuon built ins
-    "env.NUON_APP_ID" = "{{.nuon.app_id}}"
-    "env.NUON_ORG_ID" = "{{.nuon.org_id}}"
-    "env.NUON_INSTALL_ID" = "{{.nuon.install_id}}"
+    "env.NUON_APP_ID" = "{{.nuon.app.id}}"
+    "env.NUON_ORG_ID" = "{{.nuon.org.id}}"
+    "env.NUON_INSTALL_ID" = "{{.nuon.install.id}}"
 
     // image component outputs
     "env.EXTERNAL_IMAGE_TAG" = "{{.nuon.components.e2e_external_image.image.tag}}"
@@ -45,12 +45,12 @@ locals {
     "env.DOCKER_BUILD_REGISTRY_ID" = "{{.nuon.components.e2e_docker_build.image.registry.id}}"
 
     // terraform component outputs
-    "env.TERRAFORM_REPO_NAME" = "{{.nuon.components.e2e_infra.outputs.repo_name}}"
-    "env.TERRAFORM_BUCKET_NAME" = "{{.nuon.components.e2e_infra.outputs.bucket_name}}"
+    "env.TERRAFORM_REPO_NAME" = "{{.nuon.components.e2e-infra.outputs.repo_name}}"
+    "env.TERRAFORM_BUCKET_NAME" = "{{.nuon.components.e2e-infra.outputs.bucket_name}}"
 
     // sandbox outputs
     "env.SANDBOX_TYPE" = "{{.nuon.install.sandbox.type}}"
-    "env.SANDBOX_VERSION" = "{{.nuon.install.sandbox.version}}"
+    "env.SANDBOX_VERSION" = "sandbox-{{.nuon.install.sandbox.version}}"
     "env.SANDBOX_PUBLIC_DOMAIN" = "{{.nuon.install.public_domain}}"
     "env.SANDBOX_INTERNAL_DOMAIN" = "{{.nuon.install.internal_domain}}"
     // sandbox runner outputs
