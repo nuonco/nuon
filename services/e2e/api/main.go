@@ -42,6 +42,7 @@ func main() {
 	r.GET("/introspect/sandbox", svc.GetSandboxHandler)
 	r.GET("/introspect/nuon", svc.GetNuonHandler)
 
+	r.GET("/", discoverHandler)
 	r.GET("/livez", healthSvc.GetLivezHandler)
 	r.GET("/readyz", healthSvc.GetReadyzHandler)
 

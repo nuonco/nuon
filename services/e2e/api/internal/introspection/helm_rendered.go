@@ -10,7 +10,7 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 )
 
-const helmRenderedDescription = "Returns the rendered manifests for a helm deploy."
+const HelmRenderedDescription = "Returns the rendered manifests for a helm deploy."
 
 func (s *svc) GetHelmRenderedHandler(ctx *gin.Context) {
 	namespace := ctx.Param("namespace")
@@ -19,7 +19,7 @@ func (s *svc) GetHelmRenderedHandler(ctx *gin.Context) {
 	resp, err := s.getHelmRendered(ctx, namespace, name)
 	if err != nil {
 		s.writeErrResponse(ctx, ErrResponse{
-			Description: helmRenderedDescription,
+			Description: HelmRenderedDescription,
 			Err:         err,
 		})
 		return

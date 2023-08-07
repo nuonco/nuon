@@ -8,7 +8,7 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 )
 
-const helmValuesDescription = "Returns the final values for a helm chart deployment"
+const HelmValuesDescription = "Returns the final values for a helm chart deployment"
 
 func (s *svc) GetHelmValuesHandler(ctx *gin.Context) {
 	namespace := ctx.Param("namespace")
@@ -17,14 +17,14 @@ func (s *svc) GetHelmValuesHandler(ctx *gin.Context) {
 	resp, err := s.getHelmValues(ctx, namespace, name)
 	if err != nil {
 		s.writeErrResponse(ctx, ErrResponse{
-			Description: helmValuesDescription,
+			Description: HelmValuesDescription,
 			Err:         err,
 		})
 		return
 	}
 
 	s.writeOKResponse(ctx, OKResponse{
-		Description: helmValuesDescription,
+		Description: HelmValuesDescription,
 		Response:    resp,
 	})
 }

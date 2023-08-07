@@ -8,20 +8,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const envDescription = "Returns the entire environment of the running service."
+const EnvDescription = "Returns the entire environment of the running service."
 
 func (s *svc) GetEnvHandler(ctx *gin.Context) {
 	resp, err := s.getEnvHandler(ctx)
 	if err != nil {
 		s.writeErrResponse(ctx, ErrResponse{
-			Description: envDescription,
+			Description: EnvDescription,
 			Err:         err,
 		})
 		return
 	}
 
 	s.writeOKResponse(ctx, OKResponse{
-		Description: envDescription,
+		Description: EnvDescription,
 		Response:    resp,
 	})
 }

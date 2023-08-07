@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const namespaceDescription = "Returns details about a namespace"
+const KubeNamespaceDescription = "Returns details about a namespace"
 
 func (s *svc) GetNamespaceHandler(ctx *gin.Context) {
 	namespace := ctx.Param("namespace")
@@ -18,14 +18,14 @@ func (s *svc) GetNamespaceHandler(ctx *gin.Context) {
 	resp, err := s.getNamespaceHandler(ctx, namespace)
 	if err != nil {
 		s.writeErrResponse(ctx, ErrResponse{
-			Description: kubeDescription,
+			Description: KubeNamespaceDescription,
 			Err:         err,
 		})
 		return
 	}
 
 	s.writeOKResponse(ctx, OKResponse{
-		Description: kubeDescription,
+		Description: KubeNamespaceDescription,
 		Response:    resp,
 	})
 }

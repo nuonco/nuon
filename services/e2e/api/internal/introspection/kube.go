@@ -10,20 +10,20 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const kubeDescription = "Returns details about the kubernetes cluster and what is running in it."
+const KubeDescription = "Returns details about the kubernetes cluster and what is running in it."
 
 func (s *svc) GetKubeHandler(ctx *gin.Context) {
 	resp, err := s.getKubeHandler(ctx)
 	if err != nil {
 		s.writeErrResponse(ctx, ErrResponse{
-			Description: kubeDescription,
+			Description: KubeDescription,
 			Err:         err,
 		})
 		return
 	}
 
 	s.writeOKResponse(ctx, OKResponse{
-		Description: kubeDescription,
+		Description: KubeDescription,
 		Response:    resp,
 	})
 }

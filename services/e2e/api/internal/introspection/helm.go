@@ -10,20 +10,20 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 )
 
-const helmDescription = "Returns details about the helm charts installed, and their values."
+const HelmDescription = "Returns details about the helm charts installed, and their values."
 
 func (s *svc) GetHelmHandler(ctx *gin.Context) {
 	resp, err := s.getHelmHandler(ctx)
 	if err != nil {
 		s.writeErrResponse(ctx, ErrResponse{
-			Description: helmDescription,
+			Description: HelmDescription,
 			Err:         err,
 		})
 		return
 	}
 
 	s.writeOKResponse(ctx, OKResponse{
-		Description: helmDescription,
+		Description: HelmDescription,
 		Response:    resp,
 	})
 }

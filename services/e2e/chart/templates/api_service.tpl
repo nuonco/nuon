@@ -9,8 +9,8 @@ metadata:
 spec:
   clusterIP: None
   ports:
-    - name: https
-      port: {{ .Values.api.port }}
-      targetPort: https
+    - name: http
+      port: 80
+      targetPort: http
   selector:
     {{- include "common.apiSelectorLabels" . | nindent 4 }}
