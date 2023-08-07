@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "common.fullname" . }}-nlb-public
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "common.apiLabels" . | nindent 4 }}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=false
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.api.nlbs.public_domain }}
+spec:
+  type: LoadBalancer
+  loadBalancerClass: service.k8s.aws/nlb
+  allocateLoadBalancerNodePorts: false
+  externalTrafficPolicy: Local
+  internalTrafficPolicy: Local
+  selector:
+    {{- include "common.apiSelectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 443
+      targetPort: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "common.fullname" . }}-nlb-internal
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "common.apiLabels" . | nindent 4 }}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=false
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.api.nlbs.internal_domain }}
+spec:
+  type: LoadBalancer
+  loadBalancerClass: service.k8s.aws/nlb
+  allocateLoadBalancerNodePorts: false
+  externalTrafficPolicy: Local
+  internalTrafficPolicy: Local
+  selector:
+    {{- include "common.apiSelectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 443
+      targetPort: http

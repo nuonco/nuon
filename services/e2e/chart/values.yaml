@@ -1,0 +1,51 @@
+---
+env:
+  NUON_APP_ID: app-id
+  NUON_ORG_ID: org-id
+
+  # mimic terraform outputs
+  TERRAFORM_S3_BUCKET_NAME: e2e-test
+
+  # mimic sandbox details
+  SANDBOX_VERSION: c287513d
+  SANDBOX_TYPE: aws-eks
+
+  # mimic sandboxes
+  SECRET_TEST: test-secret
+
+  DEFAULT_VALUE: default-value
+
+image:
+  repository: public.ecr.aws/p7e3r5y0/e2e
+  tag: 6b16e6e
+
+serviceAccount:
+  name: e2e
+  annotations: {}
+
+worker:
+  autoscaling:
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 50
+
+api:
+  port: 8080
+  liveness_probe: /livez
+  readiness_probe: /readyz
+
+  ingresses:
+    public_domain: api.inlji8jobbibicfo0sct5ytcmf.stage.nuon.run
+    internal_domain: api.internal.inlji8jobbibicfo0sct5ytcmf.stage.nuon.run
+
+  nlbs:
+    public_domain: nlb.inlji8jobbibicfo0sct5ytcmf.stage.nuon.run
+    internal_domain: nlb.internal.inlji8jobbibicfo0sct5ytcmf.stage.nuon.run
+    public_acm_cert: ""
+
+  autoscaling:
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 50
