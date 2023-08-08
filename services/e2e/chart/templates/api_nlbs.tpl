@@ -11,6 +11,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=false
     external-dns.alpha.kubernetes.io/hostname: {{ .Values.api.nlbs.public_domain }}
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.api.nlbs.public_domain_certificate_arn }}
 spec:
   type: LoadBalancer
   loadBalancerClass: service.k8s.aws/nlb

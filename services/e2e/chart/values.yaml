@@ -35,7 +35,7 @@ api:
   nlbs:
     public_domain: nlb.INSTALL_PUBLIC_DOMAIN
     internal_domain: nlb.internal.INSTALL_INTERNAL_DOMAIN
-    public_acm_cert: ""
+    public_domain_certificate: nbl.PUBLIC_DOMAIN_CERTIFICATE
 
   autoscaling:
     minReplicas: 1

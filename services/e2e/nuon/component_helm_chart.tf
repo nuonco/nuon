@@ -36,6 +36,7 @@ locals {
     "api.ingresses.internal_domain" = "api.{{.nuon.install.internal_domain}}"
     "api.nlbs.public_domain" = "nlb.{{.nuon.install.public_domain}}"
     "api.nlbs.internal_domain" = "nlb.internal.{{.nuon.install.internal_domain}}"
+    "api.nlbs.public_domain_certificate_arn" = "nlb.{{.nuon.components.e2e_infra.outputs.public_domain_certificate_arn}}"
 
     "env.DEFAULT_VALUE" = "set-by-terraform-provider-as-default"
   }
@@ -63,6 +64,7 @@ locals {
     // terraform component outputs
     "env.TERRAFORM_REPO_NAME" = "{{.nuon.components.e2e_infra.outputs.repo_name}}"
     "env.TERRAFORM_BUCKET_NAME" = "{{.nuon.components.e2e_infra.outputs.bucket_name}}"
+    "env.TERRAFORM_PUBLIC_DOMAIN_CERTIFICATE_ARN" = "{{.nuon.components.e2e_infra.outputs.public_domain_certificate_arn}}"
 
     // sandbox outputs
     "env.SANDBOX_TYPE" = "{{.nuon.install.sandbox.type}}"
