@@ -29,12 +29,12 @@ api:
   readiness_probe: /readyz
 
   ingresses:
-    public_domain: api.inlji8jobbibicfo0sct5ytcmf.stage.nuon.run
-    internal_domain: api.internal.inlji8jobbibicfo0sct5ytcmf.stage.nuon.run
+    public_domain: api.INSTALL_PUBLIC_DOMAIN
+    internal_domain: api.internal.INSTALL_INTERNAL_DOMAIN
 
   nlbs:
-    public_domain: nlb.inlji8jobbibicfo0sct5ytcmf.stage.nuon.run
-    internal_domain: nlb.internal.inlji8jobbibicfo0sct5ytcmf.stage.nuon.run
+    public_domain: nlb.INSTALL_PUBLIC_DOMAIN
+    internal_domain: nlb.internal.INSTALL_INTERNAL_DOMAIN
     public_acm_cert: ""
 
   autoscaling:

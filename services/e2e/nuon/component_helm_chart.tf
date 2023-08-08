@@ -1,6 +1,6 @@
 // nuon allows you to connect any helm chart in a connected or public repo to install in your application
 resource "nuon_helm_chart_component" "e2e" {
-  name = "e2e-helm"
+  name = "e2e_helm"
   app_id = nuon_app.main.id
 
   chart_name = "e2e-helm"
@@ -11,6 +11,15 @@ resource "nuon_helm_chart_component" "e2e" {
   }
 
   // dynamically set env vars from another source
+  dynamic "value" {
+    for_each = local.all_available_helm_values
+    iterator = ev
+    content {
+      name = ev.key
+      value = ev.value
+    }
+  }
+
   dynamic "value" {
     for_each = local.helm_values
     iterator = ev
@@ -23,8 +32,15 @@ resource "nuon_helm_chart_component" "e2e" {
 
 locals {
   helm_values = {
-    "env.DEFAULT_VALUE" = "set-by-terraform-provider-as-default"
+    "api.ingresses.public_domain" = "api.{{.nuon.install.public_domain}}"
+    "api.ingresses.internal_domain" = "api.{{.nuon.install.internal_domain}}"
+    "api.nlbs.public_domain" = "nlb.{{.nuon.install.public_domain}}"
+    "api.nlbs.internal_domain" = "nlb.internal.{{.nuon.install.internal_domain}}"
 
+    "env.DEFAULT_VALUE" = "set-by-terraform-provider-as-default"
+  }
+
+  all_available_helm_values = {
     // nuon built ins
     "env.NUON_APP_ID" = "{{.nuon.app.id}}"
     "env.NUON_ORG_ID" = "{{.nuon.org.id}}"
@@ -45,8 +61,8 @@ locals {
     "env.DOCKER_BUILD_REGISTRY_ID" = "!!str {{.nuon.components.e2e_docker_build.image.registry.id}}"
 
     // terraform component outputs
-    "env.TERRAFORM_REPO_NAME" = "{{.nuon.components.e2e-infra.outputs.repo_name}}"
-    "env.TERRAFORM_BUCKET_NAME" = "{{.nuon.components.e2e-infra.outputs.bucket_name}}"
+    "env.TERRAFORM_REPO_NAME" = "{{.nuon.components.e2e_infra.outputs.repo_name}}"
+    "env.TERRAFORM_BUCKET_NAME" = "{{.nuon.components.e2e_infra.outputs.bucket_name}}"
 
     // sandbox outputs
     "env.SANDBOX_TYPE" = "{{.nuon.install.sandbox.type}}"
@@ -69,7 +85,7 @@ locals {
     "env.SANDBOX_OUTPUT_VPC_AZS" = "{{.nuon.install.sandbox.outputs.vpc.azs}}"
     "env.SANDBOX_OUTPUT_VPC_PRIVATE_SUBNET_CIDR_BLOCKS" = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_cidr_blocks}}"
     "env.SANDBOX_OUTPUT_VPC_PRIVATE_SUBNET_IDS" = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids}}"
-    "env.SANDBOX_OUTPUT_VPC_PUBLIC_SUBNET_CIDR_BLOCKS" = "{{.nuon.install.sandbox.outputs.vpc.public_subnet_cidr_blocks}}"
+    "env.SANDBOX_OUTPUT_VPC_PUBLIC_SUBNET_CIDR_BLOCKS" = "{{.nuon.install.sandbox.outputs.vpc.public_subnets_cidr_blocks}}"
     "env.SANDBOX_OUTPUT_VPC_PUBLIC_SUBNET_IDS" = "{{.nuon.install.sandbox.outputs.vpc.public_subnet_ids}}"
     // sandbox account outputs
     "env.SANDBOX_OUTPUT_ACCOUNT_ID" = "!!str {{.nuon.install.sandbox.outputs.account.id}}"

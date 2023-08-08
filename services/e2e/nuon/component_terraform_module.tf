@@ -1,5 +1,5 @@
 resource "nuon_terraform_module_component" "e2e" {
-  name = "e2e-infra"
+  name = "e2e_infra"
   app_id = nuon_app.main.id
 
   connected_repo = {
@@ -15,5 +15,15 @@ resource "nuon_terraform_module_component" "e2e" {
   var {
     name = "region"
     value = "{{.nuon.install.sandbox.outputs.account.region}}"
+  }
+
+  var {
+    name = "public_domain"
+    value = "{{.nuon.install.public_domain}}"
+  }
+
+  var {
+    name = "public_domain_zone_id"
+    value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
   }
 }
