@@ -29,7 +29,7 @@ output "vpc" {
     private_subnet_cidr_blocks = module.vpc.private_subnets_cidr_blocks
     private_subnet_ids = module.vpc.private_subnets
 
-    public_subnets_cidr_blocks = module.vpc.public_subnets_cidr_blocks
+    public_subnet_cidr_blocks = module.vpc.public_subnet_cidr_blocks
     public_subnet_ids = module.vpc.public_subnets
   }
 }
