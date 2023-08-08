@@ -4,7 +4,7 @@ resource "nuon_docker_build_component" "e2e" {
 
   dockerfile = "Dockerfile"
   connected_repo = {
-    directory = "demo/components/go-httpbin"
+    directory = "components/go-httpbin"
     repo = "powertoolsdev/demo"
     branch = "main"
   }

@@ -6,6 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	sdk "github.com/hashicorp/waypoint-plugin-sdk"
 	"github.com/powertoolsdev/mono/bins/waypoint-plugin-noop/internal/builder"
+	"github.com/powertoolsdev/mono/bins/waypoint-plugin-noop/internal/platform"
 	"github.com/powertoolsdev/mono/bins/waypoint-plugin-noop/internal/registry"
 )
 
@@ -22,9 +23,15 @@ func main() {
 		log.Fatalf("unable to initialize registry plugin: %s", err)
 	}
 
+	platformPlugin, err := platform.New(v)
+	if err != nil {
+		log.Fatalf("unable to initialize platform plugin: %s", err)
+	}
+
 	sdk.Main(sdk.WithComponents(
 		buildPlugin,
 		registryPlugin,
+		platformPlugin,
 	),
 	// NOTE(jm): eventually, we are going to move the oci plugin stuff into it's own, and expose an OCI artifact
 	// properly.

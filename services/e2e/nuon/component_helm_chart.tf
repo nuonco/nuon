@@ -35,14 +35,14 @@ locals {
     "env.EXTERNAL_IMAGE_REPOSITORY_ARN" = "{{.nuon.components.e2e_external_image.image.repository.arn}}"
     "env.EXTERNAL_IMAGE_REPOSITORY_NAME" = "{{.nuon.components.e2e_external_image.image.repository.name}}"
     "env.EXTERNAL_IMAGE_REPOSITORY_URI" = "{{.nuon.components.e2e_external_image.image.repository.uri}}"
-    "env.EXTERNAL_IMAGE_REGISTRY_ID" = "{{.nuon.components.e2e_external_image.image.registry.id}}"
+    "env.EXTERNAL_IMAGE_REGISTRY_ID" = "!!str {{.nuon.components.e2e_external_image.image.registry.id}}"
 
     // docker build component outputs
     "env.DOCKER_BUILD_TAG" = "{{.nuon.components.e2e_docker_build.image.tag}}"
     "env.DOCKER_BUILD_REPOSITORY_ARN" = "{{.nuon.components.e2e_docker_build.image.repository.arn}}"
     "env.DOCKER_BUILD_REPOSITORY_NAME" = "{{.nuon.components.e2e_docker_build.image.repository.name}}"
     "env.DOCKER_BUILD_REPOSITORY_URI" = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
-    "env.DOCKER_BUILD_REGISTRY_ID" = "{{.nuon.components.e2e_docker_build.image.registry.id}}"
+    "env.DOCKER_BUILD_REGISTRY_ID" = "!!str {{.nuon.components.e2e_docker_build.image.registry.id}}"
 
     // terraform component outputs
     "env.TERRAFORM_REPO_NAME" = "{{.nuon.components.e2e-infra.outputs.repo_name}}"
@@ -50,7 +50,7 @@ locals {
 
     // sandbox outputs
     "env.SANDBOX_TYPE" = "{{.nuon.install.sandbox.type}}"
-    "env.SANDBOX_VERSION" = "sandbox-{{.nuon.install.sandbox.version}}"
+    "env.SANDBOX_VERSION" = "!!str {{.nuon.install.sandbox.version}}"
     "env.SANDBOX_PUBLIC_DOMAIN" = "{{.nuon.install.public_domain}}"
     "env.SANDBOX_INTERNAL_DOMAIN" = "{{.nuon.install.internal_domain}}"
     // sandbox runner outputs
@@ -72,13 +72,13 @@ locals {
     "env.SANDBOX_OUTPUT_VPC_PUBLIC_SUBNET_CIDR_BLOCKS" = "{{.nuon.install.sandbox.outputs.vpc.public_subnet_cidr_blocks}}"
     "env.SANDBOX_OUTPUT_VPC_PUBLIC_SUBNET_IDS" = "{{.nuon.install.sandbox.outputs.vpc.public_subnet_ids}}"
     // sandbox account outputs
-    "env.SANDBOX_OUTPUT_ACCOUNT_ID" = "{{.nuon.install.sandbox.outputs.account.id}}"
+    "env.SANDBOX_OUTPUT_ACCOUNT_ID" = "!!str {{.nuon.install.sandbox.outputs.account.id}}"
     "env.SANDBOX_OUTPUT_ACCOUNT_REGION" = "{{.nuon.install.sandbox.outputs.account.region}}"
     // sandbox ecr outputs
     "env.SANDBOX_OUTPUT_ECR_REPOSITORY_URL" = "{{.nuon.install.sandbox.outputs.ecr.repository_url}}"
     "env.SANDBOX_OUTPUT_ECR_REPOSITORY_ARN" = "{{.nuon.install.sandbox.outputs.ecr.repository_arn}}"
     "env.SANDBOX_OUTPUT_ECR_REPOSITORY_NAME" = "{{.nuon.install.sandbox.outputs.ecr.repository_name}}"
-    "env.SANDBOX_OUTPUT_ECR_REGISTRY_ID" = "{{.nuon.install.sandbox.outputs.ecr.registry_id}}"
+    "env.SANDBOX_OUTPUT_ECR_REGISTRY_ID" = "!!str {{.nuon.install.sandbox.outputs.ecr.registry_id}}"
     "env.SANDBOX_OUTPUT_ECR_REGISTRY_URL" = "{{.nuon.install.sandbox.outputs.ecr.registry_url}}"
     // sandbox public domain outputs
     "env.SANDBOX_OUTPUT_PUBLIC_DOMAIN_NAMESERVERS" = "{{.nuon.install.sandbox.outputs.public_domain.nameservers}}"

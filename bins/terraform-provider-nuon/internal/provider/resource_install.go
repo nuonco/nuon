@@ -124,7 +124,7 @@ func (r *InstallResource) Create(ctx context.Context, req resource.CreateRequest
 	data.ID = types.StringValue(installResp.Id)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "successfully created app")
+	tflog.Trace(ctx, "successfully created install")
 
 	stateConf := &retry.StateChangeConf{
 		Pending: []string{string(gqlclient.StatusProvisioning), string(gqlclient.StatusUnknown)},
