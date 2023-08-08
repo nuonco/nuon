@@ -36,7 +36,7 @@ type VPCOutputs struct {
 	PrivateSubnetCidrBlocks []interface{} `mapstructure:"private_subnet_cidr_blocks" validate:"required" faker:"stringSliceAsInt"`
 	PrivateSubnetIDs        []interface{} `mapstructure:"private_subnet_ids" validate:"required" faker:"stringSliceAsInt"`
 	PublicSubnetIDs         []interface{} `mapstructure:"public_subnet_ids" validate:"required" faker:"stringSliceAsInt"`
-	PublicSubnetCidrBlocks  []interface{} `mapstructure:"public_subnets_cidr_blocks" validate:"required" faker:"stringSliceAsInt"`
+	PublicSubnetCidrBlocks  []interface{} `mapstructure:"public_subnet_cidr_blocks" validate:"required" faker:"stringSliceAsInt"`
 }
 
 type AccountOutputs struct {
