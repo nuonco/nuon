@@ -1,9 +1,6 @@
 locals {
   # please keep alphabetical!
   members = {
-    chrispotter : {
-      teams : [github_team.team.name, github_team.backend.name, ]
-    },
     ExecutiveDre : {
       teams : [github_team.team.name, ]
     },
