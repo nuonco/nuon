@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	publicAPIAddress string = "api.prod.nuon.co/graphql"
+	publicAPIAddress string = "https://api.prod.nuon.co/graphql"
 )
 
 type cli struct {
