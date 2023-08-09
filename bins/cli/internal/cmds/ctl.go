@@ -75,5 +75,47 @@ func (c *cli) registerCtl(ctx context.Context, rootCmd *cobra.Command) error {
 	deployCmd.PersistentFlags().BoolVar(&deployOpts.Latest, "latest", true, "latest")
 	rootCmd.AddCommand(deployCmd)
 
+	installCmd := &cobra.Command{
+		Use:   "install",
+		Short: "get, view status or create an install",
+	}
+
+	createInstallOpts := &app.CreateInstallOpts{}
+	createInstallCmd := &cobra.Command{
+		Use:   "create",
+		Short: "create a new install",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmds.CreateInstall(ctx, createInstallOpts)
+		},
+	}
+	createInstallCmd.PersistentFlags().StringVar(&createInstallOpts.InstallName, "install-name", "", "install name")
+	createInstallCmd.PersistentFlags().StringVar(&createInstallOpts.InstallRegion, "install-region", "", "install region")
+	createInstallCmd.PersistentFlags().StringVar(&createInstallOpts.InstallARN, "install-arn", "", "install ARN")
+	installCmd.AddCommand(createInstallCmd)
+
+	getInstallOpts := &app.GetInstallOpts{}
+	getInstallCmd := &cobra.Command{
+		Use:   "get",
+		Short: "get an install by ID",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmds.GetInstall(ctx, getInstallOpts)
+		},
+	}
+	getInstallCmd.PersistentFlags().StringVar(&getInstallOpts.InstallID, "install-id", "", "install ID")
+	installCmd.AddCommand(getInstallCmd)
+
+	var installID string
+	getInstallStatusCmd := &cobra.Command{
+		Use:   "status",
+		Short: "check install status by ID",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmds.GetInstallStatus(ctx, installID)
+		},
+	}
+	getInstallStatusCmd.PersistentFlags().StringVar(&installID, "install-id", "", "install ID")
+	installCmd.AddCommand(getInstallStatusCmd)
+
+	rootCmd.AddCommand(installCmd)
+
 	return nil
 }
