@@ -1,0 +1,51 @@
+VERSION --use-cache-command 0.6
+
+FROM ghcr.io/powertoolsdev/ci-go-builder
+
+WORKDIR /src
+
+ARG BIN=cli
+ARG GOCACHE=/go-cache
+ARG GOMODCACHE=/go-mod-cache
+CACHE $GOCACHE
+CACHE $GOMODCACHE
+
+code:
+    FROM ../../.+deps
+    COPY ../../pkg+code/pkg pkg
+    COPY --dir . ./bins/$BIN
+    WORKDIR bins/$BIN
+    RUN go generate ./...
+
+lint:
+    FROM +code
+
+test:
+    FROM +code
+    RUN go test ./...
+
+test-integration:
+    RUN echo "noop..."
+
+artifacts:
+    FROM +code
+    RUN mkdir -p out
+
+    # mac builds
+    RUN GOOS=darwin GOARCH=arm64 go build -o ./out/nuon_darwin_arm64 .
+    RUN GOOS=darwin GOARCH=amd64 go build -o ./out/nuon_darwin_amd64 .
+
+    # linux builds
+    RUN GOOS=linux GOARCH=arm go build -o ./out/nuon_linux_arm .
+    RUN GOOS=linux GOARCH=arm64 go build -o ./out/nuon_linux_arm64 .
+    RUN GOOS=linux GOARCH=386 go build -o ./out/nuon_linux_386 .
+
+    SAVE ARTIFACT out AS LOCAL ./out
+
+oci-artifacts:
+    RUN mkdir -p /bin
+    COPY +artifacts/out/nuon_linux_arm64 /bin/nuon
+
+    ARG repo=
+    ARG image_tag=
+    SAVE IMAGE --push $repo:$image_tag
