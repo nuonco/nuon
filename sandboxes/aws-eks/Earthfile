@@ -12,7 +12,7 @@ test:
 
 artifacts:
     RUN mkdir -p out
-    COPY --dir artifacts ./out
+    COPY --dir artifacts/* ./out
     SAVE ARTIFACT out AS LOCAL ./out
 
 oci-artifacts:
