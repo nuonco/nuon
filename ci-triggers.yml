@@ -32,6 +32,8 @@ artifacts: |
 
   bins/nuonctl:
     - bins/nuonctl/**
+  bins/cli:
+    - bins/cli/**
   bins/terraform-provider-nuon:
     - bins/terraform-provider-nuon/**
 
