@@ -116,6 +116,24 @@ data "aws_iam_policy_document" "s3_bucket_policy" {
       values   = [local.org_id]
     }
   }
+
+  // allow a few select public paths in the artifacts bucket
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:ListBucket",
+    ]
+    resources = [
+      "arn:aws:s3:::${local.bucket_name}/cli/*",
+      "arn:aws:s3:::${local.bucket_name}/sandbox/*",
+      "arn:aws:s3:::${local.bucket_name}/terraform-provider-nuon/*",
+    ]
+    principals {
+      type        = "AWS"
+      identifiers = ["*", ]
+    }
+  }
 }
 
 module "bucket" {

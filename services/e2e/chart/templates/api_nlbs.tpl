@@ -6,6 +6,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "common.apiLabels" . | nindent 4 }}
+
+  # NOTE: we run the 2.5.* version, please reference annotations here
+  # https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.5/guide/service/annotations/
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing

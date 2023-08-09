@@ -36,7 +36,7 @@ locals {
     "api.ingresses.internal_domain" = "api.{{.nuon.install.internal_domain}}"
     "api.nlbs.public_domain" = "nlb.{{.nuon.install.public_domain}}"
     "api.nlbs.internal_domain" = "nlb.internal.{{.nuon.install.internal_domain}}"
-    "api.nlbs.public_domain_certificate_arn" = "nlb.{{.nuon.components.e2e_infra.outputs.public_domain_certificate_arn}}"
+    "api.nlbs.public_domain_certificate_arn" = "{{.nuon.components.e2e_infra.outputs.public_domain_certificate_arn}}"
 
     "env.DEFAULT_VALUE" = "set-by-terraform-provider-as-default"
   }

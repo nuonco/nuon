@@ -13,6 +13,23 @@ module "nuonctl" {
   }
 }
 
+module "cli" {
+  source = "../modules/public-ecr"
+
+  name = "cli"
+  description = "Nuon cli"
+  about       = "Nuon cli"
+  tags = {
+    artifact      = "cli"
+    artifact_type = "binary"
+  }
+
+  region      = local.aws_settings.public_region
+  providers = {
+    aws = aws.public
+  }
+}
+
 module "e2e" {
   source = "../modules/public-ecr"
 

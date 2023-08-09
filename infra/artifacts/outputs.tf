@@ -39,6 +39,10 @@ output "artifacts" {
     }
 
     // binaries
+    "bins/cli" = {
+      bucket_prefix = "cli"
+      ecr           = module.cli.all
+    }
     "bins/nuonctl" = {
       bucket_prefix = "nuonctl"
       ecr           = module.nuonctl.all
