@@ -1,86 +1,13 @@
 locals {
   org_id     = data.aws_organizations_organization.orgs.id
   account_id = local.accounts[local.aws_settings.account_name]
+  public_prefixes = [
+    "cli/*",
+    "terraform-provider-nuon/*",
+    "sandbox/*",
+  ]
 }
 
-resource "aws_kms_key" "bucket" {
-  description = "KMS key for ${local.bucket_name}"
-  policy      = data.aws_iam_policy_document.bucket_key_policy.json
-
-  deletion_window_in_days = 7
-}
-
-resource "aws_kms_alias" "bucket" {
-  name          = "alias/bucket-key-${local.bucket_name}"
-  target_key_id = aws_kms_key.bucket.key_id
-}
-
-data "aws_iam_policy_document" "bucket_key_policy" {
-  # enable IAM User Permissions
-  statement {
-    effect    = "Allow"
-    actions   = ["kms:*", ]
-    resources = ["*", ]
-    principals {
-      type        = "AWS"
-      identifiers = [local.account_id, ]
-    }
-  }
-
-  # allow all principals in this account that are authorized for s3
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:Encrypt",
-      "kms:Decrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*",
-      "kms:DescribeKey"
-    ]
-    resources = ["*", ]
-    principals {
-      type        = "AWS"
-      identifiers = ["*", ]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "kms:ViaService"
-      values   = ["s3.us-west-2.amazonaws.com", ]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "kms:CallerAccount"
-      values   = [local.account_id]
-    }
-  }
-
-  # allow all principals in the nuon org that are authorized for s3
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:Encrypt",
-      "kms:Decrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*",
-      "kms:DescribeKey"
-    ]
-    resources = ["*", ]
-    principals {
-      type        = "AWS"
-      identifiers = ["*", ]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "kms:ViaService"
-      values   = ["s3.us-west-2.amazonaws.com", ]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "aws:PrincipalOrgID"
-      values   = [local.org_id]
-    }
-  }
-}
 # give all accounts in our org access to this bucket
 data "aws_iam_policy_document" "s3_bucket_policy" {
   statement {
@@ -122,16 +49,30 @@ data "aws_iam_policy_document" "s3_bucket_policy" {
     effect = "Allow"
     actions = [
       "s3:GetObject",
+    ]
+    resources = formatlist("arn:aws:s3:::${local.bucket_name}/%s", local.public_prefixes)
+    principals {
+      type        = "*"
+      identifiers = ["*",]
+    }
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
       "s3:ListBucket",
     ]
     resources = [
-      "arn:aws:s3:::${local.bucket_name}/cli/*",
-      "arn:aws:s3:::${local.bucket_name}/sandbox/*",
-      "arn:aws:s3:::${local.bucket_name}/terraform-provider-nuon/*",
+      "arn:aws:s3:::${local.bucket_name}",
     ]
     principals {
-      type        = "AWS"
-      identifiers = ["*", ]
+      type        = "*"
+      identifiers = ["*",]
+    }
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = local.public_prefixes
     }
   }
 }
@@ -148,23 +89,13 @@ module "bucket" {
   attach_deny_insecure_transport_policy = true
   attach_require_latest_tls_policy      = true
 
-  attach_public_policy = true
+  attach_public_policy = false
+  block_public_acls = false
+  block_public_policy = false
 
   control_object_ownership = true
   object_ownership         = "BucketOwnerEnforced"
 
   attach_policy = true
   policy        = data.aws_iam_policy_document.s3_bucket_policy.json
-
-  server_side_encryption_configuration = {
-    rule : [
-      {
-        apply_server_side_encryption_by_default : {
-          kms_master_key_id = aws_kms_key.bucket.arn
-          sse_algorithm : "aws:kms",
-        },
-        bucket_key_enabled : true,
-      },
-    ],
-  }
 }
