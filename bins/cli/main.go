@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "github.com/powertoolsdev/mono/bins/cli/internal/cmds"
 
 func main() {
-	fmt.Println("coming soon...")
+	cmds.Execute()
 }
