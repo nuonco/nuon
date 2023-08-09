@@ -32,13 +32,13 @@ artifacts:
     RUN mkdir -p out
 
     # mac builds
-    RUN GOOS=darwin GOARCH=arm64 go build -o ./out/$BIN_darwin_arm64 .
-    RUN GOOS=darwin GOARCH=amd64 go build -o ./out/$BIN_darwin_amd64 .
+    RUN GOOS=darwin GOARCH=arm64 go build -o ./out/${BIN}_darwin_arm64 .
+    RUN GOOS=darwin GOARCH=amd64 go build -o ./out/${BIN}_darwin_amd64 .
 
     # linux builds
-    RUN GOOS=linux GOARCH=arm go build -o ./out/$BIN_linux_arm .
-    RUN GOOS=linux GOARCH=arm64 go build -o ./out/$BIN_linux_arm64 .
-    RUN GOOS=linux GOARCH=386 go build -o ./out/$BIN_linux_386 .
+    RUN GOOS=linux GOARCH=arm go build -o ./out/${BIN}_linux_arm .
+    RUN GOOS=linux GOARCH=arm64 go build -o ./out/${BIN}_linux_arm64 .
+    RUN GOOS=linux GOARCH=386 go build -o ./out/${BIN}_linux_386 .
 
     SAVE ARTIFACT out AS LOCAL ./out
 
