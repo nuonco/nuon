@@ -5,8 +5,10 @@ FROM ghcr.io/powertoolsdev/ci-go-builder
 WORKDIR /src
 
 ARG BIN=cli
+ARG BIN_NAME=nuon
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
+ARG PKG_ROOT=github.com/powertoolsdev/mono/bins/cli
 CACHE $GOCACHE
 CACHE $GOMODCACHE
 
@@ -32,37 +34,41 @@ artifacts:
     RUN mkdir -p out
 
     ARG git_short_sha=
-    ARG ldflags=-ldflags="-X 'github.com/powertoolsdev/mono/bins/cli/internal/version.Version=${git_short_sha}'" \
 
     # mac builds
     RUN GOOS=darwin \
         GOARCH=arm64 \
-        ${ldflags} \
-        go build -o ./out/nuon_darwin_arm64 .
+        go build \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${git_short_sha}'" \
+        -o ./out/${BIN_NAME}_darwin_arm64 .
     RUN GOOS=darwin \
         GOARCH=amd64 \
-        ${ldflags} \
-        go build -o ./out/nuon_darwin_amd64 .
+        go build \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${git_short_sha}'" \
+        -o ./out/${BIN_NAME}_darwin_amd64 .
 
     # linux builds
     RUN GOOS=linux \
         GOARCH=arm \
-        ${ldflags} \
-        go build -o ./out/nuon_linux_arm .
+        go build \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${git_short_sha}'" \
+        -o ./out/${BIN_NAME}_linux_arm .
     RUN GOOS=linux \
         GOARCH=arm64 \
-        ${ldflags} \
-        go build -o ./out/nuon_linux_arm64 .
+        go build \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${git_short_sha}'" \
+        -o ./out/${BIN_NAME}_linux_arm64 .
     RUN GOOS=linux \
         GOARCH=386 \
-        ${ldflags} \
-        go build -o ./out/nuon_linux_386 .
+        go build \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${git_short_sha}'" \
+        -o ./out/${BIN_NAME}_linux_386 .
 
     SAVE ARTIFACT out AS LOCAL ./out
 
 oci-artifacts:
     RUN mkdir -p /bin
-    COPY +artifacts/out/nuon_linux_arm64 /bin/nuon
+    COPY +artifacts/out/nuon_linux_arm64 /bin/$BIN_NAME
 
     ARG repo=
     ARG image_tag=
