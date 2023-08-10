@@ -101,6 +101,18 @@ jobs:
           echo ${{ inputs.tag }} > /tmp/latest.txt && \
           aws s3 cp /tmp/latest.txt s3://${{ env.TFO_BUCKET_NAME }}/${{ env.ARTIFACT_BUCKET_PREFIX }}/latest.txt
 
+      - name: Check install script existence
+        uses: andstor/file-existence-action@v2
+        id: check_install_script
+        with:
+          files: "${{inputs.dir}}/install.sh"
+
+      - name: push install.sh file to s3 if exists
+        if: steps.check_install_script.outputs.files_exists == 'true'
+        working-directory: ${{ inputs.dir }}
+        run: |
+          aws s3 cp install.sh s3://${{ env.TFO_BUCKET_NAME }}/${{ env.ARTIFACT_BUCKET_PREFIX }}/install.sh
+
       - name: Build and push oci-artifact
         working-directory: ${{ inputs.dir }}
         run: |
