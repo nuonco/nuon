@@ -84,6 +84,7 @@ runs:
         readarray -d ',' -t build_args < <(printf "%s" "$EARTHLY_BUILD_ARGS")
         # append additional args
         build_args+=("GITHUB_ACTIONS=1")
+        build_args+=("GIT_SHORT_REF=${{GITHUB_SHA::6}}")
         printf -v build_args "%s," "${build_args[@]}"
 
         # grab existing earthly args
