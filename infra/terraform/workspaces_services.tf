@@ -66,6 +66,37 @@ module "api-gateway-prod" {
   project_id                      = tfe_project.services.id
 }
 
+module "ctl-api-stage" {
+  source = "./modules/workspace"
+
+  name       = "ctl-api-stage"
+  repo       = "powertoolsdev/mono"
+  auto_apply = true
+  dir        = "services/ctl-api/infra"
+  vars = {
+    env = "stage"
+  }
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.services.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+}
+
+module "ctl-api-prod" {
+  source = "./modules/workspace"
+
+  name       = "ctl-api-prod"
+  repo       = "powertoolsdev/mono"
+  auto_apply = false
+  dir        = "services/ctl-api/infra"
+  vars = {
+    env = "prod"
+  }
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.services.id
+}
+
 module "orgs-api-stage" {
   source = "./modules/workspace"
 
