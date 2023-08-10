@@ -33,7 +33,8 @@ func Execute() {
 	}
 
 	namespaces := map[string]func(context.Context, *cobra.Command) error{
-		"ctl": c.registerCtl,
+		"all":     c.registerCtl,
+		"version": c.registerVersion,
 	}
 	for ns, fn := range namespaces {
 		if err := fn(ctx, rootCmd); err != nil {
