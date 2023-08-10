@@ -76,7 +76,7 @@ runs:
 
     - name: get commit short SHA
       shell: bash
-      run: echo "GIT_SHORT_SHA=`echo ${GITHUB_SHA::6}`" >> $GITHUB_ENV
+      run: echo "GIT_SHORT_SHA=`echo ${GITHUB_SHA::7}`" >> $GITHUB_ENV
 
     - name: Setup earthly args
       shell: bash
