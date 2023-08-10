@@ -37,7 +37,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # NOTE(jdt): this will set our scripts to trace mode if workflow is ran in "debug"
     - shell: bash
       # run: echo "TRACE=${RUNNER_DEBUG}" >> "$GITHUB_ENV"
       run: echo "TRACE=1" >> "$GITHUB_ENV"
@@ -75,6 +74,10 @@ runs:
       with:
         registries: ${{ inputs.ecr_registries }}
 
+    - name: get commit short SHA
+      shell: bash
+      run: echo "GIT_SHORT_SHA=`echo ${GITHUB_SHA::6}`" >> $GITHUB_ENV
+
     - name: Setup earthly args
       shell: bash
       run: |
@@ -84,7 +87,7 @@ runs:
         readarray -d ',' -t build_args < <(printf "%s" "$EARTHLY_BUILD_ARGS")
         # append additional args
         build_args+=("GITHUB_ACTIONS=1")
-        build_args+=("GIT_SHORT_REF=${{GITHUB_SHA::6}}")
+        build_args+=("GIT_SHORT_REF=${{env.GIT_SHORT_SHA}}")
         printf -v build_args "%s," "${build_args[@]}"
 
         # grab existing earthly args
