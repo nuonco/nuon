@@ -12,7 +12,7 @@ set -u
 BASE_URL=https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli
 NAME=nuon
 
-DIR=$HOME/bin
+DIR=~/bin
 if [ ! -d "$DIR" ]; then
   DIR=/usr/local/bin
 
