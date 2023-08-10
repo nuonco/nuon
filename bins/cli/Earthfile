@@ -31,14 +31,32 @@ artifacts:
     FROM +code
     RUN mkdir -p out
 
+    ARG git_short_sha=
+    ARG ldflags=-ldflags="-X 'github.com/powertoolsdev/mono/bins/cli/internal/version.Version=${git_short_sha}'" \
+
     # mac builds
-    RUN GOOS=darwin GOARCH=arm64 go build -o ./out/nuon_darwin_arm64 .
-    RUN GOOS=darwin GOARCH=amd64 go build -o ./out/nuon_darwin_amd64 .
+    RUN GOOS=darwin \
+        GOARCH=arm64 \
+        ${ldflags} \
+        go build -o ./out/nuon_darwin_arm64 .
+    RUN GOOS=darwin \
+        GOARCH=amd64 \
+        ${ldflags} \
+        go build -o ./out/nuon_darwin_amd64 .
 
     # linux builds
-    RUN GOOS=linux GOARCH=arm go build -o ./out/nuon_linux_arm .
-    RUN GOOS=linux GOARCH=arm64 go build -o ./out/nuon_linux_arm64 .
-    RUN GOOS=linux GOARCH=386 go build -o ./out/nuon_linux_386 .
+    RUN GOOS=linux \
+        GOARCH=arm \
+        ${ldflags} \
+        go build -o ./out/nuon_linux_arm .
+    RUN GOOS=linux \
+        GOARCH=arm64 \
+        ${ldflags} \
+        go build -o ./out/nuon_linux_arm64 .
+    RUN GOOS=linux \
+        GOARCH=386 \
+        ${ldflags} \
+        go build -o ./out/nuon_linux_386 .
 
     SAVE ARTIFACT out AS LOCAL ./out
 
