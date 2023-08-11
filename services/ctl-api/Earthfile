@@ -1,0 +1,70 @@
+VERSION --use-cache-command 0.6
+
+FROM golang:1.20-alpine
+
+WORKDIR /src
+
+ARG EARTHLY_GIT_PROJECT_NAME
+ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}-ctl-api
+ARG SERVICE=ctl-api
+ARG GOCACHE=/go-cache
+ARG GOMODCACHE=/go-mod-cache
+ARG PKG_ROOT=github.com/powertoolsdev/mono/services/ctl-api
+ARG ETCSSL=/etc/ssl/cert.pem
+
+CACHE $GOCACHE
+CACHE $GOMODCACHE
+
+code:
+    FROM ../../.+deps
+    COPY ../../pkg+code/pkg pkg
+    COPY --dir . ./services/$SERVICE
+    WORKDIR services/$SERVICE
+    RUN go generate ./...
+
+test:
+    FROM +code
+    RUN go test ./...
+
+test-integration:
+    RUN echo "noop..."
+
+lint:
+    RUN echo "noop..."
+
+build:
+    FROM +code
+    RUN go \
+        build \
+        -ldflags="-X '${PKG_ROOT}/internal.Version=${GIT_SHORT_REF}'" \
+        -o bin/service \
+        .
+    SAVE ARTIFACT bin/service /service
+    SAVE IMAGE --push $GHCR_IMAGE:build
+
+docker:
+    FROM alpine:3.16
+    ARG EARTHLY_GIT_ORIGIN_URL
+    ARG EARTHLY_GIT_SHORT_HASH
+    ARG EARTHLY_SOURCE_DATE_EPOCH
+    ARG EARTHLY_TARGET_PROJECT_NO_TAG
+    ARG EARTHLY_TARGET_TAG_DOCKER
+
+    # These are set to run locally. They _must_ be overridden in CI.
+    ARG repo=$EARTHLY_TARGET_PROJECT_NO_TAG
+    ARG cache_tag=$EARTHLY_TARGET_TAG_DOCKER
+    ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
+
+    COPY +build/service /bin/service
+    COPY ../../images/certs+certs/cert.pem "$ETCSSL"
+    COPY ../../images/awsiamauthenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+
+    ENTRYPOINT ["/bin/service"]
+
+    LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
+    LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
+    LABEL org.opencontainers.image.version=$image_tag
+    LABEL org.opencontainers.image.source=$EARTHLY_GIT_ORIGIN_URL
+    LABEL org.opencontainers.image.authors=nuon
+    LABEL org.opencontainers.image.vendor=nuon
+    SAVE IMAGE --push --cache-from=$repo:$cache_tag $repo:$image_tag
