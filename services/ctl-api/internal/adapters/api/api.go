@@ -15,6 +15,13 @@ type Service interface {
 	RegisterInternalRoutes(*gin.Engine) error
 }
 
+func AsMiddleware(f any) any {
+	return fx.Annotate(
+		f,
+		fx.ResultTags(`group:"middlewares"`),
+	)
+}
+
 func AsService(f any) any {
 	return fx.Annotate(
 		f,
@@ -31,7 +38,7 @@ type API struct {
 	internalAddr string
 }
 
-func NewAPI(services []Service, lc fx.Lifecycle, l *zap.Logger, cfg *internal.Config) (*API, error) {
+func NewAPI(services []Service, middlewares []gin.HandlerFunc, lc fx.Lifecycle, l *zap.Logger, cfg *internal.Config) (*API, error) {
 	api := &API{
 		public:       gin.Default(),
 		publicAddr:   fmt.Sprintf(":%v", cfg.HTTPPort),
@@ -39,6 +46,9 @@ func NewAPI(services []Service, lc fx.Lifecycle, l *zap.Logger, cfg *internal.Co
 		internalAddr: fmt.Sprintf(":%v", cfg.InternalHTTPPort),
 	}
 
+	for _, middleware := range middlewares {
+		api.public.Use(middleware)
+	}
 	for idx, svc := range services {
 		if err := svc.RegisterRoutes(api.public); err != nil {
 			return nil, fmt.Errorf("unable to register routes on svc %d: %w", idx, err)

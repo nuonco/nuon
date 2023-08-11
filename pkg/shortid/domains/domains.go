@@ -50,6 +50,10 @@ func NewOrgID() string {
 	return shortid.NewNanoID("org")
 }
 
+func NewVCSConnectionID() string {
+	return shortid.NewNanoID("vcs")
+}
+
 func NewSandboxID() string {
 	return shortid.NewNanoID("snb")
 }
