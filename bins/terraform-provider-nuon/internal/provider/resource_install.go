@@ -26,7 +26,7 @@ func NewInstallResource() resource.Resource {
 
 // InstallResource defines the resource implementation.
 type InstallResource struct {
-	client gqlclient.Client
+	baseResource
 }
 
 // InstallResourceModel describes the resource data model.
@@ -77,20 +77,6 @@ func (r *InstallResource) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 		},
 	}
-}
-
-func (r *InstallResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-
-	r.client = client
 }
 
 func (r *InstallResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
