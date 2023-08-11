@@ -9,7 +9,7 @@ type VCSConnection struct {
 	Model
 
 	OrgID string
-	Org   Org
+	Org   Org `swaggerignore:"true"`
 
 	GithubInstallID string
 }
