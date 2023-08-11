@@ -22,7 +22,5 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(db.New),
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
-
-		// temporal middleware
 	}
 }

@@ -2,8 +2,14 @@ package cmd
 
 import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/api"
+	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
+	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
+	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	orgsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/service"
+	vcsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/service"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/health"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/hooks"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 )
@@ -20,11 +26,23 @@ func (c *cli) registerAPI() error {
 
 func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
+		// add app hooks
+		fx.Provide(appshooks.New),
+		fx.Provide(installshooks.New),
+		fx.Provide(orgshooks.New),
+
+		// add middlewares
+		fx.Provide(api.AsMiddleware(metrics.New)),
+		fx.Provide(api.AsMiddleware(hooks.New)),
+
 		// add endpoints
 		fx.Provide(api.AsService(health.New)),
 		fx.Provide(api.AsService(orgsservice.New)),
-		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`))),
+		fx.Provide(api.AsService(vcsservice.New)),
+
+		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`, `group:"middlewares"`))),
 		fx.Invoke(func(*api.API) {
+
 		}),
 	}
 
