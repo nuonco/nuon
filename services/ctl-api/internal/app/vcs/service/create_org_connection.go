@@ -11,9 +11,21 @@ import (
 )
 
 type CreateOrgConnectionRequest struct {
-	GithubInstallID string `json:"github_install_id"`
+	GithubInstallID string `json:"github_install_id" `
 }
 
+// @BasePath /v1/vcs
+
+// PingExample godoc
+// @Summary create a vcs connection for Github
+// @Schemes
+// @Description create a vcs connection
+// @Param org_id path string org_id "org ID for your current org"
+// @Tags vcs
+// @Accept json
+// @Produce json
+// @Success 200 {object} app.VCSConnection
+// @Router /v1/vcs/{org_id}/connection [post]
 func (s *service) CreateOrgConnection(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 	var req CreateOrgConnectionRequest

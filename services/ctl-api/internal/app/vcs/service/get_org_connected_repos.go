@@ -16,6 +16,26 @@ const (
 	defaultReposPerPage int = 100
 )
 
+type Repository struct {
+	Name     string `json:"name,omitempty" validate:"required"`
+	FullName string `json:"full_name,omitempty" validate:"required"`
+	UserName string `json:"user_name" validate:"required"`
+	GitURL   string `json:"git_url,omitempty" validate:"required"`
+	CloneURL string `json:"clone_url,omitempty" validate:"required"`
+}
+
+// @BasePath /v1/vcs
+
+// GetOrgConnectedRepos returns all VCS connected repos for an org
+// @Summary get all vcs connected repos for an org
+// @Schemes
+// @Description return all vcs connected repos for an org
+// @Param org_id path string org_id "org ID for your current org"
+// @Tags vcs
+// @Accept json
+// @Produce json
+// @Success 200 {object} Repository
+// @Router /v1/vcs/{org_id}/connected-repos [get]
 func (s *service) GetOrgConnectedRepos(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
@@ -25,7 +45,7 @@ func (s *service) GetOrgConnectedRepos(ctx *gin.Context) {
 		return
 	}
 
-	repos := make([]*github.Repository, 0)
+	repos := make([]*Repository, 0)
 	for _, vcsConn := range vcsConns {
 		vcsConnRepos, err := s.getConnectionRepos(ctx, vcsConn)
 		if err != nil {
@@ -38,7 +58,7 @@ func (s *service) GetOrgConnectedRepos(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, repos)
 }
 
-func (s *service) getConnectionRepos(ctx context.Context, conn *app.VCSConnection) ([]*github.Repository, error) {
+func (s *service) getConnectionRepos(ctx context.Context, conn *app.VCSConnection) ([]*Repository, error) {
 	// get a static token
 	installID, err := strconv.ParseInt(conn.GithubInstallID, 10, 64)
 	if err != nil {
@@ -57,7 +77,7 @@ func (s *service) getConnectionRepos(ctx context.Context, conn *app.VCSConnectio
 	client := github.NewClient(tc)
 
 	// fetch all repos
-	allRepos := make([]*github.Repository, 0)
+	allRepos := make([]*Repository, 0)
 	page := 1
 	for {
 		repos, resp, err := client.Apps.ListRepos(ctx, &github.ListOptions{
@@ -68,7 +88,15 @@ func (s *service) getConnectionRepos(ctx context.Context, conn *app.VCSConnectio
 			return nil, fmt.Errorf("unable to get repos: %w", err)
 		}
 
-		allRepos = append(allRepos, repos.Repositories...)
+		for _, repo := range repos.Repositories {
+			allRepos = append(allRepos, &Repository{
+				Name:     *repo.Name,
+				FullName: *repo.FullName,
+				UserName: *repo.Owner.Login,
+				GitURL:   *repo.GitURL,
+				CloneURL: *repo.CloneURL,
+			})
+		}
 		if resp.NextPage < 1 {
 			break
 		}
