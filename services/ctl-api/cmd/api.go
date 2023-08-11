@@ -4,6 +4,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/docs"
 	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
+	generalservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/service"
 	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	orgsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/service"
@@ -41,6 +42,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(health.New)),
 		fx.Provide(api.AsService(orgsservice.New)),
 		fx.Provide(api.AsService(vcsservice.New)),
+		fx.Provide(api.AsService(generalservice.New)),
 
 		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`, `group:"middlewares"`))),
 		fx.Invoke(func(*api.API) {
