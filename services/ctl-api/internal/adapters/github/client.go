@@ -11,8 +11,8 @@ import (
 
 func NewGithubClient(v *validator.Validate, cfg *internal.Config) (*github.Client, error) {
 	ghClient, err := client.New(v,
-		client.WithAppID("abc"),
-		client.WithAppKey([]byte("abc")),
+		client.WithAppID(cfg.GithubAppID),
+		client.WithAppKey([]byte(cfg.GithubAppKey)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get github client: %w", err)
