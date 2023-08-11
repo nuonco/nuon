@@ -1,0 +1,45 @@
+package metrics
+
+import (
+	"time"
+
+	"github.com/DataDog/datadog-go/v5/statsd"
+)
+
+type Incr struct {
+	Name  string   `json:"name"`
+	Value int      `json:"value"`
+	Tags  []string `json:"tags"`
+}
+
+func (m Incr) Write(mw Writer) {
+	mw.Incr(m.Name, m.Value, m.Tags)
+}
+
+type Decr struct {
+	Name  string   `json:"name"`
+	Value int      `json:"value"`
+	Tags  []string `json:"tags"`
+}
+
+func (m Decr) Write(mw Writer) {
+	mw.Decr(m.Name, m.Value, m.Tags)
+}
+
+type Timing struct {
+	Name  string        `json:"name"`
+	Value time.Duration `json:"value"`
+	Tags  []string      `json:"tags"`
+}
+
+func (m Timing) Write(mw Writer) {
+	mw.Timing(m.Name, m.Value, m.Tags)
+}
+
+type Event struct {
+	Event *statsd.Event `json:"event"`
+}
+
+func (m Event) Write(mw Writer) {
+	mw.Event(m.Event)
+}
