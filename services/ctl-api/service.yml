@@ -1,0 +1,26 @@
+---
+env:
+  DB_HOST: postgres
+  DB_NAME: api
+  DB_PASSWORD: password
+  DB_SSL_MODE: disable
+  DB_USE_IAM: false
+  DB_USE_SSL: false
+  GIT_REF: local
+  DISABLE_METRICS: true
+  HTTP_PORT: 8081
+  INTERNAL_HTTP_PORT: 8082
+env_secrets:
+  GITHUB_APP_KEY:
+    name: graphql-api-github-app-key
+    key: github_app_key
+config_map_override: api
+local_env:
+  DB_HOST: localhost
+  GITHUB_APP_IP: !!string 261597
+local_cmds:
+  - "go run . api"
+  - "go run . worker"
+earthly_cmd: server
+port: 8081
+type: api
