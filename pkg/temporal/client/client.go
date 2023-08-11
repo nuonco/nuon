@@ -13,6 +13,8 @@ import (
 type Client interface {
 	tclient.Client
 
+	GetNamespaceClient(namespace string) (tclient.Client, error)
+
 	// ExecuteWorkflowInNamespace is a wrapper that will execute a workflow in a different namespace
 	ExecuteWorkflowInNamespace(ctx context.Context,
 		namespace string,

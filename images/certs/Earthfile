@@ -1,0 +1,14 @@
+VERSION --use-cache-command 0.6
+
+FROM alpine:3.16
+
+ARG ETCSSL=/etc/ssl/cert.pem
+
+certs:
+    # NOTE(jdt): ideally we would wget -a but busybox doesn't support it
+    # or use `update-ca-certificate` but it can't handle a single file w/ multiple certs
+    RUN wget \
+            https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
+        && cat global-bundle.pem >> "$ETCSSL"
+    SAVE ARTIFACT "$ETCSSL" /cert.pem
+    SAVE IMAGE --cache-hint

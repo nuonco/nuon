@@ -1,0 +1,13 @@
+VERSION --use-cache-command 0.6
+
+FROM golang:1.20-alpine
+
+iamauthenticator:
+    WORKDIR /tmp
+    # iam authenticator download url
+    ARG version=0.6.2
+    RUN curl \
+            -Lo aws-iam-authenticator \
+            "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
+        && chmod +x aws-iam-authenticator
+    SAVE ARTIFACT aws-iam-authenticator
