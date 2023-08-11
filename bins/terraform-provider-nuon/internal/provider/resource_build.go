@@ -26,7 +26,7 @@ func NewBuildResource() resource.Resource {
 
 // BuildResource defines the resource implementation.
 type BuildResource struct {
-	client gqlclient.Client
+	baseResource
 }
 
 // BuildResourceModel describes the resource data model.
@@ -64,20 +64,6 @@ func (r *BuildResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 			},
 		},
 	}
-}
-
-func (r *BuildResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-
-	r.client = client
 }
 
 func (r *BuildResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

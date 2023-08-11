@@ -1,3 +1,1 @@
-data "nuon_org" "org" {
-  id = "orgyy3crvwoxipdfutfjzamvvw"
-}
+data "nuon_org" "org" {}

@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -25,7 +24,7 @@ func NewDockerBuildComponentResource() resource.Resource {
 
 // DockerBuildComponentResource defines the resource implementation.
 type DockerBuildComponentResource struct {
-	client gqlclient.Client
+	baseResource
 }
 
 // DockerBuildComponentResourceModel describes the resource data model.
@@ -90,19 +89,6 @@ func (r *DockerBuildComponentResource) Schema(ctx context.Context, req resource.
 	}
 }
 
-func (r *DockerBuildComponentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-
-	r.client = client
-}
 func (r *DockerBuildComponentResource) getConfigInput(data *DockerBuildComponentResourceModel) (*gqlclient.ComponentConfigInput, error) {
 	envVars := make([]*gqlclient.KeyValuePairInput, 0)
 	for _, envVar := range data.EnvVar {

@@ -12,9 +12,3 @@ locals {
     NUON_OUTPUTS = "outputs"
   }
 }
-
-
-variable "api_auth_token" {
-  type = string
-  description = "api auth token"
-}

@@ -4,5 +4,4 @@ data "nuon_app" "cool_app" {
 
 resource "nuon_app" "main" {
   name = "managed-by-terraform"
-  org_id = "${data.nuon_org.org.id}"
 }
