@@ -1,4 +1,4 @@
-local {
+locals {
   root_domain = "${var.env}.nuon.co"
 }
 
