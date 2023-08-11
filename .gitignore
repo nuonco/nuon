@@ -44,3 +44,4 @@ __debug_bin
 .secret
 services/api-gateway/src/build/
 pkg/types/build/
+services/ctl-api/docs

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/api"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/docs"
 	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
 	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
@@ -36,6 +37,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsMiddleware(hooks.New)),
 
 		// add endpoints
+		fx.Provide(api.AsService(docs.New)),
 		fx.Provide(api.AsService(health.New)),
 		fx.Provide(api.AsService(orgsservice.New)),
 		fx.Provide(api.AsService(vcsservice.New)),
