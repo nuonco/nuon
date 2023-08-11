@@ -5,7 +5,7 @@ import (
 )
 
 //go:generate -command swag go run github.com/swaggo/swag/cmd/swag
-//go:generate swag init
+//go:generate swag init --parseGoList
 func main() {
 	cmd.Execute()
 }
