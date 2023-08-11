@@ -2,12 +2,10 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
 )
 
 var _ datasource.DataSource = &InstallDataSource{}
@@ -18,7 +16,7 @@ func NewInstallDataSource() datasource.DataSource {
 
 // InstallDataSource defines the data source implementation.
 type InstallDataSource struct {
-	client gqlclient.Client
+	baseDataSource
 }
 
 // InstallDataSourceModel describes the data source data model.
@@ -49,20 +47,6 @@ func (d *InstallDataSource) Schema(ctx context.Context, req datasource.SchemaReq
 			},
 		},
 	}
-}
-
-func (d *InstallDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-
-	d.client = client
 }
 
 func (d *InstallDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

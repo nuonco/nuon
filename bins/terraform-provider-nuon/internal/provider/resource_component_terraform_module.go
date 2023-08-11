@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -25,7 +24,7 @@ func NewTerraformModuleComponentResource() resource.Resource {
 
 // TerraformModuleComponentResource defines the resource implementation.
 type TerraformModuleComponentResource struct {
-	client gqlclient.Client
+	baseResource
 }
 
 // TerraformModuleComponentResourceModel describes the resource data model.
@@ -78,20 +77,6 @@ func (r *TerraformModuleComponentResource) Schema(ctx context.Context, req resou
 			"var": terraformVariableSharedBlock(),
 		},
 	}
-}
-
-func (r *TerraformModuleComponentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-
-	r.client = client
 }
 
 func (r *TerraformModuleComponentResource) getConfigInput(data *TerraformModuleComponentResourceModel) (*gqlclient.ComponentConfigInput, error) {
