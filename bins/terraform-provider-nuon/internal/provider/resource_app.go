@@ -24,14 +24,13 @@ func NewAppResource() resource.Resource {
 
 // AppResource defines the resource implementation.
 type AppResource struct {
-	client gqlclient.Client
+	baseResource
 }
 
 // AppResourceModel describes the resource data model.
 type AppResourceModel struct {
-	Name  types.String `tfsdk:"name"`
-	OrgID types.String `tfsdk:"org_id"`
-	Id    types.String `tfsdk:"id"`
+	Name types.String `tfsdk:"name"`
+	Id   types.String `tfsdk:"id"`
 }
 
 func (r *AppResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -47,11 +46,6 @@ func (r *AppResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				Optional:            false,
 				Required:            true,
 			},
-			"org_id": schema.StringAttribute{
-				MarkdownDescription: "ID of the org this app belongs too.",
-				Optional:            false,
-				Required:            true,
-			},
 			"id": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "ID of the app",
@@ -61,20 +55,6 @@ func (r *AppResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 			},
 		},
 	}
-}
-
-func (r *AppResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-
-	r.client = client
 }
 
 func (r *AppResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -89,7 +69,7 @@ func (r *AppResource) Create(ctx context.Context, req resource.CreateRequest, re
 	tflog.Trace(ctx, "creating app")
 	appResp, err := r.client.UpsertApp(ctx, gqlclient.AppInput{
 		Name:  data.Name.ValueString(),
-		OrgId: data.OrgID.ValueString(),
+		OrgId: r.orgID,
 	})
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create app")
@@ -97,10 +77,8 @@ func (r *AppResource) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 	data.Name = types.StringValue(appResp.Name)
 	data.Id = types.StringValue(appResp.Id)
-	data.OrgID = types.StringValue(data.OrgID.ValueString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-
 	tflog.Trace(ctx, "successfully created app")
 }
 

@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
 )
 
 var _ datasource.DataSource = &ConnectedReposDataSource{}
@@ -19,7 +18,7 @@ func NewConnectedReposDataSource() datasource.DataSource {
 
 // ConnectedReposDataSource defines the data source implementation.
 type ConnectedReposDataSource struct {
-	client gqlclient.Client
+	baseDataSource
 }
 
 type ConnectedReposElementDataSource struct {
@@ -33,7 +32,6 @@ type ConnectedReposElementDataSource struct {
 
 // ConnectedReposDataSourceModel describes the data source data model.
 type ConnectedReposDataSourceModel struct {
-	OrgID types.String                      `tfsdk:"org_id"`
 	Repos []ConnectedReposElementDataSource `tfsdk:"repos"`
 }
 
@@ -47,11 +45,6 @@ func (d *ConnectedReposDataSource) Schema(ctx context.Context, req datasource.Sc
 		MarkdownDescription: "Get all connected repos for your org.",
 
 		Attributes: map[string]schema.Attribute{
-			"org_id": schema.StringAttribute{
-				Description:         "ConnectedRepos id.",
-				MarkdownDescription: "ConnectedRepos id.",
-				Required:            true,
-			},
 			"repos": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
@@ -79,20 +72,6 @@ func (d *ConnectedReposDataSource) Schema(ctx context.Context, req datasource.Sc
 	}
 }
 
-func (d *ConnectedReposDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure data source")
-		return
-	}
-
-	d.client = client
-}
-
 func (d *ConnectedReposDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data ConnectedReposDataSourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -101,11 +80,11 @@ func (d *ConnectedReposDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	tflog.Trace(ctx, "fetching repos for org id")
-	repos, err := d.client.GetConnectedRepos(ctx, data.OrgID.ValueString())
+	repos, err := d.client.GetConnectedRepos(ctx, d.orgID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to get repos",
-			fmt.Sprintf("Please make sure your org_id (%s) is correct, and that the auth token has permissions for this org.", data.OrgID.String()),
+			fmt.Sprintf("Please make sure your org_id (%s) is correct, and that the auth token has permissions for this org.", d.orgID),
 		)
 		return
 	}

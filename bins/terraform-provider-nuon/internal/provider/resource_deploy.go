@@ -26,7 +26,7 @@ func NewDeployResource() resource.Resource {
 
 // DeployResource defines the resource implementation.
 type DeployResource struct {
-	client gqlclient.Client
+	baseResource
 }
 
 // DeployResourceModel describes the resource data model.
@@ -71,20 +71,6 @@ func (r *DeployResource) Schema(ctx context.Context, req resource.SchemaRequest,
 			},
 		},
 	}
-}
-
-func (r *DeployResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-
-	r.client = client
 }
 
 func (r *DeployResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
