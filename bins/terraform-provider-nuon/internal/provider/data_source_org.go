@@ -2,12 +2,10 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
 )
 
 var _ datasource.DataSource = &OrgDataSource{}
@@ -18,7 +16,7 @@ func NewOrgDataSource() datasource.DataSource {
 
 // OrgDataSource defines the data source implementation.
 type OrgDataSource struct {
-	client gqlclient.Client
+	baseDataSource
 }
 
 // OrgDataSourceModel describes the data source data model.
@@ -45,24 +43,10 @@ func (d *OrgDataSource) Schema(ctx context.Context, req datasource.SchemaRequest
 			"id": schema.StringAttribute{
 				Description:         "Org id.",
 				MarkdownDescription: "Org id.",
-				Required:            true,
+				Computed:            true,
 			},
 		},
 	}
-}
-
-func (d *OrgDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-
-	d.client = client
 }
 
 func (d *OrgDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -72,12 +56,13 @@ func (d *OrgDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 		return
 	}
 
-	orgResp, err := d.client.GetOrg(ctx, data.Id.ValueString())
+	orgResp, err := d.client.GetOrg(ctx, d.orgID)
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get org")
 		return
 	}
 	data.Name = types.StringValue(orgResp.Name)
+	data.Id = types.StringValue(d.orgID)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

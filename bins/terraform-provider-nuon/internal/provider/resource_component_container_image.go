@@ -24,7 +24,7 @@ func NewContainerImageComponentResource() resource.Resource {
 
 // ContainerImageComponentResource defines the resource implementation.
 type ContainerImageComponentResource struct {
-	client gqlclient.Client
+	baseResource
 }
 
 type AwsEcr struct {
@@ -55,19 +55,6 @@ type ContainerImageComponentResourceModel struct {
 
 func (r *ContainerImageComponentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_container_image_component"
-}
-
-func (r *ContainerImageComponentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-	r.client = client
 }
 
 func (r *ContainerImageComponentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"os"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -16,7 +17,10 @@ import (
 )
 
 const (
-	defaultAPIURL string = "https://api.stage.nuon.co/graphql"
+	defaultAPIURL      string = "https://api.prod.nuon.co/graphql"
+	apiTokenEnvVarName string = "NUON_API_TOKEN"
+	apiURLEnvVarName   string = "NUON_API_URL"
+	orgIDEnvVarName    string = "NUON_ORG_ID"
 )
 
 // Ensure ScaffoldingProvider satisfies various provider interfaces.
@@ -34,6 +38,12 @@ type Provider struct {
 type ProviderModel struct {
 	APIURL       types.String `tfsdk:"api_url"`
 	APIAuthToken types.String `tfsdk:"api_auth_token"`
+	OrgID        types.String `tfsdk:"org_id"`
+}
+
+type ProviderData struct {
+	OrgID  string
+	Client gqlclient.Client
 }
 
 func (p *Provider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -50,7 +60,11 @@ func (p *Provider) Schema(ctx context.Context, req provider.SchemaRequest, resp 
 			},
 			"api_auth_token": schema.StringAttribute{
 				MarkdownDescription: "Auth token to access the api.",
-				Required:            true,
+				Optional:            true,
+			},
+			"org_id": schema.StringAttribute{
+				MarkdownDescription: "Nuon org ID.",
+				Optional:            true,
 			},
 		},
 	}
@@ -63,15 +77,24 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	apiURL := defaultAPIURL
-	if !data.APIURL.IsNull() {
-		apiURL = data.APIURL.ValueString()
+	// set overrides using env vars
+	apiURLEnvVar := os.Getenv(apiURLEnvVarName)
+	if apiURLEnvVar != "" {
+		data.APIURL = types.StringValue(apiURLEnvVar)
+	}
+	orgIDEnvVar := os.Getenv(orgIDEnvVarName)
+	if orgIDEnvVar != "" {
+		data.OrgID = types.StringValue(orgIDEnvVar)
+	}
+	apiTokenEnvVar := os.Getenv(apiTokenEnvVarName)
+	if orgIDEnvVar != "" {
+		data.APIAuthToken = types.StringValue(apiTokenEnvVar)
 	}
 
 	v := validator.New()
 	client, err := gqlclient.New(v,
 		gqlclient.WithAuthToken(data.APIAuthToken.ValueString()),
-		gqlclient.WithURL(apiURL),
+		gqlclient.WithURL(data.APIURL.ValueString()),
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -81,8 +104,14 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	resp.DataSourceData = client
-	resp.ResourceData = client
+	resp.DataSourceData = &ProviderData{
+		Client: client,
+		OrgID:  data.OrgID.ValueString(),
+	}
+	resp.ResourceData = &ProviderData{
+		Client: client,
+		OrgID:  data.OrgID.ValueString(),
+	}
 }
 
 func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {

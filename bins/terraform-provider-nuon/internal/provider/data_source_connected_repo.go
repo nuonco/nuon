@@ -2,13 +2,11 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
 )
 
 var _ datasource.DataSource = &ConnectedRepoDataSource{}
@@ -19,14 +17,13 @@ func NewConnectedRepoDataSource() datasource.DataSource {
 
 // ConnectedRepoDataSource defines the data source implementation.
 type ConnectedRepoDataSource struct {
-	client gqlclient.Client
+	baseDataSource
 }
 
 // ConnectedRepoDataSourceModel describes the data source data model.
 type ConnectedRepoDataSourceModel struct {
 	// inputs
-	Name  types.String `tfsdk:"name"`
-	OrgId types.String `tfsdk:"org_id"`
+	Name types.String `tfsdk:"name"`
 
 	// computed
 	DefaultBranch types.String `tfsdk:"default_branch"`
@@ -44,10 +41,6 @@ func (d *ConnectedRepoDataSource) Schema(ctx context.Context, req datasource.Sch
 	resp.Schema = schema.Schema{
 		Description: "Get a connected repo tied to your org.",
 		Attributes: map[string]schema.Attribute{
-			"org_id": schema.StringAttribute{
-				Description: "org_id with the connected repo",
-				Required:    true,
-			},
 			"name": schema.StringAttribute{
 				Description: "Name or URL of connected repo",
 				Required:    true,
@@ -72,20 +65,6 @@ func (d *ConnectedRepoDataSource) Schema(ctx context.Context, req datasource.Sch
 	}
 }
 
-func (d *ConnectedRepoDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-
-	d.client = client
-}
-
 func (d *ConnectedRepoDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data ConnectedRepoDataSourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -94,7 +73,7 @@ func (d *ConnectedRepoDataSource) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	tflog.Trace(ctx, "fetching connected repo")
-	repoResp, err := d.client.GetConnectedRepo(ctx, data.OrgId.ValueString(), data.Name.ValueString())
+	repoResp, err := d.client.GetConnectedRepo(ctx, d.orgID, data.Name.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get connected repo")
 		return

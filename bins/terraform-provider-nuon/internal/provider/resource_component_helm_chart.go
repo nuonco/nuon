@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -24,7 +23,7 @@ func NewHelmChartComponentResource() resource.Resource {
 
 // HelmChartComponentResource defines the resource implementation.
 type HelmChartComponentResource struct {
-	client gqlclient.Client
+	baseResource
 }
 
 // HelmChartComponentResourceModel describes the resource data model.
@@ -78,20 +77,6 @@ func (r *HelmChartComponentResource) Schema(ctx context.Context, req resource.Sc
 			"value": helmValueSharedBlock(),
 		},
 	}
-}
-
-func (r *HelmChartComponentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(gqlclient.Client)
-	if !ok {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("error setting client"), "configure resource")
-		return
-	}
-
-	r.client = client
 }
 
 func (r *HelmChartComponentResource) getConfigInput(data *HelmChartComponentResourceModel) (*gqlclient.ComponentConfigInput, error) {
