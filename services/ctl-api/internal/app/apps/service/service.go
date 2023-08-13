@@ -22,6 +22,7 @@ type service struct {
 func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps", s.CreateApp)
 	api.GET("/v1/apps", s.GetApps)
+
 	api.PATCH("/v1/apps/:app_id", s.UpdateApp)
 	api.GET("/v1/apps/:app_id", s.GetApp)
 	api.PUT("/v1/apps/:app_id/sandbox", s.UpdateAppSandbox)
@@ -29,7 +30,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	api.POST("/v1/apps", s.GetAllApps)
+	api.GET("/v1/apps", s.GetAllApps)
 	return nil
 }
 

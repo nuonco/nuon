@@ -26,7 +26,6 @@ func NewAutoMigrate(db *gorm.DB, l *zap.Logger, lc fx.Lifecycle) *AutoMigrate {
 			db.AutoMigrate(&app.Instance{})
 			db.AutoMigrate(&app.Sandbox{})
 			db.AutoMigrate(&app.SandboxRelease{})
-			db.AutoMigrate(&app.SandboxVersion{})
 			db.AutoMigrate(&app.VCSConnection{})
 			return nil
 		},
