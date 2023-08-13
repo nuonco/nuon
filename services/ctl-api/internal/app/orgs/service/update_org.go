@@ -13,6 +13,19 @@ type UpdateOrgRequest struct {
 	Name string `json:"name"`
 }
 
+// @BasePath /v1/orgs/
+
+// Update an org
+// @Summary Update an org
+// @Schemes
+// @Description Update an org
+// @Param org_id path string org_id "org ID for your current org"
+// @Param req body UpdateOrgRequest true "Input"
+// @Tags orgs
+// @Accept json
+// @Produce json
+// @Success 201 {object} app.Org
+// @Router /v1/orgs/{org_id} [PATCH]
 func (s *service) UpdateOrg(ctx *gin.Context) {
 	orgID := ctx.Param("id")
 	var req UpdateOrgRequest

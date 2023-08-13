@@ -9,6 +9,18 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
+// @BasePath /v1/orgs
+
+// Delete an org
+// @Summary Delete an org
+// @Schemes
+// @Description create a new org
+// @Param org_id path string org_id "org ID for your current org"
+// @Tags orgs
+// @Accept json
+// @Produce json
+// @Success 201 {string} ok
+// @Router /v1/orgs/{org} [DELETE]
 func (s *service) DeleteOrg(ctx *gin.Context) {
 	orgID := ctx.Param("id")
 
@@ -18,6 +30,7 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 		return
 	}
 
+	s.hooks.Deleted(ctx, orgID)
 	ctx.JSON(http.StatusAccepted, map[string]string{
 		"status": "ok",
 	})

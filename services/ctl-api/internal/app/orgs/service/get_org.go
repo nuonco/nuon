@@ -9,6 +9,18 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
+// @BasePath /v1/orgs
+
+// Get an org
+// @Summary Get an org
+// @Schemes
+// @Description get an org
+// @Param org_id path string org_id "org ID for your current org"
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {object} app.Org
+// @Router /v1/orgs/{org_id} [GET]
 func (s *service) GetOrg(ctx *gin.Context) {
 	orgID := ctx.Param("id")
 	org, err := s.getOrg(ctx, orgID)
@@ -20,12 +32,12 @@ func (s *service) GetOrg(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, org)
 }
 
-func (s *service) getOrg(ctx context.Context, orgID string) ([]*app.Org, error) {
-	var orgs []*app.Org
-	res := s.db.WithContext(ctx).Find(&orgs)
+func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
+	org := app.Org{}
+	res := s.db.WithContext(ctx).First(&org, "id = ?", orgID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get all orgs: %w", res.Error)
+		return nil, fmt.Errorf("unable to get org %s: %w", orgID, res.Error)
 	}
 
-	return orgs, nil
+	return &org, nil
 }

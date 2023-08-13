@@ -22,6 +22,5 @@ func (c *cli) migrate(cmd *cobra.Command, _ []string) {
 		fx.Invoke(func(*goose.Goose) {}),
 	}
 	providers = append(providers, c.providers()...)
-
 	fx.New(providers...).Run()
 }

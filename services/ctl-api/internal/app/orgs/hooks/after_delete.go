@@ -1,7 +1,11 @@
 package hooks
 
-import "context"
+import (
+	"context"
 
-func (o *hooks) AfterDelete(ctx context.Context, orgID string) {
-	o.l.Info("after delete")
+	"go.uber.org/zap"
+)
+
+func (o *Hooks) Deleted(ctx context.Context, orgID string) {
+	o.l.Info("org deleted", zap.String("org", orgID))
 }
