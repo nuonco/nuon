@@ -16,5 +16,6 @@ type Hooks struct {
 func New(v *validator.Validate, l *zap.Logger, client temporalclient.Client) *Hooks {
 	return &Hooks{
 		client: client,
+		l:      l,
 	}
 }

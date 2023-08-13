@@ -15,7 +15,7 @@ const (
 )
 
 type CreateAppRequest struct {
-	Name string
+	Name string `json:"name"`
 }
 
 // @BasePath /v1/apps
@@ -27,8 +27,8 @@ type CreateAppRequest struct {
 // @Tags apps
 // @Accept json
 // @Produce json
-// @Success 200 {object} app.App
-// @Router /v1/apps/{app_id} [get]
+// @Success 201 {object} app.App
+// @Router /v1/apps/ [post]
 func (s *service) CreateApp(ctx *gin.Context) {
 	var req CreateAppRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -50,18 +50,22 @@ func (s *service) createApp(ctx context.Context, req *CreateAppRequest) (*app.Ap
 	sandbox := app.Sandbox{
 		Name: defaultSandboxName,
 	}
-	res := s.db.WithContext(ctx).Preload("Releases").First(sandbox)
+	res := s.db.WithContext(ctx).Preload("Releases").First(&sandbox)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get sandbox: %w", res.Error)
+	}
+
+	if len(sandbox.Releases) < 1 {
+		return nil, fmt.Errorf("at least one release must be created for sandbox %s", defaultSandboxName)
 	}
 
 	app := app.App{
 		// TODO(jm): set these once we have properly figured out auth
 		CreatedByID: "abc",
-		OrgID:       "abc",
+		OrgID:       "org6h27y0rsz1oocphdb7o54zh",
 
-		Name:           req.Name,
-		SandboxRelease: sandbox.Releases[0],
+		Name:             req.Name,
+		SandboxReleaseID: sandbox.Releases[0].ID,
 	}
 
 	res = s.db.WithContext(ctx).Create(&app)

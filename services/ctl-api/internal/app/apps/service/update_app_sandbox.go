@@ -54,7 +54,7 @@ func (s *service) updateAppSandbox(ctx context.Context, appID string, req *Updat
 		},
 	}
 
-	res := s.db.WithContext(ctx).Model(&currentApp).Updates(app.App{SandboxReleaseID: req.SandboxReleaseID})
+	res := s.db.WithContext(ctx).Preload("SandboxRelease").Model(&currentApp).Updates(app.App{SandboxReleaseID: req.SandboxReleaseID})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
