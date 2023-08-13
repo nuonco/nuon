@@ -1,16 +1,9 @@
 package app
 
 import (
-	"context"
-
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 )
-
-const InstallHooksKey string = "hooks_installs"
-
-type InstallHooks interface {
-	AfterCreate(context.Context, string)
-}
 
 type Install struct {
 	Model
@@ -21,14 +14,7 @@ type Install struct {
 	App   App
 }
 
-func (i *Install) AfterCreate(tx *gorm.DB) error {
-	ctx := tx.Statement.Context
-	val := ctx.Value(InstallHooksKey)
-	hooks, ok := val.(InstallHooks)
-	if !ok {
-		return nil
-	}
-
-	hooks.AfterCreate(ctx, i.ID)
+func (i *Install) BeforeCreate(tx *gorm.DB) error {
+	i.ID = domains.NewInstallID()
 	return nil
 }

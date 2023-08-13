@@ -14,6 +14,19 @@ type CreateUserRequest struct {
 	UserID string `json:"user_id"`
 }
 
+// @BasePath /v1/orgs/
+
+// Add a user to an org
+// @Summary Add a user to an org
+// @Schemes
+// @Description add a user to an org
+// @Param org_id path string org_id "org ID for your current org"
+// @Param req body CreateUserRequest true "Input"
+// @Tags orgs
+// @Accept json
+// @Produce json
+// @Success 201 {object} app.UserOrg
+// @Router /v1/orgs/{org_id}/user [POST]
 func (s *service) CreateUser(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 	var req CreateUserRequest
