@@ -10,8 +10,8 @@ import (
 )
 
 type CreateSandboxRequest struct {
-	Name        string
-	Description string
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // @BasePath /v1/sandboxes
