@@ -58,6 +58,10 @@ func NewSandboxID() string {
 	return shortid.NewNanoID("snb")
 }
 
+func NewSandboxReleaseID() string {
+	return shortid.NewNanoID("snr")
+}
+
 func NewSecretID() string {
 	return shortid.NewNanoID("sec")
 }
