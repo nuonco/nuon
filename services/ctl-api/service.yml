@@ -20,7 +20,7 @@ local_env:
   DB_HOST: localhost
   GITHUB_APP_IP: !!string 261597
 local_cmds:
-  - "go run . migrate"
+  - "go run . auto-migrate"
   - "go run . api"
   - "go run . worker"
 earthly_cmd: server

@@ -4,13 +4,15 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/docs"
 	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
+	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
+	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
 	generalservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/service"
+	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
-	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	orgsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/service"
+	sandboxesservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/sandboxes/service"
 	vcsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/service"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/health"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/hooks"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -35,14 +37,15 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 
 		// add middlewares
 		fx.Provide(api.AsMiddleware(metrics.New)),
-		fx.Provide(api.AsMiddleware(hooks.New)),
 
 		// add endpoints
 		fx.Provide(api.AsService(docs.New)),
 		fx.Provide(api.AsService(health.New)),
 		fx.Provide(api.AsService(orgsservice.New)),
+		fx.Provide(api.AsService(appsservice.New)),
 		fx.Provide(api.AsService(vcsservice.New)),
 		fx.Provide(api.AsService(generalservice.New)),
+		fx.Provide(api.AsService(sandboxesservice.New)),
 
 		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`, `group:"middlewares"`))),
 		fx.Invoke(func(*api.API) {

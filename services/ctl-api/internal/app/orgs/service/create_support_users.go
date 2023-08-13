@@ -22,9 +22,20 @@ var defaultSupportUsers = []string{
 	"google-oauth2|110347044904830192078",
 }
 
+// @BasePath /v1/orgs
+
+// Add nuon users as support members
+// @Summary Add nuon users as support members
+// @Schemes
+// @Description create a new org
+// @Param org_id path string org_id "org ID for your current org"
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 201 {string} ok
+// @Router /v1/orgs/{org_id}/support-users [POST]
 func (s *service) CreateSupportUsers(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
-
 	for _, userID := range defaultSupportUsers {
 		if err := s.createUser(ctx, orgID, userID); err != nil {
 			ctx.Error(fmt.Errorf("unable to add users to org: %w", err))
