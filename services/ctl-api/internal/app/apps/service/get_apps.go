@@ -20,8 +20,7 @@ import (
 // @Success 200 {array} app.App
 // @Router /v1/apps [get]
 func (s *service) GetApps(ctx *gin.Context) {
-	orgID := ctx.Param("app_id")
-
+	orgID := "org6h27y0rsz1oocphdb7o54zh"
 	apps, err := s.getApps(ctx, orgID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get apps for %s: %w", orgID, err))
@@ -36,9 +35,9 @@ func (s *service) getApps(ctx context.Context, orgID string) ([]*app.App, error)
 		Model: app.Model{ID: orgID},
 	}
 
-	res := s.db.WithContext(ctx).Model(&org).Association("Apps").Find(&apps)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get org apps: %w", res.Error)
+	err := s.db.WithContext(ctx).Preload("SandboxRelease").Model(&org).Association("Apps").Find(&apps)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get org apps: %w", err)
 	}
 
 	return apps, nil

@@ -8,9 +8,9 @@ import (
 type Sandbox struct {
 	Model
 
-	Name        string `gorm:"unique"`
-	Description string
-	Releases    []SandboxRelease
+	Name        string           `gorm:"unique" json:"name"`
+	Description string           `json:"description"`
+	Releases    []SandboxRelease `json:"releases"`
 }
 
 func (o *Sandbox) BeforeCreate(tx *gorm.DB) error {
