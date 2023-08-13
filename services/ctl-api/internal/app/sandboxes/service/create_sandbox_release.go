@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type CreateSandboxReleaseRequest struct {
-	TerraformVersion string
-	Version          string
+	TerraformVersion string `json:"terraform_version"`
+	Version          string `json:"version"`
 }
 
 // @BasePath /v1/sandboxes
@@ -49,22 +50,31 @@ func (s *service) CreateSandboxRelease(ctx *gin.Context) {
 }
 
 func (s *service) createSandboxRelease(ctx context.Context, sandboxID string, req *CreateSandboxReleaseRequest) (*app.SandboxRelease, error) {
-	sandbox, err := s.getSandbox(ctx, sandboxID)
-	if err != nil {
-		return nil, err
+	sandbox := app.Sandbox{
+		Model: app.Model{
+			ID: sandboxID,
+		},
 	}
 
-	baseURL := filepath.Join(s.cfg.SandboxArtifactsBaseURL, sandbox.Name, req.Version)
-	sandbox.Releases = append(sandbox.Releases, app.SandboxRelease{
+	// build base URL
+	baseURL := s.cfg.SandboxArtifactsBaseURL
+	if !strings.HasSuffix(baseURL, "/") {
+		baseURL += "/"
+	}
+	baseURL += filepath.Join(sandbox.Name, req.Version) + "/"
+
+	// create release
+	sandboxRelease := app.SandboxRelease{
 		Version:                 req.Version,
 		TerraformVersion:        req.TerraformVersion,
-		ProvisionPolicyURL:      filepath.Join(baseURL, "provision.json"),
-		TrustPolicyURL:          filepath.Join(baseURL, "trust.json"),
-		DeprovisionPolicyURL:    filepath.Join(baseURL, "deprovision.json"),
-		OneClickRoleTemplateURL: filepath.Join(baseURL, "install-role.yaml"),
-	})
+		ProvisionPolicyURL:      baseURL + "provision.json",
+		TrustPolicyURL:          baseURL + "trust.json",
+		DeprovisionPolicyURL:    baseURL + "deprovision.json",
+		OneClickRoleTemplateURL: baseURL + "install-role.yaml",
+	}
 
-	if err := s.db.Save(sandbox).Error; err != nil {
+	err := s.db.Model(&sandbox).Association("Releases").Append(&sandboxRelease)
+	if err != nil {
 		return nil, fmt.Errorf("unable to save release: %w", err)
 	}
 	return &sandbox.Releases[len(sandbox.Releases)-1], nil

@@ -8,11 +8,9 @@ import (
 type Org struct {
 	Model
 
-	CreatedByID     string
-	Name            string `gorm:"uniqueIndex"`
-	Apps            []App  `faker:"-" swaggerignore:"true"`
-	IsNew           bool   `gorm:"-:all"`
-	GithubInstallID string
+	CreatedByID string `json:"created_by_id"`
+	Name        string `gorm:"uniqueIndex" json:"name"`
+	Apps        []App  `faker:"-" swaggerignore:"true" json:"apps"`
 }
 
 func (o *Org) BeforeCreate(tx *gorm.DB) error {
