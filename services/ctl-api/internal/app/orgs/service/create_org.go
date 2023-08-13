@@ -14,6 +14,18 @@ type CreateOrgRequest struct {
 	Name        string `json:"name,omitempty"`
 }
 
+// @BasePath /v1/orgs
+
+// Create a new org
+// @Summary create a new org
+// @Schemes
+// @Description create a new org
+// @Param req body CreateOrgRequest true "Input"
+// @Tags orgs
+// @Accept json
+// @Produce json
+// @Success 201 {object} app.Org
+// @Router /v1/orgs [POST]
 func (s *service) CreateOrg(ctx *gin.Context) {
 	req := CreateOrgRequest{}
 	if err := ctx.BindJSON(&req); err != nil {
@@ -27,6 +39,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
+	s.hooks.Created(ctx, org.ID)
 	ctx.JSON(http.StatusCreated, org)
 }
 

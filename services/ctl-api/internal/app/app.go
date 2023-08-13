@@ -1,16 +1,9 @@
 package app
 
 import (
-	"context"
-
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 )
-
-const AppHooksKey string = "hooks_apps"
-
-type AppHooks interface {
-	AfterCreate(context.Context, string)
-}
 
 type App struct {
 	Model
@@ -21,16 +14,12 @@ type App struct {
 	Org         Org         `faker:"-"`
 	Components  []Component `faker:"-"`
 	Installs    []Install   `faker:"-"`
+
+	SandboxReleaseID string
+	SandboxRelease   SandboxRelease
 }
 
-func (a *App) AfterCreate(tx *gorm.DB) error {
-	ctx := tx.Statement.Context
-	val := ctx.Value(AppHooksKey)
-	hooks, ok := val.(AppHooks)
-	if !ok {
-		return nil
-	}
-
-	hooks.AfterCreate(ctx, a.ID)
+func (a *App) BeforeCreate(tx *gorm.DB) error {
+	a.ID = domains.NewAppID()
 	return nil
 }
