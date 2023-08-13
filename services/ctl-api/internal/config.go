@@ -28,6 +28,9 @@ func init() {
 
 	// default for github
 	config.RegisterDefault("github_app_key_secret_name", "graphql-api-github-app-key")
+
+	// default sandbox url
+	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
 }
 
 type Config struct {
@@ -59,6 +62,9 @@ type Config struct {
 	GithubAppID            string `config:"github_app_id"`
 	GithubAppKey           string `config:"github_app_key"`
 	GithubAppKeySecretName string `config:"github_app_key_secret_name"`
+
+	// sandbox artifacts
+	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url"`
 }
 
 func NewConfig() (*Config, error) {

@@ -11,6 +11,17 @@ import (
 
 type AllOrgsResponse []*app.Org
 
+// @BasePath /v1/orgs
+
+// Return all orgs
+// @Summary Return all orgs
+// @Schemes
+// @Description return all orgs
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {array} app.Org
+// @Router /v1/orgs [GET]
 func (s *service) GetAllOrgs(ctx *gin.Context) {
 	orgs, err := s.getAllOrgs(ctx)
 	if err != nil {
