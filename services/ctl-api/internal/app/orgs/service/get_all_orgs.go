@@ -17,7 +17,7 @@ type AllOrgsResponse []*app.Org
 // @Summary Return all orgs
 // @Schemes
 // @Description return all orgs
-// @Tags admin
+// @Tags orgs/internal
 // @Accept json
 // @Produce json
 // @Success 200 {array} app.Org

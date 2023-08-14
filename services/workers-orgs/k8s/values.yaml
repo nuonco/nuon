@@ -37,7 +37,6 @@ serviceAccount:
   # a name is generated using the fullname template
   name:
 
-
 service:
   main:
     type: ClusterIP
@@ -49,7 +48,7 @@ probes:
   # @default  See below
   liveness:
     # Enable the liveness probe
-    enabled: true
+    enabled: false
     # Set this to `true` if you wish to specify your own livenessProbe
     custom: false
     # The spec field contains the values for the default livenessProbe.
@@ -65,7 +64,7 @@ probes:
   # @default  See below
   readiness:
     #  Enable the readiness probe
-    enabled: true
+    enabled: false
     #  Set this to `true` if you wish to specify your own readinessProbe
     custom: false
     # The spec field contains the values for the default readinessProbe.
@@ -76,7 +75,6 @@ probes:
       periodSeconds: 10
       timeoutSeconds: 1
       failureThreshold: 3
-
 
 resources:
   limits:
