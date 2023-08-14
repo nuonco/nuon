@@ -10,10 +10,10 @@ type App struct {
 
 	CreatedByID string      `json:"created_by_id"`
 	Name        string      `json:"name"`
-	OrgID       string      `json:"-"`
+	OrgID       string      `json:"org_id"`
 	Org         Org         `faker:"-" json:"-"`
-	Components  []Component `faker:"-" json:"components,omitempty"`
-	Installs    []Install   `faker:"-" json:"installs,omitempty"`
+	Components  []Component `faker:"-" json:"-" swaggerignore:"true"`
+	Installs    []Install   `faker:"-" json:"-" swaggerignore:"true"`
 
 	SandboxReleaseID string         `json:"-"`
 	SandboxRelease   SandboxRelease `json:"sandbox_release,omitempty"`
