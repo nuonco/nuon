@@ -9,7 +9,7 @@ type Install struct {
 	Model
 	Name string
 
-	App   App
+	App   App `swaggerignore:"true" json:"-"`
 	AppID string
 
 	AWSAccountID string
