@@ -29,7 +29,7 @@ var defaultSupportUsers = []string{
 // @Schemes
 // @Description create a new org
 // @Param org_id path string org_id "org ID for your current org"
-// @Tags admin
+// @Tags orgs/internal
 // @Accept json
 // @Produce json
 // @Success 201 {string} ok

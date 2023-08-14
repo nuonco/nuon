@@ -7,11 +7,16 @@ import (
 
 type Install struct {
 	Model
-	CreatedByID string
+	Name string
 
-	Name  string
-	AppID string
 	App   App
+	AppID string
+
+	AWSAccountID string
+	AWSAccount   AWSAccount
+
+	SandboxReleaseID string
+	SandboxRelease   SandboxRelease
 }
 
 func (i *Install) BeforeCreate(tx *gorm.DB) error {

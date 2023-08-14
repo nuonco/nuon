@@ -16,7 +16,7 @@ func fakeArtifactID(v reflect.Value) (interface{}, error) {
 }
 
 func fakeAWSSettingsID(v reflect.Value) (interface{}, error) {
-	return NewAWSSettingsID(), nil
+	return NewAWSAccountID(), nil
 }
 
 func fakeBuildID(v reflect.Value) (interface{}, error) {
