@@ -74,7 +74,7 @@ func TestNewArtifactID(t *testing.T) {
 
 func TestNewAWSSettingsID(t *testing.T) {
 	t.Run("get valid ID for AWSSettings", func(t *testing.T) {
-		id := NewAWSSettingsID()
+		id := NewAWSAccountID()
 		assert.Len(t, id, 26)
 		assert.Equal(t, "aws", id[:3])
 	})

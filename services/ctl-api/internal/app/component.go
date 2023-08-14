@@ -8,5 +8,5 @@ type Component struct {
 	AppID       string
 	App         App `faker:"-"`
 	CreatedByID string
-	Config      datatypes.JSON `gorm:"not null;default:'{}'" json:"config"`
+	Config      datatypes.JSON `gorm:"not null;default:'{}'" json:"config" swaggerignore:"true"`
 }

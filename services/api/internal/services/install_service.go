@@ -135,7 +135,7 @@ func (i *installService) UpsertInstall(ctx context.Context, input models.Install
 			AccountID:  "548377525120",
 			IamRoleArn: input.AwsSettings.IamRoleArn,
 		}
-		install.AWSSettings.ID = domains.NewAWSSettingsID()
+		install.AWSSettings.ID = domains.NewAWSAccountID()
 		install.Settings = install.AWSSettings
 	}
 

@@ -83,7 +83,7 @@ probes:
   # @default  See below
   liveness:
     # Enable the liveness probe
-    enabled: true
+    enabled: false
     # Set this to `true` if you wish to specify your own livenessProbe
     custom: false
     # The spec field contains the values for the default livenessProbe.

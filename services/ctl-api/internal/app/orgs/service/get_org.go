@@ -16,7 +16,7 @@ import (
 // @Schemes
 // @Description get an org
 // @Param org_id path string org_id "org ID for your current org"
-// @Tags admin
+// @Tags orgs
 // @Accept json
 // @Produce json
 // @Success 200 {object} app.Org
