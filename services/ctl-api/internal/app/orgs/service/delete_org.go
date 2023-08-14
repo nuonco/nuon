@@ -20,7 +20,7 @@ import (
 // @Accept json
 // @Produce json
 // @Success 201 {string} ok
-// @Router /v1/orgs/{org} [DELETE]
+// @Router /v1/orgs/{org_id} [DELETE]
 func (s *service) DeleteOrg(ctx *gin.Context) {
 	orgID := ctx.Param("id")
 

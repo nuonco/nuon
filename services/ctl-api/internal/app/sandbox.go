@@ -13,7 +13,7 @@ type Sandbox struct {
 	Releases    []SandboxRelease `json:"releases"`
 }
 
-func (o *Sandbox) BeforeCreate(tx *gorm.DB) error {
-	o.ID = domains.NewSandboxID()
+func (s *Sandbox) BeforeCreate(tx *gorm.DB) error {
+	s.ID = domains.NewSandboxID()
 	return nil
 }

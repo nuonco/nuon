@@ -20,20 +20,20 @@ type service struct {
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
-	api.POST("/v1/apps", s.CreateApp)
-	api.GET("/v1/apps", s.GetApps)
+	api.GET("/v1/apps/:app_id/installs", s.GetAppInstalls)
+	api.POST("/v1/apps/:app_id/installs", s.CreateInstall)
 
-	api.PATCH("/v1/apps/:app_id", s.UpdateApp)
-	api.GET("/v1/apps/:app_id", s.GetApp)
-	api.DELETE("/v1/apps/:app_id", s.DeleteApp)
+	api.GET("/v1/installs", s.GetOrgInstalls)
 
-	// sandbox release
-	api.PUT("/v1/apps/:app_id/sandbox", s.UpdateAppSandbox)
+	api.GET("/v1/installs/:app_id/:install_id", s.GetInstall)
+	api.PATCH("/v1/installs/:app_id/:install_id", s.UpdateInstall)
+	api.DELETE("/v1/installs/:app_id/:install_id", s.DeleteInstall)
+
 	return nil
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	api.GET("/v1/apps", s.GetAllApps)
+	api.GET("/v1/installs", s.GetAllInstalls)
 	return nil
 }
 
