@@ -14,11 +14,10 @@ import (
 // @Summary get all installs for an org
 // @Schemes
 // @Description get all installs for an org
-// @Param app_id path string app_id "app ID"
 // @Tags installs
 // @Accept json
 // @Produce json
-// @Success 200 {object} app.Install
+// @Success 200 {array} app.Install
 // @Router /v1/installs [GET]
 func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	orgID := "org6h27y0rsz1oocphdb7o54zh"
