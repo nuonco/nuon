@@ -63,6 +63,11 @@ artifacts:
         go build \
         -ldflags="-X '${PKG_ROOT}/internal/version.Version=${GIT_SHORT_REF}'" \
         -o ./out/${BIN_NAME}_linux_386 .
+    RUN GOOS=linux \
+        GOARCH=amd64 \
+        go build \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${GIT_SHORT_REF}'" \
+        -o ./out/${BIN_NAME}_linux_amd64 .
 
     SAVE ARTIFACT out AS LOCAL ./out
 
