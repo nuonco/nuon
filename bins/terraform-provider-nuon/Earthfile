@@ -39,6 +39,7 @@ artifacts:
     RUN GOOS=linux GOARCH=arm go build -o ./out/${BIN}_linux_arm .
     RUN GOOS=linux GOARCH=arm64 go build -o ./out/${BIN}_linux_arm64 .
     RUN GOOS=linux GOARCH=386 go build -o ./out/${BIN}_linux_386 .
+    RUN GOOS=linux GOARCH=amd64 go build -o ./out/${BIN}_linux_amd64 .
 
     SAVE ARTIFACT out AS LOCAL ./out
 
