@@ -10,7 +10,7 @@ func NewArtifactID() string {
 	return shortid.NewNanoID("art")
 }
 
-func NewAWSSettingsID() string {
+func NewAWSAccountID() string {
 	return shortid.NewNanoID("aws")
 }
 
