@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 // @BasePath /v1/installs
@@ -20,11 +21,15 @@ import (
 // @Success 200 {array} app.Install
 // @Router /v1/installs [GET]
 func (s *service) GetOrgInstalls(ctx *gin.Context) {
-	orgID := "org6h27y0rsz1oocphdb7o54zh"
-
-	install, err := s.getOrgInstalls(ctx, orgID)
+	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create install: %w", err))
+		ctx.Error(err)
+		return
+	}
+
+	install, err := s.getOrgInstalls(ctx, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get installs for org %s: %w", org.ID, err))
 		return
 	}
 
