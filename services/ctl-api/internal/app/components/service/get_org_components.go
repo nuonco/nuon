@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 // @BasePath /v1/components
@@ -20,11 +21,15 @@ import (
 // @Success 200 {array} app.Component
 // @Router /v1/components [GET]
 func (s *service) GetOrgComponents(ctx *gin.Context) {
-	orgID := "org6h27y0rsz1oocphdb7o54zh"
-
-	component, err := s.getOrgComponents(ctx, orgID)
+	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create component: %w", err))
+		ctx.Error(err)
+		return
+	}
+
+	component, err := s.getOrgComponents(ctx, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get components for org %s: %w", org.ID, err))
 		return
 	}
 

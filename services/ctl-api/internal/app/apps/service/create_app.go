@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 const (
@@ -30,13 +31,19 @@ type CreateAppRequest struct {
 // @Success 201 {object} app.App
 // @Router /v1/apps/ [post]
 func (s *service) CreateApp(ctx *gin.Context) {
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	var req CreateAppRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 
-	app, err := s.createApp(ctx, &req)
+	app, err := s.createApp(ctx, org.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
@@ -46,7 +53,7 @@ func (s *service) CreateApp(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, app)
 }
 
-func (s *service) createApp(ctx context.Context, req *CreateAppRequest) (*app.App, error) {
+func (s *service) createApp(ctx context.Context, orgID string, req *CreateAppRequest) (*app.App, error) {
 	sandbox := app.Sandbox{
 		Name: defaultSandboxName,
 	}
@@ -60,9 +67,7 @@ func (s *service) createApp(ctx context.Context, req *CreateAppRequest) (*app.Ap
 	}
 
 	app := app.App{
-		// TODO(jm): set these once we have properly figured out auth
-		CreatedByID: "abc",
-		OrgID:       "org6h27y0rsz1oocphdb7o54zh",
+		OrgID: orgID,
 
 		Name:             req.Name,
 		SandboxReleaseID: sandbox.Releases[0].ID,

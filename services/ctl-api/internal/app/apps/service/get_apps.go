@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 // @BasePath /v1/apps
@@ -20,10 +21,15 @@ import (
 // @Success 200 {array} app.App
 // @Router /v1/apps [get]
 func (s *service) GetApps(ctx *gin.Context) {
-	orgID := "org6h27y0rsz1oocphdb7o54zh"
-	apps, err := s.getApps(ctx, orgID)
+	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get apps for %s: %w", orgID, err))
+		ctx.Error(err)
+		return
+	}
+
+	apps, err := s.getApps(ctx, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get apps for %s: %w", org.ID, err))
 		return
 	}
 	ctx.JSON(http.StatusOK, apps)
