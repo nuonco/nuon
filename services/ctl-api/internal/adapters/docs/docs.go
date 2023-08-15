@@ -14,7 +14,7 @@ func (r *Route) RegisterRoutes(g *gin.Engine) error {
 }
 
 func (r *Route) RegisterInternalRoutes(g *gin.Engine) error {
-	docs.SwaggerInfo.BasePath = ""
+	docs.SwaggerInfo.Host = "localhost:8081"
 	g.GET("/docs/*any", swagger.WrapHandler(swaggerfiles.Handler))
 	return nil
 }
