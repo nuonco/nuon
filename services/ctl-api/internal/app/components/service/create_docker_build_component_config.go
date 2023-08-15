@@ -75,9 +75,14 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 	}
 
 	// build component config
+	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(parentCmp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid github vcs config: %w", err)
+	}
+
 	cfg := app.DockerBuildComponentConfig{
 		PublicGitVCSConfig:       req.publicGitVCSConfig(),
-		ConnectedGithubVCSConfig: req.connectedGithubVCSConfig(parentCmp),
+		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 
 		SyncOnly:          req.SyncOnly,
 		BasicDeployConfig: req.BasicDeployConfig.getBasicDeployConfig(),

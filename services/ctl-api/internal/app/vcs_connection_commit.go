@@ -7,21 +7,23 @@ import (
 	"gorm.io/gorm"
 )
 
-type VCSConnection struct {
+type VCSConnectionCommit struct {
 	ID          string         `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string         `json:"created_by_id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	OrgID string `json:"org_id"`
-	Org   Org    `swaggerignore:"true" json:"-"`
+	VCSConnection   VCSConnection `json:"-"`
+	VCSConnectionID string        `json:"component_config_connection_id"`
 
-	GithubInstallID string                `json:"github_install_id"`
-	Commits         []VCSConnectionCommit `json:"vcs_connection_commit"`
+	SHA         string `json:"sha"`
+	AuthorName  string `json:"author_name"`
+	AuthorEmail string `json:"author_email"`
+	Message     string `json:"message"`
 }
 
-func (v *VCSConnection) BeforeCreate(tx *gorm.DB) error {
+func (v *VCSConnectionCommit) BeforeCreate(tx *gorm.DB) error {
 	v.ID = domains.NewVCSConnectionID()
 	return nil
 }
