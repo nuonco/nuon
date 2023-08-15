@@ -37,9 +37,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 
 func (s *service) deleteInstall(ctx context.Context, installID string) error {
 	res := s.db.WithContext(ctx).Delete(&app.Install{
-		Model: app.Model{
-			ID: installID,
-		},
+		ID: installID,
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete install: %w", res.Error)

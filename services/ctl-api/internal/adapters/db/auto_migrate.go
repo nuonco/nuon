@@ -17,6 +17,7 @@ func NewAutoMigrate(db *gorm.DB, l *zap.Logger, lc fx.Lifecycle) *AutoMigrate {
 			l.Info("running auto migrate")
 			db.AutoMigrate(&app.Org{})
 			db.AutoMigrate(&app.UserOrg{})
+			db.AutoMigrate(&app.VCSConnection{})
 			db.AutoMigrate(&app.App{})
 			db.AutoMigrate(&app.App{})
 			db.AutoMigrate(&app.Build{})
@@ -25,7 +26,16 @@ func NewAutoMigrate(db *gorm.DB, l *zap.Logger, lc fx.Lifecycle) *AutoMigrate {
 			db.AutoMigrate(&app.Instance{})
 			db.AutoMigrate(&app.Sandbox{})
 			db.AutoMigrate(&app.SandboxRelease{})
-			db.AutoMigrate(&app.VCSConnection{})
+			db.AutoMigrate(&app.Component{})
+			db.AutoMigrate(&app.ComponentConfigConnection{})
+			db.AutoMigrate(&app.HelmComponentConfig{})
+			db.AutoMigrate(&app.TerraformModuleComponentConfig{})
+			db.AutoMigrate(&app.DockerBuildComponentConfig{})
+			db.AutoMigrate(&app.ExternalImageComponentConfig{})
+			db.AutoMigrate(&app.ConnectedGithubVCSConfig{})
+			db.AutoMigrate(&app.PublicGitVCSConfig{})
+			db.AutoMigrate(&app.BasicDeployConfig{})
+			db.AutoMigrate(&app.AWSECRImageConfig{})
 			return nil
 		},
 		OnStop: func(_ context.Context) error {

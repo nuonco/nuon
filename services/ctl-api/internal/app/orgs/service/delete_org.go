@@ -38,9 +38,7 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 
 func (s *service) deleteOrg(ctx context.Context, orgID string) error {
 	res := s.db.WithContext(ctx).Delete(&app.Org{
-		Model: app.Model{
-			ID: orgID,
-		},
+		ID: orgID,
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete org: %w", res.Error)
