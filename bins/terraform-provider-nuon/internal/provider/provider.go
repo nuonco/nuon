@@ -82,6 +82,10 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	if apiURLEnvVar != "" {
 		data.APIURL = types.StringValue(apiURLEnvVar)
 	}
+	if data.APIURL.ValueString() == "" {
+		data.APIURL = types.StringValue(defaultAPIURL)
+	}
+
 	orgIDEnvVar := os.Getenv(orgIDEnvVarName)
 	if orgIDEnvVar != "" {
 		data.OrgID = types.StringValue(orgIDEnvVar)
