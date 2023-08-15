@@ -15,17 +15,23 @@ func NewAutoMigrate(db *gorm.DB, l *zap.Logger, lc fx.Lifecycle) *AutoMigrate {
 	lc.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
 			l.Info("running auto migrate")
+
+			// org basics
 			db.AutoMigrate(&app.Org{})
 			db.AutoMigrate(&app.UserOrg{})
 			db.AutoMigrate(&app.VCSConnection{})
+			db.AutoMigrate(&app.VCSConnectionCommit{})
+
+			// apps
 			db.AutoMigrate(&app.App{})
-			db.AutoMigrate(&app.App{})
-			db.AutoMigrate(&app.Build{})
-			db.AutoMigrate(&app.AWSAccount{})
-			db.AutoMigrate(&app.Install{})
-			db.AutoMigrate(&app.Instance{})
 			db.AutoMigrate(&app.Sandbox{})
 			db.AutoMigrate(&app.SandboxRelease{})
+
+			// installs
+			db.AutoMigrate(&app.AWSAccount{})
+			db.AutoMigrate(&app.Install{})
+
+			// component configuration
 			db.AutoMigrate(&app.Component{})
 			db.AutoMigrate(&app.ComponentConfigConnection{})
 			db.AutoMigrate(&app.HelmComponentConfig{})
@@ -36,6 +42,14 @@ func NewAutoMigrate(db *gorm.DB, l *zap.Logger, lc fx.Lifecycle) *AutoMigrate {
 			db.AutoMigrate(&app.PublicGitVCSConfig{})
 			db.AutoMigrate(&app.BasicDeployConfig{})
 			db.AutoMigrate(&app.AWSECRImageConfig{})
+
+			// component management
+			db.AutoMigrate(&app.ComponentBuild{})
+
+			// install management
+			db.AutoMigrate(&app.InstallDeploy{})
+			db.AutoMigrate(&app.InstallComponent{})
+
 			return nil
 		},
 		OnStop: func(_ context.Context) error {
