@@ -58,8 +58,8 @@ func (p *Provider) Schema(ctx context.Context, req provider.SchemaRequest, resp 
 				MarkdownDescription: "Override the url to use a custom endpoint.",
 				Optional:            true,
 			},
-			"api_auth_token": schema.StringAttribute{
-				MarkdownDescription: "Auth token to access the api.",
+			"api_token": schema.StringAttribute{
+				MarkdownDescription: "API token to access the api.",
 				Optional:            true,
 			},
 			"org_id": schema.StringAttribute{
@@ -90,9 +90,24 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	if orgIDEnvVar != "" {
 		data.OrgID = types.StringValue(orgIDEnvVar)
 	}
+	if data.OrgID.ValueString() == "" {
+		resp.Diagnostics.AddError(
+			"Org ID must be set",
+			"Please set `org_id` on the provider, or the `NUON_ORG_ID` env var.",
+		)
+		return
+	}
+
 	apiTokenEnvVar := os.Getenv(apiTokenEnvVarName)
 	if orgIDEnvVar != "" {
 		data.APIAuthToken = types.StringValue(apiTokenEnvVar)
+	}
+	if data.APIAuthToken.ValueString() == "" {
+		resp.Diagnostics.AddError(
+			"api token must be set",
+			"Please set `api_token` on the provider, or the `NUON_API_TOKEN` env var.",
+		)
+		return
 	}
 
 	v := validator.New()
