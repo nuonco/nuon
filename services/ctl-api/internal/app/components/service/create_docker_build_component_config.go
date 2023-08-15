@@ -1,0 +1,100 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+type CreateDockerBuildComponentConfigRequest struct {
+	basicVCSConfigRequest
+	BasicDeployConfig *basicDeployConfigRequest `json:"basic_deploy_config" validate:"required_unless=SyncOnly true"`
+
+	SyncOnly   bool               `json:"sync_only"`
+	Dockerfile string             `json:"dockerfile"`
+	Target     string             `json:"target"`
+	BuildArgs  []string           `json:"build_args"`
+	EnvVars    map[string]*string `json:"env_vars"`
+}
+
+func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
+}
+
+// @BasePath /v1/components
+
+// Create a docker build component config
+// @Summary create a docker build component config
+// @Schemes
+// @Description create a docker build component config.
+// @Param req body CreateDockerBuildComponentConfigRequest true "Input"
+// @Param component_id path string component_id "component ID"
+// @Tags components
+// @Accept json
+// @Produce json
+// @Success 201 {object} app.ComponentConfigConnection
+// @Router /v1/components/{component_id}/configs/docker-build [POST]
+func (s *service) CreateDockerBuildComponentConfig(ctx *gin.Context) {
+	cmpID := ctx.Param("component_id")
+	if cmpID == "" {
+		ctx.Error(fmt.Errorf("component id must be passed in"))
+		return
+	}
+
+	var req CreateDockerBuildComponentConfigRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	cfg, err := s.createDockerBuildComponentConfig(ctx, cmpID, &req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create component cfg: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, cfg)
+}
+
+func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID string, req *CreateDockerBuildComponentConfigRequest) (*app.DockerBuildComponentConfig, error) {
+	parentCmp, err := s.getComponentWithParents(ctx, cmpID)
+	if err != nil {
+		return nil, err
+	}
+
+	// build component config
+	cfg := app.DockerBuildComponentConfig{
+		PublicGitVCSConfig:       req.publicGitVCSConfig(),
+		ConnectedGithubVCSConfig: req.connectedGithubVCSConfig(parentCmp),
+
+		SyncOnly:          req.SyncOnly,
+		BasicDeployConfig: req.BasicDeployConfig.getBasicDeployConfig(),
+
+		Dockerfile: req.Dockerfile,
+		Target:     req.Target,
+		BuildArgs:  req.BuildArgs,
+		EnvVars:    pgtype.Hstore(req.EnvVars),
+	}
+
+	componentConfigConnection := app.ComponentConfigConnection{
+		DockerBuildComponentConfig: &cfg,
+		ComponentID:                parentCmp.ID,
+	}
+	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
+		return nil, fmt.Errorf("unable to create docker build component config connection: %w", res.Error)
+	}
+
+	return &cfg, nil
+}

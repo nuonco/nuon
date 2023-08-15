@@ -49,9 +49,7 @@ func (s *service) UpdateAppSandbox(ctx *gin.Context) {
 
 func (s *service) updateAppSandbox(ctx context.Context, appID string, req *UpdateAppSandboxRequest) (*app.App, error) {
 	currentApp := app.App{
-		Model: app.Model{
-			ID: appID,
-		},
+		ID: appID,
 	}
 
 	res := s.db.WithContext(ctx).Preload("SandboxRelease").Model(&currentApp).Updates(app.App{SandboxReleaseID: req.SandboxReleaseID})

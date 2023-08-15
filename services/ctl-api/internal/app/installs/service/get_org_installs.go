@@ -33,7 +33,7 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 
 func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Install, error) {
 	org := &app.Org{}
-	res := s.db.WithContext(ctx).Preload("Apps").Preload("Installs").First(&org, "id = ?", orgID)
+	res := s.db.WithContext(ctx).Preload("Apps").Preload("Apps.Installs").First(&org, "id = ?", orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
