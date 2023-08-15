@@ -39,9 +39,7 @@ func (s *service) GetSandboxReleases(ctx *gin.Context) {
 func (s *service) getSandboxReleases(ctx context.Context, sandboxID string) ([]*app.SandboxRelease, error) {
 	var releases []*app.SandboxRelease
 	sandbox := app.Sandbox{
-		Model: app.Model{
-			ID: sandboxID,
-		},
+		ID: sandboxID,
 	}
 
 	if err := s.db.WithContext(ctx).Model(&sandbox).Association("Releases").Find(&releases); err != nil {

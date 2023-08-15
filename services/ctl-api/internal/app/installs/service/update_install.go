@@ -49,9 +49,7 @@ func (s *service) UpdateInstall(ctx *gin.Context) {
 
 func (s *service) updateInstall(ctx context.Context, installID string, req *UpdateInstallRequest) (*app.Install, error) {
 	currentInstall := app.Install{
-		Model: app.Model{
-			ID: installID,
-		},
+		ID: installID,
 	}
 
 	res := s.db.WithContext(ctx).Model(&currentInstall).Updates(app.Install{Name: req.Name})
