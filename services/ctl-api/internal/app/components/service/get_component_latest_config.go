@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 // @BasePath /v1/components
@@ -36,4 +37,17 @@ func (s *service) GetComponentLatestConfig(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, cfgs[len(cfgs)-1])
+}
+
+func (s *service) getComponentLatestConfig(ctx *gin.Context, cmpID string) (*app.ComponentConfigConnection, error) {
+	cmp := app.ComponentConfigConnection{}
+	res := s.db.WithContext(ctx).
+		Preload("Component", "id = ?", cmpID).
+		Order("created_at DESC").
+		First(&cmp)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get most recent component config: %w", res.Error)
+	}
+
+	return &cmp, nil
 }

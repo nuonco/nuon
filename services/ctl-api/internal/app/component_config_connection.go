@@ -14,7 +14,10 @@ type ComponentConfigConnection struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	ComponentID string `json:"component_id"`
+	ComponentID string    `json:"component_id"`
+	Component   Component `json:"-"`
+
+	ComponentBuilds []ComponentBuild `json:"-"`
 
 	TerraformModuleComponentConfig *TerraformModuleComponentConfig `json:"terraform_module,omitempty"`
 	HelmComponentConfig            *HelmComponentConfig            `json:"helm,omitempty"`

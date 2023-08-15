@@ -62,6 +62,9 @@ func (s *service) getComponentConfigs(ctx context.Context, cmpID string) ([]app.
 		Preload("ExternalImageComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ExternalImageComponentConfig.BasicDeployConfig").
 
+		// order by created at
+		Order("created_at DESC").
+
 		// find all configs
 		Find(&cfgs)
 	if res.Error != nil {
