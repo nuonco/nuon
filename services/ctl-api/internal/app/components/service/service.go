@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
@@ -11,12 +12,13 @@ import (
 )
 
 type service struct {
-	v     *validator.Validate
-	l     *zap.Logger
-	db    *gorm.DB
-	mw    metrics.Writer
-	cfg   *internal.Config
-	hooks *hooks.Hooks
+	v        *validator.Validate
+	l        *zap.Logger
+	db       *gorm.DB
+	mw       metrics.Writer
+	cfg      *internal.Config
+	hooks    *hooks.Hooks
+	ghClient *github.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -38,13 +40,12 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.POST("/v1/components/:component_id/configs/docker-build", s.CreateDockerBuildComponentConfig)
 	api.POST("/v1/components/:component_id/configs/external-image", s.CreateExternalImageComponentConfig)
 	api.GET("/v1/components/:component_id/configs", s.GetComponentConfigs)
-
-	// endpoints for working with a single config version
-	api.GET("/v1/components/:component_id/config", s.GetComponentLatestConfig)
+	api.GET("/v1/components/:component_id/configs/latest", s.GetComponentLatestConfig)
 
 	// builds are immutable
 	api.POST("/v1/components/:component_id/builds", s.CreateComponentBuild)
 	api.GET("/v1/components/:component_id/builds", s.GetComponentBuilds)
+	api.GET("/v1/components/:component_id/builds/latest", s.GetComponentLatestBuild)
 	api.GET("/v1/components/:component_id/builds/:build_id", s.GetComponentBuild)
 	api.GET("/v1/components/:component_id/builds/:build_id/logs", s.GetComponentBuildLogs)
 
@@ -56,13 +57,14 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(v *validator.Validate, cfg *internal.Config, db *gorm.DB, mw metrics.Writer, l *zap.Logger, hooks *hooks.Hooks) *service {
+func New(v *validator.Validate, cfg *internal.Config, db *gorm.DB, mw metrics.Writer, l *zap.Logger, hooks *hooks.Hooks, ghClient *github.Client) *service {
 	return &service{
-		cfg:   cfg,
-		l:     l,
-		v:     v,
-		db:    db,
-		mw:    mw,
-		hooks: hooks,
+		cfg:      cfg,
+		l:        l,
+		v:        v,
+		db:       db,
+		mw:       mw,
+		hooks:    hooks,
+		ghClient: ghClient,
 	}
 }
