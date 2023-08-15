@@ -5,6 +5,6 @@ provider "terraform.local/local/nuon" {
   version     = "0.0.1"
   constraints = "0.0.1"
   hashes = [
-    "h1:v1Wph6DqqthY30anYf8Q3cM4A2m1+QdHhyJJ8DEIBqA=",
+    "h1:+l4wvYWrcEnmr4f43Qc2iTU6EymVjqfjZpSLXxRia88=",
   ]
 }
