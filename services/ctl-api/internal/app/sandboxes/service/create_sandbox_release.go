@@ -51,9 +51,7 @@ func (s *service) CreateSandboxRelease(ctx *gin.Context) {
 
 func (s *service) createSandboxRelease(ctx context.Context, sandboxID string, req *CreateSandboxReleaseRequest) (*app.SandboxRelease, error) {
 	sandbox := app.Sandbox{
-		Model: app.Model{
-			ID: sandboxID,
-		},
+		ID: sandboxID,
 	}
 
 	// build base URL

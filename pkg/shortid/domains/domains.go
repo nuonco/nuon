@@ -54,6 +54,10 @@ func NewVCSConnectionID() string {
 	return shortid.NewNanoID("vcs")
 }
 
+func NewVCSID() string {
+	return shortid.NewNanoID("vcs")
+}
+
 func NewSandboxID() string {
 	return shortid.NewNanoID("snb")
 }

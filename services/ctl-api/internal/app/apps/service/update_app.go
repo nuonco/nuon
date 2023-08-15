@@ -49,9 +49,7 @@ func (s *service) UpdateApp(ctx *gin.Context) {
 
 func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppRequest) (*app.App, error) {
 	currentApp := app.App{
-		Model: app.Model{
-			ID: appID,
-		},
+		ID: appID,
 	}
 
 	res := s.db.WithContext(ctx).Model(&currentApp).Updates(app.App{Name: req.Name})

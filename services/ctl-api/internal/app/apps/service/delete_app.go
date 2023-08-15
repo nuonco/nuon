@@ -37,9 +37,7 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 
 func (s *service) deleteApp(ctx context.Context, appID string) error {
 	res := s.db.WithContext(ctx).Delete(&app.App{
-		Model: app.Model{
-			ID: appID,
-		},
+		ID: appID,
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete app: %w", res.Error)

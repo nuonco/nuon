@@ -45,9 +45,7 @@ func (s *service) UpdateOrg(ctx *gin.Context) {
 
 func (s *service) updateOrg(ctx context.Context, orgID string, req *UpdateOrgRequest) (*app.Org, error) {
 	org := app.Org{
-		Model: app.Model{
-			ID: orgID,
-		},
+		ID: orgID,
 	}
 
 	err := s.db.WithContext(ctx).Model(&org).Updates(app.Org{Name: req.Name}).Error
