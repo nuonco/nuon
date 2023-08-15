@@ -71,10 +71,15 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 	}
 
 	// build component config
+	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(parentCmp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid connected github config: %w", err)
+	}
+
 	cfg := app.TerraformModuleComponentConfig{
 		Version:                  req.Version,
 		PublicGitVCSConfig:       req.publicGitVCSConfig(),
-		ConnectedGithubVCSConfig: req.connectedGithubVCSConfig(parentCmp),
+		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 		Variables:                pgtype.Hstore(req.Variables),
 	}
 

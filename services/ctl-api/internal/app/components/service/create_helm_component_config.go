@@ -71,9 +71,14 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 	}
 
 	// build component config
+	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(parentCmp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid connected github vcs config: %w", err)
+	}
+
 	cfg := app.HelmComponentConfig{
 		PublicGitVCSConfig:       req.publicGitVCSConfig(),
-		ConnectedGithubVCSConfig: req.connectedGithubVCSConfig(parentCmp),
+		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 		Values:                   pgtype.Hstore(req.Values),
 		ChartName:                req.ChartName,
 	}
