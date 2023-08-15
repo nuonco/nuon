@@ -4,9 +4,6 @@ locals {
     ExecutiveDre : {
       teams : [github_team.team.name, ]
     },
-    focusaurus : {
-      teams : [github_team.team.name, github_team.backend.name, ]
-    },
     jonmorehouse : {
       teams : [github_team.team.name, github_team.backend.name, github_team.frontend.name, ]
       role : "admin"
