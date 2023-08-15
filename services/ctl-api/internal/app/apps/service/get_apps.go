@@ -32,7 +32,7 @@ func (s *service) GetApps(ctx *gin.Context) {
 func (s *service) getApps(ctx context.Context, orgID string) ([]*app.App, error) {
 	var apps []*app.App
 	org := &app.Org{
-		Model: app.Model{ID: orgID},
+		ID: orgID,
 	}
 
 	err := s.db.WithContext(ctx).Preload("SandboxRelease").Model(&org).Association("Apps").Find(&apps)

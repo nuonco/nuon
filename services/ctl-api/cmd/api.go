@@ -5,6 +5,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/docs"
 	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
+	componentsshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
+	componentsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/service"
 	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	installsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/service"
@@ -34,6 +36,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(appshooks.New),
 		fx.Provide(installshooks.New),
 		fx.Provide(orgshooks.New),
+		fx.Provide(componentsshooks.New),
 
 		// add middlewares
 		fx.Provide(api.AsMiddleware(metrics.New)),
@@ -47,6 +50,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(generalservice.New)),
 		fx.Provide(api.AsService(sandboxesservice.New)),
 		fx.Provide(api.AsService(installsservice.New)),
+		fx.Provide(api.AsService(componentsservice.New)),
 
 		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`, `group:"middlewares"`))),
 		fx.Invoke(func(*api.API) {

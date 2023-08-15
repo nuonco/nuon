@@ -100,9 +100,9 @@ func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (*gorm.DB, 
 	}
 
 	gormCfg := &gorm.Config{
-		Logger: database.Logger,
+		Logger:         database.Logger,
+		TranslateError: true,
 	}
-
 	postgresCfg := postgres.Config{
 		Conn: stdlib.OpenDB(*connCfg, stdlib.OptionBeforeConnect(beforeConnectFn)),
 	}
