@@ -19,9 +19,10 @@ type ConnectedGithubVCSConfig struct {
 	ComponentConfigType string `json:"component_config_type"`
 
 	Repo      string `json:"repo"`
+	RepoName  string `json:"repo_name"`
+	RepoOwner string `json:"repo_owner"`
 	Directory string `json:"directory"`
 	Branch    string `json:"branch"`
-	GitRef    string `json:"git_ref"`
 
 	VCSConnection   VCSConnection `json:"-"`
 	VCSConnectionID string        `json:"vcs_connection_id"`

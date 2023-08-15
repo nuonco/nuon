@@ -90,9 +90,13 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 	}
 
 	// build component config
+	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(parentCmp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid connected github vcs config: %w", err)
+	}
 	cfg := app.ExternalImageComponentConfig{
 		PublicGitVCSConfig:       req.publicGitVCSConfig(),
-		ConnectedGithubVCSConfig: req.connectedGithubVCSConfig(parentCmp),
+		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 
 		ImageURL:          req.ImageURL,
 		Tag:               req.Tag,

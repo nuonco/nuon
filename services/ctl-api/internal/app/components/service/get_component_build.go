@@ -1,5 +1,58 @@
 package service
 
-import "github.com/gin-gonic/gin"
+import (
+	"context"
+	"fmt"
+	"net/http"
 
-func (s *service) GetComponentBuild(ctx *gin.Context) {}
+	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+// @BasePath /v1/components
+// Get a build for a component
+// @Summary get a build for a component
+// @Schemes
+// @Description get a build for a component
+// @Param component_id path string component_id "component ID"
+// @Tags components
+// @Accept json
+// @Produce json
+// @Success 200 {array} app.ComponentBuild
+// @Router /v1/components/{component_id}/build [GET]
+func (s *service) GetComponentBuild(ctx *gin.Context) {
+	cmpID := ctx.Param("component_id")
+	if cmpID == "" {
+		ctx.Error(fmt.Errorf("component id must be passed in"))
+		return
+	}
+
+	bldID := ctx.Param("build_id")
+	if cmpID == "" {
+		ctx.Error(fmt.Errorf("build id must be passed in"))
+		return
+	}
+
+	bld, err := s.getComponentBuild(ctx, cmpID, bldID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get component build: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, bld)
+}
+
+func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*app.ComponentBuild, error) {
+	var bld app.ComponentBuild
+
+	// query the build in a way where it will _only_ be returned if it belongs to the component id in question
+	res := s.db.WithContext(ctx).
+		Preload("VCSConnectionCommit").
+		Preload("ComponentConfigConnection", "component_id = ?", cmpID).
+		First(&bld, "id = ?", bldID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get component build: %w", res.Error)
+	}
+
+	return &bld, nil
+}
