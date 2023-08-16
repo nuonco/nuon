@@ -37,7 +37,7 @@ type Provider struct {
 // ProviderModel describes the provider data model.
 type ProviderModel struct {
 	APIURL       types.String `tfsdk:"api_url"`
-	APIAuthToken types.String `tfsdk:"api_auth_token"`
+	APIAuthToken types.String `tfsdk:"api_token"`
 	OrgID        types.String `tfsdk:"org_id"`
 }
 
