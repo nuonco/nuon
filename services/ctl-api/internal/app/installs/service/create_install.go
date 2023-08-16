@@ -68,20 +68,31 @@ func (s *service) createInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	// use the append functionality here
+	installCmps := make([]app.InstallComponent, 0)
+	for _, cmp := range parentApp.Components {
+		installCmps = append(installCmps, app.InstallComponent{
+			ComponentID: cmp.ID,
+		})
+	}
 	install := app.Install{
-		Name: req.Name,
+		AppID:  appID,
+		Name:   req.Name,
+		Status: "queued",
 		AWSAccount: app.AWSAccount{
 			Region:     req.AWSAccount.Region,
 			IAMRoleARN: req.AWSAccount.IAMRoleARN,
 		},
-		SandboxReleaseID: parentApp.SandboxRelease.ID,
-		SandboxRelease:   parentApp.SandboxRelease,
-	}
-	err := s.db.Model(&parentApp).Association("Installs").Append(&install)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create install: %w", err)
+		SandboxReleaseID:  parentApp.SandboxRelease.ID,
+		InstallComponents: installCmps,
 	}
 
+	// TODO(jm): figure out why append is not actually appending the nested objects
+	//if err := s.db.Model(&parentApp).Association("Installs").Append(&install); err != nil {
+	//return nil, fmt.Errorf("unable to create association: %w", err)
+	//}
+	res = s.db.Create(&install)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create install: %w", res.Error)
+	}
 	return &install, nil
 }

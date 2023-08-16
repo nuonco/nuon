@@ -62,18 +62,30 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 
 func (s *service) createComponent(ctx context.Context, appID string, req *CreateComponentRequest) (*app.Component, error) {
 	parentApp := app.App{}
-	res := s.db.WithContext(ctx).Preload("Components").First(&parentApp, "id = ?", appID)
+	res := s.db.WithContext(ctx).Preload("Components").Preload("Installs").First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	// use the append functionality here
 	component := app.Component{
 		Name: req.Name,
 	}
 	err := s.db.Model(&parentApp).Association("Components").Append(&component)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create component: %w", err)
+	}
+
+	// create an install component for all known installs
+	var installCmps = []app.InstallComponent{}
+	for _, install := range parentApp.Installs {
+		installCmps = append(installCmps, app.InstallComponent{
+			ComponentID: component.ID,
+			InstallID:   install.ID,
+		})
+	}
+	res = s.db.Create(&installCmps)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create install components: %w", res.Error)
 	}
 
 	return &component, nil
