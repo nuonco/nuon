@@ -38,7 +38,11 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 
 func (s *service) getAppInstalls(ctx context.Context, appID string) ([]app.Install, error) {
 	currentApp := &app.App{}
-	res := s.db.WithContext(ctx).Preload("Installs").First(&currentApp, "id = ?", appID)
+	res := s.db.WithContext(ctx).
+		Preload("Installs").
+		Preload("Installs.SandboxRelease").
+		Preload("Installs.AWSAccount").
+		First(&currentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}

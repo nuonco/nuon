@@ -19,11 +19,11 @@ type Install struct {
 	AppID  string `json:"app_id"`
 	Status string `json:"status"`
 
-	AWSAccountID string     `json:"-"`
-	AWSAccount   AWSAccount `json:"aws_account"`
-
 	SandboxReleaseID string         `json:"-"`
 	SandboxRelease   SandboxRelease `json:"sandbox_release"`
+
+	InstallComponents []InstallComponent `json:"-"`
+	AWSAccount        AWSAccount         `json:"aws_account"`
 }
 
 func (i *Install) BeforeCreate(tx *gorm.DB) error {
