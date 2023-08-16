@@ -30,6 +30,7 @@ test-integration:
     RUN echo "noop..."
 
 artifacts:
+    FROM golang:latest
     FROM +code
     RUN mkdir -p out
 
