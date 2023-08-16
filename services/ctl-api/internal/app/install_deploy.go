@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 )
 
@@ -13,9 +14,16 @@ type InstallDeploy struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	BuildID string
-	Build   ComponentBuild `faker:"-"`
+	BuildID string         `json:"build_id"`
+	Build   ComponentBuild `faker:"-" json:"build,omitempty"`
 
-	InstallComponentID string
-	InstallComponent   InstallComponent `faker:"-"`
+	InstallComponentID string           `json:"install_component_id"`
+	InstallComponent   InstallComponent `faker:"-" json:"-"`
+
+	Status string `json:"status"`
+}
+
+func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
+	c.ID = domains.NewDeployID()
+	return nil
 }

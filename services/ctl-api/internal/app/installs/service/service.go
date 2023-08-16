@@ -5,7 +5,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -20,14 +20,27 @@ type service struct {
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
+	// get all installs across all orgs
+	api.GET("/v1/installs", s.GetOrgInstalls)
+
+	// get / create installs for an app
 	api.GET("/v1/apps/:app_id/installs", s.GetAppInstalls)
 	api.POST("/v1/apps/:app_id/installs", s.CreateInstall)
 
-	api.GET("/v1/installs", s.GetOrgInstalls)
+	// individual installs
+	api.GET("/v1/installs/:install_id", s.GetInstall)
+	api.PATCH("/v1/installs/:install_id", s.UpdateInstall)
+	api.DELETE("/v1/installs/:install_id", s.DeleteInstall)
 
-	api.GET("/v1/installs/:app_id/:install_id", s.GetInstall)
-	api.PATCH("/v1/installs/:app_id/:install_id", s.UpdateInstall)
-	api.DELETE("/v1/installs/:app_id/:install_id", s.DeleteInstall)
+	// install deploys
+	api.GET("/v1/installs/:install_id/deploys", s.GetInstallDeploys)
+	api.POST("/v1/installs/:install_id/deploys", s.CreateInstallDeploy)
+	api.GET("/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallDeploy)
+	api.GET("/v1/installs/:install_id/deploys/:deploy_id/logs", s.GetInstallDeployLogs)
+
+	// install components
+	api.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
+	api.GET("/v1/installs/:install_id/components/:component_id/deploys", s.GetInstallComponentDeploys)
 
 	return nil
 }
