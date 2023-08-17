@@ -18,8 +18,6 @@ var defaultSupportUsers = []string{
 	"google-oauth2|107796233904597398271",
 	// Pavi Sandhu
 	"google-oauth2|117375967099708763726",
-	// Pete Lyons
-	"google-oauth2|110347044904830192078",
 }
 
 // @BasePath /v1/orgs
@@ -36,6 +34,7 @@ var defaultSupportUsers = []string{
 // @Router /v1/orgs/{org_id}/support-users [POST]
 func (s *service) CreateSupportUsers(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
+
 	for _, userID := range defaultSupportUsers {
 		if err := s.createUser(ctx, orgID, userID); err != nil {
 			ctx.Error(fmt.Errorf("unable to add users to org: %w", err))

@@ -22,11 +22,6 @@ import (
 // @Router /v1/installs/{install_id}/components [GET]
 func (s *service) GetInstallComponents(ctx *gin.Context) {
 	appID := ctx.Param("install_id")
-	if appID == "" {
-		ctx.Error(fmt.Errorf("install id must be passed in"))
-		return
-	}
-
 	installComponents, err := s.getInstallComponents(ctx, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install components: %w", err))

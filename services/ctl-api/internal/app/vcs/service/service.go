@@ -13,6 +13,7 @@ type service struct {
 	l        *zap.Logger
 	db       *gorm.DB
 	ghClient *github.Client
+	v        *validator.Validate
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -28,6 +29,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 func New(v *validator.Validate, db *gorm.DB, mw metrics.Writer, l *zap.Logger, ghClient *github.Client) *service {
 	return &service{
+		v:        v,
 		l:        l,
 		db:       db,
 		ghClient: ghClient,

@@ -29,6 +29,7 @@ type CreateUserRequest struct {
 // @Router /v1/orgs/{org_id}/user [POST]
 func (s *service) CreateUser(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
+
 	var req CreateUserRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))

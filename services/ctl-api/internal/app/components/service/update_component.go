@@ -26,15 +26,10 @@ type UpdateComponentRequest struct {
 // @Success 201 {object} app.Component
 // @Router /v1/{component_id} [PATCH]
 func (s *service) UpdateComponent(ctx *gin.Context) {
+	componentID := ctx.Param("component_id")
 	var req UpdateComponentRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
-		return
-	}
-
-	componentID := ctx.Param("component_id")
-	if componentID == "" {
-		ctx.Error(fmt.Errorf("component_id must be passed in"))
 		return
 	}
 

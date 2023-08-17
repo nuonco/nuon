@@ -6,12 +6,20 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm/clause"
 )
 
 type CreateOrgConnectionRequest struct {
 	GithubInstallID string `json:"github_install_id" `
+}
+
+func (c *CreateOrgConnectionRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 // @BasePath /v1/vcs
@@ -28,9 +36,14 @@ type CreateOrgConnectionRequest struct {
 // @Router /v1/vcs/{org_id}/connection [post]
 func (s *service) CreateOrgConnection(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
+
 	var req CreateOrgConnectionRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 

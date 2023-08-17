@@ -6,6 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -23,22 +26,54 @@ func FromContext(ctx *gin.Context) (*app.Org, error) {
 	return org.(*app.Org), nil
 }
 
-func New(writer metrics.Writer, db *gorm.DB) gin.HandlerFunc {
+type middleware struct {
+	l      *zap.Logger
+	writer metrics.Writer
+	db     *gorm.DB
+}
+
+func (m middleware) Name() string {
+	return "org"
+}
+
+func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		m.l.Info("org middleware")
+		if public.IsPublic(ctx) {
+			ctx.Next()
+			return
+		}
+
 		orgID := ctx.Request.Header.Get(orgIDHeaderKey)
 		if orgID == "" {
-			ctx.Error(fmt.Errorf("org header missing, please set %s", orgIDHeaderKey))
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("required header %s not found", orgIDHeaderKey),
+				Description: fmt.Sprintf("please retry request with %s header", orgIDHeaderKey),
+			})
+			ctx.Abort()
 			return
 		}
 
 		org := app.Org{}
-		res := db.WithContext(ctx).First(&org, "id = ?", orgID)
+		res := m.db.WithContext(ctx).First(&org, "id = ?", orgID)
 		if res.Error != nil {
-			ctx.Error(fmt.Errorf("unable to get org: %w", res.Error))
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("org %s was not found", orgID),
+				Description: "please make sure org ID is set properly",
+			})
+			ctx.Abort()
 			return
 		}
 
 		ctx.Set(orgCtxKey, &org)
 		ctx.Next()
+	}
+}
+
+func New(l *zap.Logger, writer metrics.Writer, db *gorm.DB) *middleware {
+	return &middleware{
+		l:      l,
+		writer: writer,
+		db:     db,
 	}
 }
