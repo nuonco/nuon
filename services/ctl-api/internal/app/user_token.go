@@ -7,19 +7,24 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserOrg struct {
+type UserToken struct {
 	ID          string         `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string         `json:"created_by_id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	UserID string
-	OrgID  string
-	IsNew  bool `gorm:"-:all"`
+	Token string `gorm:"uniqueIndex" json:"-"`
+
+	// claim data
+	UserID    string    `json:"user_id"`
+	Subject   string    `json:"subject"`
+	ExpiresAt time.Time `json:"expires_at"`
+	IssuedAt  time.Time `json:"issued_at"`
+	Issuer    string    `json:"issuer"`
 }
 
-func (u *UserOrg) BeforeCreate(tx *gorm.DB) error {
-	u.ID = domains.NewUserID()
+func (u *UserToken) BeforeCreate(tx *gorm.DB) error {
+	u.ID = domains.NewUserTokenID()
 	return nil
 }
