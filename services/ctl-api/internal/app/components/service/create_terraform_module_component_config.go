@@ -40,10 +40,6 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 // @Router /v1/components/{component_id}/configs/terraform-module [POST]
 func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
-	if cmpID == "" {
-		ctx.Error(fmt.Errorf("component id must be passed in"))
-		return
-	}
 
 	var req CreateTerraformModuleComponentConfigRequest
 	if err := ctx.BindJSON(&req); err != nil {

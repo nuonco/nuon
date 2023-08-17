@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
@@ -16,7 +17,14 @@ const (
 )
 
 type CreateAppRequest struct {
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required"`
+}
+
+func (c *CreateAppRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 // @BasePath /v1/apps
@@ -40,6 +48,10 @@ func (s *service) CreateApp(ctx *gin.Context) {
 	var req CreateAppRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 

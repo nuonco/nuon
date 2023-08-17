@@ -6,12 +6,20 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type CreateOrgRequest struct {
 	CreatedByID string `json:"created_by_id,omitempty"`
 	Name        string `json:"name,omitempty"`
+}
+
+func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 // @BasePath /v1/orgs
@@ -30,6 +38,10 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	req := CreateOrgRequest{}
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 

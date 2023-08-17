@@ -22,10 +22,6 @@ import (
 // @Router /v1/apps/{app_id}/components [GET]
 func (s *service) GetAppComponents(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
-	if appID == "" {
-		ctx.Error(fmt.Errorf("app id must be passed in"))
-		return
-	}
 
 	component, err := s.getAppComponents(ctx, appID)
 	if err != nil {

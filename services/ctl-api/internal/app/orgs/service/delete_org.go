@@ -22,7 +22,7 @@ import (
 // @Success 201 {string} ok
 // @Router /v1/orgs/{org_id} [DELETE]
 func (s *service) DeleteOrg(ctx *gin.Context) {
-	orgID := ctx.Param("id")
+	orgID := ctx.Param("org_id")
 
 	err := s.deleteOrg(ctx, orgID)
 	if err != nil {

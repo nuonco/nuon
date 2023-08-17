@@ -33,10 +33,6 @@ func (s *service) UpdateApp(ctx *gin.Context) {
 	}
 
 	appID := ctx.Param("app_id")
-	if appID == "" {
-		ctx.Error(fmt.Errorf("app_id must be passed in"))
-		return
-	}
 
 	app, err := s.updateApp(ctx, appID, &req)
 	if err != nil {

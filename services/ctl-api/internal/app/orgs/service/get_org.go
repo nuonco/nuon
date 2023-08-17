@@ -22,7 +22,8 @@ import (
 // @Success 200 {object} app.Org
 // @Router /v1/orgs/{org_id} [GET]
 func (s *service) GetOrg(ctx *gin.Context) {
-	orgID := ctx.Param("id")
+	orgID := ctx.Param("org_id")
+
 	org, err := s.getOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(err)
