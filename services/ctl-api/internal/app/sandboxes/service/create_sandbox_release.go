@@ -8,12 +8,20 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type CreateSandboxReleaseRequest struct {
-	TerraformVersion string `json:"terraform_version"`
-	Version          string `json:"version"`
+	TerraformVersion string `json:"terraform_version,omitempty" validate:"required"`
+	Version          string `json:"version,omitempty" validate:"required"`
+}
+
+func (c *CreateSandboxReleaseRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 // @BasePath /v1/sandboxes
@@ -30,14 +38,13 @@ type CreateSandboxReleaseRequest struct {
 // @Router /v1/sandboxes/{sandbox_id}/release [post]
 func (s *service) CreateSandboxRelease(ctx *gin.Context) {
 	sandboxID := ctx.Param("sandbox_id")
-	if sandboxID == "" {
-		ctx.Error(fmt.Errorf("sandbox_id must be passed in"))
-		return
-	}
-
 	req := CreateSandboxReleaseRequest{}
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 

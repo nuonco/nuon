@@ -26,15 +26,11 @@ type UpdateInstallRequest struct {
 // @Success 201 {object} app.Install
 // @Router /v1/{install_id} [PATCH]
 func (s *service) UpdateInstall(ctx *gin.Context) {
+	installID := ctx.Param("install_id")
+
 	var req UpdateInstallRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
-		return
-	}
-
-	installID := ctx.Param("install_id")
-	if installID == "" {
-		ctx.Error(fmt.Errorf("install_id must be passed in"))
 		return
 	}
 

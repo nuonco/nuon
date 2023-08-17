@@ -27,7 +27,8 @@ type UpdateOrgRequest struct {
 // @Success 201 {object} app.Org
 // @Router /v1/orgs/{org_id} [PATCH]
 func (s *service) UpdateOrg(ctx *gin.Context) {
-	orgID := ctx.Param("id")
+	orgID := ctx.Param("org_id")
+
 	var req UpdateOrgRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))

@@ -24,13 +24,24 @@ func init() {
 	config.RegisterDefault("db_region", "us-west-2")
 	config.RegisterDefault("db_migrations_path", "./migrations")
 
+	// defaults for app
 	config.RegisterDefault("temporal_namespace", "default")
-
-	// default for github
 	config.RegisterDefault("github_app_key_secret_name", "graphql-api-github-app-key")
-
-	// default sandbox url
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
+
+	//// defaults for middlewares
+	//config.RegisterDefault("middlewares", []string{
+	//"metrics",
+	//"error",
+	//"public",
+	//"auth",
+	//"org",
+	//"headers",
+	//})
+	//config.RegisterDefault("internal_middlewares", []string{
+	//"metrics",
+	//"error",
+	//})
 }
 
 type Config struct {
@@ -65,6 +76,10 @@ type Config struct {
 
 	// sandbox artifacts
 	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url"`
+
+	// middleware configuration
+	Middlewares         []string `config:"middlewares"`
+	InternalMiddlewares []string `config:"internal_middlewares"`
 }
 
 func NewConfig() (*Config, error) {

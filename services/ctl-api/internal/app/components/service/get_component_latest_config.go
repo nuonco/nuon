@@ -21,10 +21,6 @@ import (
 // @Router /v1/components/{component_id}/config [GET]
 func (s *service) GetComponentLatestConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
-	if cmpID == "" {
-		ctx.Error(fmt.Errorf("component id must be passed in"))
-		return
-	}
 
 	cfgs, err := s.getComponentConfigs(ctx, cmpID)
 	if err != nil {
