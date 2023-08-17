@@ -24,16 +24,7 @@ import (
 // @Router /v1/installs/{install_id}/components/{component_id}/deploys [GET]
 func (s *service) GetInstallComponentDeploys(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	if installID == "" {
-		ctx.Error(fmt.Errorf("install id must be passed in"))
-		return
-	}
-
 	componentID := ctx.Param("component_id")
-	if installID == "" {
-		ctx.Error(fmt.Errorf("component id must be passed in"))
-		return
-	}
 
 	installComponentDeploys, err := s.getInstallComponentDeploys(ctx, installID, componentID)
 	if err != nil {

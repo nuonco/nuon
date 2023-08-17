@@ -35,10 +35,6 @@ func (c *CreateComponentRequest) Validate(v *validator.Validate) error {
 // @Router /v1/apps/{app_id}/components/ [post]
 func (s *service) CreateComponent(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
-	if appID == "" {
-		ctx.Error(fmt.Errorf("app id must be passed in"))
-		return
-	}
 
 	var req CreateComponentRequest
 	if err := ctx.BindJSON(&req); err != nil {

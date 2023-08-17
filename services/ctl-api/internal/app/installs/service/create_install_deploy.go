@@ -35,10 +35,6 @@ func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
 // @Router /v1/installs/{install_id}/deploys/ [post]
 func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	if installID == "" {
-		ctx.Error(fmt.Errorf("install id must be passed in"))
-		return
-	}
 
 	var req CreateInstallDeployRequest
 	if err := ctx.BindJSON(&req); err != nil {

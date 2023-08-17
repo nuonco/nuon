@@ -22,10 +22,6 @@ import (
 // @Router /v1/components/{component_id}/build [GET]
 func (s *service) GetComponentBuild(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
-	if cmpID == "" {
-		ctx.Error(fmt.Errorf("component id must be passed in"))
-		return
-	}
 
 	bldID := ctx.Param("build_id")
 	if cmpID == "" {
