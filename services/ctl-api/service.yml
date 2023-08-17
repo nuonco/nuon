@@ -18,9 +18,12 @@ env_secrets:
     name: graphql-api-github-app-key
     key: github_app_key
 config_map_override: api
+
 local_env:
   DB_HOST: localhost
   GITHUB_APP_IP: !!string 261597
+  AUTH0_ISSUER_URL: "https://nuon.us.auth0.com/"
+  AUTH0_AUDIENCE: "api.nuon.co"
 local_cmds:
   - "go run . auto-migrate"
   - "go run . api"

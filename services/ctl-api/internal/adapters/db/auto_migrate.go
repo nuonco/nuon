@@ -19,6 +19,9 @@ func NewAutoMigrate(db *gorm.DB, l *zap.Logger, lc fx.Lifecycle) *AutoMigrate {
 			// org basics
 			db.AutoMigrate(&app.Org{})
 			db.AutoMigrate(&app.UserOrg{})
+			db.AutoMigrate(&app.UserToken{})
+
+			// vcs basics
 			db.AutoMigrate(&app.VCSConnection{})
 			db.AutoMigrate(&app.VCSConnectionCommit{})
 
