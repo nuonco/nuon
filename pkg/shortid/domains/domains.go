@@ -70,6 +70,10 @@ func NewSecretID() string {
 	return shortid.NewNanoID("sec")
 }
 
+func NewUserTokenID() string {
+	return shortid.NewNanoID("tok")
+}
+
 func NewUserID() string {
 	return shortid.NewNanoID("usr")
 }

@@ -80,6 +80,10 @@ type Config struct {
 	// middleware configuration
 	Middlewares         []string `config:"middlewares"`
 	InternalMiddlewares []string `config:"internal_middlewares"`
+
+	// auth 0 config
+	Auth0IssuerURL string `config:"auth0_issuer_url"`
+	Auth0Audience  string `config:"auth0_audience"`
 }
 
 func NewConfig() (*Config, error) {

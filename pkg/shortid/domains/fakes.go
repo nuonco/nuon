@@ -63,6 +63,10 @@ func fakeUserID(v reflect.Value) (interface{}, error) {
 	return NewUserID(), nil
 }
 
+func fakeUserTokenID(v reflect.Value) (interface{}, error) {
+	return NewUserTokenID(), nil
+}
+
 func init() {
 	_ = faker.AddProvider("appID", fakeAppID)
 	_ = faker.AddProvider("artifactID", fakeArtifactID)
@@ -78,5 +82,6 @@ func init() {
 	_ = faker.AddProvider("orgID", fakeOrgID)
 	_ = faker.AddProvider("sandboxID", fakeSandboxID)
 	_ = faker.AddProvider("secretID", fakeSecretID)
+	_ = faker.AddProvider("userTokenID", fakeUserTokenID)
 	_ = faker.AddProvider("userID", fakeUserID)
 }
