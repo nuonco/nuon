@@ -11,6 +11,8 @@ env:
   HTTP_PORT: 8081
   INTERNAL_HTTP_PORT: 8082
   DB_MIGRATIONS_PATH: ./migrations
+  MIDDLEWARES: error,metrics,public,auth,org,headers
+  INTERNAL_MIDDLEWARES: metrics,error
 env_secrets:
   GITHUB_APP_KEY:
     name: graphql-api-github-app-key

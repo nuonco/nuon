@@ -23,10 +23,6 @@ import (
 // @Router /v1/installs/{install_id}/deploys [GET]
 func (s *service) GetInstallDeploys(ctx *gin.Context) {
 	appID := ctx.Param("install_id")
-	if appID == "" {
-		ctx.Error(fmt.Errorf("install id must be passed in"))
-		return
-	}
 
 	installDeploys, err := s.getInstallDeploys(ctx, appID)
 	if err != nil {

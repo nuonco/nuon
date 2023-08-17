@@ -25,15 +25,11 @@ type UpdateAppSandboxRequest struct {
 // @Success 200 {object} app.App
 // @Router /v1/apps/{app_id}/sandbox [patch]
 func (s *service) UpdateAppSandbox(ctx *gin.Context) {
+	appID := ctx.Param("app_id")
+
 	var req UpdateAppSandboxRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
-		return
-	}
-
-	appID := ctx.Param("app_id")
-	if appID == "" {
-		ctx.Error(fmt.Errorf("app_id must be passed in"))
 		return
 	}
 

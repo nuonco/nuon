@@ -22,10 +22,6 @@ import (
 // @Router /v1/sandboxes/{sandbox_id}/releases [get]
 func (s *service) GetSandboxReleases(ctx *gin.Context) {
 	sandboxID := ctx.Param("sandbox_id")
-	if sandboxID == "" {
-		ctx.Error(fmt.Errorf("sandbox_id must be passed in"))
-		return
-	}
 
 	sandbox, err := s.getSandboxReleases(ctx, sandboxID)
 	if err != nil {
