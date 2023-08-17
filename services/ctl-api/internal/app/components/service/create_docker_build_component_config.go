@@ -44,10 +44,6 @@ func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate
 // @Router /v1/components/{component_id}/configs/docker-build [POST]
 func (s *service) CreateDockerBuildComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
-	if cmpID == "" {
-		ctx.Error(fmt.Errorf("component id must be passed in"))
-		return
-	}
 
 	var req CreateDockerBuildComponentConfigRequest
 	if err := ctx.BindJSON(&req); err != nil {

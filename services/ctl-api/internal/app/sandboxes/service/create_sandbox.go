@@ -6,12 +6,20 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type CreateSandboxRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+}
+
+func (c *CreateSandboxRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 // @BasePath /v1/sandboxes
@@ -29,6 +37,10 @@ func (s *service) CreateSandbox(ctx *gin.Context) {
 	req := CreateSandboxRequest{}
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 

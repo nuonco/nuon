@@ -22,11 +22,6 @@ import (
 // @Router /v1/apps/{app_id} [get]
 func (s *service) GetApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
-	if appID == "" {
-		ctx.Error(fmt.Errorf("app_id must be passed in"))
-		return
-	}
-
 	app, err := s.getApp(ctx, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get  app%s: %w", appID, err))

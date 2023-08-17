@@ -10,53 +10,37 @@ import (
 	"go.uber.org/zap"
 )
 
-type Service interface {
-	RegisterRoutes(*gin.Engine) error
-	RegisterInternalRoutes(*gin.Engine) error
-}
-
-func AsMiddleware(f any) any {
-	return fx.Annotate(
-		f,
-		fx.ResultTags(`group:"middlewares"`),
-	)
-}
-
-func AsService(f any) any {
-	return fx.Annotate(
-		f,
-		fx.As(new(Service)),
-		fx.ResultTags(`group:"services"`),
-	)
-}
-
 type API struct {
 	public     *gin.Engine
 	publicAddr string
 
 	internal     *gin.Engine
 	internalAddr string
+
+	services    []Service
+	middlewares []Middleware
+	l           *zap.Logger
+	cfg         *internal.Config
 }
 
-func NewAPI(services []Service, middlewares []gin.HandlerFunc, lc fx.Lifecycle, l *zap.Logger, cfg *internal.Config) (*API, error) {
+func NewAPI(services []Service, middlewares []Middleware, lc fx.Lifecycle, l *zap.Logger, cfg *internal.Config) (*API, error) {
 	api := &API{
 		public:       gin.Default(),
 		publicAddr:   fmt.Sprintf(":%v", cfg.HTTPPort),
 		internal:     gin.Default(),
 		internalAddr: fmt.Sprintf(":%v", cfg.InternalHTTPPort),
+
+		cfg:         cfg,
+		services:    services,
+		middlewares: middlewares,
+		l:           l,
 	}
 
-	for _, middleware := range middlewares {
-		api.public.Use(middleware)
+	if err := api.registerMiddlewares(); err != nil {
+		return nil, fmt.Errorf("unable to register middlewares: %w", err)
 	}
-	for idx, svc := range services {
-		if err := svc.RegisterRoutes(api.public); err != nil {
-			return nil, fmt.Errorf("unable to register routes on svc %d: %w", idx, err)
-		}
-
-		if err := svc.RegisterInternalRoutes(api.internal); err != nil {
-			return nil, fmt.Errorf("unable to register internal routes on svc %d: %w", idx, err)
-		}
+	if err := api.registerServices(); err != nil {
+		return nil, fmt.Errorf("unable to register middlewares: %w", err)
 	}
 
 	lc.Append(fx.Hook{
