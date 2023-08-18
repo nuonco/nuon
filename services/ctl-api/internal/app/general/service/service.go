@@ -17,6 +17,7 @@ type service struct {
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/metrics", s.PublishMetrics)
+	api.GET("/v1/general/current-user", s.GetCurrentUser)
 	return nil
 }
 

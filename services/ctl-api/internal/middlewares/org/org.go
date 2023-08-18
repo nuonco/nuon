@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/global"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -39,7 +39,7 @@ func (m middleware) Name() string {
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		m.l.Info("org middleware")
-		if public.IsPublic(ctx) {
+		if global.IsGlobal(ctx) {
 			ctx.Next()
 			return
 		}
