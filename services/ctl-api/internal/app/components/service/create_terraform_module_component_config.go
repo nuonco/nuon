@@ -57,7 +57,7 @@ func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, cfg)
+	ctx.JSON(http.StatusCreated, cfg)
 }
 
 func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpID string, req *CreateTerraformModuleComponentConfigRequest) (*app.TerraformModuleComponentConfig, error) {

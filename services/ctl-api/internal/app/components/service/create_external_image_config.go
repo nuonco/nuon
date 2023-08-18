@@ -76,7 +76,7 @@ func (s *service) CreateExternalImageComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, cfg)
+	ctx.JSON(http.StatusCreated, cfg)
 }
 
 func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID string, req *CreateExternalImageComponentConfigRequest) (*app.ExternalImageComponentConfig, error) {

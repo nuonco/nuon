@@ -7,6 +7,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -59,6 +60,7 @@ func (s *orgsIntegrationTestSuite) TestOrgByID() {
 		assert.Nil(t, org)
 	})
 	s.T().Run("errors with no org id", func(t *testing.T) {
+		s.apiClient.SetOrgID("")
 		orgs, err := s.apiClient.GetOrg(s.ctx, seedOrg.ID)
 		assert.Error(t, err)
 		assert.Empty(t, orgs)
@@ -75,16 +77,16 @@ func (s *orgsIntegrationTestSuite) TestUpdateOrg() {
 	s.T().Run("success", func(t *testing.T) {
 		updateReq := generics.GetFakeObj[*models.ServiceUpdateOrgRequest]()
 		org, err := s.apiClient.UpdateOrg(s.ctx, seedOrg.ID, updateReq)
-		assert.NoError(t, err)
-		assert.NotNil(t, org)
-		assert.Equal(t, seedOrg.Name, org.Name)
-		assert.Equal(t, seedOrg.ID, org.ID)
+		require.NoError(t, err)
+		require.NotNil(t, org)
+		require.Equal(t, *(updateReq.Name), org.Name)
+		require.Equal(t, seedOrg.ID, org.ID)
 
 		// fetch org
 		fetchedOrg, err := s.apiClient.GetOrg(s.ctx, seedOrg.ID)
-		assert.NoError(t, err)
-		assert.NotNil(t, fetchedOrg)
-		assert.Equal(t, updateReq.Name, fetchedOrg.Name)
+		require.NoError(t, err)
+		require.NotNil(t, fetchedOrg)
+		require.Equal(t, *(updateReq.Name), fetchedOrg.Name)
 	})
 	s.T().Run("error when org does not exist", func(t *testing.T) {
 		updateReq := generics.GetFakeObj[*models.ServiceUpdateOrgRequest]()
@@ -98,7 +100,6 @@ func (s *orgsIntegrationTestSuite) TestUpdateOrg() {
 		assert.Nil(t, org)
 	})
 	s.T().Run("errors with no org id", func(t *testing.T) {
-		s.apiClient.SetOrgID("")
 		orgs, err := s.apiClient.UpdateOrg(s.ctx, seedOrg.ID, &models.ServiceUpdateOrgRequest{})
 		assert.Error(t, err)
 		assert.Empty(t, orgs)

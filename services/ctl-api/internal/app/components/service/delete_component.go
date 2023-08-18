@@ -30,9 +30,7 @@ func (s *service) DeleteComponent(ctx *gin.Context) {
 	}
 
 	s.hooks.Deleted(ctx, componentID)
-	ctx.JSON(http.StatusAccepted, map[string]string{
-		"status": "ok",
-	})
+	ctx.JSON(http.StatusOK, true)
 }
 
 func (s *service) deleteComponent(ctx context.Context, componentID string) error {
@@ -41,6 +39,9 @@ func (s *service) deleteComponent(ctx context.Context, componentID string) error
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete component: %w", res.Error)
+	}
+	if res.RowsAffected != 1 {
+		return fmt.Errorf("component not found")
 	}
 
 	return nil
