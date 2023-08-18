@@ -36,7 +36,7 @@ func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate
 // @Schemes
 // @Description create a docker build component config.
 // @Param req body CreateDockerBuildComponentConfigRequest true "Input"
-// @Param component_id path string component_id "component ID"
+// @Param component_id path string true "component ID"
 // @Tags components
 // @Accept json
 // @Produce json

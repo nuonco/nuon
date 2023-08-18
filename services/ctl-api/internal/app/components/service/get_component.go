@@ -14,7 +14,7 @@ import (
 // @Summary get a component
 // @Schemes
 // @Description get a component
-// @Param component_id path string component_id "component ID"
+// @Param component_id path string true "component ID"
 // @Tags components
 // @Accept json
 // @Produce json

@@ -13,7 +13,7 @@ import (
 // @Summary get latest build for a component
 // @Schemes
 // @Description get latest build for a component
-// @Param component_id path string component_id "component ID"
+// @Param component_id path string true "component ID"
 // @Tags components
 // @Accept json
 // @Produce json

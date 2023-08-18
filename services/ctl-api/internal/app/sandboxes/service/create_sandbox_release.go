@@ -30,7 +30,7 @@ func (c *CreateSandboxReleaseRequest) Validate(v *validator.Validate) error {
 // @Schemes
 // @Description create a new sandbox
 // @Param req body CreateSandboxReleaseRequest true "Input"
-// @Param sandbox_id path string sandbox_id "sandbox ID"
+// @Param sandbox_id path string true "sandbox ID"
 // @Tags sandboxes/internal
 // @Accept json
 // @Produce json

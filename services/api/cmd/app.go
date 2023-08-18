@@ -8,7 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/powertoolsdev/mono/pkg/config"
-	"github.com/powertoolsdev/mono/pkg/api/interceptors"
+	"github.com/powertoolsdev/mono/pkg/deprecated/api/interceptors"
 	wfc "github.com/powertoolsdev/mono/pkg/workflows/client"
 	"github.com/powertoolsdev/mono/services/api/internal"
 	databaseclient "github.com/powertoolsdev/mono/services/api/internal/clients/database"

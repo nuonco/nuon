@@ -14,7 +14,7 @@ import (
 // @Summary get sandbox releases
 // @Schemes
 // @Description get sandbox releases
-// @Param sandbox_id path string sandbox_id "sandbox ID"
+// @Param sandbox_id path string true "sandbox ID"
 // @Tags sandboxes
 // @Accept json
 // @Produce json

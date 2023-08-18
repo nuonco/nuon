@@ -26,7 +26,7 @@ func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
 // @Summary deploy a build to an install
 // @Schemes
 // @Description deploy a build to an install
-// @Param install_id path string install_id "install ID"
+// @Param install_id path string true "install ID"
 // @Param req body CreateInstallDeployRequest true "Input"
 // @Tags installs
 // @Accept json

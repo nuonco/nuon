@@ -15,7 +15,7 @@ import (
 // @Summary get an installs deploys
 // @Schemes
 // @Description get all deploys for an install
-// @Param install_id path string install_id "install ID"
+// @Param install_id path string true "install ID"
 // @Tags installs
 // @Accept json
 // @Produce json

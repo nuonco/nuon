@@ -28,7 +28,7 @@ func (c *CreateOrgConnectionRequest) Validate(v *validator.Validate) error {
 // @Summary create a vcs connection for Github
 // @Schemes
 // @Description create a vcs connection
-// @Param org_id path string org_id "org ID for your current org"
+// @Param org_id path string true "org ID for your current org"
 // @Tags vcs
 // @Accept json
 // @Produce json
