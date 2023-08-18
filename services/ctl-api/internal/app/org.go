@@ -14,10 +14,10 @@ type Org struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	Name           string `gorm:"uniqueIndex" json:"name"`
-	Status         string `json:"status"`
-	Apps           []App  `faker:"-" swaggerignore:"true" json:"apps"`
-	VCSConnections []VCSConnection
+	Name           string          `gorm:"uniqueIndex" json:"name"`
+	Status         string          `json:"status"`
+	Apps           []App           `faker:"-" swaggerignore:"true" json:"apps,omitempty"`
+	VCSConnections []VCSConnection `json:"vcs_connections,omitempty"`
 }
 
 func (o *Org) BeforeCreate(tx *gorm.DB) error {
