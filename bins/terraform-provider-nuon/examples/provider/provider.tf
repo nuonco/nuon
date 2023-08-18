@@ -1,3 +1,2 @@
-provider "scaffolding" {
-  # example configuration here
-}
+# All configuration is provided through environment variables.
+provider "nuon" {}
