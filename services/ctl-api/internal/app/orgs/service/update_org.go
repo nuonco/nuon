@@ -6,11 +6,19 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type UpdateOrgRequest struct {
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required"`
+}
+
+func (c *UpdateOrgRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 // @BasePath /v1/orgs/
@@ -24,13 +32,17 @@ type UpdateOrgRequest struct {
 // @Tags orgs
 // @Accept json
 // @Produce json
-// @Success 201 {object} app.Org
+// @Success 200 {object} app.Org
 // @Router /v1/orgs/{org_id} [PATCH]
 func (s *service) UpdateOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
 	var req UpdateOrgRequest
 	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
@@ -41,17 +53,21 @@ func (s *service) UpdateOrg(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusAccepted, org)
+	ctx.JSON(http.StatusOK, org)
 }
 
 func (s *service) updateOrg(ctx context.Context, orgID string, req *UpdateOrgRequest) (*app.Org, error) {
 	org := app.Org{
 		ID: orgID,
 	}
-
-	err := s.db.WithContext(ctx).Model(&org).Updates(app.Org{Name: req.Name}).Error
-	if err != nil {
-		return nil, fmt.Errorf("unable to update org: %w", err)
+	res := s.db.WithContext(ctx).Model(&org).Updates(app.Org{
+		Name: req.Name,
+	})
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to update org: %w", res.Error)
+	}
+	if res.RowsAffected != 1 {
+		return nil, fmt.Errorf("org not found")
 	}
 
 	return &org, nil
