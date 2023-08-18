@@ -18,13 +18,13 @@ type UpdateInstallRequest struct {
 // @Summary update an install
 // @Schemes
 // @Description update an install
-// @Param install_id path string app_id "app ID"
+// @Param install_id path string true "app ID"
 // @Param req body UpdateInstallRequest true "Input"
 // @Tags installs
 // @Accept json
 // @Produce json
 // @Success 201 {object} app.Install
-// @Router /v1/{install_id} [PATCH]
+// @Router /v1/installs/{install_id} [PATCH]
 func (s *service) UpdateInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

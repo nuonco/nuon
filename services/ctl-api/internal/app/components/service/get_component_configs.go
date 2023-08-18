@@ -14,7 +14,7 @@ import (
 // @Summary get all configs for a component
 // @Schemes
 // @Description get all configs for a component
-// @Param component_id path string component_id "component ID"
+// @Param component_id path string true "component ID"
 // @Tags components
 // @Accept json
 // @Produce json

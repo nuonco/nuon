@@ -32,7 +32,7 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 // @Schemes
 // @Description create a helm component config.
 // @Param req body CreateHelmComponentConfigRequest true "Input"
-// @Param component_id path string component_id "component ID"
+// @Param component_id path string true "component ID"
 // @Tags components
 // @Accept json
 // @Produce json

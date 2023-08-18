@@ -15,8 +15,8 @@ import (
 // @Summary get an install components deploys
 // @Schemes
 // @Description get all deploys for an install
-// @Param install_id path string install_id "install ID"
-// @Param component_id path string component_id "component ID"
+// @Param install_id path string true "install ID"
+// @Param component_id path string true "component ID"
 // @Tags installs
 // @Accept json
 // @Produce json
