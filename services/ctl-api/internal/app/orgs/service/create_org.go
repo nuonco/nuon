@@ -11,8 +11,7 @@ import (
 )
 
 type CreateOrgRequest struct {
-	CreatedByID string `json:"created_by_id,omitempty"`
-	Name        string `json:"name,omitempty"`
+	Name string `json:"name" validate:"required"`
 }
 
 func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
@@ -57,8 +56,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 
 func (s *service) createOrg(ctx context.Context, req *CreateOrgRequest) (*app.Org, error) {
 	org := &app.Org{
-		CreatedByID: req.CreatedByID,
-		Name:        req.Name,
+		Name: req.Name,
 	}
 	if err := s.db.WithContext(ctx).Create(org).Error; err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
