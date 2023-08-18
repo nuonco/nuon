@@ -32,7 +32,6 @@ func (c *CreateAppRequest) Validate(v *validator.Validate) error {
 // @Summary create an app
 // @Schemes
 // @Description get an app
-// @Param app_id path string app_id "app ID"
 // @Tags apps
 // @Accept json
 // @Produce json

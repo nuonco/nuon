@@ -14,8 +14,8 @@ import (
 // @Summary get an install component
 // @Schemes
 // @Description get an install
-// @Param install_id path string install_id "install ID"
-// @Param component_id path string install_id "component ID"
+// @Param install_id path string true "install ID"
+// @Param component_id path string true "component ID"
 // @Tags installs
 // @Accept json
 // @Produce json

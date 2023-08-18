@@ -28,13 +28,13 @@ func (c *CreateComponentBuildRequest) Validate(v *validator.Validate) error {
 // @Summary create component build
 // @Schemes
 // @Description create component build
-// @Param component_id path string component_id "component ID"
+// @Param component_id path string true "component ID"
 // @Param req body CreateComponentBuildRequest true "Input"
 // @Tags components
 // @Accept json
 // @Produce json
 // @Success 201 {object} app.ComponentBuild
-// @Router /v1/apps/{app_id}/components/builds/ [POST]
+// @Router /v1/components/{component_id}/builds/ [POST]
 func (s *service) CreateComponentBuild(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

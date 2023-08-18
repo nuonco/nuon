@@ -3,7 +3,7 @@ package provider
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
 func stringToAPIRegion(val string) (gqlclient.AWSRegion, error) {

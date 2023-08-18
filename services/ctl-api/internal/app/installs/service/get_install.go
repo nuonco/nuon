@@ -14,7 +14,7 @@ import (
 // @Summary get an install
 // @Schemes
 // @Description get an install
-// @Param install_id path string install_id "install ID"
+// @Param install_id path string true "install ID"
 // @Tags installs
 // @Accept json
 // @Produce json

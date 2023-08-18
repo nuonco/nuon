@@ -51,7 +51,7 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 // @Schemes
 // @Description create an external image component config.
 // @Param req body CreateExternalImageComponentConfigRequest true "Input"
-// @Param component_id path string component_id "component ID"
+// @Param component_id path string true "component ID"
 // @Tags components
 // @Accept json
 // @Produce json

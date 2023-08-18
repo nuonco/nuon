@@ -18,7 +18,7 @@ type UpdateAppSandboxRequest struct {
 // @Summary update an app sandbox release
 // @Schemes
 // @Description update an app sandbox release
-// @Param app_id path string app_id "app ID"
+// @Param app_id path string true "app ID"
 // @Tags apps
 // @Accept json
 // @Produce json

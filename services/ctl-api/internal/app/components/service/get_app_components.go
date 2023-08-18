@@ -14,7 +14,7 @@ import (
 // @Summary get all components for an app
 // @Schemes
 // @Description get all components for an org
-// @Param app_id path string app_id "app ID"
+// @Param app_id path string true "app ID"
 // @Tags components
 // @Accept json
 // @Produce json
