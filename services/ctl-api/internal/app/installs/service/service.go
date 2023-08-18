@@ -20,7 +20,7 @@ type service struct {
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
-	// get all installs across all orgs
+	// get all installs across orgs
 	api.GET("/v1/installs", s.GetOrgInstalls)
 
 	// get / create installs for an app

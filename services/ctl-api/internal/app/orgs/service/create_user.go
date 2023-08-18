@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type CreateUserRequest struct {
+type CreateOrgUserRequest struct {
 	UserID string `json:"user_id"`
 }
 
@@ -21,7 +21,7 @@ type CreateUserRequest struct {
 // @Schemes
 // @Description add a user to an org
 // @Param org_id path string true "org ID for your current org"
-// @Param req body CreateUserRequest true "Input"
+// @Param req body CreateOrgUserRequest true "Input"
 // @Tags orgs
 // @Accept json
 // @Produce json
@@ -30,7 +30,7 @@ type CreateUserRequest struct {
 func (s *service) CreateUser(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
-	var req CreateUserRequest
+	var req CreateOrgUserRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return

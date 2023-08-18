@@ -29,6 +29,7 @@ func (c *CreateOrgConnectionRequest) Validate(v *validator.Validate) error {
 // @Schemes
 // @Description create a vcs connection
 // @Param org_id path string true "org ID for your current org"
+// @Param req body CreateOrgConnectionRequest true "Input"
 // @Tags vcs
 // @Accept json
 // @Produce json
