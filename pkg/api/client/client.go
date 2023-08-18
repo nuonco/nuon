@@ -92,7 +92,6 @@ type client struct {
 	URL      string `validate:"required"`
 	OrgID    string
 
-	// inner fields
 	httpClient *http.Client
 }
 
