@@ -2857,10 +2857,10 @@
         },
         "service.CreateOrgRequest": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
-                "created_by_id": {
-                    "type": "string"
-                },
                 "name": {
                     "type": "string"
                 }
