@@ -54,7 +54,7 @@ func (s *service) CreateComponentBuild(ctx *gin.Context) {
 		return
 	}
 	s.hooks.BuildCreated(ctx, component.ID)
-	ctx.JSON(http.StatusOK, component)
+	ctx.JSON(http.StatusCreated, component)
 }
 
 func (s *service) createComponentBuild(ctx context.Context, cmpID string, req *CreateComponentBuildRequest) (*app.ComponentBuild, error) {

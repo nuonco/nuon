@@ -30,9 +30,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 	}
 
 	s.hooks.Deleted(ctx, installID)
-	ctx.JSON(http.StatusAccepted, map[string]string{
-		"status": "ok",
-	})
+	ctx.JSON(http.StatusOK, true)
 }
 
 func (s *service) deleteInstall(ctx context.Context, installID string) error {
@@ -41,6 +39,9 @@ func (s *service) deleteInstall(ctx context.Context, installID string) error {
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete install: %w", res.Error)
+	}
+	if res.RowsAffected != 1 {
+		return fmt.Errorf("install not found")
 	}
 
 	return nil

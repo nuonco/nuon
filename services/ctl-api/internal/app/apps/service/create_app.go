@@ -62,7 +62,7 @@ func (s *service) CreateApp(ctx *gin.Context) {
 	}
 
 	s.hooks.Created(ctx, app.ID)
-	ctx.JSON(http.StatusOK, app)
+	ctx.JSON(http.StatusCreated, app)
 }
 
 func (s *service) createApp(ctx context.Context, orgID string, req *CreateAppRequest) (*app.App, error) {
