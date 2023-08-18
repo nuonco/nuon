@@ -18,7 +18,7 @@ import (
 // @Tags components
 // @Accept json
 // @Produce json
-// @Success 200 {array} app.ComponentConfigConnection
+// @Success 200 {array} app.ComponentBuild
 // @Router /v1/components/{component_id}/builds [GET]
 func (s *service) GetComponentBuilds(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")

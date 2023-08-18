@@ -15,19 +15,15 @@ import (
 // @Schemes
 // @Description get a build for a component
 // @Param component_id path string true "component ID"
+// @Param build_id path string true "build ID"
 // @Tags components
 // @Accept json
 // @Produce json
-// @Success 200 {array} app.ComponentBuild
-// @Router /v1/components/{component_id}/build [GET]
+// @Success 200 {object} app.ComponentBuild
+// @Router /v1/components/{component_id}/build/{build_id} [GET]
 func (s *service) GetComponentBuild(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
-
 	bldID := ctx.Param("build_id")
-	if cmpID == "" {
-		ctx.Error(fmt.Errorf("build id must be passed in"))
-		return
-	}
 
 	bld, err := s.getComponentBuild(ctx, cmpID, bldID)
 	if err != nil {
