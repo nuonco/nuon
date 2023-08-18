@@ -16,7 +16,7 @@ import (
 // @Tags sandboxes
 // @Accept json
 // @Produce json
-// @Success 200 {object} app.Sandbox
+// @Success 200 {array} app.Sandbox
 // @Router /v1/sandboxes [get]
 func (s *service) GetSandboxes(ctx *gin.Context) {
 	sandboxes, err := s.getSandboxes(ctx)
