@@ -34,6 +34,7 @@ func (c *CreateAppRequest) Validate(v *validator.Validate) error {
 // @Description get an app
 // @Tags apps
 // @Accept json
+// @Param req body CreateAppRequest true "Input"
 // @Produce json
 // @Success 201 {object} app.App
 // @Router /v1/apps/ [post]
