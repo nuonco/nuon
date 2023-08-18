@@ -26,7 +26,7 @@ func (c *CreateComponentRequest) Validate(v *validator.Validate) error {
 // @Summary create an app component
 // @Schemes
 // @Description create an app component
-// @Param app_id path string app_id "app ID"
+// @Param app_id path string true "app ID"
 // @Param req body CreateComponentRequest true "Input"
 // @Tags components
 // @Accept json

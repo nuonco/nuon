@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 	"github.com/powertoolsdev/mono/pkg/ui"
 )
 

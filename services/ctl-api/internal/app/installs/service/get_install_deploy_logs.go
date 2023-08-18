@@ -15,8 +15,8 @@ type DeployLog struct{}
 // @Summary get install deploy logs
 // @Schemes
 // @Description get install deploy logs
-// @Param install_id path string install_id "install ID"
-// @Param deploy_id path string deploy_id "deploy ID"
+// @Param install_id path string true "install ID"
+// @Param deploy_id path string true "deploy ID"
 // @Tags installs
 // @Accept json
 // @Produce json

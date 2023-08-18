@@ -14,7 +14,7 @@ import (
 // @Summary delete an app
 // @Schemes
 // @Description delete an app
-// @Param app_id path string app_id "app ID"
+// @Param app_id path string true "app ID"
 // @Tags apps
 // @Accept json
 // @Produce json
