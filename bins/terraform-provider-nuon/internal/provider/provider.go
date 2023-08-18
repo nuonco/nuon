@@ -53,6 +53,7 @@ func (p *Provider) Metadata(ctx context.Context, req provider.MetadataRequest, r
 
 func (p *Provider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "A Terraform provider for managing apps on the Nuon platform.",
 		Attributes: map[string]schema.Attribute{
 			"api_url": schema.StringAttribute{
 				MarkdownDescription: "Override the url to use a custom endpoint.",
