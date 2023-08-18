@@ -6,7 +6,7 @@ import (
 
 // @title		Nuon API
 // @version v1
-// @description	This is a sample server celler server.
+// @description	API for managing nuon apps and installs.
 // @contact.name	Nuon Support
 // @contact.email	support@nuon.co
 // @BasePath	/api/v1

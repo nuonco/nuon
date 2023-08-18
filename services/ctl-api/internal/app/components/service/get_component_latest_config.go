@@ -17,7 +17,7 @@ import (
 // @Tags components
 // @Accept json
 // @Produce json
-// @Success 200 {array} app.ComponentConfigConnection
+// @Success 200 {object} app.ComponentConfigConnection
 // @Router /v1/components/{component_id}/config [GET]
 func (s *service) GetComponentLatestConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
