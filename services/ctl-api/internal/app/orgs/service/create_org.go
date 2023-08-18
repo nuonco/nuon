@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 )
 
 type CreateOrgRequest struct {
@@ -34,6 +35,12 @@ func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
 // @Success 201 {object} app.Org
 // @Router /v1/orgs [POST]
 func (s *service) CreateOrg(ctx *gin.Context) {
+	user, err := auth.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	req := CreateOrgRequest{}
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
@@ -44,7 +51,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.createOrg(ctx, &req)
+	org, err := s.createOrg(ctx, user.Subject, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org: %w", err))
 		return
@@ -54,13 +61,26 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, org)
 }
 
-func (s *service) createOrg(ctx context.Context, req *CreateOrgRequest) (*app.Org, error) {
-	org := &app.Org{
+func (s *service) createOrg(ctx context.Context, userID string, req *CreateOrgRequest) (*app.Org, error) {
+	org := app.Org{
 		Name: req.Name,
+		//UserOrgs: []app.UserOrg{
+		//{
+		//UserID: userID,
+		//},
+		//},
 	}
-	if err := s.db.WithContext(ctx).Create(org).Error; err != nil {
+	if err := s.db.WithContext(ctx).Create(&org).Error; err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
 	}
 
-	return org, nil
+	userOrg := app.UserOrg{
+		UserID: userID,
+		OrgID:  org.ID,
+	}
+	if err := s.db.WithContext(ctx).Create(&userOrg).Error; err != nil {
+		return nil, fmt.Errorf("unable to create user org: %w", err)
+	}
+
+	return &org, nil
 }

@@ -61,7 +61,7 @@ func (s *service) CreateDockerBuildComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, cfg)
+	ctx.JSON(http.StatusCreated, cfg)
 }
 
 func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID string, req *CreateDockerBuildComponentConfigRequest) (*app.DockerBuildComponentConfig, error) {

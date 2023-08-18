@@ -6,11 +6,19 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type UpdateInstallRequest struct {
 	Name string `json:"name"`
+}
+
+func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 // @BasePath /v1/installs
@@ -23,7 +31,7 @@ type UpdateInstallRequest struct {
 // @Tags installs
 // @Accept json
 // @Produce json
-// @Success 201 {object} app.Install
+// @Success 200 {object} app.Install
 // @Router /v1/installs/{install_id} [PATCH]
 func (s *service) UpdateInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
@@ -31,6 +39,10 @@ func (s *service) UpdateInstall(ctx *gin.Context) {
 	var req UpdateInstallRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 
@@ -51,6 +63,9 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 	res := s.db.WithContext(ctx).Model(&currentInstall).Updates(app.Install{Name: req.Name})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+	}
+	if res.RowsAffected != 1 {
+		return nil, fmt.Errorf("install not found")
 	}
 
 	return &currentInstall, nil
