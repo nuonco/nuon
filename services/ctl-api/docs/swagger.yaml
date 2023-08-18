@@ -781,7 +781,7 @@ info:
   contact:
     email: support@nuon.co
     name: Nuon Support
-  description: This is a sample server celler server.
+  description: API for managing nuon apps and installs.
   title: Nuon API
   version: v1
 paths:
@@ -838,10 +838,10 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            type: string
+            type: boolean
       summary: delete an app
       tags:
       - apps
@@ -908,7 +908,9 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/app.Component'
+            items:
+              $ref: '#/definitions/app.Component'
+            type: array
       summary: get all components for an app
       tags:
       - components
@@ -956,7 +958,9 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/app.Install'
+            items:
+              $ref: '#/definitions/app.Install'
+            type: array
       summary: get all installs for an app
       tags:
       - installs
@@ -1045,10 +1049,10 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            type: string
+            type: boolean
       summary: delete an component
       tags:
       - components
@@ -1098,7 +1102,7 @@ paths:
       summary: update a component
       tags:
       - components
-  /v1/components/{component_id}/build:
+  /v1/components/{component_id}/build/{build_id}:
     get:
       consumes:
       - application/json
@@ -1109,15 +1113,18 @@ paths:
         name: component_id
         required: true
         type: string
+      - description: build ID
+        in: path
+        name: build_id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/app.ComponentBuild'
-            type: array
+            $ref: '#/definitions/app.ComponentBuild'
       summary: get a build for a component
       tags:
       - components
@@ -1139,7 +1146,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/app.ComponentConfigConnection'
+              $ref: '#/definitions/app.ComponentBuild'
             type: array
       summary: get all builds for a component
       tags:
@@ -1440,10 +1447,10 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            type: string
+            type: boolean
       summary: delete an install
       tags:
       - installs
@@ -1588,7 +1595,7 @@ paths:
           description: Created
           schema:
             items:
-              $ref: '#/definitions/app.InstallComponent'
+              $ref: '#/definitions/app.InstallDeploy'
             type: array
       summary: get an installs deploys
       tags:
@@ -1686,9 +1693,7 @@ paths:
           description: OK
           schema:
             items:
-              items:
-                $ref: '#/definitions/app.Org'
-              type: array
+              $ref: '#/definitions/app.Org'
             type: array
       summary: Return current user's orgs
       tags:
@@ -1840,7 +1845,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/app.Sandbox'
+            items:
+              $ref: '#/definitions/app.Sandbox'
+            type: array
       summary: get all sandboxes
       tags:
       - sandboxes
@@ -1953,7 +1960,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.Repository'
+            items:
+              $ref: '#/definitions/service.Repository'
+            type: array
       summary: get all vcs connected repos for an org
       tags:
       - vcs

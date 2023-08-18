@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "This is a sample server celler server.",
+        "description": "API for managing nuon apps and installs.",
         "title": "Nuon API",
         "contact": {
             "name": "Nuon Support",
@@ -124,10 +124,10 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "boolean"
                         }
                     }
                 }
@@ -198,7 +198,10 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/app.Component"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.Component"
+                            }
                         }
                     }
                 }
@@ -271,7 +274,10 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/app.Install"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.Install"
+                            }
                         }
                     }
                 }
@@ -438,10 +444,10 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "boolean"
                         }
                     }
                 }
@@ -486,7 +492,7 @@
                 }
             }
         },
-        "/v1/components/{component_id}/build": {
+        "/v1/components/{component_id}/build/{build_id}": {
             "get": {
                 "description": "get a build for a component",
                 "consumes": [
@@ -506,16 +512,20 @@
                         "name": "component_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "build ID",
+                        "name": "build_id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/app.ComponentBuild"
-                            }
+                            "$ref": "#/definitions/app.ComponentBuild"
                         }
                     }
                 }
@@ -549,7 +559,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/app.ComponentConfigConnection"
+                                "$ref": "#/definitions/app.ComponentBuild"
                             }
                         }
                     }
@@ -1038,10 +1048,10 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "boolean"
                         }
                     }
                 }
@@ -1230,7 +1240,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/app.InstallComponent"
+                                "$ref": "#/definitions/app.InstallDeploy"
                             }
                         }
                     }
@@ -1378,10 +1388,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/definitions/app.Org"
-                                }
+                                "$ref": "#/definitions/app.Org"
                             }
                         }
                     }
@@ -1611,7 +1618,10 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/app.Sandbox"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.Sandbox"
+                            }
                         }
                     }
                 }
@@ -1783,7 +1793,10 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.Repository"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.Repository"
+                            }
                         }
                     }
                 }

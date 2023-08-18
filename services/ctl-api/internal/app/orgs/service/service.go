@@ -22,7 +22,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.DELETE("/v1/orgs/:id", s.DeleteOrg)
 	api.PATCH("/v1/orgs/:id", s.UpdateOrg)
 	api.POST("/v1/orgs", s.CreateOrg)
-	//api.GET("/v1/orgs", s.GetCurrentUserOrgs)
+	api.GET("/v1/orgs", s.GetCurrentUserOrgs)
 
 	api.POST("/v1/orgs/:org_id/user", s.CreateUser)
 	return nil
