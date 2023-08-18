@@ -12,9 +12,14 @@ import (
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 )
 
+//
 //go:generate -command swagger go run github.com/go-swagger/go-swagger/cmd/swagger
 //go:generate swagger generate client --skip-tag-packages -f ../../../services/ctl-api/docs/swagger.json
+//go:generate -command mockgen go run github.com/golang/mock/mockgen
+//go:generate mockgen -destination=mock.go -source=client.go -package=client
 type Client interface {
+	SetOrgID(orgID string)
+
 	// orgs
 	GetOrg(ctx context.Context, orgID string) (*models.AppOrg, error)
 	GetOrgs(ctx context.Context) ([]*models.AppOrg, error)
@@ -96,7 +101,8 @@ type client struct {
 	APIURL   string `validate:"required"`
 	OrgID    string
 
-	genClient *genclient.NuonAPI
+	genClient    *genclient.NuonAPI
+	appTransport *appTransport
 }
 
 type clientOption func(*client) error
@@ -119,11 +125,13 @@ func New(v *validator.Validate, opts ...clientOption) (*client, error) {
 	}
 
 	transport := httptransport.New(apiURL.Host, "", []string{apiURL.Scheme})
-	transport.Transport = &appTransport{
+	appTransport := &appTransport{
 		authToken: c.APIToken,
 		orgID:     c.OrgID,
 		transport: http.DefaultTransport,
 	}
+	c.appTransport = appTransport
+	transport.Transport = appTransport
 	genClient := genclient.New(transport, nil)
 	c.genClient = genClient
 
