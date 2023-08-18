@@ -19,7 +19,7 @@ type UpdateOrgRequest struct {
 // @Summary Update an org
 // @Schemes
 // @Description Update an org
-// @Param org_id path string org_id "org ID for your current org"
+// @Param org_id path string true "org ID for your current org"
 // @Param req body UpdateOrgRequest true "Input"
 // @Tags orgs
 // @Accept json

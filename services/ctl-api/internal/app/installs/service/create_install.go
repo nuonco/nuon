@@ -31,7 +31,7 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 // @Summary create an app install
 // @Schemes
 // @Description create an app install
-// @Param app_id path string app_id "app ID"
+// @Param app_id path string true "app ID"
 // @Param req body CreateInstallRequest true "Input"
 // @Tags installs
 // @Accept json

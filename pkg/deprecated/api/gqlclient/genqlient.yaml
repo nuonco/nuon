@@ -1,4 +1,4 @@
-schema: ../../../services/api-gateway/src/gql-schema/*.graphql
+schema: ../../../../services/api-gateway/src/gql-schema/*.graphql
 operations:
   - operations/orgs.graphql
   - operations/instances.graphql

@@ -15,7 +15,7 @@ import (
 // @Summary get vcs connection for an org
 // @Schemes
 // @Description get vcs connections
-// @Param org_id path string org_id "org ID for your current org"
+// @Param org_id path string true "org ID for your current org"
 // @Tags vcs
 // @Accept json
 // @Produce json
