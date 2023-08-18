@@ -17,7 +17,6 @@ type UserToken struct {
 	Token string `gorm:"uniqueIndex" json:"-"`
 
 	// claim data
-	UserID    string    `json:"user_id"`
 	Subject   string    `json:"subject"`
 	ExpiresAt time.Time `json:"expires_at"`
 	IssuedAt  time.Time `json:"issued_at"`
