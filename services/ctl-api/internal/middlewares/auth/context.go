@@ -12,7 +12,7 @@ const userTokenCtxKey string = "user_token"
 func FromContext(ctx *gin.Context) (*app.UserToken, error) {
 	org, exists := ctx.Get(userTokenCtxKey)
 	if !exists {
-		return nil, fmt.Errorf("org was not set on middleware context")
+		return nil, fmt.Errorf("user was not set on middleware context")
 	}
 
 	return org.(*app.UserToken), nil
