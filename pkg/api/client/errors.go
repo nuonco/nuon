@@ -1,1 +1,1 @@
-package gqlclient
+package client

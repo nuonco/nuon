@@ -18,7 +18,7 @@ import (
 // @Tags components
 // @Accept json
 // @Produce json
-// @Success 201 {string} ok
+// @Success 200 {boolean} true
 // @Router /v1/components/{component_id} [DELETE]
 func (s *service) DeleteComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")

@@ -18,7 +18,7 @@ import (
 // @Tags installs
 // @Accept json
 // @Produce json
-// @Success 201 {object} app.Install
+// @Success 201 {array} app.Install
 // @Router /v1/apps/{app_id}/installs [GET]
 func (s *service) GetAppInstalls(ctx *gin.Context) {
 	appID := ctx.Param("app_id")

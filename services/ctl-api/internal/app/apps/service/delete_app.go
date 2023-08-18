@@ -18,7 +18,7 @@ import (
 // @Tags apps
 // @Accept json
 // @Produce json
-// @Success 201 {string} ok
+// @Success 200 {boolean} true
 // @Router /v1/apps/{app_id} [DELETE]
 func (s *service) DeleteApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")

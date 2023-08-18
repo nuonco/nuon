@@ -18,7 +18,7 @@ import (
 // @Tags installs
 // @Accept json
 // @Produce json
-// @Success 201 {string} ok
+// @Success 200 {boolean} true
 // @Router /v1/installs/{install_id} [DELETE]
 func (s *service) DeleteInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
