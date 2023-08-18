@@ -26,7 +26,7 @@ var defaultSupportUsers = []string{
 // @Summary Add nuon users as support members
 // @Schemes
 // @Description create a new org
-// @Param org_id path string org_id "org ID for your current org"
+// @Param org_id path string true "org ID for your current org"
 // @Tags orgs/internal
 // @Accept json
 // @Produce json

@@ -20,7 +20,7 @@ type CreateUserRequest struct {
 // @Summary Add a user to an org
 // @Schemes
 // @Description add a user to an org
-// @Param org_id path string org_id "org ID for your current org"
+// @Param org_id path string true "org ID for your current org"
 // @Param req body CreateUserRequest true "Input"
 // @Tags orgs
 // @Accept json

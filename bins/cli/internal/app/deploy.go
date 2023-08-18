@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"golang.org/x/sync/errgroup"
 )

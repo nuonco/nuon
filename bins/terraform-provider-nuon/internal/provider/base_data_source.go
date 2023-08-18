@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
 type baseDataSource struct {

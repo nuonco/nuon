@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
 const (

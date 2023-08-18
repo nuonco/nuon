@@ -32,7 +32,7 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 // @Schemes
 // @Description create a terraform component config.
 // @Param req body CreateTerraformModuleComponentConfigRequest true "Input"
-// @Param component_id path string component_id "component ID"
+// @Param component_id path string true "component ID"
 // @Tags components
 // @Accept json
 // @Produce json

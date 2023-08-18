@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/powertoolsdev/mono/pkg/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
 type PublicRepo struct {

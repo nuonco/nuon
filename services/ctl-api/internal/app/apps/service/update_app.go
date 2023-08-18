@@ -18,7 +18,7 @@ type UpdateAppRequest struct {
 // @Summary update an app
 // @Schemes
 // @Description update an app
-// @Param app_id path string app_id "app ID"
+// @Param app_id path string true "app ID"
 // @Param req body UpdateAppRequest true "Input"
 // @Tags apps
 // @Accept json
