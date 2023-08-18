@@ -1,0 +1,3063 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a sample server celler server.",
+        "title": "Nuon API",
+        "contact": {
+            "name": "Nuon Support",
+            "email": "support@nuon.co"
+        },
+        "version": "v1"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/v1/apps": {
+            "get": {
+                "description": "get an app",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "apps"
+                ],
+                "summary": "get all apps for the current org",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.App"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/apps/": {
+            "post": {
+                "description": "get an app",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "apps"
+                ],
+                "summary": "create an app",
+                "parameters": [
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateAppRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.App"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/apps/{app_id}": {
+            "get": {
+                "description": "get an app",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "apps"
+                ],
+                "summary": "get an app",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "app ID",
+                        "name": "app_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.App"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "delete an app",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "apps"
+                ],
+                "summary": "delete an app",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "app ID",
+                        "name": "app_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "update an app",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "apps"
+                ],
+                "summary": "update an app",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "app ID",
+                        "name": "app_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.UpdateAppRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.App"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/apps/{app_id}/components": {
+            "get": {
+                "description": "get all components for an org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "get all components for an app",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "app ID",
+                        "name": "app_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.Component"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/apps/{app_id}/components/": {
+            "post": {
+                "description": "create an app component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "create an app component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "app ID",
+                        "name": "app_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateComponentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.Component"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/apps/{app_id}/installs": {
+            "get": {
+                "description": "get all installs for an org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "get all installs for an app",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "app ID",
+                        "name": "app_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.Install"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/apps/{app_id}/installs/": {
+            "post": {
+                "description": "create an app install",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "create an app install",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "app ID",
+                        "name": "app_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateInstallRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.Install"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/apps/{app_id}/sandbox": {
+            "patch": {
+                "description": "update an app sandbox release",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "apps"
+                ],
+                "summary": "update an app sandbox release",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "app ID",
+                        "name": "app_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.UpdateAppSandboxRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.App"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components": {
+            "get": {
+                "description": "get all components for an org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "get all components for an org",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.Component"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}": {
+            "get": {
+                "description": "get a component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "get a component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.Component"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "delete an component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "delete an component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "update a component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "update a component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.UpdateComponentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.Component"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/build": {
+            "get": {
+                "description": "get a build for a component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "get a build for a component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.ComponentBuild"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/builds": {
+            "get": {
+                "description": "get all builds for a component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "get all builds for a component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.ComponentConfigConnection"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/builds/": {
+            "post": {
+                "description": "create component build",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "create component build",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateComponentBuildRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.ComponentBuild"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/builds/{build_id}/logs": {
+            "get": {
+                "description": "get install build logs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "get install build logs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "build ID",
+                        "name": "build_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.BuildLog"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/config": {
+            "get": {
+                "description": "get latest config for a component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "get latest config for a component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.ComponentConfigConnection"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/configs": {
+            "get": {
+                "description": "get all configs for a component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "get all configs for a component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.ComponentConfigConnection"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/configs/docker-build": {
+            "post": {
+                "description": "create a docker build component config.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "create a docker build component config",
+                "parameters": [
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateDockerBuildComponentConfigRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.ComponentConfigConnection"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/configs/external-image": {
+            "post": {
+                "description": "create an external image component config.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "create an external image component config",
+                "parameters": [
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateExternalImageComponentConfigRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.ComponentConfigConnection"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/configs/helm": {
+            "post": {
+                "description": "create a helm component config.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "create a helm component config",
+                "parameters": [
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateHelmComponentConfigRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.ComponentConfigConnection"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/configs/terraform-module": {
+            "post": {
+                "description": "create a terraform component config.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "create a terraform component config",
+                "parameters": [
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateTerraformModuleComponentConfigRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.ComponentConfigConnection"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/latest-build": {
+            "get": {
+                "description": "get latest build for a component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "components"
+                ],
+                "summary": "get latest build for a component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.ComponentBuild"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/general/current-user": {
+            "get": {
+                "description": "get current user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "general"
+                ],
+                "summary": "Get current user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.UserToken"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/general/metrics": {
+            "post": {
+                "description": "Both the terraform provider and CLI write metrics back home",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "general"
+                ],
+                "summary": "Publish a metric from different Nuon clients for telemetry purposes.",
+                "parameters": [
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.PublishMetricInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/installs": {
+            "get": {
+                "description": "get all installs for an org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "get all installs for an org",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.Install"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/installs/{install_id}": {
+            "get": {
+                "description": "get an install",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "get an install",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "install ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.Install"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "delete an install",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "delete an install",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "install ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "update an install",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "update an install",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "app ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.UpdateInstallRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.Install"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/installs/{install_id}/component/{component_id}": {
+            "get": {
+                "description": "get an install",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "get an install component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "install ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.InstallComponent"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/installs/{install_id}/components": {
+            "get": {
+                "description": "get all components for an install",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "get an installs components",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "install ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.InstallComponent"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/installs/{install_id}/components/{component_id}/deploys": {
+            "get": {
+                "description": "get all deploys for an install",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "get an install components deploys",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "install ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.InstallDeploy"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/installs/{install_id}/deploys": {
+            "get": {
+                "description": "get all deploys for an install",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "get an installs deploys",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "install ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.InstallComponent"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/installs/{install_id}/deploys/": {
+            "post": {
+                "description": "deploy a build to an install",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "deploy a build to an install",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "install ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateInstallDeployRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.InstallDeploy"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/installs/{install_id}/deploys/{deploy_id}": {
+            "get": {
+                "description": "get an install deploy",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "get an install deploy",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "install ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "deploy ID",
+                        "name": "deploy_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.InstallDeploy"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/installs/{install_id}/deploys/{deploy_id}/logs": {
+            "get": {
+                "description": "get install deploy logs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs"
+                ],
+                "summary": "get install deploy logs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "install ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "deploy ID",
+                        "name": "deploy_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.DeployLog"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/orgs": {
+            "get": {
+                "description": "return current user's orgs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orgs"
+                ],
+                "summary": "Return current user's orgs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/app.Org"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "create a new org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orgs"
+                ],
+                "summary": "create a new org",
+                "parameters": [
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateOrgRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.Org"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/orgs/{org_id}": {
+            "get": {
+                "description": "get an org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orgs"
+                ],
+                "summary": "Get an org",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "org ID for your current org",
+                        "name": "org_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.Org"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "create a new org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orgs"
+                ],
+                "summary": "Delete an org",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "org ID for your current org",
+                        "name": "org_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Update an org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orgs"
+                ],
+                "summary": "Update an org",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "org ID for your current org",
+                        "name": "org_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.UpdateOrgRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.Org"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/orgs/{org_id}/support-users": {
+            "post": {
+                "description": "create a new org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orgs/internal"
+                ],
+                "summary": "Add nuon users as support members",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "org ID for your current org",
+                        "name": "org_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/orgs/{org_id}/user": {
+            "post": {
+                "description": "add a user to an org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orgs"
+                ],
+                "summary": "Add a user to an org",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "org ID for your current org",
+                        "name": "org_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateOrgUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.UserOrg"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/sandboxes": {
+            "get": {
+                "description": "get all sandboxes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sandboxes"
+                ],
+                "summary": "get all sandboxes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.Sandbox"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "create a new sandbox",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sandboxes/internal"
+                ],
+                "summary": "create a new sandbox",
+                "parameters": [
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateSandboxRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.Sandbox"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/sandboxes/{sandbox_id}": {
+            "get": {
+                "description": "get a sandbox",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sandboxes"
+                ],
+                "summary": "get a sandbox",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "sandbox ID",
+                        "name": "sandbox_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.Sandbox"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/sandboxes/{sandbox_id}/release": {
+            "post": {
+                "description": "create a new sandbox",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sandboxes/internal"
+                ],
+                "summary": "create a new sandbox",
+                "parameters": [
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateSandboxReleaseRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "sandbox ID",
+                        "name": "sandbox_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.Sandbox"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/sandboxes/{sandbox_id}/releases": {
+            "get": {
+                "description": "get sandbox releases",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sandboxes"
+                ],
+                "summary": "get sandbox releases",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "sandbox ID",
+                        "name": "sandbox_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.SandboxRelease"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/vcs/{org_id}/connected-repos": {
+            "get": {
+                "description": "return all vcs connected repos for an org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vcs"
+                ],
+                "summary": "get all vcs connected repos for an org",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "org ID for your current org",
+                        "name": "org_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.Repository"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/vcs/{org_id}/connection": {
+            "post": {
+                "description": "create a vcs connection",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vcs"
+                ],
+                "summary": "create a vcs connection for Github",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "org ID for your current org",
+                        "name": "org_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateOrgConnectionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.VCSConnection"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/vcs/{org_id}/connections": {
+            "get": {
+                "description": "get vcs connections",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vcs"
+                ],
+                "summary": "get vcs connection for an org",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "org ID for your current org",
+                        "name": "org_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.VCSConnection"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "app.AWSAccount": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "iam_role_arn": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.AWSECRImageConfig": {
+            "type": "object",
+            "properties": {
+                "aws_region": {
+                    "type": "string"
+                },
+                "component_config_id": {
+                    "description": "connection to parent model",
+                    "type": "string"
+                },
+                "component_config_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "iam_role_arn": {
+                    "description": "actual configuration",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.App": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "org_id": {
+                    "type": "string"
+                },
+                "sandbox_release": {
+                    "$ref": "#/definitions/app.SandboxRelease"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.BasicDeployConfig": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "component_config_id": {
+                    "description": "connection to parent model",
+                    "type": "string"
+                },
+                "component_config_type": {
+                    "type": "string"
+                },
+                "cpu_limit": {
+                    "type": "string"
+                },
+                "cpu_request": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "env_vars": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "health_check_path": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "instance_count": {
+                    "description": "actual configuration",
+                    "type": "integer"
+                },
+                "listen_port": {
+                    "type": "integer"
+                },
+                "mem_limit": {
+                    "type": "string"
+                },
+                "mem_request": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.Component": {
+            "type": "object",
+            "properties": {
+                "app_id": {
+                    "type": "string"
+                },
+                "config_versions": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.ComponentBuild": {
+            "type": "object",
+            "properties": {
+                "component_config_connection_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "git_ref": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "vcs_connection_commit": {
+                    "$ref": "#/definitions/app.VCSConnectionCommit"
+                }
+            }
+        },
+        "app.ComponentConfigConnection": {
+            "type": "object",
+            "properties": {
+                "component_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "docker_build": {
+                    "$ref": "#/definitions/app.DockerBuildComponentConfig"
+                },
+                "external_image": {
+                    "$ref": "#/definitions/app.ExternalImageComponentConfig"
+                },
+                "helm": {
+                    "$ref": "#/definitions/app.HelmComponentConfig"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "terraform_module": {
+                    "$ref": "#/definitions/app.TerraformModuleComponentConfig"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.ConnectedGithubVCSConfig": {
+            "type": "object",
+            "properties": {
+                "branch": {
+                    "type": "string"
+                },
+                "component_config_id": {
+                    "description": "parent component",
+                    "type": "string"
+                },
+                "component_config_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "directory": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "repo": {
+                    "type": "string"
+                },
+                "repo_name": {
+                    "type": "string"
+                },
+                "repo_owner": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "vcs_connection_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.DockerBuildComponentConfig": {
+            "type": "object",
+            "properties": {
+                "basic_deploy_config": {
+                    "$ref": "#/definitions/app.BasicDeployConfig"
+                },
+                "build_args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connected_github_vcs_config": {
+                    "$ref": "#/definitions/app.ConnectedGithubVCSConfig"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "dockerfile": {
+                    "type": "string"
+                },
+                "env_vars": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "public_git_vcs_config": {
+                    "description": "VCS Config",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/app.PublicGitVCSConfig"
+                        }
+                    ]
+                },
+                "sync_only": {
+                    "type": "boolean"
+                },
+                "target": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.ExternalImageComponentConfig": {
+            "type": "object",
+            "properties": {
+                "aws_ecr_image_config": {
+                    "$ref": "#/definitions/app.AWSECRImageConfig"
+                },
+                "basic_deploy_config": {
+                    "$ref": "#/definitions/app.BasicDeployConfig"
+                },
+                "componentConfigConnectionID": {
+                    "description": "value",
+                    "type": "string"
+                },
+                "connected_github_vcs_config": {
+                    "$ref": "#/definitions/app.ConnectedGithubVCSConfig"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "public_git_vcs_config": {
+                    "description": "VCS Config",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/app.PublicGitVCSConfig"
+                        }
+                    ]
+                },
+                "sync_only": {
+                    "type": "boolean"
+                },
+                "tag": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.HelmComponentConfig": {
+            "type": "object",
+            "properties": {
+                "chart_name": {
+                    "description": "Helm specific configurations",
+                    "type": "string"
+                },
+                "connected_github_vcs_config": {
+                    "$ref": "#/definitions/app.ConnectedGithubVCSConfig"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "public_git_vcs_config": {
+                    "$ref": "#/definitions/app.PublicGitVCSConfig"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "values": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "app.Install": {
+            "type": "object",
+            "properties": {
+                "app_id": {
+                    "type": "string"
+                },
+                "aws_account": {
+                    "$ref": "#/definitions/app.AWSAccount"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sandbox_release": {
+                    "$ref": "#/definitions/app.SandboxRelease"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.InstallComponent": {
+            "type": "object",
+            "properties": {
+                "component": {
+                    "$ref": "#/definitions/app.Component"
+                },
+                "component_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "install": {
+                    "$ref": "#/definitions/app.Install"
+                },
+                "installDeploys": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.InstallDeploy"
+                    }
+                },
+                "install_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.InstallDeploy": {
+            "type": "object",
+            "properties": {
+                "build": {
+                    "$ref": "#/definitions/app.ComponentBuild"
+                },
+                "build_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "install_component_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.Org": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "vcs_connections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.VCSConnection"
+                    }
+                }
+            }
+        },
+        "app.PublicGitVCSConfig": {
+            "type": "object",
+            "properties": {
+                "branch": {
+                    "type": "string"
+                },
+                "component_config_id": {
+                    "type": "string"
+                },
+                "component_config_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "directory": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "repo": {
+                    "description": "actual configuration",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.Sandbox": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "releases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.SandboxRelease"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.SandboxRelease": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "deprovision_policy_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "one_click_role_template_url": {
+                    "type": "string"
+                },
+                "provision_policy_url": {
+                    "type": "string"
+                },
+                "terraform_version": {
+                    "type": "string"
+                },
+                "trust_policy_url": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.TerraformModuleComponentConfig": {
+            "type": "object",
+            "properties": {
+                "connected_github_vcs_config": {
+                    "$ref": "#/definitions/app.ConnectedGithubVCSConfig"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "public_git_vcs_config": {
+                    "description": "VCSConfig",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/app.PublicGitVCSConfig"
+                        }
+                    ]
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "variables": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "version": {
+                    "description": "terraform configuration values",
+                    "type": "string"
+                }
+            }
+        },
+        "app.UserOrg": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isNew": {
+                    "type": "boolean"
+                },
+                "org": {
+                    "$ref": "#/definitions/app.Org"
+                },
+                "orgID": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "userID": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.UserToken": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "issued_at": {
+                    "type": "string"
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "subject": {
+                    "description": "claim data",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.VCSConnection": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "github_install_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "org_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "vcs_connection_commit": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.VCSConnectionCommit"
+                    }
+                }
+            }
+        },
+        "app.VCSConnectionCommit": {
+            "type": "object",
+            "properties": {
+                "author_email": {
+                    "type": "string"
+                },
+                "author_name": {
+                    "type": "string"
+                },
+                "component_config_connection_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "sha": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.BuildLog": {
+            "type": "object"
+        },
+        "service.ConnectedGithubVCSConfigRequest": {
+            "type": "object",
+            "required": [
+                "directory",
+                "repo"
+            ],
+            "properties": {
+                "branch": {
+                    "type": "string"
+                },
+                "directory": {
+                    "type": "string"
+                },
+                "gitRef": {
+                    "type": "string"
+                },
+                "repo": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateAppRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateComponentBuildRequest": {
+            "type": "object",
+            "properties": {
+                "git_ref": {
+                    "type": "string"
+                },
+                "use_latest": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "service.CreateComponentRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateDockerBuildComponentConfigRequest": {
+            "type": "object",
+            "properties": {
+                "basic_deploy_config": {
+                    "$ref": "#/definitions/service.basicDeployConfigRequest"
+                },
+                "build_args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "connected_github_vcs_config": {
+                    "$ref": "#/definitions/service.ConnectedGithubVCSConfigRequest"
+                },
+                "dockerfile": {
+                    "type": "string"
+                },
+                "env_vars": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "public_git_vcs_config": {
+                    "$ref": "#/definitions/service.PublicGitVCSConfigRequest"
+                },
+                "sync_only": {
+                    "type": "boolean"
+                },
+                "target": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateExternalImageComponentConfigRequest": {
+            "type": "object",
+            "required": [
+                "image_url",
+                "tag"
+            ],
+            "properties": {
+                "aws_ecr_image_config": {
+                    "$ref": "#/definitions/service.awsECRImageConfigRequest"
+                },
+                "basic_deploy_config": {
+                    "$ref": "#/definitions/service.basicDeployConfigRequest"
+                },
+                "connected_github_vcs_config": {
+                    "$ref": "#/definitions/service.ConnectedGithubVCSConfigRequest"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "public_git_vcs_config": {
+                    "$ref": "#/definitions/service.PublicGitVCSConfigRequest"
+                },
+                "sync_only": {
+                    "type": "boolean"
+                },
+                "tag": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateHelmComponentConfigRequest": {
+            "type": "object",
+            "required": [
+                "chart_name",
+                "values"
+            ],
+            "properties": {
+                "chart_name": {
+                    "type": "string"
+                },
+                "connected_github_vcs_config": {
+                    "$ref": "#/definitions/service.ConnectedGithubVCSConfigRequest"
+                },
+                "public_git_vcs_config": {
+                    "$ref": "#/definitions/service.PublicGitVCSConfigRequest"
+                },
+                "values": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "service.CreateInstallDeployRequest": {
+            "type": "object",
+            "properties": {
+                "build_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateInstallRequest": {
+            "type": "object",
+            "required": [
+                "aws_account",
+                "name"
+            ],
+            "properties": {
+                "aws_account": {
+                    "type": "object",
+                    "required": [
+                        "iam_role_arn"
+                    ],
+                    "properties": {
+                        "iam_role_arn": {
+                            "type": "string"
+                        },
+                        "region": {
+                            "type": "string",
+                            "enum": [
+                                "us-east-1",
+                                "us-east-2",
+                                "us-west-2"
+                            ]
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateOrgConnectionRequest": {
+            "type": "object",
+            "properties": {
+                "github_install_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateOrgRequest": {
+            "type": "object",
+            "properties": {
+                "created_by_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateOrgUserRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateSandboxReleaseRequest": {
+            "type": "object",
+            "required": [
+                "terraform_version",
+                "version"
+            ],
+            "properties": {
+                "terraform_version": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateSandboxRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.CreateTerraformModuleComponentConfigRequest": {
+            "type": "object",
+            "required": [
+                "variables"
+            ],
+            "properties": {
+                "connected_github_vcs_config": {
+                    "$ref": "#/definitions/service.ConnectedGithubVCSConfigRequest"
+                },
+                "public_git_vcs_config": {
+                    "$ref": "#/definitions/service.PublicGitVCSConfigRequest"
+                },
+                "variables": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.DeployLog": {
+            "type": "object"
+        },
+        "service.PublicGitVCSConfigRequest": {
+            "type": "object",
+            "required": [
+                "branch",
+                "directory",
+                "repo"
+            ],
+            "properties": {
+                "branch": {
+                    "type": "string"
+                },
+                "directory": {
+                    "type": "string"
+                },
+                "repo": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.PublishMetricInput": {
+            "type": "object"
+        },
+        "service.Repository": {
+            "type": "object",
+            "required": [
+                "clone_url",
+                "full_name",
+                "git_url",
+                "name",
+                "user_name"
+            ],
+            "properties": {
+                "clone_url": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "git_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.UpdateAppRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.UpdateAppSandboxRequest": {
+            "type": "object",
+            "properties": {
+                "sandbox_release_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.UpdateComponentRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.UpdateInstallRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.UpdateOrgRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.awsECRImageConfigRequest": {
+            "type": "object",
+            "properties": {
+                "aws_region": {
+                    "type": "string"
+                },
+                "iam_role_arn": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.basicDeployConfigRequest": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cpu_limit": {
+                    "type": "string"
+                },
+                "cpu_request": {
+                    "type": "string"
+                },
+                "env_vars": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "health_check_path": {
+                    "type": "string"
+                },
+                "instance_count": {
+                    "type": "integer"
+                },
+                "listen_port": {
+                    "type": "integer"
+                },
+                "mem_limit": {
+                    "type": "string"
+                },
+                "mem_request": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "Bearer token to access the api from",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}
