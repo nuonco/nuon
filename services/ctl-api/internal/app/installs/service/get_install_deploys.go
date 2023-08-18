@@ -19,7 +19,7 @@ import (
 // @Tags installs
 // @Accept json
 // @Produce json
-// @Success 201 {array} app.InstallComponent
+// @Success 201 {array} app.InstallDeploy
 // @Router /v1/installs/{install_id}/deploys [GET]
 func (s *service) GetInstallDeploys(ctx *gin.Context) {
 	appID := ctx.Param("install_id")
