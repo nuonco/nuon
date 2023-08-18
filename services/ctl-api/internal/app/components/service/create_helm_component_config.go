@@ -57,7 +57,7 @@ func (s *service) CreateHelmComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, cfg)
+	ctx.JSON(http.StatusCreated, cfg)
 }
 
 func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, req *CreateHelmComponentConfigRequest) (*app.HelmComponentConfig, error) {

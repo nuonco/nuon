@@ -46,6 +46,10 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
 
 	install, err := s.createInstall(ctx, appID, &req)
 	if err != nil {
@@ -54,7 +58,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 	}
 
 	s.hooks.Created(ctx, install.ID)
-	ctx.JSON(http.StatusOK, install)
+	ctx.JSON(http.StatusCreated, install)
 }
 
 func (s *service) createInstall(ctx context.Context, appID string, req *CreateInstallRequest) (*app.Install, error) {
@@ -82,10 +86,6 @@ func (s *service) createInstall(ctx context.Context, appID string, req *CreateIn
 		InstallComponents: installCmps,
 	}
 
-	// TODO(jm): figure out why append is not actually appending the nested objects
-	//if err := s.db.Model(&parentApp).Association("Installs").Append(&install); err != nil {
-	//return nil, fmt.Errorf("unable to create association: %w", err)
-	//}
 	res = s.db.Create(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)

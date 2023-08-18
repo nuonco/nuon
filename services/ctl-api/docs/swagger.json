@@ -195,8 +195,8 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -271,8 +271,8 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -1087,8 +1087,8 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/app.Install"
                         }
@@ -1158,8 +1158,8 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -1200,8 +1200,8 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -1235,8 +1235,8 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -1519,8 +1519,8 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/app.Org"
                         }
@@ -2399,6 +2399,12 @@
                 "updated_at": {
                     "type": "string"
                 },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.UserOrg"
+                    }
+                },
                 "vcs_connections": {
                     "type": "array",
                     "items": {
@@ -2561,6 +2567,7 @@
                     "$ref": "#/definitions/app.Org"
                 },
                 "orgID": {
+                    "description": "parent relationship",
                     "type": "string"
                 },
                 "updated_at": {
@@ -3009,6 +3016,9 @@
         },
         "service.UpdateOrgRequest": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "name": {
                     "type": "string"
