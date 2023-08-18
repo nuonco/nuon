@@ -20,3 +20,7 @@ func (t *appTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	return t.transport.RoundTrip(req)
 }
+
+func (c *client) SetOrgID(orgID string) {
+	c.appTransport.orgID = orgID
+}
