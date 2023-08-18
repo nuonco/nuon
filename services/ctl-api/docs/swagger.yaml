@@ -341,6 +341,10 @@ definitions:
         type: string
       updated_at:
         type: string
+      users:
+        items:
+          $ref: '#/definitions/app.UserOrg'
+        type: array
       vcs_connections:
         items:
           $ref: '#/definitions/app.VCSConnection'
@@ -447,6 +451,7 @@ definitions:
       org:
         $ref: '#/definitions/app.Org'
       orgID:
+        description: parent relationship
         type: string
       updated_at:
         type: string
@@ -744,6 +749,8 @@ definitions:
     properties:
       name:
         type: string
+    required:
+    - name
     type: object
   service.awsECRImageConfigRequest:
     properties:
@@ -905,8 +912,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             items:
               $ref: '#/definitions/app.Component'
@@ -955,8 +962,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             items:
               $ref: '#/definitions/app.Install'
@@ -1493,8 +1500,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             $ref: '#/definitions/app.Install'
       summary: update an install
@@ -1540,8 +1547,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             items:
               $ref: '#/definitions/app.InstallComponent'
@@ -1568,8 +1575,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             items:
               $ref: '#/definitions/app.InstallDeploy'
@@ -1591,8 +1598,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             items:
               $ref: '#/definitions/app.InstallDeploy'
@@ -1779,8 +1786,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             $ref: '#/definitions/app.Org'
       summary: Update an org

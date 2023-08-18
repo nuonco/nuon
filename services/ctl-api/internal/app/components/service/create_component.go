@@ -53,7 +53,7 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 	}
 
 	s.hooks.Created(ctx, component.ID)
-	ctx.JSON(http.StatusOK, component)
+	ctx.JSON(http.StatusCreated, component)
 }
 
 func (s *service) createComponent(ctx context.Context, appID string, req *CreateComponentRequest) (*app.Component, error) {

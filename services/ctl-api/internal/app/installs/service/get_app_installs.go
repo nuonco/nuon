@@ -18,18 +18,18 @@ import (
 // @Tags installs
 // @Accept json
 // @Produce json
-// @Success 201 {array} app.Install
+// @Success 200 {array} app.Install
 // @Router /v1/apps/{app_id}/installs [GET]
 func (s *service) GetAppInstalls(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
-	install, err := s.getAppInstalls(ctx, appID)
+	installs, err := s.getAppInstalls(ctx, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, install)
+	ctx.JSON(http.StatusOK, installs)
 }
 
 func (s *service) getAppInstalls(ctx context.Context, appID string) ([]app.Install, error) {

@@ -19,7 +19,7 @@ type baseIntegrationTestSuite struct {
 	ctxCancel func()
 }
 
-func (s *baseIntegrationTestSuite) SetupTest() {
+func (s *baseIntegrationTestSuite) SetupSuite() {
 	ctx := context.Background()
 	ctx, ctxCancel := context.WithCancel(ctx)
 	s.ctx = ctx

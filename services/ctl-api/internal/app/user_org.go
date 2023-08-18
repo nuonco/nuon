@@ -14,9 +14,11 @@ type UserOrg struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// parent relationship
+	OrgID string
+	Org   Org
+
 	UserID string
-	OrgID  string
-	Org    Org
 
 	IsNew bool `gorm:"-:all"`
 }
