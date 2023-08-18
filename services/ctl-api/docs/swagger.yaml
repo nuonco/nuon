@@ -642,10 +642,10 @@ definitions:
     type: object
   service.CreateOrgRequest:
     properties:
-      created_by_id:
-        type: string
       name:
         type: string
+    required:
+    - name
     type: object
   service.CreateOrgUserRequest:
     properties:
