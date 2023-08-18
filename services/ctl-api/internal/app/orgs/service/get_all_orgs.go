@@ -9,8 +9,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-type AllOrgsResponse []*app.Org
-
 // @BasePath /v1/orgs
 
 // Return all orgs
