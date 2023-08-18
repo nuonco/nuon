@@ -32,19 +32,16 @@ func (d *AppDataSource) Metadata(ctx context.Context, req datasource.MetadataReq
 
 func (d *AppDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:         "`nuon_app` provides information about a Nuon app.\nThis data source can be useful when adding components and installs to an app created in the UI.",
-		MarkdownDescription: "`nuon_app` provides information about a Nuon app.\nThis data source can be useful when adding components and installs to an app created in the UI.",
+		Description: "`nuon_app` provides information about a Nuon app.\nThis data source can be useful when adding components and installs to an app created in the UI.",
 
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
-				Description:         "app name",
-				MarkdownDescription: "app name",
-				Computed:            true,
+				Description: "The human readable name of the app.",
+				Computed:    true,
 			},
 			"id": schema.StringAttribute{
-				Description:         "App id.",
-				MarkdownDescription: "App id.",
-				Required:            true,
+				Description: "The unique ID of the app.",
+				Required:    true,
 			},
 		},
 	}
