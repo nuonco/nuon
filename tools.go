@@ -4,7 +4,7 @@
 package tools
 
 import (
-	_ "github.com/go-swagger/go-swagger/blob/master/cmd/swagger"
+	_ "github.com/go-swagger/go-swagger/cmd/swagger"
 	_ "github.com/golang/mock/mockgen"
 	_ "github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs"
 	_ "github.com/swaggo/swag/cmd/swag"
