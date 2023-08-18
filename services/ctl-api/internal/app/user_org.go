@@ -16,7 +16,9 @@ type UserOrg struct {
 
 	UserID string
 	OrgID  string
-	IsNew  bool `gorm:"-:all"`
+	Org    Org
+
+	IsNew bool `gorm:"-:all"`
 }
 
 func (u *UserOrg) BeforeCreate(tx *gorm.DB) error {

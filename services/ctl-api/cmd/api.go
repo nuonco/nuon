@@ -16,10 +16,10 @@ import (
 	vcsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/service"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/health"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/global"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/headers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -45,7 +45,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 
 		// add middlewares
 		fx.Provide(api.AsMiddleware(stderr.New)),
-		fx.Provide(api.AsMiddleware(public.New)),
+		fx.Provide(api.AsMiddleware(global.New)),
 		fx.Provide(api.AsMiddleware(metrics.New)),
 		fx.Provide(api.AsMiddleware(headers.New)),
 		fx.Provide(api.AsMiddleware(auth.New)),
