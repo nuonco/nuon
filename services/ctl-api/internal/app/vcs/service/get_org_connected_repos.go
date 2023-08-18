@@ -34,7 +34,7 @@ type Repository struct {
 // @Tags vcs
 // @Accept json
 // @Produce json
-// @Success 200 {object} Repository
+// @Success 200 {array} Repository
 // @Router /v1/vcs/{org_id}/connected-repos [get]
 func (s *service) GetOrgConnectedRepos(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")

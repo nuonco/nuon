@@ -19,7 +19,7 @@ import (
 // @Tags orgs
 // @Accept json
 // @Produce json
-// @Success 200 {array} []app.Org
+// @Success 200 {array} app.Org
 // @Router /v1/orgs [GET]
 func (s *service) GetCurrentUserOrgs(ctx *gin.Context) {
 	userToken, err := auth.FromContext(ctx)

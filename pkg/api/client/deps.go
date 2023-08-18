@@ -1,4 +1,4 @@
-package gqlclient
+package client
 
 import (
 	_ "github.com/go-openapi/errors"
