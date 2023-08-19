@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 // @BasePath /v1/apps/installs
@@ -33,9 +34,14 @@ func (s *service) GetInstallComponents(ctx *gin.Context) {
 
 func (s *service) getInstallComponents(ctx context.Context, installID string) ([]app.InstallComponent, error) {
 	install := &app.Install{}
-	res := s.db.WithContext(ctx).Preload("InstallComponents").First(&install, "id = ?", installID)
+	res := s.db.WithContext(ctx).
+		Preload("InstallComponents", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_components.created_at DESC")
+		}).
+		Preload("InstallComponents.Component").
+		First(&install, "id = ?", installID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+		return nil, fmt.Errorf("unable to get install components: %w", res.Error)
 	}
 
 	return install.InstallComponents, nil

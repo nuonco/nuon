@@ -157,6 +157,31 @@ func (s *appsTestSuite) TestGetApps() {
 }
 
 func (s *appsTestSuite) TestUpdateAppSandbox() {
-	// TODO(jm): add this test once we have a way of seeding multiple, deterministic sandbox versions we can use
-	// here.
+	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+	app, err := s.apiClient.CreateApp(s.ctx, appReq)
+	require.Nil(s.T(), err)
+	require.NotNil(s.T(), app)
+
+	sandboxes, err := s.apiClient.GetSandboxes(s.ctx)
+	require.NoError(s.T(), err)
+	sandboxReleases, err := s.apiClient.GetSandboxReleases(s.ctx, sandboxes[0].ID)
+	require.NoError(s.T(), err)
+
+	s.T().Run("success", func(t *testing.T) {
+		updateAppSandboxReq := &models.ServiceUpdateAppSandboxRequest{
+			SandboxReleaseID: sandboxReleases[0].ID,
+		}
+
+		updatedApp, err := s.apiClient.UpdateAppSandbox(s.ctx, app.ID, updateAppSandboxReq)
+		require.NoError(t, err)
+		require.NotNil(t, updatedApp)
+	})
+
+	s.T().Run("errors on bad request", func(t *testing.T) {
+		updateAppSandboxReq := &models.ServiceUpdateAppSandboxRequest{}
+
+		updatedApp, err := s.apiClient.UpdateAppSandbox(s.ctx, app.ID, updateAppSandboxReq)
+		require.Error(t, err)
+		require.Nil(t, updatedApp)
+	})
 }

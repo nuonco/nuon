@@ -67,7 +67,6 @@ func (s *vcsIntegrationTestSuite) TestGetConnections() {
 }
 
 func (s *vcsIntegrationTestSuite) TestGetConnection() {
-	return
 	vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
 	vcs, err := s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
 	require.Nil(s.T(), err)
@@ -79,7 +78,7 @@ func (s *vcsIntegrationTestSuite) TestGetConnection() {
 		require.Nil(t, err)
 		require.NotNil(t, vcs)
 
-		require.Equal(t, vcs.GithubInstallID, vcsReq.GithubInstallID)
+		require.Equal(t, vcs.GithubInstallID, *(vcsReq.GithubInstallID))
 	})
 }
 

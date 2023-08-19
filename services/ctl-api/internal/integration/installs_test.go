@@ -59,6 +59,23 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 		require.Error(t, err)
 		require.Nil(t, install)
 	})
+
+	s.T().Run("adds existing components to install", func(t *testing.T) {
+		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
+		require.NoError(t, err)
+
+		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
+		fakeReq.AwsAccount.Region = "us-west-2"
+		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
+		require.NoError(t, err)
+		require.NotNil(t, install)
+
+		installComps, err := s.apiClient.GetInstallComponents(s.ctx, install.ID)
+		require.NoError(t, err)
+		require.Len(t, installComps, 1)
+		require.Equal(t, installComps[0].ComponentID, comp.ID)
+	})
 }
 
 func (s *installsIntegrationTestSuite) TestGetInstall() {
@@ -150,5 +167,26 @@ func (s *installsIntegrationTestSuite) TestGetAppInstalls() {
 		installs, err := s.apiClient.GetAppInstalls(s.ctx, generics.GetFakeObj[string]())
 		require.NotNil(t, err)
 		require.Empty(t, installs)
+	})
+}
+
+func (s *installsIntegrationTestSuite) TestGetAllInstalls() {
+	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+	app, err := s.apiClient.CreateApp(s.ctx, appReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), app)
+	s.appID = app.ID
+
+	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
+	fakeReq.AwsAccount.Region = "us-west-2"
+	seedInstall, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), seedInstall)
+
+	s.T().Run("success", func(t *testing.T) {
+		installs, err := s.apiClient.GetAllInstalls(s.ctx)
+		require.Nil(t, err)
+		require.Len(t, installs, 1)
+		require.Equal(t, installs[0].ID, seedInstall.ID)
 	})
 }

@@ -13,8 +13,11 @@ import (
 type installComponentsTestSuite struct {
 	baseIntegrationTestSuite
 
-	orgID string
-	appID string
+	orgID     string
+	appID     string
+	compID    string
+	buildID   string
+	installID string
 }
 
 func TestInstallComponentsSuite(t *testing.T) {
@@ -35,51 +38,142 @@ func (s *installComponentsTestSuite) SetupTest() {
 	s.apiClient.SetOrgID(org.ID)
 	s.orgID = org.ID
 
+	// add a vcs connection to the org
+	vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
+	_, err = s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
+	require.Nil(s.T(), err)
+
 	// create an app
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), org)
 	s.appID = app.ID
+
+	// create a component
+	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), comp)
+	s.compID = comp.ID
+
+	// create a component config
+	req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
+	req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+	cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), cfg)
+
+	// create a build of this component
+	buildReq := &models.ServiceCreateComponentBuildRequest{
+		GitRef: "HEAD",
+	}
+	build, err := s.apiClient.CreateComponentBuild(s.ctx, comp.ID, buildReq)
+	require.NoError(s.T(), err)
+	s.buildID = build.ID
+
+	// create install
+	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
+	fakeReq.AwsAccount.Region = "us-west-2"
+	install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), install)
+	s.installID = install.ID
 }
 
 func (s *installComponentsTestSuite) TestGetInstallComponents() {
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
-	fakeReq.AwsAccount.Region = "us-west-2"
-	seedInstall, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), seedInstall)
-
-	s.T().Run("creates install component when component exists first", func(t *testing.T) {
-		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-		require.NoError(t, err)
-
-		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
-		fakeReq.AwsAccount.Region = "us-west-2"
-		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
-		require.NoError(t, err)
-
-		installComponents, err := s.apiClient.GetInstallComponents(s.ctx, install.ID)
+	s.T().Run("get install components", func(t *testing.T) {
+		installComponents, err := s.apiClient.GetInstallComponents(s.ctx, s.installID)
 		require.NoError(t, err)
 		require.Len(t, installComponents, 1)
-		require.Equal(t, installComponents[0].ComponentID, comp.ID)
+		require.Equal(t, s.compID, installComponents[0].ComponentID)
 	})
 
-	s.T().Run("creates install component when component created after", func(t *testing.T) {
+	s.T().Run("returns components based on created order desc", func(t *testing.T) {
 		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
 		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-		require.NoError(t, err)
+		require.Nil(t, err)
+		require.NotNil(t, comp)
 
-		installComponents, err := s.apiClient.GetInstallComponents(s.ctx, seedInstall.ID)
+		installComponents, err := s.apiClient.GetInstallComponents(s.ctx, s.installID)
 		require.NoError(t, err)
 		require.Len(t, installComponents, 2)
-		require.Equal(t, installComponents[1].ComponentID, comp.ID)
+		require.Equal(t, comp.ID, installComponents[0].ComponentID)
 	})
 
 	s.T().Run("get install components invalid install", func(t *testing.T) {
 		installComponents, err := s.apiClient.GetInstallComponents(s.ctx, generics.GetFakeObj[string]())
 		require.Error(t, err)
 		require.Empty(t, installComponents)
+	})
+}
+
+func (s *installComponentsTestSuite) TestGetInstallComponentDeploys() {
+	s.T().Run("successfully returns when no deploys", func(t *testing.T) {
+		installDeploys, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, s.compID)
+		require.NoError(t, err)
+		require.Empty(t, installDeploys)
+	})
+
+	s.T().Run("success", func(t *testing.T) {
+		depReq := &models.ServiceCreateInstallDeployRequest{
+			BuildID: s.buildID,
+		}
+		deploy, err := s.apiClient.CreateInstallDeploy(s.ctx, s.installID, depReq)
+		require.NoError(s.T(), err)
+		require.NotNil(s.T(), deploy)
+
+		installDeploys, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, s.compID)
+		require.NoError(t, err)
+		require.Len(t, installDeploys, 1)
+		require.Equal(t, installDeploys[0].ID, deploy.ID)
+	})
+
+	s.T().Run("sorts deploys based on created at DESC", func(t *testing.T) {
+		depReq := &models.ServiceCreateInstallDeployRequest{
+			BuildID: s.buildID,
+		}
+		deploy, err := s.apiClient.CreateInstallDeploy(s.ctx, s.installID, depReq)
+		require.NoError(s.T(), err)
+		require.NotNil(s.T(), deploy)
+
+		installDeploys, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, s.compID)
+		require.NoError(t, err)
+		require.Len(t, installDeploys, 2)
+		require.Equal(t, installDeploys[0].ID, deploy.ID)
+	})
+
+	s.T().Run("errors on invalid install", func(t *testing.T) {
+		installComponents, err := s.apiClient.GetInstallComponentDeploys(s.ctx, generics.GetFakeObj[string](), s.compID)
+		require.Error(t, err)
+		require.Empty(t, installComponents)
+	})
+
+	s.T().Run("errors on invalid component", func(t *testing.T) {
+		installComponents, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, generics.GetFakeObj[string]())
+		require.Error(t, err)
+		require.Empty(t, installComponents)
+	})
+}
+
+func (s *installComponentsTestSuite) TestGetInstallComponentLatestDeploy() {
+	s.T().Run("errors when no deploys", func(t *testing.T) {
+		deploy, err := s.apiClient.GetInstallComponentLatestDeploy(s.ctx, s.installID, s.compID)
+		require.Error(t, err)
+		require.Nil(t, deploy)
+	})
+
+	s.T().Run("success", func(t *testing.T) {
+		depReq := &models.ServiceCreateInstallDeployRequest{
+			BuildID: s.buildID,
+		}
+		deploy, err := s.apiClient.CreateInstallDeploy(s.ctx, s.installID, depReq)
+		require.NoError(s.T(), err)
+		require.NotNil(s.T(), deploy)
+
+		installDeploy, err := s.apiClient.GetInstallComponentLatestDeploy(s.ctx, s.installID, s.compID)
+		require.NoError(t, err)
+		require.NotNil(t, installDeploy)
+		require.Equal(t, installDeploy.ID, deploy.ID)
 	})
 }

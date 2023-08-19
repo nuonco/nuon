@@ -70,7 +70,7 @@ func (c *client) DeleteApp(ctx context.Context, appID string) (bool, error) {
 }
 
 func (c *client) UpdateAppSandbox(ctx context.Context, appID string, req *models.ServiceUpdateAppSandboxRequest) (*models.AppApp, error) {
-	resp, err := c.genClient.Operations.PatchV1AppsAppIDSandbox(&operations.PatchV1AppsAppIDSandboxParams{
+	resp, err := c.genClient.Operations.PutV1AppsAppIDSandbox(&operations.PutV1AppsAppIDSandboxParams{
 		AppID:   appID,
 		Req:     req,
 		Context: ctx,

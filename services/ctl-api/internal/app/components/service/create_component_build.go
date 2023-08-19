@@ -77,11 +77,11 @@ func (s *service) createComponentBuild(ctx context.Context, cmpID string, req *C
 
 	cmp := app.ComponentConfigConnection{}
 	err := s.db.WithContext(ctx).
-		Preload("Component", "id = ?", cmpID).
 		Order("created_at DESC").
-		First(&cmp).Association("ComponentBuilds").Append(&bld)
+		Limit(1).
+		First(&cmp, "component_id = ?", cmpID).Association("ComponentBuilds").Append(&bld)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get most recent component config: %w", err)
+		return nil, fmt.Errorf("unable to create build for component: %w", err)
 	}
 	return &bld, nil
 }
