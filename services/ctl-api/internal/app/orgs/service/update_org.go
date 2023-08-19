@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 type UpdateOrgRequest struct {
@@ -23,19 +24,22 @@ func (c *UpdateOrgRequest) Validate(v *validator.Validate) error {
 
 // @BasePath /v1/orgs/
 
-// Update an org
-// @Summary Update an org
+// Update current org
+// @Summary Update current org
 // @Schemes
-// @Description Update an org
-// @Param org_id path string true "org ID for your current org"
+// @Description Update current org
 // @Param req body UpdateOrgRequest true "Input"
 // @Tags orgs
 // @Accept json
 // @Produce json
 // @Success 200 {object} app.Org
-// @Router /v1/orgs/{org_id} [PATCH]
+// @Router /v1/orgs/current [PATCH]
 func (s *service) UpdateOrg(ctx *gin.Context) {
-	orgID := ctx.Param("org_id")
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	var req UpdateOrgRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -47,7 +51,7 @@ func (s *service) UpdateOrg(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.updateOrg(ctx, orgID, &req)
+	org, err = s.updateOrg(ctx, org.ID, &req)
 	if err != nil {
 		ctx.Error(err)
 		return

@@ -9,7 +9,7 @@ import (
 )
 
 // sandbox methods
-func (c *client) GetSandboxes(ctx context.Context, sandboxID string) ([]*models.AppSandbox, error) {
+func (c *client) GetSandboxes(ctx context.Context) ([]*models.AppSandbox, error) {
 	resp, err := c.genClient.Operations.GetV1Sandboxes(&operations.GetV1SandboxesParams{
 		Context: ctx,
 	})

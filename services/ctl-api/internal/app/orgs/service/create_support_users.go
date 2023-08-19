@@ -36,7 +36,7 @@ func (s *service) CreateSupportUsers(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
 	for _, userID := range defaultSupportUsers {
-		if err := s.createUser(ctx, orgID, userID); err != nil {
+		if _, err := s.createUser(ctx, orgID, userID); err != nil {
 			ctx.Error(fmt.Errorf("unable to add users to org: %w", err))
 			return
 		}

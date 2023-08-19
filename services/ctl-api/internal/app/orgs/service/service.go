@@ -18,13 +18,15 @@ type service struct {
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
-	api.GET("/v1/orgs/:org_id", s.GetOrg)
-	api.DELETE("/v1/orgs/:org_id", s.DeleteOrg)
-	api.PATCH("/v1/orgs/:org_id", s.UpdateOrg)
+	// global routes
 	api.POST("/v1/orgs", s.CreateOrg)
 	api.GET("/v1/orgs", s.GetCurrentUserOrgs)
 
-	api.POST("/v1/orgs/:org_id/user", s.CreateUser)
+	// update your current org
+	api.GET("/v1/orgs/current", s.GetOrg)
+	api.DELETE("/v1/orgs/current", s.DeleteOrg)
+	api.PATCH("/v1/orgs/current", s.UpdateOrg)
+	api.POST("/v1/orgs/current/user", s.CreateUser)
 	return nil
 }
 
