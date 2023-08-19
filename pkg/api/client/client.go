@@ -45,8 +45,10 @@ type Client interface {
 	GetSandboxReleases(ctx context.Context, sandboxID string) ([]*models.AppSandboxRelease, error)
 
 	// vcs connections
-	CreateOrgVCSConnection(ctx context.Context, orgID string, req *models.ServiceCreateOrgConnectionRequest) (*models.AppVCSConnection, error)
-	GetOrgVCSConnectedRepos(ctx context.Context, orgID string) ([]*models.ServiceRepository, error)
+	CreateVCSConnection(ctx context.Context, req *models.ServiceCreateConnectionRequest) (*models.AppVCSConnection, error)
+	GetVCSConnections(ctx context.Context) ([]*models.AppVCSConnection, error)
+	GetVCSConnection(ctx context.Context, connID string) (*models.AppVCSConnection, error)
+	GetAllVCSConnectedRepos(ctx context.Context) ([]*models.ServiceRepository, error)
 
 	// installs
 	CreateInstall(ctx context.Context, appID string, req *models.ServiceCreateInstallRequest) (*models.AppInstall, error)
@@ -73,7 +75,7 @@ type Client interface {
 	CreateComponent(ctx context.Context, appID string, req *models.ServiceCreateComponentRequest) (*models.AppComponent, error)
 
 	GetComponent(ctx context.Context, componentID string) (*models.AppComponent, error)
-	UpdateComponent(ctx context.Context, componentID string, req *models.ServiceCreateComponentRequest) (*models.AppComponent, error)
+	UpdateComponent(ctx context.Context, componentID string, req *models.ServiceUpdateComponentRequest) (*models.AppComponent, error)
 	DeleteComponent(ctx context.Context, componentID string) (bool, error)
 
 	// component configs
