@@ -12,10 +12,13 @@ const (
 )
 
 var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
-	{"POST", "/v1/orgs"}:                {},
-	{"GET", "/v1/orgs"}:                 {},
-	{"POST", "/v1/general/metrics"}:     {},
-	{"GET", "/v1/general/current-user"}: {},
+	{"POST", "/v1/orgs"}:                          {},
+	{"GET", "/v1/orgs"}:                           {},
+	{"POST", "/v1/general/metrics"}:               {},
+	{"GET", "/v1/general/current-user"}:           {},
+	{"GET", "/v1/sandboxes"}:                      {},
+	{"GET", "/v1/sandboxes/:sandbox_id"}:          {},
+	{"GET", "/v1/sandboxes/:sandbox_id/releases"}: {},
 }
 
 func IsGlobal(ctx *gin.Context) bool {
@@ -37,11 +40,11 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		m.l.Info("public middleware")
+		m.l.Info("global middleware")
 		method := ctx.Request.Method
-		path := ctx.Request.URL.Path
+		// full path will return the _matched_ path, such as `/v1/sandboxes/:id`
+		path := ctx.FullPath()
 
-		m.l.Info("request", zap.String("path", path), zap.String("method", method))
 		key := [2]string{
 			method,
 			path,

@@ -55,7 +55,7 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 // @Tags components
 // @Accept json
 // @Produce json
-// @Success 201 {object} app.ComponentConfigConnection
+// @Success 201 {object} app.ExternalImageComponentConfig
 // @Router /v1/components/{component_id}/configs/external-image [POST]
 func (s *service) CreateExternalImageComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")

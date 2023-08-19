@@ -6,7 +6,6 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,97 +24,87 @@ func TestOrgsSuite(t *testing.T) {
 }
 
 func (s *orgsIntegrationTestSuite) TestCreateOrg() {
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
-
 	s.T().Run("success", func(t *testing.T) {
+		fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
 		org, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
-		assert.NoError(t, err)
-		assert.NotNil(t, org)
-		assert.Equal(t, *fakeReq.Name, org.Name)
+		require.NoError(t, err)
+		require.NotNil(t, org)
+		require.Equal(t, *fakeReq.Name, org.Name)
 	})
+
 	s.T().Run("missing name", func(t *testing.T) {
 		org, err := s.apiClient.CreateOrg(s.ctx, &models.ServiceCreateOrgRequest{})
-		assert.Error(t, err)
-		assert.Nil(t, org)
+		require.Error(t, err)
+		require.Nil(t, org)
+	})
+
+	s.T().Run("adds current user who created the org as a user", func(t *testing.T) {
+		fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+		org, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
+		require.NoError(t, err)
+		require.NotNil(t, org)
+
+		s.apiClient.SetOrgID(org.ID)
+		fetchedOrg, err := s.apiClient.GetOrg(s.ctx)
+		require.NoError(t, err)
+		require.Len(t, fetchedOrg.Users, 1)
 	})
 }
 
 func (s *orgsIntegrationTestSuite) TestOrgByID() {
 	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
 	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
-	assert.NoError(s.T(), err)
-	assert.NotNil(s.T(), seedOrg)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), seedOrg)
 	s.apiClient.SetOrgID(seedOrg.ID)
 
 	s.T().Run("success", func(t *testing.T) {
-		org, err := s.apiClient.GetOrg(s.ctx, seedOrg.ID)
-		assert.NoError(t, err)
-		assert.NotNil(t, org)
-		assert.Equal(t, seedOrg.Name, org.Name)
-		assert.Equal(t, seedOrg.ID, org.ID)
-	})
-	s.T().Run("error when org does not exist", func(t *testing.T) {
-		org, err := s.apiClient.GetOrg(s.ctx, generics.GetFakeObj[string]())
-		assert.Error(t, err)
-		assert.Nil(t, org)
-	})
-	s.T().Run("errors with no org id", func(t *testing.T) {
-		s.apiClient.SetOrgID("")
-		orgs, err := s.apiClient.GetOrg(s.ctx, seedOrg.ID)
-		assert.Error(t, err)
-		assert.Empty(t, orgs)
+		org, err := s.apiClient.GetOrg(s.ctx)
+		require.NoError(t, err)
+		require.NotNil(t, org)
+		require.Equal(t, seedOrg.Name, org.Name)
+		require.Equal(t, seedOrg.ID, org.ID)
 	})
 }
 
 func (s *orgsIntegrationTestSuite) TestUpdateOrg() {
 	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
 	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
-	assert.NoError(s.T(), err)
-	assert.NotNil(s.T(), seedOrg)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), seedOrg)
 	s.apiClient.SetOrgID(seedOrg.ID)
 
 	s.T().Run("success", func(t *testing.T) {
 		updateReq := generics.GetFakeObj[*models.ServiceUpdateOrgRequest]()
-		org, err := s.apiClient.UpdateOrg(s.ctx, seedOrg.ID, updateReq)
+		org, err := s.apiClient.UpdateOrg(s.ctx, updateReq)
 		require.NoError(t, err)
 		require.NotNil(t, org)
 		require.Equal(t, *(updateReq.Name), org.Name)
 		require.Equal(t, seedOrg.ID, org.ID)
 
 		// fetch org
-		fetchedOrg, err := s.apiClient.GetOrg(s.ctx, seedOrg.ID)
+		fetchedOrg, err := s.apiClient.GetOrg(s.ctx)
 		require.NoError(t, err)
 		require.NotNil(t, fetchedOrg)
 		require.Equal(t, *(updateReq.Name), fetchedOrg.Name)
 	})
-	s.T().Run("error when org does not exist", func(t *testing.T) {
-		updateReq := generics.GetFakeObj[*models.ServiceUpdateOrgRequest]()
-		org, err := s.apiClient.UpdateOrg(s.ctx, generics.GetFakeObj[string](), updateReq)
-		assert.Error(t, err)
-		assert.Nil(t, org)
-	})
 	s.T().Run("error when invalid request", func(t *testing.T) {
-		org, err := s.apiClient.UpdateOrg(s.ctx, seedOrg.ID, &models.ServiceUpdateOrgRequest{})
-		assert.Error(t, err)
-		assert.Nil(t, org)
-	})
-	s.T().Run("errors with no org id", func(t *testing.T) {
-		orgs, err := s.apiClient.UpdateOrg(s.ctx, seedOrg.ID, &models.ServiceUpdateOrgRequest{})
-		assert.Error(t, err)
-		assert.Empty(t, orgs)
+		org, err := s.apiClient.UpdateOrg(s.ctx, &models.ServiceUpdateOrgRequest{})
+		require.Error(t, err)
+		require.Nil(t, org)
 	})
 }
 
 func (s *orgsIntegrationTestSuite) TestGetOrgs() {
 	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
 	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
-	assert.NoError(s.T(), err)
-	assert.NotNil(s.T(), seedOrg)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), seedOrg)
 
 	s.T().Run("success", func(t *testing.T) {
 		orgs, err := s.apiClient.GetOrgs(s.ctx)
-		assert.NoError(t, err)
-		assert.NotEmpty(t, orgs)
+		require.NoError(t, err)
+		require.NotEmpty(t, orgs)
 
 		var lookupOrg *models.AppOrg
 		for _, org := range orgs {
@@ -125,8 +114,42 @@ func (s *orgsIntegrationTestSuite) TestGetOrgs() {
 			lookupOrg = org
 			break
 		}
-		assert.NotNil(t, lookupOrg)
-		assert.Equal(t, seedOrg.ID, lookupOrg.ID)
-		assert.Equal(t, seedOrg.Name, lookupOrg.Name)
+		require.NotNil(t, lookupOrg)
+		require.Equal(t, seedOrg.ID, lookupOrg.ID)
+		require.Equal(t, seedOrg.Name, lookupOrg.Name)
+	})
+}
+
+func (s *orgsIntegrationTestSuite) TestCreateOrgUser() {
+	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), seedOrg)
+	s.apiClient.SetOrgID(seedOrg.ID)
+
+	s.T().Run("success", func(t *testing.T) {
+		req := generics.GetFakeObj[*models.ServiceCreateOrgUserRequest]()
+		resp, err := s.apiClient.CreateOrgUser(s.ctx, req)
+		require.NoError(t, err)
+		require.NotEmpty(t, resp)
+
+		fetchedOrg, err := s.apiClient.GetOrg(s.ctx)
+		require.NoError(t, err)
+		require.NotNil(t, fetchedOrg)
+		require.Len(t, fetchedOrg.Users, 2)
+	})
+}
+
+func (s *orgsIntegrationTestSuite) TestDeleteOrg() {
+	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), seedOrg)
+	s.apiClient.SetOrgID(seedOrg.ID)
+
+	s.T().Run("success", func(t *testing.T) {
+		deleted, err := s.apiClient.DeleteOrg(s.ctx)
+		require.NoError(t, err)
+		require.True(t, deleted)
 	})
 }

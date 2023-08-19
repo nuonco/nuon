@@ -58,7 +58,7 @@ func (s *componentsSuite) TestCreateComponent() {
 		require.Nil(t, comp)
 	})
 
-	s.T().Run("updates existing installs", func(t *testing.T) {
+	s.T().Run("creates install components for prexisting installs", func(t *testing.T) {
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 		fakeReq.AwsAccount.Region = "us-west-2"
 		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
@@ -85,7 +85,7 @@ func (s *componentsSuite) TestUpdateComponent() {
 		updateReq := generics.GetFakeObj[*models.ServiceUpdateComponentRequest]()
 		updatedComp, err := s.apiClient.UpdateComponent(s.ctx, comp.ID, updateReq)
 		require.Nil(t, err)
-		require.Equal(t, updatedComp.Name, updateReq.Name)
+		require.Equal(t, updatedComp.Name, *(updateReq.Name))
 	})
 
 	s.T().Run("errors on invalid parameters", func(t *testing.T) {
@@ -157,7 +157,7 @@ func (s *componentsSuite) TestGetAppComponents() {
 	require.NotNil(s.T(), comp)
 
 	s.T().Run("success", func(t *testing.T) {
-		comps, err := s.apiClient.GetAllComponents(s.ctx)
+		comps, err := s.apiClient.GetAppComponents(s.ctx, s.appID)
 		require.Nil(t, err)
 		require.Len(t, comps, 1)
 		require.Equal(t, comp.ID, comps[0].ID)
