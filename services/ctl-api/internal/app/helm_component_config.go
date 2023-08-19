@@ -16,7 +16,7 @@ type HelmComponentConfig struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// parent reference
-	ComponentConfigConnectionID string `json:"-"`
+	ComponentConfigConnectionID string `json:"component_config_connection_id"`
 
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig" json:"public_git_vcs_config,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig" json:"connected_github_vcs_config,omitempty"`

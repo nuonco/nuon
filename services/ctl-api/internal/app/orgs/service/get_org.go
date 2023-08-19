@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 // @BasePath /v1/orgs
@@ -15,16 +16,19 @@ import (
 // @Summary Get an org
 // @Schemes
 // @Description get an org
-// @Param org_id path string true "org ID for your current org"
 // @Tags orgs
 // @Accept json
 // @Produce json
 // @Success 200 {object} app.Org
-// @Router /v1/orgs/{org_id} [GET]
+// @Router /v1/orgs/current [GET]
 func (s *service) GetOrg(ctx *gin.Context) {
-	orgID := ctx.Param("org_id")
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
-	org, err := s.getOrg(ctx, orgID)
+	org, err = s.getOrg(ctx, org.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -35,7 +39,7 @@ func (s *service) GetOrg(ctx *gin.Context) {
 
 func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
 	org := app.Org{}
-	res := s.db.WithContext(ctx).First(&org, "id = ?", orgID)
+	res := s.db.WithContext(ctx).Preload("UserOrgs").First(&org, "id = ?", orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org %s: %w", orgID, res.Error)
 	}

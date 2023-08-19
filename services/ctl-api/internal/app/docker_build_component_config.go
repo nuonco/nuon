@@ -17,7 +17,7 @@ type DockerBuildComponentConfig struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// value
-	ComponentConfigConnectionID string `json:"-"`
+	ComponentConfigConnectionID string `json:"component_config_connection_id"`
 
 	// VCS Config
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig" json:"public_git_vcs_config,omitempty"`

@@ -31,13 +31,13 @@ func (s *service) GetConnection(ctx *gin.Context) {
 		return
 	}
 
-	vcsConns, err := s.getConnection(ctx, currentOrg.ID, vcsID)
+	vcsConn, err := s.getConnection(ctx, currentOrg.ID, vcsID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org vcs connection: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, vcsConns)
+	ctx.JSON(http.StatusOK, vcsConn)
 }
 
 func (s *service) getConnection(ctx context.Context, orgID, vcsID string) (*app.VCSConnection, error) {
