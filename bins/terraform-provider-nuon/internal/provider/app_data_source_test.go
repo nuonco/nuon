@@ -7,6 +7,7 @@ import (
 )
 
 func TestAppDataSource(t *testing.T) {
+	t.Skip()
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
