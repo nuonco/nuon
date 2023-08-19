@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 // @BasePath /v1/installs
@@ -15,36 +16,35 @@ import (
 // @Schemes
 // @Description get an install deploy
 // @Param install_id path string true "install ID"
-// @Param deploy_id path string true "deploy ID"
 // @Tags installs
 // @Accept json
 // @Produce json
 // @Success 200 {object} app.InstallDeploy
-// @Router /v1/installs/{install_id}/deploys/{deploy_id} [get]
-func (s *service) GetInstallDeploy(ctx *gin.Context) {
+// @Router /v1/installs/{install_id}/deploys/latest [get]
+func (s *service) GetInstallLatestDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	deployID := ctx.Param("deploy_id")
 
-	installDeploy, err := s.getInstallDeploy(ctx, installID, deployID)
+	installDeploy, err := s.getInstallLatestDeploy(ctx, installID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install deploy %s: %w", deployID, err))
+		ctx.Error(fmt.Errorf("unable to get install latest deploy: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusOK, installDeploy)
 }
 
-func (s *service) getInstallDeploy(ctx context.Context, installID, deployID string) (*app.InstallDeploy, error) {
+func (s *service) getInstallLatestDeploy(ctx context.Context, installID string) (*app.InstallDeploy, error) {
 	installCmp := &app.InstallComponent{}
 	res := s.db.WithContext(ctx).
-		Preload("InstallDeploys", "id = ?", deployID).
-		Preload("InstallDeploys.Build").
+		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_deploys.created_at DESC").Limit(1000)
+		}).
 		First(&installCmp, "install_id = ?", installID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
 	if len(installCmp.InstallDeploys) != 1 {
-		return nil, fmt.Errorf("deploy not found")
+		return nil, fmt.Errorf("no deploy exists for install")
 	}
 
 	return &installCmp.InstallDeploys[0], nil

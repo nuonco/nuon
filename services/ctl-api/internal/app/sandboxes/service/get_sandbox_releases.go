@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 // @BasePath /v1/sandboxes
@@ -32,15 +33,15 @@ func (s *service) GetSandboxReleases(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, sandbox)
 }
 
-func (s *service) getSandboxReleases(ctx context.Context, sandboxID string) ([]*app.SandboxRelease, error) {
-	var releases []*app.SandboxRelease
-	sandbox := app.Sandbox{
-		ID: sandboxID,
+func (s *service) getSandboxReleases(ctx context.Context, sandboxID string) ([]app.SandboxRelease, error) {
+	sandbox := app.Sandbox{}
+
+	res := s.db.WithContext(ctx).Preload("Releases", func(db *gorm.DB) *gorm.DB {
+		return db.Order("sandbox_releases.created_at DESC")
+	}).First(&sandbox, "id = ?", sandboxID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get sandbox releases: %w", res.Error)
 	}
 
-	if err := s.db.WithContext(ctx).Model(&sandbox).Association("Releases").Find(&releases); err != nil {
-		return nil, fmt.Errorf("unable to get sandbox releases: %w", err)
-	}
-
-	return releases, nil
+	return sandbox.Releases, nil
 }

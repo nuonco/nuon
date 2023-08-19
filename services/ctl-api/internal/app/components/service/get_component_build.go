@@ -20,7 +20,7 @@ import (
 // @Accept json
 // @Produce json
 // @Success 200 {object} app.ComponentBuild
-// @Router /v1/components/{component_id}/build/{build_id} [GET]
+// @Router /v1/components/{component_id}/builds/{build_id} [GET]
 func (s *service) GetComponentBuild(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 	bldID := ctx.Param("build_id")

@@ -34,7 +34,8 @@ func (c *client) GetVCSConnections(ctx context.Context) ([]*models.AppVCSConnect
 
 func (c *client) GetVCSConnection(ctx context.Context, connID string) (*models.AppVCSConnection, error) {
 	resp, err := c.genClient.Operations.GetV1VcsConnectionsConnectionID(&operations.GetV1VcsConnectionsConnectionIDParams{
-		Context: ctx,
+		ConnectionID: connID,
+		Context:      ctx,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create get vcs connection: %w", err)

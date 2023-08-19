@@ -22,7 +22,7 @@ type Install struct {
 	SandboxReleaseID string         `json:"-"`
 	SandboxRelease   SandboxRelease `json:"sandbox_release"`
 
-	InstallComponents []InstallComponent `json:"-"`
+	InstallComponents []InstallComponent `json:"install_components,omitempty"`
 	AWSAccount        AWSAccount         `json:"aws_account"`
 }
 

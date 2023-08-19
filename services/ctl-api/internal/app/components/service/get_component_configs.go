@@ -62,7 +62,7 @@ func (s *service) getComponentConfigs(ctx context.Context, cmpID string) ([]app.
 		Order("created_at DESC").
 
 		// find all configs
-		Find(&cfgs)
+		Find(&cfgs, "component_id = ?", cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to load component configs: %w", res.Error)
 	}

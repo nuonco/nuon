@@ -49,7 +49,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	}
 
 	s.hooks.InstallDeployCreated(ctx, installID, deploy.ID)
-	ctx.JSON(http.StatusOK, deploy)
+	ctx.JSON(http.StatusCreated, deploy)
 }
 
 func (s *service) createInstallDeploy(ctx context.Context, installID string, req *CreateInstallDeployRequest) (*app.InstallDeploy, error) {
@@ -70,11 +70,12 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 		Status:  "queued",
 		BuildID: req.BuildID,
 	}
-	err := s.db.First(&installCmp).
+	err := s.db.First(&installCmp, "install_id = ?", installID).
 		Association("InstallDeploys").
 		Append(&deploy)
 	if err != nil {
 		return nil, fmt.Errorf("unable to add install deploy: %w", err)
 	}
+
 	return &deploy, nil
 }

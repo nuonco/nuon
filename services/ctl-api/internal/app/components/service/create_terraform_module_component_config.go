@@ -36,7 +36,7 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 // @Tags components
 // @Accept json
 // @Produce json
-// @Success 201 {object} app.ComponentConfigConnection
+// @Success 201 {object} app.TerraformModuleComponentConfig
 // @Router /v1/components/{component_id}/configs/terraform-module [POST]
 func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")

@@ -16,7 +16,7 @@ type TerraformModuleComponentConfig struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// parent reference
-	ComponentConfigConnectionID string `json:"-"`
+	ComponentConfigConnectionID string `json:"component_config_connection_id"`
 
 	// terraform configuration values
 	Version   string        `json:"version" gorm:"default:v1.5.3"`

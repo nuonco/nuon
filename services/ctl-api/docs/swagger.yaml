@@ -187,6 +187,9 @@ definitions:
         items:
           type: string
         type: array
+      component_config_connection_id:
+        description: value
+        type: string
       connected_github_vcs_config:
         $ref: '#/definitions/app.ConnectedGithubVCSConfig'
       created_at:
@@ -218,7 +221,7 @@ definitions:
         $ref: '#/definitions/app.AWSECRImageConfig'
       basic_deploy_config:
         $ref: '#/definitions/app.BasicDeployConfig'
-      componentConfigConnectionID:
+      component_config_connection_id:
         description: value
         type: string
       connected_github_vcs_config:
@@ -246,6 +249,9 @@ definitions:
     properties:
       chart_name:
         description: Helm specific configurations
+        type: string
+      component_config_connection_id:
+        description: parent reference
         type: string
       connected_github_vcs_config:
         $ref: '#/definitions/app.ConnectedGithubVCSConfig'
@@ -276,6 +282,10 @@ definitions:
         type: string
       id:
         type: string
+      install_components:
+        items:
+          $ref: '#/definitions/app.InstallComponent'
+        type: array
       name:
         type: string
       sandbox_release:
@@ -416,6 +426,9 @@ definitions:
     type: object
   app.TerraformModuleComponentConfig:
     properties:
+      component_config_connection_id:
+        description: parent reference
+        type: string
       connected_github_vcs_config:
         $ref: '#/definitions/app.ConnectedGithubVCSConfig'
       created_at:
@@ -1003,7 +1016,7 @@ paths:
       tags:
       - installs
   /v1/apps/{app_id}/sandbox:
-    patch:
+    put:
       consumes:
       - application/json
       description: update an app sandbox release
@@ -1113,32 +1126,6 @@ paths:
       summary: update a component
       tags:
       - components
-  /v1/components/{component_id}/build/{build_id}:
-    get:
-      consumes:
-      - application/json
-      description: get a build for a component
-      parameters:
-      - description: component ID
-        in: path
-        name: component_id
-        required: true
-        type: string
-      - description: build ID
-        in: path
-        name: build_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/app.ComponentBuild'
-      summary: get a build for a component
-      tags:
-      - components
   /v1/components/{component_id}/builds:
     get:
       consumes:
@@ -1188,6 +1175,32 @@ paths:
       summary: create component build
       tags:
       - components
+  /v1/components/{component_id}/builds/{build_id}:
+    get:
+      consumes:
+      - application/json
+      description: get a build for a component
+      parameters:
+      - description: component ID
+        in: path
+        name: component_id
+        required: true
+        type: string
+      - description: build ID
+        in: path
+        name: build_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.ComponentBuild'
+      summary: get a build for a component
+      tags:
+      - components
   /v1/components/{component_id}/builds/{build_id}/logs:
     get:
       consumes:
@@ -1216,11 +1229,11 @@ paths:
       summary: get install build logs
       tags:
       - components
-  /v1/components/{component_id}/config:
+  /v1/components/{component_id}/builds/latest:
     get:
       consumes:
       - application/json
-      description: get latest config for a component
+      description: get latest build for a component
       parameters:
       - description: component ID
         in: path
@@ -1233,8 +1246,8 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/app.ComponentConfigConnection'
-      summary: get latest config for a component
+            $ref: '#/definitions/app.ComponentBuild'
+      summary: get latest build for a component
       tags:
       - components
   /v1/components/{component_id}/configs:
@@ -1283,7 +1296,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/app.ComponentConfigConnection'
+            $ref: '#/definitions/app.DockerBuildComponentConfig'
       summary: create a docker build component config
       tags:
       - components
@@ -1310,7 +1323,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/app.ComponentConfigConnection'
+            $ref: '#/definitions/app.ExternalImageComponentConfig'
       summary: create an external image component config
       tags:
       - components
@@ -1337,8 +1350,29 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/app.ComponentConfigConnection'
+            $ref: '#/definitions/app.HelmComponentConfig'
       summary: create a helm component config
+      tags:
+      - components
+  /v1/components/{component_id}/configs/latest:
+    get:
+      consumes:
+      - application/json
+      description: get latest config for a component
+      parameters:
+      - description: component ID
+        in: path
+        name: component_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.ComponentConfigConnection'
+      summary: get latest config for a component
       tags:
       - components
   /v1/components/{component_id}/configs/terraform-module:
@@ -1364,29 +1398,8 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/app.ComponentConfigConnection'
+            $ref: '#/definitions/app.TerraformModuleComponentConfig'
       summary: create a terraform component config
-      tags:
-      - components
-  /v1/components/{component_id}/latest-build:
-    get:
-      consumes:
-      - application/json
-      description: get latest build for a component
-      parameters:
-      - description: component ID
-        in: path
-        name: component_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/app.ComponentBuild'
-      summary: get latest build for a component
       tags:
       - components
   /v1/general/current-user:
@@ -1587,6 +1600,32 @@ paths:
       summary: get an install components deploys
       tags:
       - installs
+  /v1/installs/{install_id}/components/{component_id}/deploys/latest:
+    get:
+      consumes:
+      - application/json
+      description: get latest deploy for an install component
+      parameters:
+      - description: install ID
+        in: path
+        name: install_id
+        required: true
+        type: string
+      - description: component ID
+        in: path
+        name: component_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.InstallDeploy'
+      summary: get the latest deploy for an install component
+      tags:
+      - installs
   /v1/installs/{install_id}/deploys:
     get:
       consumes:
@@ -1691,6 +1730,27 @@ paths:
       summary: get install deploy logs
       tags:
       - installs
+  /v1/installs/{install_id}/deploys/latest:
+    get:
+      consumes:
+      - application/json
+      description: get an install deploy
+      parameters:
+      - description: install ID
+        in: path
+        name: install_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.InstallDeploy'
+      summary: get an install deploy
+      tags:
+      - installs
   /v1/orgs:
     get:
       consumes:
@@ -1729,73 +1789,6 @@ paths:
       summary: create a new org
       tags:
       - orgs
-  /v1/orgs/{org_id}:
-    delete:
-      consumes:
-      - application/json
-      description: create a new org
-      parameters:
-      - description: org ID for your current org
-        in: path
-        name: org_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: boolean
-      summary: Delete an org
-      tags:
-      - orgs
-    get:
-      consumes:
-      - application/json
-      description: get an org
-      parameters:
-      - description: org ID for your current org
-        in: path
-        name: org_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/app.Org'
-      summary: Get an org
-      tags:
-      - orgs
-    patch:
-      consumes:
-      - application/json
-      description: Update an org
-      parameters:
-      - description: org ID for your current org
-        in: path
-        name: org_id
-        required: true
-        type: string
-      - description: Input
-        in: body
-        name: req
-        required: true
-        schema:
-          $ref: '#/definitions/service.UpdateOrgRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/app.Org'
-      summary: Update an org
-      tags:
-      - orgs
   /v1/orgs/{org_id}/support-users:
     post:
       consumes:
@@ -1817,17 +1810,62 @@ paths:
       summary: Add nuon users as support members
       tags:
       - orgs/internal
-  /v1/orgs/{org_id}/user:
+  /v1/orgs/current:
+    delete:
+      consumes:
+      - application/json
+      description: create a new org
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      summary: Delete an org
+      tags:
+      - orgs
+    get:
+      consumes:
+      - application/json
+      description: get an org
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.Org'
+      summary: Get an org
+      tags:
+      - orgs
+    patch:
+      consumes:
+      - application/json
+      description: Update current org
+      parameters:
+      - description: Input
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateOrgRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.Org'
+      summary: Update current org
+      tags:
+      - orgs
+  /v1/orgs/current/user:
     post:
       consumes:
       - application/json
-      description: add a user to an org
+      description: add a user to the current org
       parameters:
-      - description: org ID for your current org
-        in: path
-        name: org_id
-        required: true
-        type: string
       - description: Input
         in: body
         name: req
@@ -1841,7 +1879,7 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/app.UserOrg'
-      summary: Add a user to an org
+      summary: Add a user to the current org
       tags:
       - orgs
   /v1/sandboxes:
