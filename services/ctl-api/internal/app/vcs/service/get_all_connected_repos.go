@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 	"golang.org/x/oauth2"
 )
 
@@ -26,20 +27,22 @@ type Repository struct {
 
 // @BasePath /v1/vcs
 
-// GetOrgConnectedRepos returns all VCS connected repos for an org
+// GetAllConnectedRepos returns all VCS connected repos for an org
 // @Summary get all vcs connected repos for an org
 // @Schemes
 // @Description return all vcs connected repos for an org
-// @Param org_id path string true "org ID for your current org"
 // @Tags vcs
 // @Accept json
 // @Produce json
 // @Success 200 {array} Repository
-// @Router /v1/vcs/{org_id}/connected-repos [get]
-func (s *service) GetOrgConnectedRepos(ctx *gin.Context) {
-	orgID := ctx.Param("org_id")
-
-	vcsConns, err := s.getOrgConnections(ctx, orgID)
+// @Router /v1/vcs/connected-repos [get]
+func (s *service) GetAllConnectedRepos(ctx *gin.Context) {
+	currentOrg, err := org.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	vcsConns, err := s.getOrgConnections(ctx, currentOrg.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org vcs connections: %w", err))
 		return

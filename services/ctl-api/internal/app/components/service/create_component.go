@@ -70,6 +70,9 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 	if err != nil {
 		return nil, fmt.Errorf("unable to create component: %w", err)
 	}
+	if len(parentApp.Installs) < 1 {
+		return &component, nil
+	}
 
 	// create an install component for all known installs
 	var installCmps = []app.InstallComponent{}

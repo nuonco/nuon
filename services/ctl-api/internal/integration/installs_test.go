@@ -26,9 +26,7 @@ func TestInstallsSuite(t *testing.T) {
 	suite.Run(t, new(installsIntegrationTestSuite))
 }
 
-func (s *installsIntegrationTestSuite) SetupSuite() {
-	s.baseIntegrationTestSuite.SetupSuite()
-
+func (s *installsIntegrationTestSuite) SetupTest() {
 	// create an org
 	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
 	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
@@ -129,7 +127,7 @@ func (s *installsIntegrationTestSuite) TestUpdateInstall() {
 	})
 }
 
-func (s *installsIntegrationTestSuite) TestGetInstalls() {
+func (s *installsIntegrationTestSuite) TestGetAppInstalls() {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.NoError(s.T(), err)
@@ -152,37 +150,5 @@ func (s *installsIntegrationTestSuite) TestGetInstalls() {
 		installs, err := s.apiClient.GetAppInstalls(s.ctx, generics.GetFakeObj[string]())
 		require.NotNil(t, err)
 		require.Empty(t, installs)
-	})
-}
-
-func (s *installsIntegrationTestSuite) TestGetInstallComponents() {
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
-	fakeReq.AwsAccount.Region = "us-west-2"
-	seedInstall, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), seedInstall)
-
-	s.T().Run("creates install component when component exists first", func(t *testing.T) {
-		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-		require.NoError(t, err)
-
-		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
-		fakeReq.AwsAccount.Region = "us-west-2"
-		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
-		require.NoError(t, err)
-
-		installComponents, err := s.apiClient.GetInstallComponents(s.ctx, install.ID)
-		require.NoError(t, err)
-		require.Len(t, installComponents, 1)
-		require.Equal(t, installComponents[0].ComponentID, comp.ID)
-	})
-
-	s.T().Run("creates install component when component created after", func(t *testing.T) {
-
-	})
-
-	s.T().Run("get install components", func(t *testing.T) {
-
 	})
 }

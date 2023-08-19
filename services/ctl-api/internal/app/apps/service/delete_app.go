@@ -30,9 +30,7 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 	}
 
 	s.hooks.Deleted(ctx, appID)
-	ctx.JSON(http.StatusAccepted, map[string]string{
-		"status": "ok",
-	})
+	ctx.JSON(http.StatusOK, true)
 }
 
 func (s *service) deleteApp(ctx context.Context, appID string) error {
@@ -41,6 +39,9 @@ func (s *service) deleteApp(ctx context.Context, appID string) error {
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete app: %w", res.Error)
+	}
+	if res.RowsAffected != 1 {
+		return fmt.Errorf("app not found")
 	}
 
 	return nil
