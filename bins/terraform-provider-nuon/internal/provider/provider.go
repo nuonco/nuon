@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/powertoolsdev/mono/pkg/api/client"
 	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
@@ -42,8 +43,9 @@ type ProviderModel struct {
 }
 
 type ProviderData struct {
-	OrgID  string
-	Client gqlclient.Client
+	OrgID      string
+	Client     gqlclient.Client
+	RestClient client.Client
 }
 
 func (p *Provider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -112,25 +114,40 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	v := validator.New()
-	client, err := gqlclient.New(v,
+	graphqlClient, err := gqlclient.New(v,
 		gqlclient.WithAuthToken(data.APIAuthToken.ValueString()),
 		gqlclient.WithURL(data.APIURL.ValueString()),
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"unable to initialize api client",
+			"unable to initialize graphql api client",
+			"Please report this issue to the provider developers.",
+		)
+		return
+	}
+
+	restClient, err := client.New(validator.New(),
+		client.WithAuthToken(data.APIAuthToken.ValueString()),
+		client.WithURL("http://localhost:8081"),
+		client.WithOrgID(data.OrgID.ValueString()),
+	)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"unable to initialize rest api client",
 			"Please report this issue to the provider developers.",
 		)
 		return
 	}
 
 	resp.DataSourceData = &ProviderData{
-		Client: client,
-		OrgID:  data.OrgID.ValueString(),
+		Client:     graphqlClient,
+		RestClient: restClient,
+		OrgID:      data.OrgID.ValueString(),
 	}
 	resp.ResourceData = &ProviderData{
-		Client: client,
-		OrgID:  data.OrgID.ValueString(),
+		Client:     graphqlClient,
+		RestClient: restClient,
+		OrgID:      data.OrgID.ValueString(),
 	}
 }
 
