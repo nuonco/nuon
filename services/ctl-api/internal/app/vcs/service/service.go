@@ -17,9 +17,10 @@ type service struct {
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
-	api.GET("/v1/vcs/:org_id/connections", s.GetOrgConnections)
-	api.POST("/v1/vcs/:org_id/connection", s.CreateOrgConnection)
-	api.GET("/v1/vcs/:org_id/connected-repos", s.GetOrgConnectedRepos)
+	api.GET("/v1/vcs/connections", s.GetConnections)
+	api.POST("/v1/vcs/connections", s.CreateConnection)
+	api.GET("/v1/vcs/connections/:connection_id", s.GetConnection)
+	api.GET("/v1/vcs/connected-repos", s.GetAllConnectedRepos)
 	return nil
 }
 

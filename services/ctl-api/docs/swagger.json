@@ -483,8 +483,8 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/app.Component"
                         }
@@ -564,9 +564,7 @@
                         }
                     }
                 }
-            }
-        },
-        "/v1/components/{component_id}/builds/": {
+            },
             "post": {
                 "description": "create component build",
                 "consumes": [
@@ -1480,10 +1478,10 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "boolean"
                         }
                     }
                 }
@@ -1767,7 +1765,7 @@
                 }
             }
         },
-        "/v1/vcs/{org_id}/connected-repos": {
+        "/v1/vcs/connected-repos": {
             "get": {
                 "description": "return all vcs connected repos for an org",
                 "consumes": [
@@ -1780,15 +1778,6 @@
                     "vcs"
                 ],
                 "summary": "get all vcs connected repos for an org",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "org ID for your current org",
-                        "name": "org_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1802,7 +1791,31 @@
                 }
             }
         },
-        "/v1/vcs/{org_id}/connection": {
+        "/v1/vcs/connections": {
+            "get": {
+                "description": "get vcs connections",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vcs"
+                ],
+                "summary": "get vcs connection for an org",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.VCSConnection"
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "create a vcs connection",
                 "consumes": [
@@ -1817,25 +1830,18 @@
                 "summary": "create a vcs connection for Github",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "org ID for your current org",
-                        "name": "org_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
                         "description": "Input",
                         "name": "req",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.CreateOrgConnectionRequest"
+                            "$ref": "#/definitions/service.CreateConnectionRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/app.VCSConnection"
                         }
@@ -1843,9 +1849,9 @@
                 }
             }
         },
-        "/v1/vcs/{org_id}/connections": {
+        "/v1/vcs/connections/{connection_id}": {
             "get": {
-                "description": "get vcs connections",
+                "description": "get vcs connection",
                 "consumes": [
                     "application/json"
                 ],
@@ -1855,12 +1861,12 @@
                 "tags": [
                     "vcs"
                 ],
-                "summary": "get vcs connection for an org",
+                "summary": "returns a vcs connection for an org",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "org ID for your current org",
-                        "name": "org_id",
+                        "description": "connection ID",
+                        "name": "connection_id",
                         "in": "path",
                         "required": true
                     }
@@ -1869,10 +1875,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/app.VCSConnection"
-                            }
+                            "$ref": "#/definitions/app.VCSConnection"
                         }
                     }
                 }
@@ -2726,6 +2729,17 @@
                 }
             }
         },
+        "service.CreateConnectionRequest": {
+            "type": "object",
+            "required": [
+                "github_install_id"
+            ],
+            "properties": {
+                "github_install_id": {
+                    "type": "string"
+                }
+            }
+        },
         "service.CreateDockerBuildComponentConfigRequest": {
             "type": "object",
             "properties": {
@@ -2850,14 +2864,6 @@
                     }
                 },
                 "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.CreateOrgConnectionRequest": {
-            "type": "object",
-            "properties": {
-                "github_install_id": {
                     "type": "string"
                 }
             }
@@ -3000,6 +3006,9 @@
         },
         "service.UpdateComponentRequest": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "name": {
                     "type": "string"

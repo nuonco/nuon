@@ -9,9 +9,9 @@ import (
 )
 
 // vcs connections
-func (c *client) CreateOrgVCSConnection(ctx context.Context, orgID string, req *models.ServiceCreateOrgConnectionRequest) (*models.AppVCSConnection, error) {
-	resp, err := c.genClient.Operations.PostV1VcsOrgIDConnection(&operations.PostV1VcsOrgIDConnectionParams{
-		OrgID:   orgID,
+func (c *client) CreateVCSConnection(ctx context.Context, req *models.ServiceCreateConnectionRequest) (*models.AppVCSConnection, error) {
+	resp, err := c.genClient.Operations.PostV1VcsConnections(&operations.PostV1VcsConnectionsParams{
+		Req:     req,
 		Context: ctx,
 	})
 	if err != nil {
@@ -21,9 +21,30 @@ func (c *client) CreateOrgVCSConnection(ctx context.Context, orgID string, req *
 	return resp.Payload, nil
 }
 
-func (c *client) GetOrgVCSConnectedRepos(ctx context.Context, orgID string) ([]*models.ServiceRepository, error) {
-	resp, err := c.genClient.Operations.GetV1VcsOrgIDConnectedRepos(&operations.GetV1VcsOrgIDConnectedReposParams{
-		OrgID:   orgID,
+func (c *client) GetVCSConnections(ctx context.Context) ([]*models.AppVCSConnection, error) {
+	resp, err := c.genClient.Operations.GetV1VcsConnections(&operations.GetV1VcsConnectionsParams{
+		Context: ctx,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get vcs connections: %w", err)
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) GetVCSConnection(ctx context.Context, connID string) (*models.AppVCSConnection, error) {
+	resp, err := c.genClient.Operations.GetV1VcsConnectionsConnectionID(&operations.GetV1VcsConnectionsConnectionIDParams{
+		Context: ctx,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create get vcs connection: %w", err)
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) GetAllVCSConnectedRepos(ctx context.Context) ([]*models.ServiceRepository, error) {
+	resp, err := c.genClient.Operations.GetV1VcsConnectedRepos(&operations.GetV1VcsConnectedReposParams{
 		Context: ctx,
 	})
 	if err != nil {
