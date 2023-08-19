@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/api/client/models"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -67,16 +67,15 @@ func (r *AppResource) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	tflog.Trace(ctx, "creating app")
-	appResp, err := r.client.UpsertApp(ctx, gqlclient.AppInput{
-		Name:  data.Name.ValueString(),
-		OrgId: r.orgID,
+	appResp, err := r.restClient.CreateApp(ctx, &models.ServiceCreateAppRequest{
+		Name: data.Name.ValueStringPointer(),
 	})
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create app")
 		return
 	}
 	data.Name = types.StringValue(appResp.Name)
-	data.Id = types.StringValue(appResp.Id)
+	data.Id = types.StringValue(appResp.ID)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	tflog.Trace(ctx, "successfully created app")
@@ -90,14 +89,14 @@ func (r *AppResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 		return
 	}
 
-	appResp, err := r.client.GetApp(ctx, data.Id.ValueString())
+	appResp, err := r.restClient.GetApp(ctx, data.Id.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get app")
 		return
 	}
 
 	data.Name = types.StringValue(appResp.Name)
-	data.Id = types.StringValue(appResp.Id)
+	data.Id = types.StringValue(appResp.ID)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -109,8 +108,7 @@ func (r *AppResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	appResp, err := r.client.UpsertApp(ctx, gqlclient.AppInput{
-		Id:   data.Id.ValueString(),
+	appResp, err := r.restClient.UpdateApp(ctx, data.Id.ValueString(), &models.ServiceUpdateAppRequest{
 		Name: data.Name.ValueString(),
 	})
 	if err != nil {
@@ -119,7 +117,7 @@ func (r *AppResource) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 
 	data.Name = types.StringValue(appResp.Name)
-	data.Id = types.StringValue(appResp.Id)
+	data.Id = types.StringValue(appResp.ID)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -130,7 +128,7 @@ func (r *AppResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 		return
 	}
 
-	deleted, err := r.client.DeleteApp(ctx, data.Id.ValueString())
+	deleted, err := r.restClient.DeleteApp(ctx, data.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete app",
@@ -147,5 +145,5 @@ func (r *AppResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 
 func (r *AppResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-	resource.ImportStatePassthroughID(ctx, path.Root("org_id"), req, resp)
+	// resource.ImportStatePassthroughID(ctx, path.Root("org_id"), req, resp)
 }

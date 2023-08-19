@@ -95,11 +95,11 @@ jobs:
         working-directory: ${{ inputs.dir }}
         run: aws s3 sync ./out s3://${{ env.TFO_BUCKET_NAME }}/${{ env.ARTIFACT_BUCKET_PREFIX }}/${{ inputs.tag }}/
 
-      - name: push latest file manifest to s3
-        working-directory: ${{ inputs.dir }}
-        run: |
-          echo ${{ inputs.tag }} > /tmp/latest.txt && \
-          aws s3 cp /tmp/latest.txt s3://${{ env.TFO_BUCKET_NAME }}/${{ env.ARTIFACT_BUCKET_PREFIX }}/latest.txt
+          # - name: push latest file manifest to s3
+          #   working-directory: ${{ inputs.dir }}
+          #   run: |
+          #     echo ${{ inputs.tag }} > /tmp/latest.txt && \
+          #     aws s3 cp /tmp/latest.txt s3://${{ env.TFO_BUCKET_NAME }}/${{ env.ARTIFACT_BUCKET_PREFIX }}/latest.txt
 
       - name: Check install script existence
         uses: andstor/file-existence-action@v2
