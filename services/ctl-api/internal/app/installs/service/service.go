@@ -35,12 +35,14 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	// install deploys
 	api.GET("/v1/installs/:install_id/deploys", s.GetInstallDeploys)
 	api.POST("/v1/installs/:install_id/deploys", s.CreateInstallDeploy)
+	api.GET("/v1/installs/:install_id/deploys/latest", s.GetInstallLatestDeploy)
 	api.GET("/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallDeploy)
 	api.GET("/v1/installs/:install_id/deploys/:deploy_id/logs", s.GetInstallDeployLogs)
 
 	// install components
 	api.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys", s.GetInstallComponentDeploys)
+	api.GET("/v1/installs/:install_id/components/:component_id/deploys/latest", s.GetInstallComponentLatestDeploy)
 
 	return nil
 }

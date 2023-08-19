@@ -83,7 +83,7 @@ func (c *client) DeleteComponent(ctx context.Context, componentID string) (bool,
 }
 
 // component configs
-func (c *client) CreateTerraformModuleComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateTerraformModuleComponentConfigRequest) (*models.AppComponentConfigConnection, error) {
+func (c *client) CreateTerraformModuleComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateTerraformModuleComponentConfigRequest) (*models.AppTerraformModuleComponentConfig, error) {
 	resp, err := c.genClient.Operations.PostV1ComponentsComponentIDConfigsTerraformModule(&operations.PostV1ComponentsComponentIDConfigsTerraformModuleParams{
 		ComponentID: componentID,
 		Req:         req,
@@ -96,7 +96,7 @@ func (c *client) CreateTerraformModuleComponentConfig(ctx context.Context, compo
 	return resp.Payload, nil
 }
 
-func (c *client) CreateHelmComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateHelmComponentConfigRequest) (*models.AppComponentConfigConnection, error) {
+func (c *client) CreateHelmComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateHelmComponentConfigRequest) (*models.AppHelmComponentConfig, error) {
 	resp, err := c.genClient.Operations.PostV1ComponentsComponentIDConfigsHelm(&operations.PostV1ComponentsComponentIDConfigsHelmParams{
 		ComponentID: componentID,
 		Req:         req,
@@ -109,7 +109,7 @@ func (c *client) CreateHelmComponentConfig(ctx context.Context, componentID stri
 	return resp.Payload, nil
 }
 
-func (c *client) CreateDockerBuildComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateDockerBuildComponentConfigRequest) (*models.AppComponentConfigConnection, error) {
+func (c *client) CreateDockerBuildComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateDockerBuildComponentConfigRequest) (*models.AppDockerBuildComponentConfig, error) {
 	resp, err := c.genClient.Operations.PostV1ComponentsComponentIDConfigsDockerBuild(&operations.PostV1ComponentsComponentIDConfigsDockerBuildParams{
 		ComponentID: componentID,
 		Req:         req,
@@ -122,7 +122,7 @@ func (c *client) CreateDockerBuildComponentConfig(ctx context.Context, component
 	return resp.Payload, nil
 }
 
-func (c *client) CreateExternalImageComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateExternalImageComponentConfigRequest) (*models.AppComponentConfigConnection, error) {
+func (c *client) CreateExternalImageComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateExternalImageComponentConfigRequest) (*models.AppExternalImageComponentConfig, error) {
 	resp, err := c.genClient.Operations.PostV1ComponentsComponentIDConfigsExternalImage(&operations.PostV1ComponentsComponentIDConfigsExternalImageParams{
 		ComponentID: componentID,
 		Req:         req,
@@ -148,7 +148,7 @@ func (c *client) GetComponentConfigs(ctx context.Context, componentID string) ([
 }
 
 func (c *client) GetComponentLatestConfig(ctx context.Context, componentID string) (*models.AppComponentConfigConnection, error) {
-	resp, err := c.genClient.Operations.GetV1ComponentsComponentIDConfig(&operations.GetV1ComponentsComponentIDConfigParams{
+	resp, err := c.genClient.Operations.GetV1ComponentsComponentIDConfigsLatest(&operations.GetV1ComponentsComponentIDConfigsLatestParams{
 		ComponentID: componentID,
 		Context:     ctx,
 	})
@@ -186,7 +186,7 @@ func (c *client) GetComponentBuilds(ctx context.Context, componentID string) ([]
 }
 
 func (c *client) GetComponentLatestBuild(ctx context.Context, componentID string) (*models.AppComponentBuild, error) {
-	resp, err := c.genClient.Operations.GetV1ComponentsComponentIDLatestBuild(&operations.GetV1ComponentsComponentIDLatestBuildParams{
+	resp, err := c.genClient.Operations.GetV1ComponentsComponentIDBuildsLatest(&operations.GetV1ComponentsComponentIDBuildsLatestParams{
 		ComponentID: componentID,
 		Context:     ctx,
 	})
@@ -198,13 +198,13 @@ func (c *client) GetComponentLatestBuild(ctx context.Context, componentID string
 }
 
 func (c *client) GetComponentBuild(ctx context.Context, componentID string, buildID string) (*models.AppComponentBuild, error) {
-	resp, err := c.genClient.Operations.GetV1ComponentsComponentIDBuildBuildID(&operations.GetV1ComponentsComponentIDBuildBuildIDParams{
+	resp, err := c.genClient.Operations.GetV1ComponentsComponentIDBuildsBuildID(&operations.GetV1ComponentsComponentIDBuildsBuildIDParams{
 		BuildID:     buildID,
 		ComponentID: componentID,
 		Context:     ctx,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to get latest build for component: %w", err)
+		return nil, fmt.Errorf("unable to get component build: %w", err)
 	}
 
 	return resp.Payload, nil

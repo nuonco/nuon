@@ -20,12 +20,15 @@ import (
 type Client interface {
 	SetOrgID(orgID string)
 
-	// orgs
-	GetOrg(ctx context.Context, orgID string) (*models.AppOrg, error)
+	//get / create org
 	GetOrgs(ctx context.Context) ([]*models.AppOrg, error)
 	CreateOrg(ctx context.Context, req *models.ServiceCreateOrgRequest) (*models.AppOrg, error)
-	UpdateOrg(ctx context.Context, orgID string, req *models.ServiceUpdateOrgRequest) (*models.AppOrg, error)
-	CreateOrgUser(ctx context.Context, orgID string, req *models.ServiceCreateOrgUserRequest) (*models.AppUserOrg, error)
+
+	//current org
+	GetOrg(ctx context.Context) (*models.AppOrg, error)
+	UpdateOrg(ctx context.Context, req *models.ServiceUpdateOrgRequest) (*models.AppOrg, error)
+	DeleteOrg(ctx context.Context) (bool, error)
+	CreateOrgUser(ctx context.Context, req *models.ServiceCreateOrgUserRequest) (*models.AppUserOrg, error)
 
 	// internal methods
 	GetApp(ctx context.Context, appID string) (*models.AppApp, error)
@@ -40,7 +43,7 @@ type Client interface {
 	PublishMetrics(ctx context.Context, req []*models.ServicePublishMetricInput) error
 
 	// sandbox methods
-	GetSandboxes(ctx context.Context, sandboxID string) ([]*models.AppSandbox, error)
+	GetSandboxes(ctx context.Context) ([]*models.AppSandbox, error)
 	GetSandbox(ctx context.Context, sandboxID string) (*models.AppSandbox, error)
 	GetSandboxReleases(ctx context.Context, sandboxID string) ([]*models.AppSandboxRelease, error)
 
@@ -63,11 +66,13 @@ type Client interface {
 	GetInstallDeploys(ctx context.Context, installID string) ([]*models.AppInstallDeploy, error)
 	CreateInstallDeploy(ctx context.Context, installID string, req *models.ServiceCreateInstallDeployRequest) (*models.AppInstallDeploy, error)
 	GetInstallDeploy(ctx context.Context, installID, deployID string) (*models.AppInstallDeploy, error)
+	GetInstallLatestDeploy(ctx context.Context, installID string) (*models.AppInstallDeploy, error)
 	GetInstallDeployLogs(ctx context.Context, installID, deployID string) ([]models.ServiceDeployLog, error)
 
 	// install components
 	GetInstallComponents(ctx context.Context, installID string) ([]*models.AppInstallComponent, error)
 	GetInstallComponentDeploys(ctx context.Context, installID, componentID string) ([]*models.AppInstallDeploy, error)
+	GetInstallComponentLatestDeploy(ctx context.Context, installID, componentID string) (*models.AppInstallDeploy, error)
 
 	// components
 	GetAllComponents(ctx context.Context) ([]*models.AppComponent, error)
@@ -79,10 +84,10 @@ type Client interface {
 	DeleteComponent(ctx context.Context, componentID string) (bool, error)
 
 	// component configs
-	CreateTerraformModuleComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateTerraformModuleComponentConfigRequest) (*models.AppComponentConfigConnection, error)
-	CreateHelmComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateHelmComponentConfigRequest) (*models.AppComponentConfigConnection, error)
-	CreateDockerBuildComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateDockerBuildComponentConfigRequest) (*models.AppComponentConfigConnection, error)
-	CreateExternalImageComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateExternalImageComponentConfigRequest) (*models.AppComponentConfigConnection, error)
+	CreateTerraformModuleComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateTerraformModuleComponentConfigRequest) (*models.AppTerraformModuleComponentConfig, error)
+	CreateHelmComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateHelmComponentConfigRequest) (*models.AppHelmComponentConfig, error)
+	CreateDockerBuildComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateDockerBuildComponentConfigRequest) (*models.AppDockerBuildComponentConfig, error)
+	CreateExternalImageComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateExternalImageComponentConfigRequest) (*models.AppExternalImageComponentConfig, error)
 	GetComponentConfigs(ctx context.Context, componentID string) ([]*models.AppComponentConfigConnection, error)
 	GetComponentLatestConfig(ctx context.Context, componentID string) (*models.AppComponentConfigConnection, error)
 

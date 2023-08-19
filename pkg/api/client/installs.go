@@ -97,8 +97,21 @@ func (c *client) GetInstallDeploys(ctx context.Context, installID string) ([]*mo
 
 func (c *client) CreateInstallDeploy(ctx context.Context, installID string, req *models.ServiceCreateInstallDeployRequest) (*models.AppInstallDeploy, error) {
 	resp, err := c.genClient.Operations.PostV1InstallsInstallIDDeploys(&operations.PostV1InstallsInstallIDDeploysParams{
-		Req:     req,
-		Context: ctx,
+		InstallID: installID,
+		Req:       req,
+		Context:   ctx,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create install deploy: %w", err)
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) GetInstallLatestDeploy(ctx context.Context, installID string) (*models.AppInstallDeploy, error) {
+	resp, err := c.genClient.Operations.GetV1InstallsInstallIDDeploysLatest(&operations.GetV1InstallsInstallIDDeploysLatestParams{
+		InstallID: installID,
+		Context:   ctx,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create install deploy: %w", err)
@@ -154,6 +167,19 @@ func (c *client) GetInstallComponentDeploys(ctx context.Context, installID strin
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install components: %w", err)
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) GetInstallComponentLatestDeploy(ctx context.Context, installID string, componentID string) (*models.AppInstallDeploy, error) {
+	resp, err := c.genClient.Operations.GetV1InstallsInstallIDComponentsComponentIDDeploysLatest(&operations.GetV1InstallsInstallIDComponentsComponentIDDeploysLatestParams{
+		ComponentID: componentID,
+		InstallID:   installID,
+		Context:     ctx,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install component latest deploy: %w", err)
 	}
 
 	return resp.Payload, nil
