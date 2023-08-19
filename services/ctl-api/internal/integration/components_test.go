@@ -1,0 +1,165 @@
+package integration
+
+import (
+	"os"
+	"testing"
+
+	"github.com/powertoolsdev/mono/pkg/api/client/models"
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+)
+
+type componentsSuite struct {
+	baseIntegrationTestSuite
+
+	orgID string
+	appID string
+}
+
+func TestComponentsSuite(t *testing.T) {
+	integration := os.Getenv("INTEGRATION")
+	if integration == "" {
+		t.Skip("INTEGRATION=true must be set in environment to run.")
+	}
+
+	suite.Run(t, new(componentsSuite))
+}
+
+func (s *componentsSuite) SetupTest() {
+	// create an org
+	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), org)
+	s.apiClient.SetOrgID(org.ID)
+	s.orgID = org.ID
+
+	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+	app, err := s.apiClient.CreateApp(s.ctx, appReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), app)
+	s.appID = app.ID
+}
+
+func (s *componentsSuite) TestCreateComponent() {
+	s.T().Run("success", func(t *testing.T) {
+		createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
+		require.Nil(t, err)
+		require.NotNil(t, comp)
+
+		require.Equal(t, comp.Name, *(createReq.Name))
+	})
+
+	s.T().Run("errors on invalid parameters", func(t *testing.T) {
+		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, &models.ServiceCreateComponentRequest{})
+		require.NotNil(t, err)
+		require.Nil(t, comp)
+	})
+
+	s.T().Run("updates existing installs", func(t *testing.T) {
+		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
+		fakeReq.AwsAccount.Region = "us-west-2"
+		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
+		require.Nil(t, err)
+		require.NotNil(t, install)
+
+		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, &models.ServiceCreateComponentRequest{})
+		require.NotNil(t, err)
+		require.Nil(t, comp)
+
+		installComps, err := s.apiClient.GetInstallComponents(s.ctx, install.ID)
+		require.Nil(t, err)
+		require.NotEmpty(t, installComps)
+	})
+}
+
+func (s *componentsSuite) TestUpdateComponent() {
+	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
+	require.Nil(s.T(), err)
+	require.NotNil(s.T(), comp)
+
+	s.T().Run("success", func(t *testing.T) {
+		updateReq := generics.GetFakeObj[*models.ServiceUpdateComponentRequest]()
+		updatedComp, err := s.apiClient.UpdateComponent(s.ctx, comp.ID, updateReq)
+		require.Nil(t, err)
+		require.Equal(t, updatedComp.Name, updateReq.Name)
+	})
+
+	s.T().Run("errors on invalid parameters", func(t *testing.T) {
+		comp, err := s.apiClient.UpdateComponent(s.ctx, s.appID, &models.ServiceUpdateComponentRequest{})
+		require.NotNil(t, err)
+		require.Nil(t, comp)
+	})
+}
+
+func (s *componentsSuite) TestDeleteComponent() {
+	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
+	require.Nil(s.T(), err)
+	require.NotNil(s.T(), comp)
+
+	s.T().Run("success", func(t *testing.T) {
+		deleted, err := s.apiClient.DeleteComponent(s.ctx, comp.ID)
+		require.Nil(t, err)
+		require.True(t, deleted)
+
+		comp, err := s.apiClient.GetComponent(s.ctx, comp.ID)
+		require.Nil(t, comp)
+		require.NotNil(t, err)
+	})
+
+	s.T().Run("errors on not found", func(t *testing.T) {
+		deleted, err := s.apiClient.DeleteComponent(s.ctx, generics.GetFakeObj[string]())
+		require.NotNil(t, err)
+		require.False(t, deleted)
+	})
+}
+
+func (s *componentsSuite) TestGetAllComponents() {
+	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
+	require.Nil(s.T(), err)
+	require.NotNil(s.T(), comp)
+
+	s.T().Run("success with a single app", func(t *testing.T) {
+		comps, err := s.apiClient.GetAllComponents(s.ctx)
+		require.Nil(t, err)
+		require.Len(t, comps, 1)
+		require.Equal(t, comp.ID, comps[0].ID)
+	})
+
+	s.T().Run("success with multiple apps", func(t *testing.T) {
+		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		app, err := s.apiClient.CreateApp(s.ctx, appReq)
+		require.NoError(s.T(), err)
+		require.NotNil(s.T(), app)
+
+		createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+		comp2, err := s.apiClient.CreateComponent(s.ctx, app.ID, createReq)
+		require.Nil(s.T(), err)
+		require.NotNil(s.T(), comp2)
+
+		comps, err := s.apiClient.GetAllComponents(s.ctx)
+		require.Nil(t, err)
+		require.Len(t, comps, 2)
+		require.Equal(t, comp.ID, comps[0].ID)
+		require.Equal(t, comp2.ID, comps[1].ID)
+	})
+}
+
+func (s *componentsSuite) TestGetAppComponents() {
+	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
+	require.Nil(s.T(), err)
+	require.NotNil(s.T(), comp)
+
+	s.T().Run("success", func(t *testing.T) {
+		comps, err := s.apiClient.GetAllComponents(s.ctx)
+		require.Nil(t, err)
+		require.Len(t, comps, 1)
+		require.Equal(t, comp.ID, comps[0].ID)
+	})
+}

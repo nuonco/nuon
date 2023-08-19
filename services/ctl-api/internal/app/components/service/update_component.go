@@ -6,11 +6,19 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type UpdateComponentRequest struct {
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required"`
+}
+
+func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 // @BasePath /v1/components
@@ -23,13 +31,17 @@ type UpdateComponentRequest struct {
 // @Tags components
 // @Accept json
 // @Produce json
-// @Success 201 {object} app.Component
+// @Success 200 {object} app.Component
 // @Router /v1/components/{component_id} [PATCH]
 func (s *service) UpdateComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 	var req UpdateComponentRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 
