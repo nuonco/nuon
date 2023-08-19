@@ -7,30 +7,34 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 // @BasePath /v1/vcs
 
-// GetOrgConnections returns all VCS connections for an org
+// GetConnections returns all VCS connections for an org
 // @Summary get vcs connection for an org
 // @Schemes
 // @Description get vcs connections
-// @Param org_id path string true "org ID for your current org"
 // @Tags vcs
 // @Accept json
 // @Produce json
 // @Success 200 {array} app.VCSConnection
-// @Router /v1/vcs/{org_id}/connections [get]
-func (s *service) GetOrgConnections(ctx *gin.Context) {
-	orgID := ctx.Param("org_id")
+// @Router /v1/vcs/connections [get]
+func (s *service) GetConnections(ctx *gin.Context) {
+	currentOrg, err := org.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
-	vcsConns, err := s.getOrgConnections(ctx, orgID)
+	vcsConns, err := s.getOrgConnections(ctx, currentOrg.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org vcs connections: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, vcsConns)
+	ctx.JSON(http.StatusOK, vcsConns)
 }
 
 func (s *service) getOrgConnections(ctx context.Context, orgID string) ([]*app.VCSConnection, error) {

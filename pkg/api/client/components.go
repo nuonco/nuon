@@ -57,8 +57,9 @@ func (c *client) GetComponent(ctx context.Context, componentID string) (*models.
 	return resp.Payload, nil
 }
 
-func (c *client) UpdateComponent(ctx context.Context, componentID string, req *models.ServiceCreateComponentRequest) (*models.AppComponent, error) {
+func (c *client) UpdateComponent(ctx context.Context, componentID string, req *models.ServiceUpdateComponentRequest) (*models.AppComponent, error) {
 	resp, err := c.genClient.Operations.PatchV1ComponentsComponentID(&operations.PatchV1ComponentsComponentIDParams{
+		Req:         req,
 		ComponentID: componentID,
 		Context:     ctx,
 	})

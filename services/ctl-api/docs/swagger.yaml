@@ -555,6 +555,13 @@ definitions:
     required:
     - name
     type: object
+  service.CreateConnectionRequest:
+    properties:
+      github_install_id:
+        type: string
+    required:
+    - github_install_id
+    type: object
   service.CreateDockerBuildComponentConfigRequest:
     properties:
       basic_deploy_config:
@@ -639,11 +646,6 @@ definitions:
     required:
     - aws_account
     - name
-    type: object
-  service.CreateOrgConnectionRequest:
-    properties:
-      github_install_id:
-        type: string
     type: object
   service.CreateOrgRequest:
     properties:
@@ -739,6 +741,8 @@ definitions:
     properties:
       name:
         type: string
+    required:
+    - name
     type: object
   service.UpdateInstallRequest:
     properties:
@@ -1102,8 +1106,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             $ref: '#/definitions/app.Component'
       summary: update a component
@@ -1158,7 +1162,6 @@ paths:
       summary: get all builds for a component
       tags:
       - components
-  /v1/components/{component_id}/builds/:
     post:
       consumes:
       - application/json
@@ -1740,10 +1743,10 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            type: string
+            type: boolean
       summary: Delete an org
       tags:
       - orgs
@@ -1950,17 +1953,11 @@ paths:
       summary: get sandbox releases
       tags:
       - sandboxes
-  /v1/vcs/{org_id}/connected-repos:
+  /v1/vcs/connected-repos:
     get:
       consumes:
       - application/json
       description: return all vcs connected repos for an org
-      parameters:
-      - description: org ID for your current org
-        in: path
-        name: org_id
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -1973,44 +1970,11 @@ paths:
       summary: get all vcs connected repos for an org
       tags:
       - vcs
-  /v1/vcs/{org_id}/connection:
-    post:
-      consumes:
-      - application/json
-      description: create a vcs connection
-      parameters:
-      - description: org ID for your current org
-        in: path
-        name: org_id
-        required: true
-        type: string
-      - description: Input
-        in: body
-        name: req
-        required: true
-        schema:
-          $ref: '#/definitions/service.CreateOrgConnectionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/app.VCSConnection'
-      summary: create a vcs connection for Github
-      tags:
-      - vcs
-  /v1/vcs/{org_id}/connections:
+  /v1/vcs/connections:
     get:
       consumes:
       - application/json
       description: get vcs connections
-      parameters:
-      - description: org ID for your current org
-        in: path
-        name: org_id
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -2021,6 +1985,48 @@ paths:
               $ref: '#/definitions/app.VCSConnection'
             type: array
       summary: get vcs connection for an org
+      tags:
+      - vcs
+    post:
+      consumes:
+      - application/json
+      description: create a vcs connection
+      parameters:
+      - description: Input
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateConnectionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/app.VCSConnection'
+      summary: create a vcs connection for Github
+      tags:
+      - vcs
+  /v1/vcs/connections/{connection_id}:
+    get:
+      consumes:
+      - application/json
+      description: get vcs connection
+      parameters:
+      - description: connection ID
+        in: path
+        name: connection_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.VCSConnection'
+      summary: returns a vcs connection for an org
       tags:
       - vcs
 securityDefinitions:
