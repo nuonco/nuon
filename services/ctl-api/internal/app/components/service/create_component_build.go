@@ -23,7 +23,7 @@ func (c *CreateComponentBuildRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @BasePath /v1/apps
+// @BasePath /v1/components
 // Create component build
 // @Summary create component build
 // @Schemes
@@ -34,7 +34,7 @@ func (c *CreateComponentBuildRequest) Validate(v *validator.Validate) error {
 // @Accept json
 // @Produce json
 // @Success 201 {object} app.ComponentBuild
-// @Router /v1/components/{component_id}/builds/ [POST]
+// @Router /v1/components/{component_id}/builds [POST]
 func (s *service) CreateComponentBuild(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

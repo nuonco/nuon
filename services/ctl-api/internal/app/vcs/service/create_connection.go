@@ -8,14 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 	"gorm.io/gorm/clause"
 )
 
-type CreateOrgConnectionRequest struct {
-	GithubInstallID string `json:"github_install_id" `
+type CreateConnectionRequest struct {
+	GithubInstallID string `json:"github_install_id" validate:"required"`
 }
 
-func (c *CreateOrgConnectionRequest) Validate(v *validator.Validate) error {
+func (c *CreateConnectionRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
@@ -28,17 +29,20 @@ func (c *CreateOrgConnectionRequest) Validate(v *validator.Validate) error {
 // @Summary create a vcs connection for Github
 // @Schemes
 // @Description create a vcs connection
-// @Param org_id path string true "org ID for your current org"
-// @Param req body CreateOrgConnectionRequest true "Input"
+// @Param req body CreateConnectionRequest true "Input"
 // @Tags vcs
 // @Accept json
 // @Produce json
-// @Success 200 {object} app.VCSConnection
-// @Router /v1/vcs/{org_id}/connection [post]
-func (s *service) CreateOrgConnection(ctx *gin.Context) {
-	orgID := ctx.Param("org_id")
+// @Success 201 {object} app.VCSConnection
+// @Router /v1/vcs/connections [post]
+func (s *service) CreateConnection(ctx *gin.Context) {
+	currentOrg, err := org.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
-	var req CreateOrgConnectionRequest
+	var req CreateConnectionRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
@@ -48,7 +52,7 @@ func (s *service) CreateOrgConnection(ctx *gin.Context) {
 		return
 	}
 
-	vcsConn, err := s.createOrgConnection(ctx, orgID, &req)
+	vcsConn, err := s.createOrgConnection(ctx, currentOrg.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org connection: %w", err))
 		return
@@ -57,7 +61,7 @@ func (s *service) CreateOrgConnection(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, vcsConn)
 }
 
-func (s *service) createOrgConnection(ctx context.Context, orgID string, req *CreateOrgConnectionRequest) (*app.VCSConnection, error) {
+func (s *service) createOrgConnection(ctx context.Context, orgID string, req *CreateConnectionRequest) (*app.VCSConnection, error) {
 	vcsConn := app.VCSConnection{
 		OrgID:           orgID,
 		GithubInstallID: req.GithubInstallID,

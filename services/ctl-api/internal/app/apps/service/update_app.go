@@ -6,11 +6,19 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type UpdateAppRequest struct {
 	Name string `json:"name"`
+}
+
+func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
 }
 
 // @BasePath /v1/apps
@@ -26,13 +34,17 @@ type UpdateAppRequest struct {
 // @Success 200 {object} app.App
 // @Router /v1/apps/{app_id} [patch]
 func (s *service) UpdateApp(ctx *gin.Context) {
+	appID := ctx.Param("app_id")
+
 	var req UpdateAppRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse update request: %w", err))
 		return
 	}
-
-	appID := ctx.Param("app_id")
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
 
 	app, err := s.updateApp(ctx, appID, &req)
 	if err != nil {

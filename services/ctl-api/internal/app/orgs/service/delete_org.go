@@ -19,7 +19,7 @@ import (
 // @Tags orgs
 // @Accept json
 // @Produce json
-// @Success 201 {string} ok
+// @Success 200 {boolean} ok
 // @Router /v1/orgs/{org_id} [DELETE]
 func (s *service) DeleteOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
@@ -31,9 +31,7 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 	}
 
 	s.hooks.Deleted(ctx, orgID)
-	ctx.JSON(http.StatusAccepted, map[string]string{
-		"status": "ok",
-	})
+	ctx.JSON(http.StatusAccepted, true)
 }
 
 func (s *service) deleteOrg(ctx context.Context, orgID string) error {
@@ -42,6 +40,9 @@ func (s *service) deleteOrg(ctx context.Context, orgID string) error {
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete org: %w", res.Error)
+	}
+	if res.RowsAffected != 1 {
+		return fmt.Errorf("org not found")
 	}
 
 	return nil
