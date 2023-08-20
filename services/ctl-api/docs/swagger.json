@@ -2452,6 +2452,9 @@
                 "status": {
                     "type": "string"
                 },
+                "status_description": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -3055,6 +3058,9 @@
         },
         "service.UpdateAppSandboxRequest": {
             "type": "object",
+            "required": [
+                "sandbox_release_id"
+            ],
             "properties": {
                 "sandbox_release_id": {
                     "type": "string"
