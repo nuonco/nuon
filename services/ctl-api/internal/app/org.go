@@ -14,8 +14,9 @@ type Org struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	Name   string `gorm:"uniqueIndex" json:"name"`
-	Status string `json:"status"`
+	Name              string `gorm:"uniqueIndex" json:"name"`
+	Status            string `json:"status"`
+	StatusDescription string `json:"status_description"`
 
 	Apps           []App           `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	VCSConnections []VCSConnection `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`

@@ -33,6 +33,25 @@ type Client interface {
 		namespace string,
 		workflowID string,
 		runID string) error
+
+	// SignalWorkflowInNamespace is a wrapper that will signal a workflow in a different namespace
+	SignalWorkflowInNamespace(ctx context.Context,
+		namespace string,
+		workflowID string,
+		runID string,
+		signalName string,
+		signalArg interface{}) error
+
+	// SignalWithStartWorkflowInNamespace is a wrapper that will signal and start a workflow in a different
+	// namespace
+	SignalWithStartWorkflowInNamespace(ctx context.Context,
+		namespace string,
+		workflowID string,
+		signalName string,
+		signalArg interface{},
+		options tclient.StartWorkflowOptions,
+		workflow interface{},
+		workflowArgs interface{}) (tclient.WorkflowRun, error)
 }
 
 // getClient returns a temporal client from memory, or creates a new one and caches it
