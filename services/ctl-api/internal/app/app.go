@@ -14,12 +14,13 @@ type App struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	Name       string      `json:"name"`
-	OrgID      string      `json:"org_id"`
-	Org        Org         `faker:"-" json:"-"`
-	Components []Component `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	Installs   []Install   `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	Status     string      `json:"status"`
+	Name              string      `json:"name"`
+	OrgID             string      `json:"org_id"`
+	Org               Org         `faker:"-" json:"-"`
+	Components        []Component `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	Installs          []Install   `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	Status            string      `json:"status"`
+	StatusDescription string      `json:"status_description"`
 
 	SandboxReleaseID string         `json:"-"`
 	SandboxRelease   SandboxRelease `json:"sandbox_release,omitempty"`

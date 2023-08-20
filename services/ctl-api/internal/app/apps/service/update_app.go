@@ -62,7 +62,10 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 
 	res := s.db.WithContext(ctx).Model(&currentApp).Updates(app.App{Name: req.Name})
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+		return nil, fmt.Errorf("unable to update app: %w", res.Error)
+	}
+	if res.RowsAffected < 1 {
+		return nil, fmt.Errorf("app not found %s", appID)
 	}
 
 	return &currentApp, nil

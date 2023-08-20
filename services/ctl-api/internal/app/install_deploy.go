@@ -20,7 +20,8 @@ type InstallDeploy struct {
 	InstallComponentID string           `json:"install_component_id"`
 	InstallComponent   InstallComponent `faker:"-" json:"-"`
 
-	Status string `json:"status"`
+	Status            string `json:"status"`
+	StatusDescription string `json:"status_description"`
 }
 
 func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {

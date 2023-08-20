@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (m *middleware) fetchUserToken(ctx context.Context, token string) (*app.UserToken, error) {
@@ -49,7 +50,9 @@ func (m *middleware) saveUserToken(ctx context.Context, token string, claims *va
 		Issuer:    claims.RegisteredClaims.Issuer,
 	}
 
-	res := m.db.WithContext(ctx).Create(&userToken)
+	res := m.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&userToken)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to save user token: %w", res.Error)
 	}

@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	appsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker"
+	appsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 	orgsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker"
 	orgsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	"github.com/spf13/cobra"
@@ -19,11 +21,18 @@ func (c *cli) registerWorker() error {
 
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
-		// orgs workflows
+		// orgs worker
 		fx.Provide(orgsactivities.New),
 		fx.Provide(orgsworker.NewWorkflows),
 		fx.Provide(orgsworker.New),
 		fx.Invoke(func(*orgsworker.Worker) {
+		}),
+
+		// apps worker
+		fx.Provide(appsactivities.New),
+		fx.Provide(appsworker.NewWorkflows),
+		fx.Provide(appsworker.New),
+		fx.Invoke(func(*appsworker.Worker) {
 		}),
 	}
 	providers = append(providers, c.providers()...)

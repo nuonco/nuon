@@ -72,7 +72,7 @@ type Config struct {
 	Auth0Audience  string `config:"auth0_audience"`
 
 	// flags for controlling the background workers
-	EnableWorkersDryRun bool `config:"enable_workers_dry_run"`
+	DevEnableWorkersDryRun bool `config:"dev_enable_workers_dry_run"`
 }
 
 func NewConfig() (*Config, error) {
