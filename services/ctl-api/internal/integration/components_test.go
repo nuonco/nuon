@@ -18,12 +18,18 @@ type componentsSuite struct {
 }
 
 func TestComponentsSuite(t *testing.T) {
+	t.Parallel()
+
 	integration := os.Getenv("INTEGRATION")
 	if integration == "" {
 		t.Skip("INTEGRATION=true must be set in environment to run.")
 	}
 
 	suite.Run(t, new(componentsSuite))
+}
+
+func (s *componentsSuite) TearDownTest() {
+	s.deleteOrg(s.orgID)
 }
 
 func (s *componentsSuite) SetupTest() {
@@ -131,7 +137,7 @@ func (s *componentsSuite) TestGetAllComponents() {
 		require.Equal(t, comp.ID, comps[0].ID)
 	})
 
-	s.T().Run("success with multiple apps", func(t *testing.T) {
+	s.T().Run("success all apps ordered by component desc", func(t *testing.T) {
 		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
 		app, err := s.apiClient.CreateApp(s.ctx, appReq)
 		require.NoError(s.T(), err)
@@ -145,8 +151,8 @@ func (s *componentsSuite) TestGetAllComponents() {
 		comps, err := s.apiClient.GetAllComponents(s.ctx)
 		require.Nil(t, err)
 		require.Len(t, comps, 2)
-		require.Equal(t, comp.ID, comps[0].ID)
-		require.Equal(t, comp2.ID, comps[1].ID)
+		require.Equal(t, comp2.ID, comps[0].ID)
+		require.Equal(t, comp.ID, comps[1].ID)
 	})
 }
 

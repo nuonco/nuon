@@ -16,7 +16,7 @@ type Sandbox struct {
 
 	Name        string           `gorm:"unique" json:"name"`
 	Description string           `json:"description"`
-	Releases    []SandboxRelease `json:"releases"`
+	Releases    []SandboxRelease `json:"releases" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (s *Sandbox) BeforeCreate(tx *gorm.DB) error {

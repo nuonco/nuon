@@ -17,8 +17,9 @@ type VCSConnection struct {
 	OrgID string `json:"org_id"`
 	Org   Org    `swaggerignore:"true" json:"-"`
 
-	GithubInstallID string                `json:"github_install_id"`
-	Commits         []VCSConnectionCommit `json:"vcs_connection_commit"`
+	GithubInstallID           string                     `json:"github_install_id"`
+	Commits                   []VCSConnectionCommit      `json:"vcs_connection_commit" `
+	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (v *VCSConnection) BeforeCreate(tx *gorm.DB) error {
