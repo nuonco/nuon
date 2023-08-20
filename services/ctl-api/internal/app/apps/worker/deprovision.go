@@ -2,7 +2,6 @@ package worker
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 	"go.temporal.io/sdk/workflow"
@@ -18,9 +17,10 @@ func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool)
 		return fmt.Errorf("unable to update app status: %w", err)
 	}
 
-	// call child workflow
+	// NOTE: we don't actually have a deprovision step, but we sleep here locally when a dry-run is enabled, to
+	// ensure that the status updating is working correctly.
 	if dryRun {
-		workflow.Sleep(ctx, time.Second*5)
+		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
 	}
 
 	// update status with response
