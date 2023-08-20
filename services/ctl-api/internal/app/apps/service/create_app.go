@@ -79,10 +79,11 @@ func (s *service) createApp(ctx context.Context, orgID string, req *CreateAppReq
 	}
 
 	app := app.App{
-		OrgID: orgID,
-
-		Name:             req.Name,
-		SandboxReleaseID: sandbox.Releases[0].ID,
+		OrgID:             orgID,
+		Name:              req.Name,
+		Status:            "queued",
+		StatusDescription: "waiting for event loop to start and provision app",
+		SandboxReleaseID:  sandbox.Releases[0].ID,
 	}
 
 	res = s.db.WithContext(ctx).Create(&app)

@@ -14,10 +14,11 @@ type Install struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	Name   string `json:"name"`
-	App    App    `swaggerignore:"true" json:"-"`
-	AppID  string `json:"app_id"`
-	Status string `json:"status"`
+	Name              string `json:"name"`
+	App               App    `swaggerignore:"true" json:"-"`
+	AppID             string `json:"app_id"`
+	Status            string `json:"status"`
+	StatusDescription string `json:"status_description"`
 
 	SandboxReleaseID string         `json:"-"`
 	SandboxRelease   SandboxRelease `json:"sandbox_release"`

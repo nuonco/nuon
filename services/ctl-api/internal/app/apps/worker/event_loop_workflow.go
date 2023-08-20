@@ -8,18 +8,17 @@ import (
 )
 
 const (
-	EventLoopWorkflowName string = "OrgEventLoop"
-	defaultOrgRegion      string = "us-west-2"
+	EventLoopWorkflowName string = "AppEventLoop"
 )
 
 func EventLoopWorkflowID(orgID string) string {
 	return fmt.Sprintf("%s-event-loop", orgID)
 }
 
-func (w *Workflows) OrgEventLoop(ctx workflow.Context, orgID string) error {
+func (w *Workflows) AppEventLoop(ctx workflow.Context, appID string) error {
 	l := zap.L()
 
-	signalChan := workflow.GetSignalChannel(ctx, orgID)
+	signalChan := workflow.GetSignalChannel(ctx, appID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
 		var signal Signal
@@ -35,13 +34,16 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, orgID string) error {
 
 		switch signal.Operation {
 		case OperationProvision:
-			if err := w.provision(ctx, orgID, signal.DryRun); err != nil {
-				l.Info("unable to provision org: %w", zap.Error(err))
+			if err := w.provision(ctx, appID, signal.DryRun); err != nil {
+				l.Info("unable to provision app: %w", zap.Error(err))
+			}
+		case OperationUpdateSandbox:
+			if err := w.updateSandbox(ctx, appID, signal.SandboxReleaseID, signal.DryRun); err != nil {
+				l.Info("unable to provision app: %w", zap.Error(err))
 			}
 		case OperationDeprovision:
-			l.Info("here")
-			if err := w.deprovision(ctx, orgID, signal.DryRun); err != nil {
-				l.Info("unable to deprovision org: %w", zap.Error(err))
+			if err := w.deprovision(ctx, appID, signal.DryRun); err != nil {
+				l.Info("unable to deprovision app: %w", zap.Error(err))
 			}
 		}
 	})

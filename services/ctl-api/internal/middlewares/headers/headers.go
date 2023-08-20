@@ -16,7 +16,6 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		m.l.Info("header middleware")
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Next()
 	}

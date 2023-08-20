@@ -20,7 +20,6 @@ type middleware struct {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		m.l.Info("auth middleware")
 		token, err := jwtmiddleware.AuthHeaderTokenExtractor(ctx.Request)
 		if err != nil {
 			ctx.Error(stderr.ErrUser{

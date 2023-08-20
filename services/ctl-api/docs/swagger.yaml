@@ -52,6 +52,8 @@ definitions:
         $ref: '#/definitions/app.SandboxRelease'
       status:
         type: string
+      status_description:
+        type: string
       updated_at:
         type: string
     type: object
@@ -124,6 +126,8 @@ definitions:
       id:
         type: string
       status:
+        type: string
+      status_description:
         type: string
       updated_at:
         type: string
@@ -292,6 +296,8 @@ definitions:
         $ref: '#/definitions/app.SandboxRelease'
       status:
         type: string
+      status_description:
+        type: string
       updated_at:
         type: string
     type: object
@@ -333,6 +339,8 @@ definitions:
       install_component_id:
         type: string
       status:
+        type: string
+      status_description:
         type: string
       updated_at:
         type: string

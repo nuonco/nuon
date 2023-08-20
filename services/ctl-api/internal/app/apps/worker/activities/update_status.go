@@ -8,25 +8,24 @@ import (
 )
 
 type UpdateStatusRequest struct {
-	OrgID             string `validate:"required"`
+	AppID             string `validate:"required"`
 	Status            string `validate:"required"`
 	StatusDescription string `validate:"required"`
 }
 
 func (a *Activities) UpdateStatus(ctx context.Context, req UpdateStatusRequest) error {
-	org := app.Org{
-		ID: req.OrgID,
+	currentApp := app.App{
+		ID: req.AppID,
 	}
-	res := a.db.WithContext(ctx).Model(&org).Updates(app.Org{
+	res := a.db.WithContext(ctx).Model(&currentApp).Updates(app.App{
 		Status:            req.Status,
 		StatusDescription: req.StatusDescription,
 	})
 	if res.Error != nil {
-		return fmt.Errorf("unable to update org: %w", res.Error)
+		return fmt.Errorf("unable to update app: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
-		return fmt.Errorf("no org found: %s", req.OrgID)
+		return fmt.Errorf("no app found: %s", req.AppID)
 	}
-
 	return nil
 }

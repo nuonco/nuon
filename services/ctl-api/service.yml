@@ -16,7 +16,7 @@ env:
   GITHUB_APP_IP: !!string 261597
   AUTH0_ISSUER_URL: "https://nuon.us.auth0.com/"
   AUTH0_AUDIENCE: "api.nuon.co"
-  ENABLE_WORKERS_DRY_RUN: true
+  DEV_ENABLE_WORKERS_DRY_RUN: true
 local_env:
   DB_HOST: localhost
 env_secrets:
