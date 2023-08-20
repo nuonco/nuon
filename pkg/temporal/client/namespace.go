@@ -89,3 +89,60 @@ func (t *temporal) CancelWorkflowInNamespace(ctx context.Context,
 
 	return nil
 }
+
+func (t *temporal) SignalWorkflowInNamespace(ctx context.Context,
+	namespace string,
+	workflowID string,
+	runID string,
+	signalName string,
+	signalArg interface{}) error {
+	defaultClient, err := t.getClient()
+	if err != nil {
+		return fmt.Errorf("unable to get client: %w", err)
+	}
+
+	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
+		Namespace: namespace,
+		Logger:    temporalzap.NewLogger(t.Logger),
+	})
+	if err != nil {
+		return fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
+	}
+
+	return client.SignalWorkflow(ctx,
+		workflowID,
+		runID,
+		signalName,
+		signalArg)
+}
+
+func (t *temporal) SignalWithStartWorkflowInNamespace(ctx context.Context,
+	namespace string,
+	workflowID string,
+	signalName string,
+	signalArg interface{},
+	options tclient.StartWorkflowOptions,
+	workflow interface{},
+	workflowArgs interface{}) (tclient.WorkflowRun, error) {
+	defaultClient, err := t.getClient()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get client: %w", err)
+	}
+
+	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
+		Namespace: namespace,
+		Logger:    temporalzap.NewLogger(t.Logger),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
+	}
+
+	run, err := client.SignalWithStartWorkflow(ctx,
+		workflowID,
+		signalName,
+		signalArg,
+		options,
+		workflow,
+		workflowArgs)
+	return run, err
+}
