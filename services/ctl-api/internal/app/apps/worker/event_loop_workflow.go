@@ -11,8 +11,8 @@ const (
 	EventLoopWorkflowName string = "AppEventLoop"
 )
 
-func EventLoopWorkflowID(orgID string) string {
-	return fmt.Sprintf("%s-event-loop", orgID)
+func EventLoopWorkflowID(appID string) string {
+	return fmt.Sprintf("%s-event-loop", appID)
 }
 
 func (w *Workflows) AppEventLoop(ctx workflow.Context, appID string) error {
