@@ -21,11 +21,14 @@ EXPOSE 8233
 ENTRYPOINT ["/temporalite", \
             "start",\
             "--ephemeral", \
+            "-n", "installs", \
+            "-n", "orgs", \
+            "-n", "apps", \
+            "-n", "components", \
+            "-n", "releases", \
+            "-n", "canary", \
+            # the following namespaces are deprecated and will be deleted
             "-n", "api", \
             "-n", "builds", \
-            "-n", "apps", \
-            "-n", "canary", \
-	    "-n", "deploys", \
-            "-n", "installs", \
-	    "-n", "orgs", \
+            "-n", "deploys", \
             "--ip" , "0.0.0.0"]
