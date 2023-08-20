@@ -349,6 +349,8 @@ definitions:
         type: string
       status:
         type: string
+      status_description:
+        type: string
       updated_at:
         type: string
       users:
@@ -749,6 +751,8 @@ definitions:
     properties:
       sandbox_release_id:
         type: string
+    required:
+    - sandbox_release_id
     type: object
   service.UpdateComponentRequest:
     properties:

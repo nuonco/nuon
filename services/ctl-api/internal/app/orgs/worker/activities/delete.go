@@ -1,0 +1,26 @@
+package activities
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+type DeleteRequest struct {
+	OrgID string `validate:"required"`
+}
+
+func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
+	res := a.db.WithContext(ctx).Unscoped().Delete(&app.Org{
+		ID: req.OrgID,
+	})
+	if res.Error != nil {
+		return fmt.Errorf("unable to delete org: %w", res.Error)
+	}
+	if res.RowsAffected != 1 {
+		return fmt.Errorf("org not found")
+	}
+
+	return nil
+}
