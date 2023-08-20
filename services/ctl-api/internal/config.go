@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-playground/validator"
 	"github.com/powertoolsdev/mono/pkg/config"
@@ -28,6 +29,9 @@ func init() {
 	config.RegisterDefault("temporal_namespace", "default")
 	config.RegisterDefault("github_app_key_secret_name", "graphql-api-github-app-key")
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
+
+	// local dev dry-run for background jobs
+	config.RegisterDefault("dev_dry_run_sleep", 0)
 }
 
 type Config struct {
@@ -72,7 +76,8 @@ type Config struct {
 	Auth0Audience  string `config:"auth0_audience"`
 
 	// flags for controlling the background workers
-	DevEnableWorkersDryRun bool `config:"dev_enable_workers_dry_run"`
+	DevEnableWorkersDryRun bool          `config:"dev_enable_workers_dry_run"`
+	DevDryRunSleep         time.Duration `config:"dev_dry_run_sleep"`
 }
 
 func NewConfig() (*Config, error) {

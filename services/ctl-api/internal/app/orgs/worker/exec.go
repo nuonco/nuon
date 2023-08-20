@@ -8,6 +8,7 @@ import (
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 )
 
 func (w *Workflows) execDeprovisionWorkflow(
@@ -16,7 +17,8 @@ func (w *Workflows) execDeprovisionWorkflow(
 	req *orgsv1.DeprovisionRequest,
 ) (*orgsv1.DeprovisionResponse, error) {
 	if dryRun {
-		w.l.Info("dry-run enabled, sleeping for 5 seconds to mimic deprovisioning")
+		w.l.Info("dry-run enabled, sleeping for to mimic deprovisioning", zap.String("duration", w.cfg.DevDryRunSleep.String()))
+		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
 		return generics.GetFakeObj[*orgsv1.DeprovisionResponse](), nil
 	}
 
@@ -43,7 +45,8 @@ func (w *Workflows) execProvisionWorkflow(
 	req *orgsv1.ProvisionRequest,
 ) (*orgsv1.ProvisionResponse, error) {
 	if dryRun {
-		w.l.Info("dry-run enabled, sleeping for 5 seconds to mimic provisioning")
+		w.l.Info("dry-run enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.DevDryRunSleep.String()))
+		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
 		return generics.GetFakeObj[*orgsv1.ProvisionResponse](), nil
 	}
 
