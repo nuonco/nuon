@@ -17,12 +17,12 @@ type ComponentConfigConnection struct {
 	ComponentID string    `json:"component_id"`
 	Component   Component `json:"-"`
 
-	ComponentBuilds []ComponentBuild `json:"-"`
+	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
-	TerraformModuleComponentConfig *TerraformModuleComponentConfig `json:"terraform_module,omitempty"`
-	HelmComponentConfig            *HelmComponentConfig            `json:"helm,omitempty"`
-	ExternalImageComponentConfig   *ExternalImageComponentConfig   `json:"external_image,omitempty"`
-	DockerBuildComponentConfig     *DockerBuildComponentConfig     `json:"docker_build,omitempty"`
+	TerraformModuleComponentConfig *TerraformModuleComponentConfig `json:"terraform_module,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	HelmComponentConfig            *HelmComponentConfig            `json:"helm,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	ExternalImageComponentConfig   *ExternalImageComponentConfig   `json:"external_image,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	DockerBuildComponentConfig     *DockerBuildComponentConfig     `json:"docker_build,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (c *ComponentConfigConnection) BeforeCreate(tx *gorm.DB) error {

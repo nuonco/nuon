@@ -16,7 +16,7 @@ type UserOrg struct {
 
 	// parent relationship
 	OrgID string
-	Org   Org
+	Org   Org `gorm:"constraint:OnDelete:CASCADE;"`
 
 	UserID string
 

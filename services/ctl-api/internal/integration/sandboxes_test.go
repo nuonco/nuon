@@ -11,12 +11,11 @@ import (
 
 type sandboxesTestSuite struct {
 	baseIntegrationTestSuite
-
-	orgID string
-	appID string
 }
 
 func TestSandboxesSuite(t *testing.T) {
+	t.Parallel()
+
 	integration := os.Getenv("INTEGRATION")
 	if integration == "" {
 		t.Skip("INTEGRATION=true must be set in environment to run.")
