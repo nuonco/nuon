@@ -11,7 +11,7 @@ type GetRequest struct {
 	AppID string `validate:"required"`
 }
 
-func (a *Activities) Get(ctx context.Context, req DeleteRequest) (*app.App, error) {
+func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.App, error) {
 	currentApp := app.App{}
 	res := a.db.WithContext(ctx).First(&currentApp, "id = ?", req.AppID)
 	if res.Error != nil {
