@@ -27,7 +27,9 @@ type temporal struct {
 	sync.RWMutex
 }
 
-func New(v *validator.Validate, opts ...temporalOption) (Client, error) {
+var _ Client = (*temporal)(nil)
+
+func New(v *validator.Validate, opts ...temporalOption) (*temporal, error) {
 	logger, _ := zap.NewProduction(zap.WithCaller(false))
 	tmp := &temporal{
 		v:         v,

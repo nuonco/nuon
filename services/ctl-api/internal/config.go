@@ -28,20 +28,6 @@ func init() {
 	config.RegisterDefault("temporal_namespace", "default")
 	config.RegisterDefault("github_app_key_secret_name", "graphql-api-github-app-key")
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
-
-	//// defaults for middlewares
-	//config.RegisterDefault("middlewares", []string{
-	//"metrics",
-	//"error",
-	//"public",
-	//"auth",
-	//"org",
-	//"headers",
-	//})
-	//config.RegisterDefault("internal_middlewares", []string{
-	//"metrics",
-	//"error",
-	//})
 }
 
 type Config struct {
@@ -84,6 +70,9 @@ type Config struct {
 	// auth 0 config
 	Auth0IssuerURL string `config:"auth0_issuer_url"`
 	Auth0Audience  string `config:"auth0_audience"`
+
+	// flags for controlling the background workers
+	EnableWorkersDryRun bool `config:"enable_workers_dry_run"`
 }
 
 func NewConfig() (*Config, error) {

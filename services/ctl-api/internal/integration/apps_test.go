@@ -175,7 +175,7 @@ func (s *appsTestSuite) TestUpdateAppSandbox() {
 
 	s.T().Run("success", func(t *testing.T) {
 		updateAppSandboxReq := &models.ServiceUpdateAppSandboxRequest{
-			SandboxReleaseID: sandboxReleases[0].ID,
+			SandboxReleaseID: &(sandboxReleases[0].ID),
 		}
 
 		updatedApp, err := s.apiClient.UpdateAppSandbox(s.ctx, app.ID, updateAppSandboxReq)
