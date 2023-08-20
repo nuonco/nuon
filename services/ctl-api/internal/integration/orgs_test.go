@@ -15,6 +15,8 @@ type orgsIntegrationTestSuite struct {
 }
 
 func TestOrgsSuite(t *testing.T) {
+	t.Parallel()
+
 	integration := os.Getenv("INTEGRATION")
 	if integration == "" {
 		t.Skip("INTEGRATION=true must be set in environment to run.")
@@ -30,6 +32,8 @@ func (s *orgsIntegrationTestSuite) TestCreateOrg() {
 		require.NoError(t, err)
 		require.NotNil(t, org)
 		require.Equal(t, *fakeReq.Name, org.Name)
+
+		s.deleteOrg(org.ID)
 	})
 
 	s.T().Run("missing name", func(t *testing.T) {
@@ -48,6 +52,8 @@ func (s *orgsIntegrationTestSuite) TestCreateOrg() {
 		fetchedOrg, err := s.apiClient.GetOrg(s.ctx)
 		require.NoError(t, err)
 		require.Len(t, fetchedOrg.Users, 1)
+
+		s.deleteOrg(org.ID)
 	})
 }
 
@@ -57,6 +63,7 @@ func (s *orgsIntegrationTestSuite) TestOrgByID() {
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), seedOrg)
 	s.apiClient.SetOrgID(seedOrg.ID)
+	defer s.deleteOrg(seedOrg.ID)
 
 	s.T().Run("success", func(t *testing.T) {
 		org, err := s.apiClient.GetOrg(s.ctx)
@@ -73,6 +80,7 @@ func (s *orgsIntegrationTestSuite) TestUpdateOrg() {
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), seedOrg)
 	s.apiClient.SetOrgID(seedOrg.ID)
+	defer s.deleteOrg(seedOrg.ID)
 
 	s.T().Run("success", func(t *testing.T) {
 		updateReq := generics.GetFakeObj[*models.ServiceUpdateOrgRequest]()
@@ -100,6 +108,7 @@ func (s *orgsIntegrationTestSuite) TestGetOrgs() {
 	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), seedOrg)
+	defer s.deleteOrg(seedOrg.ID)
 
 	s.T().Run("success", func(t *testing.T) {
 		orgs, err := s.apiClient.GetOrgs(s.ctx)
@@ -126,6 +135,7 @@ func (s *orgsIntegrationTestSuite) TestCreateOrgUser() {
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), seedOrg)
 	s.apiClient.SetOrgID(seedOrg.ID)
+	defer s.deleteOrg(seedOrg.ID)
 
 	s.T().Run("success", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateOrgUserRequest]()
