@@ -2,6 +2,7 @@ package cmd
 
 import (
 	orgsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker"
+	orgsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 )
@@ -19,7 +20,7 @@ func (c *cli) registerWorker() error {
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
 		// orgs workflows
-		fx.Provide(orgsworker.NewActivities),
+		fx.Provide(orgsactivities.New),
 		fx.Provide(orgsworker.NewWorkflows),
 		fx.Provide(orgsworker.New),
 		fx.Invoke(func(*orgsworker.Worker) {

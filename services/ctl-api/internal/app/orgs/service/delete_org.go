@@ -39,8 +39,12 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 }
 
 func (s *service) deleteOrg(ctx context.Context, orgID string) error {
-	res := s.db.WithContext(ctx).Unscoped().Delete(&app.Org{
+	org := app.Org{
 		ID: orgID,
+	}
+	res := s.db.WithContext(ctx).Model(&org).Updates(app.Org{
+		Status:            "delete_queued",
+		StatusDescription: "delete has been queued and waiting",
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete org: %w", res.Error)
@@ -48,6 +52,5 @@ func (s *service) deleteOrg(ctx context.Context, orgID string) error {
 	if res.RowsAffected != 1 {
 		return fmt.Errorf("org not found")
 	}
-
 	return nil
 }

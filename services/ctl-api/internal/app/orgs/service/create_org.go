@@ -63,12 +63,12 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 
 func (s *service) createOrg(ctx context.Context, userID string, req *CreateOrgRequest) (*app.Org, error) {
 	org := app.Org{
-		Name: req.Name,
-		//UserOrgs: []app.UserOrg{
-		//{
-		//UserID: userID,
-		//},
-		//},
+		Name:              req.Name,
+		Status:            "queued",
+		StatusDescription: "waiting for event loop to start and provision org",
+
+		// TODO(jm): figure out why we can't update and users using the nested association
+		//UserOrgs: []app.UserOrg{{UserID: userID}},
 	}
 	if err := s.db.WithContext(ctx).Create(&org).Error; err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
