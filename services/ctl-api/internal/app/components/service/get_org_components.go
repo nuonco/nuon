@@ -37,16 +37,16 @@ func (s *service) GetOrgComponents(ctx *gin.Context) {
 }
 
 func (s *service) getOrgComponents(ctx context.Context, orgID string) ([]app.Component, error) {
-	org := &app.Org{}
-	res := s.db.WithContext(ctx).Preload("Apps").Preload("Apps.Components").First(&org, "id = ?", orgID)
+	comps := []app.Component{}
+
+	res := s.db.WithContext(ctx).
+		Joins("JOIN apps on apps.id=components.app_id").
+		Where("org_id = ?", orgID).
+		Order("created_at desc").
+		Find(&comps)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+		return nil, fmt.Errorf("unable to get components: %w", res.Error)
 	}
 
-	components := make([]app.Component, 0)
-	for _, app := range org.Apps {
-		components = append(components, app.Components...)
-	}
-
-	return components, nil
+	return comps, nil
 }

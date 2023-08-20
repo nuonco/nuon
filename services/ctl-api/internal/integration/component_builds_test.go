@@ -20,13 +20,19 @@ type componentBuildsSuite struct {
 	cfgConnectionID string
 }
 
-func TestComponentBuildsConfigsSuite(t *testing.T) {
+func TestComponentBuildsSuite(t *testing.T) {
+	t.Parallel()
+
 	integration := os.Getenv("INTEGRATION")
 	if integration == "" {
 		t.Skip("INTEGRATION=true must be set in environment to run.")
 	}
 
 	suite.Run(t, new(componentBuildsSuite))
+}
+
+func (s *componentBuildsSuite) TearDownTest() {
+	s.deleteOrg(s.orgID)
 }
 
 func (s *componentBuildsSuite) SetupTest() {

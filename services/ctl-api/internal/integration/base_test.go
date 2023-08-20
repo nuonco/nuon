@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/api/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,4 +40,16 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 	)
 	assert.NoError(s.T(), err)
 	s.apiClient = apiClient
+}
+
+func (s *baseIntegrationTestSuite) deleteOrg(orgID string) {
+	disabled := os.Getenv("INTEGRATION_NO_CLEANUP")
+	if disabled != "" {
+		return
+	}
+
+	s.apiClient.SetOrgID(orgID)
+	deleted, err := s.apiClient.DeleteOrg(s.ctx)
+	require.NoError(s.T(), err)
+	require.True(s.T(), deleted)
 }

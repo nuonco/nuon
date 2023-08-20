@@ -17,9 +17,9 @@ type Org struct {
 	Name   string `gorm:"uniqueIndex" json:"name"`
 	Status string `json:"status"`
 
-	Apps           []App           `faker:"-" swaggerignore:"true" json:"apps,omitempty"`
-	VCSConnections []VCSConnection `json:"vcs_connections,omitempty"`
-	UserOrgs       []UserOrg       `json:"users,omitempty"`
+	Apps           []App           `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	VCSConnections []VCSConnection `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	UserOrgs       []UserOrg       `json:"users,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (o *Org) BeforeCreate(tx *gorm.DB) error {
