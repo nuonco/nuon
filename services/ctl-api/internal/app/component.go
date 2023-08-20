@@ -20,7 +20,7 @@ type Component struct {
 	App   App    `faker:"-" json:"-"`
 
 	ConfigVersions   int                         `gorm:"-" json:"config_versions"`
-	ComponentConfigs []ComponentConfigConnection `json:"-"`
+	ComponentConfigs []ComponentConfigConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (c *Component) BeforeCreate(tx *gorm.DB) error {

@@ -39,7 +39,7 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 }
 
 func (s *service) deleteOrg(ctx context.Context, orgID string) error {
-	res := s.db.WithContext(ctx).Delete(&app.Org{
+	res := s.db.WithContext(ctx).Unscoped().Delete(&app.Org{
 		ID: orgID,
 	})
 	if res.Error != nil {

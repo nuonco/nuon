@@ -20,11 +20,11 @@ type DockerBuildComponentConfig struct {
 	ComponentConfigConnectionID string `json:"component_config_connection_id"`
 
 	// VCS Config
-	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig" json:"public_git_vcs_config,omitempty"`
-	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig" json:"connected_github_vcs_config,omitempty"`
+	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
+	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
 
 	SyncOnly          bool               `json:"sync_only,omitempty"`
-	BasicDeployConfig *BasicDeployConfig `gorm:"polymorphic:ComponentConfig" json:"basic_deploy_config,omitempty"`
+	BasicDeployConfig *BasicDeployConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"basic_deploy_config,omitempty"`
 
 	Dockerfile string         `json:"dockerfile" gorm:"default:Dockerfile"`
 	Target     string         `json:"target"`

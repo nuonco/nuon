@@ -17,8 +17,8 @@ type App struct {
 	Name       string      `json:"name"`
 	OrgID      string      `json:"org_id"`
 	Org        Org         `faker:"-" json:"-"`
-	Components []Component `faker:"-" json:"-" swaggerignore:"true"`
-	Installs   []Install   `faker:"-" json:"-" swaggerignore:"true"`
+	Components []Component `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	Installs   []Install   `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
 	Status     string      `json:"status"`
 
 	SandboxReleaseID string         `json:"-"`

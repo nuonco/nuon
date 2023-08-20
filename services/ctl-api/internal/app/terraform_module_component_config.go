@@ -23,8 +23,8 @@ type TerraformModuleComponentConfig struct {
 	Variables pgtype.Hstore `json:"variables" gorm:"type:hstore" swaggertype:"object,string"`
 
 	// VCSConfig
-	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig" json:"public_git_vcs_config,omitempty"`
-	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig" json:"connected_github_vcs_config,omitempty"`
+	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
+	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
 }
 
 func (c *TerraformModuleComponentConfig) BeforeCreate(tx *gorm.DB) error {
