@@ -13,6 +13,8 @@ type generalIntegrationTestSuite struct {
 }
 
 func TestGeneralSuite(t *testing.T) {
+	t.Parallel()
+
 	integration := os.Getenv("INTEGRATION")
 	if integration == "" {
 		t.Skip("INTEGRATION=true must be set in environment to run.")

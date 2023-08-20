@@ -19,7 +19,7 @@ type InstallComponent struct {
 	ComponentID string    `json:"component_id" gorm:"index:install_component_group,unique"`
 	Component   Component `faker:"-"`
 
-	InstallDeploys []InstallDeploy `faker:"-"`
+	InstallDeploys []InstallDeploy `faker:"-" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {

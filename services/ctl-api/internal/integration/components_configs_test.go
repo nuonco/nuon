@@ -19,12 +19,18 @@ type componentConfigsSuite struct {
 }
 
 func TestComponentConfigsSuite(t *testing.T) {
+	t.Parallel()
+
 	integration := os.Getenv("INTEGRATION")
 	if integration == "" {
 		t.Skip("INTEGRATION=true must be set in environment to run.")
 	}
 
 	suite.Run(t, new(componentConfigsSuite))
+}
+
+func (s *componentConfigsSuite) TearDownTest() {
+	s.deleteOrg(s.orgID)
 }
 
 func (s *componentConfigsSuite) SetupTest() {
