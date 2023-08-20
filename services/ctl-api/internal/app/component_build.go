@@ -20,8 +20,9 @@ type ComponentBuild struct {
 	VCSConnectionCommitID *string              `json:"-"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit"`
 
-	Status string  `json:"status"`
-	GitRef *string `json:"git_ref"`
+	Status            string  `json:"status"`
+	StatusDescription string  `json:"status_description"`
+	GitRef            *string `json:"git_ref"`
 }
 
 func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {

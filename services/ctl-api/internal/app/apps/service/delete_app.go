@@ -34,14 +34,20 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 }
 
 func (s *service) deleteApp(ctx context.Context, appID string) error {
-	res := s.db.WithContext(ctx).Delete(&app.App{
+	currentApp := app.App{
 		ID: appID,
+	}
+
+	res := s.db.WithContext(ctx).Model(&currentApp).Updates(app.App{
+		Status:            "delete_queued",
+		StatusDescription: "delete has been queued and waiting",
 	})
 	if res.Error != nil {
-		return fmt.Errorf("unable to delete app: %w", res.Error)
+		return fmt.Errorf("unable to update app: %w", res.Error)
 	}
-	if res.RowsAffected != 1 {
-		return fmt.Errorf("app not found")
+
+	if res.RowsAffected < 1 {
+		return fmt.Errorf("app not found %s", appID)
 	}
 
 	return nil
