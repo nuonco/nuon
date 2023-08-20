@@ -12,14 +12,7 @@ import (
 )
 
 func (o *Hooks) Created(ctx context.Context, orgID string) {
-	o.l.Debug("org created hook", zap.String("id", orgID))
-	o.l.Info("org created hook (info)", zap.String("id", orgID))
-
 	workflowID := worker.EventLoopWorkflowID(orgID)
-	signal := worker.Signal{
-		DryRun:    o.cfg.EnableWorkersDryRun,
-		Operation: worker.OperationProvision,
-	}
 	opts := tclient.StartWorkflowOptions{
 		ID:        workflowID,
 		TaskQueue: workflows.APITaskQueue,
@@ -31,21 +24,24 @@ func (o *Hooks) Created(ctx context.Context, orgID string) {
 		},
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
-	wkflowRun, err := o.client.SignalWithStartWorkflowInNamespace(ctx,
+	wkflowRun, err := o.client.ExecuteWorkflowInNamespace(ctx,
 		defaultNamespace,
-		workflowID,
-		orgID,
-		signal,
 		opts,
 		worker.EventLoopWorkflowName,
 		orgID)
 	if err != nil {
-		log.Fatalln("error creating event loop + signaling to provision", err)
+		log.Fatalln("error creating org event loop", err)
 		return
 	}
-	o.l.Debug("started event loop",
+	o.l.Debug("started org event loop",
 		zap.String("workflow-id", wkflowRun.GetID()),
-		zap.String("workflow-id", wkflowRun.GetID()),
+		zap.String("run-id", wkflowRun.GetID()),
+		zap.String("org-id", orgID),
 		zap.Error(err),
 	)
+
+	o.sendSignal(ctx, orgID, worker.Signal{
+		DryRun:    o.cfg.DevEnableWorkersDryRun,
+		Operation: worker.OperationProvision,
+	})
 }

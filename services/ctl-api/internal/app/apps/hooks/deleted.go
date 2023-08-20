@@ -3,9 +3,12 @@ package hooks
 import (
 	"context"
 
-	"go.uber.org/zap"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker"
 )
 
-func (a *Hooks) Deleted(ctx context.Context, id string) {
-	a.l.Info("app deleted", zap.String("id", id))
+func (a *Hooks) Deleted(ctx context.Context, appID string) {
+	a.sendSignal(ctx, appID, worker.Signal{
+		DryRun:    a.cfg.DevEnableWorkersDryRun,
+		Operation: worker.OperationDeprovision,
+	})
 }
