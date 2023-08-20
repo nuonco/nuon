@@ -48,13 +48,13 @@ func (s *service) CreateComponentBuild(ctx *gin.Context) {
 		return
 	}
 
-	component, err := s.createComponentBuild(ctx, cmpID, &req)
+	bld, err := s.createComponentBuild(ctx, cmpID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create component build: %w", err))
 		return
 	}
-	s.hooks.BuildCreated(ctx, component.ID)
-	ctx.JSON(http.StatusCreated, component)
+	s.hooks.BuildCreated(ctx, cmpID, bld.ID)
+	ctx.JSON(http.StatusCreated, bld)
 }
 
 func (s *service) createComponentBuild(ctx context.Context, cmpID string, req *CreateComponentBuildRequest) (*app.ComponentBuild, error) {
@@ -68,8 +68,9 @@ func (s *service) createComponentBuild(ctx context.Context, cmpID string, req *C
 	}
 
 	bld := app.ComponentBuild{
-		Status: "queued",
-		GitRef: req.GitRef,
+		Status:            "queued",
+		StatusDescription: "queued and waiting for runner to pick up",
+		GitRef:            req.GitRef,
 	}
 	if vcsCommit != nil {
 		bld.VCSConnectionCommitID = generics.ToPtr(vcsCommit.ID)

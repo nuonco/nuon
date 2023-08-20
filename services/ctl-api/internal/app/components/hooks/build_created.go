@@ -3,9 +3,13 @@ package hooks
 import (
 	"context"
 
-	"go.uber.org/zap"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker"
 )
 
-func (h *Hooks) BuildCreated(ctx context.Context, componentID string) {
-	h.l.Info("component build created", zap.String("component-id", componentID))
+func (h *Hooks) BuildCreated(ctx context.Context, componentID, buildID string) {
+	h.sendSignal(ctx, componentID, worker.Signal{
+		DryRun:    h.cfg.DevEnableWorkersDryRun,
+		Operation: worker.OperationBuild,
+		BuildID:   buildID,
+	})
 }

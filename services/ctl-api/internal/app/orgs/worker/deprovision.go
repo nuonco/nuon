@@ -2,8 +2,8 @@ package worker
 
 import (
 	"fmt"
-	"time"
 
+	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	"go.temporal.io/sdk/workflow"
 )
@@ -18,9 +18,12 @@ func (w *Workflows) deprovision(ctx workflow.Context, orgID string, dryRun bool)
 		return fmt.Errorf("unable to update org status: %w", err)
 	}
 
-	// call child workflow
-	if dryRun {
-		workflow.Sleep(ctx, time.Second*5)
+	_, err := w.execDeprovisionWorkflow(ctx, dryRun, &orgsv1.DeprovisionRequest{
+		OrgId:  orgID,
+		Region: defaultOrgRegion,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to deprovision org: %w", err)
 	}
 
 	// update status with response

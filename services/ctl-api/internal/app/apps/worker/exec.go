@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 )
 
 func (w *Workflows) execProvisionWorkflow(
@@ -17,7 +18,8 @@ func (w *Workflows) execProvisionWorkflow(
 	req *appsv1.ProvisionRequest,
 ) (*appsv1.ProvisionResponse, error) {
 	if dryRun {
-		w.l.Info("dry-run enabled, sleeping for 5 seconds to mimic provisioning")
+		w.l.Info("dry-run enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.DevDryRunSleep.String()))
+		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
 		return generics.GetFakeObj[*appsv1.ProvisionResponse](), nil
 	}
 
