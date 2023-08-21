@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v50/github"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 	"golang.org/x/oauth2"
@@ -18,11 +19,12 @@ const (
 )
 
 type Repository struct {
-	Name     string `json:"name,omitempty" validate:"required"`
-	FullName string `json:"full_name,omitempty" validate:"required"`
-	UserName string `json:"user_name" validate:"required"`
-	GitURL   string `json:"git_url,omitempty" validate:"required"`
-	CloneURL string `json:"clone_url,omitempty" validate:"required"`
+	Name          string `json:"name,omitempty" validate:"required"`
+	FullName      string `json:"full_name,omitempty" validate:"required"`
+	UserName      string `json:"user_name" validate:"required"`
+	GitURL        string `json:"git_url,omitempty" validate:"required"`
+	DefaultBranch string `json:"default_branch,omitempty" validate:"required"`
+	CloneURL      string `json:"clone_url,omitempty" validate:"required"`
 }
 
 // @BasePath /v1/vcs
@@ -93,11 +95,12 @@ func (s *service) getConnectionRepos(ctx context.Context, conn *app.VCSConnectio
 
 		for _, repo := range repos.Repositories {
 			allRepos = append(allRepos, &Repository{
-				Name:     *repo.Name,
-				FullName: *repo.FullName,
-				UserName: *repo.Owner.Login,
-				GitURL:   *repo.GitURL,
-				CloneURL: *repo.CloneURL,
+				Name:          generics.FromPtrStr(repo.Name),
+				FullName:      generics.FromPtrStr(repo.FullName),
+				UserName:      generics.FromPtrStr(repo.Owner.Login),
+				GitURL:        generics.FromPtrStr(repo.GitURL),
+				CloneURL:      generics.FromPtrStr(repo.CloneURL),
+				DefaultBranch: generics.FromPtrStr(repo.DefaultBranch),
 			})
 		}
 		if resp.NextPage < 1 {

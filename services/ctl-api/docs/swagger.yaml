@@ -735,6 +735,8 @@ definitions:
     properties:
       clone_url:
         type: string
+      default_branch:
+        type: string
       full_name:
         type: string
       git_url:
@@ -745,6 +747,7 @@ definitions:
         type: string
     required:
     - clone_url
+    - default_branch
     - full_name
     - git_url
     - name

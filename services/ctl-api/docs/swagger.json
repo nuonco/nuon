@@ -3037,6 +3037,7 @@
             "type": "object",
             "required": [
                 "clone_url",
+                "default_branch",
                 "full_name",
                 "git_url",
                 "name",
@@ -3044,6 +3045,9 @@
             ],
             "properties": {
                 "clone_url": {
+                    "type": "string"
+                },
+                "default_branch": {
                     "type": "string"
                 },
                 "full_name": {
