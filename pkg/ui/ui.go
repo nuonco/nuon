@@ -9,6 +9,28 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	ColorGreen  = "\033[032m"
+	ColorRed    = "\033[31m"
+	ColorYellow = "\033[33m"
+	ColorReset  = "\033[0m"
+)
+
+func GetStatusColor(status string) string {
+	var statusColor string
+
+	switch status {
+	case "active":
+		statusColor = ColorGreen
+	case "failed":
+		statusColor = ColorRed
+	default:
+		statusColor = ColorYellow
+	}
+
+	return statusColor
+}
+
 func Line(ctx context.Context, msg string, args ...interface{}) {
 	log, err := FromContext(ctx)
 	if err != nil {
