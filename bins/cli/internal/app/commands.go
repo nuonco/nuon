@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/api/client"
 	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
@@ -17,6 +18,7 @@ const (
 type commands struct {
 	v *validator.Validate
 
+	client    client.Client
 	apiClient gqlclient.Client
 
 	appID string
@@ -50,11 +52,18 @@ func WithAPIURL(apiURL string) commandsOption {
 			return fmt.Errorf("No auth token set, please set $%s", AUTH_TOKEN_ENV_VAR_NAME)
 		}
 
-		client, err := gqlclient.New(c.v, gqlclient.WithAuthToken(authToken), gqlclient.WithURL(apiURL))
+		gqlClient, err := gqlclient.New(c.v, gqlclient.WithAuthToken(authToken), gqlclient.WithURL(apiURL))
 		if err != nil {
 			return fmt.Errorf("unable to create api client")
 		}
-		c.apiClient = client
+		c.apiClient = gqlClient
+
+		// TODO: get ctl-api url from param
+		ctlClient, err := client.New(c.v, client.WithAuthToken(authToken), client.WithURL(os.Getenv("NUON_API_URL")), client.WithOrgID(c.orgID))
+		if err != nil {
+			return fmt.Errorf("unable to create api client")
+		}
+		c.client = ctlClient
 
 		return nil
 	}
