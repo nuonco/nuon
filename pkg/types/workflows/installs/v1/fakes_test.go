@@ -9,7 +9,7 @@ import (
 )
 
 func Test_fakeTerraformOutputs(t *testing.T) {
-	resp, err := fakeTerraformOutputs(reflect.ValueOf("anything"))
+	resp, err := fakeInstallTerraformOutputs(reflect.ValueOf("anything"))
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 
