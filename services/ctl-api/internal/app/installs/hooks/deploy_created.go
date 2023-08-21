@@ -3,9 +3,13 @@ package hooks
 import (
 	"context"
 
-	"go.uber.org/zap"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker"
 )
 
 func (i *Hooks) InstallDeployCreated(ctx context.Context, installID, deployID string) {
-	i.l.Info("install deploy created", zap.String("install-id", installID), zap.String("deploy-id", deployID))
+	i.sendSignal(ctx, installID, worker.Signal{
+		DryRun:    i.cfg.DevEnableWorkersDryRun,
+		Operation: worker.OperationDeploy,
+		DeployID:  deployID,
+	})
 }
