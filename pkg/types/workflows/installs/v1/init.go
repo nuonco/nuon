@@ -5,5 +5,5 @@ import (
 )
 
 func init() {
-	_ = faker.AddProvider("terraformOutputs", fakeTerraformOutputs)
+	_ = faker.AddProvider("installTerraformOutputs", fakeInstallTerraformOutputs)
 }
