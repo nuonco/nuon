@@ -26,6 +26,15 @@ func (c *cli) registerCtl(ctx context.Context, rootCmd *cobra.Command) error {
 		return fmt.Errorf("unable to initialize ctl: %w", err)
 	}
 
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "context",
+		Short: "Get current org context",
+		Long:  "Get the current org context",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmds.GetContext(ctx)
+		},
+	})
+
 	// register commands
 	rootCmd.AddCommand(&cobra.Command{
 		Use: "apps",
