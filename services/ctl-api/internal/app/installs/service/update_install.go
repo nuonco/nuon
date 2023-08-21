@@ -48,7 +48,7 @@ func (s *service) UpdateInstall(ctx *gin.Context) {
 
 	install, err := s.updateInstall(ctx, installID, &req)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get  app%s: %w", installID, err))
+		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
 	}
 

@@ -34,14 +34,20 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 }
 
 func (s *service) deleteInstall(ctx context.Context, installID string) error {
-	res := s.db.WithContext(ctx).Delete(&app.Install{
+	install := app.Install{
 		ID: installID,
+	}
+
+	res := s.db.WithContext(ctx).Model(&install).Updates(app.Install{
+		Status:            "delete_queued",
+		StatusDescription: "delete has been queued and waiting",
 	})
 	if res.Error != nil {
-		return fmt.Errorf("unable to delete install: %w", res.Error)
+		return fmt.Errorf("unable to update install: %w", res.Error)
 	}
-	if res.RowsAffected != 1 {
-		return fmt.Errorf("install not found")
+
+	if res.RowsAffected < 1 {
+		return fmt.Errorf("install not found %s", installID)
 	}
 
 	return nil
