@@ -65,7 +65,7 @@ func (s *service) createInstall(ctx context.Context, appID string, req *CreateIn
 	parentApp := app.App{}
 	res := s.db.WithContext(ctx).Preload("Components").Preload("SandboxRelease").First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
 
 	installCmps := make([]app.InstallComponent, 0)
@@ -75,9 +75,10 @@ func (s *service) createInstall(ctx context.Context, appID string, req *CreateIn
 		})
 	}
 	install := app.Install{
-		AppID:  appID,
-		Name:   req.Name,
-		Status: "queued",
+		AppID:             appID,
+		Name:              req.Name,
+		Status:            "queued",
+		StatusDescription: "waiting for event loop to start and provision install",
 		AWSAccount: app.AWSAccount{
 			Region:     req.AWSAccount.Region,
 			IAMRoleARN: req.AWSAccount.IAMRoleARN,
