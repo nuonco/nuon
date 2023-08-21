@@ -40,7 +40,7 @@ func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Insta
 	org := &app.Org{}
 	res := s.db.WithContext(ctx).Preload("Apps").Preload("Apps.Installs").First(&org, "id = ?", orgID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+		return nil, fmt.Errorf("unable to get installs: %w", res.Error)
 	}
 
 	installs := make([]app.Install, 0)

@@ -33,5 +33,5 @@ message ProvisionRequest {
 
 // StartResponse returns the response from a deployment workflow
 message ProvisionResponse {
-  google.protobuf.Struct terraform_outputs = 1 [(tagger.tags) = "faker:\"fakeTerraformOutputs\""];
+  google.protobuf.Struct terraform_outputs = 1 [(tagger.tags) = "faker:\"installTerraformOutputs\""];
 }
