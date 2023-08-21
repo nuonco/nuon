@@ -36,10 +36,34 @@ func (c *cli) registerCtl(ctx context.Context, rootCmd *cobra.Command) error {
 	})
 
 	// register commands
-	rootCmd.AddCommand(&cobra.Command{
-		Use: "apps",
+	appsCmd := &cobra.Command{
+		Use:   "apps",
+		Short: "View the apps in your org",
+	}
+
+	appsCmd.AddCommand(&cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List all your apps",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmds.ListApps(ctx)
+		},
+	})
+
+	appsCmd.AddCommand(&cobra.Command{
+		Use:   "get",
+		Short: "Get the current app",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmds.GetApp(ctx)
+		},
+	})
+
+	rootCmd.AddCommand(appsCmd)
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use: "legacy-apps",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmds.LegacyListApps(ctx)
 		},
 	})
 
