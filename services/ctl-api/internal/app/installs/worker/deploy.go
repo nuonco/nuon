@@ -3,11 +3,73 @@ package worker
 import (
 	"fmt"
 
+	componentsv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	execv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
+	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"go.temporal.io/sdk/workflow"
 )
 
 func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dryRun bool) error {
+	var install app.Install
+	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
+		InstallID: installID,
+	}, &install); err != nil {
+		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	var deployCfg componentsv1.Component
+	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentConfig, activities.GetComponentConfigRequest{
+		DeployID: deployID,
+	}, &deployCfg); err != nil {
+		return fmt.Errorf("unable to get deploy component config: %w", err)
+	}
+
+	// sync image
+	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
+		DeployID:          deployID,
+		Status:            "planning",
+		StatusDescription: "creating sync plan",
+	}); err != nil {
+		return fmt.Errorf("unable to update deploy status: %w", err)
+	}
+
+	// execute the plan phase here
+	syncImagePlanWorkflowID := fmt.Sprintf("%s-sync-plan-%s", installID, deployID)
+	planResp, err := w.execCreatePlanWorkflow(ctx, dryRun, syncImagePlanWorkflowID, &planv1.CreatePlanRequest{
+		Input: &planv1.CreatePlanRequest_Component{
+			Component: &planv1.ComponentInput{
+				OrgId:     install.App.OrgID,
+				AppId:     install.App.ID,
+				DeployId:  deployID,
+				Component: &deployCfg,
+				Type:      planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE,
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("unable to create sync plan: %w", err)
+	}
+
+	// update status with response
+	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
+		DeployID:          deployID,
+		Status:            "syncing",
+		StatusDescription: "executing sync plan",
+	}); err != nil {
+		return fmt.Errorf("unable to update deploy status: %w", err)
+	}
+
+	syncExecuteWorkflowID := fmt.Sprintf("%s-sync-execute-%s", installID, deployID)
+	_, err = w.execExecPlanWorkflow(ctx, dryRun, syncExecuteWorkflowID, &execv1.ExecutePlanRequest{
+		Plan: planResp.Plan,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to execute sync plan: %w", err)
+	}
+
+	// now do a deploy
 	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
 		DeployID:          deployID,
 		Status:            "planning",
@@ -17,11 +79,22 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 	}
 
 	// execute the plan phase here
-	if dryRun {
-		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
+	deployPlanWorkflowID := fmt.Sprintf("%s-deploy-plan-%s", installID, deployID)
+	planResp, err = w.execCreatePlanWorkflow(ctx, dryRun, deployPlanWorkflowID, &planv1.CreatePlanRequest{
+		Input: &planv1.CreatePlanRequest_Component{
+			Component: &planv1.ComponentInput{
+				OrgId:     install.App.OrgID,
+				AppId:     install.App.ID,
+				DeployId:  deployID,
+				Component: &deployCfg,
+				Type:      planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY,
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("unable to create deploy plan: %w", err)
 	}
 
-	// update status with response
 	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
 		DeployID:          deployID,
 		Status:            "deploying",
@@ -30,9 +103,12 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 		return fmt.Errorf("unable to update deploy status: %w", err)
 	}
 
-	// execute the exec phase here
-	if dryRun {
-		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
+	deployExecuteWorkflowID := fmt.Sprintf("%s-deploy-execute-%s", installID, deployID)
+	_, err = w.execExecPlanWorkflow(ctx, dryRun, deployExecuteWorkflowID, &execv1.ExecutePlanRequest{
+		Plan: planResp.Plan,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to execute deploy plan: %w", err)
 	}
 
 	// update status with response
@@ -43,6 +119,5 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 	}); err != nil {
 		return fmt.Errorf("unable to update deploy status: %w", err)
 	}
-
 	return nil
 }
