@@ -42,8 +42,7 @@ func TestAppResource(t *testing.T) {
 			{
 				Config: testAccAppResource(updatedName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("nuon_app", "id", updatedName),
-					resource.TestCheckResourceAttr("nuon_app", "name", "My Updated App"),
+					resource.TestCheckResourceAttr("nuon_app.my_app", "name", updatedName),
 				),
 			},
 			// Delete testing will happen automatically.
