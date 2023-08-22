@@ -109,7 +109,7 @@ func (c *cli) registerCtl(ctx context.Context, rootCmd *cobra.Command) error {
 	rootCmd.AddCommand(deployCmd)
 
 	installCmd := &cobra.Command{
-		Use:   "install",
+		Use:   "legacy-install",
 		Short: "get, view status or create an install",
 	}
 
