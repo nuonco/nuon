@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/powertoolsdev/mono/pkg/api/client/models"
 	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
@@ -89,44 +90,34 @@ func (r *InstallResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	tflog.Trace(ctx, "creating install")
-	region, err := stringToAPIRegion(data.Region.ValueString())
-	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create install")
-		return
-	}
 
-	installResp, err := r.client.UpsertInstall(ctx, gqlclient.InstallInput{
-		Name:  data.Name.ValueString(),
-		AppId: data.AppID.ValueString(),
-		AwsSettings: &gqlclient.AWSSettingsInput{
-			Region: region,
-			Role:   data.IAMRoleARN.ValueString(),
+	installResp, err := r.restClient.CreateInstall(ctx, data.AppID.ValueString(), &models.ServiceCreateInstallRequest{
+		Name: data.Name.ValueStringPointer(),
+		AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
+			Region:     data.Region.ValueString(),
+			IamRoleArn: data.IAMRoleARN.ValueStringPointer(),
 		},
 	})
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create install")
 		return
 	}
-	data.ID = types.StringValue(installResp.Id)
+	data.ID = types.StringValue(installResp.ID)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
 	tflog.Trace(ctx, "successfully created install")
 
 	stateConf := &retry.StateChangeConf{
-		Pending: []string{string(gqlclient.StatusProvisioning), string(gqlclient.StatusUnknown)},
-		Target:  []string{string(gqlclient.StatusActive)},
+		Pending: []string{statusQueued, statusProvisioning},
+		Target:  []string{statusActive},
 		Refresh: func() (interface{}, string, error) {
 			tflog.Trace(ctx, "refreshing install status")
-			status, err := r.client.GetInstallStatus(ctx,
-				installResp.App.Org.Id,
-				data.AppID.ValueString(),
-				data.ID.ValueString(),
-			)
+			install, err := r.restClient.GetInstall(ctx, installResp.ID)
 			if err != nil {
 				writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "poll status")
 				return nil, string(gqlclient.StatusUnknown), err
 			}
-			return status, string(status), nil
+			return install.Status, string(install.Status), nil
 		},
 		Timeout:    time.Minute * 20,
 		Delay:      time.Second * 10,
@@ -138,7 +129,7 @@ func (r *InstallResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	status, ok := statusRaw.(gqlclient.Status)
+	status, ok := statusRaw.(string)
 	if !ok {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("invalid install %s", status), "create install")
 		return
@@ -153,7 +144,7 @@ func (r *InstallResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	installResp, err := r.client.GetInstall(ctx, data.ID.ValueString())
+	installResp, err := r.restClient.GetInstall(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get install")
 		return
@@ -176,8 +167,7 @@ func (r *InstallResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	installResp, err := r.client.UpsertInstall(ctx, gqlclient.InstallInput{
-		Id:   data.ID.ValueString(),
+	installResp, err := r.restClient.UpdateInstall(ctx, data.ID.ValueString(), &models.ServiceUpdateInstallRequest{
 		Name: data.Name.ValueString(),
 	})
 	if err != nil {
@@ -185,22 +175,22 @@ func (r *InstallResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	if installResp.GetSettings().(installAWSSettings).GetRole() != data.IAMRoleARN.ValueString() {
+	if installResp.AwsAccount.IamRoleArn != data.IAMRoleARN.ValueString() {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "IAM Role ARN changed")
 		return
 	}
 
-	region, err := stringToAPIRegion(data.Region.ValueString())
+	region := data.Region.ValueString()
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "invalid input region")
 		return
 	}
-	if installResp.GetSettings().(installAWSSettings).GetRegion() != region {
+	if installResp.AwsAccount.Region != region {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "AWS Region changed")
 		return
 	}
 
-	data.ID = types.StringValue(installResp.Id)
+	data.ID = types.StringValue(installResp.ID)
 	data.Name = types.StringValue(installResp.Name)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -212,7 +202,7 @@ func (r *InstallResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	deleted, err := r.client.DeleteInstall(ctx, data.ID.ValueString())
+	deleted, err := r.restClient.DeleteInstall(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete install")
 		return
@@ -222,8 +212,35 @@ func (r *InstallResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	tflog.Trace(ctx, "waiting 1 minute to ensure install starts deprovisioning before any other resources get deleted")
-	time.Sleep(time.Minute)
+	data.ID = types.StringValue(data.ID.ValueString())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+
+	stateConf := &retry.StateChangeConf{
+		Pending: []string{statusDeleteQueued, statusDeprovisioning},
+		Target:  []string{""},
+		Refresh: func() (interface{}, string, error) {
+			tflog.Trace(ctx, "refreshing install status")
+			install, err := r.restClient.GetInstall(ctx, data.ID.ValueString())
+			if err != nil {
+				return "", "", nil
+			} else {
+				return install.Status, install.Status, nil
+			}
+		},
+		Timeout:    time.Minute * 20,
+		Delay:      time.Second * 10,
+		MinTimeout: 3 * time.Second,
+	}
+	statusRaw, err := stateConf.WaitForState()
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get install")
+		return
+	}
+
+	status, ok := statusRaw.(string)
+	if !ok {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, fmt.Errorf("invalid install %s", status), "create install")
+	}
 }
 
 func (r *InstallResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

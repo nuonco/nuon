@@ -20,3 +20,24 @@ func stringToAPIRegion(val string) (gqlclient.AWSRegion, error) {
 
 	return gqlclient.AWSRegion(""), fmt.Errorf("region not supported: %s", val)
 }
+
+const (
+	// orgs, apps & installs:
+	statusQueued         = "queued"
+	statusProvisioning   = "provisioning"
+	statusActive         = "active"
+	statusDeleteQueued   = "delete_queued"
+	statusDeprovisioning = "deprovisioning"
+
+	// builds:
+	// queued
+	statusPlanning = "planning"
+	statusBuilding = "building"
+	// active
+
+	// deploys:
+	// queued
+	// planning
+	statusDeploying = "deploying"
+	// active
+)

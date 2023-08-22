@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/api/client"
 )
 
 type baseDataSource struct {
-	client gqlclient.Client
-	orgID  string
+	restClient client.Client
+	orgID      string
 }
 
 func (r *baseDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
@@ -27,6 +27,6 @@ func (r *baseDataSource) Configure(ctx context.Context, req datasource.Configure
 		return
 	}
 
-	r.client = providerData.Client
+	r.restClient = providerData.RestClient
 	r.orgID = providerData.OrgID
 }

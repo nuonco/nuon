@@ -14,11 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/powertoolsdev/mono/pkg/api/client"
-	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
 const (
-	defaultAPIURL      string = "https://api.prod.nuon.co/graphql"
 	apiTokenEnvVarName string = "NUON_API_TOKEN"
 	apiURLEnvVarName   string = "NUON_API_URL"
 	orgIDEnvVarName    string = "NUON_ORG_ID"
@@ -44,7 +42,6 @@ type ProviderModel struct {
 
 type ProviderData struct {
 	OrgID      string
-	Client     gqlclient.Client
 	RestClient client.Client
 }
 
@@ -81,13 +78,6 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	// set overrides using env vars
-	apiURLEnvVar := os.Getenv(apiURLEnvVarName)
-	if apiURLEnvVar != "" {
-		data.APIURL = types.StringValue(apiURLEnvVar)
-	}
-	if data.APIURL.ValueString() == "" {
-		data.APIURL = types.StringValue(defaultAPIURL)
-	}
 
 	orgIDEnvVar := os.Getenv(orgIDEnvVarName)
 	if orgIDEnvVar != "" {
@@ -113,19 +103,6 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	v := validator.New()
-	graphqlClient, err := gqlclient.New(v,
-		gqlclient.WithAuthToken(data.APIAuthToken.ValueString()),
-		gqlclient.WithURL(data.APIURL.ValueString()),
-	)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"unable to initialize graphql api client",
-			"Please report this issue to the provider developers.",
-		)
-		return
-	}
-
 	restClient, err := client.New(validator.New(),
 		client.WithAuthToken(data.APIAuthToken.ValueString()),
 		client.WithURL("http://localhost:8081"),
@@ -140,12 +117,10 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	resp.DataSourceData = &ProviderData{
-		Client:     graphqlClient,
 		RestClient: restClient,
 		OrgID:      data.OrgID.ValueString(),
 	}
 	resp.ResourceData = &ProviderData{
-		Client:     graphqlClient,
 		RestClient: restClient,
 		OrgID:      data.OrgID.ValueString(),
 	}
@@ -159,17 +134,13 @@ func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 		NewDockerBuildComponentResource,
 		NewHelmChartComponentResource,
 		NewTerraformModuleComponentResource,
-		NewDeployResource,
-		NewBuildResource,
 	}
 }
 
 func (p *Provider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewAppDataSource,
-		NewOrgDataSource,
 		NewConnectedRepoDataSource,
-		NewConnectedReposDataSource,
 		NewInstallDataSource,
 	}
 }
