@@ -58,16 +58,25 @@ func (r *InstallResource) Schema(ctx context.Context, req resource.SchemaRequest
 				MarkdownDescription: "ID of the app this install belongs too.",
 				Optional:            false,
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"region": schema.StringAttribute{
 				MarkdownDescription: "AWS region",
 				Optional:            false,
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"iam_role_arn": schema.StringAttribute{
 				MarkdownDescription: "ARN of the role to use for provisioning.",
 				Optional:            false,
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:            true,
@@ -150,6 +159,9 @@ func (r *InstallResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 	data.Name = types.StringValue(installResp.Name)
+	data.AppID = types.StringValue(installResp.AppID)
+	data.IAMRoleARN = types.StringValue(installResp.AwsAccount.IamRoleArn)
+	data.Region = types.StringValue(installResp.AwsAccount.Region)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -174,24 +186,16 @@ func (r *InstallResource) Update(ctx context.Context, req resource.UpdateRequest
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update install")
 		return
 	}
-
-	if installResp.AwsAccount.IamRoleArn != data.IAMRoleARN.ValueString() {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "IAM Role ARN changed")
-		return
-	}
-
-	region := data.Region.ValueString()
-	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "invalid input region")
-		return
-	}
-	if installResp.AwsAccount.Region != region {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "AWS Region changed")
-		return
-	}
-
 	data.ID = types.StringValue(installResp.ID)
 	data.Name = types.StringValue(installResp.Name)
+
+	// TODO: The SDK doesn't return these values.
+	// These can't be updated anyway, so it's not a blocker,
+	// but it would be ideal to use the API as the source of truth.
+	// data.AppID = types.StringValue(installResp.AppID)
+	// data.IAMRoleARN = types.StringValue(installResp.AwsAccount.IamRoleArn)
+	// data.Region = types.StringValue(installResp.AwsAccount.Region)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -245,5 +249,4 @@ func (r *InstallResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 func (r *InstallResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-	resource.ImportStatePassthroughID(ctx, path.Root("org_id"), req, resp)
 }
