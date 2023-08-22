@@ -1,0 +1,48 @@
+---
+name: skip-ci
+"on":
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  id-token: write
+  issues: read
+  packages: write
+  pull-requests: write
+  statuses: write
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  # NOTE(jm): we only want to "cancel" in flight jobs if pushing to an existing PR. If this is running on main, do not
+  # cancel previous jobs.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  changes:
+    name: 🔍 changes
+    runs-on: ubuntu-latest
+    outputs:
+      artifacts: ${{ steps.filter.outputs.changes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        check:
+          - services ✅
+          - artifacts ✅
+          - infra ✅
+          - pkg ✅
+    steps:
+      - name: update statuses
+        if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
+        uses: ouzi-dev/commit-status-updater@v2.0.1
+        with:
+          name: ${{ matrix.check }}
+          status: success
