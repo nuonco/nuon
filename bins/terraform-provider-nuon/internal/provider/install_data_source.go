@@ -56,7 +56,7 @@ func (d *InstallDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	installResp, err := d.client.GetInstall(ctx, data.Id.ValueString())
+	installResp, err := d.restClient.GetInstall(ctx, data.Id.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get install")
 		return

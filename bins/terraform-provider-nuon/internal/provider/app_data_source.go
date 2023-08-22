@@ -55,7 +55,7 @@ func (d *AppDataSource) Read(ctx context.Context, req datasource.ReadRequest, re
 	}
 
 	tflog.Trace(ctx, "fetching app by id")
-	appResp, err := d.client.GetApp(ctx, data.Id.ValueString())
+	appResp, err := d.restClient.GetApp(ctx, data.Id.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get app")
 		return
