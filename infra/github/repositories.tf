@@ -54,12 +54,14 @@ module "mono" {
 
   topics     = ["terraform", "helm", "go"]
   enable_ecr = false
+
+  // NOTE: since we use `count` to create these resources in a loop, the ordering here must be preserved. Add a new repo
+  // to the _end_ of the array to ensure we don't try to delete previous repos.
   extra_ecr_repos = [
     //services
     "api",
     "api-gateway",
     "orgs-api",
-    "ctl-api",
     "workers-apps",
     "workers-canary",
     "workers-deployments",
@@ -67,6 +69,7 @@ module "mono" {
     "workers-installs",
     "workers-instances",
     "workers-orgs",
+    "ctl-api",
   ]
 
   required_checks = [
