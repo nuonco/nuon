@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/api/client/models"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -79,34 +79,6 @@ func (r *HelmChartComponentResource) Schema(ctx context.Context, req resource.Sc
 	}
 }
 
-func (r *HelmChartComponentResource) getConfigInput(data *HelmChartComponentResourceModel) (*gqlclient.ComponentConfigInput, error) {
-	vals := make([]*gqlclient.KeyValuePairInput, 0)
-	for _, val := range data.Value {
-		vals = append(vals, val.toKeyValueInput())
-	}
-
-	cfg := &gqlclient.ComponentConfigInput{
-		BuildConfig: &gqlclient.BuildConfigInput{
-			HelmBuildConfig: &gqlclient.HelmBuildInput{
-				ChartName: data.ChartName.ValueString(),
-			},
-		},
-		DeployConfig: &gqlclient.DeployConfigInput{
-			HelmDeployConfig: &gqlclient.HelmDeployInput{
-				Values: vals,
-			},
-		},
-	}
-
-	if data.PublicRepo != nil {
-		cfg.BuildConfig.HelmBuildConfig.VcsConfig = data.PublicRepo.getVCSConfig()
-	} else {
-		cfg.BuildConfig.HelmBuildConfig.VcsConfig = data.ConnectedRepo.getVCSConfig()
-	}
-
-	return cfg, nil
-}
-
 func (r *HelmChartComponentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data *HelmChartComponentResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -114,25 +86,48 @@ func (r *HelmChartComponentResource) Create(ctx context.Context, req resource.Cr
 		return
 	}
 
-	tflog.Trace(ctx, "creating component")
-	cfgInput, err := r.getConfigInput(data)
-	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component")
-		return
-	}
-
-	compResp, err := r.client.UpsertComponent(ctx, gqlclient.ComponentInput{
-		Id:     data.ID.ValueString(),
-		AppId:  data.AppID.ValueString(),
-		Name:   data.Name.ValueString(),
-		Config: cfgInput,
+	compResp, err := r.restClient.CreateComponent(ctx, data.AppID.ValueString(), &models.ServiceCreateComponentRequest{
+		Name: data.Name.ValueStringPointer(),
 	})
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component")
 		return
 	}
-	data.ID = types.StringValue(compResp.Id)
+	tflog.Trace(ctx, "got ID -- "+compResp.ID)
+	data.ID = types.StringValue(compResp.ID)
+
+	configRequest := &models.ServiceCreateHelmComponentConfigRequest{
+		ChartName:                data.ChartName.ValueStringPointer(),
+		ConnectedGithubVcsConfig: nil,
+		PublicGitVcsConfig:       nil,
+		Values:                   map[string]string{},
+	}
+	if data.PublicRepo != nil {
+		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
+			// TODO
+			// Branch:    data.PublicRepo.GitRef.ValueStringPointer(),
+			Directory: data.PublicRepo.Directory.ValueStringPointer(),
+			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
+		}
+	} else {
+		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
+			Branch:    data.ConnectedRepo.Branch.ValueString(),
+			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
+			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
+			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
+		}
+	}
+	for _, value := range data.Value {
+		configRequest.Values[value.Name.String()] = value.Value.String()
+	}
+	_, err = r.restClient.CreateHelmComponentConfig(ctx, compResp.ID, configRequest)
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component config")
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "successfully created component")
 }
 
 func (r *HelmChartComponentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -143,13 +138,40 @@ func (r *HelmChartComponentResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	compResp, err := r.client.GetComponent(ctx, data.ID.ValueString())
+	compResp, err := r.restClient.GetComponent(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component")
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
+
+	configResp, err := r.restClient.GetComponentLatestConfig(ctx, data.ID.ValueString())
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component config")
+		return
+	}
+	data.ChartName = types.StringValue(configResp.Helm.ChartName)
+	if configResp.Helm.PublicGitVcsConfig != nil {
+		// TODO
+		// data.PublicRepo.GitRef = types.StringValue(configResp.Helm.PublicGitVcsConfig.Branch)
+		data.PublicRepo.Directory = types.StringValue(configResp.Helm.PublicGitVcsConfig.Directory)
+		data.PublicRepo.Repo = types.StringValue(configResp.Helm.PublicGitVcsConfig.Repo)
+	} else {
+		data.ConnectedRepo.Branch = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Branch)
+		data.ConnectedRepo.Directory = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Directory)
+		// TODO
+		// data.ConnectedRepo.GitRef = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Branch)
+		data.ConnectedRepo.Repo = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Repo)
+	}
+	for key, val := range configResp.DockerBuild.EnvVars {
+		data.Value = append(data.Value, HelmValue{
+			Name:  types.StringValue(key),
+			Value: types.StringValue(val),
+		})
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "successfully read component")
 }
 
 func (r *HelmChartComponentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -160,7 +182,7 @@ func (r *HelmChartComponentResource) Delete(ctx context.Context, req resource.De
 		return
 	}
 
-	deleted, err := r.client.DeleteComponent(ctx, data.ID.ValueString())
+	deleted, err := r.restClient.DeleteComponent(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
@@ -170,6 +192,8 @@ func (r *HelmChartComponentResource) Delete(ctx context.Context, req resource.De
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
+
+	tflog.Trace(ctx, "successfully deleted component")
 }
 
 func (r *HelmChartComponentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -181,25 +205,48 @@ func (r *HelmChartComponentResource) Update(ctx context.Context, req resource.Up
 	}
 
 	tflog.Trace(ctx, "updating component "+data.ID.ValueString())
-	cfgInput, err := r.getConfigInput(data)
-	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
-		return
-	}
 
-	installResp, err := r.client.UpsertComponent(ctx, gqlclient.ComponentInput{
-		AppId:  data.AppID.ValueString(),
-		Id:     data.ID.ValueString(),
-		Name:   data.Name.ValueString(),
-		Config: cfgInput,
+	compResp, err := r.restClient.UpdateComponent(ctx, data.ID.ValueString(), &models.ServiceUpdateComponentRequest{
+		Name: data.Name.ValueStringPointer(),
 	})
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
+	data.Name = types.StringValue(compResp.Name)
 
-	data.Name = types.StringValue(installResp.Name)
+	configRequest := &models.ServiceCreateHelmComponentConfigRequest{
+		ChartName:                data.ChartName.ValueStringPointer(),
+		ConnectedGithubVcsConfig: nil,
+		PublicGitVcsConfig:       nil,
+		Values:                   map[string]string{},
+	}
+	if data.PublicRepo != nil {
+		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
+			// TODO
+			// Branch:    data.PublicRepo.GitRef.ValueStringPointer(),
+			Directory: data.PublicRepo.Directory.ValueStringPointer(),
+			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
+		}
+	} else {
+		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
+			Branch:    data.ConnectedRepo.Branch.ValueString(),
+			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
+			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
+			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
+		}
+	}
+	for _, value := range data.Value {
+		configRequest.Values[value.Name.String()] = value.Value.String()
+	}
+	_, err = r.restClient.CreateHelmComponentConfig(ctx, compResp.ID, configRequest)
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component config")
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "successfully updated component")
 }
 
 func (r *HelmChartComponentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

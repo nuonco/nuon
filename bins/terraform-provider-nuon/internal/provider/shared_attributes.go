@@ -5,23 +5,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
 type PublicRepo struct {
 	Repo      types.String `tfsdk:"repo"`
 	GitRef    types.String `tfsdk:"git_ref"`
 	Directory types.String `tfsdk:"directory"`
-}
-
-func (p PublicRepo) getVCSConfig() *gqlclient.VcsConfigInput {
-	return &gqlclient.VcsConfigInput{
-		PublicGit: &gqlclient.PublicGitConfigInput{
-			Repo:      p.Repo.ValueString(),
-			GitRef:    p.GitRef.ValueString(),
-			Directory: p.Directory.ValueString(),
-		},
-	}
 }
 
 func publicRepoAttribute() schema.SingleNestedAttribute {
@@ -50,17 +39,6 @@ type ConnectedRepo struct {
 	Branch    types.String `tfsdk:"branch"`
 	GitRef    types.String `tfsdk:"git_ref"`
 	Directory types.String `tfsdk:"directory"`
-}
-
-func (c ConnectedRepo) getVCSConfig() *gqlclient.VcsConfigInput {
-	return &gqlclient.VcsConfigInput{
-		ConnectedGithub: &gqlclient.ConnectedGithubConfigInput{
-			Repo:      c.Repo.ValueString(),
-			GitRef:    c.GitRef.ValueString(),
-			Directory: c.Directory.ValueString(),
-			Branch:    c.Branch.ValueString(),
-		},
-	}
 }
 
 func connectedRepoAttribute() schema.SingleNestedAttribute {
@@ -92,17 +70,6 @@ type BasicDeploy struct {
 	Port            types.Int64  `tfsdk:"port"`
 	InstanceCount   types.Int64  `tfsdk:"instance_count"`
 	HealthCheckPath types.String `tfsdk:"health_check_path"`
-}
-
-func (b BasicDeploy) toDeployConfigInput() *gqlclient.DeployConfigInput {
-	return &gqlclient.DeployConfigInput{
-		BasicDeployConfig: &gqlclient.BasicDeployConfigInput{
-			Port:            int(b.Port.ValueInt64()),
-			InstanceCount:   int(b.InstanceCount.ValueInt64()),
-			HealthCheckPath: b.HealthCheckPath.ValueString(),
-			EnvVars:         []*gqlclient.KeyValuePairInput{},
-		},
-	}
 }
 
 func basicDeployAttribute() schema.SingleNestedAttribute {
