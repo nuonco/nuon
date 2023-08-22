@@ -68,7 +68,7 @@ func (c *cli) registerCtl(ctx context.Context, rootCmd *cobra.Command) error {
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
-		Use: "installs",
+		Use: "legacy-installs",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmds.ListInstalls(ctx)
 		},
