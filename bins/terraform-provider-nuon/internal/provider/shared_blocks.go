@@ -3,19 +3,11 @@ package provider
 import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
 type EnvVar struct {
 	Name  types.String `tfsdk:"name"`
 	Value types.String `tfsdk:"value"`
-}
-
-func (e EnvVar) toKeyValueInput() *gqlclient.KeyValuePairInput {
-	return &gqlclient.KeyValuePairInput{
-		Key:   e.Name.ValueString(),
-		Value: e.Value.ValueString(),
-	}
 }
 
 func envVarSharedBlock() schema.ListNestedBlock {
@@ -38,13 +30,6 @@ func envVarSharedBlock() schema.ListNestedBlock {
 type HelmValue struct {
 	Name  types.String `tfsdk:"name"`
 	Value types.String `tfsdk:"value"`
-}
-
-func (e HelmValue) toKeyValueInput() *gqlclient.KeyValuePairInput {
-	return &gqlclient.KeyValuePairInput{
-		Key:   e.Name.ValueString(),
-		Value: e.Value.ValueString(),
-	}
 }
 
 func helmValueSharedBlock() schema.ListNestedBlock {
@@ -83,12 +68,5 @@ func terraformVariableSharedBlock() schema.ListNestedBlock {
 				},
 			},
 		},
-	}
-}
-
-func (e TerraformVariable) toKeyValueInput() *gqlclient.KeyValuePairInput {
-	return &gqlclient.KeyValuePairInput{
-		Key:   e.Name.ValueString(),
-		Value: e.Value.ValueString(),
 	}
 }

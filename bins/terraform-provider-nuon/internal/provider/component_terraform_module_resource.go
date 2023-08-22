@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/api/client/models"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -79,32 +79,6 @@ func (r *TerraformModuleComponentResource) Schema(ctx context.Context, req resou
 	}
 }
 
-func (r *TerraformModuleComponentResource) getConfigInput(data *TerraformModuleComponentResourceModel) (*gqlclient.ComponentConfigInput, error) {
-	tfVars := make([]*gqlclient.KeyValuePairInput, 0)
-	for _, tfVar := range data.Var {
-		tfVars = append(tfVars, tfVar.toKeyValueInput())
-	}
-
-	cfg := &gqlclient.ComponentConfigInput{
-		BuildConfig: &gqlclient.BuildConfigInput{
-			TerraformBuildConfig: &gqlclient.TerraformBuildInput{},
-		},
-		DeployConfig: &gqlclient.DeployConfigInput{
-			TerraformDeployConfig: &gqlclient.TerraformDeployConfigInput{
-				TerraformVersion: gqlclient.TerraformVersionTerraformVersionLatest,
-				Vars:             tfVars,
-			},
-		},
-	}
-
-	if data.PublicRepo != nil {
-		cfg.BuildConfig.TerraformBuildConfig.VcsConfig = data.PublicRepo.getVCSConfig()
-	} else {
-		cfg.BuildConfig.TerraformBuildConfig.VcsConfig = data.ConnectedRepo.getVCSConfig()
-	}
-	return cfg, nil
-}
-
 func (r *TerraformModuleComponentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data *TerraformModuleComponentResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -113,25 +87,48 @@ func (r *TerraformModuleComponentResource) Create(ctx context.Context, req resou
 	}
 
 	tflog.Trace(ctx, "creating component")
-	cfgInput, err := r.getConfigInput(data)
-	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component")
-		return
-	}
 
-	compResp, err := r.client.UpsertComponent(ctx, gqlclient.ComponentInput{
-		Id:     data.ID.ValueString(),
-		AppId:  data.AppID.ValueString(),
-		Name:   data.Name.ValueString(),
-		Config: cfgInput,
+	compResp, err := r.restClient.CreateComponent(ctx, data.AppID.ValueString(), &models.ServiceCreateComponentRequest{
+		Name: data.Name.ValueStringPointer(),
 	})
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component")
 		return
 	}
-	data.ID = types.StringValue(compResp.Id)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "got ID -- "+compResp.ID)
+	data.ID = types.StringValue(compResp.ID)
 
+	configRequest := &models.ServiceCreateTerraformModuleComponentConfigRequest{
+		ConnectedGithubVcsConfig: nil,
+		PublicGitVcsConfig:       nil,
+		Variables:                map[string]string{},
+		Version:                  data.TerraformVersion.ValueString(),
+	}
+	for _, value := range data.Var {
+		configRequest.Variables[value.Name.String()] = value.Value.String()
+	}
+	if data.PublicRepo != nil {
+		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
+			// TODO
+			// Branch: data.PublicRepo.GitRef.ValueStringPointer(),
+			Directory: data.PublicRepo.Directory.ValueStringPointer(),
+			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
+		}
+	} else {
+		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
+			Branch:    data.ConnectedRepo.Branch.ValueString(),
+			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
+			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
+			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
+		}
+	}
+	_, err = r.restClient.CreateTerraformModuleComponentConfig(ctx, compResp.ID, configRequest)
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component config")
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	tflog.Trace(ctx, "successfully created component")
 }
 
@@ -143,13 +140,40 @@ func (r *TerraformModuleComponentResource) Read(ctx context.Context, req resourc
 		return
 	}
 
-	compResp, err := r.client.GetComponent(ctx, data.ID.ValueString())
+	compResp, err := r.restClient.GetComponent(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component")
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
+
+	configResp, err := r.restClient.GetComponentLatestConfig(ctx, data.ID.ValueString())
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component config")
+		return
+	}
+	data.TerraformVersion = types.StringValue(configResp.TerraformModule.Version)
+	for key, val := range configResp.TerraformModule.Variables {
+		data.Var = append(data.Var, TerraformVariable{
+			Name:  types.StringValue(key),
+			Value: types.StringValue(val),
+		})
+	}
+	if configResp.Helm.PublicGitVcsConfig != nil {
+		// TODO
+		// data.PublicRepo.GitRef = types.StringValue(configResp.Helm.PublicGitVcsConfig.Branch)
+		data.PublicRepo.Directory = types.StringValue(configResp.Helm.PublicGitVcsConfig.Directory)
+		data.PublicRepo.Repo = types.StringValue(configResp.Helm.PublicGitVcsConfig.Repo)
+	} else {
+		data.ConnectedRepo.Branch = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Branch)
+		data.ConnectedRepo.Directory = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Directory)
+		// TODO
+		// data.ConnectedRepo.GitRef = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Branch)
+		data.ConnectedRepo.Repo = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Repo)
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "successfully read component")
 }
 
 func (r *TerraformModuleComponentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -160,7 +184,7 @@ func (r *TerraformModuleComponentResource) Delete(ctx context.Context, req resou
 		return
 	}
 
-	deleted, err := r.client.DeleteComponent(ctx, data.ID.ValueString())
+	deleted, err := r.restClient.DeleteComponent(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
@@ -181,24 +205,46 @@ func (r *TerraformModuleComponentResource) Update(ctx context.Context, req resou
 	}
 
 	tflog.Trace(ctx, "updating component "+data.ID.ValueString())
-	cfgInput, err := r.getConfigInput(data)
-	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
-		return
-	}
 
-	installResp, err := r.client.UpsertComponent(ctx, gqlclient.ComponentInput{
-		AppId:  data.AppID.ValueString(),
-		Id:     data.ID.ValueString(),
-		Name:   data.Name.ValueString(),
-		Config: cfgInput,
+	compResp, err := r.restClient.UpdateComponent(ctx, data.ID.ValueString(), &models.ServiceUpdateComponentRequest{
+		Name: data.Name.ValueStringPointer(),
 	})
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
+	data.Name = types.StringValue(compResp.Name)
 
-	data.Name = types.StringValue(installResp.Name)
+	configRequest := &models.ServiceCreateTerraformModuleComponentConfigRequest{
+		ConnectedGithubVcsConfig: nil,
+		PublicGitVcsConfig:       nil,
+		Variables:                map[string]string{},
+		Version:                  data.TerraformVersion.ValueString(),
+	}
+	for _, value := range data.Var {
+		configRequest.Variables[value.Name.String()] = value.Value.String()
+	}
+	if data.PublicRepo != nil {
+		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
+			// TODO
+			// Branch: data.PublicRepo.GitRef.ValueStringPointer(),
+			Directory: data.PublicRepo.Directory.ValueStringPointer(),
+			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
+		}
+	} else {
+		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
+			Branch:    data.ConnectedRepo.Branch.ValueString(),
+			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
+			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
+			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
+		}
+	}
+	_, err = r.restClient.CreateTerraformModuleComponentConfig(ctx, compResp.ID, configRequest)
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component config")
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
