@@ -1,0 +1,67 @@
+package components
+
+import (
+	"fmt"
+	"time"
+
+	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
+	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
+	variablesv1 "github.com/powertoolsdev/mono/pkg/types/components/variables/v1"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"google.golang.org/protobuf/types/known/durationpb"
+)
+
+const (
+	defaultTerraformModuleDeployTimeout time.Duration = time.Minute * 30
+)
+
+func (c *Adapter) toTerraformVariables(inputVals map[string]*string) *variablesv1.TerraformVariables {
+	vals := make([]*variablesv1.TerraformVariable, 0)
+	for k, v := range inputVals {
+		if v == nil {
+			continue
+		}
+
+		vals = append(vals, &variablesv1.TerraformVariable{
+			Name:      k,
+			Value:     *v,
+			Sensitive: true,
+		})
+	}
+
+	return &variablesv1.TerraformVariables{
+		Variables: vals,
+	}
+}
+
+func (c *Adapter) ToTerraformModuleComponentConfig(cfg *app.TerraformModuleComponentConfig, connections []app.InstallDeploy, gitRef string) (*componentv1.Component, error) {
+	vcsCfg, err := c.ToVCSConfig(gitRef, cfg.PublicGitVCSConfig, cfg.ConnectedGithubVCSConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get vcs config: %w", err)
+	}
+
+	return &componentv1.Component{
+		Id: cfg.ID,
+		BuildCfg: &buildv1.Config{
+			Timeout: durationpb.New(defaultBuildTimeout),
+			Cfg: &buildv1.Config_TerraformModuleCfg{
+				TerraformModuleCfg: &buildv1.TerraformModuleConfig{
+					VcsCfg: vcsCfg,
+				},
+			},
+		},
+		DeployCfg: &deployv1.Config{
+			Timeout: durationpb.New(defaultTerraformModuleDeployTimeout),
+			Cfg: &deployv1.Config_TerraformModuleConfig{
+				TerraformModuleConfig: &deployv1.TerraformModuleConfig{
+					// TODO(jm): update the executors to just accept a string
+					//TerraformVersion: cfg.TerraformVersion,
+					TerraformVersion: deployv1.TerraformVersion_TERRAFORM_VERSION_1_4_6,
+					Vars:             c.toTerraformVariables(cfg.Variables),
+				},
+			},
+		},
+		Connections: c.toConnections(connections),
+	}, nil
+}
