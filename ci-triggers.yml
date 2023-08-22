@@ -6,14 +6,6 @@
 
 # to add a new directory that triggers a CI run for a service, update the list entry
 services: |
-  api:
-    - services/api/**
-    - pkg/types/**
-  api-gateway:
-    - services/api-gateway/**
-    - pkg/types/**
-  orgs-api:
-    - services/orgs-api/**
   workers-apps:
     - services/workers-apps/**
   workers-canary:
