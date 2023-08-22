@@ -10,7 +10,6 @@ import (
 
 type baseResource struct {
 	restClient client.Client
-	orgID      string
 }
 
 func (r *baseResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -28,5 +27,4 @@ func (r *baseResource) Configure(ctx context.Context, req resource.ConfigureRequ
 	}
 
 	r.restClient = providerData.RestClient
-	r.orgID = providerData.OrgID
 }
