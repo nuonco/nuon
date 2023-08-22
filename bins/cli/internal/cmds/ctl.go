@@ -74,7 +74,7 @@ func (c *cli) registerCtl(ctx context.Context, rootCmd *cobra.Command) error {
 		},
 	})
 	rootCmd.AddCommand(&cobra.Command{
-		Use: "components",
+		Use: "legacy-components",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmds.ListComponents(ctx)
 		},
