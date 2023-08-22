@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -11,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/api/client/models"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -129,47 +128,6 @@ func (r *ContainerImageComponentResource) Schema(ctx context.Context, req resour
 	}
 }
 
-func (r *ContainerImageComponentResource) getConfigInput(data *ContainerImageComponentResourceModel) (*gqlclient.ComponentConfigInput, error) {
-	envVars := make([]*gqlclient.KeyValuePairInput, 0)
-	for _, envVar := range data.EnvVar {
-		envVars = append(envVars, envVar.toKeyValueInput())
-	}
-
-	cfg := &gqlclient.ComponentConfigInput{
-		BuildConfig:  &gqlclient.BuildConfigInput{},
-		DeployConfig: &gqlclient.DeployConfigInput{},
-	}
-	if data.SyncOnly.ValueBool() {
-		cfg.DeployConfig.Noop = true
-	} else {
-		cfg.DeployConfig = data.BasicDeploy.toDeployConfigInput()
-		cfg.DeployConfig.BasicDeployConfig.EnvVars = envVars
-	}
-
-	if !data.Public.ImageURL.IsNull() {
-		cfg.BuildConfig.ExternalImageConfig = &gqlclient.ExternalImageInput{
-			OciImageUrl: data.Public.ImageURL.ValueString(),
-			Tag:         data.Public.Tag.ValueString(),
-		}
-	} else {
-		region, err := stringToAPIRegion(data.AwsEcr.Region.ValueString())
-		if err != nil {
-			return cfg, fmt.Errorf("invalid region: %w", err)
-		}
-
-		cfg.BuildConfig.ExternalImageConfig = &gqlclient.ExternalImageInput{
-			OciImageUrl: data.AwsEcr.ImageURL.ValueString(),
-			Tag:         data.AwsEcr.Tag.ValueString(),
-			AuthConfig: &gqlclient.AWSAuthConfigInput{
-				Role:   data.AwsEcr.IAMRoleARN.ValueString(),
-				Region: region,
-			},
-		}
-	}
-
-	return cfg, nil
-}
-
 func (r *ContainerImageComponentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data *ContainerImageComponentResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -177,27 +135,30 @@ func (r *ContainerImageComponentResource) Create(ctx context.Context, req resour
 		return
 	}
 
-	cfgInput, err := r.getConfigInput(data)
-	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "map component configuration")
-		return
-	}
-
-	compResp, err := r.client.UpsertComponent(ctx, gqlclient.ComponentInput{
-		Id:     data.ID.ValueString(),
-		AppId:  data.AppID.ValueString(),
-		Name:   data.Name.ValueString(),
-		Config: cfgInput,
+	compResp, err := r.restClient.CreateComponent(ctx, data.AppID.ValueString(), &models.ServiceCreateComponentRequest{
+		Name: data.Name.ValueStringPointer(),
 	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "upsert component")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component")
+		return
+	}
+	tflog.Trace(ctx, "got ID -- "+compResp.ID)
+	data.ID = types.StringValue(compResp.ID)
+
+	_, err = r.restClient.CreateExternalImageComponentConfig(ctx, compResp.ID, &models.ServiceCreateExternalImageComponentConfigRequest{
+		ImageURL: data.AwsEcr.ImageURL.ValueStringPointer(),
+		Tag:      data.AwsEcr.Tag.ValueStringPointer(),
+		AwsEcrImageConfig: &models.ServiceAwsECRImageConfigRequest{
+			AwsRegion:  data.AwsEcr.Region.ValueString(),
+			IamRoleArn: data.AwsEcr.Region.ValueString(),
+		},
+	})
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component config")
 		return
 	}
 
-	tflog.Trace(ctx, "got ID -- "+compResp.Id)
-	data.ID = types.StringValue(compResp.Id)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-
 	tflog.Trace(ctx, "successfully created component")
 }
 
@@ -209,13 +170,25 @@ func (r *ContainerImageComponentResource) Read(ctx context.Context, req resource
 		return
 	}
 
-	compResp, err := r.client.GetComponent(ctx, data.ID.ValueString())
+	compResp, err := r.restClient.GetComponent(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component")
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
+
+	configResp, err := r.restClient.GetComponentLatestConfig(ctx, data.ID.ValueString())
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component config")
+		return
+	}
+	data.AwsEcr.ImageURL = types.StringValue(configResp.ExternalImage.ImageURL)
+	data.AwsEcr.Tag = types.StringValue(configResp.ExternalImage.Tag)
+	data.AwsEcr.Region = types.StringValue(configResp.ExternalImage.AwsEcrImageConfig.AwsRegion)
+	data.AwsEcr.IAMRoleARN = types.StringValue(configResp.ExternalImage.AwsEcrImageConfig.IamRoleArn)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "successfully read component")
 }
 
 func (r *ContainerImageComponentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -226,7 +199,7 @@ func (r *ContainerImageComponentResource) Delete(ctx context.Context, req resour
 		return
 	}
 
-	deleted, err := r.client.DeleteComponent(ctx, data.ID.ValueString())
+	deleted, err := r.restClient.DeleteComponent(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
@@ -235,6 +208,8 @@ func (r *ContainerImageComponentResource) Delete(ctx context.Context, req resour
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
+
+	tflog.Trace(ctx, "successfully deleted component")
 }
 
 func (r *ContainerImageComponentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -246,25 +221,30 @@ func (r *ContainerImageComponentResource) Update(ctx context.Context, req resour
 	}
 
 	tflog.Trace(ctx, "updating component "+data.ID.ValueString())
-	cfgInput, err := r.getConfigInput(data)
-	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
-		return
-	}
-
-	installResp, err := r.client.UpsertComponent(ctx, gqlclient.ComponentInput{
-		AppId:  data.AppID.ValueString(),
-		Id:     data.ID.ValueString(),
-		Name:   data.Name.ValueString(),
-		Config: cfgInput,
+	compResp, err := r.restClient.UpdateComponent(ctx, data.ID.ValueString(), &models.ServiceUpdateComponentRequest{
+		Name: data.Name.ValueStringPointer(),
 	})
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
+	data.Name = types.StringValue(compResp.Name)
 
-	data.Name = types.StringValue(installResp.Name)
+	_, err = r.restClient.CreateExternalImageComponentConfig(ctx, data.ID.ValueString(), &models.ServiceCreateExternalImageComponentConfigRequest{
+		ImageURL: data.AwsEcr.ImageURL.ValueStringPointer(),
+		Tag:      data.AwsEcr.Tag.ValueStringPointer(),
+		AwsEcrImageConfig: &models.ServiceAwsECRImageConfigRequest{
+			AwsRegion:  data.AwsEcr.Region.ValueString(),
+			IamRoleArn: data.AwsEcr.Region.ValueString(),
+		},
+	})
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component config")
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "successfully updated component")
 }
 
 func (r *ContainerImageComponentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

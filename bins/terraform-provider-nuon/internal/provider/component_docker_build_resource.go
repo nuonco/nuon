@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
+	"github.com/powertoolsdev/mono/pkg/api/client/models"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -89,40 +89,6 @@ func (r *DockerBuildComponentResource) Schema(ctx context.Context, req resource.
 	}
 }
 
-func (r *DockerBuildComponentResource) getConfigInput(data *DockerBuildComponentResourceModel) (*gqlclient.ComponentConfigInput, error) {
-	envVars := make([]*gqlclient.KeyValuePairInput, 0)
-	for _, envVar := range data.EnvVar {
-		envVars = append(envVars, envVar.toKeyValueInput())
-	}
-
-	cfg := &gqlclient.ComponentConfigInput{
-		BuildConfig: &gqlclient.BuildConfigInput{
-			DockerBuildConfig: &gqlclient.DockerBuildInput{
-				BuildArgs:     []*gqlclient.KeyValuePairInput{},
-				Dockerfile:    data.Dockerfile.ValueString(),
-				EnvVarsConfig: []*gqlclient.KeyValuePairInput{},
-			},
-		},
-		DeployConfig: &gqlclient.DeployConfigInput{},
-	}
-
-	// handle deploy config
-	if data.SyncOnly.ValueBool() {
-		cfg.DeployConfig.Noop = true
-	} else {
-		cfg.DeployConfig = data.BasicDeploy.toDeployConfigInput()
-		cfg.DeployConfig.BasicDeployConfig.EnvVars = envVars
-	}
-
-	if data.PublicRepo != nil {
-		cfg.BuildConfig.DockerBuildConfig.VcsConfig = data.PublicRepo.getVCSConfig()
-	} else {
-		cfg.BuildConfig.DockerBuildConfig.VcsConfig = data.ConnectedRepo.getVCSConfig()
-	}
-
-	return cfg, nil
-}
-
 func (r *DockerBuildComponentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data *DockerBuildComponentResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -130,24 +96,63 @@ func (r *DockerBuildComponentResource) Create(ctx context.Context, req resource.
 		return
 	}
 
-	cfgInput, err := r.getConfigInput(data)
+	compResp, err := r.restClient.CreateComponent(ctx, data.AppID.ValueString(), &models.ServiceCreateComponentRequest{
+		Name: data.Name.ValueStringPointer(),
+	})
 	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component config")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component")
+		return
+	}
+	tflog.Trace(ctx, "got ID -- "+compResp.ID)
+	data.ID = types.StringValue(compResp.ID)
+
+	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
+		BasicDeployConfig: &models.ServiceBasicDeployConfigRequest{
+			Args:            []string{},
+			CPULimit:        "",
+			CPURequest:      "",
+			EnvVars:         map[string]string{},
+			HealthCheckPath: data.BasicDeploy.HealthCheckPath.String(),
+			InstanceCount:   data.BasicDeploy.InstanceCount.ValueInt64(),
+			ListenPort:      data.BasicDeploy.Port.ValueInt64(),
+			MemLimit:        "",
+			MemRequest:      "",
+		},
+		BuildArgs:                []string{},
+		ConnectedGithubVcsConfig: &models.ServiceConnectedGithubVCSConfigRequest{},
+		Dockerfile:               data.Dockerfile.ValueString(),
+		PublicGitVcsConfig:       &models.ServicePublicGitVCSConfigRequest{},
+		SyncOnly:                 data.SyncOnly.ValueBool(),
+		Target:                   "",
+		EnvVars:                  map[string]string{},
+	}
+	for _, envVar := range data.EnvVar {
+		configRequest.EnvVars[envVar.Name.String()] = envVar.Value.String()
+		configRequest.BasicDeployConfig.EnvVars[envVar.Name.String()] = envVar.Value.String()
+	}
+	if data.PublicRepo != nil {
+		branch := ""
+		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
+			Branch:    &branch,
+			Directory: data.PublicRepo.Directory.ValueStringPointer(),
+			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
+		}
+	} else {
+		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
+			Branch:    data.ConnectedRepo.Branch.ValueString(),
+			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
+			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
+			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
+		}
+	}
+	_, err = r.restClient.CreateDockerBuildComponentConfig(ctx, data.ID.ValueString(), configRequest)
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component config")
 		return
 	}
 
-	compResp, err := r.client.UpsertComponent(ctx, gqlclient.ComponentInput{
-		Id:     data.ID.ValueString(),
-		AppId:  data.AppID.ValueString(),
-		Name:   data.Name.ValueString(),
-		Config: cfgInput,
-	})
-	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "upsert component")
-		return
-	}
-	data.ID = types.StringValue(compResp.Id)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "successfully created component")
 }
 
 func (r *DockerBuildComponentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -158,13 +163,45 @@ func (r *DockerBuildComponentResource) Read(ctx context.Context, req resource.Re
 		return
 	}
 
-	compResp, err := r.client.GetComponent(ctx, data.ID.ValueString())
+	compResp, err := r.restClient.GetComponent(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component")
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
+
+	configResp, err := r.restClient.GetComponentLatestConfig(ctx, data.ID.ValueString())
+	if err != nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component config")
+		return
+	}
+
+	data.BasicDeploy.HealthCheckPath = types.StringValue(configResp.DockerBuild.BasicDeployConfig.HealthCheckPath)
+	data.BasicDeploy.InstanceCount = types.Int64Value(configResp.DockerBuild.BasicDeployConfig.InstanceCount)
+	data.BasicDeploy.Port = types.Int64Value(configResp.DockerBuild.BasicDeployConfig.ListenPort)
+	data.Dockerfile = types.StringValue(configResp.DockerBuild.Dockerfile)
+	data.SyncOnly = types.BoolValue(configResp.DockerBuild.SyncOnly)
+
+	for key, val := range configResp.DockerBuild.EnvVars {
+		data.EnvVar = append(data.EnvVar, EnvVar{
+			Name:  types.StringValue(key),
+			Value: types.StringValue(val),
+		})
+	}
+
+	if configResp.DockerBuild.ConnectedGithubVcsConfig != nil {
+		data.ConnectedRepo.Branch = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Branch)
+		data.ConnectedRepo.Directory = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Directory)
+		// TODO
+		// data.ConnectedRepo.GitRef = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Branch)
+		data.ConnectedRepo.Repo = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Repo)
+	} else {
+		data.PublicRepo.Directory = types.StringValue(configResp.DockerBuild.PublicGitVcsConfig.Directory)
+		data.PublicRepo.Repo = types.StringValue(configResp.DockerBuild.PublicGitVcsConfig.Repo)
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "successfully read component")
 }
 
 func (r *DockerBuildComponentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -175,7 +212,7 @@ func (r *DockerBuildComponentResource) Delete(ctx context.Context, req resource.
 		return
 	}
 
-	deleted, err := r.client.DeleteComponent(ctx, data.ID.ValueString())
+	deleted, err := r.restClient.DeleteComponent(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
@@ -185,6 +222,8 @@ func (r *DockerBuildComponentResource) Delete(ctx context.Context, req resource.
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "delete component")
 		return
 	}
+
+	tflog.Trace(ctx, "successfully deleted component")
 }
 
 func (r *DockerBuildComponentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -196,25 +235,63 @@ func (r *DockerBuildComponentResource) Update(ctx context.Context, req resource.
 	}
 
 	tflog.Trace(ctx, "updating component "+data.ID.ValueString())
-	cfgInput, err := r.getConfigInput(data)
+
+	compResp, err := r.restClient.UpdateComponent(ctx, data.ID.ValueString(), &models.ServiceUpdateComponentRequest{
+		Name: data.Name.ValueStringPointer(),
+	})
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
+	data.Name = types.StringValue(compResp.Name)
 
-	installResp, err := r.client.UpsertComponent(ctx, gqlclient.ComponentInput{
-		AppId:  data.AppID.ValueString(),
-		Id:     data.ID.ValueString(),
-		Name:   data.Name.ValueString(),
-		Config: cfgInput,
-	})
+	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
+		BasicDeployConfig: &models.ServiceBasicDeployConfigRequest{
+			Args:            []string{},
+			CPULimit:        "",
+			CPURequest:      "",
+			EnvVars:         map[string]string{},
+			HealthCheckPath: data.BasicDeploy.HealthCheckPath.String(),
+			InstanceCount:   data.BasicDeploy.InstanceCount.ValueInt64(),
+			ListenPort:      data.BasicDeploy.Port.ValueInt64(),
+			MemLimit:        "",
+			MemRequest:      "",
+		},
+		BuildArgs:                []string{},
+		ConnectedGithubVcsConfig: &models.ServiceConnectedGithubVCSConfigRequest{},
+		Dockerfile:               data.Dockerfile.ValueString(),
+		PublicGitVcsConfig:       &models.ServicePublicGitVCSConfigRequest{},
+		SyncOnly:                 data.SyncOnly.ValueBool(),
+		Target:                   "",
+		EnvVars:                  map[string]string{},
+	}
+	for _, envVar := range data.EnvVar {
+		configRequest.EnvVars[envVar.Name.String()] = envVar.Value.String()
+		configRequest.BasicDeployConfig.EnvVars[envVar.Name.String()] = envVar.Value.String()
+	}
+	if data.PublicRepo != nil {
+		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
+			// TODO
+			// Branch:    data.PublicRepo.GitRef.ValueStringPointer(),
+			Directory: data.PublicRepo.Directory.ValueStringPointer(),
+			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
+		}
+	} else {
+		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
+			Branch:    data.ConnectedRepo.Branch.ValueString(),
+			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
+			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
+			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
+		}
+	}
+	_, err = r.restClient.CreateDockerBuildComponentConfig(ctx, data.ID.ValueString(), configRequest)
 	if err != nil {
-		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get app")
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component config")
 		return
 	}
 
-	data.Name = types.StringValue(installResp.Name)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "successfully updated component")
 }
 
 func (r *DockerBuildComponentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
