@@ -59,6 +59,7 @@ module "mono" {
     "api",
     "api-gateway",
     "orgs-api",
+    "ctl-api",
     "workers-apps",
     "workers-canary",
     "workers-deployments",
