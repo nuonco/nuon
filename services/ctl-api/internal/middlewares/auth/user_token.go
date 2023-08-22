@@ -43,11 +43,12 @@ func (m *middleware) fetchUserToken(ctx context.Context, token string) (*app.Use
 
 func (m *middleware) saveUserToken(ctx context.Context, token string, claims *validator.ValidatedClaims) (*app.UserToken, error) {
 	userToken := app.UserToken{
-		Token:     token,
-		Subject:   claims.RegisteredClaims.Subject,
-		ExpiresAt: time.Unix(claims.RegisteredClaims.Expiry, 0),
-		IssuedAt:  time.Unix(claims.RegisteredClaims.IssuedAt, 0),
-		Issuer:    claims.RegisteredClaims.Issuer,
+		Token:       token,
+		Subject:     claims.RegisteredClaims.Subject,
+		ExpiresAt:   time.Unix(claims.RegisteredClaims.Expiry, 0),
+		IssuedAt:    time.Unix(claims.RegisteredClaims.IssuedAt, 0),
+		Issuer:      claims.RegisteredClaims.Issuer,
+		CreatedByID: claims.RegisteredClaims.Subject,
 	}
 
 	res := m.db.WithContext(ctx).

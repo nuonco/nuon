@@ -38,6 +38,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 		if userToken != nil {
 			ctx.Set(userTokenCtxKey, userToken)
+			ctx.Set(userIDCtxKey, userToken.Subject)
 			ctx.Next()
 			return
 		}
@@ -62,6 +63,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		ctx.Set(userTokenCtxKey, userToken)
+		ctx.Set(userIDCtxKey, userToken.Subject)
 		ctx.Next()
 	}
 }

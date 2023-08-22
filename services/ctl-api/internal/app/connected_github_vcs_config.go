@@ -9,26 +9,27 @@ import (
 
 type ConnectedGithubVCSConfig struct {
 	ID          string         `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string         `json:"created_by_id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	CreatedByID string         `json:"created_by_id" gorm:"notnull"`
+	CreatedAt   time.Time      `json:"created_at" gorm:"notnull"`
+	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// parent component
-	ComponentConfigID   string `json:"component_config_id"`
-	ComponentConfigType string `json:"component_config_type"`
+	ComponentConfigID   string `json:"component_config_id" gorm:"notnull"`
+	ComponentConfigType string `json:"component_config_type" gorm:"notnull"`
 
-	Repo      string `json:"repo"`
-	RepoName  string `json:"repo_name"`
-	RepoOwner string `json:"repo_owner"`
-	Directory string `json:"directory"`
-	Branch    string `json:"branch"`
+	Repo      string `json:"repo" gorm:"notnull"`
+	RepoName  string `json:"repo_name" gorm:"notnull"`
+	RepoOwner string `json:"repo_owner" gorm:"notnull"`
+	Directory string `json:"directory" gorm:"notnull"`
+	Branch    string `json:"branch" gorm:"notnull"`
 
+	VCSConnectionID string        `json:"vcs_connection_id" gorm:"notnull"`
 	VCSConnection   VCSConnection `json:"-"`
-	VCSConnectionID string        `json:"vcs_connection_id"`
 }
 
 func (c *ConnectedGithubVCSConfig) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewVCSID()
+	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
 }
