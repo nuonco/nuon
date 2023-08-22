@@ -9,14 +9,14 @@ import (
 
 type InstallComponent struct {
 	ID          string         `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string         `json:"created_by_id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	CreatedByID string         `json:"created_by_id" gorm:"notnull"`
+	CreatedAt   time.Time      `json:"created_at" gorm:"notnull"`
+	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	InstallID   string    `json:"install_id" gorm:"index:install_component_group,unique"`
+	InstallID   string    `json:"install_id" gorm:"index:install_component_group,unique;notnull"`
 	Install     Install   `faker:"-"`
-	ComponentID string    `json:"component_id" gorm:"index:install_component_group,unique"`
+	ComponentID string    `json:"component_id" gorm:"index:install_component_group,unique;notnull"`
 	Component   Component `faker:"-"`
 
 	InstallDeploys []InstallDeploy `faker:"-" gorm:"constraint:OnDelete:CASCADE;"`
@@ -24,5 +24,6 @@ type InstallComponent struct {
 
 func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewComponentID()
+	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
 }

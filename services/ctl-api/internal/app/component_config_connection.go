@@ -9,12 +9,12 @@ import (
 
 type ComponentConfigConnection struct {
 	ID          string         `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string         `json:"created_by_id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	CreatedByID string         `json:"created_by_id" gorm:"notnull"`
+	CreatedAt   time.Time      `json:"created_at" gorm:"notnull"`
+	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	ComponentID string    `json:"component_id"`
+	ComponentID string    `json:"component_id" gorm:"notnull"`
 	Component   Component `json:"-"`
 
 	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
@@ -27,5 +27,6 @@ type ComponentConfigConnection struct {
 
 func (c *ComponentConfigConnection) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewComponentID()
+	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
 }

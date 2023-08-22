@@ -9,18 +9,18 @@ import (
 
 type Install struct {
 	ID          string         `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string         `json:"created_by_id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	CreatedByID string         `json:"created_by_id" gorm:"notnull"`
+	CreatedAt   time.Time      `json:"created_at" gorm:"notnull"`
+	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	Name              string `json:"name"`
+	Name              string `json:"name" gorm:"notnull"`
 	App               App    `swaggerignore:"true" json:"-"`
-	AppID             string `json:"app_id"`
-	Status            string `json:"status"`
-	StatusDescription string `json:"status_description"`
+	AppID             string `json:"app_id" gorm:"notnull"`
+	Status            string `json:"status" gorm:"notnull"`
+	StatusDescription string `json:"status_description" gorm:"notnull"`
 
-	SandboxReleaseID string         `json:"-"`
+	SandboxReleaseID string         `json:"-" gorm:"notnull"`
 	SandboxRelease   SandboxRelease `json:"sandbox_release"`
 
 	InstallComponents []InstallComponent `json:"install_components,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
@@ -29,5 +29,6 @@ type Install struct {
 
 func (i *Install) BeforeCreate(tx *gorm.DB) error {
 	i.ID = domains.NewInstallID()
+	i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
 }
