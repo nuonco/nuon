@@ -8,6 +8,7 @@ import (
 )
 
 const userTokenCtxKey string = "user_token"
+const userIDCtxKey string = "user_id"
 
 func FromContext(ctx *gin.Context) (*app.UserToken, error) {
 	org, exists := ctx.Get(userTokenCtxKey)
