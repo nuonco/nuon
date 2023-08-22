@@ -92,3 +92,4 @@ cd services/api
 golangci-lint run
 ```
 
+
