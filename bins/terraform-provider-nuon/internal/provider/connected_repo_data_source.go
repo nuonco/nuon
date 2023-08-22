@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -73,18 +74,26 @@ func (d *ConnectedRepoDataSource) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	tflog.Trace(ctx, "fetching connected repo")
-	repoResp, err := d.client.GetConnectedRepo(ctx, d.orgID, data.Name.ValueString())
+
+	repos, err := d.restClient.GetAllVCSConnectedRepos(ctx)
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get connected repo")
 		return
 	}
 
-	data.DefaultBranch = types.StringValue(repoResp.DefaultBranch)
-	data.FullName = types.StringValue(repoResp.FullName)
-	data.Repo = types.StringValue(repoResp.Name)
-	data.Owner = types.StringValue(repoResp.Owner)
-	data.URL = types.StringValue(repoResp.Url)
+	for _, repo := range repos {
+		if repo.Name == data.Name.ValueStringPointer() {
+			data.DefaultBranch = types.StringValue(*repo.DefaultBranch)
+			data.FullName = types.StringValue(*repo.FullName)
+			data.Repo = types.StringValue(*repo.Name)
+			data.Owner = types.StringValue(*repo.UserName)
+			data.URL = types.StringValue(*repo.CloneURL)
 
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+			// Save data into Terraform state
+			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+			return
+		}
+	}
+
+	writeDiagnosticsErr(ctx, &resp.Diagnostics, errors.New("repo not found"), "get connected repo")
 }
