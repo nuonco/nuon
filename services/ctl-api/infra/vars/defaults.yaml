@@ -1,0 +1,23 @@
+---
+public_root_domain: nuon.co
+region: us-west-2
+pool: nuon
+rds:
+  engine: postgres
+  engine_version: "14.7"
+  family: "postgres14"
+  major_engine_version: "14"
+  instance_class: "db.t4g.small"
+  allocated_storage: "20"
+  db_name: ctl-api
+  port: 5432
+  username: nuonadmin
+  multi_az: false
+  backup_retention_period: 1
+  skip_final_snapshot: true
+  deletion_protection: true
+  storage_encrypted: true
+  enabled_cloudwatch_logs_exports:
+    - postgresql
+    - upgrade
+  enable_replica: false

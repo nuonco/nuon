@@ -5,7 +5,7 @@ terraform {
     organization = "launchpaddev"
 
     workspaces {
-      prefix = "workers-canary-"
+      prefix = "ctl-api-"
     }
   }
 
@@ -18,6 +18,11 @@ terraform {
     tfe = {
       source  = "hashicorp/tfe"
       version = ">= 0.36.1"
+    }
+
+    utils = {
+      source  = "cloudposse/utils"
+      version = ">= 0.17.23"
     }
   }
 }
