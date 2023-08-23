@@ -1,3 +1,7 @@
+data "aws_organizations_organization" "orgs" {
+  provider = aws.mgmt
+}
+
 data "aws_vpcs" "vpcs" {
   tags = {
     environment = var.env

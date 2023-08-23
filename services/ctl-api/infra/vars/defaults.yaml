@@ -9,7 +9,7 @@ rds:
   major_engine_version: "14"
   instance_class: "db.t4g.small"
   allocated_storage: "20"
-  db_name: ctl-api
+  db_name: ctlapi
   port: 5432
   username: nuonadmin
   multi_az: false
