@@ -26,9 +26,9 @@ env_secrets:
     key: github_app_key
 config_map_override: api
 local_cmds:
-  #- "go run . api"
-  #- "go run . worker"
   - "go run . startup"
+  - "go run . api"
+  - "go run . worker"
 earthly_cmd: server
 port: 8081
 type: api
