@@ -34,6 +34,6 @@ END
 \$\$;
 
 GRANT rds_iam TO ctl_api;
-CREATE DATABASE ctl_api;
+CREATE DATABASE ctl-api;
 CREATE EXTENSION IF NOT EXISTS hstore;
 EOF
