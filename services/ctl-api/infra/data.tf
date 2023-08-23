@@ -23,4 +23,11 @@ data "aws_subnets" "private" {
     name   = "vpc-id"
     values = [data.aws_vpc.vpc.id]
   }
+
+  tags = {
+    environment = var.env
+    pool        = local.vars.pool
+    # HACK: we should actually add a tag on the subnets for public/private
+    "karpenter.sh/discovery" = "${var.env}-${local.vars.pool}"
+  }
 }
