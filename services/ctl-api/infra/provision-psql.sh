@@ -3,19 +3,22 @@
 set -eou pipefail
 set -x
 
+OUTPUT=$(terraform output -json)
+
 # NOTE: we use the instance host for both this script, and connecting to the DB since aws iam auth doesn't seem to work
 # with any user created host records.
-DB_ADDR="$(terraform output -json | jq .instance.host)"
-DB_PORT="$(terraform output -json | jq .instance.port)"
+DB_ADDR="$(echo $OUTPUT | jq -r .db.value.instance.host)"
+DB_PORT="$(echo $OUTPUT | jq -r .db.value.instance.port)"
 
-DB_NAME="$(terraform output -json | jq .instance.name)"
-DB_USER="$(terraform output -json | jq .instance.username)"
+DB_NAME="$(echo $OUTPUT | jq -r .db.value.instance.name)"
+DB_USER="$(echo $OUTPUT | jq -r .db.value.instance.username)"
 
-ADMIN_USER="$(terraform output -json db | jq -c .admin.username )"
-ADMIN_PW="$(terraform output -json | jq -c .admin.password )"
-ADMIN_DB="$(terraform output -json db | jq -c .admin.name)"
+ADMIN_USER="$(echo $OUTPUT | jq -r .db.value.admin.username )"
+ADMIN_PW="$(echo $OUTPUT | jq -r .db.value.admin.password )"
+ADMIN_DB="$(echo $OUTPUT | jq -r .db.value.admin.name)"
 
-cat <<EOF | PGPASSWORD="$INSTANCE_PW" psql \
+echo "executing setup..."
+cat <<EOF | PGPASSWORD="$ADMIN_PW" psql \
     -h "$DB_ADDR" \
     -p "$DB_PORT" \
     -U "$ADMIN_USER" \
@@ -25,12 +28,12 @@ cat <<EOF | PGPASSWORD="$INSTANCE_PW" psql \
 
 DO \$\$
 BEGIN
-CREATE USER ctl-api WITH LOGIN;
+CREATE USER ctl_api WITH LOGIN;
 EXCEPTION WHEN duplicate_object THEN RAISE NOTICE '%, skipping', SQLERRM USING ERRCODE = SQLSTATE;
 END
 \$\$;
 
-GRANT rds_iam TO ctl-api;
-CREATE DATABASE ctl-api;
+GRANT rds_iam TO ctl_api;
+CREATE DATABASE ctl_api;
 CREATE EXTENSION IF NOT EXISTS hstore;
 EOF

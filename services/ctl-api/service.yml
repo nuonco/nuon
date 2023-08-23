@@ -29,6 +29,7 @@ local_cmds:
   - "go run . auto-migrate"
   - "go run . api"
   - "go run . worker"
+  - "go run . startup"
 earthly_cmd: server
 port: 8081
 type: api
