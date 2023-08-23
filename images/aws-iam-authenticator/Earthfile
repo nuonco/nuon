@@ -2,7 +2,8 @@ VERSION --use-cache-command 0.6
 
 FROM golang:1.20-alpine
 
-iamauthenticator:
+aws-iam-authenticator:
+    RUN apk add --update --no-cache curl ca-certificates
     WORKDIR /tmp
     # iam authenticator download url
     ARG version=0.6.2
