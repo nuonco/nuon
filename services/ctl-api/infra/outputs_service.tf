@@ -2,6 +2,10 @@ output "certificate_arn" {
   value = module.certificate.acm_certificate_arn
 }
 
-output "certificate_domains" {
-  value = module.certificate.distinct_domain_names
+output "public_domain" {
+  value = "ctl.${local.root_domain}"
+}
+
+output "internal_domain" {
+  value = "ctl.${data.aws_route53_zone.private.name}"
 }

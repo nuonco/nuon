@@ -4,7 +4,7 @@ output "db" {
       name = "ctl-api"
       host = module.primary.db_instance_address
       port = module.primary.db_instance_port
-      username = "ctl-api"
+      username = "ctl_api"
     }
 
     admin = {
