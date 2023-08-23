@@ -10,6 +10,8 @@ output "db" {
     admin = {
       name = module.primary.db_instance_name
       username = nonsensitive(module.primary.db_instance_username)
+      # NOTE: this password is only used once, and then removed.
+      password = nonsensitive(module.primary.db_instance_password)
     }
   }
 }
