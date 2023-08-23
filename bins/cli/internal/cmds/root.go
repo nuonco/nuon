@@ -36,6 +36,7 @@ func Execute() {
 		"all":        c.registerCtl,
 		"components": c.registerComponents,
 		"installls":  c.registerInstalls,
+		"releases":   c.registerReleases,
 		"version":    c.registerVersion,
 	}
 	for ns, fn := range namespaces {
