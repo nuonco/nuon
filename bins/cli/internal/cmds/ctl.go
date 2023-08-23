@@ -82,7 +82,7 @@ func (c *cli) registerCtl(ctx context.Context, rootCmd *cobra.Command) error {
 
 	buildCmdOpts := &app.BuildOpts{}
 	buildCmd := &cobra.Command{
-		Use:   "build",
+		Use:   "legacy-build",
 		Short: "build a component",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmds.Build(ctx, buildCmdOpts)
@@ -95,7 +95,7 @@ func (c *cli) registerCtl(ctx context.Context, rootCmd *cobra.Command) error {
 
 	deployOpts := &app.DeployOpts{}
 	deployCmd := &cobra.Command{
-		Use:   "deploy",
+		Use:   "legacy-deploy",
 		Short: "deploy to one or all installs",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmds.Deploy(ctx, deployOpts)
