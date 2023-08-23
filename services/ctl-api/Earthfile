@@ -63,7 +63,7 @@ docker:
 
     COPY +build/service /bin/service
     COPY ../../images/certs+certs/cert.pem "$ETCSSL"
-    COPY ../../images/awsiamauthenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+    COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 
     ENTRYPOINT ["/bin/service"]
 
