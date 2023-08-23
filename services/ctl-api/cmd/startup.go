@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db"
 	"github.com/spf13/cobra"
+	"go.uber.org/fx"
 )
 
 func (c *cli) registerStartup() error {
@@ -17,5 +17,11 @@ func (c *cli) registerStartup() error {
 }
 
 func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
-	fmt.Println("hello world")
+	// for now, run the automigrate script
+	providers := []fx.Option{
+		fx.Provide(db.NewAutoMigrate),
+		fx.Invoke(func(*db.AutoMigrate) {}),
+	}
+	providers = append(providers, c.providers()...)
+	fx.New(providers...).Run()
 }
