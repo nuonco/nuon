@@ -6,6 +6,8 @@
 
 # to add a new directory that triggers a CI run for a service, update the list entry
 services: |
+  ctl-api:
+    - services/ctl-api/**
   workers-apps:
     - services/workers-apps/**
   workers-canary:
