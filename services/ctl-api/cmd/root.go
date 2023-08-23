@@ -14,6 +14,7 @@ func Execute() {
 	c.registerWorker()
 	c.registerMigrate()
 	c.registerAutoMigrate()
+	c.registerStartup()
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(2)
