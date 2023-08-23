@@ -6,6 +6,11 @@ variable "name" {
   type = string
 }
 
+variable "additional_iam_policies" {
+  type = list(string)
+  default = []
+}
+
 locals {
   accounts = {
     for acct in data.aws_organizations_organization.orgs.accounts : acct.name => { id : acct.id }

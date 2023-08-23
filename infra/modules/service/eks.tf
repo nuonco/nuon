@@ -57,7 +57,10 @@ module "iam_eks_role" {
     (local.vars.cluster_name) = ["default:${var.name}", ]
   }
 
-  role_policy_arns = {
-    custom = aws_iam_policy.service.arn
-  }
+  role_policy_arns = merge(
+    {
+      custom = aws_iam_policy.service.arn
+    },
+    { for i, policy in var.additional_iam_policies: tostring(i) => policy }
+  )
 }
