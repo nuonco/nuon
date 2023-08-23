@@ -18,7 +18,7 @@ data "aws_iam_policy_document" "additional_permissions" {
         local.vars.region,
         local.accounts[var.env].id,
         module.primary.db_instance_resource_id,
-        local.name
+        "ctl_api",
       ),
     ]
   }
