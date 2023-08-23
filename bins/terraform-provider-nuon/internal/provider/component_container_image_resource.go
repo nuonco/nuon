@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -33,6 +34,11 @@ type AwsEcr struct {
 	IAMRoleARN types.String `tfsdk:"iam_role_arn"`
 }
 
+type Public struct {
+	ImageURL types.String `tfsdk:"image_url"`
+	Tag      types.String `tfsdk:"tag"`
+}
+
 // ContainerImageComponentResourceModel describes the resource data model.
 type ContainerImageComponentResourceModel struct {
 	ID types.String `tfsdk:"id"`
@@ -44,10 +50,7 @@ type ContainerImageComponentResourceModel struct {
 	BasicDeploy *BasicDeploy `tfsdk:"basic_deploy"`
 
 	AwsEcr *AwsEcr `tfsdk:"aws_ecr"`
-	Public struct {
-		ImageURL types.String `tfsdk:"image_url"`
-		Tag      types.String `tfsdk:"tag"`
-	} `tfsdk:"public"`
+	Public *Public `tfsdk:"public"`
 
 	EnvVar []EnvVar `tfsdk:"env_var"`
 }
@@ -145,14 +148,29 @@ func (r *ContainerImageComponentResource) Create(ctx context.Context, req resour
 	tflog.Trace(ctx, "got ID -- "+compResp.ID)
 	data.ID = types.StringValue(compResp.ID)
 
-	_, err = r.restClient.CreateExternalImageComponentConfig(ctx, compResp.ID, &models.ServiceCreateExternalImageComponentConfigRequest{
-		ImageURL: data.AwsEcr.ImageURL.ValueStringPointer(),
-		Tag:      data.AwsEcr.Tag.ValueStringPointer(),
-		AwsEcrImageConfig: &models.ServiceAwsECRImageConfigRequest{
+	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{
+		BasicDeployConfig: &models.ServiceBasicDeployConfigRequest{},
+	}
+	configRequest.SyncOnly = data.SyncOnly.ValueBool()
+	if data.AwsEcr != nil {
+		configRequest.ImageURL = data.AwsEcr.ImageURL.ValueStringPointer()
+		configRequest.Tag = data.AwsEcr.Tag.ValueStringPointer()
+		configRequest.AwsEcrImageConfig = &models.ServiceAwsECRImageConfigRequest{
 			AwsRegion:  data.AwsEcr.Region.ValueString(),
 			IamRoleArn: data.AwsEcr.Region.ValueString(),
-		},
-	})
+		}
+	} else {
+		configRequest.ImageURL = data.Public.ImageURL.ValueStringPointer()
+		configRequest.Tag = data.Public.Tag.ValueStringPointer()
+	}
+	if data.BasicDeploy != nil {
+		configRequest.BasicDeployConfig = &models.ServiceBasicDeployConfigRequest{
+			ListenPort:      data.BasicDeploy.Port.ValueInt64(),
+			InstanceCount:   data.BasicDeploy.InstanceCount.ValueInt64(),
+			HealthCheckPath: data.BasicDeploy.HealthCheckPath.String(),
+		}
+	}
+	_, err = r.restClient.CreateExternalImageComponentConfig(ctx, compResp.ID, configRequest)
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component config")
 		return
@@ -176,16 +194,44 @@ func (r *ContainerImageComponentResource) Read(ctx context.Context, req resource
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
+	data.AppID = types.StringValue(compResp.AppID)
 
 	configResp, err := r.restClient.GetComponentLatestConfig(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component config")
 		return
 	}
-	data.AwsEcr.ImageURL = types.StringValue(configResp.ExternalImage.ImageURL)
-	data.AwsEcr.Tag = types.StringValue(configResp.ExternalImage.Tag)
-	data.AwsEcr.Region = types.StringValue(configResp.ExternalImage.AwsEcrImageConfig.AwsRegion)
-	data.AwsEcr.IAMRoleARN = types.StringValue(configResp.ExternalImage.AwsEcrImageConfig.IamRoleArn)
+	if configResp.ExternalImage == nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, errors.New("did not get external image config"), "get component config")
+		return
+	}
+	externalImage := configResp.ExternalImage
+	// TODO: it wants us to set the data.AppID, but we don't get that from the API
+	data.SyncOnly = types.BoolValue(externalImage.SyncOnly)
+	if externalImage.AwsEcrImageConfig != nil {
+		data.AwsEcr = &AwsEcr{
+			ImageURL:   types.StringValue(externalImage.ImageURL),
+			Tag:        types.StringValue(externalImage.Tag),
+			Region:     types.StringValue(externalImage.AwsEcrImageConfig.AwsRegion),
+			IAMRoleARN: types.StringValue(externalImage.AwsEcrImageConfig.IamRoleArn),
+		}
+	} else {
+		data.Public = &Public{
+			ImageURL: types.StringValue(externalImage.ImageURL),
+			Tag:      types.StringValue(externalImage.Tag),
+		}
+	}
+	if externalImage.BasicDeployConfig != nil {
+		// TODO: setting data.BasicDeploy to any value will set it to null,
+		// causing Terraform to see it changed. Obviously this makes no sense,
+		// but I can't figure out why it's doing this, so I'm just commenting this out for now.
+		// This will need to be resolved before production use.
+		// data.BasicDeploy = &BasicDeploy{
+		// 	Port:            types.Int64Value(externalImage.BasicDeployConfig.ListenPort),
+		// 	InstanceCount:   types.Int64Value(externalImage.BasicDeployConfig.InstanceCount),
+		// 	HealthCheckPath: types.StringValue(externalImage.BasicDeployConfig.HealthCheckPath),
+		// }
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	tflog.Trace(ctx, "successfully read component")
@@ -228,16 +274,30 @@ func (r *ContainerImageComponentResource) Update(ctx context.Context, req resour
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "update component")
 		return
 	}
-	data.Name = types.StringValue(compResp.Name)
 
-	_, err = r.restClient.CreateExternalImageComponentConfig(ctx, data.ID.ValueString(), &models.ServiceCreateExternalImageComponentConfigRequest{
-		ImageURL: data.AwsEcr.ImageURL.ValueStringPointer(),
-		Tag:      data.AwsEcr.Tag.ValueStringPointer(),
-		AwsEcrImageConfig: &models.ServiceAwsECRImageConfigRequest{
+	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{
+		BasicDeployConfig: &models.ServiceBasicDeployConfigRequest{},
+	}
+	configRequest.SyncOnly = data.SyncOnly.ValueBool()
+	if data.AwsEcr != nil {
+		configRequest.ImageURL = data.AwsEcr.ImageURL.ValueStringPointer()
+		configRequest.Tag = data.AwsEcr.Tag.ValueStringPointer()
+		configRequest.AwsEcrImageConfig = &models.ServiceAwsECRImageConfigRequest{
 			AwsRegion:  data.AwsEcr.Region.ValueString(),
 			IamRoleArn: data.AwsEcr.Region.ValueString(),
-		},
-	})
+		}
+	} else {
+		configRequest.ImageURL = data.Public.ImageURL.ValueStringPointer()
+		configRequest.Tag = data.Public.Tag.ValueStringPointer()
+	}
+	if data.BasicDeploy != nil {
+		configRequest.BasicDeployConfig = &models.ServiceBasicDeployConfigRequest{
+			ListenPort:      data.BasicDeploy.Port.ValueInt64(),
+			InstanceCount:   data.BasicDeploy.InstanceCount.ValueInt64(),
+			HealthCheckPath: data.BasicDeploy.HealthCheckPath.String(),
+		}
+	}
+	_, err = r.restClient.CreateExternalImageComponentConfig(ctx, compResp.ID, configRequest)
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "create component config")
 		return
