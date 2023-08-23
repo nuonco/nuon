@@ -68,9 +68,7 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          - api
-          - api-gateway
-          - orgs-api
+          - ctl-api
           - workers-apps
           - workers-canary
           - workers-executors
