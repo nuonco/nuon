@@ -11,7 +11,7 @@ import (
 
 type AutoMigrate struct{}
 
-func NewAutoMigrate(db *gorm.DB, l *zap.Logger, lc fx.Lifecycle) *AutoMigrate {
+func NewAutoMigrate(db *gorm.DB, l *zap.Logger, lc fx.Lifecycle, shutdowner fx.Shutdowner) *AutoMigrate {
 	lc.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
 			l.Info("running auto migrate")
@@ -53,6 +53,7 @@ func NewAutoMigrate(db *gorm.DB, l *zap.Logger, lc fx.Lifecycle) *AutoMigrate {
 			db.AutoMigrate(&app.InstallDeploy{})
 			db.AutoMigrate(&app.InstallComponent{})
 
+			shutdowner.Shutdown()
 			return nil
 		},
 		OnStop: func(_ context.Context) error {
