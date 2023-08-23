@@ -37,7 +37,7 @@
     "graphql-yoga": "^4.0.4",
     "install": "^0.13.0",
     "lodash.merge": "^4.6.2",
-    "luxon": "^3.4.0",
+    "luxon": "^3.4.1",
     "npm": "^9.8.1",
     "pino": "^8.15.0"
   },
