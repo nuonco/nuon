@@ -60,7 +60,11 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 		ID: installID,
 	}
 
-	res := s.db.WithContext(ctx).Model(&currentInstall).Updates(app.Install{Name: req.Name})
+	res := s.db.WithContext(ctx).
+		Model(&currentInstall).
+		Preload("AWSAccount").
+		Preload("SandboxRelease").
+		Updates(app.Install{Name: req.Name})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
