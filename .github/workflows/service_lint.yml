@@ -21,18 +21,8 @@ jobs:
     runs-on: [ubuntu-latest-16-cores, linux]
     timeout-minutes: 9
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: powertoolsdev/mono/actions/app-token@main
-        with:
-          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
-          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
-          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
-
       - name: Checkout repo
         uses: actions/checkout@v3
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
 
       - name: Download terraform outputs
         uses: actions/download-artifact@v3
@@ -47,7 +37,6 @@ jobs:
         uses: powertoolsdev/mono/actions/setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
-          clone_token: ${{ steps.generate_token.outputs.token }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           aws_role: ${{ env.TFO_GH_ROLE_ARN }}
           aws_region: ${{ env.TFO_REGION }}
