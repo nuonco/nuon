@@ -109,8 +109,7 @@ func (r *TerraformModuleComponentResource) Create(ctx context.Context, req resou
 	}
 	if data.PublicRepo != nil {
 		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
-			// TODO
-			// Branch: data.PublicRepo.GitRef.ValueStringPointer(),
+			Branch:    data.PublicRepo.Branch.ValueStringPointer(),
 			Directory: data.PublicRepo.Directory.ValueStringPointer(),
 			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
 		}
@@ -118,7 +117,6 @@ func (r *TerraformModuleComponentResource) Create(ctx context.Context, req resou
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    data.ConnectedRepo.Branch.ValueString(),
 			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
-			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
 			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
 		}
 	}
@@ -160,15 +158,12 @@ func (r *TerraformModuleComponentResource) Read(ctx context.Context, req resourc
 		})
 	}
 	if configResp.Helm.PublicGitVcsConfig != nil {
-		// TODO
-		// data.PublicRepo.GitRef = types.StringValue(configResp.Helm.PublicGitVcsConfig.Branch)
+		data.PublicRepo.Branch = types.StringValue(configResp.Helm.PublicGitVcsConfig.Branch)
 		data.PublicRepo.Directory = types.StringValue(configResp.Helm.PublicGitVcsConfig.Directory)
 		data.PublicRepo.Repo = types.StringValue(configResp.Helm.PublicGitVcsConfig.Repo)
 	} else {
 		data.ConnectedRepo.Branch = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Branch)
 		data.ConnectedRepo.Directory = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Directory)
-		// TODO
-		// data.ConnectedRepo.GitRef = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Branch)
 		data.ConnectedRepo.Repo = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Repo)
 	}
 
@@ -226,8 +221,7 @@ func (r *TerraformModuleComponentResource) Update(ctx context.Context, req resou
 	}
 	if data.PublicRepo != nil {
 		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
-			// TODO
-			// Branch: data.PublicRepo.GitRef.ValueStringPointer(),
+			Branch:    data.PublicRepo.Branch.ValueStringPointer(),
 			Directory: data.PublicRepo.Directory.ValueStringPointer(),
 			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
 		}
@@ -235,7 +229,6 @@ func (r *TerraformModuleComponentResource) Update(ctx context.Context, req resou
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    data.ConnectedRepo.Branch.ValueString(),
 			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
-			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
 			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
 		}
 	}
