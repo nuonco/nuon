@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -144,27 +145,39 @@ func (r *TerraformModuleComponentResource) Read(ctx context.Context, req resourc
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
+	data.AppID = types.StringValue(compResp.AppID)
 
 	configResp, err := r.restClient.GetComponentLatestConfig(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component config")
 		return
 	}
-	data.TerraformVersion = types.StringValue(configResp.TerraformModule.Version)
-	for key, val := range configResp.TerraformModule.Variables {
+	if configResp.TerraformModule == nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, errors.New("did not get terraform config"), "get component config")
+		return
+	}
+	terraformConfig := configResp.TerraformModule
+	data.TerraformVersion = types.StringValue(terraformConfig.Version)
+	for key, val := range terraformConfig.Variables {
 		data.Var = append(data.Var, TerraformVariable{
 			Name:  types.StringValue(key),
 			Value: types.StringValue(val),
 		})
 	}
-	if configResp.Helm.PublicGitVcsConfig != nil {
-		data.PublicRepo.Branch = types.StringValue(configResp.Helm.PublicGitVcsConfig.Branch)
-		data.PublicRepo.Directory = types.StringValue(configResp.Helm.PublicGitVcsConfig.Directory)
-		data.PublicRepo.Repo = types.StringValue(configResp.Helm.PublicGitVcsConfig.Repo)
+	if terraformConfig.ConnectedGithubVcsConfig != nil {
+		connected := terraformConfig.ConnectedGithubVcsConfig
+		data.ConnectedRepo = &ConnectedRepo{
+			Branch:    types.StringValue(connected.Branch),
+			Directory: types.StringValue(connected.Directory),
+			Repo:      types.StringValue(connected.Repo),
+		}
 	} else {
-		data.ConnectedRepo.Branch = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Branch)
-		data.ConnectedRepo.Directory = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Directory)
-		data.ConnectedRepo.Repo = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Repo)
+		public := terraformConfig.PublicGitVcsConfig
+		data.PublicRepo = &PublicRepo{
+			Branch:    types.StringValue(public.Branch),
+			Directory: types.StringValue(public.Directory),
+			Repo:      types.StringValue(public.Repo),
+		}
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
