@@ -1,5 +1,15 @@
 # Changelog 
 
+## Aug 18, 2023
+
+### Terraform Provider
+
+We have built a [Terraform provider](https://developer.hashicorp.com/terraform/language/providers) that enables you to interact with Nuon’s APIs from the command line. You can now specify Docker, Helm, or Terraform components, in your Nuon app, as Terraform resources. The Terraform provider also simplifies operations, such as creating an IAM role in the customer account. For details, see: https://github.com/powertoolsdev/quickstart#readme. 
+
+### CLI Tool
+
+You can now create installs, configure, build and deploy components, as well as check the status of installs and components, using the `nuon` command line tool. Previously, these operations were only supported in our web app. The CLI tool integrates with our Terraform provider. This makes it faster and easier to configure, deploy, and update your app, automate tasks, and integrate with your existing deployment workflow.
+
 ## July 21, 2023
 
 ### Private Helm Charts
