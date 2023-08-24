@@ -9,8 +9,8 @@ import (
 
 type PublicRepo struct {
 	Repo      types.String `tfsdk:"repo"`
-	GitRef    types.String `tfsdk:"git_ref"`
 	Directory types.String `tfsdk:"directory"`
+	Branch    types.String `tfsdk:"branch"`
 }
 
 func publicRepoAttribute() schema.SingleNestedAttribute {
@@ -22,12 +22,12 @@ func publicRepoAttribute() schema.SingleNestedAttribute {
 				MarkdownDescription: "Public https: clone url  (eg: https://github.com/jonmorehouse/go-httpbin.git)",
 				Required:            true,
 			},
+			"branch": schema.StringAttribute{
+				MarkdownDescription: "Default branch to create new builds from.",
+				Required:            true,
+			},
 			"directory": schema.StringAttribute{
 				MarkdownDescription: "Directory",
-				Optional:            true,
-			},
-			"git_ref": schema.StringAttribute{
-				MarkdownDescription: "Static git ref to create new builds from.",
 				Optional:            true,
 			},
 		},
@@ -37,7 +37,6 @@ func publicRepoAttribute() schema.SingleNestedAttribute {
 type ConnectedRepo struct {
 	Repo      types.String `tfsdk:"repo"`
 	Branch    types.String `tfsdk:"branch"`
-	GitRef    types.String `tfsdk:"git_ref"`
 	Directory types.String `tfsdk:"directory"`
 }
 
@@ -53,10 +52,6 @@ func connectedRepoAttribute() schema.SingleNestedAttribute {
 			"branch": schema.StringAttribute{
 				MarkdownDescription: "Default branch to create new builds from.",
 				Required:            true,
-			},
-			"git_ref": schema.StringAttribute{
-				MarkdownDescription: "Static git ref to create new builds from.",
-				Optional:            true,
 			},
 			"directory": schema.StringAttribute{
 				MarkdownDescription: "Static git ref to create new builds from.",

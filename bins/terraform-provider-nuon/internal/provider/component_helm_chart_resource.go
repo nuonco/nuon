@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -104,8 +105,7 @@ func (r *HelmChartComponentResource) Create(ctx context.Context, req resource.Cr
 	}
 	if data.PublicRepo != nil {
 		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
-			// TODO
-			// Branch:    data.PublicRepo.GitRef.ValueStringPointer(),
+			Branch:    data.PublicRepo.Branch.ValueStringPointer(),
 			Directory: data.PublicRepo.Directory.ValueStringPointer(),
 			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
 		}
@@ -113,7 +113,6 @@ func (r *HelmChartComponentResource) Create(ctx context.Context, req resource.Cr
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    data.ConnectedRepo.Branch.ValueString(),
 			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
-			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
 			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
 		}
 	}
@@ -144,26 +143,35 @@ func (r *HelmChartComponentResource) Read(ctx context.Context, req resource.Read
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
+	data.AppID = types.StringValue(compResp.AppID)
 
 	configResp, err := r.restClient.GetComponentLatestConfig(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component config")
 		return
 	}
-	data.ChartName = types.StringValue(configResp.Helm.ChartName)
-	if configResp.Helm.PublicGitVcsConfig != nil {
-		// TODO
-		// data.PublicRepo.GitRef = types.StringValue(configResp.Helm.PublicGitVcsConfig.Branch)
-		data.PublicRepo.Directory = types.StringValue(configResp.Helm.PublicGitVcsConfig.Directory)
-		data.PublicRepo.Repo = types.StringValue(configResp.Helm.PublicGitVcsConfig.Repo)
-	} else {
-		data.ConnectedRepo.Branch = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Branch)
-		data.ConnectedRepo.Directory = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Directory)
-		// TODO
-		// data.ConnectedRepo.GitRef = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Branch)
-		data.ConnectedRepo.Repo = types.StringValue(configResp.Helm.ConnectedGithubVcsConfig.Repo)
+	if configResp.Helm == nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, errors.New("did not get helm config"), "get component config")
+		return
 	}
-	for key, val := range configResp.DockerBuild.EnvVars {
+	helmConfig := configResp.Helm
+	data.ChartName = types.StringValue(helmConfig.ChartName)
+	if helmConfig.PublicGitVcsConfig != nil {
+		public := helmConfig.PublicGitVcsConfig
+		data.PublicRepo = &PublicRepo{
+			Branch:    types.StringValue(public.Branch),
+			Directory: types.StringValue(public.Directory),
+			Repo:      types.StringValue(public.Repo),
+		}
+	} else {
+		connected := helmConfig.ConnectedGithubVcsConfig
+		data.ConnectedRepo = &ConnectedRepo{
+			Branch:    types.StringValue(connected.Branch),
+			Directory: types.StringValue(connected.Directory),
+			Repo:      types.StringValue(connected.Repo),
+		}
+	}
+	for key, val := range helmConfig.Values {
 		data.Value = append(data.Value, HelmValue{
 			Name:  types.StringValue(key),
 			Value: types.StringValue(val),
@@ -223,8 +231,7 @@ func (r *HelmChartComponentResource) Update(ctx context.Context, req resource.Up
 	}
 	if data.PublicRepo != nil {
 		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
-			// TODO
-			// Branch:    data.PublicRepo.GitRef.ValueStringPointer(),
+			Branch:    data.PublicRepo.Branch.ValueStringPointer(),
 			Directory: data.PublicRepo.Directory.ValueStringPointer(),
 			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
 		}
@@ -232,7 +239,6 @@ func (r *HelmChartComponentResource) Update(ctx context.Context, req resource.Up
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    data.ConnectedRepo.Branch.ValueString(),
 			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
-			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
 			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
 		}
 	}
