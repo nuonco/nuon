@@ -68,3 +68,9 @@ variable "topics" {
   type        = list(string)
   description = "the list of topics to assign to the repo"
 }
+
+variable "is_public" {
+  default = false
+  type = bool
+  description = "whether the repo should be public or not"
+}

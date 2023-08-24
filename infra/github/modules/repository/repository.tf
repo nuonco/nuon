@@ -13,7 +13,7 @@ resource "github_repository" "main" {
   name        = var.name
   description = var.description
 
-  visibility   = "internal"
+  visibility   = var.is_public ? "public" : "internal"
   archived     = var.archived
   has_issues   = true  # we used to turn off issues for archived repos. that causes issues so don't
   has_projects = false # we use org projects, not older projects v1
