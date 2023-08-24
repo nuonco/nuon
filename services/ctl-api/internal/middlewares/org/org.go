@@ -39,6 +39,7 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		m.l.Info("org middleware")
 		if global.IsGlobal(ctx) || public.IsPublic(ctx) {
 			ctx.Next()
 			return
