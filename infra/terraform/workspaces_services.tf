@@ -20,51 +20,6 @@ module "api-stage" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
-module "api-prod" {
-  source = "./modules/workspace"
-
-  name       = "api-prod"
-  repo       = "powertoolsdev/mono"
-  auto_apply = false
-  dir        = "services/api/infra"
-  vars = {
-    env = "prod"
-  }
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.services.id
-}
-
-module "api-gateway-stage" {
-  source = "./modules/workspace"
-
-  name       = "api-gateway-stage"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/api-gateway/infra"
-  vars = {
-    env = "stage"
-  }
-  variable_sets = ["aws-environment-credentials"]
-  project_id    = tfe_project.services.id
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
-module "api-gateway-prod" {
-  source = "./modules/workspace"
-
-  name       = "api-gateway-prod"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/api-gateway/infra"
-  vars = {
-    env = "prod"
-  }
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.services.id
-}
 
 module "ctl-api-stage" {
   source = "./modules/workspace"
@@ -76,7 +31,7 @@ module "ctl-api-stage" {
   vars = {
     env = "stage"
   }
-  variable_sets = ["aws-environment-credentials"]
+  variable_sets = ["aws-environment-credentials","slack-webhooks"]
   project_id    = tfe_project.services.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
@@ -93,38 +48,8 @@ module "ctl-api-prod" {
     env = "prod"
   }
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
+  variable_sets = ["aws-environment-credentials","slack-webhooks"]
   project_id                      = tfe_project.services.id
-}
-
-module "orgs-api-stage" {
-  source = "./modules/workspace"
-
-  name       = "orgs-api-stage"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/orgs-api/infra"
-  vars = {
-    env = "stage"
-  }
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.services.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
-module "orgs-api-prod" {
-  source = "./modules/workspace"
-
-  name       = "orgs-api-prod"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/orgs-api/infra"
-  vars = {
-    env = "prod"
-  }
-  variable_sets                   = ["aws-environment-credentials"]
-  project_id                      = tfe_project.services.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
 module "workers-canary-stage" {

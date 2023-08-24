@@ -74,31 +74,6 @@ module "aws-sso" {
   allowed_remote_state_workspaces = ["global"]
 }
 
-module "chart-common" {
-  source = "./modules/workspace"
-
-  name                            = "chart-common"
-  repo                            = "powertoolsdev/chart-common"
-  auto_apply                      = true
-  dir                             = "infra"
-  project_id                      = tfe_project.infra.id
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials"]
-  allowed_remote_state_workspaces = ["global"]
-}
-
-module "ci-images" {
-  source = "./modules/workspace"
-
-  name          = "ci-images"
-  repo          = "powertoolsdev/ci-images"
-  auto_apply    = false
-  dir           = "infra"
-  variable_sets = ["aws-environment-credentials"]
-  project_id    = tfe_project.infra.id
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
 
 module "infra-datadog-orgs-prod" {
   source = "./modules/workspace"
@@ -253,7 +228,9 @@ module "infra-github" {
   dir                             = "infra/github"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials", "github-admin-powertoolsdev"]
+  variable_sets                   = ["aws-environment-credentials",
+                                     "github-admin-powertoolsdev",
+                                     "github-admin-nuonco"]
   project_id                      = tfe_project.infra.id
 }
 

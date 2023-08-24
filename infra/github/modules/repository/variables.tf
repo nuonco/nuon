@@ -70,7 +70,7 @@ variable "topics" {
 }
 
 variable "is_public" {
-  default = false
-  type = bool
+  default     = false
+  type        = bool
   description = "whether the repo should be public or not"
 }

@@ -32,6 +32,6 @@ module "code-focusaurus" {
   enable_prod_environment  = false
   enable_stage_environment = false
 
-  required_checks          = []
-  topics = ["personal-workspace"]
+  required_checks = []
+  topics          = ["personal-workspace"]
 }

@@ -515,7 +515,7 @@ module "public-docs" {
   name        = "public-docs"
   description = "public documentation"
   topics      = ["archived"]
-  archived = true
+  archived    = true
 
   enable_branch_protection = false
 }
