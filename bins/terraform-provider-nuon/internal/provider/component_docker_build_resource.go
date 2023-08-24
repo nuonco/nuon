@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -107,7 +108,14 @@ func (r *DockerBuildComponentResource) Create(ctx context.Context, req resource.
 	data.ID = types.StringValue(compResp.ID)
 
 	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
-		BasicDeployConfig: &models.ServiceBasicDeployConfigRequest{
+		BuildArgs:  []string{},
+		Dockerfile: data.Dockerfile.ValueString(),
+		SyncOnly:   data.SyncOnly.ValueBool(),
+		Target:     "",
+		EnvVars:    map[string]string{},
+	}
+	if data.BasicDeploy != nil {
+		configRequest.BasicDeployConfig = &models.ServiceBasicDeployConfigRequest{
 			Args:            []string{},
 			CPULimit:        "",
 			CPURequest:      "",
@@ -117,31 +125,27 @@ func (r *DockerBuildComponentResource) Create(ctx context.Context, req resource.
 			ListenPort:      data.BasicDeploy.Port.ValueInt64(),
 			MemLimit:        "",
 			MemRequest:      "",
-		},
-		BuildArgs:                []string{},
-		ConnectedGithubVcsConfig: &models.ServiceConnectedGithubVCSConfigRequest{},
-		Dockerfile:               data.Dockerfile.ValueString(),
-		PublicGitVcsConfig:       &models.ServicePublicGitVCSConfigRequest{},
-		SyncOnly:                 data.SyncOnly.ValueBool(),
-		Target:                   "",
-		EnvVars:                  map[string]string{},
+		}
+	}
+	if data.PublicRepo != nil {
+		public := data.PublicRepo
+		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
+			Branch:    public.Branch.ValueStringPointer(),
+			Directory: public.Directory.ValueStringPointer(),
+			Repo:      public.Repo.ValueStringPointer(),
+		}
+	} else {
+		connected := data.ConnectedRepo
+		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
+			Branch:    connected.Branch.ValueString(),
+			Directory: connected.Directory.ValueStringPointer(),
+			Repo:      connected.Repo.ValueStringPointer(),
+		}
 	}
 	for _, envVar := range data.EnvVar {
 		configRequest.EnvVars[envVar.Name.String()] = envVar.Value.String()
-		configRequest.BasicDeployConfig.EnvVars[envVar.Name.String()] = envVar.Value.String()
-	}
-	if data.PublicRepo != nil {
-		branch := ""
-		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
-			Branch:    &branch,
-			Directory: data.PublicRepo.Directory.ValueStringPointer(),
-			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
-		}
-	} else {
-		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
-			Branch:    data.ConnectedRepo.Branch.ValueString(),
-			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
-			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
+		if configRequest.BasicDeployConfig != nil {
+			configRequest.BasicDeployConfig.EnvVars[envVar.Name.String()] = envVar.Value.String()
 		}
 	}
 	_, err = r.restClient.CreateDockerBuildComponentConfig(ctx, data.ID.ValueString(), configRequest)
@@ -168,33 +172,48 @@ func (r *DockerBuildComponentResource) Read(ctx context.Context, req resource.Re
 		return
 	}
 	data.Name = types.StringValue(compResp.Name)
+	data.AppID = types.StringValue(compResp.AppID)
 
 	configResp, err := r.restClient.GetComponentLatestConfig(ctx, data.ID.ValueString())
 	if err != nil {
 		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "get component config")
 		return
 	}
-
-	data.BasicDeploy.HealthCheckPath = types.StringValue(configResp.DockerBuild.BasicDeployConfig.HealthCheckPath)
-	data.BasicDeploy.InstanceCount = types.Int64Value(configResp.DockerBuild.BasicDeployConfig.InstanceCount)
-	data.BasicDeploy.Port = types.Int64Value(configResp.DockerBuild.BasicDeployConfig.ListenPort)
-	data.Dockerfile = types.StringValue(configResp.DockerBuild.Dockerfile)
-	data.SyncOnly = types.BoolValue(configResp.DockerBuild.SyncOnly)
-
+	if configResp.DockerBuild == nil {
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, errors.New("did not get docker build config"), "get component config")
+		return
+	}
+	dockerBuild := configResp.DockerBuild
+	data.Dockerfile = types.StringValue(dockerBuild.Dockerfile)
+	data.SyncOnly = types.BoolValue(dockerBuild.SyncOnly)
+	if dockerBuild.BasicDeployConfig != nil {
+		basicDeployConfig := dockerBuild.BasicDeployConfig
+		data.BasicDeploy = &BasicDeploy{
+			HealthCheckPath: types.StringValue(basicDeployConfig.HealthCheckPath),
+			InstanceCount:   types.Int64Value(basicDeployConfig.InstanceCount),
+			Port:            types.Int64Value(basicDeployConfig.ListenPort),
+		}
+	}
+	if dockerBuild.ConnectedGithubVcsConfig != nil {
+		connected := dockerBuild.ConnectedGithubVcsConfig
+		data.ConnectedRepo = &ConnectedRepo{
+			Branch:    types.StringValue(connected.Branch),
+			Directory: types.StringValue(connected.Directory),
+			Repo:      types.StringValue(connected.Repo),
+		}
+	} else {
+		public := dockerBuild.PublicGitVcsConfig
+		data.PublicRepo = &PublicRepo{
+			Branch:    types.StringValue(public.Branch),
+			Directory: types.StringValue(public.Directory),
+			Repo:      types.StringValue(public.Repo),
+		}
+	}
 	for key, val := range configResp.DockerBuild.EnvVars {
 		data.EnvVar = append(data.EnvVar, EnvVar{
 			Name:  types.StringValue(key),
 			Value: types.StringValue(val),
 		})
-	}
-
-	if configResp.DockerBuild.ConnectedGithubVcsConfig != nil {
-		data.ConnectedRepo.Branch = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Branch)
-		data.ConnectedRepo.Directory = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Directory)
-		data.ConnectedRepo.Repo = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Repo)
-	} else {
-		data.PublicRepo.Directory = types.StringValue(configResp.DockerBuild.PublicGitVcsConfig.Directory)
-		data.PublicRepo.Repo = types.StringValue(configResp.DockerBuild.PublicGitVcsConfig.Repo)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -243,7 +262,14 @@ func (r *DockerBuildComponentResource) Update(ctx context.Context, req resource.
 	data.Name = types.StringValue(compResp.Name)
 
 	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
-		BasicDeployConfig: &models.ServiceBasicDeployConfigRequest{
+		BuildArgs:  []string{},
+		Dockerfile: data.Dockerfile.ValueString(),
+		SyncOnly:   data.SyncOnly.ValueBool(),
+		Target:     "",
+		EnvVars:    map[string]string{},
+	}
+	if data.BasicDeploy != nil {
+		configRequest.BasicDeployConfig = &models.ServiceBasicDeployConfigRequest{
 			Args:            []string{},
 			CPULimit:        "",
 			CPURequest:      "",
@@ -253,30 +279,27 @@ func (r *DockerBuildComponentResource) Update(ctx context.Context, req resource.
 			ListenPort:      data.BasicDeploy.Port.ValueInt64(),
 			MemLimit:        "",
 			MemRequest:      "",
-		},
-		BuildArgs:                []string{},
-		ConnectedGithubVcsConfig: &models.ServiceConnectedGithubVCSConfigRequest{},
-		Dockerfile:               data.Dockerfile.ValueString(),
-		PublicGitVcsConfig:       &models.ServicePublicGitVCSConfigRequest{},
-		SyncOnly:                 data.SyncOnly.ValueBool(),
-		Target:                   "",
-		EnvVars:                  map[string]string{},
+		}
+	}
+	if data.PublicRepo != nil {
+		public := data.PublicRepo
+		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
+			Branch:    public.Branch.ValueStringPointer(),
+			Directory: public.Directory.ValueStringPointer(),
+			Repo:      public.Repo.ValueStringPointer(),
+		}
+	} else {
+		connected := data.ConnectedRepo
+		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
+			Branch:    connected.Branch.ValueString(),
+			Directory: connected.Directory.ValueStringPointer(),
+			Repo:      connected.Repo.ValueStringPointer(),
+		}
 	}
 	for _, envVar := range data.EnvVar {
 		configRequest.EnvVars[envVar.Name.String()] = envVar.Value.String()
-		configRequest.BasicDeployConfig.EnvVars[envVar.Name.String()] = envVar.Value.String()
-	}
-	if data.PublicRepo != nil {
-		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
-			Branch:    data.PublicRepo.Branch.ValueStringPointer(),
-			Directory: data.PublicRepo.Directory.ValueStringPointer(),
-			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
-		}
-	} else {
-		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
-			Branch:    data.ConnectedRepo.Branch.ValueString(),
-			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
-			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
+		if configRequest.BasicDeployConfig != nil {
+			configRequest.BasicDeployConfig.EnvVars[envVar.Name.String()] = envVar.Value.String()
 		}
 	}
 	_, err = r.restClient.CreateDockerBuildComponentConfig(ctx, data.ID.ValueString(), configRequest)
