@@ -30,14 +30,6 @@ jobs:
       image_tag: ${{ inputs.tag }}
     timeout-minutes: 10
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: powertoolsdev/mono/actions/app-token@main
-        with:
-          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
-          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
-          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
-
       - name: Checkout repo
         uses: actions/checkout@v3
 
@@ -55,7 +47,6 @@ jobs:
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          clone_token: ${{ steps.generate_token.outputs.token }}
           aws_role: ${{ env.TFO_GH_ROLE_ARN }}
           aws_region: ${{ env.TFO_REGION }}
           ecr_registries: ${{ env.TFO_ECR_REGISTRY_ID }}
