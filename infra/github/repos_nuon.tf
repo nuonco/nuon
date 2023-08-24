@@ -10,3 +10,16 @@ module "quickstart-nuon" {
     github = github.nuon
   }
 }
+
+module "nuonco" {
+  source          = "./modules/repository"
+  name            = "nuonco"
+  description     = "Run your app in your customer's cloud with nuon.co"
+  required_checks = []
+  is_public       = true
+  owning_team_id  = github_team.nuon.id
+
+  providers = {
+    github = github.nuon
+  }
+}

@@ -1,9 +1,10 @@
 resource "github_membership" "nuon" {
   provider = github.nuon
 
-  for_each = local.members
+  for_each = { for _, user in local.vars.members : user.username => lookup(user, "role", "member") }
+
   username = each.key
-  role     = lookup(each.value, "role", "member")
+  role     = each.value
 }
 
 resource "github_team_members" "nuon" {
@@ -11,10 +12,11 @@ resource "github_team_members" "nuon" {
   team_id  = github_team.nuon.id
 
   dynamic "members" {
-    for_each = { for user, m in local.members : user => m if contains(m.teams, github_team.nuon.name) }
+    for_each = { for _, user in local.vars.members : user.username => lookup(user, "role", "member") }
+
     content {
       username = members.key
-      role     = try(members.value.role, "") == "admin" ? "maintainer" : "member"
+      role     = members.value == "admin" ? "maintainer" : "member"
     }
   }
 }
