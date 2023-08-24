@@ -16,6 +16,7 @@ type middleware struct {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		m.l.Info("metrics middleware")
 		startTS := time.Now()
 		status := "ok"
 		c.Next()

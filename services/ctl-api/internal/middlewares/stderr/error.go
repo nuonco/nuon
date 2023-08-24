@@ -35,6 +35,7 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		m.l.Info("stderr middleware")
 		c.Next()
 
 		if len(c.Errors) < 1 {
