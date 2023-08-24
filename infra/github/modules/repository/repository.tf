@@ -1,9 +1,3 @@
-locals {
-  # NOTE(jdt): this is a hack so we don't look have to look up the same value
-  # for every repo...
-  github_team_team_id = 4455826
-}
-
 # The actual repo being created
 resource "github_repository" "main" {
   lifecycle {
@@ -46,6 +40,6 @@ resource "github_team_repository" "owner" {
   repository = github_repository.main.name
 
   # if a team isn't given then "team" will "own" the repo and have push permission
-  team_id    = lookup(var.owning_team, "id", local.github_team_team_id)
+  team_id    = var.owning_team_id
   permission = "push"
 }

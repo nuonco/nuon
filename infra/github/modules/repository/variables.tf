@@ -44,10 +44,10 @@ variable "name" {
   description = "The repository name"
 }
 
-variable "owning_team" {
+variable "owning_team_id" {
   description = "The owning team of the repo"
-  type        = map(any)
-  default     = {}
+  type        = number
+  default     = 4455826
 }
 
 

@@ -6,9 +6,9 @@ resource "github_membership" "nuon" {
   role     = lookup(each.value, "role", "member")
 }
 
-resource "github_team_members" "nuonco" {
+resource "github_team_members" "nuon" {
   provider = github.nuon
-  team_id = github_team.nuon.id
+  team_id  = github_team.nuon.id
 
   dynamic "members" {
     for_each = { for user, m in local.members : user => m if contains(m.teams, github_team.nuon.name) }
@@ -20,7 +20,7 @@ resource "github_team_members" "nuonco" {
 }
 
 resource "github_team" "nuon" {
-  provider = github.nuon
+  provider    = github.nuon
   name        = "team"
   description = "The full Nuon team"
   privacy     = "closed"
