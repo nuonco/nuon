@@ -22,16 +22,3 @@ module "code-jordanacosta" {
 
   topics = ["personal-workspace"]
 }
-
-module "code-focusaurus" {
-  source = "./modules/repository"
-
-  name                     = "code-focusaurus"
-  description              = "personal workspace for @focusaurus"
-  enable_ecr               = false
-  enable_prod_environment  = false
-  enable_stage_environment = false
-
-  required_checks = []
-  topics          = ["personal-workspace"]
-}

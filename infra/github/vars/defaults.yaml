@@ -1,0 +1,14 @@
+---
+members:
+  - username: jonmorehouse
+    role: admin
+  - username: jordan-acosta
+    role: admin
+  - username: nnnnat
+    role: admin
+
+  # all other team members
+  - username: ExecutiveDre
+  - username: nuonbot
+  - username: pavisandhu
+  - username: sbnoorwd

@@ -16,9 +16,9 @@ provider "github" {
   owner = "nuonco"
 
   app_auth {
-    id              = var.powertools_app_id
-    installation_id = var.powertools_app_installation_id
-    pem_file        = var.powertools_app_pem_file
+    id              = var.nuonco_app_id
+    pem_file        = var.nuonco_pem_file
+    installation_id = var.nuonco_install_id
   }
 }
 
