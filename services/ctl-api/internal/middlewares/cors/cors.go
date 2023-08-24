@@ -1,6 +1,9 @@
-package headers
+package cors
 
 import (
+	"time"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
@@ -13,19 +16,22 @@ type middleware struct {
 }
 
 func (m *middleware) Name() string {
-	return "headers"
+	return "cors"
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("X-Nuon-API-Version", m.cfg.GitRef)
-		c.Next()
-	}
+	return cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"PUT", "PATCH", "POST", "GET", "OPTIONS"},
+		AllowHeaders:     []string{"Authorization", "Content-Type", "X-Nuon-Org-ID", "Origin"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	})
 }
 
 func New(writer metrics.Writer, l *zap.Logger, cfg *internal.Config) *middleware {
 	return &middleware{
-		l:   l,
-		cfg: cfg,
+		l: l,
 	}
 }
