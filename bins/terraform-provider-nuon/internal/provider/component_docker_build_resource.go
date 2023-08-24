@@ -141,7 +141,6 @@ func (r *DockerBuildComponentResource) Create(ctx context.Context, req resource.
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    data.ConnectedRepo.Branch.ValueString(),
 			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
-			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
 			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
 		}
 	}
@@ -192,8 +191,6 @@ func (r *DockerBuildComponentResource) Read(ctx context.Context, req resource.Re
 	if configResp.DockerBuild.ConnectedGithubVcsConfig != nil {
 		data.ConnectedRepo.Branch = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Branch)
 		data.ConnectedRepo.Directory = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Directory)
-		// TODO
-		// data.ConnectedRepo.GitRef = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Branch)
 		data.ConnectedRepo.Repo = types.StringValue(configResp.DockerBuild.ConnectedGithubVcsConfig.Repo)
 	} else {
 		data.PublicRepo.Directory = types.StringValue(configResp.DockerBuild.PublicGitVcsConfig.Directory)
@@ -271,8 +268,7 @@ func (r *DockerBuildComponentResource) Update(ctx context.Context, req resource.
 	}
 	if data.PublicRepo != nil {
 		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
-			// TODO
-			// Branch:    data.PublicRepo.GitRef.ValueStringPointer(),
+			Branch:    data.PublicRepo.Branch.ValueStringPointer(),
 			Directory: data.PublicRepo.Directory.ValueStringPointer(),
 			Repo:      data.PublicRepo.Repo.ValueStringPointer(),
 		}
@@ -280,7 +276,6 @@ func (r *DockerBuildComponentResource) Update(ctx context.Context, req resource.
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    data.ConnectedRepo.Branch.ValueString(),
 			Directory: data.ConnectedRepo.Directory.ValueStringPointer(),
-			GitRef:    data.ConnectedRepo.GitRef.ValueString(),
 			Repo:      data.ConnectedRepo.Repo.ValueStringPointer(),
 		}
 	}
