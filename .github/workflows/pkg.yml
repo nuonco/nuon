@@ -52,15 +52,6 @@ jobs:
         working-directory: pkg
     runs-on: [ubuntu-latest-16-cores, linux]
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: powertoolsdev/mono/actions/app-token@main
-        with:
-          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
-          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
-          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
-          repositories: go-aws-assume-role,go-kube,protos
-
       - name: Checkout repo
         uses: actions/checkout@v3
 
@@ -85,21 +76,11 @@ jobs:
         working-directory: pkg
     runs-on: [ubuntu-latest-16-cores, linux]
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: powertoolsdev/mono/actions/app-token@main
-        with:
-          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
-          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
-          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
-
       - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Setup for CI
         uses: powertoolsdev/mono/actions/setup-ci@main
-        with:
-          clone_token: ${{ steps.generate_token.outputs.token }}
 
       - name: Test
         run: |
@@ -119,21 +100,11 @@ jobs:
         working-directory: pkg
     runs-on: [ubuntu-latest-16-cores, linux]
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: powertoolsdev/action-app-token@main
-        with:
-          app_id: ${{ secrets.CROSS_REPO_APP_ID }}
-          installation_id: ${{ secrets.CROSS_REPO_INSTALLATION_ID }}
-          private_key: ${{ secrets.CROSS_REPO_PRIV_KEY }}
-
       - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Setup for CI
         uses: powertoolsdev/action-setup-ci@main
-        with:
-          clone_token: ${{ steps.generate_token.outputs.token }}
 
       - name: cache
         run: |

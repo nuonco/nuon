@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -20,6 +21,11 @@ type middleware struct {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		if public.IsPublic(ctx) {
+			ctx.Next()
+			return
+		}
+
 		token, err := jwtmiddleware.AuthHeaderTokenExtractor(ctx.Request)
 		if err != nil {
 			ctx.Error(stderr.ErrUser{
