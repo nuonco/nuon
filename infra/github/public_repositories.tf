@@ -5,3 +5,15 @@ module "quickstart" {
   required_checks = []
   is_public = true
 }
+
+module "quickstart-nuon" {
+  source          = "./modules/repository"
+  name            = "quickstart"
+  description     = "A simple example project to easily get up and running with Nuon."
+  required_checks = []
+  is_public = true
+
+  providers = {
+    github = github.nuon
+  }
+}

@@ -12,7 +12,8 @@ locals {
 }
 
 provider "github" {
-  owner = "powertoolsdev"
+  alias = "nuon"
+  owner = "nuonco"
 
   app_auth {
     id              = var.powertools_app_id
@@ -21,10 +22,15 @@ provider "github" {
   }
 }
 
-# provider "github" {
-#   alias = "nuon"
-#   owner = "nuonco"
-# }
+provider "github" {
+  owner = "powertoolsdev"
+
+  app_auth {
+    id              = var.powertools_app_id
+    installation_id = var.powertools_app_installation_id
+    pem_file        = var.powertools_app_pem_file
+  }
+}
 
 provider "aws" {
   region = local.region
