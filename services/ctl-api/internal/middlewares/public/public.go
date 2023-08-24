@@ -15,6 +15,7 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/livez"}:   {},
 	{"GET", "/version"}: {},
 	{"GET", "/readyz"}:  {},
+	{"OPTIONS", "*"}:    {},
 }
 
 func IsPublic(ctx *gin.Context) bool {
@@ -36,9 +37,11 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		m.l.Info("public middleware")
 		method := ctx.Request.Method
 		// full path will return the _matched_ path, such as `/v1/sandboxes/:id`
 		path := ctx.FullPath()
+		m.l.Info(path)
 
 		key := [2]string{
 			method,
@@ -47,9 +50,22 @@ func (m middleware) Handler() gin.HandlerFunc {
 		_, found := publicEndpointList[key]
 		if found {
 			m.l.Info("marking request as public", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
+			ctx.Set(isPublicKey, true)
+			return
 		}
 
-		ctx.Set(isPublicKey, found)
+		wildcardKey := [2]string{
+			method,
+			"*",
+		}
+		_, found = publicEndpointList[wildcardKey]
+		if found {
+			m.l.Info("marking request as public due to wildcard", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
+			ctx.Set(isPublicKey, true)
+			return
+		}
+
+		ctx.Set(isPublicKey, false)
 	}
 }
 
