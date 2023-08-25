@@ -1,13 +1,3 @@
-variable "org_id" {
-  description = "org ID to create this app in. NOTE: the org must be connected to the powertoolsdev github."
-  type = string
-}
-
-variable "api_auth_token" {
-  description = "auth token. Recommend setting this using TF_VAR_api_auth_token"
-  type = string
-}
-
 variable "app_name" {
   description = "App name, which can be useful when creating more than one instance of e2e in a single org."
   default = "e2e"
