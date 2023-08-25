@@ -22,6 +22,25 @@ func (r *run) Apply(ctx context.Context) error {
 	return nil
 }
 
+func (r *run) outputCallback(filename string) (pipeline.CallbackFn, error) {
+	if r.OutputSettings.Ignore {
+		return callbackmappers.Noop, nil
+	}
+
+	applyCb, err := callbackmappers.NewS3Callback(r.v,
+		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
+		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
+			Bucket:       r.OutputSettings.Bucket,
+			BucketPrefix: r.OutputSettings.JobPrefix,
+			Filename:     filename,
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create apply cb: %w", err)
+	}
+
+	return applyCb, nil
+}
+
 func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 	// initialize steps to load the workspace
 	pipe, err := pipeline.New(r.v,
@@ -64,15 +83,9 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 
-	applyCb, err := callbackmappers.NewS3Callback(r.v,
-		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
-		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
-			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.JobPrefix,
-			Filename:     "apply.json",
-		}))
+	applyCb, err := r.outputCallback("apply.json")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create apply cb: %w", err)
+		return nil, fmt.Errorf("unable to create apply callback: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "apply",
@@ -80,15 +93,9 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: applyCb,
 	})
 
-	outputCb, err := callbackmappers.NewS3Callback(r.v,
-		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
-		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
-			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.JobPrefix,
-			Filename:     "output.json",
-		}))
+	outputCb, err := r.outputCallback("output.json")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create output cb: %w", err)
+		return nil, fmt.Errorf("unable to create output callback: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get output",
@@ -96,15 +103,9 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: outputCb,
 	})
 
-	structOutputCb, err := callbackmappers.NewS3Callback(r.v,
-		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
-		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
-			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.InstancePrefix,
-			Filename:     "output-struct-v1.pb",
-		}))
+	structOutputCb, err := r.outputCallback("output-struct-v1.pb")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create output cb: %w", err)
+		return nil, fmt.Errorf("unable to create struct output callback: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get struct output",
@@ -112,15 +113,9 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: structOutputCb,
 	})
 
-	stateCb, err := callbackmappers.NewS3Callback(r.v,
-		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
-		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
-			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.JobPrefix,
-			Filename:     "state.json",
-		}))
+	stateCb, err := r.outputCallback("state.json")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create output cb: %w", err)
+		return nil, fmt.Errorf("unable to create state callback: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get state",

@@ -63,15 +63,9 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 
-	destroyCb, err := callbackmappers.NewS3Callback(r.v,
-		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
-		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
-			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.JobPrefix,
-			Filename:     "apply.json",
-		}))
+	destroyCb, err := r.outputCallback("destroy.json")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create apply cb: %w", err)
+		return nil, fmt.Errorf("unable to create output callback: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "destroy",
@@ -79,15 +73,9 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: destroyCb,
 	})
 
-	outputCb, err := callbackmappers.NewS3Callback(r.v,
-		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
-		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
-			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.JobPrefix,
-			Filename:     "output.json",
-		}))
+	outputCb, err := r.outputCallback("output.json")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create output cb: %w", err)
+		return nil, fmt.Errorf("unable to create output callback: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get output",
@@ -95,15 +83,9 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: outputCb,
 	})
 
-	stateCb, err := callbackmappers.NewS3Callback(r.v,
-		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
-		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
-			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.JobPrefix,
-			Filename:     "state.json",
-		}))
+	stateCb, err := r.outputCallback("state.json")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create output cb: %w", err)
+		return nil, fmt.Errorf("unable to create state callback: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get state",

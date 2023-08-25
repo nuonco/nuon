@@ -13,7 +13,9 @@ var _ archive.Archive = (*dir)(nil)
 type dir struct {
 	v *validator.Validate
 
-	Path string `validate:"required"`
+	Path                    string `validate:"required"`
+	IgnoreTerraformLockFile bool
+	IgnoreDotTerraformDir   bool
 }
 
 type dirOption func(*dir) error
@@ -39,6 +41,22 @@ func New(v *validator.Validate, opts ...dirOption) (*dir, error) {
 func WithPath(path string) dirOption {
 	return func(d *dir) error {
 		d.Path = path
+		return nil
+	}
+}
+
+// WithIgnoreTerraformLockFile ignores the .terraform.lock.hcl
+func WithIgnoreTerraformLockFile() dirOption {
+	return func(d *dir) error {
+		d.IgnoreTerraformLockFile = true
+		return nil
+	}
+}
+
+// WithIgnoreDotTerraformDir ignores the .terraform directory
+func WithIgnoreDotTerraformDir() dirOption {
+	return func(d *dir) error {
+		d.IgnoreDotTerraformDir = true
 		return nil
 	}
 }
