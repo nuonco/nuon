@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 var _ datasource.DataSource = &ConnectedRepoDataSource{}
@@ -82,17 +83,19 @@ func (d *ConnectedRepoDataSource) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	for _, repo := range repos {
-		if repo.Name == data.Name.ValueStringPointer() {
-			data.DefaultBranch = types.StringValue(*repo.DefaultBranch)
-			data.FullName = types.StringValue(*repo.FullName)
-			data.Repo = types.StringValue(*repo.Name)
-			data.Owner = types.StringValue(*repo.UserName)
-			data.URL = types.StringValue(*repo.CloneURL)
-
-			// Save data into Terraform state
-			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-			return
+		if generics.FromPtrStr(repo.FullName) != data.Name.ValueString() {
+			continue
 		}
+
+		data.DefaultBranch = types.StringValue(*repo.DefaultBranch)
+		data.FullName = types.StringValue(*repo.FullName)
+		data.Repo = types.StringValue(*repo.Name)
+		data.Owner = types.StringValue(*repo.UserName)
+		data.URL = types.StringValue(*repo.CloneURL)
+
+		// Save data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		return
 	}
 
 	writeDiagnosticsErr(ctx, &resp.Diagnostics, errors.New("repo not found"), "get connected repo")
