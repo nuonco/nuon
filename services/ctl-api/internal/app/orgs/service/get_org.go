@@ -39,7 +39,10 @@ func (s *service) GetOrg(ctx *gin.Context) {
 
 func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
 	org := app.Org{}
-	res := s.db.WithContext(ctx).Preload("UserOrgs").First(&org, "id = ?", orgID)
+	res := s.db.WithContext(ctx).
+		Preload("UserOrgs").
+		Preload("VCSConnections").
+		First(&org, "id = ?", orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org %s: %w", orgID, res.Error)
 	}
