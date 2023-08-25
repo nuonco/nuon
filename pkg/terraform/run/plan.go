@@ -62,15 +62,10 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		ExecFn:     execmappers.MapInitLog(r.Workspace.Init),
 		CallbackFn: callbackmappers.Noop,
 	})
-	planCb, err := callbackmappers.NewS3Callback(r.v,
-		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
-		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
-			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.JobPrefix,
-			Filename:     "plan.json",
-		}))
+
+	planCb, err := r.outputCallback("plan.json")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create plan cb: %w", err)
+		return nil, fmt.Errorf("unable to create plan callback: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "plan",
@@ -78,15 +73,9 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: planCb,
 	})
 
-	outputCb, err := callbackmappers.NewS3Callback(r.v,
-		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
-		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
-			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.JobPrefix,
-			Filename:     "output.json",
-		}))
+	outputCb, err := r.outputCallback("output.json")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create output cb: %w", err)
+		return nil, fmt.Errorf("unable to create output callback: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get output",
@@ -94,15 +83,9 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: outputCb,
 	})
 
-	stateCb, err := callbackmappers.NewS3Callback(r.v,
-		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
-		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
-			Bucket:       r.OutputSettings.Bucket,
-			BucketPrefix: r.OutputSettings.JobPrefix,
-			Filename:     "state.json",
-		}))
+	stateCb, err := r.outputCallback("state.json")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create output cb: %w", err)
+		return nil, fmt.Errorf("unable to create state callback: %w", err)
 	}
 	pipe.AddStep(&pipeline.Step{
 		Name:       "get state",

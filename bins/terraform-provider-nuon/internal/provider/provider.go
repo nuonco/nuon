@@ -20,6 +20,7 @@ const (
 	apiTokenEnvVarName string = "NUON_API_TOKEN"
 	apiURLEnvVarName   string = "NUON_API_URL"
 	orgIDEnvVarName    string = "NUON_ORG_ID"
+	defaultAPIURL      string = "https://ctl.prod.nuon.co"
 )
 
 // Ensure ScaffoldingProvider satisfies various provider interfaces.
@@ -78,7 +79,6 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	// set overrides using env vars
-
 	orgIDEnvVar := os.Getenv(orgIDEnvVarName)
 	if orgIDEnvVar != "" {
 		data.OrgID = types.StringValue(orgIDEnvVar)
@@ -103,16 +103,26 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
+	apiURLEnvVar := os.Getenv(apiURLEnvVarName)
+	if apiURLEnvVar == "" {
+		apiURLEnvVar = defaultAPIURL
+	}
+	data.APIURL = types.StringValue(apiURLEnvVar)
+	if data.APIURL.ValueString() == "" {
+		resp.Diagnostics.AddError(
+			"api url must be set",
+			"Please set `api_url` on the provider, or the `NUON_API_URL` env var.",
+		)
+		return
+	}
+
 	restClient, err := client.New(validator.New(),
 		client.WithAuthToken(data.APIAuthToken.ValueString()),
-		client.WithURL("http://localhost:8081"),
+		client.WithURL(data.APIURL.ValueString()),
 		client.WithOrgID(data.OrgID.ValueString()),
 	)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"unable to initialize rest api client",
-			"Please report this issue to the provider developers.",
-		)
+		writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "initialize client")
 		return
 	}
 
