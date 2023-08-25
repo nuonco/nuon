@@ -2635,9 +2635,6 @@
                 "id": {
                     "type": "string"
                 },
-                "isNew": {
-                    "type": "boolean"
-                },
                 "org": {
                     "$ref": "#/definitions/app.Org"
                 },
