@@ -17,7 +17,7 @@ ADMIN_USER="$(echo $OUTPUT | jq -r .db.value.admin.username )"
 ADMIN_PW="$(echo $OUTPUT | jq -r .db.value.admin.password )"
 ADMIN_DB="$(echo $OUTPUT | jq -r .db.value.admin.name)"
 
-echo "executing setup..."
+echo "executing setup iam..."
 cat <<EOF | PGPASSWORD="$ADMIN_PW" psql \
     -h "$DB_ADDR" \
     -p "$DB_PORT" \
@@ -28,12 +28,29 @@ cat <<EOF | PGPASSWORD="$ADMIN_PW" psql \
 
 DO \$\$
 BEGIN
+CREATE EXTENSION IF NOT EXISTS hstore;
 CREATE USER ctl_api WITH LOGIN;
 EXCEPTION WHEN duplicate_object THEN RAISE NOTICE '%, skipping', SQLERRM USING ERRCODE = SQLSTATE;
 END
 \$\$;
 
 GRANT rds_iam TO ctl_api;
+GRANT CREATE TO ctl_api;
 CREATE DATABASE ctl_api;
+EOF
+
+echo "executing enable hstore..."
+cat <<EOF | PGPASSWORD="$ADMIN_PW" psql \
+    -h "$DB_ADDR" \
+    -p "$DB_PORT" \
+    -U "$ADMIN_USER" \
+    -d "ctl_api" \
+    --no-psqlrc \
+    -f -
+
+DO \$\$
+BEGIN
 CREATE EXTENSION IF NOT EXISTS hstore;
+END
+\$\$;
 EOF
