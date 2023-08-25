@@ -6,6 +6,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -23,6 +24,7 @@ func (w *Workflows) execDeprovisionWorkflow(
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:                workflows.DefaultTaskQueue,
 		WorkflowID:               fmt.Sprintf("%s-deprovision", req.OrgId),
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
@@ -51,6 +53,7 @@ func (w *Workflows) execProvisionWorkflow(
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:                workflows.DefaultTaskQueue,
 		WorkflowID:               fmt.Sprintf("%s-provision", req.OrgId),
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
