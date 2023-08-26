@@ -20,6 +20,8 @@ type ComponentBuild struct {
 	VCSConnectionCommitID *string              `json:"-"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit"`
 
+	ComponentReleases []ComponentRelease `json:"releases"`
+
 	Status            string  `json:"status" gorm:"notnull"`
 	StatusDescription string  `json:"status_description" gorm:"notnull"`
 	GitRef            *string `json:"git_ref" gorm:"notnull"`
