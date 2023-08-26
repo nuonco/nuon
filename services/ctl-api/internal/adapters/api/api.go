@@ -23,7 +23,12 @@ type API struct {
 	cfg         *internal.Config
 }
 
-func NewAPI(services []Service, middlewares []Middleware, lc fx.Lifecycle, l *zap.Logger, cfg *internal.Config) (*API, error) {
+func NewAPI(services []Service,
+	middlewares []Middleware,
+	lc fx.Lifecycle,
+	l *zap.Logger,
+	cfg *internal.Config,
+	shutdowner fx.Shutdowner) (*API, error) {
 	api := &API{
 		public:       gin.Default(),
 		publicAddr:   fmt.Sprintf(":%v", cfg.HTTPPort),
@@ -46,10 +51,20 @@ func NewAPI(services []Service, middlewares []Middleware, lc fx.Lifecycle, l *za
 	lc.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
 			l.Info("starting public api", zap.String("addr", api.publicAddr))
-			go api.public.Run(api.publicAddr)
+			go func() {
+				if err := api.public.Run(api.publicAddr); err != nil {
+					l.Error("unable to run public api", zap.Error(err))
+					shutdowner.Shutdown(fx.ExitCode(127))
+				}
+			}()
 
 			l.Info("starting internal api", zap.String("addr", api.internalAddr))
-			go api.internal.Run(api.internalAddr)
+			go func() {
+				if err := api.internal.Run(api.internalAddr); err != nil {
+					l.Error("unable to run internal api", zap.Error(err))
+					shutdowner.Shutdown(fx.ExitCode(127))
+				}
+			}()
 
 			return nil
 		},

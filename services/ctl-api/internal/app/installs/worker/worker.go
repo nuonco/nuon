@@ -40,17 +40,15 @@ func New(cfg *internal.Config,
 	wkr.RegisterActivity(acts)
 	wkr.RegisterWorkflow(wkflows.InstallEventLoop)
 
-	ch := make(chan interface{})
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			l.Info("starting installs worker")
 			go func() {
-				wkr.Run(ch)
+				wkr.Run(worker.InterruptCh())
 			}()
 			return nil
 		},
 		OnStop: func(_ context.Context) error {
-			close(ch)
 			return nil
 		},
 	})

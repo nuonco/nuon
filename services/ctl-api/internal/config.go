@@ -15,23 +15,15 @@ func init() {
 	config.RegisterDefault("http_address", "0.0.0.0")
 
 	// defaults for database
-	config.RegisterDefault("db_user", "api")
-	config.RegisterDefault("db_port", "5432")
-	config.RegisterDefault("db_name", "api")
-	config.RegisterDefault("db_ssl_mode", "disable")
-	config.RegisterDefault("db_host", "localhost")
-	config.RegisterDefault("db_use_zap", false)
-	config.RegisterDefault("db_use_iam", false)
 	config.RegisterDefault("db_region", "us-west-2")
-	config.RegisterDefault("db_migrations_path", "./migrations")
+	config.RegisterDefault("db_port", 5432)
+	config.RegisterDefault("db_user", "ctl_api")
+	config.RegisterDefault("db_name", "ctl_api")
 
 	// defaults for app
 	config.RegisterDefault("temporal_namespace", "default")
 	config.RegisterDefault("github_app_key_secret_name", "graphql-api-github-app-key")
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
-
-	// local dev dry-run for background jobs
-	config.RegisterDefault("dev_dry_run_sleep", 0)
 }
 
 type Config struct {
@@ -44,16 +36,15 @@ type Config struct {
 	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
 
 	// database connection parameters
-	DBName           string `config:"db_name"`
-	DBHost           string `config:"db_host"`
-	DBPort           string `config:"db_port"`
-	DBSSLMode        string `config:"db_ssl_mode"`
-	DBPassword       string `config:"db_password"`
-	DBUser           string `config:"db_user"`
-	DBZapLog         bool   `config:"db_use_zap"`
-	DBUseIAM         bool   `config:"db_use_iam"`
-	DBRegion         string `config:"db_region"`
-	DBMigrationsPath string `config:"db_migrations_path"`
+	DBName     string `config:"db_name"`
+	DBHost     string `config:"db_host"`
+	DBPort     string `config:"db_port"`
+	DBSSLMode  string `config:"db_ssl_mode"`
+	DBPassword string `config:"db_password"`
+	DBUser     string `config:"db_user"`
+	DBZapLog   bool   `config:"db_use_zap"`
+	DBUseIAM   bool   `config:"db_use_iam"`
+	DBRegion   string `config:"db_region"`
 
 	// temporal configuration
 	TemporalHost      string `config:"temporal_host"`
