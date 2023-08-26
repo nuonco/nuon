@@ -12,8 +12,6 @@ func Execute() {
 	c := &cli{}
 	c.registerAPI()
 	c.registerWorker()
-	c.registerMigrate()
-	c.registerAutoMigrate()
 	c.registerStartup()
 
 	if err := rootCmd.Execute(); err != nil {
