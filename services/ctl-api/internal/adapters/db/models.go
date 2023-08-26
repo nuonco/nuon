@@ -42,6 +42,8 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 
 		// component management
 		&app.ComponentBuild{},
+		&app.ComponentRelease{},
+		&app.ComponentReleaseStep{},
 
 		// install management
 		&app.InstallDeploy{},

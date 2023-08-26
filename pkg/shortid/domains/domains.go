@@ -74,6 +74,10 @@ func NewUserTokenID() string {
 	return shortid.NewNanoID("tok")
 }
 
+func NewReleaseID() string {
+	return shortid.NewNanoID("rel")
+}
+
 func NewUserID() string {
 	return shortid.NewNanoID("usr")
 }

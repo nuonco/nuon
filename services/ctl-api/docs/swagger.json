@@ -324,6 +324,41 @@
                 }
             }
         },
+        "/v1/apps/{app_id}/releases": {
+            "get": {
+                "description": "get all release for an app",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "releases"
+                ],
+                "summary": "get all releases for an app",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "app ID",
+                        "name": "app_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.ComponentRelease"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/apps/{app_id}/sandbox": {
             "put": {
                 "description": "update an app sandbox release",
@@ -905,6 +940,80 @@
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/app.TerraformModuleComponentConfig"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/components/{component_id}/releases": {
+            "get": {
+                "description": "get all releases for a component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "releases"
+                ],
+                "summary": "get all releases for a component",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.ComponentRelease"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "create a release for a component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "releases"
+                ],
+                "summary": "create a release",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "component ID",
+                        "name": "component_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateComponentReleaseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.ComponentRelease"
                         }
                     }
                 }
@@ -1638,6 +1747,99 @@
                 }
             }
         },
+        "/v1/releases": {
+            "get": {
+                "description": "get all installs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "releases/internal"
+                ],
+                "summary": "get all releases for all orgs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.ComponentRelease"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/releases/{release_id}": {
+            "get": {
+                "description": "get a release",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "releases"
+                ],
+                "summary": "get a release",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "release ID",
+                        "name": "release_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.ComponentRelease"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/releases/{release_id}/steps": {
+            "get": {
+                "description": "get a release",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "releases"
+                ],
+                "summary": "get a release",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "release ID",
+                        "name": "release_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.ComponentReleaseStep"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/sandboxes": {
             "get": {
                 "description": "get all sandboxes",
@@ -2110,6 +2312,12 @@
                 "id": {
                     "type": "string"
                 },
+                "releases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.ComponentRelease"
+                    }
+                },
                 "status": {
                     "type": "string"
                 },
@@ -2155,6 +2363,102 @@
                     "type": "string"
                 }
             }
+        },
+        "app.ComponentRelease": {
+            "type": "object",
+            "properties": {
+                "build_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "release_steps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.ComponentReleaseStep"
+                    }
+                },
+                "release_strategy": {
+                    "$ref": "#/definitions/app.ComponentReleaseStrategy"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "status_description": {
+                    "type": "string"
+                },
+                "total_release_steps": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.ComponentReleaseStep": {
+            "type": "object",
+            "properties": {
+                "componentRelease": {
+                    "$ref": "#/definitions/app.ComponentRelease"
+                },
+                "component_release_id": {
+                    "description": "parent release ID",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by_id": {
+                    "type": "string"
+                },
+                "delay": {
+                    "description": "fields to control the delay of the individual step, as this is set based on the parent strategy",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "install_deploys": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.InstallDeploy"
+                    }
+                },
+                "requested_install_ids": {
+                    "description": "When a step is created, a set of installs are targeted. However, by the time the release step goes out, the\ninstall might have been setup in any order of ways.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "status_description": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.ComponentReleaseStrategy": {
+            "type": "string",
+            "enum": [
+                "parallel",
+                "sync_with_delay"
+            ],
+            "x-enum-varnames": [
+                "ComponentReleaseStrategyParallel",
+                "ComponentReleaseStrategySyncWithDelay"
+            ]
         },
         "app.ConnectedGithubVCSConfig": {
             "type": "object",
@@ -2433,6 +2737,9 @@
                     "type": "string"
                 },
                 "install_component_id": {
+                    "type": "string"
+                },
+                "release_id": {
                     "type": "string"
                 },
                 "status": {
@@ -2784,6 +3091,30 @@
                 },
                 "use_latest": {
                     "type": "boolean"
+                }
+            }
+        },
+        "service.CreateComponentReleaseRequest": {
+            "type": "object",
+            "properties": {
+                "build_id": {
+                    "type": "string"
+                },
+                "strategy": {
+                    "type": "object",
+                    "properties": {
+                        "delay": {
+                            "description": "required when strategy is delayed",
+                            "type": "string"
+                        },
+                        "installs_per_step": {
+                            "description": "required when strategy is anything but parallel",
+                            "type": "integer"
+                        },
+                        "release_strategy": {
+                            "$ref": "#/definitions/app.ComponentReleaseStrategy"
+                        }
+                    }
                 }
             }
         },
