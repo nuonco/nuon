@@ -4,15 +4,18 @@ version: "3.9"
 services:
   # postgres for the api
   postgres:
-    image: postgres:13.4-alpine
+    build:
+      context: ./images/postgres
+      dockerfile: Dockerfile
     ports:
       - 5432:5432
     environment:
-      POSTGRES_DB: api
-      POSTGRES_USER: ${POSTGRES_USER:-api}
+      POSTGRES_DB: ctl_api
+      POSTGRES_USER: ctl_api
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       PGDATA: /data/postgres
       POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_EXTENSIONS: hstore
     volumes:
       - postgres:/data/postgres
     networks:
@@ -21,8 +24,8 @@ services:
   # temporal for all workers + api
   temporal:
     build:
-      context: .
-      dockerfile: Dockerfile.temporalite
+      context: ./images/temporalite
+      dockerfile: Dockerfile
     ports:
       - 7233:7233
       - 8233:8233
