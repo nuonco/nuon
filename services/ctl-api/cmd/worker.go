@@ -9,6 +9,8 @@ import (
 	installsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	orgsworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker"
 	orgsactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
+	releasesworker "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker"
+	releasesactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 )
@@ -51,6 +53,13 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		fx.Provide(installsworker.NewWorkflows),
 		fx.Provide(installsworker.New),
 		fx.Invoke(func(*installsworker.Worker) {
+		}),
+
+		// releases worker
+		fx.Provide(releasesactivities.New),
+		fx.Provide(releasesworker.NewWorkflows),
+		fx.Provide(releasesworker.New),
+		fx.Invoke(func(*releasesworker.Worker) {
 		}),
 	}
 	providers = append(providers, c.providers()...)

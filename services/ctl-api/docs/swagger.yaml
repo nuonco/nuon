@@ -125,6 +125,10 @@ definitions:
         type: string
       id:
         type: string
+      releases:
+        items:
+          $ref: '#/definitions/app.ComponentRelease'
+        type: array
       status:
         type: string
       status_description:
@@ -155,6 +159,74 @@ definitions:
       updated_at:
         type: string
     type: object
+  app.ComponentRelease:
+    properties:
+      build_id:
+        type: string
+      created_at:
+        type: string
+      created_by_id:
+        type: string
+      id:
+        type: string
+      release_steps:
+        items:
+          $ref: '#/definitions/app.ComponentReleaseStep'
+        type: array
+      release_strategy:
+        $ref: '#/definitions/app.ComponentReleaseStrategy'
+      status:
+        type: string
+      status_description:
+        type: string
+      total_release_steps:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  app.ComponentReleaseStep:
+    properties:
+      component_release_id:
+        description: parent release ID
+        type: string
+      componentRelease:
+        $ref: '#/definitions/app.ComponentRelease'
+      created_at:
+        type: string
+      created_by_id:
+        type: string
+      delay:
+        description: fields to control the delay of the individual step, as this is
+          set based on the parent strategy
+        type: string
+      id:
+        type: string
+      install_deploys:
+        items:
+          $ref: '#/definitions/app.InstallDeploy'
+        type: array
+      requested_install_ids:
+        description: |-
+          When a step is created, a set of installs are targeted. However, by the time the release step goes out, the
+          install might have been setup in any order of ways.
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      status_description:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  app.ComponentReleaseStrategy:
+    enum:
+    - parallel
+    - sync_with_delay
+    type: string
+    x-enum-varnames:
+    - ComponentReleaseStrategyParallel
+    - ComponentReleaseStrategySyncWithDelay
   app.ConnectedGithubVCSConfig:
     properties:
       branch:
@@ -337,6 +409,8 @@ definitions:
       id:
         type: string
       install_component_id:
+        type: string
+      release_id:
         type: string
       status:
         type: string
@@ -568,6 +642,22 @@ definitions:
         type: string
       use_latest:
         type: boolean
+    type: object
+  service.CreateComponentReleaseRequest:
+    properties:
+      build_id:
+        type: string
+      strategy:
+        properties:
+          delay:
+            description: required when strategy is delayed
+            type: string
+          installs_per_step:
+            description: required when strategy is anything but parallel
+            type: integer
+          release_strategy:
+            $ref: '#/definitions/app.ComponentReleaseStrategy'
+        type: object
     type: object
   service.CreateComponentRequest:
     properties:
@@ -1028,6 +1118,29 @@ paths:
       summary: create an app install
       tags:
       - installs
+  /v1/apps/{app_id}/releases:
+    get:
+      consumes:
+      - application/json
+      description: get all release for an app
+      parameters:
+      - description: app ID
+        in: path
+        name: app_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/app.ComponentRelease'
+            type: array
+      summary: get all releases for an app
+      tags:
+      - releases
   /v1/apps/{app_id}/sandbox:
     put:
       consumes:
@@ -1415,6 +1528,55 @@ paths:
       summary: create a terraform component config
       tags:
       - components
+  /v1/components/{component_id}/releases:
+    get:
+      consumes:
+      - application/json
+      description: get all releases for a component
+      parameters:
+      - description: component ID
+        in: path
+        name: component_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/app.ComponentRelease'
+            type: array
+      summary: get all releases for a component
+      tags:
+      - releases
+    post:
+      consumes:
+      - application/json
+      description: create a release for a component
+      parameters:
+      - description: component ID
+        in: path
+        name: component_id
+        required: true
+        type: string
+      - description: Input
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateComponentReleaseRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/app.ComponentRelease'
+      summary: create a release
+      tags:
+      - releases
   /v1/general/current-user:
     get:
       consumes:
@@ -1895,6 +2057,67 @@ paths:
       summary: Add a user to the current org
       tags:
       - orgs
+  /v1/releases:
+    get:
+      consumes:
+      - application/json
+      description: get all installs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/app.ComponentRelease'
+            type: array
+      summary: get all releases for all orgs
+      tags:
+      - releases/internal
+  /v1/releases/{release_id}:
+    get:
+      consumes:
+      - application/json
+      description: get a release
+      parameters:
+      - description: release ID
+        in: path
+        name: release_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.ComponentRelease'
+      summary: get a release
+      tags:
+      - releases
+  /v1/releases/{release_id}/steps:
+    get:
+      consumes:
+      - application/json
+      description: get a release
+      parameters:
+      - description: release ID
+        in: path
+        name: release_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/app.ComponentReleaseStep'
+            type: array
+      summary: get a release
+      tags:
+      - releases
   /v1/sandboxes:
     get:
       consumes:
