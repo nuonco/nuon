@@ -12,6 +12,8 @@ import (
 	installsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/service"
 	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	orgsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/service"
+	releaseshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/hooks"
+	releasesservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/service"
 	sandboxesservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/sandboxes/service"
 	vcsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/service"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/health"
@@ -44,6 +46,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(installshooks.New),
 		fx.Provide(orgshooks.New),
 		fx.Provide(componentsshooks.New),
+		fx.Provide(releaseshooks.New),
 
 		// add middlewares
 		fx.Provide(api.AsMiddleware(stderr.New)),
@@ -65,6 +68,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(sandboxesservice.New)),
 		fx.Provide(api.AsService(installsservice.New)),
 		fx.Provide(api.AsService(componentsservice.New)),
+		fx.Provide(api.AsService(releasesservice.New)),
 
 		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`, `group:"middlewares"`))),
 		fx.Invoke(func(*api.API) {

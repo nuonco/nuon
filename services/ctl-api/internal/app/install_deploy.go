@@ -20,6 +20,9 @@ type InstallDeploy struct {
 	InstallComponentID string           `json:"install_component_id" gorm:"notnull"`
 	InstallComponent   InstallComponent `faker:"-" json:"-"`
 
+	ComponentReleaseStepID *string               `json:"release_id"`
+	ComponentReleaseStep   *ComponentReleaseStep `json:"-"`
+
 	Status            string `json:"status" gorm:"notnull"`
 	StatusDescription string `json:"status_description" gorm:"notnull"`
 }
