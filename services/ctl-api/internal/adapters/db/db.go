@@ -81,6 +81,7 @@ func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (*gorm.DB, 
 	if err != nil {
 		return nil, fmt.Errorf("unable to create database connection config: %w", err)
 	}
+	l.Info("conn config", zap.Any("cfg", connCfg.ConnString()))
 
 	beforeConnectFn := func(ctx context.Context, connCfg *pgx.ConnConfig) error {
 		if database.PasswordFn == nil {
