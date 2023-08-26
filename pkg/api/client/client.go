@@ -97,6 +97,14 @@ type Client interface {
 	GetComponentLatestBuild(ctx context.Context, componentID string) (*models.AppComponentBuild, error)
 	GetComponentBuild(ctx context.Context, componentID, buildID string) (*models.AppComponentBuild, error)
 	GetComponentBuildLogs(ctx context.Context, componentID, buildID string) ([]models.ServiceBuildLog, error)
+
+	// releases
+	GetAppReleases(ctx context.Context, componentID string) ([]*models.AppComponentRelease, error)
+	GetComponentReleases(ctx context.Context, componentID string) ([]*models.AppComponentRelease, error)
+	CreateComponentRelease(ctx context.Context, componentID string, req *models.ServiceCreateComponentReleaseRequest) (*models.AppComponentRelease, error)
+
+	GetRelease(ctx context.Context, releaseID string) (*models.AppComponentRelease, error)
+	GetReleaseSteps(ctx context.Context, releaseID string) ([]*models.AppComponentReleaseStep, error)
 }
 
 var _ Client = (*client)(nil)
