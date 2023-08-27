@@ -13,7 +13,10 @@ type GetRequest struct {
 
 func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.ComponentRelease, error) {
 	release := app.ComponentRelease{}
-	res := a.db.WithContext(ctx).First(&release, "id = ?", req.ReleaseID)
+	res := a.db.WithContext(ctx).
+		Preload("ComponentBuild").
+		Preload("ComponentReleaseSteps").
+		First(&release, "id = ?", req.ReleaseID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get release: %w", res.Error)
 	}

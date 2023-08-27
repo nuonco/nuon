@@ -1,9 +1,101 @@
 package worker
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
 	"go.temporal.io/sdk/workflow"
 )
 
+const (
+	defaultPollTimeout time.Duration = time.Second * 10
+)
+
+func (w *Workflows) pollBuild(ctx workflow.Context, releaseID, buildID string) error {
+	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
+		ReleaseID:         releaseID,
+		Status:            "polling",
+		StatusDescription: "polling build before starting release",
+	}); err != nil {
+		return fmt.Errorf("unable to update release status: %w", err)
+	}
+
+	for {
+		workflow.Sleep(ctx, defaultPollTimeout)
+
+		var build app.ComponentBuild
+		if err := w.defaultExecGetActivity(ctx, w.acts.GetBuild, activities.GetBuildRequest{
+			BuildID: buildID,
+		}, &build); err != nil {
+			return fmt.Errorf("unable to get build: %w", err)
+		}
+
+		if build.Status == "active" {
+			return nil
+		}
+
+		if build.Status == "failed" {
+			return fmt.Errorf("build failed: %s", build.StatusDescription)
+		}
+	}
+
+	return nil
+}
+
 func (w *Workflows) provision(ctx workflow.Context, releaseID string, dryRun bool) error {
+	var release app.ComponentRelease
+	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
+		ReleaseID: releaseID,
+	}, &release); err != nil {
+		return fmt.Errorf("unable to get release: %w", err)
+	}
+
+	if release.ComponentBuild.Status != "active" {
+		if err := w.pollBuild(ctx, releaseID, release.ComponentBuildID); err != nil {
+			if updateErr := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
+				ReleaseID:         releaseID,
+				Status:            "failed",
+				StatusDescription: "build failed",
+			}); updateErr != nil {
+				return fmt.Errorf("unable to update release status: %w", err)
+			}
+
+			return fmt.Errorf("release failed: %w", err)
+		}
+	}
+
+	// now trigger each step of the release
+	for _, step := range release.ComponentReleaseSteps {
+		stepWorkflowID := provisionStepWorkflowID(releaseID, step.ID)
+		req := ProvisionReleaseStepRequest{
+			ReleaseID:     releaseID,
+			ReleaseStepID: step.ID,
+		}
+		if _, err := w.execProvisionStepWorkflow(ctx,
+			stepWorkflowID,
+			req,
+		); err != nil {
+			if updateErr := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
+				ReleaseID:         releaseID,
+				Status:            "failed",
+				StatusDescription: "release step failed",
+			}); updateErr != nil {
+				return fmt.Errorf("unable to update release status: %w", err)
+			}
+
+			return fmt.Errorf("release failed: %w", err)
+		}
+	}
+
+	// update release status
+	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
+		ReleaseID:         releaseID,
+		Status:            "active",
+		StatusDescription: "release succeeded",
+	}); err != nil {
+		return fmt.Errorf("unable to update release status: %w", err)
+	}
 	return nil
 }
