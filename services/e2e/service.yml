@@ -32,9 +32,13 @@ local_env:
   # external image value
   EXTERNAL_IMAGE_VALUE: external-image-value
 
+local_startup_cmds:
+  - go build -o /tmp/svc-e2e-api ./api
+  - go build -o /tmp/svc-e2e-worker ./worker
+
 local_cmds:
-  - "go run ./api"
-  - "go run ./worker"
+  - /tmp/svc-e2e-api
+  - /tmp/svc-e2e-worker
 
 earthly_cmd: server
 port: 8080

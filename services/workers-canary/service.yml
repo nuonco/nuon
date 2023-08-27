@@ -2,5 +2,8 @@
 type: worker
 env:
   DISABLE_METRICS: true
-local_cmds: go run . all
+local_startup_cmds:
+  - go build -o /tmp/svc-workers-canary .
+local_cmds:
+  - /tmp/svc-workers-canary all
 earthly_cmd: all

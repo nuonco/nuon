@@ -2,8 +2,10 @@
 type: worker
 env:
   DISABLE_METRICS: true
+local_startup_cmds:
+  - go build -o /tmp/svc-workers-installs .
 local_cmds:
-  - go run . all
+  - /tmp/svc-workers-installs all
 local_env:
   WAYPOINT_CHART_DIR: ../../charts/waypoint
 env_secrets:
