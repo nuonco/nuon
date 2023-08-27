@@ -9,6 +9,11 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/temporal"
+	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
+	componentsshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
+	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
+	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
+	releaseshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/hooks"
 	"go.uber.org/fx"
 )
 
@@ -24,5 +29,12 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
 		fx.Provide(components.New),
+
+		// add app hooks
+		fx.Provide(appshooks.New),
+		fx.Provide(installshooks.New),
+		fx.Provide(orgshooks.New),
+		fx.Provide(componentsshooks.New),
+		fx.Provide(releaseshooks.New),
 	}
 }

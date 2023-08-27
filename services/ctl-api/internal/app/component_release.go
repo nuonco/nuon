@@ -37,7 +37,7 @@ type ComponentRelease struct {
 }
 
 func (a *ComponentRelease) BeforeCreate(tx *gorm.DB) error {
-	a.ID = domains.NewAppID()
+	a.ID = domains.NewReleaseID()
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
 }
