@@ -71,7 +71,12 @@ func (s *service) CreateComponentRelease(ctx *gin.Context) {
 
 func (s *service) createReleaseSteps(installs []app.Install, req *CreateComponentReleaseRequest) ([]*app.ComponentReleaseStep, error) {
 	installIDs := installsToIDSlice(installs)
-	stepInstalls := generics.SliceToGroups(installIDs, req.Strategy.InstallsPerStep)
+
+	installsPerStep := req.Strategy.InstallsPerStep
+	if req.Strategy.ReleaseStrategy == app.ComponentReleaseStrategyParallel {
+		installsPerStep = len(installs)
+	}
+	stepInstalls := generics.SliceToGroups(installIDs, installsPerStep)
 
 	steps := make([]*app.ComponentReleaseStep, 0)
 	for _, grp := range stepInstalls {
