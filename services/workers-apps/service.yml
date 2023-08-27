@@ -2,6 +2,8 @@
 type: worker
 env:
   DISABLE_METRICS: true
+local_startup_cmds:
+  - go build -o /tmp/svc-workers-apps .
 local_cmds:
-  - go run . all
+  - /tmp/svc-workers-apps all
 earthly_cmd: all
