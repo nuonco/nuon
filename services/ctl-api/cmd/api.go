@@ -3,16 +3,11 @@ package cmd
 import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/docs"
-	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
-	componentsshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	componentsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/service"
-	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	installsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/service"
-	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	orgsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/service"
-	releaseshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/hooks"
 	releasesservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/service"
 	sandboxesservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/sandboxes/service"
 	vcsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/service"
@@ -41,13 +36,6 @@ func (c *cli) registerAPI() error {
 
 func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
-		// add app hooks
-		fx.Provide(appshooks.New),
-		fx.Provide(installshooks.New),
-		fx.Provide(orgshooks.New),
-		fx.Provide(componentsshooks.New),
-		fx.Provide(releaseshooks.New),
-
 		// add middlewares
 		fx.Provide(api.AsMiddleware(stderr.New)),
 		fx.Provide(api.AsMiddleware(global.New)),

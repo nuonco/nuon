@@ -7,7 +7,7 @@ import (
 	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
 	"go.uber.org/fx"
@@ -39,6 +39,7 @@ func New(cfg *internal.Config,
 	})
 	wkr.RegisterActivity(acts)
 	wkr.RegisterWorkflow(wkflows.ReleaseEventLoop)
+	wkr.RegisterWorkflow(wkflows.ProvisionReleaseStep)
 
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
