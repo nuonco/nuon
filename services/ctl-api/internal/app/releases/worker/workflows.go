@@ -3,7 +3,7 @@ package worker
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
 	"go.uber.org/zap"
 )
 
