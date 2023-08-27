@@ -2,8 +2,10 @@
 type: worker
 env:
   DISABLE_METRICS: true
+local_startup_cmds:
+  - go build -o /tmp/svc-workers-orgs .
 local_cmds:
-  - go run . all
+  - /tmp/svc-workers-orgs all
 local_env:
   WAYPOINT_CHART_DIR: ../../charts/waypoint
 earthly_cmd: all
