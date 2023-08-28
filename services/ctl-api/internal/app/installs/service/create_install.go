@@ -87,7 +87,7 @@ func (s *service) createInstall(ctx context.Context, appID string, req *CreateIn
 		InstallComponents: installCmps,
 	}
 
-	res = s.db.Create(&install)
+	res = s.db.WithContext(ctx).Create(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)
 	}
