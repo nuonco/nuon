@@ -66,7 +66,7 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 	component := app.Component{
 		Name: req.Name,
 	}
-	err := s.db.Model(&parentApp).Association("Components").Append(&component)
+	err := s.db.WithContext(ctx).Model(&parentApp).Association("Components").Append(&component)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create component: %w", err)
 	}
@@ -82,7 +82,7 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 			InstallID:   install.ID,
 		})
 	}
-	res = s.db.Create(&installCmps)
+	res = s.db.WithContext(ctx).Create(&installCmps)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install components: %w", res.Error)
 	}

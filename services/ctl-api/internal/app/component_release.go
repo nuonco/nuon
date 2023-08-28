@@ -24,11 +24,14 @@ type ComponentRelease struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	ComponentBuildID string         `json:"build_id"`
 	ComponentBuild   ComponentBuild `json:"-"`
 
 	TotalComponentReleaseSteps int                    `json:"total_release_steps" gorm:"-"`
-	ComponentReleaseSteps      []ComponentReleaseStep `json:"release_steps,omitempty"`
+	ComponentReleaseSteps      []ComponentReleaseStep `json:"release_steps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
 	ReleaseStrategy ComponentReleaseStrategy `json:"release_strategy"`
 
@@ -39,5 +42,6 @@ type ComponentRelease struct {
 func (a *ComponentRelease) BeforeCreate(tx *gorm.DB) error {
 	a.ID = domains.NewReleaseID()
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	a.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }

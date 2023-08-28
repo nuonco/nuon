@@ -14,6 +14,9 @@ type ExternalImageComponentConfig struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	// value
 	ComponentConfigConnectionID string `json:"component_config_connection_id" gorm:"notnull"`
 
@@ -32,5 +35,6 @@ type ExternalImageComponentConfig struct {
 func (e *ExternalImageComponentConfig) BeforeCreate(tx *gorm.DB) error {
 	e.ID = domains.NewComponentID()
 	e.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	e.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }

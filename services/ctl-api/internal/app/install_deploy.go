@@ -14,6 +14,9 @@ type InstallDeploy struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	BuildID string         `json:"build_id" gorm:"notnull"`
 	Build   ComponentBuild `faker:"-" json:"build,omitempty"`
 
@@ -30,5 +33,6 @@ type InstallDeploy struct {
 func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewDeployID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }
