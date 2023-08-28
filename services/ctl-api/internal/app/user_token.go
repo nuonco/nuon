@@ -1,22 +1,11 @@
 package app
 
 import (
-	"context"
 	"time"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 )
-
-func createdByIDFromContext(ctx context.Context) string {
-	val := ctx.Value("user_id")
-	valStr, ok := val.(string)
-	if !ok {
-		return ""
-	}
-
-	return valStr
-}
 
 type UserToken struct {
 	ID          string         `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`

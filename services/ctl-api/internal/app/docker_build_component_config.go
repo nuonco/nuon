@@ -16,6 +16,9 @@ type DockerBuildComponentConfig struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	// value
 	ComponentConfigConnectionID string `json:"component_config_connection_id" gorm:"notnull"`
 
@@ -35,5 +38,6 @@ type DockerBuildComponentConfig struct {
 func (c *DockerBuildComponentConfig) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewComponentID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }
