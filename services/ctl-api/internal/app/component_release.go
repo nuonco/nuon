@@ -25,7 +25,7 @@ type ComponentRelease struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	ComponentBuildID string         `json:"build_id"`
 	ComponentBuild   ComponentBuild `json:"-"`
