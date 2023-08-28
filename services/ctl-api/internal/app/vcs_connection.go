@@ -14,7 +14,7 @@ type VCSConnection struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	OrgID string `json:"org_id" gorm:"notnull"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `swaggerignore:"true" json:"-"`
 
 	GithubInstallID           string                     `json:"github_install_id" gorm:"notnull"`
