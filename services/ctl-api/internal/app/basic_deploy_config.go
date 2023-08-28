@@ -17,7 +17,7 @@ type BasicDeployConfig struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	// connection to parent model
 	ComponentConfigID   string `json:"component_config_id" gorm:"notnull"`

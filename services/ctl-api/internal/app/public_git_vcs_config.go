@@ -15,7 +15,7 @@ type PublicGitVCSConfig struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	ComponentConfigID   string `json:"component_config_id" gorm:"notnull"`
 	ComponentConfigType string `json:"component_config_type" gorm:"notnull"`
