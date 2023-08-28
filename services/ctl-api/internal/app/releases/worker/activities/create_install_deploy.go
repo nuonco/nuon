@@ -25,6 +25,7 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	}
 
 	// create deploy
+	ctx = context.WithValue(ctx, "org_id", step.OrgID)
 	installCmp := app.InstallComponent{
 		InstallID:   req.InstallID,
 		ComponentID: step.ComponentRelease.ComponentBuild.ComponentConfigConnection.ComponentID,
@@ -35,7 +36,7 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		BuildID:                step.ComponentRelease.ComponentBuildID,
 		ComponentReleaseStepID: generics.ToPtr(req.ReleaseStepID),
 	}
-	err := a.db.First(&installCmp, "install_id = ?", req.InstallID).
+	err := a.db.WithContext(ctx).First(&installCmp, "install_id = ?", req.InstallID).
 		Association("InstallDeploys").
 		Append(&deploy)
 	if err != nil {

@@ -14,6 +14,9 @@ type AWSAccount struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	InstallID string `json:"-" gorm:"notnull"`
 
 	Region     string `json:"region" gorm:"notnull"`
@@ -23,5 +26,6 @@ type AWSAccount struct {
 func (a *AWSAccount) BeforeCreate(tx *gorm.DB) error {
 	a.ID = domains.NewAWSAccountID()
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	a.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }

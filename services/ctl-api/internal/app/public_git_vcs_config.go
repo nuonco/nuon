@@ -14,6 +14,9 @@ type PublicGitVCSConfig struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	ComponentConfigID   string `json:"component_config_id" gorm:"notnull"`
 	ComponentConfigType string `json:"component_config_type" gorm:"notnull"`
 
@@ -26,5 +29,6 @@ type PublicGitVCSConfig struct {
 func (c *PublicGitVCSConfig) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewVCSID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }

@@ -14,6 +14,9 @@ type VCSConnectionCommit struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	VCSConnection   VCSConnection `json:"-"`
 	VCSConnectionID string        `json:"component_config_connection_id" gorm:"notnull"`
 
@@ -26,5 +29,7 @@ type VCSConnectionCommit struct {
 func (v *VCSConnectionCommit) BeforeCreate(tx *gorm.DB) error {
 	v.ID = domains.NewVCSConnectionID()
 	v.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	v.OrgID = orgIDFromContext(tx.Statement.Context)
+
 	return nil
 }

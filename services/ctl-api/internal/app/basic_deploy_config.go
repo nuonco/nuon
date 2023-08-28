@@ -16,6 +16,9 @@ type BasicDeployConfig struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	// connection to parent model
 	ComponentConfigID   string `json:"component_config_id" gorm:"notnull"`
 	ComponentConfigType string `json:"component_config_type" gorm:"notnull"`
@@ -35,5 +38,6 @@ type BasicDeployConfig struct {
 func (c *BasicDeployConfig) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewComponentID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }

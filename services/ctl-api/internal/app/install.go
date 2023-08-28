@@ -14,6 +14,9 @@ type Install struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	Name              string `json:"name" gorm:"notnull"`
 	App               App    `swaggerignore:"true" json:"-"`
 	AppID             string `json:"app_id" gorm:"notnull"`
@@ -30,5 +33,6 @@ type Install struct {
 func (i *Install) BeforeCreate(tx *gorm.DB) error {
 	i.ID = domains.NewInstallID()
 	i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	i.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }
