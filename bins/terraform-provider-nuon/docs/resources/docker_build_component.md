@@ -57,7 +57,6 @@ Required:
 Optional:
 
 - `directory` (String) Static git ref to create new builds from.
-- `git_ref` (String) Static git ref to create new builds from.
 
 
 <a id="nestedblock--env_var"></a>
@@ -74,9 +73,9 @@ Required:
 
 Required:
 
+- `branch` (String) Default branch to create new builds from.
 - `repo` (String) Public https: clone url  (eg: https://github.com/jonmorehouse/go-httpbin.git)
 
 Optional:
 
 - `directory` (String) Directory
-- `git_ref` (String) Static git ref to create new builds from.

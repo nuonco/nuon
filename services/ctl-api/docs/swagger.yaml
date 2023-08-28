@@ -583,8 +583,6 @@ definitions:
         type: string
       id:
         type: string
-      org_id:
-        type: string
       updated_at:
         type: string
       vcs_connection_commit:

@@ -15,7 +15,7 @@ type ComponentConfigConnection struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	ComponentID string    `json:"component_id" gorm:"notnull"`
 	Component   Component `json:"-"`

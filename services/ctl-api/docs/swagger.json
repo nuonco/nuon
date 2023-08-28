@@ -3002,9 +3002,6 @@
                 "id": {
                     "type": "string"
                 },
-                "org_id": {
-                    "type": "string"
-                },
                 "updated_at": {
                     "type": "string"
                 },
