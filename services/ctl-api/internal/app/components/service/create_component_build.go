@@ -66,11 +66,15 @@ func (s *service) createComponentBuild(ctx context.Context, cmpID string, req *C
 			return nil, fmt.Errorf("unable to get latest commit for connection: %w", err)
 		}
 	}
+	gitRef := req.GitRef
+	if vcsCommit != nil {
+		gitRef = generics.ToPtr(vcsCommit.SHA)
+	}
 
 	bld := app.ComponentBuild{
 		Status:            "queued",
 		StatusDescription: "queued and waiting for runner to pick up",
-		GitRef:            req.GitRef,
+		GitRef:            gitRef,
 	}
 	if vcsCommit != nil {
 		bld.VCSConnectionCommitID = generics.ToPtr(vcsCommit.ID)
