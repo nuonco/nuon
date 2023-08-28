@@ -16,6 +16,7 @@ func (a *Activities) GetReleaseStep(ctx context.Context, req GetReleaseStepReque
 	res := a.db.WithContext(ctx).
 		Preload("ComponentRelease").
 		Preload("ComponentRelease.ComponentBuild").
+		Preload("InstallDeploys").
 		First(&step, "id = ?", req.ReleaseStepID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get release step: %w", res.Error)
