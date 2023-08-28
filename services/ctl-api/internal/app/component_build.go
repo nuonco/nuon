@@ -24,7 +24,7 @@ type ComponentBuild struct {
 
 	Status            string  `json:"status" gorm:"notnull"`
 	StatusDescription string  `json:"status_description" gorm:"notnull"`
-	GitRef            *string `json:"git_ref" gorm:"notnull"`
+	GitRef            *string `json:"git_ref"`
 }
 
 func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {

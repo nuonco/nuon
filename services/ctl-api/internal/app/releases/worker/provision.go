@@ -66,6 +66,14 @@ func (w *Workflows) provision(ctx workflow.Context, releaseID string, dryRun boo
 		}
 	}
 
+	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
+		ReleaseID:         releaseID,
+		Status:            "executing_release_steps",
+		StatusDescription: fmt.Sprintf("executing %d release steps", len(release.ComponentReleaseSteps)),
+	}); err != nil {
+		return fmt.Errorf("unable to update release status: %w", err)
+	}
+
 	// now trigger each step of the release
 	for _, step := range release.ComponentReleaseSteps {
 		stepWorkflowID := provisionStepWorkflowID(releaseID, step.ID)
