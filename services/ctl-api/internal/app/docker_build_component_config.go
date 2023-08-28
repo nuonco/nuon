@@ -17,7 +17,7 @@ type DockerBuildComponentConfig struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	// value
 	ComponentConfigConnectionID string `json:"component_config_connection_id" gorm:"notnull"`
