@@ -6,12 +6,16 @@ import (
 	"os"
 
 	"github.com/powertoolsdev/mono/pkg/api/client"
+	"github.com/powertoolsdev/mono/pkg/api/client/models"
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
 func (c *cli) registerComponents(ctx context.Context, rootCmd *cobra.Command) error {
-	var id string
+	var (
+		buildID string
+		id      string
+	)
 	orgID := os.Getenv("NUON_ORG_ID")
 	appID := os.Getenv("NUON_APP_ID")
 
@@ -84,6 +88,50 @@ func (c *cli) registerComponents(ctx context.Context, rootCmd *cobra.Command) er
 	deleteCmd.PersistentFlags().StringVar(&id, "id", "", "Component ID")
 	deleteCmd.MarkPersistentFlagRequired("id")
 	componentsCmd.AddCommand(deleteCmd)
+
+	buildCmd := &cobra.Command{
+		Use:   "build",
+		Short: "Build component",
+		Long:  "Build a component by ID",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			build, err := apiClient.CreateComponentBuild(
+				ctx, id, &models.ServiceCreateComponentBuildRequest{UseLatest: true})
+			if err != nil {
+				return err
+			}
+
+			ui.Line(ctx, "Component build ID: %s", build.ID)
+			return nil
+		},
+	}
+	buildCmd.PersistentFlags().StringVar(&id, "id", "", "Component ID")
+	buildCmd.MarkPersistentFlagRequired("id")
+	componentsCmd.AddCommand(buildCmd)
+
+	releaseCmd := &cobra.Command{
+		Use:   "release",
+		Short: "Release a component build",
+		Long:  "Release a component build by ID",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			release, err := apiClient.CreateComponentRelease(ctx, id, &models.ServiceCreateComponentReleaseRequest{
+				BuildID: buildID,
+				Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
+					ReleaseStrategy: "parallel",
+				},
+			})
+			if err != nil {
+				return err
+			}
+
+			ui.Line(ctx, "Component release ID: %s", release.ID)
+			return nil
+		},
+	}
+	releaseCmd.PersistentFlags().StringVar(&id, "id", "", "Component ID")
+	releaseCmd.MarkPersistentFlagRequired("id")
+	releaseCmd.PersistentFlags().StringVar(&buildID, "build-id", "", "Build ID")
+	releaseCmd.MarkPersistentFlagRequired("build-id")
+	componentsCmd.AddCommand(releaseCmd)
 
 	rootCmd.AddCommand(componentsCmd)
 	return nil
