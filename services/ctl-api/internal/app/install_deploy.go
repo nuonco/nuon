@@ -15,7 +15,7 @@ type InstallDeploy struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// used for RLS
-	OrgID string `json:"org_id" gorm:"notnull"`
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	BuildID string         `json:"build_id" gorm:"notnull"`
 	Build   ComponentBuild `faker:"-" json:"build,omitempty"`
