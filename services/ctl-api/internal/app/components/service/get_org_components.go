@@ -41,7 +41,7 @@ func (s *service) getOrgComponents(ctx context.Context, orgID string) ([]app.Com
 
 	res := s.db.WithContext(ctx).
 		Joins("JOIN apps on apps.id=components.app_id").
-		Where("org_id = ?", orgID).
+		Where("apps.org_id = ?", orgID).
 		Order("created_at desc").
 		Find(&comps)
 	if res.Error != nil {
