@@ -14,6 +14,9 @@ type ComponentConfigConnection struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	ComponentID string    `json:"component_id" gorm:"notnull"`
 	Component   Component `json:"-"`
 
@@ -28,5 +31,6 @@ type ComponentConfigConnection struct {
 func (c *ComponentConfigConnection) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewComponentID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }

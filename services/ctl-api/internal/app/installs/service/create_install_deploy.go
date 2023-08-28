@@ -71,7 +71,7 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 		StatusDescription: "waiting to be deployed to install",
 		BuildID:           req.BuildID,
 	}
-	err := s.db.First(&installCmp, "install_id = ?", installID).
+	err := s.db.WithContext(ctx).First(&installCmp, "install_id = ?", installID).
 		Association("InstallDeploys").
 		Append(&deploy)
 	if err != nil {

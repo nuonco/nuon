@@ -16,6 +16,7 @@ import (
 const (
 	orgIDHeaderKey string = "X-Nuon-Org-ID"
 	orgCtxKey      string = "org"
+	orgIDCtxKey    string = "org_id"
 )
 
 func FromContext(ctx *gin.Context) (*app.Org, error) {
@@ -67,6 +68,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		}
 
 		ctx.Set(orgCtxKey, &org)
+		ctx.Set(orgIDCtxKey, orgID)
 		ctx.Next()
 	}
 }

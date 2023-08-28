@@ -14,6 +14,9 @@ type InstallComponent struct {
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull"`
+
 	InstallID   string    `json:"install_id" gorm:"index:install_component_group,unique;notnull"`
 	Install     Install   `faker:"-"`
 	ComponentID string    `json:"component_id" gorm:"index:install_component_group,unique;notnull"`
@@ -25,5 +28,6 @@ type InstallComponent struct {
 func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewComponentID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }

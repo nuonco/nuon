@@ -9,7 +9,7 @@ import (
 
 type Org struct {
 	ID          string         `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string         `json:"created_by_id" `
+	CreatedByID string         `json:"created_by_id" gorm:"notnull"`
 	CreatedAt   time.Time      `json:"created_at" gorm:"notnull"`
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`

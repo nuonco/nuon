@@ -31,6 +31,10 @@ func TestComponentReleasesSuite(t *testing.T) {
 	suite.Run(t, new(componentReleasesTestSuite))
 }
 
+func (s *componentReleasesTestSuite) TearDownTest() {
+	s.deleteOrg(s.orgID)
+}
+
 func (s *componentReleasesTestSuite) SetupTest() {
 	// create an org
 	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
