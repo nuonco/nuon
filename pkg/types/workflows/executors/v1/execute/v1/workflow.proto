@@ -16,7 +16,7 @@ message ExecutePlanRequest {
 // ExecutePlanResponse returns once a plan has been executed
 message ExecutePlanResponse {
   oneof outputs {
-    option (tagger.oneof_tags) = "faker:\"executeV1TerraformOutputs\"";
+    option (tagger.oneof_tags) = "faker:\"executev1TerraformOutputs\"";
     google.protobuf.Struct terraform_outputs = 1;
   }
 }
