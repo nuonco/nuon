@@ -2385,9 +2385,6 @@
                         "$ref": "#/definitions/app.ComponentReleaseStep"
                     }
                 },
-                "release_strategy": {
-                    "$ref": "#/definitions/app.ComponentReleaseStrategy"
-                },
                 "status": {
                     "type": "string"
                 },
@@ -2448,17 +2445,6 @@
                     "type": "string"
                 }
             }
-        },
-        "app.ComponentReleaseStrategy": {
-            "type": "string",
-            "enum": [
-                "parallel",
-                "sync_with_delay"
-            ],
-            "x-enum-varnames": [
-                "ComponentReleaseStrategyParallel",
-                "ComponentReleaseStrategySyncWithDelay"
-            ]
         },
         "app.ConnectedGithubVCSConfig": {
             "type": "object",
@@ -3101,15 +3087,10 @@
                     "type": "object",
                     "properties": {
                         "delay": {
-                            "description": "required when strategy is delayed",
                             "type": "string"
                         },
                         "installs_per_step": {
-                            "description": "required when strategy is anything but parallel",
                             "type": "integer"
-                        },
-                        "release_strategy": {
-                            "$ref": "#/definitions/app.ComponentReleaseStrategy"
                         }
                     }
                 }

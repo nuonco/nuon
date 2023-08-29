@@ -173,8 +173,6 @@ definitions:
         items:
           $ref: '#/definitions/app.ComponentReleaseStep'
         type: array
-      release_strategy:
-        $ref: '#/definitions/app.ComponentReleaseStrategy'
       status:
         type: string
       status_description:
@@ -219,14 +217,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  app.ComponentReleaseStrategy:
-    enum:
-    - parallel
-    - sync_with_delay
-    type: string
-    x-enum-varnames:
-    - ComponentReleaseStrategyParallel
-    - ComponentReleaseStrategySyncWithDelay
   app.ConnectedGithubVCSConfig:
     properties:
       branch:
@@ -648,13 +638,9 @@ definitions:
       strategy:
         properties:
           delay:
-            description: required when strategy is delayed
             type: string
           installs_per_step:
-            description: required when strategy is anything but parallel
             type: integer
-          release_strategy:
-            $ref: '#/definitions/app.ComponentReleaseStrategy'
         type: object
     type: object
   service.CreateComponentRequest:

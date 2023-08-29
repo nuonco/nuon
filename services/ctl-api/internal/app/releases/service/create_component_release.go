@@ -17,13 +17,8 @@ type CreateComponentReleaseRequest struct {
 	BuildID string `json:"build_id"`
 
 	Strategy struct {
-		ReleaseStrategy app.ComponentReleaseStrategy `json:"release_strategy"`
-
-		// required when strategy is anything but parallel
-		InstallsPerStep int `json:"installs_per_step"`
-
-		// required when strategy is delayed
-		Delay string `json:"delay"`
+		InstallsPerStep int    `json:"installs_per_step"`
+		Delay           string `json:"delay"`
 	} `json:"strategy"`
 }
 
@@ -73,7 +68,7 @@ func (s *service) createReleaseSteps(installs []app.Install, req *CreateComponen
 	installIDs := installsToIDSlice(installs)
 
 	installsPerStep := req.Strategy.InstallsPerStep
-	if req.Strategy.ReleaseStrategy == app.ComponentReleaseStrategyParallel {
+	if installsPerStep == 0 {
 		installsPerStep = len(installs)
 	}
 	stepInstalls := generics.SliceToGroups(installIDs, installsPerStep)
@@ -86,13 +81,11 @@ func (s *service) createReleaseSteps(installs []app.Install, req *CreateComponen
 			RequestedInstallIDs: pq.StringArray(grp),
 		}
 
-		if req.Strategy.ReleaseStrategy == app.ComponentReleaseStrategySyncWithDelay {
-			delay, err := time.ParseDuration(req.Strategy.Delay)
-			if err != nil {
-				return nil, fmt.Errorf("invalid delay for component release: %w", err)
-			}
-			step.Delay = generics.ToPtr(delay.String())
+		delay, err := time.ParseDuration(req.Strategy.Delay)
+		if err != nil {
+			return nil, fmt.Errorf("invalid delay for component release: %w", err)
 		}
+		step.Delay = generics.ToPtr(delay.String())
 		steps = append(steps, step)
 	}
 
