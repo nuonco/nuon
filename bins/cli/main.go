@@ -1,7 +1,7 @@
 package main
 
-import "github.com/powertoolsdev/mono/bins/cli/internal/cmds"
+import "github.com/powertoolsdev/mono/bins/cli/cmd"
 
 func main() {
-	cmds.Execute()
+	cmd.Execute()
 }
