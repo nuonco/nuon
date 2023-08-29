@@ -1,28 +1,18 @@
-package cmds
+package cmd
 
 import (
 	"context"
-	"fmt"
-	"os"
 
-	"github.com/powertoolsdev/mono/pkg/api/client"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerComponents(ctx context.Context, rootCmd *cobra.Command) error {
+func (c *cli) registerComponents(ctx context.Context) cobra.Command {
 	var (
 		buildID string
 		id      string
 	)
-	orgID := os.Getenv("NUON_ORG_ID")
-	appID := os.Getenv("NUON_APP_ID")
-
-	apiClient, err := client.New(c.v, client.WithAuthToken(os.Getenv("NUON_API_TOKEN")), client.WithURL(os.Getenv("NUON_API_URL")), client.WithOrgID(orgID))
-	if err != nil {
-		return fmt.Errorf("unable to create API client: %w", err)
-	}
 
 	componentsCmd := &cobra.Command{
 		Use:   "components",
@@ -35,7 +25,7 @@ func (c *cli) registerComponents(ctx context.Context, rootCmd *cobra.Command) er
 		Short:   "List components",
 		Long:    "List your app's components",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			components, err := apiClient.GetAppComponents(ctx, appID)
+			components, err := c.api.GetAppComponents(ctx, c.cfg.APP_ID)
 			if err != nil {
 				return err
 			}
@@ -58,7 +48,7 @@ func (c *cli) registerComponents(ctx context.Context, rootCmd *cobra.Command) er
 		Short: "Get component",
 		Long:  "Get app component by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			component, err := apiClient.GetComponent(ctx, id)
+			component, err := c.api.GetComponent(ctx, id)
 			if err != nil {
 				return err
 			}
@@ -76,7 +66,7 @@ func (c *cli) registerComponents(ctx context.Context, rootCmd *cobra.Command) er
 		Short: "Delete component",
 		Long:  "Delete app component by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := apiClient.DeleteComponent(ctx, id)
+			_, err := c.api.DeleteComponent(ctx, id)
 			if err != nil {
 				return err
 			}
@@ -94,7 +84,7 @@ func (c *cli) registerComponents(ctx context.Context, rootCmd *cobra.Command) er
 		Short: "Build component",
 		Long:  "Build a component by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			build, err := apiClient.CreateComponentBuild(
+			build, err := c.api.CreateComponentBuild(
 				ctx, id, &models.ServiceCreateComponentBuildRequest{UseLatest: true})
 			if err != nil {
 				return err
@@ -113,7 +103,7 @@ func (c *cli) registerComponents(ctx context.Context, rootCmd *cobra.Command) er
 		Short: "Release a component build",
 		Long:  "Release a component build by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			release, err := apiClient.CreateComponentRelease(ctx, id, &models.ServiceCreateComponentReleaseRequest{
+			release, err := c.api.CreateComponentRelease(ctx, id, &models.ServiceCreateComponentReleaseRequest{
 				BuildID: buildID,
 				Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
 					ReleaseStrategy: "parallel",
@@ -133,6 +123,5 @@ func (c *cli) registerComponents(ctx context.Context, rootCmd *cobra.Command) er
 	releaseCmd.MarkPersistentFlagRequired("build-id")
 	componentsCmd.AddCommand(releaseCmd)
 
-	rootCmd.AddCommand(componentsCmd)
-	return nil
+	return *componentsCmd
 }
