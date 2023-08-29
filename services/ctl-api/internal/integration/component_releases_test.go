@@ -88,12 +88,34 @@ func (s *componentReleasesTestSuite) SetupTest() {
 }
 
 func (s *componentReleasesTestSuite) TestCreateRelease() {
-	s.T().Run("success with parallel strategy", func(t *testing.T) {
+	s.T().Run("success with parallel deploys", func(t *testing.T) {
 		release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 			BuildID: s.buildID,
 			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-				ReleaseStrategy: "parallel",
-				InstallsPerStep: 1,
+				InstallsPerStep: 0,
+			},
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, release)
+	})
+
+	s.T().Run("success with 10 deploys at a time", func(t *testing.T) {
+		release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
+			BuildID: s.buildID,
+			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
+				InstallsPerStep: 10,
+			},
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, release)
+	})
+
+	s.T().Run("success with 10 deploys at a time and a 1 minute delay", func(t *testing.T) {
+		release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
+			BuildID: s.buildID,
+			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
+				InstallsPerStep: 10,
+				Delay:           "1m",
 			},
 		})
 		require.NoError(t, err)
@@ -119,7 +141,6 @@ func (s *componentReleasesTestSuite) TestGetAppReleases() {
 	release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-			ReleaseStrategy: "parallel",
 			InstallsPerStep: 1,
 		},
 	})
@@ -138,7 +159,6 @@ func (s *componentReleasesTestSuite) TestGetAppReleases() {
 		secondRelease, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 			BuildID: s.buildID,
 			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-				ReleaseStrategy: "parallel",
 				InstallsPerStep: 1,
 			},
 		})
@@ -159,7 +179,6 @@ func (s *componentReleasesTestSuite) TestGetComponentReleases() {
 	release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-			ReleaseStrategy: "parallel",
 			InstallsPerStep: 1,
 		},
 	})
@@ -178,7 +197,6 @@ func (s *componentReleasesTestSuite) TestGetComponentReleases() {
 		secondRelease, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 			BuildID: s.buildID,
 			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-				ReleaseStrategy: "parallel",
 				InstallsPerStep: 1,
 			},
 		})
@@ -199,7 +217,6 @@ func (s *componentReleasesTestSuite) TestGetComponentRelease() {
 	release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-			ReleaseStrategy: "parallel",
 			InstallsPerStep: 1,
 		},
 	})
@@ -224,7 +241,6 @@ func (s *componentReleasesTestSuite) TestGetComponentReleaseSteps() {
 	release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-			ReleaseStrategy: "parallel",
 			InstallsPerStep: 1,
 		},
 	})
