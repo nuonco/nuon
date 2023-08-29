@@ -33,8 +33,6 @@ type ComponentRelease struct {
 	TotalComponentReleaseSteps int                    `json:"total_release_steps" gorm:"-"`
 	ComponentReleaseSteps      []ComponentReleaseStep `json:"release_steps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
-	ReleaseStrategy ComponentReleaseStrategy `json:"release_strategy"`
-
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description"`
 }
