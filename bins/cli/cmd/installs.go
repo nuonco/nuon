@@ -1,31 +1,20 @@
-package cmds
+package cmd
 
 import (
 	"context"
-	"fmt"
-	"os"
 
-	"github.com/powertoolsdev/mono/pkg/api/client"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) error {
+func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 	var (
 		id     string
 		name   string
 		arn    string
 		region string
 	)
-
-	orgID := os.Getenv("NUON_ORG_ID")
-	appID := os.Getenv("NUON_APP_ID")
-
-	apiClient, err := client.New(c.v, client.WithAuthToken(os.Getenv("NUON_API_TOKEN")), client.WithURL(os.Getenv("NUON_API_URL")), client.WithOrgID(orgID))
-	if err != nil {
-		return fmt.Errorf("unable to create API client: %w", err)
-	}
 
 	installsCmds := &cobra.Command{
 		Use:   "installs",
@@ -38,7 +27,7 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 		Short:   "List installs",
 		Long:    "List all your app's installs",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			installs, err := apiClient.GetAppInstalls(ctx, appID)
+			installs, err := c.api.GetAppInstalls(ctx, c.cfg.APP_ID)
 			if err != nil {
 				return err
 			}
@@ -48,7 +37,6 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 			} else {
 				for _, install := range installs {
 					statusColor := ui.GetStatusColor(install.Status)
-
 					ui.Line(ctx, "%s%s %s- %s - %s", statusColor, install.Status, ui.ColorReset, install.ID, install.Name)
 				}
 			}
@@ -63,13 +51,12 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 		Short: "Get an install",
 		Long:  "Get an install by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			install, err := apiClient.GetInstall(ctx, id)
+			install, err := c.api.GetInstall(ctx, id)
 			if err != nil {
 				return err
 			}
 
 			statusColor := ui.GetStatusColor(install.Status)
-
 			ui.Line(ctx, "%s%s %s- %s - %s", statusColor, install.Status, ui.ColorReset, install.ID, install.Name)
 			return nil
 		},
@@ -83,7 +70,7 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 		Short: "Create an install",
 		Long:  "Create a new install of your app",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			install, err := apiClient.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
+			install, err := c.api.CreateInstall(ctx, c.cfg.APP_ID, &models.ServiceCreateInstallRequest{
 				Name: &name,
 				AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
 					Region:     region,
@@ -111,7 +98,7 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 		Short: "Delete install",
 		Long:  "Delete an install by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := apiClient.DeleteInstall(ctx, id)
+			_, err := c.api.DeleteInstall(ctx, id)
 			if err != nil {
 				return err
 			}
@@ -124,7 +111,5 @@ func (c *cli) registerInstalls(ctx context.Context, rootCmd *cobra.Command) erro
 	deleteCmd.MarkPersistentFlagRequired("id")
 	installsCmds.AddCommand(deleteCmd)
 
-	rootCmd.AddCommand(installsCmds)
-
-	return nil
+	return *installsCmds
 }
