@@ -106,7 +106,7 @@ func (c *cli) registerComponents(ctx context.Context) cobra.Command {
 			release, err := c.api.CreateComponentRelease(ctx, id, &models.ServiceCreateComponentReleaseRequest{
 				BuildID: buildID,
 				Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-					ReleaseStrategy: "parallel",
+					InstallsPerStep: 0,
 				},
 			})
 			if err != nil {
