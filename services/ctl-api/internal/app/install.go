@@ -31,7 +31,9 @@ type Install struct {
 }
 
 func (i *Install) BeforeCreate(tx *gorm.DB) error {
-	i.ID = domains.NewInstallID()
+	if i.ID == "" {
+		i.ID = domains.NewInstallID()
+	}
 	i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	i.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
