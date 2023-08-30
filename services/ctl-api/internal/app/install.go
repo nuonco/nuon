@@ -17,9 +17,9 @@ type Install struct {
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
-	Name              string `json:"name" gorm:"notnull"`
+	Name              string `json:"name" gorm:"notnull;index:idx_app_install_name,unique"`
 	App               App    `swaggerignore:"true" json:"-"`
-	AppID             string `json:"app_id" gorm:"notnull"`
+	AppID             string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique"`
 	Status            string `json:"status" gorm:"notnull"`
 	StatusDescription string `json:"status_description" gorm:"notnull"`
 
