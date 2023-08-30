@@ -14,8 +14,8 @@ type App struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 
-	Name              string      `json:"name"`
-	OrgID             string      `json:"org_id"`
+	Name              string      `json:"name" gorm:"index:idx_app_name,unique"`
+	OrgID             string      `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org               Org         `faker:"-" json:"-"`
 	Components        []Component `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
 	Installs          []Install   `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`

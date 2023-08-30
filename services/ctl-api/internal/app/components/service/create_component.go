@@ -57,16 +57,11 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 }
 
 func (s *service) createComponent(ctx context.Context, appID string, req *CreateComponentRequest) (*app.Component, error) {
-	parentApp := app.App{}
-	res := s.db.WithContext(ctx).Preload("Components").Preload("Installs").First(&parentApp, "id = ?", appID)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get app: %w", res.Error)
-	}
-
 	component := app.Component{
 		Name: req.Name,
 	}
-	err := s.db.WithContext(ctx).Model(&parentApp).Association("Components").Append(&component)
+	parentApp := app.App{}
+	err := s.db.WithContext(ctx).Preload("Installs").First(&parentApp, "id = ?", appID).Association("Components").Append(&component)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create component: %w", err)
 	}
@@ -82,7 +77,7 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 			InstallID:   install.ID,
 		})
 	}
-	res = s.db.WithContext(ctx).Create(&installCmps)
+	res := s.db.WithContext(ctx).Create(&installCmps)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install components: %w", res.Error)
 	}
