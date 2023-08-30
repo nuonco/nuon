@@ -21,7 +21,6 @@ type middleware struct {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		m.l.Info("auth middleware")
 		if public.IsPublic(ctx) {
 			ctx.Next()
 			return

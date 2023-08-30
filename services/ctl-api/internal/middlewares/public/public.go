@@ -37,11 +37,9 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		m.l.Info("public middleware")
 		method := ctx.Request.Method
 		// full path will return the _matched_ path, such as `/v1/sandboxes/:id`
 		path := ctx.FullPath()
-		m.l.Info(path)
 
 		key := [2]string{
 			method,
