@@ -3,6 +3,7 @@ package integration
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -93,6 +94,7 @@ func (s *componentReleasesTestSuite) TestCreateRelease() {
 			BuildID: s.buildID,
 			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
 				InstallsPerStep: 0,
+				Delay:           generics.GetFakeObj[time.Duration]().String(),
 			},
 		})
 		require.NoError(t, err)
@@ -104,6 +106,7 @@ func (s *componentReleasesTestSuite) TestCreateRelease() {
 			BuildID: s.buildID,
 			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
 				InstallsPerStep: 10,
+				Delay:           generics.GetFakeObj[time.Duration]().String(),
 			},
 		})
 		require.NoError(t, err)
@@ -142,6 +145,7 @@ func (s *componentReleasesTestSuite) TestGetAppReleases() {
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
 			InstallsPerStep: 1,
+			Delay:           generics.GetFakeObj[time.Duration]().String(),
 		},
 	})
 	require.NoError(s.T(), err)
@@ -160,6 +164,7 @@ func (s *componentReleasesTestSuite) TestGetAppReleases() {
 			BuildID: s.buildID,
 			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
 				InstallsPerStep: 1,
+				Delay:           generics.GetFakeObj[time.Duration]().String(),
 			},
 		})
 		require.NoError(t, err)
@@ -180,6 +185,7 @@ func (s *componentReleasesTestSuite) TestGetComponentReleases() {
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
 			InstallsPerStep: 1,
+			Delay:           generics.GetFakeObj[time.Duration]().String(),
 		},
 	})
 	require.NoError(s.T(), err)
@@ -198,6 +204,7 @@ func (s *componentReleasesTestSuite) TestGetComponentReleases() {
 			BuildID: s.buildID,
 			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
 				InstallsPerStep: 1,
+				Delay:           generics.GetFakeObj[time.Duration]().String(),
 			},
 		})
 		require.NoError(t, err)
@@ -218,6 +225,7 @@ func (s *componentReleasesTestSuite) TestGetComponentRelease() {
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
 			InstallsPerStep: 1,
+			Delay:           generics.GetFakeObj[time.Duration]().String(),
 		},
 	})
 	require.NoError(s.T(), err)
@@ -242,6 +250,7 @@ func (s *componentReleasesTestSuite) TestGetComponentReleaseSteps() {
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
 			InstallsPerStep: 1,
+			Delay:           generics.GetFakeObj[time.Duration]().String(),
 		},
 	})
 	require.NoError(s.T(), err)
