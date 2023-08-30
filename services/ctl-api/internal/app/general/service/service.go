@@ -22,6 +22,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
+	api.GET("/v1/general/migrate-noteable", s.MigrateNoteable)
 	return nil
 }
 
@@ -30,5 +31,6 @@ func New(v *validator.Validate, db *gorm.DB, mw metrics.Writer, l *zap.Logger) *
 		l:  l,
 		v:  v,
 		mw: mw,
+		db: db,
 	}
 }
