@@ -24,7 +24,7 @@ func (s *service) GetApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	app, err := s.getApp(ctx, appID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get  app%s: %w", appID, err))
+		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
 	}
 

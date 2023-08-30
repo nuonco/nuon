@@ -24,7 +24,9 @@ type Org struct {
 }
 
 func (o *Org) BeforeCreate(tx *gorm.DB) error {
-	o.ID = domains.NewOrgID()
+	if o.ID == "" {
+		o.ID = domains.NewOrgID()
+	}
 	o.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
 }
