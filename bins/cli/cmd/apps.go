@@ -36,9 +36,6 @@ func (c *cli) registerApps(ctx context.Context) cobra.Command {
 	getCmd := &cobra.Command{
 		Use:   "get",
 		Short: "Get the current app",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return bindConfig(cmd)
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			app, err := c.api.GetApp(ctx, appID)
 			if err != nil {
