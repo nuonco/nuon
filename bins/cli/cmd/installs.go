@@ -14,11 +14,12 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 		name   string
 		arn    string
 		region string
+		appID  string = ""
 	)
 
 	installsCmds := &cobra.Command{
 		Use:   "installs",
-		Short: "View and manage installs of your app",
+		Short: "Manage app installs",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return bindConfig(cmd)
 		},
@@ -30,13 +31,19 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 		Short:   "List installs",
 		Long:    "List all your app's installs",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			installs, err := c.api.GetAppInstalls(ctx, c.cfg.APP_ID)
+			installs := []*models.AppInstall{}
+			err := error(nil)
+			if appID == "" {
+				installs, err = c.api.GetAllInstalls(ctx)
+			} else {
+				installs, err = c.api.GetAppInstalls(ctx, appID)
+			}
 			if err != nil {
 				return err
 			}
 
 			if len(installs) == 0 {
-				ui.Line(ctx, "No installs of this app found. Create one using the nuon installs create command")
+				ui.Line(ctx, "No installs of this app found")
 			} else {
 				for _, install := range installs {
 					statusColor := ui.GetStatusColor(install.Status)
@@ -47,6 +54,7 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 			return nil
 		},
 	}
+	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter installs by")
 	installsCmds.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
@@ -64,8 +72,8 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 			return nil
 		},
 	}
-	getCmd.PersistentFlags().StringVar(&id, "id", "", "Install ID")
-	getCmd.MarkPersistentFlagRequired("id")
+	getCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")
+	getCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(getCmd)
 
 	createCmd := &cobra.Command{
@@ -73,7 +81,7 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 		Short: "Create an install",
 		Long:  "Create a new install of your app",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			install, err := c.api.CreateInstall(ctx, c.cfg.APP_ID, &models.ServiceCreateInstallRequest{
+			install, err := c.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 				Name: &name,
 				AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
 					Region:     region,
@@ -88,12 +96,14 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 			return nil
 		},
 	}
-	createCmd.PersistentFlags().StringVar(&name, "name", "", "Install name")
-	createCmd.MarkPersistentFlagRequired("name")
-	createCmd.PersistentFlags().StringVar(&arn, "iam-arn", "", "IAM ARN")
-	createCmd.MarkPersistentFlagRequired("iam-arn")
-	createCmd.PersistentFlags().StringVar(&region, "aws-region", "", "AWS region")
-	createCmd.MarkPersistentFlagRequired("aws-region")
+	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of the app to create this install for")
+	createCmd.MarkFlagRequired("app-id")
+	createCmd.Flags().StringVarP(&name, "install-name", "n", "", "The name you want to give this install")
+	createCmd.MarkFlagRequired("install-name")
+	createCmd.Flags().StringVarP(&arn, "install-iam-arn", "i", "", "The ARN of the role to use to provision this install")
+	createCmd.MarkFlagRequired("install-iam-arn")
+	createCmd.Flags().StringVarP(&region, "install-region", "r", "", "The region to provision this install in")
+	createCmd.MarkFlagRequired("install-region")
 	installsCmds.AddCommand(createCmd)
 
 	deleteCmd := &cobra.Command{
@@ -110,8 +120,8 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 			return nil
 		},
 	}
-	deleteCmd.PersistentFlags().StringVar(&id, "id", "", "Install ID")
-	deleteCmd.MarkPersistentFlagRequired("id")
+	deleteCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")
+	deleteCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(deleteCmd)
 
 	return *installsCmds
