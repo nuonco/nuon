@@ -12,8 +12,6 @@ Each top level directory in this project corresponds to a buf repository. These 
 
 Repository services represent services that we expose, this means that their types should not be considered "portable" and shared between buf repos.
 
-* api - the protos api
-* orgs-api - the protos for the orgs-api
 * workflows - our temporal workflow request/response params
 
 ### objects
