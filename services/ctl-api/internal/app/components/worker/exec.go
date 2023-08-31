@@ -67,7 +67,7 @@ func (w *Workflows) execCreatePlanWorkflow(
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
-		TaskQueue:                workflows.DefaultTaskQueue,
+		TaskQueue:                workflows.ExecutorsTaskQueue,
 		WorkflowID:               workflowID,
 		WorkflowExecutionTimeout: time.Minute * 60,
 		WorkflowTaskTimeout:      time.Minute * 30,
