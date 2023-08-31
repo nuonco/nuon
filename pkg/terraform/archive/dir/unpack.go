@@ -14,6 +14,7 @@ import (
 const (
 	dotTerraformPrefix string = ".terraform/"
 	terraformLockFile  string = ".terraform.lock.hcl"
+	terraformStateFile string = "terraform.tfstate"
 )
 
 func (d *dir) Unpack(ctx context.Context, cb archive.Callback) error {
@@ -36,6 +37,9 @@ func (d *dir) Unpack(ctx context.Context, cb archive.Callback) error {
 			return nil
 		}
 		if d.IgnoreTerraformLockFile && relPath == terraformLockFile {
+			return nil
+		}
+		if d.IgnoreTerraformStateFile && relPath == terraformStateFile {
 			return nil
 		}
 
