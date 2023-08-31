@@ -32,12 +32,10 @@ module "infra-orgs-prod" {
   project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   allowed_remote_state_workspaces = [
-    module.orgs-api-prod.workspace_id,
     module.workers-apps-prod.workspace_id,
     module.workers-installs-prod.workspace_id,
     module.workers-executors-prod.workspace_id,
     module.workers-orgs-prod.workspace_id,
-    module.api-prod.workspace_id,
   ]
 }
 
@@ -55,12 +53,10 @@ module "infra-orgs-stage" {
   project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   allowed_remote_state_workspaces = [
-    module.orgs-api-stage.workspace_id,
     module.workers-apps-stage.workspace_id,
     module.workers-installs-stage.workspace_id,
     module.workers-executors-stage.workspace_id,
     module.workers-orgs-stage.workspace_id,
-    module.api-stage.workspace_id,
   ]
 }
 
