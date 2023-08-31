@@ -47,11 +47,9 @@ jobs:
     strategy:
       matrix:
         repo:
-          - api
           - components
-          - orgs-api
-          - shared
           - workflows
+          - plugins
     defaults:
       run:
         working-directory: pkg/types

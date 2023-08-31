@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package user.v1;
-
-import "user/v1/messages.proto";
-
-service UsersService {
-  rpc UpsertOrgMember(user.v1.UpsertOrgMemberRequest) returns (user.v1.UpsertOrgMemberResponse) {}
-}
