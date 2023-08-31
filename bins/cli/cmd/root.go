@@ -100,6 +100,10 @@ func Execute() {
 	rootCmd := &cobra.Command{
 		Use:          "nuonctl",
 		SilenceUsage: true,
+		// TODO(ja): PersistentPreRunE is only inherited by immediate child commands,
+		// so we still have to set this on each subcommand, so that it's children
+		// will inherit it. There are a couple ways we can refactor things to avoid
+		// this, but for now I'm just copy/pasting.
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return bindConfig(cmd)
 		},
