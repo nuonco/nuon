@@ -142,9 +142,3 @@ updates:
       interval: "weekly"
       time: "07:45"
       timezone: "America/New_York"
-
-registries:
-  npm-github:
-    type: npm-registry
-    url: https://npm.pkg.github.com
-    token: ${{secrets.NUON_NPM_GITHUB_TOKEN}}
