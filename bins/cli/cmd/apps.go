@@ -32,11 +32,15 @@ func (c *cli) registerApps(ctx context.Context) cobra.Command {
 		},
 	})
 
-	appsCmd.AddCommand(&cobra.Command{
+	appID := ""
+	getCmd := &cobra.Command{
 		Use:   "get",
 		Short: "Get the current app",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return bindConfig(cmd)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			app, err := c.api.GetApp(ctx, c.cfg.APP_ID)
+			app, err := c.api.GetApp(ctx, appID)
 			if err != nil {
 				return err
 			}
@@ -44,7 +48,11 @@ func (c *cli) registerApps(ctx context.Context) cobra.Command {
 			ui.Line(ctx, "%s - %s", app.ID, app.Name)
 			return nil
 		},
-	})
+	}
+	// TODO: Update API to support getting app by name and add a flag for that.
+	getCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app")
+	getCmd.MarkFlagRequired("app-id")
+	appsCmd.AddCommand(getCmd)
 
 	return *appsCmd
 }
