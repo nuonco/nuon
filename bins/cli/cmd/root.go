@@ -36,10 +36,11 @@ type cli struct {
 }
 
 // TODO: This function is a WIP. May need to refactor how we're managing each command to use this.
-// initConfig uses viper to read config values from env vars and config files, based on the flags defined in the cobra command.
-func initConfig(cmd *cobra.Command) error {
+// bindConfig uses viper to read config values from env vars and config files, based on the flags defined in the cobra command.
+func bindConfig(cmd *cobra.Command) error {
 	// Read values from config file.
 	v := viper.New()
+	v.SetConfigType("yaml")
 	v.SetConfigName(".nuon")
 	v.AddConfigPath("$HOME")
 	if err := v.ReadInConfig(); err != nil {
@@ -55,8 +56,7 @@ func initConfig(cmd *cobra.Command) error {
 	v.AutomaticEnv()
 
 	// Bind cobra flags to viper config values.
-	// If a flag is not set, this checks to see if there's a config value.
-	// If a config value is set, this will set that as a flag value.
+	// If a flag is not set, this checks to see if a config value is set.
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		name := strings.ReplaceAll(f.Name, "-", "_")
 		if !f.Changed && v.IsSet(name) {
