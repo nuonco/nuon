@@ -71,6 +71,11 @@ func (s *appsTestSuite) TestGetApp() {
 		require.Nil(t, err)
 		require.NotNil(t, app)
 	})
+	s.T().Run("success by name", func(t *testing.T) {
+		app, err := s.apiClient.GetApp(s.ctx, app.Name)
+		require.Nil(t, err)
+		require.NotNil(t, app)
+	})
 
 	s.T().Run("errors on empty id", func(t *testing.T) {
 		app, err := s.apiClient.GetApp(s.ctx, "")

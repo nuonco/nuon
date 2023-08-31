@@ -21,6 +21,7 @@ type UserToken struct {
 	ExpiresAt time.Time `json:"expires_at" gorm:"notnull"`
 	IssuedAt  time.Time `json:"issued_at" gorm:"notnull"`
 	Issuer    string    `json:"issuer" gorm:"notnull"`
+	Email     string    `json:"email"`
 }
 
 func (u *UserToken) BeforeCreate(tx *gorm.DB) error {

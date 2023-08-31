@@ -156,6 +156,31 @@ func (s *componentsSuite) TestGetAllComponents() {
 	})
 }
 
+func (s *componentsSuite) TestGetComponent() {
+	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
+	require.Nil(s.T(), err)
+	require.NotNil(s.T(), comp)
+
+	s.T().Run("success", func(t *testing.T) {
+		fetched, err := s.apiClient.GetComponent(s.ctx, comp.ID)
+		require.Nil(t, err)
+		require.NotNil(t, fetched)
+	})
+
+	s.T().Run("success by name", func(t *testing.T) {
+		fetched, err := s.apiClient.GetComponent(s.ctx, comp.Name)
+		require.Nil(t, err)
+		require.NotNil(t, fetched)
+	})
+
+	s.T().Run("error", func(t *testing.T) {
+		fetched, err := s.apiClient.GetComponent(s.ctx, generics.GetFakeObj[string]())
+		require.Error(t, err)
+		require.Nil(t, fetched)
+	})
+}
+
 func (s *componentsSuite) TestGetAppComponents() {
 	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
 	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)

@@ -37,7 +37,9 @@ func (s *service) getInstall(ctx context.Context, installID string) (*app.Instal
 	res := s.db.WithContext(ctx).
 		Preload("AWSAccount").
 		Preload("SandboxRelease").
-		First(&install, "id = ?", installID)
+		Where("name = ?", installID).
+		Or("id = ?", installID).
+		First(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}

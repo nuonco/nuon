@@ -33,7 +33,12 @@ func (s *service) GetApp(ctx *gin.Context) {
 
 func (s *service) getApp(ctx context.Context, appID string) (*app.App, error) {
 	app := app.App{}
-	res := s.db.WithContext(ctx).Preload("Components").Preload("SandboxRelease").First(&app, "id = ?", appID)
+	res := s.db.WithContext(ctx).
+		Preload("Components").
+		Preload("SandboxRelease").
+		Where("name = ?", appID).
+		Or("id = ?", appID).
+		First(&app)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
