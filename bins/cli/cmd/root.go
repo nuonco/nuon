@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/api/client"
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -32,6 +35,39 @@ type cli struct {
 	v   *validator.Validate
 }
 
+// TODO: This function is a WIP. May need to refactor how we're managing each command to use this.
+// initConfig uses viper to read config values from env vars and config files, based on the flags defined in the cobra command.
+func initConfig(cmd *cobra.Command) error {
+	// Read values from config file.
+	v := viper.New()
+	v.SetConfigName(".nuon")
+	v.AddConfigPath("$HOME")
+	if err := v.ReadInConfig(); err != nil {
+		// The config file is optional, so we want to ignore "ConfigFileNotFoundError", but return all other errors.
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
+	}
+
+	// Read values from env vars.
+	v.SetEnvPrefix("NUON")
+	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	v.AutomaticEnv()
+
+	// Bind cobra flags to viper config values.
+	// If a flag is not set, this checks to see if there's a config value.
+	// If a config value is set, this will set that as a flag value.
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		name := strings.ReplaceAll(f.Name, "-", "_")
+		if !f.Changed && v.IsSet(name) {
+			val := v.Get(name)
+			cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val))
+		}
+	})
+
+	return nil
+}
+
 func loadConfig() (Config, error) {
 	config := Config{}
 
@@ -42,10 +78,11 @@ func loadConfig() (Config, error) {
 	config.API_TOKEN = token
 
 	url := os.Getenv(API_URL_ENV_NAME)
-	if url == "" {
-		return config, fmt.Errorf("Please set a nuon API url using: %s", API_URL_ENV_NAME)
+	if url != "" {
+		config.API_URL = url
+	} else {
+		config.API_URL = "https://ctl.prod.nuon.co"
 	}
-	config.API_URL = url
 
 	orgID := os.Getenv(ORG_ID_ENV_NAME)
 	if orgID == "" {
@@ -54,9 +91,6 @@ func loadConfig() (Config, error) {
 	config.ORG_ID = orgID
 
 	appID := os.Getenv(APP_ID_ENV_NAME)
-	if appID == "" {
-		return config, fmt.Errorf("Please set a nuon app ID using: %s", APP_ID_ENV_NAME)
-	}
 	config.APP_ID = appID
 
 	return config, nil
@@ -105,7 +139,7 @@ func Execute() {
 		"apps":       c.registerApps,
 		"components": c.registerComponents,
 		"context":    c.registerContext,
-		"installs":  c.registerInstalls,
+		"installs":   c.registerInstalls,
 		"version":    c.registerVersion,
 	}
 	for _, fn := range namespaces {
