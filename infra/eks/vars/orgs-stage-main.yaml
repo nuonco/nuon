@@ -1,12 +1,6 @@
 ---
 auth_map_additions:
-  - name: eks-api-gateway
-    account: stage
-    groups:
-      - "system:masters"
-    trust:
-      - "arn:aws:iam::766121324316:role/nuon-internal-support-stage"
-  - name: eks-orgs-api
+  - name: eks-ctl-api
     account: stage
     groups:
       - "system:masters"

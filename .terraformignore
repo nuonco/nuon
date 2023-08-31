@@ -1,6 +1,4 @@
 /
-!services/api/infra/
-!services/orgs-api/infra/
 !services/ctl-api/infra/
 !services/workers-apps/infra/
 !services/workers-deployments/infra/
