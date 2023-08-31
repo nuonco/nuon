@@ -25,8 +25,7 @@ deps:
       coreutils \
       curl \
       protoc \
-      git \
-      npm
+      git
 
     # TODO(jm): we shouldn't be installing these dependencies here in this way.
     # Probably should be in tools.go or even
@@ -34,9 +33,6 @@ deps:
         && go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
         && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest \
         && go install github.com/srikrsna/protoc-gen-gotag@v0.6.2
-
-    COPY package.json package-lock.json ./
-    RUN npm install
 
     COPY go.mod go.sum ./
     RUN go mod download

@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package builds.v1;
-
-import "builds/v1/status.proto";
-
-service BuildsService {
-  rpc GetStatus(builds.v1.GetStatusRequest) returns (builds.v1.GetStatusResponse) {}
-}
