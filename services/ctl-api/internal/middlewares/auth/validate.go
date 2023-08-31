@@ -23,6 +23,10 @@ func (m *middleware) validateToken(ctx context.Context, token string) (*validato
 		return nil, fmt.Errorf("could not parse issuer url: %w", err)
 	}
 
+	customClaimsFn := func() validator.CustomClaims {
+		return &customClaims{}
+	}
+
 	provider := jwks.NewCachingProvider(issuerURL, 5*time.Minute)
 	tokenValidator, err := validator.New(
 		provider.KeyFunc,
@@ -30,6 +34,7 @@ func (m *middleware) validateToken(ctx context.Context, token string) (*validato
 		m.cfg.Auth0IssuerURL,
 		[]string{m.cfg.Auth0Audience},
 		validator.WithAllowedClockSkew(time.Minute),
+		validator.WithCustomClaims(customClaimsFn),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create validator: %w", err)

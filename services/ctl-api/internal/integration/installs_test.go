@@ -96,6 +96,13 @@ func (s *installsIntegrationTestSuite) TestGetInstall() {
 		require.Nil(t, err)
 		require.NotNil(t, instl)
 	})
+
+	s.T().Run("success by name", func(t *testing.T) {
+		instl, err := s.apiClient.GetInstall(s.ctx, seedInstall.Name)
+		require.Nil(t, err)
+		require.NotNil(t, instl)
+	})
+
 	s.T().Run("invalid id", func(t *testing.T) {
 		install, err := s.apiClient.GetInstall(s.ctx, generics.GetFakeObj[string]())
 		require.Error(t, err)

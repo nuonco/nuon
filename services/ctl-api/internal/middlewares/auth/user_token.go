@@ -41,7 +41,20 @@ func (m *middleware) fetchUserToken(ctx context.Context, token string) (*app.Use
 	return &userToken, nil
 }
 
+type customClaims struct {
+	Email string `json:"email"`
+}
+
+func (c customClaims) Validate(ctx context.Context) error {
+	return nil
+}
+
 func (m *middleware) saveUserToken(ctx context.Context, token string, claims *validator.ValidatedClaims) (*app.UserToken, error) {
+	customClaims, ok := claims.CustomClaims.(*customClaims)
+	if !ok {
+		return nil, fmt.Errorf("unable to get custom claims")
+	}
+
 	userToken := app.UserToken{
 		Token:       token,
 		Subject:     claims.RegisteredClaims.Subject,
@@ -49,6 +62,7 @@ func (m *middleware) saveUserToken(ctx context.Context, token string, claims *va
 		IssuedAt:    time.Unix(claims.RegisteredClaims.IssuedAt, 0),
 		Issuer:      claims.RegisteredClaims.Issuer,
 		CreatedByID: claims.RegisteredClaims.Subject,
+		Email:       customClaims.Email,
 	}
 
 	res := m.db.WithContext(ctx).
