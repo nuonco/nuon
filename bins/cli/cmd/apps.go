@@ -12,6 +12,9 @@ func (c *cli) registerApps(ctx context.Context) cobra.Command {
 	appsCmd := &cobra.Command{
 		Use:   "apps",
 		Short: "View the apps in your org",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return bindConfig(cmd)
+		},
 	}
 
 	appsCmd.AddCommand(&cobra.Command{
