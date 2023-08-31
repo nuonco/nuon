@@ -55,16 +55,16 @@ func (p *Platform) destroy(
 
 	// If we don't have resource state, this state is from an older version
 	// and we need to manually recreate it.
-	if deployment.ResourceState == nil {
-		rm.Resource("deployment").SetState(&expv1.Resource_Deployment{
-			Name: deployment.Name,
-		})
-	} else {
-		// Load our set state
-		if err := rm.LoadState(deployment.ResourceState); err != nil {
-			return err
-		}
-	}
+	//if deployment.ResourceState == nil {
+	//rm.Resource("deployment").SetState(&expv1.Resource_Deployment{
+	//Name: deployment.Name,
+	//})
+	//} else {
+	//// Load our set state
+	//if err := rm.LoadState(deployment.ResourceState); err != nil {
+	//return err
+	//}
+	//}
 
 	// Destroy
 	return rm.DestroyAll(ctx, log, sg, ui)
