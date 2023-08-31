@@ -17,6 +17,9 @@ func (c *cli) registerComponents(ctx context.Context) cobra.Command {
 	componentsCmd := &cobra.Command{
 		Use:   "components",
 		Short: "View your app's components",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return bindConfig(cmd)
+		},
 	}
 
 	listCmd := &cobra.Command{
