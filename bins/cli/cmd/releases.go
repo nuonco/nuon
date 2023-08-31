@@ -17,6 +17,9 @@ func (c *cli) registerReleases(ctx context.Context, api client.Client, cfg Confi
 	releasesCmd := &cobra.Command{
 		Use:   "releases",
 		Short: "View and create releases of your app",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return bindConfig(cmd)
+		},
 	}
 
 	listCmd := &cobra.Command{
