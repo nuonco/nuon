@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package instance.v1;
-
-import "instance/v1/messages.proto";
-
-service InstancesService {
-  rpc GetInstancesByInstall(instance.v1.GetInstancesByInstallRequest) returns (instance.v1.GetInstancesByInstallResponse) {}
-}

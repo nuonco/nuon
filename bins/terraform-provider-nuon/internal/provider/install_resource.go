@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
-	"github.com/powertoolsdev/mono/pkg/deprecated/api/gqlclient"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -124,7 +123,7 @@ func (r *InstallResource) Create(ctx context.Context, req resource.CreateRequest
 			install, err := r.restClient.GetInstall(ctx, installResp.ID)
 			if err != nil {
 				writeDiagnosticsErr(ctx, &resp.Diagnostics, err, "poll status")
-				return nil, string(gqlclient.StatusUnknown), err
+				return nil, "unknown", err
 			}
 			return install.Status, string(install.Status), nil
 		},
@@ -164,11 +163,6 @@ func (r *InstallResource) Read(ctx context.Context, req resource.ReadRequest, re
 	data.Region = types.StringValue(installResp.AwsAccount.Region)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-}
-
-type installAWSSettings interface {
-	GetRole() string
-	GetRegion() gqlclient.AWSRegion
 }
 
 func (r *InstallResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
