@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package github.v1;
-
-import "github/v1/messages.proto";
-
-service GithubService {
-  rpc GetRepos(github.v1.GetReposRequest) returns (github.v1.GetReposResponse) {}
-}

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package exp.v1;
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/exp/v1";
+option go_package = "github.com/powertoolsdev/mono/pkg/types/plugins/exp/v1";
 
 message BuildOutput {
   string location = 1;
