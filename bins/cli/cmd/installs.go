@@ -19,6 +19,9 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 	installsCmds := &cobra.Command{
 		Use:   "installs",
 		Short: "View and manage installs of your app",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return bindConfig(cmd)
+		},
 	}
 
 	listCmd := &cobra.Command{
