@@ -100,6 +100,9 @@ func Execute() {
 	rootCmd := &cobra.Command{
 		Use:          "nuonctl",
 		SilenceUsage: true,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return bindConfig(cmd)
+		},
 	}
 
 	v := validator.New()
