@@ -22,37 +22,13 @@ updates:
       time: "07:00"
       timezone: "America/New_York"
 
-  - package-ecosystem: "npm"
-    directory: "services/api-gateway"
-    registries: "*"
-    schedule:
-      interval: "daily"
-      time: "07:30"
-      timezone: "America/New_York"
-
   # terraform workspaces
   - package-ecosystem: "terraform"
-    directory: "services/api/infra"
+    directory: "services/ctl-api/infra"
     schedule:
       day: "sunday"
       interval: "weekly"
       time: "07:10"
-      timezone: "America/New_York"
-
-  - package-ecosystem: "terraform"
-    directory: "services/api-gateway/infra"
-    schedule:
-      day: "sunday"
-      interval: "weekly"
-      time: "07:20"
-      timezone: "America/New_York"
-
-  - package-ecosystem: "terraform"
-    directory: "services/orgs-api/infra"
-    schedule:
-      day: "sunday"
-      interval: "weekly"
-      time: "07:15"
       timezone: "America/New_York"
 
   - package-ecosystem: "terraform"
