@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"context"
-
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerApps(ctx context.Context) cobra.Command {
+func (c *cli) registerApps() cobra.Command {
 
 	appsCmd := &cobra.Command{
 		Use:   "apps",
@@ -22,6 +20,7 @@ func (c *cli) registerApps(ctx context.Context) cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List all your apps",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			apps, err := c.api.GetApps(ctx)
 			if err != nil {
 				return err
@@ -40,6 +39,7 @@ func (c *cli) registerApps(ctx context.Context) cobra.Command {
 		Use:   "get",
 		Short: "Get the current app",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			app, err := c.api.GetApp(ctx, appID)
 			if err != nil {
 				return err
