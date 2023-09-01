@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/pkg/api/client/models"
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/components"
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerComponents() cobra.Command {
+func registerComponents(componentsService *components.Service) cobra.Command {
 	var (
 		buildID string
 		id      string
@@ -27,27 +26,7 @@ func (c *cli) registerComponents() cobra.Command {
 		Short:   "List components",
 		Long:    "List your app's components",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			components := []*models.AppComponent{}
-			err := error(nil)
-			if appID != "" {
-				components, err = c.api.GetAppComponents(ctx, appID)
-			} else {
-				components, err = c.api.GetAllComponents(ctx)
-			}
-			if err != nil {
-				return err
-			}
-
-			if len(components) == 0 {
-				ui.Line(ctx, "No components found")
-			} else {
-				for _, component := range components {
-					ui.Line(ctx, "%s - %s", component.ID, component.Name)
-				}
-			}
-
-			return nil
+			return componentsService.List(cmd.Context(), appID)
 		},
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter components by")
@@ -58,14 +37,7 @@ func (c *cli) registerComponents() cobra.Command {
 		Short: "Get component",
 		Long:  "Get app component by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			component, err := c.api.GetComponent(ctx, id)
-			if err != nil {
-				return err
-			}
-
-			ui.Line(ctx, "%s - %s", component.ID, component.Name)
-			return nil
+			return componentsService.Get(cmd.Context(), id)
 		},
 	}
 	getCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID of the component you want to view")
@@ -77,14 +49,7 @@ func (c *cli) registerComponents() cobra.Command {
 		Short: "Delete component",
 		Long:  "Delete app component by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			_, err := c.api.DeleteComponent(ctx, id)
-			if err != nil {
-				return err
-			}
-
-			ui.Line(ctx, "Component %s was deleted", id)
-			return nil
+			return componentsService.Delete(cmd.Context(), id)
 		},
 	}
 	deleteCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID of the component you want to delete")
@@ -96,15 +61,7 @@ func (c *cli) registerComponents() cobra.Command {
 		Short: "Build component",
 		Long:  "Build a component by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			build, err := c.api.CreateComponentBuild(
-				ctx, id, &models.ServiceCreateComponentBuildRequest{UseLatest: true})
-			if err != nil {
-				return err
-			}
-
-			ui.Line(ctx, "Component build ID: %s", build.ID)
-			return nil
+			return componentsService.Build(cmd.Context(), id)
 		},
 	}
 	buildCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID of the component you want to create a build for")
@@ -116,19 +73,7 @@ func (c *cli) registerComponents() cobra.Command {
 		Short: "Release a component build",
 		Long:  "Release a component build by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			release, err := c.api.CreateComponentRelease(ctx, id, &models.ServiceCreateComponentReleaseRequest{
-				BuildID: buildID,
-				Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-					InstallsPerStep: 0,
-				},
-			})
-			if err != nil {
-				return err
-			}
-
-			ui.Line(ctx, "Component release ID: %s", release.ID)
-			return nil
+			return componentsService.Release(cmd.Context(), id, buildID)
 		},
 	}
 	// TODO: Remove the componentID parameter from the SDK's CreateComponentRelease method,

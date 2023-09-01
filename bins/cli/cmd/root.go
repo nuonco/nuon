@@ -8,7 +8,11 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
+	"github.com/powertoolsdev/mono/bins/cli/internal/components"
 	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
+	"github.com/powertoolsdev/mono/bins/cli/internal/orgs"
+	"github.com/powertoolsdev/mono/bins/cli/internal/version"
 	"github.com/powertoolsdev/mono/pkg/api/client"
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
@@ -93,7 +97,11 @@ func loadAPIConfig() (Config, error) {
 	return config, nil
 }
 
+// Execute is essentially the init method of the CLI. It initializes all the components and composes them together.
 func Execute() {
+	// Create root command that all other commands will be nested under.
+	// if there are any flags or other settings that we want to be "global",
+	// they should be configured on the root command
 	rootCmd := &cobra.Command{
 		Use:          "nuonctl",
 		SilenceUsage: true,
@@ -106,8 +114,8 @@ func Execute() {
 		},
 	}
 
+	// Create an api client instance for the services to use.
 	v := validator.New()
-
 	cfg, err := loadAPIConfig()
 	if err != nil {
 		log.Fatalf("Missing env variables: %s", err)
@@ -121,32 +129,36 @@ func Execute() {
 		log.Fatalf("Unable to init API client: %s", err)
 	}
 
-	c := &cli{
-		api: api,
-		v:   v,
-	}
-
-	installsCmd := c.registerInstalls(installs.New(api))
+	// Construct an instance of each domain service, injecting the API client,
+	// and passing the service to the CLI commands that will use it.
+	// TODO(ja): It looks like we can have a generic Service type these can all share,
+	// and then we may be able to loop over each domain with the same code,
+	// instead of copy/pasting.
+	installsCmd := registerInstalls(installs.New(api))
 	rootCmd.AddCommand(&installsCmd)
 
-	namespaces := map[string]func() cobra.Command{
-		"apps":       c.registerApps,
-		"components": c.registerComponents,
-		"context":    c.registerContext,
-		"version":    c.registerVersion,
-	}
-	for _, fn := range namespaces {
-		cmd := fn()
-		rootCmd.AddCommand(&cmd)
-	}
+	appsCmd := registerApps(apps.New(api))
+	rootCmd.AddCommand(&appsCmd)
 
+	orgsCmd := registerOrgs(orgs.New(api))
+	rootCmd.AddCommand(&orgsCmd)
+
+	versionCmd := registerVersion(version.New(api))
+	rootCmd.AddCommand(&versionCmd)
+
+	componentsCmd := registerComponents(components.New(api))
+	rootCmd.AddCommand(&componentsCmd)
+
+	// Execute the root command with a context object.
+	ctx := context.Background()
+
+	// TODO(ja): Should this be in cmd? Will circle back.
 	uiLog, err := ui.New(v)
 	if err != nil {
 		log.Fatalf("unable to initialize ui: %s", err)
 	}
-
-	ctx := context.Background()
 	ctx = ui.WithContext(ctx, uiLog)
+
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		os.Exit(2)
 	}
