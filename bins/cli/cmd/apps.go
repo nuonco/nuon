@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerApps() cobra.Command {
+func registerApps(appsService *apps.Service) cobra.Command {
 
 	appsCmd := &cobra.Command{
 		Use:   "apps",
@@ -20,17 +20,7 @@ func (c *cli) registerApps() cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List all your apps",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			apps, err := c.api.GetApps(ctx)
-			if err != nil {
-				return err
-			}
-
-			for _, app := range apps {
-				ui.Line(ctx, "%s - %s", app.ID, app.Name)
-			}
-
-			return nil
+			return appsService.List(cmd.Context())
 		},
 	})
 
@@ -39,14 +29,7 @@ func (c *cli) registerApps() cobra.Command {
 		Use:   "get",
 		Short: "Get the current app",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			app, err := c.api.GetApp(ctx, appID)
-			if err != nil {
-				return err
-			}
-
-			ui.Line(ctx, "%s - %s", app.ID, app.Name)
-			return nil
+			return appsService.Get(cmd.Context(), appID)
 		},
 	}
 	// TODO: Update API to support getting app by name and add a flag for that.
