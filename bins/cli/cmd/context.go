@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"context"
-
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerContext(ctx context.Context) cobra.Command {
+func (c *cli) registerContext() cobra.Command {
 	contextCmd := &cobra.Command{
 		Use:   "context",
 		Short: "Get current org context",
@@ -16,6 +14,7 @@ func (c *cli) registerContext(ctx context.Context) cobra.Command {
 			return bindConfig(cmd)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			org, err := c.api.GetOrg(ctx)
 			if err != nil {
 				return err
