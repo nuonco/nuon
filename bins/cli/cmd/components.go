@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"context"
-
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerComponents(ctx context.Context) cobra.Command {
+func (c *cli) registerComponents() cobra.Command {
 	var (
 		buildID string
 		id      string
@@ -29,6 +27,7 @@ func (c *cli) registerComponents(ctx context.Context) cobra.Command {
 		Short:   "List components",
 		Long:    "List your app's components",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			components := []*models.AppComponent{}
 			err := error(nil)
 			if appID != "" {
@@ -59,6 +58,7 @@ func (c *cli) registerComponents(ctx context.Context) cobra.Command {
 		Short: "Get component",
 		Long:  "Get app component by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			component, err := c.api.GetComponent(ctx, id)
 			if err != nil {
 				return err
@@ -77,6 +77,7 @@ func (c *cli) registerComponents(ctx context.Context) cobra.Command {
 		Short: "Delete component",
 		Long:  "Delete app component by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			_, err := c.api.DeleteComponent(ctx, id)
 			if err != nil {
 				return err
@@ -95,6 +96,7 @@ func (c *cli) registerComponents(ctx context.Context) cobra.Command {
 		Short: "Build component",
 		Long:  "Build a component by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			build, err := c.api.CreateComponentBuild(
 				ctx, id, &models.ServiceCreateComponentBuildRequest{UseLatest: true})
 			if err != nil {
@@ -114,6 +116,7 @@ func (c *cli) registerComponents(ctx context.Context) cobra.Command {
 		Short: "Release a component build",
 		Long:  "Release a component build by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			release, err := c.api.CreateComponentRelease(ctx, id, &models.ServiceCreateComponentReleaseRequest{
 				BuildID: buildID,
 				Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{

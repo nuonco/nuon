@@ -142,7 +142,7 @@ func Execute() {
 		log.Fatalf("unable to initialize cli: %s", err)
 	}
 
-	namespaces := map[string]func(context.Context) cobra.Command{
+	namespaces := map[string]func() cobra.Command{
 		"apps":       c.registerApps,
 		"components": c.registerComponents,
 		"context":    c.registerContext,
@@ -150,11 +150,11 @@ func Execute() {
 		"version":    c.registerVersion,
 	}
 	for _, fn := range namespaces {
-		cmd := fn(ctx)
+		cmd := fn()
 		rootCmd.AddCommand(&cmd)
 	}
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		os.Exit(2)
 	}
 }
