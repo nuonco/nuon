@@ -17,6 +17,7 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Install, err
 		Preload("App").
 		Preload("App.Org").
 		Preload("SandboxRelease").
+		Preload("SandboxRelease.Sandbox").
 		Preload("AWSAccount").
 		First(&install, "id = ?", req.InstallID)
 
