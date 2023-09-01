@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/pkg/api/client/models"
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerInstalls() cobra.Command {
+func (c *cli) registerInstalls(installsService *installs.Service) cobra.Command {
 	var (
 		id     string
 		name   string
@@ -29,27 +28,7 @@ func (c *cli) registerInstalls() cobra.Command {
 		Short:   "List installs",
 		Long:    "List all your app's installs",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			installs := []*models.AppInstall{}
-			err := error(nil)
-			if appID == "" {
-				installs, err = c.api.GetAllInstalls(cmd.Context())
-			} else {
-				installs, err = c.api.GetAppInstalls(cmd.Context(), appID)
-			}
-			if err != nil {
-				return err
-			}
-
-			if len(installs) == 0 {
-				ui.Line(cmd.Context(), "No installs of this app found")
-			} else {
-				for _, install := range installs {
-					statusColor := ui.GetStatusColor(install.Status)
-					ui.Line(cmd.Context(), "%s%s %s- %s - %s", statusColor, install.Status, ui.ColorReset, install.ID, install.Name)
-				}
-			}
-
-			return nil
+			return installsService.List(cmd.Context(), appID)
 		},
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter installs by")
@@ -60,14 +39,7 @@ func (c *cli) registerInstalls() cobra.Command {
 		Short: "Get an install",
 		Long:  "Get an install by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			install, err := c.api.GetInstall(cmd.Context(), id)
-			if err != nil {
-				return err
-			}
-
-			statusColor := ui.GetStatusColor(install.Status)
-			ui.Line(cmd.Context(), "%s%s %s- %s - %s", statusColor, install.Status, ui.ColorReset, install.ID, install.Name)
-			return nil
+			return installsService.Get(cmd.Context(), id)
 		},
 	}
 	getCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")
@@ -79,19 +51,7 @@ func (c *cli) registerInstalls() cobra.Command {
 		Short: "Create an install",
 		Long:  "Create a new install of your app",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			install, err := c.api.CreateInstall(cmd.Context(), appID, &models.ServiceCreateInstallRequest{
-				Name: &name,
-				AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
-					Region:     region,
-					IamRoleArn: &arn,
-				},
-			})
-			if err != nil {
-				return err
-			}
-
-			ui.Line(cmd.Context(), "Created new install: %s - %s", install.ID, install.Name)
-			return nil
+			return installsService.Create(cmd.Context(), appID, name, region, arn)
 		},
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of the app to create this install for")
@@ -109,13 +69,7 @@ func (c *cli) registerInstalls() cobra.Command {
 		Short: "Delete install",
 		Long:  "Delete an install by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := c.api.DeleteInstall(cmd.Context(), id)
-			if err != nil {
-				return err
-			}
-
-			ui.Line(cmd.Context(), "Install %s was deleted", id)
-			return nil
+			return installsService.Delete(cmd.Context(), id)
 		},
 	}
 	deleteCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")
