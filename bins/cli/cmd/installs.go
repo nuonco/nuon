@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerInstalls(installsService *installs.Service) cobra.Command {
+func registerInstalls(installsService *installs.Service) cobra.Command {
 	var (
 		id     string
 		name   string
