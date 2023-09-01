@@ -84,7 +84,7 @@ func (w *Workflows) execDeprovisionWorkflow(
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
-		TaskQueue:                workflows.ExecutorsTaskQueue,
+		TaskQueue:                workflows.DefaultTaskQueue,
 		WorkflowID:               fmt.Sprintf("%s-deprovision", req.InstallId),
 		WorkflowExecutionTimeout: time.Minute * 60,
 		WorkflowTaskTimeout:      time.Minute * 30,
@@ -112,7 +112,7 @@ func (w *Workflows) execProvisionWorkflow(
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
-		TaskQueue:                workflows.ExecutorsTaskQueue,
+		TaskQueue:                workflows.DefaultTaskQueue,
 		WorkflowID:               fmt.Sprintf("%s-provision", req.InstallId),
 		WorkflowExecutionTimeout: time.Minute * 60,
 		WorkflowTaskTimeout:      time.Minute * 30,
