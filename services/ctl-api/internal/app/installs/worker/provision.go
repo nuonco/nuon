@@ -26,8 +26,8 @@ func (w *Workflows) provision(ctx workflow.Context, installID string, dryRun boo
 	}
 
 	_, err := w.execProvisionWorkflow(ctx, dryRun, &installsv1.ProvisionRequest{
-		OrgId:     install.App.Org.ID,
-		AppId:     install.App.ID,
+		OrgId:     install.OrgID,
+		AppId:     install.AppID,
 		InstallId: installID,
 		AccountSettings: &installsv1.AccountSettings{
 			Region:       install.AWSAccount.Region,

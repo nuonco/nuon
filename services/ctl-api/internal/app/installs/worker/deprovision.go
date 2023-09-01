@@ -26,8 +26,8 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 	}
 
 	_, err := w.execDeprovisionWorkflow(ctx, dryRun, &installsv1.DeprovisionRequest{
-		OrgId:     install.App.Org.ID,
-		AppId:     install.App.ID,
+		OrgId:     install.OrgID,
+		AppId:     install.AppID,
 		InstallId: installID,
 		AccountSettings: &installsv1.AccountSettings{
 			Region:       install.AWSAccount.Region,
