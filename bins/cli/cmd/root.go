@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
 	"github.com/powertoolsdev/mono/pkg/api/client"
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
@@ -31,7 +32,6 @@ type Config struct {
 
 type cli struct {
 	api client.Client
-	cfg Config
 	v   *validator.Validate
 }
 
@@ -68,7 +68,7 @@ func bindConfig(cmd *cobra.Command) error {
 	return nil
 }
 
-func loadConfig() (Config, error) {
+func loadAPIConfig() (Config, error) {
 	config := Config{}
 
 	token := os.Getenv(API_TOKEN_ENV_NAME)
@@ -90,9 +90,6 @@ func loadConfig() (Config, error) {
 	}
 	config.ORG_ID = orgID
 
-	appID := os.Getenv(APP_ID_ENV_NAME)
-	config.APP_ID = appID
-
 	return config, nil
 }
 
@@ -111,16 +108,10 @@ func Execute() {
 
 	v := validator.New()
 
-	uiLog, err := ui.New(v)
-	if err != nil {
-		log.Fatalf("unable to initialize ui: %s", err)
-	}
-
-	cfg, err := loadConfig()
+	cfg, err := loadAPIConfig()
 	if err != nil {
 		log.Fatalf("Missing env variables: %s", err)
 	}
-
 	api, err := client.New(v,
 		client.WithAuthToken(cfg.API_TOKEN),
 		client.WithURL(cfg.API_URL),
@@ -130,23 +121,18 @@ func Execute() {
 		log.Fatalf("Unable to init API client: %s", err)
 	}
 
-	ctx := context.Background()
-	ctx = ui.WithContext(ctx, uiLog)
 	c := &cli{
 		api: api,
-		cfg: cfg,
 		v:   v,
 	}
 
-	if err := c.init(rootCmd.Flags()); err != nil {
-		log.Fatalf("unable to initialize cli: %s", err)
-	}
+	installsCmd := c.registerInstalls(installs.New(api))
+	rootCmd.AddCommand(&installsCmd)
 
 	namespaces := map[string]func() cobra.Command{
 		"apps":       c.registerApps,
 		"components": c.registerComponents,
 		"context":    c.registerContext,
-		"installs":   c.registerInstalls,
 		"version":    c.registerVersion,
 	}
 	for _, fn := range namespaces {
@@ -154,6 +140,13 @@ func Execute() {
 		rootCmd.AddCommand(&cmd)
 	}
 
+	uiLog, err := ui.New(v)
+	if err != nil {
+		log.Fatalf("unable to initialize ui: %s", err)
+	}
+
+	ctx := context.Background()
+	ctx = ui.WithContext(ctx, uiLog)
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		os.Exit(2)
 	}
