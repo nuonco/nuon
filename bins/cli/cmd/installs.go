@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"context"
-
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
+func (c *cli) registerInstalls() cobra.Command {
 	var (
 		id     string
 		name   string
@@ -34,20 +32,20 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 			installs := []*models.AppInstall{}
 			err := error(nil)
 			if appID == "" {
-				installs, err = c.api.GetAllInstalls(ctx)
+				installs, err = c.api.GetAllInstalls(cmd.Context())
 			} else {
-				installs, err = c.api.GetAppInstalls(ctx, appID)
+				installs, err = c.api.GetAppInstalls(cmd.Context(), appID)
 			}
 			if err != nil {
 				return err
 			}
 
 			if len(installs) == 0 {
-				ui.Line(ctx, "No installs of this app found")
+				ui.Line(cmd.Context(), "No installs of this app found")
 			} else {
 				for _, install := range installs {
 					statusColor := ui.GetStatusColor(install.Status)
-					ui.Line(ctx, "%s%s %s- %s - %s", statusColor, install.Status, ui.ColorReset, install.ID, install.Name)
+					ui.Line(cmd.Context(), "%s%s %s- %s - %s", statusColor, install.Status, ui.ColorReset, install.ID, install.Name)
 				}
 			}
 
@@ -62,13 +60,13 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 		Short: "Get an install",
 		Long:  "Get an install by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			install, err := c.api.GetInstall(ctx, id)
+			install, err := c.api.GetInstall(cmd.Context(), id)
 			if err != nil {
 				return err
 			}
 
 			statusColor := ui.GetStatusColor(install.Status)
-			ui.Line(ctx, "%s%s %s- %s - %s", statusColor, install.Status, ui.ColorReset, install.ID, install.Name)
+			ui.Line(cmd.Context(), "%s%s %s- %s - %s", statusColor, install.Status, ui.ColorReset, install.ID, install.Name)
 			return nil
 		},
 	}
@@ -81,7 +79,7 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 		Short: "Create an install",
 		Long:  "Create a new install of your app",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			install, err := c.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
+			install, err := c.api.CreateInstall(cmd.Context(), appID, &models.ServiceCreateInstallRequest{
 				Name: &name,
 				AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
 					Region:     region,
@@ -92,7 +90,7 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 				return err
 			}
 
-			ui.Line(ctx, "Created new install: %s - %s", install.ID, install.Name)
+			ui.Line(cmd.Context(), "Created new install: %s - %s", install.ID, install.Name)
 			return nil
 		},
 	}
@@ -111,12 +109,12 @@ func (c *cli) registerInstalls(ctx context.Context) cobra.Command {
 		Short: "Delete install",
 		Long:  "Delete an install by ID",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := c.api.DeleteInstall(ctx, id)
+			_, err := c.api.DeleteInstall(cmd.Context(), id)
 			if err != nil {
 				return err
 			}
 
-			ui.Line(ctx, "Install %s was deleted", id)
+			ui.Line(cmd.Context(), "Install %s was deleted", id)
 			return nil
 		},
 	}
