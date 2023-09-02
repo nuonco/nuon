@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func registerReleases(ctx context.Context, api client.Client, cfg Config) cobra.Command {
+func registerReleases(ctx context.Context, api client.Client) cobra.Command {
 	var (
 		id        string
 		installID string
