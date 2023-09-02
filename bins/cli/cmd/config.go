@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+type bindConfigFunc func(*cobra.Command) error
+
 // bindConfig uses viper to read config values from env vars and config files, based on the flags defined in the cobra command.
 func bindConfig(cmd *cobra.Command) error {
 	// Read values from config file.
