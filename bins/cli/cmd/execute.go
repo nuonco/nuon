@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/components"
 	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
 	"github.com/powertoolsdev/mono/bins/cli/internal/orgs"
+	"github.com/powertoolsdev/mono/bins/cli/internal/releases"
 	"github.com/powertoolsdev/mono/bins/cli/internal/version"
 	"github.com/powertoolsdev/mono/pkg/ui"
 	"github.com/spf13/cobra"
@@ -38,6 +39,7 @@ func Execute() {
 		newOrgsCmd(bindConfig, orgs.New(api)),
 		newVersionCmd(bindConfig, version.New()),
 		newBuildsCmd(bindConfig, builds.New(api)),
+		newReleasesCmd(bindConfig, releases.New(api)),
 	}
 
 	// Create a context to pass down the code path.
