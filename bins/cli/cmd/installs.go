@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func registerInstalls(installsService *installs.Service) cobra.Command {
+func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service) *cobra.Command {
 	var (
 		id     string
 		name   string
@@ -76,5 +76,5 @@ func registerInstalls(installsService *installs.Service) cobra.Command {
 	deleteCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(deleteCmd)
 
-	return *installsCmds
+	return installsCmds
 }
