@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func registerApps(appsService *apps.Service) cobra.Command {
+func newAppsCmd(bindConfig bindConfigFunc, appsService *apps.Service) *cobra.Command {
 
 	appsCmd := &cobra.Command{
 		Use:   "apps",
@@ -37,5 +37,5 @@ func registerApps(appsService *apps.Service) cobra.Command {
 	getCmd.MarkFlagRequired("app-id")
 	appsCmd.AddCommand(getCmd)
 
-	return *appsCmd
+	return appsCmd
 }

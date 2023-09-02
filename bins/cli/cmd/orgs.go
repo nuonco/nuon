@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func registerOrgs(orgsService *orgs.Service) cobra.Command {
+func newOrgsCmd(bindConfig bindConfigFunc, orgsService *orgs.Service) *cobra.Command {
 	orgsCmd := &cobra.Command{
 		Use:   "orgs",
 		Short: "Manage your organizations",
@@ -27,5 +27,5 @@ func registerOrgs(orgsService *orgs.Service) cobra.Command {
 	}
 	orgsCmd.AddCommand(currentCmd)
 
-	return *orgsCmd
+	return orgsCmd
 }
