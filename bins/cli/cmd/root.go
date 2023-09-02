@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
+	"github.com/powertoolsdev/mono/bins/cli/internal/builds"
 	"github.com/powertoolsdev/mono/bins/cli/internal/components"
 	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
 	"github.com/powertoolsdev/mono/bins/cli/internal/orgs"
@@ -56,6 +57,9 @@ func Execute() {
 
 	versionCmd := registerVersion(version.New())
 	rootCmd.AddCommand(&versionCmd)
+
+	buildsCmd := newBuildsCmd(builds.New(api))
+	rootCmd.AddCommand(&buildsCmd)
 
 	// Create a context to pass down the code path.
 	ctx := context.Background()
