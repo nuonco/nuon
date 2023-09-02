@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func registerReleases(ctx context.Context, api client.Client) cobra.Command {
+func registerReleases(ctx context.Context, api client.Client) *cobra.Command {
 	var (
 		id        string
 		installID string
@@ -73,5 +73,5 @@ func registerReleases(ctx context.Context, api client.Client) cobra.Command {
 	logsCmd.MarkPersistentFlagRequired("install-id")
 	releasesCmd.AddCommand(logsCmd)
 
-	return *releasesCmd
+	return releasesCmd
 }

@@ -6,7 +6,7 @@ import (
 )
 
 // newBuildsCmd constructs a new builds command
-func newBuildsCmd(buildsService *builds.Service) cobra.Command {
+func newBuildsCmd(bindConfig bindConfigFunc, buildsService *builds.Service) *cobra.Command {
 	var (
 		buildID string
 		compID  string
@@ -60,5 +60,5 @@ func newBuildsCmd(buildsService *builds.Service) cobra.Command {
 	createCmd.MarkFlagRequired("component-id")
 	buildsCmd.AddCommand(createCmd)
 
-	return *buildsCmd
+	return buildsCmd
 }

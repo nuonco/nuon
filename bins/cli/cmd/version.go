@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func registerVersion(versionService *version.Service) cobra.Command {
+func newVersionCmd(bindConfig bindConfigFunc, versionService *version.Service) *cobra.Command {
 	versionCmd := &cobra.Command{
 		Use: "version",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -16,5 +16,5 @@ func registerVersion(versionService *version.Service) cobra.Command {
 		},
 	}
 
-	return *versionCmd
+	return versionCmd
 }

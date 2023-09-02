@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func registerComponents(componentsService *components.Service) cobra.Command {
+func newComponentsCmd(bindConfig bindConfigFunc, componentsService *components.Service) *cobra.Command {
 	var (
 		buildID string
 		id      string
@@ -84,5 +84,5 @@ func registerComponents(componentsService *components.Service) cobra.Command {
 	releaseCmd.MarkFlagRequired("id")
 	componentsCmd.AddCommand(releaseCmd)
 
-	return *componentsCmd
+	return componentsCmd
 }
