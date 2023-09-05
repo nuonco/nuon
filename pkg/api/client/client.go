@@ -99,7 +99,7 @@ type Client interface {
 	GetComponentBuildLogs(ctx context.Context, componentID, buildID string) ([]models.ServiceBuildLog, error)
 
 	// releases
-	GetAppReleases(ctx context.Context, componentID string) ([]*models.AppComponentRelease, error)
+	GetAppReleases(ctx context.Context, appID string) ([]*models.AppComponentRelease, error)
 	GetComponentReleases(ctx context.Context, componentID string) ([]*models.AppComponentRelease, error)
 	CreateComponentRelease(ctx context.Context, componentID string, req *models.ServiceCreateComponentReleaseRequest) (*models.AppComponentRelease, error)
 
