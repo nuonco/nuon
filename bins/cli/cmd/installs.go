@@ -56,12 +56,12 @@ func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of the app to create this install for")
 	createCmd.MarkFlagRequired("app-id")
-	createCmd.Flags().StringVarP(&name, "install-name", "n", "", "The name you want to give this install")
-	createCmd.MarkFlagRequired("install-name")
-	createCmd.Flags().StringVarP(&arn, "install-iam-arn", "i", "", "The ARN of the role to use to provision this install")
-	createCmd.MarkFlagRequired("install-iam-arn")
-	createCmd.Flags().StringVarP(&region, "install-region", "r", "", "The region to provision this install in")
-	createCmd.MarkFlagRequired("install-region")
+	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name you want to give this install")
+	createCmd.MarkFlagRequired("name")
+	createCmd.Flags().StringVarP(&arn, "role", "o", "", "The ARN of the IAM role to use to provision this install")
+	createCmd.MarkFlagRequired("iam-arn")
+	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in")
+	createCmd.MarkFlagRequired("region")
 	installsCmds.AddCommand(createCmd)
 
 	deleteCmd := &cobra.Command{
