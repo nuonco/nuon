@@ -20,7 +20,7 @@ func (s *Service) List(ctx context.Context, appID string) error {
 	}
 
 	if len(installs) == 0 {
-		ui.Line(ctx, "No installs of this app found")
+		ui.Line(ctx, "No installs found")
 	} else {
 		for _, install := range installs {
 			statusColor := ui.GetStatusColor(install.Status)
