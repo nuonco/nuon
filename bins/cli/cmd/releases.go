@@ -47,7 +47,7 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 			return releasesService.Get(cmd.Context(), releaseID)
 		},
 	}
-	getCmd.Flags().StringVarP(&compID, "release-id", "r", "", "The ID of the release you want to view")
+	getCmd.Flags().StringVarP(&releaseID, "release-id", "r", "", "The ID of the release you want to view")
 	getCmd.MarkFlagRequired("release-id")
 	releasesCmd.AddCommand(getCmd)
 
