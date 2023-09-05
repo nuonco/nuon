@@ -2,7 +2,7 @@ VERSION --use-cache-command 0.6
 
 IMPORT github.com/powertoolsdev/shared-configs:main
 
-FROM golang:1.20-alpine
+FROM golang:1.21-alpine
 
 WORKDIR /src
 
