@@ -13,7 +13,7 @@ func (s *Service) Steps(ctx context.Context, releaseID string) error {
 	}
 
 	if len(steps) == 0 {
-		ui.Line(ctx, "No components found")
+		ui.Line(ctx, "No release steps found")
 	} else {
 		for _, step := range steps {
 			ui.Line(ctx, "%s - %s", step.ID, step.Status)

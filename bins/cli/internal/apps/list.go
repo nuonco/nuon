@@ -12,8 +12,12 @@ func (s *Service) List(ctx context.Context) error {
 		return err
 	}
 
-	for _, app := range apps {
-		ui.Line(ctx, "%s - %s", app.ID, app.Name)
+	if len(apps) == 0 {
+		ui.Line(ctx, "No apps found")
+	} else {
+		for _, app := range apps {
+			ui.Line(ctx, "%s - %s", app.ID, app.Name)
+		}
 	}
 
 	return nil
