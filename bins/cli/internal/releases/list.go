@@ -20,7 +20,7 @@ func (s *Service) List(ctx context.Context, appID, compID string) error {
 	}
 
 	if len(releases) == 0 {
-		ui.Line(ctx, "No components found")
+		ui.Line(ctx, "No releases found")
 	} else {
 		for _, release := range releases {
 			ui.Line(ctx, "%s - %s", release.ID, release.Status)

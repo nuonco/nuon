@@ -12,8 +12,12 @@ func (s *Service) List(ctx context.Context, compID string) error {
 		return err
 	}
 
-	for _, build := range builds {
-		ui.Line(ctx, "%s - %s", build.ID, build.Status)
+	if len(builds) == 0 {
+		ui.Line(ctx, "No builds found")
+	} else {
+		for _, build := range builds {
+			ui.Line(ctx, "%s - %s", build.ID, build.Status)
+		}
 	}
 
 	return nil
