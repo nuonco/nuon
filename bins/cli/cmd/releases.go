@@ -34,6 +34,7 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 			return releasesService.List(cmd.Context(), appID, compID)
 		},
 	}
+	// TODO(ja): update cobra so we can require either app-id or component-id?
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter releases by")
 	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of a component to filter releases by")
 	listCmd.MarkFlagsMutuallyExclusive("app-id", "component-id")
@@ -76,7 +77,7 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 	createCmd.Flags().StringVarP(&buildID, "build-id", "b", "", "The ID of the build you want to create a release for")
 	createCmd.MarkFlagRequired("build-id")
 	createCmd.Flags().StringVarP(&delay, "delay", "d", "10s", "The delay you want between each step")
-	createCmd.Flags().Int64VarP(&installsPerStep, "installs-per-step", "i", 10, "The number of deploys you want to execute each step. Set to 0 to deploy to all installs in parrallel")
+	createCmd.Flags().Int64VarP(&installsPerStep, "installs-per-step", "s", 10, "The number of deploys you want to execute each step. Set to 0 to deploy to all installs in parrallel")
 	releasesCmd.AddCommand(createCmd)
 
 	// logsCmd := &cobra.Command{
