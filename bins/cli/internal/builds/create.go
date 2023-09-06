@@ -2,16 +2,17 @@ package builds
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
-	"github.com/pterm/pterm"
 )
 
-func (s *Service) Create(ctx context.Context, compID string) error {
-	pterm.DefaultSpinner.Start()
+func (s *Service) Create(ctx context.Context, compID string) {
+	spinner := ui.NewSpinner()
+	spinner.Start()
+	basicText := ui.NewBasicText()
 
-	pterm.DefaultSpinner.UpdateText(fmt.Sprintf("Starting build for component %s", compID))
+	spinner.UpdateText(basicText.Sprintfln("Starting build for component %s", compID))
 	build, err := s.api.CreateComponentBuild(
 		ctx,
 		compID,
@@ -20,12 +21,10 @@ func (s *Service) Create(ctx context.Context, compID string) error {
 		},
 	)
 	if err != nil {
-		pterm.DefaultSpinner.Fail(fmt.Sprintf("build failed: %s", err))
-		return nil
+		spinner.Fail(basicText.Sprintfln("build failed: %s", err))
+		return
 	}
 
-	pterm.DefaultSpinner.Success(fmt.Sprintf("build completed: %s", build.ID))
-
-	pterm.DefaultSpinner.Stop()
-	return nil
+	spinner.Success(basicText.Sprintfln("build completed: %s", build.ID))
+	spinner.Stop()
 }
