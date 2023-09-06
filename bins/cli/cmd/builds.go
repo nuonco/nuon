@@ -26,8 +26,8 @@ func newBuildsCmd(bindConfig bindConfigFunc, buildsService *builds.Service) *cob
 		Aliases: []string{"ls"},
 		Short:   "List builds",
 		Long:    "List your app's builds",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return buildsService.List(cmd.Context(), compID)
+		Run: func(cmd *cobra.Command, args []string) {
+			buildsService.List(cmd.Context(), compID)
 		},
 	}
 	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of a component to filter builds by")
@@ -38,8 +38,8 @@ func newBuildsCmd(bindConfig bindConfigFunc, buildsService *builds.Service) *cob
 		Use:   "get",
 		Short: "Get component",
 		Long:  "Get app component by ID",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return buildsService.Get(cmd.Context(), compID, buildID)
+		Run: func(cmd *cobra.Command, args []string) {
+			buildsService.Get(cmd.Context(), compID, buildID)
 		},
 	}
 	getCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component whose build you want to view")
@@ -52,8 +52,8 @@ func newBuildsCmd(bindConfig bindConfigFunc, buildsService *builds.Service) *cob
 		Use:   "create",
 		Short: "Create a build",
 		Long:  "Create a build of an app component",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return buildsService.Create(cmd.Context(), compID)
+		Run: func(cmd *cobra.Command, args []string) {
+			buildsService.Create(cmd.Context(), compID)
 		},
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component you want to create a build for")
