@@ -3,15 +3,17 @@ package builds
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Get(ctx context.Context, compID, buildID string) error {
+func (s *Service) Get(ctx context.Context, compID, buildID string) {
+	basicText := ui.NewBasicText()
+
 	build, err := s.api.GetComponentBuild(ctx, compID, buildID)
 	if err != nil {
-		return err
+		basicText.PrintOnError(err)
+		return
 	}
 
-	ui.Line(ctx, "%s - %s", build.ID, build.Status)
-	return nil
+	basicText.Printfln("%s - %s", build.ID, build.Status)
 }
