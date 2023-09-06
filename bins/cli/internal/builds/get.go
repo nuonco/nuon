@@ -7,13 +7,13 @@ import (
 )
 
 func (s *Service) Get(ctx context.Context, compID, buildID string) {
-	basicText := ui.NewBasicText()
+	view := ui.NewBuildsGetView()
 
 	build, err := s.api.GetComponentBuild(ctx, compID, buildID)
 	if err != nil {
-		basicText.PrintOnError(err)
+		view.Error(err)
 		return
 	}
 
-	basicText.Printfln("%s - %s", build.ID, build.Status)
+	view.Render(build)
 }
