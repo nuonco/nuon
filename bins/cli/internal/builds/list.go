@@ -3,22 +3,24 @@ package builds
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context, compID string) error {
+func (s *Service) List(ctx context.Context, compID string) {
+	basicText := ui.NewBasicText()
+
 	builds, err := s.api.GetComponentBuilds(ctx, compID)
 	if err != nil {
-		return err
+		basicText.PrintOnError(err)
+		return
 	}
 
 	if len(builds) == 0 {
-		ui.Line(ctx, "No builds found")
+		basicText.Println("No builds found")
 	} else {
 		for _, build := range builds {
-			ui.Line(ctx, "%s - %s", build.ID, build.Status)
+			basicText.Printfln("%s - %s", build.ID, build.Status)
 		}
 	}
 
-	return nil
 }
