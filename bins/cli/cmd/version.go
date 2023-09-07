@@ -11,8 +11,8 @@ func newVersionCmd(bindConfig bindConfigFunc, versionService *version.Service) *
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return bindConfig(cmd)
 		},
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return versionService.Version(cmd.Context())
+		Run: func(cmd *cobra.Command, _ []string) {
+			versionService.Version(cmd.Context())
 		},
 	}
 

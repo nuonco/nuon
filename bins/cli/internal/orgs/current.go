@@ -3,16 +3,23 @@ package orgs
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Current(ctx context.Context) error {
+func (s *Service) Current(ctx context.Context) {
+	view := ui.NewGetView()
+
 	org, err := s.api.GetOrg(ctx)
 	if err != nil {
-		return err
+		view.Error(err)
+		return
 	}
-
-	statusColor := ui.GetStatusColor(org.Status)
-	ui.Line(ctx, "%s%s %s- %s - %s", statusColor, org.Status, ui.ColorReset, org.ID, org.Name)
-	return nil
+	view.Render([][]string{
+		[]string{"id", org.ID},
+		[]string{"name", org.Name},
+		[]string{"status", org.StatusDescription},
+		[]string{"created at", org.CreatedAt},
+		[]string{"updated at", org.UpdatedAt},
+		[]string{"created by", org.CreatedByID},
+	})
 }

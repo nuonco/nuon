@@ -3,11 +3,13 @@ package installs
 import (
 	"context"
 
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
-	"github.com/powertoolsdev/mono/pkg/ui"
 )
 
-func (s *Service) List(ctx context.Context, appID string) error {
+func (s *Service) List(ctx context.Context, appID string) {
+	view := ui.NewListView()
+
 	installs := []*models.AppInstall{}
 	err := error(nil)
 	if appID == "" {
@@ -16,17 +18,25 @@ func (s *Service) List(ctx context.Context, appID string) error {
 		installs, err = s.api.GetAppInstalls(ctx, appID)
 	}
 	if err != nil {
-		return err
+		view.Error(err)
+		return
 	}
 
-	if len(installs) == 0 {
-		ui.Line(ctx, "No installs found")
-	} else {
-		for _, install := range installs {
-			statusColor := ui.GetStatusColor(install.Status)
-			ui.Line(ctx, "%s%s %s- %s - %s", statusColor, install.Status, ui.ColorReset, install.ID, install.Name)
-		}
+	data := [][]string{
+		[]string{
+			"id",
+			"name",
+			"status",
+			"created at",
+		},
 	}
-
-	return nil
+	for _, install := range installs {
+		data = append(data, []string{
+			install.ID,
+			install.Name,
+			install.Status,
+			install.CreatedAt,
+		})
+	}
+	view.Render(data)
 }

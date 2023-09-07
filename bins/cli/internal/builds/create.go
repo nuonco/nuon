@@ -2,16 +2,15 @@ package builds
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 )
 
 func (s *Service) Create(ctx context.Context, compID string) {
-	view := ui.NewUpdateView()
+	view := ui.NewCreateView("build")
 
-	view.Update(fmt.Sprintf("Starting build for component %s", compID))
+	view.Start()
 	build, err := s.api.CreateComponentBuild(
 		ctx,
 		compID,
@@ -20,9 +19,9 @@ func (s *Service) Create(ctx context.Context, compID string) {
 		},
 	)
 	if err != nil {
-		view.Fail(fmt.Sprintf("build failed: %s", err))
+		view.Fail(err)
 		return
 	}
 
-	view.Success(fmt.Sprintf("build completed: %s", build.ID))
+	view.Success(build.ID)
 }
