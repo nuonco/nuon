@@ -3,22 +3,30 @@ package apps
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context) error {
+func (s *Service) List(ctx context.Context) {
+	view := ui.NewListView()
+
 	apps, err := s.api.GetApps(ctx)
 	if err != nil {
-		return err
+		view.Error(err)
 	}
 
-	if len(apps) == 0 {
-		ui.Line(ctx, "No apps found")
-	} else {
-		for _, app := range apps {
-			ui.Line(ctx, "%s - %s", app.ID, app.Name)
-		}
+	data := [][]string{
+		[]string{
+			"id",
+			"name",
+			"status",
+		},
 	}
-
-	return nil
+	for _, app := range apps {
+		data = append(data, []string{
+			app.ID,
+			app.Name,
+			app.Status,
+		})
+	}
+	view.Render(data)
 }

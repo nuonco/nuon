@@ -3,16 +3,26 @@ package installs
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Get(ctx context.Context, id string) error {
+func (s *Service) Get(ctx context.Context, id string) {
+	view := ui.NewGetView()
+
 	install, err := s.api.GetInstall(ctx, id)
 	if err != nil {
-		return err
+		view.Error(err)
+		return
 	}
 
-	statusColor := ui.GetStatusColor(install.Status)
-	ui.Line(ctx, "%s%s %s- %s - %s", statusColor, install.Status, ui.ColorReset, install.ID, install.Name)
-	return nil
+	view.Render([][]string{
+		[]string{"id", install.ID},
+		[]string{"name", install.Name},
+		[]string{"created at", install.CreatedAt},
+		[]string{"updated at", install.UpdatedAt},
+		[]string{"created by", install.CreatedByID},
+		[]string{"status", install.StatusDescription},
+		[]string{"region", install.AwsAccount.Region},
+		[]string{"role", install.AwsAccount.IamRoleArn},
+	})
 }

@@ -3,11 +3,13 @@ package releases
 import (
 	"context"
 
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
-	"github.com/powertoolsdev/mono/pkg/ui"
 )
 
-func (s *Service) List(ctx context.Context, appID, compID string) error {
+func (s *Service) List(ctx context.Context, appID, compID string) {
+	view := ui.NewListView()
+
 	releases := []*models.AppComponentRelease{}
 	err := error(nil)
 	if appID != "" {
@@ -16,16 +18,24 @@ func (s *Service) List(ctx context.Context, appID, compID string) error {
 		releases, err = s.api.GetComponentReleases(ctx, compID)
 	}
 	if err != nil {
-		return err
+		view.Error(err)
+		return
 	}
-
-	if len(releases) == 0 {
-		ui.Line(ctx, "No releases found")
-	} else {
-		for _, release := range releases {
-			ui.Line(ctx, "%s - %s", release.ID, release.Status)
-		}
+	data := [][]string{
+		[]string{
+			"id",
+			"status",
+			"build id",
+			"created at",
+		},
 	}
-
-	return nil
+	for _, release := range releases {
+		data = append(data, []string{
+			release.ID,
+			release.Status,
+			release.BuildID,
+			release.CreatedAt,
+		})
+	}
+	view.Render(data)
 }

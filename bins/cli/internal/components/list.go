@@ -2,12 +2,15 @@ package components
 
 import (
 	"context"
+	"strconv"
 
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
-	"github.com/powertoolsdev/mono/pkg/ui"
 )
 
-func (s *Service) List(ctx context.Context, appID string) error {
+func (s *Service) List(ctx context.Context, appID string) {
+	view := ui.NewListView()
+
 	components := []*models.AppComponent{}
 	err := error(nil)
 	if appID != "" {
@@ -16,16 +19,29 @@ func (s *Service) List(ctx context.Context, appID string) error {
 		components, err = s.api.GetAllComponents(ctx)
 	}
 	if err != nil {
-		return err
+		view.Error(err)
+		return
 	}
 
-	if len(components) == 0 {
-		ui.Line(ctx, "No components found")
-	} else {
-		for _, component := range components {
-			ui.Line(ctx, "%s - %s", component.ID, component.Name)
-		}
+	data := [][]string{
+		[]string{
+			"id",
+			"name",
+			"created at",
+			"updated at",
+			"created by",
+			"config versions",
+		},
 	}
-
-	return nil
+	for _, component := range components {
+		data = append(data, []string{
+			component.ID,
+			component.Name,
+			component.CreatedAt,
+			component.UpdatedAt,
+			component.CreatedByID,
+			strconv.Itoa(int(component.ConfigVersions)),
+		})
+	}
+	view.Render(data)
 }

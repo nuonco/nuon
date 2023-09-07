@@ -3,11 +3,14 @@ package installs
 import (
 	"context"
 
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
-	"github.com/powertoolsdev/mono/pkg/ui"
 )
 
-func (s *Service) Create(ctx context.Context, appID, name, region, arn string) error {
+func (s *Service) Create(ctx context.Context, appID, name, region, arn string) {
+	view := ui.NewCreateView("install")
+
+	view.Start()
 	install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 		Name: &name,
 		AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
@@ -16,9 +19,9 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string) e
 		},
 	})
 	if err != nil {
-		return err
+		view.Fail(err)
+		return
 	}
 
-	ui.Line(ctx, "Created new install: %s - %s", install.ID, install.Name)
-	return nil
+	view.Success(install.ID)
 }

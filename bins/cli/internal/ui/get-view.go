@@ -5,24 +5,13 @@ import (
 )
 
 type GetView struct {
-	headerColumn []string
 }
 
-func NewGetView(headerColumn []string) *GetView {
-	return &GetView{
-		headerColumn: headerColumn,
-	}
+func NewGetView() *GetView {
+	return &GetView{}
 }
 
-func (v *GetView) Render(item []string) {
-	data := [][]string{}
-	for i, v := range v.headerColumn {
-		row := []string{
-			v,
-			item[i],
-		}
-		data = append(data, row)
-	}
+func (v *GetView) Render(data [][]string) {
 	pterm.DefaultTable.
 		WithData(data).
 		Render()
