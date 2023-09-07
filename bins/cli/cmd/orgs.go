@@ -21,8 +21,8 @@ func newOrgsCmd(bindConfig bindConfigFunc, orgsService *orgs.Service) *cobra.Com
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return bindConfig(cmd)
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return orgsService.Current(cmd.Context())
+		Run: func(cmd *cobra.Command, args []string) {
+			orgsService.Current(cmd.Context())
 		},
 	}
 	orgsCmd.AddCommand(currentCmd)
