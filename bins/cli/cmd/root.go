@@ -10,7 +10,7 @@ func newRootCmd(
 	cmds ...*cobra.Command,
 ) *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:          "nuonctl",
+		Use:          "nuon",
 		SilenceUsage: true,
 		// PersistentPreRunE is only inherited by immediate child commands.
 		// We have to copy/paste this on each subcommand, so that it's children will inherit it.
