@@ -27,8 +27,8 @@ func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service
 		Aliases: []string{"ls"},
 		Short:   "List installs",
 		Long:    "List all your app's installs",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return installsService.List(cmd.Context(), appID)
+		Run: func(cmd *cobra.Command, args []string) {
+			installsService.List(cmd.Context(), appID)
 		},
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter installs by")
@@ -38,8 +38,8 @@ func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service
 		Use:   "get",
 		Short: "Get an install",
 		Long:  "Get an install by ID",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return installsService.Get(cmd.Context(), id)
+		Run: func(cmd *cobra.Command, args []string) {
+			installsService.Get(cmd.Context(), id)
 		},
 	}
 	getCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")
@@ -50,8 +50,8 @@ func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service
 		Use:   "create",
 		Short: "Create an install",
 		Long:  "Create a new install of your app",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return installsService.Create(cmd.Context(), appID, name, region, arn)
+		Run: func(cmd *cobra.Command, args []string) {
+			installsService.Create(cmd.Context(), appID, name, region, arn)
 		},
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of the app to create this install for")
@@ -68,8 +68,8 @@ func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service
 		Use:   "delete",
 		Short: "Delete install",
 		Long:  "Delete an install by ID",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return installsService.Delete(cmd.Context(), id)
+		Run: func(cmd *cobra.Command, args []string) {
+			installsService.Delete(cmd.Context(), id)
 		},
 	}
 	deleteCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")

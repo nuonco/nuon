@@ -30,8 +30,8 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 		Aliases: []string{"ls"},
 		Short:   "List releases",
 		Long:    "List releases of a component",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return releasesService.List(cmd.Context(), appID, compID)
+		Run: func(cmd *cobra.Command, args []string) {
+			releasesService.List(cmd.Context(), appID, compID)
 		},
 	}
 	// TODO(ja): update cobra so we can require either app-id or component-id?
@@ -44,8 +44,8 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 		Use:   "get",
 		Short: "Get release",
 		Long:  "Get an app release by ID",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return releasesService.Get(cmd.Context(), releaseID)
+		Run: func(cmd *cobra.Command, args []string) {
+			releasesService.Get(cmd.Context(), releaseID)
 		},
 	}
 	getCmd.Flags().StringVarP(&releaseID, "release-id", "r", "", "The ID of the release you want to view")
@@ -56,8 +56,8 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 		Use:   "steps",
 		Short: "Get release steps",
 		Long:  "Get the steps for a release by release ID",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return releasesService.Steps(cmd.Context(), releaseID)
+		Run: func(cmd *cobra.Command, args []string) {
+			releasesService.Steps(cmd.Context(), releaseID)
 		},
 	}
 	stepsCmd.Flags().StringVarP(&releaseID, "release-id", "r", "", "The ID of the release whose steps you want to view")
@@ -68,8 +68,8 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 		Use:   "create",
 		Short: "Create release",
 		Long:  "Create a release of an app component",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return releasesService.Create(cmd.Context(), compID, buildID, delay, installsPerStep)
+		Run: func(cmd *cobra.Command, args []string) {
+			releasesService.Create(cmd.Context(), compID, buildID, delay, installsPerStep)
 		},
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component whose build you want to create a release for")
@@ -84,9 +84,9 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 	// 	Use:   "logs",
 	// 	Short: "See release logs",
 	// 	Long:  "See release logs for an app install",
-	// 	RunE: func(cmd *cobra.Command, args []string) error {
+	// 	Run: func(cmd *cobra.Command, args []string) {
 	// 		ui.Line(cmd.Context(), "Not implemented")
-	// 		return nil
+	// 		nil
 	// 	},
 	// }
 	// logsCmd.PersistentFlags().StringVar(&releaseID, "id", "", "Release ID")

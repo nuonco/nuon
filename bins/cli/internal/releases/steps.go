@@ -3,22 +3,32 @@ package releases
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Steps(ctx context.Context, releaseID string) error {
+func (s *Service) Steps(ctx context.Context, releaseID string) {
+	view := ui.NewListView()
+
 	steps, err := s.api.GetReleaseSteps(ctx, releaseID)
 	if err != nil {
-		return err
+		view.Error(err)
+		return
 	}
-
-	if len(steps) == 0 {
-		ui.Line(ctx, "No release steps found")
-	} else {
-		for _, step := range steps {
-			ui.Line(ctx, "%s - %s", step.ID, step.Status)
-		}
+	data := [][]string{
+		[]string{
+			"id",
+			"status",
+			"created at",
+			"delay",
+		},
 	}
-
-	return nil
+	for _, step := range steps {
+		data = append(data, []string{
+			step.ID,
+			step.Status,
+			step.CreatedAt,
+			step.Delay,
+		})
+	}
+	view.Render(data)
 }
