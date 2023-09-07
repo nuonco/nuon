@@ -3,10 +3,13 @@ package version
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/ui"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Version(ctx context.Context) error {
-	ui.Line(ctx, "%s", "development")
-	return nil
+func (s *Service) Version(ctx context.Context) {
+	view := ui.NewGetView()
+	version := "development"
+	view.Render([][]string{
+		[]string{"version", version},
+	})
 }
