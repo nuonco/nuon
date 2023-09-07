@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Service) List(ctx context.Context, compID string) {
-	view := ui.NewBuildsListView()
+	view := ui.NewListView()
 
 	builds, err := s.api.GetComponentBuilds(ctx, compID)
 	if err != nil {
@@ -15,5 +15,21 @@ func (s *Service) List(ctx context.Context, compID string) {
 		return
 	}
 
-	view.Render(builds)
+	data := [][]string{
+		[]string{
+			"id",
+			"status",
+			"component id",
+			"git ref",
+		},
+	}
+	for _, build := range builds {
+		data = append(data, []string{
+			build.ID,
+			build.Status,
+			build.ComponentConfigConnectionID,
+			build.GitRef,
+		})
+	}
+	view.Render(data)
 }
