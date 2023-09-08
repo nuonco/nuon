@@ -10,10 +10,6 @@ output "eks_role_arn" {
   value = module.service.eks_role_arn
 }
 
-output "nuon_charts" {
-  value = module.service.nuon_charts
-}
-
 output "ecr_repository_url" {
   value = module.service.ecr_repository_url
 }

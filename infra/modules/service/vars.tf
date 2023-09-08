@@ -7,7 +7,7 @@ variable "name" {
 }
 
 variable "additional_iam_policies" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 
@@ -20,13 +20,6 @@ locals {
   github_organization    = "powertoolsdev"
   terraform_organization = "launchpaddev"
   ecr_repository         = "${local.github_repository}/${var.name}"
-
-  // helm configuration
-  helm = {
-    bucket_arn         = data.terraform_remote_state.chart_common.outputs.helm_bucket_arn
-    bucket_url         = data.terraform_remote_state.chart_common.outputs.helm_bucket_url
-    bucket_kms_key_arn = data.terraform_remote_state.chart_common.outputs.helm_bucket_kms_key_arn
-  }
 
   tags = {
     environment = var.env
