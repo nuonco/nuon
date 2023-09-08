@@ -5,7 +5,6 @@ output "release" {
     gh_role_arn        = module.github_actions.iam_role_arn
     region             = local.vars.region
     eks_role_arn       = module.iam_eks_role.iam_role_arn
-    nuon_charts        = local.helm.bucket_url
     ecr_repository_url = data.aws_ecr_repository.ecr_repository.repository_url
     ecr_registry_id    = data.aws_ecr_repository.ecr_repository.registry_id
   }
@@ -38,10 +37,6 @@ output "region" {
 
 output "eks_role_arn" {
   value = module.iam_eks_role.iam_role_arn
-}
-
-output "nuon_charts" {
-  value = local.helm.bucket_url
 }
 
 output "ecr_repository_url" {

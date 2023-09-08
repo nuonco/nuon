@@ -10,31 +10,6 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
   }
 
   statement {
-    effect = "Allow"
-    actions = [
-      "kms:Encrypt",
-      "kms:Decrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*",
-      "kms:DescribeKey",
-    ]
-    resources = [local.helm.bucket_kms_key_arn, ]
-  }
-  statement {
-    effect = "Allow"
-    actions = [
-      "s3:ListBucket",
-    ]
-    resources = [local.helm.bucket_arn, ]
-  }
-  statement {
-    effect = "Allow"
-    actions = [
-      "s3:*Object",
-    ]
-    resources = ["${local.helm.bucket_arn}/*", ]
-  }
-  statement {
     actions = [
       "ecr:BatchCheckLayerAvailability",
       "ecr:BatchGetImage",

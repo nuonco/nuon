@@ -7,17 +7,6 @@ data "aws_ecr_repository" "ecr_repository" {
   name     = local.ecr_repository
 }
 
-data "terraform_remote_state" "chart_common" {
-  backend = "remote"
-
-  config = {
-    organization = "launchpaddev"
-    workspaces = {
-      name = "chart-common"
-    }
-  }
-}
-
 data "tfe_outputs" "infra-orgs" {
   organization = local.terraform_organization
   workspace    = "infra-orgs-${var.env}"
