@@ -24,28 +24,28 @@ module "nuonco" {
   }
 }
 
-// module "terraform-provider-nuon" {
-//   source          = "./modules/repository"
-//   name            = "terraform-provider-nuon"
-//   description     = "A Terraform provider for managing applications in Nuon."
-//   required_checks = []
-//   is_public       = true
-//   owning_team_id  = github_team.nuon.id
-// 
-//   providers = {
-//     github = github.nuon
-//   }
-// }
-// 
-// module "go-sdk" {
-//   source          = "./modules/repository"
-//   name            = "go-sdk"
-//   description     = "An SDK for interacting with the Nuon platform."
-//   required_checks = []
-//   is_public       = true
-//   owning_team_id  = github_team.nuon.id
-// 
-//   providers = {
-//     github = github.nuon
-//   }
-// }
+module "terraform-provider-nuon" {
+  source          = "./modules/repository"
+  name            = "terraform-provider-nuon"
+  description     = "A Terraform provider for managing applications in Nuon."
+  required_checks = []
+  is_public       = true
+  owning_team_id  = github_team.nuon.id
+
+  providers = {
+    github = github.nuon
+  }
+}
+
+module "go-sdk" {
+  source          = "./modules/repository"
+  name            = "go-sdk"
+  description     = "An SDK for interacting with the Nuon platform."
+  required_checks = []
+  is_public       = true
+  owning_team_id  = github_team.nuon.id
+
+  providers = {
+    github = github.nuon
+  }
+}
