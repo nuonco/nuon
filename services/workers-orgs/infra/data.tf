@@ -6,14 +6,3 @@ data "aws_ecr_repository" "ecr_repository" {
   provider = aws.infra-shared-prod
   name     = "mono/${local.name}"
 }
-
-data "terraform_remote_state" "chart_common" {
-  backend = "remote"
-
-  config = {
-    organization = "launchpaddev"
-    workspaces = {
-      name = "chart-common"
-    }
-  }
-}
