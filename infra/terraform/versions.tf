@@ -2,7 +2,7 @@ terraform {
   required_version = ">= 1.3.7"
 
   backend "remote" {
-    organization = "launchpaddev"
+    organization = "nuonco"
 
     workspaces {
       name = "infra-terraform"
