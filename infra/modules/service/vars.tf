@@ -18,7 +18,7 @@ locals {
 
   github_repository      = "mono"
   github_organization    = "powertoolsdev"
-  terraform_organization = "launchpaddev"
+  terraform_organization = "nuonco"
   ecr_repository         = "${local.github_repository}/${var.name}"
 
   tags = {
