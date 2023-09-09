@@ -37,9 +37,9 @@ module "terraform-provider-nuon" {
   }
 }
 
-module "go-sdk" {
+module "nuon-go" {
   source          = "./modules/repository"
-  name            = "go-sdk"
+  name            = "nuon-go"
   description     = "An SDK for interacting with the Nuon platform."
   required_checks = []
   is_public       = true
