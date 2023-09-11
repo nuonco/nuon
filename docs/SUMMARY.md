@@ -3,17 +3,17 @@
 * [👋 Introduction](README.md)
 * [What is Nuon?](what-is-nuon.md)
 
-## Guides
-* [Overview](guides/introduction.md)
-* [Create an Organization](guides/create-organization.md)
-* [Create an Application](guides/create-application.md)
-    * [Connect to GitHub](guides/connect-to-github.md)
-* [Add a Component](guides/add-component.md)
-    * [Configure the Source](guides/configure-source.md)
-    * [Configure the Deployment](guides/configure-deployment.md)
-* [Create IAM Role for Installs](guides/iam-role-for-installs.md)
-* [Create an Install](guides/create-install.md)
-* [Deploy a Component](guides/deploy-component.md)
+<!-- ## Guides -->
+<!-- * [Overview](guides/introduction.md) -->
+<!-- * [Create an Organization](guides/create-organization.md) -->
+<!-- * [Create an Application](guides/create-application.md) -->
+<!--     * [Connect to GitHub](guides/connect-to-github.md) -->
+<!-- * [Add a Component](guides/add-component.md) -->
+<!--     * [Configure the Source](guides/configure-source.md) -->
+<!--     * [Configure the Deployment](guides/configure-deployment.md) -->
+<!-- * [Create IAM Role for Installs](guides/iam-role-for-installs.md) -->
+<!-- * [Create an Install](guides/create-install.md) -->
+<!-- * [Deploy a Component](guides/deploy-component.md) -->
 
 ## Concepts
 * [Vendor Cloud](how-it-works/vendor-cloud.md)
