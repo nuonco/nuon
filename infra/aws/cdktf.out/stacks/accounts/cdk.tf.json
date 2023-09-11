@@ -53,7 +53,7 @@
         "backend": "remote",
         "config": {
           "hostname": "app.terraform.io",
-          "organization": "launchpaddev",
+          "organization": "nuonco",
           "workspaces": {
             "name": "aws-org"
           }
@@ -64,7 +64,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-07-18T03:41:26.186Z"
+      "value": "2023-09-11T01:05:22.332Z"
     },
     "canary-gh-oidc-provider": {
       "description": "The Github OIDC provider for the canary account",
@@ -2910,7 +2910,7 @@
     "backend": {
       "remote": {
         "hostname": "app.terraform.io",
-        "organization": "launchpaddev",
+        "organization": "nuonco",
         "workspaces": {
           "name": "aws-accounts"
         }

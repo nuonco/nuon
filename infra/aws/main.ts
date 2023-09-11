@@ -11,7 +11,7 @@ const app = new App();
 const org = new Org(app, "org", { defaultTags });
 new RemoteBackend(org, {
   hostname: "app.terraform.io",
-  organization: "launchpaddev",
+  organization: "nuonco",
   workspaces: {
     name: "aws-org",
   },
@@ -23,7 +23,7 @@ const sso = new SSO(app, "sso", {
 });
 new RemoteBackend(sso, {
   hostname: "app.terraform.io",
-  organization: "launchpaddev",
+  organization: "nuonco",
   workspaces: {
     name: "aws-sso",
   },
@@ -35,7 +35,7 @@ const accounts = new Accounts(app, "accounts", {
 });
 new RemoteBackend(accounts, {
   hostname: "app.terraform.io",
-  organization: "launchpaddev",
+  organization: "nuonco",
   workspaces: {
     name: "aws-accounts",
   },

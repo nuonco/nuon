@@ -1,7 +1,7 @@
 locals {
   name                   = "${var.env}-${local.vars.pool}-${local.service}"
   service                = "temporal"
-  terraform_organization = "launchpaddev"
+  terraform_organization = "nuonco"
   zone                   = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.private_zone)
 
   tags = {

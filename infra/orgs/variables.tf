@@ -13,7 +13,7 @@ locals {
   name                   = "infra-installations"
   region                 = "us-west-2"
   target_account         = "infra-shared-${var.env}"
-  terraform_organization = "launchpaddev"
+  terraform_organization = "nuonco"
   org_account_id         = local.accounts["orgs-${var.env}"].id
 
   tags = {

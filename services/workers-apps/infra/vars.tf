@@ -6,7 +6,7 @@ locals {
   name                   = "workers-apps"
   github_repository      = "mono"
   github_organization    = "powertoolsdev"
-  terraform_organization = "launchpaddev"
+  terraform_organization = "nuonco"
 
   tags = {
     environment = var.env
