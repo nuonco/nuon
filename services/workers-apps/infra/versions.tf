@@ -2,7 +2,7 @@ terraform {
   required_version = ">= 1.3.6"
 
   backend "remote" {
-    organization = "launchpaddev"
+    organization = "nuonco"
 
     workspaces {
       prefix = "workers-apps-"
