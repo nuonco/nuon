@@ -4,23 +4,6 @@ resource "tfe_project" "services" {
   organization = data.tfe_organization.main.name
 }
 
-module "api-stage" {
-  source = "./modules/workspace"
-
-  name       = "api-stage"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/api/infra"
-  vars = {
-    env = "stage"
-  }
-  variable_sets = ["aws-environment-credentials"]
-  project_id    = tfe_project.services.id
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
-
 module "ctl-api-stage" {
   source = "./modules/workspace"
 
