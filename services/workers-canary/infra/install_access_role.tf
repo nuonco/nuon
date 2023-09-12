@@ -23,8 +23,9 @@ module "install_access" {
 
   role_name = "nuon-${local.name}-${var.env}-install-access"
 
-  allow_self_assume_role   = true
-  custom_role_trust_policy = file("policies/trust.json")
+  allow_self_assume_role          = true
+  create_custom_role_trust_policy = true
+  custom_role_trust_policy        = file("policies/trust.json")
   custom_role_policy_arns = [
     aws_iam_policy.install_deprovision.arn,
     aws_iam_policy.install_provision.arn

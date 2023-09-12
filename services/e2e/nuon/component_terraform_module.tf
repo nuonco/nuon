@@ -1,29 +1,29 @@
 resource "nuon_terraform_module_component" "e2e" {
-  name = "e2e_infra"
+  name   = "e2e_infra"
   app_id = nuon_app.main.id
 
   connected_repo = {
     directory = "services/e2e/infra"
-    repo = "powertoolsdev/mono"
-    branch = "main"
+    repo      = "powertoolsdev/mono"
+    branch    = "main"
   }
 
   var {
-    name = "install_id"
+    name  = "install_id"
     value = "{{.nuon.install.id}}"
   }
   var {
-    name = "region"
+    name  = "region"
     value = "{{.nuon.install.sandbox.outputs.account.region}}"
   }
 
   var {
-    name = "public_domain"
+    name  = "public_domain"
     value = "{{.nuon.install.public_domain}}"
   }
 
   var {
-    name = "public_domain_zone_id"
+    name  = "public_domain_zone_id"
     value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
   }
 }

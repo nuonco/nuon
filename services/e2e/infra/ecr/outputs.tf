@@ -36,6 +36,6 @@ output "all" {
     repository_arn = module.ecr.repository_arn
     is_public      = false
     region         = var.region
-    name = var.name
+    name           = var.name
   }
 }

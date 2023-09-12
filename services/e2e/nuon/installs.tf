@@ -1,9 +1,9 @@
 resource "nuon_install" "east_1" {
-  count = var.east_1_count
+  count  = var.east_1_count
   app_id = nuon_app.main.id
 
-  name = "east-1-${count.index}"
-  region = "us-east-1"
+  name         = "east-1-${count.index}"
+  region       = "us-east-1"
   iam_role_arn = var.install_role_arn
 
   depends_on = [
@@ -15,11 +15,11 @@ resource "nuon_install" "east_1" {
 }
 
 resource "nuon_install" "east_2" {
-  count = var.east_2_count
+  count  = var.east_2_count
   app_id = nuon_app.main.id
 
-  name = "east-2-${count.index}"
-  region = "us-east-2"
+  name         = "east-2-${count.index}"
+  region       = "us-east-2"
   iam_role_arn = var.install_role_arn
 
   depends_on = [
@@ -31,11 +31,11 @@ resource "nuon_install" "east_2" {
 }
 
 resource "nuon_install" "west_2" {
-  count = var.west_2_count
+  count  = var.west_2_count
   app_id = nuon_app.main.id
 
-  name = "west-2-${count.index}"
-  region = "us-west-2"
+  name         = "west-2-${count.index}"
+  region       = "us-west-2"
   iam_role_arn = var.install_role_arn
 
   depends_on = [
