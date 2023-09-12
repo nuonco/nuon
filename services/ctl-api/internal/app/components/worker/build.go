@@ -9,21 +9,32 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 )
 
-func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bool) error {
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateBuildStatus, activities.UpdateBuildStatus{
-		BuildID:           buildID,
-		Status:            "planning",
-		StatusDescription: "creating build plan",
-	}); err != nil {
-		return fmt.Errorf("unable to update build status: %w", err)
+func (w *Workflows) updateStatus(ctx workflow.Context, bldID, status, statusDescription string) {
+	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateBuildStatus, activities.UpdateBuildStatus{
+		BuildID:           bldID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	})
+	if err == nil {
+		return
 	}
+
+	w.l.Error("unable to update build status",
+		zap.String("build-id", bldID),
+		zap.Error(err))
+}
+
+func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bool) error {
+	w.updateStatus(ctx, buildID, "planning", "creating build plan")
 
 	var app app.App
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentApp, activities.GetComponentAppRequest{
 		ComponentID: cmpID,
 	}, &app); err != nil {
+		w.updateStatus(ctx, buildID, "error", "unable to get component app")
 		return fmt.Errorf("unable to get component app: %w", err)
 	}
 
@@ -31,6 +42,7 @@ func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bo
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentConfig, activities.GetRequest{
 		BuildID: buildID,
 	}, &buildCfg); err != nil {
+		w.updateStatus(ctx, buildID, "error", "unable to get component config")
 		return fmt.Errorf("unable to get build component config: %w", err)
 	}
 
@@ -48,17 +60,12 @@ func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bo
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("unable to create build plan: %w", err)
+		w.updateStatus(ctx, buildID, "error", "unable to create build plan")
+		return fmt.Errorf("unable to execute build plan: %w", err)
 	}
 
 	// update status with response
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateBuildStatus, activities.UpdateBuildStatus{
-		BuildID:           buildID,
-		Status:            "building",
-		StatusDescription: "executing build plan",
-	}); err != nil {
-		return fmt.Errorf("unable to update build status: %w", err)
-	}
+	w.updateStatus(ctx, buildID, "building", "executing build plan")
 
 	// execute the exec phase here
 	buildExecuteWorkflowID := fmt.Sprintf("%s-build-execute-%s", cmpID, buildID)
@@ -66,15 +73,10 @@ func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bo
 		Plan: planResp.Plan,
 	})
 	if err != nil {
+		w.updateStatus(ctx, buildID, "error", "unable to execute build plan")
 		return fmt.Errorf("unable to execute build plan: %w", err)
 	}
 
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateBuildStatus, activities.UpdateBuildStatus{
-		BuildID:           buildID,
-		Status:            "active",
-		StatusDescription: "build is active and ready to be deployed",
-	}); err != nil {
-		return fmt.Errorf("unable to update build status: %w", err)
-	}
+	w.updateStatus(ctx, buildID, "active", "build is active and ready to be deployed")
 	return nil
 }
