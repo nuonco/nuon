@@ -1,10 +1,10 @@
 // point docs domain at gitbook
-resource "aws_route53_record" "docs" {
+resource "aws_route53_record" "sales" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = "docs"
+  name    = "sales"
   type    = "CNAME"
   ttl     = 300
   records = [
-    "50ae19cad5-hosting.gitbook.io"
+    "cname.super.so"
   ]
 }
