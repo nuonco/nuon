@@ -46,7 +46,8 @@ module "orgs_ecr_access_role" {
   create_role       = true
   role_requires_mfa = false
 
-  role_name                = "${local.name}-orgs-account-access"
-  custom_role_trust_policy = data.aws_iam_policy_document.orgs_ecr_access_trust.json
-  custom_role_policy_arns  = [aws_iam_policy.orgs_ecr_access_policy.arn, ]
+  role_name                       = "${local.name}-orgs-account-access"
+  create_custom_role_trust_policy = true
+  custom_role_trust_policy        = data.aws_iam_policy_document.orgs_ecr_access_trust.json
+  custom_role_policy_arns         = [aws_iam_policy.orgs_ecr_access_policy.arn, ]
 }
