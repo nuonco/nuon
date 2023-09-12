@@ -4,7 +4,7 @@ data "aws_iam_policy_document" "extra_auth_map" {
     effect = "Allow"
     actions = [
       "eks:DescribeCluster",
-      "eks:ListCluster",
+      "eks:ListClusters",
     ]
     resources = [module.eks.cluster_arn, ]
   }
@@ -41,6 +41,7 @@ module "extra_auth_map" {
 
   role_name = "extra-auth-${each.key}-${local.workspace_trimmed}"
 
-  custom_role_trust_policy = data.aws_iam_policy_document.extra_auth_map_trust_policy[each.key].json
-  custom_role_policy_arns  = [aws_iam_policy.extra_auth_map[each.key].arn, ]
+  create_custom_role_trust_policy = true
+  custom_role_trust_policy        = data.aws_iam_policy_document.extra_auth_map_trust_policy[each.key].json
+  custom_role_policy_arns         = [aws_iam_policy.extra_auth_map[each.key].arn, ]
 }

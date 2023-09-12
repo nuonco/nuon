@@ -92,13 +92,15 @@ module "eks" {
         "eks-console-dashboard-full-access",
       ]
     },
-    ], [
-    for add in local.vars.auth_map_additions : {
-      rolearn : module.extra_auth_map[add.name].iam_role_arn
-      username : add.name
-      groups : add.groups
-    }
-  ])
+    ],
+    [
+      for add in local.vars.auth_map_additions : {
+        rolearn : module.extra_auth_map[add.name].iam_role_arn
+        username : add.name
+        groups : add.groups
+      }
+    ]
+  )
 
   eks_managed_node_groups = {
     karpenter = {

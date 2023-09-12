@@ -196,13 +196,13 @@ output "github_action_role_arn" {
   value       = aws_iam_role.github_actions.arn
 }
 
-output "auth_map_additional_role_arns" {
-  description = "The ARNs of the assumable roles indexed by assuming role name"
-  value = {
-    for add in local.vars.auth_map_additions :
-    add.name => module.extra_auth_map[add.name].iam_role_arn
-  }
-}
+#output "auth_map_additional_role_arns" {
+#description = "The ARNs of the assumable roles indexed by assuming role name"
+#value = {
+#for add in local.vars.auth_map_additions :
+#add.name => module.extra_auth_map[add.name].iam_role_arn
+#}
+#}
 
 output "root_domain" {
   description = "Root domain for this environment"

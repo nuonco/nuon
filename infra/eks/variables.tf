@@ -11,7 +11,7 @@ locals {
     environment = var.account
     pool        = var.pool
     tier        = local.vars.tier
-    terraform   = terraform.workspace
+    terraform   = "infra-eks-${var.account}-${var.pool}"
   }
 
   vars = yamldecode(data.utils_deep_merge_yaml.vars.output)
