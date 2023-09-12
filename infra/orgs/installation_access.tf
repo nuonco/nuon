@@ -54,6 +54,7 @@ module "install_k8s_role_external" {
 
   role_name = "install-k8s-admin-${var.env}"
 
+  create_custom_role_trust_policy = true
   custom_role_trust_policy = data.aws_iam_policy_document.install_k8s_trust_policy_external.json
   custom_role_policy_arns  = [aws_iam_policy.install_k8s_external.arn, ]
 }

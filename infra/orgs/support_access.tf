@@ -44,6 +44,7 @@ module "support_role" {
 
   role_name = "nuon-internal-support-${var.env}"
 
+  create_custom_role_trust_policy = true
   custom_role_trust_policy = data.aws_iam_policy_document.support_trust.json
   custom_role_policy_arns  = [aws_iam_policy.support.arn, ]
 }
