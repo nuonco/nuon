@@ -12,23 +12,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Calculate size labels
-      uses: actions-ecosystem/action-size@v2
-      id: size
-
-    - name: Remove existing size label
-      uses: actions-ecosystem/action-remove-labels@v1
-      with:
-        github_token: ${{ inputs.github_token }}
-        labels: ${{ steps.size.outputs.stale_labels }}
-
-    - name: Add new size label
-      uses: actions-ecosystem/action-add-labels@v1
-      with:
-        github_token: ${{ inputs.github_token }}
-        labels: ${{ steps.size.outputs.new_label }}
-
-    - uses: actions-marketplace-validations/ActionsDesk_lfs-warning@master
+    - name: Check for large files
+      uses: actions-marketplace-validations/ActionsDesk_lfs-warning@master
       if: always()
       id: lfs
       with:
