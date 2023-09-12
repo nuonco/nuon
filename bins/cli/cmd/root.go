@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +26,15 @@ func newRootCmd(
 	for _, cmd := range cmds {
 		rootCmd.AddCommand(cmd)
 	}
+
+	// Kill CLI immediately when user types Ctrl-C.
+	// Including SIGTERM to ensure consistent behavior.
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		os.Exit(1)
+	}()
 
 	return rootCmd
 }
