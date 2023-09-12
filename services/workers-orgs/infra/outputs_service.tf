@@ -91,7 +91,7 @@ output "orgs_account_kms_access_role_arn" {
 
 output "orgs_account" {
   description = "orgs account details"
-  value = nonsensitive(data.tfe_outputs.infra-orgs.values.account)
+  value       = nonsensitive(data.tfe_outputs.infra-orgs.values.account)
 }
 
 output "sandbox" {
