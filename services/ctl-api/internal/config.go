@@ -22,7 +22,7 @@ func init() {
 
 	// defaults for app
 	config.RegisterDefault("temporal_namespace", "default")
-	config.RegisterDefault("github_app_key_secret_name", "graphql-api-github-app-key")
+	config.RegisterDefault("github_app_key_secret_name", "ctl-api-github-app-key")
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
 }
 
