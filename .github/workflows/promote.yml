@@ -99,8 +99,8 @@ jobs:
     with:
       service: ${{matrix.service}}
       tag: ${{ needs.tag.outputs.git_ref }}
-      prod: ${{ inputs.prod }}
-      stage: ${{ inputs.stage }}
+      prod: true
+      stage: false
     secrets: inherit
 
   status_slack_notifications:
