@@ -35,7 +35,7 @@ jobs:
         name: get merged pr
         id: merged_pr
         with:
-          github_token: ${{ env.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: update promote output
         if: contains( steps.merged_pr.outputs.labels.*.name, 'promote')
