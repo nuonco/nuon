@@ -54,6 +54,4 @@ func (w *Workflows) AppEventLoop(ctx workflow.Context, appID string) error {
 	for {
 		selector.Select(ctx)
 	}
-
-	return nil
 }
