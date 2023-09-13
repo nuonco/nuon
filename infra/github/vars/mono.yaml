@@ -32,8 +32,6 @@ required_checks:
   - Terraform Cloud/nuonco/aws-accounts
   - Terraform Cloud/nuonco/aws-org
   - Terraform Cloud/nuonco/aws-sso
-  - Terraform Cloud/nuonco/ctl-api-prod
-  - Terraform Cloud/nuonco/ctl-api-stage
   - Terraform Cloud/nuonco/infra-datadog-orgs-prod
   - Terraform Cloud/nuonco/infra-datadog-orgs-stage
   - Terraform Cloud/nuonco/infra-datadog-prod
@@ -53,6 +51,10 @@ required_checks:
   - Terraform Cloud/nuonco/nuon-dns
   - Terraform Cloud/nuonco/powertools
   - Terraform Cloud/nuonco/sandboxes
+
+  # terraform cloud services
+  - Terraform Cloud/nuonco/ctl-api-prod
+  - Terraform Cloud/nuonco/ctl-api-stage
   - Terraform Cloud/nuonco/workers-apps-prod
   - Terraform Cloud/nuonco/workers-apps-stage
   - Terraform Cloud/nuonco/workers-canary-prod
