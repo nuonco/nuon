@@ -16,6 +16,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		InstallID: installID,
 	}, &install); err != nil {
+		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get install from database")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
@@ -23,17 +24,11 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentConfig, activities.GetComponentConfigRequest{
 		DeployID: deployID,
 	}, &deployCfg); err != nil {
+		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get component config")
 		return fmt.Errorf("unable to get deploy component config: %w", err)
 	}
 
-	// sync image
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
-		DeployID:          deployID,
-		Status:            "planning",
-		StatusDescription: "creating sync plan",
-	}); err != nil {
-		return fmt.Errorf("unable to update deploy status: %w", err)
-	}
+	w.updateDeployStatus(ctx, deployID, StatusPlanning, "creating sync plan")
 
 	// execute the plan phase here
 	syncImagePlanWorkflowID := fmt.Sprintf("%s-sync-plan-%s", installID, deployID)
@@ -49,34 +44,22 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 		},
 	})
 	if err != nil {
+		w.updateDeployStatus(ctx, deployID, StatusError, "unable to create sync plan")
 		return fmt.Errorf("unable to create sync plan: %w", err)
 	}
 
-	// update status with response
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
-		DeployID:          deployID,
-		Status:            "syncing",
-		StatusDescription: "executing sync plan",
-	}); err != nil {
-		return fmt.Errorf("unable to update deploy status: %w", err)
-	}
+	w.updateDeployStatus(ctx, deployID, StatusSyncing, "executing sync plan")
 
 	syncExecuteWorkflowID := fmt.Sprintf("%s-sync-execute-%s", installID, deployID)
 	_, err = w.execExecPlanWorkflow(ctx, dryRun, syncExecuteWorkflowID, &execv1.ExecutePlanRequest{
 		Plan: planResp.Plan,
 	})
 	if err != nil {
+		w.updateDeployStatus(ctx, deployID, StatusError, "unable to execute sync plan")
 		return fmt.Errorf("unable to execute sync plan: %w", err)
 	}
 
-	// now do a deploy
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
-		DeployID:          deployID,
-		Status:            "planning",
-		StatusDescription: "creating deploy plan",
-	}); err != nil {
-		return fmt.Errorf("unable to update deploy status: %w", err)
-	}
+	w.updateDeployStatus(ctx, deployID, StatusPlanning, "creating deploy plan")
 
 	// execute the plan phase here
 	deployPlanWorkflowID := fmt.Sprintf("%s-deploy-plan-%s", installID, deployID)
@@ -92,32 +75,21 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 		},
 	})
 	if err != nil {
+		w.updateDeployStatus(ctx, deployID, StatusError, "unable to create deploy plan")
 		return fmt.Errorf("unable to create deploy plan: %w", err)
 	}
 
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
-		DeployID:          deployID,
-		Status:            "deploying",
-		StatusDescription: "executing deploy plan",
-	}); err != nil {
-		return fmt.Errorf("unable to update deploy status: %w", err)
-	}
+	w.updateDeployStatus(ctx, deployID, StatusExecuting, "executing deploy plan")
 
 	deployExecuteWorkflowID := fmt.Sprintf("%s-deploy-execute-%s", installID, deployID)
 	_, err = w.execExecPlanWorkflow(ctx, dryRun, deployExecuteWorkflowID, &execv1.ExecutePlanRequest{
 		Plan: planResp.Plan,
 	})
 	if err != nil {
+		w.updateDeployStatus(ctx, deployID, StatusError, "unable to execute deploy plan")
 		return fmt.Errorf("unable to execute deploy plan: %w", err)
 	}
 
-	// update status with response
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
-		DeployID:          deployID,
-		Status:            "active",
-		StatusDescription: "active",
-	}); err != nil {
-		return fmt.Errorf("unable to update deploy status: %w", err)
-	}
+	w.updateDeployStatus(ctx, deployID, StatusActive, "deploy is active")
 	return nil
 }
