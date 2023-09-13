@@ -1,14 +1,9 @@
 ---
 name: promote
 on:
-  workflow_dispatch:
-    inputs:
-      prod:
-        type: boolean
-        required: true
-      stage:
-        type: boolean
-        required: true
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -28,9 +23,27 @@ defaults:
     shell: bash
 
 jobs:
+  # we use the merged pr to see if the PR was labeled "auto promote"
+  merged_pr:
+    name: Get merged PR
+    runs-on: ubuntu-latest
+    outputs:
+      promote: ${{steps.git_ref.outputs.git_ref}}
+    steps:
+      - uses: actions-ecosystem/action-get-merged-pull-request@v1
+        name: get merged pr
+        id: merged_pr
+
+      - id: update promote output
+        if: contains( steps.merged_pr.outputs.labels.*.name, 'promote')
+        run: echo "promote=true" >> "$GITHUB_OUTPUT"
+
   tag:
     name: Determine short ref
+    needs:
+      - merged_pr
     runs-on: ubuntu-latest
+    if: ${{ needs.merged_pr.outputs.promote == true }}
     outputs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
     steps:
@@ -45,25 +58,29 @@ jobs:
     name: update promotions channel
     needs:
       - tag
+      - merged_pr
+    if: ${{ needs.merged_pr.outputs.promote == true }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Slack Notification
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        SLACK_ICON_EMOJI: 🤖
-        SLACK_USERNAME: github-bot
-        SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
-        SLACK_MESSAGE: |
-          ⛴  promoting `${{ needs.tag.outputs.git_ref }}`
-          *stage* - ${{ inputs.stage }}
-          *prod* - ${{ inputs.prod }}
+      - uses: actions/checkout@v2
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_ICON_EMOJI: 🤖
+          SLACK_USERNAME: github-bot
+          SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
+          SLACK_MESSAGE: |
+            ⛴  promoting `${{ needs.tag.outputs.git_ref }}`
+            *stage* - ${{ inputs.stage }}
+            *prod* - ${{ inputs.prod }}
 
   services:
     # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
     name: 🚢
     needs:
       - tag
+      - merged_pr
+    if: ${{ needs.merged_pr.outputs.promote == true }}
     strategy:
       fail-fast: false
       matrix:
@@ -84,24 +101,25 @@ jobs:
 
   status_slack_notifications:
     name: update promotions channel
-    if: always()
+    if: ${{ needs.merged_pr.outputs.promote == true }} && always()
     needs:
       - tag
       - services
+      - merged_pr
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: martialonline/workflow-status@v3
-      id: check
-    - name: Slack Notification
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        SLACK_ICON_EMOJI: 🤖
-        SLACK_USERNAME: github-bot
-        SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
-        SLACK_COLOR: ${{steps.check.outputs.status}}
-        SLACK_MESSAGE: |
-          ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} finished promoting `${{ needs.tag.outputs.git_ref }}`
-          *stage* - ${{ inputs.stage }}
-          *prod* - ${{ inputs.prod }}
-          *status* - ${{steps.check.outputs.status}}
+      - uses: actions/checkout@v2
+      - uses: martialonline/workflow-status@v3
+        id: check
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_ICON_EMOJI: 🤖
+          SLACK_USERNAME: github-bot
+          SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{steps.check.outputs.status}}
+          SLACK_MESSAGE: |
+            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} finished promoting `${{ needs.tag.outputs.git_ref }}`
+            *stage* - ${{ inputs.stage }}
+            *prod* - ${{ inputs.prod }}
+            *status* - ${{steps.check.outputs.status}}
