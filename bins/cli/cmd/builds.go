@@ -27,7 +27,7 @@ func newBuildsCmd(bindConfig bindConfigFunc, buildsService *builds.Service) *cob
 		Short:   "List builds",
 		Long:    "List your app's builds",
 		Run: func(cmd *cobra.Command, args []string) {
-			buildsService.List(cmd.Context(), compID)
+			buildsService.List(cmd.Context(), compID, PrintJSON)
 		},
 	}
 	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of a component to filter builds by")
@@ -39,7 +39,7 @@ func newBuildsCmd(bindConfig bindConfigFunc, buildsService *builds.Service) *cob
 		Short: "Get component",
 		Long:  "Get app component by ID",
 		Run: func(cmd *cobra.Command, args []string) {
-			buildsService.Get(cmd.Context(), compID, buildID)
+			buildsService.Get(cmd.Context(), compID, buildID, PrintJSON)
 		},
 	}
 	getCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component whose build you want to view")
