@@ -33,6 +33,10 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) err
 		}
 
 		switch signal.Operation {
+		case OperationPollDependencies:
+			if err := w.pollDependencies(ctx, installID); err != nil {
+				l.Info("unable to poll install dependencies: %w", zap.Error(err))
+			}
 		case OperationProvision:
 			if err := w.provision(ctx, installID, signal.DryRun); err != nil {
 				l.Info("unable to provision install: %w", zap.Error(err))

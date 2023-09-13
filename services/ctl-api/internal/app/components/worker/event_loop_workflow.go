@@ -33,6 +33,10 @@ func (w *Workflows) ComponentEventLoop(ctx workflow.Context, appID string) error
 		}
 
 		switch signal.Operation {
+		case OperationPollDependencies:
+			if err := w.pollDependencies(ctx, appID); err != nil {
+				l.Info("unable to poll app status for readiness: %w", zap.Error(err))
+			}
 		case OperationBuild:
 			if err := w.build(ctx, appID, signal.BuildID, signal.DryRun); err != nil {
 				l.Info("unable to build component: %w", zap.Error(err))

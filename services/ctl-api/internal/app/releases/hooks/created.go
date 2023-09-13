@@ -41,6 +41,10 @@ func (a *Hooks) Created(ctx context.Context, releaseID string) {
 
 	a.sendSignal(ctx, releaseID, worker.Signal{
 		DryRun:    a.cfg.DevEnableWorkersDryRun,
+		Operation: worker.OperationPollDependencies,
+	})
+	a.sendSignal(ctx, releaseID, worker.Signal{
+		DryRun:    a.cfg.DevEnableWorkersDryRun,
 		Operation: worker.OperationProvision,
 	})
 }
