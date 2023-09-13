@@ -34,6 +34,8 @@ jobs:
       - uses: actions-ecosystem/action-get-merged-pull-request@v1
         name: get merged pr
         id: merged_pr
+        with:
+          auth: ${{ env.GITHUB_TOKEN }}
 
       - name: update promote output
         if: contains( steps.merged_pr.outputs.labels.*.name, 'promote')
