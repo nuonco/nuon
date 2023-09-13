@@ -23,7 +23,8 @@ defaults:
     shell: bash
 
 jobs:
-  # we use the merged pr to see if the PR was labeled "auto promote"
+  # we use the merged pr to see if the PR was labeled "auto promote", but since this _only_ runs after the PR is merged
+  # (on main), we have to use an action to pull it from the github api.
   merged_pr:
     name: Get merged PR
     runs-on: ubuntu-latest
@@ -34,7 +35,7 @@ jobs:
         name: get merged pr
         id: merged_pr
 
-      - id: update promote output
+      - name: update promote output
         if: contains( steps.merged_pr.outputs.labels.*.name, 'promote')
         run: echo "promote=true" >> "$GITHUB_OUTPUT"
 
