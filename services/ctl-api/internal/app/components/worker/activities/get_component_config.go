@@ -23,22 +23,26 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetRequest) (*c
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
 		// preload all helm configs
 		Preload("ComponentConfigConnection.HelmComponentConfig").
 		Preload("ComponentConfigConnection.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnection.HelmComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.HelmComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
 		// preload all docker configs
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig").
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig.BasicDeployConfig").
 
 		// preload all external image configs
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.BasicDeployConfig").
 		First(&bld, "id = ?", req.BuildID)
 	if res.Error != nil {
