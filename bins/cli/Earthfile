@@ -1,6 +1,6 @@
 VERSION --use-cache-command 0.6
 
-FROM ghcr.io/powertoolsdev/ci-go-builder
+FROM ../../images/go-base+build-base
 
 WORKDIR /src
 
@@ -30,7 +30,6 @@ test-integration:
     RUN echo "noop..."
 
 artifacts:
-    FROM golang:latest
     FROM +code
     RUN mkdir -p out
 
