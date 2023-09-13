@@ -25,7 +25,7 @@ func newComponentsCmd(bindConfig bindConfigFunc, componentsService *components.S
 		Short:   "List components",
 		Long:    "List your app's components",
 		Run: func(cmd *cobra.Command, args []string) {
-			componentsService.List(cmd.Context(), appID)
+			componentsService.List(cmd.Context(), appID, PrintJSON)
 		},
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter components by")
@@ -36,7 +36,7 @@ func newComponentsCmd(bindConfig bindConfigFunc, componentsService *components.S
 		Short: "Get component",
 		Long:  "Get app component by ID",
 		Run: func(cmd *cobra.Command, args []string) {
-			componentsService.Get(cmd.Context(), id)
+			componentsService.Get(cmd.Context(), id, PrintJSON)
 		},
 	}
 	getCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID of the component you want to view")

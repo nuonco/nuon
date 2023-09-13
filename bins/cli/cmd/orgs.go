@@ -22,7 +22,7 @@ func newOrgsCmd(bindConfig bindConfigFunc, orgsService *orgs.Service) *cobra.Com
 			return bindConfig(cmd)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			orgsService.Current(cmd.Context())
+			orgsService.Current(cmd.Context(), PrintJSON)
 		},
 	}
 	orgsCmd.AddCommand(currentCmd)

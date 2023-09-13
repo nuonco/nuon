@@ -31,7 +31,7 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 		Short:   "List releases",
 		Long:    "List releases of a component",
 		Run: func(cmd *cobra.Command, args []string) {
-			releasesService.List(cmd.Context(), appID, compID)
+			releasesService.List(cmd.Context(), appID, compID, PrintJSON)
 		},
 	}
 	// TODO(ja): update cobra so we can require either app-id or component-id?
@@ -45,7 +45,7 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 		Short: "Get release",
 		Long:  "Get an app release by ID",
 		Run: func(cmd *cobra.Command, args []string) {
-			releasesService.Get(cmd.Context(), releaseID)
+			releasesService.Get(cmd.Context(), releaseID, PrintJSON)
 		},
 	}
 	getCmd.Flags().StringVarP(&releaseID, "release-id", "r", "", "The ID of the release you want to view")
