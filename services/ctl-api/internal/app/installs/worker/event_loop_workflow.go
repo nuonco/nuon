@@ -54,6 +54,4 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) err
 	for {
 		selector.Select(ctx)
 	}
-
-	return nil
 }
