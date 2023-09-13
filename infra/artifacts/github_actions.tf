@@ -81,7 +81,6 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
     ]
     resources = [
       module.nuonctl.repository_arn,
-      module.terraform_provider_nuon.repository_arn,
       module.sandbox_aws_eks.repository_arn,
       module.sandbox_empty.repository_arn,
     ]

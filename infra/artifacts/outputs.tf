@@ -47,10 +47,6 @@ output "artifacts" {
       bucket_prefix = "nuonctl"
       ecr           = module.nuonctl.all
     }
-    "bins/terraform-provider-nuon" = {
-      bucket_prefix = "terraform-provider-nuon"
-      ecr           = module.terraform_provider_nuon.all
-    }
     "bins/waypoint-plugin-exp" = {
       bucket_prefix = "waypoint-plugin-exp"
       ecr           = module.waypoint_plugin_exp.all
