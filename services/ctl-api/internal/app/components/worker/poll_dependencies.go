@@ -13,6 +13,8 @@ const (
 	defaultPollTimeout time.Duration = time.Second * 10
 )
 
+// TODO(ja): Components don't have a status field, so we can't update them if this fails.
+// Not sure if that's a problem or not.
 func (w *Workflows) pollDependencies(ctx workflow.Context, componentID string) error {
 	for {
 		var currentApp app.App
@@ -31,6 +33,4 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, componentID string) e
 
 		workflow.Sleep(ctx, defaultPollTimeout)
 	}
-
-	return nil
 }
