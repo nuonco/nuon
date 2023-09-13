@@ -2,12 +2,14 @@ package installs
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 )
 
-func (s *Service) List(ctx context.Context, appID string) {
+func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 	view := ui.NewListView()
 
 	installs := []*models.AppInstall{}
@@ -22,21 +24,26 @@ func (s *Service) List(ctx context.Context, appID string) {
 		return
 	}
 
-	data := [][]string{
-		[]string{
-			"id",
-			"name",
-			"status",
-			"created at",
-		},
+	if asJSON == true {
+		j, _ := json.Marshal(installs)
+		fmt.Println(string(j))
+	} else {
+		data := [][]string{
+			[]string{
+				"id",
+				"name",
+				"status",
+				"created at",
+			},
+		}
+		for _, install := range installs {
+			data = append(data, []string{
+				install.ID,
+				install.Name,
+				install.Status,
+				install.CreatedAt,
+			})
+		}
+		view.Render(data)
 	}
-	for _, install := range installs {
-		data = append(data, []string{
-			install.ID,
-			install.Name,
-			install.Status,
-			install.CreatedAt,
-		})
-	}
-	view.Render(data)
 }

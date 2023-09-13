@@ -15,21 +15,23 @@ func newAppsCmd(bindConfig bindConfigFunc, appsService *apps.Service) *cobra.Com
 		},
 	}
 
-	appsCmd.AddCommand(&cobra.Command{
+	listCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List all your apps",
 		Run: func(cmd *cobra.Command, args []string) {
-			appsService.List(cmd.Context())
+			appsService.List(cmd.Context(), PrintJSON)
 		},
-	})
+	}
+
+	appsCmd.AddCommand(listCmd)
 
 	appID := ""
 	getCmd := &cobra.Command{
 		Use:   "get",
 		Short: "Get the current app",
 		Run: func(cmd *cobra.Command, args []string) {
-			appsService.Get(cmd.Context(), appID)
+			appsService.Get(cmd.Context(), appID, PrintJSON)
 		},
 	}
 	// TODO: Update API to support getting app by name and add a flag for that.
