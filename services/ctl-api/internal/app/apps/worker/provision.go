@@ -2,7 +2,6 @@ package worker
 
 import (
 	"fmt"
-	"time"
 
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -10,35 +9,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-const (
-	defaultPollTimeout time.Duration = time.Second * 10
-)
-
-func (w *Workflows) pollOrg(ctx workflow.Context, appID string) error {
-	for {
-		var currentApp app.App
-		if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-			AppID: appID,
-		}, &currentApp); err != nil {
-			return fmt.Errorf("unable to get app: %w", err)
-		}
-
-		if currentApp.Org.Status == "active" {
-			return nil
-		}
-
-		if currentApp.Org.Status == "error" {
-			return fmt.Errorf("org failed: %s", currentApp.Org.StatusDescription)
-		}
-
-		workflow.Sleep(ctx, defaultPollTimeout)
-	}
-
-	return nil
-}
-
 func (w *Workflows) provision(ctx workflow.Context, appID string, dryRun bool) error {
-	if err := w.pollOrg(ctx, appID); err != nil {
+	if err := w.pollDependencies(ctx, appID); err != nil {
 		return fmt.Errorf("unable to poll org for app: %w", err)
 	}
 
