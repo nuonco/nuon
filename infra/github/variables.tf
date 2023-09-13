@@ -4,8 +4,15 @@ data "utils_deep_merge_yaml" "vars" {
   ]
 }
 
+data "utils_deep_merge_yaml" "mono_vars" {
+  input = [
+    file("vars/mono.yaml"),
+  ]
+}
+
 locals {
   vars = yamldecode(data.utils_deep_merge_yaml.vars.output)
+  mono_vars = yamldecode(data.utils_deep_merge_yaml.mono_vars.output)
 }
 
 // powertoolsdev vars

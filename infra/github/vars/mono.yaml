@@ -1,0 +1,65 @@
+ecr_repos:
+  # NOTE: since we use `count` to create these resources in a loop, the ordering here must be preserved. Add a new repo
+  # to the _end_ of the array to ensure we don't try to delete previous repos.
+  - api
+  - api-gateway
+  - orgs-api
+  - workers-apps
+  - workers-canary
+  - workers-deployments
+  - workers-executors
+  - workers-installs
+  - workers-instances
+  - workers-orgs
+  - ctl-api
+
+required_checks:
+  # lints + tests + release + deploys for services and lib/infra.
+  - services ✅
+  - artifacts ✅
+  - pkg ✅
+  - infra ✅
+  - protos ✅
+  - sandboxes ✅
+
+  # linting and various hygiene checks
+  - pull_request ✅
+  - branch ✅
+  - lint ✅
+
+  # terraform cloud checks
+  - Terraform Cloud/nuonco/infra-artifacts
+  - Terraform Cloud/nuonco/aws-accounts
+  - Terraform Cloud/nuonco/aws-org
+  - Terraform Cloud/nuonco/aws-sso
+  - Terraform Cloud/nuonco/ctl-api-prod
+  - Terraform Cloud/nuonco/ctl-api-stage
+  - Terraform Cloud/nuonco/infra-datadog-orgs-prod
+  - Terraform Cloud/nuonco/infra-datadog-orgs-stage
+  - Terraform Cloud/nuonco/infra-datadog-prod
+  - Terraform Cloud/nuonco/infra-datadog-stage
+  - Terraform Cloud/nuonco/infra-eks-orgs-prod-main
+  - Terraform Cloud/nuonco/infra-eks-orgs-stage-main
+  - Terraform Cloud/nuonco/infra-eks-prod-nuon
+  - Terraform Cloud/nuonco/infra-eks-stage-nuon
+  - Terraform Cloud/nuonco/infra-github
+  - Terraform Cloud/nuonco/infra-orgs-prod
+  - Terraform Cloud/nuonco/infra-orgs-stage
+  - Terraform Cloud/nuonco/infra-temporal-prod
+  - Terraform Cloud/nuonco/infra-temporal-stage
+  - Terraform Cloud/nuonco/infra-terraform
+  - Terraform Cloud/nuonco/infra-waypoint-orgs-prod
+  - Terraform Cloud/nuonco/infra-waypoint-orgs-stage
+  - Terraform Cloud/nuonco/nuon-dns
+  - Terraform Cloud/nuonco/powertools
+  - Terraform Cloud/nuonco/sandboxes
+  - Terraform Cloud/nuonco/workers-apps-prod
+  - Terraform Cloud/nuonco/workers-apps-stage
+  - Terraform Cloud/nuonco/workers-canary-prod
+  - Terraform Cloud/nuonco/workers-canary-stage
+  - Terraform Cloud/nuonco/workers-executors-prod
+  - Terraform Cloud/nuonco/workers-executors-stage
+  - Terraform Cloud/nuonco/workers-installs-prod
+  - Terraform Cloud/nuonco/workers-installs-stage
+  - Terraform Cloud/nuonco/workers-orgs-prod
+  - Terraform Cloud/nuonco/workers-orgs-stage

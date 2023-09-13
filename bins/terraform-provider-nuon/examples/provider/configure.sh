@@ -1,2 +1,0 @@
-export NUON_API_TOKEN=your_api_token
-export NUON_ORG_ID=your_org_id
