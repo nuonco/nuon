@@ -47,6 +47,4 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, orgID string) error {
 	for {
 		selector.Select(ctx)
 	}
-
-	return nil
 }

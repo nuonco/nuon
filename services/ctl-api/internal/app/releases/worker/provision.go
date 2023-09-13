@@ -6,26 +6,12 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 )
 
-func (w *Workflows) updateStatus(ctx workflow.Context, releaseID, status, statusDescription string) {
-	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
-		ReleaseID:         releaseID,
-		Status:            status,
-		StatusDescription: statusDescription,
-	})
-	if err == nil {
-		return
-	}
-
-	w.l.Error("unable to update release status",
-		zap.String("release-id", releaseID),
-		zap.Error(err))
-}
-
 func (w *Workflows) provision(ctx workflow.Context, releaseID string, dryRun bool) error {
-	w.updateStatus(ctx, releaseID, "provisioning", "provisioning release")
+	// TODO(ja): "provisioning" as a status for releases doesn't sound right.
+	// We may need to revisit release statuses.
+	w.updateStatus(ctx, releaseID, StatusProvisioning, "provisioning deploys")
 
 	var release app.ComponentRelease
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
