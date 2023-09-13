@@ -1,6 +1,6 @@
 VERSION --use-cache-command 0.6
 
-FROM ghcr.io/powertoolsdev/ci-go-builder
+FROM ../../images/go-base+build-base
 
 WORKDIR /src
 
@@ -66,18 +66,10 @@ build:
     SAVE ARTIFACT bin/service /service
     SAVE IMAGE --push $GHCR_IMAGE:build
 
-iamauthenticator:
-    WORKDIR /tmp
-    # iam authenticator download url
-    ARG version=0.6.2
-    RUN curl \
-            -Lo aws-iam-authenticator \
-            "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
-        && chmod +x aws-iam-authenticator
-    SAVE ARTIFACT aws-iam-authenticator
 
 docker:
-    FROM alpine:3.16
+    FROM ../../images/go-base+alpine-base
+
     ARG EARTHLY_GIT_ORIGIN_URL
     ARG EARTHLY_GIT_SHORT_HASH
     ARG EARTHLY_SOURCE_DATE_EPOCH
@@ -89,15 +81,12 @@ docker:
     ARG cache_tag=$EARTHLY_TARGET_TAG_DOCKER
     ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
-    BUILD +iamauthenticator
     COPY +build/service /bin/service
-    COPY +iamauthenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
     COPY ../../charts/waypoint+chart/chart /charts/waypoint
-    RUN apk add --update --no-cache \
-        git \
-        zip
+    COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 
     ENTRYPOINT ["/bin/service", "all"]
+
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
     LABEL org.opencontainers.image.version=$image_tag
