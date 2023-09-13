@@ -10,18 +10,13 @@ import (
 )
 
 func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun bool) error {
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
-		InstallID:         installID,
-		Status:            "deprovisioning",
-		StatusDescription: "deleting install resources - this should take about 15 minutes",
-	}); err != nil {
-		return fmt.Errorf("unable to update install status: %w", err)
-	}
+	w.updateStatus(ctx, installID, StatusDeprovisioning, "deprovisioning install resources")
 
 	var install app.Install
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		InstallID: installID,
 	}, &install); err != nil {
+		w.updateStatus(ctx, installID, StatusError, "unable to get install from database")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
@@ -41,6 +36,7 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 		},
 	})
 	if err != nil {
+		w.updateStatus(ctx, installID, StatusError, "unable to deprovision install resources")
 		return fmt.Errorf("unable to deprovision install: %w", err)
 	}
 
@@ -48,7 +44,9 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
 		InstallID: installID,
 	}); err != nil {
+		w.updateStatus(ctx, installID, StatusError, "unable to delete install from database")
 		return fmt.Errorf("unable to delete install: %w", err)
 	}
+
 	return nil
 }
