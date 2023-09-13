@@ -10,11 +10,7 @@ import (
 )
 
 func (w *Workflows) provision(ctx workflow.Context, appID string, dryRun bool) error {
-	w.updateStatus(ctx, appID, StatusProvisioning, "creating app resources")
-
-	if err := w.pollDependencies(ctx, appID); err != nil {
-		return fmt.Errorf("unable to poll org for app: %w", err)
-	}
+	w.updateStatus(ctx, appID, StatusProvisioning, "provisioning app resources")
 
 	var currentApp app.App
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
@@ -34,6 +30,6 @@ func (w *Workflows) provision(ctx workflow.Context, appID string, dryRun bool) e
 	}
 
 	// update status with response
-	w.updateStatus(ctx, appID, StatusActive, "app is provisioned")
+	w.updateStatus(ctx, appID, StatusActive, "app resources are provisioned")
 	return nil
 }

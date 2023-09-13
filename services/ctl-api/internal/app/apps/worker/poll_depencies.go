@@ -19,6 +19,7 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, appID string) error {
 		if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 			AppID: appID,
 		}, &currentApp); err != nil {
+			w.updateStatus(ctx, appID, "error", "unable to get app from database")
 			return fmt.Errorf("unable to get app: %w", err)
 		}
 
@@ -27,6 +28,7 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, appID string) error {
 		}
 
 		if currentApp.Org.Status == "error" {
+			w.updateStatus(ctx, appID, "error", "org failed")
 			return fmt.Errorf("org failed: %s", currentApp.Org.StatusDescription)
 		}
 
