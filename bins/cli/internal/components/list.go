@@ -2,13 +2,15 @@ package components
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 )
 
-func (s *Service) List(ctx context.Context, appID string) {
+func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 	view := ui.NewListView()
 
 	components := []*models.AppComponent{}
@@ -23,25 +25,30 @@ func (s *Service) List(ctx context.Context, appID string) {
 		return
 	}
 
-	data := [][]string{
-		[]string{
-			"id",
-			"name",
-			"created at",
-			"updated at",
-			"created by",
-			"config versions",
-		},
+	if asJSON == true {
+		j, _ := json.Marshal(components)
+		fmt.Println(string(j))
+	} else {
+		data := [][]string{
+			[]string{
+				"id",
+				"name",
+				"created at",
+				"updated at",
+				"created by",
+				"config versions",
+			},
+		}
+		for _, component := range components {
+			data = append(data, []string{
+				component.ID,
+				component.Name,
+				component.CreatedAt,
+				component.UpdatedAt,
+				component.CreatedByID,
+				strconv.Itoa(int(component.ConfigVersions)),
+			})
+		}
+		view.Render(data)
 	}
-	for _, component := range components {
-		data = append(data, []string{
-			component.ID,
-			component.Name,
-			component.CreatedAt,
-			component.UpdatedAt,
-			component.CreatedByID,
-			strconv.Itoa(int(component.ConfigVersions)),
-		})
-	}
-	view.Render(data)
 }

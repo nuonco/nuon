@@ -28,7 +28,7 @@ func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service
 		Short:   "List installs",
 		Long:    "List all your app's installs",
 		Run: func(cmd *cobra.Command, args []string) {
-			installsService.List(cmd.Context(), appID)
+			installsService.List(cmd.Context(), appID, PrintJSON)
 		},
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter installs by")
@@ -39,7 +39,7 @@ func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service
 		Short: "Get an install",
 		Long:  "Get an install by ID",
 		Run: func(cmd *cobra.Command, args []string) {
-			installsService.Get(cmd.Context(), id)
+			installsService.Get(cmd.Context(), id, PrintJSON)
 		},
 	}
 	getCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")

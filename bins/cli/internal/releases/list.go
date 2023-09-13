@@ -2,12 +2,14 @@ package releases
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/api/client/models"
 )
 
-func (s *Service) List(ctx context.Context, appID, compID string) {
+func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) {
 	view := ui.NewListView()
 
 	releases := []*models.AppComponentRelease{}
@@ -21,21 +23,27 @@ func (s *Service) List(ctx context.Context, appID, compID string) {
 		view.Error(err)
 		return
 	}
-	data := [][]string{
-		[]string{
-			"id",
-			"status",
-			"build id",
-			"created at",
-		},
+
+	if asJSON == true {
+		j, _ := json.Marshal(releases)
+		fmt.Println(string(j))
+	} else {
+		data := [][]string{
+			[]string{
+				"id",
+				"status",
+				"build id",
+				"created at",
+			},
+		}
+		for _, release := range releases {
+			data = append(data, []string{
+				release.ID,
+				release.Status,
+				release.BuildID,
+				release.CreatedAt,
+			})
+		}
+		view.Render(data)
 	}
-	for _, release := range releases {
-		data = append(data, []string{
-			release.ID,
-			release.Status,
-			release.BuildID,
-			release.CreatedAt,
-		})
-	}
-	view.Render(data)
 }
