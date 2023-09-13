@@ -26,4 +26,5 @@ alpine-base:
     coreutils \
     curl \
     protoc \
-    git
+    git \
+    zip
