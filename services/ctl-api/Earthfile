@@ -1,6 +1,6 @@
 VERSION --use-cache-command 0.6
 
-FROM golang:1.20-alpine
+FROM ../../images/go-base+build-base
 
 WORKDIR /src
 
@@ -49,7 +49,8 @@ build:
     SAVE IMAGE --push $GHCR_IMAGE:build
 
 docker:
-    FROM alpine:3.16
+    FROM ../../images/go-base+alpine-base
+
     ARG EARTHLY_GIT_ORIGIN_URL
     ARG EARTHLY_GIT_SHORT_HASH
     ARG EARTHLY_SOURCE_DATE_EPOCH

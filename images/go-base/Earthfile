@@ -1,0 +1,29 @@
+VERSION --use-cache-command 0.6
+
+FROM golang:1.21
+
+build-base:
+  ENV CGO_ENABLED=0
+
+  RUN apt-get update && \
+    apt-get install -y ca-certificates \
+      coreutils \
+      make \
+      git \
+      curl \
+      protobuf-compiler
+
+alpine-base:
+  FROM golang:1.21-alpine
+
+  ENV CGO_ENABLED=0
+
+  RUN apk add --no-cache \
+    libc6-compat \
+    build-base \
+    make \
+    ca-certificates-bundle \
+    coreutils \
+    curl \
+    protoc \
+    git
