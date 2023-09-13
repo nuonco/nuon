@@ -33,6 +33,10 @@ func (w *Workflows) ReleaseEventLoop(ctx workflow.Context, releaseID string) err
 		}
 
 		switch signal.Operation {
+		case OperationPollDependencies:
+			if err := w.pollDependencies(ctx, releaseID); err != nil {
+				l.Info("unable to poll dependencies: %w", zap.Error(err))
+			}
 		case OperationProvision:
 			if err := w.provision(ctx, releaseID, signal.DryRun); err != nil {
 				l.Info("unable to provision release: %w", zap.Error(err))

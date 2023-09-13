@@ -38,4 +38,9 @@ func (a *Hooks) Created(ctx context.Context, componentID string) {
 		zap.String("component-id", componentID),
 		zap.Error(err),
 	)
+
+	a.sendSignal(ctx, componentID, worker.Signal{
+		DryRun:    a.cfg.DevEnableWorkersDryRun,
+		Operation: worker.OperationPollDependencies,
+	})
 }
