@@ -1,21 +1,9 @@
 locals {
-  size_labels = [
-    { name : "size/XS", color : "00f000", lines : "0-9" },
-    { name : "size/S", color : "77b800", lines : "10-29" },
-    { name : "size/M", color : "ebb800", lines : "30-99" },
-    { name : "size/L", color : "eb9500", lines : "100-499" },
-    { name : "size/XL", color : "ff823f", lines : "500-999" },
-    { name : "size/XXL", color : "ee0000", lines : "1000+" },
-  ]
+  size_labels = []
 
   issue_labels = [
-    { name : "proposal", color : "00f000", desc : "A proposal for an improvement, feature request or other." },
     { name : "bug", color : "77b800", desc : "A bug." },
     { name : "improvement", color : "eb9500", desc : "A QOL improvement such as improving linting, refactoring etc." },
-    { name : "product", color : "ebb800", desc : "Part of the direct product (api, ui, etc)." },
-    { name : "infra", color : "eb9500", desc : "Infrastructure related to our product (sandboxes, waypoint, etc)." },
-    { name : "internal-infra", color : "77b800", desc : "Internal infra related to our own (CI, AWS, workflows etc)." },
-    { name : "blog-content", color : "ffa500", desc : "Potential blog content." },
   ]
 }
 
