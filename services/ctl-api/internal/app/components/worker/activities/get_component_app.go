@@ -15,6 +15,7 @@ func (a *Activities) GetComponentApp(ctx context.Context, req GetComponentAppReq
 	cmp := app.Component{}
 	res := a.db.WithContext(ctx).
 		Preload("App").
+		Preload("App.Org").
 		First(&cmp, "id = ?", req.ComponentID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)

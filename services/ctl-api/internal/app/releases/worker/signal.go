@@ -9,7 +9,8 @@ import (
 type Operation string
 
 const (
-	OperationProvision Operation = "provision"
+	OperationProvision        Operation = "provision"
+	OperationPollDependencies Operation = "poll_dependencies"
 )
 
 type Signal struct {
