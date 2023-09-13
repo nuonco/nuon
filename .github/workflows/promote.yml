@@ -99,9 +99,32 @@ jobs:
     with:
       service: ${{matrix.service}}
       tag: ${{ needs.tag.outputs.git_ref }}
-      prod: true
+      prod: false
       stage: false
     secrets: inherit
+
+  bump_tag:
+    name: bump tag
+    needs:
+      - tag
+      - merged_pr
+      - services
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine next version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          patchAll: true
+
+      - name: Push tag
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: ${{ steps.semver.outputs.nextStrict }}
 
   status_slack_notifications:
     name: update promotions channel
