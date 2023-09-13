@@ -33,6 +33,10 @@ func (w *Workflows) AppEventLoop(ctx workflow.Context, appID string) error {
 		}
 
 		switch signal.Operation {
+		case OperationPollDependencies:
+			if err := w.pollDependencies(ctx, appID); err != nil {
+				l.Info("unable to poll app dependencies: %w", zap.Error(err))
+			}
 		case OperationProvision:
 			if err := w.provision(ctx, appID, signal.DryRun); err != nil {
 				l.Info("unable to provision app: %w", zap.Error(err))
