@@ -46,6 +46,4 @@ func (w *Workflows) ReleaseEventLoop(ctx workflow.Context, releaseID string) err
 	for {
 		selector.Select(ctx)
 	}
-
-	return nil
 }
