@@ -47,7 +47,7 @@ jobs:
     needs:
       - merged_pr
     runs-on: ubuntu-latest
-    if: ${{ needs.merged_pr.outputs.promote == true }}
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     outputs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
     steps:
@@ -63,7 +63,7 @@ jobs:
     needs:
       - tag
       - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == true }}
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -84,7 +84,7 @@ jobs:
     needs:
       - tag
       - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == true }}
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -105,7 +105,7 @@ jobs:
 
   status_slack_notifications:
     name: update promotions channel
-    if: ${{ needs.merged_pr.outputs.promote == true }} && always()
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
     needs:
       - tag
       - services
