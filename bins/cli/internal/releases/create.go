@@ -9,6 +9,11 @@ import (
 	"github.com/pterm/pterm"
 )
 
+const (
+	statusError  = "error"
+	statusActive = "active"
+)
+
 func (s *Service) Create(ctx context.Context, compID, buildID, delay string, installsPerStep int64) {
 	releaseSpinner, _ := pterm.DefaultSpinner.Start("starting release")
 
@@ -26,14 +31,16 @@ func (s *Service) Create(ctx context.Context, compID, buildID, delay string, ins
 
 	for {
 		release, err := s.api.GetRelease(ctx, newRelease.ID)
-		if err != nil {
+		switch {
+		case err != nil:
 			releaseSpinner.Fail(err.Error() + "\n")
-		}
-
-		if release.Status == "active" {
-			releaseSpinner.Success(fmt.Sprintf("successfully released component %s", release.ID))
+		case release.Status == statusError:
+			releaseSpinner.Fail(fmt.Errorf("failed to create release: %s", release.StatusDescription))
 			return
-		} else {
+		case release.Status == statusActive:
+			releaseSpinner.Success(fmt.Sprintf("successfully created release %s", release.ID))
+			return
+		default:
 			releaseSpinner.UpdateText(fmt.Sprintf("%s component release", release.Status))
 		}
 
