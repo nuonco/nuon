@@ -1,6 +1,6 @@
 VERSION --use-cache-command 0.6
 
-FROM ghcr.io/powertoolsdev/ci-go-builder
+FROM ../../images/go-base+build-base
 
 WORKDIR /src
 
@@ -41,7 +41,8 @@ build:
     SAVE IMAGE --push $GHCR_IMAGE:build
 
 docker:
-    FROM alpine:3.16
+    FROM ../../images/go-base+alpine-base
+
     ARG EARTHLY_GIT_ORIGIN_URL
     ARG EARTHLY_GIT_SHORT_HASH
     ARG EARTHLY_SOURCE_DATE_EPOCH
@@ -58,6 +59,8 @@ docker:
       zip
 
     COPY +build/service /bin/service
+    COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+
     ENTRYPOINT ["/bin/service", "all"]
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
     LABEL org.opencontainers.image.revision=$EARTHLY_GIT_SHORT_HASH
