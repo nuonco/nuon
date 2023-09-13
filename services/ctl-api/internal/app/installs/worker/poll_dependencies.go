@@ -19,6 +19,7 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, installID string) err
 		if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 			InstallID: installID,
 		}, &install); err != nil {
+			w.updateStatus(ctx, installID, StatusError, "unable to get install from database")
 			return fmt.Errorf("unable to get install and poll: %w", err)
 		}
 
@@ -26,10 +27,9 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, installID string) err
 			return nil
 		}
 		if install.App.Status == "error" {
+			w.updateStatus(ctx, installID, StatusError, "app failed")
 			return fmt.Errorf("app failed: %s", install.App.StatusDescription)
 		}
 		workflow.Sleep(ctx, defaultPollTimeout)
 	}
-
-	return nil
 }
