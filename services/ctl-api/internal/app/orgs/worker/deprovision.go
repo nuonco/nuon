@@ -9,20 +9,14 @@ import (
 )
 
 func (w *Workflows) deprovision(ctx workflow.Context, orgID string, dryRun bool) error {
-	// update status
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
-		OrgID:             orgID,
-		Status:            "deprovisioning",
-		StatusDescription: "tearing down org server, runner and infra - this should take about 15 minutes",
-	}); err != nil {
-		return fmt.Errorf("unable to update org status: %w", err)
-	}
+	w.updateStatus(ctx, orgID, StatusDeprovisioning, "deprovisioning organization resources")
 
 	_, err := w.execDeprovisionWorkflow(ctx, dryRun, &orgsv1.DeprovisionRequest{
 		OrgId:  orgID,
 		Region: defaultOrgRegion,
 	})
 	if err != nil {
+		w.updateStatus(ctx, orgID, StatusError, "unable to deprovision organization resources")
 		return fmt.Errorf("unable to deprovision org: %w", err)
 	}
 
@@ -30,6 +24,7 @@ func (w *Workflows) deprovision(ctx workflow.Context, orgID string, dryRun bool)
 	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
 		OrgID: orgID,
 	}); err != nil {
+		w.updateStatus(ctx, orgID, StatusError, "unable to delete organiztion from database")
 		return fmt.Errorf("unable to delete org: %w", err)
 	}
 	return nil
