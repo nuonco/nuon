@@ -34,7 +34,7 @@ func (s *Service) Create(ctx context.Context, compID string) {
 		case err != nil:
 			buildSpinner.Fail(err.Error() + "\n")
 		case build.Status == statusError:
-			buildSpinner.Fail(fmt.Errorf("failed to create build: %s", build.StatusDescription))
+			buildSpinner.Fail(fmt.Errorf("failed to create component build: %s", build.StatusDescription))
 			return
 		case build.Status == statusActive:
 			buildSpinner.Success(fmt.Sprintf("successfully created component build %s", build.ID))
