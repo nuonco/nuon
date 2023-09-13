@@ -32,6 +32,4 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, appID string) error {
 
 		workflow.Sleep(ctx, defaultPollTimeout)
 	}
-
-	return nil
 }
