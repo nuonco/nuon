@@ -123,8 +123,9 @@ func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateCo
 	}
 
 	// append the steps into the association
+	var rel app.ComponentRelease
 	err = s.db.WithContext(ctx).
-		First(&release).
+		First(&rel, "id = ?", release.ID).
 		Association("ComponentReleaseSteps").
 		Append(generics.ToIntSlice(steps)...)
 	if err != nil {
