@@ -1,8 +1,6 @@
 VERSION --use-cache-command --use-copy-link 0.6
 
-IMPORT github.com/powertoolsdev/shared-configs:main
-
-FROM ghcr.io/powertoolsdev/ci-go-builder
+FROM ../../images/go-base+build-base
 
 WORKDIR /app
 

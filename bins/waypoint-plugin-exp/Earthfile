@@ -1,6 +1,6 @@
 VERSION --use-cache-command 0.6
 
-FROM ghcr.io/powertoolsdev/ci-go-builder
+FROM ../../images/go-base+build-base
 
 WORKDIR /src
 
@@ -35,6 +35,8 @@ artifacts:
     SAVE ARTIFACT out AS LOCAL ./out
 
 oci-artifacts:
+    FROM ../../images/go-base+alpine-base
+
     COPY +artifacts/out/$BIN /bin/$BIN
 
     ARG repo=
