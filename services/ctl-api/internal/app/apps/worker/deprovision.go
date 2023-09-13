@@ -9,13 +9,7 @@ import (
 
 func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool) error {
 	// update status
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
-		AppID:             appID,
-		Status:            "deprovisioning",
-		StatusDescription: "deleting application resources",
-	}); err != nil {
-		return fmt.Errorf("unable to update app status: %w", err)
-	}
+	w.updateStatus(ctx, appID, StatusDeprovisioning, "deleting app resources")
 
 	// NOTE: we don't actually have a deprovision step, but we sleep here locally when a dry-run is enabled, to
 	// ensure that the status updating is working correctly.
@@ -27,7 +21,10 @@ func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool)
 	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
 		AppID: appID,
 	}); err != nil {
+		w.updateStatus(ctx, appID, StatusError, "unable to delete app")
 		return fmt.Errorf("unable to delete app: %w", err)
 	}
+
+	w.updateStatus(ctx, appID, StatusActive, "app is provisioned")
 	return nil
 }
