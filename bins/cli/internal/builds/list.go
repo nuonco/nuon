@@ -27,7 +27,7 @@ func (s *Service) List(ctx context.Context, compID string) {
 		data = append(data, []string{
 			build.ID,
 			build.Status,
-			build.ComponentConfigConnectionID,
+			compID,
 			build.GitRef,
 		})
 	}
