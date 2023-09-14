@@ -267,4 +267,22 @@ func (s *componentReleasesTestSuite) TestGetComponentReleaseSteps() {
 		require.Error(t, err)
 		require.Empty(t, fetched)
 	})
+
+	s.T().Run("successful when installs per step is 0", func(t *testing.T) {
+		release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
+			BuildID: s.buildID,
+			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
+				InstallsPerStep: 1,
+				Delay:           generics.GetFakeObj[time.Duration]().String(),
+			},
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, release)
+
+		fetched, err := s.apiClient.GetReleaseSteps(s.ctx, release.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, fetched)
+
+		require.Equal(t, fetched[0].RequestedInstallIds[0], s.installID)
+	})
 }
