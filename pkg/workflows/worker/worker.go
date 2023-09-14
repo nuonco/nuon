@@ -9,7 +9,7 @@ import (
 type worker struct {
 	v *validator.Validate `validate:"required"`
 
-	Config     *Config       `validate:"required,dive"`
+	Config     *Config       `validate:"required"`
 	Workflows  []interface{} `validate:"required,gt=0"`
 	Activities []interface{} `validate:"required,gt=0"`
 	Namespace  string        `validate:"required"`

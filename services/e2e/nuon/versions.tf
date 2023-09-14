@@ -3,8 +3,8 @@ terraform {
 
   required_providers {
     nuon = {
-      source  = "terraform.local/local/nuon"
-      version = "0.0.1"
+      source = "nuonco/nuon"
+      version = ">=0.1.1"
     }
   }
 }
