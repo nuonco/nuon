@@ -18,6 +18,7 @@ func EventLoopWorkflowID(releaseID string) string {
 func (w *Workflows) ReleaseEventLoop(ctx workflow.Context, releaseID string) error {
 	l := zap.L()
 
+	finished := false
 	signalChan := workflow.GetSignalChannel(ctx, releaseID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
@@ -41,9 +42,12 @@ func (w *Workflows) ReleaseEventLoop(ctx workflow.Context, releaseID string) err
 			if err := w.provision(ctx, releaseID, signal.DryRun); err != nil {
 				l.Info("unable to provision release: %w", zap.Error(err))
 			}
+			finished = true
 		}
 	})
-	for {
+	for !finished {
 		selector.Select(ctx)
 	}
+
+	return nil
 }
