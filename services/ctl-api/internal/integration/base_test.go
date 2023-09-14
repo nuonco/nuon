@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/api/client"
+	"github.com/nuonco/nuon-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -15,7 +15,7 @@ type baseIntegrationTestSuite struct {
 	suite.Suite
 
 	v         *validator.Validate
-	apiClient client.Client
+	apiClient nuon.Client
 	ctx       context.Context
 	ctxCancel func()
 }
@@ -34,9 +34,9 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 	apiToken := os.Getenv("INTEGRATION_API_TOKEN")
 	assert.NotEmpty(s.T(), apiToken)
 
-	apiClient, err := client.New(s.v,
-		client.WithAuthToken(apiToken),
-		client.WithURL(apiURL),
+	apiClient, err := nuon.New(s.v,
+		nuon.WithAuthToken(apiToken),
+		nuon.WithURL(apiURL),
 	)
 	assert.NoError(s.T(), err)
 	s.apiClient = apiClient

@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/powertoolsdev/mono/pkg/api/client/models"
+	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
