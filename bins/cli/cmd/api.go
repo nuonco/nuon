@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/api/client"
+	"github.com/nuonco/nuon-go"
 )
 
 const (
@@ -14,15 +14,15 @@ const (
 	ORG_ID_ENV_NAME    = "NUON_ORG_ID"
 )
 
-func newAPI(vld *validator.Validate) (client.Client, error) {
+func newAPI(vld *validator.Validate) (nuon.Client, error) {
 	cfg, err := loadAPIConfig()
 	if err != nil {
 		return nil, fmt.Errorf("Missing API client config: %w", err)
 	}
-	api, err := client.New(vld,
-		client.WithAuthToken(cfg.API_TOKEN),
-		client.WithURL(cfg.API_URL),
-		client.WithOrgID(cfg.ORG_ID),
+	api, err := nuon.New(vld,
+		nuon.WithAuthToken(cfg.API_TOKEN),
+		nuon.WithURL(cfg.API_URL),
+		nuon.WithOrgID(cfg.ORG_ID),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to init API client: %w", err)

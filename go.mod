@@ -1,6 +1,6 @@
 module github.com/powertoolsdev/mono
 
-go 1.21
+go 1.21.1
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
@@ -37,7 +37,7 @@ require (
 	github.com/go-openapi/validate v0.22.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/go-playground/validator v9.31.0+incompatible
-	github.com/go-playground/validator/v10 v10.14.0
+	github.com/go-playground/validator/v10 v10.15.3
 	github.com/go-swagger/go-swagger v0.30.5
 	github.com/gogo/status v1.1.1
 	github.com/golang/mock v1.6.0
@@ -295,6 +295,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/nuonco/nuon-go v0.0.3
 	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
