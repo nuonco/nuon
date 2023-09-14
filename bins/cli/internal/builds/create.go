@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/api/client/models"
+	"github.com/nuonco/nuon-go/models"
 	"github.com/pterm/pterm"
 )
 

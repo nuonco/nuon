@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/powertoolsdev/mono/pkg/api/client/models"
+	"github.com/nuonco/nuon-go/models"
 )
 
 func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) {

@@ -18,7 +18,7 @@ type BucketConfig struct {
 type s3 struct {
 	v *validator.Validate
 
-	Bucket      *BucketConfig       `validate:"required,dive"`
+	Bucket      *BucketConfig       `validate:"required"`
 	Credentials *credentials.Config `validate:"-"`
 }
 
