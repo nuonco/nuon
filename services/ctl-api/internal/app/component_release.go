@@ -28,7 +28,7 @@ type ComponentRelease struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	ComponentBuildID string         `json:"build_id"`
-	ComponentBuild   ComponentBuild `json:"build"`
+	ComponentBuild   ComponentBuild `json:"build" swaggerignore:"true"`
 
 	TotalComponentReleaseSteps int                    `json:"total_release_steps" gorm:"-"`
 	ComponentReleaseSteps      []ComponentReleaseStep `json:"release_steps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
