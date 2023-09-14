@@ -19,6 +19,7 @@ func EventLoopWorkflowID(orgID string) string {
 func (w *Workflows) OrgEventLoop(ctx workflow.Context, orgID string) error {
 	l := zap.L()
 
+	finished := false
 	signalChan := workflow.GetSignalChannel(ctx, orgID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
@@ -42,9 +43,12 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, orgID string) error {
 			if err := w.deprovision(ctx, orgID, signal.DryRun); err != nil {
 				l.Info("unable to deprovision org: %w", zap.Error(err))
 			}
+			finished = true
 		}
 	})
-	for {
+	for !finished {
 		selector.Select(ctx)
 	}
+
+	return nil
 }
