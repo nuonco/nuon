@@ -53,7 +53,7 @@ func newBuildsCmd(bindConfig bindConfigFunc, buildsService *builds.Service) *cob
 		Short: "Create a build",
 		Long:  "Create a build of an app component",
 		Run: func(cmd *cobra.Command, args []string) {
-			buildsService.Create(cmd.Context(), compID)
+			buildsService.Create(cmd.Context(), compID, PrintJSON)
 		},
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component you want to create a build for")
