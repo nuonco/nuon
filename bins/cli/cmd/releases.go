@@ -69,7 +69,7 @@ func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service
 		Short: "Create release",
 		Long:  "Create a release of an app component",
 		Run: func(cmd *cobra.Command, args []string) {
-			releasesService.Create(cmd.Context(), compID, buildID, delay, installsPerStep)
+			releasesService.Create(cmd.Context(), compID, buildID, delay, installsPerStep, PrintJSON)
 		},
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component whose build you want to create a release for")

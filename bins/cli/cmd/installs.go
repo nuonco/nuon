@@ -51,7 +51,7 @@ func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service
 		Short: "Create an install",
 		Long:  "Create a new install of your app",
 		Run: func(cmd *cobra.Command, args []string) {
-			installsService.Create(cmd.Context(), appID, name, region, arn)
+			installsService.Create(cmd.Context(), appID, name, region, arn, PrintJSON)
 		},
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of the app to create this install for")
