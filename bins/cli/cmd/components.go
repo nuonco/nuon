@@ -48,7 +48,7 @@ func newComponentsCmd(bindConfig bindConfigFunc, componentsService *components.S
 		Short: "Delete component",
 		Long:  "Delete app component by ID",
 		Run: func(cmd *cobra.Command, args []string) {
-			componentsService.Delete(cmd.Context(), id)
+			componentsService.Delete(cmd.Context(), id, PrintJSON)
 		},
 	}
 	deleteCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID of the component you want to delete")
