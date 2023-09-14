@@ -12,10 +12,11 @@ const (
 )
 
 var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
-	{"GET", "/livez"}:   {},
-	{"GET", "/version"}: {},
-	{"GET", "/readyz"}:  {},
-	{"OPTIONS", "*"}:    {},
+	{"GET", "/livez"}:     {},
+	{"GET", "/version"}:   {},
+	{"GET", "/readyz"}:    {},
+	{"OPTIONS", "*"}:      {},
+	{"GET", "/docs/*any"}: {},
 }
 
 func IsPublic(ctx *gin.Context) bool {
@@ -40,7 +41,6 @@ func (m middleware) Handler() gin.HandlerFunc {
 		method := ctx.Request.Method
 		// full path will return the _matched_ path, such as `/v1/sandboxes/:id`
 		path := ctx.FullPath()
-
 		key := [2]string{
 			method,
 			path,

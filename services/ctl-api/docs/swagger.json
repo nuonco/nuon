@@ -2193,6 +2193,9 @@
                 "name": {
                     "type": "string"
                 },
+                "org": {
+                    "$ref": "#/definitions/app.Org"
+                },
                 "org_id": {
                     "type": "string"
                 },
@@ -2367,6 +2370,9 @@
         "app.ComponentRelease": {
             "type": "object",
             "properties": {
+                "build": {
+                    "$ref": "#/definitions/app.ComponentBuild"
+                },
                 "build_id": {
                     "type": "string"
                 },
@@ -2860,6 +2866,9 @@
                 "provision_policy_url": {
                     "type": "string"
                 },
+                "sandbox": {
+                    "$ref": "#/definitions/app.Sandbox"
+                },
                 "terraform_version": {
                     "type": "string"
                 },
@@ -2950,6 +2959,9 @@
                     "type": "string"
                 },
                 "created_by_id": {
+                    "type": "string"
+                },
+                "email": {
                     "type": "string"
                 },
                 "expires_at": {

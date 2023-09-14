@@ -46,6 +46,8 @@ definitions:
         type: string
       name:
         type: string
+      org:
+        $ref: '#/definitions/app.Org'
       org_id:
         type: string
       sandbox_release:
@@ -161,6 +163,8 @@ definitions:
     type: object
   app.ComponentRelease:
     properties:
+      build:
+        $ref: '#/definitions/app.ComponentBuild'
       build_id:
         type: string
       created_at:
@@ -489,6 +493,8 @@ definitions:
         type: string
       provision_policy_url:
         type: string
+      sandbox:
+        $ref: '#/definitions/app.Sandbox'
       terraform_version:
         type: string
       trust_policy_url:
@@ -548,6 +554,8 @@ definitions:
       created_at:
         type: string
       created_by_id:
+        type: string
+      email:
         type: string
       expires_at:
         type: string
