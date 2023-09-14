@@ -22,6 +22,8 @@ name: Deploy
         type: string
         required: true
 
+concurrency: ${{inputs.service}}-${{inputs.env}}
+
 defaults:
   run:
     shell: bash
