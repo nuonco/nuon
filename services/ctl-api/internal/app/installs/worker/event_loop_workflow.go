@@ -18,6 +18,7 @@ func EventLoopWorkflowID(installID string) string {
 func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) error {
 	l := zap.L()
 
+	finished := true
 	signalChan := workflow.GetSignalChannel(ctx, installID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
@@ -45,13 +46,16 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) err
 			if err := w.deprovision(ctx, installID, signal.DryRun); err != nil {
 				l.Info("unable to deprovision install: %w", zap.Error(err))
 			}
+			finished = true
 		case OperationDeploy:
 			if err := w.deploy(ctx, installID, signal.DeployID, signal.DryRun); err != nil {
 				l.Info("unable to perform deploy: %w", zap.Error(err))
 			}
 		}
 	})
-	for {
+	for !finished {
 		selector.Select(ctx)
 	}
+
+	return nil
 }
