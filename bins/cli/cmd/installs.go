@@ -69,7 +69,7 @@ func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service
 		Short: "Delete install",
 		Long:  "Delete an install by ID",
 		Run: func(cmd *cobra.Command, args []string) {
-			installsService.Delete(cmd.Context(), id)
+			installsService.Delete(cmd.Context(), id, PrintJSON)
 		},
 	}
 	deleteCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")
