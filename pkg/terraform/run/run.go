@@ -37,7 +37,7 @@ type run struct {
 	Workspace      workspace.Workspace `validate:"required"`
 	UI             terminal.UI         `validate:"required"`
 	Log            hclog.Logger        `validate:"required"`
-	OutputSettings *OutputSettings     `validate:"required,dive"`
+	OutputSettings *OutputSettings     `validate:"required"`
 }
 
 type runOption func(*run) error
