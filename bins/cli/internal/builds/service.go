@@ -1,12 +1,12 @@
 package builds
 
-import "github.com/powertoolsdev/mono/pkg/api/client"
+import "github.com/nuonco/nuon-go"
 
 type Service struct {
-	api client.Client
+	api nuon.Client
 }
 
-func New(apiClient client.Client) *Service {
+func New(apiClient nuon.Client) *Service {
 	return &Service{
 		api: apiClient,
 	}

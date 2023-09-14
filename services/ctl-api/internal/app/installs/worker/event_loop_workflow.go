@@ -18,7 +18,7 @@ func EventLoopWorkflowID(installID string) string {
 func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) error {
 	l := zap.L()
 
-	finished := true
+	finished := false
 	signalChan := workflow.GetSignalChannel(ctx, installID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
