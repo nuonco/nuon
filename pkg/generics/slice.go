@@ -11,21 +11,20 @@ func ToIntSlice[T any](vals []T) []interface{} {
 
 // SliceToGroups turns a slice into a set of groups, with the group size. If the group size is less than 1, we set it to
 // one.
-func SliceToGroups[T any](vals []T, grpSize int) [][]T {
-	if grpSize < 1 {
-		grpSize = 1
+func SliceToGroups[T any](slice []T, limit int) [][]T {
+	if limit < 1 {
+		limit = 1
 	}
 
-	grps := make([][]T, 0)
-	grp := make([]T, 0, grpSize)
-	for _, val := range vals {
-		grp = append(grp, val)
-
-		if len(grp) >= grpSize {
-			grps = append(grps, grp)
-			grp = make([]T, 0, grpSize)
+	matrix := [][]T{{}}
+	row := 0
+	for _, val := range slice {
+		matrix[row] = append(matrix[row], val)
+		if len(matrix[row]) == limit {
+			row++
+			matrix = append(matrix, []T{})
 		}
 	}
 
-	return grps
+	return matrix
 }
