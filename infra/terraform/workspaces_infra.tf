@@ -215,10 +215,10 @@ module "infra-github" {
   dir                             = "infra/github"
   auto_apply                      = true
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials",
-                                     "github-admin-powertoolsdev",
-                                     "github-admin-nuonco"]
-  project_id                      = tfe_project.infra.id
+  variable_sets = ["aws-environment-credentials",
+    "github-admin-powertoolsdev",
+  "github-admin-nuonco"]
+  project_id = tfe_project.infra.id
 }
 
 module "infra-temporal-prod" {

@@ -14,7 +14,7 @@ module "ctl-api-stage" {
   vars = {
     env = "stage"
   }
-  variable_sets = ["aws-environment-credentials","slack-webhooks"]
+  variable_sets = ["aws-environment-credentials", "slack-webhooks"]
   project_id    = tfe_project.services.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
@@ -31,7 +31,7 @@ module "ctl-api-prod" {
     env = "prod"
   }
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets = ["aws-environment-credentials","slack-webhooks"]
+  variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
   project_id                      = tfe_project.services.id
 }
 

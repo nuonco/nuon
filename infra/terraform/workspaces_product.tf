@@ -5,19 +5,6 @@ resource "tfe_project" "product" {
   organization = data.tfe_organization.main.name
 }
 
-module "demo" {
-  source = "./modules/workspace"
-
-  name          = "demo"
-  repo          = "powertoolsdev/demo"
-  auto_apply    = true
-  dir           = "terraform"
-  variable_sets = ["aws-environment-credentials"]
-  project_id    = tfe_project.product.id
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
 module "infra-orgs-prod" {
   source = "./modules/workspace"
 

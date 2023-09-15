@@ -1,0 +1,56 @@
+# product project contains all workspaces for provisioning non-service parts of the product, such as the demo account,
+# orgs, horizon and more.
+resource "tfe_project" "demo" {
+  name         = "product"
+  organization = data.tfe_organization.main.name
+}
+
+module "demo" {
+  source = "./modules/workspace"
+
+  name          = "demo"
+  repo          = "powertoolsdev/demo"
+  auto_apply    = true
+  dir           = "terraform"
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.product.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+}
+
+module "demo-org-stage" {
+  source = "./modules/workspace"
+
+  name          = "demo-org-stage"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "infra/demo-org"
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.product.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+
+  // NOTE: we have to set the api token manually in the ui, so we don't leak it
+  vars = {
+    org_id  = "org47liun91achn0opycy6jlke"
+    api_url = "https://ctl.stage.nuon.co"
+  }
+}
+
+module "demo-org-prod" {
+  source = "./modules/workspace"
+
+  name          = "demo-org-prod"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "infra/demo-org"
+  variable_sets = ["aws-environment-credentials"]
+  project_id    = tfe_project.product.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+
+  // NOTE: we have to set the api token manually in the ui, so we don't leak it
+  vars = {
+    org_id = ""
+  }
+}
