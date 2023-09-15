@@ -16,7 +16,7 @@ type CreateWaypointProjectRequest struct {
 	OrgServerAddr        string           `json:"org_server_address" validate:"required"`
 	OrgID                string           `json:"org_id" validate:"required"`
 	InstallID            string           `json:"install_id" validate:"required"`
-	ClusterInfo          kube.ClusterInfo `json:"cluster_info" validate:"required,dive"`
+	ClusterInfo          kube.ClusterInfo `json:"cluster_info" validate:"required"`
 }
 
 func (c CreateWaypointProjectRequest) validate() error {
