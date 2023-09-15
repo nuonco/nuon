@@ -1,6 +1,6 @@
 module github.com/powertoolsdev/mono
 
-go 1.21.1
+go 1.21
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
