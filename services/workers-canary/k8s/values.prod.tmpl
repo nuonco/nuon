@@ -6,6 +6,11 @@ configmap:
     SLACK_WEBHOOK_URL: $TFO_CANARY_SLACK_WEBHOOKS_URL
     INSTALL_IAM_ROLE_ARN: $TFO_CANARY_INSTALL_IAM_ROLE_ARN
 
+    API_URL: $TFO_API_URL
+    # we prefix this with nuon to prevent conflicts when running locally
+    NUON_API_TOKEN: $TFO_API_TOKEN
+    GITHUB_INSTALL_ID: !!str "41915747"
+
 serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: $TFO_EKS_ROLE_ARN
