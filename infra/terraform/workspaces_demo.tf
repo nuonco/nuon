@@ -33,7 +33,6 @@ module "demo-org-stage" {
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   vars = {
     org_id  = "org47liun91achn0opycy6jlke"
-    api_url = "https://ctl.stage.nuon.co"
   }
 }
 
@@ -51,7 +50,7 @@ module "demo-org-prod" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   vars = {
-    org_id = ""
+    org_id = "orghbnzprgs5nuqnvusmbj0fmh"
   }
 }
 
@@ -70,6 +69,5 @@ module "e2e" {
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   vars = {
     org_id = "org47liun91achn0opycy6jlke"
-    api_url = "https://ctl.stage.nuon.co"
   }
 }

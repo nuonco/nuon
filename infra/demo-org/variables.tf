@@ -12,3 +12,15 @@ locals {
     NUON_OUTPUTS = "outputs"
   }
 }
+
+variable "api_url" {
+  description = "api_url set by standard api variable set"
+}
+
+variable "api_token" {
+  description = "api_token set by standard api variable set"
+}
+
+variable "org_id" {
+  description = "org id set from vars"
+}
