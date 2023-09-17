@@ -25,7 +25,7 @@ module "demo-org-stage" {
   repo          = "powertoolsdev/mono"
   auto_apply    = true
   dir           = "infra/demo-org"
-  variable_sets = ["aws-environment-credentials"]
+  variable_sets = ["aws-environment-credentials", "api-stage"]
   project_id    = tfe_project.product.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
@@ -44,7 +44,7 @@ module "demo-org-prod" {
   repo          = "powertoolsdev/mono"
   auto_apply    = true
   dir           = "infra/demo-org"
-  variable_sets = ["aws-environment-credentials"]
+  variable_sets = ["aws-environment-credentials", "api-prod"]
   project_id    = tfe_project.product.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
@@ -62,7 +62,7 @@ module "e2e" {
   repo          = "powertoolsdev/mono"
   auto_apply    = true
   dir           = "services/e2e/nuon"
-  variable_sets = ["aws-environment-credentials"]
+  variable_sets = ["aws-environment-credentials", "api-stage"]
   project_id    = tfe_project.product.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
