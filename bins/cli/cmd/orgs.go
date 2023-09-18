@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/orgs"
 	"github.com/spf13/cobra"
 )
 
-func newOrgsCmd(bindConfig bindConfigFunc, orgsService *orgs.Service) *cobra.Command {
+func newOrgsCmd(bindConfig config.BindCobraFunc, orgsService *orgs.Service) *cobra.Command {
 	orgsCmd := &cobra.Command{
 		Use:   "orgs",
 		Short: "Manage your organizations",

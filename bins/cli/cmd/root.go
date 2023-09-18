@@ -5,16 +5,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
 var PrintJSON bool = false
 
 // newRootCmd constructs a new root cobra command, which all other commands will be nested under. If there are any flags or other settings that we want to be "global", they should be configured on this command.
-func newRootCmd(
-	bindConfig bindConfigFunc,
-	cmds ...*cobra.Command,
-) *cobra.Command {
+func newRootCmd(bindConfig config.BindCobraFunc, cmds ...*cobra.Command) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:          "nuon",
 		SilenceUsage: true,
