@@ -31,8 +31,9 @@ module "demo-org-stage" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
-  vars = {
-    org_id  = "org47liun91achn0opycy6jlke"
+  env_vars = {
+    NUON_ORG_ID  = "org47liun91achn0opycy6jlke"
+    NUON_API_URL = "https://ctl.stage.nuon.co"
   }
 }
 
@@ -49,8 +50,8 @@ module "demo-org-prod" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
-  vars = {
-    org_id = "orghbnzprgs5nuqnvusmbj0fmh"
+  env_vars = {
+    NUON_ORG_ID = "orghbnzprgs5nuqnvusmbj0fmh"
   }
 }
 
@@ -67,7 +68,8 @@ module "e2e" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
-  vars = {
-    org_id = "org47liun91achn0opycy6jlke"
+  env_vars = {
+    NUON_ORG_ID  = "org47liun91achn0opycy6jlke"
+    NUON_API_URL = "https://ctl.stage.nuon.co"
   }
 }

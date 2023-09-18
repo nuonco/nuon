@@ -39,6 +39,12 @@ variable "vars" {
   default     = {}
 }
 
+variable "env_vars" {
+  description = "env variables to set on the workspace"
+  type        = map(any)
+  default     = {}
+}
+
 variable "variable_sets" {
   description = "names of variable sets to attach"
   type        = list(string)
