@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/builds"
+	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
 // newBuildsCmd constructs a new builds command
-func newBuildsCmd(bindConfig bindConfigFunc, buildsService *builds.Service) *cobra.Command {
+func newBuildsCmd(bindConfig config.BindCobraFunc, buildsService *builds.Service) *cobra.Command {
 	var (
 		buildID string
 		compID  string
