@@ -28,7 +28,8 @@ resource "github_branch_protection" "default" {
 
   required_pull_request_reviews {
     dismiss_stale_reviews           = true # if this is a bottleneck, the repo should be broken up
-    required_approving_review_count = 0
+    required_approving_review_count = var.required_approving_review_count
+    require_code_owner_reviews      = var.require_code_owner_reviews
   }
 
   required_status_checks {

@@ -74,3 +74,15 @@ variable "is_public" {
   type        = bool
   description = "whether the repo should be public or not"
 }
+
+variable "required_approving_review_count" {
+  type        = number
+  default     = 0
+  description = "Number of approvals required to merge to main"
+}
+
+variable "require_code_owner_reviews" {
+  type        = bool
+  default     = false
+  description = "Require approval by a code owner to merge to main"
+}
