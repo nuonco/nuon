@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/releases"
 	"github.com/spf13/cobra"
 )
 
-func newReleasesCmd(bindConfig bindConfigFunc, releasesService *releases.Service) *cobra.Command {
+func newReleasesCmd(bindConfig config.BindCobraFunc, releasesService *releases.Service) *cobra.Command {
 	var (
 		appID,
 		compID,

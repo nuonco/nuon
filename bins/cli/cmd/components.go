@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/components"
+	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
-func newComponentsCmd(bindConfig bindConfigFunc, componentsService *components.Service) *cobra.Command {
+func newComponentsCmd(bindConfig config.BindCobraFunc, componentsService *components.Service) *cobra.Command {
 	var (
 		id string
 	)

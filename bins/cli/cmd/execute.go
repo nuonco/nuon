@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
 	"github.com/powertoolsdev/mono/bins/cli/internal/builds"
 	"github.com/powertoolsdev/mono/bins/cli/internal/components"
+	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
 	"github.com/powertoolsdev/mono/bins/cli/internal/orgs"
 	"github.com/powertoolsdev/mono/bins/cli/internal/releases"
@@ -25,21 +26,27 @@ func Execute() {
 	// Construct a validator for the API client and the UI logger.
 	vld := validator.New()
 
+	// Construct a config instance
+	cfg, err := config.NewConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Construct an API client for the services to use.
-	api, err := newAPI(vld)
+	api, err := newAPI(vld, cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Construct the domain services, and pass them to the CLI commands that use them.
 	cmds := []*cobra.Command{
-		newAppsCmd(bindConfig, apps.New(api)),
-		newComponentsCmd(bindConfig, components.New(api)),
-		newInstallsCmd(bindConfig, installs.New(api)),
-		newOrgsCmd(bindConfig, orgs.New(api)),
-		newVersionCmd(bindConfig, version.New()),
-		newBuildsCmd(bindConfig, builds.New(api)),
-		newReleasesCmd(bindConfig, releases.New(api)),
+		newAppsCmd(cfg.BindCobraFlags, apps.New(api)),
+		newComponentsCmd(cfg.BindCobraFlags, components.New(api)),
+		newInstallsCmd(cfg.BindCobraFlags, installs.New(api)),
+		newOrgsCmd(cfg.BindCobraFlags, orgs.New(api)),
+		newVersionCmd(cfg.BindCobraFlags, version.New()),
+		newBuildsCmd(cfg.BindCobraFlags, builds.New(api)),
+		newReleasesCmd(cfg.BindCobraFlags, releases.New(api)),
 	}
 
 	// Create a context to pass down the code path.
@@ -51,7 +58,7 @@ func Execute() {
 	ctx = ui.WithContext(ctx, uiLog)
 
 	// Construct and init the root command.
-	rootCmd := newRootCmd(bindConfig, cmds...)
+	rootCmd := newRootCmd(cfg.BindCobraFlags, cmds...)
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		os.Exit(2)
 	}
