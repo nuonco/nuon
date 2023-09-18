@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
 	"github.com/spf13/cobra"
 )
 
-func newInstallsCmd(bindConfig bindConfigFunc, installsService *installs.Service) *cobra.Command {
+func newInstallsCmd(bindConfig config.BindCobraFunc, installsService *installs.Service) *cobra.Command {
 	var (
 		id     string
 		name   string
