@@ -1,7 +1,7 @@
 # product project contains all workspaces for provisioning non-service parts of the product, such as the demo account,
 # orgs, horizon and more.
 resource "tfe_project" "demo" {
-  name         = "product"
+  name         = "demo"
   organization = data.tfe_organization.main.name
 }
 
