@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
+	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
-func newAppsCmd(bindConfig bindConfigFunc, appsService *apps.Service) *cobra.Command {
+func newAppsCmd(bindConfig config.BindCobraFunc, appsService *apps.Service) *cobra.Command {
 
 	appsCmd := &cobra.Command{
 		Use:   "apps",
