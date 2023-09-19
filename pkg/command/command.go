@@ -11,14 +11,14 @@ import (
 type command struct {
 	v *validator.Validate
 
-	Cmd  string            `validate:"required"`
-	Args []string          `validate:"required"`
+	Cmd  string	       `validate:"required"`
+	Args []string	       `validate:"required"`
 	Env  map[string]string `validate:"required"`
 
 	// non-optional arguments
 	Cwd    string
 	Stdout io.Writer
-	Stdin  io.Reader `validate:"required"`
+	Stdin  io.Reader
 	Stderr io.Writer `validate:"required"`
 }
 
@@ -26,10 +26,10 @@ type commandOption func(*command) error
 
 func New(v *validator.Validate, opts ...commandOption) (*command, error) {
 	l := &command{
-		v:      v,
+		v:	v,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
-		Stdin:  os.Stdin,
+		Stdin:	os.Stdin,
 	}
 	for idx, opt := range opts {
 		if err := opt(l); err != nil {
