@@ -13,8 +13,10 @@ type notificationType int
 
 const (
 	notificationTypeProvisionStart notificationType = iota + 1
-	notificationTypeProvisionSuccess
 	notificationTypeProvisionError
+	notificationTypeCLICommandsError
+	notificationTypeIntrospectionAPIError
+	notificationTypeSuccess
 
 	notificationTypeDeprovisionStart
 	notificationTypeDeprovisionSuccess
@@ -25,10 +27,14 @@ func (n notificationType) notification(canaryID, env string, err error) string {
 	switch n {
 	case notificationTypeProvisionStart:
 		return fmt.Sprintf("🐦 started provisioning `%s` canary `%s` 🚂", env, canaryID)
-	case notificationTypeProvisionSuccess:
+	case notificationTypeSuccess:
 		return fmt.Sprintf("🐦 successfully provisioned `%s` canary `%s` 🏁", env, canaryID)
 	case notificationTypeProvisionError:
 		return fmt.Sprintf("🐦 error provisioning `%s` canary `%s`\n\t```%s```", env, canaryID, err)
+	case notificationTypeCLICommandsError:
+		return fmt.Sprintf("🐦 error running cli commands `%s` canary `%s`\n\t```%s```", env, canaryID, err)
+	case notificationTypeIntrospectionAPIError:
+		return fmt.Sprintf("🐦 error introspecting api `%s` canary `%s`\n\t```%s```", env, canaryID, err)
 	case notificationTypeDeprovisionStart:
 		return fmt.Sprintf("🐦 started deprovisioning `%s` canary `%s` 👷", env, canaryID)
 	case notificationTypeDeprovisionSuccess:
@@ -46,7 +52,7 @@ func (w *wkflow) sendNotification(ctx workflow.Context, typ notificationType, ca
 
 	if err := sharedactivities.SendNotification(ctx, &sharedactivitiesv1.SendNotificationRequest{
 		SlackWebhookUrl: w.cfg.SlackWebhookURL,
-		Notification:    msg,
+		Notification:	 msg,
 	}); err != nil {
 		l.Error("failed to send notification", zap.Error(err))
 	}

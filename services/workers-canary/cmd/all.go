@@ -42,7 +42,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 	}
 
 	acts, err := activities.New(v,
-		activities.WithTemporalHost(cfg.TemporalHost),
+		activities.WithConfig(&cfg),
 	)
 	if err != nil {
 		log.Fatalf("unable to create activities: %s", err.Error())

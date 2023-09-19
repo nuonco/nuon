@@ -14,31 +14,39 @@ import (
 	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1/activities/v1"
 	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	workers "github.com/powertoolsdev/mono/services/workers-canary/internal"
+	"github.com/powertoolsdev/mono/services/workers-canary/internal/activities"
 )
 
 const (
-	defaultStartActivityTimeout = time.Second * 5
-	defaultPollActivityTimeout  = time.Minute * 30
-	defaultMaxActivityRetries   = 5
-	defaultRegion               = "us-west-2"
+	defaultStartActivityTimeout time.Duration = time.Second * 5
+	defaultPollActivityTimeout  time.Duration = time.Minute * 30
+	defaultMaxActivityRetries		  = 5
+	defaultRegion				  = "us-west-2"
 )
 
 type wkflow struct {
-	cfg workers.Config
+	cfg  workers.Config
+	acts *activities.Activities
+	l    *zap.Logger
 }
 
 func New(v *validator.Validate, cfg workers.Config) (*wkflow, error) {
 	return &wkflow{
 		cfg: cfg,
+		l:   zap.L(),
 	}, nil
 }
 
-func (w *wkflow) startWorkflow(ctx workflow.Context, namespace, name string, msg protoreflect.ProtoMessage) (string, error) {
+func (w *wkflow) startWorkflow(
+	ctx workflow.Context,
+	namespace, name string,
+	msg protoreflect.ProtoMessage,
+) (string, error) {
 	l := workflow.GetLogger(ctx)
 
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		ScheduleToCloseTimeout: defaultStartActivityTimeout * defaultMaxActivityRetries,
-		StartToCloseTimeout:    defaultStartActivityTimeout,
+		StartToCloseTimeout:	defaultStartActivityTimeout,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: defaultMaxActivityRetries,
 		},
@@ -65,7 +73,10 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, namespace, name string, msg
 	return resp.WorkflowId, nil
 }
 
-func (w *wkflow) pollWorkflow(ctx workflow.Context, namespace, name, workflowID string) (*activitiesv1.PollWorkflowResponse, error) {
+func (w *wkflow) pollWorkflow(
+	ctx workflow.Context,
+	namespace, name, workflowID string,
+) (*activitiesv1.PollWorkflowResponse, error) {
 	l := workflow.GetLogger(ctx)
 
 	pollReq := &activitiesv1.PollWorkflowRequest{
@@ -78,7 +89,7 @@ func (w *wkflow) pollWorkflow(ctx workflow.Context, namespace, name, workflowID 
 	// set poll timeout
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		ScheduleToCloseTimeout: sharedactivities.PollActivityTimeout * sharedactivities.MaxActivityRetries,
-		StartToCloseTimeout:    sharedactivities.PollActivityTimeout,
+		StartToCloseTimeout:	sharedactivities.PollActivityTimeout,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: sharedactivities.MaxActivityRetries,
 		},

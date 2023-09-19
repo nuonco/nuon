@@ -163,8 +163,6 @@ definitions:
     type: object
   app.ComponentRelease:
     properties:
-      build:
-        $ref: '#/definitions/app.ComponentBuild'
       build_id:
         type: string
       created_at:

@@ -1,0 +1,148 @@
+package activities
+
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/powertoolsdev/mono/pkg/terraform/archive/dir"
+	"github.com/powertoolsdev/mono/pkg/terraform/backend/local"
+	remotebinary "github.com/powertoolsdev/mono/pkg/terraform/binary/remote"
+	"github.com/powertoolsdev/mono/pkg/terraform/outputs"
+	"github.com/powertoolsdev/mono/pkg/terraform/run"
+	staticvars "github.com/powertoolsdev/mono/pkg/terraform/variables/static"
+	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
+)
+
+const (
+	defaultTerraformVersion string = "v1.5.3"
+)
+
+type RunType string
+
+const (
+	RunTypeDestroy RunType = "destroy"
+	RunTypeApply   RunType = "apply"
+)
+
+type RunTerraformRequest struct {
+	RunType  RunType
+	CanaryID string
+	OrgID	 string
+}
+
+type RunTerraformResponse struct {
+	Outputs map[string]interface{}
+}
+
+func (c *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.Workspace, error) {
+	arch, err := dir.New(c.v,
+		dir.WithPath(moduleDir),
+		dir.WithIgnoreDotTerraformDir(),
+		dir.WithIgnoreTerraformStateFile(),
+		dir.WithIgnoreTerraformLockFile(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create archive: %w", err)
+	}
+
+	bin, err := remotebinary.New(c.v,
+		remotebinary.WithVersion(defaultTerraformVersion),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create binary: %w", err)
+	}
+
+	vars, err := staticvars.New(c.v, staticvars.WithFileVars(map[string]interface{}{
+		"app_name":	    canaryID,
+		"install_role_arn": c.cfg.InstallIamRoleArn,
+		"east_1_count":     1,
+		"east_2_count":     1,
+		"west_2_count":     1,
+	}),
+		staticvars.WithEnvVars(map[string]string{
+			"NUON_ORG_ID":	orgID,
+			"NUON_API_URL": c.cfg.APIURL,
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create vars: %w", err)
+	}
+
+	back, err := local.New(c.v, local.WithFilepath(c.cfg.TerraformStatePath))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create local backend: %w", err)
+	}
+
+	// create workspace
+	wkspace, err := workspace.New(c.v,
+		workspace.WithArchive(arch),
+		workspace.WithBackend(back),
+		workspace.WithBinary(bin),
+		workspace.WithVariables(vars),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create workspace: %w", err)
+	}
+	return wkspace, nil
+}
+
+func (c *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgID string, runTyp RunType) (map[string]interface{}, error) {
+	wkspace, err := c.getWorkspace(moduleDir, canaryID, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get workspace: %w", err)
+	}
+
+	runLog := hclog.New(&hclog.LoggerOptions{
+		Name:	"terraform",
+		Output: os.Stderr,
+	})
+
+	runUI := terminal.NonInteractiveUI(ctx)
+	tfRun, err := run.New(c.v,
+		run.WithWorkspace(wkspace),
+		run.WithUI(runUI),
+		run.WithLogger(runLog),
+		run.WithOutputSettings(&run.OutputSettings{
+			Ignore: true,
+		}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create run: %w", err)
+	}
+
+	if runTyp == RunTypeDestroy {
+		err = tfRun.Destroy(ctx)
+	} else {
+		err = tfRun.Apply(ctx)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to run: %w", err)
+	}
+
+	wkspaceOutputs, err := wkspace.Output(ctx, runLog)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get outputs: %w", err)
+	}
+	out, err := outputs.TFOutputMetaToStructPB(wkspaceOutputs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert to standard outputs: %w", err)
+	}
+
+	return out.AsMap(), nil
+}
+
+func (a *Activities) RunTerraform(ctx context.Context, req *RunTerraformRequest) (*RunTerraformResponse, error) {
+	// expand the directory with the nuon root, if it starts with `$NUON_ROOT`
+	moduleDir := a.cfg.TerraformModuleDir
+	outputs, err := a.runTerraform(ctx, moduleDir, req.CanaryID, req.OrgID, req.RunType)
+	if err != nil {
+		return nil, fmt.Errorf("unable to run terraform: %w", err)
+	}
+	outputs["org_id"] = req.OrgID
+
+	return &RunTerraformResponse{
+		Outputs: outputs,
+	}, nil
+}

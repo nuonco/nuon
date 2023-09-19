@@ -1,11 +1,13 @@
 package activities
 
-import "github.com/go-playground/validator/v10"
+import (
+	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/services/workers-canary/internal"
+)
 
 type Activities struct {
-	v *validator.Validate
-
-	TemporalHost string `validate:"required"`
+	v   *validator.Validate
+	cfg *internal.Config
 }
 
 func New(v *validator.Validate, opts ...activitiesOption) (*Activities, error) {
@@ -28,9 +30,9 @@ func New(v *validator.Validate, opts ...activitiesOption) (*Activities, error) {
 
 type activitiesOption func(*Activities) error
 
-func WithTemporalHost(host string) activitiesOption {
+func WithConfig(cfg *internal.Config) activitiesOption {
 	return func(a *Activities) error {
-		a.TemporalHost = host
+		a.cfg = cfg
 		return nil
 	}
 }
