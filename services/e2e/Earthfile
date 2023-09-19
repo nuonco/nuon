@@ -51,6 +51,10 @@ artifacts:
       touch out/.ignore
     SAVE ARTIFACT out AS LOCAL ./out
 
+terraform:
+    COPY --dir nuon/* out/
+    SAVE ARTIFACT out
+
 oci-artifacts:
     FROM ../../images/go-base+alpine-base
 

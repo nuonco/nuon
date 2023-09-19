@@ -60,6 +60,8 @@ docker:
 
     COPY +build/service /bin/service
     COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
+    COPY install-cli.sh /tmp/install-cli.sh
+    COPY ../e2e+terraform/* /tmp/terraform/
 
     ENTRYPOINT ["/bin/service", "all"]
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
