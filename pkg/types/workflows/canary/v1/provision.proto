@@ -2,16 +2,13 @@ syntax = "proto3";
 
 package canary.v1;
 
-import "canary/v1/types.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/canary/v1";
 
 message ProvisionRequest {
-  bool dry_run = 1;
-
-  string canary_id = 2 [
+  string canary_id = 1 [
     (validate.rules).string = {
       ignore_empty: true,
       len: 26
@@ -19,18 +16,17 @@ message ProvisionRequest {
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  map<string, string> tags = 3;
-
-  bool deprovision = 4;
+  bool deprovision = 2;
 }
 
 message ProvisionResponse {
-  Status status = 1;
-
-  string canary_id = 2 [
+  string canary_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  repeated Step steps = 3;
+  string org_id = 2 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
 }

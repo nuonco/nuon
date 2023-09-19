@@ -2370,9 +2370,6 @@
         "app.ComponentRelease": {
             "type": "object",
             "properties": {
-                "build": {
-                    "$ref": "#/definitions/app.ComponentBuild"
-                },
                 "build_id": {
                     "type": "string"
                 },
