@@ -51,7 +51,7 @@ module "demo-org-prod" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   env_vars = {
-    NUON_ORG_ID = "orghbnzprgs5nuqnvusmbj0fmh"
+    NUON_ORG_ID = "orgsxncpnm2l0a2fndz02pynkc"
   }
 }
 
