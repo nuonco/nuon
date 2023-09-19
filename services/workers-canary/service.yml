@@ -5,7 +5,7 @@ env:
   API_URL: http://localhost:8081
   GITHUB_INSTALL_ID: "41323514"
   TERRAFORM_MODULE_DIR: ../e2e/nuon
-  INSTALL_SCRIPT_PATH: /Users/jonmorehouse/nuon/mono/services/workers-canary/install-cli.sh
+  INSTALL_SCRIPT_PATH: ./install-cli.sh
 local_startup_cmds:
   - go build -o /tmp/svc-workers-canary .
 local_cmds:

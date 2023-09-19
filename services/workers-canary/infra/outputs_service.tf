@@ -7,9 +7,9 @@ output "canary_install_iam_role_arn" {
 }
 
 output "api_url" {
-  value = module.install_access.iam_role_arn
+  value = var.api_url
 }
 
 output "api_token" {
-  value = module.install_access.iam_role_arn
+  value = nonsensitive(var.api_token)
 }
