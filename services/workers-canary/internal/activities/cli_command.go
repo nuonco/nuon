@@ -15,6 +15,7 @@ const (
 
 type CLICommandRequest struct {
 	OrgID	string
+	AppID	string
 	Args	[]string
 	Install bool
 	Json	bool
@@ -72,9 +73,13 @@ func (a *Activities) execCLICommand(ctx context.Context, req *CLICommandRequest)
 		"NUON_API_TOKEN": a.cfg.APIToken,
 		"NUON_ORG_ID":	  req.OrgID,
 	}
+	if req.AppID != "" {
+		env["NUON_APP_ID"] = req.AppID
+	}
+
 	cmd, err := command.New(a.v,
-		command.WithEnv(env),
 		command.WithInheritedEnv(),
+		command.WithEnv(env),
 		command.WithCmd(nuonCommandName),
 		command.WithArgs(req.Args),
 		command.WithStdout(nil),

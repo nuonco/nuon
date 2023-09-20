@@ -37,21 +37,22 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	}
 
 	w.sendNotification(ctx, notificationTypeProvisionStart, req.CanaryId, nil)
-	orgID, err := w.execProvision(ctx, req)
+	outputs, err := w.execProvision(ctx, req)
 	if err != nil {
 		err = fmt.Errorf("unable to provision canary: %w", err)
 		w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, err)
+		return nil,err
 	}
 	w.sendNotification(ctx, notificationTypeSuccess, req.CanaryId, nil)
 
-	err = w.execCLICommands(ctx, orgID)
+	err = w.execCLICommands(ctx, outputs)
 	if err != nil {
 		err = fmt.Errorf("unable to execute cli commands: %w", err)
 		w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, err)
 	}
 	w.sendNotification(ctx, notificationTypeSuccess, req.CanaryId, nil)
 
-	if err := w.execProvisionDeprovision(ctx, orgID, req); err != nil {
+	if err := w.execProvisionDeprovision(ctx,outputs.OrgID, req); err != nil {
 		err = fmt.Errorf("unable to start deprovision workflow")
 		return resp, err
 	}

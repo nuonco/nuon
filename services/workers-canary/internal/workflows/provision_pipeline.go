@@ -9,21 +9,21 @@ import (
 	"go.uber.org/zap"
 )
 
-func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequest) (string, error) {
+func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequest) (*activities.TerraformRunOutputs, error) {
 	var orgResp activities.CreateOrgResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateOrg, &activities.CreateOrgRequest{
 		CanaryID: req.CanaryId,
 	}, &orgResp); err != nil {
-		return "", fmt.Errorf("unable to create org: %w", err)
+		return nil, fmt.Errorf("unable to create org: %w", err)
 	}
 	w.l.Info("create org", zap.Any("response", orgResp))
 
 	var vcsResp activities.CreateVCSConnectionResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateVCSConnection, &activities.CreateVCSConnectionRequest{
 		CanaryID: req.CanaryId,
-		OrgID:	    orgResp.OrgID,
+		OrgID:	  orgResp.OrgID,
 	}, &vcsResp); err != nil {
-		return "", fmt.Errorf("unable to create vcs connection: %w", err)
+		return nil, fmt.Errorf("unable to create vcs connection: %w", err)
 	}
 	w.l.Info("create vcs connection", zap.Any("response", vcsResp))
 
@@ -31,11 +31,11 @@ func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequ
 	if err := w.defaultExecGetActivity(ctx, w.acts.RunTerraform, &activities.RunTerraformRequest{
 		RunType:  activities.RunTypeApply,
 		CanaryID: req.CanaryId,
-		OrgID:	    orgResp.OrgID,
+		OrgID:	  orgResp.OrgID,
 	}, &runResp); err != nil {
-		return "", fmt.Errorf("unable to run terraform: %w", err)
+		return nil, fmt.Errorf("unable to run terraform: %w", err)
 	}
 	w.l.Info("run terraform", zap.Any("response", runResp))
 
-	return orgResp.OrgID, nil
+	return runResp.Outputs, nil
 }

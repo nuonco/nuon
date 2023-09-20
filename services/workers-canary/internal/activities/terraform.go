@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/mitchellh/mapstructure"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive/dir"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend/local"
 	remotebinary "github.com/powertoolsdev/mono/pkg/terraform/binary/remote"
@@ -27,6 +28,19 @@ const (
 	RunTypeApply   RunType = "apply"
 )
 
+type TerraformRunOutputs struct {
+	OrgID string `mapstructure:"org_id"`
+
+	AppID string		     `mapstructure:"app_id"`
+	App   map[string]interface{} `mapstructure:"app"`
+
+	ComponentIDs []string		    `mapstructure:"component_ids"`
+	Components   map[string]interface{} `mapstructure:"components"`
+
+	InstallIDs []string		  `mapstructure:"install_ids"`
+	Installs   map[string]interface{} `mapstructure:"installs"`
+}
+
 type RunTerraformRequest struct {
 	RunType  RunType
 	CanaryID string
@@ -34,7 +48,7 @@ type RunTerraformRequest struct {
 }
 
 type RunTerraformResponse struct {
-	Outputs map[string]interface{}
+	Outputs *TerraformRunOutputs
 }
 
 func (c *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.Workspace, error) {
@@ -136,13 +150,18 @@ func (c *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgI
 func (a *Activities) RunTerraform(ctx context.Context, req *RunTerraformRequest) (*RunTerraformResponse, error) {
 	// expand the directory with the nuon root, if it starts with `$NUON_ROOT`
 	moduleDir := a.cfg.TerraformModuleDir
-	outputs, err := a.runTerraform(ctx, moduleDir, req.CanaryID, req.OrgID, req.RunType)
+	rawOutputs, err := a.runTerraform(ctx, moduleDir, req.CanaryID, req.OrgID, req.RunType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to run terraform: %w", err)
 	}
-	outputs["org_id"] = req.OrgID
+
+	var outputs TerraformRunOutputs
+	if err := mapstructure.Decode(rawOutputs, &outputs); err != nil {
+		return nil, fmt.Errorf("unable to parse outputs: %w", err)
+	}
+	outputs.OrgID = req.OrgID
 
 	return &RunTerraformResponse{
-		Outputs: outputs,
+		Outputs: &outputs,
 	}, nil
 }
