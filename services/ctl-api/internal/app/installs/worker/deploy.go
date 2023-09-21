@@ -20,6 +20,14 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
+	var installDeploy app.InstallDeploy
+	if err := w.defaultExecGetActivity(ctx, w.acts.GetDeploy, activities.GetDeployRequest{
+		DeployID: deployID,
+	}, &installDeploy); err != nil {
+		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get install deploy from database")
+		return fmt.Errorf("unable to get install deploy: %w", err)
+	}
+
 	var deployCfg componentsv1.Component
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentConfig, activities.GetComponentConfigRequest{
 		DeployID: deployID,
@@ -37,6 +45,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 			Component: &planv1.ComponentInput{
 				OrgId:	   install.App.OrgID,
 				AppId:	   install.App.ID,
+				BuildId: installDeploy.BuildID,
 				InstallId: install.ID,
 				DeployId:  deployID,
 				Component: &deployCfg,
@@ -70,6 +79,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 				OrgId:	   install.App.OrgID,
 				AppId:	   install.App.ID,
 				InstallId: install.ID,
+				BuildId: installDeploy.BuildID,
 				DeployId:  deployID,
 				Component: &deployCfg,
 				Type:	   planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY,
