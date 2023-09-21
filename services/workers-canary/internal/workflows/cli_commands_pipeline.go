@@ -227,7 +227,7 @@ func (w *wkflow) buildAndReleaseComponents(ctx workflow.Context, outputs *activi
 				buildID,
 			},
 		}, &releaseResp); err != nil {
-			return fmt.Errorf("unable to build component: %w", err)
+			return fmt.Errorf("unable to release build: %w", err)
 		}
 	}
 
