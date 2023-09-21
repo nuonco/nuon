@@ -11,9 +11,9 @@ import (
 func (w *wkflow) getCurrentOrg(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
 	var resp activities.CLICommandResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
-		OrgID:	 outputs.OrgID,
+		OrgID:   outputs.OrgID,
 		Install: true,
-		Json:	 true,
+		Json:    true,
 		Args: []string{
 			"-j",
 			"orgs",
@@ -29,9 +29,9 @@ func (w *wkflow) getCurrentOrg(ctx workflow.Context, outputs *activities.Terrafo
 func (w *wkflow) getApp(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
 	var resp activities.CLICommandResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
-		OrgID:	 outputs.OrgID,
+		OrgID:   outputs.OrgID,
 		Install: false,
-		Json:	 true,
+		Json:    true,
 		Args: []string{
 			"-j",
 			"apps",
@@ -49,9 +49,9 @@ func (w *wkflow) getApp(ctx workflow.Context, outputs *activities.TerraformRunOu
 func (w *wkflow) listApps(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
 	var resp activities.CLICommandResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
-		OrgID:	 outputs.OrgID,
+		OrgID:   outputs.OrgID,
 		Install: false,
-		Json:	 true,
+		Json:    true,
 		Args: []string{
 			"-j",
 			"apps",
@@ -67,10 +67,10 @@ func (w *wkflow) listApps(ctx workflow.Context, outputs *activities.TerraformRun
 func (w *wkflow) listComponentBuilds(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
 	var resp activities.CLICommandResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
-		OrgID:	 outputs.OrgID,
-		AppID:	 outputs.AppID,
+		OrgID:   outputs.OrgID,
+		AppID:   outputs.AppID,
 		Install: false,
-		Json: true,
+		Json:    true,
 		Args: []string{
 			"builds",
 			"list",
@@ -87,10 +87,10 @@ func (w *wkflow) listComponentBuilds(ctx workflow.Context, outputs *activities.T
 func (w *wkflow) buildComponent(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
 	var resp activities.CLICommandResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
-		OrgID:	 outputs.OrgID,
-		AppID:	 outputs.AppID,
+		OrgID:   outputs.OrgID,
+		AppID:   outputs.AppID,
 		Install: false,
-		Json:	 false,
+		Json:    false,
 		Args: []string{
 			"builds",
 			"create",
@@ -107,10 +107,10 @@ func (w *wkflow) buildComponent(ctx workflow.Context, outputs *activities.Terraf
 func (w *wkflow) getComponent(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
 	var resp activities.CLICommandResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
-		OrgID:	 outputs.OrgID,
-		AppID:	 outputs.AppID,
+		OrgID:   outputs.OrgID,
+		AppID:   outputs.AppID,
 		Install: false,
-		Json:	 true,
+		Json:    true,
 		Args: []string{
 			"-j",
 			"components",
@@ -128,10 +128,10 @@ func (w *wkflow) getComponent(ctx workflow.Context, outputs *activities.Terrafor
 func (w *wkflow) listComponents(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
 	var resp activities.CLICommandResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
-		OrgID:	 outputs.OrgID,
-		AppID:	 outputs.AppID,
+		OrgID:   outputs.OrgID,
+		AppID:   outputs.AppID,
 		Install: false,
-		Json:	 true,
+		Json:    true,
 		Args: []string{
 			"-j",
 			"components",
@@ -152,10 +152,10 @@ func (w *wkflow) getInstall(ctx workflow.Context, outputs *activities.TerraformR
 
 	var resp activities.CLICommandResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
-		OrgID:	 outputs.OrgID,
-		AppID:	 outputs.AppID,
+		OrgID:   outputs.OrgID,
+		AppID:   outputs.AppID,
 		Install: false,
-		Json:	 true,
+		Json:    true,
 		Args: []string{
 			"-j",
 			"installs",
@@ -174,10 +174,10 @@ func (w *wkflow) getInstall(ctx workflow.Context, outputs *activities.TerraformR
 func (w *wkflow) listInstalls(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
 	var resp activities.CLICommandResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
-		OrgID:	 outputs.OrgID,
-		AppID:	 outputs.AppID,
+		OrgID:   outputs.OrgID,
+		AppID:   outputs.AppID,
 		Install: false,
-		Json:	 true,
+		Json:    true,
 		Args: []string{
 			"-j",
 			"installs",
@@ -191,6 +191,49 @@ func (w *wkflow) listInstalls(ctx workflow.Context, outputs *activities.Terrafor
 	return nil
 }
 
+func (w *wkflow) buildAndReleaseComponents(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
+	for _, compID := range outputs.ComponentIDs {
+		var buildResp activities.CLICommandResponse
+		if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
+			OrgID:   outputs.OrgID,
+			AppID:   outputs.AppID,
+			Install: false,
+			Json:    true,
+			Args: []string{
+				"-j",
+				"builds",
+				"create",
+				"-c",
+				compID,
+			},
+		}, &buildResp); err != nil {
+			return fmt.Errorf("unable to build component: %w", err)
+		}
+
+		// TODO(nnnnat): this is probably not the best way to access the build ID from this interface
+		var buildID string = buildResp.JsonOutput.(map[string]interface{})["id"].(string)
+		var releaseResp activities.CLICommandResponse
+		if err := w.defaultExecGetActivity(ctx, w.acts.CLICommand, &activities.CLICommandRequest{
+			OrgID:   outputs.OrgID,
+			AppID:   outputs.AppID,
+			Install: false,
+			Json:    false,
+			Args: []string{
+				"releases",
+				"create",
+				"-c",
+				compID,
+				"-b",
+				buildID,
+			},
+		}, &releaseResp); err != nil {
+			return fmt.Errorf("unable to build component: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func (w *wkflow) execCLICommands(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
 	methods := []func(workflow.Context, *activities.TerraformRunOutputs) error{
 		w.getCurrentOrg,
@@ -200,9 +243,10 @@ func (w *wkflow) execCLICommands(ctx workflow.Context, outputs *activities.Terra
 		w.getComponent,
 		w.listInstalls,
 		w.getInstall,
-		w.buildComponent,
-		w.listComponentBuilds,
+		w.buildAndReleaseComponents,
 	}
+
+	fmt.Println("hello?")
 
 	for _, method := range methods {
 		if err := method(ctx, outputs); err != nil {
