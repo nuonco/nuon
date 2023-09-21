@@ -20,18 +20,20 @@ func (w *Workflows) execCreatePlanWorkflow(
 	workflowID string,
 	req *planv1.CreatePlanRequest,
 ) (*planv1.CreatePlanResponse, error) {
+	l := workflow.GetLogger(ctx)
 	if dryRun {
-		w.l.Info("dry-run enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.DevDryRunSleep.String()))
+		l.Info("dry-run enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.DevDryRunSleep.String()))
 		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
 		return generics.GetFakeObj[*planv1.CreatePlanResponse](), nil
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
-		TaskQueue:                workflows.ExecutorsTaskQueue,
-		WorkflowID:               workflowID,
+		TaskQueue:		  workflows.ExecutorsTaskQueue,
+		WorkflowID:		  workflowID,
 		WorkflowExecutionTimeout: time.Minute * 60,
-		WorkflowTaskTimeout:      time.Minute * 30,
-		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		WorkflowTaskTimeout:	  time.Minute * 30,
+		WorkflowIDReusePolicy:	  enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		WaitForCancellation: true,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -49,18 +51,20 @@ func (w *Workflows) execExecPlanWorkflow(
 	workflowID string,
 	req *execv1.ExecutePlanRequest,
 ) (*execv1.ExecutePlanResponse, error) {
+	l := workflow.GetLogger(ctx)
 	if dryRun {
-		w.l.Info("dry-run enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.DevDryRunSleep.String()))
+		l.Info("dry-run enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.DevDryRunSleep.String()))
 		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
 		return generics.GetFakeObj[*execv1.ExecutePlanResponse](), nil
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
-		TaskQueue:                workflows.ExecutorsTaskQueue,
-		WorkflowID:               workflowID,
+		TaskQueue:		  workflows.ExecutorsTaskQueue,
+		WorkflowID:		  workflowID,
 		WorkflowExecutionTimeout: time.Minute * 60,
-		WorkflowTaskTimeout:      time.Minute * 30,
-		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		WorkflowTaskTimeout:	  time.Minute * 30,
+		WorkflowIDReusePolicy:	  enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		WaitForCancellation: true,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -77,18 +81,20 @@ func (w *Workflows) execDeprovisionWorkflow(
 	dryRun bool,
 	req *installsv1.DeprovisionRequest,
 ) (*installsv1.DeprovisionResponse, error) {
+	l := workflow.GetLogger(ctx)
 	if dryRun {
-		w.l.Info("dry-run enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.DevDryRunSleep.String()))
+		l.Info("dry-run enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.DevDryRunSleep.String()))
 		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
 		return generics.GetFakeObj[*installsv1.DeprovisionResponse](), nil
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
-		TaskQueue:                workflows.DefaultTaskQueue,
-		WorkflowID:               fmt.Sprintf("%s-deprovision", req.InstallId),
+		TaskQueue:		  workflows.DefaultTaskQueue,
+		WorkflowID:		  fmt.Sprintf("%s-deprovision", req.InstallId),
 		WorkflowExecutionTimeout: time.Minute * 60,
-		WorkflowTaskTimeout:      time.Minute * 30,
-		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		WorkflowTaskTimeout:	  time.Minute * 30,
+		WorkflowIDReusePolicy:	  enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		WaitForCancellation: true,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -105,18 +111,20 @@ func (w *Workflows) execProvisionWorkflow(
 	dryRun bool,
 	req *installsv1.ProvisionRequest,
 ) (*installsv1.ProvisionResponse, error) {
+	l := workflow.GetLogger(ctx)
 	if dryRun {
-		w.l.Info("dry-run enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.DevDryRunSleep.String()))
+		l.Info("dry-run enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.DevDryRunSleep.String()))
 		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
 		return generics.GetFakeObj[*installsv1.ProvisionResponse](), nil
 	}
 
 	cwo := workflow.ChildWorkflowOptions{
-		TaskQueue:                workflows.DefaultTaskQueue,
-		WorkflowID:               fmt.Sprintf("%s-provision", req.InstallId),
+		TaskQueue:		  workflows.DefaultTaskQueue,
+		WorkflowID:		  fmt.Sprintf("%s-provision", req.InstallId),
 		WorkflowExecutionTimeout: time.Minute * 60,
-		WorkflowTaskTimeout:      time.Minute * 30,
-		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		WorkflowTaskTimeout:	  time.Minute * 30,
+		WorkflowIDReusePolicy:	  enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		WaitForCancellation: true,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
@@ -137,6 +145,7 @@ func (w *Workflows) defaultExecGetActivity(
 ) error {
 	ao := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 1 * time.Minute,
+		WaitForCancellation: true,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
@@ -154,6 +163,7 @@ func (w *Workflows) defaultExecErrorActivity(
 ) error {
 	ao := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 1 * time.Minute,
+		WaitForCancellation: true,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
