@@ -1,4 +1,3 @@
 # workers-canary
 
-Temporal workers for managing canary runs. This workflow, when provisioned will create an org, app, install, deployment and instance to verify the system's integrity end to end.
-
+A worker that runs end-to-end tests of the Nuon platform. See more on [the wiki page](../../wiki/canary.md).
