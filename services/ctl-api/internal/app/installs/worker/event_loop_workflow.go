@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"errors"
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
@@ -16,7 +17,7 @@ func EventLoopWorkflowID(installID string) string {
 }
 
 func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) error {
-	l := zap.L()
+	l := workflow.GetLogger(ctx)
 
 	finished := false
 	signalChan := workflow.GetSignalChannel(ctx, installID)
@@ -33,27 +34,38 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) err
 			l.Info("invalid signal", zap.Error(err))
 		}
 
+		var err error
 		switch signal.Operation {
 		case OperationPollDependencies:
-			if err := w.pollDependencies(ctx, installID); err != nil {
-				l.Info("unable to poll install dependencies: %w", zap.Error(err))
+			err = w.pollDependencies(ctx, installID)
+			if err != nil {
+				l.Error("unable to poll dependencies", zap.Error(err))
 			}
 		case OperationProvision:
-			if err := w.provision(ctx, installID, signal.DryRun); err != nil {
-				l.Info("unable to provision install: %w", zap.Error(err))
+			err = w.provision(ctx, installID, signal.DryRun)
+			if err != nil {
+				l.Error("unable to provision", zap.Error(err))
 			}
 		case OperationDeprovision:
-			if err := w.deprovision(ctx, installID, signal.DryRun); err != nil {
-				l.Info("unable to deprovision install: %w", zap.Error(err))
+			err = w.deprovision(ctx, installID, signal.DryRun)
+			if err != nil {
+				l.Error("unable to deprovision", zap.Error(err))
 			}
 			finished = true
 		case OperationDeploy:
-			if err := w.deploy(ctx, installID, signal.DeployID, signal.DryRun); err != nil {
-				l.Info("unable to perform deploy: %w", zap.Error(err))
+			err = w.deploy(ctx, installID, signal.DeployID, signal.DryRun)
+			if err != nil {
+				l.Error("unable to deploy", zap.Error(err))
 			}
 		}
 	})
+
 	for !finished {
+		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
+			l.Error("workflow canceled")
+			break
+		}
+
 		selector.Select(ctx)
 	}
 
