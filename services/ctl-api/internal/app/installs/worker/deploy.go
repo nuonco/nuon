@@ -35,11 +35,12 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 	planResp, err := w.execCreatePlanWorkflow(ctx, dryRun, syncImagePlanWorkflowID, &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
-				OrgId:     install.App.OrgID,
-				AppId:     install.App.ID,
+				OrgId:	   install.App.OrgID,
+				AppId:	   install.App.ID,
+				InstallId: install.ID,
 				DeployId:  deployID,
 				Component: &deployCfg,
-				Type:      planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE,
+				Type:	   planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE,
 			},
 		},
 	})
@@ -66,11 +67,12 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 	planResp, err = w.execCreatePlanWorkflow(ctx, dryRun, deployPlanWorkflowID, &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
-				OrgId:     install.App.OrgID,
-				AppId:     install.App.ID,
+				OrgId:	   install.App.OrgID,
+				AppId:	   install.App.ID,
+				InstallId: install.ID,
 				DeployId:  deployID,
 				Component: &deployCfg,
-				Type:      planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY,
+				Type:	   planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY,
 			},
 		},
 	})
