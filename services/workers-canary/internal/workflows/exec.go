@@ -14,7 +14,7 @@ func (w *wkflow) defaultExecGetActivity(
 	resp interface{},
 ) error {
 	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 1 * time.Minute,
+		ScheduleToCloseTimeout: 5 * time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
@@ -32,7 +32,7 @@ func (w *wkflow) defaultTerraformRunActivity(
 	resp interface{},
 ) error {
 	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 30 * time.Minute,
+		ScheduleToCloseTimeout: 45 * time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
