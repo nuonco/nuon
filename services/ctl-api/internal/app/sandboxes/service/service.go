@@ -26,6 +26,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/sandboxes", s.CreateSandbox)
+	api.GET("/v1/sandboxes/:sandbox_id", s.GetSandbox)
 	api.POST("/v1/sandboxes/:sandbox_id/release", s.CreateSandboxRelease)
 	return nil
 }

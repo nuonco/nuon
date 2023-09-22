@@ -14,7 +14,7 @@ import (
 
 type CreateSandboxReleaseRequest struct {
 	TerraformVersion string `json:"terraform_version,omitempty" validate:"required"`
-	Version          string `json:"version,omitempty" validate:"required"`
+	Version		 string `json:"version,omitempty" validate:"required"`
 }
 
 func (c *CreateSandboxReleaseRequest) Validate(v *validator.Validate) error {
@@ -57,8 +57,11 @@ func (s *service) CreateSandboxRelease(ctx *gin.Context) {
 }
 
 func (s *service) createSandboxRelease(ctx context.Context, sandboxID string, req *CreateSandboxReleaseRequest) (*app.SandboxRelease, error) {
-	sandbox := app.Sandbox{
-		ID: sandboxID,
+	sandbox := app.Sandbox{}
+	res := s.db.WithContext(ctx).
+		First(&sandbox, "id = ?", sandboxID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get sandbox: %w", res.Error)
 	}
 
 	// build base URL
@@ -66,15 +69,15 @@ func (s *service) createSandboxRelease(ctx context.Context, sandboxID string, re
 	if !strings.HasSuffix(baseURL, "/") {
 		baseURL += "/"
 	}
-	baseURL += filepath.Join(sandbox.Name, req.Version) + "/"
+	baseURL += filepath.Join(sandbox.Name+"/", req.Version) + "/"
 
 	// create release
 	sandboxRelease := app.SandboxRelease{
-		Version:                 req.Version,
-		TerraformVersion:        req.TerraformVersion,
-		ProvisionPolicyURL:      baseURL + "provision.json",
-		TrustPolicyURL:          baseURL + "trust.json",
-		DeprovisionPolicyURL:    baseURL + "deprovision.json",
+		Version:		 req.Version,
+		TerraformVersion:	 req.TerraformVersion,
+		ProvisionPolicyURL:	 baseURL + "provision.json",
+		TrustPolicyURL:		 baseURL + "trust.json",
+		DeprovisionPolicyURL:	 baseURL + "deprovision.json",
 		OneClickRoleTemplateURL: baseURL + "install-role.yaml",
 	}
 
