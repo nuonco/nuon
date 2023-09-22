@@ -50,8 +50,9 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) err
 			err = w.deprovision(ctx, installID, signal.DryRun)
 			if err != nil {
 				l.Error("unable to deprovision", zap.Error(err))
+			} else {
+				finished = true
 			}
-			finished = true
 		case OperationDeploy:
 			err = w.deploy(ctx, installID, signal.DeployID, signal.DryRun)
 			if err != nil {
