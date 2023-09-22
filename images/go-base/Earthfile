@@ -4,6 +4,10 @@ FROM golang:1.21
 
 build-base:
   ENV CGO_ENABLED=0
+  ENV GOCACHE=/go-cache
+  ENV GOMODCACHE=/go-mod-cache
+  ENV CGO_ENABLED=0
+  ENV GOPRIVATE=github.com/powertoolsdev/*
 
   RUN apt-get update && \
     apt-get install -y ca-certificates \
