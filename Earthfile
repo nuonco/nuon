@@ -4,10 +4,6 @@ FROM ./images/go-base+build-base
 
 WORKDIR /src
 
-ARG GOCACHE=/go-cache
-ARG GOMODCACHE=/go-mod-cache
-ARG CGO_ENABLED=0
-ARG GOPRIVATE=github.com/powertoolsdev/*
 ARG ETCSSL=/etc/ssl/cert.pem
 ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
