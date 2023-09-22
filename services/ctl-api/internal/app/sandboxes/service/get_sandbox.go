@@ -34,7 +34,11 @@ func (s *service) GetSandbox(ctx *gin.Context) {
 
 func (s *service) getSandbox(ctx context.Context, sandboxID string) (*app.Sandbox, error) {
 	sandbox := app.Sandbox{}
-	res := s.db.WithContext(ctx).Preload("Releases").First(&sandbox, "id = ?", sandboxID)
+	res := s.db.WithContext(ctx).
+		Preload("Releases").
+		Where("name = ?", sandboxID).
+		Or("id = ?", sandboxID).
+		First(&sandbox)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get sandbox: %w", res.Error)
 	}
