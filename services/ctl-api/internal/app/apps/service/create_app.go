@@ -75,7 +75,7 @@ func (s *service) createApp(ctx context.Context, orgID string, req *CreateAppReq
 			return db.Order("sandbox_releases.created_at DESC").
 				Limit(1)
 		}).
-		Preload("Releases").First(&sandbox)
+		First(&sandbox)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get sandbox: %w", res.Error)
 	}
