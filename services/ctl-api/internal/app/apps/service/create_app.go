@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"gorm.io/gorm"
 )
 
 const (
@@ -69,19 +70,23 @@ func (s *service) createApp(ctx context.Context, orgID string, req *CreateAppReq
 	sandbox := app.Sandbox{
 		Name: defaultSandboxName,
 	}
-	res := s.db.WithContext(ctx).Preload("Releases").First(&sandbox)
+	res := s.db.WithContext(ctx).
+		Preload("Releases", func(db *gorm.DB) *gorm.DB {
+			return db.Order("sandbox_releases.created_at DESC").
+				Limit(1)
+		}).
+		Preload("Releases").First(&sandbox)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get sandbox: %w", res.Error)
 	}
-
 	if len(sandbox.Releases) < 1 {
 		return nil, fmt.Errorf("at least one release must be created for sandbox %s", defaultSandboxName)
 	}
 
 	app := app.App{
-		OrgID:             orgID,
-		Name:              req.Name,
-		Status:            "queued",
+		OrgID:		   orgID,
+		Name:		   req.Name,
+		Status:		   "queued",
 		StatusDescription: "waiting for event loop to start and provision app",
 		SandboxReleaseID:  sandbox.Releases[0].ID,
 	}
