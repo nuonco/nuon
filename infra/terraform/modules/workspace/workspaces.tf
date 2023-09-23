@@ -9,9 +9,9 @@ resource "tfe_workspace" "workspace" {
   trigger_prefixes  = var.dir != "" ? [var.dir] : []
   terraform_version = var.terraform_version
 
-  global_remote_state = true
+  global_remote_state       = true
   remote_state_consumer_ids = []
-  project_id          = var.project_id
+  project_id                = var.project_id
 
   tag_names = ["managed-by:terraform", "${var.auto_apply ? "auto-applied" : "manually-applied"}"]
 

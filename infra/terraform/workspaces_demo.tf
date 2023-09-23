@@ -79,7 +79,7 @@ module "e2e-stage" {
   vars = {
     east_1_count = 1
     east_2_count = 0
-    west_2_count = 0
+    west_2_count = 1
   }
   triggered_by = [module.infra-terraform.workspace_id]
 }
