@@ -8,9 +8,6 @@ ARG ETCSSL=/etc/ssl/cert.pem
 ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 
-CACHE $GOCACHE
-CACHE $GOMODCACHE
-
 deps:
     # TODO(jm): we shouldn't be installing these dependencies here in this way.
     # Probably should be in tools.go or even
