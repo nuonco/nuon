@@ -75,8 +75,8 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
           SLACK_MESSAGE: |
             ⛴  promoting `${{ needs.tag.outputs.git_ref }}`
-            *stage* - ${{ inputs.stage }}
-            *prod* - ${{ inputs.prod }}
+            *stage* - true
+            *prod* - true
 
   services:
     # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
@@ -147,6 +147,6 @@ jobs:
           SLACK_COLOR: ${{steps.check.outputs.status}}
           SLACK_MESSAGE: |
             ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} finished promoting `${{ needs.tag.outputs.git_ref }}`
-            *stage* - ${{ inputs.stage }}
-            *prod* - ${{ inputs.prod }}
+            *stage* - true
+            *prod* - true
             *status* - ${{steps.check.outputs.status}}
