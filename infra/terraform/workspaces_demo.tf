@@ -55,10 +55,10 @@ module "demo-org-prod" {
   }
 }
 
-module "e2e" {
+module "e2e-stage" {
   source = "./modules/workspace"
 
-  name          = "e2e"
+  name          = "e2e-stage"
   repo          = "powertoolsdev/mono"
   auto_apply    = true
   dir           = "services/e2e/nuon"
@@ -71,5 +71,35 @@ module "e2e" {
   env_vars = {
     NUON_ORG_ID  = "org47liun91achn0opycy6jlke"
     NUON_API_URL = "https://ctl.stage.nuon.co"
+  }
+
+  vars = {
+    east_1_count = 0
+    east_2_count = 0
+    west_2_count = 0
+  }
+}
+
+module "e2e-prod" {
+  source = "./modules/workspace"
+
+  name          = "e2e"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "services/e2e/nuon"
+  variable_sets = ["aws-environment-credentials", "api-prod"]
+  project_id    = tfe_project.product.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+
+  // NOTE: we have to set the api token manually in the ui, so we don't leak it
+  env_vars = {
+    NUON_ORG_ID  = "orgtvkz1podyp9lmenx7o64usx"
+  }
+
+  vars = {
+    east_1_count = 0
+    east_2_count = 0
+    west_2_count = 0
   }
 }
