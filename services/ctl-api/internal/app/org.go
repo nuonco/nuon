@@ -5,16 +5,17 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
 )
 
 type Org struct {
-	ID          string         `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string         `json:"created_by_id" gorm:"notnull"`
-	CreatedAt   time.Time      `json:"created_at" gorm:"notnull"`
-	UpdatedAt   time.Time      `json:"updated_at" gorm:"notnull"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
+	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
+	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
+	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_org_name,unique" json:"-"`
 
-	Name              string `gorm:"uniqueIndex;notnull" json:"name"`
+	Name              string `gorm:"index:idx_org_name,unique;notnull" json:"name"`
 	Status            string `json:"status" gorm:"notnull"`
 	StatusDescription string `json:"status_description" gorm:"notnull"`
 

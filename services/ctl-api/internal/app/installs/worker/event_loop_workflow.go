@@ -40,23 +40,26 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) err
 			err = w.pollDependencies(ctx, installID)
 			if err != nil {
 				l.Error("unable to poll dependencies", zap.Error(err))
+				return
 			}
 		case OperationProvision:
 			err = w.provision(ctx, installID, signal.DryRun)
 			if err != nil {
 				l.Error("unable to provision", zap.Error(err))
+				return
 			}
 		case OperationDeprovision:
 			err = w.deprovision(ctx, installID, signal.DryRun)
 			if err != nil {
 				l.Error("unable to deprovision", zap.Error(err))
-			} else {
-				finished = true
+				return
 			}
+			finished = true
 		case OperationDeploy:
 			err = w.deploy(ctx, installID, signal.DeployID, signal.DryRun)
 			if err != nil {
 				l.Error("unable to deploy", zap.Error(err))
+				return
 			}
 		}
 	})
