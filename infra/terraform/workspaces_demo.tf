@@ -83,7 +83,7 @@ module "e2e-stage" {
 module "e2e-prod" {
   source = "./modules/workspace"
 
-  name          = "e2e"
+  name          = "e2e-prod"
   repo          = "powertoolsdev/mono"
   auto_apply    = true
   dir           = "services/e2e/nuon"
