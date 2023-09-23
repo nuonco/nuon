@@ -28,10 +28,10 @@ resource "helm_release" "alb-ingress-controller" {
   namespace        = "kube-system"
   create_namespace = true
 
-  name       = "eks"
+  name       = "aws-load-balancer-controller"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
-  version    = "1.4.7"
+  version    = "1.6.1"
 
   set {
     name  = "enableCertManager"
