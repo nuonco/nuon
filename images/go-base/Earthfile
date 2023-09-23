@@ -2,6 +2,9 @@ VERSION --use-cache-command 0.6
 
 FROM golang:1.21
 
+CACHE /go-cache
+CACHE /go-mod-cache
+
 build-base:
   ENV CGO_ENABLED=0
   ENV GOCACHE=/go-cache
