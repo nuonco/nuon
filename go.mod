@@ -107,6 +107,7 @@ require (
 	github.com/go-openapi/validate v0.22.1 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	golang.org/x/net v0.14.0 // indirect
+	gorm.io/plugin/soft_delete v1.2.1 // indirect
 )
 
 require (

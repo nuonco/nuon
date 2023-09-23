@@ -6,14 +6,15 @@ import (
 	"github.com/lib/pq"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
 )
 
 type ComponentReleaseStep struct {
-	ID          string         `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string         `json:"created_by_id" gorm:"notnull"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
+	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
+	CreatedAt   time.Time             `json:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`

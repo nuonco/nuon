@@ -53,6 +53,37 @@ func (s *appsTestSuite) TestCreateApp() {
 		require.NotEmpty(t, app.ID)
 	})
 
+	s.T().Run("errors on duplicate name", func(t *testing.T) {
+		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		app, err := s.apiClient.CreateApp(s.ctx, appReq)
+		require.Nil(t, err)
+		require.NotNil(t, app)
+
+		require.Equal(t, app.Name, *(appReq.Name))
+		require.NotEmpty(t, app.ID)
+
+		dupeApp, err := s.apiClient.CreateApp(s.ctx, appReq)
+		require.Error(t, err)
+		require.Nil(t, dupeApp)
+	})
+
+	s.T().Run("allows creating with duplicate name after deleting", func(t *testing.T) {
+		t.Skip("can not test for success after deleting duplicated name because objects are deleted by workers")
+		return
+		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		app, err := s.apiClient.CreateApp(s.ctx, appReq)
+		require.Nil(t, err)
+		require.NotNil(t, app)
+
+		deleted, err := s.apiClient.DeleteApp(s.ctx, app.ID)
+		require.NoError(t, err)
+		require.True(t, deleted)
+
+		dupeApp, err := s.apiClient.CreateApp(s.ctx, appReq)
+		require.NoError(t, err)
+		require.NotNil(t, dupeApp)
+	})
+
 	s.T().Run("errors on invalid parameters", func(t *testing.T) {
 		app, err := s.apiClient.CreateApp(s.ctx, &models.ServiceCreateAppRequest{})
 		require.NotNil(t, err)
