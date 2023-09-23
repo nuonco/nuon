@@ -90,5 +90,5 @@ module "infra-waypoint-orgs-stage" {
   vars = {
     env = "orgs-stage"
   }
-  triggered_by = [module.infra-eks-orgs-prod-main.workspace_id]
+  triggered_by = [module.infra-eks-orgs-stage-main.workspace_id]
 }
