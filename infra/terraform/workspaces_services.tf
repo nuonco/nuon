@@ -16,6 +16,7 @@ module "ctl-api-stage" {
   }
   variable_sets = ["aws-environment-credentials", "slack-webhooks"]
   project_id    = tfe_project.services.id
+  triggered_by  = [module.infra-eks-orgs-stage-main.workspace_id]
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
@@ -33,6 +34,7 @@ module "ctl-api-prod" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
   project_id                      = tfe_project.services.id
+  triggered_by                    = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
 module "workers-canary-stage" {
@@ -48,6 +50,7 @@ module "workers-canary-stage" {
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks", "api-stage"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  triggered_by                    = [module.infra-eks-orgs-stage-main.workspace_id]
 }
 
 module "workers-canary-prod" {
@@ -63,6 +66,7 @@ module "workers-canary-prod" {
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks", "api-prod"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  triggered_by                    = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
 module "workers-apps-prod" {
@@ -78,6 +82,7 @@ module "workers-apps-prod" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  triggered_by                    = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
 module "workers-apps-stage" {
@@ -93,6 +98,7 @@ module "workers-apps-stage" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  triggered_by                    = [module.infra-eks-orgs-stage-main.workspace_id]
 }
 
 module "workers-executors-prod" {
@@ -108,6 +114,7 @@ module "workers-executors-prod" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  triggered_by                    = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
 module "workers-executors-stage" {
@@ -123,6 +130,7 @@ module "workers-executors-stage" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  triggered_by                    = [module.infra-eks-orgs-stage-main.workspace_id]
 }
 
 module "workers-installs-prod" {
@@ -138,6 +146,7 @@ module "workers-installs-prod" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  triggered_by                    = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
 module "workers-installs-stage" {
@@ -153,6 +162,7 @@ module "workers-installs-stage" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  triggered_by                    = [module.infra-eks-orgs-stage-main.workspace_id]
 }
 
 module "workers-orgs-prod" {
@@ -168,6 +178,7 @@ module "workers-orgs-prod" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  triggered_by                    = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
 module "workers-orgs-stage" {
@@ -183,4 +194,5 @@ module "workers-orgs-stage" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  triggered_by                    = [module.infra-eks-orgs-stage-main.workspace_id]
 }

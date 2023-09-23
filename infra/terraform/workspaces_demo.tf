@@ -35,6 +35,8 @@ module "demo-org-stage" {
     NUON_ORG_ID  = "org47liun91achn0opycy6jlke"
     NUON_API_URL = "https://ctl.stage.nuon.co"
   }
+
+  triggered_by = [module.infra-terraform.workspace_id]
 }
 
 module "demo-org-prod" {
@@ -53,6 +55,7 @@ module "demo-org-prod" {
   env_vars = {
     NUON_ORG_ID = "orgtvkz1podyp9lmenx7o64usx"
   }
+  triggered_by = [module.infra-terraform.workspace_id]
 }
 
 module "e2e-stage" {
@@ -78,6 +81,7 @@ module "e2e-stage" {
     east_2_count = 0
     west_2_count = 0
   }
+  triggered_by = [module.infra-terraform.workspace_id]
 }
 
 module "e2e-prod" {
@@ -94,7 +98,7 @@ module "e2e-prod" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   env_vars = {
-    NUON_ORG_ID  = "orgtvkz1podyp9lmenx7o64usx"
+    NUON_ORG_ID = "orgtvkz1podyp9lmenx7o64usx"
   }
 
   vars = {
@@ -102,4 +106,5 @@ module "e2e-prod" {
     east_2_count = 0
     west_2_count = 0
   }
+  triggered_by = [module.infra-terraform.workspace_id]
 }

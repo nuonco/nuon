@@ -16,7 +16,6 @@ module "infra-artifacts" {
   project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = []
 }
 
 module "aws" {
@@ -30,7 +29,6 @@ module "aws" {
   project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = ["global"]
 }
 
 module "aws-accounts" {
@@ -44,7 +42,6 @@ module "aws-accounts" {
   project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = ["global"]
 }
 
 module "aws-sso" {
@@ -58,7 +55,6 @@ module "aws-sso" {
   project_id    = tfe_project.infra.id
 
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = ["global"]
 }
 
 
@@ -75,6 +71,7 @@ module "infra-datadog-orgs-prod" {
   vars = {
     env = "orgs-prod"
   }
+  triggered_by = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
 module "infra-datadog-orgs-stage" {
@@ -90,6 +87,7 @@ module "infra-datadog-orgs-stage" {
   vars = {
     env = "orgs-stage"
   }
+  triggered_by = [module.infra-eks-orgs-stage-main.workspace_id]
 }
 
 module "infra-datadog-prod" {
@@ -105,6 +103,7 @@ module "infra-datadog-prod" {
   vars = {
     env = "prod"
   }
+  triggered_by = [module.infra-eks-prod-nuon.workspace_id]
 }
 
 module "infra-datadog-stage" {
@@ -120,6 +119,7 @@ module "infra-datadog-stage" {
   vars = {
     env = "stage"
   }
+  triggered_by = [module.infra-eks-stage-nuon.workspace_id]
 }
 
 module "infra-eks-orgs-prod-main" {
@@ -132,15 +132,6 @@ module "infra-eks-orgs-prod-main" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
   project_id                      = tfe_project.infra.id
-  allowed_remote_state_workspaces = [
-    module.infra-datadog-orgs-prod.workspace_id,
-    module.infra-waypoint-orgs-prod.workspace_id,
-    module.infra-orgs-prod.workspace_id,
-    module.workers-orgs-prod.workspace_id,
-    module.workers-installs-prod.workspace_id,
-    module.workers-apps-prod.workspace_id,
-    module.workers-executors-prod.workspace_id
-  ]
 
   vars = {
     account = "orgs-prod"
@@ -158,15 +149,6 @@ module "infra-eks-orgs-stage-main" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
   project_id                      = tfe_project.infra.id
-  allowed_remote_state_workspaces = [
-    module.infra-datadog-orgs-stage.workspace_id,
-    module.infra-waypoint-orgs-stage.workspace_id,
-    module.infra-orgs-stage.workspace_id,
-    module.workers-orgs-stage.workspace_id,
-    module.workers-installs-stage.workspace_id,
-    module.workers-apps-stage.workspace_id,
-    module.workers-executors-stage.workspace_id
-  ]
   vars = {
     account = "orgs-stage"
     pool    = "main"
@@ -183,7 +165,6 @@ module "infra-eks-prod-nuon" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
   project_id                      = tfe_project.infra.id
-  allowed_remote_state_workspaces = ["global"]
   vars = {
     account = "prod"
     pool    = "nuon"
@@ -200,7 +181,6 @@ module "infra-eks-stage-nuon" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
   project_id                      = tfe_project.infra.id
-  allowed_remote_state_workspaces = ["global"]
   vars = {
     account = "stage"
     pool    = "nuon"
@@ -234,6 +214,7 @@ module "infra-temporal-prod" {
   vars = {
     env = "prod"
   }
+  triggered_by = [module.infra-eks-prod-nuon.workspace_id]
 }
 
 module "infra-temporal-stage" {
@@ -249,6 +230,7 @@ module "infra-temporal-stage" {
   vars = {
     env = "stage"
   }
+  triggered_by = [module.infra-eks-stage-nuon.workspace_id]
 }
 
 module "infra-terraform" {

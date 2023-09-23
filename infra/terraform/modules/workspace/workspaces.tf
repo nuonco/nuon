@@ -1,6 +1,3 @@
-locals {
-  global_remote_state = contains(var.allowed_remote_state_workspaces, "global")
-}
 resource "tfe_workspace" "workspace" {
   name         = var.name
   description  = "${var.name} terraform workspace for repo ${var.repo}."
@@ -12,9 +9,9 @@ resource "tfe_workspace" "workspace" {
   trigger_prefixes  = var.dir != "" ? [var.dir] : []
   terraform_version = var.terraform_version
 
-  global_remote_state       = local.global_remote_state
-  remote_state_consumer_ids = local.global_remote_state ? [] : var.allowed_remote_state_workspaces
-  project_id                = var.project_id
+  global_remote_state = true
+  remote_state_consumer_ids = []
+  project_id          = var.project_id
 
   tag_names = ["managed-by:terraform", "${var.auto_apply ? "auto-applied" : "manually-applied"}"]
 

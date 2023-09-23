@@ -18,12 +18,7 @@ module "infra-orgs-prod" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = [
-    module.workers-apps-prod.workspace_id,
-    module.workers-installs-prod.workspace_id,
-    module.workers-executors-prod.workspace_id,
-    module.workers-orgs-prod.workspace_id,
-  ]
+  triggered_by                    = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
 module "infra-orgs-stage" {
@@ -39,12 +34,7 @@ module "infra-orgs-stage" {
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  allowed_remote_state_workspaces = [
-    module.workers-apps-stage.workspace_id,
-    module.workers-installs-stage.workspace_id,
-    module.workers-executors-stage.workspace_id,
-    module.workers-orgs-stage.workspace_id,
-  ]
+  triggered_by                    = [module.infra-eks-orgs-stage-main.workspace_id]
 }
 
 module "waypoint" {
@@ -69,10 +59,6 @@ module "sandboxes" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials"]
   project_id                      = tfe_project.product.id
-  allowed_remote_state_workspaces = [
-    module.infra-orgs-prod.workspace_id,
-    module.infra-orgs-stage.workspace_id,
-  ]
 }
 
 module "infra-waypoint-orgs-prod" {
@@ -88,6 +74,7 @@ module "infra-waypoint-orgs-prod" {
   vars = {
     env = "orgs-prod"
   }
+  triggered_by = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
 module "infra-waypoint-orgs-stage" {
@@ -103,4 +90,5 @@ module "infra-waypoint-orgs-stage" {
   vars = {
     env = "orgs-stage"
   }
+  triggered_by = [module.infra-eks-orgs-prod-main.workspace_id]
 }

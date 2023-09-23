@@ -1,8 +1,3 @@
-variable "allowed_remote_state_workspaces" {
-  type    = list(string)
-  default = []
-}
-
 variable "auto_apply" {
   type    = bool
   default = false
@@ -63,4 +58,10 @@ variable "project_id" {
 variable "terraform_version" {
   type    = string
   default = "1.5.3"
+}
+
+variable "triggered_by" {
+  type        = list(string)
+  description = "workspace ids that should trigger runs of this workspace"
+  default     = []
 }
