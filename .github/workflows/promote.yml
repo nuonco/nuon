@@ -99,8 +99,8 @@ jobs:
     with:
       service: ${{matrix.service}}
       tag: ${{ needs.tag.outputs.git_ref }}
-      prod: false
-      stage: false
+      prod: true
+      stage: true
     secrets: inherit
 
   bump_tag:
