@@ -47,7 +47,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		}
 		_, found := publicEndpointList[key]
 		if found {
-			m.l.Info("marking request as public", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
+			m.l.Debug("marking request as public", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
 			ctx.Set(isPublicKey, true)
 			return
 		}
@@ -58,7 +58,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		}
 		_, found = publicEndpointList[wildcardKey]
 		if found {
-			m.l.Info("marking request as public due to wildcard", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
+			m.l.Debug("marking request as public due to wildcard", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
 			ctx.Set(isPublicKey, true)
 			return
 		}
