@@ -12,9 +12,9 @@ import (
 func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) error {
 	var runResp activities.RunTerraformResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.RunTerraform, &activities.RunTerraformRequest{
-		RunType:  activities.RunTypeApply,
+		RunType:  activities.RunTypeDestroy,
 		CanaryID: req.CanaryId,
-		OrgID:	  req.OrgId,
+		OrgID:    req.OrgId,
 	}, &runResp); err != nil {
 		return fmt.Errorf("unable to run terraform: %w", err)
 	}
@@ -23,8 +23,9 @@ func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.Deprovision
 	var orgResp activities.DeleteOrgResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.DeleteOrg, &activities.DeleteOrgRequest{
 		CanaryID: req.CanaryId,
+		OrgID:    req.OrgId,
 	}, &orgResp); err != nil {
-		return fmt.Errorf("unable to create org: %w", err)
+		return fmt.Errorf("unable to delete org: %w", err)
 	}
 	w.l.Info("deleted org", zap.Any("response", orgResp))
 

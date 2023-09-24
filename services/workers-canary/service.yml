@@ -6,6 +6,9 @@ env:
   GITHUB_INSTALL_ID: "41323514"
   TERRAFORM_MODULE_DIR: ../e2e/nuon
   INSTALL_SCRIPT_PATH: ./install-cli.sh
+  DISABLE_NOTIFICATIONS: true
+  DISABLE_CLI_COMMANDS: true
+  DISABLE_INTROSPECTION: true
 local_startup_cmds:
   - go build -o /tmp/svc-workers-canary .
 local_cmds:

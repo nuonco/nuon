@@ -235,6 +235,12 @@ func (w *wkflow) buildAndReleaseComponents(ctx workflow.Context, outputs *activi
 }
 
 func (w *wkflow) execCLICommands(ctx workflow.Context, outputs *activities.TerraformRunOutputs) error {
+	l := workflow.GetLogger(ctx)
+	if w.cfg.DisableCLICommands {
+		l.Info("skipping cli commands due to local config", zap.String("env", "DISABLE_CLI_COMMANDS"))
+		return nil
+	}
+
 	methods := []func(workflow.Context, *activities.TerraformRunOutputs) error{
 		w.getCurrentOrg,
 		w.getApp,
@@ -246,10 +252,10 @@ func (w *wkflow) execCLICommands(ctx workflow.Context, outputs *activities.Terra
 		w.buildAndReleaseComponents,
 	}
 
-	fmt.Println("hello?")
-
-	for _, method := range methods {
+	for idx, method := range methods {
+		l.Info("executing cli test", zap.Int("step", idx))
 		if err := method(ctx, outputs); err != nil {
+			l.Info("error executing cli test", zap.Int("step", idx), zap.Error(err))
 			return fmt.Errorf("error on cli command: %w", err)
 		}
 	}
