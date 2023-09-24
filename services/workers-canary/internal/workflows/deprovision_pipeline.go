@@ -11,7 +11,7 @@ import (
 
 func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) error {
 	var runResp activities.RunTerraformResponse
-	if err := w.defaultExecGetActivity(ctx, w.acts.RunTerraform, &activities.RunTerraformRequest{
+	if err := w.defaultTerraformRunActivity(ctx, w.acts.RunTerraform, &activities.RunTerraformRequest{
 		RunType:  activities.RunTypeDestroy,
 		CanaryID: req.CanaryId,
 		OrgID:    req.OrgId,

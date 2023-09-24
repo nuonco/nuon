@@ -28,7 +28,7 @@ func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequ
 	w.l.Info("create vcs connection", zap.Any("response", vcsResp))
 
 	var runResp activities.RunTerraformResponse
-	if err := w.defaultExecGetActivity(ctx, w.acts.RunTerraform, &activities.RunTerraformRequest{
+	if err := w.defaultTerraformRunActivity(ctx, w.acts.RunTerraform, &activities.RunTerraformRequest{
 		RunType:  activities.RunTypeApply,
 		CanaryID: req.CanaryId,
 		OrgID:    orgResp.OrgID,
