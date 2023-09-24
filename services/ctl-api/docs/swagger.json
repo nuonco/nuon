@@ -1547,6 +1547,47 @@
                 }
             }
         },
+        "/v1/installs/{install_id}/restart": {
+            "post": {
+                "description": "restart install event loop",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "installs/internal"
+                ],
+                "summary": "restart an installs event loop",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "install ID",
+                        "name": "install_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.RestartInstallRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/orgs": {
             "get": {
                 "description": "return current user's orgs",
@@ -3378,6 +3419,9 @@
                     "type": "string"
                 }
             }
+        },
+        "service.RestartInstallRequest": {
+            "type": "object"
         },
         "service.UpdateAppRequest": {
             "type": "object",
