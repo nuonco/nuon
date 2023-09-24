@@ -831,6 +831,8 @@ definitions:
     - name
     - user_name
     type: object
+  service.RestartInstallRequest:
+    type: object
   service.UpdateAppRequest:
     properties:
       name:
@@ -1916,6 +1918,33 @@ paths:
       summary: get an install deploy
       tags:
       - installs
+  /v1/installs/{install_id}/restart:
+    post:
+      consumes:
+      - application/json
+      description: restart install event loop
+      parameters:
+      - description: install ID
+        in: path
+        name: install_id
+        required: true
+        type: string
+      - description: Input
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/service.RestartInstallRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: boolean
+      summary: restart an installs event loop
+      tags:
+      - installs/internal
   /v1/orgs:
     get:
       consumes:
