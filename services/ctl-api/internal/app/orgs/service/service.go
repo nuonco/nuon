@@ -33,6 +33,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/orgs", s.GetAllOrgs)
 	api.POST("/v1/orgs/:org_id/support-users", s.CreateSupportUsers)
+	api.POST("/v1/orgs/:org_id/add-user", s.CreateOrgUser)
 	api.POST("/v1/orgs/:org_id/admin-delete", s.AdminDeleteOrg)
 	return nil
 }
