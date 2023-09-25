@@ -1756,6 +1756,38 @@
                 }
             }
         },
+        "/v1/orgs/{org_id}/add-user": {
+            "post": {
+                "description": "create a new org",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orgs/internal"
+                ],
+                "summary": "Add a user to an org",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "org ID to add user too",
+                        "name": "org_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/orgs/{org_id}/support-users": {
             "post": {
                 "description": "create a new org",
