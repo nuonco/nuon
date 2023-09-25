@@ -59,3 +59,5 @@ provider "aws" {
     tags = local.tags
   }
 }
+
+provider "http" {}
