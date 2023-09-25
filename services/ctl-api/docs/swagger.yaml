@@ -1983,6 +1983,27 @@ paths:
       summary: create a new org
       tags:
       - orgs
+  /v1/orgs/{org_id}/add-user:
+    post:
+      consumes:
+      - application/json
+      description: create a new org
+      parameters:
+      - description: org ID to add user too
+        in: path
+        name: org_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+      summary: Add a user to an org
+      tags:
+      - orgs/internal
   /v1/orgs/{org_id}/support-users:
     post:
       consumes:
