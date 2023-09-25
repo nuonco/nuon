@@ -14,7 +14,7 @@ type Route struct {
 
 func (r *Route) RegisterRoutes(g *gin.Engine) error {
 	switch r.cfg.Env {
-	case "developnent":
+	case "development":
 		docs.SwaggerInfo.Host = "localhost:8081"
 	case "prod":
 		docs.SwaggerInfo.Host = "ctl.prod.nuon.co"
