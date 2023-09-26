@@ -12,6 +12,7 @@ services: |
     - services/workers-apps/**
   workers-canary:
     - services/workers-canary/**
+    - services/e2e/nuon/**
   workers-executors:
     - services/workers-executors/**
   workers-installs:
