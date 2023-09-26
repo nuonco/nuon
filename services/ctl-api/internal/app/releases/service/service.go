@@ -24,6 +24,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/components/:component_id/releases", s.GetComponentReleases)
 	api.GET("/v1/apps/:app_id/releases", s.GetAppReleases)
 
+	api.POST("/v1/releases", s.CreateRelease)
 	api.GET("/v1/releases/:release_id", s.GetRelease)
 	api.GET("/v1/releases/:release_id/steps", s.GetReleaseSteps)
 	return nil
