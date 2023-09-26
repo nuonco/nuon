@@ -23,8 +23,9 @@ type Component struct {
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_component_name,unique"`
 	App   App    `faker:"-" json:"-"`
 
-	ConfigVersions   int                         `gorm:"-" json:"config_versions"`
-	ComponentConfigs []ComponentConfigConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	ConfigVersions    int                         `gorm:"-" json:"config_versions"`
+	ComponentConfigs  []ComponentConfigConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallComponents []InstallComponent          `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (c *Component) BeforeCreate(tx *gorm.DB) error {
