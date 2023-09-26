@@ -41,9 +41,8 @@ else
   ARCH=$(dpkg --print-architecture)
 fi
 
-if [ "$OS" = "x86" ]; then
+if [ "$ARCH" = "x86_64" ]; then
   ARCH=amd64
-  OS=linux
 fi
 
 OS=$(uname -s |  awk '{print tolower($0)}')
