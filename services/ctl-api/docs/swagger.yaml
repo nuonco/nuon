@@ -110,6 +110,10 @@ definitions:
         type: string
       id:
         type: string
+      installComponents:
+        items:
+          $ref: '#/definitions/app.InstallComponent'
+        type: array
       name:
         type: string
       updated_at:
@@ -2114,6 +2118,27 @@ paths:
       summary: get all releases for all orgs
       tags:
       - releases/internal
+    post:
+      consumes:
+      - application/json
+      description: create a release for a component
+      parameters:
+      - description: Input
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateComponentReleaseRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/app.ComponentRelease'
+      summary: create a release
+      tags:
+      - releases
   /v1/releases/{release_id}:
     get:
       consumes:

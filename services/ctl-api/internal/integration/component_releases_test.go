@@ -125,6 +125,18 @@ func (s *componentReleasesTestSuite) TestCreateRelease() {
 		require.NotEmpty(t, release)
 	})
 
+	// s.T().Run("success with only a build ID", func(t *testing.T) {
+	// 	release, err := s.apiClient.CreateRelease(s.ctx, s.compID, &models.ServiceCreateReleaseRequest{
+	// 		BuildID: s.buildID,
+	// 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
+	// 			InstallsPerStep: 10,
+	// 			Delay:           "1m",
+	// 		},
+	// 	})
+	// 	require.NoError(t, err)
+	// 	require.NotEmpty(t, release)
+	// })
+
 	s.T().Run("fails with missing component", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateComponentReleaseRequest]()
 		release, err := s.apiClient.CreateComponentRelease(s.ctx, generics.GetFakeObj[string](), req)
