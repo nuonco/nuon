@@ -9,7 +9,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "canary")
-	config.RegisterDefault("terraform_state_path", "/tmp/nuonctl-api-seed.tfstate")
+	config.RegisterDefault("terraform_state_path", "/tmp/nuonctl-canary.tfstate")
 	config.RegisterDefault("install_script_path", "/install-cli.sh")
 	config.RegisterDefault("terraform_module_dir", "/terraform")
 }
@@ -17,7 +17,7 @@ func init() {
 type Config struct {
 	worker.Config `config:",squash"`
 
-	SlackWebhookURL   string `config:"slack_webhook_url"     validate:"required"`
+	SlackWebhookURL   string `config:"slack_webhook_url"	 validate:"required"`
 	InstallIamRoleArn string `config:"install_iam_role_arn"  validate:"required"`
 
 	APIURL          string `config:"api_url" validate:"required"`
