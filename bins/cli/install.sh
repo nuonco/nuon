@@ -40,6 +40,12 @@ then
 else
   ARCH=$(dpkg --print-architecture)
 fi
+
+if [ "$OS" = "x86" ]; then
+  ARCH=amd64
+  OS=linux
+fi
+
 OS=$(uname -s |  awk '{print tolower($0)}')
 echo "✅ using version ${OS}_${ARCH}..."
 
