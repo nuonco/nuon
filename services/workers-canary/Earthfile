@@ -61,6 +61,7 @@ docker:
     COPY +build/service /bin/service
     COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
     COPY install-cli.sh /install-cli.sh
+    RUN chmod +x /install-cli.sh
     COPY ../e2e+terraform/* /terraform/
 
     ENTRYPOINT ["/bin/service", "all"]
