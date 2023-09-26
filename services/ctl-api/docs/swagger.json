@@ -1844,6 +1844,38 @@
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "create a release for a component",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "releases"
+                ],
+                "summary": "create a release",
+                "parameters": [
+                    {
+                        "description": "Input",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateComponentReleaseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/app.ComponentRelease"
+                        }
+                    }
+                }
             }
         },
         "/v1/releases/{release_id}": {
@@ -2361,6 +2393,12 @@
                 },
                 "id": {
                     "type": "string"
+                },
+                "installComponents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/app.InstallComponent"
+                    }
                 },
                 "name": {
                     "type": "string"
