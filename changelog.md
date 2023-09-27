@@ -9,3 +9,7 @@ Releasing the changes to use ingresses for `ctl-api`.
 ## v0.3.3
 
 Pushing change for min count in api.
+
+## v0.3.4
+
+Fixing the api authentication bug.
