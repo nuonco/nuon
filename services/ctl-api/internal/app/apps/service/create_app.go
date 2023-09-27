@@ -14,6 +14,7 @@ import (
 
 const (
 	// NOTE(jm): we eventually will allow an app to use a custom sandbox, but for now we just use aws-eks
+
 	defaultSandboxName string = "aws-eks"
 )
 
@@ -84,9 +85,9 @@ func (s *service) createApp(ctx context.Context, orgID string, req *CreateAppReq
 	}
 
 	app := app.App{
-		OrgID:		   orgID,
-		Name:		   req.Name,
-		Status:		   "queued",
+		OrgID:             orgID,
+		Name:              req.Name,
+		Status:            "queued",
 		StatusDescription: "waiting for event loop to start and provision app",
 		SandboxReleaseID:  sandbox.Releases[0].ID,
 	}
