@@ -15,12 +15,6 @@ ARG ETCSSL=/etc/ssl/cert.pem
 CACHE $GOCACHE
 CACHE $GOMODCACHE
 
-swagger-schema:
-  RUN mkdir -p /services/ctl-api/docs/
-  COPY --dir docs/swagger.json /services/ctl-api/docs/
-  COPY --dir docs/swagger.yaml /services/ctl-api/docs/
-  SAVE ARTIFACT /services
-
 code:
     FROM ../../.+deps
     COPY ../../pkg+code/pkg pkg
