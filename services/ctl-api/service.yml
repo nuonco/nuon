@@ -25,7 +25,10 @@ env_secrets:
   GITHUB_APP_KEY:
     name: ctl-api-github-app-key
     key: github_app_key
+watch_ignore_dirs:
+  - docs/
 local_startup_cmds:
+  - go generate ./...
   - go build -o /tmp/svc-ctl-api
   - /tmp/svc-ctl-api startup
 local_cmds:
