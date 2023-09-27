@@ -2121,7 +2121,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: create a release for a component
+      description: create a release for a build
       parameters:
       - description: Input
         in: body

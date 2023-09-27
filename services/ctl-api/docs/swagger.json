@@ -1846,7 +1846,7 @@
                 }
             },
             "post": {
-                "description": "create a release for a component",
+                "description": "create a release for a build",
                 "consumes": [
                     "application/json"
                 ],
