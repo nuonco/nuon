@@ -14,7 +14,6 @@ ARG GHCR_IMAGE=ghcr.io/powertoolsdev/mono-pkg:cache
 code:
     FROM ../.+deps
     COPY --dir . ./pkg
-    COPY ../services/ctl-api+swagger-schema/services /src/services
     DO +GEN
 
     SAVE ARTIFACT pkg
