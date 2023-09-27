@@ -208,3 +208,13 @@ output "root_domain" {
   description = "Root domain for this environment"
   value       = data.aws_route53_zone.env_root.name
 }
+
+output "twingate_service_accounts" {
+  description = "twingate service account"
+  value = {
+    github_actions = {
+      token = nonsensitive(twingate_service_account_key.github_actions.token)
+      id = twingate_service_account_key.github_actions.service_account_id
+    }
+  }
+}
