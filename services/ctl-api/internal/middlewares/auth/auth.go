@@ -36,6 +36,15 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		if token == "" {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("auth token was empty"),
+				Description: "Please make sure you set the -H Auth:Bearer <token> header",
+			})
+			ctx.Abort()
+			return
+		}
+
 		userToken, err := m.fetchUserToken(ctx, token)
 		if err != nil {
 			ctx.Error(err)

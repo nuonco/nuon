@@ -50,7 +50,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		}
 		_, found := globalEndpointList[key]
 		if found {
-			m.l.Debug("marking request as public", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
+			m.l.Debug("marking request as global", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
 		}
 
 		ctx.Set(isGlobalKey, found)
