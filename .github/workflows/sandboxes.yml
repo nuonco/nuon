@@ -68,6 +68,8 @@ jobs:
         sandbox: [empty, aws-eks]
     uses: ./.github/workflows/sandbox.yml
     with:
+      env: stage
+      publish: true
       sandbox: ${{ matrix.sandbox }}
       tag: ${{ needs.tag.outputs.git_ref }}
     secrets: inherit

@@ -103,12 +103,30 @@ jobs:
       stage: true
     secrets: inherit
 
+  sandboxes:
+    name: 🚢 sandbox
+    needs:
+      - tag
+      - merged_pr
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
+    strategy:
+      matrix:
+        sandbox: [empty, aws-eks]
+    uses: ./.github/workflows/sandbox.yml
+    with:
+      env: prod
+      publish: true
+      sandbox: ${{ matrix.sandbox }}
+      tag: ${{ needs.tag.outputs.git_ref }}
+    secrets: inherit
+
   bump_tag:
     name: bump tag
     needs:
       - tag
       - merged_pr
       - services
+      - sandboxes
     if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     runs-on: ubuntu-latest
     steps:
