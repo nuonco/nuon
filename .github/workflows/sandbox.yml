@@ -9,6 +9,10 @@ name: sandbox
       tag:
         type: string
         required: true
+      publish:
+        type: boolean
+      env:
+        type: string
     outputs: {}
 
 permissions:
@@ -40,7 +44,7 @@ jobs:
     name: Release
     needs:
       - validate
-    if: github.event_name != 'pull_request'
+    if: ${{ inputs.publish }}
     env:
       TF_OUT: ${{ github.workspace }}/tf-out.json
     runs-on: ubuntu-latest
@@ -98,3 +102,16 @@ jobs:
           SLACK_COLOR: "#228B22"
           SLACK_WEBHOOK: ${{ secrets.STAGE_DEPLOYS_SLACK_WEBHOOK_URL }}
           MSG_MINIMAL: true
+
+  publish:
+    name: Publish
+    needs:
+      - release
+    if: ${{ inputs.publish }}
+    uses: ./.github/workflows/internal_api.yml
+    with:
+      env: ${{ inputs.env }}
+      endpoint: /v1/sandboxes/${{ inputs.sandbox }}/release
+      method: POST
+      data: "{\"version\":\"${{ inputs.tag }} \",\"terraform_version\":\"v1.5.3\"}"
+    secrets: inherit
