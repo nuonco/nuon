@@ -24,11 +24,11 @@ defaults:
 jobs:
   terraform:
     name: Get terraform outputs
-    uses: ./.github/workflows/service_terraform_outputs.yml
+    uses: ./.github/workflows/terraform_outputs.yml
     secrets: inherit
     with:
       dir: services/${{ inputs.service }}/infra
-      service: ${{ inputs.service }}
+      cache-key: ${{ inputs.service }}
       workspace: stage
 
   lint:

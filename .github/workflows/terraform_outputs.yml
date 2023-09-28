@@ -1,0 +1,91 @@
+---
+name: terraform-outputs
+"on":
+  workflow_call:
+    inputs:
+      workspace:
+        type: string
+        required: false
+      cache-key:
+        type: string
+        required: false
+      dir:
+        type: string
+        required: true
+    outputs:
+      cache_key:
+        description: "output cache key for fetching using download-artifact"
+        value: ${{ jobs.terraform.outputs.cache_key }}
+      tf_env:
+        description: "tf env path, where terraform outputs are written in environment variable form (ie: TFO_ prefix)"
+        value: ${{ jobs.terraform.outputs.tf_env }}
+      tf_out:
+        description: "tf out path, where terraform outputs are written"
+        value: ${{ jobs.terraform.outputs.tf_out }}
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+
+jobs:
+  terraform:
+    name: Get terraform outputs
+    runs-on: ubuntu-latest
+    env:
+      TF_OUT: ${{ github.workspace }}/tf-out.json
+      TF_WORKSPACE: ${{ inputs.workspace }}
+      TF_ENV: ${{ github.workspace }}/.tfenv
+    outputs:
+      tf_out: ${{ steps.save_output_vars.outputs.tf_out }}
+      tf_env: ${{ steps.save_output_vars.outputs.tf_env }}
+      cache_key: ${{ steps.save_output_vars.outputs.cache_key }}
+    permissions:
+      contents: read
+    timeout-minutes: 7
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_KEY }}
+
+      - name: Init terraform
+        working-directory: ${{ inputs.dir }}
+        run: |
+          terraform init
+
+      - name: Get terraform outputs
+        working-directory: ${{ inputs.dir }}
+        run: |
+          terraform-bin output -json > "${{ env.TF_OUT }}"
+
+      - name: Parse terraform outputs
+        uses: powertoolsdev/mono/actions/tf-output@main
+        with:
+          file: ${{ env.TF_OUT }}
+
+      - name: Save terraform outputs
+        run: |
+          printenv | grep "TFO_" > "${{ env.TF_ENV }}"
+
+      - name: Save output vars
+        id: save_output_vars
+        run: |
+          echo tf_out=${{ env.TF_OUT }} >> "$GITHUB_OUTPUT"
+          echo tf_env=${{ env.TF_ENV }} >> "$GITHUB_OUTPUT"
+          echo cache_key=env-${{ github.run_id }}-${{ inputs.cache-key }} >> "$GITHUB_OUTPUT"
+
+      - name: Save outputs
+        uses: actions/upload-artifact@v3
+        with:
+          name: env-${{ github.run_id }}-${{inputs.cache-key}}
+          path: ${{ env.TF_ENV }}
+          if-no-files-found: error
+          retention-days: 1
