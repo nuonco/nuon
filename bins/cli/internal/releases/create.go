@@ -2,12 +2,11 @@ package releases
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 const (
@@ -16,51 +15,63 @@ const (
 )
 
 func (s *Service) Create(ctx context.Context, compID, buildID, delay string, installsPerStep int64, asJSON bool) {
-	if asJSON == true {
-		newRelease, err := s.api.CreateComponentRelease(ctx, compID, &models.ServiceCreateComponentReleaseRequest{
-			BuildID: buildID,
-			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-				Delay:           delay,
-				InstallsPerStep: installsPerStep,
-			},
-		})
+	view := ui.NewCreateView("release", asJSON)
+	view.Start()
+
+	if buildID == "" && compID == "" {
+		view.Fail(fmt.Errorf("need either a build ID or a component ID"))
+	}
+
+	req := &models.ServiceCreateComponentReleaseRequest{
+		BuildID: buildID,
+		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
+			Delay:           delay,
+			InstallsPerStep: installsPerStep,
+		},
+	}
+
+	// if we weren't given a build ID, we get the latest build for the component
+	if buildID == "" {
+		view.Update(fmt.Sprintf("getting latest build for component %s", compID))
+		var latestBuild *models.AppComponentBuild
+		latestBuild, err := s.api.GetComponentLatestBuild(ctx, compID)
 		if err != nil {
-			fmt.Printf("failed to create release: %s", err)
+			view.Fail(err)
 			return
 		}
-		j, _ := json.Marshal(newRelease)
-		fmt.Println(string(j))
-	} else {
-		releaseSpinner, _ := pterm.DefaultSpinner.Start("starting release")
+		req.BuildID = latestBuild.ID
+		view.Update(fmt.Sprintf("got build %s", buildID))
+	}
 
-		newRelease, err := s.api.CreateComponentRelease(ctx, compID, &models.ServiceCreateComponentReleaseRequest{
-			BuildID: buildID,
-			Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-				Delay:           delay,
-				InstallsPerStep: installsPerStep,
-			},
-		})
-		if err != nil {
-			releaseSpinner.Fail(err.Error() + "\n")
+	view.Update(fmt.Sprintf("creating release from build %s", buildID))
+	release, err := s.api.CreateRelease(ctx, req)
+	if err != nil {
+		view.Fail(err)
+		return
+	}
+
+	if asJSON {
+		view.Success(release.ID)
+		return
+	}
+
+	for {
+		release, err := s.api.GetRelease(ctx, release.ID)
+
+		switch {
+		case err != nil:
+			view.Fail(err)
 			return
+		case release.Status == statusError:
+			view.Fail(fmt.Errorf(release.StatusDescription))
+			return
+		case release.Status == statusActive:
+			view.Success(release.ID)
+			return
+		default:
+			view.Update(fmt.Sprintf("release %s %s", release.ID, release.Status))
 		}
 
-		for {
-			release, err := s.api.GetRelease(ctx, newRelease.ID)
-			switch {
-			case err != nil:
-				releaseSpinner.Fail(err.Error() + "\n")
-			case release.Status == statusError:
-				releaseSpinner.Fail(fmt.Errorf("failed to create release: %s", release.StatusDescription))
-				return
-			case release.Status == statusActive:
-				releaseSpinner.Success(fmt.Sprintf("successfully created release %s", release.ID))
-				return
-			default:
-				releaseSpinner.UpdateText(fmt.Sprintf("%s component release", release.Status))
-			}
-
-			time.Sleep(5 * time.Second)
-		}
+		time.Sleep(5 * time.Second)
 	}
 }

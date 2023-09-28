@@ -12,7 +12,7 @@ type DeleteView struct {
 
 func NewDeleteView(model, id string) *DeleteView {
 	return &DeleteView{
-		*NewSpinnerView(),
+		*NewSpinnerView(false),
 		model,
 		id,
 	}
