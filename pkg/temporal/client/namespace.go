@@ -15,8 +15,9 @@ func (t *temporal) GetNamespaceClient(namespace string) (tclient.Client, error) 
 	}
 
 	client, err := tclient.NewClientFromExisting(defaultClient, tclient.Options{
-		Namespace: namespace,
-		Logger:    temporalzap.NewLogger(t.Logger),
+		Namespace:     namespace,
+		Logger:        temporalzap.NewLogger(t.Logger),
+		DataConverter: t.Converter,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get client in namespace %s: %w", namespace, err)
