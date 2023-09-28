@@ -12,7 +12,7 @@ resource "time_static" "key_rotation" {
 }
 
 resource "twingate_service_account_key" "github_actions" {
-  name               = "github-actions-key"
+  name               = "github-actions-key-${local.workspace_trimmed}"
   service_account_id = twingate_service_account.github_actions.id
 
   lifecycle {
