@@ -172,10 +172,11 @@ jobs:
   trigger_canary:
     name: trigger canary
     needs:
+      - merged_pr
       - services
       - sandboxes
       - tag
-    if: ${{ inputs.publish }}
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     uses: ./.github/workflows/internal_api.yml
     with:
       env: prod
