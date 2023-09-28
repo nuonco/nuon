@@ -1,0 +1,69 @@
+---
+name: internal-api
+"on":
+  workflow_call:
+    inputs:
+      env:
+        type: string
+        required: false
+      endpoint:
+        type: string
+        required: false
+      method:
+        type: string
+        required: true
+      data:
+        type: string
+        required: false
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  terraform:
+    name: Get terraform outputs
+    uses: ./.github/workflows/terraform_outputs.yml
+    secrets: inherit
+    with:
+      dir: infra/eks
+      cache-key: infra-eks-${{ inputs.env }}-nuon
+      workspace: ${{ inputs.env }}-nuon
+
+  setup-twingate:
+    name: 🔍 internal-api-request
+    runs-on: ubuntu-latest
+    needs:
+      - terraform
+    steps:
+      - name: Fetch terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.terraform.outputs.cache_key }}
+
+      - name: Copy terraform outputs to environment
+        run: |
+          cat "${{ needs.terraform.outputs.tf_env }}" >> "$GITHUB_ENV"
+
+      - name: Setup twingate
+        uses: twingate/github-action@v1
+        with:
+          service-key: ${{ env.TFO_TWINGATE_SERVICE_ACCOUNTS_GITHUB_ACTIONS_TOKEN }}
+
+      - name: write
+        if: ${{ inputs.method != 'GET' }}
+        run: |
+          curl -X ${{ inputs.method }} \
+            --data '${{ inputs.data }}' \
+            http://ctl.nuon.us-west-2.${{ inputs.env }}.nuon.cloud${{ inputs.endpoint }}
+
+      - name: read
+        if: ${{ inputs.method == 'GET' }}
+        run: |
+          curl -X ${{ inputs.method }} \
+            http://ctl.nuon.us-west-2.${{ inputs.env }}.nuon.cloud${{ inputs.endpoint }}
