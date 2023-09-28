@@ -1,5 +1,5 @@
 resource "twingate_service_account" "github_actions" {
-  name = "github-actions"
+  name = "github-actions-${local.workspace_trimmed}"
 }
 
 // Key rotation using the time provider (see https://registry.terraform.io/providers/hashicorp/time/latest)
@@ -12,7 +12,7 @@ resource "time_static" "key_rotation" {
 }
 
 resource "twingate_service_account_key" "github_actions" {
-  name = "github-actions-key"
+  name               = "github-actions-key"
   service_account_id = twingate_service_account.github_actions.id
 
   lifecycle {

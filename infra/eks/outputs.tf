@@ -214,7 +214,7 @@ output "twingate_service_accounts" {
   value = {
     github_actions = {
       token = nonsensitive(twingate_service_account_key.github_actions.token)
-      id = twingate_service_account_key.github_actions.service_account_id
+      id    = twingate_service_account_key.github_actions.service_account_id
     }
   }
 }

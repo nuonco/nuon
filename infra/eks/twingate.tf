@@ -15,7 +15,10 @@ resource "twingate_resource" "internal_dns" {
   remote_network_id = twingate_remote_network.vpc.id
 
   access {
-    group_ids = [data.twingate_groups.engineers.groups[0].id]
+    group_ids = [
+      data.twingate_groups.engineers.groups[0].id,
+      twingate_service_account.github_actions.id
+    ]
   }
 }
 
@@ -26,7 +29,10 @@ resource "twingate_resource" "private_subnets" {
   remote_network_id = twingate_remote_network.vpc.id
 
   access {
-    group_ids = [data.twingate_groups.engineers.groups[0].id]
+    group_ids = [
+      data.twingate_groups.engineers.groups[0].id,
+      twingate_service_account.github_actions.id
+    ]
   }
 }
 
