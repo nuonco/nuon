@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	tclient "go.temporal.io/sdk/client"
+	converter "go.temporal.io/sdk/converter"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +23,7 @@ type temporal struct {
 	Namespace string      `validate:"required"`
 	Logger    *zap.Logger `validate:"required"`
 	LazyLoad  bool
+	Converter converter.DataConverter
 
 	tclient.Client
 	sync.RWMutex
@@ -82,6 +84,13 @@ func WithNamespace(namespace string) temporalOption {
 func WithLazyLoad(lazyLoad bool) temporalOption {
 	return func(t *temporal) error {
 		t.LazyLoad = lazyLoad
+		return nil
+	}
+}
+
+func WithDataConverter(dataConverter converter.DataConverter) temporalOption {
+	return func(t *temporal) error {
+		t.Converter = dataConverter
 		return nil
 	}
 }

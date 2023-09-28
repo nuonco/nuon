@@ -17,7 +17,7 @@ type App struct {
 
 	Name              string      `json:"name" gorm:"index:idx_app_name,unique"`
 	OrgID             string      `json:"org_id" gorm:"index:idx_app_name,unique"`
-	Org               Org         `faker:"-" json:"org"`
+	Org               Org         `faker:"-" json:"-"`
 	Components        []Component `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
 	Installs          []Install   `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
 	Status            string      `json:"status"`
