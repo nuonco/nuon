@@ -65,9 +65,10 @@ func (t *temporal) getClient() (tclient.Client, error) {
 
 	// no client was found, create a new one, set it and return it
 	tc, err := tclient.Dial(tclient.Options{
-		HostPort:  t.Addr,
-		Namespace: t.Namespace,
-		Logger:    temporalzap.NewLogger(t.Logger),
+		HostPort:      t.Addr,
+		Namespace:     t.Namespace,
+		Logger:        temporalzap.NewLogger(t.Logger),
+		DataConverter: t.Converter,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to dial temporal: %w", err)

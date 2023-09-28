@@ -43,7 +43,7 @@ func (a *AutoMigrate) createSandbox(ctx context.Context, sandboxName, version st
 		DeprovisionPolicyURL:    baseURL + "deprovision.json",
 		OneClickRoleTemplateURL: baseURL + "install-role.yaml",
 	}
-	err := a.db.Model(&sandbox).Association("Releases").Append(&sandboxRelease)
+	err := a.db.Model(&sandbox).Where("id = ?", sandbox.ID).Association("Releases").Append(&sandboxRelease)
 	if err != nil {
 		return fmt.Errorf("unable to save sandbox release: %w", err)
 	}
