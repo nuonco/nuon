@@ -15,9 +15,9 @@ type SandboxRelease struct {
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
 
-	SandboxID               string  `json:"-" gorm:"notnull"`
+	SandboxID               string  `json:"-" gorm:"index:idx_sandbox_release,unique"`
 	Sandbox                 Sandbox `json:"sandbox,omitempty"`
-	Version                 string  `gorm:"unique;notnull" json:"version"`
+	Version                 string  `gorm:"index:idx_sandbox_release,unique" json:"version"`
 	TerraformVersion        string  `json:"terraform_version" gorm:"notnull"`
 	ProvisionPolicyURL      string  `json:"provision_policy_url" gorm:"notnull"`
 	DeprovisionPolicyURL    string  `json:"deprovision_policy_url" gorm:"notnull"`
