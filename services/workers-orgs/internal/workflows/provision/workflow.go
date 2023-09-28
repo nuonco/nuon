@@ -88,7 +88,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *orgsv1.ProvisionRequest) (
 		Reprovision: req.Reprovision,
 	})
 	if err != nil {
-		err = fmt.Errorf("failed to install runner: %w", err)
+		err = fmt.Errorf("failed to install server: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
