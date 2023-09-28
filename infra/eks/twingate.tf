@@ -17,6 +17,8 @@ resource "twingate_resource" "internal_dns" {
   access {
     group_ids = [
       data.twingate_groups.engineers.groups[0].id,
+    ]
+    service_account_ids = [
       twingate_service_account.github_actions.id
     ]
   }
@@ -31,6 +33,8 @@ resource "twingate_resource" "private_subnets" {
   access {
     group_ids = [
       data.twingate_groups.engineers.groups[0].id,
+    ]
+    service_account_ids = [
       twingate_service_account.github_actions.id
     ]
   }
