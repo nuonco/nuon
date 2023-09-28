@@ -1842,6 +1842,10 @@ github.com/nelsam/hel/v2 v2.3.3/go.mod h1:1ZTGfU2PFTOd5mx22i5O0Lc2GY933lQ2wb/ggy
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nuonco/nuon-go v0.0.5 h1:t6HH7oGe3EJqrDnQFUXfQmq6rMAi9YTPUrg7nA0jHSU=
 github.com/nuonco/nuon-go v0.0.5/go.mod h1:JUQtBQdvRLhVkPOKcKaH7hhaqXszQqiqokD3isDgdDA=
+github.com/nuonco/nuon-go v0.2.0 h1:bUEYQfzWtXhrOBIJzaCI19V/MeGqQRy0HLRqNZxlEwk=
+github.com/nuonco/nuon-go v0.2.0/go.mod h1:JUQtBQdvRLhVkPOKcKaH7hhaqXszQqiqokD3isDgdDA=
+github.com/nuonco/nuon-go v0.2.1 h1:N5ErhHu28yRq8vCptPtqeR0dsS9/+Z+tVhW4anBiuw4=
+github.com/nuonco/nuon-go v0.2.1/go.mod h1:JUQtBQdvRLhVkPOKcKaH7hhaqXszQqiqokD3isDgdDA=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2 h1:e3mzJFJs4k83GXBEiTaQ5HgSc/kOK8q0rDaRO0MPaOk=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2/go.mod h1:yntwv/HfMc/Hbvtq9I19D1n58te3h6KsqCf3GxyfBGY=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
@@ -2120,6 +2124,8 @@ github.com/spf13/cobra v1.0.0/go.mod h1:/6GTrnGXV9HjY+aR4k0oJ5tcvakLuG6EuKReYlHN
 github.com/spf13/cobra v1.2.1/go.mod h1:ExllRjgxM/piMAM+3tAZvg8fsklGAf3tPfi+i8t68Nk=
 github.com/spf13/cobra v1.7.0 h1:hyqWnYt1ZQShIddO5kBpj3vu05/++x6tJ6dg8EC572I=
 github.com/spf13/cobra v1.7.0/go.mod h1:uLxZILRyS/50WlhOIKD7W6V5bgeIt+4sICxh6uRMrb0=
+github.com/spf13/cobra v1.7.1-0.20230908172906-0c72800b8dba h1:b48mOHedHw5aaJ3yfcIH1++b5rfalUAg5DSlu88syCs=
+github.com/spf13/cobra v1.7.1-0.20230908172906-0c72800b8dba/go.mod h1:uLxZILRyS/50WlhOIKD7W6V5bgeIt+4sICxh6uRMrb0=
 github.com/spf13/jwalterweatherman v1.0.0/go.mod h1:cQK4TGJAtQXfYWX+Ddv3mKDzgVb68N+wFjFa4jdeBTo=
 github.com/spf13/jwalterweatherman v1.1.0 h1:ue6voC5bR5F8YxI5S67j9i582FU4Qvo2bmqnqMYADFk=
 github.com/spf13/jwalterweatherman v1.1.0/go.mod h1:aNWZUN0dPAAO/Ljvb5BEdw96iTZ0EXowPYD95IqWIGo=

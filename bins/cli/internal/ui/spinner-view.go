@@ -1,27 +1,57 @@
 package ui
 
-import "github.com/pterm/pterm"
+import (
+	"github.com/pterm/pterm"
+)
 
 type SpinnerView struct {
+	json    bool
+	spinner *pterm.SpinnerPrinter
 }
 
-func NewSpinnerView() *SpinnerView {
-	pterm.DefaultSpinner.Start()
-	return &SpinnerView{}
+func NewSpinnerView(json bool) *SpinnerView {
+	return &SpinnerView{
+		json,
+		nil,
+	}
 }
 
 func (v *SpinnerView) Start(text string) {
-	pterm.DefaultSpinner.Start(text)
+	if v.json {
+		return
+	}
+
+	spinner, _ := pterm.DefaultSpinner.Start(text)
+	v.spinner = spinner
 }
 
 func (v *SpinnerView) Update(text string) {
-	pterm.DefaultSpinner.UpdateText(text)
+	if v.json {
+		return
+	}
+
+	// force clearing the line
+	// TODO: this is a work-around for a pterm bug that we should be able to remove in the future
+	// we think it's related to this: https://github.com/pterm/pterm/pull/447
+	v.spinner.UpdateText("                                                                                                   ")
+
+	v.spinner.UpdateText(text)
 }
 
 func (v *SpinnerView) Fail(err error) {
-	pterm.DefaultSpinner.Fail(err.Error() + "\n")
+	if v.json {
+		printJSONError(err)
+		return
+	}
+
+	v.spinner.Fail(err.Error())
 }
 
 func (v *SpinnerView) Success(text string) {
-	pterm.DefaultSpinner.Success(text + "\n")
+	if v.json {
+		printJSON(text)
+		return
+	}
+
+	v.spinner.Success(text)
 }
