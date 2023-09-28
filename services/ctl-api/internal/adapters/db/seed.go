@@ -10,12 +10,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// this function is used to seed the minimal amount of dependencies we need to properly bootstrap the application. It
-// should not be used for general dev seeding, `nuonctl api seed` is where we manage that.
-func (a *AutoMigrate) seedModels(ctx context.Context) error {
-	a.l.Info("creating default sandbox")
+func (a *AutoMigrate) createSandbox(ctx context.Context, sandboxName, version string) error {
 	// create the default sandbox
-	sandboxName := "aws-eks"
 	sandbox := app.Sandbox{
 		Name:        sandboxName,
 		Description: "default aws sandbox",
@@ -33,8 +29,7 @@ func (a *AutoMigrate) seedModels(ctx context.Context) error {
 		return nil
 	}
 
-	a.l.Info("adding sandbox version")
-	version := "08e7f11"
+	// create sandbox version
 	baseURL := a.cfg.SandboxArtifactsBaseURL
 	if !strings.HasSuffix(baseURL, "/") {
 		baseURL += "/"
@@ -51,6 +46,20 @@ func (a *AutoMigrate) seedModels(ctx context.Context) error {
 	err := a.db.Model(&sandbox).Association("Releases").Append(&sandboxRelease)
 	if err != nil {
 		return fmt.Errorf("unable to save sandbox release: %w", err)
+	}
+
+	return nil
+}
+
+// this function is used to seed the minimal amount of dependencies we need to properly bootstrap the application. It
+// should not be used for general dev seeding, `nuonctl api seed` is where we manage that.
+func (a *AutoMigrate) seedModels(ctx context.Context) error {
+	a.l.Info("creating default aws sandbox")
+	if err := a.createSandbox(ctx, "aws-eks", "08e7f11"); err != nil {
+		return fmt.Errorf("unable to create aws-eks sandbox: %w", err)
+	}
+	if err := a.createSandbox(ctx, "empty", "08e7f11"); err != nil {
+		return fmt.Errorf("unable to create empty sandbox: %w", err)
 	}
 
 	return nil
