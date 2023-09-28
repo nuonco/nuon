@@ -74,9 +74,8 @@ func newReleasesCmd(bindConfig config.BindCobraFunc, releasesService *releases.S
 		},
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component whose build you want to create a release for")
-	createCmd.MarkFlagRequired("component-id")
 	createCmd.Flags().StringVarP(&buildID, "build-id", "b", "", "The ID of the build you want to create a release for")
-	createCmd.MarkFlagRequired("build-id")
+	createCmd.MarkFlagsOneRequired("build-id", "component-id")
 	createCmd.Flags().StringVarP(&delay, "delay", "d", "10s", "The delay you want between each step")
 	createCmd.Flags().Int64VarP(&installsPerStep, "installs-per-step", "s", 10, "The number of deploys you want to execute each step. Set to 0 to deploy to all installs in parrallel")
 	releasesCmd.AddCommand(createCmd)
