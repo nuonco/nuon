@@ -168,3 +168,18 @@ jobs:
             *stage* - true
             *prod* - true
             *status* - ${{steps.check.outputs.status}}
+
+  trigger_canary:
+    name: trigger canary
+    needs:
+      - services
+      - sandboxes
+      - tag
+    if: ${{ inputs.publish }}
+    uses: ./.github/workflows/internal_api.yml
+    with:
+      env: prod
+      endpoint: /v1/general/provision-canary
+      method: POST
+      data: "{}"
+    secrets: inherit
