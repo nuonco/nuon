@@ -13,3 +13,7 @@ Pushing change for min count in api.
 ## v0.3.4
 
 Fixing the api authentication bug.
+
+## v0.6.0
+
+Fixed TF version in infra components.
