@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -20,14 +21,8 @@ func NewConfig() (*Config, error) {
 	cfg := &Config{viper.New()}
 
 	// Read values from config file.
-	cfg.SetConfigType("yaml")
-	cfg.SetConfigName(".nuon")
-	cfg.AddConfigPath("$HOME")
-	if err := cfg.ReadInConfig(); err != nil {
-		// The config file is optional, so we want to ignore "ConfigFileNotFoundError", but return all other errors.
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return nil, err
-		}
+	if err := cfg.readConfigFile(); err != nil {
+		return nil, err
 	}
 
 	// Read values from env vars.
@@ -36,6 +31,24 @@ func NewConfig() (*Config, error) {
 	cfg.AutomaticEnv()
 
 	return cfg, nil
+}
+
+// readConfigFile reads config values from a yaml file at ~/.nuon
+func (cfg *Config) readConfigFile() error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	cfg.SetConfigFile(homeDir + "/.nuon")
+	cfg.SetConfigType("yaml")
+	if err := cfg.ReadInConfig(); err != nil {
+		// The config file is optional, so we want to ignore "ConfigFileNotFoundError", but return all other errors.
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
+	}
+	return nil
 }
 
 // BindCobraFlags binds config values to the flags of the provided cobra command.
