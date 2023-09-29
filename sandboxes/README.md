@@ -13,5 +13,3 @@ To execute `earthly` targets:
 ```bash
 $ earthly +lint --SANDBOX=aws-eks
 ```
-
-
