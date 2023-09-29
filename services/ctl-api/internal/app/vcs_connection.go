@@ -19,7 +19,7 @@ type VCSConnection struct {
 	Org   Org    `swaggerignore:"true" json:"-"`
 
 	GithubInstallID           string                     `json:"github_install_id" gorm:"notnull"`
-	Commits                   []VCSConnectionCommit      `json:"vcs_connection_commit" `
+	Commits                   []VCSConnectionCommit      `json:"vcs_connection_commit" gorm:"constraint:OnDelete:CASCADE;"`
 	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
