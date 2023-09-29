@@ -55,9 +55,7 @@ func (c *Adapter) ToTerraformModuleComponentConfig(cfg *app.TerraformModuleCompo
 			Timeout: durationpb.New(defaultTerraformModuleDeployTimeout),
 			Cfg: &deployv1.Config_TerraformModuleConfig{
 				TerraformModuleConfig: &deployv1.TerraformModuleConfig{
-					// TODO(jm): update the executors to just accept a string
-					//TerraformVersion: cfg.TerraformVersion,
-					TerraformVersion: deployv1.TerraformVersion_TERRAFORM_VERSION_1_4_6,
+					TerraformVersion: cfg.Version,
 					Vars:             c.toTerraformVariables(cfg.Variables),
 				},
 			},
