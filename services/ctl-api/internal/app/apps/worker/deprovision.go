@@ -51,6 +51,5 @@ func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool)
 		return fmt.Errorf("unable to delete app: %w", err)
 	}
 
-	w.updateStatus(ctx, appID, StatusActive, "app is provisioned")
 	return nil
 }
