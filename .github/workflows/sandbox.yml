@@ -11,6 +11,7 @@ name: sandbox
         required: true
       publish:
         type: boolean
+        required: true
       env:
         type: string
     outputs: {}
@@ -113,5 +114,5 @@ jobs:
       env: ${{ inputs.env }}
       endpoint: /v1/sandboxes/${{ inputs.sandbox }}/release
       method: POST
-      data: "{\"version\":\"${{ inputs.tag }} \",\"terraform_version\":\"v1.5.3\"}"
+      data: '{"version":"${{ inputs.tag }}","terraform_version":"v1.5.3"}'
     secrets: inherit
