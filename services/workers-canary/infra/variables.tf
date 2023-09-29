@@ -14,10 +14,15 @@ variable "slack_webhook_url_canary_bots" {
 
 variable "api_url" {
   type        = string
-  description = "api url"
+  description = "api url set by the standard api var set"
+}
+
+variable "internal_api_url" {
+  type        = string
+  description = "internal api url set by the standard api var set"
 }
 
 variable "api_token" {
   type        = string
-  description = "api url"
+  description = "api token set by the standard api var set"
 }

@@ -10,6 +10,10 @@ output "api_url" {
   value = var.api_url
 }
 
+output "internal_api_url" {
+  value = var.internal_api_url
+}
+
 output "api_token" {
   value = nonsensitive(var.api_token)
 }
