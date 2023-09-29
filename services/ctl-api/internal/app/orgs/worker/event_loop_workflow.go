@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"errors"
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
@@ -47,6 +48,11 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, orgID string) error {
 		}
 	})
 	for !finished {
+		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
+			l.Error("workflow canceled")
+			break
+		}
+
 		selector.Select(ctx)
 	}
 
