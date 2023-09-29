@@ -10,7 +10,7 @@ configmap:
     INTERNAL_API_URL: $TFO_INTERNAL_API_URL
     # we prefix this with nuon to prevent conflicts when running locally
     NUON_API_TOKEN: $TFO_API_TOKEN
-    GITHUB_INSTALL_ID: !!str "41323514"
+    GITHUB_INSTALL_ID: !!str $TFO_GITHUB_INSTALL_ID
 
 serviceAccount:
   annotations:

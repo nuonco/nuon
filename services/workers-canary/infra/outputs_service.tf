@@ -17,3 +17,7 @@ output "internal_api_url" {
 output "api_token" {
   value = nonsensitive(var.api_token)
 }
+
+output "github_install_id" {
+  value = var.github_install_id
+}

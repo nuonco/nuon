@@ -26,3 +26,8 @@ variable "api_token" {
   type        = string
   description = "api token set by the standard api var set"
 }
+
+variable "github_install_id" {
+  type        = string
+  description = "github install id to add to org"
+}

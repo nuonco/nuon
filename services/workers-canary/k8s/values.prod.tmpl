@@ -11,7 +11,7 @@ configmap:
 
     # we prefix this with nuon to prevent conflicts when running locally
     NUON_API_TOKEN: $TFO_API_TOKEN
-    GITHUB_INSTALL_ID: !!str "41915747"
+    GITHUB_INSTALL_ID: !!str $TFO_GITHUB_INSTALL_ID
 
 serviceAccount:
   annotations:
