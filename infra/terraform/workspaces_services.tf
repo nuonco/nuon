@@ -46,6 +46,7 @@ module "workers-canary-stage" {
   dir        = "services/workers-canary/infra"
   vars = {
     env = "stage"
+    github_install_id = "41323514"
   }
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks", "api-stage"]
   project_id                      = tfe_project.services.id
@@ -62,6 +63,7 @@ module "workers-canary-prod" {
   dir        = "services/workers-canary/infra"
   vars = {
     env = "prod"
+    github_install_id = "41959553"
   }
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks", "api-prod"]
   project_id                      = tfe_project.services.id
