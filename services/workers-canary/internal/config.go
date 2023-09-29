@@ -9,7 +9,7 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "canary")
-	config.RegisterDefault("terraform_state_path", "/tmp/nuonctl-canary.tfstate")
+	config.RegisterDefault("terraform_state_base_dir", "/tmp/state")
 	config.RegisterDefault("install_script_path", "/install-cli.sh")
 	config.RegisterDefault("terraform_module_dir", "/terraform")
 }
@@ -25,9 +25,9 @@ type Config struct {
 	APIToken        string `config:"nuon_api_token" validate:"required"`
 	GithubInstallID string `config:"github_install_id" validate:"required"`
 
-	TerraformModuleDir string `config:"terraform_module_dir" validate:"required"`
-	TerraformStatePath string `config:"terraform_state_path" validate:"required"`
-	InstallScriptPath  string `config:"install_script_path" validate:"required"`
+	TerraformModuleDir    string `config:"terraform_module_dir" validate:"required"`
+	TerraformStateBaseDir string `config:"terraform_state_base_dir" validate:"required"`
+	InstallScriptPath     string `config:"install_script_path" validate:"required"`
 
 	// flags for local development
 	DisableNotifications bool `config:"disable_notifications"`

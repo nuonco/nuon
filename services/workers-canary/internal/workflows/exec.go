@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -33,6 +34,9 @@ func (w *wkflow) defaultTerraformRunActivity(
 ) error {
 	ao := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 45 * time.Minute,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 1,
+		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 

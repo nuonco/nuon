@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
@@ -31,20 +32,20 @@ const (
 type TerraformRunOutputs struct {
 	OrgID string `mapstructure:"org_id"`
 
-	AppID string		     `mapstructure:"app_id"`
+	AppID string                 `mapstructure:"app_id"`
 	App   map[string]interface{} `mapstructure:"app"`
 
-	ComponentIDs []string		    `mapstructure:"component_ids"`
+	ComponentIDs []string               `mapstructure:"component_ids"`
 	Components   map[string]interface{} `mapstructure:"components"`
 
-	InstallIDs []string		  `mapstructure:"install_ids"`
+	InstallIDs []string               `mapstructure:"install_ids"`
 	Installs   map[string]interface{} `mapstructure:"installs"`
 }
 
 type RunTerraformRequest struct {
 	RunType  RunType
 	CanaryID string
-	OrgID	 string
+	OrgID    string
 }
 
 type RunTerraformResponse struct {
@@ -70,21 +71,22 @@ func (c *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.
 	}
 
 	vars, err := staticvars.New(c.v, staticvars.WithFileVars(map[string]interface{}{
-		"app_name":	    canaryID,
+		"app_name":         canaryID,
 		"install_role_arn": c.cfg.InstallIamRoleArn,
 		"east_1_count":     1,
 		"east_2_count":     1,
 		"west_2_count":     1,
 	}),
 		staticvars.WithEnvVars(map[string]string{
-			"NUON_ORG_ID":	orgID,
+			"NUON_ORG_ID":  orgID,
 			"NUON_API_URL": c.cfg.APIURL,
 		}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create vars: %w", err)
 	}
 
-	back, err := local.New(c.v, local.WithFilepath(c.cfg.TerraformStatePath))
+	stateFp := filepath.Join(c.cfg.TerraformStateBaseDir, fmt.Sprintf("%s-terraform.tfstate", canaryID))
+	back, err := local.New(c.v, local.WithFilepath(stateFp))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local backend: %w", err)
 	}
@@ -109,7 +111,7 @@ func (c *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgI
 	}
 
 	runLog := hclog.New(&hclog.LoggerOptions{
-		Name:	"terraform",
+		Name:   "terraform",
 		Output: os.Stderr,
 	})
 
