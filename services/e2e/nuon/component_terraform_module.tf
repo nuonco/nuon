@@ -1,6 +1,7 @@
 resource "nuon_terraform_module_component" "e2e" {
   name   = "e2e_infra"
   app_id = nuon_app.main.id
+  terraform_version = "1.5.7"
 
   connected_repo = {
     directory = "services/e2e/infra"
