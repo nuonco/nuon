@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon-go"
+	"github.com/powertoolsdev/mono/pkg/api"
 )
 
 type DeleteOrgRequest struct {
 	CanaryID string
-	OrgID	 string
+	OrgID    string
 }
 
 type DeleteOrgResponse struct {
@@ -17,16 +17,14 @@ type DeleteOrgResponse struct {
 }
 
 func (a *Activities) DeleteOrg(ctx context.Context, req *DeleteOrgRequest) (*DeleteOrgResponse, error) {
-	apiClient, err := nuon.New(a.v,
-		nuon.WithURL(a.cfg.APIURL),
-		nuon.WithAuthToken(a.cfg.APIToken),
-		nuon.WithOrgID(req.OrgID),
+	internalAPIClient, err := api.New(a.v,
+		api.WithURL(a.cfg.InternalAPIURL),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create api client: %w", err)
+		return nil, fmt.Errorf("unable to create internal api client: %w", err)
 	}
 
-	_, err = apiClient.DeleteOrg(ctx)
+	err = internalAPIClient.DeleteOrg(ctx, req.OrgID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
 	}

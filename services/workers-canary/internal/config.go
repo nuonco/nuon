@@ -21,6 +21,7 @@ type Config struct {
 	InstallIamRoleArn string `config:"install_iam_role_arn"  validate:"required"`
 
 	APIURL          string `config:"api_url" validate:"required"`
+	InternalAPIURL  string `config:"internal_api_url" validate:"required"`
 	APIToken        string `config:"nuon_api_token" validate:"required"`
 	GithubInstallID string `config:"github_install_id" validate:"required"`
 

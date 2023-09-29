@@ -3,6 +3,7 @@ type: worker
 env:
   DISABLE_METRICS: true
   API_URL: http://localhost:8081
+  INTERNAL_API_URL: http://localhost:8082
   GITHUB_INSTALL_ID: "41323514"
   TERRAFORM_MODULE_DIR: ../e2e/nuon
   INSTALL_SCRIPT_PATH: ./install-cli.sh
