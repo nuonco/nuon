@@ -22,18 +22,18 @@ func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @BasePath /v1/orgs
+//	@BasePath	/v1/orgs
 
 // Create a new org
-// @Summary create a new org
-// @Schemes
-// @Description create a new org
-// @Param req body CreateOrgRequest true "Input"
-// @Tags orgs
-// @Accept json
-// @Produce json
-// @Success 201 {object} app.Org
-// @Router /v1/orgs [POST]
+//	@Summary	create a new org
+//	@Schemes
+//	@Description	create a new org
+//	@Param			req	body	CreateOrgRequest	true	"Input"
+//	@Tags			orgs
+//	@Accept			json
+//	@Produce		json
+//	@Success		201	{object}	app.Org
+//	@Router			/v1/orgs [POST]
 func (s *service) CreateOrg(ctx *gin.Context) {
 	user, err := auth.FromContext(ctx)
 	if err != nil {

@@ -9,17 +9,17 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/apps/components
+//	@BasePath	/v1/apps/components
 // Get an app's components
-// @Summary get all components for an app
-// @Schemes
-// @Description get all components for an org
-// @Param app_id path string true "app ID"
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.Component
-// @Router /v1/apps/{app_id}/components [GET]
+//	@Summary	get all components for an app
+//	@Schemes
+//	@Description	get all components for an org
+//	@Param			app_id	path	string	true	"app ID"
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.Component
+//	@Router			/v1/apps/{app_id}/components [GET]
 func (s *service) GetAppComponents(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

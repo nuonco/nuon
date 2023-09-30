@@ -15,18 +15,18 @@ type CreateOrgUserRequest struct {
 	UserID string `json:"user_id"`
 }
 
-// @BasePath /v1/orgs/
+//	@BasePath	/v1/orgs/
 
 // Add a user to an org
-// @Summary Add a user to the current org
-// @Schemes
-// @Description add a user to the current org
-// @Param req body CreateOrgUserRequest true "Input"
-// @Tags orgs
-// @Accept json
-// @Produce json
-// @Success 201 {object} app.UserOrg
-// @Router /v1/orgs/current/user [POST]
+//	@Summary	Add a user to the current org
+//	@Schemes
+//	@Description	add a user to the current org
+//	@Param			req	body	CreateOrgUserRequest	true	"Input"
+//	@Tags			orgs
+//	@Accept			json
+//	@Produce		json
+//	@Success		201	{object}	app.UserOrg
+//	@Router			/v1/orgs/current/user [POST]
 func (s *service) CreateUser(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

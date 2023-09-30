@@ -1,4 +1,6 @@
 ---
+port: 8081
+type: api
 env:
   DB_HOST: postgres
   DB_USER: ctl_api
@@ -27,6 +29,7 @@ env_secrets:
     key: github_app_key
 watch_ignore_dirs:
   - docs/
+  - admin/
 local_startup_cmds:
   - go generate ./...
   - go build -o /tmp/svc-ctl-api
@@ -35,5 +38,3 @@ local_cmds:
   - /tmp/svc-ctl-api api
   - /tmp/svc-ctl-api worker
 earthly_cmd: server
-port: 8081
-type: api

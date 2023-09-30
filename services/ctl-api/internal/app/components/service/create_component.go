@@ -21,18 +21,18 @@ func (c *CreateComponentRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @BasePath /v1/apps
+//	@BasePath	/v1/apps
 // Create an app component
-// @Summary create an app component
-// @Schemes
-// @Description create an app component
-// @Param app_id path string true "app ID"
-// @Param req body CreateComponentRequest true "Input"
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 201 {object} app.Component
-// @Router /v1/apps/{app_id}/components/ [post]
+//	@Summary	create an app component
+//	@Schemes
+//	@Description	create an app component
+//	@Param			app_id	path	string					true	"app ID"
+//	@Param			req		body	CreateComponentRequest	true	"Input"
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		201	{object}	app.Component
+//	@Router			/v1/apps/{app_id}/components/ [post]
 func (s *service) CreateComponent(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

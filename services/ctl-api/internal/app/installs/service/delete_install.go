@@ -9,17 +9,17 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/installs
+//	@BasePath	/v1/installs
 // Delete an install
-// @Summary delete an install
-// @Schemes
-// @Description delete an install
-// @Param install_id path string true "install ID"
-// @Tags installs
-// @Accept json
-// @Produce json
-// @Success 200 {boolean} true
-// @Router /v1/installs/{install_id} [DELETE]
+//	@Summary	delete an install
+//	@Schemes
+//	@Description	delete an install
+//	@Param			install_id	path	string	true	"install ID"
+//	@Tags			installs
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{boolean}	true
+//	@Router			/v1/installs/{install_id} [DELETE]
 func (s *service) DeleteInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

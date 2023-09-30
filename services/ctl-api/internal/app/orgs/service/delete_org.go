@@ -10,17 +10,17 @@ import (
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
-// @BasePath /v1/orgs
+//	@BasePath	/v1/orgs
 
 // Delete an org
-// @Summary Delete an org
-// @Schemes
-// @Description create a new org
-// @Tags orgs
-// @Accept json
-// @Produce json
-// @Success 200 {boolean} ok
-// @Router /v1/orgs/current [DELETE]
+//	@Summary	Delete an org
+//	@Schemes
+//	@Description	create a new org
+//	@Tags			orgs
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{boolean}	ok
+//	@Router			/v1/orgs/current [DELETE]
 func (s *service) DeleteOrg(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

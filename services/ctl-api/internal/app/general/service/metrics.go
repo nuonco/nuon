@@ -30,18 +30,18 @@ func (m PublishMetricInput) write(mw metrics.Writer) {
 	}
 }
 
-// @BasePath /v1/general/metrics/publish
+//	@BasePath	/v1/general/metrics/publish
 
 // Publish metric
-// @Summary Publish a metric from different Nuon clients for telemetry purposes.
-// @Schemes
-// @Description Both the terraform provider and CLI write metrics back home
-// @Param req body PublishMetricInput true "Input"
-// @Tags general
-// @Accept json
-// @Produce json
-// @Success 200 {string} ok
-// @Router /v1/general/metrics [post]
+//	@Summary	Publish a metric from different Nuon clients for telemetry purposes.
+//	@Schemes
+//	@Description	Both the terraform provider and CLI write metrics back home
+//	@Param			req	body	PublishMetricInput	true	"Input"
+//	@Tags			general
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{string}	ok
+//	@Router			/v1/general/metrics [post]
 func (s *service) PublishMetrics(ctx *gin.Context) {
 	var req []PublishMetricInput
 	if err := ctx.BindJSON(&req); err != nil {

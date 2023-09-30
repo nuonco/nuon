@@ -10,16 +10,16 @@ import (
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
-// @BasePath /v1/installs
+//	@BasePath	/v1/installs
 // Create an org's installs
-// @Summary get all installs for an org
-// @Schemes
-// @Description get all installs for an org
-// @Tags installs
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.Install
-// @Router /v1/installs [GET]
+//	@Summary	get all installs for an org
+//	@Schemes
+//	@Description	get all installs for an org
+//	@Tags			installs
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.Install
+//	@Router			/v1/installs [GET]
 func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
