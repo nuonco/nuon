@@ -9,17 +9,17 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/components
+//	@BasePath	/v1/components
 // Get all configs for a component
-// @Summary get all configs for a component
-// @Schemes
-// @Description get all configs for a component
-// @Param component_id path string true "component ID"
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.ComponentConfigConnection
-// @Router /v1/components/{component_id}/configs [GET]
+//	@Summary	get all configs for a component
+//	@Schemes
+//	@Description	get all configs for a component
+//	@Param			component_id	path	string	true	"component ID"
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.ComponentConfigConnection
+//	@Router			/v1/components/{component_id}/configs [GET]
 func (s *service) GetComponentConfigs(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

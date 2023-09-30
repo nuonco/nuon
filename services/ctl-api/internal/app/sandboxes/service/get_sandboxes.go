@@ -8,16 +8,18 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/sandboxes
+//	@BasePath	/v1/sandboxes
+//
 // Get all sandboxes
-// @Summary get all sandboxes
-// @Schemes
-// @Description get all sandboxes
-// @Tags sandboxes
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.Sandbox
-// @Router /v1/sandboxes [get]
+//
+//	@Summary	get all sandboxes
+//	@Schemes
+//	@Description	get all sandboxes
+//	@Tags			sandboxes/admin
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.Sandbox
+//	@Router			/v1/sandboxes [get]
 func (s *service) GetSandboxes(ctx *gin.Context) {
 	sandboxes, err := s.getSandboxes(ctx)
 	if err != nil {

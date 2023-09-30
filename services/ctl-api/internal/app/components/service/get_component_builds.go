@@ -10,17 +10,17 @@ import (
 	"gorm.io/gorm"
 )
 
-// @BasePath /v1/components
+//	@BasePath	/v1/components
 // Get all builds for a component
-// @Summary get all builds for a component
-// @Schemes
-// @Description get all builds for a component
-// @Param component_id path string true "component ID"
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.ComponentBuild
-// @Router /v1/components/{component_id}/builds [GET]
+//	@Summary	get all builds for a component
+//	@Schemes
+//	@Description	get all builds for a component
+//	@Param			component_id	path	string	true	"component ID"
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.ComponentBuild
+//	@Router			/v1/components/{component_id}/builds [GET]
 func (s *service) GetComponentBuilds(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 	if cmpID == "" {

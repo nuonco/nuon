@@ -10,17 +10,17 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 )
 
-// @BasePath /v1/orgs
+//	@BasePath	/v1/orgs
 
 // Return current user's orgs
-// @Summary Return current user's orgs
-// @Schemes
-// @Description return current user's orgs
-// @Tags orgs
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.Org
-// @Router /v1/orgs [GET]
+//	@Summary	Return current user's orgs
+//	@Schemes
+//	@Description	return current user's orgs
+//	@Tags			orgs
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.Org
+//	@Router			/v1/orgs [GET]
 func (s *service) GetCurrentUserOrgs(ctx *gin.Context) {
 	userToken, err := auth.FromContext(ctx)
 	if err != nil {

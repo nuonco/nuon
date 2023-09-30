@@ -21,18 +21,18 @@ func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @BasePath /v1/components
+//	@BasePath	/v1/components
 // Update a component
-// @Summary update a component
-// @Schemes
-// @Description update a component
-// @Param component_id path string true "component ID"
-// @Param req body UpdateComponentRequest true "Input"
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 200 {object} app.Component
-// @Router /v1/components/{component_id} [PATCH]
+//	@Summary	update a component
+//	@Schemes
+//	@Description	update a component
+//	@Param			component_id	path	string					true	"component ID"
+//	@Param			req				body	UpdateComponentRequest	true	"Input"
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	app.Component
+//	@Router			/v1/components/{component_id} [PATCH]
 func (s *service) UpdateComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 	var req UpdateComponentRequest

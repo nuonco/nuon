@@ -9,17 +9,17 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/apps
+//	@BasePath	/v1/apps
 // Get an all releases for an app
-// @Summary get all releases for an app
-// @Schemes
-// @Description get all release for an app
-// @Param app_id path string true "app ID"
-// @Tags releases
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.ComponentRelease
-// @Router /v1/apps/{app_id}/releases [GET]
+//	@Summary	get all releases for an app
+//	@Schemes
+//	@Description	get all release for an app
+//	@Param			app_id	path	string	true	"app ID"
+//	@Tags			releases
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.ComponentRelease
+//	@Router			/v1/apps/{app_id}/releases [GET]
 func (s *service) GetAppReleases(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

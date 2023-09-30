@@ -10,18 +10,18 @@ import (
 	"gorm.io/gorm"
 )
 
-// @BasePath /v1/installs
+//	@BasePath	/v1/installs
 // Get the latest deploy for an install component
-// @Summary get the latest deploy for an install component
-// @Schemes
-// @Description get latest deploy for an install component
-// @Param install_id path string true "install ID"
-// @Param component_id path string true "component ID"
-// @Tags installs
-// @Accept json
-// @Produce json
-// @Success 200 {object} app.InstallDeploy
-// @Router /v1/installs/{install_id}/components/{component_id}/deploys/latest [get]
+//	@Summary	get the latest deploy for an install component
+//	@Schemes
+//	@Description	get latest deploy for an install component
+//	@Param			install_id		path	string	true	"install ID"
+//	@Param			component_id	path	string	true	"component ID"
+//	@Tags			installs
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	app.InstallDeploy
+//	@Router			/v1/installs/{install_id}/components/{component_id}/deploys/latest [get]
 func (s *service) GetInstallComponentLatestDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	componentID := ctx.Param("component_id")

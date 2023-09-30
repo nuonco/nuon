@@ -10,17 +10,19 @@ import (
 	"gorm.io/gorm"
 )
 
-// @BasePath /v1/sandboxes
+//	@BasePath	/v1/sandboxes
+//
 // Create get sandbox releases
-// @Summary get sandbox releases
-// @Schemes
-// @Description get sandbox releases
-// @Param sandbox_id path string true "sandbox ID"
-// @Tags sandboxes
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.SandboxRelease
-// @Router /v1/sandboxes/{sandbox_id}/releases [get]
+//
+//	@Summary	get sandbox releases
+//	@Schemes
+//	@Description	get sandbox releases
+//	@Param			sandbox_id	path	string	true	"sandbox ID"
+//	@Tags			sandboxes/admin
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.SandboxRelease
+//	@Router			/v1/sandboxes/{sandbox_id}/releases [get]
 func (s *service) GetSandboxReleases(ctx *gin.Context) {
 	sandboxID := ctx.Param("sandbox_id")
 

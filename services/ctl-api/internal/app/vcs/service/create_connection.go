@@ -23,18 +23,18 @@ func (c *CreateConnectionRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @BasePath /v1/vcs
+//	@BasePath	/v1/vcs
 
 // PingExample godoc
-// @Summary create a vcs connection for Github
-// @Schemes
-// @Description create a vcs connection
-// @Param req body CreateConnectionRequest true "Input"
-// @Tags vcs
-// @Accept json
-// @Produce json
-// @Success 201 {object} app.VCSConnection
-// @Router /v1/vcs/connections [post]
+//	@Summary	create a vcs connection for Github
+//	@Schemes
+//	@Description	create a vcs connection
+//	@Param			req	body	CreateConnectionRequest	true	"Input"
+//	@Tags			vcs
+//	@Accept			json
+//	@Produce		json
+//	@Success		201	{object}	app.VCSConnection
+//	@Router			/v1/vcs/connections [post]
 func (s *service) CreateConnection(ctx *gin.Context) {
 	currentOrg, err := org.FromContext(ctx)
 	if err != nil {

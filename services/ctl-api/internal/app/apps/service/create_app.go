@@ -29,17 +29,17 @@ func (c *CreateAppRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @BasePath /v1/apps
+//	@BasePath	/v1/apps
 // Create an app
-// @Summary create an app
-// @Schemes
-// @Description get an app
-// @Tags apps
-// @Accept json
-// @Param req body CreateAppRequest true "Input"
-// @Produce json
-// @Success 201 {object} app.App
-// @Router /v1/apps/ [post]
+//	@Summary	create an app
+//	@Schemes
+//	@Description	get an app
+//	@Tags			apps
+//	@Accept			json
+//	@Param			req	body	CreateAppRequest	true	"Input"
+//	@Produce		json
+//	@Success		201	{object}	app.App
+//	@Router			/v1/apps/ [post]
 func (s *service) CreateApp(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

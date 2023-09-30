@@ -21,18 +21,18 @@ func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @BasePath /v1/installs
+//	@BasePath	/v1/installs
 // Update an install
-// @Summary update an install
-// @Schemes
-// @Description update an install
-// @Param install_id path string true "app ID"
-// @Param req body UpdateInstallRequest true "Input"
-// @Tags installs
-// @Accept json
-// @Produce json
-// @Success 200 {object} app.Install
-// @Router /v1/installs/{install_id} [PATCH]
+//	@Summary	update an install
+//	@Schemes
+//	@Description	update an install
+//	@Param			install_id	path	string					true	"app ID"
+//	@Param			req			body	UpdateInstallRequest	true	"Input"
+//	@Tags			installs
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	app.Install
+//	@Router			/v1/installs/{install_id} [PATCH]
 func (s *service) UpdateInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

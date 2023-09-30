@@ -9,16 +9,16 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/components
+//	@BasePath	/v1/components
 // Get all components
-// @Summary get all components for all orgs
-// @Schemes
-// @Description get all components
-// @Tags components/internal
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.Component
-// @Router /v1/components [get]
+//	@Summary	get all components for all orgs
+//	@Schemes
+//	@Description	get all components
+//	@Tags			components/internal
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.Component
+//	@Router			/v1/components [get]
 func (s *service) GetAllComponents(ctx *gin.Context) {
 	components, err := s.getAllComponents(ctx)
 	if err != nil {
