@@ -10,17 +10,17 @@ import (
 	"gorm.io/gorm"
 )
 
-// @BasePath /v1/apps/installs
+//	@BasePath	/v1/apps/installs
 // Get an install's components
-// @Summary get an installs components
-// @Schemes
-// @Description get all components for an install
-// @Param install_id path string true "install ID"
-// @Tags installs
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.InstallComponent
-// @Router /v1/installs/{install_id}/components [GET]
+//	@Summary	get an installs components
+//	@Schemes
+//	@Description	get all components for an install
+//	@Param			install_id	path	string	true	"install ID"
+//	@Tags			installs
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.InstallComponent
+//	@Router			/v1/installs/{install_id}/components [GET]
 func (s *service) GetInstallComponents(ctx *gin.Context) {
 	appID := ctx.Param("install_id")
 	installComponents, err := s.getInstallComponents(ctx, appID)

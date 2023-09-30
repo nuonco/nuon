@@ -9,17 +9,17 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/apps
+//	@BasePath	/v1/apps
 // Create get an app
-// @Summary get an app
-// @Schemes
-// @Description get an app
-// @Param app_id path string true "app ID"
-// @Tags apps
-// @Accept json
-// @Produce json
-// @Success 200 {object} app.App
-// @Router /v1/apps/{app_id} [get]
+//	@Summary	get an app
+//	@Schemes
+//	@Description	get an app
+//	@Param			app_id	path	string	true	"app ID"
+//	@Tags			apps
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	app.App
+//	@Router			/v1/apps/{app_id} [get]
 func (s *service) GetApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	app, err := s.getApp(ctx, appID)

@@ -10,17 +10,17 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/releases
+//	@BasePath	/v1/releases
 // Create a release from a build
-// @Summary create a release
-// @Schemes
-// @Description create a release for a build
-// @Tags releases
-// @Accept json
-// @Param req body CreateComponentReleaseRequest true "Input"
-// @Produce json
-// @Success 201 {object} app.ComponentRelease
-// @Router /v1/releases [post]
+//	@Summary	create a release
+//	@Schemes
+//	@Description	create a release for a build
+//	@Tags			releases
+//	@Accept			json
+//	@Param			req	body	CreateComponentReleaseRequest	true	"Input"
+//	@Produce		json
+//	@Success		201	{object}	app.ComponentRelease
+//	@Router			/v1/releases [post]
 func (s *service) CreateRelease(ctx *gin.Context) {
 	var req CreateComponentReleaseRequest
 	if err := ctx.BindJSON(&req); err != nil {

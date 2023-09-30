@@ -9,16 +9,18 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/apps
+//	@BasePath	/v1/apps
+//
 // Get all apps
-// @Summary get all apps for all orgs
-// @Schemes
-// @Description get all apps
-// @Tags apps/internal
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.App
-// @Router /v1/apps [get]
+//
+//	@Summary	get all apps for all orgs
+//	@Schemes
+//	@Description	get all apps
+//	@Tags			apps/admin
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.App
+//	@Router			/v1/apps [get]
 func (s *service) GetAllApps(ctx *gin.Context) {
 	apps, err := s.getAllApps(ctx)
 	if err != nil {

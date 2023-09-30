@@ -9,17 +9,17 @@ import (
 	"gorm.io/gorm"
 )
 
-// @BasePath /v1/components
+//	@BasePath	/v1/components
 // Get latest build for a component
-// @Summary get latest build for a component
-// @Schemes
-// @Description get latest build for a component
-// @Param component_id path string true "component ID"
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 200 {object} app.ComponentBuild
-// @Router /v1/components/{component_id}/builds/latest [GET]
+//	@Summary	get latest build for a component
+//	@Schemes
+//	@Description	get latest build for a component
+//	@Param			component_id	path	string	true	"component ID"
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	app.ComponentBuild
+//	@Router			/v1/components/{component_id}/builds/latest [GET]
 func (s *service) GetComponentLatestBuild(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

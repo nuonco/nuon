@@ -9,17 +9,17 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/apps/installs
+//	@BasePath	/v1/apps/installs
 // Get an app's installs
-// @Summary get all installs for an app
-// @Schemes
-// @Description get all installs for an org
-// @Param app_id path string true "app ID"
-// @Tags installs
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.Install
-// @Router /v1/apps/{app_id}/installs [GET]
+//	@Summary	get all installs for an app
+//	@Schemes
+//	@Description	get all installs for an org
+//	@Param			app_id	path	string	true	"app ID"
+//	@Tags			installs
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.Install
+//	@Router			/v1/apps/{app_id}/installs [GET]
 func (s *service) GetAppInstalls(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 
