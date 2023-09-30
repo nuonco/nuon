@@ -29,19 +29,19 @@ func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate
 	return nil
 }
 
-// @BasePath /v1/components
+//	@BasePath	/v1/components
 
 // Create a docker build component config
-// @Summary create a docker build component config
-// @Schemes
-// @Description create a docker build component config.
-// @Param req body CreateDockerBuildComponentConfigRequest true "Input"
-// @Param component_id path string true "component ID"
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 201 {object} app.DockerBuildComponentConfig
-// @Router /v1/components/{component_id}/configs/docker-build [POST]
+//	@Summary	create a docker build component config
+//	@Schemes
+//	@Description	create a docker build component config.
+//	@Param			req				body	CreateDockerBuildComponentConfigRequest	true	"Input"
+//	@Param			component_id	path	string									true	"component ID"
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		201	{object}	app.DockerBuildComponentConfig
+//	@Router			/v1/components/{component_id}/configs/docker-build [POST]
 func (s *service) CreateDockerBuildComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

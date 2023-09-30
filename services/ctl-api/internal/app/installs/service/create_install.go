@@ -26,18 +26,18 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @BasePath /v1/apps
+//	@BasePath	/v1/apps
 // Create an app install
-// @Summary create an app install
-// @Schemes
-// @Description create an app install
-// @Param app_id path string true "app ID"
-// @Param req body CreateInstallRequest true "Input"
-// @Tags installs
-// @Accept json
-// @Produce json
-// @Success 201 {object} app.Install
-// @Router /v1/apps/{app_id}/installs/ [post]
+//	@Summary	create an app install
+//	@Schemes
+//	@Description	create an app install
+//	@Param			app_id	path	string					true	"app ID"
+//	@Param			req		body	CreateInstallRequest	true	"Input"
+//	@Tags			installs
+//	@Accept			json
+//	@Produce		json
+//	@Success		201	{object}	app.Install
+//	@Router			/v1/apps/{app_id}/installs/ [post]
 func (s *service) CreateInstall(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

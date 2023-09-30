@@ -10,18 +10,18 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
-// @BasePath /v1/vcs
+//	@BasePath	/v1/vcs
 
 // GetOrgConnection returns a vcs connection for an org
-// @Summary returns a vcs connection for an org
-// @Schemes
-// @Description get vcs connection
-// @Param connection_id path string true "connection ID"
-// @Tags vcs
-// @Accept json
-// @Produce json
-// @Success 200 {object} app.VCSConnection
-// @Router /v1/vcs/connections/{connection_id} [get]
+//	@Summary	returns a vcs connection for an org
+//	@Schemes
+//	@Description	get vcs connection
+//	@Param			connection_id	path	string	true	"connection ID"
+//	@Tags			vcs
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	app.VCSConnection
+//	@Router			/v1/vcs/connections/{connection_id} [get]
 func (s *service) GetConnection(ctx *gin.Context) {
 	vcsID := ctx.Param("connection_id")
 

@@ -11,7 +11,20 @@ import (
 
 type AdminDeleteOrgRequest struct{}
 
-// NOTE(jm): this endpoint is intentionally not documented as it is extremely destructive.
+// Delete an org and everything in it
+//
+//	@Summary delete an org and everything in it
+//
+// @Schemes
+//
+//	@Description	delete an org org
+//	@Param			org_id	path	string	true	"org ID for your current org"
+//	@Tags			orgs/admin
+//	@Accept			json
+//	@Param			req	body	AdminDeleteOrgRequest	true	"Input"
+//	@Produce		json
+//	@Success		201	{string}	ok
+//	@Router			/v1/orgs/{org_id}/admin-delete [POST]
 func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

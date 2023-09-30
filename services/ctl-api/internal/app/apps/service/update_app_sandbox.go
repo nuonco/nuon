@@ -21,18 +21,18 @@ func (c *UpdateAppSandboxRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @BasePath /v1/apps
+//	@BasePath	/v1/apps
 // Update app sandbox release
-// @Summary update an app sandbox release
-// @Schemes
-// @Description update an app sandbox release
-// @Param app_id path string true "app ID"
-// @Param req body UpdateAppSandboxRequest true "Input"
-// @Tags apps
-// @Accept json
-// @Produce json
-// @Success 200 {object} app.App
-// @Router /v1/apps/{app_id}/sandbox [PUT]
+//	@Summary	update an app sandbox release
+//	@Schemes
+//	@Description	update an app sandbox release
+//	@Param			app_id	path	string					true	"app ID"
+//	@Param			req		body	UpdateAppSandboxRequest	true	"Input"
+//	@Tags			apps
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	app.App
+//	@Router			/v1/apps/{app_id}/sandbox [PUT]
 func (s *service) UpdateAppSandbox(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

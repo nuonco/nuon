@@ -29,18 +29,18 @@ func (c *CreateComponentReleaseRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @BasePath /v1/releases
+//	@BasePath	/v1/releases
 // Create a release
-// @Summary create a release
-// @Schemes
-// @Description create a release for a component
-// @Param component_id path string true "component ID"
-// @Tags releases
-// @Accept json
-// @Param req body CreateComponentReleaseRequest true "Input"
-// @Produce json
-// @Success 201 {object} app.ComponentRelease
-// @Router /v1/components/{component_id}/releases [post]
+//	@Summary	create a release
+//	@Schemes
+//	@Description	create a release for a component
+//	@Param			component_id	path	string	true	"component ID"
+//	@Tags			releases
+//	@Accept			json
+//	@Param			req	body	CreateComponentReleaseRequest	true	"Input"
+//	@Produce		json
+//	@Success		201	{object}	app.ComponentRelease
+//	@Router			/v1/components/{component_id}/releases [post]
 func (s *service) CreateComponentRelease(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 
