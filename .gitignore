@@ -44,5 +44,6 @@ __debug_bin
 .secret
 pkg/types/build/
 services/ctl-api/docs
+services/ctl-api/admin
 pkg/api/client/client/
 pkg/api/client/models/

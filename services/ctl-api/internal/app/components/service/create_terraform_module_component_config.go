@@ -25,19 +25,19 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 	return nil
 }
 
-// @BasePath /v1/components
+//	@BasePath	/v1/components
 
 // Create a terraform component config
-// @Summary create a terraform component config
-// @Schemes
-// @Description create a terraform component config.
-// @Param req body CreateTerraformModuleComponentConfigRequest true "Input"
-// @Param component_id path string true "component ID"
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 201 {object} app.TerraformModuleComponentConfig
-// @Router /v1/components/{component_id}/configs/terraform-module [POST]
+//	@Summary	create a terraform component config
+//	@Schemes
+//	@Description	create a terraform component config.
+//	@Param			req				body	CreateTerraformModuleComponentConfigRequest	true	"Input"
+//	@Param			component_id	path	string										true	"component ID"
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		201	{object}	app.TerraformModuleComponentConfig
+//	@Router			/v1/components/{component_id}/configs/terraform-module [POST]
 func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

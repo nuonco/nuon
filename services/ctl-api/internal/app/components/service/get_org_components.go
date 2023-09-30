@@ -10,16 +10,16 @@ import (
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
-// @BasePath /v1/components
+//	@BasePath	/v1/components
 // Create an org's components
-// @Summary get all components for an org
-// @Schemes
-// @Description get all components for an org
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 200 {array} app.Component
-// @Router /v1/components [GET]
+//	@Summary	get all components for an org
+//	@Schemes
+//	@Description	get all components for an org
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	app.Component
+//	@Router			/v1/components [GET]
 func (s *service) GetOrgComponents(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

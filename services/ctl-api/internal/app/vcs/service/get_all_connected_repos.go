@@ -27,17 +27,17 @@ type Repository struct {
 	CloneURL      string `json:"clone_url,omitempty" validate:"required"`
 }
 
-// @BasePath /v1/vcs
+//	@BasePath	/v1/vcs
 
 // GetAllConnectedRepos returns all VCS connected repos for an org
-// @Summary get all vcs connected repos for an org
-// @Schemes
-// @Description return all vcs connected repos for an org
-// @Tags vcs
-// @Accept json
-// @Produce json
-// @Success 200 {array} Repository
-// @Router /v1/vcs/connected-repos [get]
+//	@Summary	get all vcs connected repos for an org
+//	@Schemes
+//	@Description	return all vcs connected repos for an org
+//	@Tags			vcs
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	Repository
+//	@Router			/v1/vcs/connected-repos [get]
 func (s *service) GetAllConnectedRepos(ctx *gin.Context) {
 	currentOrg, err := org.FromContext(ctx)
 	if err != nil {
