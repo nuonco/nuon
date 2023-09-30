@@ -25,19 +25,19 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 	return nil
 }
 
-// @BasePath /v1/components
+//	@BasePath	/v1/components
 
 // Create a helm component config
-// @Summary create a helm component config
-// @Schemes
-// @Description create a helm component config.
-// @Param req body CreateHelmComponentConfigRequest true "Input"
-// @Param component_id path string true "component ID"
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 201 {object} app.HelmComponentConfig
-// @Router /v1/components/{component_id}/configs/helm [POST]
+//	@Summary	create a helm component config
+//	@Schemes
+//	@Description	create a helm component config.
+//	@Param			req				body	CreateHelmComponentConfigRequest	true	"Input"
+//	@Param			component_id	path	string								true	"component ID"
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		201	{object}	app.HelmComponentConfig
+//	@Router			/v1/components/{component_id}/configs/helm [POST]
 func (s *service) CreateHelmComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

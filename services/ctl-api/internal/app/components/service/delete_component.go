@@ -9,17 +9,17 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @BasePath /v1/components
+//	@BasePath	/v1/components
 // Delete an component
-// @Summary delete an component
-// @Schemes
-// @Description delete an component
-// @Param component_id path string true "component ID"
-// @Tags components
-// @Accept json
-// @Produce json
-// @Success 200 {boolean} true
-// @Router /v1/components/{component_id} [DELETE]
+//	@Summary	delete an component
+//	@Schemes
+//	@Description	delete an component
+//	@Param			component_id	path	string	true	"component ID"
+//	@Tags			components
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{boolean}	true
+//	@Router			/v1/components/{component_id} [DELETE]
 func (s *service) DeleteComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 
