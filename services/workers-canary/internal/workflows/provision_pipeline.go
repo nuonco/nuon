@@ -32,7 +32,7 @@ func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequ
 		RunType:  activities.RunTypeApply,
 		CanaryID: req.CanaryId,
 		OrgID:    orgResp.OrgID,
-	}, &runResp); err != nil {
+	}, &runResp, 1); err != nil {
 		return nil, orgResp.OrgID, fmt.Errorf("unable to run terraform: %w", err)
 	}
 	w.l.Info("run terraform", zap.Any("response", runResp))

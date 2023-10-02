@@ -15,7 +15,7 @@ func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.Deprovision
 		RunType:  activities.RunTypeDestroy,
 		CanaryID: req.CanaryId,
 		OrgID:    req.OrgId,
-	}, &runResp); err != nil {
+	}, &runResp, 3); err != nil {
 		return fmt.Errorf("unable to run terraform: %w", err)
 	}
 	w.l.Info("run terraform", zap.Any("response", runResp))

@@ -8,6 +8,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+const (
+	defaultTerraformRunTimeout time.Duration = time.Minute * 45
+)
+
 func (w *wkflow) defaultExecGetActivity(
 	ctx workflow.Context,
 	actFn interface{},
@@ -31,11 +35,12 @@ func (w *wkflow) defaultTerraformRunActivity(
 	actFn interface{},
 	req interface{},
 	resp interface{},
+	maxAttempts int32,
 ) error {
 	ao := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 45 * time.Minute,
+		ScheduleToCloseTimeout: time.Duration(maxAttempts) * defaultTerraformRunTimeout,
 		RetryPolicy: &temporal.RetryPolicy{
-			MaximumAttempts: 1,
+			MaximumAttempts: maxAttempts,
 		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
