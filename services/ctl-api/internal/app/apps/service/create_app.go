@@ -30,7 +30,9 @@ func (c *CreateAppRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/apps
+//
 // Create an app
+//
 //	@Summary	create an app
 //	@Schemes
 //	@Description	get an app
@@ -38,7 +40,12 @@ func (c *CreateAppRequest) Validate(v *validator.Validate) error {
 //	@Accept			json
 //	@Param			req	body	CreateAppRequest	true	"Input"
 //	@Produce		json
-//	@Success		201	{object}	app.App
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.App
 //	@Router			/v1/apps/ [post]
 func (s *service) CreateApp(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)

@@ -11,7 +11,9 @@ import (
 )
 
 //	@BasePath	/v1/installs
+//
 // Get the latest deploy for an install component
+//
 //	@Summary	get the latest deploy for an install component
 //	@Schemes
 //	@Description	get latest deploy for an install component
@@ -20,7 +22,12 @@ import (
 //	@Tags			installs
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	app.InstallDeploy
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{object}	app.InstallDeploy
 //	@Router			/v1/installs/{install_id}/components/{component_id}/deploys/latest [get]
 func (s *service) GetInstallComponentLatestDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")

@@ -10,7 +10,9 @@ import (
 )
 
 //	@BasePath	/v1/installs
+//
 // Delete an install
+//
 //	@Summary	delete an install
 //	@Schemes
 //	@Description	delete an install
@@ -18,7 +20,12 @@ import (
 //	@Tags			installs
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{boolean}	true
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{boolean}	true
 //	@Router			/v1/installs/{install_id} [DELETE]
 func (s *service) DeleteInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")

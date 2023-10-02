@@ -17,11 +17,11 @@ type Route struct {
 func (r *Route) RegisterRoutes(g *gin.Engine) error {
 	switch r.cfg.Env {
 	case "development":
-		docs.SwaggerInfo.Host = "http://localhost:8081"
+		docs.SwaggerInfo.Host = "localhost:8081"
 	case "prod":
-		docs.SwaggerInfo.Host = "https://ctl.prod.nuon.co"
+		docs.SwaggerInfo.Host = "ctl.prod.nuon.co"
 	case "stage":
-		docs.SwaggerInfo.Host = "https://ctl.stage.nuon.co"
+		docs.SwaggerInfo.Host = "ctl.stage.nuon.co"
 	}
 
 	g.GET("/docs/*any", swagger.WrapHandler(
@@ -35,12 +35,13 @@ func (r *Route) RegisterInternalRoutes(g *gin.Engine) error {
 	case "development":
 		admin.SwaggerInfoadmin.Host = "localhost:8082"
 	case "prod":
-		admin.SwaggerInfoadmin.Host = "http://ctl.nuon.us-west-2.prod.nuon.cloud"
+		admin.SwaggerInfoadmin.Host = "ctl.nuon.us-west-2.prod.nuon.cloud"
 	case "stage":
-		admin.SwaggerInfoadmin.Host = "http://ctl.nuon.us-west-2.stage.nuon.cloud"
+		admin.SwaggerInfoadmin.Host = "ctl.nuon.us-west-2.stage.nuon.cloud"
 	}
 
-	docs.SwaggerInfo.Title = "Nuon Admin API"
+	admin.SwaggerInfoadmin.Title = "Nuon Admin API"
+	admin.SwaggerInfoadmin.Schemes = []string{"http"}
 	g.GET("/docs/*any", swagger.WrapHandler(
 		swaggerfiles.Handler,
 		swagger.InstanceName("admin"),

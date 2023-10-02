@@ -10,12 +10,19 @@ import (
 )
 
 //	@BasePath	/v1/components
+//
 // Get latest config for a component
+//
 //	@Summary	get latest config for a component
 //	@Schemes
 //	@Description	get latest config for a component
 //	@Param			component_id	path	string	true	"component ID"
 //	@Tags			components
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	app.ComponentConfigConnection

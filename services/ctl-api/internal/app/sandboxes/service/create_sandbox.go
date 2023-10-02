@@ -23,12 +23,14 @@ func (c *CreateSandboxRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/sandboxes
+//
 // Create a new sandbox
+//
 //	@Summary	create a new sandbox
 //	@Schemes
 //	@Description	create a new sandbox
 //	@Param			req	body	CreateSandboxRequest	true	"Input"
-//	@Tags			sandboxes/internal
+//	@Tags			sandboxes/admin
 //	@Accept			json
 //	@Produce		json
 //	@Success		201	{object}	app.Sandbox

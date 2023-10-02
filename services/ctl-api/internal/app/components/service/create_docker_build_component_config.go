@@ -32,6 +32,7 @@ func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate
 //	@BasePath	/v1/components
 
 // Create a docker build component config
+//
 //	@Summary	create a docker build component config
 //	@Schemes
 //	@Description	create a docker build component config.
@@ -40,7 +41,12 @@ func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object}	app.DockerBuildComponentConfig
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.DockerBuildComponentConfig
 //	@Router			/v1/components/{component_id}/configs/docker-build [POST]
 func (s *service) CreateDockerBuildComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")

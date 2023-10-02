@@ -30,7 +30,9 @@ func (c *CreateComponentReleaseRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/releases
+//
 // Create a release
+//
 //	@Summary	create a release
 //	@Schemes
 //	@Description	create a release for a component
@@ -39,7 +41,12 @@ func (c *CreateComponentReleaseRequest) Validate(v *validator.Validate) error {
 //	@Accept			json
 //	@Param			req	body	CreateComponentReleaseRequest	true	"Input"
 //	@Produce		json
-//	@Success		201	{object}	app.ComponentRelease
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.ComponentRelease
 //	@Router			/v1/components/{component_id}/releases [post]
 func (s *service) CreateComponentRelease(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
