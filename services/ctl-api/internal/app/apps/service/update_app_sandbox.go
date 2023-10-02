@@ -22,7 +22,9 @@ func (c *UpdateAppSandboxRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/apps
+//
 // Update app sandbox release
+//
 //	@Summary	update an app sandbox release
 //	@Schemes
 //	@Description	update an app sandbox release
@@ -31,7 +33,12 @@ func (c *UpdateAppSandboxRequest) Validate(v *validator.Validate) error {
 //	@Tags			apps
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	app.App
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{object}	app.App
 //	@Router			/v1/apps/{app_id}/sandbox [PUT]
 func (s *service) UpdateAppSandbox(ctx *gin.Context) {
 	appID := ctx.Param("app_id")

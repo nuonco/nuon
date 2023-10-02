@@ -22,7 +22,9 @@ func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/apps
+//
 // Update an app
+//
 //	@Summary	update an app
 //	@Schemes
 //	@Description	update an app
@@ -31,7 +33,12 @@ func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
 //	@Tags			apps
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	app.App
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{object}	app.App
 //	@Router			/v1/apps/{app_id} [patch]
 func (s *service) UpdateApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")

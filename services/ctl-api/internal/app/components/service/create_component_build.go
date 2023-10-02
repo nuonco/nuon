@@ -24,7 +24,9 @@ func (c *CreateComponentBuildRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/components
+//
 // Create component build
+//
 //	@Summary	create component build
 //	@Schemes
 //	@Description	create component build
@@ -33,7 +35,12 @@ func (c *CreateComponentBuildRequest) Validate(v *validator.Validate) error {
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object}	app.ComponentBuild
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.ComponentBuild
 //	@Router			/v1/components/{component_id}/builds [POST]
 func (s *service) CreateComponentBuild(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")

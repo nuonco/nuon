@@ -10,7 +10,9 @@ import (
 )
 
 //	@BasePath	/v1/components
+//
 // Get latest build for a component
+//
 //	@Summary	get latest build for a component
 //	@Schemes
 //	@Description	get latest build for a component
@@ -18,7 +20,12 @@ import (
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	app.ComponentBuild
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{object}	app.ComponentBuild
 //	@Router			/v1/components/{component_id}/builds/latest [GET]
 func (s *service) GetComponentLatestBuild(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")

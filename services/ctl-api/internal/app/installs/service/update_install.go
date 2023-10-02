@@ -22,7 +22,9 @@ func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/installs
+//
 // Update an install
+//
 //	@Summary	update an install
 //	@Schemes
 //	@Description	update an install
@@ -31,7 +33,12 @@ func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
 //	@Tags			installs
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	app.Install
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{object}	app.Install
 //	@Router			/v1/installs/{install_id} [PATCH]
 func (s *service) UpdateInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")

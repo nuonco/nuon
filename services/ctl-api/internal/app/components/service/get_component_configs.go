@@ -10,7 +10,9 @@ import (
 )
 
 //	@BasePath	/v1/components
+//
 // Get all configs for a component
+//
 //	@Summary	get all configs for a component
 //	@Schemes
 //	@Description	get all configs for a component
@@ -18,7 +20,12 @@ import (
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{array}	app.ComponentConfigConnection
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{array}		app.ComponentConfigConnection
 //	@Router			/v1/components/{component_id}/configs [GET]
 func (s *service) GetComponentConfigs(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")

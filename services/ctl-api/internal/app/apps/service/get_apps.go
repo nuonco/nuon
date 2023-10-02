@@ -11,14 +11,21 @@ import (
 )
 
 //	@BasePath	/v1/apps
+//
 // Get all apps for the current org
+//
 //	@Summary	get all apps for the current org
 //	@Schemes
 //	@Description	get an app
 //	@Tags			apps
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{array}	app.App
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{array}		app.App
 //	@Router			/v1/apps [get]
 func (s *service) GetApps(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)

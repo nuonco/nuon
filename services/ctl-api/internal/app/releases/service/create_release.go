@@ -11,7 +11,9 @@ import (
 )
 
 //	@BasePath	/v1/releases
+//
 // Create a release from a build
+//
 //	@Summary	create a release
 //	@Schemes
 //	@Description	create a release for a build
@@ -19,7 +21,12 @@ import (
 //	@Accept			json
 //	@Param			req	body	CreateComponentReleaseRequest	true	"Input"
 //	@Produce		json
-//	@Success		201	{object}	app.ComponentRelease
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.ComponentRelease
 //	@Router			/v1/releases [post]
 func (s *service) CreateRelease(ctx *gin.Context) {
 	var req CreateComponentReleaseRequest
