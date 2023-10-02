@@ -22,7 +22,9 @@ func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/apps
+//
 // Deploy a build to an install
+//
 //	@Summary	deploy a build to an install
 //	@Schemes
 //	@Description	deploy a build to an install
@@ -31,7 +33,12 @@ func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
 //	@Tags			installs
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object}	app.InstallDeploy
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.InstallDeploy
 //	@Router			/v1/installs/{install_id}/deploys/ [post]
 func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")

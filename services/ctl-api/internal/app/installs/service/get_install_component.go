@@ -10,7 +10,9 @@ import (
 )
 
 //	@BasePath	/v1/installs
+//
 // Get an install component
+//
 //	@Summary	get an install component
 //	@Schemes
 //	@Description	get an install
@@ -19,7 +21,12 @@ import (
 //	@Tags			installs
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	app.InstallComponent
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{object}	app.InstallComponent
 //	@Router			/v1/installs/{install_id}/component/{component_id} [get]
 func (s *service) GetInstallComponent(ctx *gin.Context) {
 	installID := ctx.Param("install_id")

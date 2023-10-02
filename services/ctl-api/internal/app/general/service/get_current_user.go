@@ -10,13 +10,18 @@ import (
 //	@BasePath	/v1/general
 
 // Get current user
+//
 //	@Summary	Get current user
 //	@Schemes
 //	@Description	get current user
 //	@Tags			general
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	app.UserToken
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{object}	app.UserToken
 //	@Router			/v1/general/current-user [GET]
 func (s *service) GetCurrentUser(ctx *gin.Context) {
 	userToken, err := auth.FromContext(ctx)

@@ -27,7 +27,9 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/apps
+//
 // Create an app install
+//
 //	@Summary	create an app install
 //	@Schemes
 //	@Description	create an app install
@@ -36,7 +38,12 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 //	@Tags			installs
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object}	app.Install
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.Install
 //	@Router			/v1/apps/{app_id}/installs/ [post]
 func (s *service) CreateInstall(ctx *gin.Context) {
 	appID := ctx.Param("app_id")

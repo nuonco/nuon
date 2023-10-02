@@ -30,13 +30,19 @@ type Repository struct {
 //	@BasePath	/v1/vcs
 
 // GetAllConnectedRepos returns all VCS connected repos for an org
+//
 //	@Summary	get all vcs connected repos for an org
 //	@Schemes
 //	@Description	return all vcs connected repos for an org
 //	@Tags			vcs
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{array}	Repository
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{array}		Repository
 //	@Router			/v1/vcs/connected-repos [get]
 func (s *service) GetAllConnectedRepos(ctx *gin.Context) {
 	currentOrg, err := org.FromContext(ctx)
