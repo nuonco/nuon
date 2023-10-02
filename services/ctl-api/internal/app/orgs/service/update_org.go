@@ -25,6 +25,7 @@ func (c *UpdateOrgRequest) Validate(v *validator.Validate) error {
 //	@BasePath	/v1/orgs/
 
 // Update current org
+//
 //	@Summary	Update current org
 //	@Schemes
 //	@Description	Update current org
@@ -32,7 +33,12 @@ func (c *UpdateOrgRequest) Validate(v *validator.Validate) error {
 //	@Tags			orgs
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	app.Org
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{object}	app.Org
 //	@Router			/v1/orgs/current [PATCH]
 func (s *service) UpdateOrg(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)

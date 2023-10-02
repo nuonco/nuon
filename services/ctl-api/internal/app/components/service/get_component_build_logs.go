@@ -9,7 +9,9 @@ import (
 type BuildLog struct{}
 
 //	@BasePath	/v1/installs
+//
 // Get install build logs
+//
 //	@Summary	get install build logs
 //	@Schemes
 //	@Description	get install build logs
@@ -18,7 +20,12 @@ type BuildLog struct{}
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	[]BuildLog
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{object}	[]BuildLog
 //	@Router			/v1/components/{component_id}/builds/{build_id}/logs [get]
 func (s *service) GetComponentBuildLogs(ctx *gin.Context) {
 	ctx.Error(fmt.Errorf("not yet implemented"))

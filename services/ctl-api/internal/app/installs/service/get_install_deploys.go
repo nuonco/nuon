@@ -11,7 +11,9 @@ import (
 )
 
 //	@BasePath	/v1/apps/installs
+//
 // Get an install's deploys
+//
 //	@Summary	get an installs deploys
 //	@Schemes
 //	@Description	get all deploys for an install
@@ -19,7 +21,12 @@ import (
 //	@Tags			installs
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{array}	app.InstallDeploy
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{array}		app.InstallDeploy
 //	@Router			/v1/installs/{install_id}/deploys [GET]
 func (s *service) GetInstallDeploys(ctx *gin.Context) {
 	appID := ctx.Param("install_id")

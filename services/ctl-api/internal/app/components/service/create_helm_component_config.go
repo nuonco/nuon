@@ -28,6 +28,7 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 //	@BasePath	/v1/components
 
 // Create a helm component config
+//
 //	@Summary	create a helm component config
 //	@Schemes
 //	@Description	create a helm component config.
@@ -36,7 +37,12 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object}	app.HelmComponentConfig
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.HelmComponentConfig
 //	@Router			/v1/components/{component_id}/configs/helm [POST]
 func (s *service) CreateHelmComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")

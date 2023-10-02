@@ -22,7 +22,9 @@ func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/components
+//
 // Update a component
+//
 //	@Summary	update a component
 //	@Schemes
 //	@Description	update a component
@@ -31,7 +33,12 @@ func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	app.Component
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{object}	app.Component
 //	@Router			/v1/components/{component_id} [PATCH]
 func (s *service) UpdateComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
