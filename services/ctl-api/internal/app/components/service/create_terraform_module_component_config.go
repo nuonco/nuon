@@ -28,6 +28,7 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 //	@BasePath	/v1/components
 
 // Create a terraform component config
+//
 //	@Summary	create a terraform component config
 //	@Schemes
 //	@Description	create a terraform component config.
@@ -36,7 +37,12 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object}	app.TerraformModuleComponentConfig
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.TerraformModuleComponentConfig
 //	@Router			/v1/components/{component_id}/configs/terraform-module [POST]
 func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")

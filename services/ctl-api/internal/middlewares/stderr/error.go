@@ -63,6 +63,16 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			})
 			return
 		}
+
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			c.JSON(http.StatusBadRequest, ErrResponse{
+				Error:       err.Error(),
+				UserError:   true,
+				Description: "duplicate key",
+			})
+			return
+		}
+
 		// validation errors for any request inputs
 		var vErr validator.ValidationErrors
 		if errors.As(err, &vErr) {
@@ -73,6 +83,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			})
 			return
 		}
+
 		c.JSON(http.StatusInternalServerError, ErrResponse{
 			Error:       err.Error(),
 			UserError:   true,

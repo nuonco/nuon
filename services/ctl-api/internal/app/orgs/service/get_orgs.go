@@ -13,13 +13,18 @@ import (
 //	@BasePath	/v1/orgs
 
 // Return current user's orgs
+//
 //	@Summary	Return current user's orgs
 //	@Schemes
 //	@Description	return current user's orgs
 //	@Tags			orgs
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{array}	app.Org
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{array}		app.Org
 //	@Router			/v1/orgs [GET]
 func (s *service) GetCurrentUserOrgs(ctx *gin.Context) {
 	userToken, err := auth.FromContext(ctx)

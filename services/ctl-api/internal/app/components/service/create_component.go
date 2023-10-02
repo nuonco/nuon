@@ -22,7 +22,9 @@ func (c *CreateComponentRequest) Validate(v *validator.Validate) error {
 }
 
 //	@BasePath	/v1/apps
+//
 // Create an app component
+//
 //	@Summary	create an app component
 //	@Schemes
 //	@Description	create an app component
@@ -31,7 +33,12 @@ func (c *CreateComponentRequest) Validate(v *validator.Validate) error {
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object}	app.Component
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.Component
 //	@Router			/v1/apps/{app_id}/components/ [post]
 func (s *service) CreateComponent(ctx *gin.Context) {
 	appID := ctx.Param("app_id")

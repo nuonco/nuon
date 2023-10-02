@@ -10,7 +10,9 @@ import (
 )
 
 //	@BasePath	/v1/apps
+//
 // Get an all releases for an app
+//
 //	@Summary	get all releases for an app
 //	@Schemes
 //	@Description	get all release for an app
@@ -18,7 +20,12 @@ import (
 //	@Tags			releases
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{array}	app.ComponentRelease
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{array}		app.ComponentRelease
 //	@Router			/v1/apps/{app_id}/releases [GET]
 func (s *service) GetAppReleases(ctx *gin.Context) {
 	appID := ctx.Param("app_id")

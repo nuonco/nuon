@@ -13,13 +13,19 @@ import (
 //	@BasePath	/v1/vcs
 
 // GetConnections returns all VCS connections for an org
+//
 //	@Summary	get vcs connection for an org
 //	@Schemes
 //	@Description	get vcs connections
 //	@Tags			vcs
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{array}	app.VCSConnection
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{array}		app.VCSConnection
 //	@Router			/v1/vcs/connections [get]
 func (s *service) GetConnections(ctx *gin.Context) {
 	currentOrg, err := org.FromContext(ctx)
