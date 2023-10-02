@@ -10,7 +10,9 @@ import (
 )
 
 //	@BasePath	/v1/components
+//
 // Delete an component
+//
 //	@Summary	delete an component
 //	@Schemes
 //	@Description	delete an component
@@ -18,7 +20,12 @@ import (
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{boolean}	true
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{boolean}	true
 //	@Router			/v1/components/{component_id} [DELETE]
 func (s *service) DeleteComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")

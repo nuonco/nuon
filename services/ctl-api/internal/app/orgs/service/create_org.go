@@ -25,6 +25,7 @@ func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
 //	@BasePath	/v1/orgs
 
 // Create a new org
+//
 //	@Summary	create a new org
 //	@Schemes
 //	@Description	create a new org
@@ -32,7 +33,11 @@ func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
 //	@Tags			orgs
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object}	app.Org
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.Org
 //	@Router			/v1/orgs [POST]
 func (s *service) CreateOrg(ctx *gin.Context) {
 	user, err := auth.FromContext(ctx)

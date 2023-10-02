@@ -21,7 +21,11 @@ import (
 //	@Tags			sandboxes/admin
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{array}	app.SandboxRelease
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		200				{array}		app.SandboxRelease
 //	@Router			/v1/sandboxes/{sandbox_id}/releases [get]
 func (s *service) GetSandboxReleases(ctx *gin.Context) {
 	sandboxID := ctx.Param("sandbox_id")

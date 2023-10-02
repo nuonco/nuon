@@ -26,6 +26,7 @@ func (c *CreateConnectionRequest) Validate(v *validator.Validate) error {
 //	@BasePath	/v1/vcs
 
 // PingExample godoc
+//
 //	@Summary	create a vcs connection for Github
 //	@Schemes
 //	@Description	create a vcs connection
@@ -33,7 +34,12 @@ func (c *CreateConnectionRequest) Validate(v *validator.Validate) error {
 //	@Tags			vcs
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object}	app.VCSConnection
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.VCSConnection
 //	@Router			/v1/vcs/connections [post]
 func (s *service) CreateConnection(ctx *gin.Context) {
 	currentOrg, err := org.FromContext(ctx)

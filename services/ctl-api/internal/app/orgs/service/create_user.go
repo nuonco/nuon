@@ -18,6 +18,7 @@ type CreateOrgUserRequest struct {
 //	@BasePath	/v1/orgs/
 
 // Add a user to an org
+//
 //	@Summary	Add a user to the current org
 //	@Schemes
 //	@Description	add a user to the current org
@@ -25,7 +26,12 @@ type CreateOrgUserRequest struct {
 //	@Tags			orgs
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object}	app.UserOrg
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.UserOrg
 //	@Router			/v1/orgs/current/user [POST]
 func (s *service) CreateUser(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
