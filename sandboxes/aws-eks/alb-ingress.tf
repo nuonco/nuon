@@ -10,24 +10,25 @@ module "alb_controller_irsa" {
 
   role_name = "alb-controller-${local.vars.id}"
 
+  create_role = true
   attach_load_balancer_controller_policy = true
 
   oidc_providers = {
     k8s = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:${local.aws_alb_controller.service_account_name}"]
+      namespace_service_accounts = ["alb-ingress:${local.aws_alb_controller.service_account_name}"]
     }
   }
 }
 
 resource "helm_release" "alb-ingress-controller" {
-  namespace        = "kube-system"
+  namespace        = "alb-ingress"
   create_namespace = true
 
   name       = "alb-ingress-controller"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
-  version    = "1.4.7"
+  version    = "1.6.1"
 
   set {
     name  = "enableCertManager"

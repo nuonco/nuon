@@ -42,6 +42,7 @@
         "eks:DescribeNodegroup",
         "iam:DeleteOpenIDConnectProvider",
         "iam:DeletePolicy",
+        "iam:DeletePolicyVersion",
         "iam:DeleteRole",
         "iam:DeleteRolePolicy",
         "iam:DetachRolePolicy",
