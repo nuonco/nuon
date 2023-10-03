@@ -7,6 +7,7 @@ resource "helm_release" "nginx-ingress-controller" {
   repository = "https://kubernetes.github.io/ingress-nginx"
   chart      = "ingress-nginx"
   version    = "4.8.0"
+  timeout = 600
 
   set {
     name  = "rbac.create"
