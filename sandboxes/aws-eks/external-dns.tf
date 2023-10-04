@@ -75,6 +75,7 @@ resource "helm_release" "external_dns" {
   ]
 
   depends_on = [
-    helm_release.cert_manager
+     module.external_dns_irsa,
+     helm_release.metrics_server
   ]
 }

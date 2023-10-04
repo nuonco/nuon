@@ -17,7 +17,7 @@ go run github.com/swaggo/swag/cmd/swag \
   --parseGoList \
   --output admin \
   --parseGoList \
-  -t orgs/admin,orgs/admin,apps/admin,general/admin,sandboxes/admin
+  -t orgs/admin,orgs/admin,apps/admin,general/admin,sandboxes/admin,installs/admin
 
 echo "validating admin schema"
 go run github.com/go-swagger/go-swagger/cmd/swagger \
