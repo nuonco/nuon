@@ -55,7 +55,7 @@ func (w *Workflows) deprovision(ctx workflow.Context, orgID string, dryRun bool)
 	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
 		OrgID: orgID,
 	}); err != nil {
-		w.updateStatus(ctx, orgID, StatusError, "unable to delete organiztion from database")
+		w.updateStatus(ctx, orgID, StatusError, "unable to delete organization from database")
 		return fmt.Errorf("unable to delete org: %w", err)
 	}
 	return nil
