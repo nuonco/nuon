@@ -34,14 +34,13 @@ func (w *Workflows) pollAppsDeprovisioned(ctx workflow.Context, orgID string) er
 }
 
 func (w *Workflows) deprovision(ctx workflow.Context, orgID string, dryRun bool) error {
-	w.updateStatus(ctx, orgID, StatusDeprovisioning, "ensuring all apps are deleted")
+	w.updateStatus(ctx, orgID, StatusActive, "ensuring all apps are deleted before deprovisioning")
 	if err := w.pollAppsDeprovisioned(ctx, orgID); err != nil {
 		w.updateStatus(ctx, orgID, StatusError, "error polling apps being deprovisioned")
 		return fmt.Errorf("unable to poll for deleted apps: %w", err)
 	}
 
 	w.updateStatus(ctx, orgID, StatusDeprovisioning, "deprovisioning organization resources")
-
 	_, err := w.execDeprovisionWorkflow(ctx, dryRun, &orgsv1.DeprovisionRequest{
 		OrgId:  orgID,
 		Region: defaultOrgRegion,

@@ -50,8 +50,8 @@ func (s *service) getInstallComponentDeploys(ctx context.Context, installID, com
 	res := s.db.WithContext(ctx).Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
 		return db.Order("install_deploys.created_at DESC").Limit(1000)
 	}).
-		Preload("InstallDeploys.Build").
-		Preload("InstallDeploys.Build.VCSConnectionCommit").
+		Preload("InstallDeploys.ComponentBuild").
+		Preload("InstallDeploys.ComponentBuild.VCSConnectionCommit").
 		Where(install).
 		First(&install)
 	if res.Error != nil {

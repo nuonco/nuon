@@ -49,7 +49,6 @@ func (s *service) deleteOrg(ctx context.Context, orgID string) error {
 		ID: orgID,
 	}
 	res := s.db.WithContext(ctx).Model(&org).Updates(app.Org{
-		Status:            "delete_queued",
 		StatusDescription: "delete has been queued",
 	})
 	if res.Error != nil {

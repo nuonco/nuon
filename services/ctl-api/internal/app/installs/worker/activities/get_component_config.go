@@ -22,31 +22,31 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetComponentCon
 		Preload("InstallComponent.Install.App.Org").
 
 		// build
-		Preload("Build.VCSConnectionCommit").
-		Preload("Build.ComponentConfigConnection").
-		Preload("Build.ComponentConfigConnection.Component").
+		Preload("ComponentBuild.VCSConnectionCommit").
+		Preload("ComponentBuild.ComponentConfigConnection").
+		Preload("ComponentBuild.ComponentConfigConnection.Component").
 
 		// preload all terraform configs
-		Preload("Build.ComponentConfigConnection.TerraformModuleComponentConfig").
-		Preload("Build.ComponentConfigConnection.TerraformModuleComponentConfig.PublicGitVCSConfig").
-		Preload("Build.ComponentConfigConnection.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.TerraformModuleComponentConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.TerraformModuleComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
 
 		// preload all helm configs
-		Preload("Build.ComponentConfigConnection.HelmComponentConfig").
-		Preload("Build.ComponentConfigConnection.HelmComponentConfig.PublicGitVCSConfig").
-		Preload("Build.ComponentConfigConnection.HelmComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.HelmComponentConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.HelmComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.HelmComponentConfig.ConnectedGithubVCSConfig").
 
 		// preload all docker configs
-		Preload("Build.ComponentConfigConnection.DockerBuildComponentConfig").
-		Preload("Build.ComponentConfigConnection.DockerBuildComponentConfig.PublicGitVCSConfig").
-		Preload("Build.ComponentConfigConnection.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-		Preload("Build.ComponentConfigConnection.DockerBuildComponentConfig.BasicDeployConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.DockerBuildComponentConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.DockerBuildComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.DockerBuildComponentConfig.BasicDeployConfig").
 
 		// preload all external image configs
-		Preload("Build.ComponentConfigConnection.ExternalImageComponentConfig").
-		Preload("Build.ComponentConfigConnection.ExternalImageComponentConfig.PublicGitVCSConfig").
-		Preload("Build.ComponentConfigConnection.ExternalImageComponentConfig.ConnectedGithubVCSConfig").
-		Preload("Build.ComponentConfigConnection.ExternalImageComponentConfig.BasicDeployConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.BasicDeployConfig").
 		First(&dep, "id = ?", req.DeployID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get deploy: %w", res.Error)
