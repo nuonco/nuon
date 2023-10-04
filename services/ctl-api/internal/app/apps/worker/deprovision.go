@@ -28,7 +28,7 @@ func (w *Workflows) pollInstallsDeprovisioned(ctx workflow.Context, appID string
 }
 
 func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool) error {
-	w.updateStatus(ctx, appID, StatusDeprovisioning, "polling for all installs to be deprovisioned")
+	w.updateStatus(ctx, appID, StatusActive, "polling for all installs to be deprovisioned")
 	if err := w.pollInstallsDeprovisioned(ctx, appID); err != nil {
 		w.updateStatus(ctx, appID, StatusError, "error polling installs being deprovisioned")
 		return fmt.Errorf("unable to poll for deleted installs: %w", err)
