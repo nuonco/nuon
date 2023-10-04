@@ -29,7 +29,7 @@ type ComponentReleaseStep struct {
 	// When a step is created, a set of installs are targeted. However, by the time the release step goes out, the
 	// install might have been setup in any order of ways.
 	RequestedInstallIDs pq.StringArray  `gorm:"type:text[]" json:"requested_install_ids" swaggertype:"array,string"`
-	InstallDeploys      []InstallDeploy `json:"install_deploys,omitempty"`
+	InstallDeploys      []InstallDeploy `json:"install_deploys,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
 	// fields to control the delay of the individual step, as this is set based on the parent strategy
 	Delay *string `json:"delay"`

@@ -61,6 +61,7 @@ resource "helm_release" "alb-ingress-controller" {
   }
 
   depends_on = [
-    helm_release.cert_manager
+    helm_release.cert_manager,
+    module.alb_controller_irsa
   ]
 }

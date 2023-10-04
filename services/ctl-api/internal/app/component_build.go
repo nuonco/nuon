@@ -25,6 +25,7 @@ type ComponentBuild struct {
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit"`
 
 	ComponentReleases []ComponentRelease `json:"releases" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallDeploys    []InstallDeploy    `json:"install_deploys" gorm:"constraint:OnDelete:CASCADE;"`
 
 	Status            string  `json:"status" gorm:"notnull"`
 	StatusDescription string  `json:"status_description" gorm:"notnull"`

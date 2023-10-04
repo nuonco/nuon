@@ -12,6 +12,7 @@ const (
 	OperationProvision        Operation = "provision"
 	OperationDeprovision      Operation = "deprovision"
 	OperationDeploy           Operation = "deploy"
+	OperationForgotten        Operation = "forgotten"
 	OperationPollDependencies Operation = "poll_dependencies"
 )
 
