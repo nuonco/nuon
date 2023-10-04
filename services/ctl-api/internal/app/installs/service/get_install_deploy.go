@@ -45,7 +45,7 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 	installCmp := &app.InstallComponent{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallDeploys", "id = ?", deployID).
-		Preload("InstallDeploys.Build").
+		Preload("InstallDeploys.ComponentBuild").
 		First(&installCmp, "install_id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)

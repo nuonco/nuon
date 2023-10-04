@@ -144,7 +144,7 @@ func (s *installComponentsTestSuite) TestGetInstallComponentDeploys() {
 		require.NotNil(s.T(), deploy)
 
 		installDeploys, err := s.apiClient.GetInstallComponentDeploys(s.ctx, s.installID, s.compID)
-		require.NoError(t, err)
+		require.NoError(t, err, "HELLO WORLD")
 		require.Len(t, installDeploys, 2)
 		require.Equal(t, installDeploys[0].ID, deploy.ID)
 	})
