@@ -55,6 +55,8 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) err
 				return
 			}
 			finished = true
+		case OperationForgotten:
+			finished = true
 		case OperationDeploy:
 			err = w.deploy(ctx, installID, signal.DeployID, signal.DryRun)
 			if err != nil {

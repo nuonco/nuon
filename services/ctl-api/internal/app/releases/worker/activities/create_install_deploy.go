@@ -33,7 +33,7 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	deploy := app.InstallDeploy{
 		Status:                 "queued",
 		StatusDescription:      "waiting to be deployed to install",
-		BuildID:                step.ComponentRelease.ComponentBuildID,
+		ComponentBuildID:       step.ComponentRelease.ComponentBuildID,
 		ComponentReleaseStepID: generics.ToPtr(req.ReleaseStepID),
 	}
 	err := a.db.WithContext(ctx).First(&installCmp, "install_id = ?", req.InstallID).
