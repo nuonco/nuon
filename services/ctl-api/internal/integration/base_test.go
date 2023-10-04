@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go"
+	"github.com/powertoolsdev/mono/pkg/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -14,10 +15,11 @@ import (
 type baseIntegrationTestSuite struct {
 	suite.Suite
 
-	v         *validator.Validate
-	apiClient nuon.Client
-	ctx       context.Context
-	ctxCancel func()
+	v            *validator.Validate
+	apiClient    nuon.Client
+	intAPIClient api.Client
+	ctx          context.Context
+	ctxCancel    func()
 }
 
 func (s *baseIntegrationTestSuite) SetupSuite() {
@@ -40,6 +42,16 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 	)
 	assert.NoError(s.T(), err)
 	s.apiClient = apiClient
+
+	internalAPIURL := os.Getenv("INTEGRATION_INTERNAL_API_URL")
+	assert.NotEmpty(s.T(), internalAPIURL)
+
+	intApiClient, err := api.New(s.v,
+		api.WithURL(internalAPIURL),
+	)
+	assert.NoError(s.T(), err)
+	assert.NotEmpty(s.T(), intApiClient)
+	s.intAPIClient = intApiClient
 }
 
 func (s *baseIntegrationTestSuite) deleteOrg(orgID string) {
@@ -48,8 +60,6 @@ func (s *baseIntegrationTestSuite) deleteOrg(orgID string) {
 		return
 	}
 
-	s.apiClient.SetOrgID(orgID)
-	deleted, err := s.apiClient.DeleteOrg(s.ctx)
+	err := s.intAPIClient.DeleteOrg(s.ctx, orgID)
 	require.NoError(s.T(), err)
-	require.True(s.T(), deleted)
 }
