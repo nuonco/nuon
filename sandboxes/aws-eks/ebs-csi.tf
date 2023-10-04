@@ -51,4 +51,10 @@ resource "helm_release" "ebs_csi" {
       }
     }),
   ]
+
+  depends_on = [
+    module.ebs_csi_irsa,
+    module.vpc,
+    module.eks
+  ]
 }
