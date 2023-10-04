@@ -15,7 +15,7 @@ resource "helm_release" "nginx-ingress-controller" {
   }
 
   depends_on = [
-    helm_release.cert_manager,
+    module.alb_controller_irsa,
     helm_release.alb-ingress-controller
   ]
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func (c *Adapter) FromDeploy(deploy *app.InstallDeploy, installDeploys []app.InstallDeploy) (*componentv1.Component, error) {
-	build := deploy.Build
+	build := deploy.ComponentBuild
 
 	compCfg := build.ComponentConfigConnection
 	if compCfg.TerraformModuleComponentConfig != nil {
