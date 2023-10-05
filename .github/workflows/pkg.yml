@@ -57,8 +57,6 @@ jobs:
 
       - name: Setup for CI
         uses: powertoolsdev/mono/actions/setup-ci@main
-        with:
-          clone_token: ${{ steps.generate_token.outputs.token }}
 
       - name: Lint
         run: |

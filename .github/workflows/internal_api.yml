@@ -44,7 +44,7 @@ jobs:
       - name: Fetch terraform outputs
         uses: actions/download-artifact@v3
         with:
-          name: ${{ needs.terraform.outputs.cache_key }}
+          name: ${{ needs.terraform.outputs.env_cache_key }}
 
       - name: Copy terraform outputs to environment
         run: |

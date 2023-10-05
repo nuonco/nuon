@@ -1,0 +1,85 @@
+---
+name: artifact outputs
+"on":
+  workflow_call:
+    inputs:
+      dir:
+        type: string
+        required: true
+    outputs:
+      ecr_repository_url:
+        description: "ecr repository url"
+        value: ${{ jobs.artifact_outputs.outputs.ecr_repository_url }}
+      ecr_repository_arn:
+        description: "ecr repository arn"
+        value: ${{ jobs.artifact_outputs.outputs.ecr_repository_arn }}
+      ecr_is_public:
+        description: "flag to denote whether ECR is a public repo or not"
+        value: ${{ jobs.artifact_outputs.outputs.ecr_is_public }}
+      ecr_registry_id:
+        description: "ecr registry ID"
+        value: ${{ jobs.artifact_outputs.outputs.ecr_registry_id }}
+      bucket_prefix:
+        description: "bucket prefix to upload artifacts to"
+        value: ${{ jobs.artifact_outputs.outputs.bucket_prefix }}
+      region:
+        description: "AWS region"
+        value: ${{ jobs.artifact_outputs.outputs.region }}
+      use_promotions:
+        description: "whether to use a promotions workflow"
+        value: ${{ jobs.artifact_outputs.outputs.use_promotions }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  terraform:
+    name: Get terraform outputs
+    uses: ./.github/workflows/terraform_outputs.yml
+    secrets: inherit
+    with:
+      dir: infra/artifacts
+      cache-key: infra-artifacts
+      workspace: infra-artifacts
+      static_workspace: true
+
+  artifact_outputs:
+    name: parse artifact outputs
+    needs:
+      - terraform
+    outputs:
+      ecr_repository_url: ${{ steps.outputs.outputs.ecr_repository_url }}
+      ecr_repository_arn: ${{ steps.outputs.outputs.ecr_repository_arn }}
+      ecr_is_public: ${{ steps.outputs.outputs.ecr_is_public }}
+      ecr_registry_id: ${{ steps.outputs.outputs.ecr_registry_id }}
+      bucket_prefix: ${{ steps.outputs.outputs.bucket_prefix }}
+      region: ${{ steps.outputs.outputs.region }}
+      use_promotions: ${{ steps.outputs.outputs.use_promotions }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.terraform.outputs.outputs_cache_key }}
+
+      - name: Parse and set artifact outputs
+        id: outputs
+        run: |
+          cat ${{ needs.terraform.outputs.tf_out }}
+
+          repo_url=$(cat ${{ needs.terraform.outputs.tf_out }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.repository_url')
+          repo_arn=$(cat ${{ needs.terraform.outputs.tf_out }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.repository_arn')
+          is_public=$(cat ${{ needs.terraform.outputs.tf_out }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.is_public')
+          registry_id=$(cat ${{ needs.terraform.outputs.tf_out }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.registry_id')
+          bucket_prefix=$(cat ${{ needs.terraform.outputs.tf_out }} | jq -r '.artifacts.value."${{ inputs.dir }}".bucket_prefix')
+          region=$(cat ${{ needs.terraform.outputs.tf_out }} | jq -r '.artifacts.value."${{ inputs.dir }}".ecr.region')
+          use_promotions=$(cat ${{ needs.terraform.outputs.tf_out }} | jq -r '.artifacts.value."${{ inputs.dir }}".use_promotions')
+
+          echo "ecr_repository_url=$repo_url" >> "$GITHUB_OUTPUT"
+          echo "ecr_repository_arn=$repo_arn" >> "$GITHUB_OUTPUT"
+          echo "ecr_is_public=$is_public" >> "$GITHUB_OUTPUT"
+          echo "ecr_registry_id=$registry_id" >> "$GITHUB_OUTPUT"
+          echo "bucket_prefix=$bucket_prefix" >> "$GITHUB_OUTPUT"
+          echo "region=$region" >> "$GITHUB_OUTPUT"
+          echo "use_promotions=$use_promotions" >> "$GITHUB_OUTPUT"
