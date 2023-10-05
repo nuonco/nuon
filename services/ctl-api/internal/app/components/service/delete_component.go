@@ -40,15 +40,21 @@ func (s *service) DeleteComponent(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, true)
 }
 
-func (s *service) deleteComponent(ctx context.Context, componentID string) error {
-	res := s.db.WithContext(ctx).Delete(&app.Component{
-		ID: componentID,
+func (s *service) deleteComponent(ctx context.Context, compID string) error {
+	comp := app.Component{
+		ID: compID,
+	}
+
+	res := s.db.WithContext(ctx).Model(&comp).Updates(app.Component{
+		Status:            "delete_queued",
+		StatusDescription: "delete has been queued and waiting",
 	})
 	if res.Error != nil {
-		return fmt.Errorf("unable to delete component: %w", res.Error)
+		return fmt.Errorf("unable to update component: %w", res.Error)
 	}
-	if res.RowsAffected != 1 {
-		return fmt.Errorf("component not found")
+
+	if res.RowsAffected < 1 {
+		return fmt.Errorf("component not found %s", compID)
 	}
 
 	return nil

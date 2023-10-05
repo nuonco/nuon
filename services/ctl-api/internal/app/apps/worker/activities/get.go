@@ -16,6 +16,7 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.App, error) 
 	res := a.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Installs").
+		Preload("Components").
 		First(&currentApp, "id = ?", req.AppID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
