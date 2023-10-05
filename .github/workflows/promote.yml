@@ -115,17 +115,7 @@ jobs:
       matrix:
         dir:
           - services/e2e
-          - bins/nuonctl
           - bins/cli
-          - charts/demo
-          - charts/temporal
-          - charts/waypoint
-          - bins/waypoint-plugin-exp
-          - bins/waypoint-plugin-helm
-          - bins/waypoint-plugin-noop
-          - bins/waypoint-plugin-oci
-          - bins/waypoint-plugin-oci-sync
-          - bins/waypoint-plugin-terraform
     uses: ./.github/workflows/artifact.yml
     with:
       dir: ${{matrix.dir}}
