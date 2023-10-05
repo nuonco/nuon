@@ -50,6 +50,7 @@ jobs:
     if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     outputs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
+      semver: ${{ steps.semver.outputs.nextStrict }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -57,6 +58,14 @@ jobs:
       - name: Set git_ref output
         id: git_ref
         run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Determine next version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          patchAll: true
 
   start_slack_notifications:
     name: update promotions channel
@@ -119,7 +128,7 @@ jobs:
     uses: ./.github/workflows/artifact.yml
     with:
       dir: ${{matrix.dir}}
-      tag: ${{ needs.tag.outputs.git_ref }}
+      tag: ${{ needs.tag.outputs.semver }}
       is_promotion: true
     secrets: inherit
 
@@ -147,22 +156,15 @@ jobs:
       - merged_pr
       - services
       - sandboxes
+      - artifacts
     if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Determine next version
-        id: semver
-        uses: ietf-tools/semver-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-          patchAll: true
-
       - name: Push tag
         uses: mathieudutour/github-tag-action@v6.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          custom_tag: ${{ steps.semver.outputs.nextStrict }}
+          custom_tag: ${{ needs.tag.outputs.semver }}
 
   status_slack_notifications:
     name: update promotions channel
