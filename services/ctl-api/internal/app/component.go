@@ -23,6 +23,9 @@ type Component struct {
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_component_name,unique"`
 	App   App    `faker:"-" json:"-"`
 
+	Status            string `json:"status"`
+	StatusDescription string `json:"status_description"`
+
 	ConfigVersions    int                         `gorm:"-" json:"config_versions"`
 	ComponentConfigs  []ComponentConfigConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallComponents []InstallComponent          `gorm:"constraint:OnDelete:CASCADE;"`
