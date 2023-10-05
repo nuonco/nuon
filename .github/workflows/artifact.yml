@@ -6,11 +6,11 @@ name: artifact
       dir:
         type: string
         required: true
-      publish:
-        type: boolean
-        required: true
       tag:
         type: string
+        required: true
+      is_promotion:
+        type: boolean
         required: true
     outputs: {}
 
@@ -19,6 +19,13 @@ defaults:
     shell: bash
 
 jobs:
+  outputs:
+    name: 🌏 outputs
+    uses: ./.github/workflows/artifact_outputs.yml
+    secrets: inherit
+    with:
+      dir: ${{ inputs.dir }}
+
   lint:
     name: 🌏 lint
     uses: ./.github/workflows/artifact_lint.yml
@@ -36,9 +43,20 @@ jobs:
   publish:
     name: 🌏 publish
     uses: ./.github/workflows/artifact_publish.yml
-    if: ${{ inputs.publish }}
+
+    # we run publish under two circumstances:
+    # when a promotion is happening and the artifact uses promotions
+    # when a PR is merged and the artifact does _not_ use promotions
+    if: |
+      (inputs.is_promotion && needs.outputs.outputs.use_promotions == 'true') ||
+      (
+          !inputs.is_promotion &&
+          needs.outputs.outputs.use_promotions != 'true' &&
+          github.event_name != 'pull_request'
+      )
     secrets: inherit
     needs:
+      - outputs
       - test
       - lint
     with:

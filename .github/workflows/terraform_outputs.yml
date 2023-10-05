@@ -12,10 +12,17 @@ name: terraform-outputs
       dir:
         type: string
         required: true
+      static_workspace:
+        type: boolean
+        required: false
+        default: false
     outputs:
-      cache_key:
-        description: "output cache key for fetching using download-artifact"
-        value: ${{ jobs.terraform.outputs.cache_key }}
+      outputs_cache_key:
+        description: "plain outputs"
+        value: ${{ jobs.terraform.outputs.outputs_cache_key }}
+      env_cache_key:
+        description: "env cache key"
+        value: ${{ jobs.terraform.outputs.env_cache_key }}
       tf_env:
         description: "tf env path, where terraform outputs are written in environment variable form (ie: TFO_ prefix)"
         value: ${{ jobs.terraform.outputs.tf_env }}
@@ -38,12 +45,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TF_OUT: ${{ github.workspace }}/tf-out.json
-      TF_WORKSPACE: ${{ inputs.workspace }}
       TF_ENV: ${{ github.workspace }}/.tfenv
     outputs:
       tf_out: ${{ steps.save_output_vars.outputs.tf_out }}
       tf_env: ${{ steps.save_output_vars.outputs.tf_env }}
-      cache_key: ${{ steps.save_output_vars.outputs.cache_key }}
+      env_cache_key: ${{ steps.save_output_vars.outputs.env_cache_key }}
+      outputs_cache_key: ${{ steps.save_output_vars.outputs.outputs_cache_key }}
     permissions:
       contents: read
     timeout-minutes: 7
@@ -55,6 +62,10 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_KEY }}
+
+      - name: Set TF workspace
+        if: ${{ !inputs.static_workspace }}
+        run: echo TF_WORKSPACE=${{ inputs.workspace }} > $GITHUB_ENV
 
       - name: Init terraform
         working-directory: ${{ inputs.dir }}
@@ -70,6 +81,7 @@ jobs:
         uses: powertoolsdev/mono/actions/tf-output@main
         with:
           file: ${{ env.TF_OUT }}
+          cleanup: false
 
       - name: Save terraform outputs
         run: |
@@ -80,12 +92,21 @@ jobs:
         run: |
           echo tf_out=${{ env.TF_OUT }} >> "$GITHUB_OUTPUT"
           echo tf_env=${{ env.TF_ENV }} >> "$GITHUB_OUTPUT"
-          echo cache_key=env-${{ github.run_id }}-${{ inputs.cache-key }} >> "$GITHUB_OUTPUT"
+          echo env_cache_key=env-${{ github.run_id }}-${{ inputs.cache-key }}-env >> "$GITHUB_OUTPUT"
+          echo outputs_cache_key=env-${{ github.run_id }}-${{ inputs.cache-key }}-outputs >> "$GITHUB_OUTPUT"
 
-      - name: Save outputs
+      - name: Save env outputs
         uses: actions/upload-artifact@v3
         with:
-          name: env-${{ github.run_id }}-${{inputs.cache-key}}
+          name: env-${{ github.run_id }}-${{inputs.cache-key}}-env
           path: ${{ env.TF_ENV }}
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Save tf outputs
+        uses: actions/upload-artifact@v3
+        with:
+          name: env-${{ github.run_id }}-${{inputs.cache-key}}-outputs
+          path: ${{ env.TF_OUT }}
           if-no-files-found: error
           retention-days: 1
