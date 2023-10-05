@@ -12,13 +12,13 @@ import (
 )
 
 func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bool) error {
-	w.updateBuildStatus(ctx, buildID, StatusPlanning, "creating build plan")
+	w.updateBuildStatus(ctx, buildID, BuildStatusPlanning, "creating build plan")
 
 	var app app.App
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentApp, activities.GetComponentAppRequest{
 		ComponentID: cmpID,
 	}, &app); err != nil {
-		w.updateBuildStatus(ctx, buildID, StatusError, "unable to get component app")
+		w.updateBuildStatus(ctx, buildID, BuildStatusError, "unable to get component app")
 		return fmt.Errorf("unable to get component app: %w", err)
 	}
 
@@ -26,7 +26,7 @@ func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bo
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentConfig, activities.GetRequest{
 		BuildID: buildID,
 	}, &buildCfg); err != nil {
-		w.updateBuildStatus(ctx, buildID, StatusError, "unable to get component config")
+		w.updateBuildStatus(ctx, buildID, BuildStatusError, "unable to get component config")
 		return fmt.Errorf("unable to get build component config: %w", err)
 	}
 
@@ -44,12 +44,12 @@ func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bo
 		},
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, StatusError, "unable to create build plan")
+		w.updateBuildStatus(ctx, buildID, BuildStatusError, "unable to create build plan")
 		return fmt.Errorf("unable to execute build plan: %w", err)
 	}
 
 	// update status with response
-	w.updateBuildStatus(ctx, buildID, StatusBuilding, "executing build plan")
+	w.updateBuildStatus(ctx, buildID, BuildStatusBuilding, "executing build plan")
 
 	// execute the exec phase here
 	buildExecuteWorkflowID := fmt.Sprintf("%s-build-execute-%s", cmpID, buildID)
@@ -57,10 +57,10 @@ func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bo
 		Plan: planResp.Plan,
 	})
 	if err != nil {
-		w.updateBuildStatus(ctx, buildID, StatusError, "unable to execute build plan")
+		w.updateBuildStatus(ctx, buildID, BuildStatusError, "unable to execute build plan")
 		return fmt.Errorf("unable to execute build plan: %w", err)
 	}
 
-	w.updateBuildStatus(ctx, buildID, StatusActive, "build is active and ready to be deployed")
+	w.updateBuildStatus(ctx, buildID, BuildStatusActive, "build is active and ready to be deployed")
 	return nil
 }

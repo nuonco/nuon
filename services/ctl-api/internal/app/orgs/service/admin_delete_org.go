@@ -42,8 +42,13 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 
 	for _, app := range org.Apps {
 		s.appHooks.Deleted(ctx, app.ID)
+
 		for _, install := range app.Installs {
 			s.installHooks.Deleted(ctx, install.ID)
+		}
+
+		for _, comp := range app.Components {
+			s.componentHooks.Deleted(ctx, comp.ID)
 		}
 	}
 	s.hooks.Deleted(ctx, orgID)
@@ -56,6 +61,7 @@ func (s *service) getOrgAndDependencies(ctx context.Context, orgID string) (*app
 	res := s.db.WithContext(ctx).
 		Preload("Apps").
 		Preload("Apps.Installs").
+		Preload("Apps.Components").
 		First(&org, "id = ?", orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org %s: %w", orgID, res.Error)

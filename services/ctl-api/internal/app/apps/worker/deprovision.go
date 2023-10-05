@@ -2,13 +2,15 @@ package worker
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w *Workflows) pollInstallsDeprovisioned(ctx workflow.Context, appID string) error {
+func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string) error {
+	deadline := workflow.Now(ctx).Add(time.Minute * 60)
 	for {
 		var currentApp app.App
 		if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
@@ -18,9 +20,16 @@ func (w *Workflows) pollInstallsDeprovisioned(ctx workflow.Context, appID string
 			return fmt.Errorf("unable to get app: %w", err)
 		}
 
-		if len(currentApp.Installs) < 1 {
+		if len(currentApp.Components) < 1 && len(currentApp.Installs) < 1 {
 			return nil
 		}
+
+		if workflow.Now(ctx).After(deadline) {
+			err := fmt.Errorf("timeout waiting for installs and components to deprovision")
+			w.updateStatus(ctx, appID, "error", err.Error())
+			return err
+		}
+
 		workflow.Sleep(ctx, defaultPollTimeout)
 	}
 
@@ -28,10 +37,9 @@ func (w *Workflows) pollInstallsDeprovisioned(ctx workflow.Context, appID string
 }
 
 func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool) error {
-	w.updateStatus(ctx, appID, StatusActive, "polling for all installs to be deprovisioned")
-	if err := w.pollInstallsDeprovisioned(ctx, appID); err != nil {
-		w.updateStatus(ctx, appID, StatusError, "error polling installs being deprovisioned")
-		return fmt.Errorf("unable to poll for deleted installs: %w", err)
+	w.updateStatus(ctx, appID, StatusActive, "polling for installs and components to be deprovisioned")
+	if err := w.pollChildrenDeprovisioned(ctx, appID); err != nil {
+		return err
 	}
 
 	// update status

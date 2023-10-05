@@ -5,6 +5,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	apphooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
+	componenthooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	installhooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	"go.uber.org/zap"
@@ -12,13 +13,14 @@ import (
 )
 
 type service struct {
-	v            *validator.Validate
-	l            *zap.Logger
-	db           *gorm.DB
-	mw           metrics.Writer
-	hooks        *hooks.Hooks
-	appHooks     *apphooks.Hooks
-	installHooks *installhooks.Hooks
+	v              *validator.Validate
+	l              *zap.Logger
+	db             *gorm.DB
+	mw             metrics.Writer
+	hooks          *hooks.Hooks
+	appHooks       *apphooks.Hooks
+	installHooks   *installhooks.Hooks
+	componentHooks *componenthooks.Hooks
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -49,14 +51,16 @@ func New(v *validator.Validate,
 	hooks *hooks.Hooks,
 	appHooks *apphooks.Hooks,
 	installHooks *installhooks.Hooks,
+	componentHooks *componenthooks.Hooks,
 ) *service {
 	return &service{
-		l:            l,
-		v:            v,
-		db:           db,
-		mw:           mw,
-		hooks:        hooks,
-		appHooks:     appHooks,
-		installHooks: installHooks,
+		l:              l,
+		v:              v,
+		db:             db,
+		mw:             mw,
+		hooks:          hooks,
+		appHooks:       appHooks,
+		installHooks:   installHooks,
+		componentHooks: componentHooks,
 	}
 }

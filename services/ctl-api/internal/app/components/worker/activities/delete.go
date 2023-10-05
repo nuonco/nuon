@@ -2,9 +2,11 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type DeleteRequest struct {
@@ -12,17 +14,16 @@ type DeleteRequest struct {
 }
 
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
-	res := a.db.WithContext(ctx).Unscoped().Delete(&app.Component{
+	res := a.db.WithContext(ctx).Delete(&app.Component{
 		ID: req.ComponentID,
 	})
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		return nil
+	}
+
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete component: %w", res.Error)
 	}
 
-	// NOTE(jm): since this inevitably an async operation, we do not error if the app was not found when deleting,
-	// as the parent org could have deleted this first.
-	//
-	// Eventually, we would want the parent org to ensure all child component workflows are closed + deleted, but
-	// for now this is not guaranteed.
 	return nil
 }
