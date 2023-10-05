@@ -1,0 +1,35 @@
+package app
+
+import (
+	"time"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
+)
+
+type JobComponentConfig struct {
+	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
+	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
+	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
+	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
+
+	// used for RLS
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+
+	// value
+	ComponentConfigConnectionID string `json:"component_config_connection_id" gorm:"notnull"`
+
+	// Image attributes, copied from a docker_buid or external_image component.
+	ImageURL string `json:"image_url" gorm:"notnull"`
+	Tag      string `json:"tag" gorm:"notnull"`
+	Cmd      string `json:"cmd" gorm:"notnull"`
+}
+
+func (e *JobComponentConfig) BeforeCreate(tx *gorm.DB) error {
+	e.ID = domains.NewComponentID()
+	e.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	e.OrgID = orgIDFromContext(tx.Statement.Context)
+	return nil
+}
