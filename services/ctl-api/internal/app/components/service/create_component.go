@@ -65,7 +65,9 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 
 func (s *service) createComponent(ctx context.Context, appID string, req *CreateComponentRequest) (*app.Component, error) {
 	component := app.Component{
-		Name: req.Name,
+		Name:              req.Name,
+		Status:            "queued",
+		StatusDescription: "waiting for event loop to start for component",
 	}
 	parentApp := app.App{}
 	err := s.db.WithContext(ctx).Preload("Installs").First(&parentApp, "id = ?", appID).Association("Components").Append(&component)

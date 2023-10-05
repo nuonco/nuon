@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/http"
 
@@ -56,21 +55,16 @@ func (s *service) CreateRelease(ctx *gin.Context) {
 }
 
 func (s *service) getBuildComponent(ctx context.Context, buildID string) (*app.Component, error) {
-	component := app.Component{}
+	build := app.ComponentBuild{}
+
 	res := s.db.WithContext(ctx).
-		Raw(`
-select cmp.*
-from components cmp
-join component_config_connections cfg on cmp.id = cfg.component_id
-join component_builds bld on cfg.id = bld.component_config_connection_id
-where bld.id = @buildID
-`, sql.Named("buildID", buildID)).
-		First(&component)
+		Preload("ComponentConfigConnection").
+		Preload("ComponentConfigConnection.Component").
+		Preload("ComponentConfigConnection.Component.ComponentConfigs").
+		First(&build, "id = ?", buildID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
 
-	component.ConfigVersions = len(component.ComponentConfigs)
-
-	return &component, nil
+	return &build.ComponentConfigConnection.Component, nil
 }
