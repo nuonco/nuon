@@ -28,7 +28,6 @@ jobs:
       - name: Setup for CI
         uses: powertoolsdev/mono/actions/setup-ci@main
         with:
-          clone_token: ${{ secrets.GITHUB_TOKEN }}
           setup_helm: "false"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
