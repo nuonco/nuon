@@ -126,7 +126,7 @@ jobs:
           - bins/waypoint-plugin-oci
           - bins/waypoint-plugin-oci-sync
           - bins/waypoint-plugin-terraform
-    uses: ./.github/workflows/service.yml
+    uses: ./.github/workflows/artifact.yml
     with:
       dir: ${{matrix.dir}}
       tag: ${{ needs.tag.outputs.git_ref }}
