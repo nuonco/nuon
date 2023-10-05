@@ -17,3 +17,7 @@ Fixing the api authentication bug.
 ## v0.6.0
 
 Fixed TF version in infra components.
+
+## v0.7.0
+
+Updating various event loop logic, api and promotion workflow.
