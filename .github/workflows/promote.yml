@@ -103,6 +103,36 @@ jobs:
       stage: true
     secrets: inherit
 
+  artifacts:
+    # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
+    name: 🚢
+    needs:
+      - tag
+      - merged_pr
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        dir:
+          - services/e2e
+          - bins/nuonctl
+          - bins/cli
+          - charts/demo
+          - charts/temporal
+          - charts/waypoint
+          - bins/waypoint-plugin-exp
+          - bins/waypoint-plugin-helm
+          - bins/waypoint-plugin-noop
+          - bins/waypoint-plugin-oci
+          - bins/waypoint-plugin-oci-sync
+          - bins/waypoint-plugin-terraform
+    uses: ./.github/workflows/service.yml
+    with:
+      dir: ${{matrix.dir}}
+      tag: ${{ needs.tag.outputs.git_ref }}
+      is_promotion: true
+    secrets: inherit
+
   sandboxes:
     name: 🚢 sandbox
     needs:
@@ -175,6 +205,7 @@ jobs:
       - merged_pr
       - services
       - sandboxes
+      - artifacts
       - tag
     if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     uses: ./.github/workflows/internal_api.yml

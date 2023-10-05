@@ -72,8 +72,8 @@ jobs:
     uses: ./.github/workflows/artifact.yml
     with:
       dir: ${{matrix.dir}}
-      publish: ${{ github.event_name != 'pull_request' }}
       tag: ${{ needs.tag.outputs.git_ref }}
+      is_promotion: false
     secrets: inherit
 
   update_status:
