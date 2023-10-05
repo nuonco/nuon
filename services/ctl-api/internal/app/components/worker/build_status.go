@@ -6,17 +6,17 @@ import (
 	"go.uber.org/zap"
 )
 
-type Status string
+type BuildStatus string
 
 const (
-	StatusPlanning Status = "planning"
-	StatusError    Status = "error"
-	StatusBuilding Status = "building"
-	StatusActive   Status = "active"
-	StatusDeleting Status = "deleting"
+	BuildStatusPlanning BuildStatus = "planning"
+	BuildStatusError    BuildStatus = "error"
+	BuildStatusBuilding BuildStatus = "building"
+	BuildStatusActive   BuildStatus = "active"
+	BuildStatusDeleting BuildStatus = "deleting"
 )
 
-func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status Status, statusDescription string) {
+func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status BuildStatus, statusDescription string) {
 	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateBuildStatus, activities.UpdateBuildStatus{
 		BuildID:           bldID,
 		Status:            string(status),

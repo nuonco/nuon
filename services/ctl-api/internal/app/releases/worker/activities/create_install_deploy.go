@@ -2,10 +2,12 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type CreateInstallDeployRequest struct {
@@ -39,9 +41,13 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	err := a.db.WithContext(ctx).First(&installCmp, "install_id = ?", req.InstallID).
 		Association("InstallDeploys").
 		Append(&deploy)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("unable to create install deploy: %w", err)
 	}
+
 	a.installHooks.InstallDeployCreated(ctx, req.InstallID, deploy.ID)
 	return nil
 }
