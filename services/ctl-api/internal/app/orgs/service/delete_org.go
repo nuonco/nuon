@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"gorm.io/gorm"
 )
 
 //	@BasePath	/v1/orgs
@@ -23,6 +24,8 @@ import (
 //	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
 //	@Param			Authorization	header		string	true	"bearer auth token"
 //	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		401				{object}	stderr.ErrResponse
+//	@Failure		403				{object}	stderr.ErrResponse
 //	@Failure		404				{object}	stderr.ErrResponse
 //	@Failure		500				{object}	stderr.ErrResponse
 //	@Success		200				{boolean}	ok
@@ -55,7 +58,7 @@ func (s *service) deleteOrg(ctx context.Context, orgID string) error {
 		return fmt.Errorf("unable to delete org: %w", res.Error)
 	}
 	if res.RowsAffected != 1 {
-		return fmt.Errorf("org not found")
+		return fmt.Errorf("org not found: %w", gorm.ErrRecordNotFound)
 	}
 	return nil
 }

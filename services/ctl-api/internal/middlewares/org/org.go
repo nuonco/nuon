@@ -47,7 +47,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		orgID := ctx.Request.Header.Get(orgIDHeaderKey)
 		if orgID == "" {
-			ctx.Error(stderr.ErrUser{
+			ctx.Error(stderr.ErrAuthorization{
 				Err:         fmt.Errorf("required header %s not found", orgIDHeaderKey),
 				Description: fmt.Sprintf("please retry request with %s header", orgIDHeaderKey),
 			})
@@ -58,7 +58,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		org := app.Org{}
 		res := m.db.WithContext(ctx).First(&org, "id = ?", orgID)
 		if res.Error != nil {
-			ctx.Error(stderr.ErrUser{
+			ctx.Error(stderr.ErrAuthorization{
 				Err:         fmt.Errorf("org %s was not found", orgID),
 				Description: "please make sure org ID is set properly",
 			})

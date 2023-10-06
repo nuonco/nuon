@@ -15,7 +15,7 @@ func (s *Service) Steps(ctx context.Context, releaseID string) {
 		return
 	}
 	data := [][]string{
-		[]string{
+		{
 			"id",
 			"status",
 			"created at",
