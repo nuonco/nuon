@@ -2,8 +2,6 @@ package orgs
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -17,17 +15,17 @@ func (s *Service) Current(ctx context.Context, asJSON bool) {
 		return
 	}
 
-	if asJSON == true {
-		j, _ := json.Marshal(org)
-		fmt.Println(string(j))
-	} else {
-		view.Render([][]string{
-			[]string{"id", org.ID},
-			[]string{"name", org.Name},
-			[]string{"status", org.StatusDescription},
-			[]string{"created at", org.CreatedAt},
-			[]string{"updated at", org.UpdatedAt},
-			[]string{"created by", org.CreatedByID},
-		})
+	if asJSON {
+		ui.PrintJSON(org)
+		return
 	}
+
+	view.Render([][]string{
+		{"id", org.ID},
+		{"name", org.Name},
+		{"status", org.StatusDescription},
+		{"created at", org.CreatedAt},
+		{"updated at", org.UpdatedAt},
+		{"created by", org.CreatedByID},
+	})
 }

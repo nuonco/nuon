@@ -16,15 +16,12 @@ import (
 //	@Summary	get all components for all orgs
 //	@Schemes
 //	@Description	get all components
-//	@Tags			components/internal
+//	@Tags			components/admin
 //	@Accept			json
 //	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{array}		app.Component
+//	@Param			X-Nuon-Org-ID	header	string	true	"org ID"
+//	@Param			Authorization	header	string	true	"bearer auth token"
+//	@Success		200				{array}	app.Component
 //	@Router			/v1/components [get]
 func (s *service) GetAllComponents(ctx *gin.Context) {
 	components, err := s.getAllComponents(ctx)

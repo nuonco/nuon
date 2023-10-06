@@ -2,12 +2,11 @@ package builds
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/pterm/pterm"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 const (
@@ -16,7 +15,7 @@ const (
 )
 
 func (s *Service) Create(ctx context.Context, compID string, asJSON bool) {
-	if asJSON == true {
+	if asJSON {
 		newBuild, err := s.api.CreateComponentBuild(
 			ctx,
 			compID,
@@ -25,40 +24,43 @@ func (s *Service) Create(ctx context.Context, compID string, asJSON bool) {
 			},
 		)
 		if err != nil {
-			fmt.Printf("failed to create build: %s", err)
-			return
-		}
-		j, _ := json.Marshal(newBuild)
-		fmt.Println(string(j))
-	} else {
-		buildSpinner, _ := pterm.DefaultSpinner.Start("starting component build")
-		newBuild, err := s.api.CreateComponentBuild(
-			ctx,
-			compID,
-			&models.ServiceCreateComponentBuildRequest{
-				UseLatest: true,
-			},
-		)
-		if err != nil {
-			buildSpinner.Fail(err.Error() + "\n")
+			ui.PrintJSONError(err)
 			return
 		}
 
-		for {
-			build, err := s.api.GetComponentBuild(ctx, compID, newBuild.ID)
-			switch {
-			case err != nil:
-				buildSpinner.Fail(err.Error() + "\n")
-			case build.Status == statusError:
-				buildSpinner.Fail(fmt.Errorf("failed to create component build: %s", build.StatusDescription))
-				return
-			case build.Status == statusActive:
-				buildSpinner.Success(fmt.Sprintf("successfully created component build %s", build.ID))
-				return
-			default:
-				buildSpinner.UpdateText(fmt.Sprintf("%s component build", build.Status))
-			}
-			time.Sleep(5 * time.Second)
+		ui.PrintJSON(newBuild)
+		return
+	}
+
+	view := ui.NewCreateView("build", asJSON)
+	view.Start()
+	view.Update("starting component build")
+	newBuild, err := s.api.CreateComponentBuild(
+		ctx,
+		compID,
+		&models.ServiceCreateComponentBuildRequest{
+			UseLatest: true,
+		},
+	)
+	if err != nil {
+		view.Fail(err)
+		return
+	}
+
+	for {
+		build, err := s.api.GetComponentBuild(ctx, compID, newBuild.ID)
+		switch {
+		case err != nil:
+			view.Fail(err)
+		case build.Status == statusError:
+			view.Fail(fmt.Errorf("failed to create component build: %s", build.StatusDescription))
+			return
+		case build.Status == statusActive:
+			view.Success(fmt.Sprintf("successfully created component build %s", build.ID))
+			return
+		default:
+			view.Update(fmt.Sprintf("%s component build", build.Status))
 		}
+		time.Sleep(5 * time.Second)
 	}
 }

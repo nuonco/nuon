@@ -23,6 +23,8 @@ import (
 //	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
 //	@Param			Authorization	header		string	true	"bearer auth token"
 //	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		401				{object}	stderr.ErrResponse
+//	@Failure		403				{object}	stderr.ErrResponse
 //	@Failure		404				{object}	stderr.ErrResponse
 //	@Failure		500				{object}	stderr.ErrResponse
 //	@Success		200				{object}	app.Component
@@ -32,7 +34,7 @@ func (s *service) GetComponent(ctx *gin.Context) {
 
 	component, err := s.getComponent(ctx, componentID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get  component %s: %w", componentID, err))
+		ctx.Error(fmt.Errorf("unable to get component %s: %w", componentID, err))
 		return
 	}
 

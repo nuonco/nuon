@@ -15,9 +15,11 @@ type Route struct {
 }
 
 func (r *Route) RegisterRoutes(g *gin.Engine) error {
+	docs.SwaggerInfo.Schemes = []string{"https"}
 	switch r.cfg.Env {
 	case "development":
 		docs.SwaggerInfo.Host = "localhost:8081"
+		docs.SwaggerInfo.Schemes = []string{"http"}
 	case "prod":
 		docs.SwaggerInfo.Host = "ctl.prod.nuon.co"
 	case "stage":

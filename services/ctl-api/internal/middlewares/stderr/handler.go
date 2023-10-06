@@ -10,21 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type ErrUser struct {
-	Err         error
-	Description string
-}
-
-func (u ErrUser) Error() string {
-	return u.Err.Error()
-}
-
-type ErrResponse struct {
-	Error       string `json:"error"`
-	UserError   bool   `json:"user_error"`
-	Description string `json:"description"`
-}
-
 type middleware struct {
 	l *zap.Logger
 }
@@ -47,9 +32,29 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		var uErr ErrUser
 		if errors.As(err, &uErr) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
-				Error:       err.Error(),
+				Error:	     err.Error(),
 				UserError:   true,
 				Description: uErr.Description,
+			})
+			return
+		}
+
+		var authnErr ErrAuthentication
+		if errors.As(err, &authnErr) {
+			c.JSON(http.StatusUnauthorized, ErrResponse{
+				Error:	     err.Error(),
+				UserError:   true,
+				Description: authnErr.Description,
+			})
+			return
+		}
+
+		var authzErr ErrAuthorization
+		if errors.As(err, &authzErr) {
+			c.JSON(http.StatusForbidden, ErrResponse{
+				Error:	     err.Error(),
+				UserError:   true,
+				Description: authzErr.Description,
 			})
 			return
 		}
@@ -57,7 +62,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		// gorm not found errors are usually user errors
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, ErrResponse{
-				Error:       err.Error(),
+				Error:	     err.Error(),
 				UserError:   true,
 				Description: "not found",
 			})
@@ -66,7 +71,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
-				Error:       err.Error(),
+				Error:	     err.Error(),
 				UserError:   true,
 				Description: "duplicate key",
 			})
@@ -77,7 +82,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		var vErr validator.ValidationErrors
 		if errors.As(err, &vErr) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
-				Error:       err.Error(),
+				Error:	     err.Error(),
 				UserError:   true,
 				Description: "invalid request input",
 			})
@@ -85,7 +90,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusInternalServerError, ErrResponse{
-			Error:       err.Error(),
+			Error:	     err.Error(),
 			UserError:   true,
 			Description: err.Error(),
 		})
