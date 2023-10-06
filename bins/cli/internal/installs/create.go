@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon-go/models"
+	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/pterm/pterm"
 )
@@ -16,6 +17,12 @@ const (
 )
 
 func (s *Service) Create(ctx context.Context, appID, name, region, arn string, asJSON bool) {
+	appID, err := lookup.AppID(ctx, s.api, appID)
+	if err != nil {
+		ui.PrintError(err)
+		return
+	}
+
 	if asJSON {
 		install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 			Name: &name,
