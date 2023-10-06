@@ -27,6 +27,7 @@ type ComponentConfigConnection struct {
 	HelmComponentConfig            *HelmComponentConfig            `json:"helm,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	ExternalImageComponentConfig   *ExternalImageComponentConfig   `json:"external_image,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	DockerBuildComponentConfig     *DockerBuildComponentConfig     `json:"docker_build,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	JobComponentConfig             *JobComponentConfig             `json:"job,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (c *ComponentConfigConnection) BeforeCreate(tx *gorm.DB) error {

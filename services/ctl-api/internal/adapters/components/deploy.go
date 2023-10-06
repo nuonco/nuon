@@ -28,6 +28,10 @@ func (c *Adapter) FromDeploy(deploy *app.InstallDeploy, installDeploys []app.Ins
 		return c.ToExternalImageConfig(compCfg.ExternalImageComponentConfig, installDeploys)
 	}
 
+	if compCfg.JobComponentConfig != nil {
+		return c.ToJobConfig(compCfg.JobComponentConfig, installDeploys)
+	}
+
 	if compCfg.DockerBuildComponentConfig != nil {
 		return c.ToDockerBuildConfig(compCfg.DockerBuildComponentConfig,
 			installDeploys,
