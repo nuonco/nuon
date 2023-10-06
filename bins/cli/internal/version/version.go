@@ -10,6 +10,6 @@ func (s *Service) Version(ctx context.Context) {
 	view := ui.NewGetView()
 	version := "development"
 	view.Render([][]string{
-		[]string{"version", version},
+		{"version", version},
 	})
 }

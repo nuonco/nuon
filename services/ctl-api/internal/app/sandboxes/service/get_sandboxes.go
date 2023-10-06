@@ -15,7 +15,7 @@ import (
 //	@Summary	get all sandboxes
 //	@Schemes
 //	@Description	get all sandboxes
-//	@Tags			sandboxes/admin
+//	@Tags			sandboxes
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{array}	app.Sandbox

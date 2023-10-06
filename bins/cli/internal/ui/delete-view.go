@@ -10,11 +10,11 @@ type DeleteView struct {
 	id    string
 }
 
-func NewDeleteView(model, id string) *DeleteView {
+func NewDeleteView(model string, id string) *DeleteView {
 	return &DeleteView{
 		*NewSpinnerView(false),
-		model,
 		id,
+		model,
 	}
 }
 
@@ -24,4 +24,8 @@ func (v *DeleteView) Start() {
 
 func (v *DeleteView) Success() {
 	v.SpinnerView.Success(fmt.Sprintf("successfully deleted %s %s", v.model, v.id))
+}
+
+func (v *DeleteView) Fail(err error) {
+	v.SpinnerView.Fail(fmt.Errorf("failed to create %s: %w", v.model, err))
 }
