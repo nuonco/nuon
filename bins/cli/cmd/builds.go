@@ -29,7 +29,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 			svc.List(cmd.Context(), compID, PrintJSON)
 		},
 	}
-	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of a component to filter builds by")
+	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of a component to filter builds by")
 	listCmd.MarkFlagRequired("component-id")
 	buildsCmd.AddCommand(listCmd)
 
@@ -42,7 +42,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 			svc.Get(cmd.Context(), compID, buildID, PrintJSON)
 		},
 	}
-	getCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component whose build you want to view")
+	getCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of the component whose build you want to view")
 	getCmd.MarkFlagRequired("component-id")
 	getCmd.Flags().StringVarP(&buildID, "build-id", "b", "", "The ID of the build you want to view")
 	getCmd.MarkFlagRequired("build-id")
@@ -57,7 +57,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 			svc.Create(cmd.Context(), compID, PrintJSON)
 		},
 	}
-	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component you want to create a build for")
+	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of the component you want to create a build for")
 	createCmd.MarkFlagRequired("component-id")
 	buildsCmd.AddCommand(createCmd)
 

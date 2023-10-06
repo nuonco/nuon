@@ -5,15 +5,21 @@ import (
 	"strconv"
 
 	"github.com/nuonco/nuon-go/models"
+	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
+	appID, err := lookup.AppID(ctx, s.api, appID)
+	if err != nil {
+		ui.PrintError(err)
+		return
+	}
+
 	view := ui.NewListView()
 
 	var (
 		components []*models.AppComponent
-		err        error
 	)
 	if appID != "" {
 		components, err = s.api.GetAppComponents(ctx, appID)

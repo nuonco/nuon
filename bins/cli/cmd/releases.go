@@ -33,8 +33,8 @@ func (c *cli) releasesCmd() *cobra.Command {
 		},
 	}
 	// TODO(ja): update cobra so we can require either app-id or component-id?
-	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter releases by")
-	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of a component to filter releases by")
+	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter releases by")
+	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of a component to filter releases by")
 	listCmd.MarkFlagsMutuallyExclusive("app-id", "component-id")
 	releasesCmd.AddCommand(listCmd)
 
@@ -73,8 +73,8 @@ func (c *cli) releasesCmd() *cobra.Command {
 			svc.Create(cmd.Context(), compID, buildID, delay, installsPerStep, PrintJSON)
 		},
 	}
-	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component whose build you want to create a release for")
-	createCmd.Flags().StringVarP(&buildID, "build-id", "b", "", "The ID of the build you want to create a release for")
+	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of the component whose build you want to create a release for")
+	createCmd.Flags().StringVarP(&buildID, "build-id", "b", "latest", "The ID of the build you want to create a release for")
 	createCmd.MarkFlagsOneRequired("build-id", "component-id")
 	createCmd.Flags().StringVarP(&delay, "delay", "d", "10s", "The delay you want between each step")
 	createCmd.Flags().Int64VarP(&installsPerStep, "installs-per-step", "s", 10, "The number of deploys you want to execute each step. Set to 0 to deploy to all installs in parrallel")
