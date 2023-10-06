@@ -2,8 +2,6 @@ package installs
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -17,19 +15,19 @@ func (s *Service) Get(ctx context.Context, id string, asJSON bool) {
 		return
 	}
 
-	if asJSON == true {
-		j, _ := json.Marshal(install)
-		fmt.Println(string(j))
-	} else {
-		view.Render([][]string{
-			[]string{"id", install.ID},
-			[]string{"name", install.Name},
-			[]string{"created at", install.CreatedAt},
-			[]string{"updated at", install.UpdatedAt},
-			[]string{"created by", install.CreatedByID},
-			[]string{"status", install.StatusDescription},
-			[]string{"region", install.AwsAccount.Region},
-			[]string{"role", install.AwsAccount.IamRoleArn},
-		})
+	if asJSON {
+		ui.PrintJSON(install)
+		return
 	}
+
+	view.Render([][]string{
+		{"id", install.ID},
+		{"name", install.Name},
+		{"created at", install.CreatedAt},
+		{"updated at", install.UpdatedAt},
+		{"created by", install.CreatedByID},
+		{"status", install.StatusDescription},
+		{"region", install.AwsAccount.Region},
+		{"role", install.AwsAccount.IamRoleArn},
+	})
 }

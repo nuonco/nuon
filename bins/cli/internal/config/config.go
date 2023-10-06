@@ -57,9 +57,11 @@ func (cfg *Config) BindCobraFlags(cmd *cobra.Command) error {
 		name := strings.ReplaceAll(f.Name, "-", "_")
 		if !f.Changed && cfg.IsSet(name) {
 			val := cfg.Get(name)
+			//nolint:all
 			cmd.Flags().Set(f.Name, fmt.Sprintf("%v", val))
 		}
 	})
+
 	return nil
 }
 

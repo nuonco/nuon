@@ -18,11 +18,13 @@ import (
 //	@Schemes
 //	@Description	get sandbox releases
 //	@Param			sandbox_id	path	string	true	"sandbox ID"
-//	@Tags			sandboxes/admin
+//	@Tags			sandboxes
 //	@Accept			json
 //	@Produce		json
 //	@Param			Authorization	header		string	true	"bearer auth token"
 //	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		401				{object}	stderr.ErrResponse
+//	@Failure		403				{object}	stderr.ErrResponse
 //	@Failure		404				{object}	stderr.ErrResponse
 //	@Failure		500				{object}	stderr.ErrResponse
 //	@Success		200				{array}		app.SandboxRelease
