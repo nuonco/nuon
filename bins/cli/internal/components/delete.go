@@ -2,17 +2,15 @@ package components
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 func (s *Service) Delete(ctx context.Context, compID string, asJSON bool) {
-	if asJSON == true {
+	if asJSON {
 		res, err := s.api.DeleteComponent(ctx, compID)
 		if err != nil {
-			fmt.Printf("failed to delete component: %s", err)
+			ui.PrintJSONError(err)
 			return
 		}
 
@@ -21,16 +19,17 @@ func (s *Service) Delete(ctx context.Context, compID string, asJSON bool) {
 			Deleted bool   `json:"deleted"`
 		}
 		r := response{ID: compID, Deleted: res}
-		j, _ := json.Marshal(r)
-		fmt.Println(string(j))
-	} else {
-		view := ui.NewDeleteView("component", compID)
-
-		_, err := s.api.DeleteComponent(ctx, compID)
-		if err != nil {
-			view.Fail(err)
-			return
-		}
-		view.Success()
+		ui.PrintJSON(r)
+		return
 	}
+
+	view := ui.NewDeleteView("component", compID)
+	view.Start()
+
+	_, err := s.api.DeleteComponent(ctx, compID)
+	if err != nil {
+		view.Fail(err)
+		return
+	}
+	view.Success()
 }

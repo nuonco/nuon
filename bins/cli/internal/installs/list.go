@@ -2,18 +2,19 @@ package installs
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/nuonco/nuon-go/models"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 	view := ui.NewListView()
 
-	installs := []*models.AppInstall{}
-	err := error(nil)
+	var (
+		installs []*models.AppInstall
+		err      error
+	)
+
 	if appID == "" {
 		installs, err = s.api.GetAllInstalls(ctx)
 	} else {
@@ -24,26 +25,26 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 		return
 	}
 
-	if asJSON == true {
-		j, _ := json.Marshal(installs)
-		fmt.Println(string(j))
-	} else {
-		data := [][]string{
-			[]string{
-				"id",
-				"name",
-				"status",
-				"created at",
-			},
-		}
-		for _, install := range installs {
-			data = append(data, []string{
-				install.ID,
-				install.Name,
-				install.Status,
-				install.CreatedAt,
-			})
-		}
-		view.Render(data)
+	if asJSON {
+		ui.PrintJSON(installs)
+		return
 	}
+
+	data := [][]string{
+		{
+			"id",
+			"name",
+			"status",
+			"created at",
+		},
+	}
+	for _, install := range installs {
+		data = append(data, []string{
+			install.ID,
+			install.Name,
+			install.Status,
+			install.CreatedAt,
+		})
+	}
+	view.Render(data)
 }

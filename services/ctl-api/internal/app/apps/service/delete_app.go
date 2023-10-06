@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 //	@BasePath	/v1/apps
@@ -23,6 +24,8 @@ import (
 //	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
 //	@Param			Authorization	header		string	true	"bearer auth token"
 //	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		401				{object}	stderr.ErrResponse
+//	@Failure		403				{object}	stderr.ErrResponse
 //	@Failure		404				{object}	stderr.ErrResponse
 //	@Failure		500				{object}	stderr.ErrResponse
 //	@Success		200				{boolean}	true
@@ -54,7 +57,7 @@ func (s *service) deleteApp(ctx context.Context, appID string) error {
 	}
 
 	if res.RowsAffected < 1 {
-		return fmt.Errorf("app not found %s", appID)
+		return fmt.Errorf("app not found %s: %w", appID, gorm.ErrRecordNotFound)
 	}
 
 	return nil

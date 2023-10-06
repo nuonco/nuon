@@ -2,8 +2,6 @@ package builds
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -17,26 +15,26 @@ func (s *Service) Get(ctx context.Context, compID, buildID string, asJSON bool) 
 		return
 	}
 
-	if asJSON == true {
-		j, _ := json.Marshal(build)
-		fmt.Println(string(j))
-	} else {
-		view.Render([][]string{
-			[]string{"id", build.ID},
-			[]string{"status", build.Status},
-			[]string{"created at", build.CreatedAt},
-			[]string{"updated at", build.UpdatedAt},
-			[]string{"created by", build.CreatedByID},
-			[]string{"component id", build.ComponentConfigConnectionID},
-
-			[]string{"vcs connection id", build.VcsConnectionCommit.ID},
-			[]string{"commit sha", build.VcsConnectionCommit.Sha},
-			[]string{"commit author email", build.VcsConnectionCommit.AuthorEmail},
-			[]string{"commit author name", build.VcsConnectionCommit.AuthorName},
-			[]string{"commit created at", build.VcsConnectionCommit.CreatedAt},
-			[]string{"commit updated at", build.VcsConnectionCommit.UpdatedAt},
-			[]string{"commit created by", build.VcsConnectionCommit.CreatedByID},
-			[]string{"commit message", build.VcsConnectionCommit.Message},
-		})
+	if asJSON {
+		ui.PrintJSON(build)
+		return
 	}
+
+	view.Render([][]string{
+		{"id", build.ID},
+		{"status", build.Status},
+		{"created at", build.CreatedAt},
+		{"updated at", build.UpdatedAt},
+		{"created by", build.CreatedByID},
+		{"component id", build.ComponentConfigConnectionID},
+
+		{"vcs connection id", build.VcsConnectionCommit.ID},
+		{"commit sha", build.VcsConnectionCommit.Sha},
+		{"commit author email", build.VcsConnectionCommit.AuthorEmail},
+		{"commit author name", build.VcsConnectionCommit.AuthorName},
+		{"commit created at", build.VcsConnectionCommit.CreatedAt},
+		{"commit updated at", build.VcsConnectionCommit.UpdatedAt},
+		{"commit created by", build.VcsConnectionCommit.CreatedByID},
+		{"commit message", build.VcsConnectionCommit.Message},
+	})
 }
