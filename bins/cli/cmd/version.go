@@ -1,19 +1,17 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/version"
 	"github.com/spf13/cobra"
 )
 
-func newVersionCmd(bindConfig config.BindCobraFunc, versionService *version.Service) *cobra.Command {
+func (c *cli) versionCmd() *cobra.Command {
 	versionCmd := &cobra.Command{
-		Use: "version",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return bindConfig(cmd)
-		},
+		Use:               "version",
+		PersistentPreRunE: c.persistentPreRunE,
 		Run: func(cmd *cobra.Command, _ []string) {
-			versionService.Version(cmd.Context())
+			svc := version.New()
+			svc.Version(cmd.Context())
 		},
 	}
 

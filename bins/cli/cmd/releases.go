@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/releases"
 	"github.com/spf13/cobra"
 )
 
-func newReleasesCmd(bindConfig config.BindCobraFunc, releasesService *releases.Service) *cobra.Command {
+func (c *cli) releasesCmd() *cobra.Command {
 	var (
 		appID,
 		compID,
@@ -14,16 +13,13 @@ func newReleasesCmd(bindConfig config.BindCobraFunc, releasesService *releases.S
 		releaseID,
 		delay string
 		installsPerStep int64
-		// installID string
 	)
 
 	releasesCmd := &cobra.Command{
-		Use:   "releases",
-		Short: "Manage releases",
-		Long:  "Manages releases of app components to installs",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return bindConfig(cmd)
-		},
+		Use:               "releases",
+		Short:             "Manage releases",
+		Long:              "Manages releases of app components to installs",
+		PersistentPreRunE: c.persistentPreRunE,
 	}
 
 	listCmd := &cobra.Command{
@@ -31,8 +27,9 @@ func newReleasesCmd(bindConfig config.BindCobraFunc, releasesService *releases.S
 		Aliases: []string{"ls"},
 		Short:   "List releases",
 		Long:    "List releases of a component",
-		Run: func(cmd *cobra.Command, args []string) {
-			releasesService.List(cmd.Context(), appID, compID, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := releases.New(c.apiClient)
+			svc.List(cmd.Context(), appID, compID, PrintJSON)
 		},
 	}
 	// TODO(ja): update cobra so we can require either app-id or component-id?
@@ -45,8 +42,9 @@ func newReleasesCmd(bindConfig config.BindCobraFunc, releasesService *releases.S
 		Use:   "get",
 		Short: "Get release",
 		Long:  "Get an app release by ID",
-		Run: func(cmd *cobra.Command, args []string) {
-			releasesService.Get(cmd.Context(), releaseID, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := releases.New(c.apiClient)
+			svc.Get(cmd.Context(), releaseID, PrintJSON)
 		},
 	}
 	getCmd.Flags().StringVarP(&releaseID, "release-id", "r", "", "The ID of the release you want to view")
@@ -57,8 +55,9 @@ func newReleasesCmd(bindConfig config.BindCobraFunc, releasesService *releases.S
 		Use:   "steps",
 		Short: "Get release steps",
 		Long:  "Get the steps for a release by release ID",
-		Run: func(cmd *cobra.Command, args []string) {
-			releasesService.Steps(cmd.Context(), releaseID)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := releases.New(c.apiClient)
+			svc.Steps(cmd.Context(), releaseID)
 		},
 	}
 	stepsCmd.Flags().StringVarP(&releaseID, "release-id", "r", "", "The ID of the release whose steps you want to view")
@@ -69,8 +68,9 @@ func newReleasesCmd(bindConfig config.BindCobraFunc, releasesService *releases.S
 		Use:   "create",
 		Short: "Create release",
 		Long:  "Create a release of an app component",
-		Run: func(cmd *cobra.Command, args []string) {
-			releasesService.Create(cmd.Context(), compID, buildID, delay, installsPerStep, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := releases.New(c.apiClient)
+			svc.Create(cmd.Context(), compID, buildID, delay, installsPerStep, PrintJSON)
 		},
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component whose build you want to create a release for")
@@ -81,13 +81,13 @@ func newReleasesCmd(bindConfig config.BindCobraFunc, releasesService *releases.S
 	releasesCmd.AddCommand(createCmd)
 
 	// logsCmd := &cobra.Command{
-	// 	Use:   "logs",
-	// 	Short: "See release logs",
-	// 	Long:  "See release logs for an app install",
-	// 	Run: func(cmd *cobra.Command, args []string) {
-	// 		ui.Line(cmd.Context(), "Not implemented")
-	// 		nil
-	// 	},
+	//	Use:   "logs",
+	//	Short: "See release logs",
+	//	Long:  "See release logs for an app install",
+	//	Run: func(cmd *cobra.Command, args []string) {
+	//		ui.Line(cmd.Context(), "Not implemented")
+	//		nil
+	//	},
 	// }
 	// logsCmd.PersistentFlags().StringVar(&releaseID, "id", "", "Release ID")
 	// logsCmd.MarkPersistentFlagRequired("id")

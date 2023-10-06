@@ -2,21 +2,18 @@ package cmd
 
 import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/components"
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
-func newComponentsCmd(bindConfig config.BindCobraFunc, componentsService *components.Service) *cobra.Command {
+func (c *cli) componentsCmd() *cobra.Command {
 	var (
 		id string
 	)
 
 	componentsCmd := &cobra.Command{
-		Use:   "components",
-		Short: "Manage app components",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return bindConfig(cmd)
-		},
+		Use:               "components",
+		Short:             "Manage app components",
+		PersistentPreRunE: c.persistentPreRunE,
 	}
 
 	appID := ""
@@ -25,8 +22,9 @@ func newComponentsCmd(bindConfig config.BindCobraFunc, componentsService *compon
 		Aliases: []string{"ls"},
 		Short:   "List components",
 		Long:    "List your app's components",
-		Run: func(cmd *cobra.Command, args []string) {
-			componentsService.List(cmd.Context(), appID, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := components.New(c.apiClient)
+			svc.List(cmd.Context(), appID, PrintJSON)
 		},
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter components by")
@@ -36,8 +34,9 @@ func newComponentsCmd(bindConfig config.BindCobraFunc, componentsService *compon
 		Use:   "get",
 		Short: "Get component",
 		Long:  "Get app component by ID",
-		Run: func(cmd *cobra.Command, args []string) {
-			componentsService.Get(cmd.Context(), id, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := components.New(c.apiClient)
+			svc.Get(cmd.Context(), id, PrintJSON)
 		},
 	}
 	getCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID of the component you want to view")
@@ -48,8 +47,9 @@ func newComponentsCmd(bindConfig config.BindCobraFunc, componentsService *compon
 		Use:   "delete",
 		Short: "Delete component",
 		Long:  "Delete app component by ID",
-		Run: func(cmd *cobra.Command, args []string) {
-			componentsService.Delete(cmd.Context(), id, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := components.New(c.apiClient)
+			svc.Delete(cmd.Context(), id, PrintJSON)
 		},
 	}
 	deleteCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID of the component you want to delete")

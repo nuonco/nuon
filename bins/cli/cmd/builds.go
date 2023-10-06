@@ -2,24 +2,21 @@ package cmd
 
 import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/builds"
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
 // newBuildsCmd constructs a new builds command
-func newBuildsCmd(bindConfig config.BindCobraFunc, buildsService *builds.Service) *cobra.Command {
+func (c *cli) buildsCmd() *cobra.Command {
 	var (
 		buildID string
 		compID  string
 	)
 
 	buildsCmd := &cobra.Command{
-		Use:   "builds",
-		Short: "Manage component builds",
-		Long:  "Manage builds of your app components",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return bindConfig(cmd)
-		},
+		Use:               "builds",
+		Short:             "Manage component builds",
+		Long:              "Manage builds of your app components",
+		PersistentPreRunE: c.persistentPreRunE,
 	}
 
 	listCmd := &cobra.Command{
@@ -27,8 +24,9 @@ func newBuildsCmd(bindConfig config.BindCobraFunc, buildsService *builds.Service
 		Aliases: []string{"ls"},
 		Short:   "List builds",
 		Long:    "List your app's builds",
-		Run: func(cmd *cobra.Command, args []string) {
-			buildsService.List(cmd.Context(), compID, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := builds.New(c.apiClient)
+			svc.List(cmd.Context(), compID, PrintJSON)
 		},
 	}
 	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of a component to filter builds by")
@@ -39,8 +37,9 @@ func newBuildsCmd(bindConfig config.BindCobraFunc, buildsService *builds.Service
 		Use:   "get",
 		Short: "Get component",
 		Long:  "Get app component by ID",
-		Run: func(cmd *cobra.Command, args []string) {
-			buildsService.Get(cmd.Context(), compID, buildID, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := builds.New(c.apiClient)
+			svc.Get(cmd.Context(), compID, buildID, PrintJSON)
 		},
 	}
 	getCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component whose build you want to view")
@@ -53,8 +52,9 @@ func newBuildsCmd(bindConfig config.BindCobraFunc, buildsService *builds.Service
 		Use:   "create",
 		Short: "Create a build",
 		Long:  "Create a build of an app component",
-		Run: func(cmd *cobra.Command, args []string) {
-			buildsService.Create(cmd.Context(), compID, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := builds.New(c.apiClient)
+			svc.Create(cmd.Context(), compID, PrintJSON)
 		},
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID of the component you want to create a build for")
