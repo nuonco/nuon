@@ -168,6 +168,27 @@ func (s *componentConfigsSuite) TestCreateExternalImageComponentConfig() {
 	})
 }
 
+func (s *componentConfigsSuite) TestCreateJobComponentConfig() {
+	s.T().Run("success", func(t *testing.T) {
+		req := generics.GetFakeObj[*models.ServiceCreateJobComponentConfigRequest]()
+		imageURL := "kennethreitz/httpbin"
+		req.ImageURL = &imageURL
+		tag := "latest"
+		req.Tag = &tag
+		req.Cmd = ""
+
+		cfg, err := s.apiClient.CreateJobComponentConfig(s.ctx, s.compID, req)
+		require.Nil(t, err)
+		require.NotNil(t, cfg)
+	})
+
+	s.T().Run("errors on invalid parameters", func(t *testing.T) {
+		cfg, err := s.apiClient.CreateJobComponentConfig(s.ctx, s.compID, &models.ServiceCreateJobComponentConfigRequest{})
+		require.NotNil(t, err)
+		require.Nil(t, cfg)
+	})
+}
+
 func (s *componentConfigsSuite) TestComponentConfigs() {
 	s.T().Run("successfully returns one component config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
