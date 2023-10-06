@@ -28,6 +28,7 @@ func (c *cli) rootCmd() *cobra.Command {
 		c.installsCmd(),
 		c.releasesCmd(),
 		c.buildsCmd(),
+		c.orgsCmd(),
 		c.versionCmd(),
 	}
 	for _, cmd := range cmds {
