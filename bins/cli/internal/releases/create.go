@@ -14,12 +14,15 @@ const (
 	statusActive = "active"
 )
 
+var errMissingInput = fmt.Errorf("need either a build ID or a component ID")
+
 func (s *Service) Create(ctx context.Context, compID, buildID, delay string, installsPerStep int64, asJSON bool) {
 	view := ui.NewCreateView("release", asJSON)
 	view.Start()
 
 	if buildID == "" && compID == "" {
-		view.Fail(fmt.Errorf("need either a build ID or a component ID"))
+		view.Fail(errMissingInput)
+		return
 	}
 
 	req := &models.ServiceCreateComponentReleaseRequest{

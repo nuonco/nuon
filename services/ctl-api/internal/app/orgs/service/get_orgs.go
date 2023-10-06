@@ -22,6 +22,8 @@ import (
 //	@Produce		json
 //	@Param			Authorization	header		string	true	"bearer auth token"
 //	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		401				{object}	stderr.ErrResponse
+//	@Failure		403				{object}	stderr.ErrResponse
 //	@Failure		404				{object}	stderr.ErrResponse
 //	@Failure		500				{object}	stderr.ErrResponse
 //	@Success		200				{array}		app.Org

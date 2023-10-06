@@ -2,8 +2,6 @@ package components
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -18,18 +16,18 @@ func (s *Service) Get(ctx context.Context, compID string, asJSON bool) {
 		return
 	}
 
-	if asJSON == true {
-		j, _ := json.Marshal(component)
-		fmt.Println(string(j))
-	} else {
-		view.Render([][]string{
-			[]string{"id", component.ID},
-			[]string{"name", component.Name},
-			[]string{"created at", component.CreatedAt},
-			[]string{"updated at", component.UpdatedAt},
-			[]string{"created by", component.CreatedByID},
-			[]string{"app id ", component.AppID},
-			[]string{"config versions", strconv.Itoa(int(component.ConfigVersions))},
-		})
+	if asJSON {
+		ui.PrintJSON(component)
+		return
 	}
+
+	view.Render([][]string{
+		{"id", component.ID},
+		{"name", component.Name},
+		{"created at", component.CreatedAt},
+		{"updated at", component.UpdatedAt},
+		{"created by", component.CreatedByID},
+		{"app id ", component.AppID},
+		{"config versions", strconv.Itoa(int(component.ConfigVersions))},
+	})
 }

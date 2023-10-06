@@ -28,7 +28,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 		token, err := jwtmiddleware.AuthHeaderTokenExtractor(ctx.Request)
 		if err != nil {
-			ctx.Error(stderr.ErrUser{
+			ctx.Error(stderr.ErrAuthentication{
 				Err:         err,
 				Description: "Please make sure you set the -H Auth:Bearer <token> header",
 			})
@@ -37,7 +37,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		if token == "" {
-			ctx.Error(stderr.ErrUser{
+			ctx.Error(stderr.ErrAuthentication{
 				Err:         fmt.Errorf("auth token was empty"),
 				Description: "Please make sure you set the -H Auth:Bearer <token> header",
 			})
@@ -61,9 +61,9 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		// new token, so validate the token
 		claims, err := m.validateToken(ctx, token)
 		if err != nil {
-			ctx.Error(stderr.ErrUser{
+			ctx.Error(stderr.ErrAuthentication{
 				Err:         err,
-				Description: "Please sure the token is valid",
+				Description: "Please make sure the token is valid, and not expired.",
 			})
 			ctx.Abort()
 			return

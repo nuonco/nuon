@@ -2,8 +2,6 @@ package releases
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -18,18 +16,18 @@ func (s *Service) Get(ctx context.Context, releaseID string, asJSON bool) {
 		return
 	}
 
-	if asJSON == true {
-		j, _ := json.Marshal(release)
-		fmt.Println(string(j))
-	} else {
-		view.Render([][]string{
-			[]string{"id", release.ID},
-			[]string{"status", release.Status},
-			[]string{"created at", release.CreatedAt},
-			[]string{"updated at", release.UpdatedAt},
-			[]string{"created by", release.CreatedByID},
-			[]string{"build id", release.BuildID},
-			[]string{"total steps", strconv.Itoa(int(release.TotalReleaseSteps))},
-		})
+	if asJSON {
+		ui.PrintJSON(release)
+		return
 	}
+
+	view.Render([][]string{
+		{"id", release.ID},
+		{"status", release.Status},
+		{"created at", release.CreatedAt},
+		{"updated at", release.UpdatedAt},
+		{"created by", release.CreatedByID},
+		{"build id", release.BuildID},
+		{"total steps", strconv.Itoa(int(release.TotalReleaseSteps))},
+	})
 }
