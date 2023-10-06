@@ -30,7 +30,7 @@ func (c *cli) installsCmd() *cobra.Command {
 			svc.List(cmd.Context(), appID, PrintJSON)
 		},
 	}
-	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter installs by")
+	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
 	installsCmds.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
@@ -42,7 +42,7 @@ func (c *cli) installsCmd() *cobra.Command {
 			svc.Get(cmd.Context(), id, PrintJSON)
 		},
 	}
-	getCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")
+	getCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	getCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(getCmd)
 
@@ -55,7 +55,7 @@ func (c *cli) installsCmd() *cobra.Command {
 			svc.Create(cmd.Context(), appID, name, region, arn, PrintJSON)
 		},
 	}
-	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of the app to create this install for")
+	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
 	createCmd.MarkFlagRequired("app-id")
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name you want to give this install")
 	createCmd.MarkFlagRequired("name")
@@ -74,7 +74,7 @@ func (c *cli) installsCmd() *cobra.Command {
 			svc.Delete(cmd.Context(), id, PrintJSON)
 		},
 	}
-	deleteCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")
+	deleteCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	deleteCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(deleteCmd)
 

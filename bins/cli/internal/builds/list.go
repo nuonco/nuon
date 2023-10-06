@@ -3,10 +3,17 @@ package builds
 import (
 	"context"
 
+	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 func (s *Service) List(ctx context.Context, compID string, asJSON bool) {
+	compID, err := lookup.ComponentID(ctx, s.api, compID)
+	if err != nil {
+		ui.PrintError(err)
+		return
+	}
+
 	view := ui.NewListView()
 
 	builds, err := s.api.GetComponentBuilds(ctx, compID)
