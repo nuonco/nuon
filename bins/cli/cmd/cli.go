@@ -27,10 +27,6 @@ func (c *cli) persistentPreRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	c.cfg.BindCobraFlags(cmd)
-
-	if err := c.autoSetOrgID(); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -46,24 +42,6 @@ func (c *cli) initAPIClient() error {
 	}
 
 	c.apiClient = api
-	return nil
-}
-
-func (c *cli) autoSetOrgID() error {
-	if c.cfg.OrgID != "" {
-		return nil
-	}
-
-	orgs, err := c.apiClient.GetOrgs(c.ctx)
-	if err != nil {
-		return fmt.Errorf("error fetching orgs from api to initialize command: %w", err)
-	}
-	if len(orgs) != 1 {
-		return nil
-	}
-
-	c.cfg.OrgID = orgs[0].ID
-	c.apiClient.SetOrgID(c.cfg.OrgID)
 	return nil
 }
 
