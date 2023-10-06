@@ -19,6 +19,7 @@ env:
   GITHUB_APP_ID: !!string 261597
   AUTH0_ISSUER_URL: "https://nuon.us.auth0.com/"
   AUTH0_AUDIENCE: "api.nuon.co"
+  AUTH0_CLIENT_ID: 7VLjCLy25IQVWx7yMLgp15x5IkXDS6Vr
   DEV_ENABLE_WORKERS_DRY_RUN: true
   DEV_DRY_RUN_SLEEP: 5s
 local_env:
