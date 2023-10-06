@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	defaultFilePath string = "~/.nuon"
-	defaultAPIURL   string = "https://ctl.prod.nuon.co"
+	defaultFilePath         string = "~/.nuon"
+	defaultAPIURL           string = "https://ctl.prod.nuon.co"
+	defaultConfigFileEnvVar string = "NUON_CONFIG_FILE"
 )
 
 // config holds config values, read from the `~/.nuon` config file and env vars.
@@ -56,6 +57,9 @@ func (c *Config) readConfigFile(customFP string) error {
 	cfgFP := defaultFilePath
 	if customFP != "" {
 		cfgFP = customFP
+	}
+	if os.Getenv(defaultConfigFileEnvVar) != "" {
+		cfgFP = os.Getenv(defaultConfigFileEnvVar)
 	}
 
 	var err error
