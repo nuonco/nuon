@@ -4,10 +4,17 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 func (s *Service) Get(ctx context.Context, compID string, asJSON bool) {
+	compID, err := lookup.ComponentID(ctx, s.api, compID)
+	if err != nil {
+		ui.PrintError(err)
+		return
+	}
+
 	view := ui.NewGetView()
 
 	component, err := s.api.GetComponent(ctx, compID)
