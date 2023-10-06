@@ -65,6 +65,7 @@ type Config struct {
 	// auth 0 config
 	Auth0IssuerURL string `config:"auth0_issuer_url"`
 	Auth0Audience  string `config:"auth0_audience"`
+	Auth0ClientID  string `config:"auth0_client_id"`
 
 	// flags for controlling the background workers
 	DevEnableWorkersDryRun bool          `config:"dev_enable_workers_dry_run"`
