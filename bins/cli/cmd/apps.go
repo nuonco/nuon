@@ -33,8 +33,7 @@ func (c *cli) appsCmd() *cobra.Command {
 			svc.Get(cmd.Context(), appID, PrintJSON)
 		},
 	}
-	// TODO: Update API to support getting app by name and add a flag for that.
-	getCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app")
+	getCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	getCmd.MarkFlagRequired("app-id")
 	appsCmd.AddCommand(getCmd)
 

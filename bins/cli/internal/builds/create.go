@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon-go/models"
+	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
@@ -15,6 +16,12 @@ const (
 )
 
 func (s *Service) Create(ctx context.Context, compID string, asJSON bool) {
+	compID, err := lookup.ComponentID(ctx, s.api, compID)
+	if err != nil {
+		ui.PrintError(err)
+		return
+	}
+
 	if asJSON {
 		newBuild, err := s.api.CreateComponentBuild(
 			ctx,
