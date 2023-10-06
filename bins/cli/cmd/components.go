@@ -27,7 +27,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 			svc.List(cmd.Context(), appID, PrintJSON)
 		},
 	}
-	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter components by")
+	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter components by")
 	componentsCmd.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
@@ -39,7 +39,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 			svc.Get(cmd.Context(), id, PrintJSON)
 		},
 	}
-	getCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID of the component you want to view")
+	getCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID or name of the component you want to view")
 	getCmd.MarkFlagRequired("component-id")
 	componentsCmd.AddCommand(getCmd)
 
@@ -52,7 +52,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 			svc.Delete(cmd.Context(), id, PrintJSON)
 		},
 	}
-	deleteCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID of the component you want to delete")
+	deleteCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID or name of the component you want to delete")
 	deleteCmd.MarkFlagRequired("id")
 	componentsCmd.AddCommand(deleteCmd)
 

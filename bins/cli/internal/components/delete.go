@@ -3,10 +3,17 @@ package components
 import (
 	"context"
 
+	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 func (s *Service) Delete(ctx context.Context, compID string, asJSON bool) {
+	compID, err := lookup.ComponentID(ctx, s.api, compID)
+	if err != nil {
+		ui.PrintError(err)
+		return
+	}
+
 	if asJSON {
 		res, err := s.api.DeleteComponent(ctx, compID)
 		if err != nil {
@@ -26,7 +33,7 @@ func (s *Service) Delete(ctx context.Context, compID string, asJSON bool) {
 	view := ui.NewDeleteView("component", compID)
 	view.Start()
 
-	_, err := s.api.DeleteComponent(ctx, compID)
+	_, err = s.api.DeleteComponent(ctx, compID)
 	if err != nil {
 		view.Fail(err)
 		return
