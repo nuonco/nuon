@@ -19,7 +19,7 @@ func (c *cli) rootCmd() *cobra.Command {
 	}
 
 	rootCmd.PersistentFlags().BoolVarP(&PrintJSON, "json", "j", false, "print output as json")
-	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "f", "~/.nuon", "path to custom config file")
+	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "f", "~/.nuon", "path to custom config file. Can also be set using the NUON_CONFIG_FILE env var.")
 
 	cmds := []*cobra.Command{
 		c.appsCmd(),
