@@ -26,6 +26,10 @@ func (c *Adapter) FromBuild(build *app.ComponentBuild) (*componentv1.Component, 
 		return c.ToExternalImageConfig(compCfg.ExternalImageComponentConfig, nil)
 	}
 
+	if compCfg.JobComponentConfig != nil {
+		return c.ToJobConfig(compCfg.JobComponentConfig, nil)
+	}
+
 	if compCfg.DockerBuildComponentConfig != nil {
 		return c.ToDockerBuildConfig(compCfg.DockerBuildComponentConfig,
 			nil,
