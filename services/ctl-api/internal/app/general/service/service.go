@@ -5,6 +5,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -14,12 +15,14 @@ type service struct {
 	l              *zap.Logger
 	db             *gorm.DB
 	mw             metrics.Writer
+	cfg            *internal.Config
 	temporalClient temporal.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/metrics", s.PublishMetrics)
 	api.GET("/v1/general/current-user", s.GetCurrentUser)
+	api.GET("/v1/general/cli-config", s.GetCLIConfig)
 	return nil
 }
 
@@ -28,12 +31,13 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(v *validator.Validate, db *gorm.DB, mw metrics.Writer, l *zap.Logger, temporalClient temporal.Client) *service {
+func New(v *validator.Validate, db *gorm.DB, mw metrics.Writer, l *zap.Logger, temporalClient temporal.Client, cfg *internal.Config) *service {
 	return &service{
 		l:              l,
 		v:              v,
 		mw:             mw,
 		db:             db,
 		temporalClient: temporalClient,
+		cfg:            cfg,
 	}
 }
