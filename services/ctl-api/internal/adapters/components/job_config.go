@@ -1,0 +1,25 @@
+package components
+
+import (
+	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
+	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"google.golang.org/protobuf/types/known/durationpb"
+)
+
+func (c *Adapter) ToJobConfig(cfg *app.JobComponentConfig, connections []app.InstallDeploy) (*componentv1.Component, error) {
+	return &componentv1.Component{
+		Id: cfg.ID,
+		BuildCfg: &buildv1.Config{
+			Timeout: durationpb.New(defaultBuildTimeout),
+			Cfg: &buildv1.Config_JobConfig{
+				JobConfig: &buildv1.JobConfig{
+					Tag:         cfg.Tag,
+					OciImageUrl: cfg.ImageURL,
+					Cmd:         cfg.Cmd,
+				},
+			},
+		},
+		Connections: c.toConnections(connections),
+	}, nil
+}
