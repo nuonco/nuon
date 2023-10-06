@@ -5,6 +5,7 @@ package build.v1;
 import "build/v1/docker.proto";
 import "build/v1/external_image.proto";
 import "build/v1/helm_chart.proto";
+import "build/v1/job.proto";
 import "build/v1/noop.proto";
 import "build/v1/terraform_module.proto";
 import "google/protobuf/duration.proto";
@@ -23,5 +24,6 @@ message Config {
     build.v1.NoopConfig noop = 4;
     build.v1.TerraformModuleConfig terraform_module_cfg = 5;
     build.v1.HelmChartConfig helm_chart_cfg = 6;
+    build.v1.JobConfig job_config = 7;
   }
 }

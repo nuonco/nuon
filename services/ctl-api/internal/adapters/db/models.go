@@ -34,6 +34,7 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		&app.HelmComponentConfig{},
 		&app.TerraformModuleComponentConfig{},
 		&app.DockerBuildComponentConfig{},
+		&app.JobComponentConfig{},
 		&app.ExternalImageComponentConfig{},
 		&app.ConnectedGithubVCSConfig{},
 		&app.PublicGitVCSConfig{},
