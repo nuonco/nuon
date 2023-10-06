@@ -1,26 +1,23 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
 	"github.com/spf13/cobra"
 )
 
-func newInstallsCmd(bindConfig config.BindCobraFunc, installsService *installs.Service) *cobra.Command {
+func (c *cli) installsCmd() *cobra.Command {
 	var (
 		id     string
 		name   string
 		arn    string
 		region string
-		appID  string = ""
+		appID  string
 	)
 
 	installsCmds := &cobra.Command{
-		Use:   "installs",
-		Short: "Manage app installs",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return bindConfig(cmd)
-		},
+		Use:               "installs",
+		Short:             "Manage app installs",
+		PersistentPreRunE: c.persistentPreRunE,
 	}
 
 	listCmd := &cobra.Command{
@@ -28,8 +25,9 @@ func newInstallsCmd(bindConfig config.BindCobraFunc, installsService *installs.S
 		Aliases: []string{"ls"},
 		Short:   "List installs",
 		Long:    "List all your app's installs",
-		Run: func(cmd *cobra.Command, args []string) {
-			installsService.List(cmd.Context(), appID, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient)
+			svc.List(cmd.Context(), appID, PrintJSON)
 		},
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of an app to filter installs by")
@@ -39,8 +37,9 @@ func newInstallsCmd(bindConfig config.BindCobraFunc, installsService *installs.S
 		Use:   "get",
 		Short: "Get an install",
 		Long:  "Get an install by ID",
-		Run: func(cmd *cobra.Command, args []string) {
-			installsService.Get(cmd.Context(), id, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient)
+			svc.Get(cmd.Context(), id, PrintJSON)
 		},
 	}
 	getCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")
@@ -51,8 +50,9 @@ func newInstallsCmd(bindConfig config.BindCobraFunc, installsService *installs.S
 		Use:   "create",
 		Short: "Create an install",
 		Long:  "Create a new install of your app",
-		Run: func(cmd *cobra.Command, args []string) {
-			installsService.Create(cmd.Context(), appID, name, region, arn, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient)
+			svc.Create(cmd.Context(), appID, name, region, arn, PrintJSON)
 		},
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID of the app to create this install for")
@@ -69,8 +69,9 @@ func newInstallsCmd(bindConfig config.BindCobraFunc, installsService *installs.S
 		Use:   "delete",
 		Short: "Delete install",
 		Long:  "Delete an install by ID",
-		Run: func(cmd *cobra.Command, args []string) {
-			installsService.Delete(cmd.Context(), id, PrintJSON)
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient)
+			svc.Delete(cmd.Context(), id, PrintJSON)
 		},
 	}
 	deleteCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to view")
