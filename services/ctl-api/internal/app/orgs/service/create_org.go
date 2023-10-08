@@ -68,7 +68,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Created(ctx, org.ID)
+	s.hooks.Created(ctx, org.ID, org.SandboxMode)
 	ctx.JSON(http.StatusCreated, org)
 }
 
@@ -80,7 +80,7 @@ func (s *service) createOrg(ctx context.Context, userID string, req *CreateOrgRe
 		SandboxMode:       req.UseSandboxMode,
 		CustomCert:        req.UseCustomCert,
 	}
-	if s.cfg.DevEnableWorkersDryRun {
+	if s.cfg.ForceSandboxMode {
 		org.SandboxMode = true
 	}
 

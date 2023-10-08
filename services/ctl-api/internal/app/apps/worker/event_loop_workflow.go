@@ -15,11 +15,16 @@ func EventLoopWorkflowID(appID string) string {
 	return fmt.Sprintf("%s-event-loop", appID)
 }
 
-func (w *Workflows) AppEventLoop(ctx workflow.Context, appID string) error {
+type AppEventLoopRequest struct {
+	AppID       string
+	SandboxMode bool
+}
+
+func (w *Workflows) AppEventLoop(ctx workflow.Context, req AppEventLoopRequest) error {
 	l := zap.L()
 
 	finished := false
-	signalChan := workflow.GetSignalChannel(ctx, appID)
+	signalChan := workflow.GetSignalChannel(ctx, req.AppID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
 		var signal Signal
@@ -35,23 +40,23 @@ func (w *Workflows) AppEventLoop(ctx workflow.Context, appID string) error {
 
 		switch signal.Operation {
 		case OperationPollDependencies:
-			if err := w.pollDependencies(ctx, appID); err != nil {
+			if err := w.pollDependencies(ctx, req.AppID); err != nil {
 				l.Info("unable to poll app dependencies: %w", zap.Error(err))
 			}
 		case OperationProvision:
-			if err := w.provision(ctx, appID, signal.DryRun); err != nil {
+			if err := w.provision(ctx, req.AppID, req.SandboxMode); err != nil {
 				l.Info("unable to provision app: %w", zap.Error(err))
 			}
 		case OperationReprovision:
-			if err := w.reprovision(ctx, appID, signal.DryRun); err != nil {
+			if err := w.reprovision(ctx, req.AppID, req.SandboxMode); err != nil {
 				l.Info("unable to reprovision app: %w", zap.Error(err))
 			}
 		case OperationUpdateSandbox:
-			if err := w.updateSandbox(ctx, appID, signal.SandboxReleaseID, signal.DryRun); err != nil {
+			if err := w.updateSandbox(ctx, req.AppID, signal.SandboxReleaseID, req.SandboxMode); err != nil {
 				l.Info("unable to provision app: %w", zap.Error(err))
 			}
 		case OperationDeprovision:
-			if err := w.deprovision(ctx, appID, signal.DryRun); err != nil {
+			if err := w.deprovision(ctx, req.AppID, req.SandboxMode); err != nil {
 				l.Info("unable to deprovision app: %w", zap.Error(err))
 			}
 			finished = true

@@ -15,11 +15,16 @@ func EventLoopWorkflowID(componentID string) string {
 	return fmt.Sprintf("%s-event-loop", componentID)
 }
 
-func (w *Workflows) ComponentEventLoop(ctx workflow.Context, appID string) error {
+type ComponentEventLoopRequest struct {
+	ComponentID string
+	SandboxMode bool
+}
+
+func (w *Workflows) ComponentEventLoop(ctx workflow.Context, req ComponentEventLoopRequest) error {
 	l := zap.L()
 
 	finished := false
-	signalChan := workflow.GetSignalChannel(ctx, appID)
+	signalChan := workflow.GetSignalChannel(ctx, req.ComponentID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
 		var signal Signal
@@ -35,15 +40,15 @@ func (w *Workflows) ComponentEventLoop(ctx workflow.Context, appID string) error
 
 		switch signal.Operation {
 		case OperationPollDependencies:
-			if err := w.pollDependencies(ctx, appID); err != nil {
+			if err := w.pollDependencies(ctx, req.ComponentID); err != nil {
 				l.Info("unable to poll app status for readiness: %w", zap.Error(err))
 			}
 		case OperationBuild:
-			if err := w.build(ctx, appID, signal.BuildID, signal.DryRun); err != nil {
+			if err := w.build(ctx, req.ComponentID, signal.BuildID, req.SandboxMode); err != nil {
 				l.Info("unable to build component: %w", zap.Error(err))
 			}
 		case OperationDelete:
-			if err := w.delete(ctx, appID, signal.DryRun); err != nil {
+			if err := w.delete(ctx, req.ComponentID, req.SandboxMode); err != nil {
 				l.Info("unable to delete component: %w", zap.Error(err))
 			}
 			finished = true

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 type CreateComponentRequest struct {
@@ -43,6 +44,12 @@ func (c *CreateComponentRequest) Validate(v *validator.Validate) error {
 //	@Success		201				{object}	app.Component
 //	@Router			/v1/apps/{app_id}/components/ [post]
 func (s *service) CreateComponent(ctx *gin.Context) {
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	appID := ctx.Param("app_id")
 
 	var req CreateComponentRequest
@@ -61,7 +68,7 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Created(ctx, component.ID)
+	s.hooks.Created(ctx, component.ID, org.SandboxMode)
 	ctx.JSON(http.StatusCreated, component)
 }
 

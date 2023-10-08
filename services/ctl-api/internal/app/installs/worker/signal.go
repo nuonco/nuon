@@ -18,7 +18,6 @@ const (
 )
 
 type Signal struct {
-	DryRun    bool
 	Operation Operation `validate:"required"`
 
 	DeployID string `validate:"required_if=Operation deploy"`

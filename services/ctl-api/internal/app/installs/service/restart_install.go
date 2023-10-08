@@ -37,6 +37,6 @@ func (s *service) RestartInstall(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Restart(ctx, install.ID)
+	s.hooks.Restart(ctx, install.ID, install.App.Org.SandboxMode)
 	ctx.JSON(http.StatusOK, true)
 }

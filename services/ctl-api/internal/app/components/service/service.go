@@ -55,6 +55,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/components", s.GetAllComponents)
+	api.POST("/v1/components/:component_id/admin-restart", s.RestartComponent)
 	return nil
 }
 
