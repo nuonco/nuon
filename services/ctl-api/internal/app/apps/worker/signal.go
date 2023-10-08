@@ -17,7 +17,6 @@ const (
 )
 
 type Signal struct {
-	DryRun    bool
 	Operation Operation `validate:"required"`
 
 	SandboxReleaseID string `validate:"required_if=Operation update_sandbox"`

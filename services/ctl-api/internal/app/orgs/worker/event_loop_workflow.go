@@ -17,11 +17,16 @@ func EventLoopWorkflowID(orgID string) string {
 	return fmt.Sprintf("%s-event-loop", orgID)
 }
 
-func (w *Workflows) OrgEventLoop(ctx workflow.Context, orgID string) error {
+type OrgEventLoopRequest struct {
+	OrgID       string
+	SandboxMode bool
+}
+
+func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) error {
 	l := zap.L()
 
 	finished := false
-	signalChan := workflow.GetSignalChannel(ctx, orgID)
+	signalChan := workflow.GetSignalChannel(ctx, req.OrgID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
 		var signal Signal
@@ -37,15 +42,15 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, orgID string) error {
 
 		switch signal.Operation {
 		case OperationProvision:
-			if err := w.provision(ctx, orgID, signal.DryRun); err != nil {
+			if err := w.provision(ctx, req.OrgID, req.SandboxMode); err != nil {
 				l.Info("unable to provision org: %w", zap.Error(err))
 			}
 		case OperationReprovision:
-			if err := w.reprovision(ctx, orgID, signal.DryRun); err != nil {
+			if err := w.reprovision(ctx, req.OrgID, req.SandboxMode); err != nil {
 				l.Info("unable to reprovision org: %w", zap.Error(err))
 			}
 		case OperationDeprovision:
-			if err := w.deprovision(ctx, orgID, signal.DryRun); err != nil {
+			if err := w.deprovision(ctx, req.OrgID, req.SandboxMode); err != nil {
 				l.Info("unable to deprovision org: %w", zap.Error(err))
 			}
 			finished = true

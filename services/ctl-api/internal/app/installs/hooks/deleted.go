@@ -8,7 +8,6 @@ import (
 
 func (i *Hooks) Deleted(ctx context.Context, installID string) {
 	i.sendSignal(ctx, installID, worker.Signal{
-		DryRun:    i.cfg.DevEnableWorkersDryRun,
 		Operation: worker.OperationDeprovision,
 	})
 }

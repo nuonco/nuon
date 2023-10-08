@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (a *Hooks) Created(ctx context.Context, releaseID string) {
+func (a *Hooks) Created(ctx context.Context, releaseID string, sandboxMode bool) {
 	workflowID := worker.EventLoopWorkflowID(releaseID)
 	opts := tclient.StartWorkflowOptions{
 		ID:        workflowID,
@@ -23,11 +23,15 @@ func (a *Hooks) Created(ctx context.Context, releaseID string) {
 		},
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
+	req := worker.ReleaseEventLoopRequest{
+		ReleaseID:   releaseID,
+		SandboxMode: sandboxMode,
+	}
 	wkflowRun, err := a.client.ExecuteWorkflowInNamespace(ctx,
 		defaultNamespace,
 		opts,
 		worker.EventLoopWorkflowName,
-		releaseID)
+		req)
 	if err != nil {
 		log.Fatalln("error creating release event loop", err)
 		return
@@ -40,11 +44,9 @@ func (a *Hooks) Created(ctx context.Context, releaseID string) {
 	)
 
 	a.sendSignal(ctx, releaseID, worker.Signal{
-		DryRun:    a.cfg.DevEnableWorkersDryRun,
 		Operation: worker.OperationPollDependencies,
 	})
 	a.sendSignal(ctx, releaseID, worker.Signal{
-		DryRun:    a.cfg.DevEnableWorkersDryRun,
 		Operation: worker.OperationProvision,
 	})
 }

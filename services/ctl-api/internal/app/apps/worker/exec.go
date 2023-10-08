@@ -14,12 +14,12 @@ import (
 
 func (w *Workflows) execProvisionWorkflow(
 	ctx workflow.Context,
-	dryRun bool,
+	sandboxMode bool,
 	req *appsv1.ProvisionRequest,
 ) (*appsv1.ProvisionResponse, error) {
-	if dryRun {
-		w.l.Info("dry-run enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.DevDryRunSleep.String()))
-		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
+	if sandboxMode {
+		w.l.Info("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
+		workflow.Sleep(ctx, w.cfg.SandboxSleep)
 		return generics.GetFakeObj[*appsv1.ProvisionResponse](), nil
 	}
 
