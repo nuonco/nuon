@@ -72,7 +72,7 @@ func (s *service) CreateApp(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Created(ctx, app.ID)
+	s.hooks.Created(ctx, app.ID, org.SandboxMode)
 	ctx.JSON(http.StatusCreated, app)
 }
 

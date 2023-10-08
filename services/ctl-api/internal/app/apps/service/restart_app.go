@@ -37,6 +37,6 @@ func (s *service) RestartApp(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Restart(ctx, app.ID)
+	s.hooks.Restart(ctx, app.ID, app.Org.SandboxMode)
 	ctx.JSON(http.StatusOK, true)
 }

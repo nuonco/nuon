@@ -9,7 +9,6 @@ import (
 func (o *Hooks) Reprovision(ctx context.Context, orgID string) {
 	o.l.Info("sending signal")
 	o.sendSignal(ctx, orgID, worker.Signal{
-		DryRun:    o.cfg.DevEnableWorkersDryRun,
 		Operation: worker.OperationReprovision,
 	})
 }

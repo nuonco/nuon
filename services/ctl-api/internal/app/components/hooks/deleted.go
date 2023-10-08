@@ -8,7 +8,6 @@ import (
 
 func (a *Hooks) Deleted(ctx context.Context, componentID string) {
 	a.sendSignal(ctx, componentID, worker.Signal{
-		DryRun:    a.cfg.DevEnableWorkersDryRun,
 		Operation: worker.OperationDelete,
 	})
 }

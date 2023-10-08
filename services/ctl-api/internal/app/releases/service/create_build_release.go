@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 //	@BasePath	/v1/releases
@@ -30,6 +31,12 @@ import (
 //	@Success		201				{object}	app.ComponentRelease
 //	@Router			/v1/releases [post]
 func (s *service) CreateRelease(ctx *gin.Context) {
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	var req CreateComponentReleaseRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
@@ -52,7 +59,7 @@ func (s *service) CreateRelease(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Created(ctx, app.ID)
+	s.hooks.Created(ctx, app.ID, org.SandboxMode)
 	ctx.JSON(http.StatusCreated, app)
 }
 

@@ -37,6 +37,6 @@ func (s *service) RestartOrg(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Restart(ctx, org.ID)
+	s.hooks.Restart(ctx, org.ID, org.SandboxMode)
 	ctx.JSON(http.StatusOK, true)
 }
