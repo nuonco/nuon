@@ -29,6 +29,11 @@ server:
     # and used per instance.
     secretName: null
 
+    # When source secret name is set, the chart will pull a secret from another namespace
+    useSourceCert: false
+    sourceCertSecretName: ""
+    sourceCertSecretNamespace: ""
+
     # certName and keyName are the names of the files within the secret for
     # the TLS cert and private key, respectively. These have reasonable
     # defaults but can be customized if necessary.
