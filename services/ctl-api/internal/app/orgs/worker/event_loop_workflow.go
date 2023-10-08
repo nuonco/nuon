@@ -40,6 +40,10 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, orgID string) error {
 			if err := w.provision(ctx, orgID, signal.DryRun); err != nil {
 				l.Info("unable to provision org: %w", zap.Error(err))
 			}
+		case OperationReprovision:
+			if err := w.reprovision(ctx, orgID, signal.DryRun); err != nil {
+				l.Info("unable to reprovision org: %w", zap.Error(err))
+			}
 		case OperationDeprovision:
 			if err := w.deprovision(ctx, orgID, signal.DryRun); err != nil {
 				l.Info("unable to deprovision org: %w", zap.Error(err))

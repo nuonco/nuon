@@ -955,6 +955,8 @@ github.com/dsnet/compress v0.0.1/go.mod h1:Aw8dCMJ7RioblQeTqt88akK31OvO8Dhf5Jflh
 github.com/dsnet/golib v0.0.0-20171103203638-1ea166775780/go.mod h1:Lj+Z9rebOhdfkVLjJ8T6VcRQv3SXugXy999NBtR9aFY=
 github.com/dustin/go-humanize v0.0.0-20171111073723-bb3d318650d4/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
+github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0 h1:90Ly+6UfUypEF6vvvW5rQIv9opIL8CbmW9FT20LDQoY=
+github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0/go.mod h1:V+Qd57rJe8gd4eiGzZyg4h54VLHmYVVw54iMnlAMrF8=
 github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5mFgVsvEsIPBvNs=
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
@@ -1848,6 +1850,8 @@ github.com/nuonco/nuon-go v0.3.1 h1:YO1ScoeNyPFj1WJuTpDT+pKbBY8olPqbVN4nvvRcnt8=
 github.com/nuonco/nuon-go v0.3.1/go.mod h1:JUQtBQdvRLhVkPOKcKaH7hhaqXszQqiqokD3isDgdDA=
 github.com/nuonco/nuon-go v0.4.0 h1:vJCMh0U5BbX1VcouQ72J7tugpAXanH3+1TlDsBTbxtI=
 github.com/nuonco/nuon-go v0.4.0/go.mod h1:JUQtBQdvRLhVkPOKcKaH7hhaqXszQqiqokD3isDgdDA=
+github.com/nuonco/nuon-go v0.4.1 h1:eKtjYtWPdujtQtRabeOCqS4wnLsHu2zZWlcOSf2W2Kk=
+github.com/nuonco/nuon-go v0.4.1/go.mod h1:JUQtBQdvRLhVkPOKcKaH7hhaqXszQqiqokD3isDgdDA=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2 h1:e3mzJFJs4k83GXBEiTaQ5HgSc/kOK8q0rDaRO0MPaOk=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2/go.mod h1:yntwv/HfMc/Hbvtq9I19D1n58te3h6KsqCf3GxyfBGY=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
