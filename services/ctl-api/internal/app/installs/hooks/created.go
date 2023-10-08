@@ -2,7 +2,6 @@ package hooks
 
 import (
 	"context"
-	"log"
 
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker"
@@ -11,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (a *Hooks) Created(ctx context.Context, installID string) {
+func (a *Hooks) startEventLoop(ctx context.Context, installID string, sandboxMode bool) error {
 	workflowID := worker.EventLoopWorkflowID(installID)
 	opts := tclient.StartWorkflowOptions{
 		ID:        workflowID,
@@ -23,28 +22,42 @@ func (a *Hooks) Created(ctx context.Context, installID string) {
 		},
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
+
+	req := worker.InstallEventLoopRequest{
+		InstallID:   installID,
+		SandboxMode: sandboxMode,
+	}
 	wkflowRun, err := a.client.ExecuteWorkflowInNamespace(ctx,
 		defaultNamespace,
 		opts,
 		worker.EventLoopWorkflowName,
-		installID)
+		req)
 	if err != nil {
-		log.Fatalln("error creating install event loop", err)
-		return
+		return err
 	}
+
 	a.l.Debug("started install event loop",
 		zap.String("workflow-id", wkflowRun.GetID()),
 		zap.String("run-id", wkflowRun.GetID()),
 		zap.String("install-id", installID),
 		zap.Error(err),
 	)
+	return nil
+}
+
+func (a *Hooks) Created(ctx context.Context, installID string, sandboxMode bool) {
+	if err := a.startEventLoop(ctx, installID, sandboxMode); err != nil {
+		a.l.Error("unable to start event loop",
+			zap.String("install-id", installID),
+			zap.Error(err),
+		)
+		return
+	}
 
 	a.sendSignal(ctx, installID, worker.Signal{
-		DryRun:    a.cfg.DevEnableWorkersDryRun,
 		Operation: worker.OperationPollDependencies,
 	})
 	a.sendSignal(ctx, installID, worker.Signal{
-		DryRun:    a.cfg.DevEnableWorkersDryRun,
 		Operation: worker.OperationProvision,
 	})
 }

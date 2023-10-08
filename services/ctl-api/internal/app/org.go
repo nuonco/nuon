@@ -21,8 +21,8 @@ type Org struct {
 
 	// These fields are used to control the behaviour of the org
 	// NOTE: these are starting as nullable, so we can update stage/prod before resetting locally.
-	SandboxMode bool
-	CustomCert  bool
+	SandboxMode bool `json:"sandbox_mode"`
+	CustomCert  bool `json:"custom_cert"`
 
 	Apps           []App           `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	VCSConnections []VCSConnection `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`

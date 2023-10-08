@@ -2,7 +2,6 @@ package hooks
 
 import (
 	"context"
-	"log"
 
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker"
@@ -11,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (a *Hooks) Created(ctx context.Context, componentID string) {
+func (a *Hooks) startEventLoop(ctx context.Context, componentID string, sandboxMode bool) error {
 	workflowID := worker.EventLoopWorkflowID(componentID)
 	opts := tclient.StartWorkflowOptions{
 		ID:        workflowID,
@@ -23,14 +22,18 @@ func (a *Hooks) Created(ctx context.Context, componentID string) {
 		},
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
+
+	req := worker.ComponentEventLoopRequest{
+		ComponentID: componentID,
+		SandboxMode: sandboxMode,
+	}
 	wkflowRun, err := a.client.ExecuteWorkflowInNamespace(ctx,
 		defaultNamespace,
 		opts,
 		worker.EventLoopWorkflowName,
-		componentID)
+		req)
 	if err != nil {
-		log.Fatalln("error creating component event loop", err)
-		return
+		return err
 	}
 	a.l.Debug("started component event loop",
 		zap.String("workflow-id", wkflowRun.GetID()),
@@ -39,8 +42,19 @@ func (a *Hooks) Created(ctx context.Context, componentID string) {
 		zap.Error(err),
 	)
 
+	return nil
+}
+
+func (a *Hooks) Created(ctx context.Context, componentID string, sandboxMode bool) {
+	if err := a.startEventLoop(ctx, componentID, sandboxMode); err != nil {
+		a.l.Error("error starting event loop",
+			zap.String("component-id", componentID),
+			zap.Error(err),
+		)
+		return
+	}
+
 	a.sendSignal(ctx, componentID, worker.Signal{
-		DryRun:    a.cfg.DevEnableWorkersDryRun,
 		Operation: worker.OperationPollDependencies,
 	})
 }

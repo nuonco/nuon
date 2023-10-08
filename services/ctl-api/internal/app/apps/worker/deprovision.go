@@ -48,7 +48,7 @@ func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool)
 	// NOTE: we don't actually have a deprovision step, but we sleep here locally when a dry-run is enabled, to
 	// ensure that the status updating is working correctly.
 	if dryRun {
-		workflow.Sleep(ctx, w.cfg.DevDryRunSleep)
+		workflow.Sleep(ctx, w.cfg.SandboxSleep)
 	}
 
 	// update status with response

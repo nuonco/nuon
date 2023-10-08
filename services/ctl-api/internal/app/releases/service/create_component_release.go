@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 type CreateComponentReleaseRequest struct {
@@ -51,6 +52,12 @@ func (c *CreateComponentReleaseRequest) Validate(v *validator.Validate) error {
 //	@Success		201				{object}	app.ComponentRelease
 //	@Router			/v1/components/{component_id}/releases [post]
 func (s *service) CreateComponentRelease(ctx *gin.Context) {
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	cmpID := ctx.Param("component_id")
 
 	var req CreateComponentReleaseRequest
@@ -69,7 +76,7 @@ func (s *service) CreateComponentRelease(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Created(ctx, app.ID)
+	s.hooks.Created(ctx, app.ID, org.SandboxMode)
 	ctx.JSON(http.StatusCreated, app)
 }
 
