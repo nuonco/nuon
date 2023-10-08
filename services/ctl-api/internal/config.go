@@ -68,8 +68,8 @@ type Config struct {
 	Auth0ClientID  string `config:"auth0_client_id"`
 
 	// flags for controlling the background workers
-	DevEnableWorkersDryRun bool          `config:"dev_enable_workers_dry_run"`
-	DevDryRunSleep         time.Duration `config:"dev_dry_run_sleep"`
+	ForceSandboxMode bool          `config:"force_sandbox_mode"`
+	SandboxSleep     time.Duration `config:"sandbox_sleep"`
 }
 
 func NewConfig() (*Config, error) {

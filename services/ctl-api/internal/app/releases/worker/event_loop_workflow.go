@@ -15,11 +15,16 @@ func EventLoopWorkflowID(releaseID string) string {
 	return fmt.Sprintf("%s-event-loop", releaseID)
 }
 
-func (w *Workflows) ReleaseEventLoop(ctx workflow.Context, releaseID string) error {
+type ReleaseEventLoopRequest struct {
+	ReleaseID   string
+	SandboxMode bool
+}
+
+func (w *Workflows) ReleaseEventLoop(ctx workflow.Context, req ReleaseEventLoopRequest) error {
 	l := zap.L()
 
 	finished := false
-	signalChan := workflow.GetSignalChannel(ctx, releaseID)
+	signalChan := workflow.GetSignalChannel(ctx, req.ReleaseID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
 		var signal Signal
@@ -35,11 +40,11 @@ func (w *Workflows) ReleaseEventLoop(ctx workflow.Context, releaseID string) err
 
 		switch signal.Operation {
 		case OperationPollDependencies:
-			if err := w.pollDependencies(ctx, releaseID); err != nil {
+			if err := w.pollDependencies(ctx, req.ReleaseID); err != nil {
 				l.Info("unable to poll dependencies: %w", zap.Error(err))
 			}
 		case OperationProvision:
-			if err := w.provision(ctx, releaseID, signal.DryRun); err != nil {
+			if err := w.provision(ctx, req.ReleaseID, req.SandboxMode); err != nil {
 				l.Info("unable to provision release: %w", zap.Error(err))
 			}
 			finished = true
