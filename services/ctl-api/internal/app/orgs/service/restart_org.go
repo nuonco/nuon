@@ -22,7 +22,7 @@ type RestartOrgRequest struct{}
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{boolean}	true
-//	@Router			/v1/orgs/{org_id}/restart [POST]
+//	@Router			/v1/orgs/{org_id}/admin-restart [POST]
 func (s *service) RestartOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 

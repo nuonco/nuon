@@ -22,7 +22,7 @@ type RestartAppRequest struct{}
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{boolean}	true
-//	@Router			/v1/apps/{app_id}/restart [POST]
+//	@Router			/v1/apps/{app_id}/admin-restart [POST]
 func (s *service) RestartApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

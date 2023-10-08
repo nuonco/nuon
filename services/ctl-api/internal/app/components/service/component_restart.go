@@ -23,7 +23,7 @@ type RestartComponentRequest struct{}
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{boolean}	true
-//	@Router			/v1/components/{component_id}/restart [POST]
+//	@Router			/v1/components/{component_id}/admin-restart [POST]
 func (s *service) RestartComponent(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
