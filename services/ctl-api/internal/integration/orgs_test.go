@@ -40,6 +40,7 @@ func (s *orgsIntegrationTestSuite) TestCreateOrg() {
 	s.T().Run("sets custom cert", func(t *testing.T) {
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
 		fakeReq.UseCustomCert = true
+		fakeReq.UseSandboxMode = true
 		org, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
 		require.NoError(t, err)
 		require.NotNil(t, org)

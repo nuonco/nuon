@@ -8,7 +8,6 @@ import (
 
 func (i *Hooks) InstallDeployCreated(ctx context.Context, installID, deployID string) {
 	i.sendSignal(ctx, installID, worker.Signal{
-		DryRun:    i.cfg.DevEnableWorkersDryRun,
 		Operation: worker.OperationDeploy,
 		DeployID:  deployID,
 	})

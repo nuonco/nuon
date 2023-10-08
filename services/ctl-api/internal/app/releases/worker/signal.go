@@ -14,7 +14,6 @@ const (
 )
 
 type Signal struct {
-	DryRun    bool
 	Operation Operation `validate:"required"`
 }
 

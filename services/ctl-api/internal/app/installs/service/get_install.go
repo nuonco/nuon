@@ -45,6 +45,8 @@ func (s *service) getInstall(ctx context.Context, installID string) (*app.Instal
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("AWSAccount").
+		Preload("App").
+		Preload("App.Org").
 		Preload("SandboxRelease").
 		Where("name = ?", installID).
 		Or("id = ?", installID).

@@ -16,11 +16,16 @@ func EventLoopWorkflowID(installID string) string {
 	return fmt.Sprintf("%s-event-loop", installID)
 }
 
-func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) error {
+type InstallEventLoopRequest struct {
+	InstallID   string
+	SandboxMode bool
+}
+
+func (w *Workflows) InstallEventLoop(ctx workflow.Context, req InstallEventLoopRequest) error {
 	l := workflow.GetLogger(ctx)
 
 	finished := false
-	signalChan := workflow.GetSignalChannel(ctx, installID)
+	signalChan := workflow.GetSignalChannel(ctx, req.InstallID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
 		var signal Signal
@@ -37,25 +42,25 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) err
 		var err error
 		switch signal.Operation {
 		case OperationPollDependencies:
-			err = w.pollDependencies(ctx, installID)
+			err = w.pollDependencies(ctx, req.InstallID)
 			if err != nil {
 				l.Error("unable to poll dependencies", zap.Error(err))
 				return
 			}
 		case OperationProvision:
-			err = w.provision(ctx, installID, signal.DryRun)
+			err = w.provision(ctx, req.InstallID, req.SandboxMode)
 			if err != nil {
 				l.Error("unable to provision", zap.Error(err))
 				return
 			}
 		case OperationReprovision:
-			err = w.reprovision(ctx, installID, signal.DryRun)
+			err = w.reprovision(ctx, req.InstallID, req.SandboxMode)
 			if err != nil {
 				l.Error("unable to reprovision", zap.Error(err))
 				return
 			}
 		case OperationDeprovision:
-			err = w.deprovision(ctx, installID, signal.DryRun)
+			err = w.deprovision(ctx, req.InstallID, req.SandboxMode)
 			if err != nil {
 				l.Error("unable to deprovision", zap.Error(err))
 				return
@@ -64,7 +69,7 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) err
 		case OperationForgotten:
 			finished = true
 		case OperationDeploy:
-			err = w.deploy(ctx, installID, signal.DeployID, signal.DryRun)
+			err = w.deploy(ctx, req.InstallID, signal.DeployID, req.SandboxMode)
 			if err != nil {
 				l.Error("unable to deploy", zap.Error(err))
 				return
