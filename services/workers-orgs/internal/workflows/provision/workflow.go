@@ -86,6 +86,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *orgsv1.ProvisionRequest) (
 		OrgId:       req.OrgId,
 		Region:      req.Region,
 		Reprovision: req.Reprovision,
+		CustomCert:  req.CustomCert,
 	})
 	if err != nil {
 		err = fmt.Errorf("failed to install server: %w", err)

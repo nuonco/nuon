@@ -36,7 +36,7 @@ func (c *client) ReprovisionOrg(ctx context.Context, orgID string) error {
 		return fmt.Errorf("unable to parse response: %w", err)
 	}
 	if !response {
-		return fmt.Errorf("unable to delete org: %v", response)
+		return fmt.Errorf("unable to reprovision org: %v", response)
 	}
 
 	return nil
