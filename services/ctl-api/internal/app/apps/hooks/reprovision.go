@@ -1,0 +1,15 @@
+package hooks
+
+import (
+	"context"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker"
+)
+
+func (o *Hooks) Reprovision(ctx context.Context, appID string) {
+	o.l.Info("sending signal")
+	o.sendSignal(ctx, appID, worker.Signal{
+		DryRun:    o.cfg.DevEnableWorkersDryRun,
+		Operation: worker.OperationReprovision,
+	})
+}
