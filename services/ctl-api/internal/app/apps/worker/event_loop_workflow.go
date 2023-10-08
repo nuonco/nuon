@@ -42,6 +42,10 @@ func (w *Workflows) AppEventLoop(ctx workflow.Context, appID string) error {
 			if err := w.provision(ctx, appID, signal.DryRun); err != nil {
 				l.Info("unable to provision app: %w", zap.Error(err))
 			}
+		case OperationReprovision:
+			if err := w.reprovision(ctx, appID, signal.DryRun); err != nil {
+				l.Info("unable to reprovision app: %w", zap.Error(err))
+			}
 		case OperationUpdateSandbox:
 			if err := w.updateSandbox(ctx, appID, signal.SandboxReleaseID, signal.DryRun); err != nil {
 				l.Info("unable to provision app: %w", zap.Error(err))

@@ -48,6 +48,12 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, installID string) err
 				l.Error("unable to provision", zap.Error(err))
 				return
 			}
+		case OperationReprovision:
+			err = w.reprovision(ctx, installID, signal.DryRun)
+			if err != nil {
+				l.Error("unable to reprovision", zap.Error(err))
+				return
+			}
 		case OperationDeprovision:
 			err = w.deprovision(ctx, installID, signal.DryRun)
 			if err != nil {

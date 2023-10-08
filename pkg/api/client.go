@@ -15,6 +15,12 @@ type Client interface {
 	DeleteOrg(ctx context.Context, orgID string) error
 	ReprovisionOrg(ctx context.Context, orgID string) error
 	RestartOrg(ctx context.Context, orgID string) error
+
+	ReprovisionApp(ctx context.Context, appID string) error
+	RestartApp(ctx context.Context, appID string) error
+
+	ReprovisionInstall(ctx context.Context, installID string) error
+	RestartInstall(ctx context.Context, installID string) error
 }
 
 var _ Client = (*client)(nil)
