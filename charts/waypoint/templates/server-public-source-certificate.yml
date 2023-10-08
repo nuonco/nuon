@@ -1,0 +1,13 @@
+{{- if and .Values.server.enabled .Values.server.certs.useSourceCert }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.server.certs.secretName}}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    replicator.v1.mittwald.de/replicate-from: {{ .Values.server.certs.sourceCertSecretNamespace}}/{{ .Values.server.certs.sourceCertSecretName }}
+type: kubernetes.io/tls
+data:
+  {{.Values.server.certs.certName}}: ""
+  {{.Values.server.certs.keyName}}: ""
+{{- end }}

@@ -1,4 +1,4 @@
-{{- if (eq (.Values.server.enabled | toString) "true") }}
+{{- if and .Values.server.enabled (ne .Values.server.certs.useSourceCert true) }}
 # Headless service for Waypoint server statefulset.
 apiVersion: cert-manager.io/v1
 kind: Certificate
