@@ -24,6 +24,7 @@ message ProvisionRequest {
   ];
 
   bool reprovision = 3 [(tagger.tags) = "faker:\"-\""];
+  bool custom_cert = 4;
 }
 
 message ProvisionResponse {

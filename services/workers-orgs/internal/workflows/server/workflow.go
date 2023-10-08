@@ -74,6 +74,7 @@ func (w wkflow) ProvisionServer(ctx workflow.Context, req *serverv1.ProvisionSer
 		ReleaseName: fmt.Sprintf("wp-%s", req.OrgId),
 		Domain:      serverDomain,
 		OrgID:       req.OrgId,
+		CustomCert:  req.CustomCert,
 		Chart:       chart,
 		Atomic:      false,
 		ClusterInfo: clusterInfo,
