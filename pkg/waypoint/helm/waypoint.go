@@ -18,10 +18,13 @@ type Values struct {
 		RunArgs []string `mapstructure:"runArgs,omitempty"`
 		Domain  string   `mapstructure:"domain,omitempty"`
 		Certs   struct {
-			SecretName        interface{} `mapstructure:"secretName,omitempty"`
-			CertName          string      `mapstructure:"certName,omitempty"`
-			KeyName           string      `mapstructure:"keyName,omitempty"`
-			ClusterIssuerName string      `mapstructure:"clusterIssuerName,omitempty"`
+			SecretName                interface{} `mapstructure:"secretName,omitempty"`
+			CertName                  string      `mapstructure:"certName,omitempty"`
+			KeyName                   string      `mapstructure:"keyName,omitempty"`
+			ClusterIssuerName         string      `mapstructure:"clusterIssuerName,omitempty"`
+			UseSourceCert             bool        `mapstructure:"useSourceCert,omitempty"`
+			SourceCertSecretName      string      `mapstructure:"sourceCertSecretName,omitempty"`
+			SourceCertSecretNamespace string      `mapstructure:"sourceCertSecretNamespace,omitempty"`
 		} `mapstructure:"certs,omitempty"`
 
 		Storage struct {
