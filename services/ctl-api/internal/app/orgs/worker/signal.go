@@ -11,6 +11,7 @@ type Operation string
 const (
 	OperationProvision   Operation = "provision"
 	OperationDeprovision Operation = "deprovision"
+	OperationReprovision Operation = "reprovision"
 )
 
 type Signal struct {

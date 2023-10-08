@@ -15,8 +15,7 @@ type App struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_app_name,unique"`
 
-	Name        string `json:"name" gorm:"index:idx_app_name,unique"`
-	DataPlaneID string
+	Name string `json:"name" gorm:"index:idx_app_name,unique"`
 
 	OrgID             string      `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org               Org         `faker:"-" json:"-"`

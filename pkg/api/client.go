@@ -13,6 +13,8 @@ const (
 
 type Client interface {
 	DeleteOrg(ctx context.Context, orgID string) error
+	ReprovisionOrg(ctx context.Context, orgID string) error
+	RestartOrg(ctx context.Context, orgID string) error
 }
 
 var _ Client = (*client)(nil)

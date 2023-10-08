@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	apphooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
 	componenthooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	installhooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
@@ -17,6 +18,7 @@ type service struct {
 	l              *zap.Logger
 	db             *gorm.DB
 	mw             metrics.Writer
+	cfg            *internal.Config
 	hooks          *hooks.Hooks
 	appHooks       *apphooks.Hooks
 	installHooks   *installhooks.Hooks
@@ -41,6 +43,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/support-users", s.CreateSupportUsers)
 	api.POST("/v1/orgs/:org_id/add-user", s.CreateOrgUser)
 	api.POST("/v1/orgs/:org_id/admin-delete", s.AdminDeleteOrg)
+	api.POST("/v1/orgs/:org_id/admin-reprovision", s.AdminReprovisionOrg)
+	api.POST("/v1/orgs/:org_id/admin-restart", s.RestartOrg)
 	return nil
 }
 
@@ -49,6 +53,7 @@ func New(v *validator.Validate,
 	mw metrics.Writer,
 	l *zap.Logger,
 	hooks *hooks.Hooks,
+	cfg *internal.Config,
 	appHooks *apphooks.Hooks,
 	installHooks *installhooks.Hooks,
 	componentHooks *componenthooks.Hooks,
@@ -58,6 +63,7 @@ func New(v *validator.Validate,
 		v:              v,
 		db:             db,
 		mw:             mw,
+		cfg:            cfg,
 		hooks:          hooks,
 		appHooks:       appHooks,
 		installHooks:   installHooks,

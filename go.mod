@@ -24,6 +24,7 @@ require (
 	github.com/briandowns/spinner v1.23.0
 	github.com/bufbuild/connect-go v1.5.2
 	github.com/docker/distribution v2.8.1+incompatible
+	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 	github.com/envoyproxy/protoc-gen-validate v0.10.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-faker/faker/v4 v4.1.0
@@ -286,7 +287,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nuonco/nuon-go v0.4.0
+	github.com/nuonco/nuon-go v0.4.1
 	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect

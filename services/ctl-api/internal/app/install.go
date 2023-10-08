@@ -18,7 +18,6 @@ type Install struct {
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
-	DataPlaneID       string
 	Name              string `json:"name" gorm:"notnull;index:idx_app_install_name,unique"`
 	App               App    `swaggerignore:"true" json:"app"`
 	AppID             string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique"`
@@ -36,6 +35,7 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
 		i.ID = domains.NewInstallID()
 	}
+
 	i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	i.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
