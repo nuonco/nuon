@@ -10,7 +10,7 @@ type ReprovisionOrgRequest struct{}
 
 // Reprovision an org
 //
-//	@Summary repvosision an org
+//	@Summary reprovision an org
 //
 // @Schemes
 //

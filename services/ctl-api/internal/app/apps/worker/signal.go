@@ -12,6 +12,7 @@ const (
 	OperationProvision        Operation = "provision"
 	OperationPollDependencies Operation = "poll_dependencies"
 	OperationDeprovision      Operation = "deprovision"
+	OperationReprovision      Operation = "reprovision"
 	OperationUpdateSandbox    Operation = "update_sandbox"
 )
 
