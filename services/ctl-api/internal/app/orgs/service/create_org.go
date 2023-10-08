@@ -13,6 +13,10 @@ import (
 
 type CreateOrgRequest struct {
 	Name string `json:"name" validate:"required"`
+
+	// These fields are used to control the behaviour of the org.
+	UseCustomCert  bool `json:"use_custom_cert"`
+	UseSandboxMode bool `json:"use_sandbox_mode"`
 }
 
 func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
@@ -73,10 +77,13 @@ func (s *service) createOrg(ctx context.Context, userID string, req *CreateOrgRe
 		Name:              req.Name,
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start and provision org",
-
-		// TODO(jm): figure out why we can't update and users using the nested association
-		//UserOrgs: []app.UserOrg{{UserID: userID}},
+		SandboxMode:       req.UseSandboxMode,
+		CustomCert:        req.UseCustomCert,
 	}
+	if s.cfg.DevEnableWorkersDryRun {
+		org.SandboxMode = true
+	}
+
 	if err := s.db.WithContext(ctx).Create(&org).Error; err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
 	}
