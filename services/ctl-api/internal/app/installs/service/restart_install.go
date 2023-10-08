@@ -22,7 +22,7 @@ type RestartInstallRequest struct{}
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{boolean}	true
-//	@Router			/v1/installs/{install_id}/restart [POST]
+//	@Router			/v1/installs/{install_id}/admin-restart [POST]
 func (s *service) RestartInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
