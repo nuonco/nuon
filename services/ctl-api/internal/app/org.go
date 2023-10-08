@@ -19,6 +19,10 @@ type Org struct {
 	Status            string `json:"status" gorm:"notnull"`
 	StatusDescription string `json:"status_description" gorm:"notnull"`
 
+	DataPlaneID   string
+	SandboxMode   bool
+	UseCustomCert bool
+
 	Apps           []App           `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	VCSConnections []VCSConnection `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	UserOrgs       []UserOrg       `json:"users,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
