@@ -1,4 +1,3 @@
-# NOTE(jm): creating this may lead to an SG getting deleted, which breaks deprovisioning. Trying without this.
 resource "helm_release" "nginx-ingress-controller" {
   namespace        = "nginx-ingress"
   create_namespace = true
