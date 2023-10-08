@@ -11,10 +11,6 @@ resource "kubectl_manifest" "wildcard_cert" {
         "app.kubernetes.io/name"       = "wildcard"
         "app.kubernetes.io/managed-by" = "infra-eks"
       }
-      annotations = {
-        "reflector.v1.k8s.emberstack.com/reflection-allowed"            = "true"
-        "reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces" = "*"
-      }
     }
 
     spec = {
@@ -26,6 +22,12 @@ resource "kubectl_manifest" "wildcard_cert" {
       issuerRef = {
         name = local.cert_manager_issuers.public_issuer_name
         kind = "ClusterIssuer"
+      }
+      secretTemplate = {
+        annotations = {
+          "reflector.v1.k8s.emberstack.com/reflection-allowed"            = "true"
+          "reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces" = ""
+        }
       }
     }
   })

@@ -13,6 +13,11 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 )
 
+const (
+	defaultWildcardCertSecretNamespace        = "default"
+	defaultWildcardCertSecretName      string = "wildcard-tls"
+)
+
 type InstallWaypointServerRequest struct {
 	Namespace   string      `json:"namespace" validate:"required"`
 	OrgID       string      `json:"org_id" validate:"required"`
@@ -20,6 +25,7 @@ type InstallWaypointServerRequest struct {
 	ReleaseName string      `json:"release_name" validate:"required"`
 	Chart       *helm.Chart `json:"chart" validate:"required"`
 	Atomic      bool        `json:"atomic"`
+	CustomCert  bool        `json:"custom_cert"`
 
 	ClusterInfo kube.ClusterInfo `json:"cluster_info" validate:"required"`
 
@@ -52,6 +58,12 @@ func (a *Activities) InstallWaypointServer(ctx context.Context, req InstallWaypo
 	// set values
 	values.Server.Domain = req.Domain
 	values.Server.Certs.SecretName = fmt.Sprintf("tls-%s", req.OrgID)
+
+	if !req.CustomCert {
+		values.Server.Certs.UseSourceCert = true
+		values.Server.Certs.SourceCertSecretName = defaultWildcardCertSecretName
+		values.Server.Certs.SourceCertSecretNamespace = defaultWildcardCertSecretNamespace
+	}
 
 	var vals map[string]interface{}
 	if err := mapstructure.Decode(values, &vals); err != nil {
