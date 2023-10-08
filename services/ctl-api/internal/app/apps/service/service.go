@@ -34,6 +34,8 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps", s.GetAllApps)
+	api.POST("/v1/apps/:app_id/admin-reprovision", s.AdminReprovisionApp)
+	api.POST("/v1/apps/:app_id/admin-restart", s.RestartApp)
 	return nil
 }
 
