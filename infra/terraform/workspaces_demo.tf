@@ -39,6 +39,27 @@ module "demo-org-stage" {
   triggered_by = [module.infra-terraform.workspace_id]
 }
 
+module "demo-org-sandbox-stage" {
+  source = "./modules/workspace"
+
+  name          = "demo-org-sandbox-stage"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "infra/demo-org"
+  variable_sets = ["aws-environment-credentials", "api-stage"]
+  project_id    = tfe_project.product.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+
+  // NOTE: we have to set the api token manually in the ui, so we don't leak it
+  env_vars = {
+    NUON_ORG_ID  = "orgvwpbd584d7v7o9x8oxqfo6b"
+    NUON_API_URL = "https://ctl.stage.nuon.co"
+  }
+
+  triggered_by = [module.infra-terraform.workspace_id]
+}
+
 module "demo-org-prod" {
   source = "./modules/workspace"
 
@@ -80,6 +101,32 @@ module "e2e-stage" {
     east_1_count = 0
     east_2_count = 0
     west_2_count = 1
+  }
+  triggered_by = [module.infra-terraform.workspace_id]
+}
+
+module "e2e-sandbox-stage" {
+  source = "./modules/workspace"
+
+  name          = "e2e-sandbox-stage"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "services/e2e/nuon"
+  variable_sets = ["aws-environment-credentials", "api-stage"]
+  project_id    = tfe_project.product.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+
+  // NOTE: we have to set the api token manually in the ui, so we don't leak it
+  env_vars = {
+    NUON_ORG_ID  = "orgvwpbd584d7v7o9x8oxqfo6b"
+    NUON_API_URL = "https://ctl.stage.nuon.co"
+  }
+
+  vars = {
+    east_1_count = 5
+    east_2_count = 5
+    west_2_count = 5
   }
   triggered_by = [module.infra-terraform.workspace_id]
 }

@@ -45,7 +45,7 @@ module "workers-canary-stage" {
   auto_apply = true
   dir        = "services/workers-canary/infra"
   vars = {
-    env = "stage"
+    env               = "stage"
     github_install_id = "41323514"
   }
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks", "api-stage"]
@@ -62,7 +62,7 @@ module "workers-canary-prod" {
   auto_apply = true
   dir        = "services/workers-canary/infra"
   vars = {
-    env = "prod"
+    env               = "prod"
     github_install_id = "41959553"
   }
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks", "api-prod"]
