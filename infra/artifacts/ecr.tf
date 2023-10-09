@@ -16,7 +16,7 @@ module "nuonctl" {
 module "cli" {
   source = "../modules/public-ecr"
 
-  name = "cli"
+  name        = "cli"
   description = "Nuon cli"
   about       = "Nuon cli"
   tags = {
@@ -24,7 +24,7 @@ module "cli" {
     artifact_type = "binary"
   }
 
-  region      = local.aws_settings.public_region
+  region = local.aws_settings.public_region
   providers = {
     aws = aws.public
   }
@@ -35,12 +35,12 @@ module "e2e" {
 
   name = "e2e"
   tags = {
-    artifact      = "e2e"
+    artifact = "e2e"
   }
   description = "E2E image for testing nuon with an introspection api."
   about       = "E2E image for testing nuon with an introspection api."
 
-  region      = local.aws_settings.public_region
+  region = local.aws_settings.public_region
   providers = {
     aws = aws.public
   }
@@ -193,6 +193,23 @@ module "waypoint_plugin_terraform" {
   about       = "nuon waypoint plugin"
   tags = {
     artifact      = "waypoint-plugin-terraform"
+    artifact_type = "waypoint-plugin-odr"
+  }
+
+  providers = {
+    aws = aws.public
+  }
+}
+
+module "waypoint_plugin_job" {
+  source = "../modules/public-ecr"
+
+  name        = "waypoint-plugin-job"
+  region      = local.aws_settings.public_region
+  description = "nuon waypoint plugin"
+  about       = "nuon waypoint plugin"
+  tags = {
+    artifact      = "waypoint-plugin-job"
     artifact_type = "waypoint-plugin-odr"
   }
 
