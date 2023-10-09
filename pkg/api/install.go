@@ -6,6 +6,27 @@ import (
 	"fmt"
 )
 
+type Install struct {
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
+}
+
+func (c *client) ListInstalls(ctx context.Context) ([]Install, error) {
+	endpoint := "/v1/installs"
+	byts, err := c.execGetRequest(ctx, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute post request: %w", err)
+	}
+
+	var response []Install
+	if err := json.Unmarshal(byts, &response); err != nil {
+		return nil, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return response, nil
+}
+
 func (c *client) ForgetInstall(ctx context.Context, installID string) error {
 	endpoint := fmt.Sprintf("/v1/installs/%s/admin-forget", installID)
 	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
