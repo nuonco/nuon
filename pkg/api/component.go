@@ -6,20 +6,20 @@ import (
 	"fmt"
 )
 
-type App struct {
+type Component struct {
 	Id     string `json:"id"`
 	Name   string `json:"name"`
 	Status string `json:"status"`
 }
 
-func (c *client) ListApps(ctx context.Context) ([]App, error) {
-	endpoint := "/v1/apps"
+func (c *client) ListComponents(ctx context.Context) ([]Component, error) {
+	endpoint := "/v1/components"
 	byts, err := c.execGetRequest(ctx, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute post request: %w", err)
 	}
 
-	var response []App
+	var response []Component
 	if err := json.Unmarshal(byts, &response); err != nil {
 		return nil, fmt.Errorf("unable to parse response: %w", err)
 	}
@@ -27,26 +27,8 @@ func (c *client) ListApps(ctx context.Context) ([]App, error) {
 	return response, nil
 }
 
-func (c *client) ReprovisionApp(ctx context.Context, appID string) error {
-	endpoint := fmt.Sprintf("/v1/apps/%s/admin-reprovision", appID)
-	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
-	if err != nil {
-		return fmt.Errorf("unable to execute post request: %w", err)
-	}
-
-	var response bool
-	if err := json.Unmarshal(byts, &response); err != nil {
-		return fmt.Errorf("unable to parse response: %w", err)
-	}
-	if !response {
-		return fmt.Errorf("unable to reprovision app: %v", response)
-	}
-
-	return nil
-}
-
-func (c *client) RestartApp(ctx context.Context, appID string) error {
-	endpoint := fmt.Sprintf("/v1/apps/%s/admin-restart", appID)
+func (c *client) RestartComponent(ctx context.Context, appID string) error {
+	endpoint := fmt.Sprintf("/v1/components/%s/admin-restart", appID)
 	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
 	if err != nil {
 		return fmt.Errorf("unable to execute post request: %w", err)

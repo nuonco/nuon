@@ -48,7 +48,7 @@ func (c *CreateAppRequest) Validate(v *validator.Validate) error {
 //	@Failure		404				{object}	stderr.ErrResponse
 //	@Failure		500				{object}	stderr.ErrResponse
 //	@Success		201				{object}	app.App
-//	@Router			/v1/apps/ [post]
+//	@Router			/v1/apps [post]
 func (s *service) CreateApp(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

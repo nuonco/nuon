@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 type RestartComponentRequest struct{}
@@ -25,12 +24,6 @@ type RestartComponentRequest struct{}
 //	@Success		200	{boolean}	true
 //	@Router			/v1/components/{component_id}/admin-restart [POST]
 func (s *service) RestartComponent(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	componentID := ctx.Param("component_id")
 
 	var req RestartComponentRequest
@@ -44,6 +37,6 @@ func (s *service) RestartComponent(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Restart(ctx, component.ID, org.SandboxMode)
+	s.hooks.Restart(ctx, component.ID, component.App.Org.SandboxMode)
 	ctx.JSON(http.StatusOK, true)
 }

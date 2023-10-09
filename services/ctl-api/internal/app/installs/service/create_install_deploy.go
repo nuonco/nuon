@@ -41,7 +41,7 @@ func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
 //	@Failure		404				{object}	stderr.ErrResponse
 //	@Failure		500				{object}	stderr.ErrResponse
 //	@Success		201				{object}	app.InstallDeploy
-//	@Router			/v1/installs/{install_id}/deploys/ [post]
+//	@Router			/v1/installs/{install_id}/deploys [post]
 func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

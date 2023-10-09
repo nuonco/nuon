@@ -47,6 +47,8 @@ func (s *service) getComponent(ctx context.Context, componentID string) (*app.Co
 		Where("id = ?", componentID).
 		Or("name = ?", componentID).
 		Preload("ComponentConfigs").
+		Preload("App").
+		Preload("App.Org").
 		First(&component)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
