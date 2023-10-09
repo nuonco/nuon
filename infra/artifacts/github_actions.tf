@@ -65,6 +65,7 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
     ]
   }
 
+  // grant permissions for internal repos
   statement {
     actions = [
       "ecr:BatchCheckLayerAvailability",

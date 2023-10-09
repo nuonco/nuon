@@ -6,6 +6,7 @@ locals {
     "dev-waypoint-plugin-oci",
     "dev-waypoint-plugin-oci-sync",
     "dev-waypoint-plugin-terraform",
+    "dev-waypoint-plugin-job",
   ]
 }
 
