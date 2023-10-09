@@ -13,8 +13,11 @@ Fixing the api authentication bug.
 ## v0.3.3
 
 Pushing change for min count in api.
+
 ## v0.3.2
 
 Releasing the changes to use ingresses for `ctl-api`.
 
+## v0.3.3
 
+Promoting sandbox mode into prod.
