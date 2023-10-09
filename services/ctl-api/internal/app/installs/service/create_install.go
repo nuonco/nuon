@@ -47,7 +47,7 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 //	@Failure		404				{object}	stderr.ErrResponse
 //	@Failure		500				{object}	stderr.ErrResponse
 //	@Success		201				{object}	app.Install
-//	@Router			/v1/apps/{app_id}/installs/ [post]
+//	@Router			/v1/apps/{app_id}/installs [post]
 func (s *service) CreateInstall(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
