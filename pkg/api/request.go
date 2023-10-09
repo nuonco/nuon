@@ -9,6 +9,34 @@ import (
 	"net/http"
 )
 
+func (c *client) execGetRequest(ctx context.Context, endpoint string) ([]byte, error) {
+	httpClient := http.Client{
+		Timeout: c.Timeout,
+	}
+
+	url := c.APIURL + endpoint
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	res, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get response: %w", err)
+	}
+
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read body: %w", err)
+	}
+
+	return body, nil
+}
+
 func (c *client) execPostRequest(ctx context.Context, endpoint string, data interface{}) ([]byte, error) {
 	httpClient := http.Client{
 		Timeout: c.Timeout,

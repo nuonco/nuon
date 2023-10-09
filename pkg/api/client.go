@@ -12,15 +12,21 @@ const (
 )
 
 type Client interface {
+	ListOrgs(ctx context.Context) ([]Org, error)
 	DeleteOrg(ctx context.Context, orgID string) error
 	ReprovisionOrg(ctx context.Context, orgID string) error
 	RestartOrg(ctx context.Context, orgID string) error
 
+	ListApps(ctx context.Context) ([]App, error)
 	ReprovisionApp(ctx context.Context, appID string) error
 	RestartApp(ctx context.Context, appID string) error
 
+	ListInstalls(ctx context.Context) ([]Install, error)
 	ReprovisionInstall(ctx context.Context, installID string) error
 	RestartInstall(ctx context.Context, installID string) error
+
+	ListComponents(ctx context.Context) ([]Component, error)
+	RestartComponent(ctx context.Context, componentID string) error
 }
 
 var _ Client = (*client)(nil)
