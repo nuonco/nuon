@@ -32,6 +32,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/releases", s.GetAllReleases)
+	api.POST("/v1/releases/:release_id/admin-restart", s.RestartRelease)
 	return nil
 }
 

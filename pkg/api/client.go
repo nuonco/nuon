@@ -27,6 +27,9 @@ type Client interface {
 
 	ListComponents(ctx context.Context) ([]Component, error)
 	RestartComponent(ctx context.Context, componentID string) error
+
+	ListReleases(ctx context.Context) ([]Release, error)
+	RestartRelease(ctx context.Context, releaseID string) error
 }
 
 var _ Client = (*client)(nil)
