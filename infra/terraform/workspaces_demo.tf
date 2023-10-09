@@ -32,7 +32,7 @@ module "demo-org-stage" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   env_vars = {
-    NUON_ORG_ID  = "orgwtvv6jrt95jp0n1abx5u8eb"
+    NUON_ORG_ID  = "orgzblonf9hol7jq92vkdriio4"
     NUON_API_URL = "https://ctl.stage.nuon.co"
   }
 
@@ -93,7 +93,7 @@ module "e2e-stage" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   env_vars = {
-    NUON_ORG_ID  = "orgwtvv6jrt95jp0n1abx5u8eb"
+    NUON_ORG_ID  = "orgzblonf9hol7jq92vkdriio4"
     NUON_API_URL = "https://ctl.stage.nuon.co"
   }
 
