@@ -22,20 +22,20 @@ import (
 //	@Success		200	{array}	app.ComponentRelease
 //	@Router			/v1/releases [get]
 func (s *service) GetAllReleases(ctx *gin.Context) {
-	installs, err := s.getAllInstalls(ctx)
+	releases, err := s.getAllReleases(ctx)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get installs for: %w", err))
+		ctx.Error(fmt.Errorf("unable to get all releases: %w", err))
 		return
 	}
-	ctx.JSON(http.StatusOK, installs)
+	ctx.JSON(http.StatusOK, releases)
 }
 
-func (s *service) getAllInstalls(ctx context.Context) ([]*app.Install, error) {
-	var installs []*app.Install
-	res := s.db.WithContext(ctx).Find(&installs)
+func (s *service) getAllReleases(ctx context.Context) ([]*app.ComponentRelease, error) {
+	var releases []*app.ComponentRelease
+	res := s.db.WithContext(ctx).Find(&releases)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get all installs: %w", res.Error)
+		return nil, fmt.Errorf("unable to get all releases: %w", res.Error)
 	}
 
-	return installs, nil
+	return releases, nil
 }
