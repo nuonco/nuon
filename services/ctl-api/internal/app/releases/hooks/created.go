@@ -2,7 +2,7 @@ package hooks
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker"
@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (a *Hooks) Created(ctx context.Context, releaseID string, sandboxMode bool) {
+func (a *Hooks) startEventLoop(ctx context.Context, releaseID string, sandboxMode bool) error {
 	workflowID := worker.EventLoopWorkflowID(releaseID)
 	opts := tclient.StartWorkflowOptions{
 		ID:        workflowID,
@@ -33,8 +33,7 @@ func (a *Hooks) Created(ctx context.Context, releaseID string, sandboxMode bool)
 		worker.EventLoopWorkflowName,
 		req)
 	if err != nil {
-		log.Fatalln("error creating release event loop", err)
-		return
+		return fmt.Errorf("unable to create release event loop: %w", err)
 	}
 	a.l.Debug("started release event loop",
 		zap.String("workflow-id", wkflowRun.GetID()),
@@ -42,6 +41,18 @@ func (a *Hooks) Created(ctx context.Context, releaseID string, sandboxMode bool)
 		zap.String("release-id", releaseID),
 		zap.Error(err),
 	)
+
+	return nil
+}
+
+func (a *Hooks) Created(ctx context.Context, releaseID string, sandboxMode bool) {
+	if err := a.startEventLoop(ctx, releaseID, sandboxMode); err != nil {
+		a.l.Error("error starting event loop",
+			zap.String("release-id", releaseID),
+			zap.Error(err),
+		)
+		return
+	}
 
 	a.sendSignal(ctx, releaseID, worker.Signal{
 		Operation: worker.OperationPollDependencies,
