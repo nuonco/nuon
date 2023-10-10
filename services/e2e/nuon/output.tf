@@ -6,6 +6,14 @@ output "app" {
   value = nuon_app.main
 }
 
+output "app_installer_slug" {
+  value = nuon_app_installer.main.slug
+}
+
+output "app_installer" {
+  value = nuon_app_installer.main
+}
+
 output "component_ids" {
   value = [
     nuon_docker_build_component.e2e.id,
