@@ -2,6 +2,14 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.7.0
+
+Update latest spec + run canary.
+
+## v0.5.4
+
+Pushing changes to api schema, and CLI.
+
 ## v0.5.4
 
 Pushing changes to api schema, and CLI.
