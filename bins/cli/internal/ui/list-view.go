@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"github.com/nuonco/nuon-go"
 	"github.com/pterm/pterm"
 )
 
@@ -26,16 +25,5 @@ func (v *ListView) Render(data [][]string) {
 }
 
 func (v *ListView) Error(err error) {
-	userErr, ok := nuon.ToUserError(err)
-	if ok {
-		pterm.Error.Println(userErr.Description)
-		return
-	}
-
-	if nuon.IsServerError(err) {
-		pterm.Error.Println(defaultServerErrorMessage)
-		return
-	}
-
-	pterm.Error.Println(err)
+	PrintError(err)
 }
