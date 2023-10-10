@@ -29,6 +29,15 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 	// sandbox release
 	api.PUT("/v1/apps/:app_id/sandbox", s.UpdateAppSandbox)
+
+	// installers
+	api.POST("/v1/apps/:app_id/installer", s.CreateAppInstaller)
+	api.PATCH("/v1/installers/:installer_id", s.UpdateAppInstaller)
+	api.DELETE("/v1/installers/:installer_id", s.DeleteAppInstaller)
+
+	// public installer endpoints
+	api.GET("/v1/installers/:installer_slug", s.GetAppInstaller)
+
 	return nil
 }
 
@@ -36,6 +45,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps", s.GetAllApps)
 	api.POST("/v1/apps/:app_id/admin-reprovision", s.AdminReprovisionApp)
 	api.POST("/v1/apps/:app_id/admin-restart", s.RestartApp)
+
+	api.GET("/v1/installers", s.GetAllAppInstallers)
 	return nil
 }
 
