@@ -88,11 +88,13 @@ func (s *service) createAppInstaller(ctx context.Context, orgID, appID string, r
 		AppID: appID,
 		Slug:  slug.Make(req.Slug),
 		Metadata: app.AppInstallerMetadata{
+			Description:      req.Description,
+			Name:             req.Name,
+			CommunityURL:     req.Links.Community,
+			HomepageURL:      req.Links.Homepage,
 			DocumentationURL: req.Links.Documentation,
 			GithubURL:        req.Links.Github,
 			LogoURL:          req.Links.Logo,
-			Description:      req.Description,
-			Name:             req.Name,
 		},
 	}
 

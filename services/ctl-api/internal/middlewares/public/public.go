@@ -12,13 +12,13 @@ const (
 )
 
 var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
-	{"GET", "/livez"}:                         {},
-	{"GET", "/version"}:                       {},
-	{"GET", "/readyz"}:                        {},
-	{"OPTIONS", "*"}:                          {},
-	{"GET", "/docs/*any"}:                     {},
-	{"GET", "/v1/general/cli-config"}:         {},
-	{"GET", "/v1/installers/:installer_slug"}: {},
+	{"GET", "/livez"}:                               {},
+	{"GET", "/version"}:                             {},
+	{"GET", "/readyz"}:                              {},
+	{"OPTIONS", "*"}:                                {},
+	{"GET", "/docs/*any"}:                           {},
+	{"GET", "/v1/general/cli-config"}:               {},
+	{"GET", "/v1/installer/:installer_slug/render"}: {},
 }
 
 func IsPublic(ctx *gin.Context) bool {
