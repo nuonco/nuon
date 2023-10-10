@@ -20,6 +20,10 @@ type service struct {
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
+	// public installer endpoints
+	api.GET("/v1/installer/:installer_slug/render", s.RenderAppInstaller)
+
+	// manage apps
 	api.POST("/v1/apps", s.CreateApp)
 	api.GET("/v1/apps", s.GetApps)
 
@@ -34,9 +38,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/installer", s.CreateAppInstaller)
 	api.PATCH("/v1/installers/:installer_id", s.UpdateAppInstaller)
 	api.DELETE("/v1/installers/:installer_id", s.DeleteAppInstaller)
-
-	// public installer endpoints
-	api.GET("/v1/installers/:installer_slug", s.GetAppInstaller)
+	api.GET("/v1/installers/:installer_id", s.GetAppInstaller)
 
 	return nil
 }
