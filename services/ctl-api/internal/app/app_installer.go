@@ -13,13 +13,13 @@ type AppInstaller struct {
 	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_installer_slug,unique" json:"-"`
 
 	OrgID string `json:"org_id" gorm:"notnull"`
 	AppID string `json:"app_id" gorm:"notnull"`
 	App   App
 
-	Slug string `json:"slug" gorm:"notnull;unique"`
+	Slug string `json:"slug" gorm:"index:idx_app_installer_slug,unique"`
 
 	Metadata AppInstallerMetadata `json:"app_installer_metadata" gorm:"constraint:OnDelete:CASCADE;"`
 }
