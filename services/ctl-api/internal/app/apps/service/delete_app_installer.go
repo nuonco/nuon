@@ -30,9 +30,9 @@ import (
 //	@Success		200				{boolean}	true
 //	@Router			/v1/installers/{installer_id} [DELETE]
 func (s *service) DeleteAppInstaller(ctx *gin.Context) {
-	appID := ctx.Param("app_id")
+	installerID := ctx.Param("installer_id")
 
-	err := s.deleteAppInstaller(ctx, appID)
+	err := s.deleteAppInstaller(ctx, installerID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -41,9 +41,9 @@ func (s *service) DeleteAppInstaller(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, true)
 }
 
-func (s *service) deleteAppInstaller(ctx context.Context, appID string) error {
+func (s *service) deleteAppInstaller(ctx context.Context, appInstallerID string) error {
 	res := s.db.WithContext(ctx).Delete(&app.AppInstaller{
-		AppID: appID,
+		ID: appInstallerID,
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to delete app: %w", res.Error)

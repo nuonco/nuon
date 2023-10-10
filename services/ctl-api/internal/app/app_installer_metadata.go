@@ -17,11 +17,14 @@ type AppInstallerMetadata struct {
 
 	AppInstallerID string `json:"app_installer_id" gorm:"notnull"`
 
-	Name             string `json:"name" gorm:"notnull"`
-	Description      string `json:"description" gorm:"description"`
+	Name        string `json:"name" gorm:"notnull"`
+	Description string `json:"description" gorm:"notnull"`
+
 	DocumentationURL string `json:"documentation_url" gorm:"notnull"`
-	LogoURL          string `json:"logo_url" gorm:"logo_url"`
-	GithubURL        string `json:"github_url" gorm:"github_url"`
+	LogoURL          string `json:"logo_url" gorm:"notnull"`
+	GithubURL        string `json:"github_url" gorm:"notnull"`
+	CommunityURL     string `json:"community_url" gorm:"notnull"`
+	HomepageURL      string `json:"homepage_url" gorm:"notnull"`
 }
 
 func (a *AppInstallerMetadata) BeforeCreate(tx *gorm.DB) error {
