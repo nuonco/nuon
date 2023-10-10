@@ -12,6 +12,7 @@ func init() {
 	config.RegisterDefault("terraform_state_base_dir", "/tmp/state")
 	config.RegisterDefault("install_script_path", "/install-cli.sh")
 	config.RegisterDefault("terraform_module_dir", "/terraform")
+	config.RegisterDefault("disable_cli_commands", true)
 }
 
 type Config struct {
