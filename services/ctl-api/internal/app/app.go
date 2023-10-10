@@ -17,15 +17,18 @@ type App struct {
 
 	Name string `json:"name" gorm:"index:idx_app_name,unique"`
 
-	OrgID             string      `json:"org_id" gorm:"index:idx_app_name,unique"`
-	Org               Org         `faker:"-" json:"-"`
-	Components        []Component `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	Installs          []Install   `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	Status            string      `json:"status"`
-	StatusDescription string      `json:"status_description"`
+	OrgID      string      `json:"org_id" gorm:"index:idx_app_name,unique"`
+	Org        Org         `faker:"-" json:"-"`
+	Components []Component `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	Installs   []Install   `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+
+	Status            string `json:"status"`
+	StatusDescription string `json:"status_description"`
 
 	SandboxReleaseID string         `json:"-"`
 	SandboxRelease   SandboxRelease `json:"sandbox_release,omitempty"`
+
+	Installers []AppInstaller `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (a *App) BeforeCreate(tx *gorm.DB) error {
