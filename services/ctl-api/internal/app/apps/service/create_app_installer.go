@@ -1,0 +1,105 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/gosimple/slug"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+)
+
+type CreateAppInstallerRequest struct {
+	Slug        string `validate:"required" json:"slug"`
+	Name        string `validate:"required" json:"name"`
+	Description string `validate:"required" json:"description"`
+
+	Links struct {
+		Documentation string `validate:"required" json:"documentation"`
+		Logo          string `validate:"required" json:"logo"`
+		Github        string `validate:"required" json:"github"`
+		Homepage      string `validate:"required" json:"homepage"`
+		Community     string `validate:"required" json:"community"`
+	} `json:"links"`
+}
+
+func (c *CreateAppInstallerRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
+}
+
+//	@BasePath	/v1/apps
+//
+// Create an app
+//
+//	@Summary	create an app installer
+//	@Schemes
+//	@Description	create an app installer
+//	@Tags			apps
+//	@Accept			json
+//	@Param			req	body	CreateAppInstallerRequest	true	"Input"
+//	@Produce		json
+//	@Param			app_id	path	string				true	"app ID"
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		401				{object}	stderr.ErrResponse
+//	@Failure		403				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.AppInstaller
+//	@Router			/v1/apps/{app_id}/installer [post]
+func (s *service) CreateAppInstaller(ctx *gin.Context) {
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	appID := ctx.Param("app_id")
+
+	var req CreateAppInstallerRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	installer, err := s.createAppInstaller(ctx, org.ID, appID, &req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create app installer: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, installer)
+}
+
+func (s *service) createAppInstaller(ctx context.Context, orgID, appID string, req *CreateAppInstallerRequest) (*app.AppInstaller, error) {
+	installer := app.AppInstaller{
+		OrgID: orgID,
+		AppID: appID,
+		Slug:  slug.Make(req.Slug),
+		Metadata: app.AppInstallerMetadata{
+			DocumentationURL: req.Links.Documentation,
+			GithubURL:        req.Links.Github,
+			LogoURL:          req.Links.Logo,
+			Description:      req.Description,
+			Name:             req.Name,
+		},
+	}
+
+	res := s.db.WithContext(ctx).Create(&installer)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create app installer: %w", res.Error)
+	}
+
+	return &installer, nil
+}
