@@ -22,6 +22,28 @@ func (r *run) Apply(ctx context.Context) error {
 	return nil
 }
 
+func (r *run) instanceOutputCallback(filename string) (pipeline.CallbackFn, error) {
+	if r.OutputSettings.Ignore {
+		return callbackmappers.Noop, nil
+	}
+	if r.OutputSettings.InstancePrefix == "" {
+		return callbackmappers.Noop, nil
+	}
+
+	applyCb, err := callbackmappers.NewS3Callback(r.v,
+		callbackmappers.WithCredentials(r.OutputSettings.Credentials),
+		callbackmappers.WithBucketKeySettings(callbackmappers.BucketKeySettings{
+			Bucket:       r.OutputSettings.Bucket,
+			BucketPrefix: r.OutputSettings.InstancePrefix,
+			Filename:     filename,
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create apply cb: %w", err)
+	}
+
+	return applyCb, nil
+}
+
 func (r *run) outputCallback(filename string) (pipeline.CallbackFn, error) {
 	if r.OutputSettings.Ignore {
 		return callbackmappers.Noop, nil
@@ -113,6 +135,16 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: structOutputCb,
 	})
 
+	instanceStructOutputCb, err := r.instanceOutputCallback("output-struct-v1.pb")
+	if err != nil {
+		return nil, fmt.Errorf("unable to create struct output callback: %w", err)
+	}
+	pipe.AddStep(&pipeline.Step{
+		Name:       "get struct output",
+		ExecFn:     execmappers.MapStructOutput(r.Workspace.Output),
+		CallbackFn: instanceStructOutputCb,
+	})
+
 	stateCb, err := r.outputCallback("state.json")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create state callback: %w", err)
@@ -121,6 +153,16 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		Name:       "get state",
 		ExecFn:     execmappers.MapTerraformState(r.Workspace.Show),
 		CallbackFn: stateCb,
+	})
+
+	instanceStateCb, err := r.instanceOutputCallback("state.json")
+	if err != nil {
+		return nil, fmt.Errorf("unable to create state callback: %w", err)
+	}
+	pipe.AddStep(&pipeline.Step{
+		Name:       "get state",
+		ExecFn:     execmappers.MapTerraformState(r.Workspace.Show),
+		CallbackFn: instanceStateCb,
 	})
 
 	return pipe, nil
