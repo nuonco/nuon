@@ -101,10 +101,14 @@ func (s *service) createApp(ctx context.Context, orgID string, req *CreateAppReq
 		SandboxReleaseID:  sandbox.Releases[0].ID,
 	}
 
-	res = s.db.WithContext(ctx).Create(&app)
+	res = s.db.WithContext(ctx).
+		Create(&app)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create app: %w", res.Error)
 	}
 
+	// NOTE(jm): gorm does not support automatically pulling the ID from this field when set, as it will
+	// automatically try to save a copy of it
+	app.SandboxRelease = sandbox.Releases[0]
 	return &app, nil
 }
