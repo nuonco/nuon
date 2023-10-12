@@ -59,7 +59,7 @@ func (c *Adapter) ToDockerBuildConfig(cfg *app.DockerBuildComponentConfig, conne
 	}
 
 	return &componentv1.Component{
-		Id: cfg.ID,
+		Id: cfg.ComponentConfigConnection.ComponentID,
 		BuildCfg: &buildv1.Config{
 			Timeout: durationpb.New(defaultBuildTimeout),
 			Cfg: &buildv1.Config_DockerCfg{
