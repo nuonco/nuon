@@ -42,7 +42,7 @@ func (c *Adapter) ToTerraformModuleComponentConfig(cfg *app.TerraformModuleCompo
 	}
 
 	return &componentv1.Component{
-		Id: cfg.ID,
+		Id: cfg.ComponentConfigConnection.ComponentID,
 		BuildCfg: &buildv1.Config{
 			Timeout: durationpb.New(defaultBuildTimeout),
 			Cfg: &buildv1.Config_TerraformModuleCfg{

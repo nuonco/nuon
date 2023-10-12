@@ -1,10 +1,12 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type RestartComponentRequest struct{}
@@ -39,4 +41,21 @@ func (s *service) RestartComponent(ctx *gin.Context) {
 
 	s.hooks.Restart(ctx, component.ID, component.App.Org.SandboxMode)
 	ctx.JSON(http.StatusOK, true)
+}
+
+func (s *service) getComponent(ctx context.Context, componentID string) (*app.Component, error) {
+	component := app.Component{}
+	res := s.db.WithContext(ctx).
+		Where("id = ?", componentID).
+		Or("name = ?", componentID).
+		Preload("ComponentConfigs").
+		Preload("App").
+		Preload("App.Org").
+		First(&component)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get component: %w", res.Error)
+	}
+	component.ConfigVersions = len(component.ComponentConfigs)
+
+	return &component, nil
 }

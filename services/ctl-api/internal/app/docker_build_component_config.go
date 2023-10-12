@@ -21,7 +21,8 @@ type DockerBuildComponentConfig struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	// value
-	ComponentConfigConnectionID string `json:"component_config_connection_id" gorm:"notnull"`
+	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
+	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
 	// VCS Config
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
@@ -37,7 +38,7 @@ type DockerBuildComponentConfig struct {
 }
 
 func (c *DockerBuildComponentConfig) BeforeCreate(tx *gorm.DB) error {
-	c.ID = domains.NewComponentID()
+	c.ID = domains.NewConfigID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
