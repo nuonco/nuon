@@ -74,24 +74,32 @@ func (s *service) UpdateAppInstaller(ctx *gin.Context) {
 }
 
 func (s *service) updateAppInstaller(ctx context.Context, installerID string, req *UpdateAppInstallerRequest) (*app.AppInstaller, error) {
-	currentInstaller := app.AppInstaller{
-		ID: installerID,
+	updates := app.AppInstallerMetadata{
+		DocumentationURL: req.Links.Documentation,
+		GithubURL:        req.Links.Github,
+		LogoURL:          req.Links.Logo,
+		HomepageURL:      req.Links.Homepage,
+		CommunityURL:     req.Links.Community,
+		Description:      req.Description,
+		Name:             req.Name,
 	}
 
-	updates := app.AppInstaller{
-		Metadata: app.AppInstallerMetadata{
-			DocumentationURL: req.Links.Documentation,
-			GithubURL:        req.Links.Github,
-			LogoURL:          req.Links.Logo,
-			Description:      req.Description,
-			Name:             req.Name,
-		},
-	}
-
-	res := s.db.WithContext(ctx).Model(&currentInstaller).Updates(updates)
+	metadata := app.AppInstallerMetadata{}
+	res := s.db.WithContext(ctx).
+		Model(&metadata).
+		Where("app_installer_id = ?", installerID).
+		Updates(updates)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app installer: %w", res.Error)
 	}
 
-	return &updates, nil
+	var installer app.AppInstaller
+	res = s.db.WithContext(ctx).
+		Preload("Metadata").
+		Find(&installer, "id = ?", installerID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to find installer: %w", res.Error)
+	}
+
+	return &installer, nil
 }

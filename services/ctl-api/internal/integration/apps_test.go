@@ -53,6 +53,19 @@ func (s *appsTestSuite) TestCreateApp() {
 		require.NotEmpty(t, app.ID)
 	})
 
+	s.T().Run("returns sandbox release", func(t *testing.T) {
+		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		app, err := s.apiClient.CreateApp(s.ctx, appReq)
+		require.Nil(t, err)
+		require.NotNil(t, app)
+
+		require.Equal(t, app.Name, *(appReq.Name))
+		require.NotEmpty(t, app.ID)
+		require.NotNil(t, app.SandboxRelease)
+		require.NotEmpty(t, app.SandboxRelease)
+		require.NotEmpty(t, app.SandboxRelease.ProvisionPolicyURL)
+	})
+
 	s.T().Run("errors on duplicate name", func(t *testing.T) {
 		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
 		app, err := s.apiClient.CreateApp(s.ctx, appReq)

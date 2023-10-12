@@ -31,6 +31,7 @@ env_secrets:
 watch_ignore_dirs:
   - docs/
   - admin/
+  - internal/integration/
 local_startup_cmds:
   - go generate ./...
   - go build -o /tmp/svc-ctl-api
