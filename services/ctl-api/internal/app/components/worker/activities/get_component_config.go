@@ -44,6 +44,11 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetRequest) (*c
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.BasicDeployConfig").
+
+		// preload all job configs
+		Preload("ComponentConfigConnection.JobComponentConfig").
+
+		// get config by build ID
 		First(&bld, "id = ?", req.BuildID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get build: %w", res.Error)
