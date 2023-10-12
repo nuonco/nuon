@@ -32,7 +32,11 @@ func (s *service) GetAllInstalls(ctx *gin.Context) {
 
 func (s *service) getAllInstalls(ctx context.Context) ([]*app.Install, error) {
 	var installs []*app.Install
-	res := s.db.WithContext(ctx).Find(&installs)
+	res := s.db.WithContext(ctx).
+		Preload("SandboxRelease").
+		Preload("SandboxRelease.Sandbox").
+		Preload("AWSAccount").
+		Find(&installs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all installs: %w", res.Error)
 	}
