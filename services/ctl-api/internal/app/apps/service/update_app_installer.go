@@ -52,7 +52,7 @@ func (c *UpdateAppInstallerRequest) Validate(v *validator.Validate) error {
 //	@Success		201				{object}	app.AppInstaller
 //	@Router			/v1/installers/{installer_id} [PATCH]
 func (s *service) UpdateAppInstaller(ctx *gin.Context) {
-	appID := ctx.Param("app_id")
+	installerID := ctx.Param("installer_id")
 
 	var req UpdateAppInstallerRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -64,13 +64,13 @@ func (s *service) UpdateAppInstaller(ctx *gin.Context) {
 		return
 	}
 
-	installer, err := s.updateAppInstaller(ctx, appID, &req)
+	installer, err := s.updateAppInstaller(ctx, installerID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update app installer: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusAccepted, installer)
+	ctx.JSON(http.StatusCreated, installer)
 }
 
 func (s *service) updateAppInstaller(ctx context.Context, installerID string, req *UpdateAppInstallerRequest) (*app.AppInstaller, error) {
@@ -78,7 +78,7 @@ func (s *service) updateAppInstaller(ctx context.Context, installerID string, re
 		ID: installerID,
 	}
 
-	installer := app.AppInstaller{
+	updates := app.AppInstaller{
 		Metadata: app.AppInstallerMetadata{
 			DocumentationURL: req.Links.Documentation,
 			GithubURL:        req.Links.Github,
@@ -88,10 +88,10 @@ func (s *service) updateAppInstaller(ctx context.Context, installerID string, re
 		},
 	}
 
-	res := s.db.WithContext(ctx).Model(&currentInstaller).Updates(installer)
+	res := s.db.WithContext(ctx).Model(&currentInstaller).Updates(updates)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app installer: %w", res.Error)
 	}
 
-	return &installer, nil
+	return &updates, nil
 }
