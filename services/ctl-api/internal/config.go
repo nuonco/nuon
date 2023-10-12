@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 )

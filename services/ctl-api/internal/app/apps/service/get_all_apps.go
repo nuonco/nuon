@@ -32,7 +32,12 @@ func (s *service) GetAllApps(ctx *gin.Context) {
 
 func (s *service) getAllApps(ctx context.Context) ([]*app.App, error) {
 	var apps []*app.App
-	res := s.db.WithContext(ctx).Find(&apps)
+	res := s.db.WithContext(ctx).
+		Preload("SandboxRelease").
+		Preload("SandboxRelease.Sandbox").
+		Preload("Installs").
+		Preload("Components").
+		Find(&apps)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all apps: %w", res.Error)
 	}
