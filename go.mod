@@ -29,7 +29,6 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-faker/faker/v4 v4.1.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
-	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-playground/validator/v10 v10.15.3
 	github.com/go-swagger/go-swagger v0.30.5
 	github.com/gogo/status v1.1.1
