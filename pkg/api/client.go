@@ -25,6 +25,7 @@ type Client interface {
 	ListInstalls(ctx context.Context) ([]Install, error)
 	ReprovisionInstall(ctx context.Context, installID string) error
 	RestartInstall(ctx context.Context, installID string) error
+	UpdateInstallSandbox(ctx context.Context, installID string) error
 
 	ListComponents(ctx context.Context) ([]Component, error)
 	RestartComponent(ctx context.Context, componentID string) error
