@@ -20,6 +20,7 @@ type Client interface {
 	ListApps(ctx context.Context) ([]App, error)
 	ReprovisionApp(ctx context.Context, appID string) error
 	RestartApp(ctx context.Context, appID string) error
+	UpdateAppSandbox(ctx context.Context, appID string) error
 
 	ListInstalls(ctx context.Context) ([]Install, error)
 	ReprovisionInstall(ctx context.Context, installID string) error

@@ -55,7 +55,7 @@ func (s *service) UpdateAppSandbox(ctx *gin.Context) {
 		return
 	}
 
-	app, err := s.updateAppSandbox(ctx, appID, &req)
+	app, err := s.updateAppSandbox(ctx, appID, req.SandboxReleaseID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update app %s: %w", appID, err))
 		return
@@ -65,12 +65,12 @@ func (s *service) UpdateAppSandbox(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, app)
 }
 
-func (s *service) updateAppSandbox(ctx context.Context, appID string, req *UpdateAppSandboxRequest) (*app.App, error) {
+func (s *service) updateAppSandbox(ctx context.Context, appID string, sandboxReleaseID string) (*app.App, error) {
 	currentApp := app.App{
 		ID: appID,
 	}
 
-	res := s.db.WithContext(ctx).Preload("SandboxRelease").Model(&currentApp).Updates(app.App{SandboxReleaseID: req.SandboxReleaseID})
+	res := s.db.WithContext(ctx).Preload("SandboxRelease").Model(&currentApp).Updates(app.App{SandboxReleaseID: sandboxReleaseID})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}

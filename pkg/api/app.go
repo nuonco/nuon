@@ -62,3 +62,21 @@ func (c *client) RestartApp(ctx context.Context, appID string) error {
 
 	return nil
 }
+
+func (c *client) UpdateAppSandbox(ctx context.Context, appID string) error {
+	endpoint := fmt.Sprintf("/v1/apps/%s/admin-update-sandbox", appID)
+	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
+	if err != nil {
+		return fmt.Errorf("unable to execute post request: %w", err)
+	}
+
+	var response bool
+	if err := json.Unmarshal(byts, &response); err != nil {
+		return fmt.Errorf("unable to parse response: %w", err)
+	}
+	if !response {
+		return fmt.Errorf("unable to update app sandbox: %v", response)
+	}
+
+	return nil
+}
