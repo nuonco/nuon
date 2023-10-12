@@ -28,17 +28,17 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 
 	// create deploy
 	ctx = context.WithValue(ctx, "org_id", step.OrgID)
-	installCmp := app.InstallComponent{
-		InstallID:   req.InstallID,
-		ComponentID: step.ComponentRelease.ComponentBuild.ComponentConfigConnection.ComponentID,
-	}
+	installCmp := app.InstallComponent{}
 	deploy := app.InstallDeploy{
 		Status:                 "queued",
 		StatusDescription:      "waiting to be deployed to install",
 		ComponentBuildID:       step.ComponentRelease.ComponentBuildID,
 		ComponentReleaseStepID: generics.ToPtr(req.ReleaseStepID),
 	}
-	err := a.db.WithContext(ctx).First(&installCmp, "install_id = ?", req.InstallID).
+	err := a.db.WithContext(ctx).Where(app.InstallComponent{
+		InstallID:   req.InstallID,
+		ComponentID: step.ComponentRelease.ComponentBuild.ComponentConfigConnection.ComponentID,
+	}).First(&installCmp).
 		Association("InstallDeploys").
 		Append(&deploy)
 	if errors.Is(err, gorm.ErrRecordNotFound) {

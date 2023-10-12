@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 //	@BasePath	/v1/apps
@@ -30,8 +31,14 @@ import (
 //	@Success		200				{object}	app.App
 //	@Router			/v1/apps/{app_id} [get]
 func (s *service) GetApp(ctx *gin.Context) {
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	appID := ctx.Param("app_id")
-	app, err := s.getApp(ctx, appID)
+	app, err := s.findApp(ctx, org.ID, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
@@ -40,13 +47,13 @@ func (s *service) GetApp(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, app)
 }
 
-func (s *service) getApp(ctx context.Context, appID string) (*app.App, error) {
+func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, error) {
 	app := app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Components").
 		Preload("SandboxRelease").
-		Where("name = ?", appID).
+		Where("name = ? AND org_id = ?", appID, orgID).
 		Or("id = ?", appID).
 		First(&app)
 	if res.Error != nil {

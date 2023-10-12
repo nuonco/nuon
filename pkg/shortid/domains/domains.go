@@ -22,6 +22,10 @@ func NewCanaryID() string {
 	return shortid.NewNanoID("can")
 }
 
+func NewConfigID() string {
+	return shortid.NewNanoID("cfg")
+}
+
 func NewComponentID() string {
 	return shortid.NewNanoID("cmp")
 }

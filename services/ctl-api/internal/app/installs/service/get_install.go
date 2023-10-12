@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 //	@BasePath	/v1/installs
@@ -30,9 +31,15 @@ import (
 //	@Success		200				{object}	app.Install
 //	@Router			/v1/installs/{install_id} [get]
 func (s *service) GetInstall(ctx *gin.Context) {
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	installID := ctx.Param("install_id")
 
-	install, err := s.getInstall(ctx, installID)
+	install, err := s.findInstall(ctx, org.ID, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
@@ -41,14 +48,14 @@ func (s *service) GetInstall(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, install)
 }
 
-func (s *service) getInstall(ctx context.Context, installID string) (*app.Install, error) {
+func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("AWSAccount").
 		Preload("App").
 		Preload("App.Org").
 		Preload("SandboxRelease").
-		Where("name = ?", installID).
+		Where("name = ? AND org_id = ?", installID, orgID).
 		Or("id = ?", installID).
 		First(&install)
 	if res.Error != nil {
