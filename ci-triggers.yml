@@ -49,6 +49,7 @@ artifacts: |
     - bins/waypoint-plugin-oci-sync/**
   bins/waypoint-plugin-terraform:
     - bins/waypoint-plugin-terraform/**
+    - pkg/terraform/**
   bins/waypoint-plugin-job:
     - bins/waypoint-plugin-job/**
 

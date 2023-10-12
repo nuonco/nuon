@@ -42,7 +42,7 @@ func (c *Adapter) ToHelmComponentConfig(cfg *app.HelmComponentConfig, connection
 	}
 
 	return &componentv1.Component{
-		Id: cfg.ID,
+		Id: cfg.ComponentConfigConnection.ComponentID,
 		BuildCfg: &buildv1.Config{
 			Timeout: durationpb.New(defaultBuildTimeout),
 			Cfg: &buildv1.Config_HelmChartCfg{

@@ -1,10 +1,12 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type RestartAppRequest struct{}
@@ -39,4 +41,20 @@ func (s *service) RestartApp(ctx *gin.Context) {
 
 	s.hooks.Restart(ctx, app.ID, app.Org.SandboxMode)
 	ctx.JSON(http.StatusOK, true)
+}
+
+func (s *service) getApp(ctx context.Context, appID string) (*app.App, error) {
+	app := app.App{}
+	res := s.db.WithContext(ctx).
+		Preload("Org").
+		Preload("Components").
+		Preload("SandboxRelease").
+		Where("name = ?", appID).
+		Or("id = ?", appID).
+		First(&app)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+	}
+
+	return &app, nil
 }

@@ -20,7 +20,8 @@ type TerraformModuleComponentConfig struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	// parent reference
-	ComponentConfigConnectionID string `json:"component_config_connection_id" gorm:"notnull"`
+	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
+	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
 	// terraform configuration values
 	Version   string        `json:"version" gorm:"default:v1.5.3;notnull"`
@@ -32,7 +33,7 @@ type TerraformModuleComponentConfig struct {
 }
 
 func (c *TerraformModuleComponentConfig) BeforeCreate(tx *gorm.DB) error {
-	c.ID = domains.NewComponentID()
+	c.ID = domains.NewConfigID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil

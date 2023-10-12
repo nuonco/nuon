@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 //	@BasePath	/v1/components
@@ -30,9 +31,15 @@ import (
 //	@Success		200				{object}	app.Component
 //	@Router			/v1/components/{component_id} [get]
 func (s *service) GetComponent(ctx *gin.Context) {
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	componentID := ctx.Param("component_id")
 
-	component, err := s.getComponent(ctx, componentID)
+	component, err := s.findComponent(ctx, org.ID, componentID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get component %s: %w", componentID, err))
 		return
@@ -41,11 +48,11 @@ func (s *service) GetComponent(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, component)
 }
 
-func (s *service) getComponent(ctx context.Context, componentID string) (*app.Component, error) {
+func (s *service) findComponent(ctx context.Context, orgID, componentID string) (*app.Component, error) {
 	component := app.Component{}
 	res := s.db.WithContext(ctx).
 		Where("id = ?", componentID).
-		Or("name = ?", componentID).
+		Or("name = ? AND org_id = ?", componentID, orgID).
 		Preload("ComponentConfigs").
 		Preload("App").
 		Preload("App.Org").
