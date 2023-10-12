@@ -52,6 +52,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/admin-restart", s.RestartInstall)
 	api.POST("/v1/installs/:install_id/admin-reprovision", s.ReprovisionInstall)
 	api.POST("/v1/installs/:install_id/admin-forget", s.ForgetInstall)
+	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
 	return nil
 }
 
