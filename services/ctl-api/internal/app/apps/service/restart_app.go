@@ -49,6 +49,7 @@ func (s *service) getApp(ctx context.Context, appID string) (*app.App, error) {
 		Preload("Org").
 		Preload("Components").
 		Preload("SandboxRelease").
+		Preload("SandboxRelease").
 		Where("name = ?", appID).
 		Or("id = ?", appID).
 		First(&app)
