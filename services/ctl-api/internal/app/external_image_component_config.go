@@ -19,7 +19,8 @@ type ExternalImageComponentConfig struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	// value
-	ComponentConfigConnectionID string `json:"component_config_connection_id" gorm:"notnull"`
+	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
+	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
 	// VCS Config
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
@@ -34,7 +35,7 @@ type ExternalImageComponentConfig struct {
 }
 
 func (e *ExternalImageComponentConfig) BeforeCreate(tx *gorm.DB) error {
-	e.ID = domains.NewComponentID()
+	e.ID = domains.NewConfigID()
 	e.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	e.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil

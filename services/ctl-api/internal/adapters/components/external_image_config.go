@@ -28,7 +28,7 @@ func (c *Adapter) toExternalImageAuthConfig(cfg *app.ExternalImageComponentConfi
 
 func (c *Adapter) ToExternalImageConfig(cfg *app.ExternalImageComponentConfig, connections []app.InstallDeploy) (*componentv1.Component, error) {
 	return &componentv1.Component{
-		Id: cfg.ID,
+		Id: cfg.ComponentConfigConnection.ComponentID,
 		BuildCfg: &buildv1.Config{
 			Timeout: durationpb.New(defaultBuildTimeout),
 			Cfg: &buildv1.Config_ExternalImageCfg{
