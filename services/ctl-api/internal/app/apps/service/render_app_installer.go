@@ -32,7 +32,7 @@ type AppInstaller struct {
 //	@Failure		404				{object}	stderr.ErrResponse
 //	@Failure		500				{object}	stderr.ErrResponse
 //	@Success		200				{object}	AppInstaller
-//	@Router			/v1/installers/{installer_slug}/render [GET]
+//	@Router			/v1/installer/{installer_slug}/render [GET]
 func (s *service) RenderAppInstaller(ctx *gin.Context) {
 	slugOrID := ctx.Param("installer_slug")
 	if slugOrID == "" {
