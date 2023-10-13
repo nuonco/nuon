@@ -19,7 +19,8 @@ type JobComponentConfig struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	// value
-	ComponentConfigConnectionID string `json:"component_config_connection_id" gorm:"notnull"`
+	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
+	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
 	// Image attributes, copied from a docker_buid or external_image component.
 	ImageURL string `json:"image_url" gorm:"notnull"`
