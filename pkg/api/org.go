@@ -80,3 +80,21 @@ func (c *client) RestartOrg(ctx context.Context, orgID string) error {
 
 	return nil
 }
+
+func (c *client) DeprovisionOrg(ctx context.Context, orgID string) error {
+	endpoint := fmt.Sprintf("/v1/orgs/%s/admin-deprovision", orgID)
+	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
+	if err != nil {
+		return fmt.Errorf("unable to execute post request: %w", err)
+	}
+
+	var response bool
+	if err := json.Unmarshal(byts, &response); err != nil {
+		return fmt.Errorf("unable to parse response: %w", err)
+	}
+	if !response {
+		return fmt.Errorf("unable to deprovision org: %v", response)
+	}
+
+	return nil
+}

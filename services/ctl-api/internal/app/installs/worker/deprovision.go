@@ -40,6 +40,15 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 		return fmt.Errorf("unable to deprovision install: %w", err)
 	}
 
+	return nil
+
+}
+
+func (w *Workflows) delete(ctx workflow.Context, installID string, dryRun bool) error {
+	if err := w.deprovision(ctx, installID, dryRun); err != nil {
+		return err
+	}
+
 	// update status with response
 	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
 		InstallID: installID,
