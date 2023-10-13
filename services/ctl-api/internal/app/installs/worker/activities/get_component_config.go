@@ -79,5 +79,9 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetComponentCon
 		return nil, fmt.Errorf("unable to convert deploy to component config: %w", err)
 	}
 
+	if err := compCfg.Validate(); err != nil {
+		return nil, fmt.Errorf("component config was invalid: %w", err)
+	}
+
 	return compCfg, nil
 }
