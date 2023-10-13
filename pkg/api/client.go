@@ -14,6 +14,7 @@ const (
 type Client interface {
 	ListOrgs(ctx context.Context) ([]Org, error)
 	DeleteOrg(ctx context.Context, orgID string) error
+	DeprovisionOrg(ctx context.Context, orgID string) error
 	ReprovisionOrg(ctx context.Context, orgID string) error
 	RestartOrg(ctx context.Context, orgID string) error
 
@@ -25,6 +26,8 @@ type Client interface {
 	ListInstalls(ctx context.Context) ([]Install, error)
 	ReprovisionInstall(ctx context.Context, installID string) error
 	RestartInstall(ctx context.Context, installID string) error
+	DeprovisionInstall(ctx context.Context, installID string) error
+	DeleteInstall(ctx context.Context, installID string) error
 	UpdateInstallSandbox(ctx context.Context, installID string) error
 
 	ListComponents(ctx context.Context) ([]Component, error)

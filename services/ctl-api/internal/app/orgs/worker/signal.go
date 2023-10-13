@@ -10,6 +10,7 @@ type Operation string
 
 const (
 	OperationProvision   Operation = "provision"
+	OperationDelete      Operation = "delete"
 	OperationDeprovision Operation = "deprovision"
 	OperationReprovision Operation = "reprovision"
 )
