@@ -98,3 +98,39 @@ func (c *client) UpdateInstallSandbox(ctx context.Context, installID string) err
 
 	return nil
 }
+
+func (c *client) DeprovisionInstall(ctx context.Context, installID string) error {
+	endpoint := fmt.Sprintf("/v1/installs/%s/admin-deprovision", installID)
+	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
+	if err != nil {
+		return fmt.Errorf("unable to execute post request: %w", err)
+	}
+
+	var response bool
+	if err := json.Unmarshal(byts, &response); err != nil {
+		return fmt.Errorf("unable to parse response: %w", err)
+	}
+	if !response {
+		return fmt.Errorf("unable to deprovision: %v", response)
+	}
+
+	return nil
+}
+
+func (c *client) DeleteInstall(ctx context.Context, installID string) error {
+	endpoint := fmt.Sprintf("/v1/installs/%s/admin-delete", installID)
+	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
+	if err != nil {
+		return fmt.Errorf("unable to execute post request: %w", err)
+	}
+
+	var response bool
+	if err := json.Unmarshal(byts, &response); err != nil {
+		return fmt.Errorf("unable to parse response: %w", err)
+	}
+	if !response {
+		return fmt.Errorf("unable to delete: %v", response)
+	}
+
+	return nil
+}

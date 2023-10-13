@@ -6,9 +6,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker"
 )
 
-func (o *Hooks) Deleted(ctx context.Context, orgID string) {
+func (o *Hooks) Deprovisioned(ctx context.Context, orgID string) {
 	o.l.Info("sending signal")
 	o.sendSignal(ctx, orgID, worker.Signal{
-		Operation: worker.OperationDelete,
+		Operation: worker.OperationDeprovision,
 	})
 }
