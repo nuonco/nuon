@@ -45,7 +45,7 @@ type client struct {
 
 	Settings Settings `validate:"required"`
 	Auth     *credentials.Config
-	OrgId    string `validate:"unless Auth 1"`
+	OrgId    string
 }
 
 var _ Client = (*client)(nil)

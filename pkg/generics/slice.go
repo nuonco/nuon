@@ -1,5 +1,15 @@
 package generics
 
+func SliceContains[T comparable](val T, vals []T) bool {
+	for _, v := range vals {
+		if val == v {
+			return true
+		}
+	}
+
+	return false
+}
+
 func ToIntSlice[T any](vals []T) []interface{} {
 	intVals := make([]interface{}, len(vals))
 	for idx, val := range vals {

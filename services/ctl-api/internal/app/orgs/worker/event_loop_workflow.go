@@ -53,6 +53,10 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 			if err := w.deprovision(ctx, req.OrgID, req.SandboxMode); err != nil {
 				l.Info("unable to deprovision org: %w", zap.Error(err))
 			}
+		case OperationDelete:
+			if err := w.delete(ctx, req.OrgID, req.SandboxMode); err != nil {
+				l.Info("unable to delete org: %w", zap.Error(err))
+			}
 			finished = true
 		}
 	})

@@ -67,7 +67,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 		// register activities
 		worker.WithActivity(provision.NewActivities(cfg, n)),
 		worker.WithActivity(runner.NewActivities(v, cfg)),
-		worker.WithActivity(deprovision.NewActivities(n)),
+		worker.WithActivity(deprovision.NewActivities(v, n, &cfg)),
 		worker.WithActivity(dns.NewActivities(v)),
 	)
 	if err != nil {

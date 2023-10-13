@@ -44,6 +44,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/add-user", s.CreateOrgUser)
 	api.POST("/v1/orgs/:org_id/admin-delete", s.AdminDeleteOrg)
 	api.POST("/v1/orgs/:org_id/admin-reprovision", s.AdminReprovisionOrg)
+	api.POST("/v1/orgs/:org_id/admin-deprovision", s.AdminDeprovisionOrg)
 	api.POST("/v1/orgs/:org_id/admin-restart", s.RestartOrg)
 	return nil
 }
