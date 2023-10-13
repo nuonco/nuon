@@ -24,12 +24,14 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetRequest) (*c
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+		Preload("ComponentConfigConnection.TerraformModuleComponentConfig.ComponentConfigConnection").
 
 		// preload all helm configs
 		Preload("ComponentConfigConnection.HelmComponentConfig").
 		Preload("ComponentConfigConnection.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnection.HelmComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigConnection.HelmComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+		Preload("ComponentConfigConnection.HelmComponentConfig.ComponentConfigConnection").
 
 		// preload all docker configs
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig").
@@ -37,6 +39,7 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetRequest) (*c
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig.BasicDeployConfig").
+		Preload("ComponentConfigConnection.DockerBuildComponentConfig.ComponentConfigConnection").
 
 		// preload all external image configs
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
@@ -44,9 +47,11 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetRequest) (*c
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.BasicDeployConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig.ComponentConfigConnection").
 
 		// preload all job configs
 		Preload("ComponentConfigConnection.JobComponentConfig").
+		Preload("ComponentConfigConnection.JobComponentConfig.ComponentConfigConnection").
 
 		// get config by build ID
 		First(&bld, "id = ?", req.BuildID)
@@ -57,6 +62,10 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetRequest) (*c
 	compCfg, err := a.components.FromBuild(&bld)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert build to component config: %w", err)
+	}
+
+	if err := compCfg.Validate(); err != nil {
+		return nil, fmt.Errorf("component config was invalid: %w", err)
 	}
 
 	return compCfg, nil
