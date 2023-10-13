@@ -59,13 +59,19 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req InstallEventLoopR
 				l.Error("unable to reprovision", zap.Error(err))
 				return
 			}
+		case OperationDelete:
+			err = w.delete(ctx, req.InstallID, req.SandboxMode)
+			if err != nil {
+				l.Error("unable to delete", zap.Error(err))
+				return
+			}
+			finished = true
 		case OperationDeprovision:
 			err = w.deprovision(ctx, req.InstallID, req.SandboxMode)
 			if err != nil {
 				l.Error("unable to deprovision", zap.Error(err))
 				return
 			}
-			finished = true
 		case OperationForgotten:
 			finished = true
 		case OperationDeploy:

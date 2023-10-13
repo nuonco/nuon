@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -54,7 +55,7 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 	}
 
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
-	act := NewActivities(nil)
+	act := NewActivities(nil, nil, nil)
 
 	stReq := StartRequest{
 		DeprovisionRequest:  req,
@@ -64,6 +65,37 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 	if err != nil {
 		l.Debug("unable to execute start activity", "error", err)
 		return resp, fmt.Errorf("unable to execute start activity: %w", err)
+	}
+
+	// NOTE(jm): this is not a long term solution, eventually we will manage both the runner and the different
+	// components using nuon components, and then will just remove these by orchestrating the executors upstream.
+	//
+	// however, for now, until this all works we just "cheat" and delete the builtin namespace
+	listResp, err := execListNamespaces(ctx, act, ListNamespacesRequest{
+		AppID:     req.AppId,
+		OrgID:     req.OrgId,
+		InstallID: req.InstallId,
+	})
+	if err != nil {
+		l.Debug("unable to list namespaces", "error", err)
+		return resp, fmt.Errorf("unable to delete namespace: %w", err)
+	}
+
+	for _, namespace := range listResp.Namespaces {
+		if generics.SliceContains(namespace, terraformManagedNamespaces) {
+			continue
+		}
+
+		_, err = execDeleteNamespace(ctx, act, DeleteNamespaceRequest{
+			AppID:     req.AppId,
+			OrgID:     req.OrgId,
+			InstallID: req.InstallId,
+			Namespace: namespace,
+		})
+		if err != nil {
+			l.Debug("unable to delete namespace activity", "error", err)
+			return resp, fmt.Errorf("unable to delete namespace: %w", err)
+		}
 	}
 
 	cpReq := planv1.CreatePlanRequest{
@@ -98,11 +130,10 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 		return resp, err
 	}
 
-	// if req.PlanOnly {
-	//	l.Info("skipping the rest of the workflow - plan only")
-	//	w.finishWorkflow(ctx, req, resp, nil)
-	//	return resp, nil
-	// }
+	if req.PlanOnly {
+		l.Info("skipping the rest of the workflow - plan only")
+		return resp, nil
+	}
 
 	l.Debug("executing sandbox execute")
 	seReq := executev1.ExecutePlanRequest{Plan: spr.Plan}
@@ -150,5 +181,35 @@ func execFinish(ctx workflow.Context, act *Activities, req FinishRequest) (Finis
 	if err := fut.Get(ctx, &resp); err != nil {
 		return resp, err
 	}
+	return resp, nil
+}
+
+// exec delete namespace will delete a namespace of choice for the install
+func execDeleteNamespace(ctx workflow.Context, act *Activities, dnr DeleteNamespaceRequest) (DeleteNamespaceResponse, error) {
+	var resp DeleteNamespaceResponse
+
+	l := workflow.GetLogger(ctx)
+	l.Debug("executing delete namespace activity")
+	fut := workflow.ExecuteActivity(ctx, act.DeleteNamespace, dnr)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+// exec list namespaces activity
+func execListNamespaces(ctx workflow.Context, act *Activities, lnr ListNamespacesRequest) (ListNamespacesResponse, error) {
+	var resp ListNamespacesResponse
+
+	l := workflow.GetLogger(ctx)
+	l.Debug("executing list namespaces activity")
+	fut := workflow.ExecuteActivity(ctx, act.ListNamespaces, lnr)
+
+	if err := fut.Get(ctx, &resp); err != nil {
+		return resp, err
+	}
+
 	return resp, nil
 }
