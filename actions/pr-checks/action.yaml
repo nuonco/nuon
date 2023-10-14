@@ -17,7 +17,7 @@ runs:
       if: always()
       id: lfs
       with:
-        filesizelimit: 2MB
+        filesizelimit: 5MB
         token: ${{ inputs.github_token }}
 
     - name: Lint pull request title
