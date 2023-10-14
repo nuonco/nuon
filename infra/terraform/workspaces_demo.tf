@@ -155,3 +155,47 @@ module "e2e-prod" {
   }
   triggered_by = [module.infra-terraform.workspace_id]
 }
+
+module "customers-shared-stage" {
+  source = "./modules/workspace"
+
+  name          = "customers-shared-stage"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "infra/customers-shared"
+  variable_sets = ["aws-environment-credentials", "api-stage"]
+  project_id    = tfe_project.product.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+
+  // NOTE: we have to set the api token manually in the ui, so we don't leak it
+  env_vars = {
+    NUON_API_URL = "https://ctl.stage.nuon.co"
+  }
+
+  vars = {
+    sandbox_org_id  = "orgxik6l2v8bqbgz41c1nh1acb"
+    org_id = "orgkyyq9mk8rkohrom51euxae6"
+  }
+
+  triggered_by = [module.infra-terraform.workspace_id]
+}
+
+module "customers-shared-prod" {
+  source = "./modules/workspace"
+
+  name          = "customers-shared-prod"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "infra/customers-shared"
+  variable_sets = ["aws-environment-credentials", "api-prod"]
+  project_id    = tfe_project.product.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+
+  vars = {
+    sandbox_org_id = "org1dc0615iykaaryb1txem6iw"
+    org_id = "org11dvz3bq0at3ol1k2lk1esf"
+  }
+  triggered_by = [module.infra-terraform.workspace_id]
+}
