@@ -14,7 +14,7 @@ apps:
       github: https://github.com/temporalio/temporal
       community: https://community.temporal.io/
       homepage: https://temporal.io/
-      demo: https://www.youtube.com/watch?v=2HjnQlnA5eY
+      demo: https://www.youtube.com/embed/2HjnQlnA5eY
   - name: sourcegraph
     installs:
       - Pepsi
@@ -29,4 +29,4 @@ apps:
       github: https://github.com/sourcegraph
       community: https://discord.com/invite/s2qDtYGnAE
       homepage: https://sourcegraph.com/
-      demo: https://www.youtube.com/watch?v=D2x037j3BZ4
+      demo: https://www.youtube.com/embed/D2x037j3BZ4

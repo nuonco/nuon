@@ -16,10 +16,6 @@ locals {
   ])
 }
 
-output "sandbox_installs" {
-  value = local.sandbox_installs
-}
-
 resource "nuon_app" "sandbox" {
   for_each = { for app in local.sandbox.apps : app.name => app }
 
