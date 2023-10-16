@@ -25,7 +25,7 @@ type AppInstaller struct {
 //	@Tags			apps
 //	@Accept			json
 //	@Produce		json
-//	@Param			installer_slug	path	string				true	"installer slug or ID"
+//	@Param			installer_slug	path		string	true	"installer slug or ID"
 //	@Failure		400				{object}	stderr.ErrResponse
 //	@Failure		401				{object}	stderr.ErrResponse
 //	@Failure		403				{object}	stderr.ErrResponse
@@ -53,14 +53,14 @@ func (s *service) RenderAppInstaller(ctx *gin.Context) {
 	})
 }
 
-func (s *service) getAppInstaller(ctx context.Context, appID string) (*app.AppInstaller, error) {
+func (s *service) getAppInstaller(ctx context.Context, installerID string) (*app.AppInstaller, error) {
 	app := app.AppInstaller{}
 	res := s.db.WithContext(ctx).
 		Preload("App.Org").
 		Preload("App.SandboxRelease").
 		Preload("Metadata").
-		Where("slug = ?", appID).
-		Or("id = ?", appID).
+		Where("slug = ?", installerID).
+		Or("id = ?", installerID).
 		First(&app)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)

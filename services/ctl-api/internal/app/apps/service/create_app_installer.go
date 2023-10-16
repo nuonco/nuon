@@ -23,6 +23,7 @@ type CreateAppInstallerRequest struct {
 		Github        string `validate:"required" json:"github"`
 		Homepage      string `validate:"required" json:"homepage"`
 		Community     string `validate:"required" json:"community"`
+		Demo          string `json:"demo"`
 	} `json:"links"`
 }
 
@@ -95,6 +96,7 @@ func (s *service) createAppInstaller(ctx context.Context, orgID, appID string, r
 			DocumentationURL: req.Links.Documentation,
 			GithubURL:        req.Links.Github,
 			LogoURL:          req.Links.Logo,
+			DemoURL:          req.Links.Demo,
 		},
 	}
 

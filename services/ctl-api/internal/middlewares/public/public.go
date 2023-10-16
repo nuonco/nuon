@@ -19,6 +19,8 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/docs/*any"}:                           {},
 	{"GET", "/v1/general/cli-config"}:               {},
 	{"GET", "/v1/installer/:installer_slug/render"}: {},
+	{"GET", "/v1/installer/:installer_slug/install/:install_id"}: {},
+	{"POST", "/v1/installer/:installer_slug/installs"}:           {},
 }
 
 func IsPublic(ctx *gin.Context) bool {

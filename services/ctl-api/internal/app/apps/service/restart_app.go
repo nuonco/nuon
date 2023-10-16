@@ -18,8 +18,8 @@ type RestartAppRequest struct{}
 //	@Summary	restart an apps event loop
 //	@Schemes
 //	@Description	restart app event loop
-//	@Param			app_id	path	string					true	"app ID"
-//	@Param			req			body	RestartAppRequest	true	"Input"
+//	@Param			app_id	path	string				true	"app ID"
+//	@Param			req		body	RestartAppRequest	true	"Input"
 //	@Tags			apps/admin
 //	@Accept			json
 //	@Produce		json

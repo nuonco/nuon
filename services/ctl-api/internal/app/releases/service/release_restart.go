@@ -16,7 +16,7 @@ type RestartReleaseReleaseRequest struct{}
 //	@Summary	restart an releases event loop
 //	@Schemes
 //	@Description	restart release event loop
-//	@Param			release_id	path	string					true	"release ID"
+//	@Param			release_id	path	string							true	"release ID"
 //	@Param			req			body	RestartReleaseReleaseRequest	true	"Input"
 //	@Tags			releases/admin
 //	@Accept			json

@@ -19,7 +19,7 @@ type RestartComponentRequest struct{}
 //	@Schemes
 //	@Description	restart component event loop
 //	@Param			component_id	path	string					true	"component ID"
-//	@Param			req			body	RestartComponentRequest	true	"Input"
+//	@Param			req				body	RestartComponentRequest	true	"Input"
 //	@Tags			components/admin
 //	@Accept			json
 //	@Produce		json
