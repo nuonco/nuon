@@ -5,7 +5,7 @@ resource "nuon_helm_chart_component" "signoz" {
 
   public_repo = {
     directory = "charts/signoz"
-    repo      = "https://github.com/SigNoz"
+    repo      = "https://github.com/SigNoz/charts"
     branch    = "main"
   }
 
