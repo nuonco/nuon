@@ -31,7 +31,7 @@ func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error 
 //	@Schemes
 //	@Description	create a job component config.
 //	@Param			req				body	CreateJobComponentConfigRequest	true	"Input"
-//	@Param			component_id	path	string										true	"component ID"
+//	@Param			component_id	path	string							true	"component ID"
 //	@Tags			components
 //	@Accept			json
 //	@Produce		json
