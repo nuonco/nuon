@@ -5,7 +5,7 @@ apps:
       - Pepsi
       - Coca Cola
     installer:
-      slug: signoz-test
+      slug: signoz
       description: OpenTelemetry-Native Traces, Metrics, and Logs in a single pane
       name: SigNoz
     urls:
@@ -31,3 +31,19 @@ apps:
       community: https://discord.com/invite/s2qDtYGnAE
       homepage: https://sourcegraph.com/
       demo: https://www.youtube.com/watch?v=D2x037j3BZ4
+
+  - name: temporal
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
+      slug: temporal
+      description: Code for more reliable systems
+      name: Temporal
+    urls:
+      documentation: https://docs.temporal.io/
+      logo: https://temporal.io/images/logos/logo-temporal-with-copy.svg
+      github: https://github.com/temporalio/temporal
+      community: https://community.temporal.io/
+      homepage: https://temporal.io/
+      demo: https://www.youtube.com/watch?v=2HjnQlnA5eY
