@@ -20,6 +20,7 @@ type UpdateAppInstallerRequest struct {
 		Github        string `validate:"required" json:"github"`
 		Homepage      string `validate:"required" json:"homepage"`
 		Community     string `validate:"required" json:"community"`
+		Demo          string `validate:"required" json:"demo"`
 	} `json:"links"`
 }
 
@@ -41,7 +42,7 @@ func (c *UpdateAppInstallerRequest) Validate(v *validator.Validate) error {
 //	@Accept			json
 //	@Param			req	body	UpdateAppInstallerRequest	true	"Input"
 //	@Produce		json
-//	@Param			installer_id	path	string				true	"installer ID"
+//	@Param			installer_id	path		string	true	"installer ID"
 //	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
 //	@Param			Authorization	header		string	true	"bearer auth token"
 //	@Failure		400				{object}	stderr.ErrResponse
@@ -80,6 +81,7 @@ func (s *service) updateAppInstaller(ctx context.Context, installerID string, re
 		LogoURL:          req.Links.Logo,
 		HomepageURL:      req.Links.Homepage,
 		CommunityURL:     req.Links.Community,
+		DemoURL:          req.Links.Demo,
 		Description:      req.Description,
 		Name:             req.Name,
 	}

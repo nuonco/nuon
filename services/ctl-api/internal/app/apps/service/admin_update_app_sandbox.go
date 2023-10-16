@@ -15,16 +15,16 @@ type AdminUpdateSandboxRequest struct{}
 //
 // Update an app to the latest sandbox release
 //
-//		@Summary	update an app to the latest sandbox
-//		@Schemes
-//		@Description	update and app to the latest sandbox
-//	  @Param			app_id	path	string					true	"app ID"
-//		@Param			req			body	AdminUpdateSandboxRequest	true	"Input"
-//		@Tags			apps/admin
-//		@Accept			json
-//		@Produce		json
-//		@Success		200	{boolean}	true
-//		@Router			/v1/apps/{app_id}/admin-update-sandbox [POST]
+//	@Summary	update an app to the latest sandbox
+//	@Schemes
+//	@Description	update and app to the latest sandbox
+//	@Param			app_id	path	string						true	"app ID"
+//	@Param			req		body	AdminUpdateSandboxRequest	true	"Input"
+//	@Tags			apps/admin
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{boolean}	true
+//	@Router			/v1/apps/{app_id}/admin-update-sandbox [POST]
 func (s *service) AdminUpdateSandbox(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

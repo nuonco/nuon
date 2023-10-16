@@ -16,8 +16,8 @@ type RestartOrgRequest struct{}
 //	@Summary	restart an orgs event loop
 //	@Schemes
 //	@Description	restart org event loop
-//	@Param			org_id	path	string					true	"org ID"
-//	@Param			req			body	RestartOrgRequest	true	"Input"
+//	@Param			org_id	path	string				true	"org ID"
+//	@Param			req		body	RestartOrgRequest	true	"Input"
 //	@Tags			orgs/admin
 //	@Accept			json
 //	@Produce		json

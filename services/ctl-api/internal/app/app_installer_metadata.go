@@ -25,6 +25,7 @@ type AppInstallerMetadata struct {
 	GithubURL        string `json:"github_url" gorm:"notnull"`
 	CommunityURL     string `json:"community_url" gorm:"notnull"`
 	HomepageURL      string `json:"homepage_url" gorm:"notnull"`
+	DemoURL          string `json:"demo_url"`
 }
 
 func (a *AppInstallerMetadata) BeforeCreate(tx *gorm.DB) error {
