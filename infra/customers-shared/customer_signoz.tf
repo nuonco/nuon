@@ -9,10 +9,10 @@ resource "nuon_helm_chart_component" "signoz" {
     branch    = "main"
   }
 
-  value {
-    name  = "frontend.service.annotations.\"external-dns.alpha.kubernetes.io/hostname\""
-    value = "nlb.{{ .nuon.install.public_domain }}"
-  }
+  #value {
+    #name  = "frontend.service.annotations.\"external-dns.alpha.kubernetes.io/hostname\""
+    #value = "nlb.{{ .nuon.install.public_domain }}"
+  #}
 }
 
 resource "nuon_install" "signoz_install" {
