@@ -29,7 +29,7 @@ type AdminForgetInstallRequest struct{}
 //	@Failure		404	{object}	stderr.ErrResponse
 //	@Failure		500	{object}	stderr.ErrResponse
 //	@Success		200	{boolean}	true
-//	@Router			/v1/installs/{install_id}/forget [POST]
+//	@Router			/v1/installs/{install_id}/admin-forget [POST]
 func (s *service) ForgetInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
