@@ -10,20 +10,19 @@ type AdminDeleteInstallRequest struct{}
 
 // Delete an install
 //
-//	@Summary deprovision an install, but keep it in the database
+//	@Summary	delete an install
 //
-// @Schemes
+//	@Schemes
 //
-//	@Description	deprovision an install
-//
-// @Param			install_id	path	string	true	"org ID for your current org"
+//	@Description	delete an install
 //
 //	@Tags			installs/admin
 //	@Accept			json
-//	@Param			req	body	AdminDeleteInstallRequest	true	"Input"
+//	@Param			req			body	AdminDeleteInstallRequest	true	"Input"
+//	@Param			install_id	path	string						true	"install id"
 //	@Produce		json
 //	@Success		201	{string}	ok
-//	@Router			/v1/installs/{install_id}/admin-deprovision [POST]
+//	@Router			/v1/installs/{install_id}/admin-delete [POST]
 func (s *service) AdminDeleteInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	s.hooks.Deleted(ctx, installID)

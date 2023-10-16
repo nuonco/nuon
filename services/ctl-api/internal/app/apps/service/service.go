@@ -22,6 +22,8 @@ type service struct {
 func (s *service) RegisterRoutes(api *gin.Engine) error {
 	// public installer endpoints
 	api.GET("/v1/installer/:installer_slug/render", s.RenderAppInstaller)
+	api.POST("/v1/installer/:installer_slug/installs", s.CreateInstallerInstall)
+	api.GET("/v1/installer/:installer_slug/install/:install_id", s.GetInstallerInstall)
 
 	// manage apps
 	api.POST("/v1/apps", s.CreateApp)
