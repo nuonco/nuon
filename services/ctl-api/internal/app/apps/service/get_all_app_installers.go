@@ -33,7 +33,7 @@ func (s *service) GetAllAppInstallers(ctx *gin.Context) {
 func (s *service) getAllAppInstallers(ctx context.Context) ([]*app.AppInstaller, error) {
 	var apps []*app.AppInstaller
 	res := s.db.WithContext(ctx).
-		Preload("AppInstallerMetadata").
+		Preload("Metadata").
 		Find(&apps)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all app installers: %w", res.Error)
