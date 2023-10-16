@@ -19,10 +19,10 @@ import (
 //	@Tags			apps/admin
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{array}	app.App
+//	@Success		200	{array}	app.AppInstaller
 //	@Router			/v1/installers [get]
 func (s *service) GetAllAppInstallers(ctx *gin.Context) {
-	apps, err := s.getAllApps(ctx)
+	apps, err := s.getAllAppInstallers(ctx)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get apps for: %w", err))
 		return
@@ -34,10 +34,9 @@ func (s *service) getAllAppInstallers(ctx context.Context) ([]*app.AppInstaller,
 	var apps []*app.AppInstaller
 	res := s.db.WithContext(ctx).
 		Preload("AppInstallerMetadata").
-		Preload("App").
 		Find(&apps)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get all apps: %w", res.Error)
+		return nil, fmt.Errorf("unable to get all app installers: %w", res.Error)
 	}
 	return apps, nil
 }
