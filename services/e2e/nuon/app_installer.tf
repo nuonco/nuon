@@ -9,4 +9,5 @@ resource "nuon_app_installer" "main" {
   homepage_url = "https://nuon.co"
   github_url = "https://github.com/nuonco"
   logo_url = "https://fakeimg.pl/250x100/"
+  demo_url = "https://www.loom.com/share/aec62b468f9747c59ed5c30c79d473c4"
 }
