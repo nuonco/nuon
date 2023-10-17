@@ -71,7 +71,7 @@ func (s *service) CreateInstallerInstall(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Created(ctx, install.ID, installer.App.Org.SandboxMode)
+	s.installHooks.Created(ctx, install.ID, installer.App.Org.SandboxMode)
 	ctx.JSON(http.StatusCreated, install)
 }
 
