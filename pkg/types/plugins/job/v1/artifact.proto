@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package job.v1;
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/job/v1";
+
+message Artifact {
+  // image is the OCI compatible image url, and for most cases will reference an ECR repo in either the vendor's account
+  // or the customer's account.
+  // eg: public.ecr.aws/p7e3r5y0/waypoint-plugin-job
+  string image = 1;
+
+  // tag is the image tag to fetch
+  string tag = 2;
+
+  map<string, string> labels = 3;
+}

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package job.v1;
+
+//NOTE(jm): this is a hashicorp proto, defined https://github.com/powertoolsdev/mono/pull/671
+import "opaqueany/v1/any.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/job/v1";
+
+// You can customise this message to change the fields for
+// the output value from your Deployment
+message Run {
+  opaqueany.v1.Any resource_state = 1;
+}
+
+// An example proto message for a deployment resource. When you make your own
+// this might look a little different depending on what kinds of options you
+// wish to know about a resource
+message Resource {
+  string name = 1;
+
+  message Run {
+    string name = 1;
+  }
+}
