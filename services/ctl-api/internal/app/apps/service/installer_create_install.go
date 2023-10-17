@@ -64,14 +64,14 @@ func (s *service) CreateInstallerInstall(ctx *gin.Context) {
 	}
 
 	cctx := context.WithValue(ctx, "org_id", installer.App.OrgID)
-	cctx = context.WithValue(ctx, "user_id", installer.ID)
+	cctx = context.WithValue(cctx, "user_id", installer.ID)
 	install, err := s.createInstall(cctx, installer.App.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
 	}
 
-	s.installHooks.Created(ctx, install.ID, installer.App.Org.SandboxMode)
+	s.installHooks.Created(cctx, install.ID, installer.App.Org.SandboxMode)
 	ctx.JSON(http.StatusCreated, install)
 }
 
