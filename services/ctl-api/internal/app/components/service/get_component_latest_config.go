@@ -67,6 +67,11 @@ func (s *service) getComponentLatestConfig(ctx *gin.Context, cmpID string) (*app
 		Preload("ComponentConfigs.ExternalImageComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.ExternalImageComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.ExternalImageComponentConfig.BasicDeployConfig").
+
+		// preload all job configs
+		Preload("ComponentConfigs.JobComponentConfig").
+
+		// get config by build ID
 		First(&cmp, "id = ?", cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get most recent component config: %w", res.Error)
