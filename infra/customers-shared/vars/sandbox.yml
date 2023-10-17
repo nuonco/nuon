@@ -10,7 +10,7 @@ apps:
       name: Temporal
     urls:
       documentation: https://docs.temporal.io/
-      logo: https://temporal.io/images/logos/logo-temporal-with-copy.svg
+      logo: https://cdn.icon-icons.com/icons2/3915/PNG/512/temporal_logo_icon_249430.png
       github: https://github.com/temporalio/temporal
       community: https://community.temporal.io/
       homepage: https://temporal.io/
@@ -30,3 +30,18 @@ apps:
       community: https://discord.com/invite/s2qDtYGnAE
       homepage: https://sourcegraph.com/
       demo: https://www.youtube.com/embed/D2x037j3BZ4
+  - name: clickhouse
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
+      slug: clickhouse
+      description: ClickHouse is the fastest and most resource efficient open-source database for real-time apps and analytics.
+      name: ClickHouse
+    urls:
+      documentation:  https://clickhouse.com/docs/en/intro
+      logo: https://upload.wikimedia.org/wikipedia/commons/0/0e/Clickhouse.png
+      github: https://github.com/clickhouse
+      community: https://clickhousedb.slack.com/join/shared_invite/zt-23y85sfck-crUbdd4RupnjOBxfFIQv5w#/shared-invite/email
+      homepage:  https://clickhouse.com
+      demo: https://www.youtube.com/embed/FtoWGT7kS-c
