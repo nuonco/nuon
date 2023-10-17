@@ -30,6 +30,7 @@ var pluginTypeNames map[PluginType]string = map[PluginType]string{
 	PluginTypeOciSync:   "oci-sync",
 	PluginTypeDev:       "dev",
 	PluginTypeNoop:      "noop",
+	PluginTypeJob:       "job",
 }
 
 type PluginType int
@@ -44,6 +45,7 @@ const (
 	PluginTypeOci
 	PluginTypeOciSync
 	PluginTypeHelm
+	PluginTypeJob
 )
 
 // ImageURL returns the image url to access this using our default, public ecr repo
@@ -78,6 +80,8 @@ func (p PluginType) RepositoryName() string {
 		return "waypoint-plugin-oci"
 	case PluginTypeOciSync:
 		return "waypoint-plugin-oci-sync"
+	case PluginTypeJob:
+		return "waypoint-plugin-job"
 	default:
 	}
 	return ""

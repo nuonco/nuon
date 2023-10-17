@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package job.v1;
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/job/v1";
+
+message Deployment {}
