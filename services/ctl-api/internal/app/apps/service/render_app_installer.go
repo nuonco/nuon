@@ -56,6 +56,7 @@ func (s *service) RenderAppInstaller(ctx *gin.Context) {
 func (s *service) getAppInstaller(ctx context.Context, installerID string) (*app.AppInstaller, error) {
 	app := app.AppInstaller{}
 	res := s.db.WithContext(ctx).
+		Preload("App").
 		Preload("App.Org").
 		Preload("App.SandboxRelease").
 		Preload("Metadata").
