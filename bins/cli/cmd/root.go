@@ -27,7 +27,6 @@ func (c *cli) rootCmd() *cobra.Command {
 		c.componentsCmd(),
 		c.installsCmd(),
 		c.releasesCmd(),
-		c.buildsCmd(),
 		c.orgsCmd(),
 		c.versionCmd(),
 	}
