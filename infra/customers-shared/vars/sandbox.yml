@@ -60,3 +60,18 @@ apps:
       community: https://clickhousedb.slack.com/join/shared_invite/zt-23y85sfck-crUbdd4RupnjOBxfFIQv5w#/shared-invite/email
       homepage:  https://clickhouse.com
       demo: https://www.youtube.com/embed/FtoWGT7kS-c
+  - name: retool
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
+      slug: retool
+      description: The fastest way to develop effective software.
+      name: Retool
+    urls:
+      documentation:  https://docs.retool.com/
+      logo:  https://logo.clearbit.com/retool.com?size=400
+      github: https://github.com/tryretool
+      community: https://community.retool.com/
+      homepage: https://retool.com/
+      demo: https://www.youtube.com/embed/AkcwNwPy7RI
