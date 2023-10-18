@@ -14,7 +14,7 @@ resource "aws_kms_alias" "eks" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.0"
+  version = "~> 19.17.2"
 
   # This module does something funny with state and `default_tags`
   # so it shows as a change on every apply. By using a provider w/o
@@ -35,6 +35,12 @@ module "eks" {
   cluster_encryption_config = {
     provider_key_arn = aws_kms_key.eks.arn
     resources        = ["secrets"]
+  }
+
+  cluster_addons = {
+    vpc-cni = {
+      most_recent = true
+    }
   }
 
   node_security_group_additional_rules = {}
