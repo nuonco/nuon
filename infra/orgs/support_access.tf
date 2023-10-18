@@ -1,10 +1,10 @@
-// NOTE(jdt): create these resources in the orgs account
 data "aws_iam_policy_document" "support" {
   statement {
     effect = "Allow"
     actions = [
       "eks:DescribeCluster",
       "eks:ListCluster",
+      "sts:AssumeRole",
     ]
     resources = ["*", ]
   }
