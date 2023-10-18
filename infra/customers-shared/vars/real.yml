@@ -1,17 +1,2 @@
 ---
-apps:
-  - name: signoz
-    installs:
-      - Pepsi
-      - Coca Cola
-    installer:
-      slug: signoz
-      description: OpenTelemetry-Native Traces, Metrics, and Logs in a single pane
-      name: SigNoz
-    urls:
-      documentation: https://signoz.io/docs
-      logo: https://d33wubrfki0l68.cloudfront.net/2b655ea5a90ef409e4b73144da2536ec35bcf69f/a959a/img/signozlogo-orange.svg
-      github: https://github.com/signoz/signoz
-      community: https://signoz-community.slack.com/join/shared_invite/zt-2421fjjci-RO7y1FrVbkh0bnh~8oy5nA#/shared-invite/email
-      homepage: https://signoz.io
-      demo: https://www.youtube.com/embed/jD36hjfL1x0
+apps: []

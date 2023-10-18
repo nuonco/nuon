@@ -1,6 +1,8 @@
 resource "nuon_helm_chart_component" "signoz" {
+  provider = nuon.sandbox
+
   name       = "Signoz"
-  app_id = nuon_app.real["signoz"].id
+  app_id = nuon_app.sandbox["signoz"].id
   chart_name = "signoz"
 
   public_repo = {
@@ -16,7 +18,9 @@ resource "nuon_helm_chart_component" "signoz" {
 }
 
 resource "nuon_install" "signoz_install" {
-  app_id = nuon_app.real["signoz"].id
+  provider = nuon.sandbox
+
+  app_id = nuon_app.sandbox["signoz"].id
 
   name         = "signoz-demo"
   region       = "us-east-1"
