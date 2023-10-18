@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## 0.8.3
+
+Promoting internal endpoints into prod.
+
 ## 0.8.2
 
 Update api with event loop reconciliation changes.
