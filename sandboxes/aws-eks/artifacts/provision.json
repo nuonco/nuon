@@ -51,7 +51,7 @@
         "eks:ListTagsForResource",
         "eks:DescribeNodegroup",
         "eks:ListAddons",
-        "eks:CreateAddons",
+        "eks:CreateAddon",
         "eks:DescribeAddon",
         "eks:DescribeAddonConfiguration",
         "eks:DescribeAddonVersions",
