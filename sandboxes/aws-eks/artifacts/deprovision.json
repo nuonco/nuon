@@ -40,6 +40,7 @@
         "eks:DeleteNodegroup",
         "eks:DescribeCluster",
         "eks:DescribeNodegroup",
+        "eks:DeleteAddon",
         "iam:DeleteOpenIDConnectProvider",
         "iam:DeletePolicy",
         "iam:DeletePolicyVersion",
