@@ -44,7 +44,7 @@ func (s *service) getComponentConnectionCommit(ctx context.Context, cmpID string
 		Preload("ExternalImageComponentConfig.BasicDeployConfig").
 
 		// preload
-		First(&cmp)
+		First(&cmp, "component_id = ?", cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component config connection: %w", res.Error)
 	}
