@@ -2,7 +2,9 @@ package deprovision
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/kube"
@@ -65,12 +67,18 @@ func (a *Activities) ListNamespaces(ctx context.Context, req ListNamespacesReque
 	}
 
 	namespaces, err := a.listNamespaces(ctx, clientset.CoreV1().Namespaces())
+	var dnsError *net.DNSError
+	if errors.As(err, &dnsError) {
+		l.Info("kube cluster does not appear to active, assuming this is a reprovision")
+		return resp, nil
+	}
+
 	if err != nil {
-		return resp, fmt.Errorf("failed to destroy namespace: %w", err)
+		return resp, fmt.Errorf("failed to list namespaces: %w", err)
 	}
 	resp.Namespaces = namespaces
 
-	l.Debug("finished destroying namespace", "response", resp)
+	l.Debug("finished listing namespaces", "response", resp)
 	return resp, nil
 }
 
