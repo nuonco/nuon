@@ -58,6 +58,7 @@ func (w *Workflows) AppEventLoop(ctx workflow.Context, req AppEventLoopRequest) 
 		case OperationDeprovision:
 			if err := w.deprovision(ctx, req.AppID, req.SandboxMode); err != nil {
 				l.Info("unable to deprovision app: %w", zap.Error(err))
+				return
 			}
 			finished = true
 		}
