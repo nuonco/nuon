@@ -125,6 +125,8 @@ jobs:
         dir:
           - services/e2e
           - bins/cli
+          - sandboxes/aws-eks
+          - sandboxes/empty
     uses: ./.github/workflows/artifact.yml
     with:
       dir: ${{matrix.dir}}
