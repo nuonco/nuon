@@ -43,9 +43,18 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		ScheduleToCloseTimeout: 60 * time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
+	act := NewActivities(workers.Config{}, nil)
 
 	if err := w.startWorkflow(ctx, req); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
+		return resp, err
+	}
+
+	if err := execCheckIAMRole(ctx, act, CheckIAMRoleRequest{
+		RoleARN: req.AccountSettings.AwsRoleArn,
+	}); err != nil {
+		err = fmt.Errorf("unable to validate IAM role: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
 
@@ -190,4 +199,23 @@ func execProvisionDNS(
 	}
 
 	return resp, nil
+}
+
+func execCheckIAMRole(
+	ctx workflow.Context,
+	act *Activities,
+	req CheckIAMRoleRequest,
+) error {
+	activityOpts := workflow.ActivityOptions{
+		ScheduleToCloseTimeout: 1 * time.Minute,
+	}
+	ctx = workflow.WithActivityOptions(ctx, activityOpts)
+
+	var resp CheckIAMRoleResponse
+	fut := workflow.ExecuteActivity(ctx, act.CheckIAMRole, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -31,6 +31,31 @@ func Fetch(ctx context.Context, cfg *Config) (aws.Config, error) {
 	return awsCfg, nil
 }
 
+type ErrUnableToAssumeRole struct {
+	RoleARN string
+	Err     error
+}
+
+func (e ErrUnableToAssumeRole) Error() string {
+	return fmt.Sprintf("unable to assume role: %s", e.RoleARN)
+}
+
+func (e ErrUnableToAssumeRole) Unwrap() error {
+	return e.Err
+}
+
+type ErrUnableToFetchStatic struct {
+	Err error
+}
+
+func (e ErrUnableToFetchStatic) Unwrap() error {
+	return e.Err
+}
+
+func (e ErrUnableToFetchStatic) Error() string {
+	return "unable to fetch static"
+}
+
 func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 	v := validator.New()
 
@@ -38,7 +63,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 	if c.UseDefault {
 		awsCfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(c.Region))
 		if err != nil {
-			return aws.Config{}, fmt.Errorf("unable to load static credentials: %w", err)
+			return aws.Config{}, ErrUnableToFetchStatic{err}
 		}
 
 		return awsCfg, nil
@@ -53,7 +78,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 
 		awsCfg, err := config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(provider), config.WithRegion(c.Region))
 		if err != nil {
-			return aws.Config{}, fmt.Errorf("unable to load static credentials: %w", err)
+			return aws.Config{}, ErrUnableToFetchStatic{err}
 		}
 		return awsCfg, nil
 	}
@@ -69,7 +94,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 
 	cfg, err := assumer.LoadConfigWithAssumedRole(ctx)
 	if err != nil {
-		return aws.Config{}, fmt.Errorf("unable to assume role: %w", err)
+		return aws.Config{}, ErrUnableToAssumeRole{c.AssumeRole.RoleARN, err}
 	}
 
 	return cfg, nil
