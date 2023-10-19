@@ -48,7 +48,8 @@ func (a *Activities) ListNamespaces(ctx context.Context, req ListNamespacesReque
 
 	tfOutputs, err := a.getSandboxOutputs(ctx, req.OrgID, req.AppID, req.InstallID)
 	if err != nil {
-		return resp, fmt.Errorf("unable to get sandbox outputs: %w", err)
+		// NOTE(jm): sometimes the outputs will legitimately not exist, if this is a re-run of a destroy.
+		return resp, nil
 	}
 
 	kubeCfg, err := a.getKubeConfig(&kube.ClusterInfo{
