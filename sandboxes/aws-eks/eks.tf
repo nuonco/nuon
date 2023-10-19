@@ -80,9 +80,9 @@ module "eks" {
         additional = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
       }
 
-      network_interfaces = {
+      network_interfaces = [{
         delete_on_termination = true
-      }
+      }]
     }
   }
 
