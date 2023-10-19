@@ -2,7 +2,9 @@ package worker
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -35,6 +37,14 @@ func (w *Workflows) provision(ctx workflow.Context, installID string, dryRun boo
 			TerraformVersion: install.SandboxRelease.TerraformVersion,
 		},
 	})
+	accessError := credentials.ErrUnableToAssumeRole{
+		RoleARN: install.AWSAccount.IAMRoleARN,
+	}
+	if strings.Contains(err.Error(), accessError.Error()) {
+		w.updateStatus(ctx, installID, StatusAccessError, "unable to assume provided role to access account")
+		return fmt.Errorf("unable to provision install: %w", err)
+	}
+
 	if err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to provision install resources")
 		return fmt.Errorf("unable to provision install: %w", err)

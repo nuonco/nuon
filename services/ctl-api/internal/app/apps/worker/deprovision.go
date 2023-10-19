@@ -20,7 +20,13 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string
 			return fmt.Errorf("unable to get app: %w", err)
 		}
 
-		if len(currentApp.Components) < 1 && len(currentApp.Installs) < 1 {
+		installCnt := 0
+		for _, install := range currentApp.Installs {
+			if install.Status != "access-error" {
+				installCnt += 1
+			}
+		}
+		if len(currentApp.Components) < 1 && installCnt < 1 {
 			return nil
 		}
 
