@@ -30,12 +30,27 @@ func (w *workspace) init(ctx context.Context, client Terraform) error {
 }
 
 func (w *workspace) Apply(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	if err := w.Hooks.PreApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing pre-apply hook: %w", err)
+	}
+
 	client, err := w.getClient(ctx, log)
 	if err != nil {
 		return nil, err
 	}
 
-	return w.apply(ctx, client, log)
+	byts, err := w.apply(ctx, client, log)
+	if err != nil {
+		if hookErr := w.Hooks.ErrorApply(ctx, log); hookErr != nil {
+			return nil, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
+		}
+		return nil, err
+	}
+
+	if err := w.Hooks.PostApply(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing post-apply hook: %w", err)
+	}
+	return byts, nil
 }
 
 func (w *workspace) apply(ctx context.Context, client Terraform, log hclog.Logger) ([]byte, error) {
@@ -61,12 +76,28 @@ func (w *workspace) apply(ctx context.Context, client Terraform, log hclog.Logge
 }
 
 func (w *workspace) Destroy(ctx context.Context, log hclog.Logger) ([]byte, error) {
+	if err := w.Hooks.PreDestroy(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing pre-destroy hook: %w", err)
+	}
+
 	client, err := w.getClient(ctx, log)
 	if err != nil {
 		return nil, err
 	}
 
-	return w.destroy(ctx, client, log)
+	byts, err := w.destroy(ctx, client, log)
+	if err != nil {
+		if hookErr := w.Hooks.ErrorDestroy(ctx, log); hookErr != nil {
+			return nil, fmt.Errorf("error executing error-destroy hook: %w: original-error: %w", hookErr, err)
+		}
+		return nil, err
+	}
+
+	if err := w.Hooks.PostDestroy(ctx, log); err != nil {
+		return nil, fmt.Errorf("error executing post-destroy hook: %w", err)
+	}
+
+	return byts, nil
 }
 
 func (w *workspace) destroy(ctx context.Context, client Terraform, log hclog.Logger) ([]byte, error) {

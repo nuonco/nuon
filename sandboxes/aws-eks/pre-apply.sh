@@ -1,3 +1,1 @@
-#!/bin/sh
-
-echo "pre-apply-hook"
+error-destroy.sh
