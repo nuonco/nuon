@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
 	"github.com/powertoolsdev/mono/pkg/terraform/binary"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 	"github.com/powertoolsdev/mono/pkg/terraform/variables"
 )
 
@@ -21,10 +22,12 @@ var _ Workspace = (*workspace)(nil)
 type workspace struct {
 	v *validator.Validate
 
-	Archive        archive.Archive     `validate:"required"`
-	Backend        backend.Backend     `validate:"required"`
-	Variables      variables.Variables `validate:"required"`
-	Binary         binary.Binary       `validate:"required"`
+	Archive   archive.Archive     `validate:"required"`
+	Backend   backend.Backend     `validate:"required"`
+	Variables variables.Variables `validate:"required"`
+	Binary    binary.Binary       `validate:"required"`
+	Hooks     hooks.Hooks         `validate:"required"`
+
 	DisableCleanup bool
 
 	// internal vars for managing the workspace
@@ -57,6 +60,13 @@ func New(v *validator.Validate, opts ...workspaceOption) (*workspace, error) {
 func WithArchive(arch archive.Archive) workspaceOption {
 	return func(w *workspace) error {
 		w.Archive = arch
+		return nil
+	}
+}
+
+func WithHooks(hooks hooks.Hooks) workspaceOption {
+	return func(w *workspace) error {
+		w.Hooks = hooks
 		return nil
 	}
 }

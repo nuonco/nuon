@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
 	"github.com/powertoolsdev/mono/pkg/terraform/binary"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 	"github.com/powertoolsdev/mono/pkg/terraform/variables"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,6 +20,7 @@ func Test_workspace_createRoot(t *testing.T) {
 	arch := archive.NewMockArchive(nil)
 	back := backend.NewMockBackend(nil)
 	vars := variables.NewMockVariables(nil)
+	hooks := hooks.NewMockHooks(nil)
 	bin := binary.NewMockBinary(nil)
 
 	tests := map[string]struct {
@@ -32,6 +34,7 @@ func Test_workspace_createRoot(t *testing.T) {
 					WithBackend(back),
 					WithArchive(arch),
 					WithVariables(vars),
+					WithHooks(hooks),
 					WithBinary(bin),
 				)
 				assert.NoError(t, err)
@@ -70,6 +73,7 @@ func Test_workspace_cleanup(t *testing.T) {
 	arch := archive.NewMockArchive(nil)
 	back := backend.NewMockBackend(nil)
 	vars := variables.NewMockVariables(nil)
+	hooks := hooks.NewMockHooks(nil)
 	bin := binary.NewMockBinary(nil)
 
 	tests := map[string]struct {
@@ -84,6 +88,7 @@ func Test_workspace_cleanup(t *testing.T) {
 					WithArchive(arch),
 					WithVariables(vars),
 					WithBinary(bin),
+					WithHooks(hooks),
 				)
 				assert.NoError(t, err)
 
@@ -111,6 +116,7 @@ func Test_workspace_cleanup(t *testing.T) {
 					WithArchive(arch),
 					WithVariables(vars),
 					WithBinary(bin),
+					WithHooks(hooks),
 					WithDisableCleanup(true),
 				)
 				assert.NoError(t, err)
@@ -156,6 +162,7 @@ func Test_workspace_writeFile(t *testing.T) {
 	back := backend.NewMockBackend(nil)
 	vars := variables.NewMockVariables(nil)
 	bin := binary.NewMockBinary(nil)
+	hooks := hooks.NewMockHooks(nil)
 
 	tests := map[string]struct {
 		workspaceFn func(*testing.T) *workspace
@@ -169,6 +176,7 @@ func Test_workspace_writeFile(t *testing.T) {
 					WithBackend(back),
 					WithArchive(arch),
 					WithVariables(vars),
+					WithHooks(hooks),
 					WithBinary(bin),
 				)
 				assert.NoError(t, err)
@@ -196,6 +204,7 @@ func Test_workspace_writeFile(t *testing.T) {
 					WithArchive(arch),
 					WithVariables(vars),
 					WithBinary(bin),
+					WithHooks(hooks),
 				)
 				assert.NoError(t, err)
 				return w

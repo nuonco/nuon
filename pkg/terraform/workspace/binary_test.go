@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
 	"github.com/powertoolsdev/mono/pkg/terraform/binary"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 	"github.com/powertoolsdev/mono/pkg/terraform/variables"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,6 +24,7 @@ func Test_LoadBinary(t *testing.T) {
 	arch := archive.NewMockArchive(nil)
 	vars := variables.NewMockVariables(nil)
 	back := backend.NewMockBackend(nil)
+	hooks := hooks.NewMockHooks(nil)
 
 	errLoadBinary := fmt.Errorf("error")
 	execPath := generics.GetFakeObj[string]()
@@ -84,6 +86,7 @@ func Test_LoadBinary(t *testing.T) {
 			bin := test.binaryFn(mockCtl)
 
 			wkspace, err := New(v,
+				WithHooks(hooks),
 				WithArchive(arch),
 				WithBinary(bin),
 				WithBackend(back),
