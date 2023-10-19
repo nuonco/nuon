@@ -37,14 +37,15 @@ func (w *Workflows) reprovision(ctx workflow.Context, installID string, dryRun b
 			TerraformVersion: install.SandboxRelease.TerraformVersion,
 		},
 	})
-	accessError := credentials.ErrUnableToAssumeRole{
-		RoleARN: install.AWSAccount.IAMRoleARN,
-	}
-	if strings.Contains(err.Error(), accessError.Error()) {
-		w.updateStatus(ctx, installID, StatusAccessError, "unable to assume provided role to access account")
-		return fmt.Errorf("unable to reprovision install: %w", err)
-	}
 	if err != nil {
+		accessError := credentials.ErrUnableToAssumeRole{
+			RoleARN: install.AWSAccount.IAMRoleARN,
+		}
+		if strings.Contains(err.Error(), accessError.Error()) {
+			w.updateStatus(ctx, installID, StatusAccessError, "unable to assume provided role to access account")
+			return fmt.Errorf("unable to reprovision install: %w", err)
+		}
+
 		w.updateStatus(ctx, installID, StatusError, "unable to reprovision app resources")
 		return fmt.Errorf("unable to provision install: %w", err)
 	}
