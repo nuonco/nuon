@@ -79,6 +79,10 @@ module "eks" {
       iam_role_additional_policies = {
         additional = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
       }
+
+      network_interfaces = {
+        delete_on_termination = true
+      }
     }
   }
 
