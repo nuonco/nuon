@@ -17,6 +17,8 @@
         "ec2:DescribeLaunchTemplates",
         "ec2:DescribeNatGateways",
         "ec2:DescribeNetworkAcls",
+        "ec2:DeleteNetworkInterface",
+        "ec2:DetachNetworkInterface",
         "ec2:DescribeNetworkInterfaces",
         "ec2:DescribeRouteTables",
         "ec2:DescribeSecurityGroupRules",
