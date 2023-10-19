@@ -35,4 +35,5 @@ alpine-base:
     protoc \
     jq \
     git \
+    aws-cli \
     zip

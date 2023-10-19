@@ -98,6 +98,11 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		ExecFn:     execmappers.MapInit(r.Workspace.LoadVariables),
 		CallbackFn: callbackmappers.Noop,
 	})
+	pipe.AddStep(&pipeline.Step{
+		Name:       "load hooks",
+		ExecFn:     execmappers.MapInit(r.Workspace.LoadHooks),
+		CallbackFn: callbackmappers.Noop,
+	})
 
 	pipe.AddStep(&pipeline.Step{
 		Name:       "init",
