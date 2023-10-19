@@ -58,6 +58,11 @@ func (r *run) getDestroyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 	pipe.AddStep(&pipeline.Step{
+		Name:       "load hooks",
+		ExecFn:     execmappers.MapInit(r.Workspace.LoadHooks),
+		CallbackFn: callbackmappers.Noop,
+	})
+	pipe.AddStep(&pipeline.Step{
 		Name:       "init",
 		ExecFn:     execmappers.MapInitLog(r.Workspace.Init),
 		CallbackFn: callbackmappers.Noop,

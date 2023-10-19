@@ -6,6 +6,7 @@ import (
 	ociarchive "github.com/powertoolsdev/mono/pkg/terraform/archive/oci"
 	s3backend "github.com/powertoolsdev/mono/pkg/terraform/backend/s3"
 	remotebinary "github.com/powertoolsdev/mono/pkg/terraform/binary/remote"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks/noop"
 	staticvars "github.com/powertoolsdev/mono/pkg/terraform/variables/static"
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
 )
@@ -50,7 +51,9 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 		return nil, fmt.Errorf("unable to create variable set: %w", err)
 	}
 
+	hooks := noop.New()
 	wkspace, err := workspace.New(p.v,
+		workspace.WithHooks(hooks),
 		workspace.WithArchive(arch),
 		workspace.WithBackend(back),
 		workspace.WithBinary(bin),

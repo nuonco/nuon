@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
 	"github.com/powertoolsdev/mono/pkg/terraform/binary"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 	"github.com/powertoolsdev/mono/pkg/terraform/variables"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,6 +20,7 @@ func TestNew(t *testing.T) {
 	back := backend.NewMockBackend(nil)
 	vars := variables.NewMockVariables(nil)
 	bin := binary.NewMockBinary(nil)
+	hooks := hooks.NewMockHooks(nil)
 
 	tests := map[string]struct {
 		errExpected error
@@ -31,6 +33,7 @@ func TestNew(t *testing.T) {
 					WithBackend(back),
 					WithArchive(arch),
 					WithVariables(vars),
+					WithHooks(hooks),
 					WithBinary(bin),
 				}
 			},
@@ -48,6 +51,7 @@ func TestNew(t *testing.T) {
 					WithBackend(back),
 					WithArchive(arch),
 					WithVariables(vars),
+					WithHooks(hooks),
 					WithBinary(bin),
 					WithDisableCleanup(true),
 				}
@@ -65,6 +69,7 @@ func TestNew(t *testing.T) {
 				return []workspaceOption{
 					WithBackend(back),
 					WithVariables(vars),
+					WithHooks(hooks),
 					WithBinary(bin),
 				}
 			},
@@ -75,6 +80,7 @@ func TestNew(t *testing.T) {
 				return []workspaceOption{
 					WithArchive(arch),
 					WithVariables(vars),
+					WithHooks(hooks),
 					WithBinary(bin),
 				}
 			},
@@ -85,16 +91,29 @@ func TestNew(t *testing.T) {
 				return []workspaceOption{
 					WithBackend(back),
 					WithArchive(arch),
+					WithHooks(hooks),
 					WithVariables(vars),
 				}
 			},
 			errExpected: fmt.Errorf("Binary"),
+		},
+		"missing hooks": {
+			optsFn: func() []workspaceOption {
+				return []workspaceOption{
+					WithBackend(back),
+					WithArchive(arch),
+					WithBinary(bin),
+					WithVariables(vars),
+				}
+			},
+			errExpected: fmt.Errorf("Hooks"),
 		},
 		"missing variables": {
 			optsFn: func() []workspaceOption {
 				return []workspaceOption{
 					WithBackend(back),
 					WithArchive(arch),
+					WithHooks(hooks),
 					WithBinary(bin),
 				}
 			},

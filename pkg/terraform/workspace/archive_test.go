@@ -14,6 +14,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
 	"github.com/powertoolsdev/mono/pkg/terraform/binary"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 	"github.com/powertoolsdev/mono/pkg/terraform/variables"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,6 +23,7 @@ func Test_LoadArchive(t *testing.T) {
 	back := backend.NewMockBackend(nil)
 	vars := variables.NewMockVariables(nil)
 	bin := binary.NewMockBinary(nil)
+	hooks := hooks.NewMockHooks(nil)
 
 	v := validator.New()
 	errLoadArchive := fmt.Errorf("error")
@@ -102,6 +104,7 @@ func Test_LoadArchive(t *testing.T) {
 
 			wkspace, err := New(v,
 				WithArchive(arch),
+				WithHooks(hooks),
 				WithBackend(back),
 				WithBinary(bin),
 				WithVariables(vars),

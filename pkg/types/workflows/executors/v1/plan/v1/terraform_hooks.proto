@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package executors.v1.plan.v1;
+
+import "tagger/tagger.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
+
+message TerraformHooks {
+  bool enabled = 1;
+  string assume_role_arn = 2;
+  map<string, string> env_vars = 3 [(tagger.tags) = "faker:\"-\""];
+}

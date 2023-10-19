@@ -18,6 +18,8 @@ type Workspace interface {
 	LoadBackend(ctx context.Context) error
 	// LoadBinary installs the binary using the provided binary
 	LoadBinary(ctx context.Context, log hclog.Logger) error
+	// LoadHooks initializes any hooks that need to be executed
+	LoadHooks(ctx context.Context) error
 	// InitRoot: initializes workspace should be called before any other load functions
 	InitRoot(ctx context.Context) error
 	//LoadVariables is used to load the variables into the environment

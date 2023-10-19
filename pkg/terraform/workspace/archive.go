@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 )
 
 // LoadArchive loads the archives into the workspace
@@ -21,7 +24,12 @@ func (w *workspace) LoadArchive(ctx context.Context) error {
 		}
 		defer reader.Close()
 
-		if err := w.writeFile(name, byts, defaultFilePermissions); err != nil {
+		permissions := defaultFilePermissions
+		if generics.SliceContains(name, hooks.ValidHooks()) {
+			permissions = defaultFileExecPermissions
+		}
+
+		if err := w.writeFile(name, byts, permissions); err != nil {
 			return fmt.Errorf("unable to write file: %w", err)
 		}
 		return nil
