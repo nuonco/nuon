@@ -3,6 +3,7 @@ syntax = "proto3";
 package executors.v1.plan.v1;
 
 import "executors/v1/plan/v1/s3_object.proto";
+import "executors/v1/plan/v1/terraform_hooks.proto";
 import "executors/v1/plan/v1/terraform_module.proto";
 import "executors/v1/plan/v1/terraform_outputs.proto";
 import "executors/v1/plan/v1/terraform_run_type.proto";
@@ -20,4 +21,5 @@ message TerraformPlan {
   .executors.v1.plan.v1.TerraformRunType run_type = 5;
   string terraform_version = 6;
   .executors.v1.plan.v1.TerraformOutputs outputs = 7 [(tagger.tags) = "faker:\"-\""];
+  .executors.v1.plan.v1.TerraformHooks hooks = 8 [(tagger.tags) = "faker:\"-\""];
 }

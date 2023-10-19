@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
 	"github.com/powertoolsdev/mono/pkg/terraform/binary"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 	"github.com/powertoolsdev/mono/pkg/terraform/variables"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,6 +19,7 @@ func Test_workspace_Init(t *testing.T) {
 
 	back := backend.NewMockBackend(nil)
 	vars := variables.NewMockVariables(nil)
+	hooks := hooks.NewMockHooks(nil)
 	bin := binary.NewMockBinary(nil)
 	arch := archive.NewMockArchive(nil)
 
@@ -30,6 +32,7 @@ func Test_workspace_Init(t *testing.T) {
 			workspaceFn: func(t *testing.T) *workspace {
 				wkspace, err := New(v, WithArchive(arch),
 					WithBackend(back),
+					WithHooks(hooks),
 					WithVariables(vars),
 					WithBinary(bin),
 				)
