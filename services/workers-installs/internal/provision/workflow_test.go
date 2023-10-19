@@ -7,6 +7,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -14,7 +15,6 @@ import (
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
-	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/testsuite"
@@ -224,6 +224,12 @@ func TestProvision(t *testing.T) {
 			return resp, nil
 		})
 
+	env.OnActivity(act.CheckIAMRole, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r CheckIAMRoleRequest) (CheckIAMRoleResponse, error) {
+			resp := CheckIAMRoleResponse{}
+			return resp, nil
+		})
+
 	wkflow := NewWorkflow(cfg)
 	env.ExecuteWorkflow(wkflow.Provision, req)
 	assert.True(t, env.IsWorkflowCompleted())
@@ -301,6 +307,12 @@ func TestProvision_plan_only(t *testing.T) {
 			assert.Equal(t, assertedRoleARN, r.MetadataBucketAssumeRoleArn)
 			assertedPrefix := prefix.InstallPath(req.OrgId, req.AppId, req.InstallId)
 			assert.Equal(t, assertedPrefix, r.MetadataBucketPrefix)
+			return resp, nil
+		})
+
+	env.OnActivity(act.CheckIAMRole, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r CheckIAMRoleRequest) (CheckIAMRoleResponse, error) {
+			resp := CheckIAMRoleResponse{}
 			return resp, nil
 		})
 

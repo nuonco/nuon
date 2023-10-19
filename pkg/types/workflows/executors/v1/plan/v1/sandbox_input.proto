@@ -58,10 +58,7 @@ message AWSSettings {
     (tagger.tags) = "faker:\"len=12\""
   ];
 
-  string role_arn = 3 [
-    (validate.rules).string.min_len = 20,
-    (tagger.tags) = "faker:\"len=20\""
-  ];
+  string role_arn = 3 [(tagger.tags) = "faker:\"len=20\""];
 }
 
 message SandboxSettings {

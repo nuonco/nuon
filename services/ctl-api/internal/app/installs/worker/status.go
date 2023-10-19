@@ -9,13 +9,14 @@ import (
 type Status string
 
 const (
-	StatusPlanning	     Status = "planning"
-	StatusError	     Status = "error"
-	StatusActive	     Status = "active"
+	StatusPlanning       Status = "planning"
+	StatusError          Status = "error"
+	StatusAccessError    Status = "access-error"
+	StatusActive         Status = "active"
 	StatusProvisioning   Status = "provisioning"
 	StatusDeprovisioning Status = "deprovisioning"
 
-	StatusSyncing	Status = "syncing"
+	StatusSyncing   Status = "syncing"
 	StatusExecuting Status = "executing"
 )
 
@@ -23,8 +24,8 @@ func (w *Workflows) updateStatus(ctx workflow.Context, installID string, status 
 	l := workflow.GetLogger(ctx)
 
 	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
-		InstallID:	   installID,
-		Status:		   string(status),
+		InstallID:         installID,
+		Status:            string(status),
 		StatusDescription: statusDescription,
 	})
 	if err == nil {
@@ -39,8 +40,8 @@ func (w *Workflows) updateStatus(ctx workflow.Context, installID string, status 
 func (w *Workflows) updateDeployStatus(ctx workflow.Context, deployID string, status Status, statusDescription string) {
 	l := workflow.GetLogger(ctx)
 	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateDeployStatus, activities.UpdateDeployStatusRequest{
-		DeployID:	   deployID,
-		Status:		   string(status),
+		DeployID:          deployID,
+		Status:            string(status),
 		StatusDescription: statusDescription,
 	})
 	if err == nil {
