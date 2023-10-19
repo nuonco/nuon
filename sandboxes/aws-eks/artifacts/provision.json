@@ -86,6 +86,7 @@
         "kms:PutKeyPolicy",
         "kms:TagResource",
         "logs:CreateLogGroup",
+        "logs:TagLogGroup",
         "logs:DescribeLogGroups",
         "logs:ListTagsLogGroup",
         "logs:PutRetentionPolicy",
