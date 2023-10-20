@@ -6,8 +6,9 @@ data "utils_deep_merge_yaml" "vars" {
 }
 
 locals {
-  name = "ctl-api"
-  vars = yamldecode(data.utils_deep_merge_yaml.vars.output)
+  name                   = "ctl-api"
+  vars                   = yamldecode(data.utils_deep_merge_yaml.vars.output)
+  terraform_organization = "nuonco"
   accounts = {
     for acct in data.aws_organizations_organization.orgs.accounts : acct.name => { id : acct.id }
   }
@@ -21,4 +22,9 @@ locals {
 variable "env" {
   type        = string
   description = "env"
+}
+
+variable "tfe_token" {
+  type        = string
+  description = "tfe_token"
 }
