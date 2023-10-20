@@ -18,8 +18,8 @@ import (
 //	@Schemes
 //	@Description	get component build plan
 //	@Param			component_id	path	string	true	"component ID"
-//	@Param			build_id	path	string	true	"build ID"
-//	@Tags components
+//	@Param			build_id		path	string	true	"build ID"
+//	@Tags			components
 //	@Accept			json
 //	@Produce		json
 //	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
@@ -29,7 +29,7 @@ import (
 //	@Failure		403				{object}	stderr.ErrResponse
 //	@Failure		404				{object}	stderr.ErrResponse
 //	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{object} planv1.Plan
+//	@Success		200				{object}	planv1.Plan
 //	@Router			/v1/components/{component_id}/builds/{build_id}/plan [get]
 func (s *service) GetComponentBuildPlan(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
