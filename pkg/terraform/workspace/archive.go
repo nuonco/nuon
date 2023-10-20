@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
@@ -23,6 +24,8 @@ func (w *workspace) LoadArchive(ctx context.Context) error {
 			return fmt.Errorf("unable to read file in callback: %w", err)
 		}
 		defer reader.Close()
+
+		name = strings.TrimPrefix(name, "./")
 
 		permissions := defaultFilePermissions
 		if generics.SliceContains(name, hooks.ValidHooks()) {

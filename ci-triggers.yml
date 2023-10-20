@@ -15,6 +15,7 @@ services: |
     - services/e2e/nuon/**
   workers-executors:
     - services/workers-executors/**
+    - pkg/terraform/**
   workers-installs:
     - services/workers-installs/**
   workers-orgs:
