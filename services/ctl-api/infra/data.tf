@@ -31,3 +31,8 @@ data "aws_subnets" "private" {
     "karpenter.sh/discovery" = "${var.env}-${local.vars.pool}"
   }
 }
+
+data "tfe_outputs" "infra-orgs" {
+  organization = local.terraform_organization
+  workspace    = "infra-orgs-${var.env}"
+}
