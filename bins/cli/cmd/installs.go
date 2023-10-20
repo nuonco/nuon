@@ -78,5 +78,18 @@ func (c *cli) installsCmd() *cobra.Command {
 	deleteCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(deleteCmd)
 
+	componentsCmd := &cobra.Command{
+		Use:   "components",
+		Short: "Get install components",
+		Long:  "Get all components on an install",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient)
+			svc.Components(cmd.Context(), id, PrintJSON)
+		},
+	}
+	componentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
+	componentsCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(componentsCmd)
+
 	return installsCmds
 }
