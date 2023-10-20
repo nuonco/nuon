@@ -17,7 +17,8 @@ func (w *worker) getLogger() (*zap.Logger, error) {
 	case config.Local, config.Development:
 		l, err = zap.NewDevelopment()
 	default:
-		l, err = zap.NewProduction()
+		l, err = zap.NewDevelopment()
+		//l, err = zap.NewProduction()
 	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to create logger: %w", err)
