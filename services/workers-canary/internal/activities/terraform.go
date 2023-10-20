@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/archive/dir"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend/local"
 	remotebinary "github.com/powertoolsdev/mono/pkg/terraform/binary/remote"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks/noop"
 	"github.com/powertoolsdev/mono/pkg/terraform/outputs"
 	"github.com/powertoolsdev/mono/pkg/terraform/run"
 	staticvars "github.com/powertoolsdev/mono/pkg/terraform/variables/static"
@@ -91,8 +92,11 @@ func (c *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.
 		return nil, fmt.Errorf("unable to create local backend: %w", err)
 	}
 
+	hooks := noop.New()
+
 	// create workspace
 	wkspace, err := workspace.New(c.v,
+		workspace.WithHooks(hooks),
 		workspace.WithArchive(arch),
 		workspace.WithBackend(back),
 		workspace.WithBinary(bin),
