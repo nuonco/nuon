@@ -38,6 +38,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/deploys/latest", s.GetInstallLatestDeploy)
 	api.GET("/v1/installs/:install_id/deploys/:deploy_id", s.GetInstallDeploy)
 	api.GET("/v1/installs/:install_id/deploys/:deploy_id/logs", s.GetInstallDeployLogs)
+	api.GET("/v1/installs/:install_id/deploys/:deploy_id/plan", s.GetInstallDeployPlan)
 
 	// install components
 	api.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
