@@ -18,8 +18,8 @@ type AdminForgetOrgInstallsRequest struct{}
 //	@Summary	forget all installs for an org
 //	@Schemes
 //	@Description	forget all installs for an org
-//	@Param			org_id	path	string					true	"org ID"
-//	@Param			req			body	AdminForgetOrgInstallsRequest	true	"Input"
+//	@Param			org_id	path	string							true	"org ID"
+//	@Param			req		body	AdminForgetOrgInstallsRequest	true	"Input"
 //	@Tags			installs/admin
 //	@Accept			json
 //	@Produce		json
