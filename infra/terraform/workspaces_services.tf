@@ -13,7 +13,7 @@ module "ctl-api-stage" {
   dir        = "services/ctl-api/infra"
   vars = {
     env       = "stage"
-    tfe_token = tfe_team_token.service-accounts-stage.id
+    tfe_token = tfe_team_token.service-accounts-stage.token
   }
   variable_sets = ["aws-environment-credentials", "slack-webhooks"]
   project_id    = tfe_project.services.id
@@ -31,7 +31,7 @@ module "ctl-api-prod" {
   dir        = "services/ctl-api/infra"
   vars = {
     env       = "prod"
-    tfe_token = tfe_team_token.service-accounts-prod.id
+    tfe_token = tfe_team_token.service-accounts-prod.token
   }
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
