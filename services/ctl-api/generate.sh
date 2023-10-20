@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
+set -e
+set -o pipefail
+set -u
+
 echo "generating public schema"
 go run github.com/swaggo/swag/cmd/swag \
   init \
-  --parseGoList \
   --parseDependency \
   -g main.go \
   -t orgs,apps,installs,general,vcs,components,sandboxes,releases
