@@ -12,7 +12,8 @@ module "ctl-api-stage" {
   auto_apply = true
   dir        = "services/ctl-api/infra"
   vars = {
-    env = "stage"
+    env       = "stage"
+    tfe_token = tfe_team_token.service-accounts-stage.id
   }
   variable_sets = ["aws-environment-credentials", "slack-webhooks"]
   project_id    = tfe_project.services.id
@@ -29,7 +30,8 @@ module "ctl-api-prod" {
   auto_apply = false
   dir        = "services/ctl-api/infra"
   vars = {
-    env = "prod"
+    env       = "prod"
+    tfe_token = tfe_team_token.service-accounts-prod.id
   }
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]

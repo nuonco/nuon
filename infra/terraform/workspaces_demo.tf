@@ -174,8 +174,8 @@ module "customers-shared-stage" {
   }
 
   vars = {
-    sandbox_org_id  = "orgxik6l2v8bqbgz41c1nh1acb"
-    org_id = "orgkyyq9mk8rkohrom51euxae6"
+    sandbox_org_id = "orgxik6l2v8bqbgz41c1nh1acb"
+    org_id         = "orgkyyq9mk8rkohrom51euxae6"
   }
 
   triggered_by = [module.infra-terraform.workspace_id]
@@ -195,7 +195,7 @@ module "customers-shared-prod" {
 
   vars = {
     sandbox_org_id = "org1dc0615iykaaryb1txem6iw"
-    org_id = "org11dvz3bq0at3ol1k2lk1esf"
+    org_id         = "org11dvz3bq0at3ol1k2lk1esf"
   }
   triggered_by = [module.infra-terraform.workspace_id]
 }
