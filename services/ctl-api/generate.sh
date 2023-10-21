@@ -19,7 +19,6 @@ echo "generating admin schema"
 go run github.com/swaggo/swag/cmd/swag \
   init \
   --instanceName admin \
-  --parseGoList \
   --output admin \
   --parseGoList \
   -t orgs/admin,orgs/admin,apps/admin,general/admin,sandboxes/admin,installs/admin
