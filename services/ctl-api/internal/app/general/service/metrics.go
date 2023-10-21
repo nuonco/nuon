@@ -38,7 +38,7 @@ func (m PublishMetricInput) write(mw metrics.Writer) {
 //	@Schemes
 //	@Description	Both the terraform provider and CLI write metrics back home
 //	@Tags			general
-//	@Param			req	body	PublishMetricInput	true	"Input"
+//	@Param			req	body	[]PublishMetricInput	true	"Input"
 //	@Accept			json
 //	@Produce		json
 //	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
