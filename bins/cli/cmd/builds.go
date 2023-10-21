@@ -35,8 +35,8 @@ func (c *cli) buildsCmd() *cobra.Command {
 
 	getCmd := &cobra.Command{
 		Use:   "get",
-		Short: "Get component",
-		Long:  "Get app component by ID",
+		Short: "Get build",
+		Long:  "Get component build",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := builds.New(c.apiClient)
 			svc.Get(cmd.Context(), compID, buildID, PrintJSON)
@@ -60,6 +60,21 @@ func (c *cli) buildsCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of the component you want to create a build for")
 	createCmd.MarkFlagRequired("component-id")
 	buildsCmd.AddCommand(createCmd)
+
+	printPlanCmd := &cobra.Command{
+		Use:   "print-plan",
+		Short: "Print build plan",
+		Long:  "Print build plan",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := builds.New(c.apiClient)
+			svc.PrintPlan(cmd.Context(), compID, buildID, PrintJSON)
+		},
+	}
+	printPlanCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of the component whose build you want to view")
+	printPlanCmd.MarkFlagRequired("component-id")
+	printPlanCmd.Flags().StringVarP(&buildID, "build-id", "b", "", "The build ID for the build plan you want to print")
+	printPlanCmd.MarkFlagRequired("build-id")
+	buildsCmd.AddCommand(printPlanCmd)
 
 	return buildsCmd
 }
