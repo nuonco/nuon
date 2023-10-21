@@ -36,40 +36,42 @@ type Config struct {
 	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
 
 	// database connection parameters
-	DBName     string `config:"db_name"`
-	DBHost     string `config:"db_host"`
-	DBPort     string `config:"db_port"`
-	DBSSLMode  string `config:"db_ssl_mode"`
+	DBName     string `config:"db_name" validate:"required"`
+	DBHost     string `config:"db_host" validate:"required"`
+	DBPort     string `config:"db_port" validate:"required"`
+	DBSSLMode  string `config:"db_ssl_mode" validate:"required"`
 	DBPassword string `config:"db_password"`
-	DBUser     string `config:"db_user"`
+	DBUser     string `config:"db_user" validate:"required"`
 	DBZapLog   bool   `config:"db_use_zap"`
 	DBUseIAM   bool   `config:"db_use_iam"`
-	DBRegion   string `config:"db_region"`
+	DBRegion   string `config:"db_region" validate:"required"`
 
 	// temporal configuration
-	TemporalHost      string `config:"temporal_host"`
-	TemporalNamespace string `config:"temporal_namespace"`
+	TemporalHost      string `config:"temporal_host"  validate:"required"`
+	TemporalNamespace string `config:"temporal_namespace" validate:"required"`
 
 	// github configuration
-	GithubAppID            string `config:"github_app_id"`
-	GithubAppKey           string `config:"github_app_key"`
-	GithubAppKeySecretName string `config:"github_app_key_secret_name"`
+	GithubAppID            string `config:"github_app_id" validate:"required"`
+	GithubAppKey           string `config:"github_app_key" validate:"required"`
+	GithubAppKeySecretName string `config:"github_app_key_secret_name" validate:"required"`
 
 	// sandbox artifacts
-	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url"`
+	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url" validate:"required"`
 
 	// middleware configuration
 	Middlewares         []string `config:"middlewares"`
 	InternalMiddlewares []string `config:"internal_middlewares"`
 
 	// auth 0 config
-	Auth0IssuerURL string `config:"auth0_issuer_url"`
-	Auth0Audience  string `config:"auth0_audience"`
-	Auth0ClientID  string `config:"auth0_client_id"`
+	Auth0IssuerURL string `config:"auth0_issuer_url" validate:"required"`
+	Auth0Audience  string `config:"auth0_audience" validate:"required"`
+	Auth0ClientID  string `config:"auth0_client_id" validate:"required"`
 
 	// flags for controlling the background workers
-	ForceSandboxMode bool          `config:"force_sandbox_mode"`
-	SandboxSleep     time.Duration `config:"sandbox_sleep"`
+	ForceSandboxMode   bool          `config:"force_sandbox_mode"`
+	SandboxSleep       time.Duration `config:"sandbox_sleep"`
+	TFEToken           string        `config:"tfe_token" validate:"required"`
+	TFEOrgsWorkspaceID string        `config:"tfe_orgs_workspace_id" validate:"required"`
 }
 
 func NewConfig() (*Config, error) {
