@@ -28,7 +28,7 @@ func (m Decr) Write(mw Writer) {
 
 type Timing struct {
 	Name  string        `json:"name"`
-	Value time.Duration `json:"value" swaggerignore:"true"`
+	Value time.Duration `json:"value" swaggertype:"primitive,integer"`
 	Tags  []string      `json:"tags"`
 }
 
