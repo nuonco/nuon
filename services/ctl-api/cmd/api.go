@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/docs"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
 	componentsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/service"
@@ -59,9 +60,8 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(releasesservice.New)),
 
 		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`, `group:"middlewares"`))),
-		fx.Invoke(func(*api.API) {
-
-		}),
+		fx.Invoke(func(*terraformcloud.OrgsOutputs) {}),
+		fx.Invoke(func(*api.API) {}),
 	}
 
 	providers = append(providers, c.providers()...)

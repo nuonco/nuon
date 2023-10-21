@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/temporal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
 	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
 	componentsshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
@@ -29,6 +30,8 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
 		fx.Provide(components.New),
+		fx.Provide(terraformcloud.NewTerraformCloud),
+		fx.Provide(terraformcloud.NewOrgsOutputs),
 
 		// add app hooks
 		fx.Provide(appshooks.New),

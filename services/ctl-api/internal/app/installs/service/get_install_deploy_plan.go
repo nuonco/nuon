@@ -6,8 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
+	"github.com/powertoolsdev/mono/pkg/workflows/dal"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 //	@BasePath	/v1/installs
@@ -32,10 +33,33 @@ import (
 //	@Success		200				{object} planv1.Plan
 //	@Router			/v1/installs/{install_id}/deploys/{deploy_id}/plan [get]
 func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	installID := ctx.Param("install_id")
 	deployID := ctx.Param("deploy_id")
 
-	plan, err := s.getInstallDeployPlan(ctx, installID, deployID)
+	install, err := s.getInstall(ctx, installID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install: %w", err))
+		return
+	}
+
+	deploy, err := s.getInstallDeploy(ctx, installID, deployID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install deploy: %w %s", err, deployID))
+		return
+	}
+
+	plan, err := s.getInstallDeployPlan(ctx,
+		org.ID,
+		install.AppID,
+		deploy.ComponentBuild.ComponentConfigConnection.ComponentID,
+		deployID,
+		installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install deploy plan: %w", err))
 		return
@@ -44,11 +68,19 @@ func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, plan)
 }
 
-func (s *service) getInstallDeployPlan(ctx context.Context, installID, componentID string) (*planv1.Plan, error) {
-	plan := generics.GetFakeObj[*planv1.WaypointPlan]()
-	return &planv1.Plan{
-		Actual: &planv1.Plan_WaypointPlan{
-			WaypointPlan: plan,
-		},
-	}, nil
+func (s *service) getInstallDeployPlan(ctx context.Context, orgID, appID, componentID, deployID, installID string) (*planv1.Plan, error) {
+	wkflowDal, err := dal.New(s.v, dal.WithSettings(dal.Settings{
+		DeploymentsBucket:                s.orgsOutputs.Buckets.Deployments.Name,
+		DeploymentsBucketIAMRoleTemplate: s.orgsOutputs.OrgsIAMRoleNameTemplateOutputs.DeploymentsAccess,
+	}), dal.WithOrgID(orgID))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get dal for deploy plan: %w", err)
+	}
+
+	plan, err := wkflowDal.GetInstanceDeployPlan(ctx, orgID, appID, componentID, deployID, installID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get build plan: %w", err)
+	}
+
+	return plan, nil
 }

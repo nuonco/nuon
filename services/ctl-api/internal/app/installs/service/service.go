@@ -5,18 +5,20 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type service struct {
-	v     *validator.Validate
-	l     *zap.Logger
-	db    *gorm.DB
-	mw    metrics.Writer
-	cfg   *internal.Config
-	hooks *hooks.Hooks
+	v           *validator.Validate
+	l           *zap.Logger
+	db          *gorm.DB
+	mw          metrics.Writer
+	cfg         *internal.Config
+	hooks       *hooks.Hooks
+	orgsOutputs *terraformcloud.OrgsOutputs
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -61,13 +63,21 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(v *validator.Validate, cfg *internal.Config, db *gorm.DB, mw metrics.Writer, l *zap.Logger, hooks *hooks.Hooks) *service {
+func New(v *validator.Validate,
+	cfg *internal.Config,
+	db *gorm.DB,
+	mw metrics.Writer,
+	l *zap.Logger,
+	hooks *hooks.Hooks,
+	orgsOutputs *terraformcloud.OrgsOutputs,
+) *service {
 	return &service{
-		cfg:   cfg,
-		l:     l,
-		v:     v,
-		db:    db,
-		mw:    mw,
-		hooks: hooks,
+		cfg:         cfg,
+		l:           l,
+		v:           v,
+		db:          db,
+		mw:          mw,
+		hooks:       hooks,
+		orgsOutputs: orgsOutputs,
 	}
 }
