@@ -38,6 +38,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gosimple/slug v1.13.1
 	github.com/hashicorp/go-hclog v1.5.0
+	github.com/hashicorp/go-tfe v1.36.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/hc-install v0.5.2
 	github.com/hashicorp/hcl/v2 v2.17.0
@@ -81,7 +82,7 @@ require (
 	golang.org/x/sync v0.4.0
 	google.golang.org/genproto v0.0.0-20230815205213-6bfd019c3878
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230815205213-6bfd019c3878
-	google.golang.org/grpc v1.57.0
+	google.golang.org/grpc v1.57.1
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -115,7 +116,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.4 // indirect
 	github.com/hashicorp/go-slug v0.12.2 // indirect
-	github.com/hashicorp/go-tfe v1.36.0 // indirect
 	github.com/hashicorp/jsonapi v0.0.0-20210826224640-ee7dae0fb22d // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
