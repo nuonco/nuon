@@ -14,9 +14,9 @@ func (c *Adapter) ToJobConfig(cfg *app.JobComponentConfig, connections []app.Ins
 			Timeout: durationpb.New(defaultBuildTimeout),
 			Cfg: &buildv1.Config_JobConfig{
 				JobConfig: &buildv1.JobConfig{
-					Tag:         cfg.Tag,
-					OciImageUrl: cfg.ImageURL,
-					Cmd:         cfg.Cmd,
+					Tag:      cfg.Tag,
+					ImageUrl: cfg.ImageURL,
+					Cmd:      cfg.Cmd,
 				},
 			},
 		},
