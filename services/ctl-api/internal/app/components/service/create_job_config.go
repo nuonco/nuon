@@ -13,7 +13,7 @@ import (
 type CreateJobComponentConfigRequest struct {
 	ImageURL string `json:"image_url" validate:"required"`
 	Tag      string `json:"tag" validate:"required"`
-	Cmd      string `json:"cmd"`
+	Cmd      string `json:"cmd" validate:"required"`
 }
 
 func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error {
