@@ -9,7 +9,7 @@ import (
 
 func (c *Adapter) ToJobConfig(cfg *app.JobComponentConfig, connections []app.InstallDeploy) (*componentv1.Component, error) {
 	return &componentv1.Component{
-		Id: cfg.ID,
+		Id: cfg.ComponentConfigConnection.ComponentID,
 		BuildCfg: &buildv1.Config{
 			Timeout: durationpb.New(defaultBuildTimeout),
 			Cfg: &buildv1.Config_JobConfig{
