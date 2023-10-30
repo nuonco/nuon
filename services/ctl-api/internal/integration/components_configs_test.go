@@ -175,7 +175,8 @@ func (s *componentConfigsSuite) TestCreateJobComponentConfig() {
 		req.ImageURL = &imageURL
 		tag := "latest"
 		req.Tag = &tag
-		req.Cmd = ""
+		cmd := ""
+		req.Cmd = cmd
 
 		cfg, err := s.apiClient.CreateJobComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -268,6 +269,20 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
 		cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
+		require.Nil(t, err)
+		require.NotNil(t, cfg)
+
+		latestCfg, err := s.apiClient.GetComponentLatestConfig(s.ctx, s.compID)
+		require.Nil(t, err)
+		require.NotNil(t, latestCfg)
+
+		require.Equal(t, cfg.ID, latestCfg.ExternalImage.ID)
+	})
+
+	s.T().Run("success with job", func(t *testing.T) {
+		req := generics.GetFakeObj[*models.ServiceCreateJobComponentConfigRequest]()
+
+		cfg, err := s.apiClient.CreateJobComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
 		require.NotNil(t, cfg)
 
