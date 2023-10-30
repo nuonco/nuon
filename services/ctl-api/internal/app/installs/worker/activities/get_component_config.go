@@ -51,6 +51,12 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetComponentCon
 		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.BasicDeployConfig").
 		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.ComponentConfigConnection").
+
+		// preload all job configs
+		Preload("ComponentConfigConnection.JobComponentConfig").
+		Preload("ComponentConfigConnection.JobComponentConfig.ComponentConfigConnection").
+
+		// get config by deploy ID
 		First(&dep, "id = ?", req.DeployID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get deploy: %w", res.Error)
