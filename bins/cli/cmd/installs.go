@@ -7,11 +7,12 @@ import (
 
 func (c *cli) installsCmd() *cobra.Command {
 	var (
-		id     string
-		name   string
-		arn    string
-		region string
-		appID  string
+		id       string
+		name     string
+		arn      string
+		region   string
+		appID    string
+		deployID string
 	)
 
 	installsCmds := &cobra.Command{
@@ -90,6 +91,21 @@ func (c *cli) installsCmd() *cobra.Command {
 	componentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	componentsCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(componentsCmd)
+
+	printDeployPlan := &cobra.Command{
+		Use:   "print-deploy-plan",
+		Short: "Print install deploy plan",
+		Long:  "Print install deploy plan as JSON",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient)
+			svc.PrintDeployPlan(cmd.Context(), id, deployID, PrintJSON)
+		},
+	}
+	printDeployPlan.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
+	printDeployPlan.MarkFlagRequired("install-id")
+	printDeployPlan.Flags().StringVarP(&deployID, "deploy-id", "d", "", "The ID of the deploy you want to view")
+	printDeployPlan.MarkFlagRequired("deploy-id")
+	installsCmds.AddCommand(printDeployPlan)
 
 	return installsCmds
 }
