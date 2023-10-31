@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
@@ -23,9 +24,10 @@ type JobComponentConfig struct {
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
 	// Image attributes, copied from a docker_buid or external_image component.
-	ImageURL string `json:"image_url" gorm:"notnull"`
-	Tag      string `json:"tag" gorm:"notnull"`
-	Cmd      string `json:"cmd" gorm:"notnull"`
+	ImageURL string        `json:"image_url" gorm:"notnull"`
+	Tag      string        `json:"tag" gorm:"notnull"`
+	Cmd      string        `json:"cmd" gorm:"notnull"`
+	EnvVars  pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 }
 
 func (e *JobComponentConfig) BeforeCreate(tx *gorm.DB) error {
