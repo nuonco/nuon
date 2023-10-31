@@ -41,6 +41,10 @@ func TestToPluginType(t *testing.T) {
 			name: "oci-sync",
 			typ:  PluginTypeOciSync,
 		},
+		"job": {
+			name: "job",
+			typ:  PluginTypeJob,
+		},
 		"invalid": {
 			name:        "invalid",
 			errExpected: fmt.Errorf("invalid"),
@@ -87,6 +91,10 @@ func TestPluginType_DevRepositoryName(t *testing.T) {
 		"oci": {
 			typ:      PluginTypeOci,
 			expected: "dev-waypoint-plugin-oci",
+		},
+		"job": {
+			typ:      PluginTypeJob,
+			expected: "dev-waypoint-plugin-job",
 		},
 		"oci-sync": {
 			typ:      PluginTypeOciSync,
@@ -139,6 +147,10 @@ func TestPluginType_RepositoryName(t *testing.T) {
 			typ:      PluginTypeHelm,
 			expected: "waypoint-plugin-helm",
 		},
+		"job": {
+			typ:      PluginTypeJob,
+			expected: "waypoint-plugin-job",
+		},
 	}
 
 	for name, test := range tests {
@@ -181,6 +193,10 @@ func TestPluginType_ImageURL(t *testing.T) {
 		"oci-sync": {
 			typ:      PluginTypeOciSync,
 			expected: "public.ecr.aws/p7e3r5y0/waypoint-plugin-oci-sync",
+		},
+		"job": {
+			typ:      PluginTypeJob,
+			expected: "public.ecr.aws/p7e3r5y0/waypoint-plugin-job",
 		},
 	}
 
