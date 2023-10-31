@@ -53,8 +53,8 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetComponentCon
 		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.ComponentConfigConnection").
 
 		// preload all job configs
-		Preload("ComponentConfigConnection.JobComponentConfig").
-		Preload("ComponentConfigConnection.JobComponentConfig.ComponentConfigConnection").
+		Preload("ComponentBuild.ComponentConfigConnection.JobComponentConfig").
+		Preload("ComponentBuild.ComponentConfigConnection.JobComponentConfig.ComponentConfigConnection").
 
 		// get config by deploy ID
 		First(&dep, "id = ?", req.DeployID)
