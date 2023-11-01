@@ -7,21 +7,19 @@ import (
 	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
-	"go.uber.org/zap"
 )
 
-func New(v *validator.Validate, orgsOutputs *terraformcloud.OrgsOutputs, l *zap.Logger) (multi.Client, error) {
-	l.Error("test", zap.Any("test", orgsOutputs.Waypoint))
+func New(v *validator.Validate, orgsOutputs *terraformcloud.OrgsOutputs) (multi.Client, error) {
 	client, err := multi.New(v, multi.WithConfig(&multi.Config{
-		AddressTemplate:    "%s." + orgsOutputs.Waypoint.RootDomain,
-		SecretNameTemplate: orgsOutputs.Waypoint.TokenSecretNamespace,
+		AddressTemplate:    "%s." + orgsOutputs.Waypoint.RootDomain + ":9701",
+		SecretNameTemplate: orgsOutputs.Waypoint.TokenSecretTemplate,
 		SecretNamespace:    orgsOutputs.Waypoint.TokenSecretNamespace,
-		SecretKey:          "data",
+		SecretKey:          "token",
 		ClusterInfo: &kube.ClusterInfo{
 			ID:             orgsOutputs.Waypoint.ClusterID,
 			Endpoint:       orgsOutputs.Waypoint.PublicEndpoint,
 			CAData:         orgsOutputs.Waypoint.CAData,
-			TrustedRoleARN: orgsOutputs.K8s.AccessRoleARNs["ctl-api"],
+			TrustedRoleARN: orgsOutputs.K8s.AccessRoleARNs["eks-ctl-api"],
 		},
 	}))
 	if err != nil {
