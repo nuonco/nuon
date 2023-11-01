@@ -90,3 +90,19 @@ apps:
       community: https://join.slack.com/t/unstructuredw-kbe4326/shared_invite/zt-23kciff0y-bvzXxJkgtbXe5POo_rxMkw
       homepage: https://unstructured.io/
       demo: https://www.youtube.com/embed/rh40FbpSiCs
+
+  - name: airbyte
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
+      slug: airbyte
+      description: The only tool you need to move data
+      name: Airbyte
+    urls:
+      documentation:  https://docs.airbyte.com/
+      logo: https://docs.airbyte.com/img/logo-dark.png
+      github: https://github.com/airbytehq/airbyte
+      community: https://slack.airbyte.com/
+      homepage: https://airbyte.com
+      demo: https://www.youtube.com/embed/aLUr8QNbQp4
