@@ -14,7 +14,7 @@ func (m *multiClient) getClient(ctx context.Context, id string) (pb.WaypointClie
 		ClusterInfo: m.Config.ClusterInfo,
 		Token: k8s.Token{
 			Namespace: fmt.Sprintf(m.Config.SecretNamespace),
-			Name:      fmt.Sprintf(m.Config.SecretNameTemplate),
+			Name:      fmt.Sprintf(m.Config.SecretNameTemplate, id),
 			Key:       fmt.Sprintf(m.Config.SecretKey),
 		},
 	}))

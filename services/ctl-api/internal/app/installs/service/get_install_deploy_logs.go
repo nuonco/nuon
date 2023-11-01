@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -12,7 +14,7 @@ import (
 )
 
 const (
-	defaultLogPollTimeout time.Duration = time.Second * 2
+	defaultLogPollTimeout time.Duration = time.Second * 20
 )
 
 type DeployLog interface{}
@@ -80,6 +82,10 @@ func (s *service) getLogs(ctx context.Context, orgID, deployID string) ([]Deploy
 		}
 
 		resp, err := logClient.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+
 		if err != nil {
 			return nil, fmt.Errorf("unable to receive logs: %w", err)
 		}
