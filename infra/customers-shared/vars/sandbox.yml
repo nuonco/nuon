@@ -75,3 +75,18 @@ apps:
       community: https://community.retool.com/
       homepage: https://retool.com/
       demo: https://www.youtube.com/embed/AkcwNwPy7RI
+  - name: unstructured
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
+      slug: unstructured
+      description: ETL for LLMs
+      name: Unstructured
+    urls:
+      documentation:  https://unstructured-io.github.io/unstructured/
+      logo: https://unstructured-io.github.io/unstructured/_static/images/logo-dark-mode.svg
+      github: https://github.com/Unstructured-IO/unstructured
+      community: https://join.slack.com/t/unstructuredw-kbe4326/shared_invite/zt-23kciff0y-bvzXxJkgtbXe5POo_rxMkw
+      homepage: https://unstructured.io/
+      demo: https://www.youtube.com/embed/rh40FbpSiCs
