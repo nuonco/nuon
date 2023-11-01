@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -12,7 +14,7 @@ import (
 )
 
 const (
-	defaultLogPollTimeout time.Duration = time.Second * 2
+	defaultLogPollTimeout time.Duration = time.Second * 20
 )
 
 type BuildLog interface{}
@@ -81,6 +83,10 @@ func (s *service) getLogs(ctx context.Context, orgID, buildID string) ([]BuildLo
 
 		resp, err := logClient.Recv()
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+
 			return nil, fmt.Errorf("unable to receive logs: %w", err)
 		}
 
