@@ -16,6 +16,7 @@ services: |
   workers-executors:
     - services/workers-executors/**
     - pkg/terraform/**
+    - pkg/waypoint/**
   workers-installs:
     - services/workers-installs/**
   workers-orgs:
