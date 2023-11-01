@@ -72,6 +72,7 @@ func New(v *validator.Validate,
 	l *zap.Logger,
 	hooks *hooks.Hooks,
 	orgsOutputs *terraformcloud.OrgsOutputs,
+	wpClient multi.Client,
 ) *service {
 	return &service{
 		cfg:         cfg,
@@ -81,5 +82,6 @@ func New(v *validator.Validate,
 		mw:          mw,
 		hooks:       hooks,
 		orgsOutputs: orgsOutputs,
+		wpClient:    wpClient,
 	}
 }
