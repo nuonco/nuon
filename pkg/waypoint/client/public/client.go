@@ -1,4 +1,4 @@
-package client
+package public
 
 import (
 	"context"
@@ -13,20 +13,20 @@ const (
 )
 
 // getClient returns a waypoint client
-func getClient(ctx context.Context, addr, token string) (*grpc.ClientConn, error) {
+func (c *publicClient) getClient(ctx context.Context, addr string) (*grpc.ClientConn, error) {
 	cfg, err := serverclient.ContextConfig()
 	if err != nil {
 		return nil, err
 	}
+
 	cfg.Server.RequireAuth = false
 	cfg.Server.Address = addr
 	cfg.Server.Tls = true
 	cfg.Server.TlsSkipVerify = true
-	cfg.Server.RequireAuth = token != ""
-	cfg.Server.AuthToken = token
+	cfg.Server.RequireAuth = false
+	cfg.Server.AuthToken = ""
 	primaryOpts := serverclient.FromContextConfig(cfg)
 
-	// TODO(jdt): this should absolutely use our structured logging...
 	appLogger := hclog.New(&hclog.LoggerOptions{
 		Name:  defaultHCLogName,
 		Level: hclog.LevelFromString("DEBUG"),

@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewWriter(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (metrics.Writer, error) {
+func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (metrics.Writer, error) {
 	tags := []string{
 		fmt.Sprintf("git_ref:%s", cfg.GitRef),
 		fmt.Sprintf("service:%s", cfg.ServiceName),

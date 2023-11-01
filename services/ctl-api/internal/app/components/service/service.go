@@ -5,6 +5,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
@@ -21,6 +22,7 @@ type service struct {
 	hooks       *hooks.Hooks
 	ghClient    *github.Client
 	orgsOutputs *terraformcloud.OrgsOutputs
+	wpClient    multi.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -70,6 +72,7 @@ func New(v *validator.Validate,
 	hooks *hooks.Hooks,
 	ghClient *github.Client,
 	orgsOutputs *terraformcloud.OrgsOutputs,
+	wpClient multi.Client,
 ) *service {
 	return &service{
 		cfg:         cfg,
@@ -80,5 +83,6 @@ func New(v *validator.Validate,
 		hooks:       hooks,
 		ghClient:    ghClient,
 		orgsOutputs: orgsOutputs,
+		wpClient:    wpClient,
 	}
 }
