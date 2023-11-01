@@ -1,4 +1,4 @@
-package client
+package k8s
 
 import (
 	"context"
@@ -8,10 +8,13 @@ import (
 	pb "github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/powertoolsdev/mono/pkg/kube/secret"
+	"github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"google.golang.org/grpc"
 )
 
-type k8sProvider struct {
+var _ client.Provider = (*k8sClient)(nil)
+
+type k8sClient struct {
 	Address         string `validate:"required"`
 	SecretNamespace string `validate:"required"`
 	SecretName      string `validate:"required"`
@@ -20,15 +23,14 @@ type k8sProvider struct {
 	ClusterInfo *kube.ClusterInfo
 
 	// internal state
-	v            *validator.Validate
-	clientGetter clientGetter
-	clientConn   *grpc.ClientConn
+	v          *validator.Validate
+	clientConn *grpc.ClientConn
 }
 
-type k8sProviderOption func(*k8sProvider) error
+type clientOption func(*k8sClient) error
 
-func NewK8sProvider(v *validator.Validate, opts ...k8sProviderOption) (*k8sProvider, error) {
-	p := &k8sProvider{v: v, clientGetter: &defaultClientGetter{}}
+func New(v *validator.Validate, opts ...clientOption) (*k8sClient, error) {
+	p := &k8sClient{v: v}
 
 	for _, opt := range opts {
 		if err := opt(p); err != nil {
@@ -43,8 +45,8 @@ func NewK8sProvider(v *validator.Validate, opts ...k8sProviderOption) (*k8sProvi
 	return p, nil
 }
 
-func WithConfig(cfg Config) k8sProviderOption {
-	return func(p *k8sProvider) error {
+func WithConfig(cfg Config) clientOption {
+	return func(p *k8sClient) error {
 		p.Address = cfg.Address
 		p.SecretNamespace = cfg.Token.Namespace
 		p.SecretName = cfg.Token.Name
@@ -54,7 +56,7 @@ func WithConfig(cfg Config) k8sProviderOption {
 	}
 }
 
-func (p *k8sProvider) Close() error {
+func (p *k8sClient) Close() error {
 	if p.clientConn == nil {
 		return nil
 	}
@@ -64,7 +66,7 @@ func (p *k8sProvider) Close() error {
 
 // GetClient returns a waypoint client with the previously configured address,
 // fetching the token from k8s using the token information
-func (p *k8sProvider) GetClient(ctx context.Context) (pb.WaypointClient, error) {
+func (p *k8sClient) Fetch(ctx context.Context) (pb.WaypointClient, error) {
 	secretGetter, err := secret.New(p.v,
 		secret.WithNamespace(p.SecretNamespace),
 		secret.WithCluster(p.ClusterInfo),
@@ -80,7 +82,8 @@ func (p *k8sProvider) GetClient(ctx context.Context) (pb.WaypointClient, error) 
 		return nil, fmt.Errorf("unable to get token secret: %w", err)
 	}
 
-	cc, wp, err := p.clientGetter.getClient(ctx, p.Address, string(token))
+	cc, err := p.getClient(ctx, p.Address, string(token))
 	p.clientConn = cc
+	wp := pb.NewWaypointClient(cc)
 	return wp, err
 }

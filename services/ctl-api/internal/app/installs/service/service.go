@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
@@ -19,6 +20,7 @@ type service struct {
 	cfg         *internal.Config
 	hooks       *hooks.Hooks
 	orgsOutputs *terraformcloud.OrgsOutputs
+	wpClient    multi.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
