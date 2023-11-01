@@ -3,11 +3,19 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hashicorp/waypoint/pkg/server/gen"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
-type DeployLog struct{}
+const (
+	defaultLogPollTimeout time.Duration = time.Second * 2
+)
+
+type DeployLog interface{}
 
 //	@BasePath	/v1/installs
 //
@@ -31,9 +39,53 @@ type DeployLog struct{}
 //	@Success		200				{object}	[]DeployLog
 //	@Router			/v1/installs/{install_id}/deploys/{deploy_id}/logs [get]
 func (s *service) GetInstallDeployLogs(ctx *gin.Context) {
-	ctx.Error(fmt.Errorf("not yet implemented"))
+	deployID := ctx.Param("deploy_id")
+
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	logs, err := s.getLogs(ctx, org.ID, deployID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get logs: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, logs)
 }
 
-func (s *service) getInstallDeployLogs(ctx context.Context, installID, componentID string) ([]DeployLog, error) {
-	return nil, nil
+func (s *service) getLogs(ctx context.Context, orgID, deployID string) ([]DeployLog, error) {
+	logs := make([]DeployLog, 0)
+	ctx, cancelFn := context.WithTimeout(ctx, defaultLogPollTimeout)
+	defer cancelFn()
+
+	logClient, err := s.wpClient.GetJobStream(ctx, orgID, &gen.GetJobStreamRequest{
+		JobId: fmt.Sprintf("deploy-%s", deployID),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get job stream: %w", err)
+	}
+
+	done := false
+	for {
+		select {
+		case <-ctx.Done():
+			done = true
+		default:
+		}
+		if done {
+			break
+		}
+
+		resp, err := logClient.Recv()
+		if err != nil {
+			return nil, fmt.Errorf("unable to receive logs: %w", err)
+		}
+
+		logs = append(logs, resp.Event)
+	}
+
+	return logs, nil
 }

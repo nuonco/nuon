@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
 
-func NewGithubClient(v *validator.Validate, cfg *internal.Config) (*github.Client, error) {
+func New(v *validator.Validate, cfg *internal.Config) (*github.Client, error) {
 	ghClient, err := client.New(v,
 		client.WithAppID(cfg.GithubAppID),
 		client.WithAppKey([]byte(cfg.GithubAppKey)),
