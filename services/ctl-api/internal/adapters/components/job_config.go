@@ -14,15 +14,8 @@ func (c *Adapter) ToJobConfig(cfg *app.JobComponentConfig, connections []app.Ins
 		Id: cfg.ComponentConfigConnection.ComponentID,
 		BuildCfg: &buildv1.Config{
 			Timeout: durationpb.New(defaultBuildTimeout),
-			Cfg: &buildv1.Config_JobConfig{
-				JobConfig: &buildv1.JobConfig{
-					Tag:      cfg.Tag,
-					ImageUrl: cfg.ImageURL,
-					Cmd:      cfg.Cmd,
-					EnvVars: &variablesv1.EnvVars{
-						Env: []*variablesv1.EnvVar{},
-					},
-				},
+			Cfg: &buildv1.Config_Noop{
+				Noop: &buildv1.NoopConfig{},
 			},
 		},
 		DeployCfg: &deployv1.Config{
