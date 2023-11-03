@@ -1,2 +1,17 @@
 ---
-apps: []
+apps:
+  - name: clickhouse
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
+      slug: clickhouse
+      description: ClickHouse is the fastest and most resource efficient open-source database for real-time apps and analytics.
+      name: ClickHouse
+    urls:
+      documentation:  https://clickhouse.com/docs/en/intro
+      logo: https://upload.wikimedia.org/wikipedia/commons/0/0e/Clickhouse.png
+      github: https://github.com/clickhouse
+      community: https://clickhousedb.slack.com/join/shared_invite/zt-23y85sfck-crUbdd4RupnjOBxfFIQv5w#/shared-invite/email
+      homepage:  https://clickhouse.com
+      demo: https://www.youtube.com/embed/FtoWGT7kS-c

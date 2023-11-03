@@ -1,0 +1,19 @@
+resource "nuon_helm_chart_component" "clickhouse" {
+  name       = "clickhouse"
+  app_id = nuon_app.real["clickhouse"].id
+  chart_name = "clickhouse"
+
+  public_repo = {
+    directory = "charts/clickhouse"
+    repo      = "https://github.com/bitnami/charts"
+    branch    = "main"
+  }
+}
+
+resource "nuon_install" "clickhouse_install" {
+  app_id = nuon_app.real["clickhouse"].id
+
+  name         = "clickhouse-demo"
+  region       = "us-east-1"
+  iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-install-access"
+}
