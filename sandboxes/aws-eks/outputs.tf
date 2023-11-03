@@ -14,6 +14,7 @@ output "cluster" {
     name = module.eks.cluster_name
     platform_version = module.eks.cluster_platform_version
     status = module.eks.cluster_status
+    oidc_issuer_url = module.eks.cluster_oidc_issuer_url
   }
 }
 
