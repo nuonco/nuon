@@ -41,7 +41,7 @@ func (p *Platform) execRun(
 ) (*terraformv1.Deployment, error) {
 	stdout, _, err := ui.OutputWriters()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get output writers")
+		return nil, fmt.Errorf("unable to get output writers: %w", err)
 	}
 
 	runLog := hclog.New(&hclog.LoggerOptions{
