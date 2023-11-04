@@ -37,3 +37,7 @@ Releasing the changes to use ingresses for `ctl-api`.
 ## v0.3.3
 
 Promoting sandbox mode into prod.
+
+## v0.3.4
+
+Promoting recent sandbox changes into prod.
