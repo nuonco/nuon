@@ -118,9 +118,22 @@ func (c *cli) installsCmd() *cobra.Command {
 	}
 	deployLogsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install whose deploy you want to view")
 	deployLogsCmd.MarkFlagRequired("install-id")
-	deployLogsCmd.Flags().StringVarP(&deployID, "deploy-id", "b", "", "The deploy ID for the deploy log you want to view")
+	deployLogsCmd.Flags().StringVarP(&deployID, "deploy-id", "d", "", "The deploy ID for the deploy log you want to view")
 	deployLogsCmd.MarkFlagRequired("deploy-id")
 	installsCmds.AddCommand(deployLogsCmd)
+
+	listDeploysCmd := &cobra.Command{
+		Use:   "list-deploys",
+		Short: "View all install deploys",
+		Long:  "View all install deploys by install ID",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient)
+			svc.ListDeploys(cmd.Context(), id, PrintJSON)
+		},
+	}
+	listDeploysCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install whose deploy you want to view")
+	listDeploysCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(listDeploysCmd)
 
 	return installsCmds
 }
