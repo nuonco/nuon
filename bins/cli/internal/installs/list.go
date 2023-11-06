@@ -9,22 +9,24 @@ import (
 )
 
 func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
-	appID, err := lookup.AppID(ctx, s.api, appID)
-	if err != nil {
-		ui.PrintError(err)
-		return
-	}
 
 	view := ui.NewListView()
 
 	var (
 		installs []*models.AppInstall
+		err      error
 	)
 
-	if appID == "" {
-		installs, err = s.api.GetAllInstalls(ctx)
-	} else {
+	if appID != "" {
+		appID, err := lookup.AppID(ctx, s.api, appID)
+		if err != nil {
+			ui.PrintError(err)
+			return
+		}
 		installs, err = s.api.GetAppInstalls(ctx, appID)
+
+	} else {
+		installs, err = s.api.GetAllInstalls(ctx)
 	}
 	if err != nil {
 		view.Error(err)
