@@ -41,3 +41,7 @@ Promoting sandbox mode into prod.
 ## v0.3.4
 
 Promoting recent sandbox changes into prod.
+
+## v0.3.5
+
+Promoting recent cli and api changes into prod.
