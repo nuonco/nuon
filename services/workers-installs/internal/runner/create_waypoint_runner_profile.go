@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
+	"github.com/powertoolsdev/mono/pkg/waypoint/client/k8s"
 	"google.golang.org/grpc"
 )
 
@@ -38,9 +39,9 @@ func (a *Activities) CreateWaypointRunnerProfile(ctx context.Context, req Create
 		return resp, fmt.Errorf("failed to validate request: %w", err)
 	}
 
-	provider, err := waypoint.NewK8sProvider(a.v, waypoint.WithConfig(waypoint.Config{
+	provider, err := k8s.New(a.v, k8s.WithConfig(k8s.Config{
 		Address: req.OrgServerAddr,
-		Token: waypoint.Token{
+		Token: k8s.Token{
 			Namespace: req.TokenSecretNamespace,
 			Name:      waypoint.DefaultTokenSecretName(req.OrgID),
 			Key:       waypoint.DefaultTokenSecretKey,
@@ -54,7 +55,7 @@ func (a *Activities) CreateWaypointRunnerProfile(ctx context.Context, req Create
 		return resp, fmt.Errorf("unable to get org provider: %w", err)
 	}
 
-	client, err := provider.GetClient(ctx)
+	client, err := provider.Fetch(ctx)
 	if err != nil {
 		return resp, fmt.Errorf("unable to get client: %w", err)
 	}
