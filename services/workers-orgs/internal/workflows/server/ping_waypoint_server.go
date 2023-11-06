@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
-	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
+	"github.com/powertoolsdev/mono/pkg/waypoint/client/public"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -31,9 +31,7 @@ func (a *Activities) PingWaypointServer(ctx context.Context, req PingWaypointSer
 	ctx, cancelFn := context.WithTimeout(ctx, req.Timeout)
 	defer cancelFn()
 
-	provider, err := waypoint.NewUnauthenticatedProvider(a.v, waypoint.WithUnauthenticatedConfig(waypoint.Config{
-		Address: req.Addr,
-	}))
+	provider, err := public.New(a.v, public.WithAddress(req.Addr))
 	if err != nil {
 		return resp, fmt.Errorf("unable to get org provider: %w", err)
 	}
@@ -47,7 +45,7 @@ func (a *Activities) PingWaypointServer(ctx context.Context, req PingWaypointSer
 }
 
 type waypointProvider interface {
-	GetClient(context.Context) (gen.WaypointClient, error)
+	Fetch(context.Context) (gen.WaypointClient, error)
 }
 
 type waypointServerPinger interface {
@@ -69,7 +67,7 @@ func (w *wpServerPinger) pingWaypointServerUntilReachable(ctx context.Context, p
 		default:
 		}
 
-		client, err := provider.GetClient(ctx)
+		client, err := provider.Fetch(ctx)
 		if err != nil {
 			fmt.Printf("unable to get client: %v", err)
 			continue
