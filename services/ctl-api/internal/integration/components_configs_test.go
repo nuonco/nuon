@@ -290,7 +290,7 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 		require.Nil(t, err)
 		require.NotNil(t, latestCfg)
 
-		require.Equal(t, cfg.ID, latestCfg.ExternalImage.ID)
+		require.Equal(t, cfg.ID, latestCfg.Job.ID)
 	})
 
 	s.T().Run("error on no configs", func(t *testing.T) {
