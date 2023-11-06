@@ -14,7 +14,7 @@ import (
 type CreateJobComponentConfigRequest struct {
 	ImageURL string             `json:"image_url" validate:"required"`
 	Tag      string             `json:"tag" validate:"required"`
-	Cmd      string             `json:"cmd" validate:"required"`
+	Cmd      string             `json:"cmd"`
 	EnvVars  map[string]*string `json:"env_vars"`
 }
 
