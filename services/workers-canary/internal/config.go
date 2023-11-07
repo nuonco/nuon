@@ -2,6 +2,7 @@ package internal
 
 import (
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 )
@@ -12,7 +13,7 @@ func init() {
 	config.RegisterDefault("terraform_state_base_dir", "/tmp/state")
 	config.RegisterDefault("install_script_path", "/install-cli.sh")
 	config.RegisterDefault("terraform_module_dir", "/terraform")
-	config.RegisterDefault("disable_cli_commands", true)
+	config.RegisterDefault("disable_cli_commands", false)
 }
 
 type Config struct {
