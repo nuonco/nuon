@@ -27,7 +27,7 @@ type JobComponentConfig struct {
 	// Image attributes, copied from a docker_buid or external_image component.
 	ImageURL string         `json:"image_url" gorm:"notnull"`
 	Tag      string         `json:"tag" gorm:"notnull"`
-	Cmd      string         `json:"cmd" gorm:"notnull"`
+	Cmd      pq.StringArray `json:"cmd" gorm:"type:text[]"`
 	EnvVars  pgtype.Hstore  `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 	Args     pq.StringArray `json:"args" gorm:"type:text[]" swaggertype:"array,string"`
 }
