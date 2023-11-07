@@ -57,3 +57,7 @@ Re-promote to run canaries in prod.
 ## v0.3.8
 
 Re-promote to run canaries in prod.
+
+## v0.3.9
+
+Promoting cli update.
