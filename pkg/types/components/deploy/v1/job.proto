@@ -11,4 +11,5 @@ message JobConfig {
   string tag = 2;
   string cmd = 3;
   variables.v1.EnvVars env_vars = 4;
+  repeated string args = 5;
 }
