@@ -45,3 +45,11 @@ Promoting recent sandbox changes into prod.
 ## v0.3.5
 
 Promoting recent cli and api changes into prod.
+
+## v0.3.6
+
+Re-promoting new cli capabilities.
+
+## v0.3.7
+
+Re-promote to run canaries in prod.
