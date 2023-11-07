@@ -28,6 +28,7 @@ func (c *Adapter) ToJobConfig(cfg *app.JobComponentConfig, connections []app.Ins
 					EnvVars: &variablesv1.EnvVars{
 						Env: []*variablesv1.EnvVar{},
 					},
+					Args: cfg.Args,
 				},
 			},
 		},

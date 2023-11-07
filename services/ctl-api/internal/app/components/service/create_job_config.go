@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -16,6 +17,7 @@ type CreateJobComponentConfigRequest struct {
 	Tag      string             `json:"tag" validate:"required"`
 	Cmd      string             `json:"cmd"`
 	EnvVars  map[string]*string `json:"env_vars"`
+	Args     []string           `json:"args"`
 }
 
 func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -75,11 +77,14 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 	}
 
 	// build component config
+	// args := pgtype.Array[string]{}
+	// args.Set
 	cfg := app.JobComponentConfig{
 		ImageURL: req.ImageURL,
 		Tag:      req.Tag,
 		Cmd:      req.Cmd,
 		EnvVars:  pgtype.Hstore(req.EnvVars),
+		Args:     pq.StringArray(req.Args),
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
