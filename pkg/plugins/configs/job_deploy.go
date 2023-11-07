@@ -6,6 +6,6 @@ type JobDeploy struct {
 	StaticEnvVars map[string]string `hcl:"static_environment,optional"`
 	ImageURL      string            `hcl:"image_url"`
 	Tag           string            `hcl:"tag"`
-	Cmd           string            `hcl:"cmd,optional"`
+	Cmd           []string          `hcl:"cmd,optional"`
 	Args          []string          `hcl:"args"`
 }
