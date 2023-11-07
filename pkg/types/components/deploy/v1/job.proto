@@ -9,7 +9,7 @@ option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v
 message JobConfig {
   string image_url = 1;
   string tag = 2;
-  string cmd = 3;
+  repeated string cmd = 3;
   variables.v1.EnvVars env_vars = 4;
   repeated string args = 5;
 }
