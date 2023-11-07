@@ -26,10 +26,11 @@ func (p *Platform) startJob(ctx context.Context, clientset *kubernetes.Clientset
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "job",
-							Image: p.Cfg.ImageURL,
-							Args:  p.Cfg.Args,
-							Env:   toEnv(p.Cfg.StaticEnvVars),
+							Name:    "job",
+							Image:   p.Cfg.ImageURL,
+							Command: p.Cfg.Cmd,
+							Args:    p.Cfg.Args,
+							Env:     toEnv(p.Cfg.StaticEnvVars),
 						},
 					},
 					RestartPolicy: "Never",

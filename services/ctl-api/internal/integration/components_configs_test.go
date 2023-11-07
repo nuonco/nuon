@@ -175,8 +175,8 @@ func (s *componentConfigsSuite) TestCreateJobComponentConfig() {
 		req.ImageURL = &imageURL
 		tag := "latest"
 		req.Tag = &tag
-		cmd := ""
-		req.Cmd = cmd
+		req.Cmd = []string{""}
+		req.Args = []string{""}
 
 		cfg, err := s.apiClient.CreateJobComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
