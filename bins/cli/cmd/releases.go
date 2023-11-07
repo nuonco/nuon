@@ -57,7 +57,7 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Long:  "Get the steps for a release by release ID",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := releases.New(c.apiClient)
-			svc.Steps(cmd.Context(), releaseID)
+			svc.Steps(cmd.Context(), releaseID, PrintJSON)
 		},
 	}
 	stepsCmd.Flags().StringVarP(&releaseID, "release-id", "r", "", "The ID of the release whose steps you want to view")
