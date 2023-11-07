@@ -28,7 +28,7 @@ func (p *Platform) startJob(ctx context.Context, clientset *kubernetes.Clientset
 						{
 							Name:  "job",
 							Image: p.Cfg.ImageURL,
-							Args:  []string{p.Cfg.Cmd},
+							Args:  p.Cfg.Args,
 							Env:   toEnv(p.Cfg.StaticEnvVars),
 						},
 					},
