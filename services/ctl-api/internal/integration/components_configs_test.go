@@ -175,8 +175,6 @@ func (s *componentConfigsSuite) TestCreateJobComponentConfig() {
 		req.ImageURL = &imageURL
 		tag := "latest"
 		req.Tag = &tag
-		req.Cmd = []string{""}
-		req.Args = []string{""}
 		req.EnvVars = map[string]string{
 			"FOO": "foo",
 			"BAR": "bar",
