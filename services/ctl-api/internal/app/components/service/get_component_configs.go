@@ -67,6 +67,9 @@ func (s *service) getComponentConfigs(ctx context.Context, cmpID string) ([]app.
 		Preload("ExternalImageComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ExternalImageComponentConfig.BasicDeployConfig").
 
+		// preload all job configs
+		Preload("JobComponentConfig").
+
 		// order by created at
 		Order("created_at DESC").
 
