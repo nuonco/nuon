@@ -77,8 +77,6 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 	}
 
 	// build component config
-	// args := pgtype.Array[string]{}
-	// args.Set
 	cfg := app.JobComponentConfig{
 		ImageURL: req.ImageURL,
 		Tag:      req.Tag,

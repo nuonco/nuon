@@ -4,7 +4,6 @@ import (
 	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
-	variablesv1 "github.com/powertoolsdev/mono/pkg/types/components/variables/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -25,10 +24,8 @@ func (c *Adapter) ToJobConfig(cfg *app.JobComponentConfig, connections []app.Ins
 					Tag:      cfg.Tag,
 					ImageUrl: cfg.ImageURL,
 					Cmd:      cfg.Cmd,
-					EnvVars: &variablesv1.EnvVars{
-						Env: []*variablesv1.EnvVar{},
-					},
-					Args: cfg.Args,
+					EnvVars:  c.toEnvVars(cfg.EnvVars),
+					Args:     cfg.Args,
 				},
 			},
 		},

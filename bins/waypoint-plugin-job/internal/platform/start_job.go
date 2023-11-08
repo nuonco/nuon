@@ -2,7 +2,6 @@ package platform
 
 import (
 	"context"
-	"strings"
 
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	batchv1 "k8s.io/api/batch/v1"
@@ -13,12 +12,10 @@ import (
 
 func (p *Platform) startJob(ctx context.Context, clientset *kubernetes.Clientset, jobInfo *component.JobInfo) (*batchv1.Job, error) {
 	// create the job config
-	imageName := strings.Split(p.Cfg.ImageURL, "/")
-	name := imageName[len(imageName)-1] + "-"
 	namespace := jobInfo.Workspace
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: name,
+			GenerateName: "test-job-",
 			Namespace:    namespace,
 		},
 		Spec: batchv1.JobSpec{
@@ -30,7 +27,7 @@ func (p *Platform) startJob(ctx context.Context, clientset *kubernetes.Clientset
 							Image:   p.Cfg.ImageURL,
 							Command: p.Cfg.Cmd,
 							Args:    p.Cfg.Args,
-							Env:     toEnv(p.Cfg.StaticEnvVars),
+							Env:     toEnv(p.Cfg.EnvVars),
 						},
 					},
 					RestartPolicy: "Never",
