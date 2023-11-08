@@ -27,7 +27,26 @@ func (s *Service) Get(ctx context.Context, compID, buildID string, asJSON bool) 
 		return
 	}
 
-	view.Render([][]string{
+	vcsConnectionID := ""
+	commitSha := ""
+	commitAuthorEmail := ""
+	commitAuthorName := ""
+	commitCreatedAt := ""
+	commitUpdatedAt := ""
+	commitCreatedBy := ""
+	commitMessage := ""
+	if build.VcsConnectionCommit != nil {
+		vcsConnectionID = build.VcsConnectionCommit.ID
+		commitSha = build.VcsConnectionCommit.Sha
+		commitAuthorEmail = build.VcsConnectionCommit.AuthorEmail
+		commitAuthorName = build.VcsConnectionCommit.AuthorName
+		commitCreatedAt = build.VcsConnectionCommit.CreatedAt
+		commitUpdatedAt = build.VcsConnectionCommit.UpdatedAt
+		commitCreatedBy = build.VcsConnectionCommit.CreatedByID
+		commitMessage = build.VcsConnectionCommit.Message
+	}
+
+	buildRes := [][]string{
 		{"id", build.ID},
 		{"status", build.Status},
 		{"created at", build.CreatedAt},
@@ -35,13 +54,15 @@ func (s *Service) Get(ctx context.Context, compID, buildID string, asJSON bool) 
 		{"created by", build.CreatedByID},
 		{"component id", build.ComponentConfigConnectionID},
 
-		{"vcs connection id", build.VcsConnectionCommit.ID},
-		{"commit sha", build.VcsConnectionCommit.Sha},
-		{"commit author email", build.VcsConnectionCommit.AuthorEmail},
-		{"commit author name", build.VcsConnectionCommit.AuthorName},
-		{"commit created at", build.VcsConnectionCommit.CreatedAt},
-		{"commit updated at", build.VcsConnectionCommit.UpdatedAt},
-		{"commit created by", build.VcsConnectionCommit.CreatedByID},
-		{"commit message", build.VcsConnectionCommit.Message},
-	})
+		{"vcs connection id", vcsConnectionID},
+		{"commit sha", commitSha},
+		{"commit author email", commitAuthorEmail},
+		{"commit author name", commitAuthorName},
+		{"commit created at", commitCreatedAt},
+		{"commit updated at", commitUpdatedAt},
+		{"commit created by", commitCreatedBy},
+		{"commit message", commitMessage},
+	}
+
+	view.Render(buildRes)
 }
