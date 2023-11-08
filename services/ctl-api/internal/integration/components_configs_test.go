@@ -177,6 +177,10 @@ func (s *componentConfigsSuite) TestCreateJobComponentConfig() {
 		req.Tag = &tag
 		req.Cmd = []string{""}
 		req.Args = []string{""}
+		req.EnvVars = map[string]string{
+			"FOO": "foo",
+			"BAR": "bar",
+		}
 
 		cfg, err := s.apiClient.CreateJobComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)

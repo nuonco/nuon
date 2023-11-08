@@ -11,25 +11,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-func (c *Adapter) toEnvVars(inputVals map[string]*string) *variablesv1.EnvVars {
-	vals := make([]*variablesv1.EnvVar, 0)
-	for k, v := range inputVals {
-		if v == nil {
-			continue
-		}
-
-		vals = append(vals, &variablesv1.EnvVar{
-			Name:      k,
-			Value:     *v,
-			Sensitive: true,
-		})
-	}
-
-	return &variablesv1.EnvVars{
-		Env: vals,
-	}
-}
-
 func (c *Adapter) toBuildArgs(inputArgs []string) ([]*buildv1.DockerBuildArg, error) {
 	args := make([]*buildv1.DockerBuildArg, 0)
 	for _, arg := range inputArgs {
