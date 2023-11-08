@@ -46,9 +46,11 @@ func (s *service) GetInstallDeploy(ctx *gin.Context) {
 func (s *service) getInstallDeploy(ctx context.Context, installID, deployID string) (*app.InstallDeploy, error) {
 	var installDeploy app.InstallDeploy
 	res := s.db.WithContext(ctx).
+		Joins("JOIN install_components ON install_components.id=install_deploys.install_component_id").
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection").
-		First(&installDeploy, "id = ?", deployID)
+		Where("install_components.install_id = ?", installID).
+		First(&installDeploy, "install_deploys.id = ?", deployID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
 	}

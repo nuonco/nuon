@@ -63,8 +63,6 @@ func (s *service) getComponentConfigs(ctx context.Context, cmpID string) ([]app.
 
 		// preload all external image configs
 		Preload("ExternalImageComponentConfig").
-		Preload("ExternalImageComponentConfig.PublicGitVCSConfig").
-		Preload("ExternalImageComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ExternalImageComponentConfig.BasicDeployConfig").
 
 		// preload all job configs

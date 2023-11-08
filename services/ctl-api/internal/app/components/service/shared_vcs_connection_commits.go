@@ -38,9 +38,6 @@ func (s *service) getComponentConnectionCommit(ctx context.Context, cmpID string
 
 		// preload all external image configs
 		Preload("ExternalImageComponentConfig").
-		Preload("ExternalImageComponentConfig.PublicGitVCSConfig").
-		Preload("ExternalImageComponentConfig.ConnectedGithubVCSConfig").
-		Preload("ExternalImageComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("ExternalImageComponentConfig.BasicDeployConfig").
 
 		// preload
