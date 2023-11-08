@@ -113,7 +113,7 @@ func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateCo
 	cmp := app.Component{}
 	res := s.db.WithContext(ctx).
 		Preload("App").
-		Preload("App.Installs", "status = ?", "active").
+		Preload("App.Installs", "status IN ?", []string{"active", "queued", "provisioning"}).
 		First(&cmp, "id = ?", cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
