@@ -33,7 +33,7 @@
     "@types/node": "^18.15.7",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@typescript-eslint/parser": "^5.56.0",
-    "cdktf-cli": "^0.15.5",
+    "cdktf-cli": "^0.19.1",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-import": "^2.27.5",
