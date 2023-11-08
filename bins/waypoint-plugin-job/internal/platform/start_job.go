@@ -15,22 +15,23 @@ func (p *Platform) startJob(ctx context.Context, clientset *kubernetes.Clientset
 	namespace := jobInfo.Workspace
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "test-job-",
-			Namespace:    namespace,
+			Name:      p.Cfg.JobName,
+			Namespace: p.Cfg.Namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
+					ServiceAccountName: p.Cfg.ServiceAccount,
 					Containers: []corev1.Container{
 						{
-							Name:    "job",
+							Name:    p.Cfg.ContainerName,
 							Image:   p.Cfg.ImageURL,
 							Command: p.Cfg.Cmd,
 							Args:    p.Cfg.Args,
 							Env:     toEnv(p.Cfg.EnvVars),
 						},
 					},
-					RestartPolicy: "Never",
+					RestartPolicy: corev1.RestartPolicy(p.Cfg.RestartPolicy),
 				},
 			},
 		},
