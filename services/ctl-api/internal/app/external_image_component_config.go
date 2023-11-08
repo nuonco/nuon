@@ -22,10 +22,6 @@ type ExternalImageComponentConfig struct {
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
-	// VCS Config
-	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
-	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
-
 	ImageURL          string             `json:"image_url" gorm:"notnull"`
 	Tag               string             `json:"tag" gorm:"notnull"`
 	AWSECRImageConfig *AWSECRImageConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"aws_ecr_image_config,omitempty"`

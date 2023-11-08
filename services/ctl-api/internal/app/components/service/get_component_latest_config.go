@@ -64,8 +64,6 @@ func (s *service) getComponentLatestConfig(ctx *gin.Context, cmpID string) (*app
 
 		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
-		Preload("ComponentConfigs.ExternalImageComponentConfig.PublicGitVCSConfig").
-		Preload("ComponentConfigs.ExternalImageComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.ExternalImageComponentConfig.BasicDeployConfig").
 
 		// preload all job configs
