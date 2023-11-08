@@ -27,7 +27,6 @@ func (a *awsECRImageConfigRequest) getAWSECRImageConfig() *app.AWSECRImageConfig
 }
 
 type CreateExternalImageComponentConfigRequest struct {
-	basicVCSConfigRequest
 	BasicDeployConfig *basicDeployConfigRequest `json:"basic_deploy_config" validate:"required_unless=SyncOnly true"`
 
 	AWSECRImageConfig *awsECRImageConfigRequest `json:"aws_ecr_image_config"`
@@ -94,14 +93,7 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 	}
 
 	// build component config
-	connectedGithubVCSConfig, err := req.connectedGithubVCSConfig(parentCmp)
-	if err != nil {
-		return nil, fmt.Errorf("invalid connected github vcs config: %w", err)
-	}
 	cfg := app.ExternalImageComponentConfig{
-		PublicGitVCSConfig:       req.publicGitVCSConfig(),
-		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
-
 		ImageURL:          req.ImageURL,
 		Tag:               req.Tag,
 		SyncOnly:          req.SyncOnly,
