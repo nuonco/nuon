@@ -47,8 +47,6 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetComponentCon
 
 		// preload all external image configs
 		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig").
-		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.PublicGitVCSConfig").
-		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.BasicDeployConfig").
 		Preload("ComponentBuild.ComponentConfigConnection.ExternalImageComponentConfig.ComponentConfigConnection").
 
