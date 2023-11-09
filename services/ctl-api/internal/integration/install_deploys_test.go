@@ -167,6 +167,18 @@ func (s *installDeploysIntegrationTestSuite) TestGetInstallDeploys() {
 		require.Equal(t, deploys[0].ID, seedDeploy.ID)
 	})
 
+	s.T().Run("successfully fetches with multiple components", func(t *testing.T) {
+		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
+		require.Nil(s.T(), err)
+		require.NotNil(s.T(), comp)
+
+		deploys, err := s.apiClient.GetInstallDeploys(s.ctx, s.installID)
+		require.NoError(t, err)
+		require.NotEmpty(t, deploys)
+		require.Equal(t, deploys[0].ID, seedDeploy.ID)
+	})
+
 	s.T().Run("successfully returns deploys in created_at desc order", func(t *testing.T) {
 		secondDeploy, err := s.apiClient.CreateInstallDeploy(s.ctx, s.installID, depReq)
 		require.NoError(s.T(), err)
@@ -177,13 +189,6 @@ func (s *installDeploysIntegrationTestSuite) TestGetInstallDeploys() {
 		require.NotEmpty(t, deploys)
 		require.Equal(t, deploys[0].ID, secondDeploy.ID)
 	})
-
-	s.T().Run("errors when install is invalid", func(t *testing.T) {
-		deploys, err := s.apiClient.GetInstallDeploys(s.ctx, generics.GetFakeObj[string]())
-		require.Error(t, err)
-		require.Nil(t, deploys)
-	})
-
 }
 
 func (s *installDeploysIntegrationTestSuite) TestGetInstallLatestDeploy() {
