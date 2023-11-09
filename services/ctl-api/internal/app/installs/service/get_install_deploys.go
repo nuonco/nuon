@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"gorm.io/gorm"
 )
 
 //	@BasePath	/v1/apps/installs
@@ -43,22 +42,17 @@ func (s *service) GetInstallDeploys(ctx *gin.Context) {
 }
 
 func (s *service) getInstallDeploys(ctx context.Context, installID string) ([]app.InstallDeploy, error) {
-	var installCmps []app.InstallComponent
-	res := s.db.WithContext(ctx).Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-		return db.Order("install_deploys.created_at DESC").Limit(1000)
-	}).
-		Preload("InstallDeploys.ComponentBuild").
-		Preload("InstallDeploys.ComponentBuild.VCSConnectionCommit").
-		Where("install_id = ?", installID).
-		First(&installCmps)
+	var installDeploys []app.InstallDeploy
+	res := s.db.WithContext(ctx).
+		Preload("ComponentBuild").
+		Preload("ComponentBuild.VCSConnectionCommit").
+		Joins("JOIN install_components ON install_components.id=install_deploys.install_component_id").
+		Where("install_components.install_id = ?", installID).
+		Order("created_at desc").
+		Find(&installDeploys)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+		return nil, fmt.Errorf("unable to get install deploys: %w", res.Error)
 	}
 
-	deploys := make([]app.InstallDeploy, 0)
-	for _, installCmp := range installCmps {
-		deploys = append(deploys, installCmp.InstallDeploys...)
-	}
-
-	return deploys, nil
+	return installDeploys, nil
 }
