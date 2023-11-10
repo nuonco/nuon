@@ -6,10 +6,11 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
+var Version string = "development"
+
 func (s *Service) Version(ctx context.Context) {
 	view := ui.NewGetView()
-	version := "development"
 	view.Render([][]string{
-		{"version", version},
+		{"version", Version},
 	})
 }
