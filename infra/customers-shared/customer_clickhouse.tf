@@ -1,4 +1,6 @@
 resource "nuon_helm_chart_component" "clickhouse" {
+  provider = nuon.sandbox
+
   name       = "clickhouse"
   app_id = nuon_app.sandbox["clickhouse"].id
   chart_name = "clickhouse"
@@ -11,6 +13,8 @@ resource "nuon_helm_chart_component" "clickhouse" {
 }
 
 resource "nuon_install" "clickhouse_install" {
+  provider = nuon.sandbox
+
   app_id = nuon_app.sandbox["clickhouse"].id
 
   name         = "clickhouse-demo"
