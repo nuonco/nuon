@@ -1,3 +1,16 @@
+locals {
+  stage = {
+    org_id         = "orgzblonf9hol7jq92vkdriio4"
+    sandbox_org_id = "orgvwpbd584d7v7o9x8oxqfo6b"
+    api_url        = "https://ctl.stage.nuon.co"
+  }
+
+  prod = {
+    org_id         = "orgtvkz1podyp9lmenx7o64usx"
+    sandbox_org_id = "org1dc0615iykaaryb1txem6iw"
+  }
+}
+
 # product project contains all workspaces for provisioning non-service parts of the product, such as the demo account,
 # orgs, horizon and more.
 resource "tfe_project" "demo" {
@@ -53,8 +66,8 @@ module "demo-org-sandbox-stage" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   env_vars = {
-    NUON_ORG_ID  = "orgvwpbd584d7v7o9x8oxqfo6b"
-    NUON_API_URL = "https://ctl.stage.nuon.co"
+    NUON_ORG_ID  = local.stage.org_id
+    NUON_API_URL = local.stage.api_url
   }
 
   triggered_by = [module.infra-terraform.workspace_id]
@@ -74,7 +87,7 @@ module "demo-org-prod" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   env_vars = {
-    NUON_ORG_ID = "orgtvkz1podyp9lmenx7o64usx"
+    NUON_ORG_ID = local.prod.org_id
   }
   triggered_by = [module.infra-terraform.workspace_id]
 }
@@ -93,8 +106,8 @@ module "e2e-stage" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   env_vars = {
-    NUON_ORG_ID  = "orgzblonf9hol7jq92vkdriio4"
-    NUON_API_URL = "https://ctl.stage.nuon.co"
+    NUON_ORG_ID  = local.stage.org_id
+    NUON_API_URL = local.stage.api_url
   }
 
   vars = {
@@ -119,8 +132,8 @@ module "e2e-sandbox-stage" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   env_vars = {
-    NUON_ORG_ID  = "orgvwpbd584d7v7o9x8oxqfo6b"
-    NUON_API_URL = "https://ctl.stage.nuon.co"
+    NUON_ORG_ID  = local.stage.sandbox_org_id
+    NUON_API_URL = local.stage.api_url
   }
 
   vars = {
@@ -145,7 +158,7 @@ module "e2e-prod" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   env_vars = {
-    NUON_ORG_ID = "orgtvkz1podyp9lmenx7o64usx"
+    NUON_ORG_ID = local.prod.org_id
   }
 
   vars = {
@@ -170,12 +183,12 @@ module "customers-shared-stage" {
 
   // NOTE: we have to set the api token manually in the ui, so we don't leak it
   env_vars = {
-    NUON_API_URL = "https://ctl.stage.nuon.co"
+    NUON_API_URL = local.stage.api_url
   }
 
   vars = {
-    sandbox_org_id = "orgxik6l2v8bqbgz41c1nh1acb"
-    org_id         = "orgkyyq9mk8rkohrom51euxae6"
+    sandbox_org_id = local.stage.sandbox_org_id
+    org_id         = local.stage.org_id
   }
 
   triggered_by = [module.infra-terraform.workspace_id]
@@ -194,8 +207,8 @@ module "customers-shared-prod" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 
   vars = {
-    sandbox_org_id = "org1dc0615iykaaryb1txem6iw"
-    org_id         = "org11dvz3bq0at3ol1k2lk1esf"
+    sandbox_org_id = local.prod.sandbox_org_id
+    org_id         = local.prod.org_id
   }
   triggered_by = [module.infra-terraform.workspace_id]
 }
