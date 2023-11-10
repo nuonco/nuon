@@ -65,7 +65,6 @@ func (s *installComponentsTestSuite) SetupTest() {
 
 	// create a component config
 	req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
-	req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 	cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), cfg)
