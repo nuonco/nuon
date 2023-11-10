@@ -8,7 +8,7 @@ env:
   TERRAFORM_MODULE_DIR: ../e2e/nuon
   INSTALL_SCRIPT_PATH: ./install-cli.sh
   DISABLE_NOTIFICATIONS: true
-  DISABLE_CLI_COMMANDS: true
+  DISABLE_CLI_COMMANDS: false
   DISABLE_INTROSPECTION: true
 local_startup_cmds:
   - go build -o /tmp/svc-workers-canary .
