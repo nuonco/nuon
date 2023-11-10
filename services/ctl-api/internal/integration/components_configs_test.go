@@ -145,7 +145,6 @@ func (s *componentConfigsSuite) TestCreateHelmComponentConfig() {
 func (s *componentConfigsSuite) TestCreateExternalImageComponentConfig() {
 	s.T().Run("success with connected github config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
 		cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -154,7 +153,6 @@ func (s *componentConfigsSuite) TestCreateExternalImageComponentConfig() {
 
 	s.T().Run("success with public config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
-		req.ConnectedGithubVcsConfig = nil
 
 		cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -268,7 +266,6 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 
 	s.T().Run("success with external image", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
-		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
 		cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
