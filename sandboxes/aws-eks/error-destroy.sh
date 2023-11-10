@@ -40,7 +40,7 @@ done
 
 echo $SGS | jq -r '.SecurityGroups[].GroupId' | while read -r sg_id ; do
   echo "deleting security group $sg_id"
-  aws ec2 delete-security-group --security-group-id=$sg_id
+  aws ec2 delete-security-group --group-id=$sg_id
 done
 
 echo "looking for vpc..."
