@@ -22,7 +22,7 @@ output "artifacts" {
     "services/e2e" = {
       bucket_prefix  = "e2e"
       ecr            = module.e2e.all
-      use_promotions = false
+      use_promotions = true
     }
 
     // charts
@@ -93,12 +93,12 @@ output "artifacts" {
     "sandboxes/aws-eks" = {
       bucket_prefix  = "sandbox/aws-eks"
       ecr            = module.sandbox_aws_eks.all
-      use_promotions = false
+      use_promotions = true
     }
     "sandboxes/empty" = {
       bucket_prefix  = "sandbox/empty"
       ecr            = module.sandbox_empty.all
-      use_promotions = false
+      use_promotions = true
     }
   }
 }
