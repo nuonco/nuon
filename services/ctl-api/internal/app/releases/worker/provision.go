@@ -17,7 +17,7 @@ func (w *Workflows) provision(ctx workflow.Context, releaseID string, dryRun boo
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		ReleaseID: releaseID,
 	}, &release); err != nil {
-		w.updateStatus(ctx, releaseID, "failed", "unable to read release record from database")
+		w.updateStatus(ctx, releaseID, "error", "unable to read release record from database")
 		return fmt.Errorf("unable to read release record from database: %w", err)
 	}
 
@@ -34,7 +34,7 @@ func (w *Workflows) provision(ctx workflow.Context, releaseID string, dryRun boo
 			stepWorkflowID,
 			req,
 		); err != nil {
-			w.updateStatus(ctx, releaseID, "failed", "release step failed")
+			w.updateStatus(ctx, releaseID, "error", "release step failed")
 			return fmt.Errorf("release failed: %w", err)
 		}
 	}
