@@ -89,8 +89,8 @@ jobs:
             ${{ env.EARTHLY_EXTRA_ARGS }} \
             --ci \
             --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            --version=${{ inputs.tag }} \
-            --artifact +artifacts/out
+            --artifact +artifacts/out \
+            --version=${{ inputs.tag }}
 
       - name: push artifacts to s3
         working-directory: ${{ inputs.dir }}
