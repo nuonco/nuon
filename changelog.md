@@ -61,3 +61,7 @@ Re-promote to run canaries in prod.
 ## v0.3.9
 
 Promoting cli update.
+
+## v0.4.0
+
+Promote fix that will ensure sandbox artifacts are published.
