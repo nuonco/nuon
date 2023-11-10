@@ -47,6 +47,9 @@ func (s *service) getInstallComponents(ctx context.Context, installID string) ([
 		Preload("InstallComponents", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_components.created_at DESC")
 		}).
+		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_deploys.created_at DESC").Limit(1)
+		}).
 		Preload("InstallComponents.Component").
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
