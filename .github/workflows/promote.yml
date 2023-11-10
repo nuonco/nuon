@@ -148,7 +148,7 @@ jobs:
       env: prod
       publish: true
       sandbox: ${{ matrix.sandbox }}
-      tag: ${{ needs.tag.outputs.git_ref }}
+      tag: ${{ needs.tag.outputs.semver }}
     secrets: inherit
 
   bump_tag:
