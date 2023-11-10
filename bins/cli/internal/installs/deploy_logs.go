@@ -16,16 +16,16 @@ func (s *Service) DeployLogs(ctx context.Context, installID, deployID string, as
 
 	view := ui.NewGetView()
 
-	wpLog, err := s.api.GetInstallDeployLogs(ctx, installID, deployID)
+	log, err := s.api.GetInstallDeployLogs(ctx, installID, deployID)
 	if err != nil {
 		view.Error(err)
 		return
 	}
 
 	if asJSON {
-		ui.PrintJSON(wpLog)
+		ui.PrintJSON(log)
 		return
 	}
 
-	ui.PrintJSON(wpLog)
+	ui.PrintDeployLogs(log)
 }
