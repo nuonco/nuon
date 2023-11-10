@@ -22,7 +22,7 @@ type InstallDeploy struct {
 	ComponentBuild   ComponentBuild `faker:"-" json:"build,omitempty"`
 
 	InstallComponentID string           `json:"install_component_id" gorm:"notnull"`
-	InstallComponent   InstallComponent `faker:"-" json:"-"`
+	InstallComponent   InstallComponent `faker:"-" json:"install_component"`
 
 	ComponentReleaseStepID *string               `json:"release_id"`
 	ComponentReleaseStep   *ComponentReleaseStep `json:"-"`
