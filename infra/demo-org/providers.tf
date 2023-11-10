@@ -1,7 +1,21 @@
-locals {}
+provider "nuon" {}
 
-provider "nuon" {
-  #api_url = var.api_url
-  #api_token = var.api_token
-  #org_id = var.org_id
+provider "aws" {
+  region = local.region
+  alias  = "mgmt"
+  default_tags {
+    tags = local.tags
+  }
+}
+
+provider "aws" {
+  region = local.region
+
+  assume_role {
+    role_arn = "arn:aws:iam::${local.accounts.demo.id}:role/terraform"
+  }
+
+  default_tags {
+    tags = local.tags
+  }
 }

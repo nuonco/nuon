@@ -1,6 +1,6 @@
 resource "nuon_helm_chart_component" "clickhouse" {
   name       = "clickhouse"
-  app_id = nuon_app.real["clickhouse"].id
+  app_id = nuon_app.sandbox["clickhouse"].id
   chart_name = "clickhouse"
 
   public_repo = {
@@ -11,7 +11,7 @@ resource "nuon_helm_chart_component" "clickhouse" {
 }
 
 resource "nuon_install" "clickhouse_install" {
-  app_id = nuon_app.real["clickhouse"].id
+  app_id = nuon_app.sandbox["clickhouse"].id
 
   name         = "clickhouse-demo"
   region       = "us-east-1"
