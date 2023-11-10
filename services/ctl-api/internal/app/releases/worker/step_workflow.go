@@ -38,7 +38,7 @@ func (w *Workflows) pollReleaseStepInstallDeploys(ctx workflow.Context, releaseS
 			if installDeploy.Status == "active" {
 				continue
 			}
-			if installDeploy.Status == "failed" {
+			if installDeploy.Status == "error" {
 				return fmt.Errorf("install deploy failed %s", installDeploy.InstallComponent.InstallID)
 			}
 			isPending = true
@@ -111,8 +111,8 @@ func (w *Workflows) ProvisionReleaseStep(ctx workflow.Context, req ProvisionRele
 	if err := w.pollReleaseStepInstallDeploys(ctx, req.ReleaseStepID); err != nil {
 		if updateErr := w.defaultExecErrorActivity(ctx, w.acts.UpdateReleaseStepStatus, activities.UpdateReleaseStepStatusRequest{
 			ReleaseStepID:     req.ReleaseStepID,
-			Status:            "failed",
-			StatusDescription: "failed",
+			Status:            "error",
+			StatusDescription: "error",
 		}); updateErr != nil {
 			return fmt.Errorf("unable to update release step status: %w", updateErr)
 		}
