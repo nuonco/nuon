@@ -16,16 +16,16 @@ func (s *Service) Logs(ctx context.Context, compID, buildID string, asJSON bool)
 
 	view := ui.NewGetView()
 
-	wpLog, err := s.api.GetComponentBuildLogs(ctx, compID, buildID)
+	log, err := s.api.GetComponentBuildLogs(ctx, compID, buildID)
 	if err != nil {
 		view.Error(err)
 		return
 	}
 
 	if asJSON {
-		ui.PrintJSON(wpLog)
+		ui.PrintJSON(log)
 		return
 	}
 
-	ui.PrintJSON(wpLog)
+	ui.PrintBuildLog(log)
 }
