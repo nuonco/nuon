@@ -8,6 +8,8 @@
 services: |
   ctl-api:
     - services/ctl-api/**
+    - go.mod
+    - go.sum
   workers-apps:
     - services/workers-apps/**
   workers-canary:
@@ -31,6 +33,8 @@ artifacts: |
     - bins/nuonctl/**
   bins/cli:
     - bins/cli/**
+    - go.mod
+    - go.sum
 
   charts/demo:
     - charts/demo/**

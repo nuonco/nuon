@@ -66,7 +66,6 @@ func (s *componentReleasesTestSuite) SetupTest() {
 
 	// create a component config
 	req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
-	req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 	cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
 	require.Nil(s.T(), err)
 	require.NotNil(s.T(), cfg)
@@ -126,15 +125,15 @@ func (s *componentReleasesTestSuite) TestCreateRelease() {
 	})
 
 	// s.T().Run("success with only a build ID", func(t *testing.T) {
-	// 	release, err := s.apiClient.CreateRelease(s.ctx, s.compID, &models.ServiceCreateReleaseRequest{
-	// 		BuildID: s.buildID,
-	// 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
-	// 			InstallsPerStep: 10,
-	// 			Delay:           "1m",
-	// 		},
-	// 	})
-	// 	require.NoError(t, err)
-	// 	require.NotEmpty(t, release)
+	//	release, err := s.apiClient.CreateRelease(s.ctx, s.compID, &models.ServiceCreateReleaseRequest{
+	//		BuildID: s.buildID,
+	//		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
+	//			InstallsPerStep: 10,
+	//			Delay:		 "1m",
+	//		},
+	//	})
+	//	require.NoError(t, err)
+	//	require.NotEmpty(t, release)
 	// })
 
 	s.T().Run("fails with missing component", func(t *testing.T) {
