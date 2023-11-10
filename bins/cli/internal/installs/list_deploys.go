@@ -33,6 +33,8 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, asJSON bool
 			"status",
 			"build id",
 			"created at",
+			"component id",
+			"component name",
 		},
 	}
 	for _, deploy := range deploys {
@@ -41,6 +43,8 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, asJSON bool
 			deploy.Status,
 			deploy.BuildID,
 			deploy.CreatedAt,
+			deploy.InstallComponentID,
+			deploy.InstallComponent.Component.Name,
 		})
 	}
 	view.Render(data)
