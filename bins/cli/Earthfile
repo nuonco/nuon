@@ -33,40 +33,40 @@ artifacts:
     FROM +code
     RUN mkdir -p out
 
-    ARG GIT_SHORT_REF=
+    ARG version=
 
     # mac builds
     RUN GOOS=darwin \
         GOARCH=arm64 \
         go build \
-        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${GIT_SHORT_REF}'" \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${version}'" \
         -o ./out/${BIN_NAME}_darwin_arm64 .
     RUN GOOS=darwin \
         GOARCH=amd64 \
         go build \
-        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${GIT_SHORT_REF}'" \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${version}'" \
         -o ./out/${BIN_NAME}_darwin_amd64 .
 
     # linux builds
     RUN GOOS=linux \
         GOARCH=arm \
         go build \
-        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${GIT_SHORT_REF}'" \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${version}'" \
         -o ./out/${BIN_NAME}_linux_arm .
     RUN GOOS=linux \
         GOARCH=arm64 \
         go build \
-        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${GIT_SHORT_REF}'" \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${version}'" \
         -o ./out/${BIN_NAME}_linux_arm64 .
     RUN GOOS=linux \
         GOARCH=386 \
         go build \
-        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${GIT_SHORT_REF}'" \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${version}'" \
         -o ./out/${BIN_NAME}_linux_386 .
     RUN GOOS=linux \
         GOARCH=amd64 \
         go build \
-        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${GIT_SHORT_REF}'" \
+        -ldflags="-X '${PKG_ROOT}/internal/version.Version=${version}'" \
         -o ./out/${BIN_NAME}_linux_amd64 .
 
     SAVE ARTIFACT out AS LOCAL ./out
