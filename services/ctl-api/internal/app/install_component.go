@@ -21,7 +21,7 @@ type InstallComponent struct {
 	InstallID   string    `json:"install_id" gorm:"index:install_component_group,unique;notnull"`
 	Install     Install   `faker:"-"`
 	ComponentID string    `json:"component_id" gorm:"index:install_component_group,unique;notnull"`
-	Component   Component `faker:"-"`
+	Component   Component `faker:"-" json:"component"`
 
 	InstallDeploys []InstallDeploy `faker:"-" gorm:"constraint:OnDelete:CASCADE;"`
 }
