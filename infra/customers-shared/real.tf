@@ -17,6 +17,7 @@ locals {
 }
 
 resource "nuon_app" "real" {
+  provider = nuon.real
   for_each = { for app in local.real.apps : app.name => app }
 
   name = each.value.name
@@ -24,6 +25,7 @@ resource "nuon_app" "real" {
 }
 
 resource "nuon_app_installer" "real" {
+  provider = nuon.real
   for_each = { for app in local.real.apps : app.name => app }
 
   app_id = nuon_app.real[each.value.name].id
