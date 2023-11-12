@@ -53,7 +53,7 @@ func InstancesIAMPolicy(orgID string) ([]byte, error) {
 // InstancesIAMTrustPolicy generates the trust policy for the instance role
 // The trust policy gives access to any role arn with the provided prefix, in this case the EKS roles for our workers
 // running in the main accounts.
-func InstancesIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, error) {
+func InstancesIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn, odrRoleArn string) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -67,6 +67,19 @@ func InstancesIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte
 				Condition: iamCondition{
 					StringLike: map[string]string{
 						"aws:PrincipalArn": workerRoleArnPrefix,
+					},
+				},
+			},
+			{
+				Action: []string{"sts:AssumeRole"},
+				Effect: "Allow",
+				Sid:    "",
+				Principal: iamPrincipal{
+					AWS: "*",
+				},
+				Condition: iamCondition{
+					StringEquals: map[string]string{
+						"aws:PrincipalArn": odrRoleArn,
 					},
 				},
 			},

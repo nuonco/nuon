@@ -7,34 +7,13 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	"github.com/powertoolsdev/mono/pkg/terraform/run"
 	terraformv1 "github.com/powertoolsdev/mono/pkg/types/plugins/terraform/v1"
 )
 
-type runType int
-
-const (
-	runTypeApply runType = iota + 1
-	runTypePlan
-	runTypeDestroy
-)
-
-func (r runType) String() string {
-	switch r {
-	case runTypeApply:
-		return "apply"
-	case runTypePlan:
-		return "plan"
-	case runTypeDestroy:
-		return "destroy"
-	}
-
-	return ""
-}
-
 func (p *Platform) execRun(
 	ctx context.Context,
-	runTyp runType,
 	ji *component.JobInfo,
 	ui terminal.UI,
 	log hclog.Logger,
@@ -63,16 +42,18 @@ func (p *Platform) execRun(
 		return nil, fmt.Errorf("unable to create run: %w", err)
 	}
 
-	switch runTyp {
-	case runTypeApply:
+	switch p.Cfg.RunType {
+	case configs.TerraformDeployRunTypeApply:
 		err = tfRun.Apply(ctx)
-	case runTypeDestroy:
+	case configs.TerraformDeployRunTypeDestroy:
 		err = tfRun.Destroy(ctx)
-	case runTypePlan:
+	case configs.TerraformDeployRunTypePlan:
 		err = tfRun.Plan(ctx)
+	default:
+		return nil, fmt.Errorf("unsupported run type %s", p.Cfg.RunType)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("unable to execute %s run: %w", runTyp, err)
+		return nil, fmt.Errorf("unable to execute %s run: %w", p.Cfg.RunType, err)
 	}
 
 	return &terraformv1.Deployment{

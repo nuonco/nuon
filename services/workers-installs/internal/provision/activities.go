@@ -1,6 +1,7 @@
 package provision
 
 import (
+	"github.com/go-playground/validator/v10"
 	"k8s.io/client-go/rest"
 
 	"github.com/powertoolsdev/mono/pkg/sender"
@@ -10,6 +11,7 @@ import (
 // ProvisionActivities is a type that wraps the set of provision activities that we'll be using to execute this
 // workflow. It should only be a few activities, such as running terraform and installing the agent
 type Activities struct {
+	v      *validator.Validate
 	sender sender.NotificationSender
 
 	config workers.Config
@@ -20,8 +22,9 @@ type Activities struct {
 	notifier
 }
 
-func NewActivities(cfg workers.Config, sender sender.NotificationSender) *Activities {
+func NewActivities(v *validator.Validate, cfg workers.Config, sender sender.NotificationSender) *Activities {
 	return &Activities{
+		v:        v,
 		config:   cfg,
 		sender:   sender,
 		notifier: &notifierImpl{sender},

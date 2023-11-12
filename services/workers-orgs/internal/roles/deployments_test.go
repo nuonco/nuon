@@ -36,7 +36,10 @@ func TestDeploymentsIAMName(t *testing.T) {
 }
 
 func TestDeploymentsIAMTrustPolicy(t *testing.T) {
-	doc, err := DeploymentsIAMTrustPolicy("arn:aws:iam::676549690856:role/eks/eks-workers-*", "arn:aws:iam::766121324316:role/nuon-internal-support-stage")
+	doc, err := DeploymentsIAMTrustPolicy("arn:aws:iam::676549690856:role/eks/eks-workers-*",
+		"arn:aws:iam::766121324316:role/nuon-internal-support-stage",
+		"arn:aws:iam::766121324316:role/org-odr-runner",
+	)
 	assert.NoError(t, err)
 
 	var policy iamRoleTrustPolicy
