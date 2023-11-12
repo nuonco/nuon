@@ -8,7 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w wkflow) provisionSecretsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
+func (w wkflow) provisionSecretsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest, odrRoleArn string) (string, error) {
 	set := iamSet{
 		name: "secrets",
 		policyFn: func() ([]byte, error) {
@@ -18,7 +18,7 @@ func (w wkflow) provisionSecretsIAM(ctx workflow.Context, req *iamv1.ProvisionIA
 			return roles.SecretsIAMName(req.OrgId)
 		},
 		trustPolicyFn: func() ([]byte, error) {
-			return roles.InstallerIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
+			return roles.InstallerIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN, odrRoleArn)
 		},
 	}
 
@@ -41,7 +41,7 @@ func (w wkflow) provisionOdrIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReq
 	return w.createIAMSet(ctx, req, set)
 }
 
-func (w wkflow) provisionInstallerIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
+func (w wkflow) provisionInstallerIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest, odrRoleArn string) (string, error) {
 	set := iamSet{
 		name: "installer",
 		policyFn: func() ([]byte, error) {
@@ -51,13 +51,13 @@ func (w wkflow) provisionInstallerIAM(ctx workflow.Context, req *iamv1.Provision
 			return roles.InstallerIAMName(req.OrgId)
 		},
 		trustPolicyFn: func() ([]byte, error) {
-			return roles.InstallerIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
+			return roles.InstallerIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN, odrRoleArn)
 		},
 	}
 	return w.createIAMSet(ctx, req, set)
 }
 
-func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
+func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest, odrRoleArn string) (string, error) {
 	set := iamSet{
 		name: "installations",
 		policyFn: func() ([]byte, error) {
@@ -72,13 +72,13 @@ func (w wkflow) provisionInstallationsIAM(ctx workflow.Context, req *iamv1.Provi
 			return roles.InstallationsIAMName(req.OrgId)
 		},
 		trustPolicyFn: func() ([]byte, error) {
-			return roles.InstallationsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
+			return roles.InstallationsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN, odrRoleArn)
 		},
 	}
 	return w.createIAMSet(ctx, req, set)
 }
 
-func (w wkflow) provisionOrgsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
+func (w wkflow) provisionOrgsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest, odrRoleArn string) (string, error) {
 	set := iamSet{
 		name: "orgs",
 		policyFn: func() ([]byte, error) {
@@ -88,13 +88,13 @@ func (w wkflow) provisionOrgsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRe
 			return roles.OrgsIAMName(req.OrgId)
 		},
 		trustPolicyFn: func() ([]byte, error) {
-			return roles.InstallationsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
+			return roles.InstallationsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN, odrRoleArn)
 		},
 	}
 	return w.createIAMSet(ctx, req, set)
 }
 
-func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
+func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest, odrRoleArn string) (string, error) {
 	set := iamSet{
 		name: "deployments",
 		policyFn: func() ([]byte, error) {
@@ -104,13 +104,13 @@ func (w wkflow) provisionDeploymentsIAM(ctx workflow.Context, req *iamv1.Provisi
 			return roles.DeploymentsIAMName(req.OrgId)
 		},
 		trustPolicyFn: func() ([]byte, error) {
-			return roles.DeploymentsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
+			return roles.DeploymentsIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN, odrRoleArn)
 		},
 	}
 	return w.createIAMSet(ctx, req, set)
 }
 
-func (w wkflow) provisionInstancesIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest) (string, error) {
+func (w wkflow) provisionInstancesIAM(ctx workflow.Context, req *iamv1.ProvisionIAMRequest, odrRoleArn string) (string, error) {
 	set := iamSet{
 		name: "instances",
 		policyFn: func() ([]byte, error) {
@@ -120,7 +120,7 @@ func (w wkflow) provisionInstancesIAM(ctx workflow.Context, req *iamv1.Provision
 			return roles.InstancesIAMName(req.OrgId)
 		},
 		trustPolicyFn: func() ([]byte, error) {
-			return roles.InstancesIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN)
+			return roles.InstancesIAMTrustPolicy(w.cfg.WorkersIAMRoleARNPrefix, w.cfg.SupportIAMRoleARN, odrRoleArn)
 		},
 	}
 	return w.createIAMSet(ctx, req, set)
@@ -139,43 +139,43 @@ func (w wkflow) ProvisionIAM(ctx workflow.Context, req *iamv1.ProvisionIAMReques
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
-	orgsRoleArn, err := w.provisionOrgsIAM(ctx, req)
-	if err != nil {
-		return resp, fmt.Errorf("unable to provision orgs IAM role: %w", err)
-	}
-	resp.OrgsRoleArn = orgsRoleArn
-
-	deploymentsRoleArn, err := w.provisionDeploymentsIAM(ctx, req)
-	if err != nil {
-		return resp, fmt.Errorf("unable to provision deployments IAM role: %w", err)
-	}
-	resp.DeploymentsRoleArn = deploymentsRoleArn
-
-	installationsRoleArn, err := w.provisionInstallationsIAM(ctx, req)
-	if err != nil {
-		return resp, fmt.Errorf("unable to provision installations IAM role: %w", err)
-	}
-	resp.InstallationsRoleArn = installationsRoleArn
-
-	installerRoleArn, err := w.provisionInstallerIAM(ctx, req)
-	if err != nil {
-		return resp, fmt.Errorf("unable to provision installer IAM role: %w", err)
-	}
-	resp.InstallerRoleArn = installerRoleArn
-
 	odrRoleArn, err := w.provisionOdrIAM(ctx, req)
 	if err != nil {
 		return resp, fmt.Errorf("unable to provision odr IAM role: %w", err)
 	}
 	resp.OdrRoleArn = odrRoleArn
 
-	instanceRoleArn, err := w.provisionInstancesIAM(ctx, req)
+	orgsRoleArn, err := w.provisionOrgsIAM(ctx, req, odrRoleArn)
+	if err != nil {
+		return resp, fmt.Errorf("unable to provision orgs IAM role: %w", err)
+	}
+	resp.OrgsRoleArn = orgsRoleArn
+
+	deploymentsRoleArn, err := w.provisionDeploymentsIAM(ctx, req, odrRoleArn)
+	if err != nil {
+		return resp, fmt.Errorf("unable to provision deployments IAM role: %w", err)
+	}
+	resp.DeploymentsRoleArn = deploymentsRoleArn
+
+	installationsRoleArn, err := w.provisionInstallationsIAM(ctx, req, odrRoleArn)
+	if err != nil {
+		return resp, fmt.Errorf("unable to provision installations IAM role: %w", err)
+	}
+	resp.InstallationsRoleArn = installationsRoleArn
+
+	installerRoleArn, err := w.provisionInstallerIAM(ctx, req, odrRoleArn)
+	if err != nil {
+		return resp, fmt.Errorf("unable to provision installer IAM role: %w", err)
+	}
+	resp.InstallerRoleArn = installerRoleArn
+
+	instanceRoleArn, err := w.provisionInstancesIAM(ctx, req, odrRoleArn)
 	if err != nil {
 		return resp, fmt.Errorf("unable to provision instance IAM role: %w", err)
 	}
 	resp.InstancesRoleArn = instanceRoleArn
 
-	secretsRoleArn, err := w.provisionSecretsIAM(ctx, req)
+	secretsRoleArn, err := w.provisionSecretsIAM(ctx, req, odrRoleArn)
 	if err != nil {
 		return resp, fmt.Errorf("unable to provision instance IAM role: %w", err)
 	}

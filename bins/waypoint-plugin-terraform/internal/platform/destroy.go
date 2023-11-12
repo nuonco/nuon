@@ -19,5 +19,5 @@ func (p *Platform) destroy(
 	ui terminal.UI,
 	log hclog.Logger,
 ) (*terraformv1.Deployment, error) {
-	return p.execRun(ctx, runTypeDestroy, ji, ui, log)
+	return p.execRun(ctx, ji, ui, log)
 }

@@ -3,15 +3,15 @@ syntax = "proto3";
 package executors.v1.plan.v1;
 
 import "executors/v1/plan/v1/noop_plan.proto";
-import "executors/v1/plan/v1/terraform_plan.proto";
 import "executors/v1/plan/v1/waypoint_plan.proto";
+import "tagger/tagger.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1";
 
 message Plan {
   oneof actual {
-    WaypointPlan waypoint_plan = 1;
-    TerraformPlan terraform_plan = 2;
-    NoopPlan noop_plan = 3;
+    option (tagger.oneof_tags) = "json:\"actual\"";
+    WaypointPlan waypoint_plan = 1 [(tagger.tags) = "json:\"waypoint_plan\""];
+    NoopPlan noop_plan = 3 [(tagger.tags) = "json:\"noop_plan\""];
   }
 }
