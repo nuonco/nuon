@@ -1,2 +1,17 @@
 ---
-apps: []
+apps:
+  - name: weaviate
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
+      slug: weaviate
+      description: The AI Native Vector Database
+      name: Weaviate
+    urls:
+      documentation: https://weaviate.io/developers/weaviate
+      logo: https://weaviate.io/img/site/weaviate-nav-logo-light.svg
+      github: https://github.com/weaviate/weaviate
+      community: https://forum.weaviate.io/
+      homepage: https://weaviate.io/
+      demo: https://www.youtube.com/watch?v=VAxrREiugxQ
