@@ -19,10 +19,5 @@ func (p *Platform) deploy(
 	ui terminal.UI,
 	log hclog.Logger,
 ) (*terraformv1.Deployment, error) {
-	runTyp := runTypeApply
-	if p.Cfg.PlanOnly {
-		runTyp = runTypePlan
-	}
-
-	return p.execRun(ctx, runTyp, ji, ui, log)
+	return p.execRun(ctx, ji, ui, log)
 }

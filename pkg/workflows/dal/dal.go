@@ -24,6 +24,7 @@ type Client interface {
 	// workflow request and responses
 	GetInstallProvisionRequest(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionRequest, error)
 	GetInstallProvisionResponse(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionResponse, error)
+	GetInstallSandboxOutputs(ctx context.Context, orgID, appID, installID string) (*structpb.Struct, error)
 
 	GetOrgProvisionRequest(ctx context.Context, orgID string) (*orgsv1.ProvisionRequest, error)
 	GetOrgProvisionResponse(ctx context.Context, orgID string) (*orgsv1.ProvisionResponse, error)

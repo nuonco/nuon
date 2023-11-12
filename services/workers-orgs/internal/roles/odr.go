@@ -37,6 +37,13 @@ func OdrIAMPolicy(ecrRegistryARN, orgID string) ([]byte, error) {
 				},
 				Resource: "*",
 			},
+			{
+				Effect: "Allow",
+				Action: []string{
+					"sts:AssumeRole",
+				},
+				Resource: "*",
+			},
 		},
 	}
 

@@ -82,12 +82,12 @@ func (a *Activities) getSandboxOutputs(ctx context.Context, orgID, appID, instal
 		return nil, fmt.Errorf("unable to get dal client: %w", err)
 	}
 
-	response, err := dalClient.GetInstallProvisionResponse(ctx, orgID, appID, installID)
+	response, err := dalClient.GetInstallSandboxOutputs(ctx, orgID, appID, installID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install provision response: %w", err)
 	}
 
-	tfOutputs, err := awseks.ParseTerraformOutputs(response.GetTerraformOutputs())
+	tfOutputs, err := awseks.ParseTerraformOutputs(response)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse terraform outputs: %w", err)
 	}
