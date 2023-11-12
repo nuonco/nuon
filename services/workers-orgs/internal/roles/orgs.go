@@ -35,7 +35,7 @@ func OrgsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 // TODO(jdt): is there a way we can restrict this to fewer services / roles?
 // OrgsIAMTrustPolicy generates the trust policy for the orgs role, allowing it to be assumed by services in our
 // cluster.
-func OrgsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, error) {
+func OrgsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn, odrRoleArn string) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -49,6 +49,19 @@ func OrgsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, err
 				Condition: iamCondition{
 					StringLike: map[string]string{
 						"aws:PrincipalArn": workerRoleArnPrefix,
+					},
+				},
+			},
+			{
+				Action: []string{"sts:AssumeRole"},
+				Effect: "Allow",
+				Sid:    "",
+				Principal: iamPrincipal{
+					AWS: "*",
+				},
+				Condition: iamCondition{
+					StringEquals: map[string]string{
+						"aws:PrincipalArn": odrRoleArn,
 					},
 				},
 			},

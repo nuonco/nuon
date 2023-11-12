@@ -8,7 +8,31 @@ import (
 	"github.com/powertoolsdev/mono/pkg/aws/s3downloader"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
+	"google.golang.org/protobuf/proto"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 )
+
+// GetInstallOutputs returns outputs for an install sandbox
+func (r *client) GetInstallSandboxOutputs(ctx context.Context, orgID, appID, installID string) (*structpb.Struct, error) {
+	creds := r.installsCredentials(ctx)
+	client, err := s3downloader.New(r.Settings.InstallsBucket, s3downloader.WithCredentials(creds))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get downloader: %w", err)
+	}
+
+	key := filepath.Join(prefix.InstallPath(orgID, appID, installID), defaultTerraformOutputFilename)
+	byts, err := client.GetBlob(ctx, key)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get blob: %w", err)
+	}
+
+	outputs := &structpb.Struct{}
+	if err := proto.Unmarshal(byts, outputs); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal outputs: %w", err)
+	}
+
+	return outputs, nil
+}
 
 // GetInstallProvisionRequest returns a provision request for an app
 func (r *client) GetInstallProvisionRequest(ctx context.Context, orgID, appID, installID string) (*installsv1.ProvisionRequest, error) {
