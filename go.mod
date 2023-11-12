@@ -5,7 +5,6 @@ go 1.21
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/DataDog/datadog-go/v5 v5.3.0
-	github.com/Khan/genqlient v0.6.0
 	github.com/auth0/go-jwt-middleware/v2 v2.1.0
 	github.com/aws/aws-sdk-go v1.44.229
 	github.com/aws/aws-sdk-go-v2 v1.21.1
@@ -29,11 +28,6 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v0.10.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-faker/faker/v4 v4.1.0
-	github.com/go-openapi/errors v0.20.4
-	github.com/go-openapi/runtime v0.26.0
-	github.com/go-openapi/strfmt v0.21.7
-	github.com/go-openapi/swag v0.22.4
-	github.com/go-openapi/validate v0.22.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/go-playground/validator/v10 v10.15.3
 	github.com/go-swagger/go-swagger v0.30.5
@@ -74,7 +68,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
-	github.com/swaggo/swag v1.16.1
+	github.com/swaggo/swag v1.16.2
 	github.com/tidwall/gjson v1.15.0
 	github.com/vburenin/ifacemaker v1.2.1
 	github.com/zclconf/go-cty v1.14.1
@@ -116,6 +110,11 @@ require (
 	github.com/bodgit/sevenzip v1.3.0 // indirect
 	github.com/bodgit/windows v1.0.0 // indirect
 	github.com/connesc/cipherio v0.2.1 // indirect
+	github.com/go-openapi/errors v0.20.4 // indirect
+	github.com/go-openapi/runtime v0.26.0 // indirect
+	github.com/go-openapi/strfmt v0.21.7 // indirect
+	github.com/go-openapi/swag v0.22.4 // indirect
+	github.com/go-openapi/validate v0.22.1 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.4 // indirect
@@ -123,7 +122,6 @@ require (
 	github.com/hashicorp/jsonapi v0.0.0-20210826224640-ee7dae0fb22d // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20230722043721-ed46e5a46466 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.1 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/net v0.17.0 // indirect
 )
