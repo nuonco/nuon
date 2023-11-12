@@ -65,7 +65,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 		worker.WithWorkflow(dnsWorkflow.ProvisionDNS),
 
 		// register activities
-		worker.WithActivity(provision.NewActivities(cfg, n)),
+		worker.WithActivity(provision.NewActivities(v, cfg, n)),
 		worker.WithActivity(runner.NewActivities(v, cfg)),
 		worker.WithActivity(deprovision.NewActivities(v, n, &cfg)),
 		worker.WithActivity(dns.NewActivities(v)),

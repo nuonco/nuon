@@ -43,7 +43,11 @@ func TestInstallerIAMName(t *testing.T) {
 }
 
 func TestInstallerIAMTrustPolicy(t *testing.T) {
-	doc, err := InstallerIAMTrustPolicy("arn:aws:iam::676549690856:role/eks/eks-workers-*", "arn:aws:iam::766121324316:role/nuon-internal-support-stage")
+	doc, err := InstallerIAMTrustPolicy(
+		"arn:aws:iam::676549690856:role/eks/eks-workers-*",
+		"arn:aws:iam::766121324316:role/nuon-internal-support-stage",
+		"arn:aws:iam::766121324316:role/runner",
+	)
 	assert.NoError(t, err)
 
 	var policy iamRoleTrustPolicy

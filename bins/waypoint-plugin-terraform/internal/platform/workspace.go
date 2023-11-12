@@ -1,28 +1,49 @@
 package platform
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 	ociarchive "github.com/powertoolsdev/mono/pkg/terraform/archive/oci"
+	s3archive "github.com/powertoolsdev/mono/pkg/terraform/archive/s3"
 	s3backend "github.com/powertoolsdev/mono/pkg/terraform/backend/s3"
 	remotebinary "github.com/powertoolsdev/mono/pkg/terraform/binary/remote"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 	"github.com/powertoolsdev/mono/pkg/terraform/hooks/noop"
+	"github.com/powertoolsdev/mono/pkg/terraform/hooks/shell"
 	staticvars "github.com/powertoolsdev/mono/pkg/terraform/variables/static"
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
 )
 
 // GetWorkspace returns a valid workspace for working with this plugin
 func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
-	arch, err := ociarchive.New(p.v, ociarchive.WithAuth(&ociarchive.Auth{
-		Username: p.Cfg.Archive.Username,
-		Token:    p.Cfg.Archive.AuthToken,
-	}), ociarchive.WithImage(&ociarchive.Image{
-		Registry: p.Cfg.Archive.RegistryURL,
-		Repo:     p.Cfg.Archive.Repo,
-		Tag:      p.Cfg.Archive.Tag,
-	}))
-	if err != nil {
-		return nil, fmt.Errorf("unable to create archive: %w", err)
+	var arch archive.Archive
+
+	if p.Cfg.OCIArchive != nil {
+		var err error
+		arch, err = ociarchive.New(p.v, ociarchive.WithAuth(&ociarchive.Auth{
+			Username: p.Cfg.OCIArchive.Username,
+			Token:    p.Cfg.OCIArchive.AuthToken,
+		}), ociarchive.WithImage(&ociarchive.Image{
+			Registry: p.Cfg.OCIArchive.RegistryURL,
+			Repo:     p.Cfg.OCIArchive.Repo,
+			Tag:      p.Cfg.OCIArchive.Tag,
+		}))
+		if err != nil {
+			return nil, fmt.Errorf("unable to create oci archive: %w", err)
+		}
+	} else if p.Cfg.S3Archive != nil {
+		var err error
+		arch, err = s3archive.New(p.v,
+			s3archive.WithCredentials(&p.Cfg.S3Archive.Auth),
+			s3archive.WithBucketKey(p.Cfg.S3Archive.BucketKey),
+			s3archive.WithBucketName(p.Cfg.S3Archive.Bucket),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create archive: %w", err)
+		}
 	}
 
 	back, err := s3backend.New(p.v, s3backend.WithCredentials(&p.Cfg.Backend.Auth),
@@ -41,9 +62,13 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 		return nil, fmt.Errorf("unable to create binary: %w", err)
 	}
 
-	cfgVars := make(map[string]interface{})
-	for k, v := range p.Cfg.Variables {
-		cfgVars[k] = v
+	cfgVars := generics.ToIntMap(p.Cfg.Variables)
+	if p.Cfg.VariablesJSON != "" {
+		var jsonVars map[string]interface{}
+		if err := json.Unmarshal([]byte(p.Cfg.VariablesJSON), &cfgVars); err != nil {
+			return nil, fmt.Errorf("unable to parse json vars: %w", err)
+		}
+		cfgVars = generics.MergeMap(cfgVars, jsonVars)
 	}
 
 	vars, err := staticvars.New(p.v, staticvars.WithFileVars(cfgVars))
@@ -51,7 +76,19 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 		return nil, fmt.Errorf("unable to create variable set: %w", err)
 	}
 
-	hooks := noop.New()
+	var hooks hooks.Hooks
+	if p.Cfg.Hooks == nil {
+		hooks = noop.New()
+	} else {
+		hooks, err = shell.New(p.v,
+			shell.WithAssumeRoleARN(p.Cfg.Hooks.AssumeRoleArn),
+			shell.WithEnvVars(p.Cfg.Hooks.EnvVars),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get hooks: %w", err)
+		}
+	}
+
 	wkspace, err := workspace.New(p.v,
 		workspace.WithHooks(hooks),
 		workspace.WithArchive(arch),

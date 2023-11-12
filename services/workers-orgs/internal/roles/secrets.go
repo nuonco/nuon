@@ -118,7 +118,7 @@ func SecretsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 }
 
 // SecretsTrustPolicy is the trust policy that controls who can assume the key values IAM role
-func SecretsTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, error) {
+func SecretsTrustPolicy(workerRoleArnPrefix, supportRoleArn, odrRoleArn string) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -132,6 +132,19 @@ func SecretsTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, err
 				Condition: iamCondition{
 					StringLike: map[string]string{
 						"aws:PrincipalArn": workerRoleArnPrefix,
+					},
+				},
+			},
+			{
+				Action: []string{"sts:AssumeRole"},
+				Effect: "Allow",
+				Sid:    "",
+				Principal: iamPrincipal{
+					AWS: "*",
+				},
+				Condition: iamCondition{
+					StringEquals: map[string]string{
+						"aws:PrincipalArn": odrRoleArn,
 					},
 				},
 			},

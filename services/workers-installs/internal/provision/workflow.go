@@ -13,10 +13,7 @@ import (
 	dnsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/dns/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
-	"github.com/powertoolsdev/mono/services/workers-installs/internal/dns"
-	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/sandbox"
-	enumspb "go.temporal.io/api/enums/v1"
 )
 
 // NewWorkflow returns a new workflow executor
@@ -30,40 +27,8 @@ type wkflow struct {
 	cfg workers.Config
 }
 
-// Provision is a workflow that creates an app install sandbox using terraform
-func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest) (*installsv1.ProvisionResponse, error) {
-	resp := &installsv1.ProvisionResponse{}
-	l := workflow.GetLogger(ctx)
-
-	if err := req.Validate(); err != nil {
-		return resp, fmt.Errorf("invalid request: %w", err)
-	}
-
-	activityOpts := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 60 * time.Minute,
-	}
-	ctx = workflow.WithActivityOptions(ctx, activityOpts)
-	act := NewActivities(workers.Config{}, nil)
-
-	if err := w.startWorkflow(ctx, req); err != nil {
-		err = fmt.Errorf("unable to start workflow: %w", err)
-		return resp, err
-	}
-
-	if err := execCheckIAMRole(ctx, act, CheckIAMRoleRequest{
-		RoleARN: req.AccountSettings.AwsRoleArn,
-	}); err != nil {
-		err = fmt.Errorf("unable to validate IAM role: %w", err)
-		w.finishWorkflow(ctx, req, resp, err)
-		return resp, err
-	}
-
-	runTyp := planv1.SandboxInputType_SANDBOX_INPUT_TYPE_PROVISION
-	if req.PlanOnly {
-		runTyp = planv1.SandboxInputType_SANDBOX_INPUT_TYPE_PROVISION_PLAN
-	}
-
-	cpReq := planv1.CreatePlanRequest{
+func (w wkflow) createPlanRequest(runTyp planv1.SandboxInputType, req *installsv1.ProvisionRequest) *planv1.CreatePlanRequest {
+	return &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Sandbox{
 			Sandbox: &planv1.SandboxInput{
 				Type:             runTyp,
@@ -87,28 +52,106 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		},
 	}
 
-	spr, err := sandbox.Plan(ctx, &cpReq)
+}
+
+func (w wkflow) provisionNoopBuild(ctx workflow.Context, req *installsv1.ProvisionRequest) error {
+	planReq := w.createPlanRequest(planv1.SandboxInputType_SANDBOX_INPUT_TYPE_NOOP_BUILD, req)
+	planResp, err := sandbox.Plan(ctx, planReq)
 	if err != nil {
-		err = fmt.Errorf("unable to plan sandbox: %w", err)
+		return fmt.Errorf("unable to create noop-build plan: %w", err)
+	}
+
+	_, err = sandbox.Execute(ctx, &executev1.ExecutePlanRequest{
+		Plan: planResp.Plan,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to execute noop-build plan: %w", err)
+	}
+
+	return nil
+}
+
+func (w wkflow) provisionSandbox(ctx workflow.Context, req *installsv1.ProvisionRequest) (*executev1.ExecutePlanResponse, error) {
+	runTyp := planv1.SandboxInputType_SANDBOX_INPUT_TYPE_PROVISION
+	if req.PlanOnly {
+		runTyp = planv1.SandboxInputType_SANDBOX_INPUT_TYPE_PROVISION_PLAN
+	}
+
+	planReq := w.createPlanRequest(runTyp, req)
+	planResp, err := sandbox.Plan(ctx, planReq)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create plan: %w", err)
+	}
+
+	execResp, err := sandbox.Execute(ctx, &executev1.ExecutePlanRequest{
+		Plan: planResp.Plan,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute plan: %w", err)
+	}
+
+	return execResp, nil
+}
+
+// Provision is a workflow that creates an app install sandbox using terraform
+func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest) (*installsv1.ProvisionResponse, error) {
+	resp := &installsv1.ProvisionResponse{}
+	l := workflow.GetLogger(ctx)
+
+	if err := req.Validate(); err != nil {
+		return resp, fmt.Errorf("invalid request: %w", err)
+	}
+
+	activityOpts := workflow.ActivityOptions{
+		ScheduleToCloseTimeout: 60 * time.Minute,
+	}
+	ctx = workflow.WithActivityOptions(ctx, activityOpts)
+	act := NewActivities(nil, workers.Config{}, nil)
+
+	if err := w.startWorkflow(ctx, req); err != nil {
+		err = fmt.Errorf("unable to start workflow: %w", err)
+		return resp, err
+	}
+
+	if err := execCheckIAMRole(ctx, act, CheckIAMRoleRequest{
+		RoleARN: req.AccountSettings.AwsRoleArn,
+	}); err != nil {
+		err = fmt.Errorf("unable to validate IAM role: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
 
-	seReq := executev1.ExecutePlanRequest{Plan: spr.Plan}
-	ser, err := sandbox.Execute(ctx, &seReq)
-	if err != nil {
-		err = fmt.Errorf("unable to execute sandbox: %w", err)
+	if err := w.provisionNoopBuild(ctx, req); err != nil {
+		err = fmt.Errorf("unable to create noop build: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
+
+	_, err := w.provisionSandbox(ctx, req)
+	if err != nil {
+		err = fmt.Errorf("unable to provision sandbox: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, err
+	}
+
 	if req.PlanOnly {
 		l.Info("skipping the rest of the workflow - plan only")
 		w.finishWorkflow(ctx, req, resp, nil)
 		return resp, nil
 	}
 
-	resp.TerraformOutputs = ser.GetTerraformOutputs()
-	tfOutputs, err := awseks.ParseTerraformOutputs(ser.GetTerraformOutputs())
+	outputs, err := execFetchSandboxOutputs(ctx, act, FetchSandboxOutputsRequest{
+		OrgID:     req.OrgId,
+		AppID:     req.AppId,
+		InstallID: req.InstallId,
+	})
+	if err != nil {
+		err = fmt.Errorf("unable to fetch sandbox outputs: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, nil
+	}
+
+	tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
 	if err != nil {
 		err = fmt.Errorf("invalid sandbox outputs: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
@@ -148,74 +191,4 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	l.Debug("finished provisioning", "response", resp)
 	w.finishWorkflow(ctx, req, resp, nil)
 	return resp, nil
-}
-
-func execProvisionRunner(
-	ctx workflow.Context,
-	cfg workers.Config,
-	iwrr *runnerv1.ProvisionRunnerRequest,
-) (*runnerv1.ProvisionRunnerResponse, error) {
-	resp := &runnerv1.ProvisionRunnerResponse{}
-
-	cwo := workflow.ChildWorkflowOptions{
-		WorkflowID:               fmt.Sprintf("%s-provision-runner", iwrr.InstallId),
-		WorkflowExecutionTimeout: time.Minute * 10,
-		WorkflowTaskTimeout:      time.Minute * 5,
-		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
-	}
-	ctx = workflow.WithChildOptions(ctx, cwo)
-
-	wkflow := runner.NewWorkflow(cfg)
-	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionRunner, iwrr)
-
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-func execProvisionDNS(
-	ctx workflow.Context,
-	cfg workers.Config,
-	req *dnsv1.ProvisionDNSRequest,
-	installID string,
-) (*dnsv1.ProvisionDNSResponse, error) {
-	resp := &dnsv1.ProvisionDNSResponse{}
-
-	cwo := workflow.ChildWorkflowOptions{
-		WorkflowID:               fmt.Sprintf("%s-provision-dns", installID),
-		WorkflowExecutionTimeout: time.Minute * 10,
-		WorkflowTaskTimeout:      time.Minute * 5,
-		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
-	}
-	ctx = workflow.WithChildOptions(ctx, cwo)
-
-	wkflow := dns.NewWorkflow(cfg)
-	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionDNS, req)
-
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-
-	return resp, nil
-}
-
-func execCheckIAMRole(
-	ctx workflow.Context,
-	act *Activities,
-	req CheckIAMRoleRequest,
-) error {
-	activityOpts := workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 1 * time.Minute,
-	}
-	ctx = workflow.WithActivityOptions(ctx, activityOpts)
-
-	var resp CheckIAMRoleResponse
-	fut := workflow.ExecuteActivity(ctx, act.CheckIAMRole, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return err
-	}
-
-	return nil
 }
