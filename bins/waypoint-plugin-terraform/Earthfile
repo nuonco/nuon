@@ -7,7 +7,7 @@ WORKDIR /src
 ARG BIN=waypoint-plugin-terraform
 ARG GOCACHE=/go-cache
 ARG GOMODCACHE=/go-mod-cache
-ARG ODR_VERSION=v0.1.0
+ARG ODR_VERSION=v0.2.1
 
 CACHE $GOCACHE
 CACHE $GOMODCACHE
@@ -43,6 +43,18 @@ artifacts:
 
 oci-artifacts:
     FROM public.ecr.aws/p7e3r5y0/waypoint-odr-base:$ODR_VERSION
+    RUN apk add --no-cache \
+      libc6-compat \
+      build-base \
+      make \
+      ca-certificates-bundle \
+      coreutils \
+      curl \
+      protoc \
+      jq \
+      git \
+      aws-cli \
+      zip
 
     ARG repo=
     ARG image_tag=
