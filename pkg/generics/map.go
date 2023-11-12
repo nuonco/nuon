@@ -12,6 +12,15 @@ func MergeMap[K comparable, T any](src map[K]T, vals ...map[K]T) map[K]T {
 	return src
 }
 
+func ToIntMap[T any](inp map[string]T) map[string]interface{} {
+	out := make(map[string]interface{})
+	for k, v := range inp {
+		out[k] = v
+	}
+
+	return out
+}
+
 func ToStringMap(inp map[string]interface{}) map[string]string {
 	out := make(map[string]string)
 	for k, v := range inp {

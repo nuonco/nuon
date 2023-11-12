@@ -50,5 +50,6 @@ oci-artifacts:
     # note waypoint plugins need to be loaded from a specific path on disk
     ENV XDG_CONFIG_HOME=/home/waypoint/.config
     COPY +artifacts/out/$BIN /home/waypoint/.config/waypoint/plugins/$BIN
+    COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 
     SAVE IMAGE --push $repo:$image_tag

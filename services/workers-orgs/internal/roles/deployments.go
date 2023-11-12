@@ -40,7 +40,7 @@ func DeploymentsIAMPolicy(bucketName string, orgID string) ([]byte, error) {
 // DeploymentsIAMTrustPolicy generates the trust policy for the deployments role
 // The trust policy gives access to any role arn with the provided prefix, in this case the EKS roles for our workers
 // running in the main accounts.
-func DeploymentsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]byte, error) {
+func DeploymentsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn, odrRoleArn string) ([]byte, error) {
 	trustPolicy := iamRoleTrustPolicy{
 		Version: defaultIAMPolicyVersion,
 		Statement: []iamRoleTrustStatement{
@@ -54,6 +54,19 @@ func DeploymentsIAMTrustPolicy(workerRoleArnPrefix, supportRoleArn string) ([]by
 				Condition: iamCondition{
 					StringLike: map[string]string{
 						"aws:PrincipalArn": workerRoleArnPrefix,
+					},
+				},
+			},
+			{
+				Action: []string{"sts:AssumeRole"},
+				Effect: "Allow",
+				Sid:    "",
+				Principal: iamPrincipal{
+					AWS: "*",
+				},
+				Condition: iamCondition{
+					StringEquals: map[string]string{
+						"aws:PrincipalArn": odrRoleArn,
 					},
 				},
 			},

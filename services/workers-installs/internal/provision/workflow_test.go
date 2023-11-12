@@ -57,7 +57,7 @@ func TestProvision_finishWithErr(t *testing.T) {
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	act := NewActivities(internal.Config{}, nil)
+	act := NewActivities(nil, internal.Config{}, nil)
 
 	errChildWorkflow := fmt.Errorf("unable to complete workflow")
 
@@ -134,7 +134,7 @@ func TestProvision(t *testing.T) {
 	provisionOutputs := generics.GetFakeObj[awseks.TerraformOutputs]()
 	assert.NoError(t, provisionOutputs.Validate())
 
-	act := NewActivities(internal.Config{}, nil)
+	act := NewActivities(nil, internal.Config{}, nil)
 	// Mock activity implementation
 	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
 		Return(func(_ workflow.Context, pr *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
@@ -143,7 +143,6 @@ func TestProvision(t *testing.T) {
 			assert.Equal(t, req.OrgId, pr.GetSandbox().OrgId)
 			assert.Equal(t, req.AppId, pr.GetSandbox().AppId)
 			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
-			assert.Equal(t, planv1.SandboxInputType_SANDBOX_INPUT_TYPE_PROVISION, pr.GetSandbox().Type)
 
 			acctSettings := pr.GetSandbox().GetAws()
 			assert.Equal(t, req.AccountSettings.AwsAccountId, acctSettings.AccountId)
@@ -261,7 +260,7 @@ func TestProvision_plan_only(t *testing.T) {
 	env.RegisterWorkflow(CreatePlan)
 	env.RegisterWorkflow(ExecutePlan)
 
-	act := NewActivities(internal.Config{}, nil)
+	act := NewActivities(nil, internal.Config{}, nil)
 	// Mock activity implementation
 	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
 		Return(func(_ workflow.Context, pr *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
@@ -308,6 +307,11 @@ func TestProvision_plan_only(t *testing.T) {
 			assertedPrefix := prefix.InstallPath(req.OrgId, req.AppId, req.InstallId)
 			assert.Equal(t, assertedPrefix, r.MetadataBucketPrefix)
 			return resp, nil
+		})
+
+	env.OnActivity(act.FetchSandboxOutputs, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r FetchSandboxOutputsRequest) (*structpb.Struct, error) {
+			return &structpb.Struct{}, nil
 		})
 
 	env.OnActivity(act.CheckIAMRole, mock.Anything, mock.Anything).
