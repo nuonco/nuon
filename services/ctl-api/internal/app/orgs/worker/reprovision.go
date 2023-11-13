@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	orgsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1"
+	iamv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/iam/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	"go.temporal.io/sdk/workflow"
@@ -20,7 +21,11 @@ func (w *Workflows) reprovision(ctx workflow.Context, orgID string, dryRun bool)
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	_, err := w.execProvisionWorkflow(ctx, dryRun, &orgsv1.ProvisionRequest{
+	_, err := w.execDeprovisionIAMWorkflow(ctx, dryRun, &iamv1.DeprovisionIAMRequest{
+		OrgId: orgID,
+	})
+
+	_, err = w.execProvisionWorkflow(ctx, dryRun, &orgsv1.ProvisionRequest{
 		OrgId:       orgID,
 		Region:      defaultOrgRegion,
 		Reprovision: true,
