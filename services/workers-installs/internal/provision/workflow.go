@@ -121,6 +121,12 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		return resp, err
 	}
 
+	if req.PlanOnly {
+		l.Info("skipping the rest of the workflow - plan only")
+		w.finishWorkflow(ctx, req, resp, nil)
+		return resp, nil
+	}
+
 	if err := w.provisionNoopBuild(ctx, req); err != nil {
 		err = fmt.Errorf("unable to create noop build: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
@@ -132,12 +138,6 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		err = fmt.Errorf("unable to provision sandbox: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
-	}
-
-	if req.PlanOnly {
-		l.Info("skipping the rest of the workflow - plan only")
-		w.finishWorkflow(ctx, req, resp, nil)
-		return resp, nil
 	}
 
 	outputs, err := execFetchSandboxOutputs(ctx, act, FetchSandboxOutputsRequest{
