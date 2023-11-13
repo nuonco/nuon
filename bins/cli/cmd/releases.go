@@ -35,7 +35,7 @@ func (c *cli) releasesCmd() *cobra.Command {
 	// TODO(ja): update cobra so we can require either app-id or component-id?
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter releases by")
 	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of a component to filter releases by")
-	listCmd.MarkFlagsMutuallyExclusive("app-id", "component-id")
+	listCmd.MarkFlagsOneRequired("app-id", "component-id")
 	releasesCmd.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
