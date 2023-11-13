@@ -15,10 +15,10 @@ func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) {
 		err      error
 	)
 
-	if appID != "" {
-		releases, err = s.api.GetAppReleases(ctx, appID)
-	} else if compID != "" {
+	if compID != "" {
 		releases, err = s.api.GetComponentReleases(ctx, compID)
+	} else if appID != "" {
+		releases, err = s.api.GetAppReleases(ctx, appID)
 	}
 	if err != nil {
 		view.Error(err)
