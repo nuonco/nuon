@@ -2,6 +2,8 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.18.1
+
 ## 0.8.3
 
 Promoting internal endpoints into prod.
@@ -61,6 +63,10 @@ Re-promote to run canaries in prod.
 ## v0.3.9
 
 Promoting cli update.
+
+## v0.4.0
+
+Promote fix that will ensure sandbox artifacts are published.
 
 ## v0.4.0
 
