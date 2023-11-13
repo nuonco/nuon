@@ -25,9 +25,36 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	if res.Error != nil {
 		return fmt.Errorf("unable to get release step: %w", res.Error)
 	}
+	componentID := step.ComponentRelease.ComponentBuild.ComponentConfigConnection.ComponentID
+
+	// set the orgID on the context, for all writes
+	ctx = context.WithValue(ctx, "org_id", step.OrgID)
+
+	// ensure that the install component exists
+	var install app.Install
+	res = a.db.WithContext(ctx).
+		Preload("InstallComponents", func(db *gorm.DB) *gorm.DB {
+			return db.Where("component_id = ?", componentID).
+				Where("install_id = ?", req.InstallID)
+		}).
+		First(&install, "id = ?", req.InstallID)
+	if res.Error != nil {
+		return fmt.Errorf("unable to get install: %w", res.Error)
+	}
+
+	// if the install component does not exist, create it.
+	if len(install.InstallComponents) != 1 {
+		err := a.db.WithContext(ctx).First(&install, "id = ?", req.InstallID).
+			Association("InstallComponents").
+			Append(&app.InstallComponent{
+				ComponentID: componentID,
+			})
+		if err != nil {
+			return fmt.Errorf("unable to create missing install component: %w", err)
+		}
+	}
 
 	// create deploy
-	ctx = context.WithValue(ctx, "org_id", step.OrgID)
 	installCmp := app.InstallComponent{}
 	deploy := app.InstallDeploy{
 		Status:                 "queued",
@@ -35,14 +62,16 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		ComponentBuildID:       step.ComponentRelease.ComponentBuildID,
 		ComponentReleaseStepID: generics.ToPtr(req.ReleaseStepID),
 	}
-	err := a.db.WithContext(ctx).Where(app.InstallComponent{
+	err := a.db.WithContext(ctx).Where(&app.InstallComponent{
 		InstallID:   req.InstallID,
-		ComponentID: step.ComponentRelease.ComponentBuild.ComponentConfigConnection.ComponentID,
+		ComponentID: componentID,
 	}).First(&installCmp).
 		Association("InstallDeploys").
 		Append(&deploy)
+
+	// install was deleted, or no longer exists
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil
+		return fmt.Errorf("no install component found: %w", err)
 	}
 	if err != nil {
 		return fmt.Errorf("unable to create install deploy: %w", err)
