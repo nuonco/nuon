@@ -18,12 +18,6 @@ const (
 var errMissingInput = fmt.Errorf("need either a build ID or a component ID")
 
 func (s *Service) Create(ctx context.Context, compID, buildID, delay string, installsPerStep int64, asJSON bool) {
-	compID, err := lookup.ComponentID(ctx, s.api, compID)
-	if err != nil {
-		ui.PrintError(err)
-		return
-	}
-
 	view := ui.NewCreateView("release", asJSON)
 	view.Start()
 
@@ -42,9 +36,14 @@ func (s *Service) Create(ctx context.Context, compID, buildID, delay string, ins
 
 	// if we weren't given a build ID, we get the latest build for the component
 	if buildID == "" || buildID == "latest" {
+		compID, err := lookup.ComponentID(ctx, s.api, compID)
+		if err != nil {
+			ui.PrintError(err)
+			return
+		}
 		view.Update(fmt.Sprintf("getting latest build for component %s", compID))
 		var latestBuild *models.AppComponentBuild
-		latestBuild, err := s.api.GetComponentLatestBuild(ctx, compID)
+		latestBuild, err = s.api.GetComponentLatestBuild(ctx, compID)
 		if err != nil {
 			view.Fail(err)
 			return

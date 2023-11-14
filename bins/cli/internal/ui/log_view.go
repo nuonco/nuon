@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/mitchellh/mapstructure"
@@ -20,7 +21,13 @@ type LogTerminal struct {
 			Line *struct {
 				Msg string
 			}
+			Raw *struct {
+				Data string
+			}
 			Step *struct {
+				Msg string
+			}
+			Status *struct {
 				Msg string
 			}
 		}
@@ -49,6 +56,12 @@ func PrintBuildLog(log []models.ServiceBuildLog) {
 			if line.Step != nil {
 				if line.Step.Msg != "" {
 					fmt.Println(line.Step.Msg)
+				}
+			}
+
+			if line.Status != nil {
+				if line.Status.Msg != "" {
+					fmt.Println(line.Status.Msg)
 				}
 			}
 		}
@@ -85,9 +98,26 @@ func PrintDeployLogs(log []models.ServiceDeployLog) {
 				}
 			}
 
+			if line.Raw != nil {
+				if line.Raw.Data != "" {
+					l, err := base64.StdEncoding.DecodeString(line.Raw.Data)
+					if err != nil {
+						PrintError(err)
+						return
+					}
+					fmt.Printf("%s\n", l)
+				}
+			}
+
 			if line.Step != nil {
 				if line.Step.Msg != "" {
 					fmt.Println(line.Step.Msg)
+				}
+			}
+
+			if line.Status != nil {
+				if line.Status.Msg != "" {
+					fmt.Println(line.Status.Msg)
 				}
 			}
 		}
