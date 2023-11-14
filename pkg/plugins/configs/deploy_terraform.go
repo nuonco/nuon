@@ -72,6 +72,8 @@ type TerraformDeploy struct {
 
 	Labels    map[string]string `hcl:"labels" validate:"required"`
 	Variables map[string]string `hcl:"variables"`
+	EnvVars   map[string]string `hcl:"env_vars"`
+
 	// NOTE(jm): I'm not a fan of this approach, but it's faster than building a custom map[string]interface{}
 	// decoder for go-hcl. Go-HCL does not support map[string]interface{} out of the box.
 	VariablesJSON string                `hcl:"variables_json"`

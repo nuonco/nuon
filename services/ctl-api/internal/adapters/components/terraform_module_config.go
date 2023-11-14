@@ -57,6 +57,7 @@ func (c *Adapter) ToTerraformModuleComponentConfig(cfg *app.TerraformModuleCompo
 				TerraformModuleConfig: &deployv1.TerraformModuleConfig{
 					TerraformVersion: cfg.Version,
 					Vars:             c.toTerraformVariables(cfg.Variables),
+					EnvVars:          c.toEnvVars(cfg.EnvVars),
 				},
 			},
 		},
