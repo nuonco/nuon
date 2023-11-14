@@ -1,12 +1,22 @@
 resource "nuon_terraform_module_component" "e2e" {
   name   = "e2e_infra"
   app_id = nuon_app.main.id
-  terraform_version = "1.5.7"
+  terraform_version = "1.6.3"
 
   connected_repo = {
     directory = "services/e2e/infra"
     repo      = "powertoolsdev/mono"
     branch    = "main"
+  }
+
+  env_var {
+    name  = "install_id"
+    value = "{{.nuon.install.id}}"
+  }
+
+  env_var {
+    name  = "AWS_REGION"
+    value = "{{.nuon.install.sandbox.outputs.account.region}}"
   }
 
   var {
