@@ -28,8 +28,7 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, appID string) error {
 		}
 
 		if currentApp.Org.Status == "error" {
-			w.updateStatus(ctx, appID, "error", "org failed")
-			return fmt.Errorf("org failed: %s", currentApp.Org.StatusDescription)
+			w.updateStatus(ctx, appID, "error", "org is in error state")
 		}
 
 		workflow.Sleep(ctx, defaultPollTimeout)

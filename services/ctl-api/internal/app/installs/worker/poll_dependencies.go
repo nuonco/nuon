@@ -27,8 +27,7 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, installID string) err
 			return nil
 		}
 		if install.App.Status == "error" {
-			w.updateStatus(ctx, installID, StatusError, "app failed")
-			return fmt.Errorf("app failed: %s", install.App.StatusDescription)
+			w.updateStatus(ctx, installID, StatusError, "app is in error state")
 		}
 		workflow.Sleep(ctx, defaultPollTimeout)
 	}
