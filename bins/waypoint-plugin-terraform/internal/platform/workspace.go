@@ -71,7 +71,7 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 		cfgVars = generics.MergeMap(cfgVars, jsonVars)
 	}
 
-	vars, err := staticvars.New(p.v, staticvars.WithFileVars(cfgVars))
+	vars, err := staticvars.New(p.v, staticvars.WithFileVars(cfgVars), staticvars.WithEnvVars(p.Cfg.EnvVars))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create variable set: %w", err)
 	}

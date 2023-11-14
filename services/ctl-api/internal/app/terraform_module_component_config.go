@@ -26,6 +26,7 @@ type TerraformModuleComponentConfig struct {
 	// terraform configuration values
 	Version   string        `json:"version" gorm:"default:v1.5.3;notnull"`
 	Variables pgtype.Hstore `json:"variables" gorm:"type:hstore" swaggertype:"object,string"`
+	EnvVars   pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 
 	// VCSConfig
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
