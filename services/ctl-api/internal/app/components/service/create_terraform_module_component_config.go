@@ -16,6 +16,7 @@ type CreateTerraformModuleComponentConfigRequest struct {
 
 	Version   string             `json:"version"`
 	Variables map[string]*string `json:"variables" validate:"required"`
+	EnvVars   map[string]*string `json:"env_vars" validate:"required"`
 }
 
 func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -85,6 +86,7 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		PublicGitVCSConfig:       req.publicGitVCSConfig(),
 		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 		Variables:                pgtype.Hstore(req.Variables),
+		EnvVars:                  pgtype.Hstore(req.EnvVars),
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
