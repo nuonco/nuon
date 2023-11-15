@@ -2,6 +2,7 @@ package platform
 
 import (
 	"github.com/go-playground/validator/v10"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 )
@@ -20,4 +21,6 @@ type Platform struct {
 
 	// internal fields
 	Cfg configs.JobDeploy `validate:"required"`
+
+	logger hclog.Logger
 }
