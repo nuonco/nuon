@@ -31,21 +31,23 @@ func (s *Service) Components(ctx context.Context, installID string, asJSON bool)
 		{
 			"id",
 			"name",
-			"created at",
-			"updated at",
-			"created by",
 			"config versions",
+			"status",
+			"latest deploy",
+			"latest release",
 		},
 	}
 	for _, comp := range components {
-		data = append(data, []string{
-			comp.Component.ID,
-			comp.Component.Name,
-			comp.Component.CreatedAt,
-			comp.Component.UpdatedAt,
-			comp.Component.CreatedByID,
-			strconv.Itoa(int(comp.Component.ConfigVersions)),
-		})
+		if len(comp.InstallDeploys) != 0 {
+			data = append(data, []string{
+				comp.Component.ID,
+				comp.Component.Name,
+				strconv.Itoa(int(comp.Component.ConfigVersions)),
+				comp.InstallDeploys[0].Status,
+				comp.InstallDeploys[0].ID,
+				comp.InstallDeploys[0].ReleaseID,
+			})
+		}
 	}
 	view.Render(data)
 }
