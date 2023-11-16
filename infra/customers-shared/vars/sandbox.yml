@@ -1,5 +1,20 @@
 ---
 apps:
+  - name: postman
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
+      slug: postman
+      description: OpenTelemetry-Native Traces, Metrics, and Logs in a single pane
+      name: Postman
+    urls:
+      documentation: https://learning.postman.com/docs/introduction/overview/
+      logo: https://cdn.cookielaw.org/logos/70564414-548a-4286-8ad7-04d95b172a08/e26443c0-68d1-47c8-b8fc-9bc765da2e95/3a159462-db70-43cf-a27d-f602a6baed44/pm-logo-horiz.png
+      github: https://github.com/postmanlabs
+      community: https://community.postman.com/
+      homepage: https://www.postman.com/
+      demo: https://www.youtube.com/embed/oI-GyWB_6jA?
   - name: signoz
     installs:
       - Pepsi
