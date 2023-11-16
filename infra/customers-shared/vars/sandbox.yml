@@ -6,7 +6,7 @@ apps:
       - Coca Cola
     installer:
       slug: postman
-      description: OpenTelemetry-Native Traces, Metrics, and Logs in a single pane
+      description: Over 25 million developers use Postman.
       name: Postman
     urls:
       documentation: https://learning.postman.com/docs/introduction/overview/
