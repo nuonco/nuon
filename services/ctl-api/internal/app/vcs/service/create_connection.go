@@ -76,6 +76,7 @@ func (s *service) createOrgConnection(ctx context.Context, orgID string, req *Cr
 	}
 
 	if err := s.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "org_id"}, {Name: "github_install_id"}},
 		DoNothing: true,
 	}).Create(&vcsConn).Error; err != nil {
 		return nil, fmt.Errorf("unable to create vcs_connection: %w", err)
