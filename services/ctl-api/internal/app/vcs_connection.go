@@ -15,10 +15,10 @@ type VCSConnection struct {
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
 
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	OrgID string `json:"org_id" swaggerignore:"true" gorm:"index:idx_github_install_id,unique"`
 	Org   Org    `swaggerignore:"true" json:"-"`
 
-	GithubInstallID           string                     `json:"github_install_id" gorm:"notnull"`
+	GithubInstallID           string                     `json:"github_install_id" gorm:"index:idx_github_install_id,unique"`
 	Commits                   []VCSConnectionCommit      `json:"vcs_connection_commit" gorm:"constraint:OnDelete:CASCADE;"`
 	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 }
