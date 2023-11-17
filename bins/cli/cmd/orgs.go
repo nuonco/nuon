@@ -24,7 +24,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 	orgsCmd.AddCommand(currentCmd)
 
 	listConntectedRepos := &cobra.Command{
-		Use:   "list-conntected-repos",
+		Use:   "list-connected-repos",
 		Short: "List connected repos",
 		Long:  "List repositories from connected GitHub accounts",
 		Run: func(cmd *cobra.Command, _ []string) {
