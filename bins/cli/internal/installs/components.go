@@ -2,7 +2,6 @@ package installs
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -31,7 +30,6 @@ func (s *Service) Components(ctx context.Context, installID string, asJSON bool)
 		{
 			"id",
 			"name",
-			"config versions",
 			"status",
 			"latest deploy",
 			"latest release",
@@ -42,7 +40,6 @@ func (s *Service) Components(ctx context.Context, installID string, asJSON bool)
 			data = append(data, []string{
 				comp.Component.ID,
 				comp.Component.Name,
-				strconv.Itoa(int(comp.Component.ConfigVersions)),
 				comp.InstallDeploys[0].Status,
 				comp.InstallDeploys[0].ID,
 				comp.InstallDeploys[0].ReleaseID,
