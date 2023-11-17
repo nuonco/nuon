@@ -1,0 +1,41 @@
+package orgs
+
+import (
+	"context"
+
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+)
+
+func (s *Service) ConnectedRepos(ctx context.Context, asJSON bool) {
+	view := ui.NewGetView()
+
+	repos, err := s.api.GetAllVCSConnectedRepos(ctx)
+	if err != nil {
+		view.Error(err)
+		return
+	}
+
+	if asJSON {
+		ui.PrintJSON(repos)
+		return
+	}
+
+	data := [][]string{
+		{
+			"user",
+			"name",
+			"default branch",
+			"git url",
+		},
+	}
+
+	for _, repo := range repos {
+		data = append(data, []string{
+			*repo.UserName,
+			*repo.Name,
+			*repo.DefaultBranch,
+			*repo.GitURL,
+		})
+	}
+	view.Render(data)
+}
