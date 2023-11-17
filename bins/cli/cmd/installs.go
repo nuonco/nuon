@@ -7,12 +7,15 @@ import (
 
 func (c *cli) installsCmd() *cobra.Command {
 	var (
-		id       string
-		name     string
-		arn      string
-		region   string
-		appID    string
-		deployID string
+		id               string
+		name             string
+		arn              string
+		region           string
+		appID            string
+		deployID         string
+		renderedVars     bool
+		intermediateOnly bool
+		jobConfig        bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -98,13 +101,17 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Print install deploy plan as JSON",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := installs.New(c.apiClient)
-			svc.PrintDeployPlan(cmd.Context(), id, deployID, PrintJSON)
+			svc.PrintDeployPlan(cmd.Context(), id, deployID, PrintJSON, renderedVars, intermediateOnly, jobConfig)
 		},
 	}
 	printDeployPlan.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	printDeployPlan.MarkFlagRequired("install-id")
 	printDeployPlan.Flags().StringVarP(&deployID, "deploy-id", "d", "", "The ID of the deploy you want to view")
 	printDeployPlan.MarkFlagRequired("deploy-id")
+	printDeployPlan.Flags().BoolVar(&renderedVars, "rendered-vars", false, "Print rendered variables from deploy plan")
+	printDeployPlan.Flags().BoolVar(&intermediateOnly, "intermediate-only", false, "Print intermediate variables from deploy plan")
+	printDeployPlan.Flags().BoolVar(&jobConfig, "print-job-config", false, "Print job config from deploy plan")
+	printDeployPlan.MarkFlagsMutuallyExclusive("rendered-vars", "intermediate-only", "print-job-config")
 	installsCmds.AddCommand(printDeployPlan)
 
 	deployLogsCmd := &cobra.Command{
