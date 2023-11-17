@@ -23,7 +23,7 @@ if [ ! -d "$DIR" ]; then
   fi
 fi
 
-read -ep "Installing nuon cli into $DIR, would you like to proceed? " -n 1 -r
+read -ep "Installing nuon cli into $DIR, press \"y\" to proceed." -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
