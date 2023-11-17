@@ -8,90 +8,48 @@ import (
 	"github.com/nuonco/nuon-go/models"
 )
 
-type LogState struct {
-	State struct {
-		Current string
+type State struct {
+	Current string
+}
+
+type Terminal struct {
+	Buffered bool
+	Events   []struct {
+		Line *struct {
+			Msg string
+		}
+		Raw *struct {
+			Data string
+		}
+		Step *struct {
+			Msg string
+		}
+		Status *struct {
+			Msg string
+		}
 	}
 }
 
-type LogTerminal struct {
-	Terminal struct {
-		Buffered bool
-		Events   []struct {
-			Line *struct {
-				Msg string
-			}
-			Raw *struct {
-				Data string
-			}
-			Step *struct {
-				Msg string
-			}
-			Status *struct {
-				Msg string
-			}
-		}
-	}
+type Logs struct {
+	Open     interface{}
+	State    State
+	Terminal Terminal
 }
 
 func PrintBuildLog(log []models.ServiceBuildLog) {
-	state := log[1]
-	terminal := log[4]
+	var lgs Logs
 
-	var trm LogTerminal
-	err := mapstructure.Decode(terminal, &trm)
-	if err != nil {
-		PrintError(err)
-		return
-	}
-
-	if len(trm.Terminal.Events) != 0 {
-		for _, line := range trm.Terminal.Events {
-			if line.Line != nil {
-				if line.Line.Msg != "" {
-					fmt.Println(line.Line.Msg)
-				}
-			}
-
-			if line.Step != nil {
-				if line.Step.Msg != "" {
-					fmt.Println(line.Step.Msg)
-				}
-			}
-
-			if line.Status != nil {
-				if line.Status.Msg != "" {
-					fmt.Println(line.Status.Msg)
-				}
-			}
+	for _, l := range log {
+		err := mapstructure.Decode(l, &lgs)
+		if err != nil {
+			PrintError(err)
+			return
 		}
-	} else {
-		fmt.Println("Logs expire after 24hrs, run command again with --json to see full logs")
+
 	}
 
-	var ste LogState
-	err = mapstructure.Decode(state, &ste)
-	if err != nil {
-		PrintError(err)
-		return
-	}
-
-	fmt.Printf("status: %v\n", ste.State.Current)
-}
-
-func PrintDeployLogs(log []models.ServiceDeployLog) {
-	state := log[1]
-	terminal := log[4]
-
-	var trm LogTerminal
-	err := mapstructure.Decode(terminal, &trm)
-	if err != nil {
-		PrintError(err)
-		return
-	}
-
-	if len(trm.Terminal.Events) != 0 {
-		for _, line := range trm.Terminal.Events {
+	if len(lgs.Terminal.Events) != 0 {
+		for _, line := range lgs.Terminal.Events {
 			if line.Line != nil {
 				if line.Line.Msg != "" {
 					fmt.Println(line.Line.Msg)
@@ -125,12 +83,55 @@ func PrintDeployLogs(log []models.ServiceDeployLog) {
 		fmt.Println("Logs expire after 24hrs, run command again with --json to see full logs")
 	}
 
-	var ste LogState
-	err = mapstructure.Decode(state, &ste)
-	if err != nil {
-		PrintError(err)
-		return
+	fmt.Printf("status: %v\n", lgs.State.Current)
+}
+
+func PrintDeployLogs(log []models.ServiceDeployLog) {
+	var lgs Logs
+
+	for _, l := range log {
+		err := mapstructure.Decode(l, &lgs)
+		if err != nil {
+			PrintError(err)
+			return
+		}
+
 	}
 
-	fmt.Printf("status: %v\n", ste.State.Current)
+	if len(lgs.Terminal.Events) != 0 {
+		for _, line := range lgs.Terminal.Events {
+			if line.Line != nil {
+				if line.Line.Msg != "" {
+					fmt.Println(line.Line.Msg)
+				}
+			}
+
+			if line.Raw != nil {
+				if line.Raw.Data != "" {
+					l, err := base64.StdEncoding.DecodeString(line.Raw.Data)
+					if err != nil {
+						PrintError(err)
+						return
+					}
+					fmt.Printf("%s\n", l)
+				}
+			}
+
+			if line.Step != nil {
+				if line.Step.Msg != "" {
+					fmt.Println(line.Step.Msg)
+				}
+			}
+
+			if line.Status != nil {
+				if line.Status.Msg != "" {
+					fmt.Println(line.Status.Msg)
+				}
+			}
+		}
+	} else {
+		fmt.Println("Logs expire after 24hrs, run command again with --json to see full logs")
+	}
+
+	fmt.Printf("status: %v\n", lgs.State.Current)
 }
