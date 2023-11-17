@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.18.3
+
+Promoting support for multiple vcs configs.
+
 ## v0.18.2
 
 Promoting environment variable support.
