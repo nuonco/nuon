@@ -23,5 +23,16 @@ func (c *cli) orgsCmd() *cobra.Command {
 	}
 	orgsCmd.AddCommand(currentCmd)
 
+	listConntectedRepos := &cobra.Command{
+		Use:   "list-conntected-repos",
+		Short: "List connected repos",
+		Long:  "List repositories from connected GitHub accounts",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient)
+			svc.ConnectedRepos(cmd.Context(), PrintJSON)
+		},
+	}
+	orgsCmd.AddCommand(listConntectedRepos)
+
 	return orgsCmd
 }
