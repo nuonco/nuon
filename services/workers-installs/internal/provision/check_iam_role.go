@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"go.temporal.io/sdk/temporal"
 )
 
 type CheckIAMRoleRequest struct {
@@ -22,7 +23,7 @@ func (a *Activities) CheckIAMRole(ctx context.Context, req CheckIAMRoleRequest) 
 	}
 	_, err := credentials.Fetch(ctx, cfg)
 	if err != nil {
-		return resp, err
+		return resp, temporal.NewNonRetryableApplicationError("unable to access iam role", "error", err)
 	}
 
 	return resp, nil
