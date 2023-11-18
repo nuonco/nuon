@@ -8,7 +8,6 @@ import (
 	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
-	deploymentsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/deployments/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -24,9 +23,6 @@ type Client interface {
 	ScheduleCanaryProvision(context.Context, string, string, *canaryv1.ProvisionRequest) error
 	UnscheduleCanaryProvision(context.Context, string) error
 	TriggerCanaryDeprovision(context.Context, *canaryv1.DeprovisionRequest) error
-
-	TriggerDeploymentStart(context.Context, *deploymentsv1.StartRequest) (string, error)
-	ExecDeploymentStart(context.Context, *deploymentsv1.StartRequest) (*deploymentsv1.StartResponse, error)
 
 	TriggerInstallProvision(context.Context, *installsv1.ProvisionRequest) (string, error)
 	TriggerInstallDeprovision(context.Context, *installsv1.DeprovisionRequest) (string, error)

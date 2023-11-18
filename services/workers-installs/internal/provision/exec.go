@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/dns"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
 	enumspb "go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -72,6 +73,9 @@ func execCheckIAMRole(
 ) error {
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 1 * time.Minute,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 5,
+		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
