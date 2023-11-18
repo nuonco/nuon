@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
-	"github.com/pterm/pterm"
 )
 
 const (
@@ -40,9 +39,9 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, a
 		return
 	}
 
-	view, _ := pterm.DefaultSpinner.Start("creating install")
-
+	view := ui.NewCreateView("install", asJSON)
 	view.Start()
+	view.Update("creating install")
 	install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 		Name: &name,
 		AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
@@ -51,7 +50,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, a
 		},
 	})
 	if err != nil {
-		view.Fail(err.Error() + "\n")
+		view.Fail(err)
 		return
 	}
 
@@ -59,7 +58,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, a
 		ins, err := s.api.GetInstall(ctx, install.ID)
 		switch {
 		case err != nil:
-			view.Fail(err.Error() + "\n")
+			view.Fail(err)
 		case ins.Status == statusAccessError:
 			view.Fail(fmt.Errorf("failed to create install due to access error: %s", ins.StatusDescription))
 			return
@@ -70,7 +69,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, a
 			view.Success(fmt.Sprintf("successfully created install %s", ins.ID))
 			return
 		default:
-			view.UpdateText(fmt.Sprintf("%s install", ins.Status))
+			view.Update(fmt.Sprintf("%s install", ins.Status))
 		}
 
 		time.Sleep(5 * time.Second)
