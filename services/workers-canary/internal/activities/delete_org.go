@@ -24,6 +24,11 @@ func (a *Activities) DeleteOrg(ctx context.Context, req *DeleteOrgRequest) (*Del
 		return nil, fmt.Errorf("unable to create internal api client: %w", err)
 	}
 
+	err = internalAPIClient.ForgetOrgInstalls(ctx, req.OrgID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create org: %w", err)
+	}
+
 	err = internalAPIClient.DeleteOrg(ctx, req.OrgID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
