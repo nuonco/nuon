@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
@@ -160,18 +159,7 @@ func TestProvision(t *testing.T) {
 		Return(func(_ workflow.Context, pr *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
 			assert.Nil(t, pr.Validate())
 			assert.Equal(t, planref, pr.Plan)
-
-			var m map[string]interface{}
-			assert.NoError(t, mapstructure.Decode(provisionOutputs, &m))
-
-			respOutputs, err := structpb.NewStruct(m)
-			assert.NoError(t, err)
-
-			return &executev1.ExecutePlanResponse{
-				Outputs: &executev1.ExecutePlanResponse_TerraformOutputs{
-					TerraformOutputs: respOutputs,
-				},
-			}, nil
+			return &executev1.ExecutePlanResponse{}, nil
 		})
 
 	env.OnWorkflow(dnsWkflow.ProvisionDNS, mock.Anything, mock.Anything).

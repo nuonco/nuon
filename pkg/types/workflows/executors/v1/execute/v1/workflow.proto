@@ -3,8 +3,6 @@ syntax = "proto3";
 package executors.v1.execute.v1;
 
 import "executors/v1/plan/v1/plan_ref.proto";
-import "google/protobuf/struct.proto";
-import "tagger/tagger.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1";
 
@@ -14,9 +12,4 @@ message ExecutePlanRequest {
 }
 
 // ExecutePlanResponse returns once a plan has been executed
-message ExecutePlanResponse {
-  oneof outputs {
-    option (tagger.oneof_tags) = "faker:\"executev1TerraformOutputs\"";
-    google.protobuf.Struct terraform_outputs = 1;
-  }
-}
+message ExecutePlanResponse {}

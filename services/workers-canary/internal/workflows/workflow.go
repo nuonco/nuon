@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	activitiesv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1/activities/v1"
-	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	workers "github.com/powertoolsdev/mono/services/workers-canary/internal"
 	"github.com/powertoolsdev/mono/services/workers-canary/internal/activities"
 )
@@ -20,8 +19,8 @@ import (
 const (
 	defaultStartActivityTimeout time.Duration = time.Second * 5
 	defaultPollActivityTimeout  time.Duration = time.Minute * 30
-	defaultMaxActivityRetries		  = 5
-	defaultRegion				  = "us-west-2"
+	defaultMaxActivityRetries                 = 5
+	defaultRegion                             = "us-west-2"
 )
 
 type wkflow struct {
@@ -46,7 +45,7 @@ func (w *wkflow) startWorkflow(
 
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		ScheduleToCloseTimeout: defaultStartActivityTimeout * defaultMaxActivityRetries,
-		StartToCloseTimeout:	defaultStartActivityTimeout,
+		StartToCloseTimeout:    defaultStartActivityTimeout,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: defaultMaxActivityRetries,
 		},
@@ -71,44 +70,4 @@ func (w *wkflow) startWorkflow(
 	l.Info("successfully started %s.%s workflow", namespace, name)
 
 	return resp.WorkflowId, nil
-}
-
-func (w *wkflow) pollWorkflow(
-	ctx workflow.Context,
-	namespace, name, workflowID string,
-) (*activitiesv1.PollWorkflowResponse, error) {
-	l := workflow.GetLogger(ctx)
-
-	pollReq := &activitiesv1.PollWorkflowRequest{
-		Namespace:    namespace,
-		WorkflowName: name,
-		WorkflowId:   workflowID,
-	}
-
-	shrdAct := &sharedactivities.Activities{}
-	// set poll timeout
-	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		ScheduleToCloseTimeout: sharedactivities.PollActivityTimeout * sharedactivities.MaxActivityRetries,
-		StartToCloseTimeout:	sharedactivities.PollActivityTimeout,
-		RetryPolicy: &temporal.RetryPolicy{
-			MaximumAttempts: sharedactivities.MaxActivityRetries,
-		},
-	})
-
-	var pollResp activitiesv1.PollWorkflowResponse
-	fut := workflow.ExecuteActivity(ctx, shrdAct.PollWorkflow, pollReq)
-	err := fut.Get(ctx, &pollResp)
-	if err != nil {
-		return nil, fmt.Errorf("unable to poll for workflow response: %w", err)
-	}
-
-	resp, wkflowErr := anypb.New(&pollResp)
-	if wkflowErr != nil {
-		return nil, fmt.Errorf("unable to get response: %w", wkflowErr)
-	}
-
-	l.Info("successfully got %s.%s workflow response", namespace, name)
-	return &activitiesv1.PollWorkflowResponse{
-		Response: resp,
-	}, nil
 }
