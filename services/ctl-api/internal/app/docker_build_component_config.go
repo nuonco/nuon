@@ -24,10 +24,6 @@ type DockerBuildComponentConfig struct {
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
-	// VCS Config
-	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
-	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
-
 	SyncOnly          bool               `json:"sync_only,omitempty"`
 	BasicDeployConfig *BasicDeployConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"basic_deploy_config,omitempty"`
 
@@ -35,6 +31,9 @@ type DockerBuildComponentConfig struct {
 	Target     string         `json:"target"`
 	BuildArgs  pq.StringArray `gorm:"type:text[]" json:"build_args" swaggertype:"array,string"`
 	EnvVars    pgtype.Hstore  `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
+
+	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
+	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
 }
 
 func (c *DockerBuildComponentConfig) BeforeCreate(tx *gorm.DB) error {
