@@ -23,12 +23,12 @@ type HelmComponentConfig struct {
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
-	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
-	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
-
 	// Helm specific configurations
 	ChartName string        `json:"chart_name" gorm:"notnull"`
 	Values    pgtype.Hstore `json:"values" gorm:"type:hstore" swaggertype:"object,string"`
+
+	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
+	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
 }
 
 func (c *HelmComponentConfig) BeforeCreate(tx *gorm.DB) error {
