@@ -3,13 +3,9 @@ syntax = "proto3";
 package shared.v1;
 
 import "apps/v1/provision.proto";
-import "builds/v1/build.proto";
-import "deployments/v1/start.proto";
-import "deploys/v1/deploy.proto";
 import "executors/v1/plan/v1/plan.proto";
 import "installs/v1/deprovision.proto";
 import "installs/v1/provision.proto";
-import "instances/v1/provision.proto";
 import "orgs/v1/deprovision.proto";
 import "orgs/v1/provision.proto";
 import "tagger/tagger.proto";
@@ -43,22 +39,14 @@ message Request {
 // RequestRef represents the request that was passed in
 message RequestRef {
   oneof request {
-    deployments.v1.StartRequest deployment_start = 1;
-
     installs.v1.ProvisionRequest install_provision = 2;
     installs.v1.DeprovisionRequest install_deprovision = 3;
 
     orgs.v1.ProvisionRequest org_signup = 4;
     orgs.v1.DeprovisionRequest org_teardown = 5;
 
-    instances.v1.ProvisionRequest instance_provision = 6;
-
     apps.v1.ProvisionRequest app_provision = 7;
 
     executors.v1.plan.v1.Plan executors_plan = 8;
-
-    builds.v1.BuildRequest build_request = 9;
-
-    deploys.v1.DeployRequest deploy_request = 10;
   }
 }

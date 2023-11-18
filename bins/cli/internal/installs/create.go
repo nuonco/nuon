@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	statusError  = "error"
-	statusActive = "active"
+	statusError       = "error"
+	statusActive      = "active"
+	statusAccessError = "access-error"
 )
 
 func (s *Service) Create(ctx context.Context, appID, name, region, arn string, asJSON bool) {
@@ -59,6 +60,9 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, a
 		switch {
 		case err != nil:
 			view.Fail(err.Error() + "\n")
+		case ins.Status == statusAccessError:
+			view.Fail(fmt.Errorf("failed to create install due to access error: %s", ins.StatusDescription))
+			return
 		case ins.Status == statusError:
 			view.Fail(fmt.Errorf("failed to create install: %s", ins.StatusDescription))
 			return
