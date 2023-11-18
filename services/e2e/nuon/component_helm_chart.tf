@@ -6,7 +6,7 @@ resource "nuon_helm_chart_component" "e2e" {
   chart_name = "e2e-helm"
   connected_repo = {
     directory = "services/e2e/chart"
-    repo      = "jonmorehouse/nvim"
+    repo      = data.nuon_connected_repo.mono.name
     branch    = data.nuon_connected_repo.mono.default_branch
   }
 
