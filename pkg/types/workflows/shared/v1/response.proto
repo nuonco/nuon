@@ -3,13 +3,9 @@ syntax = "proto3";
 package shared.v1;
 
 import "apps/v1/provision.proto";
-import "builds/v1/build.proto";
-import "deployments/v1/start.proto";
-import "deploys/v1/deploy.proto";
 import "google/protobuf/any.proto";
 import "installs/v1/deprovision.proto";
 import "installs/v1/provision.proto";
-import "instances/v1/provision.proto";
 import "orgs/v1/deprovision.proto";
 import "orgs/v1/provision.proto";
 import "tagger/tagger.proto";
@@ -44,20 +40,12 @@ enum ResponseStatus {
 // ResponseRef represents the request that was passed in
 message ResponseRef {
   oneof response {
-    deployments.v1.StartResponse deployment_start = 1;
-
     installs.v1.ProvisionResponse install_provision = 2;
     installs.v1.DeprovisionResponse install_deprovision = 3;
 
     orgs.v1.ProvisionResponse org_signup = 4;
     orgs.v1.DeprovisionResponse org_teardown = 5;
 
-    instances.v1.ProvisionResponse instance_provision = 6;
-
     apps.v1.ProvisionResponse apps_provision = 7;
-
-    builds.v1.BuildResponse build_response = 8;
-
-    deploys.v1.DeployResponse deploy_response = 9;
   }
 }
