@@ -23,7 +23,7 @@ require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
 	github.com/briandowns/spinner v1.23.0
 	github.com/bufbuild/connect-go v1.5.2
-	github.com/docker/distribution v2.8.1+incompatible
+	github.com/docker/distribution v2.8.3+incompatible
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 	github.com/envoyproxy/protoc-gen-validate v0.10.1
 	github.com/gin-gonic/gin v1.9.1
@@ -110,6 +110,7 @@ require (
 	github.com/bodgit/sevenzip v1.3.0 // indirect
 	github.com/bodgit/windows v1.0.0 // indirect
 	github.com/connesc/cipherio v0.2.1 // indirect
+	github.com/distribution/reference v0.5.0 // indirect
 	github.com/go-openapi/errors v0.20.4 // indirect
 	github.com/go-openapi/runtime v0.26.0 // indirect
 	github.com/go-openapi/strfmt v0.21.7 // indirect
