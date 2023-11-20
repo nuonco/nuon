@@ -21,7 +21,7 @@ go run github.com/swaggo/swag/cmd/swag \
   --instanceName admin \
   --output admin \
   --parseGoList \
-  -t orgs/admin,orgs/admin,apps/admin,general/admin,sandboxes/admin,installs/admin
+  -t orgs/admin,orgs/admin,apps/admin,general/admin,sandboxes/admin,installs/admin,components/admin
 
 echo "validating admin schema"
 go run github.com/go-swagger/go-swagger/cmd/swagger \
