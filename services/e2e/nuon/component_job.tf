@@ -1,8 +1,23 @@
 resource "nuon_job_component" "e2e" {
   name      = "e2e_job"
   app_id    = nuon_app.main.id
-  image_url = "bitnami/kubectl"
+  image_url = "alpine"
   tag       = "latest"
-  cmd       = ["kubectl"]
-  args      = ["version"]
+  cmd       = ["printenv"]
+  args      = [""]
+
+  env_var {
+    name  = "NUON_APP_ID"
+    value = "{{.nuon.app.id}}"
+  }
+
+  env_var {
+    name  = "NUON_ORG_ID"
+    value = "{{.nuon.org.id}}"
+  }
+
+  env_var {
+    name  = "NUON_INSTALL_ID"
+    value = "{{.nuon.install.id}}"
+  }
 }
