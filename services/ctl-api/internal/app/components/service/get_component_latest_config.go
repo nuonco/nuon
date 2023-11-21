@@ -50,16 +50,19 @@ func (s *service) getComponentLatestConfig(ctx *gin.Context, cmpID string) (*app
 		Preload("ComponentConfigs.TerraformModuleComponentConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.TerraformModuleComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
 		// preload all helm configs
 		Preload("ComponentConfigs.HelmComponentConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.HelmComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 
 		// preload all docker configs
 		Preload("ComponentConfigs.DockerBuildComponentConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.BasicDeployConfig").
 
 		// preload all external image configs

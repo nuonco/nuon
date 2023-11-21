@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultLogPollTimeout time.Duration = time.Second * 20
+	defaultLogPollTimeout time.Duration = time.Second * 2
 )
 
 type DeployLog interface{}
@@ -83,6 +83,9 @@ func (s *service) getLogs(ctx context.Context, orgID, deployID string) ([]Deploy
 
 		resp, err := logClient.Recv()
 		if errors.Is(err, io.EOF) {
+			break
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
 			break
 		}
 

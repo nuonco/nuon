@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultLogPollTimeout time.Duration = time.Second * 20
+	defaultLogPollTimeout time.Duration = time.Second * 2
 )
 
 type BuildLog interface{}
@@ -82,11 +82,14 @@ func (s *service) getLogs(ctx context.Context, orgID, buildID string) ([]BuildLo
 		}
 
 		resp, err := logClient.Recv()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			break
+		}
 
+		if err != nil {
 			return nil, fmt.Errorf("unable to receive logs: %w", err)
 		}
 

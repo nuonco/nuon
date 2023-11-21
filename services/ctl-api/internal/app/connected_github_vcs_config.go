@@ -29,7 +29,7 @@ type ConnectedGithubVCSConfig struct {
 	Branch    string `json:"branch" gorm:"notnull"`
 
 	VCSConnectionID string        `json:"vcs_connection_id" gorm:"notnull"`
-	VCSConnection   VCSConnection `json:"-"`
+	VCSConnection   VCSConnection `json:"vcs_connection,omitempty"`
 }
 
 func (c *ConnectedGithubVCSConfig) BeforeCreate(tx *gorm.DB) error {
