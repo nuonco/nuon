@@ -19,12 +19,13 @@ const (
 )
 
 type Repository struct {
-	Name          string `json:"name,omitempty" validate:"required"`
-	FullName      string `json:"full_name,omitempty" validate:"required"`
-	UserName      string `json:"user_name" validate:"required"`
-	GitURL        string `json:"git_url,omitempty" validate:"required"`
-	DefaultBranch string `json:"default_branch,omitempty" validate:"required"`
-	CloneURL      string `json:"clone_url,omitempty" validate:"required"`
+	Name            string `json:"name,omitempty" validate:"required"`
+	FullName        string `json:"full_name,omitempty" validate:"required"`
+	UserName        string `json:"user_name" validate:"required"`
+	GitURL          string `json:"git_url,omitempty" validate:"required"`
+	DefaultBranch   string `json:"default_branch,omitempty" validate:"required"`
+	CloneURL        string `json:"clone_url,omitempty" validate:"required"`
+	GithubInstallID string `json:"github_install_id,omitempty" validate:"required"`
 }
 
 //	@BasePath	/v1/vcs
@@ -103,12 +104,13 @@ func (s *service) getConnectionRepos(ctx context.Context, conn *app.VCSConnectio
 
 		for _, repo := range repos.Repositories {
 			allRepos = append(allRepos, &Repository{
-				Name:          generics.FromPtrStr(repo.Name),
-				FullName:      generics.FromPtrStr(repo.FullName),
-				UserName:      generics.FromPtrStr(repo.Owner.Login),
-				GitURL:        generics.FromPtrStr(repo.GitURL),
-				CloneURL:      generics.FromPtrStr(repo.CloneURL),
-				DefaultBranch: generics.FromPtrStr(repo.DefaultBranch),
+				Name:            generics.FromPtrStr(repo.Name),
+				FullName:        generics.FromPtrStr(repo.FullName),
+				UserName:        generics.FromPtrStr(repo.Owner.Login),
+				GitURL:          generics.FromPtrStr(repo.GitURL),
+				CloneURL:        generics.FromPtrStr(repo.CloneURL),
+				DefaultBranch:   generics.FromPtrStr(repo.DefaultBranch),
+				GithubInstallID: conn.GithubInstallID,
 			})
 		}
 		if resp.NextPage < 1 {
