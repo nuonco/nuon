@@ -43,10 +43,18 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 
 func (s *service) getAppComponents(ctx context.Context, appID string) ([]app.Component, error) {
 	currentApp := &app.App{}
-	res := s.db.WithContext(ctx).Preload("Components").First(&currentApp, "id = ?", appID)
+	res := s.db.WithContext(ctx).
+		Preload("Components").
+		Preload("Components.ComponentConfigs").
+		First(&currentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	return currentApp.Components, nil
+	comps := currentApp.Components
+	for idx, comp := range comps {
+		comps[idx].ConfigVersions = len(comp.ComponentConfigs)
+	}
+
+	return comps, nil
 }
