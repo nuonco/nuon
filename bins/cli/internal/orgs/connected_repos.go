@@ -26,6 +26,7 @@ func (s *Service) ConnectedRepos(ctx context.Context, asJSON bool) {
 			"name",
 			"default branch",
 			"git url",
+			"github install id",
 		},
 	}
 
@@ -35,6 +36,7 @@ func (s *Service) ConnectedRepos(ctx context.Context, asJSON bool) {
 			*repo.Name,
 			*repo.DefaultBranch,
 			*repo.GitURL,
+			*repo.GithubInstallID,
 		})
 	}
 	view.Render(data)
