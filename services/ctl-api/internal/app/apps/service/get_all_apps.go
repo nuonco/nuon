@@ -37,6 +37,7 @@ func (s *service) getAllApps(ctx context.Context) ([]*app.App, error) {
 		Preload("SandboxRelease.Sandbox").
 		Preload("Installs").
 		Preload("Components").
+		Order("created_at desc").
 		Find(&apps)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all apps: %w", res.Error)

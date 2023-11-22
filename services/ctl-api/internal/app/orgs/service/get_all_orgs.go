@@ -33,7 +33,9 @@ func (s *service) GetAllOrgs(ctx *gin.Context) {
 
 func (s *service) getAllOrgs(ctx context.Context) ([]*app.Org, error) {
 	var orgs []*app.Org
-	res := s.db.WithContext(ctx).Find(&orgs)
+	res := s.db.WithContext(ctx).
+		Order("created_at desc").
+		Find(&orgs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all orgs: %w", res.Error)
 	}

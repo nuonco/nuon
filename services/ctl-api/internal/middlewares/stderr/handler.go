@@ -2,6 +2,7 @@ package stderr
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,7 +33,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		var uErr ErrUser
 		if errors.As(err, &uErr) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
-				Error:	     err.Error(),
+				Error:       err.Error(),
 				UserError:   true,
 				Description: uErr.Description,
 			})
@@ -42,7 +43,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		var authnErr ErrAuthentication
 		if errors.As(err, &authnErr) {
 			c.JSON(http.StatusUnauthorized, ErrResponse{
-				Error:	     err.Error(),
+				Error:       err.Error(),
 				UserError:   true,
 				Description: authnErr.Description,
 			})
@@ -52,7 +53,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		var authzErr ErrAuthorization
 		if errors.As(err, &authzErr) {
 			c.JSON(http.StatusForbidden, ErrResponse{
-				Error:	     err.Error(),
+				Error:       err.Error(),
 				UserError:   true,
 				Description: authzErr.Description,
 			})
@@ -62,7 +63,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		// gorm not found errors are usually user errors
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, ErrResponse{
-				Error:	     err.Error(),
+				Error:       err.Error(),
 				UserError:   true,
 				Description: "not found",
 			})
@@ -71,7 +72,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
-				Error:	     err.Error(),
+				Error:       err.Error(),
 				UserError:   true,
 				Description: "duplicate key",
 			})
@@ -82,15 +83,15 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		var vErr validator.ValidationErrors
 		if errors.As(err, &vErr) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
-				Error:	     err.Error(),
+				Error:       fmt.Sprintf("invalid input for %s", vErr[0].Field()),
 				UserError:   true,
-				Description: "invalid request input",
+				Description: fmt.Sprintf("invalid request input: %s", err),
 			})
 			return
 		}
 
 		c.JSON(http.StatusInternalServerError, ErrResponse{
-			Error:	     err.Error(),
+			Error:       err.Error(),
 			UserError:   true,
 			Description: err.Error(),
 		})
