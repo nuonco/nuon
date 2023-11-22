@@ -12,6 +12,15 @@ type State struct {
 	Current string
 }
 
+type Error struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type Complete struct {
+	Error Error `json:"error"`
+}
+
 type Terminal struct {
 	Buffered bool
 	Events   []struct {
@@ -34,6 +43,7 @@ type Logs struct {
 	Open     interface{}
 	State    State
 	Terminal Terminal
+	Complete Complete
 }
 
 func PrintBuildLog(log []models.ServiceBuildLog) {
@@ -82,8 +92,12 @@ func PrintBuildLog(log []models.ServiceBuildLog) {
 	} else {
 		fmt.Println("Logs expire after 24hrs, run command again with --json to see full logs")
 	}
+	if lgs.Complete.Error != (Error{}) {
+		fmt.Printf("job-error: %d\n", lgs.Complete.Error.Code)
+		fmt.Printf("message: %s\n", lgs.Complete.Error.Message)
+	}
 
-	fmt.Printf("status: %v\n", lgs.State.Current)
+	fmt.Printf("\nstatus: %v\n", lgs.State.Current)
 }
 
 func PrintDeployLogs(log []models.ServiceDeployLog) {
@@ -132,6 +146,10 @@ func PrintDeployLogs(log []models.ServiceDeployLog) {
 	} else {
 		fmt.Println("Logs expire after 24hrs, run command again with --json to see full logs")
 	}
+	if lgs.Complete.Error != (Error{}) {
+		fmt.Printf("job-error: %d\n", lgs.Complete.Error.Code)
+		fmt.Printf("message: %s\n", lgs.Complete.Error.Message)
+	}
 
-	fmt.Printf("status: %v\n", lgs.State.Current)
+	fmt.Printf("\nstatus: %v\n", lgs.State.Current)
 }
