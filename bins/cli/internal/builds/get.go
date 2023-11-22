@@ -3,6 +3,7 @@ package builds
 import (
 	"context"
 
+	"github.com/mitchellh/go-wordwrap"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -62,6 +63,8 @@ func (s *Service) Get(ctx context.Context, compID, buildID string, asJSON bool) 
 		{"commit updated at", commitUpdatedAt},
 		{"commit created by", commitCreatedBy},
 		{"commit message", commitMessage},
+
+		{"description", wordwrap.WrapString(build.StatusDescription, 75)},
 	}
 
 	view.Render(buildRes)
