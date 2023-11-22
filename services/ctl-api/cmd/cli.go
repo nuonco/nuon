@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/components"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db"
@@ -10,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/validator"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/waypoint"
 	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
 	componentsshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"

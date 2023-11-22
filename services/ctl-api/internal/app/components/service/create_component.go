@@ -12,7 +12,7 @@ import (
 )
 
 type CreateComponentRequest struct {
-	Name string `json:"name" validate:"required"`
+	Name string `json:"name" validate:"required,interpolatedName"`
 }
 
 func (c *CreateComponentRequest) Validate(v *validator.Validate) error {

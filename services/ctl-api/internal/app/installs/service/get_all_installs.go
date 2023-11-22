@@ -36,6 +36,7 @@ func (s *service) getAllInstalls(ctx context.Context) ([]*app.Install, error) {
 		Preload("SandboxRelease").
 		Preload("SandboxRelease.Sandbox").
 		Preload("AWSAccount").
+		Order("created_at desc").
 		Find(&installs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all installs: %w", res.Error)
