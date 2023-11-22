@@ -1,8 +1,8 @@
 resource "nuon_job_component" "e2e" {
   name      = "e2e_job"
   app_id    = nuon_app.main.id
-  image_url = "alpine"
-  tag       = "latest"
+  image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
+  tag       = "{{.nuon.components.e2e_docker_build.image.tag}}"
   cmd       = ["printenv"]
   args      = [""]
 
