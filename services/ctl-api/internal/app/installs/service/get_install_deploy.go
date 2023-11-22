@@ -47,6 +47,7 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 	var installDeploy app.InstallDeploy
 	res := s.db.WithContext(ctx).
 		Joins("JOIN install_components ON install_components.id=install_deploys.install_component_id").
+		Preload("InstallComponent").
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection").
 		Where("install_components.install_id = ?", installID).

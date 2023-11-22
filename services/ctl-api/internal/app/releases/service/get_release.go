@@ -45,6 +45,8 @@ func (s *service) getRelease(ctx context.Context, releaseID string) (*app.Compon
 	res := s.db.WithContext(ctx).
 		Preload("ComponentBuild").
 		Preload("ComponentReleaseSteps").
+		Preload("ComponentReleaseSteps.InstallDeploys").
+		Preload("ComponentReleaseSteps.InstallDeploys.InstallComponent").
 		First(&release, "id = ?", releaseID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get release: %w", res.Error)
