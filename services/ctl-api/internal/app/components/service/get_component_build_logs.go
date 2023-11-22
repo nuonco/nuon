@@ -88,9 +88,10 @@ func (s *service) getLogs(ctx context.Context, orgID, buildID string) ([]BuildLo
 		if errors.Is(err, context.DeadlineExceeded) {
 			break
 		}
-
+		// TODO(jm): figure out how to parse the context exceeded part from waypoint
 		if err != nil {
-			return nil, fmt.Errorf("unable to receive logs: %w", err)
+			break
+			//return nil, fmt.Errorf("unable to receive logs: %w", err)
 		}
 
 		logs = append(logs, resp.Event)
