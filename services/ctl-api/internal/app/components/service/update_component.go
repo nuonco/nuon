@@ -11,7 +11,7 @@ import (
 )
 
 type UpdateComponentRequest struct {
-	Name string `json:"name" validate:"required"`
+	Name string `json:"name" validate:"required,interpolatedName"`
 }
 
 func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {

@@ -10,6 +10,7 @@ type Operation string
 
 const (
 	OperationBuild            Operation = "build"
+	OperationProvision        Operation = "provision"
 	OperationDelete           Operation = "delete"
 	OperationPollDependencies Operation = "poll_dependencies"
 )
