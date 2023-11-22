@@ -54,7 +54,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 		},
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, "unable to create sync plan")
+		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to create sync plan: %s", err))
 		return fmt.Errorf("unable to create sync plan: %w", err)
 	}
 
@@ -65,7 +65,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 		Plan: planResp.Plan,
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, "unable to execute sync plan")
+		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to execute sync plan: %s", err))
 		return fmt.Errorf("unable to execute sync plan: %w", err)
 	}
 
@@ -87,7 +87,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 		},
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, "unable to create deploy plan")
+		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to create deploy plan: %s", err))
 		return fmt.Errorf("unable to create deploy plan: %w", err)
 	}
 
@@ -98,7 +98,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 		Plan: planResp.Plan,
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, "unable to execute deploy plan")
+		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to execute deploy plan: %s", err))
 		return fmt.Errorf("unable to execute deploy plan: %w", err)
 	}
 
