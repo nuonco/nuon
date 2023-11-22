@@ -43,6 +43,10 @@ func (w *Workflows) ComponentEventLoop(ctx workflow.Context, req ComponentEventL
 			if err := w.pollDependencies(ctx, req.ComponentID); err != nil {
 				l.Info("unable to poll app status for readiness: %w", zap.Error(err))
 			}
+		case OperationProvision:
+			if err := w.provision(ctx, req.ComponentID); err != nil {
+				l.Info("unable to provision: %w", zap.Error(err))
+			}
 		case OperationBuild:
 			if err := w.build(ctx, req.ComponentID, signal.BuildID, req.SandboxMode); err != nil {
 				l.Info("unable to build component: %w", zap.Error(err))

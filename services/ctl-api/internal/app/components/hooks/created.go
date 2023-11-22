@@ -57,4 +57,7 @@ func (a *Hooks) Created(ctx context.Context, componentID string, sandboxMode boo
 	a.sendSignal(ctx, componentID, worker.Signal{
 		Operation: worker.OperationPollDependencies,
 	})
+	a.sendSignal(ctx, componentID, worker.Signal{
+		Operation: worker.OperationProvision,
+	})
 }

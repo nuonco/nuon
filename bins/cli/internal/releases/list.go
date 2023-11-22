@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-go/models"
+	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
@@ -16,8 +17,20 @@ func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) {
 	)
 
 	if compID != "" {
+		compID, err = lookup.ComponentID(ctx, s.api, compID)
+		if err != nil {
+			ui.PrintError(err)
+			return
+		}
+
 		releases, err = s.api.GetComponentReleases(ctx, compID)
 	} else if appID != "" {
+		appID, err = lookup.AppID(ctx, s.api, appID)
+		if err != nil {
+			ui.PrintError(err)
+			return
+		}
+
 		releases, err = s.api.GetAppReleases(ctx, appID)
 	}
 	if err != nil {
