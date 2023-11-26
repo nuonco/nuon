@@ -18,7 +18,6 @@ type SandboxRelease struct {
 	SandboxID               string  `json:"-" gorm:"index:idx_sandbox_release,unique"`
 	Sandbox                 Sandbox `json:"sandbox,omitempty"`
 	Version                 string  `gorm:"index:idx_sandbox_release,unique" json:"version"`
-	TerraformVersion        string  `json:"terraform_version" gorm:"notnull"`
 	ProvisionPolicyURL      string  `json:"provision_policy_url" gorm:"notnull"`
 	DeprovisionPolicyURL    string  `json:"deprovision_policy_url" gorm:"notnull"`
 	TrustPolicyURL          string  `json:"trust_policy_url" gorm:"notnull"`

@@ -1,4 +1,4 @@
-package components
+package protos
 
 import (
 	"github.com/powertoolsdev/mono/pkg/generics"

@@ -1,0 +1,74 @@
+package protos
+
+import (
+	"fmt"
+
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+func (c *Adapter) toSandboxSettings(install *app.Install) (*installsv1.SandboxSettings, error) {
+	sandboxSettings := &installsv1.SandboxSettings{
+		TerraformVersion: install.AppSandboxConfig.TerraformVersion,
+		Vars:             c.toTerraformVariables(install.AppSandboxConfig.SandboxInputs),
+	}
+
+	if install.AppSandboxConfig.SandboxRelease != nil {
+		sandboxSettings.BuiltinConfig = &installsv1.BuiltinSandbox{
+			Name:    install.AppSandboxConfig.SandboxRelease.Sandbox.Name,
+			Version: install.AppSandboxConfig.SandboxRelease.Version,
+		}
+	}
+
+	if install.AppSandboxConfig.PublicGitVCSConfig != nil {
+		sandboxSettings.PublicGitConfig = c.toPublicGitConfig(install.AppSandboxConfig.PublicGitVCSConfig.Branch,
+			install.AppSandboxConfig.PublicGitVCSConfig)
+	}
+
+	if install.AppSandboxConfig.ConnectedGithubVCSConfig != nil {
+		sandboxSettings.ConnectedGithubConfig = c.toConnectedGithubConfig(install.AppSandboxConfig.ConnectedGithubVCSConfig.Branch,
+			install.AppSandboxConfig.ConnectedGithubVCSConfig)
+	}
+
+	return sandboxSettings, nil
+}
+
+func (c *Adapter) ToInstallProvisionRequest(install *app.Install) (*installsv1.ProvisionRequest, error) {
+	sandboxSettings, err := c.toSandboxSettings(install)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
+	}
+
+	req := &installsv1.ProvisionRequest{
+		OrgId:     install.OrgID,
+		AppId:     install.AppID,
+		InstallId: install.ID,
+		AccountSettings: &installsv1.AccountSettings{
+			Region:     install.AWSAccount.Region,
+			AwsRoleArn: install.AWSAccount.IAMRoleARN,
+		},
+		SandboxSettings: sandboxSettings,
+	}
+
+	return req, nil
+}
+
+func (c *Adapter) ToInstallDeprovisionRequest(install *app.Install) (*installsv1.DeprovisionRequest, error) {
+	sandboxSettings, err := c.toSandboxSettings(install)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
+	}
+
+	req := &installsv1.DeprovisionRequest{
+		OrgId:     install.OrgID,
+		AppId:     install.AppID,
+		InstallId: install.ID,
+		AccountSettings: &installsv1.AccountSettings{
+			Region:     install.AWSAccount.Region,
+			AwsRoleArn: install.AWSAccount.IAMRoleARN,
+		},
+		SandboxSettings: sandboxSettings,
+	}
+
+	return req, nil
+}

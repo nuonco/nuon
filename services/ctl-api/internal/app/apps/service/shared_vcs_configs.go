@@ -13,13 +13,13 @@ import (
 	"gorm.io/gorm"
 )
 
-type PublicGitVCSConfigRequest struct {
+type PublicGitVCSSandboxConfigRequest struct {
 	Repo      string `validate:"required"`
 	Directory string `validate:"required"`
 	Branch    string `validate:"required"`
 }
 
-type ConnectedGithubVCSConfigRequest struct {
+type ConnectedGithubVCSSandboxConfigRequest struct {
 	Repo      string `validate:"required"`
 	Directory string `validate:"required"`
 
@@ -28,8 +28,8 @@ type ConnectedGithubVCSConfigRequest struct {
 }
 
 type basicVCSConfigRequest struct {
-	PublicGitVCSConfig       *PublicGitVCSConfigRequest       `json:"public_git_vcs_config" validate:"required_if=PublicGitVCSConfig nil"`
-	ConnectedGithubVCSConfig *ConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config" `
+	PublicGitVCSConfig       *PublicGitVCSSandboxConfigRequest       `json:"public_git_vcs_config" validate:"required_if=PublicGitVCSConfig nil"`
+	ConnectedGithubVCSConfig *ConnectedGithubVCSSandboxConfigRequest `json:"connected_github_vcs_config" `
 }
 
 func (b *basicVCSConfigRequest) lookupVCSConnection(ctx context.Context,
@@ -61,14 +61,12 @@ func (b *basicVCSConfigRequest) lookupVCSConnection(ctx context.Context,
 		tc := oauth2.NewClient(ctx, ts)
 		client := github.NewClient(tc)
 
-		repo, _, err := client.Repositories.Get(ctx, owner, name)
+		_, _, err = client.Repositories.Get(ctx, owner, name)
+		// TODO(jm): better parsing here
 		if err != nil {
 			continue
 		}
 
-		if *repo.Visibility == "public" {
-			return "", fmt.Errorf("can not use a public repo with a connected_repo config")
-		}
 		return vcsConn.ID, nil
 	}
 
@@ -78,7 +76,7 @@ func (b *basicVCSConfigRequest) lookupVCSConnection(ctx context.Context,
 	}
 }
 
-func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, parentCmp *app.Component, ghClient *github.Client) (*app.ConnectedGithubVCSConfig, error) {
+func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, parentApp *app.App, ghClient *github.Client) (*app.ConnectedGithubVCSConfig, error) {
 	if b.ConnectedGithubVCSConfig == nil {
 		return nil, nil
 	}
@@ -91,7 +89,7 @@ func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, pa
 		}
 	}
 
-	vcsConnID, err := b.lookupVCSConnection(ctx, ghClient, pieces[0], pieces[1], parentCmp.App.Org.VCSConnections)
+	vcsConnID, err := b.lookupVCSConnection(ctx, ghClient, pieces[0], pieces[1], parentApp.Org.VCSConnections)
 	if err != nil {
 		return nil, err
 	}
@@ -111,13 +109,8 @@ func (b *basicVCSConfigRequest) publicGitVCSConfig() *app.PublicGitVCSConfig {
 		return nil
 	}
 
-	repo := b.PublicGitVCSConfig.Repo
-	if !strings.HasPrefix(repo, "git@") && !strings.HasPrefix(repo, "https://") {
-		repo = fmt.Sprintf("git@github.com:%s.git", repo)
-	}
-
 	return &app.PublicGitVCSConfig{
-		Repo:      repo,
+		Repo:      b.PublicGitVCSConfig.Repo,
 		Directory: b.PublicGitVCSConfig.Directory,
 		Branch:    b.PublicGitVCSConfig.Branch,
 	}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type AppInstaller struct {
@@ -58,7 +59,13 @@ func (s *service) getAppInstaller(ctx context.Context, installerID string) (*app
 	res := s.db.WithContext(ctx).
 		Preload("App").
 		Preload("App.Org").
-		Preload("App.SandboxRelease").
+		Preload("App.AppSandbox.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_sandbox_configs.created_at DESC")
+		}).
+		Preload("App.AppSandbox.AppSandboxConfigs.PublicGitVCSConfig").
+		Preload("App.AppSandbox.AppSandboxConfigs.ConnectedGithubVCSConfig").
+		Preload("App.AppSandbox.AppSandboxConfigs.SandboxRelease").
+		Preload("App.AppSandbox.AppSandboxConfigs.SandboxRelease.Sandbox").
 		Preload("Metadata").
 		Where("slug = ?", installerID).
 		Or("id = ?", installerID).

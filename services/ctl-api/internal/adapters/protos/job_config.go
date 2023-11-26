@@ -1,4 +1,4 @@
-package components
+package protos
 
 import (
 	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"

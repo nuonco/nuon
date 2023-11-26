@@ -1,4 +1,4 @@
-package components
+package protos
 
 import variablesv1 "github.com/powertoolsdev/mono/pkg/types/components/variables/v1"
 

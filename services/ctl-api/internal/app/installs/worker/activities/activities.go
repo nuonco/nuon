@@ -1,18 +1,18 @@
 package activities
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/components"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/protos"
 	"gorm.io/gorm"
 )
 
 type Activities struct {
 	db         *gorm.DB
-	components *components.Adapter
+	components *protos.Adapter
 }
 
-func New(db *gorm.DB, comps *components.Adapter) (*Activities, error) {
+func New(db *gorm.DB, prt *protos.Adapter) (*Activities, error) {
 	return &Activities{
 		db:         db,
-		components: comps,
+		components: prt,
 	}, nil
 }

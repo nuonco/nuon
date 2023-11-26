@@ -36,24 +36,10 @@ func (s *installComponentsTestSuite) TearDownTest() {
 }
 
 func (s *installComponentsTestSuite) SetupTest() {
-	// create an org
-	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
-	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), org)
-	s.apiClient.SetOrgID(org.ID)
+	org := s.createOrg()
 	s.orgID = org.ID
 
-	// add a vcs connection to the org
-	vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
-	_, err = s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
-	require.Nil(s.T(), err)
-
-	// create an app
-	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
-	app, err := s.apiClient.CreateApp(s.ctx, appReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), org)
+	app := s.createApp(s.orgID)
 	s.appID = app.ID
 
 	// create a component

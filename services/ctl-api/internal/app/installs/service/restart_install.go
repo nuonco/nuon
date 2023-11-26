@@ -49,7 +49,7 @@ func (s *service) getInstall(ctx context.Context, installID string) (*app.Instal
 		Preload("AWSAccount").
 		Preload("App").
 		Preload("App.Org").
-		Preload("SandboxRelease").
+		Preload("AppSandboxConfig").
 		Where("name = ?", installID).
 		Or("id = ?", installID).
 		First(&install)

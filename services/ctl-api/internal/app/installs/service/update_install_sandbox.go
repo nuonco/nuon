@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type AdminUpdateSandboxRequest struct{}
@@ -34,19 +35,19 @@ func (s *service) AdminUpdateSandbox(ctx *gin.Context) {
 		return
 	}
 
-	app, err := s.getInstall(ctx, installID)
+	install, err := s.getInstall(ctx, installID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
 	}
 
-	sandboxRelease, err := s.getLatestSandbox(ctx, app.SandboxRelease.SandboxID)
+	appSandboxConfig, err := s.getLatestAppSandboxConfig(ctx, install.AppID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get latest sandbox release: %w", err))
+		ctx.Error(fmt.Errorf("unable to get latest app sandbox config: %w", err))
 		return
 	}
 
-	if _, err := s.updateInstallSandbox(ctx, installID, sandboxRelease.ID); err != nil {
+	if _, err := s.updateInstallSandbox(ctx, installID, appSandboxConfig.ID); err != nil {
 		ctx.Error(fmt.Errorf("unable to update install sandbox: %w", err))
 		return
 	}
@@ -54,18 +55,22 @@ func (s *service) AdminUpdateSandbox(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, true)
 }
 
-func (s *service) getLatestSandbox(ctx context.Context, sandboxID string) (*app.SandboxRelease, error) {
-	release := app.SandboxRelease{}
+func (s *service) getLatestAppSandboxConfig(ctx context.Context, appID string) (*app.AppSandboxConfig, error) {
+	appSandbox := app.AppSandbox{}
 
 	res := s.db.WithContext(ctx).
-		Order("created_at DESC").
-		Limit(1).
-		First(&release, "sandbox_id = ?", sandboxID)
+		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_sandbox_configs.created_at DESC")
+		}).
+		First(&appSandbox, "app_id = ?", appID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get sandbox releases: %w", res.Error)
+		return nil, fmt.Errorf("unable to get app sandbox configs: %w", res.Error)
+	}
+	if len(appSandbox.AppSandboxConfigs) < 1 {
+		return nil, fmt.Errorf("app does not have any sandbox configs")
 	}
 
-	return &release, nil
+	return &appSandbox.AppSandboxConfigs[0], nil
 }
 
 func (s *service) updateInstallSandbox(ctx context.Context, installID string, sandboxReleaseID string) (*app.Install, error) {
@@ -74,9 +79,9 @@ func (s *service) updateInstallSandbox(ctx context.Context, installID string, sa
 	}
 
 	res := s.db.WithContext(ctx).
-		Preload("SandboxRelease").
+		Preload("AppSandboxConfig").
 		Model(&currentInstall).
-		Updates(app.App{SandboxReleaseID: sandboxReleaseID})
+		Updates(app.App{})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update install: %w", res.Error)
 	}

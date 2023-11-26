@@ -20,10 +20,5 @@ message AccountSettings {
     (tagger.tags) = "faker:\"oneof: us-west-2\""
   ];
 
-  string aws_account_id = 2 [
-    (validate.rules).string.min_len = 12,
-    (tagger.tags) = "faker:\"len=12\""
-  ];
-
   string aws_role_arn = 3 [(tagger.tags) = "faker:\"len=20\""];
 }

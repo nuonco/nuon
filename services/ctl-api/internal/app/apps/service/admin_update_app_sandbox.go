@@ -40,16 +40,28 @@ func (s *service) AdminUpdateSandbox(ctx *gin.Context) {
 		return
 	}
 
-	sandboxRelease, err := s.getLatestSandbox(ctx, app.SandboxRelease.SandboxID)
+	if len(app.AppSandbox.AppSandboxConfigs) < 1 {
+		ctx.Error(fmt.Errorf("no app sandbox configs found"))
+		return
+	}
+
+	sandboxName := app.AppSandbox.AppSandboxConfigs[0].SandboxRelease.Sandbox.Name
+	if sandboxName == "" {
+		ctx.Error(fmt.Errorf("no built in app sandbox found"))
+		return
+	}
+
+	_, err = s.getLatestSandbox(ctx, sandboxName)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get latest sandbox release: %w", err))
 		return
 	}
 
-	if _, err := s.updateAppSandbox(ctx, appID, sandboxRelease.ID); err != nil {
-		ctx.Error(fmt.Errorf("unable to update app sandbox: %w", err))
-		return
-	}
+	//// TODO(jm): create a new sandbox config
+	//if _, err := s.updateAppSandbox(ctx, appID, sandboxRelease.ID); err != nil {
+	//ctx.Error(fmt.Errorf("unable to update app sandbox: %w", err))
+	//return
+	//}
 
 	ctx.JSON(http.StatusOK, true)
 }

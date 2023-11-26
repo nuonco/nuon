@@ -46,15 +46,12 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 }
 
 func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Install, error) {
-	org := &app.Org{}
-	res := s.db.WithContext(ctx).Preload("Apps").Preload("Apps.Installs").First(&org, "id = ?", orgID)
+	var installs []app.Install
+	res := s.db.WithContext(ctx).
+		Order("created_at desc").
+		Find(&installs, "org_id = ?", orgID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get installs: %w", res.Error)
-	}
-
-	installs := make([]app.Install, 0)
-	for _, app := range org.Apps {
-		installs = append(installs, app.Installs...)
+		return nil, fmt.Errorf("unable to get org installs: %w", res.Error)
 	}
 
 	return installs, nil
