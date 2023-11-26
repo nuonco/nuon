@@ -33,18 +33,10 @@ func (s *componentsSuite) TearDownTest() {
 }
 
 func (s *componentsSuite) SetupTest() {
-	// create an org
-	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
-	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), org)
-	s.apiClient.SetOrgID(org.ID)
+	org := s.createOrg()
 	s.orgID = org.ID
 
-	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
-	app, err := s.apiClient.CreateApp(s.ctx, appReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), app)
+	app := s.createApp(s.orgID)
 	s.appID = app.ID
 }
 
@@ -71,9 +63,10 @@ func (s *componentsSuite) TestCreateComponent() {
 		require.Nil(t, err)
 		require.NotNil(t, install)
 
-		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, &models.ServiceCreateComponentRequest{})
-		require.NotNil(t, err)
-		require.Nil(t, comp)
+		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
+		require.NoError(t, err)
+		require.NotNil(t, comp)
 
 		installComps, err := s.apiClient.GetInstallComponents(s.ctx, install.ID)
 		require.Nil(t, err)

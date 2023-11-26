@@ -59,7 +59,7 @@ func (s *service) getInstallComponentLatestDeploy(ctx context.Context, installID
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
 	if len(installCmp.InstallDeploys) != 1 {
-		return nil, fmt.Errorf("no deploy exists for install")
+		return nil, fmt.Errorf("no deploy exists for install: %w", gorm.ErrRecordNotFound)
 	}
 
 	return &installCmp.InstallDeploys[0], nil

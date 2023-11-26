@@ -3,7 +3,6 @@ package worker
 import (
 	"fmt"
 
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"go.temporal.io/sdk/workflow"
@@ -20,21 +19,13 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	_, err := w.execDeprovisionWorkflow(ctx, dryRun, &installsv1.DeprovisionRequest{
-		OrgId:     install.OrgID,
-		AppId:     install.AppID,
-		InstallId: installID,
-		AccountSettings: &installsv1.AccountSettings{
-			Region:       install.AWSAccount.Region,
-			AwsRoleArn:   install.AWSAccount.IAMRoleARN,
-			AwsAccountId: "REMOVE - DEPRECATED",
-		},
-		SandboxSettings: &installsv1.SandboxSettings{
-			Name:             install.SandboxRelease.Sandbox.Name,
-			Version:          install.SandboxRelease.Version,
-			TerraformVersion: install.SandboxRelease.TerraformVersion,
-		},
-	})
+	req, err := w.protos.ToInstallDeprovisionRequest(&install)
+	if err != nil {
+		w.updateStatus(ctx, installID, StatusError, "unable to create install deprovision request")
+		return fmt.Errorf("unable to create install deprovision request: %w", err)
+	}
+
+	_, err = w.execDeprovisionWorkflow(ctx, dryRun, req)
 	if err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to deprovision install resources")
 		return fmt.Errorf("unable to deprovision install: %w", err)

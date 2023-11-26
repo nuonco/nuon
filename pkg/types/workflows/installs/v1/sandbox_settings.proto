@@ -4,10 +4,13 @@ package installs.v1;
 
 import "tagger/tagger.proto";
 import "validate/validate.proto";
+import "variables/v1/terraform.proto";
+import "vcs/v1/connected_github.proto";
+import "vcs/v1/public_git.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1";
 
-message SandboxSettings {
+message BuiltinSandbox {
   string name = 1 [
     (validate.rules).string.min_len = 1,
     (tagger.tags) = "faker:\"len=5\""
@@ -17,9 +20,19 @@ message SandboxSettings {
     (validate.rules).string.min_len = 1,
     (tagger.tags) = "faker:\"len=5\""
   ];
+}
 
-  string terraform_version = 3 [
+message SandboxSettings {
+  string terraform_version = 1 [
     (validate.rules).string.min_len = 1,
     (tagger.tags) = "faker:\"len=5\""
   ];
+
+  // configs for where to find the sandbox code
+  optional vcs.v1.ConnectedGithubConfig connected_github_config = 2;
+  optional vcs.v1.PublicGitConfig public_git_config = 3;
+  optional BuiltinSandbox builtin_config = 4;
+
+  // variables to be substituted
+  variables.v1.TerraformVariables vars = 5;
 }

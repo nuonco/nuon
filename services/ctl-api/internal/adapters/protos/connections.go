@@ -1,4 +1,4 @@
-package components
+package protos
 
 import (
 	connectionsv1 "github.com/powertoolsdev/mono/pkg/types/components/connections/v1"

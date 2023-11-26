@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type CreateInstallDeployRequest struct {
@@ -85,7 +86,9 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 
 	// if the install component does not exist, create it.
 	if len(install.InstallComponents) != 1 {
-		err := s.db.WithContext(ctx).First(&install, "id = ?", installID).
+		err := s.db.WithContext(ctx).
+			Clauses(clause.OnConflict{DoNothing: true}).
+			First(&install, "id = ?", installID).
 			Association("InstallComponents").
 			Append(&app.InstallComponent{
 				ComponentID: build.ComponentConfigConnection.ComponentID,

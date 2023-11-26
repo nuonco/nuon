@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"gorm.io/gorm"
 )
 
@@ -79,7 +80,10 @@ func (s *service) getComponentLatestConfig(ctx *gin.Context, cmpID string) (*app
 	}
 
 	if len(cmp.ComponentConfigs) < 1 {
-		return nil, fmt.Errorf("no component config found for component")
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("no component config found for component"),
+			Description: "please make sure at least one component config has been created",
+		}
 	}
 
 	return &cmp.ComponentConfigs[0], nil
