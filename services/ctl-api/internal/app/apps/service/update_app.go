@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type UpdateAppRequest struct {
@@ -74,7 +75,7 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 		return nil, fmt.Errorf("unable to update app: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
-		return nil, fmt.Errorf("app not found %s", appID)
+		return nil, fmt.Errorf("app not found %s %w", appID, gorm.ErrRecordNotFound)
 	}
 
 	return &currentApp, nil

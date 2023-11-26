@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type UpdateDeployStatusRequest struct {
@@ -25,7 +26,7 @@ func (a *Activities) UpdateDeployStatus(ctx context.Context, req UpdateDeploySta
 		return fmt.Errorf("unable to update install deploy: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
-		return fmt.Errorf("no install found: %s", req.DeployID)
+		return fmt.Errorf("no install found: %s %w", req.DeployID, gorm.ErrRecordNotFound)
 	}
 	return nil
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
@@ -19,6 +20,7 @@ type service struct {
 	cfg          *internal.Config
 	hooks        *hooks.Hooks
 	installHooks *installhooks.Hooks
+	ghClient     *github.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -35,8 +37,10 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id", s.GetApp)
 	api.DELETE("/v1/apps/:app_id", s.DeleteApp)
 
-	// sandbox release
-	api.PUT("/v1/apps/:app_id/sandbox", s.UpdateAppSandbox)
+	// app sandbox management
+	api.POST("/v1/apps/:app_id/sandbox-config", s.CreateAppSandboxConfig)
+	api.GET("/v1/apps/:app_id/sandbox-latest-config", s.GetAppSandboxLatestConfig)
+	api.GET("/v1/apps/:app_id/sandbox-configs", s.GetAppSandboxConfigs)
 
 	// installers
 	api.POST("/v1/apps/:app_id/installer", s.CreateAppInstaller)
@@ -52,12 +56,20 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/admin-reprovision", s.AdminReprovisionApp)
 	api.POST("/v1/apps/:app_id/admin-restart", s.RestartApp)
 	api.POST("/v1/apps/:app_id/admin-update-sandbox", s.AdminUpdateSandbox)
+	api.POST("/v1/apps/admin-add-app-sandboxes", s.AdminAddAppSandboxes)
 
 	api.GET("/v1/installers", s.GetAllAppInstallers)
 	return nil
 }
 
-func New(v *validator.Validate, cfg *internal.Config, db *gorm.DB, mw metrics.Writer, l *zap.Logger, hooks *hooks.Hooks, installHooks *installhooks.Hooks) *service {
+func New(v *validator.Validate,
+	cfg *internal.Config,
+	db *gorm.DB, mw metrics.Writer,
+	l *zap.Logger,
+	hooks *hooks.Hooks,
+	installHooks *installhooks.Hooks,
+	ghClient *github.Client,
+) *service {
 	return &service{
 		cfg:          cfg,
 		l:            l,
@@ -66,5 +78,6 @@ func New(v *validator.Validate, cfg *internal.Config, db *gorm.DB, mw metrics.Wr
 		mw:           mw,
 		hooks:        hooks,
 		installHooks: installHooks,
+		ghClient:     ghClient,
 	}
 }

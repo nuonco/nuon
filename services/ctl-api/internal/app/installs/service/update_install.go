@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type UpdateInstallRequest struct {
@@ -72,13 +73,13 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 	res := s.db.WithContext(ctx).
 		Model(&currentInstall).
 		Preload("AWSAccount").
-		Preload("SandboxRelease").
+		Preload("AppSandboxConfig").
 		Updates(app.Install{Name: req.Name})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
 	if res.RowsAffected != 1 {
-		return nil, fmt.Errorf("install not found")
+		return nil, fmt.Errorf("install not found: %w", gorm.ErrRecordNotFound)
 	}
 
 	return &currentInstall, nil

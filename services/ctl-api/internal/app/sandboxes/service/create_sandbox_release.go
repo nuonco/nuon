@@ -78,7 +78,6 @@ func (s *service) createSandboxRelease(ctx context.Context, sandboxID string, re
 	// create release
 	sandboxRelease := app.SandboxRelease{
 		Version:                 req.Version,
-		TerraformVersion:        req.TerraformVersion,
 		ProvisionPolicyURL:      baseURL + "provision.json",
 		TrustPolicyURL:          baseURL + "trust.json",
 		DeprovisionPolicyURL:    baseURL + "deprovision.json",

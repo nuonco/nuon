@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type AdminForgetInstallRequest struct{}
@@ -52,7 +53,7 @@ func (s *service) forgetInstall(ctx context.Context, installID string) error {
 	}
 
 	if res.RowsAffected < 1 {
-		return fmt.Errorf("install not found %s", installID)
+		return fmt.Errorf("install not found %s %s", installID, gorm.ErrRecordNotFound)
 	}
 	return nil
 }
