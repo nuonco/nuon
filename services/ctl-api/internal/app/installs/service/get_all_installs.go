@@ -33,8 +33,7 @@ func (s *service) GetAllInstalls(ctx *gin.Context) {
 func (s *service) getAllInstalls(ctx context.Context) ([]*app.Install, error) {
 	var installs []*app.Install
 	res := s.db.WithContext(ctx).
-		Preload("SandboxRelease").
-		Preload("SandboxRelease.Sandbox").
+		Preload("AppSandboxConfig").
 		Preload("AWSAccount").
 		Order("created_at desc").
 		Find(&installs)

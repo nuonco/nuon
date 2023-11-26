@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type UpdateStatusRequest struct {
@@ -25,7 +26,7 @@ func (a *Activities) UpdateStatus(ctx context.Context, req UpdateStatusRequest) 
 		return fmt.Errorf("unable to update org: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
-		return fmt.Errorf("no org found: %s", req.OrgID)
+		return fmt.Errorf("no org found: %s %w", req.OrgID, gorm.ErrRecordNotFound)
 	}
 
 	return nil

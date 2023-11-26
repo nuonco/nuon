@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 //	@BasePath	/v1/apps
@@ -49,7 +50,7 @@ func (s *service) deleteAppInstaller(ctx context.Context, appInstallerID string)
 		return fmt.Errorf("unable to delete app: %w", res.Error)
 	}
 	if res.RowsAffected != 1 {
-		return fmt.Errorf("app installer not found")
+		return fmt.Errorf("app installer not found: %w", gorm.ErrRecordNotFound)
 	}
 
 	return nil

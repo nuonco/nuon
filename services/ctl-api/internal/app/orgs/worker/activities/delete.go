@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type DeleteRequest struct {
@@ -19,7 +20,7 @@ func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 		return fmt.Errorf("unable to delete org: %w", res.Error)
 	}
 	if res.RowsAffected != 1 {
-		return fmt.Errorf("org not found")
+		return fmt.Errorf("org not found %w", gorm.ErrRecordNotFound)
 	}
 
 	return nil

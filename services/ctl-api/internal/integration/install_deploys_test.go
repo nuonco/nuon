@@ -36,24 +36,10 @@ func (s *installDeploysIntegrationTestSuite) TearDownTest() {
 }
 
 func (s *installDeploysIntegrationTestSuite) SetupTest() {
-	// create an org
-	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
-	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), org)
-	s.apiClient.SetOrgID(org.ID)
+	org := s.createOrg()
 	s.orgID = org.ID
 
-	// add a vcs connection to the org
-	vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
-	_, err = s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
-	require.Nil(s.T(), err)
-
-	// create an app
-	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
-	app, err := s.apiClient.CreateApp(s.ctx, appReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), app)
+	app := s.createApp(s.orgID)
 	s.appID = app.ID
 
 	// create a component
@@ -78,11 +64,7 @@ func (s *installDeploysIntegrationTestSuite) SetupTest() {
 	s.buildID = build.ID
 
 	// create install
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
-	fakeReq.AwsAccount.Region = "us-west-2"
-	install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), install)
+	install := s.createInstall(s.appID)
 	s.installID = install.ID
 }
 
@@ -212,11 +194,7 @@ func (s *installDeploysIntegrationTestSuite) TestGetInstallLatestDeploy() {
 
 	s.T().Run("errors when no deploy exists", func(t *testing.T) {
 		// create install
-		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
-		fakeReq.AwsAccount.Region = "us-west-2"
-		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
-		require.NoError(s.T(), err)
-		require.NotNil(s.T(), install)
+		install := s.createInstall(s.appID)
 
 		deploy, err := s.apiClient.GetInstallLatestDeploy(s.ctx, install.ID)
 		require.Error(t, err)

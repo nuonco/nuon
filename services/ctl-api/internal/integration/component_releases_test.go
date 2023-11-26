@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type componentReleasesTestSuite struct {
+type releasesTestSuite struct {
 	baseIntegrationTestSuite
 
 	orgID     string
@@ -21,7 +21,7 @@ type componentReleasesTestSuite struct {
 	buildID   string
 }
 
-func TestComponentReleasesSuite(t *testing.T) {
+func TestReleasesSuite(t *testing.T) {
 	t.Parallel()
 
 	integration := os.Getenv("INTEGRATION")
@@ -29,32 +29,19 @@ func TestComponentReleasesSuite(t *testing.T) {
 		t.Skip("INTEGRATION=true must be set in environment to run.")
 	}
 
-	suite.Run(t, new(componentReleasesTestSuite))
+	suite.Run(t, new(releasesTestSuite))
 }
 
-func (s *componentReleasesTestSuite) TearDownTest() {
+func (s *releasesTestSuite) TearDownTest() {
 	s.deleteOrg(s.orgID)
 }
 
-func (s *componentReleasesTestSuite) SetupTest() {
+func (s *releasesTestSuite) SetupTest() {
 	// create an org
-	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
-	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), org)
-	s.apiClient.SetOrgID(org.ID)
+	org := s.createOrg()
 	s.orgID = org.ID
 
-	// add a vcs connection to the org
-	vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
-	_, err = s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
-	require.Nil(s.T(), err)
-
-	// create an app
-	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
-	app, err := s.apiClient.CreateApp(s.ctx, appReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), app)
+	app := s.createApp(s.orgID)
 	s.appID = app.ID
 
 	// create a component
@@ -79,15 +66,11 @@ func (s *componentReleasesTestSuite) SetupTest() {
 	s.buildID = build.ID
 
 	// create install
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
-	fakeReq.AwsAccount.Region = "us-west-2"
-	install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), install)
+	install := s.createInstall(s.appID)
 	s.installID = install.ID
 }
 
-func (s *componentReleasesTestSuite) TestCreateRelease() {
+func (s *releasesTestSuite) TestCreateRelease() {
 	s.T().Run("success with parallel deploys", func(t *testing.T) {
 		release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 			BuildID: s.buildID,
@@ -151,7 +134,7 @@ func (s *componentReleasesTestSuite) TestCreateRelease() {
 	})
 }
 
-func (s *componentReleasesTestSuite) TestGetAppReleases() {
+func (s *releasesTestSuite) TestGetAppReleases() {
 	release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
@@ -191,7 +174,7 @@ func (s *componentReleasesTestSuite) TestGetAppReleases() {
 	})
 }
 
-func (s *componentReleasesTestSuite) TestGetComponentReleases() {
+func (s *releasesTestSuite) TestGetComponentReleases() {
 	release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
@@ -231,7 +214,7 @@ func (s *componentReleasesTestSuite) TestGetComponentReleases() {
 	})
 }
 
-func (s *componentReleasesTestSuite) TestGetComponentRelease() {
+func (s *releasesTestSuite) TestGetComponentRelease() {
 	release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{
@@ -256,7 +239,7 @@ func (s *componentReleasesTestSuite) TestGetComponentRelease() {
 	})
 }
 
-func (s *componentReleasesTestSuite) TestGetComponentReleaseSteps() {
+func (s *releasesTestSuite) TestGetComponentReleaseSteps() {
 	release, err := s.apiClient.CreateComponentRelease(s.ctx, s.compID, &models.ServiceCreateComponentReleaseRequest{
 		BuildID: s.buildID,
 		Strategy: &models.ServiceCreateComponentReleaseRequestStrategy{

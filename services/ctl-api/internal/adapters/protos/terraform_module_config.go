@@ -1,4 +1,4 @@
-package components
+package protos
 
 import (
 	"fmt"
@@ -13,29 +13,29 @@ import (
 )
 
 const (
-	defaultHelmDeployTimeout time.Duration = time.Minute * 15
+	defaultTerraformModuleDeployTimeout time.Duration = time.Minute * 30
 )
 
-func (c *Adapter) toHelmValues(inputVals map[string]*string) *variablesv1.HelmValues {
-	vals := make([]*variablesv1.HelmValue, 0)
+func (c *Adapter) toTerraformVariables(inputVals map[string]*string) *variablesv1.TerraformVariables {
+	vals := make([]*variablesv1.TerraformVariable, 0)
 	for k, v := range inputVals {
 		if v == nil {
 			continue
 		}
 
-		vals = append(vals, &variablesv1.HelmValue{
+		vals = append(vals, &variablesv1.TerraformVariable{
 			Name:      k,
 			Value:     *v,
 			Sensitive: true,
 		})
 	}
 
-	return &variablesv1.HelmValues{
-		Values: vals,
+	return &variablesv1.TerraformVariables{
+		Variables: vals,
 	}
 }
 
-func (c *Adapter) ToHelmComponentConfig(cfg *app.HelmComponentConfig, connections []app.InstallDeploy, gitRef string) (*componentv1.Component, error) {
+func (c *Adapter) ToTerraformModuleComponentConfig(cfg *app.TerraformModuleComponentConfig, connections []app.InstallDeploy, gitRef string) (*componentv1.Component, error) {
 	vcsCfg, err := c.ToVCSConfig(gitRef, cfg.PublicGitVCSConfig, cfg.ConnectedGithubVCSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get vcs config: %w", err)
@@ -45,18 +45,19 @@ func (c *Adapter) ToHelmComponentConfig(cfg *app.HelmComponentConfig, connection
 		Id: cfg.ComponentConfigConnection.ComponentID,
 		BuildCfg: &buildv1.Config{
 			Timeout: durationpb.New(defaultBuildTimeout),
-			Cfg: &buildv1.Config_HelmChartCfg{
-				HelmChartCfg: &buildv1.HelmChartConfig{
-					VcsCfg:    vcsCfg,
-					ChartName: cfg.ChartName,
+			Cfg: &buildv1.Config_TerraformModuleCfg{
+				TerraformModuleCfg: &buildv1.TerraformModuleConfig{
+					VcsCfg: vcsCfg,
 				},
 			},
 		},
 		DeployCfg: &deployv1.Config{
-			Timeout: durationpb.New(defaultHelmDeployTimeout),
-			Cfg: &deployv1.Config_HelmChart{
-				HelmChart: &deployv1.HelmChartConfig{
-					Values: c.toHelmValues(cfg.Values),
+			Timeout: durationpb.New(defaultTerraformModuleDeployTimeout),
+			Cfg: &deployv1.Config_TerraformModuleConfig{
+				TerraformModuleConfig: &deployv1.TerraformModuleConfig{
+					TerraformVersion: cfg.Version,
+					Vars:             c.toTerraformVariables(cfg.Variables),
+					EnvVars:          c.toEnvVars(cfg.EnvVars),
 				},
 			},
 		},
