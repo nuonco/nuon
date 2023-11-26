@@ -97,7 +97,7 @@ func (s *service) createInstall(ctx context.Context, appID string, req *Installe
 			Region:     req.AWSAccount.Region,
 			IAMRoleARN: req.AWSAccount.IAMRoleARN,
 		},
-		SandboxReleaseID:  parentApp.SandboxRelease.ID,
+		//SandboxReleaseID:  parentApp.SandboxRelease.ID,
 		InstallComponents: installCmps,
 	}
 

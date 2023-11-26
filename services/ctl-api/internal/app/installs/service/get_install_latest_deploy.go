@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"gorm.io/gorm"
 )
 
@@ -53,7 +54,10 @@ func (s *service) getInstallLatestDeploy(ctx context.Context, installID string) 
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
 	if len(installCmp.InstallDeploys) != 1 {
-		return nil, fmt.Errorf("no deploy exists for install")
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("no deploy exists for install: %w", gorm.ErrRecordNotFound),
+			Description: "no errors exist for install yet",
+		}
 	}
 
 	return &installCmp.InstallDeploys[0], nil

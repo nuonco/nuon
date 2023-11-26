@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type UpdateBuildStatus struct {
@@ -25,7 +26,7 @@ func (a *Activities) UpdateBuildStatus(ctx context.Context, req UpdateBuildStatu
 		return fmt.Errorf("unable to update build: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
-		return fmt.Errorf("no build found: %s", req.BuildID)
+		return fmt.Errorf("no build found: %s %w", req.BuildID, gorm.ErrRecordNotFound)
 	}
 
 	return nil

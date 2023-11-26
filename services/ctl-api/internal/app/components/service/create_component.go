@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"gorm.io/gorm/clause"
 )
 
 type CreateComponentRequest struct {
@@ -74,14 +75,24 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 
 func (s *service) createComponent(ctx context.Context, appID string, req *CreateComponentRequest) (*app.Component, error) {
 	component := app.Component{
+		AppID:             appID,
 		Name:              req.Name,
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start for component",
 	}
+	res := s.db.WithContext(ctx).
+		Create(&component)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create component: %w", res.Error)
+	}
+
+	// fetch the parent app's installs and ensure each gets the new component
 	parentApp := app.App{}
-	err := s.db.WithContext(ctx).Preload("Installs").First(&parentApp, "id = ?", appID).Association("Components").Append(&component)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create component: %w", err)
+	res = s.db.WithContext(ctx).
+		Preload("Installs").
+		First(&parentApp, "id = ?", appID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create component: %w", res.Error)
 	}
 	if len(parentApp.Installs) < 1 {
 		return &component, nil
@@ -95,7 +106,9 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 			InstallID:   install.ID,
 		})
 	}
-	res := s.db.WithContext(ctx).Create(&installCmps)
+	res = s.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&installCmps)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install components: %w", res.Error)
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"gorm.io/gorm"
 )
 
 //	@BasePath	/v1/apps
@@ -50,7 +51,12 @@ func (s *service) getApps(ctx context.Context, orgID string) ([]*app.App, error)
 		ID: orgID,
 	}
 
-	err := s.db.WithContext(ctx).Preload("SandboxRelease").Model(&org).Association("Apps").Find(&apps)
+	err := s.db.WithContext(ctx).
+		Preload("AppSandbox").
+		Preload("AppSandbox.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_sandbox_configs.created_at DESC")
+		}).
+		Model(&org).Association("Apps").Find(&apps)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get org apps: %w", err)
 	}

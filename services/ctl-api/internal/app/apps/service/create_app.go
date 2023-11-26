@@ -9,13 +9,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
-	"gorm.io/gorm"
-)
-
-const (
-	// NOTE(jm): we eventually will allow an app to use a custom sandbox, but for now we just use aws-eks
-
-	defaultSandboxName string = "aws-eks"
 )
 
 type CreateAppRequest struct {
@@ -77,38 +70,21 @@ func (s *service) CreateApp(ctx *gin.Context) {
 }
 
 func (s *service) createApp(ctx context.Context, orgID string, req *CreateAppRequest) (*app.App, error) {
-	sandbox := app.Sandbox{
-		Name: defaultSandboxName,
-	}
-	res := s.db.WithContext(ctx).
-		Preload("Releases", func(db *gorm.DB) *gorm.DB {
-			return db.Order("sandbox_releases.created_at DESC").
-				Limit(1)
-		}).
-		First(&sandbox)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get sandbox: %w", res.Error)
-	}
-	if len(sandbox.Releases) < 1 {
-		return nil, fmt.Errorf("at least one release must be created for sandbox %s", defaultSandboxName)
-	}
-
 	app := app.App{
 		OrgID:             orgID,
 		Name:              req.Name,
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start and provision app",
-		SandboxReleaseID:  sandbox.Releases[0].ID,
+		AppSandbox: app.AppSandbox{
+			OrgID: orgID,
+		},
 	}
 
-	res = s.db.WithContext(ctx).
+	res := s.db.WithContext(ctx).
 		Create(&app)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create app: %w", res.Error)
 	}
 
-	// NOTE(jm): gorm does not support automatically pulling the ID from this field when set, as it will
-	// automatically try to save a copy of it
-	app.SandboxRelease = sandbox.Releases[0]
 	return &app, nil
 }

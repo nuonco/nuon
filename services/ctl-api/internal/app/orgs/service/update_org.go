@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"gorm.io/gorm"
 )
 
 type UpdateOrgRequest struct {
@@ -79,7 +80,7 @@ func (s *service) updateOrg(ctx context.Context, orgID string, req *UpdateOrgReq
 		return nil, fmt.Errorf("unable to update org: %w", res.Error)
 	}
 	if res.RowsAffected != 1 {
-		return nil, fmt.Errorf("org not found")
+		return nil, fmt.Errorf("org not found %w", gorm.ErrRecordNotFound)
 	}
 
 	return &org, nil

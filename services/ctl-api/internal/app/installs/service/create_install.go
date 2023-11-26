@@ -9,6 +9,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type CreateInstallRequest struct {
@@ -79,17 +82,22 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 
 func (s *service) createInstall(ctx context.Context, appID string, req *CreateInstallRequest) (*app.Install, error) {
 	parentApp := app.App{}
-	res := s.db.WithContext(ctx).Preload("Components").Preload("SandboxRelease").First(&parentApp, "id = ?", appID)
+	res := s.db.WithContext(ctx).Preload("Components").
+		Preload("AppSandbox").
+		Preload("AppSandbox.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_sandbox_configs.created_at DESC")
+		}).
+		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
-
-	installCmps := make([]app.InstallComponent, 0)
-	for _, cmp := range parentApp.Components {
-		installCmps = append(installCmps, app.InstallComponent{
-			ComponentID: cmp.ID,
-		})
+	if len(parentApp.AppSandbox.AppSandboxConfigs) < 1 {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("app does not have any sandbox configs"),
+			Description: "please make create at least one app sandbox config first",
+		}
 	}
+
 	install := app.Install{
 		AppID:             appID,
 		Name:              req.Name,
@@ -99,13 +107,33 @@ func (s *service) createInstall(ctx context.Context, appID string, req *CreateIn
 			Region:     req.AWSAccount.Region,
 			IAMRoleARN: req.AWSAccount.IAMRoleARN,
 		},
-		SandboxReleaseID:  parentApp.SandboxRelease.ID,
-		InstallComponents: installCmps,
+		AppSandboxConfigID: parentApp.AppSandbox.AppSandboxConfigs[0].ID,
 	}
 
 	res = s.db.WithContext(ctx).Create(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)
 	}
+
+	// NOTE(jm): we have to upsert the install components separately from the install, as they could conflict when a
+	// component is created at the same time
+	installCmps := make([]app.InstallComponent, 0)
+	for _, cmp := range parentApp.Components {
+		installCmps = append(installCmps, app.InstallComponent{
+			InstallID:   install.ID,
+			ComponentID: cmp.ID,
+		})
+	}
+	if len(installCmps) < 1 {
+		return &install, nil
+	}
+
+	res = s.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&installCmps)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create install components: %w", res.Error)
+	}
+
 	return &install, nil
 }

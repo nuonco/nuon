@@ -17,7 +17,7 @@ type vcsIntegrationTestSuite struct {
 	orgID string
 }
 
-func TestVCSsSuite(t *testing.T) {
+func TestVCSSuite(t *testing.T) {
 	t.Parallel()
 
 	integration := os.Getenv("INTEGRATION")
@@ -33,12 +33,7 @@ func (s *vcsIntegrationTestSuite) TearDownTest() {
 }
 
 func (s *vcsIntegrationTestSuite) SetupTest() {
-	// create an org
-	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
-	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), org)
-	s.apiClient.SetOrgID(org.ID)
+	org := s.createOrg()
 	s.orgID = org.ID
 }
 
@@ -89,5 +84,23 @@ func (s *vcsIntegrationTestSuite) TestGetConnection() {
 }
 
 func (s *vcsIntegrationTestSuite) TestGetAllConnectedRepos() {
-	s.T().Skip("skipping connected repos as it requires a live github install ID")
+	s.T().Run("returns all connected repos", func(t *testing.T) {
+		if s.githubInstallID == "" {
+			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
+			return
+		}
+
+		repos, err := s.apiClient.GetAllVCSConnectedRepos(s.ctx)
+		require.NoError(t, err)
+		require.NotEmpty(t, repos)
+
+		found := false
+		for _, repo := range repos {
+			if *repo.Name == "mono" {
+				found = true
+				break
+			}
+		}
+		require.True(t, found)
+	})
 }
