@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type RestartAppRequest struct{}
@@ -48,8 +49,10 @@ func (s *service) getApp(ctx context.Context, appID string) (*app.App, error) {
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Components").
-		Preload("SandboxRelease").
-		Preload("SandboxRelease").
+		Preload("AppSandbox").
+		Preload("AppSandbox.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_sandbox_configs.created_at DESC")
+		}).
 		Where("name = ?", appID).
 		Or("id = ?", appID).
 		First(&app)

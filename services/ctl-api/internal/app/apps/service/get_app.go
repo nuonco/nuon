@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"gorm.io/gorm"
 )
 
 //	@BasePath	/v1/apps
@@ -52,7 +53,14 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Components").
-		Preload("SandboxRelease").
+		Preload("AppSandbox").
+		Preload("AppSandbox.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_sandbox_configs.created_at DESC")
+		}).
+		Preload("AppSandbox.AppSandboxConfigs.PublicGitVCSConfig").
+		Preload("AppSandbox.AppSandboxConfigs.ConnectedGithubVCSConfig").
+		Preload("AppSandbox.AppSandboxConfigs.SandboxRelease").
+		Preload("AppSandbox.AppSandboxConfigs.SandboxRelease.Sandbox").
 		Where("name = ? AND org_id = ?", appID, orgID).
 		Or("id = ?", appID).
 		First(&app)

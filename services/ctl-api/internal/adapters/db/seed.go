@@ -37,7 +37,6 @@ func (a *AutoMigrate) createSandbox(ctx context.Context, sandboxName, version st
 	baseURL += filepath.Join(sandboxName, version) + "/"
 	sandboxRelease := app.SandboxRelease{
 		Version:                 version,
-		TerraformVersion:        "v1.5.3",
 		ProvisionPolicyURL:      baseURL + "provision.json",
 		TrustPolicyURL:          baseURL + "trust.json",
 		DeprovisionPolicyURL:    baseURL + "deprovision.json",

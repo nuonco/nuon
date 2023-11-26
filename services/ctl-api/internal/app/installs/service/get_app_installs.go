@@ -45,7 +45,7 @@ func (s *service) getAppInstalls(ctx context.Context, appID string) ([]app.Insta
 	currentApp := &app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("Installs").
-		Preload("Installs.SandboxRelease").
+		Preload("Installs.AppSandboxConfig").
 		Preload("Installs.AWSAccount").
 		First(&currentApp, "id = ?", appID)
 	if res.Error != nil {

@@ -56,7 +56,7 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetRequest) (*c
 		return nil, fmt.Errorf("unable to get build: %w", res.Error)
 	}
 
-	compCfg, err := a.components.FromBuild(&bld)
+	compCfg, err := a.protos.FromBuild(&bld)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert build to component config: %w", err)
 	}

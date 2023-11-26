@@ -8,7 +8,9 @@ import (
 
 	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"golang.org/x/oauth2"
+	"gorm.io/gorm"
 )
 
 type PublicGitVCSConfigRequest struct {
@@ -35,7 +37,10 @@ func (b *basicVCSConfigRequest) lookupVCSConnection(ctx context.Context,
 	owner, name string,
 	vcsConnections []app.VCSConnection) (string, error) {
 	if len(vcsConnections) < 1 {
-		return "", fmt.Errorf("no vcs connections on org")
+		return "", stderr.ErrUser{
+			Err:         fmt.Errorf("no vcs connections on org: %w", gorm.ErrRecordNotFound),
+			Description: "please create a vcs connection before proceeding",
+		}
 	}
 
 	for _, vcsConn := range vcsConnections {
@@ -67,7 +72,10 @@ func (b *basicVCSConfigRequest) lookupVCSConnection(ctx context.Context,
 		return vcsConn.ID, nil
 	}
 
-	return "", fmt.Errorf("no vcs connection found with access to %s/%s", owner, name)
+	return "", stderr.ErrUser{
+		Err:         fmt.Errorf("no vcs connection found with access to %s/%s", owner, name),
+		Description: "please make sure vcs connection has access to this repo",
+	}
 }
 
 func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, parentCmp *app.Component, ghClient *github.Client) (*app.ConnectedGithubVCSConfig, error) {
@@ -77,7 +85,10 @@ func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, pa
 
 	pieces := strings.SplitN(b.ConnectedGithubVCSConfig.Repo, "/", 2)
 	if len(pieces) != 2 {
-		return nil, fmt.Errorf("invalid repo, must be of the format <user-name>/<repo-name>")
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("invalid repo, must be of the format <user-name>/<repo-name>"),
+			Description: "please correct format and try again",
+		}
 	}
 
 	vcsConnID, err := b.lookupVCSConnection(ctx, ghClient, pieces[0], pieces[1], parentCmp.App.Org.VCSConnections)

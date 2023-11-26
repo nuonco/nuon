@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type CreateInstallDeployRequest struct {
@@ -44,7 +45,9 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 
 	// if the install component does not exist, create it.
 	if len(install.InstallComponents) != 1 {
-		err := a.db.WithContext(ctx).First(&install, "id = ?", req.InstallID).
+		err := a.db.WithContext(ctx).
+			Clauses(clause.OnConflict{DoNothing: true}).
+			First(&install, "id = ?", req.InstallID).
 			Association("InstallComponents").
 			Append(&app.InstallComponent{
 				ComponentID: componentID,

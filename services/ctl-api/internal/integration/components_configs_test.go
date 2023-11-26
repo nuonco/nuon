@@ -34,24 +34,9 @@ func (s *componentConfigsSuite) TearDownTest() {
 }
 
 func (s *componentConfigsSuite) SetupTest() {
-	// create an org
-	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
-	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), org)
-	s.apiClient.SetOrgID(org.ID)
+	org := s.createOrg()
 	s.orgID = org.ID
-
-	// add a vcs connection to the org
-	vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionRequest]()
-	_, err = s.apiClient.CreateVCSConnection(s.ctx, vcsReq)
-	require.Nil(s.T(), err)
-
-	// create an app
-	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
-	app, err := s.apiClient.CreateApp(s.ctx, appReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), app)
+	app := s.createApp(s.orgID)
 	s.appID = app.ID
 
 	// create a component
@@ -63,7 +48,7 @@ func (s *componentConfigsSuite) SetupTest() {
 }
 
 func (s *componentConfigsSuite) TestCreateDockerBuildComponentConfig() {
-	s.T().Run("success with connected github config", func(t *testing.T) {
+	s.T().Run("success with public git vcs config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig = nil
 
@@ -72,7 +57,12 @@ func (s *componentConfigsSuite) TestCreateDockerBuildComponentConfig() {
 		require.NotNil(t, cfg)
 	})
 
-	s.T().Run("success with public config", func(t *testing.T) {
+	s.T().Run("success with connected github vcs config", func(t *testing.T) {
+		if s.githubInstallID == "" {
+			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
+			return
+		}
+
 		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
@@ -90,6 +80,11 @@ func (s *componentConfigsSuite) TestCreateDockerBuildComponentConfig() {
 
 func (s *componentConfigsSuite) TestCreateTerraformModuleComponentConfig() {
 	s.T().Run("success with connected github config", func(t *testing.T) {
+		if s.githubInstallID == "" {
+			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
+			return
+		}
+
 		req := generics.GetFakeObj[*models.ServiceCreateTerraformModuleComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
@@ -116,6 +111,11 @@ func (s *componentConfigsSuite) TestCreateTerraformModuleComponentConfig() {
 
 func (s *componentConfigsSuite) TestCreateHelmComponentConfig() {
 	s.T().Run("success with connected github config", func(t *testing.T) {
+		if s.githubInstallID == "" {
+			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
+			return
+		}
+
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
@@ -143,15 +143,7 @@ func (s *componentConfigsSuite) TestCreateHelmComponentConfig() {
 }
 
 func (s *componentConfigsSuite) TestCreateExternalImageComponentConfig() {
-	s.T().Run("success with connected github config", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
-
-		cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
-		require.Nil(t, err)
-		require.NotNil(t, cfg)
-	})
-
-	s.T().Run("success with public config", func(t *testing.T) {
+	s.T().Run("success", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
 
 		cfg, err := s.apiClient.CreateExternalImageComponentConfig(s.ctx, s.compID, req)
@@ -169,15 +161,6 @@ func (s *componentConfigsSuite) TestCreateExternalImageComponentConfig() {
 func (s *componentConfigsSuite) TestCreateJobComponentConfig() {
 	s.T().Run("success", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateJobComponentConfigRequest]()
-		imageURL := "kennethreitz/httpbin"
-		req.ImageURL = &imageURL
-		tag := "latest"
-		req.Tag = &tag
-		req.EnvVars = map[string]string{
-			"FOO": "foo",
-			"BAR": "bar",
-		}
-
 		cfg, err := s.apiClient.CreateJobComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
 		require.NotNil(t, cfg)
@@ -192,6 +175,11 @@ func (s *componentConfigsSuite) TestCreateJobComponentConfig() {
 
 func (s *componentConfigsSuite) TestComponentConfigs() {
 	s.T().Run("successfully returns one component config", func(t *testing.T) {
+		if s.githubInstallID == "" {
+			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
+			return
+		}
+
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
@@ -206,6 +194,11 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 	})
 
 	s.T().Run("returns based on created at desc order", func(t *testing.T) {
+		if s.githubInstallID == "" {
+			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
+			return
+		}
+
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
@@ -222,6 +215,11 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 
 func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 	s.T().Run("success with helm", func(t *testing.T) {
+		if s.githubInstallID == "" {
+			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
+			return
+		}
+
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
@@ -236,6 +234,10 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 		require.Equal(t, cfg.ID, latestCfg.Helm.ID)
 	})
 	s.T().Run("success with terraform module", func(t *testing.T) {
+		if s.githubInstallID == "" {
+			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
+			return
+		}
 		req := generics.GetFakeObj[*models.ServiceCreateTerraformModuleComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
@@ -250,6 +252,10 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 		require.Equal(t, cfg.ID, latestCfg.TerraformModule.ID)
 	})
 	s.T().Run("success with docker build", func(t *testing.T) {
+		if s.githubInstallID == "" {
+			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
+			return
+		}
 		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 

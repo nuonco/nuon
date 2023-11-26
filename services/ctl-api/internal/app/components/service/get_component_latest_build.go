@@ -66,5 +66,5 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 		}
 	}
 
-	return nil, fmt.Errorf("no build found for component")
+	return nil, fmt.Errorf("no build found for component: %w", gorm.ErrRecordNotFound)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type App struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
+	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
@@ -17,18 +17,16 @@ type App struct {
 
 	Name string `json:"name" gorm:"index:idx_app_name,unique"`
 
-	OrgID      string      `json:"org_id" gorm:"index:idx_app_name,unique"`
-	Org        Org         `faker:"-" json:"-"`
-	Components []Component `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	Installs   []Install   `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
+	Org   Org    `faker:"-" json:"-"`
+
+	Components []Component    `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	Installs   []Install      `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	AppSandbox AppSandbox     `json:"app_sandbox" gorm:"constraint:OnDelete:CASCADE;"`
+	Installers []AppInstaller `gorm:"constraint:OnDelete:CASCADE;"`
 
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description"`
-
-	SandboxReleaseID string         `json:"-"`
-	SandboxRelease   SandboxRelease `json:"sandbox_release,omitempty"`
-
-	Installers []AppInstaller `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (a *App) BeforeCreate(tx *gorm.DB) error {

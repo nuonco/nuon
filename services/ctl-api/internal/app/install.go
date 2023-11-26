@@ -24,8 +24,8 @@ type Install struct {
 	Status            string `json:"status" gorm:"notnull"`
 	StatusDescription string `json:"status_description" gorm:"notnull"`
 
-	SandboxReleaseID string         `json:"-" gorm:"notnull"`
-	SandboxRelease   SandboxRelease `json:"sandbox_release"`
+	AppSandboxConfigID string           `json:"-"`
+	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config"`
 
 	InstallComponents []InstallComponent `json:"install_components,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	AWSAccount        AWSAccount         `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;"`

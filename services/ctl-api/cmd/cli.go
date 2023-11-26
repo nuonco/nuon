@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/components"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/metrics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/protos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/validator"
@@ -32,7 +32,7 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(db.New),
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
-		fx.Provide(components.New),
+		fx.Provide(protos.New),
 		fx.Provide(terraformcloud.NewTerraformCloud),
 		fx.Provide(terraformcloud.NewOrgsOutputs),
 		fx.Provide(waypoint.New),

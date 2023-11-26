@@ -7,10 +7,7 @@ resource "nuon_install" "east_1" {
   iam_role_arn = var.install_role_arn
 
   depends_on = [
-    nuon_docker_build_component.e2e,
-    nuon_helm_chart_component.e2e,
-    nuon_terraform_module_component.e2e,
-    nuon_container_image_component.e2e
+    nuon_app_sandbox.main,
   ]
 }
 
@@ -23,10 +20,7 @@ resource "nuon_install" "east_2" {
   iam_role_arn = var.install_role_arn
 
   depends_on = [
-    nuon_docker_build_component.e2e,
-    nuon_helm_chart_component.e2e,
-    nuon_terraform_module_component.e2e,
-    nuon_container_image_component.e2e
+    nuon_app_sandbox.main,
   ]
 }
 
@@ -39,9 +33,6 @@ resource "nuon_install" "west_2" {
   iam_role_arn = var.install_role_arn
 
   depends_on = [
-    nuon_docker_build_component.e2e,
-    nuon_helm_chart_component.e2e,
-    nuon_terraform_module_component.e2e,
-    nuon_container_image_component.e2e
+    nuon_app_sandbox.main,
   ]
 }
