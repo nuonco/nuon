@@ -31,7 +31,7 @@ module "quickstart_test_nuon" {
 
 module "nuonco" {
   source          = "./modules/repository"
-  name            = "nuonco"
+  name            = ".github"
   description     = "Run your app in your customer's cloud with nuon.co"
   required_checks = []
   is_public       = true
