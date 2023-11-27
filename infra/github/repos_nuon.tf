@@ -53,3 +53,18 @@ module "nuon-go" {
     github = github.nuon
   }
 }
+
+module "nuon-sandboxes" {
+  source          = "./modules/repository"
+  name            = "sandboxes"
+  description     = "Builtin sandboxes for Nuon apps."
+  required_checks = []
+  is_public       = true
+  owning_team_id                  = github_team.nuon.id
+  require_code_owner_reviews      = true
+  required_approving_review_count = 1
+
+  providers = {
+    github = github.nuon
+  }
+}
