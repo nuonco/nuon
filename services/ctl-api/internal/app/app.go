@@ -20,10 +20,14 @@ type App struct {
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org   Org    `faker:"-" json:"-"`
 
-	Components []Component    `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	Installs   []Install      `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	AppSandbox AppSandbox     `json:"app_sandbox" gorm:"constraint:OnDelete:CASCADE;"`
-	Installers []AppInstaller `gorm:"constraint:OnDelete:CASCADE;"`
+	Components      []Component      `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	Installs        []Install        `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	Installers      []AppInstaller   `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	AppInputConfigs []AppInputConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+
+	// TODO(jm): there is no reason to have an app_sandbox field, so let's remove it, and just follow the pattern
+	// above.
+	AppSandbox AppSandbox `json:"app_sandbox" gorm:"constraint:OnDelete:CASCADE;"`
 
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description"`
