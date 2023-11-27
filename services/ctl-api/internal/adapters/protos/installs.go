@@ -3,7 +3,6 @@ package protos
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -35,7 +34,7 @@ func (c *Adapter) toSandboxSettings(install *app.Install) (*installsv1.SandboxSe
 	return sandboxSettings, nil
 }
 
-func (c *Adapter) ToInstallProvisionRequest(install *app.Install) (*installsv1.ProvisionRequest, error) {
+func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) (*installsv1.ProvisionRequest, error) {
 	sandboxSettings, err := c.toSandboxSettings(install)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
@@ -45,7 +44,7 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install) (*installsv1.P
 		OrgId:     install.OrgID,
 		AppId:     install.AppID,
 		InstallId: install.ID,
-		RunId:     domains.NewRunID(),
+		RunId:     runID,
 		AccountSettings: &installsv1.AccountSettings{
 			Region:     install.AWSAccount.Region,
 			AwsRoleArn: install.AWSAccount.IAMRoleARN,
@@ -56,7 +55,7 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install) (*installsv1.P
 	return req, nil
 }
 
-func (c *Adapter) ToInstallDeprovisionRequest(install *app.Install) (*installsv1.DeprovisionRequest, error) {
+func (c *Adapter) ToInstallDeprovisionRequest(install *app.Install, runID string) (*installsv1.DeprovisionRequest, error) {
 	sandboxSettings, err := c.toSandboxSettings(install)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
@@ -66,7 +65,7 @@ func (c *Adapter) ToInstallDeprovisionRequest(install *app.Install) (*installsv1
 		OrgId:     install.OrgID,
 		AppId:     install.AppID,
 		InstallId: install.ID,
-		RunId:     domains.NewRunID(),
+		RunId:     runID,
 		AccountSettings: &installsv1.AccountSettings{
 			Region:     install.AWSAccount.Region,
 			AwsRoleArn: install.AWSAccount.IAMRoleARN,

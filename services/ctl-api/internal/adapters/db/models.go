@@ -33,6 +33,7 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		// installs
 		&app.AWSAccount{},
 		&app.Install{},
+		&app.InstallSandboxRun{},
 
 		// component configuration
 		&app.Component{},
