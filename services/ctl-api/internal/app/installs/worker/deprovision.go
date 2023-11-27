@@ -19,15 +19,26 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	req, err := w.protos.ToInstallDeprovisionRequest(&install)
+	var installRun app.InstallSandboxRun
+	if err := w.defaultExecGetActivity(ctx, w.acts.CreateSandboxRun, activities.CreateSandboxRunRequest{
+		InstallID: installID,
+		RunType:   app.SandboxRunTypeDeprovision,
+	}, &installRun); err != nil {
+		w.updateStatus(ctx, installID, StatusError, "unable to create sandbox run")
+		return fmt.Errorf("unable to create install: %w", err)
+	}
+
+	req, err := w.protos.ToInstallDeprovisionRequest(&install, installRun.ID)
 	if err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to create install deprovision request")
+		w.updateRunStatus(ctx, installRun.ID, StatusError, "unable to create install deprovision request")
 		return fmt.Errorf("unable to create install deprovision request: %w", err)
 	}
 
 	_, err = w.execDeprovisionWorkflow(ctx, dryRun, req)
 	if err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to deprovision install resources")
+		w.updateRunStatus(ctx, installRun.ID, StatusError, "unable to deprovision install resources")
 		return fmt.Errorf("unable to deprovision install: %w", err)
 	}
 
