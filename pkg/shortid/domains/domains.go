@@ -42,6 +42,10 @@ func NewDomainID() string {
 	return shortid.NewNanoID("dom")
 }
 
+func NewRunID() string {
+	return shortid.NewNanoID("run")
+}
+
 func NewInstallID() string {
 	return shortid.NewNanoID("inl")
 }

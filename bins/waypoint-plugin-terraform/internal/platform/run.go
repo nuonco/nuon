@@ -15,9 +15,17 @@ import (
 func (p *Platform) execRun(
 	ctx context.Context,
 	ji *component.JobInfo,
+	src *component.Source,
 	ui terminal.UI,
 	log hclog.Logger,
 ) (*terraformv1.Deployment, error) {
+	p.Path = src.Path
+	wkspace, err := p.GetWorkspace()
+	if err != nil {
+		return nil, fmt.Errorf("unable to create workspace from config: %w", err)
+	}
+	p.Workspace = wkspace
+
 	stdout, _, err := ui.OutputWriters()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get output writers: %w", err)

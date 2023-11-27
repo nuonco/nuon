@@ -3,6 +3,7 @@ package protos
 import (
 	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -11,6 +12,7 @@ func (c *Adapter) toSandboxSettings(install *app.Install) (*installsv1.SandboxSe
 	sandboxSettings := &installsv1.SandboxSettings{
 		TerraformVersion: install.AppSandboxConfig.TerraformVersion,
 		Vars:             c.toTerraformVariables(install.AppSandboxConfig.SandboxInputs),
+		RootDomain:       fmt.Sprintf("%s.%s", install.ID, c.orgsOutputs.PublicDomain.Domain),
 	}
 
 	if install.AppSandboxConfig.SandboxRelease != nil {
@@ -43,6 +45,7 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install) (*installsv1.P
 		OrgId:     install.OrgID,
 		AppId:     install.AppID,
 		InstallId: install.ID,
+		RunId:     domains.NewRunID(),
 		AccountSettings: &installsv1.AccountSettings{
 			Region:     install.AWSAccount.Region,
 			AwsRoleArn: install.AWSAccount.IAMRoleARN,
@@ -63,6 +66,7 @@ func (c *Adapter) ToInstallDeprovisionRequest(install *app.Install) (*installsv1
 		OrgId:     install.OrgID,
 		AppId:     install.AppID,
 		InstallId: install.ID,
+		RunId:     domains.NewRunID(),
 		AccountSettings: &installsv1.AccountSettings{
 			Region:     install.AWSAccount.Region,
 			AwsRoleArn: install.AWSAccount.IAMRoleARN,
