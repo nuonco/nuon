@@ -86,10 +86,15 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to create connected github vcs config: %w", err)
 	}
 
+	publicGitConfig, err := req.publicGitVCSConfig()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get public git config: %w", err)
+	}
+
 	appSandboxConfig := app.AppSandboxConfig{
 		AppSandboxID:             parentApp.AppSandbox.ID,
 		SandboxReleaseID:         req.SandboxReleaseID,
-		PublicGitVCSConfig:       req.publicGitVCSConfig(),
+		PublicGitVCSConfig:       publicGitConfig,
 		ConnectedGithubVCSConfig: githubVCSConfig,
 		SandboxInputs:            pgtype.Hstore(req.SandboxInputs),
 		TerraformVersion:         req.TerraformVersion,

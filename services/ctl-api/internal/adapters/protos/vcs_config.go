@@ -2,6 +2,7 @@ package protos
 
 import (
 	"fmt"
+	"strings"
 
 	vcsv1 "github.com/powertoolsdev/mono/pkg/types/components/vcs/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -28,8 +29,13 @@ func (c *Adapter) ToVCSConfig(gitRef string, publicCfg *app.PublicGitVCSConfig, 
 }
 
 func (c *Adapter) toPublicGitConfig(gitRef string, cfg *app.PublicGitVCSConfig) *vcsv1.PublicGitConfig {
+	repo := cfg.Repo
+	if !strings.HasPrefix(repo, "https://") {
+		repo = fmt.Sprintf("git@github.com:%s.git", repo)
+	}
+
 	return &vcsv1.PublicGitConfig{
-		Repo:      cfg.Repo,
+		Repo:      repo,
 		Directory: cfg.Directory,
 		GitRef:    gitRef,
 	}

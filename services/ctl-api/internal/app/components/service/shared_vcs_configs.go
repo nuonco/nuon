@@ -67,7 +67,10 @@ func (b *basicVCSConfigRequest) lookupVCSConnection(ctx context.Context,
 		}
 
 		if *repo.Visibility == "public" {
-			return "", fmt.Errorf("can not use a public repo with a connected_repo config")
+			return "", stderr.ErrUser{
+				Err:         fmt.Errorf("can not use a public repo with a connected_repo config"),
+				Description: "please use a `public_repo` block instead",
+			}
 		}
 		return vcsConn.ID, nil
 	}
@@ -106,19 +109,22 @@ func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context, pa
 	}, nil
 }
 
-func (b *basicVCSConfigRequest) publicGitVCSConfig() *app.PublicGitVCSConfig {
+func (b *basicVCSConfigRequest) publicGitVCSConfig() (*app.PublicGitVCSConfig, error) {
 	if b.PublicGitVCSConfig == nil {
-		return nil
+		return nil, nil
 	}
 
 	repo := b.PublicGitVCSConfig.Repo
-	if !strings.HasPrefix(repo, "git@") && !strings.HasPrefix(repo, "https://") {
-		repo = fmt.Sprintf("git@github.com:%s.git", repo)
+	if strings.HasPrefix("git@", repo) {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("invalid git clone url"),
+			Description: "Please use either a <owner>/<repo> format, or a full https:// public clone url",
+		}
 	}
 
 	return &app.PublicGitVCSConfig{
 		Repo:      repo,
 		Directory: b.PublicGitVCSConfig.Directory,
 		Branch:    b.PublicGitVCSConfig.Branch,
-	}
+	}, nil
 }
