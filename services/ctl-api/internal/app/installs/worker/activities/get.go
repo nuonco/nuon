@@ -16,8 +16,19 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Install, err
 	res := a.db.WithContext(ctx).
 		Preload("App").
 		Preload("App.Org").
-		Preload("AppSandboxConfig").
 		Preload("AWSAccount").
+		Preload("AppSandboxConfig").
+
+		// load sandbox
+		Preload("AppSandboxConfig.SandboxRelease").
+		Preload("AppSandboxConfig.SandboxRelease.Sandbox").
+
+		// load connected github
+		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
+		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
+
+		// load public git
+		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		First(&install, "id = ?", req.InstallID)
 
 	if res.Error != nil {

@@ -16,8 +16,9 @@ func (p *Platform) DestroyFunc() interface{} {
 func (p *Platform) destroy(
 	ctx context.Context,
 	ji *component.JobInfo,
+	src *component.Source,
 	ui terminal.UI,
 	log hclog.Logger,
 ) (*terraformv1.Deployment, error) {
-	return p.execRun(ctx, ji, ui, log)
+	return p.execRun(ctx, ji, src, ui, log)
 }

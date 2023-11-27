@@ -19,6 +19,10 @@ type TerraformDeployS3Archive struct {
 	Auth      credentials.Config `hcl:"auth" validate:"required"`
 }
 
+type TerraformDeployDirArchive struct {
+	Path string `hcl:"path" validate:"required"`
+}
+
 type TerraformDeployOCIArchive struct {
 	// NOTE(jm): we can not pull the archive information in from the registry plugin, as waypoint doesn't
 	// support that.
@@ -57,6 +61,7 @@ type TerraformDeploy struct {
 
 	OCIArchive *TerraformDeployOCIArchive `hcl:"oci_archive,block"`
 	S3Archive  *TerraformDeployS3Archive  `hcl:"s3_archive,block"`
+	DirArchive *TerraformDeployDirArchive `hcl:"local_archive,block"`
 
 	TerraformVersion string                 `hcl:"terraform_version"`
 	RunType          TerraformDeployRunType `hcl:"run_type"`
