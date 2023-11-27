@@ -6,18 +6,18 @@ module "customer-meroxa" {
   required_checks = []
 }
 
-module "customer-noteable" {
+module "customer-weaviate" {
   source = "./modules/repository"
 
-  name            = "customer-noteable"
-  description     = "Nuon configuration + demo for Noteable."
+  name            = "customer-weaviate"
+  description     = "Nuon configuration + demo for Weaviate."
   required_checks = []
 }
 
-module "customer-signoz" {
+module "customer-flipt" {
   source = "./modules/repository"
 
-  name            = "customer-signoz"
-  description     = "Nuon configuration + demo for Signox."
+  name            = "customer-flipt"
+  description     = "Nuon configuration + demo for Flipt."
   required_checks = []
 }

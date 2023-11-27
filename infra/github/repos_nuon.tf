@@ -68,3 +68,18 @@ module "nuon-sandboxes" {
     github = github.nuon
   }
 }
+
+module "nuon-nuonco" {
+  source          = "./modules/repository"
+  name            = "nuonco"
+  description     = "Create a fully managed version of your app that runs in your customer’s cloud account."
+  required_checks = []
+  is_public       = true
+  owning_team_id                  = github_team.nuon.id
+  require_code_owner_reviews      = true
+  required_approving_review_count = 1
+
+  providers = {
+    github = github.nuon
+  }
+}
