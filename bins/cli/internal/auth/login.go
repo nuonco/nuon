@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
@@ -13,7 +14,7 @@ var (
 	AuthAudience string
 )
 
-func (a *Service) Login(ctx context.Context) {
+func (a *Service) Login(ctx context.Context, cliCfg *config.Config) {
 	view := ui.NewGetView()
 
 	cfg, err := a.api.GetCLIConfig(ctx)
@@ -37,8 +38,9 @@ func (a *Service) Login(ctx context.Context) {
 		view.Error(fmt.Errorf("couldn't get OAuth tokens: %w", err))
 	}
 
-	// write access token in config
-	// TODO
+	// add access token to config and write to the file
+	cliCfg.Set("api_token", tokens.AccessToken)
+	cliCfg.WriteConfig()
 
 	// get user info from ID token
 	user := a.getUserInfo(tokens.IDToken)

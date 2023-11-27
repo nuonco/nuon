@@ -12,7 +12,7 @@ func (c *cli) loginCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: func(cmd *cobra.Command, args []string) {
 			svc := auth.New(c.apiClient)
-			svc.Login(cmd.Context())
+			svc.Login(cmd.Context(), c.cfg)
 		},
 	}
 
