@@ -6,10 +6,10 @@ resource "nuon_app_sandbox" "main" {
   app_id = nuon_app.main.id
   terraform_version = "v1.6.3"
 
-  connected_repo = {
-    repo = "powertoolsdev/mono"
+  public_repo = {
+    repo = "nuonco/.github"
     branch = "main"
-    directory = "sandboxes/aws-eks"
+    directory = "aws-eks"
   }
 
   input {
