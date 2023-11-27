@@ -129,13 +129,12 @@ func TestOrgComponentPath(t *testing.T) {
 func TestSandboxPath(t *testing.T) {
 	obj := generics.GetFakeObj[installation]()
 
-	prefix := InstallationPath(obj.OrgID, obj.AppID, obj.InstallID, obj.SandboxName, obj.SandboxVersion)
+	prefix := InstallationPath(obj.OrgID, obj.AppID, obj.InstallID, obj.RunID)
 	expectedKVs := [][2]string{
 		{"org", obj.OrgID},
 		{"app", obj.AppID},
 		{"install", obj.InstallID},
-		{"sandbox", obj.SandboxName},
-		{"version", obj.SandboxVersion},
+		{"run", obj.RunID},
 	}
 	for _, kv := range expectedKVs {
 		assert.Contains(t, prefix, fmt.Sprintf("%s=%s", kv[0], kv[1]))

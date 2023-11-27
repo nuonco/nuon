@@ -112,16 +112,10 @@ func TestDeprovision(t *testing.T) {
 			assert.Equal(t, req.OrgId, pr.GetSandbox().OrgId)
 			assert.Equal(t, req.AppId, pr.GetSandbox().AppId)
 			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
+			assert.Equal(t, req.RunId, pr.GetSandbox().RunId)
+			assert.Equal(t, req.SandboxSettings, pr.GetSandbox().SandboxSettings)
+			assert.Equal(t, req.AccountSettings, pr.GetSandbox().AccountSettings)
 			assert.Equal(t, planv1.SandboxInputType_SANDBOX_INPUT_TYPE_DEPROVISION, pr.GetSandbox().Type)
-
-			acctSettings := pr.GetSandbox().GetAws()
-			assert.Equal(t, req.AccountSettings.AwsAccountId, acctSettings.AccountId)
-			assert.Equal(t, req.AccountSettings.Region, acctSettings.Region)
-			assert.Equal(t, req.AccountSettings.AwsRoleArn, acctSettings.RoleArn)
-
-			sbxSettings := pr.GetSandbox().GetSandboxSettings()
-			assert.Equal(t, req.SandboxSettings.Name, sbxSettings.Name)
-			assert.Equal(t, req.SandboxSettings.Version, sbxSettings.Version)
 
 			return &planv1.CreatePlanResponse{Plan: planref}, nil
 		})

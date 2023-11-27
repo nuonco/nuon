@@ -22,7 +22,9 @@ type Platform struct {
 	v *validator.Validate
 
 	// internal fields
-	Cfg       configs.TerraformDeploy `validate:"required"`
-	Workspace workspace.Workspace     `validate:"required"`
-	Store     *file.Store             `validate:"required"`
+	Cfg   configs.TerraformDeploy `validate:"required"`
+	Store *file.Store             `validate:"required"`
+
+	Workspace workspace.Workspace
+	Path      string
 }

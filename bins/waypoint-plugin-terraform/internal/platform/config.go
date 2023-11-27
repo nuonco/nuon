@@ -26,12 +26,6 @@ func (p *Platform) ConfigSet(config interface{}) error {
 		return fmt.Errorf("unable to validate backend auth: %w", err)
 	}
 
-	wkspace, err := p.GetWorkspace()
-	if err != nil {
-		return fmt.Errorf("unable to create workspace from config: %w", err)
-	}
-	p.Workspace = wkspace
-
 	if err := p.v.Struct(p); err != nil {
 		return fmt.Errorf("unable to validate plugin: %w", err)
 	}
