@@ -61,12 +61,14 @@ func (b *basicVCSConfigRequest) lookupVCSConnection(ctx context.Context,
 		tc := oauth2.NewClient(ctx, ts)
 		client := github.NewClient(tc)
 
-		_, _, err = client.Repositories.Get(ctx, owner, name)
-		// TODO(jm): better parsing here
+		repo, _, err := client.Repositories.Get(ctx, owner, name)
 		if err != nil {
 			continue
 		}
 
+		if *repo.Visibility == "public" {
+			return "", fmt.Errorf("can not use a public repo with a connected_repo config")
+		}
 		return vcsConn.ID, nil
 	}
 
@@ -109,8 +111,13 @@ func (b *basicVCSConfigRequest) publicGitVCSConfig() *app.PublicGitVCSConfig {
 		return nil
 	}
 
+	repo := b.PublicGitVCSConfig.Repo
+	if !strings.HasPrefix(repo, "git@") && !strings.HasPrefix(repo, "https://") {
+		repo = fmt.Sprintf("git@github.com:%s.git", repo)
+	}
+
 	return &app.PublicGitVCSConfig{
-		Repo:      b.PublicGitVCSConfig.Repo,
+		Repo:      repo,
 		Directory: b.PublicGitVCSConfig.Directory,
 		Branch:    b.PublicGitVCSConfig.Branch,
 	}
