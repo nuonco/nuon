@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package executors.v1.plan.v1;
 
+import "installs/v1/account_settings.proto";
+import "installs/v1/sandbox_settings.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -20,17 +22,14 @@ message SandboxInput {
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];
+  string run_id = 4 [
+    (validate.rules).string.len = 26,
+    (tagger.tags) = "faker:\"shortID\""
+  ];
 
-  SandboxSettings sandbox_settings = 4;
-  string terraform_version = 5;
-  SandboxInputType type = 6;
-
-  oneof account_settings {
-    option (tagger.oneof_tags) = "faker:\"sandboxInputAccountSettings\"";
-    AWSSettings aws = 100;
-  }
-
-  string root_domain = 7 [(validate.rules).string.min_len = 1];
+  SandboxInputType type = 5;
+  installs.v1.SandboxSettings sandbox_settings = 6;
+  installs.v1.AccountSettings account_settings = 7;
 }
 
 enum SandboxInputType {
@@ -39,37 +38,4 @@ enum SandboxInputType {
   SANDBOX_INPUT_TYPE_DEPROVISION = 2;
   SANDBOX_INPUT_TYPE_PROVISION_PLAN = 3;
   SANDBOX_INPUT_TYPE_NOOP_BUILD = 4;
-}
-
-message AWSSettings {
-  string region = 1 [
-    (validate.rules).string = {
-      in: [
-        "us-west-2",
-        "us-west-1",
-        "us-east-2",
-        "us-east-1"
-      ]
-    },
-    (tagger.tags) = "faker:\"oneof: us-west-2\""
-  ];
-
-  string account_id = 2 [
-    (validate.rules).string.min_len = 12,
-    (tagger.tags) = "faker:\"len=12\""
-  ];
-
-  string role_arn = 3 [(tagger.tags) = "faker:\"len=20\""];
-}
-
-message SandboxSettings {
-  string name = 1 [
-    (validate.rules).string.min_len = 1,
-    (tagger.tags) = "faker:\"len=5\""
-  ];
-
-  string version = 2 [
-    (validate.rules).string.min_len = 1,
-    (tagger.tags) = "faker:\"len=5\""
-  ];
 }
