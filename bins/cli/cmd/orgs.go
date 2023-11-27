@@ -6,6 +6,8 @@ import (
 )
 
 func (c *cli) orgsCmd() *cobra.Command {
+	var id string
+
 	orgsCmd := &cobra.Command{
 		Use:               "orgs",
 		Short:             "Manage your organizations",
@@ -22,6 +24,31 @@ func (c *cli) orgsCmd() *cobra.Command {
 		},
 	}
 	orgsCmd.AddCommand(currentCmd)
+
+	setCurrentCmd := &cobra.Command{
+		Use:   "set-current",
+		Short: "Set current org",
+		Long:  "Set current org by org ID",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient)
+			svc.SetCurrent(cmd.Context(), id, c.cfg)
+		},
+	}
+	setCurrentCmd.Flags().StringVarP(&id, "org-id", "o", "", "The ID of the org you want to use")
+	setCurrentCmd.MarkFlagRequired("org-id")
+	orgsCmd.AddCommand(setCurrentCmd)
+
+	listCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List orgs",
+		Long:    "List all your orgs",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient)
+			svc.List(cmd.Context(), PrintJSON)
+		},
+	}
+	orgsCmd.AddCommand(listCmd)
 
 	listConntectedRepos := &cobra.Command{
 		Use:   "list-connected-repos",
