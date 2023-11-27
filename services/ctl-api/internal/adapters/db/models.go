@@ -23,6 +23,8 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		&app.App{},
 		&app.AppSandbox{},
 		&app.AppSandboxConfig{},
+		&app.AppInput{},
+		&app.AppInputConfig{},
 		&app.AppInstaller{},
 		&app.AppInstallerMetadata{},
 
@@ -33,6 +35,7 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		// installs
 		&app.AWSAccount{},
 		&app.Install{},
+		&app.InstallInputs{},
 		&app.InstallSandboxRun{},
 
 		// component configuration

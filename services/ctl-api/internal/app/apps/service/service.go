@@ -32,7 +32,6 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	// manage apps
 	api.POST("/v1/apps", s.CreateApp)
 	api.GET("/v1/apps", s.GetApps)
-
 	api.PATCH("/v1/apps/:app_id", s.UpdateApp)
 	api.GET("/v1/apps/:app_id", s.GetApp)
 	api.DELETE("/v1/apps/:app_id", s.DeleteApp)
@@ -41,6 +40,11 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/sandbox-config", s.CreateAppSandboxConfig)
 	api.GET("/v1/apps/:app_id/sandbox-latest-config", s.GetAppSandboxLatestConfig)
 	api.GET("/v1/apps/:app_id/sandbox-configs", s.GetAppSandboxConfigs)
+
+	// app input management
+	api.POST("/v1/apps/:app_id/input-config", s.CreateAppInputsConfig)
+	api.GET("/v1/apps/:app_id/input-latest-config", s.GetAppInputLatestConfig)
+	api.GET("/v1/apps/:app_id/input-configs", s.GetAppInputConfigs)
 
 	// installers
 	api.POST("/v1/apps/:app_id/installer", s.CreateAppInstaller)
@@ -57,6 +61,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/admin-restart", s.RestartApp)
 	api.POST("/v1/apps/:app_id/admin-update-sandbox", s.AdminUpdateSandbox)
 	api.POST("/v1/apps/admin-add-app-sandboxes", s.AdminAddAppSandboxes)
+	api.POST("/v1/apps/admin-add-app-inputs", s.AdminAddAppInputsConfigs)
 
 	api.GET("/v1/installers", s.GetAllAppInstallers)
 	return nil

@@ -4,7 +4,6 @@ data "nuon_builtin_sandbox" "main" {
 
 resource "nuon_app_sandbox" "main" {
   app_id = nuon_app.main.id
-  builtin_sandbox_release_id = data.nuon_builtin_sandbox.main.sandbox_release.id
   terraform_version = "v1.6.3"
 
   connected_repo = {
