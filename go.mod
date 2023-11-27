@@ -12,6 +12,7 @@ replace github.com/spf13/viper v1.4.0 => github.com/spf13/viper v1.7.1
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/DataDog/datadog-go/v5 v5.3.0
+	github.com/Khan/genqlient v0.6.0
 	github.com/auth0/go-jwt-middleware/v2 v2.1.0
 	github.com/aws/aws-sdk-go v1.44.229
 	github.com/aws/aws-sdk-go-v2 v1.21.1
@@ -35,6 +36,11 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.0.2
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-faker/faker/v4 v4.1.0
+	github.com/go-openapi/errors v0.20.4
+	github.com/go-openapi/runtime v0.26.0
+	github.com/go-openapi/strfmt v0.21.7
+	github.com/go-openapi/swag v0.22.4
+	github.com/go-openapi/validate v0.22.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/go-playground/validator/v10 v10.15.5
 	github.com/go-swagger/go-swagger v0.30.5
@@ -66,6 +72,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/opencontainers/image-spec v1.1.0-rc2
+	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1
 	github.com/shurcooL/githubv4 v0.0.0-20230704064427-599ae7bbf278
 	github.com/spf13/cobra v1.7.1-0.20230908172906-0c72800b8dba
@@ -119,11 +126,6 @@ require (
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	github.com/connesc/cipherio v0.2.1 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/go-openapi/errors v0.20.4 // indirect
-	github.com/go-openapi/runtime v0.26.0 // indirect
-	github.com/go-openapi/strfmt v0.21.7 // indirect
-	github.com/go-openapi/swag v0.22.4 // indirect
-	github.com/go-openapi/validate v0.22.1 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.4 // indirect
@@ -135,6 +137,7 @@ require (
 	github.com/shurcooL/graphql v0.0.0-20230722043721-ed46e5a46466 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.1 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/net v0.17.0 // indirect
 )
@@ -228,7 +231,7 @@ require (
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
