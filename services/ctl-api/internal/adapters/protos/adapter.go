@@ -3,14 +3,19 @@ package protos
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
 )
 
 type Adapter struct {
-	cfg *internal.Config
+	cfg         *internal.Config
+	orgsOutputs *terraformcloud.OrgsOutputs
 }
 
-func New(v *validator.Validate, cfg *internal.Config) (*Adapter, error) {
+func New(v *validator.Validate,
+	cfg *internal.Config,
+	orgsOutputs *terraformcloud.OrgsOutputs) (*Adapter, error) {
 	return &Adapter{
-		cfg: cfg,
+		orgsOutputs: orgsOutputs,
+		cfg:         cfg,
 	}, nil
 }

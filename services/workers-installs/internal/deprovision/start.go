@@ -11,8 +11,6 @@ import (
 
 const startNotificationTemplate string = `:construction: _started deprovisioning sandbox_ :construction:
 • *s3-path*: %s
-• *sandbox-name*: _%s_
-• *sandbox-version*: _%s_
 • *nuon-id*: _%s_
 `
 
@@ -53,8 +51,6 @@ func (s *starterImpl) sendStartNotification(ctx context.Context, req StartReques
 	s3Prefix := fmt.Sprintf("s3://%s/%s", req.InstallationsBucket, prefix.InstallPath(dr.OrgId, dr.AppId, dr.InstallId))
 	notif := fmt.Sprintf(startNotificationTemplate,
 		s3Prefix,
-		dr.SandboxSettings.Name,
-		dr.SandboxSettings.Version,
 		dr.InstallId)
 
 	return sender.Send(ctx, notif)
