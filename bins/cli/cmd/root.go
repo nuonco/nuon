@@ -29,6 +29,7 @@ func (c *cli) rootCmd() *cobra.Command {
 		c.releasesCmd(),
 		c.orgsCmd(),
 		c.versionCmd(),
+		c.loginCmd(),
 	}
 	for _, cmd := range cmds {
 		rootCmd.AddCommand(cmd)
