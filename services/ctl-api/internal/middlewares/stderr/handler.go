@@ -79,6 +79,15 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		if errors.Is(err, gorm.ErrForeignKeyViolated) {
+			c.JSON(http.StatusBadRequest, ErrResponse{
+				Error:       err.Error(),
+				UserError:   true,
+				Description: "invalid foreign key - usually from using an invalid parent object ID",
+			})
+			return
+		}
+
 		// validation errors for any request inputs
 		var vErr validator.ValidationErrors
 		if errors.As(err, &vErr) {
