@@ -3,9 +3,11 @@ package platform
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
+	dirarchive "github.com/powertoolsdev/mono/pkg/terraform/archive/dir"
 	ociarchive "github.com/powertoolsdev/mono/pkg/terraform/archive/oci"
 	s3archive "github.com/powertoolsdev/mono/pkg/terraform/archive/s3"
 	s3backend "github.com/powertoolsdev/mono/pkg/terraform/backend/s3"
@@ -43,6 +45,14 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 		)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create archive: %w", err)
+		}
+	} else if p.Cfg.DirArchive != nil {
+		var err error
+		arch, err = dirarchive.New(p.v,
+			dirarchive.WithPath(filepath.Join(p.Path, p.Cfg.DirArchive.Path)),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create local archive: %w", err)
 		}
 	}
 

@@ -216,30 +216,27 @@ func (s installationStatic) toPath() string {
 }
 
 type installation struct {
-	OrgID          string
-	AppID          string
-	InstallID      string
-	SandboxName    string
-	SandboxVersion string
+	OrgID     string
+	AppID     string
+	InstallID string
+	RunID     string
 }
 
-func InstallationPath(orgID, appID, installID, sandboxName, sandboxVersion string) string {
+func InstallationPath(orgID, appID, installID, runID string) string {
 	return installation{
-		OrgID:          orgID,
-		AppID:          appID,
-		InstallID:      installID,
-		SandboxName:    sandboxName,
-		SandboxVersion: sandboxVersion,
+		OrgID:     orgID,
+		AppID:     appID,
+		InstallID: installID,
+		RunID:     runID,
 	}.toPath()
 }
 
 func (s installation) toPath() string {
-	return fmt.Sprintf("org=%s/app=%s/install=%s/sandbox=%s/version=%s",
+	return fmt.Sprintf("org=%s/app=%s/install=%s/run=%s",
 		s.OrgID,
 		s.AppID,
 		s.InstallID,
-		s.SandboxName,
-		s.SandboxVersion,
+		s.RunID,
 	)
 }
 

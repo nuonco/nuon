@@ -23,8 +23,6 @@ type notifierImpl struct {
 
 const errorNotificationTemplate string = `:rotating_light: _error provisioning sandbox_ :rotating_light:
 • *s3-path*: s3://%s/%s
-• *sandbox-name*: _%s_
-• *sandbox-version*: _%s_
 • *nuon-id*: _%s_
 • *error*: _%s_
 `
@@ -35,8 +33,6 @@ func (n *notifierImpl) sendErrorNotification(ctx context.Context, bucket string,
 	notif := fmt.Sprintf(errorNotificationTemplate,
 		bucket,
 		prefix,
-		req.SandboxSettings.Name,
-		req.SandboxSettings.Version,
 		req.InstallId,
 		errMsg)
 
@@ -45,8 +41,6 @@ func (n *notifierImpl) sendErrorNotification(ctx context.Context, bucket string,
 
 const successNotificationTemplate string = `:white_check_mark: _successfully provisioned sandbox_ :white_check_mark:
 • *s3-path*: s3://%s/%s
-• *sandbox-name*: _%s_
-• *sandbox-version*: _%s_
 • *nuon-id*: _%s_
 • *runner-id*: _%s_
 • *org-id*: _%s_
@@ -57,8 +51,6 @@ func (n *notifierImpl) sendSuccessNotification(ctx context.Context, bucket strin
 	notif := fmt.Sprintf(successNotificationTemplate,
 		bucket,
 		s3Prefix,
-		req.SandboxSettings.Name,
-		req.SandboxSettings.Version,
 		req.InstallId,
 		req.InstallId,
 		req.OrgId)
@@ -68,8 +60,6 @@ func (n *notifierImpl) sendSuccessNotification(ctx context.Context, bucket strin
 
 const startNotificationTemplate = `:package: _started provisioning sandbox_ :package:
 • *s3-path*: s3://%s/%s
-• *sandbox-name*: _%s_
-• *sandbox-version*: _%s_
 • *role*: _%s_
 • *nuon-id*: _%s_
 `
@@ -79,8 +69,6 @@ func (n *notifierImpl) sendStartNotification(ctx context.Context, bucket string,
 	prefix := prefix.InstallPath(req.OrgId, req.AppId, req.InstallId)
 
 	msg := fmt.Sprintf(startNotificationTemplate, bucket, prefix,
-		req.SandboxSettings.Name,
-		req.SandboxSettings.Version,
 		req.AccountSettings.AwsRoleArn,
 		req.InstallId,
 	)

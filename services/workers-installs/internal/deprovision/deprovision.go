@@ -14,23 +14,13 @@ func (w wkflow) createPlanRequest(runTyp planv1.SandboxInputType, req *installsv
 	return &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Sandbox{
 			Sandbox: &planv1.SandboxInput{
-				OrgId:     req.OrgId,
-				AppId:     req.AppId,
-				InstallId: req.InstallId,
-				SandboxSettings: &planv1.SandboxSettings{
-					Name:    req.SandboxSettings.Name,
-					Version: req.SandboxSettings.Version,
-				},
-				TerraformVersion: req.SandboxSettings.TerraformVersion,
-				Type:             planv1.SandboxInputType_SANDBOX_INPUT_TYPE_DEPROVISION,
-				AccountSettings: &planv1.SandboxInput_Aws{
-					Aws: &planv1.AWSSettings{
-						Region:    req.AccountSettings.Region,
-						AccountId: req.AccountSettings.AwsAccountId,
-						RoleArn:   req.AccountSettings.AwsRoleArn,
-					},
-				},
-				RootDomain: fmt.Sprintf("%s.%s", req.InstallId, w.cfg.PublicDomain),
+				OrgId:           req.OrgId,
+				AppId:           req.AppId,
+				InstallId:       req.InstallId,
+				RunId:           req.RunId,
+				Type:            planv1.SandboxInputType_SANDBOX_INPUT_TYPE_DEPROVISION,
+				AccountSettings: req.AccountSettings,
+				SandboxSettings: req.SandboxSettings,
 			},
 		},
 	}

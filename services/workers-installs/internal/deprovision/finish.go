@@ -11,15 +11,11 @@ import (
 
 const successNotificationTemplate string = `:white_check_mark: _successfully deprovisioned sandbox_ :white_check_mark:
 • *s3-path*: %s
-• *sandbox-name*: _%s_
-• *sandbox-version*: _%s_
 • *nuon-id*: _%s_
 `
 
 const errorNotificationTemplate string = `:rotating_light: _error deprovisioning sandbox_ :rotating_light:
 • *s3-path*: %s
-• *sandbox-name*: _%s_
-• *sandbox-version*: _%s_
 • *nuon-id*: _%s_
 • *error-step*: _%s_
 
@@ -72,8 +68,6 @@ func (s *finisherImpl) sendErrorNotification(ctx context.Context, req FinishRequ
 	s3Prefix := fmt.Sprintf("s3://%s/%s", req.InstallationsBucket, prefix.InstallPath(dr.OrgId, dr.AppId, dr.InstallId))
 	notif := fmt.Sprintf(errorNotificationTemplate,
 		s3Prefix,
-		dr.SandboxSettings.Name,
-		dr.SandboxSettings.Version,
 		dr.InstallId,
 		req.ErrorStep,
 		req.ErrorMessage)
@@ -86,8 +80,6 @@ func (s *finisherImpl) sendSuccessNotification(ctx context.Context, req FinishRe
 	s3Prefix := fmt.Sprintf("s3://%s/%s", req.InstallationsBucket, prefix.InstallPath(dr.OrgId, dr.AppId, dr.InstallId))
 	notif := fmt.Sprintf(successNotificationTemplate,
 		s3Prefix,
-		dr.SandboxSettings.Name,
-		dr.SandboxSettings.Version,
 		dr.InstallId)
 
 	return sender.Send(ctx, notif)

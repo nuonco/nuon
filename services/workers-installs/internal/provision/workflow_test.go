@@ -142,15 +142,9 @@ func TestProvision(t *testing.T) {
 			assert.Equal(t, req.OrgId, pr.GetSandbox().OrgId)
 			assert.Equal(t, req.AppId, pr.GetSandbox().AppId)
 			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
-
-			acctSettings := pr.GetSandbox().GetAws()
-			assert.Equal(t, req.AccountSettings.AwsAccountId, acctSettings.AccountId)
-			assert.Equal(t, req.AccountSettings.Region, acctSettings.Region)
-			assert.Equal(t, req.AccountSettings.AwsRoleArn, acctSettings.RoleArn)
-
-			sbxSettings := pr.GetSandbox().GetSandboxSettings()
-			assert.Equal(t, req.SandboxSettings.Name, sbxSettings.Name)
-			assert.Equal(t, req.SandboxSettings.Version, sbxSettings.Version)
+			assert.Equal(t, req.RunId, pr.GetSandbox().RunId)
+			assert.Equal(t, req.SandboxSettings, pr.GetSandbox().SandboxSettings)
+			assert.Equal(t, req.AccountSettings, pr.GetSandbox().AccountSettings)
 
 			return &planv1.CreatePlanResponse{Plan: planref}, nil
 		})
@@ -257,15 +251,8 @@ func TestProvision_plan_only(t *testing.T) {
 			assert.Equal(t, req.OrgId, pr.GetSandbox().OrgId)
 			assert.Equal(t, req.AppId, pr.GetSandbox().AppId)
 			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
-
-			acctSettings := pr.GetSandbox().GetAws()
-			assert.Equal(t, req.AccountSettings.AwsAccountId, acctSettings.AccountId)
-			assert.Equal(t, req.AccountSettings.Region, acctSettings.Region)
-			assert.Equal(t, req.AccountSettings.AwsRoleArn, acctSettings.RoleArn)
-
-			sbxSettings := pr.GetSandbox().GetSandboxSettings()
-			assert.Equal(t, req.SandboxSettings.Name, sbxSettings.Name)
-			assert.Equal(t, req.SandboxSettings.Version, sbxSettings.Version)
+			assert.Equal(t, req.SandboxSettings, pr.GetSandbox().SandboxSettings)
+			assert.Equal(t, req.AccountSettings, pr.GetSandbox().AccountSettings)
 
 			return &planv1.CreatePlanResponse{Plan: planref}, nil
 		})
