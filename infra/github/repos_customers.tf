@@ -1,23 +1,23 @@
-module "customer-meroxa" {
-  source = "./modules/repository"
+#module "customer-meroxa" {
+  #source = "./modules/repository"
 
-  name            = "customer-meroxa"
-  description     = "Nuon configuration + demo for Meroxa."
-  required_checks = []
-}
+  #name            = "customer-meroxa"
+  #description     = "Nuon configuration + demo for Meroxa."
+  #required_checks = []
+#}
 
-module "customer-weaviate" {
-  source = "./modules/repository"
+#module "customer-weaviate" {
+  #source = "./modules/repository"
 
-  name            = "customer-weaviate"
-  description     = "Nuon configuration + demo for Weaviate."
-  required_checks = []
-}
+  #name            = "customer-weaviate"
+  #description     = "Nuon configuration + demo for Weaviate."
+  #required_checks = []
+#}
 
-module "customer-flipt" {
-  source = "./modules/repository"
+#module "customer-flipt" {
+  #source = "./modules/repository"
 
-  name            = "customer-flipt"
-  description     = "Nuon configuration + demo for Flipt."
-  required_checks = []
-}
+  #name            = "customer-flipt"
+  #description     = "Nuon configuration + demo for Flipt."
+  #required_checks = []
+#}
