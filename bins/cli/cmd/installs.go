@@ -156,5 +156,18 @@ func (c *cli) installsCmd() *cobra.Command {
 	listDeploysCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(listDeploysCmd)
 
+	sandboxRunsCmd := &cobra.Command{
+		Use:   "sandbox-runs",
+		Short: "View sandbox runs",
+		Long:  "View sandbox runs by install ID",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient)
+			svc.SandboxRuns(cmd.Context(), id, PrintJSON)
+		},
+	}
+	sandboxRunsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
+	sandboxRunsCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(sandboxRunsCmd)
+
 	return installsCmds
 }
