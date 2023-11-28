@@ -64,11 +64,9 @@ func (s *service) getComponentLatestConfig(ctx *gin.Context, cmpID string) (*app
 		Preload("ComponentConfigs.DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigs.DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-		Preload("ComponentConfigs.DockerBuildComponentConfig.BasicDeployConfig").
 
 		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
-		Preload("ComponentConfigs.ExternalImageComponentConfig.BasicDeployConfig").
 
 		// preload all job configs
 		Preload("ComponentConfigs.JobComponentConfig").
