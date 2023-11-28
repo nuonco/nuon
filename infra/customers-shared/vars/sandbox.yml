@@ -69,8 +69,8 @@ apps:
       description: The fastest way to develop effective software.
       name: Retool
     urls:
-      documentation:  https://docs.retool.com/
-      logo:  https://logo.clearbit.com/retool.com?size=400
+      documentation: https://docs.retool.com/
+      logo: https://logo.clearbit.com/retool.com?size=400
       github: https://github.com/tryretool
       community: https://community.retool.com/
       homepage: https://retool.com/
@@ -84,7 +84,7 @@ apps:
       description: ETL for LLMs
       name: Unstructured
     urls:
-      documentation:  https://unstructured-io.github.io/unstructured/
+      documentation: https://unstructured-io.github.io/unstructured/
       logo: https://unstructured-io.github.io/unstructured/_static/images/logo-dark-mode.svg
       github: https://github.com/Unstructured-IO/unstructured
       community: https://join.slack.com/t/unstructuredw-kbe4326/shared_invite/zt-23kciff0y-bvzXxJkgtbXe5POo_rxMkw
@@ -100,7 +100,7 @@ apps:
       description: The only tool you need to move data
       name: Airbyte
     urls:
-      documentation:  https://docs.airbyte.com/
+      documentation: https://docs.airbyte.com/
       logo: https://docs.airbyte.com/img/logo-dark.png
       github: https://github.com/airbytehq/airbyte
       community: https://slack.airbyte.com/
@@ -115,9 +115,39 @@ apps:
       description: ClickHouse is the fastest and most resource efficient open-source database for real-time apps and analytics.
       name: ClickHouse
     urls:
-      documentation:  https://clickhouse.com/docs/en/intro
+      documentation: https://clickhouse.com/docs/en/intro
       logo: https://upload.wikimedia.org/wikipedia/commons/0/0e/Clickhouse.png
       github: https://github.com/clickhouse
       community: https://clickhousedb.slack.com/join/shared_invite/zt-23y85sfck-crUbdd4RupnjOBxfFIQv5w#/shared-invite/email
-      homepage:  https://clickhouse.com
+      homepage: https://clickhouse.com
       demo: https://www.youtube.com/embed/FtoWGT7kS-c
+
+  - name: weaviate
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
+      slug: weaviate-sandbox
+      description: The AI Native Vector Database
+      name: Weaviate
+    urls:
+      documentation: https://weaviate.io/developers/weaviate
+      logo: https://weaviate.io/img/site/weaviate-nav-logo-light.svg
+      github: https://github.com/weaviate/weaviate
+      community: https://forum.weaviate.io/
+      homepage: https://weaviate.io/
+      demo: https://www.youtube.com/embed/VAxrREiugxQ
+
+  - name: meroxa
+    installs: []
+    installer:
+      slug: meroxa
+      description: The leading developer experience layer for streaming data.
+      name: Meroxa
+    urls:
+      documentation: https://docs.meroxa.com/
+      logo: https://docs.meroxa.com/images/meroxa-logo.svg
+      github: https://github.com/meroxa
+      community: ""
+      homepage: https://meroxa.com
+      demo: https://www.youtube.com/embed/KogwX5VI-TY?si=KE5fgyGA68sjFUOd

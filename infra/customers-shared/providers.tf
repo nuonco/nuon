@@ -4,6 +4,6 @@ provider "nuon" {
 }
 
 provider "nuon" {
-  alias = "real"
+  alias  = "real"
   org_id = var.org_id
 }
