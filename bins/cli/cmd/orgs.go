@@ -36,6 +36,17 @@ func (c *cli) orgsCmd() *cobra.Command {
 	}
 	orgsCmd.AddCommand(apiTokenCmd)
 
+	idCmd := &cobra.Command{
+		Use:   "id",
+		Short: "Get current org id",
+		Long:  "Get id for current org",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient, c.cfg)
+			svc.ID(cmd.Context(), PrintJSON)
+		},
+	}
+	orgsCmd.AddCommand(idCmd)
+
 	setCurrentCmd := &cobra.Command{
 		Use:   "set-current",
 		Short: "Set current org",
