@@ -38,12 +38,10 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetRequest) (*c
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig.ConnectedGithubVCSConfig").
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-		Preload("ComponentConfigConnection.DockerBuildComponentConfig.BasicDeployConfig").
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig.ComponentConfigConnection").
 
 		// preload all external image configs
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
-		Preload("ComponentConfigConnection.ExternalImageComponentConfig.BasicDeployConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.ComponentConfigConnection").
 
 		// preload all job configs

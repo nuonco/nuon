@@ -6,6 +6,7 @@ import (
 
 	buildv1 "github.com/powertoolsdev/mono/pkg/types/components/build/v1"
 	componentv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
+	deployv1 "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1"
 	variablesv1 "github.com/powertoolsdev/mono/pkg/types/components/variables/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -55,7 +56,12 @@ func (c *Adapter) ToDockerBuildConfig(cfg *app.DockerBuildComponentConfig, conne
 				},
 			},
 		},
-		DeployCfg:   c.toBasicDeployConfig(cfg.SyncOnly, cfg.BasicDeployConfig),
+		DeployCfg: &deployv1.Config{
+			Timeout: durationpb.New(defaultDeployTimeout),
+			Cfg: &deployv1.Config_Noop{
+				Noop: &deployv1.NoopConfig{},
+			},
+		},
 		Connections: c.toConnections(connections),
 	}, nil
 }

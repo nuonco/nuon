@@ -48,7 +48,6 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		&app.ExternalImageComponentConfig{},
 		&app.ConnectedGithubVCSConfig{},
 		&app.PublicGitVCSConfig{},
-		&app.BasicDeployConfig{},
 		&app.AWSECRImageConfig{},
 
 		// component management

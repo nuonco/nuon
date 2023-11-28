@@ -13,10 +13,8 @@ import (
 
 type CreateDockerBuildComponentConfigRequest struct {
 	basicVCSConfigRequest
-	BasicDeployConfig *basicDeployConfigRequest `json:"basic_deploy_config" validate:"required_unless=SyncOnly true"`
 
-	SyncOnly   bool               `json:"sync_only"`
-	Dockerfile string             `json:"dockerfile"`
+	Dockerfile string             `json:"dockerfile" validate:"required"`
 	Target     string             `json:"target"`
 	BuildArgs  []string           `json:"build_args"`
 	EnvVars    map[string]*string `json:"env_vars"`
@@ -92,9 +90,6 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 	cfg := app.DockerBuildComponentConfig{
 		PublicGitVCSConfig:       publicGitVCSConfig,
 		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
-
-		SyncOnly:          req.SyncOnly,
-		BasicDeployConfig: req.BasicDeployConfig.getBasicDeployConfig(),
 
 		Dockerfile: req.Dockerfile,
 		Target:     req.Target,
