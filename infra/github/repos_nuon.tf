@@ -11,6 +11,9 @@ module "quickstart-nuon" {
   }
 }
 
+# This had to start as a fork of nuonco/quickstart, so we could test
+# using the quickstart in the same way a vendor would.
+# Leaving this here as a record of how this repo was created.
 import {
   to = module.quickstart_test_nuon.github_repository.main
   id = "quickstart-test"
