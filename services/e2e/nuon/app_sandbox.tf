@@ -7,7 +7,7 @@ resource "nuon_app_sandbox" "main" {
   terraform_version = "v1.6.3"
 
   public_repo = {
-    repo = "nuonco/.github"
+    repo = "nuonco/sandboxes"
     branch = "main"
     directory = "aws-eks"
   }
