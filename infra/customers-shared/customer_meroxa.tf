@@ -1,13 +1,13 @@
 resource "nuon_app_input" "meroxa" {
   provider = nuon.sandbox
-  app_id     = nuon_app.sandbox["meroxa"].id
+  app_id   = nuon_app.sandbox["meroxa"].id
 
   // NOTE: this can also just be a secret input, if needed - where a customer provides the secret directly, if desired.
   input {
     name        = "secret_role_arn"
     required    = true
     description = "ARN for the secret that is placed into AWS SM"
-    default = ""
+    default     = ""
   }
 
   input {
@@ -15,19 +15,6 @@ resource "nuon_app_input" "meroxa" {
     default     = "20Gi"
     required    = false
     description = "description"
-  }
-}
-
-resource "nuon_app_sandbox" "meroxa" {
-  provider = nuon.sandbox
-
-  app_id     = nuon_app.sandbox["meroxa"].id
-  terraform_version = "v1.6.3"
-
-  public_repo = {
-    repo = "nuonco/sandboxes"
-    branch = "main"
-    directory = "aws-eks"
   }
 }
 

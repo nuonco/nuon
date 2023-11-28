@@ -24,6 +24,20 @@ resource "nuon_app" "real" {
   depends_on = [nuon_app.sandbox]
 }
 
+resource "nuon_app_sandbox" "real" {
+  for_each = { for app in local.real.apps : app.name => app }
+
+  provider = nuon.real
+  app_id   = nuon_app.real[each.value.name].id
+
+  terraform_version = "v1.6.3"
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-eks"
+  }
+}
+
 resource "nuon_app_installer" "real" {
   provider = nuon.real
   for_each = { for app in local.real.apps : app.name => app }

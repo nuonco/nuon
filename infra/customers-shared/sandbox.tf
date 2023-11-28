@@ -23,6 +23,20 @@ resource "nuon_app" "sandbox" {
   name     = each.value.name
 }
 
+resource "nuon_app_sandbox" "sandbox" {
+  for_each = { for app in local.sandbox.apps : app.name => app }
+
+  provider = nuon.sandbox
+  app_id   = nuon_app.sandbox[each.value.name].id
+
+  terraform_version = "v1.6.3"
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-eks"
+  }
+}
+
 resource "nuon_install" "sandbox" {
   for_each = {
     for obj in local.sandbox_installs : "${obj.app.name}.${obj.install}" => obj
