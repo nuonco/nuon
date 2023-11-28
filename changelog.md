@@ -2,6 +2,16 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.1
+
+New features into prod:
+
+* cli login
+* app inputs
+* custom sandboxes
+
+Various fixes and feedback for HoneyHive / Flipt.
+
 ## v0.18.3
 
 Promoting support for multiple vcs configs.
