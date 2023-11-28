@@ -24,9 +24,6 @@ type DockerBuildComponentConfig struct {
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
-	SyncOnly          bool               `json:"sync_only,omitempty"`
-	BasicDeployConfig *BasicDeployConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"basic_deploy_config,omitempty"`
-
 	Dockerfile string         `json:"dockerfile" gorm:"default:Dockerfile;notnull"`
 	Target     string         `json:"target"`
 	BuildArgs  pq.StringArray `gorm:"type:text[]" json:"build_args" swaggertype:"array,string"`

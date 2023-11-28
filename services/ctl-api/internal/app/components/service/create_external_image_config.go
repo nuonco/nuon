@@ -27,11 +27,8 @@ func (a *awsECRImageConfigRequest) getAWSECRImageConfig() *app.AWSECRImageConfig
 }
 
 type CreateExternalImageComponentConfigRequest struct {
-	BasicDeployConfig *basicDeployConfigRequest `json:"basic_deploy_config" validate:"required_unless=SyncOnly true"`
-
 	AWSECRImageConfig *awsECRImageConfigRequest `json:"aws_ecr_image_config"`
 
-	SyncOnly bool   `json:"sync_only"`
 	ImageURL string `json:"image_url" validate:"required"`
 	Tag      string `json:"tag" validate:"required"`
 }
@@ -96,8 +93,6 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 	cfg := app.ExternalImageComponentConfig{
 		ImageURL:          req.ImageURL,
 		Tag:               req.Tag,
-		SyncOnly:          req.SyncOnly,
-		BasicDeployConfig: req.BasicDeployConfig.getBasicDeployConfig(),
 		AWSECRImageConfig: req.AWSECRImageConfig.getAWSECRImageConfig(),
 	}
 

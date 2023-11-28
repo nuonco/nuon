@@ -34,11 +34,9 @@ func (s *service) getComponentConnectionCommit(ctx context.Context, cmpID string
 		Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
 		Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig").
 		Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
-		Preload("DockerBuildComponentConfig.BasicDeployConfig").
 
 		// preload all external image configs
 		Preload("ExternalImageComponentConfig").
-		Preload("ExternalImageComponentConfig.BasicDeployConfig").
 
 		// preload
 		First(&cmp, "component_id = ?", cmpID)
