@@ -65,6 +65,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
+          minorList: ""
           patchAll: true
 
   start_slack_notifications:
