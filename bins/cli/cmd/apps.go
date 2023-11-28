@@ -37,5 +37,18 @@ func (c *cli) appsCmd() *cobra.Command {
 	getCmd.MarkFlagRequired("app-id")
 	appsCmd.AddCommand(getCmd)
 
+	latestSandboxConfigCmd := &cobra.Command{
+		Use:   "sandbox-config",
+		Short: "View sandbox config",
+		Long:  "View apps latest sandbox config",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.apiClient)
+			svc.GetSandboxConfig(cmd.Context(), appID, PrintJSON)
+		},
+	}
+	latestSandboxConfigCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	latestSandboxConfigCmd.MarkFlagRequired("app-id")
+	appsCmd.AddCommand(latestSandboxConfigCmd)
+
 	return appsCmd
 }
