@@ -11,7 +11,11 @@ resource "nuon_docker_build_component" "public_docker" {
     branch = "main"
   }
 
-  sync_only = true
+  // add a single build env var
+  env_var {
+    name = "MY_ENV_VAR"
+    value = "{{.nuon.secrets.env_var}}"
+  }
 }
 
 // build a docker image and sync it into your customer's cloud account
@@ -25,6 +29,4 @@ resource "nuon_docker_build_component" "private_docker" {
     repo = "powertoolsdev/demo"
     branch = "main"
   }
-
-  sync_only = true
 }

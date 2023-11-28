@@ -8,6 +8,4 @@ resource "nuon_docker_build_component" "e2e" {
     repo      = "powertoolsdev/demo"
     branch    = "main"
   }
-
-  sync_only = true
 }

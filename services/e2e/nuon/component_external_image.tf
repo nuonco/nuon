@@ -6,6 +6,4 @@ resource "nuon_container_image_component" "e2e" {
     image_url = "kennethreitz/httpbin"
     tag       = "latest"
   }
-
-  sync_only = true
 }

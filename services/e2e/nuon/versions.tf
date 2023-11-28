@@ -14,7 +14,7 @@ terraform {
   required_providers {
     nuon = {
       source  = "nuonco/nuon"
-      version = ">= 0.4.6"
+      version = ">= 0.6.1"
     }
   }
 }

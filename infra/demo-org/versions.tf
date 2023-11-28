@@ -12,7 +12,7 @@ terraform {
   required_providers {
     nuon = {
       source  = "nuonco/nuon"
-      version = ">= 0.3.6"
+      version = ">= 0.6.1"
     }
 
     aws = {
