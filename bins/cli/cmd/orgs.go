@@ -19,18 +19,29 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "Get current org",
 		Long:  "Get the org you are currently authenticated with",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := orgs.New(c.apiClient)
+			svc := orgs.New(c.apiClient, c.cfg)
 			svc.Current(cmd.Context(), PrintJSON)
 		},
 	}
 	orgsCmd.AddCommand(currentCmd)
+
+	apiTokenCmd := &cobra.Command{
+		Use:   "api-token",
+		Short: "Get api token",
+		Long:  "Get api token that is active for current org",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient, c.cfg)
+			svc.APIToken(cmd.Context(), PrintJSON)
+		},
+	}
+	orgsCmd.AddCommand(apiTokenCmd)
 
 	setCurrentCmd := &cobra.Command{
 		Use:   "set-current",
 		Short: "Set current org",
 		Long:  "Set current org by org ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := orgs.New(c.apiClient)
+			svc := orgs.New(c.apiClient, c.cfg)
 			svc.SetCurrent(cmd.Context(), id, c.cfg)
 		},
 	}
@@ -44,7 +55,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short:   "List orgs",
 		Long:    "List all your orgs",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := orgs.New(c.apiClient)
+			svc := orgs.New(c.apiClient, c.cfg)
 			svc.List(cmd.Context(), PrintJSON)
 		},
 	}
@@ -55,7 +66,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "List connected repos",
 		Long:  "List repositories from connected GitHub accounts",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := orgs.New(c.apiClient)
+			svc := orgs.New(c.apiClient, c.cfg)
 			svc.ConnectedRepos(cmd.Context(), PrintJSON)
 		},
 	}
