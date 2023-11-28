@@ -25,9 +25,6 @@ type ExternalImageComponentConfig struct {
 	ImageURL          string             `json:"image_url" gorm:"notnull"`
 	Tag               string             `json:"tag" gorm:"notnull"`
 	AWSECRImageConfig *AWSECRImageConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"aws_ecr_image_config,omitempty"`
-
-	SyncOnly          bool               `json:"sync_only,omitempty"`
-	BasicDeployConfig *BasicDeployConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"basic_deploy_config,omitempty"`
 }
 
 func (e *ExternalImageComponentConfig) BeforeCreate(tx *gorm.DB) error {
