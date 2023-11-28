@@ -1,6 +1,6 @@
 // nuon allows you to connect any helm chart in a connected or public repo to install in your application
 resource "nuon_helm_chart_component" "demo-chart" {
-  name = "Private Repo Helm Chart"
+  name = "private_repo_helm_chart"
   app_id = nuon_app.main.id
 
   chart_name = "demo-chart"

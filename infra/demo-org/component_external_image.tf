@@ -1,6 +1,6 @@
 // run any image in ECR in a customer's cloud account
 resource "nuon_container_image_component" "ecr_external" {
-  name = "ECR Image"
+  name = "ecr_image"
   app_id = nuon_app.main.id
 
   public = {
@@ -15,26 +15,12 @@ resource "nuon_container_image_component" "ecr_external" {
 
   }
 
-  // add a single env var
-  env_var {
-    name = "MY_ENV_VAR"
-    value = "{{.nuon.secrets.env_var}}"
-  }
-
-  // dynamically set env vars from another source
-  dynamic "env_var" {
-    for_each = local.default_env_vars
-    iterator = ev
-    content {
-      name = ev.key
-      value = ev.value
-    }
-  }
+  sync_only = true
 }
 
 // sync any container image into your customer's cloud account
 resource "nuon_container_image_component" "public_sync_only" {
-  name = "Docker Hub (sync only)"
+  name = "docker_hub_sync_only"
   app_id = nuon_app.main.id
 
   public = {
