@@ -46,14 +46,12 @@ module "nuonco" {
 }
 
 module "terraform-provider-nuon" {
-  source                          = "./modules/repository"
-  name                            = "terraform-provider-nuon"
-  description                     = "A Terraform provider for managing applications in Nuon."
-  required_checks                 = []
-  is_public                       = true
-  owning_team_id                  = github_team.nuon.id
-  require_code_owner_reviews      = true
-  required_approving_review_count = 1
+  source          = "./modules/repository"
+  name            = "terraform-provider-nuon"
+  description     = "A Terraform provider for managing applications in Nuon."
+  required_checks = []
+  is_public       = true
+  owning_team_id  = github_team.nuon.id
 
   providers = {
     github = github.nuon
@@ -61,14 +59,12 @@ module "terraform-provider-nuon" {
 }
 
 module "nuon-go" {
-  source                          = "./modules/repository"
-  name                            = "nuon-go"
-  description                     = "An SDK for interacting with the Nuon platform."
-  required_checks                 = []
-  is_public                       = true
-  owning_team_id                  = github_team.nuon.id
-  require_code_owner_reviews      = true
-  required_approving_review_count = 1
+  source          = "./modules/repository"
+  name            = "nuon-go"
+  description     = "An SDK for interacting with the Nuon platform."
+  required_checks = []
+  is_public       = true
+  owning_team_id  = github_team.nuon.id
 
   providers = {
     github = github.nuon
@@ -76,14 +72,12 @@ module "nuon-go" {
 }
 
 module "nuon-sandboxes" {
-  source                          = "./modules/repository"
-  name                            = "sandboxes"
-  description                     = "Builtin sandboxes for Nuon apps."
-  required_checks                 = []
-  is_public                       = true
-  owning_team_id                  = github_team.nuon.id
-  require_code_owner_reviews      = true
-  required_approving_review_count = 1
+  source          = "./modules/repository"
+  name            = "sandboxes"
+  description     = "Builtin sandboxes for Nuon apps."
+  required_checks = []
+  is_public       = true
+  owning_team_id  = github_team.nuon.id
 
   providers = {
     github = github.nuon

@@ -27,9 +27,10 @@ resource "github_branch_protection" "default" {
   require_signed_commits = true
 
   required_pull_request_reviews {
-    dismiss_stale_reviews           = true # if this is a bottleneck, the repo should be broken up
-    required_approving_review_count = var.required_approving_review_count
-    require_code_owner_reviews      = var.require_code_owner_reviews
+    dismiss_stale_reviews           = true
+    required_approving_review_count = var.is_public ? 1 : 0
+    require_code_owner_reviews      = var.is_public
+    pull_request_bypassers          = var.is_public ? [var.owning_team_id] : []
   }
 
   required_status_checks {
