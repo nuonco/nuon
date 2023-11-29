@@ -42,7 +42,6 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 
 	for _, app := range org.Apps {
 		s.appHooks.Deleted(ctx, app.ID)
-
 		for _, install := range app.Installs {
 			s.installHooks.Deleted(ctx, install.ID)
 			s.installHooks.Forgotten(ctx, install.ID)
