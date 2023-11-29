@@ -37,6 +37,9 @@ module "quickstart" {
 
   vars = {
     example_app_repo = "nuonco/quickstart-test"
+    install_count = 1
+    install_region = "us-west-2"
+    install_iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-install-access"
   }
   triggered_by = [module.infra-terraform.workspace_id]
 }
