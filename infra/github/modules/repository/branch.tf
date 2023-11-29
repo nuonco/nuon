@@ -22,8 +22,9 @@ resource "github_branch_protection" "default" {
   required_linear_history = true
 
   # these will be a requirement for SLSA, etc
-  allows_deletions       = false
-  allows_force_pushes    = false
+  allows_deletions = false
+  # allows force pushes is required to enable syncing in the UI, for forks.
+  allows_force_pushes    = var.is_fork
   require_signed_commits = true
 
   required_pull_request_reviews {

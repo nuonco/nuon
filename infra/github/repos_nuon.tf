@@ -26,6 +26,7 @@ module "quickstart_test_nuon" {
   description      = "Repo for testing the quickstart"
   required_checks  = []
   is_public        = true
+  is_fork          = true
   owning_team_id   = github_team.nuon.id
   owning_team_name = "nuonco/${github_team.nuon.name}"
 

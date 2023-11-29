@@ -80,3 +80,9 @@ variable "is_public" {
   type        = bool
   description = "whether the repo should be public or not"
 }
+
+variable "is_fork" {
+  default     = false
+  type        = bool
+  description = "whether the repo is a fork or not"
+}
