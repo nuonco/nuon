@@ -30,7 +30,7 @@ resource "github_branch_protection" "default" {
     dismiss_stale_reviews           = true
     required_approving_review_count = var.is_public ? 1 : 0
     require_code_owner_reviews      = var.is_public
-    pull_request_bypassers          = var.is_public ? [var.owning_team_id] : []
+    pull_request_bypassers          = var.is_public ? [var.owning_team_name] : []
   }
 
   required_status_checks {

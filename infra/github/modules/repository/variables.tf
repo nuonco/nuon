@@ -50,6 +50,12 @@ variable "owning_team_id" {
   default     = 4455826
 }
 
+variable "owning_team_name" {
+  description = "The owning team name of the repo"
+  type        = string
+  default     = "powertoolsdev/team"
+}
+
 
 variable "prod_wait_timer" {
   type        = number

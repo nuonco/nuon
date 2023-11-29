@@ -1,10 +1,11 @@
 module "quickstart-nuon" {
-  source          = "./modules/repository"
-  name            = "quickstart"
-  description     = "Create a fully managed version of your app that runs in your customer’s cloud account."
-  required_checks = []
-  is_public       = true
-  owning_team_id  = github_team.nuon.id
+  source           = "./modules/repository"
+  name             = "quickstart"
+  description      = "Create a fully managed version of your app that runs in your customer’s cloud account."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
 
   providers = {
     github = github.nuon
@@ -20,12 +21,13 @@ import {
 }
 
 module "quickstart_test_nuon" {
-  source          = "./modules/repository"
-  name            = "quickstart-test"
-  description     = "Repo for testing the quickstart"
-  required_checks = []
-  is_public       = true
-  owning_team_id  = github_team.nuon.id
+  source           = "./modules/repository"
+  name             = "quickstart-test"
+  description      = "Repo for testing the quickstart"
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = github_team.nuon.name
 
   providers = {
     github = github.nuon
@@ -33,12 +35,13 @@ module "quickstart_test_nuon" {
 }
 
 module "nuonco" {
-  source          = "./modules/repository"
-  name            = ".github"
-  description     = "Run your app in your customer's cloud with nuon.co"
-  required_checks = []
-  is_public       = true
-  owning_team_id  = github_team.nuon.id
+  source           = "./modules/repository"
+  name             = ".github"
+  description      = "Run your app in your customer's cloud with nuon.co"
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
 
   providers = {
     github = github.nuon
@@ -46,12 +49,13 @@ module "nuonco" {
 }
 
 module "terraform-provider-nuon" {
-  source          = "./modules/repository"
-  name            = "terraform-provider-nuon"
-  description     = "A Terraform provider for managing applications in Nuon."
-  required_checks = []
-  is_public       = true
-  owning_team_id  = github_team.nuon.id
+  source           = "./modules/repository"
+  name             = "terraform-provider-nuon"
+  description      = "A Terraform provider for managing applications in Nuon."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
 
   providers = {
     github = github.nuon
@@ -59,12 +63,13 @@ module "terraform-provider-nuon" {
 }
 
 module "nuon-go" {
-  source          = "./modules/repository"
-  name            = "nuon-go"
-  description     = "An SDK for interacting with the Nuon platform."
-  required_checks = []
-  is_public       = true
-  owning_team_id  = github_team.nuon.id
+  source           = "./modules/repository"
+  name             = "nuon-go"
+  description      = "An SDK for interacting with the Nuon platform."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
 
   providers = {
     github = github.nuon
@@ -72,12 +77,13 @@ module "nuon-go" {
 }
 
 module "nuon-sandboxes" {
-  source          = "./modules/repository"
-  name            = "sandboxes"
-  description     = "Builtin sandboxes for Nuon apps."
-  required_checks = []
-  is_public       = true
-  owning_team_id  = github_team.nuon.id
+  source           = "./modules/repository"
+  name             = "sandboxes"
+  description      = "Builtin sandboxes for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
 
   providers = {
     github = github.nuon
