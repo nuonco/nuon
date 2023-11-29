@@ -31,7 +31,7 @@ func (c *Adapter) ToVCSConfig(gitRef string, publicCfg *app.PublicGitVCSConfig, 
 func (c *Adapter) toPublicGitConfig(gitRef string, cfg *app.PublicGitVCSConfig) *vcsv1.PublicGitConfig {
 	repo := cfg.Repo
 	if !strings.HasPrefix(repo, "https://") {
-		repo = fmt.Sprintf("git@github.com:%s.git", repo)
+		repo = fmt.Sprintf("https://github.com/%s", repo)
 	}
 
 	return &vcsv1.PublicGitConfig{
