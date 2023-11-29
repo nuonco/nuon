@@ -18,6 +18,31 @@ resource "tfe_project" "demo" {
   organization = data.tfe_organization.main.name
 }
 
+module "quickstart" {
+  source = "./modules/workspace"
+
+  name          = "quickstart"
+  repo          = "nuonco/quickstart-test"
+  auto_apply    = true
+  dir           = "services/e2e/nuon"
+  variable_sets = ["aws-environment-credentials", "api-prod"]
+  project_id    = tfe_project.product.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+
+  // NOTE: we have to set the api token manually in the ui, so we don't leak it
+  env_vars = {
+    NUON_ORG_ID = local.prod.org_id
+  }
+
+  vars = {
+    east_1_count = 0
+    east_2_count = 0
+    west_2_count = 0
+  }
+  triggered_by = [module.infra-terraform.workspace_id]
+}
+
 module "demo" {
   source = "./modules/workspace"
 
