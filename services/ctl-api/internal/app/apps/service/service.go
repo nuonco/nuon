@@ -7,20 +7,22 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
+	componenthooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	installhooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type service struct {
-	v            *validator.Validate
-	l            *zap.Logger
-	db           *gorm.DB
-	mw           metrics.Writer
-	cfg          *internal.Config
-	hooks        *hooks.Hooks
-	installHooks *installhooks.Hooks
-	ghClient     *github.Client
+	v              *validator.Validate
+	l              *zap.Logger
+	db             *gorm.DB
+	mw             metrics.Writer
+	cfg            *internal.Config
+	hooks          *hooks.Hooks
+	installHooks   *installhooks.Hooks
+	componentHooks *componenthooks.Hooks
+	ghClient       *github.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -60,11 +62,13 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/admin-reprovision", s.AdminReprovisionApp)
 	api.POST("/v1/apps/:app_id/admin-restart", s.RestartApp)
 	api.POST("/v1/apps/:app_id/admin-update-sandbox", s.AdminUpdateSandbox)
-	api.POST("/v1/apps/admin-add-app-sandboxes", s.AdminAddAppSandboxes)
-	api.POST("/v1/apps/admin-add-app-inputs", s.AdminAddAppInputsConfigs)
-	api.POST("/v1/apps/admin-delete", s.AdminDeleteApp)
+	api.POST("/v1/apps/:app_id/admin-delete", s.AdminDeleteApp)
 
 	api.GET("/v1/installers", s.GetAllAppInstallers)
+
+	api.POST("/v1/apps/admin-add-app-sandboxes", s.AdminAddAppSandboxes)
+	api.POST("/v1/apps/admin-add-app-inputs", s.AdminAddAppInputsConfigs)
+
 	return nil
 }
 
@@ -74,16 +78,18 @@ func New(v *validator.Validate,
 	l *zap.Logger,
 	hooks *hooks.Hooks,
 	installHooks *installhooks.Hooks,
+	componentHooks *componenthooks.Hooks,
 	ghClient *github.Client,
 ) *service {
 	return &service{
-		cfg:          cfg,
-		l:            l,
-		v:            v,
-		db:           db,
-		mw:           mw,
-		hooks:        hooks,
-		installHooks: installHooks,
-		ghClient:     ghClient,
+		cfg:            cfg,
+		l:              l,
+		v:              v,
+		db:             db,
+		mw:             mw,
+		hooks:          hooks,
+		installHooks:   installHooks,
+		componentHooks: componentHooks,
+		ghClient:       ghClient,
 	}
 }
