@@ -16,6 +16,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		renderedVars     bool
 		intermediateOnly bool
 		jobConfig        bool
+		runID            string
 	)
 
 	installsCmds := &cobra.Command{
@@ -168,6 +169,21 @@ func (c *cli) installsCmd() *cobra.Command {
 	sandboxRunsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	sandboxRunsCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(sandboxRunsCmd)
+
+	sandboxRunLogsCmd := &cobra.Command{
+		Use:   "sandbox-run-logs",
+		Short: "View sandbox run logs",
+		Long:  "View sandbox run logs by run & install IDs",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient)
+			svc.SandboxRunLogs(cmd.Context(), id, runID, PrintJSON)
+		},
+	}
+	sandboxRunLogsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
+	sandboxRunLogsCmd.MarkFlagRequired("install-id")
+	sandboxRunLogsCmd.Flags().StringVarP(&runID, "run-id", "r", "", "The ID of the run you want to view")
+	sandboxRunLogsCmd.MarkFlagRequired("run-id")
+	installsCmds.AddCommand(sandboxRunLogsCmd)
 
 	return installsCmds
 }
