@@ -24,7 +24,7 @@ module "quickstart" {
   name          = "quickstart"
   repo          = "nuonco/quickstart-test"
   auto_apply    = true
-  dir           = "services/e2e/nuon"
+  dir           = "nuon"
   variable_sets = ["aws-environment-credentials", "api-prod"]
   project_id    = tfe_project.product.id
 
@@ -36,9 +36,7 @@ module "quickstart" {
   }
 
   vars = {
-    east_1_count = 0
-    east_2_count = 0
-    west_2_count = 0
+    example_app_repo = "nuonco/quickstart-test"
   }
   triggered_by = [module.infra-terraform.workspace_id]
 }
