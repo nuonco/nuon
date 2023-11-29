@@ -28,7 +28,7 @@ resource "nuon_helm_chart_component" "meroxa-platform" {
   connected_repo = {
     // TODO: change this to use meroxa/mpdx + consider making a directory for `byoc`
     directory = "platform/helm/production"
-    repo      = "https://github.com/powertoolsdev/mono"
+    repo      = "powertoolsdev/mono"
     branch    = "main"
   }
 
