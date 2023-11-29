@@ -153,3 +153,57 @@ func PrintDeployLogs(log []models.ServiceDeployLog) {
 
 	fmt.Printf("\nstatus: %v\n", lgs.State.Current)
 }
+
+func PrintLogsFromInterface(log []interface{}) {
+	var lgs Logs
+
+	for _, l := range log {
+		err := mapstructure.Decode(l, &lgs)
+		if err != nil {
+			PrintError(err)
+			return
+		}
+
+	}
+
+	if len(lgs.Terminal.Events) != 0 {
+		for _, line := range lgs.Terminal.Events {
+			if line.Line != nil {
+				if line.Line.Msg != "" {
+					fmt.Println(line.Line.Msg)
+				}
+			}
+
+			if line.Raw != nil {
+				if line.Raw.Data != "" {
+					l, err := base64.StdEncoding.DecodeString(line.Raw.Data)
+					if err != nil {
+						PrintError(err)
+						return
+					}
+					fmt.Printf("%s\n", l)
+				}
+			}
+
+			if line.Step != nil {
+				if line.Step.Msg != "" {
+					fmt.Println(line.Step.Msg)
+				}
+			}
+
+			if line.Status != nil {
+				if line.Status.Msg != "" {
+					fmt.Println(line.Status.Msg)
+				}
+			}
+		}
+	} else {
+		fmt.Println("Logs expire after 24hrs, run command again with --json to see full logs")
+	}
+	if lgs.Complete.Error != (Error{}) {
+		fmt.Printf("job-error: %d\n", lgs.Complete.Error.Code)
+		fmt.Printf("message: %s\n", lgs.Complete.Error.Message)
+	}
+
+	fmt.Printf("\nstatus: %v\n", lgs.State.Current)
+}
