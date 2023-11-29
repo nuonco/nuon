@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.2
+
+New CLI commands + removed basic configs.
+
 ## v0.19.1
 
 New features into prod:
