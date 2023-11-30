@@ -12,3 +12,13 @@ resource "aws_route53_record" "gmail_mx" {
     "10 ALT4.ASPMX.L.GOOGLE.COM."
   ]
 }
+
+resource "aws_route53_record" "dmarc" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "_dmarc"
+  type    = "TXT"
+  ttl     = 300
+  records = [
+    "v=DMARC1; p=none"
+  ]
+}
