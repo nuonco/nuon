@@ -9,10 +9,11 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func Execute(ctx workflow.Context, cpr *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
+func Execute(ctx workflow.Context, workflowID string, cpr *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
 	resp := &executev1.ExecutePlanResponse{}
 
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               workflowID,
 		WorkflowExecutionTimeout: time.Minute * 60,
 		TaskQueue:                workflowsclient.ExecutorsTaskQueue,
 		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
