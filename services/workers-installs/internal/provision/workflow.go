@@ -44,16 +44,23 @@ func (w wkflow) createPlanRequest(runTyp planv1.SandboxInputType, req *installsv
 
 }
 
+func (w wkflow) executorsWorkflowID(req *installsv1.ProvisionRequest, jobName string) string {
+	return fmt.Sprintf("%s-%s", req.RunId, jobName)
+}
+
 func (w wkflow) provisionNoopBuild(ctx workflow.Context, req *installsv1.ProvisionRequest) error {
 	planReq := w.createPlanRequest(planv1.SandboxInputType_SANDBOX_INPUT_TYPE_NOOP_BUILD, req)
-	planResp, err := sandbox.Plan(ctx, planReq)
+	planWorkflowID := w.executorsWorkflowID(req, "noop-build-plan")
+	planResp, err := sandbox.Plan(ctx, planWorkflowID, planReq)
 	if err != nil {
 		return fmt.Errorf("unable to create noop-build plan: %w", err)
 	}
 
-	_, err = sandbox.Execute(ctx, &executev1.ExecutePlanRequest{
-		Plan: planResp.Plan,
-	})
+	executeWorkflowID := w.executorsWorkflowID(req, "noop-build-execute")
+	_, err = sandbox.Execute(ctx, executeWorkflowID,
+		&executev1.ExecutePlanRequest{
+			Plan: planResp.Plan,
+		})
 	if err != nil {
 		return fmt.Errorf("unable to execute noop-build plan: %w", err)
 	}
@@ -68,12 +75,14 @@ func (w wkflow) provisionSandbox(ctx workflow.Context, req *installsv1.Provision
 	}
 
 	planReq := w.createPlanRequest(runTyp, req)
-	planResp, err := sandbox.Plan(ctx, planReq)
+	planWorkflowID := w.executorsWorkflowID(req, "provision-plan")
+	planResp, err := sandbox.Plan(ctx, planWorkflowID, planReq)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create plan: %w", err)
 	}
 
-	execResp, err := sandbox.Execute(ctx, &executev1.ExecutePlanRequest{
+	executeWorkflowID := w.executorsWorkflowID(req, "provision-execute")
+	execResp, err := sandbox.Execute(ctx, executeWorkflowID, &executev1.ExecutePlanRequest{
 		Plan: planResp.Plan,
 	})
 	if err != nil {
