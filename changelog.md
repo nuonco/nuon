@@ -4,6 +4,8 @@ This is a basic changelog where we track a minimal message whenever we do a prom
 
 ## v0.19.2
 
+## v0.19.2
+
 New CLI commands + removed basic configs.
 
 ## v0.19.1
