@@ -8,10 +8,11 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func Plan(ctx workflow.Context, cpr *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
+func Plan(ctx workflow.Context, workflowID string, cpr *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
 	resp := &planv1.CreatePlanResponse{}
 
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               workflowID,
 		WorkflowExecutionTimeout: time.Minute * 5,
 		TaskQueue:                workflowsclient.ExecutorsTaskQueue,
 	}
