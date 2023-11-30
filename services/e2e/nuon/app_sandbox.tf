@@ -8,7 +8,7 @@ resource "nuon_app_sandbox" "main" {
 
   public_repo = {
     repo      = "nuonco/sandboxes"
-    branch    = "ja/3024-aws-eks-admin-access"
+    branch    = "main"
     directory = "aws-eks"
   }
 
