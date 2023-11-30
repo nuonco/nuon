@@ -50,5 +50,31 @@ func (c *cli) appsCmd() *cobra.Command {
 	latestSandboxConfigCmd.MarkFlagRequired("app-id")
 	appsCmd.AddCommand(latestSandboxConfigCmd)
 
+	latestInputConfig := &cobra.Command{
+		Use:   "input-config",
+		Short: "View app input config",
+		Long:  "View latest app input config",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.apiClient)
+			svc.GetInputConfig(cmd.Context(), appID, PrintJSON)
+		},
+	}
+	latestInputConfig.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	latestInputConfig.MarkFlagRequired("app-id")
+	appsCmd.AddCommand(latestInputConfig)
+
+	setCurrentCmd := &cobra.Command{
+		Use:   "set-current",
+		Short: "Set current app",
+		Long:  "Set current app by app ID",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.apiClient)
+			svc.SetCurrent(cmd.Context(), appID, c.cfg)
+		},
+	}
+	setCurrentCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	setCurrentCmd.MarkFlagRequired("app-id")
+	appsCmd.AddCommand(setCurrentCmd)
+
 	return appsCmd
 }
