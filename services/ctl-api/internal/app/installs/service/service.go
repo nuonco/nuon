@@ -48,6 +48,11 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id/sandbox-runs", s.GetInstallSandboxRuns)
 	api.GET("/v1/installs/:install_id/sandbox-run/:run_id/logs", s.GetInstallSandboxRunLogs)
 
+	// install inputs
+	api.GET("/v1/installs/:install_id/inputs", s.GetInstallInputs)
+	api.POST("/v1/installs/:install_id/inputs", s.CreateInstallInputs)
+	api.GET("/v1/installs/:install_id/inputs/current", s.GetInstallCurrentInputs)
+
 	// install components
 	api.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys", s.GetInstallComponentDeploys)

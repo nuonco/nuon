@@ -66,7 +66,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 	api.GET("/v1/installers", s.GetAllAppInstallers)
 
-	api.POST("/v1/apps/admin-add-app-sandboxes", s.AdminAddAppSandboxes)
 	api.POST("/v1/apps/admin-add-app-inputs", s.AdminAddAppInputsConfigs)
 	api.POST("/v1/apps/admin-update-app-sandbox-configs", s.AdminUpdateAppSandboxConfigs)
 
