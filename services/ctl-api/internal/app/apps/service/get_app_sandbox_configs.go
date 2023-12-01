@@ -44,10 +44,10 @@ func (s *service) GetAppSandboxConfigs(ctx *gin.Context) {
 		return
 	}
 
-	if len(app.AppSandbox.AppSandboxConfigs) < 1 {
+	if len(app.AppSandboxConfigs) < 1 {
 		ctx.Error(fmt.Errorf("no app sandbox configs found for app"))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, app.AppSandbox.AppSandboxConfigs)
+	ctx.JSON(http.StatusOK, app.AppSandboxConfigs)
 }

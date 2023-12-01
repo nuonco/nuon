@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
@@ -81,6 +82,51 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.Error(t, err)
 		require.Nil(t, install)
+	})
+
+	s.T().Run("errors when app has inputs declared but are not provided", func(t *testing.T) {
+		app := s.createAppWithInputs(s.orgID)
+
+		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
+		fakeReq.AwsAccount.Region = "us-west-2"
+		fakeReq.Inputs = map[string]string{}
+
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		require.Error(t, err)
+		require.Nil(t, install)
+		require.True(t, nuon.IsBadRequest(err))
+	})
+
+	s.T().Run("errors install input is empty", func(t *testing.T) {
+		app := s.createAppWithInputs(s.orgID)
+
+		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
+		fakeReq.AwsAccount.Region = "us-west-2"
+		fakeReq.Inputs = s.fakeInstallInputsForApp(app.ID)
+		for k := range fakeReq.Inputs {
+			fakeReq.Inputs[k] = ""
+		}
+
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		require.Error(t, err)
+		require.Nil(t, install)
+		require.True(t, nuon.IsBadRequest(err))
+	})
+
+	s.T().Run("successfully sets the inputs when valid", func(t *testing.T) {
+		app := s.createAppWithInputs(s.orgID)
+
+		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
+		fakeReq.AwsAccount.Region = "us-west-2"
+		fakeReq.Inputs = s.fakeInstallInputsForApp(app.ID)
+
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		require.NoError(t, err)
+		require.NotNil(t, install)
+
+		inputs, err := s.apiClient.GetInstallCurrentInputs(s.ctx, install.ID)
+		require.NoError(t, err)
+		require.NotNil(t, inputs)
 	})
 }
 

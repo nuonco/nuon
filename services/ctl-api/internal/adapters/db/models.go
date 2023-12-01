@@ -21,7 +21,6 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 
 		// apps
 		&app.App{},
-		&app.AppSandbox{},
 		&app.AppSandboxConfig{},
 		&app.AppInput{},
 		&app.AppInputConfig{},

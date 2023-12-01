@@ -29,7 +29,7 @@ type Install struct {
 
 	InstallComponents  []InstallComponent  `json:"install_components,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallSandboxRuns []InstallSandboxRun `json:"install_sandbox_runs,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallInputs      []InstallInputs     `json:"install_inputs"`
+	InstallInputs      []InstallInputs     `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE;"`
 
 	AWSAccount AWSAccount `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;"`
 }

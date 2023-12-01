@@ -49,8 +49,7 @@ func (s *service) getApp(ctx context.Context, appID string) (*app.App, error) {
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Components").
-		Preload("AppSandbox").
-		Preload("AppSandbox.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
 		Where("name = ?", appID).
