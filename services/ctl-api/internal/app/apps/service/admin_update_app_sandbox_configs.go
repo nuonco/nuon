@@ -17,10 +17,10 @@ type AdminUpdateAppSandboxConfigsRequest struct{}
 //
 //	@Summary	update all app sandbox configs
 //
-// @Schemes
+//	@Schemes
 //
 //	@Description	update and app to the latest sandbox
-//	@Param			req		body	AdminUpdateSandboxRequest	true	"Input"
+//	@Param			req	body	AdminUpdateSandboxRequest	true	"Input"
 //	@Tags			apps/admin
 //	@Accept			json
 //	@Produce		json
