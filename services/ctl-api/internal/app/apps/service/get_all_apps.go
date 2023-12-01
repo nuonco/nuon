@@ -33,9 +33,8 @@ func (s *service) GetAllApps(ctx *gin.Context) {
 func (s *service) getAllApps(ctx context.Context) ([]*app.App, error) {
 	var apps []*app.App
 	res := s.db.WithContext(ctx).
-		Preload("AppSandbox").
-		Preload("AppSandbox.AppSandboxConfigs").
-		Preload("AppSandbox.AppSandboxConfigs.SandboxRelease").
+		Preload("AppSandboxConfigs").
+		Preload("AppSandboxConfigs.SandboxRelease").
 		Preload("Installs").
 		Preload("Components").
 		Order("created_at desc").

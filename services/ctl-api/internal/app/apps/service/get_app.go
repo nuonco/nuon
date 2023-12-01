@@ -57,14 +57,13 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 			return db.Order("app_input_configs.created_at DESC")
 		}).
 		Preload("AppInputConfigs.AppInputs").
-		Preload("AppSandbox").
-		Preload("AppSandbox.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
-		Preload("AppSandbox.AppSandboxConfigs.PublicGitVCSConfig").
-		Preload("AppSandbox.AppSandboxConfigs.ConnectedGithubVCSConfig").
-		Preload("AppSandbox.AppSandboxConfigs.SandboxRelease").
-		Preload("AppSandbox.AppSandboxConfigs.SandboxRelease.Sandbox").
+		Preload("AppSandboxConfigs.PublicGitVCSConfig").
+		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
+		Preload("AppSandboxConfigs.SandboxRelease").
+		Preload("AppSandboxConfigs.SandboxRelease.Sandbox").
 		Where("name = ? AND org_id = ?", appID, orgID).
 		Or("id = ?", appID).
 		First(&app)

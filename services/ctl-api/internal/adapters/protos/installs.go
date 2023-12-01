@@ -10,7 +10,7 @@ import (
 func (c *Adapter) toSandboxSettings(install *app.Install) (*installsv1.SandboxSettings, error) {
 	sandboxSettings := &installsv1.SandboxSettings{
 		TerraformVersion: install.AppSandboxConfig.TerraformVersion,
-		Vars:             c.toTerraformVariables(install.AppSandboxConfig.SandboxInputs),
+		Vars:             c.toTerraformVariables(install.AppSandboxConfig.Variables),
 		RootDomain:       fmt.Sprintf("%s.%s", install.ID, c.orgsOutputs.PublicDomain.Domain),
 	}
 

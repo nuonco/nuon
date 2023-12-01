@@ -28,10 +28,6 @@ type App struct {
 
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description"`
-
-	// TODO(jm): there is no reason to have an app_sandbox field, so let's remove it, and just follow the pattern
-	// above.
-	AppSandbox AppSandbox `json:"app_sandbox" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (a *App) BeforeCreate(tx *gorm.DB) error {

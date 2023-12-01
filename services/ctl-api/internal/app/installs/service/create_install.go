@@ -21,6 +21,8 @@ type CreateInstallRequest struct {
 		Region     string `json:"region" validate:"oneof=us-east-1 us-east-2 us-west-2"`
 		IAMRoleARN string `json:"iam_role_arn" validate:"required"`
 	} `json:"aws_account" validate:"required"`
+
+	Inputs map[string]*string `json:"inputs" validate:"required"`
 }
 
 func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
@@ -83,19 +85,22 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 func (s *service) createInstall(ctx context.Context, appID string, req *CreateInstallRequest) (*app.Install, error) {
 	parentApp := app.App{}
 	res := s.db.WithContext(ctx).Preload("Components").
-		Preload("AppSandbox").
-		Preload("AppSandbox.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
 	}
-	if len(parentApp.AppSandbox.AppSandboxConfigs) < 1 {
+	if len(parentApp.AppSandboxConfigs) < 1 {
 		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("app does not have any sandbox configs"),
 			Description: "please make create at least one app sandbox config first",
 		}
+	}
+
+	if err := s.validateInstallInputs(ctx, appID, req.Inputs); err != nil {
+		return nil, err
 	}
 
 	install := app.Install{
@@ -107,7 +112,12 @@ func (s *service) createInstall(ctx context.Context, appID string, req *CreateIn
 			Region:     req.AWSAccount.Region,
 			IAMRoleARN: req.AWSAccount.IAMRoleARN,
 		},
-		AppSandboxConfigID: parentApp.AppSandbox.AppSandboxConfigs[0].ID,
+		InstallInputs: []app.InstallInputs{
+			{
+				Values: req.Inputs,
+			},
+		},
+		AppSandboxConfigID: parentApp.AppSandboxConfigs[0].ID,
 	}
 
 	res = s.db.WithContext(ctx).Create(&install)
