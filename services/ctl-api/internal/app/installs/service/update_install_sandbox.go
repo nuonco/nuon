@@ -56,21 +56,21 @@ func (s *service) AdminUpdateSandbox(ctx *gin.Context) {
 }
 
 func (s *service) getLatestAppSandboxConfig(ctx context.Context, appID string) (*app.AppSandboxConfig, error) {
-	appSandbox := app.AppSandbox{}
+	parentApp := app.App{}
 
 	res := s.db.WithContext(ctx).
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
-		First(&appSandbox, "app_id = ?", appID)
+		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app sandbox configs: %w", res.Error)
 	}
-	if len(appSandbox.AppSandboxConfigs) < 1 {
-		return nil, fmt.Errorf("app does not have any sandbox configs")
+	if len(parentApp.AppSandboxConfigs) < 1 {
+		return nil, fmt.Errorf("app does not have any sandbox configs: %w", gorm.ErrRecordNotFound)
 	}
 
-	return &appSandbox.AppSandboxConfigs[0], nil
+	return &parentApp.AppSandboxConfigs[0], nil
 }
 
 func (s *service) updateInstallSandbox(ctx context.Context, installID string, sandboxReleaseID string) (*app.Install, error) {

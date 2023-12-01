@@ -45,7 +45,7 @@ func (s *service) AdminUpdateAppSandboxConfigs(ctx *gin.Context) {
 		}
 		res := s.db.WithContext(ctx).
 			Model(&appSandboxCfg).
-			Update("app_id", cfg.AppSandbox.AppID)
+			Update("app_id", cfg.AppID)
 		if res.Error != nil {
 			ctx.Error(fmt.Errorf("unable to update app sandbox config: %w", res.Error))
 			return
@@ -60,7 +60,6 @@ func (s *service) getAllAppSandboxConfigs(ctx context.Context) ([]*app.AppSandbo
 
 	res := s.db.Unscoped().
 		WithContext(ctx).
-		Preload("AppSandbox").
 		First(&cfgs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app sandbox configs: %w", res.Error)

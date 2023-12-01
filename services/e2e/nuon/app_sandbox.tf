@@ -12,12 +12,12 @@ resource "nuon_app_sandbox" "main" {
     directory = "aws-eks"
   }
 
-  input {
+  var {
     name  = "eks_version"
     value = "v1.27.8"
   }
 
-  input {
+  var {
     name  = "admin_access_role_arn"
     value = "arn:aws:iam::676549690856:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_NuonAdmin_b8aea3365312317b"
   }

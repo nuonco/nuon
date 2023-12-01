@@ -59,13 +59,13 @@ func (s *service) getAppInstaller(ctx context.Context, installerID string) (*app
 	res := s.db.WithContext(ctx).
 		Preload("App").
 		Preload("App.Org").
-		Preload("App.AppSandbox.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+		Preload("App.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
-		Preload("App.AppSandbox.AppSandboxConfigs.PublicGitVCSConfig").
-		Preload("App.AppSandbox.AppSandboxConfigs.ConnectedGithubVCSConfig").
-		Preload("App.AppSandbox.AppSandboxConfigs.SandboxRelease").
-		Preload("App.AppSandbox.AppSandboxConfigs.SandboxRelease.Sandbox").
+		Preload("App.AppSandboxConfigs.PublicGitVCSConfig").
+		Preload("App.AppSandboxConfigs.ConnectedGithubVCSConfig").
+		Preload("App.AppSandboxConfigs.SandboxRelease").
+		Preload("App.AppSandboxConfigs.SandboxRelease.Sandbox").
 		Preload("Metadata").
 		Where("slug = ?", installerID).
 		Or("id = ?", installerID).

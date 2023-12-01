@@ -1,0 +1,93 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+type CreateInstallInputsRequest struct {
+	Inputs map[string]*string `json:"inputs" validate:"required"`
+}
+
+func (c *CreateInstallInputsRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
+}
+
+//	@BasePath	/v1/apps
+//
+// Create install inputs
+//
+//	@Summary	create install inputs
+//	@Schemes
+//	@Description	create install inputs
+//
+// @Tags installs
+//
+//	@Accept			json
+//	@Param			req	body	CreateInstallInputsRequest	true	"Input"
+//	@Produce		json
+//	@Param			install_id	path	string				true	"install ID"
+//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
+//	@Param			Authorization	header		string	true	"bearer auth token"
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		401				{object}	stderr.ErrResponse
+//	@Failure		403				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.InstallInputs
+//	@Router			/v1/installs/{install_id}/inputs [post]
+func (s *service) CreateInstallInputs(ctx *gin.Context) {
+	installID := ctx.Param("install_id")
+
+	var req CreateInstallInputsRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	install, err := s.getInstall(ctx, installID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if err := s.validateInstallInputs(ctx, install.AppID, req.Inputs); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	inputs, err := s.createInstallInputs(ctx, installID, req.Inputs)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
+		return
+	}
+
+	s.hooks.Reprovision(ctx, installID)
+	ctx.JSON(http.StatusCreated, inputs)
+}
+
+func (s *service) createInstallInputs(ctx context.Context, installID string, inputs map[string]*string) (*app.InstallInputs, error) {
+	obj := &app.InstallInputs{
+		InstallID: installID,
+		Values:    pgtype.Hstore(inputs),
+	}
+	res := s.db.WithContext(ctx).Create(&obj)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create install inputs: %w", res.Error)
+	}
+
+	return obj, nil
+}

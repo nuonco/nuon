@@ -1,3 +1,10 @@
+locals {
+  install_inputs = {
+    "required_input" = "required-install-input"
+    "optional_input" = "optional-input"
+  }
+}
+
 resource "nuon_install" "east_1" {
   count  = var.east_1_count
   app_id = nuon_app.main.id
@@ -5,6 +12,15 @@ resource "nuon_install" "east_1" {
   name         = "east-1-${count.index}"
   region       = "us-east-1"
   iam_role_arn = var.install_role_arn
+
+  dynamic "input" {
+    for_each = local.install_inputs
+    iterator = ev
+    content {
+      name  = ev.key
+      value = ev.value
+    }
+  }
 
   depends_on = [
     nuon_app_sandbox.main,
@@ -19,6 +35,15 @@ resource "nuon_install" "east_2" {
   region       = "us-east-2"
   iam_role_arn = var.install_role_arn
 
+  dynamic "input" {
+    for_each = local.install_inputs
+    iterator = ev
+    content {
+      name  = ev.key
+      value = ev.value
+    }
+  }
+
   depends_on = [
     nuon_app_sandbox.main,
   ]
@@ -31,6 +56,15 @@ resource "nuon_install" "west_2" {
   name         = "west-2-${count.index}"
   region       = "us-west-2"
   iam_role_arn = var.install_role_arn
+
+  dynamic "input" {
+    for_each = local.install_inputs
+    iterator = ev
+    content {
+      name  = ev.key
+      value = ev.value
+    }
+  }
 
   depends_on = [
     nuon_app_sandbox.main,

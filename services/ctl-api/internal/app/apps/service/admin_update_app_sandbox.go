@@ -40,12 +40,12 @@ func (s *service) AdminUpdateSandbox(ctx *gin.Context) {
 		return
 	}
 
-	if len(app.AppSandbox.AppSandboxConfigs) < 1 {
+	if len(app.AppSandboxConfigs) < 1 {
 		ctx.Error(fmt.Errorf("no app sandbox configs found"))
 		return
 	}
 
-	sandboxName := app.AppSandbox.AppSandboxConfigs[0].SandboxRelease.Sandbox.Name
+	sandboxName := app.AppSandboxConfigs[0].SandboxRelease.Sandbox.Name
 	if sandboxName == "" {
 		ctx.Error(fmt.Errorf("no built in app sandbox found"))
 		return

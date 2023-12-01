@@ -74,7 +74,6 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Org.VCSConnections").
-		Preload("AppSandbox").
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app sandbox: %w", res.Error)
@@ -93,11 +92,10 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 
 	appSandboxConfig := app.AppSandboxConfig{
 		AppID:                    appID,
-		AppSandboxID:             parentApp.AppSandbox.ID,
 		SandboxReleaseID:         req.SandboxReleaseID,
 		PublicGitVCSConfig:       publicGitConfig,
 		ConnectedGithubVCSConfig: githubVCSConfig,
-		SandboxInputs:            pgtype.Hstore(req.SandboxInputs),
+		Variables:                pgtype.Hstore(req.SandboxInputs),
 		TerraformVersion:         req.TerraformVersion,
 	}
 

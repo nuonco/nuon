@@ -34,14 +34,10 @@ type AppSandboxConfig struct {
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`
 
-	// SandboxInputs are the inputs that need to be added to a sandbox for additional fields
-	SandboxInputs pgtype.Hstore `json:"sandbox_inputs" gorm:"type:hstore" swaggertype:"object,string"`
+	Variables pgtype.Hstore `json:"variables" gorm:"type:hstore" swaggertype:"object,string"`
 
-	TerraformVersion string `json:"terraform_version" gorm:"notnull"`
-
-	// TODO - remove
-	AppSandboxID string
-	AppSandbox   AppSandbox
+	TerraformVersion   string              `json:"terraform_version" gorm:"notnull"`
+	InstallSandboxRuns []InstallSandboxRun `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (a *AppSandboxConfig) BeforeCreate(tx *gorm.DB) error {

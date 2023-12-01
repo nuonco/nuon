@@ -52,8 +52,7 @@ func (s *service) getApps(ctx context.Context, orgID string) ([]*app.App, error)
 	}
 
 	err := s.db.WithContext(ctx).
-		Preload("AppSandbox").
-		Preload("AppSandbox.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
 		Model(&org).Association("Apps").Find(&apps)
