@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	validatoradapter "github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/validator"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
@@ -25,6 +26,13 @@ func (c *CreateAppInputConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
+
+	for k := range c.Inputs {
+		if err := validatoradapter.InterpolatedName(v, k); err != nil {
+			return fmt.Errorf("invalid input %s - %w", k, err)
+		}
+	}
+
 	return nil
 }
 
