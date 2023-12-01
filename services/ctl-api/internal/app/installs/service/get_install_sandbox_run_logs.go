@@ -22,7 +22,7 @@ type SandboxRunLog interface{}
 //	@Schemes
 //	@Description	get install deploy logs
 //	@Param			install_id	path	string	true	"install ID"
-//	@Param			run_id	path	string	true	"run ID"
+//	@Param			run_id		path	string	true	"run ID"
 //	@Tags			installs
 //	@Accept			json
 //	@Produce		json

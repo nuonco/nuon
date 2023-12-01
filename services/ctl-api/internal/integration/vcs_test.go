@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -48,8 +48,43 @@ func (s *vcsIntegrationTestSuite) TestCreateConnection() {
 	})
 	s.T().Run("invalid request", func(t *testing.T) {
 		org, err := s.apiClient.CreateVCSConnection(s.ctx, &models.ServiceCreateConnectionRequest{})
-		assert.Error(t, err)
-		assert.Nil(t, org)
+		require.Error(t, err)
+		require.Nil(t, org)
+	})
+}
+
+func (s *vcsIntegrationTestSuite) TestCreateConnectionCallback() {
+	s.apiClient.SetOrgID("")
+
+	s.T().Run("success", func(t *testing.T) {
+		// add a vcs connection to the org
+		vcsReq := generics.GetFakeObj[*models.ServiceCreateConnectionCallbackRequest]()
+		vcsReq.OrgID = generics.ToPtr(s.orgID)
+
+		vcs, err := s.apiClient.CreateVCSConnectionCallback(s.ctx, vcsReq)
+		require.Nil(t, err)
+		require.NotNil(t, vcs)
+		require.Equal(t, vcs.GithubInstallID, *(vcsReq.GithubInstallID))
+	})
+
+	s.T().Run("bad request", func(t *testing.T) {
+		req := generics.GetFakeObj[*models.ServiceCreateConnectionCallbackRequest]()
+		req.OrgID = nil
+
+		conn, err := s.apiClient.CreateVCSConnectionCallback(s.ctx, req)
+		require.Error(t, err)
+		require.Nil(t, conn)
+		require.True(t, nuon.IsBadRequest(err))
+	})
+
+	s.T().Run("org not found", func(t *testing.T) {
+		req := generics.GetFakeObj[*models.ServiceCreateConnectionCallbackRequest]()
+		req.OrgID = generics.GetFakeObj[*string]()
+
+		conn, err := s.apiClient.CreateVCSConnectionCallback(s.ctx, req)
+		require.Error(t, err)
+		require.Nil(t, conn)
+		require.True(t, nuon.IsNotFound(err))
 	})
 }
 
