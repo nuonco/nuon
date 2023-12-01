@@ -18,7 +18,9 @@ type AppSandboxConfig struct {
 
 	OrgID string `json:"org_id" gorm:"notnull;default null"`
 
-	AppSandboxID string `json:"app_sandbox" gorm:"notnull;default null"`
+	// TODO(jm): add this back, once we have migrated all existing app sandbox configs
+	// `gorm:"not null;default null"`
+	AppID string `json:"app_id"`
 
 	// NOTE(jm): you can use one of a few different methods of creating an app sandbox, either a built in one, that
 	// Nuon manages, or one of the public git vcs configs.
@@ -36,6 +38,10 @@ type AppSandboxConfig struct {
 	SandboxInputs pgtype.Hstore `json:"sandbox_inputs" gorm:"type:hstore" swaggertype:"object,string"`
 
 	TerraformVersion string `json:"terraform_version" gorm:"notnull"`
+
+	// TODO - remove
+	AppSandboxID string
+	AppSandbox   AppSandbox
 }
 
 func (a *AppSandboxConfig) BeforeCreate(tx *gorm.DB) error {
