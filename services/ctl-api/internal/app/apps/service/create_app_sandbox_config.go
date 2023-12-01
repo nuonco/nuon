@@ -92,6 +92,7 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 	}
 
 	appSandboxConfig := app.AppSandboxConfig{
+		AppID:                    appID,
 		AppSandboxID:             parentApp.AppSandbox.ID,
 		SandboxReleaseID:         req.SandboxReleaseID,
 		PublicGitVCSConfig:       publicGitConfig,
