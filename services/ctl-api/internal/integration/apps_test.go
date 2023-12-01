@@ -61,7 +61,6 @@ func (s *appsTestSuite) TestCreateApp() {
 
 		require.Equal(t, app.Name, *(appReq.Name))
 		require.NotEmpty(t, app.ID)
-		require.NotEmpty(t, app.AppSandbox)
 	})
 
 	s.T().Run("errors on duplicate name", func(t *testing.T) {

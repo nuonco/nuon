@@ -10,6 +10,18 @@ var (
 	interpolatedNameRegex *regexp.Regexp = regexp.MustCompile("^[a-zA-Z0-9_]*$")
 )
 
+type interpolatedNameString struct {
+	Val string `validate:"interpolatedName"`
+}
+
+func InterpolatedName(v *validator.Validate, val string) error {
+	obj := interpolatedNameString{
+		Val: val,
+	}
+
+	return v.Struct(obj)
+}
+
 func interpolatedNameValidator(fl validator.FieldLevel) bool {
 	if fl.Field().String() == "" {
 		return false
