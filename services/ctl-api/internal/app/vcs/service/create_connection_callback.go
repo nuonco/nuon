@@ -1,0 +1,82 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+)
+
+type CreateConnectionCallbackRequest struct {
+	OrgID           string `json:"org_id" validate:"required"`
+	GithubInstallID string `json:"github_install_id" validate:"required"`
+}
+
+func (c *CreateConnectionCallbackRequest) Validate(v *validator.Validate) error {
+	if err := v.Struct(c); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+	return nil
+}
+
+//	@BasePath	/v1/vcs
+
+// Public callback for creating a vcs connection, designed to be used from github
+//
+//	@Summary	public connection to create a vcs connection via a callback
+//	@Schemes
+//	@Description	public connection to create a vcs connection via a callback
+//
+//
+//	@Tags			vcs
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			req				body		CreateConnectionCallbackRequest	true	"Input"
+//
+//	@Failure		400				{object}	stderr.ErrResponse
+//	@Failure		401				{object}	stderr.ErrResponse
+//	@Failure		403				{object}	stderr.ErrResponse
+//	@Failure		404				{object}	stderr.ErrResponse
+//	@Failure		500				{object}	stderr.ErrResponse
+//	@Success		201				{object}	app.VCSConnection
+//	@Router			/v1/vcs/connection-callback [post]
+func (s *service) CreateConnectionCallback(ctx *gin.Context) {
+	var req CreateConnectionCallbackRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := req.Validate(s.v); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	_, err := s.getOrg(ctx, req.OrgID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org: %w", err))
+		return
+	}
+
+	vcsConn, err := s.createOrgConnection(ctx, req.OrgID, req.GithubInstallID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create org connection: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, vcsConn)
+}
+
+func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
+	org := app.Org{}
+	res := s.db.WithContext(ctx).
+		First(&org, "id = ?", orgID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get org %s: %w", orgID, res.Error)
+	}
+
+	return &org, nil
+}

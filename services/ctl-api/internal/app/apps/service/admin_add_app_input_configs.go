@@ -11,19 +11,19 @@ import (
 
 type AdminAddAppInputsConfigs struct{}
 
-//		@BasePath	/v1/apps
+//	@BasePath	/v1/apps
 //
 //	 Add app inputs for all apps
 //
-//		@Summary	add inputs for all apps
-//		@Schemes
-//		@Description	add app inputs for all apps
-//		@Param			req		body	AdminAddAppInputsConfigs	true	"Input"
-//		@Tags			apps/admin
-//		@Accept			json
-//		@Produce		json
-//		@Success		200	{boolean}	true
-//		@Router			/v1/apps/admin-add-app-inputs [POST]
+//	@Summary	add inputs for all apps
+//	@Schemes
+//	@Description	add app inputs for all apps
+//	@Param			req	body	AdminAddAppInputsConfigs	true	"Input"
+//	@Tags			apps/admin
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{boolean}	true
+//	@Router			/v1/apps/admin-add-app-inputs [POST]
 func (s *service) AdminAddAppInputsConfigs(ctx *gin.Context) {
 	var req AdminAddAppInputsConfigs
 	if err := ctx.BindJSON(&req); err != nil {

@@ -30,12 +30,12 @@ func (c *CreateInstallInputsRequest) Validate(v *validator.Validate) error {
 //	@Schemes
 //	@Description	create install inputs
 //
-// @Tags installs
+//	@Tags			installs
 //
 //	@Accept			json
 //	@Param			req	body	CreateInstallInputsRequest	true	"Input"
 //	@Produce		json
-//	@Param			install_id	path	string				true	"install ID"
+//	@Param			install_id		path		string	true	"install ID"
 //	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
 //	@Param			Authorization	header		string	true	"bearer auth token"
 //	@Failure		400				{object}	stderr.ErrResponse

@@ -15,7 +15,7 @@ type AdminDeleteComponentRequest struct{}
 //	@Summary	restart an components event loop
 //	@Schemes
 //	@Description	restart component event loop
-//	@Param			component_id	path	string					true	"component ID"
+//	@Param			component_id	path	string						true	"component ID"
 //	@Param			req				body	AdminDeleteComponentRequest	true	"Input"
 //	@Tags			components/admin
 //	@Accept			json
