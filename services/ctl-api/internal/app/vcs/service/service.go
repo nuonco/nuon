@@ -18,9 +18,11 @@ type service struct {
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/vcs/connections", s.GetConnections)
-	api.POST("/v1/vcs/connections", s.CreateConnection)
 	api.GET("/v1/vcs/connections/:connection_id", s.GetConnection)
 	api.GET("/v1/vcs/connected-repos", s.GetAllConnectedRepos)
+
+	api.POST("/v1/vcs/connections", s.CreateConnection)
+	api.POST("/v1/vcs/connection-callback", s.CreateConnectionCallback)
 	return nil
 }
 

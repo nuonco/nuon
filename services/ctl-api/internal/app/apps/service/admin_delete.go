@@ -21,8 +21,8 @@ type AdminDeleteAppRequest struct{}
 //
 //	@Tags			apps/admin
 //	@Accept			json
-//	@Param			req			body	AdminDeleteAppRequest	true	"Input"
-//	@Param			app_id	path	string						true	"app id"
+//	@Param			req		body	AdminDeleteAppRequest	true	"Input"
+//	@Param			app_id	path	string					true	"app id"
 //	@Produce		json
 //	@Success		201	{string}	ok
 //	@Router			/v1/apps/{app_id}/admin-delete [POST]

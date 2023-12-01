@@ -22,7 +22,7 @@ import (
 //	@Produce		json
 //	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
 //	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Param			install_id	path	string	true	"install ID"
+//	@Param			install_id		path		string	true	"install ID"
 //	@Failure		400				{object}	stderr.ErrResponse
 //	@Failure		401				{object}	stderr.ErrResponse
 //	@Failure		403				{object}	stderr.ErrResponse

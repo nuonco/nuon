@@ -12,13 +12,18 @@ const (
 )
 
 var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
-	{"GET", "/livez"}:                               {},
-	{"GET", "/version"}:                             {},
-	{"GET", "/readyz"}:                              {},
-	{"OPTIONS", "*"}:                                {},
-	{"GET", "/docs/*any"}:                           {},
-	{"GET", "/v1/general/cli-config"}:               {},
-	{"GET", "/v1/installer/:installer_slug/render"}: {},
+	{"GET", "/livez"}:     {},
+	{"GET", "/version"}:   {},
+	{"GET", "/readyz"}:    {},
+	{"OPTIONS", "*"}:      {},
+	{"GET", "/docs/*any"}: {},
+
+	// cli / ui methods
+	{"GET", "/v1/general/cli-config"}:       {},
+	{"POST", "/v1/vcs/connection-callback"}: {},
+
+	// installer methods
+	{"GET", "/v1/installer/:installer_slug/render"}:              {},
 	{"GET", "/v1/installer/:installer_slug/install/:install_id"}: {},
 	{"POST", "/v1/installer/:installer_slug/installs"}:           {},
 }

@@ -60,7 +60,7 @@ func (s *service) CreateConnection(ctx *gin.Context) {
 		return
 	}
 
-	vcsConn, err := s.createOrgConnection(ctx, currentOrg.ID, &req)
+	vcsConn, err := s.createOrgConnection(ctx, currentOrg.ID, req.GithubInstallID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org connection: %w", err))
 		return
@@ -69,10 +69,10 @@ func (s *service) CreateConnection(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, vcsConn)
 }
 
-func (s *service) createOrgConnection(ctx context.Context, orgID string, req *CreateConnectionRequest) (*app.VCSConnection, error) {
+func (s *service) createOrgConnection(ctx context.Context, orgID, githubInstallID string) (*app.VCSConnection, error) {
 	vcsConn := app.VCSConnection{
 		OrgID:           orgID,
-		GithubInstallID: req.GithubInstallID,
+		GithubInstallID: githubInstallID,
 	}
 
 	if err := s.db.WithContext(ctx).Clauses(clause.OnConflict{
