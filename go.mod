@@ -12,7 +12,6 @@ replace github.com/spf13/viper v1.4.0 => github.com/spf13/viper v1.7.1
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/DataDog/datadog-go/v5 v5.3.0
-	github.com/Khan/genqlient v0.6.0
 	github.com/auth0/go-jwt-middleware/v2 v2.1.0
 	github.com/aws/aws-sdk-go v1.44.229
 	github.com/aws/aws-sdk-go-v2 v1.21.1
@@ -36,11 +35,6 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.0.2
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-faker/faker/v4 v4.1.0
-	github.com/go-openapi/errors v0.20.4
-	github.com/go-openapi/runtime v0.26.0
-	github.com/go-openapi/strfmt v0.21.7
-	github.com/go-openapi/swag v0.22.4
-	github.com/go-openapi/validate v0.22.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/go-playground/validator/v10 v10.15.5
 	github.com/go-swagger/go-swagger v0.30.5
@@ -62,7 +56,7 @@ require (
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/waypoint v0.11.0
 	github.com/hashicorp/waypoint-plugin-sdk v0.0.0-20230412210808-dcdb2a03f714
-	github.com/jackc/pgx/v5 v5.3.1
+	github.com/jackc/pgx/v5 v5.5.0
 	github.com/kyokomi/emoji v2.2.4+incompatible
 	github.com/lib/pq v1.10.7
 	github.com/matoous/go-nanoid/v2 v2.0.0
@@ -126,18 +120,23 @@ require (
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	github.com/connesc/cipherio v0.2.1 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
+	github.com/go-openapi/errors v0.20.4 // indirect
+	github.com/go-openapi/runtime v0.26.0 // indirect
+	github.com/go-openapi/strfmt v0.21.7 // indirect
+	github.com/go-openapi/swag v0.22.4 // indirect
+	github.com/go-openapi/validate v0.22.1 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.4 // indirect
 	github.com/hashicorp/go-slug v0.12.2 // indirect
 	github.com/hashicorp/jsonapi v0.0.0-20210826224640-ee7dae0fb22d // indirect
+	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20230722043721-ed46e5a46466 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.1 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/net v0.17.0 // indirect
 )
