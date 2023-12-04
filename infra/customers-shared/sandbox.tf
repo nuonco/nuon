@@ -47,6 +47,10 @@ resource "nuon_install" "sandbox" {
   app_id       = nuon_app.sandbox[each.value.app.name].id
   region       = "us-east-1"
   iam_role_arn = "iam-role-arn"
+
+  depends_on = [
+    nuon_app_sandbox.sandbox
+  ]
 }
 
 resource "nuon_app_installer" "sandbox" {
@@ -64,4 +68,5 @@ resource "nuon_app_installer" "sandbox" {
   github_url        = each.value.urls.github
   homepage_url      = each.value.urls.homepage
   demo_url          = each.value.urls.demo
+
 }
