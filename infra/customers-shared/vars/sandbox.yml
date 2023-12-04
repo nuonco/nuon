@@ -1,5 +1,20 @@
 ---
 apps:
+  - name: streamkap
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
+      slug: streamkap
+      description: The streaming alternative to batch ETL
+      name: Streamkap
+    urls:
+      documentation: https://docs.streamkap.com/docs
+      logo: https://assets-global.website-files.com/62a1f97ee068058155677d88/636b8f2f39479ed4924817e5_Streamkap-logo-normal-p-500.png
+      github: https://github.com/streamkap-com
+      community: "na"
+      homepage: https://streamkap.com/
+      demo: https://www.youtube.com/embed/7EEQag4G764
   - name: postman
     installs:
       - Pepsi
