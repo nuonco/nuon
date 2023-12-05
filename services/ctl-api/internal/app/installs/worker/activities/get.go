@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type GetRequest struct {
@@ -18,6 +19,9 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Install, err
 		Preload("App.Org").
 		Preload("AWSAccount").
 		Preload("AppSandboxConfig").
+		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_inputs.created_at DESC")
+		}).
 
 		// load sandbox
 		Preload("AppSandboxConfig.SandboxRelease").
