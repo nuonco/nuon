@@ -10,6 +10,7 @@ services: |
     - services/ctl-api/**
     - go.mod
     - go.sum
+    - pkg/types/workflows/executors/**
   workers-apps:
     - services/workers-apps/**
   workers-canary:
@@ -21,6 +22,8 @@ services: |
     - pkg/waypoint/**
   workers-installs:
     - services/workers-installs/**
+    - pkg/types/workflows/installs/**
+    - pkg/types/workflows/executors/**
   workers-orgs:
     - services/workers-orgs/**
 
@@ -35,6 +38,7 @@ artifacts: |
     - bins/cli/**
     - go.mod
     - go.sum
+    - pkg/types/workflows/executors/**
 
   charts/demo:
     - charts/demo/**
@@ -45,19 +49,33 @@ artifacts: |
 
   bins/waypoint-plugin-exp:
     - bins/waypoint-plugin-exp/**
+    - pkg/plugins/configs/**
+    - pkg/types/plugins/**
   bins/waypoint-plugin-helm:
     - bins/waypoint-plugin-helm/**
+    - pkg/plugins/configs/**
+    - pkg/types/plugins/**
   bins/waypoint-plugin-noop:
     - bins/waypoint-plugin-noop/**
+    - pkg/plugins/configs/**
+    - pkg/types/plugins/**
   bins/waypoint-plugin-oci:
     - bins/waypoint-plugin-oci/**
+    - pkg/plugins/configs/**
+    - pkg/types/plugins/**
   bins/waypoint-plugin-oci-sync:
     - bins/waypoint-plugin-oci-sync/**
+    - pkg/plugins/configs/**
+    - pkg/types/plugins/**
   bins/waypoint-plugin-terraform:
     - bins/waypoint-plugin-terraform/**
     - pkg/terraform/**
+    - pkg/plugins/configs/**
+    - pkg/types/plugins/**
   bins/waypoint-plugin-job:
     - bins/waypoint-plugin-job/**
+    - pkg/plugins/configs/**
+    - pkg/types/plugins/**
 
   sandboxes/aws-eks:
   - sandboxes/aws-eks/**
