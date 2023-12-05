@@ -4,7 +4,7 @@ This is a basic changelog where we track a minimal message whenever we do a prom
 
 ## v0.19.6
 
-Promoting latest changes for sandbox inputs, install inputs and interpolation.
+Promoting latest changes for sandbox inputs, install inputs and interpolation. Updating  protos as well.
 
 ## v0.19.2
 
