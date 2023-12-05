@@ -18,7 +18,7 @@ func (w wkflow) createPlanRequest(runTyp planv1.SandboxInputType, req *installsv
 				AppId:           req.AppId,
 				InstallId:       req.InstallId,
 				RunId:           req.RunId,
-				Type:            planv1.SandboxInputType_SANDBOX_INPUT_TYPE_DEPROVISION,
+				Type:            runTyp,
 				AccountSettings: req.AccountSettings,
 				SandboxSettings: req.SandboxSettings,
 			},
