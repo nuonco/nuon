@@ -3,15 +3,22 @@ package protos
 import (
 	"fmt"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 func (c *Adapter) toSandboxSettings(install *app.Install) (*installsv1.SandboxSettings, error) {
+	var installInputs pgtype.Hstore
+	if len(install.InstallInputs) > 0 {
+		installInputs = install.InstallInputs[0].Values
+	}
+
 	sandboxSettings := &installsv1.SandboxSettings{
 		TerraformVersion: install.AppSandboxConfig.TerraformVersion,
 		Vars:             c.toTerraformVariables(install.AppSandboxConfig.Variables),
 		RootDomain:       fmt.Sprintf("%s.%s", install.ID, c.orgsOutputs.PublicDomain.Domain),
+		InstallInputs:    c.toTerraformVariables(installInputs),
 	}
 
 	if install.AppSandboxConfig.SandboxRelease != nil {
