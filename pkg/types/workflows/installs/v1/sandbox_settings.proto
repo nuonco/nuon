@@ -35,6 +35,7 @@ message SandboxSettings {
 
   // variables to be substituted
   variables.v1.TerraformVariables vars = 5;
+  variables.v1.TerraformVariables install_inputs = 6;
 
-  string root_domain = 6 [(validate.rules).string.min_len = 1];
+  string root_domain = 7 [(validate.rules).string.min_len = 1];
 }
