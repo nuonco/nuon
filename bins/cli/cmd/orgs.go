@@ -83,5 +83,18 @@ func (c *cli) orgsCmd() *cobra.Command {
 	}
 	orgsCmd.AddCommand(listConntectedRepos)
 
+	connectGithubCmd := &cobra.Command{
+		Use:   "connect-github",
+		Short: "Connect GitHub account",
+		Long:  "Connect GitHub account to your Nuon org",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient, c.cfg)
+			svc.ConnectGithub(cmd.Context())
+		},
+	}
+	connectGithubCmd.Flags().StringVarP(&id, "org-id", "o", "", "The ID of the org you want to use")
+	connectGithubCmd.MarkFlagRequired("org-id")
+	orgsCmd.AddCommand(connectGithubCmd)
+
 	return orgsCmd
 }
