@@ -16,22 +16,25 @@ const (
 	defaultFilePath         string = "~/.nuon"
 	defaultAPIURL           string = "https://ctl.prod.nuon.co"
 	defaultConfigFileEnvVar string = "NUON_CONFIG_FILE"
+	defaultGitHubAppName    string = "nuon-connect"
 )
 
 // config holds config values, read from the `~/.nuon` config file and env vars.
 type Config struct {
 	*viper.Viper
 
-	APIToken string `mapstructure:"api_token"`
-	APIURL   string `mapstructure:"api_url"`
-	OrgID    string `mapstructure:"org_id"`
+	APIToken      string `mapstructure:"api_token"`
+	APIURL        string `mapstructure:"api_url"`
+	GitHubAppName string `mapstructure:"github_app_name"`
+	OrgID         string `mapstructure:"org_id"`
 }
 
 // newConfig creates a new config instance.
 func NewConfig(customFilepath string) (*Config, error) {
 	cfg := &Config{
-		Viper:  viper.New(),
-		APIURL: defaultAPIURL,
+		Viper:         viper.New(),
+		APIURL:        defaultAPIURL,
+		GitHubAppName: defaultGitHubAppName,
 	}
 
 	// Read values from config file.
@@ -53,6 +56,9 @@ func NewConfig(customFilepath string) (*Config, error) {
 	}
 	if cfg.GetString("org_id") != "" {
 		cfg.OrgID = cfg.GetString("org_id")
+	}
+	if cfg.GetString("github_app_name") != "" {
+		cfg.GitHubAppName = cfg.GetString("github_app_name")
 	}
 
 	return cfg, nil
