@@ -55,7 +55,6 @@ required_checks:
   # terraform cloud e2e checks
   - Terraform Cloud/nuonco/e2e-prod
   - Terraform Cloud/nuonco/e2e-stage
-  - Terraform Cloud/nuonco/quickstart
 
   # terraform cloud services
   - Terraform Cloud/nuonco/ctl-api-prod
