@@ -22,15 +22,6 @@ module "company" {
   required_checks = []
 }
 
-module "demo" {
-  source = "./modules/repository"
-
-  name            = "demo"
-  enable_ecr      = false
-  description     = "Demo repo for Nuon."
-  required_checks = ["demo ✅"]
-}
-
 module "terraform-provider-echo" {
   source = "./modules/repository"
 

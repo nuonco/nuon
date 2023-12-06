@@ -519,3 +519,14 @@ module "public-docs" {
 
   enable_branch_protection = false
 }
+
+module "demo" {
+  source = "./modules/repository"
+
+  name            = "demo"
+  enable_ecr      = false
+  description     = "Demo repo for Nuon."
+  required_checks = []
+  topics          = ["archived"]
+  archived        = true
+}
