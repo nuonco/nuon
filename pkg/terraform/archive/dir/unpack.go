@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/facebookgo/symwalk"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive"
 )
 
@@ -49,7 +49,7 @@ func (d *dir) Unpack(ctx context.Context, cb archive.Callback) error {
 		return nil
 	}
 
-	if err := filepath.Walk(d.Path, fn); err != nil {
+	if err := symwalk.Walk(d.Path, fn); err != nil {
 		return fmt.Errorf("unable to walk root directory: %w", err)
 	}
 	return nil
