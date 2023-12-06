@@ -15,6 +15,6 @@ func (s *Service) ID(ctx context.Context, asJSON bool) {
 	}
 
 	view.Render([][]string{
-		{"api-token", s.cfg.OrgID},
+		{"id", s.cfg.OrgID},
 	})
 }
