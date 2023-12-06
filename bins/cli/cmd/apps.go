@@ -17,7 +17,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List all your apps",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient)
+			svc := apps.New(c.apiClient, c.cfg)
 			svc.List(cmd.Context(), PrintJSON)
 		},
 	}
@@ -29,7 +29,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:   "get",
 		Short: "Get the current app",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient)
+			svc := apps.New(c.apiClient, c.cfg)
 			svc.Get(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -42,7 +42,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "View sandbox config",
 		Long:  "View apps latest sandbox config",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient)
+			svc := apps.New(c.apiClient, c.cfg)
 			svc.GetSandboxConfig(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -55,7 +55,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "View app input config",
 		Long:  "View latest app input config",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient)
+			svc := apps.New(c.apiClient, c.cfg)
 			svc.GetInputConfig(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -68,8 +68,8 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "Set current app",
 		Long:  "Set current app by app ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient)
-			svc.SetCurrent(cmd.Context(), appID, c.cfg)
+			svc := apps.New(c.apiClient, c.cfg)
+			svc.SetCurrent(cmd.Context(), appID)
 		},
 	}
 	setCurrentCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")

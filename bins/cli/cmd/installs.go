@@ -65,7 +65,7 @@ func (c *cli) installsCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name you want to give this install")
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVarP(&arn, "role", "o", "", "The ARN of the IAM role to use to provision this install")
-	createCmd.MarkFlagRequired("iam-arn")
+	createCmd.MarkFlagRequired("role")
 	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in")
 	createCmd.MarkFlagRequired("region")
 	installsCmds.AddCommand(createCmd)
