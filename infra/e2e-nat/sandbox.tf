@@ -1,5 +1,5 @@
 locals {
-  name = "e2e-stage"
+  name = "e2e-nat"
 
   sandboxes_repo = "nuonco/sandboxes"
   sandboxes_branch = "main"
