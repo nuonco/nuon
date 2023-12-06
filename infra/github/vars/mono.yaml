@@ -27,7 +27,7 @@ required_checks:
   - branch ✅
   - lint ✅
 
-  # terraform cloud checks
+  # terraform cloud infra checks
   - Terraform Cloud/nuonco/infra-artifacts
   - Terraform Cloud/nuonco/aws-accounts
   - Terraform Cloud/nuonco/aws-org
@@ -51,6 +51,11 @@ required_checks:
   - Terraform Cloud/nuonco/nuon-dns
   - Terraform Cloud/nuonco/powertools
   - Terraform Cloud/nuonco/sandboxes
+
+  # terraform cloud e2e checks
+  - Terraform Cloud/nuonco/e2e-prod
+  - Terraform Cloud/nuonco/e2e-stage
+  - Terraform Cloud/nuonco/quickstart
 
   # terraform cloud services
   - Terraform Cloud/nuonco/ctl-api-prod
