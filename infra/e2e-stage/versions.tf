@@ -1,7 +1,13 @@
 terraform {
   required_version = ">= 1.3.7"
 
-  backend "local" {}
+  backend "remote" {
+    organization = "nuonco"
+
+    workspaces {
+      name = "e2e-stage-"
+    }
+  }
 
   # NOTE: uncomment this to run locally using `nuonctl scripts exec install-terraform-provider`
   #required_providers {

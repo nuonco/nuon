@@ -5,7 +5,7 @@ terraform {
     organization = "nuonco"
 
     workspaces {
-      name = "e2e-prod"
+      name = "e2e-nat"
     }
   }
 
