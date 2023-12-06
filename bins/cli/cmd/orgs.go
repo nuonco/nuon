@@ -6,7 +6,10 @@ import (
 )
 
 func (c *cli) orgsCmd() *cobra.Command {
-	var id string
+	var (
+		id   string
+		name string
+	)
 
 	orgsCmd := &cobra.Command{
 		Use:               "orgs",
@@ -53,7 +56,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "Set current org by org ID",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := orgs.New(c.apiClient, c.cfg)
-			svc.SetCurrent(cmd.Context(), id, c.cfg)
+			svc.SetCurrent(cmd.Context(), id, true)
 		},
 	}
 	setCurrentCmd.Flags().StringVarP(&id, "org-id", "o", "", "The ID of the org you want to use")
@@ -95,6 +98,19 @@ func (c *cli) orgsCmd() *cobra.Command {
 	connectGithubCmd.Flags().StringVarP(&id, "org-id", "o", "", "The ID of the org you want to use")
 	connectGithubCmd.MarkFlagRequired("org-id")
 	orgsCmd.AddCommand(connectGithubCmd)
+
+	createCmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create new org",
+		Long:  "Create a new org and set it as the current org",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient, c.cfg)
+			svc.Create(cmd.Context(), name, PrintJSON)
+		},
+	}
+	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name of your new org")
+	createCmd.MarkFlagRequired("name")
+	orgsCmd.AddCommand(createCmd)
 
 	return orgsCmd
 }
