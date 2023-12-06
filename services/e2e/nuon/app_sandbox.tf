@@ -7,9 +7,9 @@ resource "nuon_app_sandbox" "main" {
   terraform_version = "v1.6.3"
 
   public_repo = {
-    repo      = "nuonco/sandboxes"
-    branch    = "ja/3024-aws-eks-admin-access"
-    directory = "aws-eks"
+    repo      = var.sandbox_repo
+    branch    = var.sandbox_branch
+    directory = var.sandbox_dir
   }
 
   var {

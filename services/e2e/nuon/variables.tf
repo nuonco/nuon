@@ -4,7 +4,6 @@ variable "app_name" {
   type        = string
 }
 
-# NOTE: eventually we will create these per run, so this can be self-containing.
 variable "install_role_arn" {
   description = "IAM role ARN"
   type        = string
@@ -23,4 +22,18 @@ variable "east_2_count" {
 variable "west_2_count" {
   description = "Number of installs to create in us-west-2"
   type        = number
+}
+
+variable "sandbox_repo" {
+  description = "Sandbox repository to use, must be public."
+  default = "nuonco/sandboxes"
+}
+
+variable "sandbox_dir" {
+  description = "Sandbox directory to use."
+}
+
+variable "sandbox_branch" {
+  description = "Sandbox branch to use."
+  default = "main"
 }

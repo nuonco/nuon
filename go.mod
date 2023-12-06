@@ -120,6 +120,7 @@ require (
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	github.com/connesc/cipherio v0.2.1 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
+	github.com/facebookgo/symwalk v0.0.0-20150726040526-42004b9f3222 // indirect
 	github.com/go-openapi/errors v0.20.4 // indirect
 	github.com/go-openapi/runtime v0.26.0 // indirect
 	github.com/go-openapi/strfmt v0.21.7 // indirect

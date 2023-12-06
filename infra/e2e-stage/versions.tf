@@ -1,8 +1,9 @@
 terraform {
   required_version = ">= 1.3.7"
 
+  backend "local" {}
 
-# NOTE: uncomment this to run locally using `nuonctl scripts exec install-terraform-provider`
+  # NOTE: uncomment this to run locally using `nuonctl scripts exec install-terraform-provider`
   #required_providers {
     #nuon = {
       #source  = "terraform.local/local/nuon"

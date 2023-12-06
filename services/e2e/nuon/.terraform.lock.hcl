@@ -6,10 +6,6 @@ provider "registry.terraform.io/nuonco/nuon" {
   constraints = ">= 0.7.0"
   hashes = [
     "h1:02Rnpd5vigcYOB6ov50jw5bUFVWgm0k8mKA3+NPpK4w=",
-    "h1:AAysyF+H79oq2lZzKOEnVnobJTv18Mn4njhzIUDXhIY=",
-    "h1:E4nNasE3kd5VaDfLqMMR3wAOJnlpE0pDzLbwnYGsjwE=",
-    "h1:FAxWFt1Xq5p2abX/1XpbV8x26yYAZr2KdJ7NvN479kk=",
-    "h1:FtgUvUKrGbl+CeLC6IIW89TX1rTkORSzGcgH3XgVSx0=",
     "zh:23b857b98dfd8ca0b44787550fbae5877f1d86a18b2beca5b24fc2af30b39238",
     "zh:367418997e783eaa56738a741ae140ea235f0f04630edf9b7c1dbb5ba1883bf7",
     "zh:39104faa2448fdc9d575779ebcb4137c95ac3e7e6b9dabe2699799a0c68b01ba",
