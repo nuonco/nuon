@@ -15,10 +15,11 @@ const (
 	statusAccessError = "access-error"
 )
 
-func (s *Service) Create(ctx context.Context, name string, asJSON bool) {
+func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, asJSON bool) {
 	if asJSON {
 		org, err := s.api.CreateOrg(ctx, &models.ServiceCreateOrgRequest{
-			Name: &name,
+			Name:           &name,
+			UseSandboxMode: isSandboxMode,
 		})
 		if err != nil {
 			ui.PrintJSONError(err)
@@ -33,7 +34,8 @@ func (s *Service) Create(ctx context.Context, name string, asJSON bool) {
 	view.Start()
 	view.Update("creating org")
 	org, err := s.api.CreateOrg(ctx, &models.ServiceCreateOrgRequest{
-		Name: &name,
+		Name:           &name,
+		UseSandboxMode: isSandboxMode,
 	})
 	if err != nil {
 		view.Fail(err)
