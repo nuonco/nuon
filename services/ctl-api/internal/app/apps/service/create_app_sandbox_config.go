@@ -98,11 +98,18 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		Variables:                pgtype.Hstore(req.SandboxInputs),
 		TerraformVersion:         req.TerraformVersion,
 	}
-
 	res = s.db.WithContext(ctx).
 		Create(&appSandboxConfig)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create app sandbox config: %w", res.Error)
+	}
+
+	// update the sandbox configs on all installs in the app
+	res = s.db.WithContext(ctx).Model(&app.Install{}).
+		Where("app_id = ?", appID).
+		Update("app_sandbox_config_id", appSandboxConfig.ID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to update app installs to reference new sandbox config: %w", res.Error)
 	}
 
 	return &appSandboxConfig, nil
