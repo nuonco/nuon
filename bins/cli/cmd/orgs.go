@@ -7,8 +7,9 @@ import (
 
 func (c *cli) orgsCmd() *cobra.Command {
 	var (
-		id   string
-		name string
+		id      string
+		name    string
+		sandbox bool
 	)
 
 	orgsCmd := &cobra.Command{
@@ -105,11 +106,12 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "Create a new org and set it as the current org",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := orgs.New(c.apiClient, c.cfg)
-			svc.Create(cmd.Context(), name, PrintJSON)
+			svc.Create(cmd.Context(), name, sandbox, PrintJSON)
 		},
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name of your new org")
 	createCmd.MarkFlagRequired("name")
+	createCmd.Flags().BoolVar(&sandbox, "sandbox-mode", false, "Create org in sandbox mode")
 	orgsCmd.AddCommand(createCmd)
 
 	return orgsCmd
