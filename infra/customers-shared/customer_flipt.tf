@@ -41,6 +41,10 @@ resource "nuon_install" "flipt_install" {
 
   name         = "flipt-demo"
   region       = "us-east-1"
-  iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-install-access"
+  iam_role_arn = "customer-flipt"
+
+  depends_on = [
+    nuon_app_sandbox.sandbox
+  ]
 }
 

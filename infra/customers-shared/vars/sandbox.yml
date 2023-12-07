@@ -5,6 +5,21 @@ apps:
       - Pepsi
       - Coca Cola
     installer:
+      slug: flipt-sandbox
+      description: Open Source Feature Management
+      name: Flipt
+    urls:
+      documentation: https://www.flipt.io/docs/introduction
+      logo: https://www.flipt.io/img/logo.svg
+      github: https://github.com/flipt-io
+      community: https://discord.com/invite/kRhEqG2TEZ
+      homepage: https://www.flipt.io
+      demo: https://www.youtube.com/embed/xzaZU6oKBq4
+  - name: streamkap
+    installs:
+      - Pepsi
+      - Coca Cola
+    installer:
       slug: streamkap
       description: The streaming alternative to batch ETL
       name: Streamkap
@@ -15,21 +30,6 @@ apps:
       community: "na"
       homepage: https://streamkap.com/
       demo: https://www.youtube.com/embed/7EEQag4G764
-  - name: streamkap
-    installs:
-      - Pepsi
-      - Coca Cola
-    installer:
-      slug: flipt
-      description: Open Source Feature Management
-      name: Flipt
-    urls:
-      documentation: https://www.flipt.io/docs/introduction
-      logo: https://www.flipt.io/img/logo.svg
-      github: https://github.com/flipt-io
-      community: https://discord.com/invite/kRhEqG2TEZ
-      homepage: https://www.flipt.io
-      demo: https://www.youtube.com/embed/xzaZU6oKBq4
   - name: postman
     installs:
       - Pepsi
