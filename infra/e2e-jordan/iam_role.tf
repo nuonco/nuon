@@ -1,21 +1,18 @@
 locals {
-  artifact_base_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox/aws-eks"
-}
-
-data "http" "sandbox_version" {
-  url = "${local.artifact_base_url}/latest.txt"
+  git_ref           = "main"
+  artifact_base_url = "https://raw.githubusercontent.com/nuonco/sandboxes/${local.git_ref}/aws-eks-byovpc/artifacts"
 }
 
 data "http" "sandbox_trust_policy" {
-  url = "${local.artifact_base_url}/${chomp(data.http.sandbox_version.response_body)}/trust.json"
+  url = "${local.artifact_base_url}/trust.json"
 }
 
 data "http" "sandbox_provision_policy" {
-  url = "${local.artifact_base_url}/${chomp(data.http.sandbox_version.response_body)}/provision.json"
+  url = "${local.artifact_base_url}/provision.json"
 }
 
 data "http" "sandbox_deprovision_policy" {
-  url = "${local.artifact_base_url}/${chomp(data.http.sandbox_version.response_body)}/deprovision.json"
+  url = "${local.artifact_base_url}/deprovision.json"
 }
 
 resource "aws_iam_policy" "install_deprovision" {
@@ -36,7 +33,7 @@ module "install_access" {
 
   role_name = "${local.name}-customer-iam-role"
 
-  allow_self_assume_role   = true
+  allow_self_assume_role          = true
   custom_role_trust_policy        = data.http.sandbox_trust_policy.response_body
   create_custom_role_trust_policy = true
   custom_role_policy_arns = [
