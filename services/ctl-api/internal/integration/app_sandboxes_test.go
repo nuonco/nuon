@@ -63,6 +63,23 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 		require.Equal(t, latestCfg.SandboxReleaseID, sandbox.Releases[0].ID)
 	})
 
+	s.T().Run("updates installs to reference new sandbox", func(t *testing.T) {
+		install := s.createInstall(s.appID)
+
+		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
+		req.SandboxReleaseID = ""
+		req.ConnectedGithubVcsConfig = nil
+
+		appSandboxCfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
+		require.NoError(t, err)
+		require.NotNil(t, appSandboxCfg)
+
+		updatedInstall, err := s.apiClient.GetInstall(s.ctx, install.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, updatedInstall)
+		require.Equal(t, updatedInstall.AppSandboxConfig.ID, appSandboxCfg.ID)
+	})
+
 	s.T().Run("errors on invalid built-in sandbox id", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
 		req.SandboxReleaseID = generics.GetFakeObj[string]()
