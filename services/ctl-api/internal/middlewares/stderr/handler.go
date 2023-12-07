@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgconn"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -79,12 +80,15 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		if errors.Is(err, gorm.ErrForeignKeyViolated) {
-			c.JSON(http.StatusBadRequest, ErrResponse{
-				Error:       err.Error(),
-				UserError:   true,
-				Description: "invalid foreign key - usually from using an invalid parent object ID",
-			})
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "25303" {
+				c.JSON(http.StatusBadRequest, ErrResponse{
+					Error:       err.Error(),
+					UserError:   true,
+					Description: "invalid foreign key - usually from using an invalid parent object ID",
+				})
+			}
 			return
 		}
 

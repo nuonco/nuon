@@ -23,9 +23,11 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			status = "err"
 		}
+
+		path := c.FullPath()
 		tags := []string{
 			"status:" + status,
-			"endpoint:" + fmt.Sprintf("%s-%s", c.Request.Method, c.Request.URL.Path),
+			"endpoint:" + fmt.Sprintf("%s-%s", c.Request.Method, path),
 		}
 
 		m.writer.Incr("api.request.status", 1, tags)
