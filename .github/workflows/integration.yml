@@ -41,31 +41,40 @@ jobs:
         if: contains( steps.merged_pr.outputs.labels, 'integration')
         run: echo "integration=true" >> "$GITHUB_OUTPUT"
 
-  # NOTE: we use the internal api request workflow, as it will automatically setup twingate access
-  setup-internal-api-access:
-    name: setup internal api access
-    needs:
-      - merged_pr
-    if: ${{ needs.merged_pr.outputs.integration == 'true' }}
-    uses: ./.github/workflows/internal_api.yml
-    with:
-      env: stage
-      endpoint: /version
-      method: GET
-      data: ''
+  terraform:
+    name: Get terraform outputs
+    uses: ./.github/workflows/terraform_outputs.yml
     secrets: inherit
+    with:
+      dir: infra/eks
+      cache-key: infra-eks-${{ inputs.env }}-nuon
+      workspace: ${{ inputs.env }}-nuon
 
   run-integration-tests:
     name: 🌏 test
     runs-on: [ubuntu-latest-16-cores, linux]
     needs:
       - merged_pr
-      - setup-internal-api-access
+      - terraform
     permissions:
       contents: read
       packages: write
     timeout-minutes: 5
     steps:
+      - name: Fetch terraform outputs
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.terraform.outputs.env_cache_key }}
+
+      - name: Copy terraform outputs to environment
+        run: |
+          cat "${{ needs.terraform.outputs.tf_env }}" >> "$GITHUB_ENV"
+
+      - name: Setup twingate
+        uses: twingate/github-action@v1
+        with:
+          service-key: ${{ env.TFO_TWINGATE_SERVICE_ACCOUNTS_GITHUB_ACTIONS_TOKEN }}
+
       - name: Checkout repo
         uses: actions/checkout@v3
 
@@ -91,10 +100,10 @@ jobs:
 
   status_slack_notifications:
     name: update promotions channel
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
+    if: ${{ needs.merged_pr.outputs.integration == 'true' }} && always()
     needs:
       - merged_pr
-      - setup-internal-api-access
+      - terraform
       - run-integration-tests
     runs-on: ubuntu-latest
     steps:
