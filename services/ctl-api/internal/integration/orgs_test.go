@@ -27,7 +27,8 @@ func TestOrgsSuite(t *testing.T) {
 
 func (s *orgsIntegrationTestSuite) TestCreateOrg() {
 	s.T().Run("success", func(t *testing.T) {
-		fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+		fakeReq := s.fakeOrgRequest()
+
 		org, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
 		require.NoError(t, err)
 		require.NotNil(t, org)
@@ -38,9 +39,9 @@ func (s *orgsIntegrationTestSuite) TestCreateOrg() {
 	})
 
 	s.T().Run("sets custom cert", func(t *testing.T) {
-		fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+		fakeReq := s.fakeOrgRequest()
 		fakeReq.UseCustomCert = true
-		fakeReq.UseSandboxMode = true
+
 		org, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
 		require.NoError(t, err)
 		require.NotNil(t, org)
@@ -58,7 +59,8 @@ func (s *orgsIntegrationTestSuite) TestCreateOrg() {
 	})
 
 	s.T().Run("adds current user who created the org as a user", func(t *testing.T) {
-		fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+		fakeReq := s.fakeOrgRequest()
+
 		org, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
 		require.NoError(t, err)
 		require.NotNil(t, org)
@@ -73,8 +75,10 @@ func (s *orgsIntegrationTestSuite) TestCreateOrg() {
 }
 
 func (s *orgsIntegrationTestSuite) TestOrgByID() {
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+	fakeReq := s.fakeOrgRequest()
+
 	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
+
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), seedOrg)
 	s.apiClient.SetOrgID(seedOrg.ID)
@@ -90,7 +94,8 @@ func (s *orgsIntegrationTestSuite) TestOrgByID() {
 }
 
 func (s *orgsIntegrationTestSuite) TestUpdateOrg() {
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+	fakeReq := s.fakeOrgRequest()
+
 	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), seedOrg)
@@ -119,7 +124,8 @@ func (s *orgsIntegrationTestSuite) TestUpdateOrg() {
 }
 
 func (s *orgsIntegrationTestSuite) TestGetOrgs() {
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+	fakeReq := s.fakeOrgRequest()
+
 	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), seedOrg)
@@ -145,7 +151,8 @@ func (s *orgsIntegrationTestSuite) TestGetOrgs() {
 }
 
 func (s *orgsIntegrationTestSuite) TestCreateOrgUser() {
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+	fakeReq := s.fakeOrgRequest()
+
 	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), seedOrg)
@@ -166,7 +173,8 @@ func (s *orgsIntegrationTestSuite) TestCreateOrgUser() {
 }
 
 func (s *orgsIntegrationTestSuite) TestDeleteOrg() {
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+	fakeReq := s.fakeOrgRequest()
+
 	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), seedOrg)

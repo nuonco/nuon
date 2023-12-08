@@ -37,7 +37,22 @@ integration:
     ENV INTEGRATION_INTERNAL_API_URL=$internal_api_url
 
     WORKDIR internal/integration
-    RUN go test -count=1 -v -run ./...
+    RUN go test -count=1 -parallel=1 -v -run TestAppsSuite
+    RUN go test -count=1 -parallel=1 -v -run TestAppInputSuite
+    RUN go test -count=1 -parallel=1 -v -run TestAppSandboxesSuite
+    RUN go test -count=1 -parallel=1 -v -run TestAppsSuite
+    RUN go test -count=1 -parallel=1 -v -run TestComponentBuildsSuite
+    RUN go test -count=1 -parallel=1 -v -run TestComponentReleasesSuite
+    RUN go test -count=1 -parallel=1 -v -run TestComponentReleasesSuite
+    RUN go test -count=1 -parallel=1 -v -run TestComponentConfigsSuite
+    RUN go test -count=1 -parallel=1 -v -run TestGeneralSuite
+    RUN go test -count=1 -parallel=1 -v -run TestInstallComponentsSuite
+    RUN go test -count=1 -parallel=1 -v -run TestInstallDeploysSuite
+    RUN go test -count=1 -parallel=1 -v -run TestInstallInputsSuite
+    RUN go test -count=1 -parallel=1 -v -run TestInstallsSuite
+    RUN go test -count=1 -parallel=1 -v -run TestOrgsSuite
+    RUN go test -count=1 -parallel=1 -v -run TestSandboxesSuite
+    RUN go test -count=1 -parallel=1 -v -run TestVCSSuite
 
 lint:
     FROM +code
