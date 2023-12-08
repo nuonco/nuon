@@ -32,8 +32,8 @@ jobs:
     secrets: inherit
     with:
       dir: infra/eks
-      cache-key: infra-eks-stage-nuon
-      workspace: stage-nuon
+      cache-key: infra-eks-${{ inputs.env }}-nuon
+      workspace: ${{ inputs.env }}-nuon
 
   setup-twingate:
     name: 🔍 internal-api-request
