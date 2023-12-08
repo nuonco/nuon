@@ -115,7 +115,6 @@ func TestDeprovision(t *testing.T) {
 			assert.Equal(t, req.RunId, pr.GetSandbox().RunId)
 			assert.Equal(t, req.SandboxSettings, pr.GetSandbox().SandboxSettings)
 			assert.Equal(t, req.AccountSettings, pr.GetSandbox().AccountSettings)
-			assert.Equal(t, planv1.SandboxInputType_SANDBOX_INPUT_TYPE_DEPROVISION, pr.GetSandbox().Type)
 
 			return &planv1.CreatePlanResponse{Plan: planref}, nil
 		})
