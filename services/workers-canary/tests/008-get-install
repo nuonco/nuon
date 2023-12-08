@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+set -o pipefail
+set -u
+
+echo >&2 "testing get installs..."
+
+cat $TF_OUTPUTS_PATH | jq -r '.install_ids[]' | while read -r install_id ; do
+  echo >&2 "getting install $install_id..."
+  nuon -j installs get -i $install_id
+done

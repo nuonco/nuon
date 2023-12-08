@@ -7,7 +7,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
-	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -19,11 +18,6 @@ const defaultAgent = "unknown"
 //go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_client.go -source=client.go -package=client
 type Client interface {
-	TriggerCanaryProvision(context.Context, *canaryv1.ProvisionRequest) error
-	ScheduleCanaryProvision(context.Context, string, string, *canaryv1.ProvisionRequest) error
-	UnscheduleCanaryProvision(context.Context, string) error
-	TriggerCanaryDeprovision(context.Context, *canaryv1.DeprovisionRequest) error
-
 	TriggerInstallProvision(context.Context, *installsv1.ProvisionRequest) (string, error)
 	TriggerInstallDeprovision(context.Context, *installsv1.DeprovisionRequest) (string, error)
 

@@ -51,3 +51,21 @@ func (w *wkflow) defaultTerraformRunActivity(
 	}
 	return nil
 }
+
+func (w *wkflow) defaultExecTestActivity(
+	ctx workflow.Context,
+	actFn interface{},
+	req interface{},
+	resp interface{},
+) error {
+	ao := workflow.ActivityOptions{
+		ScheduleToCloseTimeout: 5 * time.Minute,
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
+
+	fut := workflow.ExecuteActivity(ctx, actFn, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return fmt.Errorf("unable to get test response: %w", err)
+	}
+	return nil
+}

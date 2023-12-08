@@ -54,15 +54,13 @@ docker:
     ARG cache_tag=$EARTHLY_TARGET_TAG_DOCKER
     ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
-    RUN apk add --update --no-cache \
-      bash \
-      git \
-      zip
-
     COPY +build/service /bin/service
     COPY ../../images/aws-iam-authenticator+aws-iam-authenticator/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
     COPY install-cli.sh /install-cli.sh
-    COPY ../e2e+terraform/* /terraform/
+    COPY --dir terraform /terraform
+    COPY --dir tests /tests
+
+    COPY ../e2e+terraform/* /terraform/e2e
 
     ENTRYPOINT ["/bin/service", "all"]
     LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH

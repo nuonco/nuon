@@ -12,17 +12,13 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 	l.Info("deprovisioning")
 	resp := &canaryv1.DeprovisionResponse{
 		CanaryId: req.CanaryId,
-		OrgId:    req.OrgId,
 	}
-	w.sendNotification(ctx, notificationTypeDeprovisionStart, req.CanaryId, nil)
 
 	err := w.execDeprovision(ctx, req)
 	if err != nil {
 		err = fmt.Errorf("unable to deprovision canary: %w", err)
-		w.sendNotification(ctx, notificationTypeDeprovisionError, req.CanaryId, err)
+		w.sendNotification(ctx, notificationTypeDeprovisionError, req.CanaryId, req.SandboxMode, err)
 		return nil, err
 	}
-
-	w.sendNotification(ctx, notificationTypeDeprovisionSuccess, req.CanaryId, nil)
 	return resp, nil
 }

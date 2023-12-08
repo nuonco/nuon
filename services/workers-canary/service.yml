@@ -5,11 +5,11 @@ env:
   API_URL: http://localhost:8081
   INTERNAL_API_URL: http://localhost:8082
   GITHUB_INSTALL_ID: "41323514"
-  TERRAFORM_MODULE_DIR: ../e2e/nuon
+  TERRAFORM_MODULE_DIR: /Users/jonmorehouse/nuon/mono/services/workers-canary/terraform
+  TESTS_DIR: ./tests
   INSTALL_SCRIPT_PATH: ./install-cli.sh
   DISABLE_NOTIFICATIONS: true
-  DISABLE_CLI_COMMANDS: false
-  DISABLE_INTROSPECTION: true
+  DISABLE_TESTS: false
 local_startup_cmds:
   - go build -o /tmp/svc-workers-canary .
 local_cmds:

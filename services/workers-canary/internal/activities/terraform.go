@@ -31,16 +31,16 @@ const (
 )
 
 type TerraformRunOutputs struct {
-	OrgID string `mapstructure:"org_id"`
+	OrgID string `mapstructure:"org_id" json:"org_id"`
 
-	AppID string                 `mapstructure:"app_id"`
-	App   map[string]interface{} `mapstructure:"app"`
+	AppID string                 `mapstructure:"app_id" json:"app_id"`
+	App   map[string]interface{} `mapstructure:"app" json:"app"`
 
-	ComponentIDs []string               `mapstructure:"component_ids"`
-	Components   map[string]interface{} `mapstructure:"components"`
+	ComponentIDs []string               `mapstructure:"component_ids" json:"component_ids"`
+	Components   map[string]interface{} `mapstructure:"components" json:"components"`
 
-	InstallIDs []string               `mapstructure:"install_ids"`
-	Installs   map[string]interface{} `mapstructure:"installs"`
+	InstallIDs []string               `mapstructure:"install_ids" json:"install_ids"`
+	Installs   map[string]interface{} `mapstructure:"installs" json:"installs"`
 }
 
 type RunTerraformRequest struct {
@@ -53,8 +53,8 @@ type RunTerraformResponse struct {
 	Outputs *TerraformRunOutputs
 }
 
-func (c *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.Workspace, error) {
-	arch, err := dir.New(c.v,
+func (a *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.Workspace, error) {
+	arch, err := dir.New(a.v,
 		dir.WithPath(moduleDir),
 		dir.WithIgnoreDotTerraformDir(),
 		dir.WithIgnoreTerraformStateFile(),
@@ -64,30 +64,26 @@ func (c *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.
 		return nil, fmt.Errorf("unable to create archive: %w", err)
 	}
 
-	bin, err := remotebinary.New(c.v,
+	bin, err := remotebinary.New(a.v,
 		remotebinary.WithVersion(defaultTerraformVersion),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create binary: %w", err)
 	}
 
-	vars, err := staticvars.New(c.v, staticvars.WithFileVars(map[string]interface{}{
-		"app_name":         canaryID,
-		"install_role_arn": c.cfg.InstallIamRoleArn,
-		"east_1_count":     1,
-		"east_2_count":     1,
-		"west_2_count":     1,
+	vars, err := staticvars.New(a.v, staticvars.WithFileVars(map[string]interface{}{
+		"install_role_arn": a.cfg.InstallIamRoleArn,
 	}),
 		staticvars.WithEnvVars(map[string]string{
 			"NUON_ORG_ID":  orgID,
-			"NUON_API_URL": c.cfg.APIURL,
+			"NUON_API_URL": a.cfg.APIURL,
 		}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create vars: %w", err)
 	}
 
-	stateFp := filepath.Join(c.cfg.TerraformStateBaseDir, fmt.Sprintf("%s-terraform.tfstate", canaryID))
-	back, err := local.New(c.v, local.WithFilepath(stateFp))
+	stateFp := filepath.Join(a.cfg.TerraformStateBaseDir, fmt.Sprintf("%s-terraform.tfstate", canaryID))
+	back, err := local.New(a.v, local.WithFilepath(stateFp))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local backend: %w", err)
 	}
@@ -95,7 +91,7 @@ func (c *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.
 	hooks := noop.New()
 
 	// create workspace
-	wkspace, err := workspace.New(c.v,
+	wkspace, err := workspace.New(a.v,
 		workspace.WithHooks(hooks),
 		workspace.WithArchive(arch),
 		workspace.WithBackend(back),
@@ -108,8 +104,8 @@ func (c *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.
 	return wkspace, nil
 }
 
-func (c *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgID string, runTyp RunType) (map[string]interface{}, error) {
-	wkspace, err := c.getWorkspace(moduleDir, canaryID, orgID)
+func (a *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgID string, runTyp RunType) (map[string]interface{}, error) {
+	wkspace, err := a.getWorkspace(moduleDir, canaryID, orgID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get workspace: %w", err)
 	}
@@ -120,7 +116,7 @@ func (c *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgI
 	})
 
 	runUI := terminal.NonInteractiveUI(ctx)
-	tfRun, err := run.New(c.v,
+	tfRun, err := run.New(a.v,
 		run.WithWorkspace(wkspace),
 		run.WithUI(runUI),
 		run.WithLogger(runLog),
@@ -154,7 +150,6 @@ func (c *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgI
 }
 
 func (a *Activities) RunTerraform(ctx context.Context, req *RunTerraformRequest) (*RunTerraformResponse, error) {
-	// expand the directory with the nuon root, if it starts with `$NUON_ROOT`
 	moduleDir := a.cfg.TerraformModuleDir
 	rawOutputs, err := a.runTerraform(ctx, moduleDir, req.CanaryID, req.OrgID, req.RunType)
 	if err != nil {

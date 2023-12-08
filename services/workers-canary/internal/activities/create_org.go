@@ -10,7 +10,8 @@ import (
 )
 
 type CreateOrgRequest struct {
-	CanaryID string
+	CanaryID    string
+	SandboxMode bool
 }
 
 type CreateOrgResponse struct {
@@ -27,7 +28,8 @@ func (a *Activities) CreateOrg(ctx context.Context, req *CreateOrgRequest) (*Cre
 	}
 
 	org, err := apiClient.CreateOrg(ctx, &models.ServiceCreateOrgRequest{
-		Name: generics.ToPtr(req.CanaryID),
+		Name:           generics.ToPtr(req.CanaryID),
+		UseSandboxMode: req.SandboxMode,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)

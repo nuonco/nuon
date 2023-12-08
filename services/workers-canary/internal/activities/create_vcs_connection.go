@@ -11,7 +11,7 @@ import (
 
 type CreateVCSConnectionRequest struct {
 	CanaryID string
-	OrgID	   string
+	OrgID    string
 }
 
 type CreateVCSConnectionResponse struct {

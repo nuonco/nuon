@@ -12,7 +12,8 @@ import (
 func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequest) (*activities.TerraformRunOutputs, string, error) {
 	var orgResp activities.CreateOrgResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateOrg, &activities.CreateOrgRequest{
-		CanaryID: req.CanaryId,
+		CanaryID:    req.CanaryId,
+		SandboxMode: req.SandboxMode,
 	}, &orgResp); err != nil {
 		return nil, "", fmt.Errorf("unable to create org: %w", err)
 	}

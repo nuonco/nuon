@@ -42,7 +42,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 		return nil, err
 	}
 
-	w.sendNotification(ctx, notificationTypeProvisionStart, req.CanaryId, nil)
+	w.sendNotification(ctx, notificationTypeCanaryStart, req.CanaryId, req.SandboxMode, nil)
 	outputs, orgID, err := w.execProvision(ctx, req)
 	// NOTE: we make a best effort here to always try and cleanup the canary, to prevent leaking resources. Even if
 	// part of the provision fails, or the cli commands etc, we will give this a try.
@@ -54,25 +54,15 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 		}()
 	}
 	if err != nil {
-		err = fmt.Errorf("unable to provision canary: %w", err)
-		w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, err)
+		w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, req.SandboxMode, err)
 		return nil, err
 	}
-	w.sendNotification(ctx, notificationTypeProvisionSuccess, req.CanaryId, nil)
 
-	err = w.execCLICommands(ctx, outputs)
+	err = w.execTests(ctx, req, outputs, orgID)
 	if err != nil {
-		err = fmt.Errorf("unable to execute cli commands: %w", err)
-		w.sendNotification(ctx, notificationTypeCLICommandsError, req.CanaryId, err)
+		w.sendNotification(ctx, notificationTypeTestsError, req.CanaryId, req.SandboxMode, err)
+		return nil, err
 	}
-	w.sendNotification(ctx, notificationTypeCLICommandsSuccess, req.CanaryId, nil)
-
-	err = w.execIntrospection(ctx, outputs)
-	if err != nil {
-		err = fmt.Errorf("unable to execute introspection: %w", err)
-		w.sendNotification(ctx, notificationTypeIntrospectionError, req.CanaryId, err)
-	}
-	w.sendNotification(ctx, notificationTypeIntrospectionSuccess, req.CanaryId, nil)
 
 	return &canaryv1.ProvisionResponse{
 		CanaryId: req.CanaryId,
@@ -81,12 +71,10 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 }
 
 func (w *wkflow) execProvisionDeprovision(ctx workflow.Context, orgID string, req *canaryv1.ProvisionRequest) error {
-	if !req.Deprovision {
-		return nil
-	}
 	l := workflow.GetLogger(ctx)
 
 	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("%s-deprovision", req.CanaryId),
 		WorkflowExecutionTimeout: time.Hour * 24,
 		WorkflowTaskTimeout:      time.Hour,
 		TaskQueue:                workflows.DefaultTaskQueue,
@@ -95,7 +83,6 @@ func (w *wkflow) execProvisionDeprovision(ctx workflow.Context, orgID string, re
 
 	fut := workflow.ExecuteChildWorkflow(ctx, "Deprovision", &canaryv1.DeprovisionRequest{
 		CanaryId: req.CanaryId,
-		OrgId:    orgID,
 	})
 
 	var resp canaryv1.DeprovisionResponse

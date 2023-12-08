@@ -10,11 +10,18 @@ import (
 )
 
 func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) error {
+	var getOrgResponse activities.GetOrgResponse
+	if err := w.defaultExecGetActivity(ctx, w.acts.GetOrg, &activities.GetOrgRequest{
+		CanaryID: req.CanaryId,
+	}, &getOrgResponse); err != nil {
+		return fmt.Errorf("unable to get org: %w", err)
+	}
+
 	var runResp activities.RunTerraformResponse
 	if err := w.defaultTerraformRunActivity(ctx, w.acts.RunTerraform, &activities.RunTerraformRequest{
 		RunType:  activities.RunTypeDestroy,
 		CanaryID: req.CanaryId,
-		OrgID:    req.OrgId,
+		OrgID:    getOrgResponse.OrgID,
 	}, &runResp, 3); err != nil {
 		w.l.Info("error running terraform destroy", zap.Error(err))
 	}
@@ -23,7 +30,7 @@ func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.Deprovision
 	var orgResp activities.DeleteOrgResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.DeleteOrg, &activities.DeleteOrgRequest{
 		CanaryID: req.CanaryId,
-		OrgID:    req.OrgId,
+		OrgID:    getOrgResponse.OrgID,
 	}, &orgResp); err != nil {
 		return fmt.Errorf("unable to delete org: %w", err)
 	}

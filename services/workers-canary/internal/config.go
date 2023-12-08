@@ -13,6 +13,7 @@ func init() {
 	config.RegisterDefault("terraform_state_base_dir", "/tmp/state")
 	config.RegisterDefault("install_script_path", "/install-cli.sh")
 	config.RegisterDefault("terraform_module_dir", "/terraform")
+	config.RegisterDefault("tests_dir", "/tests")
 	config.RegisterDefault("disable_cli_commands", false)
 }
 
@@ -30,11 +31,11 @@ type Config struct {
 	TerraformModuleDir    string `config:"terraform_module_dir" validate:"required"`
 	TerraformStateBaseDir string `config:"terraform_state_base_dir" validate:"required"`
 	InstallScriptPath     string `config:"install_script_path" validate:"required"`
+	TestsDir              string `config:"tests_dir" validate:"required"`
 
 	// flags for local development
 	DisableNotifications bool `config:"disable_notifications"`
-	DisableCLICommands   bool `config:"disable_cli_commands"`
-	DisableIntrospection bool `config:"disable_introspection"`
+	DisableTests         bool `config:"disable_tests"`
 }
 
 func (c Config) Validate() error {

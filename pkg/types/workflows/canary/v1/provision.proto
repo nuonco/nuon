@@ -16,7 +16,7 @@ message ProvisionRequest {
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  bool deprovision = 2;
+  bool sandbox_mode = 3;
 }
 
 message ProvisionResponse {

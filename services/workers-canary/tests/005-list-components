@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+set -o pipefail
+set -u
+
+app_id=$(cat $TF_OUTPUTS_PATH | jq .app.id)
+app_name=$(cat $TF_OUTPUTS_PATH | jq .app.name)
+
+echo >&2 "listing all components..."
+nuon -j components list
+
+echo >&2 "listing app components..."
+nuon -j components list -a $app_id
+
+echo >&2 "listing components by app name..."
+nuon -j components list -a $app_name

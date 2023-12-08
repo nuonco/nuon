@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+set -o pipefail
+set -u
+
+app_id=$(cat $TF_OUTPUTS_PATH | jq .app.id)
+
+echo >&2 "getting app $app_id ..."
+nuon -j apps get -a $app_id

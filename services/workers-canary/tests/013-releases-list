@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+set -o pipefail
+set -u
+
+echo >&2 "listing releases..."
+
+cat $TF_OUTPUTS_PATH | jq -r '.component_ids[]' | while read -r component_id ; do
+  echo >&2 "listing builds $component_id..."
+  nuon releases list -c $component_id
+done
+
