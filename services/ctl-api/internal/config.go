@@ -24,6 +24,9 @@ func init() {
 	config.RegisterDefault("temporal_namespace", "default")
 	config.RegisterDefault("github_app_key_secret_name", "ctl-api-github-app-key")
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
+
+	// defaults for sandbox mode
+	config.RegisterDefault("sandbox_sleep", "5s")
 }
 
 type Config struct {
@@ -69,9 +72,12 @@ type Config struct {
 
 	// flags for controlling the background workers
 	ForceSandboxMode   bool          `config:"force_sandbox_mode"`
-	SandboxSleep       time.Duration `config:"sandbox_sleep"`
+	SandboxSleep       time.Duration `config:"sandbox_sleep" validate:"required"`
 	TFEToken           string        `config:"tfe_token" validate:"required"`
 	TFEOrgsWorkspaceID string        `config:"tfe_orgs_workspace_id" validate:"required"`
+
+	// flags for controlling creation of integration users
+	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
 }
 
 func NewConfig() (*Config, error) {

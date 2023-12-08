@@ -42,9 +42,6 @@ test:
     FROM +code
     RUN go test ./...
 
-test-integration:
-    RUN echo "noop..."
-
 artifacts:
     RUN echo "noop..."
     RUN mkdir -p out && \

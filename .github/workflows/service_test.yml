@@ -49,14 +49,3 @@ jobs:
             --ci \
             --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +test
-
-      - name: Earthly integration-test target
-        working-directory: services/${{inputs.service}}
-        if: always()
-        run: |
-          earthly \
-            --allow-privileged \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --ci \
-            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
-            +test-integration
