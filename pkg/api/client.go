@@ -40,6 +40,8 @@ type Client interface {
 	DeprovisionCanary(ctx context.Context, canaryID string) error
 	StartCanaryCron(ctx context.Context) error
 	StopCanaryCron(ctx context.Context) error
+
+	CreateIntegrationUser(ctx context.Context) (*CreateIntegrationUserResponse, error)
 }
 
 var _ Client = (*client)(nil)

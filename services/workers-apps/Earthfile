@@ -24,8 +24,6 @@ test:
     FROM +code
     RUN go test ./...
 
-test-integration:
-    RUN echo "noop..."
 
 lint:
     FROM +code
