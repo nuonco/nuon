@@ -24,35 +24,6 @@ test:
     FROM +code
     RUN go test ./...
 
-test-integration:
-    FROM +code
-    RUN echo "noop..."
-    ## This should match our running version of k8s as closely as possible.
-    ## Use `+get-envtest-versions` to get the list of supported binaries
-    ## as they don't publish envtest binaries for every patch release.
-    #ENV K8S_VERSION=1.23.5
-    #RUN curl \
-            #-sSLo /tmp/envtest-bins.tar.gz \
-            #"https://go.kubebuilder.io/test-tools/${K8S_VERSION}/$(go env GOOS)/$(go env GOARCH)" \
-        #&& mkdir -p /usr/local/kubebuilder \
-        #&& tar -C /usr/local/kubebuilder --strip-components=1 -zvxf /tmp/envtest-bins.tar.gz \
-        #&& rm -f /tmp/envtest-bins.tar.gz
-    #ENV ACK_GINKGO_DEPRECATIONS=1.16.5
-    #RUN go test -tags=integration ./...
-    #SAVE IMAGE --push $GHCR_IMAGE:test-integration
-
-get-envtest-versions:
-    FROM alpine:3.16
-    RUN apk add --update --no-cache curl ca-certificates xmlstarlet
-    RUN xmlstarlet select --help
-    # This file is actually in GCS but uses same XMLNS as S3
-    RUN curl -L "https://go.kubebuilder.io/test-tools" \
-        | xmlstarlet \
-            select \
-            -N x="http://doc.s3.amazonaws.com/2006-03-01" \
-            --template \
-            --value-of "//x:Key"
-
 lint:
     FROM +code
     RUN golangci-lint \

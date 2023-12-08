@@ -34,19 +34,7 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 
 	s.v = validator.New()
 
-	apiURL := os.Getenv("INTEGRATION_API_URL")
-	assert.NotEmpty(s.T(), apiURL)
-
-	apiToken := os.Getenv("INTEGRATION_API_TOKEN")
-	assert.NotEmpty(s.T(), apiToken)
-
-	apiClient, err := nuon.New(s.v,
-		nuon.WithAuthToken(apiToken),
-		nuon.WithURL(apiURL),
-	)
-	assert.NoError(s.T(), err)
-	s.apiClient = apiClient
-
+	// setup internal api
 	internalAPIURL := os.Getenv("INTEGRATION_INTERNAL_API_URL")
 	assert.NotEmpty(s.T(), internalAPIURL)
 
@@ -57,8 +45,21 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 	assert.NotEmpty(s.T(), intApiClient)
 	s.intAPIClient = intApiClient
 
-	githubInstallID := os.Getenv("INTEGRATION_GITHUB_INSTALL_ID")
-	s.githubInstallID = githubInstallID
+	// create integration user
+	intUser, err := s.intAPIClient.CreateIntegrationUser(ctx)
+	require.NoError(s.T(), err)
+
+	apiURL := os.Getenv("INTEGRATION_API_URL")
+	assert.NotEmpty(s.T(), apiURL)
+
+	apiClient, err := nuon.New(s.v,
+		nuon.WithAuthToken(intUser.APIToken),
+		nuon.WithURL(apiURL),
+	)
+	assert.NoError(s.T(), err)
+	s.apiClient = apiClient
+
+	s.githubInstallID = intUser.GithubInstallID
 }
 
 func (s *baseIntegrationTestSuite) createOrg() *models.AppOrg {

@@ -22,6 +22,7 @@ env:
   AUTH0_CLIENT_ID: 7VLjCLy25IQVWx7yMLgp15x5IkXDS6Vr
   FORCE_SANDBOX_MODE: true
   SANDBOX_SLEEP: 1s
+  INTEGRATION_GITHUB_INSTALL_ID: !!string 41323514
 local_env:
   DB_HOST: localhost
 env_secrets:
