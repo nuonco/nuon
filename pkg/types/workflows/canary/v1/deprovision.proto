@@ -13,19 +13,11 @@ message DeprovisionRequest {
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  string org_id = 2 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
-  ];
+  bool sandbox_mode = 3;
 }
 
 message DeprovisionResponse {
   string canary_id = 1 [
-    (validate.rules).string.len = 26,
-    (tagger.tags) = "faker:\"shortID\""
-  ];
-
-  string org_id = 2 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
   ];

@@ -21,7 +21,7 @@ func (w *workspace) Init(ctx context.Context, log hclog.Logger) error {
 
 func (w *workspace) init(ctx context.Context, client Terraform) error {
 	if err := client.Init(ctx,
-		tfexec.BackendConfig(defaultBackendConfigFilename),
+		tfexec.BackendConfig(w.backendFilepath()),
 	); err != nil {
 		return fmt.Errorf("unable to init terraform: %w", err)
 	}
@@ -67,7 +67,7 @@ func (w *workspace) apply(ctx context.Context, client Terraform, log hclog.Logge
 	if err := client.ApplyJSON(ctx,
 		writer,
 		tfexec.Refresh(true),
-		tfexec.VarFile(defaultVariablesFilename),
+		tfexec.VarFile(w.varsFilepath()),
 	); err != nil {
 		return nil, fmt.Errorf("error running apply: %w", err)
 	}
@@ -113,7 +113,7 @@ func (w *workspace) destroy(ctx context.Context, client Terraform, log hclog.Log
 	if err := client.DestroyJSON(ctx,
 		writer,
 		tfexec.Refresh(true),
-		tfexec.VarFile(defaultVariablesFilename),
+		tfexec.VarFile(w.varsFilepath()),
 	); err != nil {
 		return nil, fmt.Errorf("error running destroy: %w", err)
 	}
@@ -143,7 +143,7 @@ func (w *workspace) plan(ctx context.Context, client Terraform, log hclog.Logger
 	if _, err := client.PlanJSON(ctx,
 		writer,
 		tfexec.Refresh(true),
-		tfexec.VarFile(defaultVariablesFilename),
+		tfexec.VarFile(w.varsFilepath()),
 	); err != nil {
 		return nil, fmt.Errorf("unable to plan: %w", err)
 	}
@@ -173,7 +173,7 @@ func (w *workspace) refresh(ctx context.Context, client Terraform, log hclog.Log
 
 	if err := client.RefreshJSON(ctx,
 		writer,
-		tfexec.VarFile(defaultVariablesFilename),
+		tfexec.VarFile(w.varsFilepath()),
 	); err != nil {
 		return nil, fmt.Errorf("unable to execute refresh: %w", err)
 	}

@@ -35,6 +35,11 @@ type Client interface {
 
 	ListReleases(ctx context.Context) ([]Release, error)
 	RestartRelease(ctx context.Context, releaseID string) error
+
+	ProvisionCanary(ctx context.Context, sandboxMode bool) error
+	DeprovisionCanary(ctx context.Context, canaryID string) error
+	StartCanaryCron(ctx context.Context) error
+	StopCanaryCron(ctx context.Context) error
 }
 
 var _ Client = (*client)(nil)
