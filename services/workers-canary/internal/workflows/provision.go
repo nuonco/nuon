@@ -44,17 +44,12 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 
 	w.sendNotification(ctx, notificationTypeCanaryStart, req.CanaryId, req.SandboxMode, nil)
 	outputs, orgID, err := w.execProvision(ctx, req)
-	// NOTE: we make a best effort here to always try and cleanup the canary, to prevent leaking resources. Even if
-	// part of the provision fails, or the cli commands etc, we will give this a try.
-	if orgID != "" {
-		defer func() {
-			if err := w.execProvisionDeprovision(ctx, orgID, req); err != nil {
-				l.Error("unable to start deprovision workflow", zap.Error(err))
-			}
-		}()
-	}
 	if err != nil {
 		w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, req.SandboxMode, err)
+
+		if err := w.execProvisionDeprovision(ctx, orgID, req); err != nil {
+			l.Error("unable to deprovision", zap.Error(err))
+		}
 		return nil, err
 	}
 
@@ -64,6 +59,11 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 		return nil, err
 	}
 
+	if err := w.execProvisionDeprovision(ctx, orgID, req); err != nil {
+		l.Error("unable to deprovision", zap.Error(err))
+	}
+
+	w.sendNotification(ctx, notificationTypeCanarySuccess, req.CanaryId, req.SandboxMode, nil)
 	return &canaryv1.ProvisionResponse{
 		CanaryId: req.CanaryId,
 		OrgId:    orgID,
@@ -72,6 +72,10 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 
 func (w *wkflow) execProvisionDeprovision(ctx workflow.Context, orgID string, req *canaryv1.ProvisionRequest) error {
 	l := workflow.GetLogger(ctx)
+	if orgID == "" {
+		l.Info("unable to cleanup, no org id present")
+		return nil
+	}
 
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowID:               fmt.Sprintf("%s-deprovision", req.CanaryId),
