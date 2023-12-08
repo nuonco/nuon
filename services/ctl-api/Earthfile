@@ -36,7 +36,7 @@ integration:
     ENV INTEGRATION_API_URL=$api_url
     ENV INTEGRATION_INTERNAL_API_URL=$internal_api_url
 
-    WORKDIR services/$SERVICE/internal/integration
+    WORKDIR internal/integration
     RUN go test -count=1 -v -run ./...
 
 lint:
