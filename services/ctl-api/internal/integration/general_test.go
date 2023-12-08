@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,8 +26,8 @@ func TestGeneralSuite(t *testing.T) {
 func (s *generalIntegrationTestSuite) TestGetCurrentUser() {
 	s.T().Run("success", func(t *testing.T) {
 		user, err := s.apiClient.GetCurrentUser(s.ctx)
-		assert.NoError(t, err)
-		assert.NotNil(t, user)
-		assert.NotEmpty(t, user.Subject)
+		require.NoError(t, err)
+		require.NotNil(t, user)
+		require.NotEmpty(t, user.Subject)
 	})
 }

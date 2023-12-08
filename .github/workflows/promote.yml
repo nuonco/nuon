@@ -175,6 +175,7 @@ jobs:
     needs:
       - tag
       - services
+      - artifacts
       - merged_pr
     runs-on: ubuntu-latest
     steps:
