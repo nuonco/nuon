@@ -6,7 +6,7 @@ resource "tfe_workspace" "workspace" {
   auto_apply        = var.auto_apply
   queue_all_runs    = false
   working_directory = var.dir
-  trigger_prefixes  = var.dir != "" ? [var.dir] : []
+  trigger_prefixes  = compact(concat([var.dir], var.trigger_prefixes))
   terraform_version = var.terraform_version
 
   global_remote_state       = true

@@ -60,8 +60,14 @@ variable "terraform_version" {
   default = "1.5.3"
 }
 
-variable "triggered_by" {
+variable "trigger_workspaces" {
   type        = list(string)
   description = "workspace ids that should trigger runs of this workspace"
+  default     = []
+}
+
+variable "trigger_prefixes" {
+  type        = list(string)
+  description = "additional prefixes that will trigger runs"
   default     = []
 }

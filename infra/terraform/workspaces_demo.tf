@@ -41,7 +41,7 @@ module "quickstart" {
     install_region = "us-west-2"
     install_iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-install-access"
   }
-  triggered_by = [module.infra-terraform.workspace_id]
+  trigger_workspaces = [module.infra-terraform.workspace_id]
 }
 
 module "customers-shared-stage" {
@@ -66,7 +66,7 @@ module "customers-shared-stage" {
     org_id         = local.stage.org_id
   }
 
-  triggered_by = [module.infra-terraform.workspace_id]
+  trigger_workspaces = [module.infra-terraform.workspace_id]
 }
 
 module "customers-shared-prod" {
@@ -85,5 +85,5 @@ module "customers-shared-prod" {
     sandbox_org_id = local.prod.sandbox_org_id
     org_id         = local.prod.org_id
   }
-  triggered_by = [module.infra-terraform.workspace_id]
+  trigger_workspaces = [module.infra-terraform.workspace_id]
 }

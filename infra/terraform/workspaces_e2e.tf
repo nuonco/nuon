@@ -18,7 +18,8 @@ module "e2e-jon" {
     org_id = local.stage.org_id
     sandbox_org_id = local.stage.sandbox_org_id
   }
-  triggered_by = [module.infra-terraform.workspace_id]
+  trigger_workspaces = [module.infra-terraform.workspace_id]
+  trigger_prefixes = ["services/e2e/nuon"]
 }
 
 module "e2e-jordan" {
@@ -41,7 +42,8 @@ module "e2e-jordan" {
     org_id = local.stage.org_id
     sandbox_org_id = local.stage.sandbox_org_id
   }
-  triggered_by = [module.infra-terraform.workspace_id]
+  trigger_workspaces = [module.infra-terraform.workspace_id]
+  trigger_prefixes = ["services/e2e/nuon"]
 }
 
 module "e2e-nat" {
@@ -64,7 +66,8 @@ module "e2e-nat" {
     org_id = local.stage.org_id
     sandbox_org_id = local.stage.sandbox_org_id
   }
-  triggered_by = [module.infra-terraform.workspace_id]
+  trigger_workspaces = [module.infra-terraform.workspace_id]
+  trigger_prefixes = ["services/e2e/nuon"]
 }
 
 module "e2e-stage" {
@@ -87,7 +90,8 @@ module "e2e-stage" {
     org_id = local.stage.org_id
     sandbox_org_id = local.stage.sandbox_org_id
   }
-  triggered_by = [module.infra-terraform.workspace_id]
+  trigger_workspaces = [module.infra-terraform.workspace_id]
+  trigger_prefixes = ["services/e2e/nuon"]
 }
 
 module "e2e-prod" {
@@ -106,5 +110,6 @@ module "e2e-prod" {
     org_id = local.prod.org_id
     sandbox_org_id = local.prod.sandbox_org_id
   }
-  triggered_by = [module.infra-terraform.workspace_id]
+  trigger_workspaces = [module.infra-terraform.workspace_id]
+  trigger_prefixes = ["services/e2e/nuon"]
 }

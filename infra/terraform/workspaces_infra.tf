@@ -71,7 +71,7 @@ module "infra-datadog-orgs-prod" {
   vars = {
     env = "orgs-prod"
   }
-  triggered_by = [module.infra-eks-orgs-prod-main.workspace_id]
+  trigger_workspaces = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
 module "infra-datadog-orgs-stage" {
@@ -87,7 +87,7 @@ module "infra-datadog-orgs-stage" {
   vars = {
     env = "orgs-stage"
   }
-  triggered_by = [module.infra-eks-orgs-stage-main.workspace_id]
+  trigger_workspaces = [module.infra-eks-orgs-stage-main.workspace_id]
 }
 
 module "infra-datadog-prod" {
@@ -103,7 +103,7 @@ module "infra-datadog-prod" {
   vars = {
     env = "prod"
   }
-  triggered_by = [module.infra-eks-prod-nuon.workspace_id]
+  trigger_workspaces = [module.infra-eks-prod-nuon.workspace_id]
 }
 
 module "infra-datadog-stage" {
@@ -119,7 +119,7 @@ module "infra-datadog-stage" {
   vars = {
     env = "stage"
   }
-  triggered_by = [module.infra-eks-stage-nuon.workspace_id]
+  trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id]
 }
 
 module "infra-eks-orgs-prod-main" {
@@ -214,7 +214,7 @@ module "infra-temporal-prod" {
   vars = {
     env = "prod"
   }
-  triggered_by = [module.infra-eks-prod-nuon.workspace_id]
+  trigger_workspaces = [module.infra-eks-prod-nuon.workspace_id]
 }
 
 module "infra-temporal-stage" {
@@ -230,7 +230,7 @@ module "infra-temporal-stage" {
   vars = {
     env = "stage"
   }
-  triggered_by = [module.infra-eks-stage-nuon.workspace_id]
+  trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id]
 }
 
 module "infra-terraform" {
