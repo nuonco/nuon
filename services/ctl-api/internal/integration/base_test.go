@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/pkg/api"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -36,13 +35,13 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 
 	// setup internal api
 	internalAPIURL := os.Getenv("INTEGRATION_INTERNAL_API_URL")
-	assert.NotEmpty(s.T(), internalAPIURL)
+	require.NotEmpty(s.T(), internalAPIURL)
 
 	intApiClient, err := api.New(s.v,
 		api.WithURL(internalAPIURL),
 	)
-	assert.NoError(s.T(), err)
-	assert.NotEmpty(s.T(), intApiClient)
+	require.NoError(s.T(), err)
+	require.NotEmpty(s.T(), intApiClient)
 	s.intAPIClient = intApiClient
 
 	// create integration user
@@ -50,20 +49,27 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 	require.NoError(s.T(), err)
 
 	apiURL := os.Getenv("INTEGRATION_API_URL")
-	assert.NotEmpty(s.T(), apiURL)
+	require.NotEmpty(s.T(), apiURL)
 
 	apiClient, err := nuon.New(s.v,
 		nuon.WithAuthToken(intUser.APIToken),
 		nuon.WithURL(apiURL),
 	)
-	assert.NoError(s.T(), err)
+	require.NoError(s.T(), err)
 	s.apiClient = apiClient
 
 	s.githubInstallID = intUser.GithubInstallID
 }
 
-func (s *baseIntegrationTestSuite) createOrg() *models.AppOrg {
+func (s *baseIntegrationTestSuite) fakeOrgRequest() *models.ServiceCreateOrgRequest {
 	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+	orgReq.UseSandboxMode = true
+	return orgReq
+}
+
+func (s *baseIntegrationTestSuite) createOrg() *models.AppOrg {
+	orgReq := s.fakeOrgRequest()
+
 	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), org)

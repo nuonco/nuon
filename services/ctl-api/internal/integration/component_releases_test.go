@@ -21,7 +21,7 @@ type releasesTestSuite struct {
 	buildID   string
 }
 
-func TestReleasesSuite(t *testing.T) {
+func TestComponentReleasesSuite(t *testing.T) {
 	t.Parallel()
 
 	integration := os.Getenv("INTEGRATION")
