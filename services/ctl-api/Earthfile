@@ -26,8 +26,18 @@ test:
     FROM +code
     RUN go test ./...
 
-test-integration:
-    RUN echo "noop..."
+integration:
+    FROM +code
+
+    ARG api_url
+    ARG internal_api_url
+
+    ENV INTEGRATION=true
+    ENV INTEGRATION_API_URL=$api_url
+    ENV INTEGRATION_INTERNAL_API_URL=$internal_api_url
+
+    WORKDIR services/$SERVICE/internal/integration
+    RUN go test -count=1 -v -run ./...
 
 lint:
     FROM +code

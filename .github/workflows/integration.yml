@@ -1,0 +1,90 @@
+---
+name: integration
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  id-token: write
+  issues: read
+  packages: write
+  pull-requests: write
+  statuses: write
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # if the PR was labeled `integration`, then we automatically will run a integration on it, when the PR lands.
+  merged_pr:
+    name: Get merged PR
+    runs-on: ubuntu-latest
+    outputs:
+      integration: ${{steps.output.outputs.integration}}
+    steps:
+      - uses: actions-ecosystem/action-get-merged-pull-request@v1
+        name: get merged pr
+        id: merged_pr
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: update integration output
+        id: output
+        if: contains( steps.merged_pr.outputs.labels, 'integration')
+        run: echo "integration=true" >> "$GITHUB_OUTPUT"
+
+  # NOTE: we use the internal api request workflow, as it will automatically setup twingate access
+  setup-internal-api-access:
+    name: setup internal api access
+    needs:
+      - merged_pr
+    if: ${{ needs.merged_pr.outputs.integration == 'true' }}
+    uses: ./.github/workflows/internal_api.yml
+    with:
+      env: stage
+      endpoint: /version
+      method: GET
+      data: ''
+    secrets: inherit
+
+  run-integration-tests:
+    name: 🌏 test
+    runs-on: [ubuntu-latest-16-cores, linux]
+    needs:
+      - merged_pr
+      - setup-internal-api-access
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup for CI
+        uses: powertoolsdev/mono/actions/setup-ci@main
+        with:
+          tfcloud_token: ${{ secrets.TF_API_KEY }}
+          setup_helm: "false"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Earthly test target
+        working-directory: services/ctl-api
+        if: always()
+        run: |
+          earthly \
+            --allow-privileged \
+            ${{ env.EARTHLY_EXTRA_ARGS }} \
+            --ci \
+            --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
+            +integration \
+            --api_url=https://ctl.stage.nuon.co \
+            --internal_api_url=http://ctl.nuon.us-west-2.stage.nuon.cloud
