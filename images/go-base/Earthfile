@@ -5,6 +5,8 @@ FROM golang:1.21
 CACHE /go-cache
 CACHE /go-mod-cache
 
+ARG GOLANGCI_LINT_VERSION=v1.55.2
+
 build-base:
   ENV CGO_ENABLED=0
   ENV GOCACHE=/go-cache
@@ -12,13 +14,17 @@ build-base:
   ENV CGO_ENABLED=0
   ENV GOPRIVATE=github.com/powertoolsdev/*
 
+  RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+    | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
+
   RUN apt-get update && \
     apt-get install -y ca-certificates \
       coreutils \
       make \
       git \
       curl \
-      protobuf-compiler
+      protobuf-compiler \
+      jq
 
 alpine-base:
   FROM golang:1.21-alpine
