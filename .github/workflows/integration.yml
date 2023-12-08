@@ -47,8 +47,8 @@ jobs:
     secrets: inherit
     with:
       dir: infra/eks
-      cache-key: infra-eks-${{ inputs.env }}-nuon
-      workspace: ${{ inputs.env }}-nuon
+      cache-key: infra-eks-stage-nuon
+      workspace: stage-nuon
 
   run-integration-tests:
     name: 🌏 test
