@@ -12,12 +12,14 @@ import (
 )
 
 const (
-	defaultIntegrationAPITokenTimeout time.Duration = time.Minute
+	defaultCanaryAPITokenTimeout time.Duration = time.Minute
 )
 
-type CreateIntegrationUserRequest struct{}
+type CreateCanaryUserRequest struct {
+	CanaryID string `json:"canary_id"`
+}
 
-type CreateIntegrationUserResponse struct {
+type CreateCanaryUserResponse struct {
 	APIToken        string `json:"api_token"`
 	GithubInstallID string `json:"github_install_id"`
 }
@@ -29,35 +31,40 @@ type CreateIntegrationUserResponse struct {
 //	@Summary	create a temp user for running integration test
 //	@Schemes
 //	@Description	create a temp user for running integration test
-//	@Param			req	body	CreateIntegrationUserRequest	true	"Input"
+//	@Param			req	body	CreateCanaryUserRequest	true	"Input"
 //	@Tags			general/admin
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object} CreateIntegrationUserResponse
-//	@Router			/v1/general/integration-user [post]
-func (s *service) CreateIntegrationUser(ctx *gin.Context) {
-	token, err := s.createIntegrationUser(ctx)
+//	@Success		201	{object} CreateCanaryUserResponse
+//	@Router			/v1/general/canary-user [post]
+func (s *service) CreateCanaryUser(ctx *gin.Context) {
+	var req CreateCanaryUserRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("invalid request input: %w", err))
+		return
+	}
+
+	token, err := s.createCanaryUser(ctx, req.CanaryID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create integration user: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, CreateIntegrationUserResponse{
+	ctx.JSON(http.StatusCreated, CreateCanaryUserResponse{
 		APIToken:        token.Token,
 		GithubInstallID: s.cfg.IntegrationGithubInstallID,
 	})
 }
 
-func (s *service) createIntegrationUser(ctx context.Context) (*app.UserToken, error) {
-	intID := domains.NewIntegrationUserID()
+func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.UserToken, error) {
 	token := app.UserToken{
-		CreatedByID: intID,
+		CreatedByID: canaryID,
 		Token:       domains.NewUserTokenID(),
-		Subject:     intID,
-		ExpiresAt:   time.Now().Add(defaultIntegrationAPITokenTimeout),
+		Subject:     canaryID,
+		ExpiresAt:   time.Now().Add(time.Hour),
 		IssuedAt:    time.Now(),
-		Issuer:      intID,
-		Email:       intID,
+		Issuer:      canaryID,
+		Email:       canaryID,
 	}
 
 	res := s.db.WithContext(ctx).
