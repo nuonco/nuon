@@ -42,6 +42,7 @@ type Client interface {
 	StopCanaryCron(ctx context.Context) error
 
 	CreateIntegrationUser(ctx context.Context) (*CreateIntegrationUserResponse, error)
+	CreateCanaryUser(ctx context.Context, canaryID string) (*CreateCanaryUserResponse, error)
 }
 
 var _ Client = (*client)(nil)
