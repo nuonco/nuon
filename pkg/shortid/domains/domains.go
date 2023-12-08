@@ -82,6 +82,10 @@ func NewUserTokenID() string {
 	return shortid.NewNanoID("tok")
 }
 
+func NewIntegrationUserID() string {
+	return shortid.NewNanoID("int")
+}
+
 func NewReleaseID() string {
 	return shortid.NewNanoID("rel")
 }
