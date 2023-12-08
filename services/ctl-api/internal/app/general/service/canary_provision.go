@@ -11,7 +11,9 @@ import (
 	tclient "go.temporal.io/sdk/client"
 )
 
-type ProvisionCanaryRequest struct{}
+type ProvisionCanaryRequest struct {
+	SandboxMode bool `json:"sandbox_mode"`
+}
 
 //	@BasePath	/v1/general
 //
@@ -27,20 +29,28 @@ type ProvisionCanaryRequest struct{}
 //	@Success		201	{string}	ok
 //	@Router			/v1/general/provision-canary [post]
 func (c *service) ProvisionCanary(ctx *gin.Context) {
-	req := &canaryv1.ProvisionRequest{
-		CanaryId:    domains.NewCanaryID(),
-		Deprovision: true,
+	var req ProvisionCanaryRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("invalid request input: %w", err))
+		return
+	}
+
+	canaryID := domains.NewCanaryID()
+	wkfowReq := &canaryv1.ProvisionRequest{
+		CanaryId:    canaryID,
+		SandboxMode: req.SandboxMode,
 	}
 
 	opts := tclient.StartWorkflowOptions{
+		ID:        fmt.Sprintf("%s-provision", canaryID),
 		TaskQueue: workflows.DefaultTaskQueue,
 		Memo: map[string]interface{}{
-			"canary-id":  req.CanaryId,
+			"canary-id":  wkfowReq.CanaryId,
 			"started-by": "ctl-api",
 		},
 	}
 
-	_, err := c.temporalClient.ExecuteWorkflowInNamespace(ctx, "canary", opts, "Provision", req)
+	_, err := c.temporalClient.ExecuteWorkflowInNamespace(ctx, "canary", opts, "Provision", wkfowReq)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to provision canary: %w", err))
 		return
