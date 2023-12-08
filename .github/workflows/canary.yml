@@ -1,0 +1,55 @@
+---
+name: canary
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  id-token: write
+  issues: read
+  packages: write
+  pull-requests: write
+  statuses: write
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # if the PR was labeled `canary`, then we automatically will run a canary on it, when the PR lands.
+  merged_pr:
+    name: Get merged PR
+    runs-on: ubuntu-latest
+    outputs:
+      canary: ${{steps.output.outputs.canary}}
+    steps:
+      - uses: actions-ecosystem/action-get-merged-pull-request@v1
+        name: get merged pr
+        id: merged_pr
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: update canary output
+        id: output
+        if: contains( steps.merged_pr.outputs.labels, 'canary')
+        run: echo "canary=true" >> "$GITHUB_OUTPUT"
+
+  trigger_canary:
+    name: trigger canary
+    needs:
+      - merged_pr
+    if: ${{ needs.merged_pr.outputs.canary == 'true' }}
+    uses: ./.github/workflows/internal_api.yml
+    with:
+      env: stage
+      endpoint: /v1/general/provision-canary
+      method: POST
+      data: '{"sandboxMode":true}'
+    secrets: inherit
