@@ -4,14 +4,14 @@ set -e
 set -o pipefail
 set -u
 
-app_id=$(cat $TF_OUTPUTS_PATH | jq .app.id)
-app_name=$(cat $TF_OUTPUTS_PATH | jq .app.name)
+app_id=$(cat $TF_OUTPUTS_PATH | jq -r .app.id)
+app_name=$(cat $TF_OUTPUTS_PATH | jq -r .app.name)
 
 echo >&2 "listing installs..."
 nuon -j installs list
 
-echo >&2 "listing installs by app id..."
+echo >&2 "listing installs by app id $app_id ..."
 nuon -j installs list -a $app_id
 
-echo >&2 "listing installs by app name..."
+echo >&2 "listing installs by app name $app_name ..."
 nuon -j installs list -a $app_name

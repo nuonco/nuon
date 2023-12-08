@@ -8,7 +8,7 @@ echo >&2 "testing getting builds..."
 
 cat $TF_OUTPUTS_PATH | jq -r '.component_ids[]' | while read -r component_id ; do
   echo >&2 "getting latest build $component_id..."
-  build_id=$(nuon -j builds list -c $component_id | jq .[0].id)
+  build_id=$(nuon -j builds list -c $component_id | jq -r .[0].id)
 
   echo >&2 "getting build $build_id"
   nuon -j builds get -c $component_id -b $build_id

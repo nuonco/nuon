@@ -4,8 +4,8 @@ set -e
 set -o pipefail
 set -u
 
-app_id=$(cat $TF_OUTPUTS_PATH | jq .app.id)
-app_name=$(cat $TF_OUTPUTS_PATH | jq .app.name)
+app_id=$(cat $TF_OUTPUTS_PATH | jq -r .app.id)
+app_name=$(cat $TF_OUTPUTS_PATH | jq -r .app.name)
 
 echo >&2 "listing all components..."
 nuon -j components list

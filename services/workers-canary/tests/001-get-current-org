@@ -6,3 +6,12 @@ set -u
 
 echo >&2 "testing current org..."
 nuon -j orgs current
+
+echo >&2 "getting api token..."
+nuon -j orgs api-token
+
+echo >&2 "getting org id..."
+nuon -j orgs id
+
+echo >&2 "list orgs..."
+nuon -j orgs list

@@ -23,11 +23,7 @@ type ExecTestScriptRequest struct {
 	InstallCLI bool
 }
 
-type ExecTestScriptResponse struct {
-	Output       []byte
-	StringOutput string
-	JSONOutput   interface{}
-}
+type ExecTestScriptResponse struct{}
 
 func (a *Activities) ExecTestScript(ctx context.Context, req *ExecTestScriptRequest) (*ExecTestScriptResponse, error) {
 	if req.InstallCLI {
@@ -40,16 +36,12 @@ func (a *Activities) ExecTestScript(ctx context.Context, req *ExecTestScriptRequ
 		return nil, fmt.Errorf("unable to write terraform outputs: %w", err)
 	}
 
-	output, jsonOutput, err := a.execTestScript(ctx, req)
+	err := a.execTestScript(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute cli command: %w", err)
 	}
 
-	return &ExecTestScriptResponse{
-		StringOutput: string(output),
-		Output:       output,
-		JSONOutput:   jsonOutput,
-	}, nil
+	return &ExecTestScriptResponse{}, nil
 }
 
 func (a *Activities) installCLI(ctx context.Context) error {
@@ -86,33 +78,22 @@ func (a *Activities) writeTFOutputs(ctx context.Context, req *ExecTestScriptRequ
 	return nil
 }
 
-func (a *Activities) execTestScript(ctx context.Context, req *ExecTestScriptRequest) ([]byte, interface{}, error) {
+func (a *Activities) execTestScript(ctx context.Context, req *ExecTestScriptRequest) error {
 	cmd, err := command.New(a.v,
 		command.WithInheritedEnv(),
 		command.WithEnv(req.Env),
 		command.WithCmd(req.Path),
 		command.WithArgs([]string{}),
-		command.WithStdout(nil),
+		command.WithStdout(os.Stdout),
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create command: %w", err)
+		return fmt.Errorf("unable to create command: %w", err)
 	}
 
-	output, err := cmd.ExecWithOutput(ctx)
+	err = cmd.Exec(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to execute command: %w", err)
+		return fmt.Errorf("unable to execute command: %w", err)
 	}
 
-	var (
-		mapOutput  map[string]interface{}
-		listOutput []interface{}
-	)
-	if err := json.Unmarshal(output, &mapOutput); err == nil {
-		return output, mapOutput, nil
-	}
-	if err := json.Unmarshal(output, &listOutput); err == nil {
-		return output, listOutput, nil
-	}
-
-	return output, nil, nil
+	return nil
 }
