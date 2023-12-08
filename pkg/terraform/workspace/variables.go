@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -56,4 +57,8 @@ func (w *workspace) LoadVariables(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (w *workspace) varsFilepath() string {
+	return filepath.Join(w.root, defaultVariablesFilename)
 }

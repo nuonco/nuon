@@ -33,6 +33,7 @@ alpine-base:
     coreutils \
     curl \
     protoc \
+    bash \
     jq \
     git \
     aws-cli \
