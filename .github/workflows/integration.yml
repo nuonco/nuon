@@ -88,3 +88,27 @@ jobs:
             +integration \
             --api_url=https://ctl.stage.nuon.co \
             --internal_api_url=http://ctl.nuon.us-west-2.stage.nuon.cloud
+
+  status_slack_notifications:
+    name: update promotions channel
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
+    needs:
+      - merged_pr
+      - setup-internal-api-access
+      - run-integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: martialonline/workflow-status@v3
+        id: check
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_ICON_EMOJI: 🤖
+          SLACK_USERNAME: github-bot
+          SLACK_WEBHOOK: ${{ secrets.INTEGRATION_SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{steps.check.outputs.status}}
+          SLACK_MESSAGE: |
+            ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} integration test finished
+            *stage* - true
+            *status* - ${{steps.check.outputs.status}}
