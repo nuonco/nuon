@@ -23,10 +23,6 @@ test:
     FROM +code
     RUN go test -cover ./...
 
-test-integration:
-    FROM +code
-    RUN go test -tags=integration ./...
-
 lint:
     RUN echo "noop..."
 
