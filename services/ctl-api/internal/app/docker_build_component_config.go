@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
@@ -23,10 +24,10 @@ type DockerBuildComponentConfig struct {
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
-	Dockerfile string                   `json:"dockerfile" gorm:"default:Dockerfile;notnull"`
-	Target     string                   `json:"target"`
-	BuildArgs  pgtype.FlatArray[string] `gorm:"type:text[]" json:"build_args" swaggertype:"array,string"`
-	EnvVars    pgtype.Hstore            `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
+	Dockerfile string         `json:"dockerfile" gorm:"default:Dockerfile;notnull"`
+	Target     string         `json:"target"`
+	BuildArgs  pq.StringArray `gorm:"type:text[]" json:"build_args" swaggertype:"array,string"`
+	EnvVars    pgtype.Hstore  `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`

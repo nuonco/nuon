@@ -88,8 +88,8 @@ func (m *middleware) Handler() gin.HandlerFunc {
 					UserError:   true,
 					Description: "invalid foreign key - usually from using an invalid parent object ID",
 				})
+				return
 			}
-			return
 		}
 
 		// validation errors for any request inputs
