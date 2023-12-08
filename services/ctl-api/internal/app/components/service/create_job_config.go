@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/lib/pq"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -80,9 +79,9 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 	cfg := app.JobComponentConfig{
 		ImageURL: req.ImageURL,
 		Tag:      req.Tag,
-		Cmd:      req.Cmd,
+		Cmd:      pgtype.FlatArray[string](req.Cmd),
 		EnvVars:  pgtype.Hstore(req.EnvVars),
-		Args:     pq.StringArray(req.Args),
+		Args:     pgtype.FlatArray[string](req.Args),
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
