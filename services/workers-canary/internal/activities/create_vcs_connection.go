@@ -10,8 +10,10 @@ import (
 )
 
 type CreateVCSConnectionRequest struct {
-	CanaryID string
-	OrgID    string
+	CanaryID        string
+	OrgID           string
+	APIToken        string
+	GithubInstallID string
 }
 
 type CreateVCSConnectionResponse struct {
@@ -21,7 +23,7 @@ type CreateVCSConnectionResponse struct {
 func (a *Activities) CreateVCSConnection(ctx context.Context, req *CreateVCSConnectionRequest) (*CreateVCSConnectionResponse, error) {
 	apiClient, err := nuon.New(a.v,
 		nuon.WithURL(a.cfg.APIURL),
-		nuon.WithAuthToken(a.cfg.APIToken),
+		nuon.WithAuthToken(req.APIToken),
 		nuon.WithOrgID(req.OrgID),
 	)
 	if err != nil {
@@ -29,7 +31,7 @@ func (a *Activities) CreateVCSConnection(ctx context.Context, req *CreateVCSConn
 	}
 
 	org, err := apiClient.CreateVCSConnection(ctx, &models.ServiceCreateConnectionRequest{
-		GithubInstallID: generics.ToPtr(a.cfg.GithubInstallID),
+		GithubInstallID: generics.ToPtr(req.GithubInstallID),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)

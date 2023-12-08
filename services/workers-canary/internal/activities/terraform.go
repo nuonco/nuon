@@ -47,13 +47,14 @@ type RunTerraformRequest struct {
 	RunType  RunType
 	CanaryID string
 	OrgID    string
+	APIToken string
 }
 
 type RunTerraformResponse struct {
 	Outputs *TerraformRunOutputs
 }
 
-func (a *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.Workspace, error) {
+func (a *Activities) getWorkspace(moduleDir, canaryID, orgID, apiToken string) (workspace.Workspace, error) {
 	arch, err := dir.New(a.v,
 		dir.WithPath(moduleDir),
 		dir.WithIgnoreDotTerraformDir(),
@@ -75,8 +76,9 @@ func (a *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.
 		"install_role_arn": a.cfg.InstallIamRoleArn,
 	}),
 		staticvars.WithEnvVars(map[string]string{
-			"NUON_ORG_ID":  orgID,
-			"NUON_API_URL": a.cfg.APIURL,
+			"NUON_ORG_ID":    orgID,
+			"NUON_API_URL":   a.cfg.APIURL,
+			"NUON_API_TOKEN": apiToken,
 		}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create vars: %w", err)
@@ -104,8 +106,8 @@ func (a *Activities) getWorkspace(moduleDir, canaryID, orgID string) (workspace.
 	return wkspace, nil
 }
 
-func (a *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgID string, runTyp RunType) (map[string]interface{}, error) {
-	wkspace, err := a.getWorkspace(moduleDir, canaryID, orgID)
+func (a *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgID, apiToken string, runTyp RunType) (map[string]interface{}, error) {
+	wkspace, err := a.getWorkspace(moduleDir, canaryID, orgID, apiToken)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get workspace: %w", err)
 	}
@@ -151,7 +153,7 @@ func (a *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgI
 
 func (a *Activities) RunTerraform(ctx context.Context, req *RunTerraformRequest) (*RunTerraformResponse, error) {
 	moduleDir := a.cfg.TerraformModuleDir
-	rawOutputs, err := a.runTerraform(ctx, moduleDir, req.CanaryID, req.OrgID, req.RunType)
+	rawOutputs, err := a.runTerraform(ctx, moduleDir, req.CanaryID, req.OrgID, req.APIToken, req.RunType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to run terraform: %w", err)
 	}

@@ -10,6 +10,13 @@ import (
 )
 
 func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) error {
+	var userResp activities.CreateUserResponse
+	if err := w.defaultExecGetActivity(ctx, w.acts.CreateUser, &activities.CreateUserRequest{
+		CanaryID: req.CanaryId,
+	}, &userResp); err != nil {
+		return fmt.Errorf("unable to create user: %w", err)
+	}
+
 	var getOrgResponse activities.GetOrgResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetOrg, &activities.GetOrgRequest{
 		CanaryID: req.CanaryId,
@@ -22,6 +29,7 @@ func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.Deprovision
 		RunType:  activities.RunTypeDestroy,
 		CanaryID: req.CanaryId,
 		OrgID:    getOrgResponse.OrgID,
+		APIToken: userResp.APIToken,
 	}, &runResp, 3); err != nil {
 		w.l.Info("error running terraform destroy", zap.Error(err))
 	}

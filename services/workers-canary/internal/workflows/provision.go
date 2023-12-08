@@ -43,7 +43,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	}
 
 	w.sendNotification(ctx, notificationTypeCanaryStart, req.CanaryId, req.SandboxMode, nil)
-	outputs, orgID, err := w.execProvision(ctx, req)
+	outputs, orgID, apiToken, err := w.execProvision(ctx, req)
 	if err != nil {
 		w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, req.SandboxMode, err)
 
@@ -53,7 +53,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 		return nil, err
 	}
 
-	err = w.execTests(ctx, req, outputs, orgID)
+	err = w.execTests(ctx, req, outputs, orgID, apiToken)
 	if err != nil {
 		w.sendNotification(ctx, notificationTypeTestsError, req.CanaryId, req.SandboxMode, err)
 		return nil, err

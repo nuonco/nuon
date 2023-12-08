@@ -12,6 +12,7 @@ import (
 type CreateOrgRequest struct {
 	CanaryID    string
 	SandboxMode bool
+	APIToken    string
 }
 
 type CreateOrgResponse struct {
@@ -21,7 +22,7 @@ type CreateOrgResponse struct {
 func (a *Activities) CreateOrg(ctx context.Context, req *CreateOrgRequest) (*CreateOrgResponse, error) {
 	apiClient, err := nuon.New(a.v,
 		nuon.WithURL(a.cfg.APIURL),
-		nuon.WithAuthToken(a.cfg.APIToken),
+		nuon.WithAuthToken(req.APIToken),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create api client: %w", err)

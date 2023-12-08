@@ -12,6 +12,7 @@ func (w *wkflow) execTests(ctx workflow.Context,
 	req *canaryv1.ProvisionRequest,
 	outputs *activities.TerraformRunOutputs,
 	orgID string,
+	apiToken string,
 ) error {
 	var testsResp activities.ListTestsResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.ListTests, &activities.ListTestsRequest{}, &testsResp); err != nil {
@@ -21,7 +22,7 @@ func (w *wkflow) execTests(ctx workflow.Context,
 	tfOutputsPath := fmt.Sprintf("/tmp/%s.json", req.CanaryId)
 	env := map[string]string{
 		"NUON_API_URL":    w.cfg.APIURL,
-		"NUON_API_TOKEN":  w.cfg.APIToken,
+		"NUON_API_TOKEN":  apiToken,
 		"NUON_ORG_ID":     orgID,
 		"SANDBOX":         fmt.Sprintf("%t", req.SandboxMode),
 		"TF_OUTPUTS_PATH": tfOutputsPath,
