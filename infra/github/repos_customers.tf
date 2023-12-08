@@ -36,3 +36,16 @@ module "customer-flipt" {
     github = github.nuon
   }
 }
+
+module "customer-honeyhive" {
+  source = "./modules/repository"
+
+  name            = "customer-honeyhive"
+  description     = "Nuon configuration + demo for Honeyhive."
+  required_checks = []
+  owning_team_id  = github_team.nuon.id
+
+  providers = {
+    github = github.nuon
+  }
+}
