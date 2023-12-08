@@ -1,17 +1,13 @@
 resource "nuon_app_input" "main" {
   app_id = nuon_app.main.id
 
-  input {
-    name = "required_input"
-    description = "required value description"
-    default = ""
-    required = true
-  }
-
-  input {
-    name = "optional_input"
-    description = "optional value description"
-    default = "default"
-    required = false
+  dynamic "input" {
+    for_each = var.install_inputs
+    content {
+      name        = input.value.name
+      description = input.value.description
+      default     = input.value.default
+      required    = input.value.required
+    }
   }
 }

@@ -1,7 +1,7 @@
 locals {}
 
 provider "nuon" {
-  alias = "sandbox"
+  alias  = "sandbox"
   org_id = var.sandbox_org_id
 }
 

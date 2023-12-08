@@ -35,12 +35,12 @@ module "vpc" {
   #create_elasticache_subnet_group = true
 
   public_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-    "kubernetes.io/role/elb"                      = 1
+    "kubernetes.io/cluster/${local.aws_eks_byovpc_app_name}" = "shared"
+    "kubernetes.io/role/elb"                                 = 1
   }
 
   private_subnet_tags = {
-    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
-    "kubernetes.io/role/internal-elb"             = 1
+    "kubernetes.io/cluster/${local.aws_eks_byovpc_app_name}" = "shared"
+    "kubernetes.io/role/internal-elb"                        = 1
   }
 }

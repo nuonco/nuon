@@ -26,7 +26,7 @@ variable "west_2_count" {
 
 variable "sandbox_repo" {
   description = "Sandbox repository to use, must be public."
-  default = "nuonco/sandboxes"
+  default     = "nuonco/sandboxes"
 }
 
 variable "sandbox_dir" {
@@ -35,5 +35,37 @@ variable "sandbox_dir" {
 
 variable "sandbox_branch" {
   description = "Sandbox branch to use."
-  default = "main"
+  default     = "main"
+}
+
+variable "install_inputs" {
+  type = list(object({
+    name          = string
+    description   = string
+    default       = string
+    required      = bool
+    value         = string
+    interpolation = string
+  }))
+  description = "Inputs that will be interpolated per install."
+
+  # The previously hard-coded install inputs. We'll need to update all callers of this module to remove this.
+  default = [
+    {
+      name          = "eks_version"
+      description   = "Version of k8s to use with EKS."
+      default       = ""
+      required      = true
+      value         = "v1.27.8"
+      interpolation = "{{.nuon.install.inputs.eks_version}}"
+    },
+    {
+      name          = "admin_access_role_arn"
+      description   = "The IAM role that provides access to manage the install."
+      default       = "default"
+      required      = false
+      value         = "arn:aws:iam::676549690856:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_NuonAdmin_b8aea3365312317b"
+      interpolation = "{{.nuon.install.inputs.admin_access_role_arn"
+    },
+  ]
 }

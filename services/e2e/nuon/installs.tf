@@ -1,10 +1,3 @@
-locals {
-  install_inputs = {
-    "required_input" = "required-install-input"
-    "optional_input" = "optional-input"
-  }
-}
-
 resource "nuon_install" "east_1" {
   count  = var.east_1_count
   app_id = nuon_app.main.id
@@ -14,11 +7,10 @@ resource "nuon_install" "east_1" {
   iam_role_arn = var.install_role_arn
 
   dynamic "input" {
-    for_each = local.install_inputs
-    iterator = ev
+    for_each = var.install_inputs
     content {
-      name  = ev.key
-      value = ev.value
+      name  = input.value.name
+      value = input.value.value
     }
   }
 
@@ -36,11 +28,10 @@ resource "nuon_install" "east_2" {
   iam_role_arn = var.install_role_arn
 
   dynamic "input" {
-    for_each = local.install_inputs
-    iterator = ev
+    for_each = var.install_inputs
     content {
-      name  = ev.key
-      value = ev.value
+      name  = input.value.name
+      value = input.value.value
     }
   }
 
@@ -58,11 +49,10 @@ resource "nuon_install" "west_2" {
   iam_role_arn = var.install_role_arn
 
   dynamic "input" {
-    for_each = local.install_inputs
-    iterator = ev
+    for_each = var.install_inputs
     content {
-      name  = ev.key
-      value = ev.value
+      name  = input.value.name
+      value = input.value.value
     }
   }
 

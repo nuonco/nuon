@@ -12,13 +12,11 @@ resource "nuon_app_sandbox" "main" {
     directory = var.sandbox_dir
   }
 
-  var {
-    name  = "eks_version"
-    value = "v1.27.8"
-  }
-
-  var {
-    name  = "admin_access_role_arn"
-    value = "arn:aws:iam::676549690856:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_NuonAdmin_b8aea3365312317b"
+  dynamic "var" {
+    for_each = var.install_inputs
+    content {
+      name  = var.value.name
+      value = var.value.interpolation
+    }
   }
 }
