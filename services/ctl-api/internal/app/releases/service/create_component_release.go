@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
@@ -19,7 +18,7 @@ type CreateComponentReleaseRequest struct {
 
 	Strategy struct {
 		InstallsPerStep int    `json:"installs_per_step"`
-		Delay                    string `json:"delay"`
+		Delay           string `json:"delay"`
 	} `json:"strategy"`
 }
 
@@ -72,7 +71,7 @@ func (s *service) CreateComponentRelease(ctx *gin.Context) {
 
 	app, err := s.createRelease(ctx, cmpID, &req)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create app: %w", err))
+		ctx.Error(fmt.Errorf("unable to create release: %w", err))
 		return
 	}
 
@@ -92,9 +91,9 @@ func (s *service) createReleaseSteps(installs []app.Install, req *CreateComponen
 	steps := make([]*app.ComponentReleaseStep, 0)
 	for _, grp := range stepInstalls {
 		step := &app.ComponentReleaseStep{
-			Status:                     "queued",
+			Status:              "queued",
 			StatusDescription:   "queued",
-			RequestedInstallIDs: pgtype.FlatArray[string](grp),
+			RequestedInstallIDs: grp,
 		}
 
 		delay, err := time.ParseDuration(req.Strategy.Delay)
@@ -126,7 +125,7 @@ func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateCo
 
 	// create the component release
 	release := app.ComponentRelease{
-		Status:                   "queued",
+		Status:            "queued",
 		StatusDescription: "queued and waiting for event loop to process",
 	}
 	bld := app.ComponentBuild{}
