@@ -28,6 +28,9 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/provision-canary", s.ProvisionCanary)
+	api.POST("/v1/general/deprovision-canary", s.DeprovisionCanary)
+	api.POST("/v1/general/start-canary-cron", s.StartCanaryCron)
+	api.POST("/v1/general/stop-canary-cron", s.StopCanaryCron)
 	return nil
 }
 

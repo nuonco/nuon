@@ -74,7 +74,7 @@ func Test_LoadBinary(t *testing.T) {
 				mock.EXPECT().Install(gomock.Any(), gomock.Any(), gomock.Any()).Return("", errLoadBinary)
 				return mock
 			},
-			errExpected: fmt.Errorf("unable to get config file"),
+			errExpected: fmt.Errorf("unable to install binary"),
 		},
 	}
 

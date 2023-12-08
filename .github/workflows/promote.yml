@@ -23,7 +23,7 @@ defaults:
     shell: bash
 
 jobs:
-  # we use the merged pr to see if the PR was labeled "auto promote", but since this _only_ runs after the PR is merged
+  # we use the merged pr to see if the PR was labeled "promote", but since this _only_ runs after the PR is merged
   # (on main), we have to use an action to pull it from the github api.
   merged_pr:
     name: Get merged PR

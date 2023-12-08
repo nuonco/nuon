@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 )
 
 const (
@@ -25,4 +26,8 @@ func (w *workspace) LoadBackend(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (w *workspace) backendFilepath() string {
+	return filepath.Join(w.root, defaultBackendConfigFilename)
 }
