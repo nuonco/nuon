@@ -35,7 +35,7 @@ func (c *Adapter) ToDockerBuildConfig(cfg *app.DockerBuildComponentConfig, conne
 		return nil, fmt.Errorf("unable to get vcs config: %w", err)
 	}
 
-	buildArgs, err := c.toBuildArgs(cfg.BuildArgs)
+	buildArgs, err := c.toBuildArgs([]string(cfg.BuildArgs))
 	if err != nil {
 		return nil, fmt.Errorf("invalid build args: %w", err)
 	}
