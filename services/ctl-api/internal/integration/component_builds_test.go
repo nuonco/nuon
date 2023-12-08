@@ -37,7 +37,7 @@ func (s *componentBuildsSuite) TearDownTest() {
 
 func (s *componentBuildsSuite) SetupTest() {
 	// create an org
-	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
+	orgReq := s.fakeOrgRequest()
 	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), org)

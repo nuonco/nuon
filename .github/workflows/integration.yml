@@ -70,13 +70,13 @@ jobs:
         run: |
           cat "${{ needs.terraform.outputs.tf_env }}" >> "$GITHUB_ENV"
 
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
       - name: Setup twingate
         uses: twingate/github-action@v1
         with:
           service-key: ${{ env.TFO_TWINGATE_SERVICE_ACCOUNTS_GITHUB_ACTIONS_TOKEN }}
-
-      - name: Checkout repo
-        uses: actions/checkout@v3
 
       - name: Setup for CI
         uses: powertoolsdev/mono/actions/setup-ci@main
