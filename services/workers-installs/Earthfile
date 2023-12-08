@@ -54,7 +54,11 @@ get-envtest-versions:
             --value-of "//x:Key"
 
 lint:
-    RUN echo "noop..."
+    FROM +code
+    RUN golangci-lint \
+      run -c ../../.golangci-lint.yaml \
+      --issues-exit-code 0 \
+      ./...
 
 build:
     FROM +code

@@ -21,6 +21,10 @@ code:
 
 lint:
     FROM +code
+    RUN golangci-lint \
+      run -c ../../.golangci-lint.yaml \
+      --issues-exit-code 0 \
+      ./...
 
 test:
     FROM +code
