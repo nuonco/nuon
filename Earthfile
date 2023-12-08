@@ -17,6 +17,7 @@ deps:
         && go install github.com/srikrsna/protoc-gen-gotag@v0.6.2
 
     COPY go.mod go.sum ./
+    COPY .golangci-lint.yaml ./
     RUN go mod download
 
     SAVE ARTIFACT go.mod AS LOCAL go.mod
