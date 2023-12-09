@@ -45,6 +45,7 @@ jobs:
     name: Get terraform outputs
     uses: ./.github/workflows/terraform_outputs.yml
     secrets: inherit
+    if: ${{ needs.merged_pr.outputs.integration == 'true' }}
     with:
       dir: infra/eks
       cache-key: infra-eks-stage-nuon
@@ -53,6 +54,7 @@ jobs:
   run-integration-tests:
     name: 🌏 test
     runs-on: [ubuntu-latest-16-cores, linux]
+    if: ${{ needs.merged_pr.outputs.integration == 'true' }}
     needs:
       - merged_pr
       - terraform
