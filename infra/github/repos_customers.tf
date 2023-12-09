@@ -49,3 +49,16 @@ module "customer-honeyhive" {
     github = github.nuon
   }
 }
+
+module "customer-electric-sql" {
+  source = "./modules/repository"
+
+  name            = "customer-electric-sql"
+  description     = "Nuon configuration + demo for Electric SQL."
+  required_checks = []
+  owning_team_id  = github_team.nuon.id
+
+  providers = {
+    github = github.nuon
+  }
+}
