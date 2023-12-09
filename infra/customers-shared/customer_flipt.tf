@@ -1,4 +1,6 @@
 resource "nuon_docker_build_component" "flipt" {
+  provider = nuon.sandbox
+
   name   = "image"
   app_id     = nuon_app.sandbox["flipt"].id
 
@@ -47,4 +49,3 @@ resource "nuon_install" "flipt_install" {
     nuon_app_sandbox.sandbox
   ]
 }
-

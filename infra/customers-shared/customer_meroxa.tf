@@ -61,4 +61,9 @@ resource "nuon_install" "meroxa_test_install" {
   name         = "meroxa"
   region       = "us-west-2"
   iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-install-access"
+
+  input {
+    name = "secret_role_arn"
+    value = "value"
+  }
 }
