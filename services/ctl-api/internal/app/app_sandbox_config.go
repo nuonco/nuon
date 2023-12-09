@@ -45,7 +45,12 @@ func (a *AppSandboxConfig) BeforeCreate(tx *gorm.DB) error {
 		a.ID = domains.NewAppID()
 	}
 
-	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
-	a.OrgID = orgIDFromContext(tx.Statement.Context)
+	if a.CreatedByID == "" {
+		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+
+	if a.OrgID == "" {
+		a.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
 	return nil
 }

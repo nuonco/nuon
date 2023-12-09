@@ -63,12 +63,15 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs", s.GetAllInstalls)
+
 	api.POST("/v1/installs/:install_id/admin-restart", s.RestartInstall)
 	api.POST("/v1/installs/:install_id/admin-reprovision", s.ReprovisionInstall)
 	api.POST("/v1/installs/:install_id/admin-deprovision", s.AdminDeprovisionInstall)
 	api.POST("/v1/installs/:install_id/admin-delete", s.AdminDeleteInstall)
 	api.POST("/v1/installs/:install_id/admin-forget", s.ForgetInstall)
 	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
+
+	api.POST("/v1/installs/admin-add-sandbox-configs", s.AdminAddSandboxConfigInstall)
 
 	api.POST("/v1/orgs/:org_id/admin-forget-installs", s.ForgetOrgInstalls)
 	return nil
