@@ -1,4 +1,4 @@
-package db
+package migrations
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (a *AutoMigrate) createSandbox(ctx context.Context, sandboxName, version string) error {
+func (a *Migrations) createSandbox(ctx context.Context, sandboxName, version string) error {
 	// create the default sandbox
 	sandbox := app.Sandbox{
 		Name:        sandboxName,
@@ -52,7 +52,7 @@ func (a *AutoMigrate) createSandbox(ctx context.Context, sandboxName, version st
 
 // this function is used to seed the minimal amount of dependencies we need to properly bootstrap the application. It
 // should not be used for general dev seeding, `nuonctl api seed` is where we manage that.
-func (a *AutoMigrate) seedModels(ctx context.Context) error {
+func (a *Migrations) migration003Seed(ctx context.Context) error {
 	a.l.Info("creating default aws sandbox")
 	if err := a.createSandbox(ctx, "aws-eks", "08e7f11"); err != nil {
 		return fmt.Errorf("unable to create aws-eks sandbox: %w", err)

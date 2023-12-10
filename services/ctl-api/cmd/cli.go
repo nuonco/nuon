@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/metrics"
@@ -29,6 +30,7 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(log.New),
 		fx.Provide(github.New),
 		fx.Provide(metrics.New),
+		fx.Provide(migrations.New),
 		fx.Provide(db.New),
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),

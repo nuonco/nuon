@@ -54,6 +54,10 @@ func NewInstanceID() string {
 	return shortid.NewNanoID("ins")
 }
 
+func NewMigrationID() string {
+	return shortid.NewNanoID("mig")
+}
+
 func NewOrgID() string {
 	return shortid.NewNanoID("org")
 }
