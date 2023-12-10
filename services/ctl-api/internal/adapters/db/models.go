@@ -57,6 +57,9 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		// install management
 		&app.InstallDeploy{},
 		&app.InstallComponent{},
+
+		// internal
+		&app.Migration{},
 	}
 	for _, model := range models {
 		if err := a.db.WithContext(ctx).AutoMigrate(model); err != nil {
