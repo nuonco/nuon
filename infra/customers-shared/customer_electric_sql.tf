@@ -1,43 +1,75 @@
 locals {
-  electric_sql_app_name    = "electric_sql"
-  electric_sql_app_id      = nuon_app.sandbox[local.electric_sql_app_name].id
-  electric_sql_repo_url    = "https://github.com/nuonco/customer-electric-sql"
-  electric_sql_repo_branch = "main"
+  electric_sql_app_name = "electric_sql"
+  electric_sql_app_id   = nuon_app.real[local.electric_sql_app_name].id
 }
 
 resource "nuon_docker_build_component" "electric_sql" {
-  provider = nuon.sandbox
-  app_id   = local.electric_sql_app_id
+  app_id = local.electric_sql_app_id
+  name   = "electric_sql"
 
-  name = local.electric_sql_app_name
+  public_repo = {
+    repo      = "https://github.com/electric-sql/electric"
+    directory = "components/electric"
+    branch    = "main"
+  }
 
-  connected_repo = {
-    repo      = local.electric_sql_repo_url
-    branch    = local.electric_sql_repo_branch
-    directory = "components/electric_sql"
+  depends_on = [
+    nuon_terraform_module_component.rds_cluster,
+  ]
+}
+
+resource "nuon_terraform_module_component" "rds_cluster" {
+  app_id = local.electric_sql_app_id
+  name   = "rds_cluster"
+
+  public_repo = {
+    repo      = "https://github.com/nuonco/customer-electric-sql"
+    directory = "components/rds_cluster"
+    branch    = "main"
+  }
+
+  var {
+    name  = "identifier"
+    value = "electric_sql"
+  }
+
+  var {
+    name  = "engine_version"
+    value = "5.7"
+  }
+
+  var {
+    name  = "instance_class"
+    value = "db.t3a.large"
+  }
+
+  var {
+    name  = "db_name"
+    value = "electric_sql"
+  }
+
+  var {
+    name  = "username"
+    value = "electric_sql"
+  }
+
+  var {
+    name  = "port"
+    value = "3306"
+  }
+
+  var {
+    name  = "iam_database_authentication_enabled"
+    value = true
+  }
+
+  var {
+    name  = "vpc_security_group_ids"
+    value = "[{{.nuon.install.sandbox.outputs.eks.node_security_group_id}}]"
+  }
+
+  var {
+    name  = "subnet_ids"
+    value = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids}}"
   }
 }
-
-resource "nuon_terraform_module_component" "electric_sql_rds" {
-  provider = nuon.sandbox
-  app_id   = local.electric_sql_app_id
-
-  name = "electric_sql_rds"
-
-  connected_repo = {
-    repo      = local.electric_sql_repo_url
-    branch    = local.electric_sql_repo_branch
-    directory = "components/rds"
-  }
-}
-
-resource "nuon_install" "electric_sql_install" {
-  provider = nuon.sandbox
-
-  app_id = nuon_app.sandbox["electric_sql"].id
-
-  name         = "electric_sql"
-  region       = "us-west-2"
-  iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-install-access"
-}
-

@@ -1,20 +1,5 @@
 ---
 apps:
-  - name: electric_sql
-    installs:
-      - Pepsi
-      - Coca Cola
-    installer:
-      slug: electric-sql-sandbox
-      description: Build reactive, realtime, local-first apps directly on Postgres.
-      name: Electric SQL
-    urls:
-      documentation: https://electric-sql.com/docs
-      logo: https://electric-sql.com/assets/files/logo@2x-0ee9333aea8b7813fcc4394972cc925f.png
-      github: https://github.com/electric-sql
-      community: https://discord.com/invite/B7kHGwDcbj
-      homepage: https://electric-sql.com/
-      demo: https://www.youtube.com/embed/-8UMbnGtbKg
   - name: honeyhive
     installs:
       - Pepsi
