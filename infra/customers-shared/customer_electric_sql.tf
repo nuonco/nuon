@@ -4,6 +4,8 @@ locals {
 }
 
 resource "nuon_docker_build_component" "electric_sql" {
+  provider = nuon.real
+
   app_id = local.electric_sql_app_id
   name   = "electric_sql"
 
@@ -19,6 +21,8 @@ resource "nuon_docker_build_component" "electric_sql" {
 }
 
 resource "nuon_terraform_module_component" "rds_cluster" {
+  provider = nuon.real
+
   app_id = local.electric_sql_app_id
   name   = "rds_cluster"
 
