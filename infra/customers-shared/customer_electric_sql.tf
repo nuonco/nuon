@@ -1,6 +1,11 @@
 locals {
   electric_sql_app_name = "electric_sql"
   electric_sql_app_id   = nuon_app.real[local.electric_sql_app_name].id
+
+  db_user     = "electric_sql"
+  db_password = "electric_sql"
+  db_port     = 5432
+  db_name     = local.electric_sql_app_name
 }
 
 resource "nuon_docker_build_component" "electric_sql" {
@@ -18,6 +23,16 @@ resource "nuon_docker_build_component" "electric_sql" {
   depends_on = [
     nuon_terraform_module_component.rds_cluster,
   ]
+
+  env_var {
+    name  = "DATABASE_URL"
+    value = "postgresql://${local.db_user}:${local.db_password}@{{.nuon.components.rds_cluster.outputs.db_instance_endpoint}}:${local.db_port}/${local.db_name}"
+  }
+
+  env_var {
+    name  = "AUTH_MODE"
+    value = "insecure"
+  }
 }
 
 resource "nuon_terraform_module_component" "rds_cluster" {
@@ -34,7 +49,7 @@ resource "nuon_terraform_module_component" "rds_cluster" {
 
   var {
     name  = "identifier"
-    value = "electric_sql"
+    value = local.electric_sql_app_name
   }
 
   var {
@@ -49,17 +64,22 @@ resource "nuon_terraform_module_component" "rds_cluster" {
 
   var {
     name  = "db_name"
-    value = "electric_sql"
+    value = local.db_name
   }
 
   var {
     name  = "username"
-    value = "electric_sql"
+    value = local.db_user
+  }
+
+  var {
+    name  = "password"
+    value = local.db_password
   }
 
   var {
     name  = "port"
-    value = "3306"
+    value = local.db_port
   }
 
   var {
