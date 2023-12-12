@@ -138,12 +138,12 @@ resource "nuon_terraform_module_component" "rds_cluster" {
 
   var {
     name  = "subnet_id_one"
-    value = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids[0]}}"
+    value = "{{index .nuon.install.sandbox.outputs.vpc.private_subnet_ids 0}}"
   }
 
   var {
     name  = "subnet_id_two"
-    value = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids[1]}}"
+    value = "{{index .nuon.install.sandbox.outputs.vpc.private_subnet_ids 1}}"
   }
 }
 
