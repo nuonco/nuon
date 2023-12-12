@@ -5,7 +5,7 @@ apps:
       - Pepsi
       - Coca Cola
     installer:
-      slug: honeyhive
+      slug: honeyhive-sandbox
       description: Open Source Feature Management
       name: Honeyhive
     urls:

@@ -147,12 +147,12 @@ resource "nuon_terraform_module_component" "rds_cluster" {
   }
 }
 
-resource "nuon_install" "electric_sql_install" {
+resource "nuon_install" "electric_sql_us_east_1" {
   provider = nuon.real
 
   app_id = local.electric_sql_app_id
 
-  name         = "${local.electric_sql_app_name}-demo"
+  name         = "${local.electric_sql_app_name}_us_east_1"
   region       = "us-east-1"
   iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-org-prod-customer-iam-role"
 
