@@ -32,10 +32,10 @@ spec:
           resources:
             limits:
               cpu: 100m
-              memory: 128Mi
+              memory: 256Mi
             requests:
               cpu: 100m
-              memory: 128Mi
+              memory: 256Mi
           envFrom:
             - configMapRef:
                 name: {{ include "common.fullname" . }}
