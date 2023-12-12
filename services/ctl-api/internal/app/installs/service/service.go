@@ -71,8 +71,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/admin-forget", s.ForgetInstall)
 	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
 
-	api.POST("/v1/installs/admin-add-sandbox-configs", s.AdminAddSandboxConfigInstall)
-
 	api.POST("/v1/orgs/:org_id/admin-forget-installs", s.ForgetOrgInstalls)
 	return nil
 }
