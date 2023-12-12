@@ -12,11 +12,11 @@ locals {
   db_name     = local.electric_sql_app_name
 }
 
-resource "nuon_container_image_component" "electric_sql" {
+resource "nuon_container_image_component" "sync_service" {
   provider = nuon.real
 
   app_id = local.electric_sql_app_id
-  name   = "electric_sql"
+  name   = "sync_service"
 
   public = {
     image_url = "electricsql/electric"
@@ -105,4 +105,18 @@ resource "nuon_terraform_module_component" "rds_cluster" {
     name  = "subnet_ids"
     value = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids}}"
   }
+}
+
+resource "nuon_install" "electric_sql_install" {
+  provider = nuon.real
+
+  app_id = local.electric_sql_app_id
+
+  name         = "${local.electric_sql_app_name}-demo"
+  region       = "us-east-1"
+  iam_role_arn = "customer-${local.electric_sql_app_name}"
+
+  depends_on = [
+    nuon_app_sandbox.real
+  ]
 }
