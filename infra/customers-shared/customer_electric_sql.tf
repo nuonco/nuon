@@ -83,7 +83,7 @@ resource "nuon_terraform_module_component" "rds_cluster" {
 
   var {
     name  = "vpc_security_group_id"
-    value = "[{{.nuon.install.sandbox.outputs.eks.node_security_group_id}}]"
+    value = "{{.nuon.install.sandbox.outputs.eks.node_security_group_id}}"
   }
 
   var {
