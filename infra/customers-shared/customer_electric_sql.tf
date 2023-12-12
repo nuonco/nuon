@@ -2,27 +2,26 @@ locals {
   electric_sql_app_name = "electric_sql"
   electric_sql_app_id   = nuon_app.real[local.electric_sql_app_name].id
 
+  auth_mode              = "insecure"
+  logical_publisher_host = "electric"
+  pg_proxy_password      = "electric_sql"
+
   db_user     = "electric_sql"
   db_password = "electric_sql"
   db_port     = 5432
   db_name     = local.electric_sql_app_name
 }
 
-resource "nuon_docker_build_component" "electric_sql" {
+resource "nuon_container_image_component" "electric_sql" {
   provider = nuon.real
 
   app_id = local.electric_sql_app_id
   name   = "electric_sql"
 
-  public_repo = {
-    repo      = "https://github.com/electric-sql/electric"
-    directory = "components/electric"
-    branch    = "main"
+  public = {
+    image_url = "electricsql/electric"
+    tag       = "latest"
   }
-
-  depends_on = [
-    nuon_terraform_module_component.rds_cluster,
-  ]
 
   env_var {
     name  = "DATABASE_URL"
@@ -31,7 +30,17 @@ resource "nuon_docker_build_component" "electric_sql" {
 
   env_var {
     name  = "AUTH_MODE"
-    value = "insecure"
+    value = local.auth_mode
+  }
+
+  env_var {
+    name  = "LOGICAL_PUBLISHER_HOST"
+    value = local.logical_publisher_host
+  }
+
+  env_var {
+    name  = "PG_PROXY_PASSWORD"
+    value = local.pg_proxy_password
   }
 }
 
