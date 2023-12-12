@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.8
+
+Promoting to fix bug caused by AWS SDK update.
+
 ## v0.19.7
 
 Promoting admin endpoints.
