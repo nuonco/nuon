@@ -1,19 +1,72 @@
 locals {
-  honeyhive_customer_name = "honeyhive"
-  honehyive_sandbox_id    = nuon_app.sandbox[local.honeyhive_customer_name].id
+  honeyhive_app_name = "honeyhive"
+  honeyhive_app_id   = nuon_app.sandbox[local.honeyhive_app_name].id
 }
 
-resource "nuon_install" "honeyhive_install" {
+resource "nuon_terraform_module_component" "document_db" {
   provider = nuon.sandbox
 
-  app_id = local.honehyive_sandbox_id
+  name   = "document_db"
+  app_id = local.honeyhive_app_id
 
-  name         = "${local.honeyhive_customer_name}-demo"
-  region       = "us-east-1"
-  iam_role_arn = "customer-${local.honeyhive_customer_name}"
+  public_repo = {
+    repo      = "powertoolsdev/mono"
+    directory = "infra/customers-shared/honeyhive/components/document-db"
+    branch    = "main"
+  }
 
-  depends_on = [
-    nuon_app_sandbox.sandbox
-  ]
+  var {
+    name  = "vpc_id"
+    value = "{{.nuon.install.inputs.vpc_id}}"
+  }
+
+  var {
+    name  = "namespace"
+    value = "honeyhive"
+  }
+
+  var {
+    name  = "stage"
+    value = "production"
+  }
+
+  var {
+    name  = "name"
+    value = "{{.nuon.install.inputs.install_name}}"
+  }
+
+  var {
+    name  = "cluster_size"
+    value = 3
+  }
+
+  var {
+    name  = "master_username"
+    value = "honeyhive"
+  }
+
+  var {
+    name  = "master_password"
+    value = "password"
+  }
+
+  var {
+    name  = "instance_class"
+    value = "db.r4.large"
+  }
+
+  var {
+    name  = "subnet_ids"
+    value = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids}}"
+  }
+
+  var {
+    name  = "allowed_security_groups"
+    value = "default"
+  }
+
+  var {
+    name  = "zone_id"
+    value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+  }
 }
-
