@@ -50,7 +50,7 @@ resource "nuon_terraform_module_component" "rds_cluster" {
   app_id = local.electric_sql_app_id
   name   = "rds_cluster"
 
-  public_repo = {
+  connected_repo = {
     repo      = "https://github.com/nuonco/customer-electric-sql"
     directory = "components/rds_cluster"
     branch    = "main"
