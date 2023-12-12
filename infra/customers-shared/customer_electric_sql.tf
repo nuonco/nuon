@@ -12,6 +12,29 @@ locals {
   db_name     = local.electric_sql_app_name
 }
 
+resource "nuon_terraform_module_component" "certificate" {
+  provider = nuon.real
+
+  app_id = local.electric_sql_app_id
+  name   = "certificate"
+
+  connected_repo = {
+    repo      = "powertoolsdev/mono"
+    directory = "infra/customers-shared/electric-sql/components/certificate"
+    branch    = "main"
+  }
+
+  var {
+    name  = "domain_name"
+    value = "nlb.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+  }
+
+  var {
+    name  = "zone_id"
+    value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+  }
+}
+
 resource "nuon_helm_chart_component" "helm_chart" {
   provider = nuon.real
 
@@ -67,7 +90,7 @@ resource "nuon_helm_chart_component" "helm_chart" {
 
   value {
     name  = "api.nlbs.public_domain_certificate_arn"
-    value = "{{.nuon.components.e2e_infra.outputs.public_domain_certificate_arn}}"
+    value = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
   }
 }
 
