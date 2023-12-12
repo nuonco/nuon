@@ -83,12 +83,12 @@ resource "nuon_terraform_module_component" "rds_cluster" {
 
   var {
     name  = "vpc_security_group_id"
-    value = "{{.nuon.install.sandbox.outputs.eks.node_security_group_id}}"
+    value = "sg-02f07af3113dd063c"
   }
 
   var {
     name  = "subnet_id"
-    value = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids[0]}}"
+    value = "subnet-012a08391e6c093e1"
   }
 }
 
