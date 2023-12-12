@@ -62,16 +62,6 @@ resource "nuon_terraform_module_component" "rds_cluster" {
   }
 
   var {
-    name  = "engine_version"
-    value = "5.7"
-  }
-
-  var {
-    name  = "instance_class"
-    value = "db.t3a.large"
-  }
-
-  var {
     name  = "db_name"
     value = local.db_name
   }
@@ -92,18 +82,13 @@ resource "nuon_terraform_module_component" "rds_cluster" {
   }
 
   var {
-    name  = "iam_database_authentication_enabled"
-    value = true
-  }
-
-  var {
-    name  = "vpc_security_group_ids"
+    name  = "vpc_security_group_id"
     value = "[{{.nuon.install.sandbox.outputs.eks.node_security_group_id}}]"
   }
 
   var {
-    name  = "subnet_ids"
-    value = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids}}"
+    name  = "subnet_id"
+    value = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids[0]}}"
   }
 }
 

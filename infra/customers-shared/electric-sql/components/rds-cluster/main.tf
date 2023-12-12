@@ -4,9 +4,19 @@ module "db" {
 
   identifier = var.identifier
 
-  engine            = var.engine
-  engine_version    = var.engine_version
-  instance_class    = var.instance_class
+  engine               = "postgres"
+  engine_version       = "14"
+  family               = "postgres14"
+  major_engine_version = "14"
+
+  parameters = [
+    {
+      name  = "rds.logical_replication"
+      value = 1
+    },
+  ]
+
+  instance_class    = "db.t3a.large"
   allocated_storage = 5
 
   db_name  = var.db_name
@@ -14,11 +24,9 @@ module "db" {
   password = var.password
   port     = var.port
 
-  iam_database_authentication_enabled = var.iam_database_authentication_enabled
-  vpc_security_group_ids              = var.vpc_security_group_ids
+  iam_database_authentication_enabled = true
+  vpc_security_group_ids              = [var.vpc_security_group_id]
 
   create_db_subnet_group = true
-  subnet_ids             = var.subnet_ids
-
-  tags = var.tags
+  subnet_ids             = [var.subnet_id]
 }
