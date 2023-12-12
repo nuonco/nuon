@@ -33,6 +33,6 @@ module "db" {
   create_db_subnet_group = true
   subnet_ids = [
     var.subnet_id_one,
-    var.var.subnet_id_two,
+    var.subnet_id_two,
   ]
 }
