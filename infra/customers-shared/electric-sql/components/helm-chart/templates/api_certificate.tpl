@@ -2,7 +2,7 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ include "common.fullname" . }}-api-public
+  name: {{ include "common.fullname" . }}-public
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "common.apiLabels" . | nindent 4 }}

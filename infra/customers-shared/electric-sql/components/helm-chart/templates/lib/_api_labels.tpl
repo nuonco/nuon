@@ -1,5 +1,5 @@
 {{- define "common.apiLabels" -}}
-app: {{ .Release.Name }}-api
+app: {{ .Release.Name }}
 helm.sh/chart: {{ include "common.chart" . }}
 {{ include "common.apiSelectorLabels" . }}
 {{- if .Chart.AppVersion }}
@@ -9,6 +9,6 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{- define "common.apiSelectorLabels" -}}
-app.kubernetes.io/name: {{ include "common.name" . }}-api
-app.kubernetes.io/instance: {{ .Release.Name }}-api
+app.kubernetes.io/name: {{ include "common.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

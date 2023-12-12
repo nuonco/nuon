@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "common.fullname" . }}-api-public
+  name: {{ include "common.fullname" . }}-public
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "common.apiLabels" . | nindent 4 }}
@@ -22,6 +22,6 @@ spec:
           pathType: Prefix
           backend:
             service:
-              name: {{ include "common.fullname" . }}-api
+              name: {{ include "common.fullname" . }}
               port:
                 number: 80

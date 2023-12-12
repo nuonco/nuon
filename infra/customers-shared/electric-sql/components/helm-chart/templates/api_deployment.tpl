@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "common.fullname" . }}-api
+  name: {{ include "common.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "common.apiLabels" . | nindent 4 }}
@@ -18,7 +18,7 @@ spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       automountServiceAccountToken: true
       containers:
-        - name: {{ include "common.fullname" . }}-api
+        - name: {{ include "common.fullname" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
             - name: satellite-http
