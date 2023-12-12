@@ -10,7 +10,7 @@ image:
   tag: latest
 
 serviceAccount:
-  name: sync_service
+  name: sync-service
   annotations: {}
 
 worker:
