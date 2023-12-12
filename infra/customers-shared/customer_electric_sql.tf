@@ -12,33 +12,35 @@ locals {
   db_name     = local.electric_sql_app_name
 }
 
-resource "nuon_container_image_component" "sync_service" {
+resource "nuon_helm_chart_component" "helm_chart" {
   provider = nuon.real
 
-  app_id = local.electric_sql_app_id
-  name   = "sync_service"
+  app_id     = local.electric_sql_app_id
+  name       = "helm_chart"
+  chart_name = "sync-service"
 
-  public = {
-    image_url = "electricsql/electric"
-    tag       = "latest"
+  connected_repo = {
+    repo      = "powertoolsdev/mono"
+    directory = "infra/customers-shared/electric-sql/components/helm-chart"
+    branch    = "main"
   }
 
-  env_var {
+  value {
     name  = "DATABASE_URL"
     value = "postgresql://${local.db_user}:${local.db_password}@{{.nuon.components.rds_cluster.outputs.db_instance_endpoint}}:${local.db_port}/${local.db_name}"
   }
 
-  env_var {
+  value {
     name  = "AUTH_MODE"
     value = local.auth_mode
   }
 
-  env_var {
+  value {
     name  = "LOGICAL_PUBLISHER_HOST"
     value = local.logical_publisher_host
   }
 
-  env_var {
+  value {
     name  = "PG_PROXY_PASSWORD"
     value = local.pg_proxy_password
   }

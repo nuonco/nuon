@@ -1,0 +1,39 @@
+---
+env:
+  DATABASE_URL: ""
+  AUTH_MODE: ""
+  LOGICAL_PUBLISHER_HOST: ""
+  PG_PROXY_PASSWORD: ""
+
+image:
+  repository: docker.io/electricsql/electric
+  tag: latest
+
+serviceAccount:
+  name: sync_service
+  annotations: {}
+
+worker:
+  autoscaling:
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 50
+
+api:
+  port: 8080
+
+  ingresses:
+    public_domain: api.INSTALL_PUBLIC_DOMAIN
+    internal_domain: api.internal.INSTALL_INTERNAL_DOMAIN
+
+  nlbs:
+    public_domain: nlb.INSTALL_PUBLIC_DOMAIN
+    internal_domain: nlb.internal.INSTALL_INTERNAL_DOMAIN
+    public_domain_certificate: nbl.PUBLIC_DOMAIN_CERTIFICATE
+
+  autoscaling:
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 50
