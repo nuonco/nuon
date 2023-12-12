@@ -1,6 +1,6 @@
 locals {
   electric_sql_app_name = "electric_sql"
-  electric_sql_app_id   = nuon_app.real[local.electric_sql_app_name].id
+  electric_sql_app_id   = nuon_app.sandbox[local.electric_sql_app_name].id
 
   auth_mode              = "insecure"
   logical_publisher_host = "electric"
@@ -13,7 +13,7 @@ locals {
 }
 
 resource "nuon_terraform_module_component" "certificate" {
-  provider = nuon.real
+  provider = nuon.sandbox
 
   app_id = local.electric_sql_app_id
   name   = "certificate"
@@ -36,7 +36,7 @@ resource "nuon_terraform_module_component" "certificate" {
 }
 
 resource "nuon_helm_chart_component" "helm_chart" {
-  provider = nuon.real
+  provider = nuon.sandbox
 
   app_id     = local.electric_sql_app_id
   name       = "helm_chart"
@@ -95,7 +95,7 @@ resource "nuon_helm_chart_component" "helm_chart" {
 }
 
 resource "nuon_terraform_module_component" "rds_cluster" {
-  provider = nuon.real
+  provider = nuon.sandbox
 
   app_id = local.electric_sql_app_id
   name   = "rds_cluster"
@@ -148,7 +148,7 @@ resource "nuon_terraform_module_component" "rds_cluster" {
 }
 
 resource "nuon_install" "electric_sql_install" {
-  provider = nuon.real
+  provider = nuon.sandbox
 
   app_id = local.electric_sql_app_id
 
@@ -157,6 +157,6 @@ resource "nuon_install" "electric_sql_install" {
   iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-org-prod-customer-iam-role"
 
   depends_on = [
-    nuon_app_sandbox.real
+    nuon_app_sandbox.sandbox
   ]
 }
