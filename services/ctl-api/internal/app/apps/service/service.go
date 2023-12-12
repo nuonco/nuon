@@ -65,17 +65,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 	api.GET("/v1/installers", s.GetAllAppInstallers)
 
-	// temporary migrations
-
-	// ensure all apps have an app sandbox config
-	api.POST("/v1/apps/admin-add-app-sandbox-configs", s.AdminAddAppSandboxConfigs)
-
-	// ensure all apps have an app input config
-	api.POST("/v1/apps/admin-add-app-inputs", s.AdminAddAppInputsConfigs)
-
-	// ensure all app sandbox configs have an app-id field
-	api.POST("/v1/apps/admin-update-app-sandbox-configs", s.AdminUpdateAppSandboxConfigs)
-
 	return nil
 }
 
