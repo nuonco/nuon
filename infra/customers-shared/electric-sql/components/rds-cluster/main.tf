@@ -31,5 +31,8 @@ module "db" {
   vpc_security_group_ids              = [var.vpc_security_group_id]
 
   create_db_subnet_group = true
-  subnet_ids             = [var.subnet_id]
+  subnet_ids = [
+    var.subnet_id_one,
+    var.var.subnet_id_two,
+  ]
 }

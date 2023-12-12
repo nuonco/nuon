@@ -22,6 +22,10 @@ variable "vpc_security_group_id" {
   type = string
 }
 
-variable "subnet_id" {
+variable "subnet_id_one" {
+  type = string
+}
+
+variable "subnet_id_two" {
   type = string
 }

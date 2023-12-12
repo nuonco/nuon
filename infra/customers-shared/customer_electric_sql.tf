@@ -87,8 +87,13 @@ resource "nuon_terraform_module_component" "rds_cluster" {
   }
 
   var {
-    name  = "subnet_id"
+    name  = "subnet_id_one"
     value = "subnet-012a08391e6c093e1"
+  }
+
+  var {
+    name  = "subnet_id_two"
+    value = "subnet-0be8074c284cc6bdb"
   }
 }
 
