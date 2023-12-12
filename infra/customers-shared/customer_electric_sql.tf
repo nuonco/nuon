@@ -51,8 +51,8 @@ resource "nuon_terraform_module_component" "rds_cluster" {
   name   = "rds_cluster"
 
   connected_repo = {
-    repo      = "nuonco/customer-electric-sql"
-    directory = "components/rds_cluster"
+    repo      = "powertoolsdev/mono"
+    directory = "infra/customers-shared/electric-sql/components/rds-cluster"
     branch    = "main"
   }
 
