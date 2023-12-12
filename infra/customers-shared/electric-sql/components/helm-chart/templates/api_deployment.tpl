@@ -20,12 +20,13 @@ spec:
       containers:
         - name: {{ include "common.fullname" . }}-api
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command:
-            - /bin/api
           ports:
-            - name: http
-              containerPort: {{ .Values.api.port }}
-              protocol: TCP
+            - name: satellite-http
+              containerPort: 5133
+            - name: logical-publisher-tcp
+              containerPort: 5433
+            - name: pg-proxy-tcp
+              containerPort: 65432
           readinessProbe: null
           livenessProbe: null
           resources:
