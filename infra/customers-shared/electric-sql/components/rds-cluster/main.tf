@@ -16,6 +16,9 @@ module "db" {
     },
   ]
 
+  create_db_option_group    = false
+  create_db_parameter_group = false
+
   instance_class    = "db.t3a.large"
   allocated_storage = 5
 

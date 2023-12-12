@@ -58,7 +58,7 @@ resource "nuon_terraform_module_component" "rds_cluster" {
 
   var {
     name  = "identifier"
-    value = local.electric_sql_app_name
+    value = "electric-sql"
   }
 
   var {
