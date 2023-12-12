@@ -114,7 +114,7 @@ resource "nuon_install" "electric_sql_install" {
 
   name         = "${local.electric_sql_app_name}-demo"
   region       = "us-east-1"
-  iam_role_arn = "customer-${local.electric_sql_app_name}"
+  iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-org-prod-customer-iam-role"
 
   depends_on = [
     nuon_app_sandbox.real
