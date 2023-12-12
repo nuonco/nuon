@@ -26,23 +26,48 @@ resource "nuon_helm_chart_component" "helm_chart" {
   }
 
   value {
-    name  = "DATABASE_URL"
+    name  = "env.DATABASE_URL"
     value = "postgresql://${local.db_user}:${local.db_password}@{{.nuon.components.rds_cluster.outputs.db_instance_endpoint}}:${local.db_port}/${local.db_name}"
   }
 
   value {
-    name  = "AUTH_MODE"
+    name  = "env.AUTH_MODE"
     value = local.auth_mode
   }
 
   value {
-    name  = "LOGICAL_PUBLISHER_HOST"
+    name  = "env.LOGICAL_PUBLISHER_HOST"
     value = local.logical_publisher_host
   }
 
   value {
-    name  = "PG_PROXY_PASSWORD"
+    name  = "env.PG_PROXY_PASSWORD"
     value = local.pg_proxy_password
+  }
+
+  value {
+    name  = "api.ingresses.public_domain"
+    value = "api.{{.nuon.install.public_domain}}"
+  }
+
+  value {
+    name  = "api.ingresses.internal_domain"
+    value = "api.{{.nuon.install.internal_domain}}"
+  }
+
+  value {
+    name  = "api.nlbs.public_domain"
+    value = "nlb.{{.nuon.install.public_domain}}"
+  }
+
+  value {
+    name  = "api.nlbs.internal_domain"
+    value = "nlb.internal.{{.nuon.install.internal_domain}}"
+  }
+
+  value {
+    name  = "api.nlbs.public_domain_certificate_arn"
+    value = "{{.nuon.components.e2e_infra.outputs.public_domain_certificate_arn}}"
   }
 }
 
