@@ -8,11 +8,38 @@ updates:
   - package-ecosystem: "gomod"  # See documentation for possible values
     directory: "/"  # Location of package manifests
     schedule:
-      day: "sunday"
+      interval: "daily"
+      time: "07:05"
+      timezone: "America/New_York"
+    labels:
+      - dependabot
+      - canary
+      - integration
+    open-pull-requests-limit: 1
+    groups:
+      nuon:
+        patterns:
+          - "nuon*"
+
+  - package-ecosystem: "gomod"  # See documentation for possible values
+    directory: "/"  # Location of package manifests
+    schedule:
+      day: sunday
       interval: "weekly"
       time: "07:05"
       timezone: "America/New_York"
     open-pull-requests-limit: 1
+    labels:
+      - dependabot
+      - canary
+      - integration
+    groups:
+      aws-deps:
+        patterns:
+          - "aws*"
+      all-deps:
+        exclude-patterns:
+          - "aws*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
