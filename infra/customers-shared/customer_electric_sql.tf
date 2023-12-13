@@ -50,7 +50,7 @@ resource "nuon_helm_chart_component" "helm_chart" {
 
   value {
     name  = "env.DATABASE_URL"
-    value = "postgresql://${local.db_user}:${local.db_password}@{{.nuon.components.rds_cluster.outputs.db_instance_endpoint}}:${local.db_port}/${local.db_name}"
+    value = "postgresql://${local.db_user}:${local.db_password}@{{.nuon.components.rds_cluster.outputs.db_instance_endpoint}}/${local.db_name}"
   }
 
   value {
