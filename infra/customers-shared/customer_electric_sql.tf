@@ -132,11 +132,6 @@ resource "nuon_terraform_module_component" "rds_cluster" {
   }
 
   var {
-    name  = "vpc_security_group_id"
-    value = "{{.nuon.install.sandbox.outputs.cluster.cluster_security_group_id}}"
-  }
-
-  var {
     name  = "subnet_id_one"
     value = "{{index .nuon.install.sandbox.outputs.vpc.private_subnet_ids 0}}"
   }
@@ -144,6 +139,16 @@ resource "nuon_terraform_module_component" "rds_cluster" {
   var {
     name  = "subnet_id_two"
     value = "{{index .nuon.install.sandbox.outputs.vpc.private_subnet_ids 1}}"
+  }
+
+  var {
+    name  = "vpc_id"
+    value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
+  }
+
+  var {
+    name  = "zone_id"
+    value = "{{.nuon.install.sandbox.outputs.internal_domain.zone_id}}"
   }
 }
 

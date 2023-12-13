@@ -1,3 +1,10 @@
+locals {
+  subnet_ids = [
+    var.subnet_id_one,
+    var.subnet_id_two,
+  ]
+}
+
 module "db" {
   source  = "terraform-aws-modules/rds/aws"
   version = "6.3.0"
@@ -28,11 +35,9 @@ module "db" {
   port     = var.port
 
   iam_database_authentication_enabled = true
-  vpc_security_group_ids              = [var.vpc_security_group_id]
+  apply_immediately                   = true
+  vpc_security_group_ids              = [module.security_group_rds.security_group_id]
 
-  create_db_subnet_group = true
-  subnet_ids = [
-    var.subnet_id_one,
-    var.subnet_id_two,
-  ]
+  db_subnet_group_name = module.subnet_group.db_subnet_group_id
+  subnet_ids           = local.subnet_ids
 }
