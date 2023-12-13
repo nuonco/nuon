@@ -108,7 +108,7 @@ resource "nuon_terraform_module_component" "rds_cluster" {
 
   var {
     name  = "identifier"
-    value = "electric-sql"
+    value = "customer-database"
   }
 
   var {
