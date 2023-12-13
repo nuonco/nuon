@@ -1,4 +1,4 @@
-module "db" {
+module "rds" {
   source  = "terraform-aws-modules/rds/aws"
   version = "6.3.0"
 
