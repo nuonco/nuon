@@ -187,5 +187,18 @@ func (c *cli) installsCmd() *cobra.Command {
 	sandboxRunLogsCmd.MarkFlagRequired("run-id")
 	installsCmds.AddCommand(sandboxRunLogsCmd)
 
+	currentInputs := &cobra.Command{
+		Use:   "current-inputs",
+		Short: "View current inputs",
+		Long:  "View current set app inputs",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient)
+			svc.CurrentInputs(cmd.Context(), id, PrintJSON)
+		},
+	}
+	currentInputs.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	currentInputs.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(currentInputs)
+
 	return installsCmds
 }
