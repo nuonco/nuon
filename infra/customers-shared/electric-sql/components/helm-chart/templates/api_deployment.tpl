@@ -38,4 +38,4 @@ spec:
               memory: 256Mi
           envFrom:
             - configMapRef:
-                name: {{- include "common.fullname" . -}}
+                name: {{ include "common.fullname" . }}
