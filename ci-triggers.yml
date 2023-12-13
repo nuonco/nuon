@@ -12,19 +12,29 @@ services: |
     - go.sum
     - pkg/types/workflows/executors/**
   workers-apps:
+    - go.mod
+    - go.sum
     - services/workers-apps/**
   workers-canary:
+    - go.mod
+    - go.sum
     - services/workers-canary/**
     - services/e2e/nuon/**
   workers-executors:
+    - go.mod
+    - go.sum
     - services/workers-executors/**
     - pkg/terraform/**
     - pkg/waypoint/**
   workers-installs:
+    - go.mod
+    - go.sum
     - services/workers-installs/**
     - pkg/types/workflows/installs/**
     - pkg/types/workflows/executors/**
   workers-orgs:
+    - go.mod
+    - go.sum
     - services/workers-orgs/**
 
 # to add a new directory that triggers a CI run for an artifact, update the list entry
