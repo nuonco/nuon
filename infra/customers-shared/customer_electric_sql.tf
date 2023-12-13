@@ -160,3 +160,19 @@ resource "nuon_install" "electric_sql_us_east_1" {
     nuon_app_sandbox.real
   ]
 }
+
+// I may have broken the _us_east_1 install testing security group changes.
+// Provisioning another one while I debug.
+resource "nuon_install" "electric_sql_us_east_2" {
+  provider = nuon.real
+
+  app_id = local.electric_sql_app_id
+
+  name         = "${local.electric_sql_app_name}_us_east_2"
+  region       = "us-east-2"
+  iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-org-prod-customer-iam-role"
+
+  depends_on = [
+    nuon_app_sandbox.real
+  ]
+}
