@@ -197,7 +197,9 @@ module "infra-github" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   variable_sets = ["aws-environment-credentials",
     "github-admin-powertoolsdev",
-  "github-admin-nuonco"]
+    "github-admin-nuonco",
+    "github-admin-nuonco-shared",
+  ]
   project_id = tfe_project.infra.id
 }
 
