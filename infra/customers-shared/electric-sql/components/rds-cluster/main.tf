@@ -29,6 +29,9 @@ module "db" {
   instance_class    = "db.t4g.micro"
   allocated_storage = 5
 
+  // in order to set the password ourselves, this must be set to false
+  manage_master_user_password = false
+
   db_name  = var.db_name
   username = var.username
   password = var.password
