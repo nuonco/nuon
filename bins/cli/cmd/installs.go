@@ -17,6 +17,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		intermediateOnly bool
 		jobConfig        bool
 		runID            string
+		inputs           []string
 	)
 
 	installsCmds := &cobra.Command{
@@ -57,7 +58,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Long:  "Create a new install of your app",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := installs.New(c.apiClient)
-			svc.Create(cmd.Context(), appID, name, region, arn, PrintJSON)
+			svc.Create(cmd.Context(), appID, name, region, arn, inputs, PrintJSON)
 		},
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
@@ -68,6 +69,7 @@ func (c *cli) installsCmd() *cobra.Command {
 	createCmd.MarkFlagRequired("role")
 	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in")
 	createCmd.MarkFlagRequired("region")
+	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	installsCmds.AddCommand(createCmd)
 
 	deleteCmd := &cobra.Command{

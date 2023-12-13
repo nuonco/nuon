@@ -3,6 +3,7 @@ package installs
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/nuonco/nuon-go/models"
@@ -16,11 +17,17 @@ const (
 	statusAccessError = "access-error"
 )
 
-func (s *Service) Create(ctx context.Context, appID, name, region, arn string, asJSON bool) {
+func (s *Service) Create(ctx context.Context, appID, name, region, arn string, inputs []string, asJSON bool) {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
 		ui.PrintError(err)
 		return
+	}
+
+	inputsMap := make(map[string]string)
+	for _, kv := range inputs {
+		kvT := strings.Split(kv, "=")
+		inputsMap[kvT[0]] = kvT[1]
 	}
 
 	if asJSON {
@@ -30,6 +37,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, a
 				Region:     region,
 				IamRoleArn: &arn,
 			},
+			Inputs: inputsMap,
 		})
 		if err != nil {
 			ui.PrintJSONError(err)
@@ -48,6 +56,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, a
 			Region:     region,
 			IamRoleArn: &arn,
 		},
+		Inputs: inputsMap,
 	})
 	if err != nil {
 		view.Fail(err)
