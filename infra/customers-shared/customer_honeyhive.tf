@@ -56,12 +56,12 @@ resource "nuon_terraform_module_component" "document_db" {
   }
 
   var {
-    name  = "subnet_id_one"
+    name  = "subnet_one"
     value = "{{index .nuon.install.sandbox.outputs.vpc.private_subnet_ids 0}}"
   }
 
   var {
-    name  = "subnet_id_two"
+    name  = "subnet_two"
     value = "{{index .nuon.install.sandbox.outputs.vpc.private_subnet_ids 1}}"
   }
 
