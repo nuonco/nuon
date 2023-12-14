@@ -110,6 +110,16 @@ func (r *run) getApplyPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 
+	planCb, err := r.outputCallback("plan.json")
+	if err != nil {
+		return nil, fmt.Errorf("unable to create plan callback: %w", err)
+	}
+	pipe.AddStep(&pipeline.Step{
+		Name:       "plan",
+		ExecFn:     execmappers.MapBytesLog(r.Workspace.Plan),
+		CallbackFn: planCb,
+	})
+
 	applyCb, err := r.outputCallback("apply.json")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create apply callback: %w", err)
