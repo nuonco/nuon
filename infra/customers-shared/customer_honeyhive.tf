@@ -17,7 +17,7 @@ resource "nuon_terraform_module_component" "document_db" {
 
   var {
     name  = "vpc_id"
-    value = "{{.nuon.install.inputs.vpc_id}}"
+    value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
   }
 
   var {
