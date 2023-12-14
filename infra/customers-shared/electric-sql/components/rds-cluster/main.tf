@@ -21,6 +21,10 @@ module "db" {
       name  = "rds.logical_replication"
       value = 1
     },
+    {
+      name  = "wal_level"
+      value = "logical"
+    },
   ]
 
   create_db_option_group    = false
