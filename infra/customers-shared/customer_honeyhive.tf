@@ -66,11 +66,6 @@ resource "nuon_terraform_module_component" "document_db" {
   }
 
   var {
-    name  = "allowed_security_groups"
-    value = "default"
-  }
-
-  var {
     name  = "zone_id"
     value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
   }
