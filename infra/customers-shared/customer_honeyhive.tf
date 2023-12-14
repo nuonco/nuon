@@ -9,7 +9,7 @@ resource "nuon_terraform_module_component" "document_db" {
   name   = "document_db"
   app_id = local.honeyhive_app_id
 
-  public_repo = {
+  connected_repo = {
     repo      = "powertoolsdev/mono"
     directory = "infra/customers-shared/honeyhive/components/document-db"
     branch    = "main"
