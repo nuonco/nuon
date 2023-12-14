@@ -5,6 +5,7 @@ module "shared-meroxa" {
   description     = "Nuon configuration + demo for Meroxa."
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
+  is_private = true
 
   providers = {
     github = github.nuonco-shared
@@ -18,6 +19,7 @@ module "shared-weaviate" {
   description     = "Nuon configuration + demo for Weaviate."
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
+  is_private = true
 
   providers = {
     github = github.nuonco-shared
@@ -44,6 +46,7 @@ module "shared-honeyhive" {
   description     = "Nuon configuration + demo for Honeyhive."
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
+  is_private = true
 
   providers = {
     github = github.nuonco-shared
@@ -57,6 +60,7 @@ module "shared-electric-sql" {
   description     = "Nuon configuration + demo for Electric SQL."
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
+  is_private = true
 
   providers = {
     github = github.nuonco-shared
@@ -70,6 +74,7 @@ module "shared-clickhouse" {
   description     = "Nuon configuration for clickhouse."
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
+  is_private = true
 
   providers = {
     github = github.nuonco-shared
