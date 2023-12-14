@@ -10,7 +10,7 @@ module "cluster" {
   master_password     = var.master_password
   instance_class      = var.instance_class
   vpc_id              = var.instance_class
-  allowed_cidr_blocks = data.aws_vpc.vpc.cidr_block_associations[0].cidr_block
+  allowed_cidr_blocks = [data.aws_vpc.vpc.cidr_block_associations[0].cidr_block]
   subnet_ids = [
     var.subnet_one,
     var.subnet_two,
