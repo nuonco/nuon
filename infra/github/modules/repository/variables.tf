@@ -92,3 +92,8 @@ variable "is_fork" {
   type        = bool
   description = "whether the repo is a fork or not"
 }
+
+variable "collaborators" {
+  type = map(string)
+  default = {}
+}

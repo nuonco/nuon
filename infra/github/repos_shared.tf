@@ -8,6 +8,10 @@ module "shared-meroxa" {
   is_private = true
   enable_branch_protection = false
 
+  collaborators = {
+      simonl2002 = "push"
+  }
+
   providers = {
     github = github.nuonco-shared
   }
@@ -22,6 +26,10 @@ module "shared-weaviate" {
   owning_team_id  = github_team.nuonco-shared.id
   is_private = true
   enable_branch_protection = false
+
+  collaborators = {
+      aduis = "push"
+  }
 
   providers = {
     github = github.nuonco-shared
@@ -38,6 +46,11 @@ module "shared-flipt" {
   is_private = true
   enable_branch_protection = false
 
+  collaborators = {
+      georgemac = "push"
+      markphelps = "push"
+  }
+
   providers = {
     github = github.nuonco-shared
   }
@@ -53,6 +66,10 @@ module "shared-honeyhive" {
   enable_branch_protection = false
   is_private = true
 
+  collaborators = {
+      "michael-hhai" = "push"
+  }
+
   providers = {
     github = github.nuonco-shared
   }
@@ -67,6 +84,13 @@ module "shared-electric-sql" {
   owning_team_id  = github_team.nuonco-shared.id
   is_private = true
   enable_branch_protection = false
+
+  collaborators = {
+      thruflo = "push"
+      samwillis = "push"
+      alco = "push"
+      balegas = "push"
+  }
 
   providers = {
     github = github.nuonco-shared

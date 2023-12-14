@@ -45,3 +45,4 @@ resource "github_team_repository" "owner" {
   team_id    = var.owning_team_id
   permission = "push"
 }
+
