@@ -4,7 +4,7 @@ env:
   DISABLE_METRICS: true
   API_URL: http://localhost:8081
   INTERNAL_API_URL: http://localhost:8082
-  TERRAFORM_MODULE_DIR: /Users/jonmorehouse/nuon/mono/services/workers-canary/terraform
+  TERRAFORM_MODULE_DIR: ./terraform
   TESTS_DIR: ./tests
   INSTALL_SCRIPT_PATH: ./install-cli.sh
   DISABLE_NOTIFICATIONS: true

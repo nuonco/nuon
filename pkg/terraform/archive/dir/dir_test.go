@@ -2,11 +2,13 @@ package dir
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNew(t *testing.T) {
@@ -25,7 +27,9 @@ func TestNew(t *testing.T) {
 				}
 			},
 			assertFn: func(t *testing.T, s *dir) {
-				assert.Equal(t, expected.Path, s.Path)
+				absPath, err := filepath.Abs(expected.Path)
+				require.NoError(t, err)
+				assert.Equal(t, absPath, s.Path)
 			},
 		},
 		"missing path": {
