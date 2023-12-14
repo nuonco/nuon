@@ -10,6 +10,7 @@ import (
 
 const (
 	defaultTerraformRunTimeout time.Duration = time.Minute * 45
+	defaultTestAttempts        int32         = 1
 )
 
 func (w *wkflow) defaultExecGetActivity(
@@ -60,6 +61,9 @@ func (w *wkflow) defaultExecTestActivity(
 ) error {
 	ao := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 5 * time.Minute,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: defaultTestAttempts,
+		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 

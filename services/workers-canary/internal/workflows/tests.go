@@ -38,7 +38,7 @@ func (w *wkflow) execTests(ctx workflow.Context,
 		}
 
 		var testResp activities.ExecTestScriptResponse
-		if err := w.defaultExecGetActivity(ctx, w.acts.ExecTestScript, req, &testResp); err != nil {
+		if err := w.defaultExecTestActivity(ctx, w.acts.ExecTestScript, req, &testResp); err != nil {
 			return fmt.Errorf("unable to execute test: %w", err)
 		}
 	}
