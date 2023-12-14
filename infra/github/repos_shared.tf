@@ -6,6 +6,7 @@ module "shared-meroxa" {
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
   is_private = true
+  enable_branch_protection = false
 
   providers = {
     github = github.nuonco-shared
@@ -20,6 +21,7 @@ module "shared-weaviate" {
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
   is_private = true
+  enable_branch_protection = false
 
   providers = {
     github = github.nuonco-shared
@@ -34,6 +36,7 @@ module "shared-flipt" {
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
   is_private = true
+  enable_branch_protection = false
 
   providers = {
     github = github.nuonco-shared
@@ -47,6 +50,7 @@ module "shared-honeyhive" {
   description     = "Nuon configuration + demo for Honeyhive."
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
+  enable_branch_protection = false
   is_private = true
 
   providers = {
@@ -62,6 +66,7 @@ module "shared-electric-sql" {
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
   is_private = true
+  enable_branch_protection = false
 
   providers = {
     github = github.nuonco-shared
@@ -76,6 +81,7 @@ module "shared-clickhouse" {
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
   is_private = true
+  enable_branch_protection = false
 
   providers = {
     github = github.nuonco-shared
