@@ -108,7 +108,7 @@ resource "nuon_terraform_module_component" "rds_cluster" {
 
   var {
     name  = "identifier"
-    value = "acme-inc-db"
+    value = "skynet-inc-db"
   }
 
   var {
