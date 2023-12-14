@@ -33,6 +33,7 @@ module "shared-flipt" {
   description     = "Nuon configuration + demo for Flipt."
   required_checks = []
   owning_team_id  = github_team.nuonco-shared.id
+  is_private = true
 
   providers = {
     github = github.nuonco-shared
