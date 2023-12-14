@@ -30,12 +30,12 @@ variable "vpc_id" {
   type = number
 }
 
-variable "subnet_ids" {
-  type = list(string)
+variable "subnet_one" {
+  type = string
 }
 
-variable "allowed_security_groups" {
-  type = list(string)
+variable "subnet_two" {
+  type = string
 }
 
 variable "zone_id" {

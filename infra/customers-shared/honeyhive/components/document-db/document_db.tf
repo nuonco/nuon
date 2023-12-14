@@ -2,15 +2,18 @@ module "cluster" {
   source  = "cloudposse/documentdb-cluster/aws"
   version = "0.24.0"
 
-  namespace               = "eg"
-  stage                   = "testing"
-  name                    = "docdb"
-  cluster_size            = 3
-  master_username         = "admin1"
-  master_password         = "Test123456789"
-  instance_class          = "db.r4.large"
-  vpc_id                  = "vpc-xxxxxxxx"
-  subnet_ids              = ["subnet-xxxxxxxx", "subnet-yyyyyyyy"]
-  allowed_security_groups = ["sg-xxxxxxxx"]
-  zone_id                 = "Zxxxxxxxx"
+  namespace           = var.namespace
+  stage               = var.stage
+  name                = var.name
+  cluster_size        = var.cluster_size
+  master_username     = var.master_username
+  master_password     = var.master_password
+  instance_class      = var.instance_class
+  vpc_id              = var.instance_class
+  allowed_cidr_blocks = data.aws_vpc.vpc.cidr_block_associations[0].cidr_block
+  subnet_ids = [
+    var.subnet_one,
+    var.subnet_two,
+  ]
+  zone_id = var.zone_id
 }

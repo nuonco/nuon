@@ -1,10 +1,10 @@
 locals {
   honeyhive_app_name = "honeyhive"
-  honeyhive_app_id   = nuon_app.sandbox[local.honeyhive_app_name].id
+  honeyhive_app_id   = nuon_app.real[local.honeyhive_app_name].id
 }
 
 resource "nuon_terraform_module_component" "document_db" {
-  provider = nuon.sandbox
+  provider = nuon.real
 
   name   = "document_db"
   app_id = local.honeyhive_app_id
@@ -22,7 +22,7 @@ resource "nuon_terraform_module_component" "document_db" {
 
   var {
     name  = "namespace"
-    value = "honeyhive"
+    value = local.honeyhive_app_name
   }
 
   var {
@@ -32,32 +32,37 @@ resource "nuon_terraform_module_component" "document_db" {
 
   var {
     name  = "name"
-    value = "{{.nuon.install.inputs.install_name}}"
+    value = local.honeyhive_app_name
   }
 
   var {
     name  = "cluster_size"
-    value = 3
+    value = 1
   }
 
   var {
     name  = "master_username"
-    value = "honeyhive"
+    value = local.honeyhive_app_name
   }
 
   var {
     name  = "master_password"
-    value = "password"
+    value = local.honeyhive_app_name
   }
 
   var {
     name  = "instance_class"
-    value = "db.r4.large"
+    value = "db.r6g.large"
   }
 
   var {
-    name  = "subnet_ids"
-    value = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids}}"
+    name  = "subnet_id_one"
+    value = "{{index .nuon.install.sandbox.outputs.vpc.private_subnet_ids 0}}"
+  }
+
+  var {
+    name  = "subnet_id_two"
+    value = "{{index .nuon.install.sandbox.outputs.vpc.private_subnet_ids 1}}"
   }
 
   var {
@@ -69,4 +74,18 @@ resource "nuon_terraform_module_component" "document_db" {
     name  = "zone_id"
     value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
   }
+}
+
+resource "nuon_install" "honeyhive_us_east_1" {
+  provider = nuon.real
+
+  app_id = local.honeyhive_app_id
+
+  name         = "${local.honeyhive_app_name}_us_east_2"
+  region       = "us-east-1"
+  iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-org-prod-customer-iam-role"
+
+  depends_on = [
+    nuon_app_sandbox.real
+  ]
 }
