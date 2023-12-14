@@ -15,19 +15,19 @@ variable "cluster_size" {
 }
 
 variable "master_username" {
-  type = number
+  type = string
 }
 
 variable "master_password" {
-  type = number
+  type = string
 }
 
 variable "instance_class" {
-  type = number
+  type = string
 }
 
 variable "vpc_id" {
-  type = number
+  type = string
 }
 
 variable "subnet_one" {
@@ -39,5 +39,5 @@ variable "subnet_two" {
 }
 
 variable "zone_id" {
-  type = number
+  type = string
 }
