@@ -42,3 +42,17 @@ variable "nuonco_pem_file" {
   type      = string
   sensitive = true
 }
+
+// nuonco_shared vars
+variable "nuonco_shared_app_id" {
+  type = string
+}
+
+variable "nuonco_shared_app_installation_id" {
+  type = string
+}
+
+variable "nuonco_shared_app_pem_file" {
+  type      = string
+  sensitive = true
+}

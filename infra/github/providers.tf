@@ -23,6 +23,17 @@ provider "github" {
 }
 
 provider "github" {
+  owner = "nuonco-shared"
+  alias = "nuonco-shared"
+
+  app_auth {
+    id              = var.nuonco_shared_app_id
+    installation_id = var.nuonco_shared_app_installation_id
+    pem_file        = var.nuonco_shared_app_pem_file
+  }
+}
+
+provider "github" {
   owner = "powertoolsdev"
 
   app_auth {
@@ -55,4 +66,3 @@ provider "aws" {
 data "aws_organizations_organization" "orgs" {
   provider = aws.mgmt
 }
-
