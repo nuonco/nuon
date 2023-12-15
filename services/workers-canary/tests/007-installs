@@ -1,0 +1,61 @@
+#!/bin/bash
+
+set -euo pipefail
+
+install_id=$(cat $TF_OUTPUTS_PATH | jq -r '.install_ids[0]')
+install_name="east-1-0"
+
+echo >&2 -e "testing nuon installs deploy command\n"
+
+echo >&2 -e "nuon installs components -i $install_name\n"
+nuon -j installs components -i $install_name
+echo -e "\n"
+
+echo >&2 -e "nuon installs list-deploys -i $install_name\n"
+nuon -j installs list-deploys -i $install_name
+echo -e "\n"
+
+echo >&2 -e "[SANDBOX=false] nuon installs print-deploy-plan -i $install_name -d {deploy_id}\n"
+if [[ "$SANDBOX" == "true" ]]; then
+  echo >&2 "skipping installs print-deploy-plan in sandbox mode"
+else
+  deploy_id=$(nuon -j installs list-deploys -i $install_name | jq -r .[0].id)
+  nuon -j installs print-deploy-plan -i $install_name -d $deploy_id
+fi
+echo -e "\n"
+
+echo >&2 -e "[SANDBOX=false] nuon installs print-deploy-plan -i $install_name -d {deploy_id} --intermediate-only\n"
+if [[ "$SANDBOX" == "true" ]]; then
+  echo >&2 "skipping installs print-deploy-plan in sandbox mode"
+else
+  deploy_id=$(nuon -j installs list-deploys -i $install_name | jq -r .[0].id)
+  nuon -j installs print-deploy-plan -i $install_name -d $deploy_id --intermediate-only
+fi
+echo -e "\n"
+
+echo >&2 -e "[SANDBOX=false] nuon installs print-deploy-plan -i $install_name -d {deploy_id} --print-job-config\n"
+if [[ "$SANDBOX" == "true" ]]; then
+  echo >&2 "skipping installs print-deploy-plan in sandbox mode"
+else
+  deploy_id=$(nuon -j installs list-deploys -i $install_name | jq -r .[0].id)
+  nuon -j installs print-deploy-plan -i $install_name -d $deploy_id --print-job-config
+fi
+echo -e "\n"
+
+echo >&2 -e "[SANDBOX=false] nuon installs print-deploy-plan -i $install_name -d {deploy_id} --rendered-vars\n"
+if [[ "$SANDBOX" == "true" ]]; then
+  echo >&2 "skipping installs print-deploy-plan in sandbox mode"
+else
+  deploy_id=$(nuon -j installs list-deploys -i $install_name | jq -r .[0].id)
+  nuon -j installs print-deploy-plan -i $install_name -d $deploy_id --rendered-vars
+fi
+echo -e "\n"
+
+echo >&2 -e "[SANDBOX=false] nuon installs deploy-logs -i $install_name -d {deploy-id}\n"
+if [[ "$SANDBOX" == "true" ]]; then
+  echo >&2 "skipping installs deploy-logs in sandbox mode"
+else
+  deploy_id=$(nuon -j installs list-deploys -i $install_name | jq -r .[0].id)
+  nuon -j installs deploy-logs -i $install_name -d $deploy_id
+fi
+echo -e "\n"

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -euo pipefail
+
+component_name="e2e_external_image"
+
+echo >&2 -e "testing nuon builds command\n"
+
+echo >&2 -e "nuon builds create -c $component_name\n"
+nuon -j builds create -c $component_name
+echo -e "\n"
+
+echo >&2 -e "nuon builds list -c $component_name\n"
+nuon -j builds list -c $component_name
+echo -e "\n"
+
+echo >&2 -e "nuon builds get -c $component_name -b {build-id}\n"
+build_id=$(nuon -j builds ls -c $component_name | jq -r .[0].id)
+nuon -j builds get -c $component_name -b $build_id
+echo -e "\n"
+
+echo >&2 -e "[SANDBOX=false] nuon builds print-plan -c $component_name -b {build-id}\n"
+if [[ "$SANDBOX" == "true" ]]; then
+  echo >&2 "skipping builds print-plan in sandbox mode"
+else
+  build_id=$(nuon -j builds ls -c $component_name | jq -r .[0].id)
+  nuon -j builds print-plan -c $component_name -b $build_id
+fi
+echo -e "\n"
+
+echo >&2 -e "[SANDBOX=false] nuon builds logs -c $component_name -b {build_id}\n"
+if [[ "$SANDBOX" == "true" ]]; then
+  echo >&2 "skipping builds logs in sandbox mode"
+else
+  build_id=$(nuon -j builds ls -c $component_name | jq -r .[0].id)
+  nuon -j builds logs -c $component_name -b $build_id
+fi
+echo -e "\n"

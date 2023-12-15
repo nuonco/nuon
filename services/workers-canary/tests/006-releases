@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -euo pipefail
+
+app_id=$(cat $TF_OUTPUTS_PATH | jq -r .app.id)
+component_name="e2e_external_image"
+
+echo >&2 -e "testing nuon releases command\n"
+
+echo >&2 -e "nuon releases create -c $component_name\n"
+nuon -j releases create -c $component_name
+echo -e "\n"
+
+echo >&2 -e "nuon releases list -c $component_name\n"
+nuon -j releases list -c $component_name
+echo -e "\n"
+
+echo >&2 -e "nuon releases list -a $app_id\n"
+nuon -j releases list -a $app_id
+echo -e "\n"
+
+echo >&2 -e "nuon releases get -r {release-id}\n"
+release_id=$(nuon -j releases ls -c $component_name | jq -r .[0].id)
+nuon -j releases get -r $release_id
+echo -e "\n"
+
+echo >&2 -e "nuon releases steps -r {release-id}\n"
+release_id=$(nuon -j releases ls -c $component_name | jq -r .[0].id)
+nuon -j releases steps -r $release_id

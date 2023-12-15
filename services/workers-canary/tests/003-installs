@@ -1,0 +1,56 @@
+#!/bin/bash
+
+set -euo pipefail
+
+install_id=$(cat $TF_OUTPUTS_PATH | jq -r '.install_ids[0]')
+install_name="east-1-0"
+
+echo >&2 -e "testing nuon installs command\n"
+
+echo >&2 -e "nuon installs list\n"
+nuon -j installs list
+echo -e "\n"
+
+echo >&2 -e "nuon installs get -i $install_id\n"
+nuon -j installs get -i $install_id
+echo -e "\n"
+
+echo >&2 -e "nuon installs get -i $install_name\n"
+nuon -j installs get -i $install_name
+echo -e "\n"
+
+echo >&2 -e "nuon installs current-inputs -i $install_id\n"
+nuon -j installs current-inputs -i $install_id
+echo >&2 -e "\n"
+
+echo >&2 -e "[SANDBOX=false] nuon installs sandbox-runs -i $install_id\n"
+if [[ "$SANDBOX" == "true" ]]; then
+  echo >&2 "skipping installs sandbox-runs in sandbox mode"
+else
+  nuon -j installs sandbox-runs -i $install_id
+fi
+echo -e "\n"
+
+echo >&2 -e "[SANDBOX=false] nuon installs sandbox-run-logs -i $install_id\n"
+if [[ "$SANDBOX" == "true" ]]; then
+  echo >&2 "skipping installs sandbox-run-logs in sandbox mode"
+else
+  run_id=$(nuon -j installs sandbox-runs -i $install_id | jq -r .[0].id)
+  nuon -j installs sandbox-run-logs -i $install_id -r $run_id
+fi
+echo -e "\n"
+
+echo >&2 -e "[SANDBOX=true] nuon installs create -n cli-canary-test -r us-east-1 -o cli-canary-test --inputs=eks_version=latest\n"
+if [[ "$SANDBOX" == "false" ]]; then
+  echo >&2 "skipping installs create outside of sandbox mode"
+else  
+  nuon -j installs create -n "cli-canary-test" -r "us-east-1" -o "cli-canary-test" --inputs="eks_version=latest"
+fi
+echo -e "\n"
+
+echo >&2 -e "[SANDBOX=true] nuon installs delete -i cli-canary-test\n"
+if [[ "$SANDBOX" == "false" ]]; then
+  echo >&2 "skipping installs delete outside of sandbox mode"
+else  
+  nuon -j installs delete -i "cli-canary-test"  
+fi

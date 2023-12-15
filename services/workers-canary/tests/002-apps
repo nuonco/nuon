@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -euo pipefail
+
+app_id=$(cat $TF_OUTPUTS_PATH | jq -r .app.id)
+app_name=$(cat $TF_OUTPUTS_PATH | jq -r .app.name)
+
+echo >&2 -e "testing nuon apps command\n"
+
+echo >&2 -e "nuon apps list\n"
+nuon -j apps list
+echo -e "\n"
+
+echo >&2 -e "nuon apps set-current\n"
+nuon -j apps set-current -a $app_id
+echo -e "\n"
+
+echo >&2 -e "nuon apps get\n"
+nuon -j apps get
+echo -e "\n"
+
+echo >&2 -e "nuon apps get -a $app_id\n"
+nuon -j apps get -a $app_id
+echo -e "\n"
+
+echo >&2 -e "nuon apps get -a $app_name\n"
+nuon -j apps get -a $app_name
+echo -e "\n"
+
+echo >&2 -e "nuon apps input-config\n"
+nuon -j apps input-config
+echo -e "\n"
+
+echo >&2 -e "nuon apps sandbox-config\n"
+nuon -j apps sandbox-config

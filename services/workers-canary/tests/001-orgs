@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -euo pipefail
+
+org_id=$(cat $TF_OUTPUTS_PATH | jq -r .org.id)
+
+echo >&2 -e "testing nuon orgs command\n"
+
+echo >&2 -e "nuon orgs set-current\n"
+nuon -j orgs set-current -o $org_id
+echo -e "\n"
+
+echo >&2 -e "nuon orgs current\n"
+nuon -j orgs current
+echo -e "\n"
+
+echo >&2 -e "nuon orgs id\n"
+nuon -j orgs id
+echo -e "\n"
+
+echo >&2 -e "nuon orgs api-token\n"
+nuon -j orgs api-token
+echo -e "\n"
+
+echo >&2 -e "nuon orgs list-connected-repos\n"
+nuon -j orgs list-connected-repos
+echo -e "\n"
+
+echo >&2 -e "nuon orgs create --sandbox-mode\n"
+nuon -j orgs create -n cli-sandbox --sandbox-mode
+echo -e "\n"
+
+echo >&2 -e "nuon orgs current\n"
+nuon -j orgs current
+echo -e "\n"
+
+echo >&2 -e "[SKIP] nuon orgs conntect-github\n"
+# nuon -j orgs connect-github
+echo -e "\n"
+
+echo >&2 -e "nuon orgs list\n"
+nuon -j orgs list
+echo -e "\n"
+
+echo >&2 -e "nuon orgs set-current\n"
+nuon -j orgs set-current -o $org_id
+echo -e "\n"
+
+echo >&2 -e "nuon orgs current\n"
+nuon -j orgs current
