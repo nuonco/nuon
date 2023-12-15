@@ -1,10 +1,10 @@
 locals {
   honeyhive_app_name = "honeyhive"
-  honeyhive_app_id   = nuon_app.real[local.honeyhive_app_name].id
+  honeyhive_app_id   = nuon_app.sandbox[local.honeyhive_app_name].id
 }
 
 resource "nuon_terraform_module_component" "document_db" {
-  provider = nuon.real
+  provider = nuon.sandbox
 
   name   = "document_db"
   app_id = local.honeyhive_app_id
@@ -72,7 +72,7 @@ resource "nuon_terraform_module_component" "document_db" {
 }
 
 resource "nuon_install" "honeyhive_us_east_1" {
-  provider = nuon.real
+  provider = nuon.sandbox
 
   app_id = local.honeyhive_app_id
 
@@ -81,6 +81,6 @@ resource "nuon_install" "honeyhive_us_east_1" {
   iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-org-prod-customer-iam-role"
 
   depends_on = [
-    nuon_app_sandbox.real
+    nuon_app_sandbox.sandbox
   ]
 }
