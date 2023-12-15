@@ -84,6 +84,9 @@ module "customers-shared-prod" {
   vars = {
     sandbox_org_id = local.prod.sandbox_org_id
     org_id         = local.prod.org_id
+
+    // NOTE: we do not actually need to/want to create installs in prod.
+    disable_installs = true
   }
   trigger_workspaces = [module.infra-terraform.workspace_id]
 }
