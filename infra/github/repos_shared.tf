@@ -111,3 +111,18 @@ module "shared-clickhouse" {
     github = github.nuonco-shared
   }
 }
+
+module "shared-commonfate" {
+  source = "./modules/repository"
+
+  name            = "commonfate"
+  description     = "Nuon configuration for commonfate."
+  required_checks = []
+  owning_team_id  = github_team.nuonco-shared.id
+  is_private = true
+  enable_branch_protection = false
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
