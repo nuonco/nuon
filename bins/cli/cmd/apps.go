@@ -27,7 +27,8 @@ func (c *cli) appsCmd() *cobra.Command {
 	appID := ""
 	getCmd := &cobra.Command{
 		Use:   "get",
-		Short: "Get the current app",
+		Short: "Get an app",
+		Long:  "Get either the current app or an app by name or ID",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := apps.New(c.apiClient, c.cfg)
 			svc.Get(cmd.Context(), appID, PrintJSON)
@@ -36,6 +37,16 @@ func (c *cli) appsCmd() *cobra.Command {
 	getCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	getCmd.MarkFlagRequired("app-id")
 	appsCmd.AddCommand(getCmd)
+
+	currentCmd := &cobra.Command{
+		Use:   "current",
+		Short: "Get the current app",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.apiClient, c.cfg)
+			svc.Get(cmd.Context(), c.cfg.GetString("app_id"), PrintJSON)
+		},
+	}
+	appsCmd.AddCommand(currentCmd)
 
 	latestSandboxConfigCmd := &cobra.Command{
 		Use:   "sandbox-config",
