@@ -21,5 +21,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "003-seed",
 			Fn:   a.migration003Seed,
 		},
+		{
+			Name: "004-fix-install-cascade-constraints",
+			Fn:   a.migration004InstallsCascadeInputs,
+		},
 	}
 }
