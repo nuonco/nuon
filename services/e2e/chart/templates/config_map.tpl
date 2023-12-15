@@ -7,7 +7,4 @@ metadata:
   labels:
     {{- include "common.labels" . | nindent 4 }}
 data:
-{{- range $path, $config := .Values.env }}
-  {{ $path }}: |
-{{ $config | indent 4 -}}
-{{- end -}}
+{{- .Values.env | toYaml | nindent 2 }}
