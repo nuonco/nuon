@@ -43,7 +43,7 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, asJSON bool
 			deploy.Status,
 			deploy.BuildID,
 			deploy.CreatedAt,
-			deploy.InstallComponentID,
+			deploy.InstallComponent.ComponentID,
 			deploy.InstallComponent.Component.Name,
 		})
 	}
