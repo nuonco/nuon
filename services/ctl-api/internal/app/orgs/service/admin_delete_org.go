@@ -33,6 +33,7 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to get org: %w", err))
 		return
 	}
+	orgID = org.ID
 
 	err = s.deleteOrg(ctx, orgID)
 	if err != nil {
@@ -52,7 +53,6 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 		}
 	}
 	s.hooks.Deleted(ctx, orgID)
-
 	ctx.JSON(http.StatusOK, true)
 }
 
@@ -62,7 +62,9 @@ func (s *service) getOrgAndDependencies(ctx context.Context, orgID string) (*app
 		Preload("Apps").
 		Preload("Apps.Installs").
 		Preload("Apps.Components").
-		First(&org, "id = ?", orgID)
+		Where("name = ?", orgID).
+		Or("id = ?", orgID).
+		First(&org)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org %s: %w", orgID, res.Error)
 	}
