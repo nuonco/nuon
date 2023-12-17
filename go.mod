@@ -11,7 +11,7 @@ replace github.com/spf13/viper v1.4.0 => github.com/spf13/viper v1.7.1
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
-	github.com/DataDog/datadog-go/v5 v5.3.0
+	github.com/DataDog/datadog-go/v5 v5.4.0
 	github.com/auth0/go-jwt-middleware/v2 v2.1.0
 	github.com/aws/aws-sdk-go v1.44.213
 	github.com/aws/aws-sdk-go-v2 v1.24.0
