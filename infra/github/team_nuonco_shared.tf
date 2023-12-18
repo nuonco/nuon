@@ -1,5 +1,5 @@
-resource "github_membership" "nuon" {
-  provider = github.nuon
+resource "github_membership" "nuonco-shared" {
+  provider = github.nuonco-shared
 
   for_each = { for _, user in local.vars.members : user.username => lookup(user, "role", "member") }
 
@@ -7,9 +7,9 @@ resource "github_membership" "nuon" {
   role     = each.value
 }
 
-resource "github_team_members" "nuon" {
-  provider = github.nuon
-  team_id  = github_team.nuon.id
+resource "github_team_members" "nuonco-shared" {
+  provider = github.nuonco-shared
+  team_id  = github_team.nuonco-shared.id
 
   dynamic "members" {
     for_each = { for _, user in local.vars.members : user.username => lookup(user, "role", "member") }
@@ -21,8 +21,8 @@ resource "github_team_members" "nuon" {
   }
 }
 
-resource "github_team" "nuon" {
-  provider    = github.nuon
+resource "github_team" "nuonco-shared" {
+  provider    = github.nuonco-shared
   name        = "team"
   description = "The full Nuon team"
   privacy     = "closed"
