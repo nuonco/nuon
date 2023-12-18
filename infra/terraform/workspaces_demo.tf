@@ -94,10 +94,16 @@ module "customers-shared-prod" {
 module "electric_sql" {
   source = "./modules/workspace"
 
-  name          = "electric_sql"
-  repo          = "nuonco-shared/electric-sql"
+  name = "electric_sql"
+
+  # temp fix to get infra/terraform building again
+  # will set up a new VCS connection after
+  repo = "powertoolsdev/mono"
+  dir  = "infra/customers-shared"
+  # repo          = "nuonco-shared/electric-sql"
+  # dir           = "nuon"
+
   auto_apply    = true
-  dir           = "nuon"
   variable_sets = ["aws-environment-credentials", "api-stage"]
   project_id    = tfe_project.product.id
 
