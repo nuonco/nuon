@@ -95,13 +95,8 @@ module "electric_sql" {
   source = "./modules/workspace"
 
   name = "electric_sql"
-
-  # temp fix to get infra/terraform building again
-  # will set up a new VCS connection after
-  repo = "powertoolsdev/mono"
-  dir  = "infra/customers-shared"
-  # repo          = "nuonco-shared/electric-sql"
-  # dir           = "nuon"
+  repo = "nuonco-shared/electric-sql"
+  dir  = "nuon"
 
   auto_apply    = true
   variable_sets = ["aws-environment-credentials", "api-stage"]
