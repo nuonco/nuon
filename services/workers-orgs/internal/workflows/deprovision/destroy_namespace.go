@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	"go.temporal.io/sdk/activity"
+	"k8s.io/apimachinery/pkg/api/errors"
 	apimetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -47,6 +48,10 @@ func (a *Activities) DestroyNamespace(ctx context.Context, req DestroyNamespaceR
 
 	err = a.destroyNamespace(ctx, clientset.CoreV1().Namespaces(), req.NamespaceName)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return resp, nil
+		}
+
 		return resp, fmt.Errorf("failed to destroy namespace: %w", err)
 	}
 
