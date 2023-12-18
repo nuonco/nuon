@@ -28,6 +28,15 @@ resource "github_team" "nuon" {
   privacy     = "closed"
 }
 
+resource "github_membership" "nuonco_shared" {
+  provider = github.nuonco-shared
+
+  for_each = { for _, user in local.vars.members : user.username => lookup(user, "role", "member") }
+
+  username = each.key
+  role     = each.value
+}
+
 resource "github_team_members" "nuonco-shared" {
   provider = github.nuonco-shared
   team_id  = github_team.nuonco-shared.id
