@@ -30,6 +30,7 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, compID strin
 					if rel.Status == string(releases.StatusActive) || rel.Status == string(releases.StatusError) || rel.Status == string(releases.StatusFailed) {
 						continue
 					}
+
 					inFlight = true
 				}
 			}
