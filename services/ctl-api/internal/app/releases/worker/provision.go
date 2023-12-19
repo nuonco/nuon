@@ -34,7 +34,7 @@ func (w *Workflows) provision(ctx workflow.Context, releaseID string, dryRun boo
 			stepWorkflowID,
 			req,
 		); err != nil {
-			w.updateStatus(ctx, releaseID, "error", "release step failed")
+			w.updateStatus(ctx, releaseID, "error", "release step errored")
 			return fmt.Errorf("release failed: %w", err)
 		}
 	}
