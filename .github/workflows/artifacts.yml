@@ -33,7 +33,7 @@ jobs:
       artifacts: ${{ steps.filter.outputs.changes }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: read ci triggers file
         uses: pietrobolcato/action-read-yaml@1.0.0
@@ -53,7 +53,7 @@ jobs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set git_ref output
         id: git_ref
