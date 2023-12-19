@@ -32,7 +32,7 @@ jobs:
       protos: ${{ steps.filter.outputs.protos }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: dorny/paths-filter@v2
         id: filter
@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup for CI
         uses: powertoolsdev/action-setup-ci@main
