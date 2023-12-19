@@ -108,7 +108,7 @@ require (
 	moul.io/zapgorm2 v1.3.0
 	oras.land/oras-go/v2 v2.1.0
 	sigs.k8s.io/aws-iam-authenticator v0.6.8
-	sigs.k8s.io/yaml v1.3.0
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
