@@ -27,7 +27,7 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, compID strin
 		for _, cfgVersion := range comp.ComponentConfigs {
 			for _, bld := range cfgVersion.ComponentBuilds {
 				for _, rel := range bld.ComponentReleases {
-					if rel.Status == string(releases.StatusActive) || rel.Status == string(releases.StatusError) || rel.Status == string(releases.StatusFailed) {
+					if rel.Status == string(releases.StatusActive) || rel.Status == string(releases.StatusError) {
 						continue
 					}
 
