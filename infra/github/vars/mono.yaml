@@ -73,4 +73,4 @@ required_checks:
   # demo spaces
   - Terraform Cloud/nuonco/customers-shared-stage
   - Terraform Cloud/nuonco/customers-shared-prod
-  - Terraform Cloud/nuonco/demo
+  - Terraform Cloud/nuonco/quickstart

@@ -12,6 +12,7 @@ locals {
     for app in local.sandbox.apps : [
       for idx in range(app.sandbox_install_count): {
           install = idx
+          inputs = app.sandbox_install_inputs
           app     = app
       }
     ]
@@ -59,6 +60,15 @@ resource "nuon_install" "sandbox" {
   app_id       = nuon_app.sandbox[each.value.app.name].id
   region       = "us-east-1"
   iam_role_arn = "iam-role-arn"
+
+  dynamic "input" {
+    for_each = each.value.inputs
+    iterator = ev
+    content {
+      name = ev.key
+      value = ev.value
+    }
+  }
 
   depends_on = [
     nuon_app_sandbox.sandbox

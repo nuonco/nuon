@@ -2,6 +2,9 @@
 apps:
   - name: honeyhive
     sandbox_install_count: 5
+    sandbox_install_inputs:
+      secret_role_arn: secret-role-arn
+      storage: 20Gi
     installs:
       - name: abc
         region: us-west-2
@@ -19,6 +22,7 @@ apps:
       demo:
   - name: electric_sql
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: electric-sql
       description: Build reactive, realtime, local-first apps directly on Postgres.
@@ -32,6 +36,7 @@ apps:
       demo: https://www.youtube.com/embed/-8UMbnGtbKg
   - name: flipt
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: flipt-sandbox
       description: Open Source Feature Management
@@ -45,6 +50,7 @@ apps:
       demo: https://www.youtube.com/embed/xzaZU6oKBq4
   - name: streamkap
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: streamkap
       description: The streaming alternative to batch ETL
@@ -58,6 +64,7 @@ apps:
       demo: https://www.youtube.com/embed/7EEQag4G764
   - name: postman
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: postman
       description: Over 25 million developers use Postman.
@@ -71,6 +78,7 @@ apps:
       demo: https://www.youtube.com/embed/oI-GyWB_6jA?
   - name: signoz
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: signoz
       description: OpenTelemetry-Native Traces, Metrics, and Logs in a single pane
@@ -84,6 +92,7 @@ apps:
       demo: https://www.youtube.com/embed/jD36hjfL1x0
   - name: temporal
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: temporal
       description: Code for more reliable systems
@@ -97,6 +106,7 @@ apps:
       demo: https://www.youtube.com/embed/2HjnQlnA5eY
   - name: sourcegraph
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: sourcegraph
       description: Code search and an AI assistant with the context of the code graph.
@@ -110,6 +120,7 @@ apps:
       demo: https://www.youtube.com/embed/D2x037j3BZ4
   - name: retool
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: retool
       description: The fastest way to develop effective software.
@@ -123,6 +134,7 @@ apps:
       demo: https://www.youtube.com/embed/AkcwNwPy7RI
   - name: unstructured
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: unstructured
       description: ETL for LLMs
@@ -137,6 +149,7 @@ apps:
 
   - name: airbyte
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: airbyte
       description: The only tool you need to move data
@@ -150,6 +163,7 @@ apps:
       demo: https://www.youtube.com/embed/aLUr8QNbQp4
   - name: clickhouse
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: clickhouse
       description: ClickHouse is the fastest and most resource efficient open-source database for real-time apps and analytics.
@@ -164,6 +178,7 @@ apps:
 
   - name: weaviate
     sandbox_install_count: 5
+    sandbox_install_inputs: {}
     installer:
       slug: weaviate-sandbox
       description: The AI Native Vector Database
@@ -178,6 +193,9 @@ apps:
 
   - name: meroxa
     sandbox_install_count: 5
+    sandbox_install_inputs:
+      secret_role_arn: secret-role-arn
+      storage: 20Gi
     installer:
       slug: meroxa
       description: The leading developer experience layer for streaming data.
