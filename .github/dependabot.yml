@@ -5,11 +5,12 @@
 ---
 version: 2
 updates:
-  - package-ecosystem: "gomod"  # See documentation for possible values
-    directory: "/"  # Location of package manifests
+  # update any internal dependencies daily
+  - package-ecosystem: "gomod"
+    directory: "/"
     schedule:
       interval: "daily"
-      time: "07:05"
+      time: "07:00"
       timezone: "America/New_York"
     labels:
       - dependabot
@@ -21,14 +22,15 @@ updates:
         patterns:
           - "nuon*"
 
-  - package-ecosystem: "gomod"  # See documentation for possible values
-    directory: "/"  # Location of package manifests
+  # update all AWS dependencies, weekly
+  - package-ecosystem: "gomod"
+    directory: "/"
     schedule:
       day: sunday
       interval: "weekly"
       time: "07:05"
       timezone: "America/New_York"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 2
     labels:
       - dependabot
       - canary
