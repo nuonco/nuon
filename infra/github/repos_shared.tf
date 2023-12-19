@@ -68,6 +68,7 @@ module "shared-honeyhive" {
 
   collaborators = {
       "michael-hhai" = "push"
+      "codehruv" = "push"
   }
 
   providers = {
