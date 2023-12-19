@@ -78,7 +78,10 @@ jobs:
          Terraform Cloud/nuonco/workers-installs-prod,
          Terraform Cloud/nuonco/workers-installs-stage,
          Terraform Cloud/nuonco/workers-orgs-prod,
-         Terraform Cloud/nuonco/workers-orgs-stage]
+         Terraform Cloud/nuonco/workers-orgs-stage
+         Terraform Cloud/nuonco/customers-shared-prod
+         Terraform Cloud/nuonco/customers-shared-stage
+         Terraform Cloud/nuonco/quickstart]
     steps:
       - name: update statuses
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
