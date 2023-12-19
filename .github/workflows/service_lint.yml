@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 9
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download terraform outputs
         uses: actions/download-artifact@v4
