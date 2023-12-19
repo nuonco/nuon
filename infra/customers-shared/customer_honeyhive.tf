@@ -70,17 +70,3 @@ resource "nuon_terraform_module_component" "document_db" {
     value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
   }
 }
-
-resource "nuon_install" "honeyhive_us_east_1" {
-  provider = nuon.sandbox
-
-  app_id = local.honeyhive_app_id
-
-  name         = "${local.honeyhive_app_name}_us_east_2"
-  region       = "us-east-1"
-  iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-org-prod-customer-iam-role"
-
-  depends_on = [
-    nuon_app_sandbox.sandbox
-  ]
-}

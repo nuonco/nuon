@@ -6,14 +6,20 @@ data "utils_deep_merge_yaml" "real" {
 
 locals {
   real = yamldecode(data.utils_deep_merge_yaml.real.output)
-  real_installs = flatten([
+
+  real_installs_array = flatten([
     for app in local.real.apps : [
-      for install in app.installs : {
+      for install in app.real_installs : {
+        app = app
         install = install
-        app     = app
       }
     ]
   ])
+
+  # create a map, where all installs have a key, that we can use to look them up + id them.
+  real_installs = {
+    for si in local.real_installs_array : "${si.app.name}.${si.install.name}" => si
+  }
 }
 
 resource "nuon_app" "real" {
@@ -53,4 +59,19 @@ resource "nuon_app_installer" "real" {
   github_url        = each.value.urls.github
   homepage_url      = each.value.urls.homepage
   demo_url          = each.value.urls.demo
+}
+
+resource "nuon_install" "real" {
+  #for_each = var.disable_installs ? {} : local.real_installs
+  for_each = local.real_installs
+
+  provider     = nuon.real
+  name         = each.value.install.name
+  app_id       = nuon_app.real[each.value.app.name].id
+  region       = each.value.install.region
+  iam_role_arn = each.value.install.iam_role_arn
+
+  depends_on = [
+    nuon_app_sandbox.real
+  ]
 }

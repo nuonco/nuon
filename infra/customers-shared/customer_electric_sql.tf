@@ -151,17 +151,3 @@ resource "nuon_terraform_module_component" "rds_cluster" {
     value = "{{.nuon.install.sandbox.outputs.internal_domain.zone_id}}"
   }
 }
-
-resource "nuon_install" "electric_sql_us_east_2" {
-  provider = nuon.sandbox
-
-  app_id = local.electric_sql_app_id
-
-  name         = "${local.electric_sql_app_name}_us_east_2"
-  region       = "us-east-2"
-  iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-org-prod-customer-iam-role"
-
-  depends_on = [
-    nuon_app_sandbox.sandbox
-  ]
-}

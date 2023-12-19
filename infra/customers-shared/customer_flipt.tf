@@ -35,17 +35,3 @@ resource "nuon_helm_chart_component" "flipt" {
     value             = "{{.nuon.components.image.image.tag}}"
   }
 }
-
-resource "nuon_install" "flipt_install" {
-  provider = nuon.sandbox
-
-  app_id = nuon_app.sandbox["flipt"].id
-
-  name         = "flipt-demo"
-  region       = "us-east-1"
-  iam_role_arn = "customer-flipt"
-
-  depends_on = [
-    nuon_app_sandbox.sandbox
-  ]
-}

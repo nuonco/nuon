@@ -6,14 +6,21 @@ data "utils_deep_merge_yaml" "sandbox" {
 
 locals {
   sandbox = yamldecode(data.utils_deep_merge_yaml.sandbox.output)
-  sandbox_installs = flatten([
+
+  # this creates a flattened list of all installs for all apps, dynamically
+  sandbox_installs_array = flatten([
     for app in local.sandbox.apps : [
-      for install in app.installs : {
-        install = install
-        app     = app
+      for idx in range(app.sandbox_install_count): {
+          install = idx
+          app     = app
       }
     ]
   ])
+
+  # create a map, where all installs have a key, that we can use to look them up + id them.
+  sandbox_installs = {
+    for si in local.sandbox_installs_array : "${si.app.name}.${si.install}" => si
+  }
 }
 
 resource "nuon_app" "sandbox" {
@@ -37,13 +44,18 @@ resource "nuon_app_sandbox" "sandbox" {
   }
 }
 
-resource "nuon_install" "sandbox" {
-  for_each = {
-    for obj in local.sandbox_installs : "${obj.app.name}.${obj.install}" => obj
+resource "random_pet" "sandbox" {
+  for_each = local.sandbox_installs
+  keepers = {
+    install_id = each.key
   }
+}
+
+resource "nuon_install" "sandbox" {
+  for_each = local.sandbox_installs
 
   provider     = nuon.sandbox
-  name         = each.value.install
+  name         = random_pet.sandbox[each.key].id
   app_id       = nuon_app.sandbox[each.value.app.name].id
   region       = "us-east-1"
   iam_role_arn = "iam-role-arn"
@@ -68,5 +80,4 @@ resource "nuon_app_installer" "sandbox" {
   github_url        = each.value.urls.github
   homepage_url      = each.value.urls.homepage
   demo_url          = each.value.urls.demo
-
 }

@@ -52,18 +52,3 @@ resource "nuon_helm_chart_component" "meroxa-platform" {
     value = "{{.nuon.install.sandbox.outputs.aws_region}}"
   }
 }
-
-resource "nuon_install" "meroxa_test_install" {
-  provider = nuon.sandbox
-
-  app_id = nuon_app.sandbox["meroxa"].id
-
-  name         = "meroxa"
-  region       = "us-west-2"
-  iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-install-access"
-
-  input {
-    name = "secret_role_arn"
-    value = "value"
-  }
-}

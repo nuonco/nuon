@@ -30,14 +30,3 @@ resource "nuon_helm_chart_component" "weaviate" {
     }
   }
 }
-
-resource "nuon_install" "weaviate_install" {
-  provider = nuon.sandbox
-
-  app_id = nuon_app.sandbox["weaviate"].id
-
-  name         = "weaviate"
-  region       = "us-west-2"
-  iam_role_arn = "arn:aws:iam::949309607565:role/nuon-demo-install-access"
-}
-
