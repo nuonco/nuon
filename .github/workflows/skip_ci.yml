@@ -26,19 +26,59 @@ defaults:
     shell: bash
 
 jobs:
-  changes:
-    name: 🔍 changes
+  checks:
+    name: 🔍 checks
     runs-on: ubuntu-latest
-    outputs:
-      artifacts: ${{ steps.filter.outputs.changes }}
     strategy:
       fail-fast: false
       matrix:
-        check:
-          - services ✅
-          - artifacts ✅
-          - infra ✅
-          - pkg ✅
+        check: [
+         services ✅,
+         artifacts ✅,
+         pkg ✅,
+         infra ✅,
+         protos ✅,
+         sandboxes ✅,
+         pull_request ✅,
+         branch ✅,
+         lint ✅,
+         Terraform Cloud/nuonco/infra-artifacts,
+         Terraform Cloud/nuonco/aws-accounts,
+         Terraform Cloud/nuonco/aws-org,
+         Terraform Cloud/nuonco/aws-sso,
+         Terraform Cloud/nuonco/infra-datadog-orgs-prod,
+         Terraform Cloud/nuonco/infra-datadog-orgs-stage,
+         Terraform Cloud/nuonco/infra-datadog-prod,
+         Terraform Cloud/nuonco/infra-datadog-stage,
+         Terraform Cloud/nuonco/infra-eks-orgs-prod-main,
+         Terraform Cloud/nuonco/infra-eks-orgs-stage-main,
+         Terraform Cloud/nuonco/infra-eks-prod-nuon,
+         Terraform Cloud/nuonco/infra-eks-stage-nuon,
+         Terraform Cloud/nuonco/infra-github,
+         Terraform Cloud/nuonco/infra-orgs-prod,
+         Terraform Cloud/nuonco/infra-orgs-stage,
+         Terraform Cloud/nuonco/infra-temporal-prod,
+         Terraform Cloud/nuonco/infra-temporal-stage,
+         Terraform Cloud/nuonco/infra-terraform,
+         Terraform Cloud/nuonco/infra-waypoint-orgs-prod,
+         Terraform Cloud/nuonco/infra-waypoint-orgs-stage,
+         Terraform Cloud/nuonco/nuon-dns,
+         Terraform Cloud/nuonco/powertools,
+         Terraform Cloud/nuonco/sandboxes,
+         Terraform Cloud/nuonco/e2e-prod,
+         Terraform Cloud/nuonco/e2e-stage,
+         Terraform Cloud/nuonco/ctl-api-prod,
+         Terraform Cloud/nuonco/ctl-api-stage,
+         Terraform Cloud/nuonco/workers-apps-prod,
+         Terraform Cloud/nuonco/workers-apps-stage,
+         Terraform Cloud/nuonco/workers-canary-prod,
+         Terraform Cloud/nuonco/workers-canary-stage,
+         Terraform Cloud/nuonco/workers-executors-prod,
+         Terraform Cloud/nuonco/workers-executors-stage,
+         Terraform Cloud/nuonco/workers-installs-prod,
+         Terraform Cloud/nuonco/workers-installs-stage,
+         Terraform Cloud/nuonco/workers-orgs-prod,
+         Terraform Cloud/nuonco/workers-orgs-stage]
     steps:
       - name: update statuses
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
