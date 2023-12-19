@@ -5,23 +5,6 @@
 ---
 version: 2
 updates:
-  # update any internal dependencies daily
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "daily"
-      time: "07:00"
-      timezone: "America/New_York"
-    labels:
-      - dependabot
-      - canary
-      - integration
-    open-pull-requests-limit: 1
-    groups:
-      nuon:
-        patterns:
-          - "nuon*"
-
   # update all AWS dependencies, weekly
   - package-ecosystem: "gomod"
     directory: "/"
@@ -30,7 +13,7 @@ updates:
       interval: "weekly"
       time: "07:05"
       timezone: "America/New_York"
-    open-pull-requests-limit: 2
+    open-pull-requests-limit: 3
     labels:
       - dependabot
       - canary
@@ -39,6 +22,9 @@ updates:
       aws-deps:
         patterns:
           - "aws*"
+      nuon:
+        patterns:
+          - "nuon*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
