@@ -33,7 +33,7 @@ jobs:
       sandboxes: ${{ steps.filter.outputs.changes }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: dorny/paths-filter@v2
         id: filter
@@ -50,7 +50,7 @@ jobs:
       git_ref: ${{steps.git_ref.outputs.git_ref}}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set git_ref output
         id: git_ref
