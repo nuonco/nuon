@@ -11,7 +11,6 @@ type Status string
 const (
 	StatusPlanning       Status = "planning"
 	StatusError          Status = "error"
-	StatusFailed         Status = "failed"
 	StatusActive         Status = "active"
 	StatusProvisioning   Status = "provisioning"
 	StatusDeprovisioning Status = "deprovisioning"

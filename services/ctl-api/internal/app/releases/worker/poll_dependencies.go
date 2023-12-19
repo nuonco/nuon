@@ -26,7 +26,7 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, releaseID string) err
 		if release.ComponentBuild.Status == "active" {
 			return nil
 		}
-		if release.ComponentBuild.Status == "failed" {
+		if release.ComponentBuild.Status == "error" {
 			w.updateStatus(ctx, releaseID, StatusError, "build failed")
 			return fmt.Errorf("build failed: %s", release.StatusDescription)
 		}
