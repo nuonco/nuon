@@ -1,0 +1,52 @@
+---
+name: tests labeler
+"on":
+  pull_request:
+    types:
+      - opened
+      - ready_for_review
+      - reopened
+
+jobs:
+  changes:
+    name: 🔍 changes
+    runs-on: ubuntu-latest
+    outputs:
+      ctl-api: ${{ steps.filter.outputs.ctl-api }}
+      workers-canary: ${{ steps.filter.outputs.workers-canary }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: read ci triggers file
+        uses: pietrobolcato/action-read-yaml@1.0.0
+        id: ci_triggers
+        with:
+          config: ci-triggers.yml
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: ${{ steps.ci_triggers.outputs['services'] }}
+
+  add-integration-label:
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+    if: ${{ !github.event.pull_request.draft && needs.changes.outputs.ctl-api == 'true' }}
+    steps:
+      - name: add integration label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: integration
+
+  add-canary-label:
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+    if: ${{ !github.event.pull_request.draft && (needs.changes.outputs.ctl-api == 'true' || needs.changes.outputs.workers-canary == 'true')}}
+    steps:
+      - name: add canary label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: canary
