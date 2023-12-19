@@ -23,7 +23,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.21.5
 	github.com/aws/aws-sdk-go-v2/service/eks v1.35.5
 	github.com/aws/aws-sdk-go-v2/service/iam v1.28.5
-	github.com/aws/aws-sdk-go-v2/service/kms v1.20.7
+	github.com/aws/aws-sdk-go-v2/service/kms v1.27.6
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.35.5
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.47.5
 	github.com/aws/aws-sdk-go-v2/service/sts v1.26.5
