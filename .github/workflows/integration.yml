@@ -44,6 +44,8 @@ jobs:
   terraform:
     name: Get terraform outputs
     uses: ./.github/workflows/terraform_outputs.yml
+    needs:
+      - merged_pr
     secrets: inherit
     if: ${{ needs.merged_pr.outputs.integration == 'true' }}
     with:
