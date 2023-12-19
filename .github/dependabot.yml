@@ -39,9 +39,6 @@ updates:
       aws-deps:
         patterns:
           - "aws*"
-      all-deps:
-        exclude-patterns:
-          - "aws*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
