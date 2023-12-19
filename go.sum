@@ -1022,6 +1022,8 @@ github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.16.9 h1:iEAeF6YC3l4Fzl
 github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.16.9/go.mod h1:kjsXoK23q9Z/tLBrckZLLyvjhZoS+AGrzqzUfEClvMM=
 github.com/aws/aws-sdk-go-v2/service/kms v1.20.7 h1:7Ligq/4Mei9qZScT1p51REuqq0dB8MLOIs8X/tsLfB0=
 github.com/aws/aws-sdk-go-v2/service/kms v1.20.7/go.mod h1:1OnRDyIEZ/RFBhxzu9oFZ3zV0RU0I9GWT3Dxz3pgITU=
+github.com/aws/aws-sdk-go-v2/service/kms v1.27.6 h1:zzaFokMF7UVk22/Igtb93A1ReGP50uu99ldLWaEMfHc=
+github.com/aws/aws-sdk-go-v2/service/kms v1.27.6/go.mod h1:D9FVDkZjkZnnFHymJ3fPVz0zOUlNSd0xcIIVmmrAac8=
 github.com/aws/aws-sdk-go-v2/service/route53 v1.35.5 h1:WVQIKVwv56JY+I0b2fFeRGCTSi/Xupa87z7y8HZ6l5g=
 github.com/aws/aws-sdk-go-v2/service/route53 v1.35.5/go.mod h1:F9El48+5Tf+TkYJB/6M9H7oqXw9Mr9eVetwJ6SUql7g=
 github.com/aws/aws-sdk-go-v2/service/s3 v1.47.5 h1:Keso8lIOS+IzI2MkPZyK6G0LYcK3My2LQ+T5bxghEAY=
