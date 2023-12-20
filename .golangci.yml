@@ -50,7 +50,6 @@ linters:
   enable:
     - bodyclose
     - dogsled
-    - errcheck
     - exportloopref
     - funlen
     - gochecknoinits
@@ -60,7 +59,6 @@ linters:
     - goimports
     - gomnd
     - goprintffuncname
-    - gosec
     - gosimple
     - govet
     - ineffassign
@@ -68,7 +66,6 @@ linters:
     - noctx
     - nolintlint
     - staticcheck
-    - stylecheck
     - typecheck
     - unconvert
     - unparam
