@@ -1,0 +1,207 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Nuon documentation",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "openapi": "http://localhost:8082/v1/general/openapi3-spec",
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#4E17FF",
+    "dark": "#4E17FF",
+    "light": "#08a5fd",
+    "anchors": {
+      "from": "#0D9373",
+      "to": "#07C983"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "support@nuon.co"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Sign in",
+    "url": "https://app.nuon.co"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-ref"
+    },
+    {
+      "name": "Go SDK",
+      "url": "https://github.com/nuonco/nuon-go/"
+    },
+    {
+      "name": "Terraform Provider",
+      "url": "https://registry.terraform.io/providers/nuonco/nuon/latest/docs"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Documentation",
+      "icon": "book-open-cover",
+      "url": "https://docs.nuon.co"
+    },
+    {
+      "name": "Community",
+      "icon": "slack",
+      "url": "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+    },
+    {
+      "name": "Blog",
+      "icon": "newspaper",
+      "url": "https://www.nuon.co/blog"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": ["quickstart"]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "guides/view-logs",
+        "guides/app-inputs",
+        "guides/job-components",
+        "guides/print-deploy-plans",
+        "guides/custom-sandbox"
+      ]
+    },
+    {
+      "group": "Get Started",
+      "pages": ["api-ref/getting-started"]
+    },
+    {
+      "group": "apps",
+      "pages": [
+        "api-ref/apps/get-all-apps-for-the-current-org",
+        "api-ref/apps/create-an-app",
+        "api-ref/apps/get-an-app",
+        "api-ref/apps/delete-an-app",
+        "api-ref/apps/update-an-app",
+        "api-ref/apps/create-app-inputs-config",
+        "api-ref/apps/get-app-input-configs",
+        "api-ref/apps/get-latest-app-input-config",
+        "api-ref/apps/create-an-app-installer",
+        "api-ref/apps/create-an-app-sandbox-config",
+        "api-ref/apps/get-app-sandbox-configs",
+        "api-ref/apps/get-latest-app-sandbox-config",
+        "api-ref/apps/render-an-app-installer",
+        "api-ref/apps/get-an-app-installer",
+        "api-ref/apps/delete-an-app-installer",
+        "api-ref/apps/update-an-app-1"
+      ]
+    },
+    {
+      "group": "components",
+      "pages": [
+        "api-ref/components/get-all-components-for-an-app",
+        "api-ref/components/create-an-app-component",
+        "api-ref/components/get-all-components-for-an-org",
+        "api-ref/components/get-a-component",
+        "api-ref/components/delete-an-component",
+        "api-ref/components/update-a-component",
+        "api-ref/components/get-all-builds-for-a-component",
+        "api-ref/components/create-component-build",
+        "api-ref/components/get-latest-build-for-a-component",
+        "api-ref/components/get-a-build-for-a-component",
+        "api-ref/components/get-install-build-logs",
+        "api-ref/components/get-component-build-plan",
+        "api-ref/components/get-all-configs-for-a-component",
+        "api-ref/components/create-a-docker-build-component-config",
+        "api-ref/components/create-an-external-image-component-config",
+        "api-ref/components/create-a-helm-component-config",
+        "api-ref/components/create-a-job-component-config",
+        "api-ref/components/get-latest-config-for-a-component",
+        "api-ref/components/create-a-terraform-component-config"
+      ]
+    },
+    {
+      "group": "installs",
+      "pages": [
+        "api-ref/installs/get-all-installs-for-an-app",
+        "api-ref/installs/create-an-app-install",
+        "api-ref/installs/get-an-install",
+        "api-ref/installs/create-an-app-install-from-an-installer",
+        "api-ref/installs/get-all-installs-for-an-org",
+        "api-ref/installs/get-an-install-1",
+        "api-ref/installs/delete-an-install",
+        "api-ref/installs/update-an-install",
+        "api-ref/installs/get-an-install-component",
+        "api-ref/installs/get-an-installs-components",
+        "api-ref/installs/get-an-install-components-deploys",
+        "api-ref/installs/get-the-latest-deploy-for-an-install-component",
+        "api-ref/installs/get-an-installs-deploys",
+        "api-ref/installs/deploy-a-build-to-an-install",
+        "api-ref/installs/get-an-install-deploy",
+        "api-ref/installs/get-an-install-deploy-1",
+        "api-ref/installs/get-install-deploy-logs",
+        "api-ref/installs/get-install-deploy-plan",
+        "api-ref/installs/get-an-installs-inputs",
+        "api-ref/installs/create-install-inputs",
+        "api-ref/installs/get-an-installs-current-inputs",
+        "api-ref/installs/get-install-deploy-logs-1",
+        "api-ref/installs/get-an-installs-sandbox-runs"
+      ]
+    },
+    {
+      "group": "releases",
+      "pages": [
+        "api-ref/releases/get-all-releases-for-an-app",
+        "api-ref/releases/get-all-releases-for-a-component",
+        "api-ref/releases/create-a-release",
+        "api-ref/releases/create-a-release-1",
+        "api-ref/releases/get-a-release",
+        "api-ref/releases/get-a-release-1"
+      ]
+    },
+    {
+      "group": "general",
+      "pages": [
+        "api-ref/general/get-config-for-cli",
+        "api-ref/general/get-current-user",
+        "api-ref/general/publish-a-metric-from-different-nuon-clients-for-telemetry-purposes"
+      ]
+    },
+    {
+      "group": "orgs",
+      "pages": [
+        "api-ref/orgs/return-current-users-orgs",
+        "api-ref/orgs/create-a-new-org",
+        "api-ref/orgs/get-an-org",
+        "api-ref/orgs/delete-an-org",
+        "api-ref/orgs/update-current-org",
+        "api-ref/orgs/add-a-user-to-the-current-org"
+      ]
+    },
+    {
+      "group": "sandboxes",
+      "pages": [
+        "api-ref/sandboxes/get-all-sandboxes",
+        "api-ref/sandboxes/get-a-sandbox",
+        "api-ref/sandboxes/get-sandbox-releases"
+      ]
+    },
+    {
+      "group": "vcs",
+      "pages": [
+        "api-ref/vcs/get-all-vcs-connected-repos-for-an-org",
+        "api-ref/vcs/public-connection-to-create-a-vcs-connection-via-a-callback",
+        "api-ref/vcs/get-vcs-connection-for-an-org",
+        "api-ref/vcs/create-a-vcs-connection-for-github",
+        "api-ref/vcs/returns-a-vcs-connection-for-an-org"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "website": "https://www.nuon.co",
+    "twitter": "https://twitter.com/nuoninc",
+    "github": "https://github.com/nuonco",
+    "linkedin": "https://www.linkedin.com/company/nuonco/"
+  }
+}

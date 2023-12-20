@@ -8,6 +8,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,6 +34,11 @@ func (c *service) GetOpenAPI3Spec(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to convert open api spec to v3: %w", err))
 		return
+	}
+	oapi3Doc.Servers = openapi3.Servers{
+		{
+			URL: "http://localhost:8081",
+		},
 	}
 
 	ctx.JSON(http.StatusOK, oapi3Doc)
