@@ -20,8 +20,8 @@ type ComponentReleaseStep struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	// parent release ID
-	ComponentReleaseID string `json:"component_release_id"`
-	ComponentRelease   ComponentRelease
+	ComponentReleaseID string           `json:"component_release_id"`
+	ComponentRelease   ComponentRelease `json:"-"`
 
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description"`
