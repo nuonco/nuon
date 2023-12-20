@@ -19,10 +19,10 @@ type InstallDeploy struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 
 	ComponentBuildID string         `json:"build_id" gorm:"notnull"`
-	ComponentBuild   ComponentBuild `faker:"-" json:"build,omitempty"`
+	ComponentBuild   ComponentBuild `faker:"-" json:"-"`
 
 	InstallComponentID string           `json:"install_component_id" gorm:"notnull"`
-	InstallComponent   InstallComponent `faker:"-" json:"install_component"`
+	InstallComponent   InstallComponent `faker:"-" json:"-"`
 
 	ComponentReleaseStepID *string               `json:"release_id"`
 	ComponentReleaseStep   *ComponentReleaseStep `json:"-"`
