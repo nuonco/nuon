@@ -21,7 +21,7 @@ type VCSConnectionCommit struct {
 	VCSConnection   VCSConnection `json:"-"`
 	VCSConnectionID string        `json:"component_config_connection_id" gorm:"notnull"`
 
-	ComponentBuilds []ComponentBuild `json:"component_builds" gorm:"constraint:OnDelete:CASCADE;"`
+	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
 	SHA         string `json:"sha" gorm:"notnull"`
 	AuthorName  string `json:"author_name"`

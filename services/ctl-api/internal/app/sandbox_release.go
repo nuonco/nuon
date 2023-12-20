@@ -16,7 +16,7 @@ type SandboxRelease struct {
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
 
 	SandboxID               string  `json:"-" gorm:"index:idx_sandbox_release,unique"`
-	Sandbox                 Sandbox `json:"sandbox,omitempty"`
+	Sandbox                 Sandbox `json:"-"`
 	Version                 string  `gorm:"index:idx_sandbox_release,unique" json:"version"`
 	ProvisionPolicyURL      string  `json:"provision_policy_url" gorm:"notnull"`
 	DeprovisionPolicyURL    string  `json:"deprovision_policy_url" gorm:"notnull"`
