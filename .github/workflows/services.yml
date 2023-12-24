@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: read ci triggers file
-        uses: pietrobolcato/action-read-yaml@1.0.0
+        uses: pietrobolcato/action-read-yaml@1.1.0
         id: ci_triggers
         with:
           config: ci-triggers.yml
