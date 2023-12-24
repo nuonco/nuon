@@ -94,7 +94,7 @@ jobs:
             --image_tag=${{ inputs.tag }} \
 
       - name: Datadog
-        uses: masci/datadog@v1.5.0
+        uses: masci/datadog@v1.6.0
         with:
           api-key: ${{ secrets.DATADOG_API_KEY }}
           api-url: "https://us5.datadoghq.com"
