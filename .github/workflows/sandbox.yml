@@ -71,7 +71,7 @@ jobs:
           file: ${{ env.TF_OUT }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.TFO_GH_ROLE_ARN }}
           aws-region: ${{ env.TFO_REGION }}
