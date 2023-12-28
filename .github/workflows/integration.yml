@@ -103,8 +103,8 @@ jobs:
             --internal_api_url=http://ctl.nuon.us-west-2.stage.nuon.cloud
 
   status_slack_notifications:
-    name: update promotions channel
-    if: ${{ needs.merged_pr.outputs.integration == 'true' }} && always()
+    name: update integration channel
+    if: needs.merged_pr.outputs.integration == 'true' && always()
     needs:
       - merged_pr
       - terraform
