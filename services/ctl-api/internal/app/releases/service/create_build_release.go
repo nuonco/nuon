@@ -10,26 +10,22 @@ import (
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
-//	@BasePath	/v1/releases
-//
-// Create a release from a build
-//
-//	@Summary	create a release
-//	@Schemes
-//	@Description	create a release for a build
-//	@Tags			releases
-//	@Accept			json
-//	@Param			req	body	CreateComponentReleaseRequest	true	"Input"
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.ComponentRelease
-//	@Router			/v1/releases [post]
+// @ID CreateBuildRelease
+// @Summary	create a release
+// @Description.markdown	create_build_release.md
+// @Tags			releases
+// @Accept			json
+// @Param			req	body	CreateComponentReleaseRequest	true	"Input"
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.ComponentRelease
+// @Router			/v1/releases [post]
 func (s *service) CreateRelease(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

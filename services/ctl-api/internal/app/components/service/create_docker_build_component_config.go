@@ -27,27 +27,23 @@ func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate
 	return nil
 }
 
-//	@BasePath	/v1/components
-
-// Create a docker build component config
-//
-//	@Summary	create a docker build component config
-//	@Schemes
-//	@Description	create a docker build component config.
-//	@Param			req				body	CreateDockerBuildComponentConfigRequest	true	"Input"
-//	@Param			component_id	path	string									true	"component ID"
-//	@Tags			components
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.DockerBuildComponentConfig
-//	@Router			/v1/components/{component_id}/configs/docker-build [POST]
+// @ID CreatDockerBuildComponentConfig
+// @Summary	create a docker build component config
+// @Description.markdown	create_docker_build_component_config.md
+// @Param			req				body	CreateDockerBuildComponentConfigRequest	true	"Input"
+// @Param			component_id	path	string									true	"component ID"
+// @Tags			components
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.DockerBuildComponentConfig
+// @Router			/v1/components/{component_id}/configs/docker-build [POST]
 func (s *service) CreateDockerBuildComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

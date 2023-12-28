@@ -34,27 +34,23 @@ func (c *CreateAppInstallerRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/apps
-//
-// Create an app
-//
-//	@Summary	create an app installer
-//	@Schemes
-//	@Description	create an app installer
-//	@Tags			apps
-//	@Accept			json
-//	@Param			req	body	CreateAppInstallerRequest	true	"Input"
-//	@Produce		json
-//	@Param			app_id	path	string				true	"app ID"
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.AppInstaller
-//	@Router			/v1/apps/{app_id}/installer [post]
+// @ID CreateAppInstaller
+// @Summary	create an app installer
+// @Description.markdown	create_app_installer.md
+// @Tags			apps
+// @Accept			json
+// @Param			req	body	CreateAppInstallerRequest	true	"Input"
+// @Produce		json
+// @Param			app_id	path	string				true	"app ID"
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.AppInstaller
+// @Router			/v1/apps/{app_id}/installer [post]
 func (s *service) CreateAppInstaller(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

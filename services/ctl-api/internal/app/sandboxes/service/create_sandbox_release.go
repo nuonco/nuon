@@ -24,20 +24,16 @@ func (c *CreateSandboxReleaseRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/sandboxes
-//
-// Create a new sandbox
-//
-//	@Summary	create a new sandbox
-//	@Schemes
-//	@Description	create a new sandbox
-//	@Param			req			body	CreateSandboxReleaseRequest	true	"Input"
-//	@Param			sandbox_id	path	string						true	"sandbox ID"
-//	@Tags			sandboxes/admin
-//	@Accept			json
-//	@Produce		json
-//	@Success		201	{object}	app.Sandbox
-//	@Router			/v1/sandboxes/{sandbox_id}/release [post]
+// @ID AdminCreateSandboxRelease
+// @Summary	create a new sandbox
+// @Description	create_sandbox_release.md
+// @Param			req			body	CreateSandboxReleaseRequest	true	"Input"
+// @Param			sandbox_id	path	string						true	"sandbox ID"
+// @Tags			sandboxes/admin
+// @Accept			json
+// @Produce		json
+// @Success		201	{object}	app.Sandbox
+// @Router			/v1/sandboxes/{sandbox_id}/release [post]
 func (s *service) CreateSandboxRelease(ctx *gin.Context) {
 	sandboxID := ctx.Param("sandbox_id")
 	req := CreateSandboxReleaseRequest{}
