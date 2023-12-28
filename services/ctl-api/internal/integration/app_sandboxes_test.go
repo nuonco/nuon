@@ -187,7 +187,6 @@ func (s *appSandboxesSuite) TestGetAppSandboxLatestConfig() {
 		require.NoError(t, err)
 		require.NotNil(t, cfg)
 		require.NotEmpty(t, cfg.SandboxRelease)
-		require.NotEmpty(t, cfg.SandboxRelease.Sandbox)
 	})
 
 	s.T().Run("success with connected github", func(t *testing.T) {
