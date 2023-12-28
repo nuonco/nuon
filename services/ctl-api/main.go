@@ -6,14 +6,24 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/cmd"
 )
 
-//	@title			Nuon API
-//	@version		v1
-//	@description	API for managing nuon apps and installs.
-//	@contact.name	Nuon Support
-//	@contact.email	support@nuon.co
-//	@BasePath		/
-//	@schemes		https
-
+// @title			Nuon API
+// @version		v1
+// @description	API for managing nuon apps and installs.
+// @contact.name	Nuon Support
+// @contact.email	support@nuon.co
+// @BasePath		/
+// @schemes		https
+//
+// @securityDefinitions.apiKey APIKey
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and token.
+//
+// @securityDefinitions.apiKey OrgID
+// @in header
+// @name X-Nuon-Org-ID
+// @description Nuon org ID
+//
 //go:generate ./generate.sh
 func main() {
 	cmd.Execute()

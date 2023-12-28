@@ -22,26 +22,22 @@ func (c *CreateAppRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/apps
-//
-// Create an app
-//
-//	@Summary	create an app
-//	@Schemes
-//	@Description	get an app
-//	@Tags			apps
-//	@Accept			json
-//	@Param			req	body	CreateAppRequest	true	"Input"
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.App
-//	@Router			/v1/apps [post]
+// @ID CreateApp
+// @Summary	create an app
+// @Description.markdown	create_app.md
+// @Tags			apps
+// @Accept			json
+// @Param			req	body	CreateAppRequest	true	"Input"
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.App
+// @Router			/v1/apps [post]
 func (s *service) CreateApp(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

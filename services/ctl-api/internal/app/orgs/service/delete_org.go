@@ -11,25 +11,21 @@ import (
 	"gorm.io/gorm"
 )
 
-//	@BasePath	/v1/orgs
-
-// Delete an org
-//
-//	@Summary	Delete an org
-//	@Schemes
-//	@Description	create a new org
-//	@Tags			orgs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{boolean}	ok
-//	@Router			/v1/orgs/current [DELETE]
+// @Summary	Delete an org
+// @Schemes
+// @Description.markdown	delete_org.md
+// @Tags			orgs
+// @Accept			json
+// @Security APIKey
+// @Security OrgID
+// @Produce		json
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{boolean}	ok
+// @Router			/v1/orgs/current [DELETE]
 func (s *service) DeleteOrg(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
