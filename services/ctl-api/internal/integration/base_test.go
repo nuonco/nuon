@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/avast/retry-go"
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
@@ -44,8 +45,12 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 	require.NotEmpty(s.T(), intApiClient)
 	s.intAPIClient = intApiClient
 
-	// create integration user
-	intUser, err := s.intAPIClient.CreateIntegrationUser(ctx)
+	// create integration user, while retrying up to 5 times due to twingate network instability inside of GHA.
+	var intUser *api.CreateIntegrationUserResponse
+	err = retry.Do(func() error {
+		intUser, err = s.intAPIClient.CreateIntegrationUser(s.ctx)
+		return err
+	}, retry.Attempts(5))
 	require.NoError(s.T(), err)
 
 	apiURL := os.Getenv("INTEGRATION_API_URL")
