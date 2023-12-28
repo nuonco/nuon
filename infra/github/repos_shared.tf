@@ -125,6 +125,7 @@ module "shared-commonfate" {
 
   collaborators = {
     chrnorm = "push"
+    shwethaumashanker = "push"
   }
 
   providers = {
