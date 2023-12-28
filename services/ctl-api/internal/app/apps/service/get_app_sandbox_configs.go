@@ -8,28 +8,22 @@ import (
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
-//	@BasePath	/v1/apps
-//
-// Get app sandbox configs
-//
-//	@Summary	get app sandbox configs
-//	@Schemes
-//	@Description	get app sandbox configs
-//
+// @ID GetAppSandboxConfigs
+// @Summary	get app sandbox configs
+// @Description.markdown	get_app_sandbox_configs.md
 // @Param			app_id	path	string	true	"app ID"
-//
-//	@Tags			apps
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{object}	[]app.AppSandboxConfig
-//	@Router			/v1/apps/{app_id}/sandbox-configs [get]
+// @Tags			apps
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{object}	[]app.AppSandboxConfig
+// @Router			/v1/apps/{app_id}/sandbox-configs [get]
 func (s *service) GetAppSandboxConfigs(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

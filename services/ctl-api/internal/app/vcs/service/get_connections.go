@@ -10,25 +10,21 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
-//	@BasePath	/v1/vcs
-
-// GetConnections returns all VCS connections for an org
-//
-//	@Summary	get vcs connection for an org
-//	@Schemes
-//	@Description	get vcs connections
-//	@Tags			vcs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{array}		app.VCSConnection
-//	@Router			/v1/vcs/connections [get]
+// @ID GetOrgVCSConnections
+// @Summary	get vcs connection for an org
+// @Description.markdown	get_org_vcs_connections.md
+// @Tags			vcs
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{array}		app.VCSConnection
+// @Router			/v1/vcs/connections [get]
 func (s *service) GetConnections(ctx *gin.Context) {
 	currentOrg, err := org.FromContext(ctx)
 	if err != nil {

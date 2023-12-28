@@ -10,11 +10,11 @@ import (
 	swagger "github.com/swaggo/gin-swagger"
 )
 
-type Route struct {
+type Docs struct {
 	cfg *internal.Config
 }
 
-func (r *Route) RegisterRoutes(g *gin.Engine) error {
+func (r *Docs) RegisterRoutes(g *gin.Engine) error {
 	docs.SwaggerInfo.Schemes = []string{"https"}
 	switch r.cfg.Env {
 	case "development":
@@ -26,13 +26,15 @@ func (r *Route) RegisterRoutes(g *gin.Engine) error {
 		docs.SwaggerInfo.Host = "ctl.stage.nuon.co"
 	}
 
+	g.GET("/oapi3/swagger", r.getOAPI3publicSpec)
 	g.GET("/docs/*any", swagger.WrapHandler(
 		swaggerfiles.Handler,
 	))
+
 	return nil
 }
 
-func (r *Route) RegisterInternalRoutes(g *gin.Engine) error {
+func (r *Docs) RegisterInternalRoutes(g *gin.Engine) error {
 	switch r.cfg.Env {
 	case "development":
 		admin.SwaggerInfoadmin.Host = "localhost:8082"
@@ -44,15 +46,18 @@ func (r *Route) RegisterInternalRoutes(g *gin.Engine) error {
 
 	admin.SwaggerInfoadmin.Title = "Nuon Admin API"
 	admin.SwaggerInfoadmin.Schemes = []string{"http"}
+
+	g.GET("/oapi3/swagger", r.getOAPI3AdminSpec)
 	g.GET("/docs/*any", swagger.WrapHandler(
 		swaggerfiles.Handler,
 		swagger.InstanceName("admin"),
 	))
+
 	return nil
 }
 
-func New(cfg *internal.Config) *Route {
-	return &Route{
+func New(cfg *internal.Config) *Docs {
+	return &Docs{
 		cfg: cfg,
 	}
 }

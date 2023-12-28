@@ -34,7 +34,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 	api.POST("/v1/general/integration-user", s.CreateIntegrationUser)
 	api.POST("/v1/general/canary-user", s.CreateCanaryUser)
-	api.GET("/v1/general/openapi3-spec", s.GetOpenAPI3Spec)
 
 	return nil
 }

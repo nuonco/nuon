@@ -29,27 +29,23 @@ func (c *CreateComponentReleaseRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/releases
-//
-// Create a release
-//
-//	@Summary	create a release
-//	@Schemes
-//	@Description	create a release for a component
-//	@Param			component_id	path	string	true	"component ID"
-//	@Tags			releases
-//	@Accept			json
-//	@Param			req	body	CreateComponentReleaseRequest	true	"Input"
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.ComponentRelease
-//	@Router			/v1/components/{component_id}/releases [post]
+// @ID CreateComponentRelease
+// @Summary	create a release
+// @Description.markdown	create_component_release.md
+// @Param			component_id	path	string	true	"component ID"
+// @Tags			releases
+// @Accept			json
+// @Param			req	body	CreateComponentReleaseRequest	true	"Input"
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.ComponentRelease
+// @Router			/v1/components/{component_id}/releases [post]
 func (s *service) CreateComponentRelease(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

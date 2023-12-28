@@ -16,24 +16,20 @@ type AppInstaller struct {
 	Metadata    app.AppInstallerMetadata `json:"metadata"`
 }
 
-//	@BasePath	/v1/apps
-//
-// Create an app
-//
-//	@Summary	render an app installer
-//	@Schemes
-//	@Description	render an app installer
-//	@Tags			apps
-//	@Accept			json
-//	@Produce		json
-//	@Param			installer_slug	path		string	true	"installer slug or ID"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{object}	AppInstaller
-//	@Router			/v1/installer/{installer_slug}/render [GET]
+// @ID RenderAppInstaller
+// @Summary	render an app installer
+// @Description.markdown	render_app_installer.md
+// @Tags			apps
+// @Accept			json
+// @Produce		json
+// @Param			installer_slug	path		string	true	"installer slug or ID"
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{object}	AppInstaller
+// @Router			/v1/installer/{installer_slug}/render [GET]
 func (s *service) RenderAppInstaller(ctx *gin.Context) {
 	slugOrID := ctx.Param("installer_slug")
 	if slugOrID == "" {

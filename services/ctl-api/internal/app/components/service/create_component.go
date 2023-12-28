@@ -23,27 +23,23 @@ func (c *CreateComponentRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/apps
-//
-// Create an app component
-//
-//	@Summary	create an app component
-//	@Schemes
-//	@Description	create an app component
-//	@Param			app_id	path	string					true	"app ID"
-//	@Param			req		body	CreateComponentRequest	true	"Input"
-//	@Tags			components
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.Component
-//	@Router			/v1/apps/{app_id}/components [post]
+// @ID CreateComponent
+// @Summary	create a component
+// @Description.markdown	create_component.md
+// @Param			app_id	path	string					true	"app ID"
+// @Param			req		body	CreateComponentRequest	true	"Input"
+// @Tags			components
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.Component
+// @Router			/v1/apps/{app_id}/components [post]
 func (s *service) CreateComponent(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

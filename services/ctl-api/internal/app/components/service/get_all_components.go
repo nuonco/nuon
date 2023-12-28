@@ -9,20 +9,15 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-//	@BasePath	/v1/components
-//
-// Get all components
-//
-//	@Summary	get all components for all orgs
-//	@Schemes
-//	@Description	get all components
-//	@Tags			components/admin
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header	string	true	"org ID"
-//	@Param			Authorization	header	string	true	"bearer auth token"
-//	@Success		200				{array}	app.Component
-//	@Router			/v1/components [get]
+// @ID GetAllComponents
+// @Summary	get all components for all orgs
+// @Description.markdown	get_all_components.md
+// @Tags			components/admin
+// @Accept			json
+// @Produce		json
+// @Param			X-Nuon-Org-ID	header	string	true	"org ID"
+// @Success		200				{array}	app.Component
+// @Router			/v1/components [get]
 func (s *service) GetAllComponents(ctx *gin.Context) {
 	components, err := s.getAllComponents(ctx)
 	if err != nil {
