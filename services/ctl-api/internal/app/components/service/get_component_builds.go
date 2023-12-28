@@ -10,26 +10,22 @@ import (
 	"gorm.io/gorm"
 )
 
-//	@BasePath	/v1/components
-//
-// Get all builds for a component
-//
-//	@Summary	get all builds for a component
-//	@Schemes
-//	@Description	get all builds for a component
-//	@Param			component_id	path	string	true	"component ID"
-//	@Tags			components
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{array}		app.ComponentBuild
-//	@Router			/v1/components/{component_id}/builds [GET]
+// @ID GetComponentBuilds
+// @Summary	get all builds for a component
+// @Description.markdown	get_component_builds.md
+// @Param			component_id	path	string	true	"component ID"
+// @Tags			components
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{array}		app.ComponentBuild
+// @Router			/v1/components/{component_id}/builds [GET]
 func (s *service) GetComponentBuilds(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 	if cmpID == "" {

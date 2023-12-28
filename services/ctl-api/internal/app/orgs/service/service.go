@@ -40,8 +40,9 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/orgs", s.GetAllOrgs)
-	api.POST("/v1/orgs/:org_id/support-users", s.CreateSupportUsers)
-	api.POST("/v1/orgs/:org_id/add-user", s.CreateOrgUser)
+
+	api.POST("/v1/orgs/:org_id/admin-add-user", s.CreateOrgUser)
+	api.POST("/v1/orgs/:org_id/admin-support-users", s.CreateSupportUsers)
 	api.POST("/v1/orgs/:org_id/admin-delete", s.AdminDeleteOrg)
 	api.POST("/v1/orgs/:org_id/admin-reprovision", s.AdminReprovisionOrg)
 	api.POST("/v1/orgs/:org_id/admin-deprovision", s.AdminDeprovisionOrg)

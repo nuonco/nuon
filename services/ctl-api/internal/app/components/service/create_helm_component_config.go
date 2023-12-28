@@ -25,27 +25,23 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 	return nil
 }
 
-//	@BasePath	/v1/components
-
-// Create a helm component config
-//
-//	@Summary	create a helm component config
-//	@Schemes
-//	@Description	create a helm component config.
-//	@Param			req				body	CreateHelmComponentConfigRequest	true	"Input"
-//	@Param			component_id	path	string								true	"component ID"
-//	@Tags			components
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.HelmComponentConfig
-//	@Router			/v1/components/{component_id}/configs/helm [POST]
+// @ID CreateHelmComponentConfig
+// @Summary	create a helm component config
+// @Description.markdown	create_helm_component_config.md
+// @Param			req				body	CreateHelmComponentConfigRequest	true	"Input"
+// @Param			component_id	path	string								true	"component ID"
+// @Tags			components
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.HelmComponentConfig
+// @Router			/v1/components/{component_id}/configs/helm [POST]
 func (s *service) CreateHelmComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

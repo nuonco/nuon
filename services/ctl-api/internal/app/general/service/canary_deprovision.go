@@ -14,19 +14,15 @@ type DeprovisionCanaryRequest struct {
 	CanaryID string `json:"canary_id"`
 }
 
-//	@BasePath	/v1/general
-//
-// Deprovision a canary
-//
-//	@Summary	provision a canary
-//	@Schemes
-//	@Description	provision a canary
-//	@Param			req	body	DeprovisionCanaryRequest	true	"Input"
-//	@Tags			general/admin
-//	@Accept			json
-//	@Produce		json
-//	@Success		201	{string}	ok
-//	@Router			/v1/general/deprovision-canary [post]
+// @ID CanaryDeprovision
+// @Summary	deprovision a canary
+// @Description.markdown	deprovision_canary.md
+// @Param			req	body	DeprovisionCanaryRequest	true	"Input"
+// @Tags			general/admin
+// @Accept			json
+// @Produce		json
+// @Success		201	{string}	ok
+// @Router			/v1/general/deprovision-canary [post]
 func (c *service) DeprovisionCanary(ctx *gin.Context) {
 	var req DeprovisionCanaryRequest
 	if err := ctx.BindJSON(&req); err != nil {

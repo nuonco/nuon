@@ -15,26 +15,21 @@ type CreateOrgUserRequest struct {
 	UserID string `json:"user_id"`
 }
 
-//	@BasePath	/v1/orgs/
-
-// Add a user to an org
-//
-//	@Summary	Add a user to the current org
-//	@Schemes
-//	@Description	add a user to the current org
-//	@Param			req	body	CreateOrgUserRequest	true	"Input"
-//	@Tags			orgs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.UserOrg
-//	@Router			/v1/orgs/current/user [POST]
+// @Summary	Add a user to the current org
+// @Description.markdown	create_org_user.md
+// @Param			req	body	CreateOrgUserRequest	true	"Input"
+// @Tags			orgs
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.UserOrg
+// @Router			/v1/orgs/current/user [POST]
 func (s *service) CreateUser(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

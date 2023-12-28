@@ -23,27 +23,23 @@ func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/apps
-//
-// Deploy a build to an install
-//
-//	@Summary	deploy a build to an install
-//	@Schemes
-//	@Description	deploy a build to an install
-//	@Param			install_id	path	string						true	"install ID"
-//	@Param			req			body	CreateInstallDeployRequest	true	"Input"
-//	@Tags			installs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.InstallDeploy
-//	@Router			/v1/installs/{install_id}/deploys [post]
+// @ID CreateInstallDeploy
+// @Summary	deploy a build to an install
+// @Description.markdown	create_install_deploy.md
+// @Param			install_id	path	string						true	"install ID"
+// @Param			req			body	CreateInstallDeployRequest	true	"Input"
+// @Tags			installs
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.InstallDeploy
+// @Router			/v1/installs/{install_id}/deploys [post]
 func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

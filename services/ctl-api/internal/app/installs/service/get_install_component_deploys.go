@@ -10,27 +10,23 @@ import (
 	"gorm.io/gorm"
 )
 
-//	@BasePath	/v1/apps/installs
-//
-// Get an install component deploys
-//
-//	@Summary	get an install components deploys
-//	@Schemes
-//	@Description	get all deploys for an install
-//	@Param			install_id		path	string	true	"install ID"
-//	@Param			component_id	path	string	true	"component ID"
-//	@Tags			installs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{array}		app.InstallDeploy
-//	@Router			/v1/installs/{install_id}/components/{component_id}/deploys [GET]
+// @ID GetInstallComponentDeploys
+// @Summary	get an install components deploys
+// @Description.markdown	get_install_component_deploys.md
+// @Param			install_id		path	string	true	"install ID"
+// @Param			component_id	path	string	true	"component ID"
+// @Tags			installs
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{array}		app.InstallDeploy
+// @Router			/v1/installs/{install_id}/components/{component_id}/deploys [GET]
 func (s *service) GetInstallComponentDeploys(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	componentID := ctx.Param("component_id")

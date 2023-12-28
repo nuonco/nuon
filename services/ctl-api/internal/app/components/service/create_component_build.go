@@ -23,27 +23,23 @@ func (c *CreateComponentBuildRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/components
-//
-// Create component build
-//
-//	@Summary	create component build
-//	@Schemes
-//	@Description	create component build
-//	@Param			component_id	path	string						true	"component ID"
-//	@Param			req				body	CreateComponentBuildRequest	true	"Input"
-//	@Tags			components
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.ComponentBuild
-//	@Router			/v1/components/{component_id}/builds [POST]
+// @ID CreateComponentBuild
+// @Summary	create component build
+// @Description.markdown	create_component_build.md
+// @Param			component_id	path	string						true	"component ID"
+// @Param			req				body	CreateComponentBuildRequest	true	"Input"
+// @Tags			components
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.ComponentBuild
+// @Router			/v1/components/{component_id}/builds [POST]
 func (s *service) CreateComponentBuild(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

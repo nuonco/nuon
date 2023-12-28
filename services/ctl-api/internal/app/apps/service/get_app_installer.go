@@ -7,26 +7,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//	@BasePath	/v1/apps
-//
-// Create get an app
-//
-//	@Summary	get an app installer
-//	@Schemes
-//	@Description	get an app installer
-//	@Param			installer_id	path	string	true	"installer ID"
-//	@Tags			apps
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{object}	app.AppInstaller
-//	@Router			/v1/installers/{installer_id} [get]
+// @ID GetAppInstaller
+// @Summary	get an app installer
+// @Description.markdown	get_app_installer.md
+// @Param			installer_id	path	string	true	"installer ID"
+// @Tags			apps
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{object}	app.AppInstaller
+// @Router			/v1/installers/{installer_id} [get]
 func (s *service) GetAppInstaller(ctx *gin.Context) {
 	installerID := ctx.Param("installer_id")
 	app, err := s.getAppInstaller(ctx, installerID)

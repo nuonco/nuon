@@ -26,25 +26,21 @@ func (c *InstallerCreateInstallRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/installer
-//
-// Create an app install from an installer
-//
-//	@Summary	create an app install from an installer
-//	@Schemes
-//	@Description	create an app install from an installer
-//	@Param			req	body	InstallerCreateInstallRequest	true	"Input"
-//	@Tags			installs
-//	@Accept			json
-//	@Produce		json
-//	@Param			installer_slug	path		string	true	"installer slug or ID"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.Install
-//	@Router			/v1/installer/{installer_slug}/installs [post]
+// @ID InstallerCreateInstaller
+// @Summary	create an app install from an installer
+// @Description.markdown installer_create_install.md
+// @Param			req	body	InstallerCreateInstallRequest	true	"Input"
+// @Tags			installs
+// @Accept			json
+// @Produce		json
+// @Param			installer_slug	path		string	true	"installer slug or ID"
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.Install
+// @Router			/v1/installer/{installer_slug}/installs [post]
 func (s *service) CreateInstallerInstall(ctx *gin.Context) {
 	var req InstallerCreateInstallRequest
 	if err := ctx.BindJSON(&req); err != nil {

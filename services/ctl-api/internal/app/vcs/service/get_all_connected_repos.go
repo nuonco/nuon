@@ -28,25 +28,21 @@ type Repository struct {
 	GithubInstallID string `json:"github_install_id,omitempty" validate:"required"`
 }
 
-//	@BasePath	/v1/vcs
-
-// GetAllConnectedRepos returns all VCS connected repos for an org
-//
-//	@Summary	get all vcs connected repos for an org
-//	@Schemes
-//	@Description	return all vcs connected repos for an org
-//	@Tags			vcs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{array}		Repository
-//	@Router			/v1/vcs/connected-repos [get]
+// @ID GetAllVCSConnectedRepos
+// @Summary	get all vcs connected repos for an org
+// @Description.markdown get_all_vcs_connected_repos.md
+// @Tags			vcs
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{array}		Repository
+// @Router			/v1/vcs/connected-repos [get]
 func (s *service) GetAllConnectedRepos(ctx *gin.Context) {
 	currentOrg, err := org.FromContext(ctx)
 	if err != nil {

@@ -10,26 +10,22 @@ import (
 	"gorm.io/gorm"
 )
 
-//	@BasePath	/v1/apps/installs
-//
-// Get an install's inputs
-//
-//	@Summary	get an installs inputs
-//	@Schemes
-//	@Description	get all inputs for an install
-//	@Tags			installs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Param			install_id		path		string	true	"install ID"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{array}		app.InstallInputs
-//	@Router			/v1/installs/{install_id}/inputs [GET]
+// @ID GetInstallInputs
+// @Summary	get an installs inputs
+// @Description.markdown	get_install_inputs.md
+// @Tags			installs
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Param			install_id		path		string	true	"install ID"
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{array}		app.InstallInputs
+// @Router			/v1/installs/{install_id}/inputs [GET]
 func (s *service) GetInstallInputs(ctx *gin.Context) {
 	appID := ctx.Param("install_id")
 

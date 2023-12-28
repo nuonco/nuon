@@ -9,26 +9,22 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-//	@BasePath	/v1/apps/installs
-//
-// Get an app's installs
-//
-//	@Summary	get all installs for an app
-//	@Schemes
-//	@Description	get all installs for an org
-//	@Param			app_id	path	string	true	"app ID"
-//	@Tags			installs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{array}		app.Install
-//	@Router			/v1/apps/{app_id}/installs [GET]
+// @ID GetAppInstalls
+// @Summary	get all installs for an app
+// @Description.markdown	get_app_installs.md
+// @Param			app_id	path	string	true	"app ID"
+// @Tags			installs
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{array}		app.Install
+// @Router			/v1/apps/{app_id}/installs [GET]
 func (s *service) GetAppInstalls(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

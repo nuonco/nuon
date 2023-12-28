@@ -11,26 +11,22 @@ import (
 	"gorm.io/gorm"
 )
 
-//	@BasePath	/v1/installs
-//
-// Get an install deploy
-//
-//	@Summary	get an install deploy
-//	@Schemes
-//	@Description	get an install deploy
-//	@Param			install_id	path	string	true	"install ID"
-//	@Tags			installs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{object}	app.InstallDeploy
-//	@Router			/v1/installs/{install_id}/deploys/latest [get]
+// @ID GetInstallLatestDeploy
+// @Summary	get an install deploy
+// @Description.markdown	get_install_latest_deploy.md
+// @Param			install_id	path	string	true	"install ID"
+// @Tags			installs
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{object}	app.InstallDeploy
+// @Router			/v1/installs/{install_id}/deploys/latest [get]
 func (s *service) GetInstallLatestDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
