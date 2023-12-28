@@ -171,7 +171,7 @@ jobs:
 
   status_slack_notifications:
     name: update promotions channel
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
+    if: needs.merged_pr.outputs.promote == 'true' && always()
     needs:
       - tag
       - services
