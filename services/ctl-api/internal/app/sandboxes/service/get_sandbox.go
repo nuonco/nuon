@@ -9,25 +9,21 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-//	@BasePath	/v1/sandboxes
-//
-// Create get a sandbox
-//
-//	@Summary	get a sandbox
-//	@Schemes
-//	@Description	get a sandbox
-//	@Param			sandbox_id	path	string	true	"sandbox ID"
-//	@Tags			sandboxes
-//	@Accept			json
-//	@Produce		json
-//	@Success		200				{object}	app.Sandbox
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Router			/v1/sandboxes/{sandbox_id} [get]
+// @ID GetSandbox
+// @Summary	get a sandbox
+// @Description.markdown	get_sandbox.md
+// @Param			sandbox_id	path	string	true	"sandbox ID"
+// @Tags			sandboxes
+// @Accept			json
+// @Produce		json
+// @Success		200				{object}	app.Sandbox
+// @Security APIKey
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Router			/v1/sandboxes/{sandbox_id} [get]
 func (s *service) GetSandbox(ctx *gin.Context) {
 	sandboxID := ctx.Param("sandbox_id")
 

@@ -22,27 +22,23 @@ func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/apps
-//
-// Update an app
-//
-//	@Summary	update an app
-//	@Schemes
-//	@Description	update an app
-//	@Param			app_id	path	string				true	"app ID"
-//	@Param			req		body	UpdateAppRequest	true	"Input"
-//	@Tags			apps
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{object}	app.App
-//	@Router			/v1/apps/{app_id} [patch]
+// @ID UpdateApp
+// @Summary	update an app
+// @Description.markdown	update_app.md
+// @Param			app_id	path	string				true	"app ID"
+// @Param			req		body	UpdateAppRequest	true	"Input"
+// @Tags			apps
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{object}	app.App
+// @Router			/v1/apps/{app_id} [patch]
 func (s *service) UpdateApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 

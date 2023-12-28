@@ -22,19 +22,15 @@ type CreateIntegrationUserResponse struct {
 	GithubInstallID string `json:"github_install_id"`
 }
 
-//	@BasePath	/v1/general
-//
-// create a temp user for running the integration test
-//
-//	@Summary	create a temp user for running integration test
-//	@Schemes
-//	@Description	create a temp user for running integration test
-//	@Param			req	body	CreateIntegrationUserRequest	true	"Input"
-//	@Tags			general/admin
-//	@Accept			json
-//	@Produce		json
-//	@Success		201	{object} CreateIntegrationUserResponse
-//	@Router			/v1/general/integration-user [post]
+// @ID CreateIntegrationUser
+// @Summary	create a temp user for running integration test
+// @Description.markdown create_integration_user.md
+// @Param			req	body	CreateIntegrationUserRequest	true	"Input"
+// @Tags			general/admin
+// @Accept			json
+// @Produce		json
+// @Success		201	{object} CreateIntegrationUserResponse
+// @Router			/v1/general/integration-user [post]
 func (s *service) CreateIntegrationUser(ctx *gin.Context) {
 	token, err := s.createIntegrationUser(ctx)
 	if err != nil {

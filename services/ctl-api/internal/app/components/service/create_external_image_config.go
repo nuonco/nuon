@@ -40,27 +40,23 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 	return nil
 }
 
-//	@BasePath	/v1/components
-
-// Create an external image component config
-//
-//	@Summary	create an external image component config
-//	@Schemes
-//	@Description	create an external image component config.
-//	@Param			req				body	CreateExternalImageComponentConfigRequest	true	"Input"
-//	@Param			component_id	path	string										true	"component ID"
-//	@Tags			components
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		201				{object}	app.ExternalImageComponentConfig
-//	@Router			/v1/components/{component_id}/configs/external-image [POST]
+// @ID CreateExternalImageComponentConfig
+// @Summary	create an external image component config
+// @Description.markdown	create_external_image_component_config.md
+// @Param			req				body	CreateExternalImageComponentConfigRequest	true	"Input"
+// @Param			component_id	path	string										true	"component ID"
+// @Tags			components
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	app.ExternalImageComponentConfig
+// @Router			/v1/components/{component_id}/configs/external-image [POST]
 func (s *service) CreateExternalImageComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 

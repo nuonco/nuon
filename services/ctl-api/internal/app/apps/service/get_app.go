@@ -11,26 +11,22 @@ import (
 	"gorm.io/gorm"
 )
 
-//	@BasePath	/v1/apps
-//
-// Create get an app
-//
-//	@Summary	get an app
-//	@Schemes
-//	@Description	get an app
-//	@Param			app_id	path	string	true	"app ID"
-//	@Tags			apps
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{object}	app.App
-//	@Router			/v1/apps/{app_id} [get]
+// @ID GetApp
+// @Summary	get an app
+// @Description.markdown	get_app.md
+// @Param			app_id	path	string	true	"app ID"
+// @Tags			apps
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{object}	app.App
+// @Router			/v1/apps/{app_id} [get]
 func (s *service) GetApp(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {

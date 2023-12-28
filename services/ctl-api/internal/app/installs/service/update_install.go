@@ -22,27 +22,23 @@ func (c *UpdateInstallRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/installs
-//
-// Update an install
-//
-//	@Summary	update an install
-//	@Schemes
-//	@Description	update an install
-//	@Param			install_id	path	string					true	"app ID"
-//	@Param			req			body	UpdateInstallRequest	true	"Input"
-//	@Tags			installs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{object}	app.Install
-//	@Router			/v1/installs/{install_id} [PATCH]
+// @ID UpdateInstall
+// @Summary	update an install
+// @Description.markdown	update_install.md
+// @Param			install_id	path	string					true	"app ID"
+// @Param			req			body	UpdateInstallRequest	true	"Input"
+// @Tags			installs
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{object}	app.Install
+// @Router			/v1/installs/{install_id} [PATCH]
 func (s *service) UpdateInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

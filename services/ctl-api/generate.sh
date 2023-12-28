@@ -8,6 +8,7 @@ echo "generating public schema"
 go run github.com/swaggo/swag/cmd/swag \
   init \
   --parseDependency \
+  --markdownFiles docs/descriptions \
   -g main.go \
   -t orgs,apps,installs,general,vcs,components,sandboxes,releases
 
@@ -21,6 +22,7 @@ go run github.com/swaggo/swag/cmd/swag \
   --instanceName admin \
   --output admin \
   --parseGoList \
+  --markdownFiles admin/descriptions \
   -t orgs/admin,orgs/admin,apps/admin,general/admin,sandboxes/admin,installs/admin,components/admin
 
 echo "validating admin schema"
