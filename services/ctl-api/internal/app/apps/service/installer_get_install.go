@@ -9,25 +9,21 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-//	@BasePath	/v1/installer
-//
-// Get an installer install
-//
-//	@Summary	get an install
-//	@Schemes
-//	@Description	get an install
-//	@Tags			installs
-//	@Accept			json
-//	@Produce		json
-//	@Param			installer_slug	path		string	true	"installer slug or ID"
-//	@Param			install_id		path		string	true	"install id"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{object}	app.Install
-//	@Router			/v1/installer/{installer_slug}/install/{install_id} [get]
+// @ID InstallerGetInstall
+// @Summary	get an installer install
+// @Description.markdown	get_installer_install.md
+// @Tags			installs
+// @Accept			json
+// @Produce		json
+// @Param			installer_slug	path		string	true	"installer slug or ID"
+// @Param			install_id		path		string	true	"install id"
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{object}	app.Install
+// @Router			/v1/installer/{installer_slug}/install/{install_id} [get]
 func (s *service) GetInstallerInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 

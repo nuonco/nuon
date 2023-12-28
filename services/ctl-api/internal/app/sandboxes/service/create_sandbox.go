@@ -22,19 +22,15 @@ func (c *CreateSandboxRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-//	@BasePath	/v1/sandboxes
-//
-// Create a new sandbox
-//
-//	@Summary	create a new sandbox
-//	@Schemes
-//	@Description	create a new sandbox
-//	@Param			req	body	CreateSandboxRequest	true	"Input"
-//	@Tags			sandboxes/admin
-//	@Accept			json
-//	@Produce		json
-//	@Success		201	{object}	app.Sandbox
-//	@Router			/v1/sandboxes [post]
+// @ID AdminCreateSandbox
+// @Summary	create a new sandbox
+// @Description.markdown create_sandbox.md
+// @Param			req	body	CreateSandboxRequest	true	"Input"
+// @Tags			sandboxes/admin
+// @Accept			json
+// @Produce		json
+// @Success		201	{object}	app.Sandbox
+// @Router			/v1/sandboxes [post]
 func (s *service) CreateSandbox(ctx *gin.Context) {
 	req := CreateSandboxRequest{}
 	if err := ctx.BindJSON(&req); err != nil {

@@ -19,27 +19,23 @@ const (
 
 type DeployLog interface{}
 
-//	@BasePath	/v1/installs
-//
-// Get install deploy logs
-//
-//	@Summary	get install deploy logs
-//	@Schemes
-//	@Description	get install deploy logs
-//	@Param			install_id	path	string	true	"install ID"
-//	@Param			deploy_id	path	string	true	"deploy ID"
-//	@Tags			installs
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{object}	[]DeployLog
-//	@Router			/v1/installs/{install_id}/deploys/{deploy_id}/logs [get]
+// @ID GetInstallDeployLogs
+// @Summary	get install deploy logs
+// @Description.markdown	get_install_deploy_logs.md
+// @Param			install_id	path	string	true	"install ID"
+// @Param			deploy_id	path	string	true	"deploy ID"
+// @Tags			installs
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{object}	[]DeployLog
+// @Router			/v1/installs/{install_id}/deploys/{deploy_id}/logs [get]
 func (s *service) GetInstallDeployLogs(ctx *gin.Context) {
 	deployID := ctx.Param("deploy_id")
 

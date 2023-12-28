@@ -10,26 +10,22 @@ import (
 	"gorm.io/gorm"
 )
 
-//	@BasePath	/v1/releases
-//
-// Get release steps
-//
-//	@Summary	get a release
-//	@Schemes
-//	@Description	get a release
-//	@Param			release_id	path	string	true	"release ID"
-//	@Tags			releases
-//	@Accept			json
-//	@Produce		json
-//	@Param			X-Nuon-Org-ID	header		string	true	"org ID"
-//	@Param			Authorization	header		string	true	"bearer auth token"
-//	@Failure		400				{object}	stderr.ErrResponse
-//	@Failure		401				{object}	stderr.ErrResponse
-//	@Failure		403				{object}	stderr.ErrResponse
-//	@Failure		404				{object}	stderr.ErrResponse
-//	@Failure		500				{object}	stderr.ErrResponse
-//	@Success		200				{array}		app.ComponentReleaseStep
-//	@Router			/v1/releases/{release_id}/steps [get]
+// @ID GetReleaseSteps
+// @Summary	get a release
+// @Description.markdown	get_release.md
+// @Param			release_id	path	string	true	"release ID"
+// @Tags			releases
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		200				{array}		app.ComponentReleaseStep
+// @Router			/v1/releases/{release_id}/steps [get]
 func (s *service) GetReleaseSteps(ctx *gin.Context) {
 	releaseID := ctx.Param("release_id")
 	steps, err := s.getReleaseSteps(ctx, releaseID)

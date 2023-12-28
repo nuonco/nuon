@@ -23,19 +23,15 @@ type StartCanaryCronRequest struct {
 	SandboxMode bool `json:"sandbox_mode"`
 }
 
-//	@BasePath	/v1/general
-//
-// Start a canary
-//
-//	@Summary	start canary cron
-//	@Schemes
-//	@Description	start canary cron
-//	@Param			req	body	StartCanaryCronRequest	true	"Input"
-//	@Tags			general/admin
-//	@Accept			json
-//	@Produce		json
-//	@Success		201	{string}	ok
-//	@Router			/v1/general/start-canary-cron [post]
+// @ID StartCanaryCron
+// @Summary	start canary cron
+// @Description.markdown	start_canary_cron.md
+// @Param			req	body	StartCanaryCronRequest	true	"Input"
+// @Tags			general/admin
+// @Accept			json
+// @Produce		json
+// @Success		201	{string}	ok
+// @Router			/v1/general/start-canary-cron [post]
 func (c *service) StartCanaryCron(ctx *gin.Context) {
 	var req StartCanaryCronRequest
 	if err := ctx.BindJSON(&req); err != nil {
