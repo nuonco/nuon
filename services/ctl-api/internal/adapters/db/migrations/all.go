@@ -25,5 +25,13 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "004-fix-install-cascade-constraints",
 			Fn:   a.migration004InstallsCascadeInputs,
 		},
+		{
+			Name: "005-component-dependencies-primary-key",
+			Fn:   a.migration005ComponentDependencyPrimaryKey,
+		},
+		{
+			Name: "006-component-dependencies-deleted-at-constraint",
+			Fn:   a.migration006ComponentDependencyDeletedAtConstraint,
+		},
 	}
 }
