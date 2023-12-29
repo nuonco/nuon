@@ -65,20 +65,23 @@ func (s *service) updateComponent(ctx context.Context, componentID string, req *
 		ID: componentID,
 	}
 
-	res := s.db.WithContext(ctx).Model(&currentComponent).Updates(app.Component{Name: req.Name})
+	res := s.db.WithContext(ctx).
+		Model(&currentComponent).
+		Updates(app.Component{Name: req.Name})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
 
-	// create dependencies
-	deps := make([]*app.Component, 0, len(req.Dependencies))
-	for _, depID := range req.Dependencies {
-		deps = append(deps, &app.Component{
-			ID: depID,
-		})
+	// clear dependencies
+	compDep := app.ComponentDependency{}
+	res = s.db.WithContext(ctx).
+		Delete(&compDep, "component_id = ?", componentID)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to clear component dependencies: %w", res.Error)
 	}
-	if err := s.db.WithContext(ctx).Model(&currentComponent).Association("Dependencies").Replace(deps); err != nil {
-		return nil, fmt.Errorf("unable to replace dependencies: %w", err)
+
+	if err := s.createComponentDependencies(ctx, componentID, req.Dependencies); err != nil {
+		return nil, fmt.Errorf("unable to clear component dependencies: %w", res.Error)
 	}
 
 	return &currentComponent, nil

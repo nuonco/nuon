@@ -77,24 +77,14 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start for component",
 	}
-
 	res := s.db.WithContext(ctx).
 		Create(&component)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create component: %w", res.Error)
 	}
 
-	// create dependencies
-	deps := make([]*app.Component, 0, len(req.Dependencies))
-	for _, depID := range req.Dependencies {
-		deps = append(deps, &app.Component{
-			ID: depID,
-		})
-	}
-	if err := s.db.WithContext(ctx).Model(&component).
-		Association("Dependencies").
-		Replace(deps); err != nil {
-		return nil, fmt.Errorf("unable to replace dependencies: %w", err)
+	if err := s.createComponentDependencies(ctx, component.ID, req.Dependencies); err != nil {
+		return nil, fmt.Errorf("unable to create component dependencies: %w", err)
 	}
 
 	// fetch the parent app's installs and ensure each gets the new component
@@ -125,4 +115,28 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 	}
 
 	return &component, nil
+}
+
+// NOTE: GORM does not support callbacks when using a custom join table on many2many relationships + associations mode.
+func (s *service) createComponentDependencies(ctx context.Context, compID string, dependencyIDs []string) error {
+	if len(dependencyIDs) < 1 {
+		return nil
+	}
+
+	// create dependencies
+	deps := make([]*app.ComponentDependency, 0, len(dependencyIDs))
+	for _, depID := range dependencyIDs {
+		deps = append(deps, &app.ComponentDependency{
+			ComponentID:  compID,
+			DependencyID: depID,
+		})
+	}
+
+	res := s.db.WithContext(ctx).
+		Create(&deps)
+	if res.Error != nil {
+		return res.Error
+	}
+
+	return nil
 }

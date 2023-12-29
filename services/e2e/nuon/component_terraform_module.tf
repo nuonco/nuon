@@ -3,6 +3,10 @@ resource "nuon_terraform_module_component" "e2e" {
   app_id = nuon_app.main.id
   terraform_version = "1.6.3"
 
+  dependencies = [
+    nuon_docker_build_component.e2e.id,
+  ]
+
   connected_repo = {
     directory = "services/e2e/infra"
     repo      = "powertoolsdev/mono"

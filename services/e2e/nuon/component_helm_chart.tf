@@ -3,6 +3,11 @@ resource "nuon_helm_chart_component" "e2e" {
   name   = "e2e_helm"
   app_id = nuon_app.main.id
 
+  dependencies = [
+    nuon_docker_build_component.e2e.id,
+    nuon_container_image_component.e2e.id,
+  ]
+
   chart_name = "e2e-helm"
   connected_repo = {
     directory = "services/e2e/chart"
