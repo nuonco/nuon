@@ -30,7 +30,7 @@ type Component struct {
 	ComponentConfigs  []ComponentConfigConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallComponents []InstallComponent          `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 
-	Dependencies []*Component `gorm:"many2many:component_dependencies" json:"dependencies"`
+	Dependencies []*Component `gorm:"many2many:component_dependencies;constraint:OnDelete:CASCADE;" json:"dependencies"`
 }
 
 func (c *Component) BeforeCreate(tx *gorm.DB) error {
