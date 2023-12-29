@@ -43,7 +43,9 @@ jobs:
 
   wait_on_checks:
     name: wait on checks
-    if: ${{ needs.merged_pr.outputs.canary == 'true' }}
+    if: ${{ needs.merged_pr.outputs.integration == 'true' }}
+    needs:
+      - merged_pr
     runs-on: ubuntu-latest
     steps:
       - name: Wait for services
