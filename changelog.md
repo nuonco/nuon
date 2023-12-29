@@ -2,6 +2,14 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.10
+
+Promote new v2/v3 specs, as well as various compatibility changes.
+
+Add new dependency endpoints for component deps.
+
+New UI for managing orgs.
+
 ## v0.19.8
 
 Promoting to fix bug caused by AWS SDK update.
