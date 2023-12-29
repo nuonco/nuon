@@ -26,7 +26,8 @@ func (r *Docs) RegisterRoutes(g *gin.Engine) error {
 		docs.SwaggerInfo.Host = "ctl.stage.nuon.co"
 	}
 
-	g.GET("/oapi3/swagger", r.getOAPI3publicSpec)
+	g.GET("/oapi/v3", r.getOAPI3publicSpec)
+	g.GET("/oapi/v2", r.getOAPI2PublicSpec)
 	g.GET("/docs/*any", swagger.WrapHandler(
 		swaggerfiles.Handler,
 	))
@@ -47,7 +48,8 @@ func (r *Docs) RegisterInternalRoutes(g *gin.Engine) error {
 	admin.SwaggerInfoadmin.Title = "Nuon Admin API"
 	admin.SwaggerInfoadmin.Schemes = []string{"http"}
 
-	g.GET("/oapi3/swagger", r.getOAPI3AdminSpec)
+	g.GET("/oapi/v3", r.getOAPI3AdminSpec)
+	g.GET("/oapi/v2", r.getOAPI2AdminSpec)
 	g.GET("/docs/*any", swagger.WrapHandler(
 		swaggerfiles.Handler,
 		swagger.InstanceName("admin"),
