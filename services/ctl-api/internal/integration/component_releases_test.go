@@ -41,14 +41,11 @@ func (s *releasesTestSuite) SetupTest() {
 	org := s.createOrg()
 	s.orgID = org.ID
 
-	app := s.createApp(s.orgID)
+	app := s.createApp()
 	s.appID = app.ID
 
 	// create a component
-	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-	require.Nil(s.T(), err)
-	require.NotNil(s.T(), comp)
+	comp := s.createComponent(s.appID)
 	s.compID = comp.ID
 
 	// create a component config

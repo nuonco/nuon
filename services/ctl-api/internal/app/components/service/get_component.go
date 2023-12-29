@@ -50,6 +50,7 @@ func (s *service) findComponent(ctx context.Context, orgID, componentID string) 
 		Where("id = ?", componentID).
 		Or("name = ? AND org_id = ?", componentID, orgID).
 		Preload("ComponentConfigs").
+		Preload("Dependencies").
 		Preload("App").
 		Preload("App.Org").
 		First(&component)

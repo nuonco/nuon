@@ -31,6 +31,7 @@ func (c *UpdateAppInstallerRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
+// @ID UpdateAppInstaller
 // @Summary	update an app installer
 // @Description.markdown	update_app_installer.md
 // @Tags			apps

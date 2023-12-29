@@ -37,7 +37,7 @@ func (s *installsIntegrationTestSuite) SetupTest() {
 	org := s.createOrg()
 	s.orgID = org.ID
 
-	app := s.createApp(s.orgID)
+	app := s.createApp()
 	s.appID = app.ID
 }
 
@@ -59,9 +59,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 	})
 
 	s.T().Run("adds existing components to install", func(t *testing.T) {
-		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-		require.NoError(t, err)
+		comp := s.createComponent(s.appID)
 
 		install := s.createInstall(s.appID)
 
@@ -195,7 +193,7 @@ func (s *installsIntegrationTestSuite) TestGetAppInstalls() {
 	origInstall := s.createInstall(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
-		secondApp := s.createApp(s.orgID)
+		secondApp := s.createApp()
 		s.createInstall(secondApp.ID)
 
 		installs, err := s.apiClient.GetAppInstalls(s.ctx, s.appID)
@@ -213,7 +211,7 @@ func (s *installsIntegrationTestSuite) TestGetAppInstalls() {
 func (s *installsIntegrationTestSuite) TestGetAllInstalls() {
 	origInstall := s.createInstall(s.appID)
 
-	secondApp := s.createApp(s.orgID)
+	secondApp := s.createApp()
 	secondAppInstall := s.createInstall(secondApp.ID)
 
 	s.T().Run("success", func(t *testing.T) {

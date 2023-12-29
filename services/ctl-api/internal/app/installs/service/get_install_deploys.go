@@ -52,5 +52,11 @@ func (s *service) getInstallDeploys(ctx context.Context, installID string) ([]ap
 		return nil, fmt.Errorf("unable to get install deploys: %w", res.Error)
 	}
 
+	for _, installDeploy := range installDeploys {
+		installDeploy.InstallID = installDeploy.InstallComponent.InstallID
+		installDeploy.ComponentID = installDeploy.InstallComponent.ComponentID
+		installDeploy.ComponentName = installDeploy.InstallComponent.Component.Name
+	}
+
 	return installDeploys, nil
 }
