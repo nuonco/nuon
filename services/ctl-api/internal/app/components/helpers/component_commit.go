@@ -1,17 +1,15 @@
-package service
+package helpers
 
 import (
 	"context"
 	"fmt"
-	"strconv"
 
-	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"golang.org/x/oauth2"
 )
 
-func (s *service) getComponentConnectionCommit(ctx context.Context, cmpID string) (*app.VCSConnectionCommit, error) {
+// GetComponentCommit will return a commit for a component, when a connected git source is attached.
+func (s *Helpers) GetComponentCommit(ctx context.Context, cmpID string) (*app.VCSConnectionCommit, error) {
 	cmp := app.ComponentConfigConnection{}
 	res := s.db.WithContext(ctx).
 		Preload("Component", "id = ?", cmpID).
@@ -58,7 +56,7 @@ func (s *service) getComponentConnectionCommit(ctx context.Context, cmpID string
 	}
 
 	// find the latest commit for this connection
-	commit, err := s.getVCSConfigLatestCommit(ctx, connectedGithubVCSConfig)
+	commit, err := s.vcsHelpers.GetVCSConfigLatestCommit(ctx, connectedGithubVCSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get the latest commit: %w", err)
 	}
@@ -75,30 +73,4 @@ func (s *service) getComponentConnectionCommit(ctx context.Context, cmpID string
 	}
 
 	return &vcsCommit, nil
-}
-
-func (s *service) getVCSConfigLatestCommit(ctx context.Context, vcsCfg *app.ConnectedGithubVCSConfig) (*github.RepositoryCommit, error) {
-	// get a static token
-	installID, err := strconv.ParseInt(vcsCfg.VCSConnection.GithubInstallID, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get install ID: %w", err)
-	}
-	resp, _, err := s.ghClient.Apps.CreateInstallationToken(ctx, installID, &github.InstallationTokenOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("unable to get installation token: %w", err)
-	}
-
-	// get a client with the github install token
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: *resp.Token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	client := github.NewClient(tc)
-
-	commitResp, _, err := client.Repositories.GetCommit(ctx, vcsCfg.RepoOwner, vcsCfg.RepoName, vcsCfg.Branch, &github.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("unable to get latest commit: %w", err)
-	}
-
-	return commitResp, nil
 }

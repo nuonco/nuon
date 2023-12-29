@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
-	"golang.org/x/oauth2"
 )
 
 const (
@@ -69,22 +67,10 @@ func (s *service) GetAllConnectedRepos(ctx *gin.Context) {
 }
 
 func (s *service) getConnectionRepos(ctx context.Context, conn *app.VCSConnection) ([]*Repository, error) {
-	// get a static token
-	installID, err := strconv.ParseInt(conn.GithubInstallID, 10, 64)
+	client, err := s.helpers.GetVCSConnectionClient(ctx, conn)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get install ID: %w", err)
+		return nil, fmt.Errorf("unable to get connection client: %w", err)
 	}
-	resp, _, err := s.ghClient.Apps.CreateInstallationToken(ctx, installID, &github.InstallationTokenOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("unable to get installation token: %w", err)
-	}
-
-	// get a client with the github install token
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: *resp.Token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	client := github.NewClient(tc)
 
 	// fetch all repos
 	allRepos := make([]*Repository, 0)
