@@ -57,7 +57,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "Set current org by org ID",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := orgs.New(c.apiClient, c.cfg)
-			svc.SetCurrent(cmd.Context(), id, true)
+			svc.SetCurrent(cmd.Context(), id, PrintJSON)
 		},
 	}
 	setCurrentCmd.Flags().StringVarP(&id, "org-id", "o", "", "The ID of the org you want to use")
@@ -113,6 +113,18 @@ func (c *cli) orgsCmd() *cobra.Command {
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().BoolVar(&sandbox, "sandbox-mode", false, "Create org in sandbox mode")
 	orgsCmd.AddCommand(createCmd)
+
+	selectOrgCmd := &cobra.Command{
+		Use:   "select",
+		Short: "Select your current org",
+		Long:  "Select your current org from a list or by org ID",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient, c.cfg)
+			svc.Select(cmd.Context(), id, PrintJSON)
+		},
+	}
+	selectOrgCmd.Flags().StringVar(&id, "org", "", "The ID of the org you want to use")
+	orgsCmd.AddCommand(selectOrgCmd)
 
 	return orgsCmd
 }
