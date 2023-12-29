@@ -33,5 +33,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "006-component-dependencies-deleted-at-constraint",
 			Fn:   a.migration006ComponentDependencyDeletedAtConstraint,
 		},
+		{
+			Name: "007-component-dependencies-cascading",
+			Fn:   a.migration007ComponentDependencyCascade,
+		},
 	}
 }
