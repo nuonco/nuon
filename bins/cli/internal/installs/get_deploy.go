@@ -28,9 +28,9 @@ func (s *Service) GetDeploy(ctx context.Context, installID, deployID string, asJ
 	}
 
 	view.Render([][]string{
-		{"install id", installDeploy.InstallComponent.ID},
+		{"install id", installDeploy.InstallID},
 		{"deploy id", installDeploy.ID},
-		{"build id", installDeploy.Build.ID},
+		{"build id", installDeploy.BuildID},
 		{"release id", installDeploy.ReleaseID},
 		{"status", installDeploy.Status},
 		{"description", wordwrap.WrapString(installDeploy.StatusDescription, 75)},

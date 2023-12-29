@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 )
 
+// @ID GetOrgs
 // @Summary	Return current user's orgs
 // @Description.markdown get_orgs.md
 // @Tags			orgs

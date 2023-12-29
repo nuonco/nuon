@@ -10,6 +10,7 @@ import (
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
+// @ID GetOrg
 // @Summary	Get an org
 // @Description.markdown	get_org.md
 // @Tags			orgs
