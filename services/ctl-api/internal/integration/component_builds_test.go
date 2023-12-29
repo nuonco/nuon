@@ -57,10 +57,7 @@ func (s *componentBuildsSuite) SetupTest() {
 	s.appID = app.ID
 
 	// create a component
-	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-	require.Nil(s.T(), err)
-	require.NotNil(s.T(), comp)
+	comp := s.createComponent(s.appID)
 	s.compID = comp.ID
 
 	// create a component config
@@ -98,10 +95,7 @@ func (s *componentBuildsSuite) TestCreateComponentBuild() {
 	})
 
 	s.T().Run("errors when no component config is set", func(t *testing.T) {
-		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-		require.Nil(t, err)
-		require.NotNil(t, comp)
+		comp := s.createComponent(s.appID)
 
 		bldReq := generics.GetFakeObj[*models.ServiceCreateComponentBuildRequest]()
 		bldReq.GitRef = "head"
@@ -184,10 +178,7 @@ func (s *componentBuildsSuite) TestGetComponentLatestBuild() {
 	})
 
 	s.T().Run("errors when no build exists", func(t *testing.T) {
-		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-		require.Nil(t, err)
-		require.NotNil(t, comp)
+		comp := s.createComponent(s.appID)
 
 		// create a component config
 		req := generics.GetFakeObj[*models.ServiceCreateExternalImageComponentConfigRequest]()
