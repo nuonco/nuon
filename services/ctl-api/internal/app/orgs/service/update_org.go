@@ -23,6 +23,7 @@ func (c *UpdateOrgRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
+// @ID UpdateOrg
 // @Summary	Update current org
 // @Description.markdown	update_org.md
 // @Param			req	body	UpdateOrgRequest	true	"Input"

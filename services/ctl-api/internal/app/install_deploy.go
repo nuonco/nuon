@@ -29,6 +29,11 @@ type InstallDeploy struct {
 
 	Status            string `json:"status" gorm:"notnull"`
 	StatusDescription string `json:"status_description" gorm:"notnull"`
+
+	// Fields that are de-nested at read time
+	InstallID     string `json:"install_id" gorm:"-"`
+	ComponentID   string `json:"component_id" gorm:"-"`
+	ComponentName string `json:"component_name" gorm:"-"`
 }
 
 func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {

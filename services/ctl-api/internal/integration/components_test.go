@@ -36,13 +36,14 @@ func (s *componentsSuite) SetupTest() {
 	org := s.createOrg()
 	s.orgID = org.ID
 
-	app := s.createApp(s.orgID)
+	app := s.createApp()
 	s.appID = app.ID
 }
 
 func (s *componentsSuite) TestCreateComponent() {
 	s.T().Run("success", func(t *testing.T) {
 		createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+		createReq.Dependencies = []string{}
 		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
 		require.Nil(t, err)
 		require.NotNil(t, comp)
@@ -64,6 +65,7 @@ func (s *componentsSuite) TestCreateComponent() {
 		require.NotNil(t, install)
 
 		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+		compReq.Dependencies = []string{}
 		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
 		require.NoError(t, err)
 		require.NotNil(t, comp)
@@ -75,13 +77,11 @@ func (s *componentsSuite) TestCreateComponent() {
 }
 
 func (s *componentsSuite) TestUpdateComponent() {
-	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
-	require.Nil(s.T(), err)
-	require.NotNil(s.T(), comp)
+	comp := s.createComponent(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
 		updateReq := generics.GetFakeObj[*models.ServiceUpdateComponentRequest]()
+		updateReq.Dependencies = []string{}
 		updatedComp, err := s.apiClient.UpdateComponent(s.ctx, comp.ID, updateReq)
 		require.Nil(t, err)
 		require.Equal(t, updatedComp.Name, *(updateReq.Name))
@@ -95,10 +95,7 @@ func (s *componentsSuite) TestUpdateComponent() {
 }
 
 func (s *componentsSuite) TestDeleteComponent() {
-	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
-	require.Nil(s.T(), err)
-	require.NotNil(s.T(), comp)
+	comp := s.createComponent(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
 		deleted, err := s.apiClient.DeleteComponent(s.ctx, comp.ID)
@@ -119,10 +116,7 @@ func (s *componentsSuite) TestDeleteComponent() {
 }
 
 func (s *componentsSuite) TestGetAllComponents() {
-	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
-	require.Nil(s.T(), err)
-	require.NotNil(s.T(), comp)
+	comp := s.createComponent(s.appID)
 
 	s.T().Run("success with a single app", func(t *testing.T) {
 		comps, err := s.apiClient.GetAllComponents(s.ctx)
@@ -137,10 +131,7 @@ func (s *componentsSuite) TestGetAllComponents() {
 		require.NoError(s.T(), err)
 		require.NotNil(s.T(), app)
 
-		createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-		comp2, err := s.apiClient.CreateComponent(s.ctx, app.ID, createReq)
-		require.Nil(s.T(), err)
-		require.NotNil(s.T(), comp2)
+		comp2 := s.createComponent(s.appID)
 
 		comps, err := s.apiClient.GetAllComponents(s.ctx)
 		require.Nil(t, err)
@@ -151,10 +142,7 @@ func (s *componentsSuite) TestGetAllComponents() {
 }
 
 func (s *componentsSuite) TestGetComponent() {
-	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
-	require.Nil(s.T(), err)
-	require.NotNil(s.T(), comp)
+	comp := s.createComponent(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
 		fetched, err := s.apiClient.GetComponent(s.ctx, comp.ID)
@@ -176,10 +164,7 @@ func (s *componentsSuite) TestGetComponent() {
 }
 
 func (s *componentsSuite) TestGetAppComponents() {
-	createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
-	require.Nil(s.T(), err)
-	require.NotNil(s.T(), comp)
+	comp := s.createComponent(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
 		comps, err := s.apiClient.GetAppComponents(s.ctx, s.appID)

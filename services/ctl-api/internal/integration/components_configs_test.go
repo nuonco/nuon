@@ -36,14 +36,11 @@ func (s *componentConfigsSuite) TearDownTest() {
 func (s *componentConfigsSuite) SetupTest() {
 	org := s.createOrg()
 	s.orgID = org.ID
-	app := s.createApp(s.orgID)
+	app := s.createApp()
 	s.appID = app.ID
 
 	// create a component
-	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-	require.Nil(s.T(), err)
-	require.NotNil(s.T(), comp)
+	comp := s.createComponent(s.appID)
 	s.compID = comp.ID
 }
 
@@ -299,10 +296,7 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 	})
 
 	s.T().Run("error on no configs", func(t *testing.T) {
-		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-		require.Nil(s.T(), err)
-		require.NotNil(s.T(), comp)
+		comp := s.createComponent(s.appID)
 
 		latestCfg, err := s.apiClient.GetComponentLatestConfig(s.ctx, comp.ID)
 		require.NotNil(t, err)
