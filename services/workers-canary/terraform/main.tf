@@ -14,9 +14,9 @@ module "aws-eks" {
   sandbox_branch = local.sandboxes_branch
   sandbox_dir = "aws-byo-vpc"
 
-  east_1_count = 5
-  east_2_count = 5
-  west_2_count = 5
+  east_1_count = var.east_1_count
+  east_2_count = var.east_2_count
+  west_2_count = var.west_2_count
 
   install_role_arn = var.install_role_arn
 }

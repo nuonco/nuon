@@ -10,17 +10,22 @@ import (
 //nolint:gochecknoinits
 func init() {
 	config.RegisterDefault("temporal_namespace", "canary")
-	config.RegisterDefault("terraform_state_base_dir", "/tmp/state")
+
+	// configuration for testing
 	config.RegisterDefault("install_script_path", "/install-cli.sh")
-	config.RegisterDefault("terraform_module_dir", "/terraform")
 	config.RegisterDefault("tests_dir", "/tests")
-	config.RegisterDefault("disable_cli_commands", false)
+
+	// configuration for terraform run
+	config.RegisterDefault("terraform_module_dir", "/terraform")
+	config.RegisterDefault("terraform_state_base_dir", "/tmp/state")
+	config.RegisterDefault("default_install_count", 1)
+	config.RegisterDefault("sandbox_mode_install_count", 5)
 }
 
 type Config struct {
 	worker.Config `config:",squash"`
 
-	SlackWebhookURL   string `config:"slack_webhook_url"	 validate:"required"`
+	SlackWebhookURL   string `config:"slack_webhook_url" validate:"required"`
 	InstallIamRoleArn string `config:"install_iam_role_arn"  validate:"required"`
 
 	APIURL         string `config:"api_url" validate:"required"`
@@ -34,6 +39,9 @@ type Config struct {
 	// flags for local development
 	DisableNotifications bool `config:"disable_notifications"`
 	DisableTests         bool `config:"disable_tests"`
+
+	SandboxModeInstallCount int `config:"sandbox_mode_install_count"`
+	DefaultInstallCount     int `config:"default_install_count"`
 }
 
 func (c Config) Validate() error {

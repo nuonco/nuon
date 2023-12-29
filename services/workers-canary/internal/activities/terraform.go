@@ -44,17 +44,18 @@ type TerraformRunOutputs struct {
 }
 
 type RunTerraformRequest struct {
-	RunType  RunType
-	CanaryID string
-	OrgID    string
-	APIToken string
+	RunType      RunType
+	CanaryID     string
+	OrgID        string
+	APIToken     string
+	InstallCount int
 }
 
 type RunTerraformResponse struct {
 	Outputs *TerraformRunOutputs
 }
 
-func (a *Activities) getWorkspace(moduleDir, canaryID, orgID, apiToken string) (workspace.Workspace, error) {
+func (a *Activities) getWorkspace(moduleDir string, req *RunTerraformRequest) (workspace.Workspace, error) {
 	arch, err := dir.New(a.v,
 		dir.WithPath(moduleDir),
 		dir.WithIgnoreDotTerraformDir(),
@@ -74,17 +75,20 @@ func (a *Activities) getWorkspace(moduleDir, canaryID, orgID, apiToken string) (
 
 	vars, err := staticvars.New(a.v, staticvars.WithFileVars(map[string]interface{}{
 		"install_role_arn": a.cfg.InstallIamRoleArn,
+		"east_1_count":     req.InstallCount,
+		"east_2_count":     req.InstallCount,
+		"west_2_count":     req.InstallCount,
 	}),
 		staticvars.WithEnvVars(map[string]string{
-			"NUON_ORG_ID":    orgID,
+			"NUON_ORG_ID":    req.OrgID,
 			"NUON_API_URL":   a.cfg.APIURL,
-			"NUON_API_TOKEN": apiToken,
+			"NUON_API_TOKEN": req.APIToken,
 		}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create vars: %w", err)
 	}
 
-	stateFp := filepath.Join(a.cfg.TerraformStateBaseDir, fmt.Sprintf("%s-terraform.tfstate", canaryID))
+	stateFp := filepath.Join(a.cfg.TerraformStateBaseDir, fmt.Sprintf("%s-terraform.tfstate", req.CanaryID))
 	back, err := local.New(a.v, local.WithFilepath(stateFp))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local backend: %w", err)
@@ -106,8 +110,8 @@ func (a *Activities) getWorkspace(moduleDir, canaryID, orgID, apiToken string) (
 	return wkspace, nil
 }
 
-func (a *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgID, apiToken string, runTyp RunType) (map[string]interface{}, error) {
-	wkspace, err := a.getWorkspace(moduleDir, canaryID, orgID, apiToken)
+func (a *Activities) runTerraform(ctx context.Context, moduleDir string, req *RunTerraformRequest) (map[string]interface{}, error) {
+	wkspace, err := a.getWorkspace(moduleDir, req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get workspace: %w", err)
 	}
@@ -130,7 +134,7 @@ func (a *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgI
 		return nil, fmt.Errorf("unable to create run: %w", err)
 	}
 
-	if runTyp == RunTypeDestroy {
+	if req.RunType == RunTypeDestroy {
 		err = tfRun.Destroy(ctx)
 	} else {
 		err = tfRun.Apply(ctx)
@@ -153,7 +157,7 @@ func (a *Activities) runTerraform(ctx context.Context, moduleDir, canaryID, orgI
 
 func (a *Activities) RunTerraform(ctx context.Context, req *RunTerraformRequest) (*RunTerraformResponse, error) {
 	moduleDir := a.cfg.TerraformModuleDir
-	rawOutputs, err := a.runTerraform(ctx, moduleDir, req.CanaryID, req.OrgID, req.APIToken, req.RunType)
+	rawOutputs, err := a.runTerraform(ctx, moduleDir, req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to run terraform: %w", err)
 	}

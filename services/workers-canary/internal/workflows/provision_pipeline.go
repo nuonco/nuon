@@ -9,6 +9,14 @@ import (
 	"go.uber.org/zap"
 )
 
+func (w *wkflow) getInstallCount(sandboxMode bool) int {
+	if sandboxMode {
+		return w.cfg.SandboxModeInstallCount
+	}
+
+	return w.cfg.DefaultInstallCount
+}
+
 func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequest) (*activities.TerraformRunOutputs, string, string, error) {
 	var userResp activities.CreateUserResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateUser, &activities.CreateUserRequest{
@@ -40,10 +48,11 @@ func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequ
 
 	var runResp activities.RunTerraformResponse
 	if err := w.defaultTerraformRunActivity(ctx, w.acts.RunTerraform, &activities.RunTerraformRequest{
-		RunType:  activities.RunTypeApply,
-		APIToken: userResp.APIToken,
-		CanaryID: req.CanaryId,
-		OrgID:    orgResp.OrgID,
+		RunType:      activities.RunTypeApply,
+		APIToken:     userResp.APIToken,
+		CanaryID:     req.CanaryId,
+		OrgID:        orgResp.OrgID,
+		InstallCount: w.getInstallCount(req.SandboxMode),
 	}, &runResp, 1); err != nil {
 		return nil, orgResp.OrgID, userResp.APIToken, fmt.Errorf("unable to run terraform: %w", err)
 	}
