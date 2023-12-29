@@ -26,6 +26,7 @@ func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
+// @ID CreateOrg
 // @Summary	create a new org
 // @Description.markdown	create_org.md
 // @Security APIKey

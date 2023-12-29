@@ -45,7 +45,7 @@ func (s *Service) Get(ctx context.Context, releaseID string, asJSON bool) {
 	for idx, step := range release.ReleaseSteps {
 		for _, installDeploy := range step.InstallDeploys {
 			data = append(data, []string{
-				installDeploy.InstallComponent.InstallID,
+				installDeploy.InstallID,
 				installDeploy.ID,
 				fmt.Sprintf("%d", idx),
 				installDeploy.Status,

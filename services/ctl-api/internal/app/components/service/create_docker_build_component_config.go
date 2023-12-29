@@ -27,7 +27,7 @@ func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate
 	return nil
 }
 
-// @ID CreatDockerBuildComponentConfig
+// @ID CreateDockerBuildComponentConfig
 // @Summary	create a docker build component config
 // @Description.markdown	create_docker_build_component_config.md
 // @Param			req				body	CreateDockerBuildComponentConfigRequest	true	"Input"

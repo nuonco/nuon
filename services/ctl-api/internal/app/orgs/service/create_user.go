@@ -15,6 +15,7 @@ type CreateOrgUserRequest struct {
 	UserID string `json:"user_id"`
 }
 
+// @ID AddUser
 // @Summary	Add a user to the current org
 // @Description.markdown	create_org_user.md
 // @Param			req	body	CreateOrgUserRequest	true	"Input"

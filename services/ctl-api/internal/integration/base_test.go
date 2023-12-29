@@ -136,7 +136,7 @@ func (s *baseIntegrationTestSuite) createAppWithInputs(orgID string) *models.App
 	return app
 }
 
-func (s *baseIntegrationTestSuite) createApp(orgID string) *models.AppApp {
+func (s *baseIntegrationTestSuite) createApp() *models.AppApp {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.NoError(s.T(), err)
@@ -152,6 +152,16 @@ func (s *baseIntegrationTestSuite) createApp(orgID string) *models.AppApp {
 	require.NotNil(s.T(), cfg)
 
 	return app
+}
+
+func (s *baseIntegrationTestSuite) createComponent(appID string) *models.AppComponent {
+	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+	compReq.Dependencies = []string{}
+
+	comp, err := s.apiClient.CreateComponent(s.ctx, appID, compReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), comp)
+	return comp
 }
 
 func (s *baseIntegrationTestSuite) createInstall(appID string) *models.AppInstall {
