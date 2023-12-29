@@ -11,7 +11,8 @@ import (
 )
 
 type UpdateComponentRequest struct {
-	Name string `json:"name" validate:"required,interpolatedName"`
+	Name         string   `json:"name" validate:"required,interpolatedName"`
+	Dependencies []string `json:"dependencies"`
 }
 
 func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {
@@ -67,6 +68,17 @@ func (s *service) updateComponent(ctx context.Context, componentID string, req *
 	res := s.db.WithContext(ctx).Model(&currentComponent).Updates(app.Component{Name: req.Name})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
+	}
+
+	// create dependencies
+	deps := make([]*app.Component, 0, len(req.Dependencies))
+	for _, depID := range req.Dependencies {
+		deps = append(deps, &app.Component{
+			ID: depID,
+		})
+	}
+	if err := s.db.WithContext(ctx).Model(&currentComponent).Association("Dependencies").Replace(deps); err != nil {
+		return nil, fmt.Errorf("unable to replace dependencies: %w", err)
 	}
 
 	return &currentComponent, nil

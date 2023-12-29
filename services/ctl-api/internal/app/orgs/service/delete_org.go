@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// @ID DeleteOrg
 // @Summary	Delete an org
 // @Schemes
 // @Description.markdown	delete_org.md

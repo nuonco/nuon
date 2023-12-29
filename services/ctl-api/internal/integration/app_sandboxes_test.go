@@ -37,7 +37,7 @@ func (s *appSandboxesSuite) SetupTest() {
 	org := s.createOrg()
 	s.orgID = org.ID
 
-	app := s.createApp(s.orgID)
+	app := s.createApp()
 	s.appID = app.ID
 }
 

@@ -39,14 +39,11 @@ func (s *installComponentsTestSuite) SetupTest() {
 	org := s.createOrg()
 	s.orgID = org.ID
 
-	app := s.createApp(s.orgID)
+	app := s.createApp()
 	s.appID = app.ID
 
 	// create a component
-	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), comp)
+	comp := s.createComponent(s.appID)
 	s.compID = comp.ID
 
 	// create a component config
@@ -81,10 +78,7 @@ func (s *installComponentsTestSuite) TestGetInstallComponents() {
 	})
 
 	s.T().Run("returns components based on created order desc", func(t *testing.T) {
-		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
-		require.Nil(t, err)
-		require.NotNil(t, comp)
+		comp := s.createComponent(s.appID)
 
 		installComponents, err := s.apiClient.GetInstallComponents(s.ctx, s.installID)
 		require.NoError(t, err)
