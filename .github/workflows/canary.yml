@@ -41,10 +41,33 @@ jobs:
         if: contains( steps.merged_pr.outputs.labels, 'canary')
         run: echo "canary=true" >> "$GITHUB_OUTPUT"
 
+  wait_on_checks:
+    name: wait on checks
+    if: ${{ needs.merged_pr.outputs.canary == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for services
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          name: services ✅
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 5
+
+      - name: Wait for artifacts
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          name: artifacts ✅
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 5
+
+
   trigger_canary:
     name: trigger canary
     needs:
       - merged_pr
+      - wait_on_checks
     if: ${{ needs.merged_pr.outputs.canary == 'true' }}
     uses: ./.github/workflows/internal_api.yml
     with:
