@@ -12,12 +12,13 @@ const (
 )
 
 var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
-	{"GET", "/livez"}:         {},
-	{"GET", "/version"}:       {},
-	{"GET", "/readyz"}:        {},
-	{"OPTIONS", "*"}:          {},
-	{"GET", "/docs/*any"}:     {},
-	{"GET", "/oapi3/swagger"}: {},
+	{"GET", "/livez"}:     {},
+	{"GET", "/version"}:   {},
+	{"GET", "/readyz"}:    {},
+	{"OPTIONS", "*"}:      {},
+	{"GET", "/docs/*any"}: {},
+	{"GET", "/oapi/v2"}:   {},
+	{"GET", "/oapi/v3"}:   {},
 
 	// cli / ui methods
 	{"GET", "/v1/general/cli-config"}:       {},
