@@ -3,12 +3,13 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
+	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -20,9 +21,10 @@ type service struct {
 	mw          metrics.Writer
 	cfg         *internal.Config
 	hooks       *hooks.Hooks
-	ghClient    *github.Client
 	orgsOutputs *terraformcloud.OrgsOutputs
 	wpClient    multi.Client
+	helpers     *helpers.Helpers
+	vcsHelpers  *vcshelpers.Helpers
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -71,9 +73,10 @@ func New(v *validator.Validate,
 	mw metrics.Writer,
 	l *zap.Logger,
 	hooks *hooks.Hooks,
-	ghClient *github.Client,
 	orgsOutputs *terraformcloud.OrgsOutputs,
 	wpClient multi.Client,
+	helpers *helpers.Helpers,
+	vcsHelpers *vcshelpers.Helpers,
 ) *service {
 	return &service{
 		cfg:         cfg,
@@ -82,8 +85,9 @@ func New(v *validator.Validate,
 		db:          db,
 		mw:          mw,
 		hooks:       hooks,
-		ghClient:    ghClient,
 		orgsOutputs: orgsOutputs,
 		wpClient:    wpClient,
+		helpers:     helpers,
+		vcsHelpers:  vcsHelpers,
 	}
 }

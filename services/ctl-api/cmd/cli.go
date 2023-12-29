@@ -13,10 +13,12 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/validator"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/waypoint"
 	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
+	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	componentsshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	releaseshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/hooks"
+	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"go.uber.org/fx"
 )
 
@@ -45,5 +47,9 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(orgshooks.New),
 		fx.Provide(componentsshooks.New),
 		fx.Provide(releaseshooks.New),
+
+		// add app helpers
+		fx.Provide(vcshelpers.New),
+		fx.Provide(componentshelpers.New),
 	}
 }
