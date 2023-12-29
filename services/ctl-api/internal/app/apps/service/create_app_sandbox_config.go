@@ -76,7 +76,7 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 	}
 
 	// build the app sandbox config
-	githubVCSConfig, err := req.connectedGithubVCSConfig(ctx, &parentApp, s.ghClient)
+	githubVCSConfig, err := req.connectedGithubVCSConfig(ctx, &parentApp, s.vcsHelpers)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create connected github vcs config: %w", err)
 	}

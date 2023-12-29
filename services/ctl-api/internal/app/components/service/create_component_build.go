@@ -66,7 +66,7 @@ func (s *service) createComponentBuild(ctx context.Context, cmpID string, req *C
 	var vcsCommit *app.VCSConnectionCommit
 	if req.UseLatest {
 		var err error
-		vcsCommit, err = s.getComponentConnectionCommit(ctx, cmpID)
+		vcsCommit, err = s.helpers.GetComponentCommit(ctx, cmpID)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get latest commit for connection: %w", err)
 		}
