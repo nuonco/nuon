@@ -2,6 +2,7 @@ package docs
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/services/ctl-api/admin"
 	"github.com/powertoolsdev/mono/services/ctl-api/docs"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
@@ -17,12 +18,12 @@ type Docs struct {
 func (r *Docs) RegisterRoutes(g *gin.Engine) error {
 	docs.SwaggerInfo.Schemes = []string{"https"}
 	switch r.cfg.Env {
-	case "development":
+	case config.Development:
 		docs.SwaggerInfo.Host = "localhost:8081"
 		docs.SwaggerInfo.Schemes = []string{"http"}
-	case "prod":
+	case config.Production:
 		docs.SwaggerInfo.Host = "ctl.prod.nuon.co"
-	case "stage":
+	case config.Stage:
 		docs.SwaggerInfo.Host = "ctl.stage.nuon.co"
 	}
 
