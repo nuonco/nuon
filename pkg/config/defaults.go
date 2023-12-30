@@ -4,12 +4,6 @@ package config
 type Env string
 
 const (
-	// Local is a local development environment
-	Local Env = "local"
-	// Demo is the demo environment
-	Demo Env = "demo"
-	// QA is the QA environment
-	QA Env = "qa"
 	// Production is the production environment
 	Production Env = "production"
 	// Development is a development environment not local
@@ -26,18 +20,14 @@ const (
 // type
 func (e *Env) UnmarshalConfig(value string) {
 	switch value {
-	case "demo":
-		*e = Demo
 	case "development", "dev":
 		*e = Development
-	case "qa":
-		*e = QA
 	case "production", "prod":
 		*e = Production
 	case "stage", "staging":
 		*e = Stage
 	default:
-		*e = Local
+		*e = Development
 	}
 }
 
@@ -53,7 +43,6 @@ var Version string = "unknown"
 //
 //nolint:gochecknoinits
 func init() {
-	RegisterDefault("env", Local)
 	RegisterDefault("system_port", defaultPort)
 	RegisterDefault("export_runtime_metrics", true)
 	RegisterDefault("trace_sample_rate", defaultSampleRate)
