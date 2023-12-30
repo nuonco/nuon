@@ -57,7 +57,11 @@ func (s *service) findComponent(ctx context.Context, orgID, componentID string) 
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
+
 	component.ConfigVersions = len(component.ComponentConfigs)
+	for _, dep := range component.Dependencies {
+		component.DependencyIDs = append(component.DependencyIDs, dep.ID)
+	}
 
 	return &component, nil
 }

@@ -58,7 +58,7 @@ func configureLogger(cfg *Base) (*zap.Logger, error) {
 	)
 
 	switch cfg.Env {
-	case Local, Development:
+	case Development:
 		l, err = zap.NewDevelopment()
 	default:
 		zCfg := zap.NewProductionConfig()
