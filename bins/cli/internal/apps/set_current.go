@@ -2,20 +2,33 @@ package apps
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon-go"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) SetCurrent(ctx context.Context, appID string) {
-	appID, err := lookup.AppID(ctx, s.api, appID)
+func (s *Service) SetCurrent(ctx context.Context, appID string, asJSON bool) {
+	view := ui.NewGetView()
+	app, err := s.api.GetApp(ctx, appID)
 	if err != nil {
-		ui.PrintError(err)
+		userErr, isUserError := nuon.ToUserError(err)
+		if isUserError && userErr.Error == s.notFoundErr(appID).Error() {
+			s.printAppNotFoundMsg(appID)
+		} else {
+			view.Error(err)
+		}
+
 		return
 	}
 
-	s.cfg.Set("app_id", appID)
-	s.cfg.WriteConfig()
-	fmt.Printf("%s is now the current app\n", appID)
+	if err := s.setAppInConfig(ctx, appID); err != nil {
+		view.Error(err)
+		return
+	}
+
+	if asJSON {
+		ui.PrintJSON(app)
+	} else {
+		s.printAppSetMsg(app.Name, app.ID)
+	}
 }
