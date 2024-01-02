@@ -5,8 +5,9 @@ import (
 )
 
 var (
-	PrintJSON  bool = false
-	ConfigFile string
+	PrintJSON             bool = false
+	ConfigFile            string
+	DefaultConfigFilePath string = "~/.nuon"
 )
 
 // newRootCmd constructs a new root cobra command, which all other commands will be nested under. If there are any flags
@@ -19,7 +20,7 @@ func (c *cli) rootCmd() *cobra.Command {
 	}
 
 	rootCmd.PersistentFlags().BoolVarP(&PrintJSON, "json", "j", false, "print output as json")
-	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "f", "~/.nuon", "path to custom config file. Can also be set using the NUON_CONFIG_FILE env var.")
+	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "f", DefaultConfigFilePath, "path to custom config file. Can also be set using the NUON_CONFIG_FILE env var.")
 
 	cmds := []*cobra.Command{
 		c.appsCmd(),
