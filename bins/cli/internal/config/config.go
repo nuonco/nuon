@@ -67,8 +67,10 @@ func NewConfig(customFilepath string) (*Config, error) {
 // readConfigFile reads config values from a yaml file at ~/.nuon
 func (c *Config) readConfigFile(customFP string) error {
 	cfgFP := defaultFilePath
-	if customFP != "" {
+	isDefault := true
+	if customFP != "" && customFP != cfgFP {
 		cfgFP = customFP
+		isDefault = false
 	}
 	if os.Getenv(defaultConfigFileEnvVar) != "" {
 		cfgFP = os.Getenv(defaultConfigFileEnvVar)
@@ -90,11 +92,19 @@ func (c *Config) readConfigFile(customFP string) error {
 
 	nfe := &viper.ConfigFileNotFoundError{}
 	if errors.As(err, &nfe) {
+		if isDefault {
+			return nil
+		}
+
 		return nil
 	}
 
 	if errors.Is(err, os.ErrNotExist) {
-		return nil
+		if isDefault {
+			return nil
+		}
+
+		return err
 	}
 
 	return fmt.Errorf("unable to load config file: %w", err)
