@@ -80,12 +80,24 @@ func (c *cli) appsCmd() *cobra.Command {
 		Long:  "Set current app by app ID",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := apps.New(c.apiClient, c.cfg)
-			svc.SetCurrent(cmd.Context(), appID)
+			svc.SetCurrent(cmd.Context(), appID, PrintJSON)
 		},
 	}
 	setCurrentCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	setCurrentCmd.MarkFlagRequired("app-id")
 	appsCmd.AddCommand(setCurrentCmd)
+
+	selectAppCmd := &cobra.Command{
+		Use:   "select",
+		Short: "Select your current app",
+		Long:  "Select your current app from a list or by app ID",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.apiClient, c.cfg)
+			svc.Select(cmd.Context(), appID, PrintJSON)
+		},
+	}
+	selectAppCmd.Flags().StringVar(&appID, "app", "", "The ID of the app you want to use")
+	appsCmd.AddCommand(selectAppCmd)
 
 	return appsCmd
 }
