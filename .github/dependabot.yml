@@ -5,12 +5,12 @@
 ---
 version: 2
 updates:
-  # update all AWS dependencies, weekly
+  # update all go dependencies, weekly
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       day: sunday
-      interval: "weekly"
+      interval: "monthly"
       time: "07:05"
       timezone: "America/New_York"
     open-pull-requests-limit: 3
@@ -30,6 +30,6 @@ updates:
     directory: "/"
     schedule:
       day: "sunday"
-      interval: "weekly"
+      interval: "monthly"
       time: "07:00"
       timezone: "America/New_York"
