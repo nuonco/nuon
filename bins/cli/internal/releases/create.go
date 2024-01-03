@@ -54,13 +54,18 @@ func (s *Service) Create(ctx context.Context, compID, buildID, delay string, ins
 
 	view.Update(fmt.Sprintf("creating release from build %s", buildID))
 	release, err := s.api.CreateRelease(ctx, req)
-	if err != nil {
-		view.Fail(err)
+
+	if asJSON {
+		if err != nil {
+			ui.PrintJSONError(err)
+			return
+		}
+		ui.PrintJSON(release)
 		return
 	}
 
-	if asJSON {
-		view.Success(release.ID)
+	if err != nil {
+		view.Fail(err)
 		return
 	}
 
