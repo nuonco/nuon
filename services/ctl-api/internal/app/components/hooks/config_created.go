@@ -6,9 +6,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/signals"
 )
 
-func (h *Hooks) BuildCreated(ctx context.Context, componentID, buildID string) {
+func (h *Hooks) ConfigCreated(ctx context.Context, componentID string) {
 	h.sendSignal(ctx, componentID, signals.Signal{
-		Operation: signals.OperationBuild,
-		BuildID:   buildID,
+		Operation: signals.OperationQueueBuild,
+		BuildID:   componentID,
 	})
 }

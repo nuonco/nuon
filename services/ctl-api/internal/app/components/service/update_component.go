@@ -80,7 +80,7 @@ func (s *service) updateComponent(ctx context.Context, componentID string, req *
 		return nil, fmt.Errorf("unable to clear component dependencies: %w", res.Error)
 	}
 
-	if err := s.createComponentDependencies(ctx, componentID, req.Dependencies); err != nil {
+	if err := s.helpers.CreateComponentDependencies(ctx, componentID, req.Dependencies); err != nil {
 		return nil, fmt.Errorf("unable to clear component dependencies: %w", res.Error)
 	}
 
