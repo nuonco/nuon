@@ -11,7 +11,6 @@ import (
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type CreateInstallRequest struct {
@@ -121,24 +120,8 @@ func (s *service) createInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)
 	}
 
-	// NOTE(jm): we have to upsert the install components separately from the install, as they could conflict when a
-	// component is created at the same time
-	installCmps := make([]app.InstallComponent, 0)
-	for _, cmp := range parentApp.Components {
-		installCmps = append(installCmps, app.InstallComponent{
-			InstallID:   install.ID,
-			ComponentID: cmp.ID,
-		})
-	}
-	if len(installCmps) < 1 {
-		return &install, nil
-	}
-
-	res = s.db.WithContext(ctx).
-		Clauses(clause.OnConflict{DoNothing: true}).
-		Create(&installCmps)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create install components: %w", res.Error)
+	if err := s.componentHelpers.EnsureInstallComponents(ctx, appID, []string{install.ID}); err != nil {
+		return nil, fmt.Errorf("unable to ensure install components: %w", err)
 	}
 
 	return &install, nil

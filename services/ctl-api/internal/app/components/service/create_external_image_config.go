@@ -76,6 +76,7 @@ func (s *service) CreateExternalImageComponentConfig(ctx *gin.Context) {
 		return
 	}
 
+	s.hooks.ConfigCreated(ctx, cmpID)
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
