@@ -9,7 +9,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
-	"gorm.io/gorm/clause"
 )
 
 type CreateComponentRequest struct {
@@ -60,13 +59,14 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 		return
 	}
 
+	// create component
 	component, err := s.createComponent(ctx, appID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create component: %w", err))
 		return
 	}
-
 	s.hooks.Created(ctx, component.ID, org.SandboxMode)
+
 	ctx.JSON(http.StatusCreated, component)
 }
 
@@ -83,60 +83,13 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 		return nil, fmt.Errorf("unable to create component: %w", res.Error)
 	}
 
-	if err := s.createComponentDependencies(ctx, component.ID, req.Dependencies); err != nil {
+	if err := s.helpers.CreateComponentDependencies(ctx, component.ID, req.Dependencies); err != nil {
 		return nil, fmt.Errorf("unable to create component dependencies: %w", err)
 	}
 
-	// fetch the parent app's installs and ensure each gets the new component
-	parentApp := app.App{}
-	res = s.db.WithContext(ctx).
-		Preload("Installs").
-		First(&parentApp, "id = ?", appID)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create component: %w", res.Error)
-	}
-	if len(parentApp.Installs) < 1 {
-		return &component, nil
-	}
-
-	// create an install component for all known installs
-	var installCmps = []app.InstallComponent{}
-	for _, install := range parentApp.Installs {
-		installCmps = append(installCmps, app.InstallComponent{
-			ComponentID: component.ID,
-			InstallID:   install.ID,
-		})
-	}
-	res = s.db.WithContext(ctx).
-		Clauses(clause.OnConflict{DoNothing: true}).
-		Create(&installCmps)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create install components: %w", res.Error)
+	if err := s.helpers.EnsureInstallComponents(ctx, appID, nil); err != nil {
+		return nil, fmt.Errorf("unable to ensure install components: %w", err)
 	}
 
 	return &component, nil
-}
-
-// NOTE: GORM does not support callbacks when using a custom join table on many2many relationships + associations mode.
-func (s *service) createComponentDependencies(ctx context.Context, compID string, dependencyIDs []string) error {
-	if len(dependencyIDs) < 1 {
-		return nil
-	}
-
-	// create dependencies
-	deps := make([]*app.ComponentDependency, 0, len(dependencyIDs))
-	for _, depID := range dependencyIDs {
-		deps = append(deps, &app.ComponentDependency{
-			ComponentID:  compID,
-			DependencyID: depID,
-		})
-	}
-
-	res := s.db.WithContext(ctx).
-		Create(&deps)
-	if res.Error != nil {
-		return res.Error
-	}
-
-	return nil
 }

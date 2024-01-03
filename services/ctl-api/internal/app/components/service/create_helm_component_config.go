@@ -61,6 +61,7 @@ func (s *service) CreateHelmComponentConfig(ctx *gin.Context) {
 		return
 	}
 
+	s.hooks.ConfigCreated(ctx, cmpID)
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
