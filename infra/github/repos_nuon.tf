@@ -90,3 +90,17 @@ module "nuon-sandboxes" {
     github = github.nuon
   }
 }
+
+module "nuon-actions" {
+  source           = "./modules/repository"
+  name             = "actions"
+  description      = "Actions for integrating with the Nuon platform."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
