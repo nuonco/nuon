@@ -1,4 +1,4 @@
-package worker
+package signals
 
 import (
 	"fmt"
@@ -10,9 +10,11 @@ type Operation string
 
 const (
 	OperationBuild            Operation = "build"
+	OperationQueueBuild       Operation = "queue_build"
 	OperationProvision        Operation = "provision"
 	OperationDelete           Operation = "delete"
 	OperationPollDependencies Operation = "poll_dependencies"
+	OperationConfigCreated    Operation = "config_created"
 )
 
 type Signal struct {

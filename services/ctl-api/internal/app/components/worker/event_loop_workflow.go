@@ -1,33 +1,20 @@
 package worker
 
 import (
-	"fmt"
-
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/signals"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
 
-const (
-	EventLoopWorkflowName string = "ComponentEventLoop"
-)
-
-func EventLoopWorkflowID(componentID string) string {
-	return fmt.Sprintf("%s-event-loop", componentID)
-}
-
-type ComponentEventLoopRequest struct {
-	ComponentID string
-	SandboxMode bool
-}
-
-func (w *Workflows) ComponentEventLoop(ctx workflow.Context, req ComponentEventLoopRequest) error {
+func (w *Workflows) ComponentEventLoop(ctx workflow.Context, req signals.ComponentEventLoopRequest) error {
 	l := zap.L()
 
 	finished := false
+
 	signalChan := workflow.GetSignalChannel(ctx, req.ComponentID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
-		var signal Signal
+		var signal signals.Signal
 		channelOpen := channel.Receive(ctx, &signal)
 		if !channelOpen {
 			l.Info("channel was closed")
@@ -39,19 +26,23 @@ func (w *Workflows) ComponentEventLoop(ctx workflow.Context, req ComponentEventL
 		}
 
 		switch signal.Operation {
-		case OperationPollDependencies:
+		case signals.OperationPollDependencies:
 			if err := w.pollDependencies(ctx, req.ComponentID); err != nil {
 				l.Info("unable to poll app status for readiness: %w", zap.Error(err))
 			}
-		case OperationProvision:
+		case signals.OperationProvision:
 			if err := w.provision(ctx, req.ComponentID); err != nil {
 				l.Info("unable to provision: %w", zap.Error(err))
 			}
-		case OperationBuild:
+		case signals.OperationQueueBuild:
+			if err := w.queueBuild(ctx, req.ComponentID); err != nil {
+				l.Info("unable to handle config created: %w", zap.Error(err))
+			}
+		case signals.OperationBuild:
 			if err := w.build(ctx, req.ComponentID, signal.BuildID, req.SandboxMode); err != nil {
 				l.Info("unable to build component: %w", zap.Error(err))
 			}
-		case OperationDelete:
+		case signals.OperationDelete:
 			if err := w.delete(ctx, req.ComponentID, req.SandboxMode); err != nil {
 				l.Info("unable to delete component: %w", zap.Error(err))
 			}
