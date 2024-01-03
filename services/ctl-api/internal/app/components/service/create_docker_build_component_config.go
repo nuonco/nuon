@@ -63,6 +63,8 @@ func (s *service) CreateDockerBuildComponentConfig(ctx *gin.Context) {
 		return
 	}
 
+	s.hooks.ConfigCreated(ctx, cmpID)
+
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
