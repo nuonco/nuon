@@ -32,7 +32,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short:   "List installs",
 		Long:    "List all your app's installs",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.List(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -44,7 +44,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "Get an install",
 		Long:  "Get an install by ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.Get(cmd.Context(), id, PrintJSON)
 		},
 	}
@@ -57,7 +57,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "Create an install",
 		Long:  "Create a new install of your app",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.Create(cmd.Context(), appID, name, region, arn, inputs, PrintJSON)
 		},
 	}
@@ -77,7 +77,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "Delete install",
 		Long:  "Delete an install by ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.Delete(cmd.Context(), id, PrintJSON)
 		},
 	}
@@ -90,7 +90,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "Get install components",
 		Long:  "Get all components on an install",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.Components(cmd.Context(), id, PrintJSON)
 		},
 	}
@@ -103,7 +103,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "Get an install deploy",
 		Long:  "Get an install deploy by ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.GetDeploy(cmd.Context(), id, deployID, PrintJSON)
 		},
 	}
@@ -117,7 +117,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "Print install deploy plan",
 		Long:  "Print install deploy plan as JSON",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.PrintDeployPlan(cmd.Context(), id, deployID, PrintJSON, renderedVars, intermediateOnly, jobConfig)
 		},
 	}
@@ -136,7 +136,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "View deploy logs",
 		Long:  "View deploy logs by install and deploy ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.DeployLogs(cmd.Context(), id, deployID, PrintJSON)
 		},
 	}
@@ -151,7 +151,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "View all install deploys",
 		Long:  "View all install deploys by install ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.ListDeploys(cmd.Context(), id, PrintJSON)
 		},
 	}
@@ -164,7 +164,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "View sandbox runs",
 		Long:  "View sandbox runs by install ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.SandboxRuns(cmd.Context(), id, PrintJSON)
 		},
 	}
@@ -177,7 +177,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "View sandbox run logs",
 		Long:  "View sandbox run logs by run & install IDs",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.SandboxRunLogs(cmd.Context(), id, runID, PrintJSON)
 		},
 	}
@@ -192,13 +192,39 @@ func (c *cli) installsCmd() *cobra.Command {
 		Short: "View current inputs",
 		Long:  "View current set app inputs",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient)
+			svc := installs.New(c.apiClient, c.cfg)
 			svc.CurrentInputs(cmd.Context(), id, PrintJSON)
 		},
 	}
 	currentInputs.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	currentInputs.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(currentInputs)
+
+	setCurrentCmd := &cobra.Command{
+		Use:   "set-current",
+		Short: "Set current install",
+		Long:  "Set current install by install ID",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient, c.cfg)
+			svc.SetCurrent(cmd.Context(), id, PrintJSON)
+		},
+	}
+	setCurrentCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	setCurrentCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(setCurrentCmd)
+
+	selectInstallCmd := &cobra.Command{
+		Use:   "select",
+		Short: "Select your current install",
+		Long:  "Select your current install from a list or by install ID",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient, c.cfg)
+			svc.Select(cmd.Context(), appID, id, PrintJSON)
+		},
+	}
+	selectInstallCmd.Flags().StringVar(&id, "install", "", "The ID of the install you want to use")
+	selectInstallCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
+	installsCmds.AddCommand(selectInstallCmd)
 
 	return installsCmds
 }
