@@ -91,9 +91,9 @@ module "nuon-sandboxes" {
   }
 }
 
-module "nuon-build-and-release" {
+module "nuon-actions-build-and-release" {
   source           = "./modules/repository"
-  name             = "build-and-release"
+  name             = "actions-build-and-release"
   description      = "Action for building and releasing a component using Nuon."
   required_checks  = []
   is_public        = true
