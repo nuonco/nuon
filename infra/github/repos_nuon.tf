@@ -91,10 +91,10 @@ module "nuon-sandboxes" {
   }
 }
 
-module "nuon-actions" {
+module "nuon-build-and-release" {
   source           = "./modules/repository"
-  name             = "actions"
-  description      = "Actions for integrating with the Nuon platform."
+  name             = "build-and-release"
+  description      = "Action for building and releasing a component using Nuon."
   required_checks  = []
   is_public        = true
   owning_team_id   = github_team.nuon.id
