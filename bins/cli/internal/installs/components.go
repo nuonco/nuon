@@ -36,15 +36,25 @@ func (s *Service) Components(ctx context.Context, installID string, asJSON bool)
 		},
 	}
 	for _, comp := range components {
-		if len(comp.InstallDeploys) != 0 {
-			data = append(data, []string{
-				comp.Component.ID,
-				comp.Component.Name,
+		args := []string{
+			comp.Component.ID,
+			comp.Component.Name,
+		}
+		if len(comp.InstallDeploys) > 0 {
+			args = append(args, []string{
 				comp.InstallDeploys[0].Status,
 				comp.InstallDeploys[0].ID,
 				comp.InstallDeploys[0].ReleaseID,
-			})
+			}...)
+		} else {
+			args = append(args, []string{
+				"n/a",
+				"n/a",
+				"n/a",
+			}...)
 		}
+
+		data = append(data, args)
 	}
 	view.Render(data)
 }
