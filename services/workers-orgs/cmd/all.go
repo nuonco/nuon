@@ -44,7 +44,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 		err error
 	)
 	switch cfg.Env {
-	case config.Local, config.Development:
+	case config.Development:
 		n = sender.NewNoopSender()
 	default:
 		n, err = sender.NewSlackSender(cfg.BotsSlackWebhookURL)
