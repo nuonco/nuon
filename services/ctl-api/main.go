@@ -7,7 +7,7 @@ import (
 )
 
 // @title			Nuon API
-// @version		v1
+// @version		1.0.0
 // @description	API for managing nuon apps and installs.
 // @contact.name	Nuon Support
 // @contact.email	support@nuon.co
