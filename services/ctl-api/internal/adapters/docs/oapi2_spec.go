@@ -21,6 +21,7 @@ func (d *Docs) getOAPI2PublicSpec(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to convert open api spec to json: %w", err))
 		return
 	}
+	doc.Info.Version = d.cfg.GitRef
 
 	ctx.JSON(http.StatusOK, doc)
 }
@@ -35,6 +36,7 @@ func (d *Docs) getOAPI2AdminSpec(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to convert open api spec to json: %w", err))
 		return
 	}
+	doc.Info.Version = d.cfg.GitRef
 
 	ctx.JSON(http.StatusOK, doc)
 }
