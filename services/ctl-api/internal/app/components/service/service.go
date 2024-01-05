@@ -7,6 +7,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
+	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
@@ -25,6 +26,7 @@ type service struct {
 	wpClient    multi.Client
 	helpers     *helpers.Helpers
 	vcsHelpers  *vcshelpers.Helpers
+	appsHelpers *appshelpers.Helpers
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -77,6 +79,7 @@ func New(v *validator.Validate,
 	wpClient multi.Client,
 	helpers *helpers.Helpers,
 	vcsHelpers *vcshelpers.Helpers,
+	appsHelpers *appshelpers.Helpers,
 ) *service {
 	return &service{
 		cfg:         cfg,
@@ -89,5 +92,6 @@ func New(v *validator.Validate,
 		wpClient:    wpClient,
 		helpers:     helpers,
 		vcsHelpers:  vcsHelpers,
+		appsHelpers: appsHelpers,
 	}
 }

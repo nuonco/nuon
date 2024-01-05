@@ -65,8 +65,14 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create component: %w", err))
 		return
 	}
-	s.hooks.Created(ctx, component.ID, org.SandboxMode)
 
+	// validate to make sure graph does not have cycles
+	if err = s.appsHelpers.ValidateGraph(ctx, appID); err != nil {
+		ctx.Error(fmt.Errorf("invalid graph: %w", err))
+		return
+	}
+
+	s.hooks.Created(ctx, component.ID, org.SandboxMode)
 	ctx.JSON(http.StatusCreated, component)
 }
 

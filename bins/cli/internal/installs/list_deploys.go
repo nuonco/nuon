@@ -31,6 +31,7 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, asJSON bool
 		{
 			"id",
 			"status",
+			"type",
 			"build id",
 			"created at",
 			"component id",
@@ -41,6 +42,7 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, asJSON bool
 		data = append(data, []string{
 			deploy.ID,
 			deploy.Status,
+			string(deploy.InstallDeployType),
 			deploy.BuildID,
 			deploy.CreatedAt,
 			deploy.ComponentID,

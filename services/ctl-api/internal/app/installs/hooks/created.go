@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/powertoolsdev/mono/pkg/workflows"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 )
 
 func (a *Hooks) startEventLoop(ctx context.Context, installID string, sandboxMode bool) error {
-	workflowID := worker.EventLoopWorkflowID(installID)
+	workflowID := signals.EventLoopWorkflowID(installID)
 	opts := tclient.StartWorkflowOptions{
 		ID:        workflowID,
 		TaskQueue: workflows.APITaskQueue,
@@ -23,14 +23,14 @@ func (a *Hooks) startEventLoop(ctx context.Context, installID string, sandboxMod
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 	}
 
-	req := worker.InstallEventLoopRequest{
+	req := signals.InstallEventLoopRequest{
 		InstallID:   installID,
 		SandboxMode: sandboxMode,
 	}
 	wkflowRun, err := a.client.ExecuteWorkflowInNamespace(ctx,
 		defaultNamespace,
 		opts,
-		worker.EventLoopWorkflowName,
+		signals.EventLoopWorkflowName,
 		req)
 	if err != nil {
 		return err
@@ -54,10 +54,13 @@ func (a *Hooks) Created(ctx context.Context, installID string, sandboxMode bool)
 		return
 	}
 
-	a.sendSignal(ctx, installID, worker.Signal{
-		Operation: worker.OperationPollDependencies,
+	a.sendSignal(ctx, installID, signals.Signal{
+		Operation: signals.OperationPollDependencies,
 	})
-	a.sendSignal(ctx, installID, worker.Signal{
-		Operation: worker.OperationProvision,
+	a.sendSignal(ctx, installID, signals.Signal{
+		Operation: signals.OperationProvision,
+	})
+	a.sendSignal(ctx, installID, signals.Signal{
+		Operation: signals.OperationDeployComponents,
 	})
 }

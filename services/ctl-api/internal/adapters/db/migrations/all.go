@@ -37,5 +37,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "007-component-dependencies-cascading",
 			Fn:   a.migration007ComponentDependencyCascade,
 		},
+		{
+			Name: "008-install-deploy-types",
+			Fn:   a.migration008InstallDeployType,
+		},
 	}
 }
