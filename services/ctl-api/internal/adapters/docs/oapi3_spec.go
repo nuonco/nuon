@@ -43,7 +43,7 @@ func (d *Docs) getOAPI3publicSpec(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to convert open api spec to json: %w", err))
 		return
 	}
-
+	doc.Info.Version = d.cfg.GitRef
 	addSpecTags(&doc)
 
 	oapi3Doc, err := openapi2conv.ToV3(&doc)
@@ -66,6 +66,7 @@ func (d *Docs) getOAPI3AdminSpec(ctx *gin.Context) {
 		return
 	}
 
+	doc.Info.Version = d.cfg.GitRef
 	addSpecTags(&doc)
 
 	oapi3Doc, err := openapi2conv.ToV3(&doc)
