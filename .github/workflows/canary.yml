@@ -52,7 +52,7 @@ jobs:
         uses: lewagon/wait-on-check-action@v1.3.3
         with:
           ref: ${{ github.ref }}
-          check-name: services ✅
+          check-name: 🔍 checks (services ✅)
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 5
 
@@ -60,7 +60,7 @@ jobs:
         uses: lewagon/wait-on-check-action@v1.3.3
         with:
           ref: ${{ github.ref }}
-          check-name: artifacts ✅
+          check-name: 🔍 checks (artifacts ✅)
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 5
 
