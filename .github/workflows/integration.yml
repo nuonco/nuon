@@ -89,7 +89,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Fetch terraform outputs
         uses: actions/download-artifact@v3
