@@ -6,6 +6,7 @@ import (
 	"github.com/google/go-github/v50/github"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
 	componenthooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	installhooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
@@ -22,6 +23,7 @@ type service struct {
 	installHooks   *installhooks.Hooks
 	componentHooks *componenthooks.Hooks
 	vcsHelpers     *vcshelpers.Helpers
+	helpers        *appshelpers.Helpers
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -75,6 +77,7 @@ func New(v *validator.Validate,
 	componentHooks *componenthooks.Hooks,
 	ghClient *github.Client,
 	vcsHelpers *vcshelpers.Helpers,
+	helpers *appshelpers.Helpers,
 ) *service {
 	return &service{
 		cfg:            cfg,
@@ -85,5 +88,6 @@ func New(v *validator.Validate,
 		installHooks:   installHooks,
 		componentHooks: componentHooks,
 		vcsHelpers:     vcsHelpers,
+		helpers:        helpers,
 	}
 }

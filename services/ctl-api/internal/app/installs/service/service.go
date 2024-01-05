@@ -57,6 +57,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 	// install components
 	api.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
+	api.POST("/v1/installs/:install_id/components/:component_id/teardown", s.TeardownInstallComponent)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys", s.GetInstallComponentDeploys)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys/latest", s.GetInstallComponentLatestDeploy)
 
@@ -72,6 +73,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/:install_id/admin-delete", s.AdminDeleteInstall)
 	api.POST("/v1/installs/:install_id/admin-forget", s.ForgetInstall)
 	api.POST("/v1/installs/:install_id/admin-update-sandbox", s.AdminUpdateSandbox)
+	api.POST("/v1/installs/:install_id/admin-teardown-components", s.AdminTeardownInstallComponents)
+	api.POST("/v1/installs/:install_id/admin-deploy-components", s.AdminDeployInstallComponents)
 
 	api.POST("/v1/orgs/:org_id/admin-forget-installs", s.ForgetOrgInstalls)
 	return nil

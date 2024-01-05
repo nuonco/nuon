@@ -5,6 +5,7 @@ resource "nuon_job_component" "e2e" {
     nuon_docker_build_component.e2e.id,
     nuon_container_image_component.e2e.id,
   ]
+
   image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
   tag       = "{{.nuon.components.e2e_docker_build.image.tag}}"
   cmd       = ["printenv"]

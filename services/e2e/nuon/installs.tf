@@ -16,6 +16,8 @@ resource "nuon_install" "east_1" {
 
   depends_on = [
     nuon_app_sandbox.main,
+    nuon_job_component.e2e,
+    nuon_helm_chart_component.e2e,
   ]
 }
 
@@ -37,6 +39,8 @@ resource "nuon_install" "east_2" {
 
   depends_on = [
     nuon_app_sandbox.main,
+    nuon_job_component.e2e,
+    nuon_helm_chart_component.e2e,
   ]
 }
 
@@ -58,5 +62,7 @@ resource "nuon_install" "west_2" {
 
   depends_on = [
     nuon_app_sandbox.main,
+    nuon_job_component.e2e,
+    nuon_helm_chart_component.e2e,
   ]
 }

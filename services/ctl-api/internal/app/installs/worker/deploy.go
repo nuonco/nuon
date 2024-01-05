@@ -11,7 +11,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dryRun bool) error {
+func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, sandboxMode bool) error {
 	var install app.Install
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		InstallID: installID,
@@ -40,7 +40,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 
 	// execute the plan phase here
 	syncImagePlanWorkflowID := fmt.Sprintf("%s-sync-plan-%s", installID, deployID)
-	planResp, err := w.execCreatePlanWorkflow(ctx, dryRun, syncImagePlanWorkflowID, &planv1.CreatePlanRequest{
+	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, syncImagePlanWorkflowID, &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
 				OrgId:     install.App.OrgID,
@@ -61,7 +61,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 	w.updateDeployStatus(ctx, deployID, StatusSyncing, "executing sync plan")
 
 	syncExecuteWorkflowID := fmt.Sprintf("%s-sync-execute-%s", installID, deployID)
-	_, err = w.execExecPlanWorkflow(ctx, dryRun, syncExecuteWorkflowID, &execv1.ExecutePlanRequest{
+	_, err = w.execExecPlanWorkflow(ctx, sandboxMode, syncExecuteWorkflowID, &execv1.ExecutePlanRequest{
 		Plan: planResp.Plan,
 	})
 	if err != nil {
@@ -73,7 +73,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 
 	// execute the plan phase here
 	deployPlanWorkflowID := fmt.Sprintf("%s-deploy-plan-%s", installID, deployID)
-	planResp, err = w.execCreatePlanWorkflow(ctx, dryRun, deployPlanWorkflowID, &planv1.CreatePlanRequest{
+	planResp, err = w.execCreatePlanWorkflow(ctx, sandboxMode, deployPlanWorkflowID, &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
 				OrgId:     install.App.OrgID,
@@ -94,7 +94,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, dry
 	w.updateDeployStatus(ctx, deployID, StatusExecuting, "executing deploy plan")
 
 	deployExecuteWorkflowID := fmt.Sprintf("%s-deploy-execute-%s", installID, deployID)
-	_, err = w.execExecPlanWorkflow(ctx, dryRun, deployExecuteWorkflowID, &execv1.ExecutePlanRequest{
+	_, err = w.execExecPlanWorkflow(ctx, sandboxMode, deployExecuteWorkflowID, &execv1.ExecutePlanRequest{
 		Plan: planResp.Plan,
 	})
 	if err != nil {
