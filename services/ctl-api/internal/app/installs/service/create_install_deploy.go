@@ -103,6 +103,7 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 		Status:            "queued",
 		StatusDescription: "waiting to be deployed to install",
 		ComponentBuildID:  req.BuildID,
+		Type:              app.InstallDeployTypeInstall,
 	}
 	err := s.db.WithContext(ctx).First(&installCmp, "install_id = ?", installID).
 		Association("InstallDeploys").
