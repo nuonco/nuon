@@ -132,3 +132,20 @@ module "shared-commonfate" {
     github = github.nuonco-shared
   }
 }
+
+module "shared-streamkap" {
+  source = "./modules/repository"
+
+  name            = "streamkap"
+  description     = "Nuon configuration for streamkap."
+  required_checks = []
+  owning_team_id  = github_team.nuonco-shared.id
+  is_private = true
+  enable_branch_protection = false
+
+  collaborators = {}
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
