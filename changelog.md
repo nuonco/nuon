@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.11
+
+Promoting auto deploys, graph tooling and some CI changes for the OAPI spec.
+
 ## v0.19.10
 
 Promote new v2/v3 specs, as well as various compatibility changes.
