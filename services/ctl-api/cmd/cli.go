@@ -12,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/validator"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/waypoint"
+	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
 	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	componentsshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
@@ -51,5 +52,6 @@ func (c *cli) providers() []fx.Option {
 		// add app helpers
 		fx.Provide(vcshelpers.New),
 		fx.Provide(componentshelpers.New),
+		fx.Provide(appshelpers.New),
 	}
 }
