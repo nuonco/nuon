@@ -44,6 +44,7 @@ K8S_DEPLOY:
             --values "values.$env.yaml" \
             --set fullnameOverride="$chart_name" \
             --set-string configmap.values.GIT_REF="$EARTHLY_GIT_SHORT_HASH" \
+            --set-string configmap.values.VERSION="$image_tag" \
             --set image.repository="$repository" \
             --set image.tag="$image_tag"
 

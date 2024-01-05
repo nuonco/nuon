@@ -17,6 +17,8 @@ type Docs struct {
 
 func (r *Docs) RegisterRoutes(g *gin.Engine) error {
 	docs.SwaggerInfo.Schemes = []string{"https"}
+	docs.SwaggerInfo.Version = r.cfg.Version
+
 	switch r.cfg.Env {
 	case config.Development:
 		docs.SwaggerInfo.Host = "localhost:8081"
@@ -46,6 +48,7 @@ func (r *Docs) RegisterInternalRoutes(g *gin.Engine) error {
 		admin.SwaggerInfoadmin.Host = "ctl.nuon.us-west-2.stage.nuon.cloud"
 	}
 
+	admin.SwaggerInfoadmin.Version = r.cfg.Version
 	admin.SwaggerInfoadmin.Title = "Nuon Admin API"
 	admin.SwaggerInfoadmin.Schemes = []string{"http"}
 
