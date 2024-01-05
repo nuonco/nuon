@@ -64,6 +64,7 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		StatusDescription:      "waiting to be deployed to install",
 		ComponentBuildID:       step.ComponentRelease.ComponentBuildID,
 		ComponentReleaseStepID: generics.ToPtr(req.ReleaseStepID),
+		Type:                   app.InstallDeployTypeRelease,
 	}
 	err := a.db.WithContext(ctx).Where(&app.InstallComponent{
 		InstallID:   req.InstallID,

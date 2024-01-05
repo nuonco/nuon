@@ -54,5 +54,6 @@ func (w *Workflows) provision(ctx workflow.Context, installID string, dryRun boo
 
 	w.updateStatus(ctx, installID, StatusActive, "install resources provisioned")
 	w.updateRunStatus(ctx, installRun.ID, StatusActive, "install resources provisioned")
+
 	return nil
 }

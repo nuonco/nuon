@@ -54,7 +54,7 @@ func (s *service) UpdateApp(ctx *gin.Context) {
 
 	app, err := s.updateApp(ctx, appID, &req)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get  app%s: %w", appID, err))
+		ctx.Error(fmt.Errorf("unable to update app %s: %w", appID, err))
 		return
 	}
 
