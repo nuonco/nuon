@@ -6,7 +6,7 @@ import (
 )
 
 type Service struct {
-	gitRef string
+	cfg *internal.Config
 }
 
 func (s *Service) RegisterRoutes(api *gin.Engine) error {
@@ -27,6 +27,6 @@ func (s *Service) RegisterInternalRoutes(api *gin.Engine) error {
 
 func New(cfg *internal.Config) (*Service, error) {
 	return &Service{
-		gitRef: cfg.GitRef,
+		cfg: cfg,
 	}, nil
 }
