@@ -8,6 +8,14 @@ import (
 	"gorm.io/plugin/soft_delete"
 )
 
+type InstallDeployType string
+
+const (
+	InstallDeployTypeRelease  InstallDeployType = "release"
+	InstallDeployTypeInstall  InstallDeployType = "install"
+	InstallDeployTypeTeardown InstallDeployType = "teardown"
+)
+
 type InstallDeploy struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
@@ -27,8 +35,9 @@ type InstallDeploy struct {
 	ComponentReleaseStepID *string               `json:"release_id"`
 	ComponentReleaseStep   *ComponentReleaseStep `json:"-"`
 
-	Status            string `json:"status" gorm:"notnull"`
-	StatusDescription string `json:"status_description" gorm:"notnull"`
+	Status            string            `json:"status" gorm:"notnull"`
+	StatusDescription string            `json:"status_description" gorm:"notnull"`
+	Type              InstallDeployType `json:"install_deploy_type"`
 
 	// Fields that are de-nested at read time
 	InstallID     string `json:"install_id" gorm:"-"`

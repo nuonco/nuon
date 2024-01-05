@@ -2,33 +2,20 @@ package worker
 
 import (
 	"errors"
-	"fmt"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
 
-const (
-	EventLoopWorkflowName string = "InstallEventLoop"
-)
-
-func EventLoopWorkflowID(installID string) string {
-	return fmt.Sprintf("%s-event-loop", installID)
-}
-
-type InstallEventLoopRequest struct {
-	InstallID   string
-	SandboxMode bool
-}
-
-func (w *Workflows) InstallEventLoop(ctx workflow.Context, req InstallEventLoopRequest) error {
+func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEventLoopRequest) error {
 	l := workflow.GetLogger(ctx)
 
 	finished := false
 	signalChan := workflow.GetSignalChannel(ctx, req.InstallID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
-		var signal Signal
+		var signal signals.Signal
 		channelOpen := channel.Receive(ctx, &signal)
 		if !channelOpen {
 			l.Info("channel was closed")
@@ -41,40 +28,52 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req InstallEventLoopR
 
 		var err error
 		switch signal.Operation {
-		case OperationPollDependencies:
+		case signals.OperationPollDependencies:
 			err = w.pollDependencies(ctx, req.InstallID)
 			if err != nil {
 				l.Error("unable to poll dependencies", zap.Error(err))
 				return
 			}
-		case OperationProvision:
+		case signals.OperationProvision:
 			err = w.provision(ctx, req.InstallID, req.SandboxMode)
 			if err != nil {
 				l.Error("unable to provision", zap.Error(err))
 				return
 			}
-		case OperationReprovision:
+		case signals.OperationReprovision:
 			err = w.reprovision(ctx, req.InstallID, req.SandboxMode)
 			if err != nil {
 				l.Error("unable to reprovision", zap.Error(err))
 				return
 			}
-		case OperationDelete:
+		case signals.OperationDelete:
 			err = w.delete(ctx, req.InstallID, req.SandboxMode)
 			if err != nil {
 				l.Error("unable to delete", zap.Error(err))
 				return
 			}
 			finished = true
-		case OperationDeprovision:
+		case signals.OperationDeprovision:
 			err = w.deprovision(ctx, req.InstallID, req.SandboxMode)
 			if err != nil {
 				l.Error("unable to deprovision", zap.Error(err))
 				return
 			}
-		case OperationForgotten:
+		case signals.OperationForgotten:
 			finished = true
-		case OperationDeploy:
+		case signals.OperationDeployComponents:
+			err = w.deployComponents(ctx, req.InstallID, req.SandboxMode, signal.Async)
+			if err != nil {
+				l.Error("unable to queue deploys for components", zap.Error(err))
+				return
+			}
+		case signals.OperationTeardownComponents:
+			err = w.teardownComponents(ctx, req.InstallID, req.SandboxMode, signal.Async)
+			if err != nil {
+				l.Error("unable to queue teardown deploys for components", zap.Error(err))
+				return
+			}
+		case signals.OperationDeploy:
 			err = w.deploy(ctx, req.InstallID, signal.DeployID, req.SandboxMode)
 			if err != nil {
 				l.Error("unable to deploy", zap.Error(err))
