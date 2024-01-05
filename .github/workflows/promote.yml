@@ -108,7 +108,7 @@ jobs:
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
-      tag: ${{ needs.tag.outputs.git_ref }}
+      tag: ${{ needs.tag.outputs.semver }}
       prod: true
       stage: true
     secrets: inherit
