@@ -8,6 +8,7 @@ import (
 
 func (s *Service) GetVersionHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, map[string]interface{}{
-		"git_ref": s.gitRef,
+		"version": s.cfg.Version,
+		"git_ref": s.cfg.GitRef,
 	})
 }

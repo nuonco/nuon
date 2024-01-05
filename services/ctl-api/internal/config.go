@@ -33,7 +33,9 @@ type Config struct {
 	worker.Config `config:",squash"`
 
 	// configs for starting and introspecting service
-	GitRef           string `config:"git_ref" validate:"required"`
+	GitRef  string `config:"git_ref" validate:"required"`
+	Version string `config:"version" validate:"required"`
+
 	ServiceName      string `config:"service_name" validate:"required"`
 	HTTPPort         string `config:"http_port" validate:"required"`
 	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
