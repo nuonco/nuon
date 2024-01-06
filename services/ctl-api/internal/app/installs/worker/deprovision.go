@@ -28,6 +28,8 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
+	w.updateRunStatus(ctx, installRun.ID, StatusDeprovisioning, "deprovisioning")
+
 	req, err := w.protos.ToInstallDeprovisionRequest(&install, installRun.ID)
 	if err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to create install deprovision request")
@@ -42,6 +44,8 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 		return fmt.Errorf("unable to deprovision install: %w", err)
 	}
 
+	w.updateStatus(ctx, installID, StatusDeprovisioned, "successfully deprovisioned")
+	w.updateRunStatus(ctx, installRun.ID, StatusActive, "successfully deprovisioned")
 	return nil
 
 }

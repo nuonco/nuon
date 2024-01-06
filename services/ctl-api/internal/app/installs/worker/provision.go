@@ -30,6 +30,8 @@ func (w *Workflows) provision(ctx workflow.Context, installID string, dryRun boo
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
+	w.updateRunStatus(ctx, installRun.ID, StatusProvisioning, "provisioning")
+
 	req, err := w.protos.ToInstallProvisionRequest(&install, installRun.ID)
 	if err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to create install provision request")
