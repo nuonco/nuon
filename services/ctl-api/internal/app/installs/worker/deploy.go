@@ -73,6 +73,12 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 
 	// execute the plan phase here
 	deployPlanWorkflowID := fmt.Sprintf("%s-deploy-plan-%s", installID, deployID)
+
+	deployPlanTyp := planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY
+	if installDeploy.Type == app.InstallDeployTypeTeardown {
+		deployPlanTyp = planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DESTROY
+	}
+
 	planResp, err = w.execCreatePlanWorkflow(ctx, sandboxMode, deployPlanWorkflowID, &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
@@ -82,7 +88,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 				BuildId:   installDeploy.ComponentBuildID,
 				DeployId:  deployID,
 				Component: &deployCfg,
-				Type:      planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_DEPLOY,
+				Type:      deployPlanTyp,
 			},
 		},
 	})

@@ -15,6 +15,7 @@ const (
 	StatusActive         Status = "active"
 	StatusProvisioning   Status = "provisioning"
 	StatusDeprovisioning Status = "deprovisioning"
+	StatusDeprovisioned  Status = "deprovisioned"
 
 	StatusSyncing   Status = "syncing"
 	StatusExecuting Status = "executing"
