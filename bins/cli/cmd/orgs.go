@@ -126,5 +126,15 @@ func (c *cli) orgsCmd() *cobra.Command {
 	selectOrgCmd.Flags().StringVar(&id, "org", "", "The ID of the org you want to use")
 	orgsCmd.AddCommand(selectOrgCmd)
 
+	orgsCmd.AddCommand(&cobra.Command{
+		Use:   "print-config",
+		Short: "Print the current cli config",
+		Long:  "Print the current cli config being used",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient, c.cfg)
+			svc.PrintConfig(PrintJSON)
+		},
+	})
+
 	return orgsCmd
 }
