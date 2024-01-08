@@ -1,0 +1,24 @@
+---
+title: 'Getting Started'
+description: 'Get started using the Nuon API endpoints'
+---
+
+You'll need an access token to use the Nuon API. You can get an access token by logging in via the Nuon [dashboard][1] or the Nuon CLI.
+
+To get your access token via the Nuon CLI, first login
+
+```sh
+nuon login
+```
+
+then view the API token
+
+```sh
+nuon orgs api-token
+```
+
+## Using the API Reference
+
+You can call the Nuon API endpoints from the API Reference by adding `Bearer <your-api-token>` to the "Authorization" field in each endpoint card. Verify you're API token with the [current-user](/api-ref/general/get-current-user) endpoint.
+
+[1]: https://app.nuon.co
