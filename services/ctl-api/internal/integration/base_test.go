@@ -119,21 +119,35 @@ func (s *baseIntegrationTestSuite) createAppWithInputs(orgID string) *models.App
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), app)
 
+	s.createAppSandboxConfig(app.ID)
+	s.createAppRunnerConfig(app.ID)
+
+	inputReq := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
+	cfg, err := s.apiClient.CreateAppInputConfig(s.ctx, app.ID, inputReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), cfg)
+
+	return app
+}
+
+func (s *baseIntegrationTestSuite) createAppSandboxConfig(appID string) {
 	// create app sandbox config
 	cfgReq := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
 	cfgReq.SandboxReleaseID = ""
 	cfgReq.ConnectedGithubVcsConfig = nil
 
-	cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, app.ID, cfgReq)
+	cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, appID, cfgReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), cfg)
+}
 
-	inputReq := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
-	_, err = s.apiClient.CreateAppInputConfig(s.ctx, app.ID, inputReq)
+func (s *baseIntegrationTestSuite) createAppRunnerConfig(appID string) {
+	// create app runner config
+	runnerCfgReq := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
+
+	runnerCfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, appID, runnerCfgReq)
 	require.NoError(s.T(), err)
-	require.NotNil(s.T(), cfg)
-
-	return app
+	require.NotNil(s.T(), runnerCfg)
 }
 
 func (s *baseIntegrationTestSuite) createApp() *models.AppApp {
@@ -142,15 +156,8 @@ func (s *baseIntegrationTestSuite) createApp() *models.AppApp {
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), app)
 
-	// create app sandbox config
-	cfgReq := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-	cfgReq.SandboxReleaseID = ""
-	cfgReq.ConnectedGithubVcsConfig = nil
-
-	cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, app.ID, cfgReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), cfg)
-
+	s.createAppSandboxConfig(app.ID)
+	s.createAppRunnerConfig(app.ID)
 	return app
 }
 
