@@ -24,8 +24,11 @@ type Install struct {
 	Status            string `json:"status" gorm:"notnull"`
 	StatusDescription string `json:"status_description" gorm:"notnull"`
 
-	AppSandboxConfigID string           `json:"-"`
+	AppSandboxConfigID string           `json:"-" swaggerignore:"true"`
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config"`
+
+	AppRunnerConfigID string          `json:"-" swaggerignore:"true"`
+	AppRunnerConfig   AppRunnerConfig `json:"app_runner_config"`
 
 	InstallComponents  []InstallComponent  `json:"install_components,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallSandboxRuns []InstallSandboxRun `json:"install_sandbox_runs,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
