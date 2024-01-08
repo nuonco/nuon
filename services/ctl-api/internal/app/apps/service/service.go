@@ -44,6 +44,11 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id/sandbox-latest-config", s.GetAppSandboxLatestConfig)
 	api.GET("/v1/apps/:app_id/sandbox-configs", s.GetAppSandboxConfigs)
 
+	// app runner management
+	api.POST("/v1/apps/:app_id/runner-config", s.CreateAppRunnerConfig)
+	api.GET("/v1/apps/:app_id/runner-latest-config", s.GetAppRunnerLatestConfig)
+	api.GET("/v1/apps/:app_id/runner-configs", s.GetAppRunnerConfigs)
+
 	// app input management
 	api.POST("/v1/apps/:app_id/input-config", s.CreateAppInputsConfig)
 	api.GET("/v1/apps/:app_id/input-latest-config", s.GetAppInputLatestConfig)

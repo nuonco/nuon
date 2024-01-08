@@ -45,6 +45,7 @@ func (d *Docs) loadOAPI2AdminSpec() (*openapi2.T, error) {
 		return nil, fmt.Errorf("unable to convert open api spec to json: %w", err)
 	}
 	addSpecTags(&doc)
+	removeSecurity(&doc)
 
 	return &doc, nil
 }
