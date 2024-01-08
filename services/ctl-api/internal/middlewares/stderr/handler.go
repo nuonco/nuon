@@ -82,7 +82,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
-			if pgErr.Code == "25303" {
+			if pgErr.Code == "25303" || pgErr.Code == "23503" {
 				c.JSON(http.StatusBadRequest, ErrResponse{
 					Error:       err.Error(),
 					UserError:   true,
@@ -90,6 +90,8 @@ func (m *middleware) Handler() gin.HandlerFunc {
 				})
 				return
 			}
+
+			panic("sql error not caught" + pgErr.Code)
 		}
 
 		// validation errors for any request inputs

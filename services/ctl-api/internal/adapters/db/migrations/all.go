@@ -41,5 +41,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "008-install-deploy-types",
 			Fn:   a.migration008InstallDeployType,
 		},
+		{
+			Name: "009-add-app-runner-configs",
+			Fn:   a.migration009AddAppRunnerConfigs,
+		},
 	}
 }

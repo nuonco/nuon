@@ -53,6 +53,9 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 			return db.Order("app_input_configs.created_at DESC")
 		}).
 		Preload("AppInputConfigs.AppInputs").
+		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_runner_configs.created_at DESC")
+		}).
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).

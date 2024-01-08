@@ -43,6 +43,7 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		// apps
 		&app.App{},
 		&app.AppSandboxConfig{},
+		&app.AppRunnerConfig{},
 		&app.AppInput{},
 		&app.AppInputConfig{},
 		&app.AppInstaller{},
