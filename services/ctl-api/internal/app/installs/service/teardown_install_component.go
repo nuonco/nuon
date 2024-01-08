@@ -11,6 +11,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
+// TODO: add this back as a param to the spec.
+// Either make this a DELETE method (which it arguably should be,)
+// or get a fix merged to the elixir openapi SDK generate to handle empty request types.
 type TeardownInstallComponentRequest struct{}
 
 func (c *TeardownInstallComponentRequest) Validate(v *validator.Validate) error {
