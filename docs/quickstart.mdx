@@ -3,38 +3,57 @@ title: 'Quickstart'
 description: "Create a fully managed version of your app that runs in your customer’s cloud account."
 ---
 
-## At a glance
+## At a Glance
 
-Nuon offers two primary methods for configuring and managing your app: the Nuon CLI and the Nuon Terraform provider or the Nuon API. This guide will concentrate on the former, as it is the quickest way to begin using Nuon.
+Nuon provides two primary methods for configuring and managing your app: the Nuon CLI and the Nuon Terraform provider or the Nuon API. This guide will focus on the former, as it is the quickest way to start using Nuon.
 
 In this quickstart guide, we will first install the Nuon CLI and Terraform providers. Next, we'll create an account and optionally link it to GitHub. After that, we'll configure your app, create installs using Terraform, and finally, release your app.
 
-## Installing the CLI and Terraform provider
+## Installing the CLI and Terraform Provider
 
 You can install our CLI with the following command:
-
 ```sh
 $ echo "y" | /bin/bash -c "$(curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)"
 ```
 
-## Create your account
+You can run `nuon version` to verify it's been installed.
+
+## Forking the Quickstart Repository
+
+Ultimately, this guide will have you releasing an example application in our [quickstart repository][1], so we suggest forking the [quickstart repository][1].
+
+## Create Your Account
+
+Once you've installed the Nuon CLI, we'll want to create a Nuon account by logging in.
+
 ```sh
 nuon login
 ```
 
+Follow the prompts in the browser and login using a Google account. _We plan to support other identity providers in the near future._
+
+Once you've logged in you can verify you're Nuon token with the `nuon orgs api-token` command. If you're logged in you should see you're Nuon access token.
+
 ## Create an org
+Now that you're logged in you can create your first Org. We'll create this Org in `--sandbox-mode`, which means we won't actually be creating cloud resources in the background. The purpose of sandbox mode is to allow you to test your app configuration without needing to wait on actual cloud resources. 
 
 ```sh
-nuon orgs create --name --sandbox-mode
+nuon orgs create --name {your-org-name} --sandbox-mode
 ```
 
+You can view the new Org using the `nuon orgs current` command.
+
 ### (Optional) Connect a GitHub account
+While connecting a GitHub account isn't necessary you will more than likely be deploying applications from your source code. You can limit the connection to a single repository ([quickstart fork][#forking-the-quickstart-repo]) and can disconnect from within your GitHub settings whenever you'd like.
+
 ```sh
 nuon orgs connect-github
 ```
 
+When you've completed the connection flow you should be able to list your connected repos using the `nuon orgs list-connected-repos` command.
+
 ## Configure your app using Terraform
-tktk
+
 
 ### Creating your app
 <CodeGroup>
@@ -66,7 +85,6 @@ variable "example" {
 </CodeGroup>
 
 ### Configuring your app's components
-tktk
 
 ### Creating installs of your app
 
@@ -100,11 +118,11 @@ variable "public_domain_zone_id" {
 
 </CodeGroup>
 
-### TKTK Plan/Apply
-tktk
+### Plan/Apply
 
 ## Releasing your app
-tktk
+
+Now that you've configured your app and have some installs created we can release your app. To do this we have two steps to complete, first we will build the app components then deploy the artifacts to the installs.
 
 ### Create a build
 ```sh
@@ -116,3 +134,4 @@ nuon builds create -c {component-name || component-id}
 nuon releases create -c {component-name || component-id}
 ```
 
+[1]: https://github.com/nuonco/quickstart
