@@ -1,21 +1,29 @@
 package orgs
 
-import "github.com/powertoolsdev/mono/bins/cli/internal/ui"
+import (
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/pterm/pterm"
+)
 
 func (s *Service) PrintConfig(asJSON bool) {
 	view := ui.NewGetView()
 
 	settings := s.cfg.AllSettings()
-
-	if asJSON {
-		ui.PrintJSON(settings)
+	if len(settings) == 0 {
+		pterm.DefaultBasicText.Println("No config set")
 		return
-	}
+	} else {
 
-	view.Render([][]string{
-		{"Org ID", settings["org_id"].(string)},
-		{"App ID", settings["app_id"].(string)},
-		{"Install ID", settings["install_id"].(string)},
-		{"API Token", settings["api_token"].(string)},
-	})
+		if asJSON {
+			ui.PrintJSON(settings)
+			return
+		}
+
+		var data = [][]string{}
+		for k, v := range settings {
+			data = append(data, []string{k, v.(string)})
+		}
+
+		view.Render(data)
+	}
 }
