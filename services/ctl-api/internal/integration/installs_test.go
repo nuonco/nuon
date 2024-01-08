@@ -75,8 +75,26 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 		require.NoError(t, err)
 		require.NotNil(t, app)
 
+		s.createAppRunnerConfig(app.ID)
+
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 		fakeReq.AwsAccount.Region = "us-west-2"
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		require.Error(t, err)
+		require.Nil(t, install)
+	})
+
+	s.T().Run("errors when no app runner config exists", func(t *testing.T) {
+		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		app, err := s.apiClient.CreateApp(s.ctx, appReq)
+		require.NoError(t, err)
+		require.NotNil(t, app)
+
+		s.createAppSandboxConfig(app.ID)
+
+		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
+		fakeReq.AwsAccount.Region = "us-west-2"
+
 		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.Error(t, err)
 		require.Nil(t, install)

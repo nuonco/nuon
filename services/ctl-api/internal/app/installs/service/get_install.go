@@ -51,6 +51,7 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("App").
 		Preload("App.Org").
 		Preload("AppSandboxConfig").
+		Preload("AppRunnerConfig").
 		Where("name = ? AND org_id = ?", installID, orgID).
 		Or("id = ?", installID).
 		First(&install)
