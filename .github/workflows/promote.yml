@@ -117,11 +117,15 @@ jobs:
     name: Update SDKs
     needs:
       - services
-    uses: peter-evans/repository-dispatch@v1
-    with:
-        token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
-        repository: nuonco/nuon-elixir
-        event-type: generate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Elixir
+        uses: peter-evans/repository-dispatch@v1
+        with:
+            token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
+            repository: nuonco/nuon-elixir
+            event-type: generate
 
   artifacts:
     # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
