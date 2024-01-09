@@ -6,7 +6,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/cmd"
 )
 
-// @title			Nuon API
+// @title			Nuon
 // @version		1.0.0
 // @description	API for managing nuon apps and installs.
 // @contact.name	Nuon Support
