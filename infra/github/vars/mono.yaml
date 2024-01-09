@@ -53,7 +53,9 @@ required_checks:
   - Terraform Cloud/nuonco/sandboxes
 
   # terraform cloud e2e checks
-  - Terraform Cloud/nuonco/e2e-prod
+  # NOTE(jm): we can not enforce e2e-prod as a status, as that precludes us from shipping full features to stage, before
+  # promoting to prod.
+  #- Terraform Cloud/nuonco/e2e-prod
   - Terraform Cloud/nuonco/e2e-stage
 
   # terraform cloud services
