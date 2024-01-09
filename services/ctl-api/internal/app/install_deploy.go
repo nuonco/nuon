@@ -39,7 +39,7 @@ type InstallDeploy struct {
 	StatusDescription string            `json:"status_description" gorm:"notnull"`
 	Type              InstallDeployType `json:"install_deploy_type"`
 
-	// Fields that are de-nested at read time
+	// Fields that are de-nested at read time using AfterQuery
 	InstallID     string `json:"install_id" gorm:"-"`
 	ComponentID   string `json:"component_id" gorm:"-"`
 	ComponentName string `json:"component_name" gorm:"-"`
@@ -49,5 +49,12 @@ func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewDeployID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
+	return nil
+}
+
+func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
+	c.InstallID = c.InstallComponent.InstallID
+	c.ComponentID = c.InstallComponent.ComponentID
+	c.ComponentName = c.InstallComponent.Component.Name
 	return nil
 }
