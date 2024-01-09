@@ -54,6 +54,7 @@ func (s *service) getComponentBuilds(ctx context.Context, cmpID string) ([]app.C
 			return db.Order("component_builds.created_at DESC")
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
+		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection").
 		First(&cmp, "id = ?", cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
