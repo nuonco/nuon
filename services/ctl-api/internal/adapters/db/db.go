@@ -112,5 +112,9 @@ func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (*gorm.DB, 
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
 
+	if err := database.registerPlugins(db); err != nil {
+		return nil, fmt.Errorf("unable to register plugins: %w", err)
+	}
+
 	return db, err
 }

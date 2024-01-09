@@ -14,7 +14,8 @@ import (
 )
 
 type CreateComponentReleaseRequest struct {
-	BuildID string `json:"build_id"`
+	BuildID   string `json:"build_id" validate:"required_without=AutoBuild"`
+	AutoBuild bool   `json:"auto_build" validate:"required_without=BuildID"`
 
 	Strategy struct {
 		InstallsPerStep int    `json:"installs_per_step"`
@@ -65,17 +66,17 @@ func (s *service) CreateComponentRelease(ctx *gin.Context) {
 		return
 	}
 
-	app, err := s.createRelease(ctx, cmpID, &req)
+	rel, err := s.createRelease(ctx, cmpID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create release: %w", err))
 		return
 	}
 
-	s.hooks.Created(ctx, app.ID, org.SandboxMode)
-	ctx.JSON(http.StatusCreated, app)
+	s.hooks.Created(ctx, rel.ID, org.SandboxMode)
+	ctx.JSON(http.StatusCreated, rel)
 }
 
-func (s *service) createReleaseSteps(installs []app.Install, req *CreateComponentReleaseRequest) ([]*app.ComponentReleaseStep, error) {
+func (s *service) createReleaseSteps(installs []app.Install, req *CreateComponentReleaseRequest) ([]app.ComponentReleaseStep, error) {
 	installIDs := installsToIDSlice(installs)
 
 	installsPerStep := req.Strategy.InstallsPerStep
@@ -84,9 +85,9 @@ func (s *service) createReleaseSteps(installs []app.Install, req *CreateComponen
 	}
 	stepInstalls := generics.SliceToGroups(installIDs, installsPerStep)
 
-	steps := make([]*app.ComponentReleaseStep, 0)
+	steps := make([]app.ComponentReleaseStep, 0)
 	for _, grp := range stepInstalls {
-		step := &app.ComponentReleaseStep{
+		step := app.ComponentReleaseStep{
 			Status:              "queued",
 			StatusDescription:   "queued",
 			RequestedInstallIDs: grp,
@@ -119,28 +120,25 @@ func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateCo
 		return nil, fmt.Errorf("unable to create release steps: %w", err)
 	}
 
-	// create the component release
-	release := app.ComponentRelease{
-		Status:            "queued",
-		StatusDescription: "queued and waiting for event loop to process",
-	}
-	bld := app.ComponentBuild{}
-	err = s.db.WithContext(ctx).
-		First(&bld, "id = ?", req.BuildID).
-		Association("ComponentReleases").
-		Append(&release)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create build for component: %w", err)
+	buildID := req.BuildID
+	if req.AutoBuild {
+		build, err := s.compHelpers.CreateComponentBuild(ctx, cmpID, true, nil)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create component build: %w", err)
+		}
+		buildID = build.ID
 	}
 
-	// append the steps into the association
-	var rel app.ComponentRelease
-	err = s.db.WithContext(ctx).
-		First(&rel, "id = ?", release.ID).
-		Association("ComponentReleaseSteps").
-		Append(generics.ToIntSlice(steps)...)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create release steps: %w", err)
+	// create the component release
+	release := app.ComponentRelease{
+		Status:                "queued",
+		StatusDescription:     "queued and waiting for event loop to process",
+		ComponentBuildID:      buildID,
+		ComponentReleaseSteps: steps,
+	}
+	res = s.db.WithContext(ctx).Create(&release)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create release: %w", res.Error)
 	}
 
 	// create release and steps, according to the inputs
