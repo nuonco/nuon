@@ -213,6 +213,28 @@ func (s *componentBuildsSuite) TestGetComponentBuild() {
 	})
 }
 
+func (s *componentBuildsSuite) TestGetBuild() {
+	bldReq := generics.GetFakeObj[*models.ServiceCreateComponentBuildRequest]()
+	bldReq.GitRef = "head"
+	bldReq.UseLatest = false
+	bld, err := s.apiClient.CreateComponentBuild(s.ctx, s.compID, bldReq)
+	require.Nil(s.T(), err)
+	require.NotNil(s.T(), bld)
+
+	s.T().Run("returns build", func(t *testing.T) {
+		returnedBld, err := s.apiClient.GetBuild(s.ctx, bld.ID)
+		require.Nil(t, err)
+		require.Equal(t, bld.ID, returnedBld.ID)
+		require.Equal(t, s.compID, returnedBld.ComponentID)
+	})
+
+	s.T().Run("errors when build does not exist", func(t *testing.T) {
+		returnedBld, err := s.apiClient.GetBuild(s.ctx, generics.GetFakeObj[string]())
+		require.Error(t, err)
+		require.Nil(t, returnedBld)
+	})
+}
+
 func (s *componentBuildsSuite) TestGetComponentBuildLogs() {
 	s.T().Skip("not currently implemented")
 }

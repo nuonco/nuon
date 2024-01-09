@@ -30,11 +30,19 @@ type ComponentBuild struct {
 	Status            string  `json:"status" gorm:"notnull"`
 	StatusDescription string  `json:"status_description" gorm:"notnull"`
 	GitRef            *string `json:"git_ref"`
+
+	// Read-only fields set on the object to de-nest data
+	ComponentID string `gorm:"-" json:"component_id"`
 }
 
 func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewBuildID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
+	return nil
+}
+
+func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
+	c.ComponentID = c.ComponentConfigConnection.ComponentID
 	return nil
 }
