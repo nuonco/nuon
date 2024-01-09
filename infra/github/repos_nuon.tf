@@ -91,6 +91,20 @@ module "nuon-elixir" {
   }
 }
 
+module "nuon-python" {
+  source           = "./modules/repository"
+  name             = "nuon-python"
+  description      = "An SDK for integrating with Nuon from Python."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
+
 module "nuon-sandboxes" {
   source           = "./modules/repository"
   name             = "sandboxes"
