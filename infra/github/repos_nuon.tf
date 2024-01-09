@@ -78,10 +78,13 @@ module "nuon-go" {
 }
 
 module "nuon-elixir" {
-  source           = "./modules/repository"
-  name             = "nuon-elixir"
-  description      = "An SDK for integrating with Nuon from Elixir."
-  required_checks  = []
+  source      = "./modules/repository"
+  name        = "nuon-elixir"
+  description = "An SDK for integrating with Nuon from Elixir."
+  required_checks = [
+    "check-pr / Run PR checks",
+    "check-pr / Update PR status",
+  ]
   is_public        = true
   owning_team_id   = github_team.nuon.id
   owning_team_name = "nuonco/${github_team.nuon.name}"
@@ -92,10 +95,13 @@ module "nuon-elixir" {
 }
 
 module "nuon-python" {
-  source           = "./modules/repository"
-  name             = "nuon-python"
-  description      = "An SDK for integrating with Nuon from Python."
-  required_checks  = []
+  source      = "./modules/repository"
+  name        = "nuon-python"
+  description = "An SDK for integrating with Nuon from Python."
+  required_checks = [
+    "check-pr / Run PR checks",
+    "check-pr / Update PR status",
+  ]
   is_public        = true
   owning_team_id   = github_team.nuon.id
   owning_team_name = "nuonco/${github_team.nuon.name}"
