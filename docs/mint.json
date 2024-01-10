@@ -60,7 +60,7 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["quickstart"]
+    "pages": ["quickstart", "what-is-nuon", "glossary"]
     },
     {
       "group": "Guides",
