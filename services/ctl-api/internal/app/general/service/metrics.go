@@ -12,7 +12,12 @@ type PublishMetricInput struct {
 	Incr   *metrics.Incr   `json:"incr"`
 	Decr   *metrics.Decr   `json:"decr"`
 	Timing *metrics.Timing `json:"timing"`
-	Event  *metrics.Event  `json:"event"`
+	// TODO: remove this after test
+	// Just making a non-functional change to create a promotion PR.
+	// Generating the python SDK locally, with no changes, actually fixed the synax error.
+	// This may be an edge case that only happens on the first generation, when it creates all the files from scratch.
+	// If this doesn't fix it, I'll try moving this statsd stuff to the admin api.
+	Event *metrics.Event `json:"event"`
 }
 
 func (m PublishMetricInput) write(mw metrics.Writer) {
