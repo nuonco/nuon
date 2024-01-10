@@ -4,6 +4,7 @@ locals {
   issue_labels = [
     { name : "bug", color : "77b800", desc : "A bug." },
     { name : "improvement", color : "eb9500", desc : "A QOL improvement such as improving linting, refactoring etc." },
+    { name : "auto-merge", color : "FF0000", desc : "Automatically merge this PR if it passes all PR checks." },
   ]
 }
 
