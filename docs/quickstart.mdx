@@ -7,131 +7,138 @@ description: "Create a fully managed version of your app that runs in your custo
 
 Nuon provides two primary methods for configuring and managing your app: the Nuon CLI and the Nuon Terraform provider or the Nuon API. This guide will focus on the former, as it is the quickest way to start using Nuon.
 
-In this quickstart guide, we will first install the Nuon CLI and Terraform providers. Next, we'll create an account and optionally link it to GitHub. After that, we'll configure your app, create installs using Terraform, and finally, release your app.
+In this quickstart guide, we will first install the Nuon CLI and Terraform providers. Next, we'll create an account and link it to GitHub. After that, we'll configure your app, create installs using Terraform, and finally, release your app.
 
 ## Installing the CLI and Terraform Provider
 
 You can install our CLI with the following command:
-```sh
-$ echo "y" | /bin/bash -c "$(curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)"
+```sh terminal
+echo "y" | /bin/bash -c "$(curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)"
 ```
 
 You can run `nuon version` to verify it's been installed.
 
 ## Forking the Quickstart Repository
 
-Ultimately, this guide will have you releasing an example application in our [quickstart repository][1], so we suggest forking the [quickstart repository][1].
+Ultimately, this guide will have you releasing an example application in our [quickstart repository][1], so you should fork and clone the [quickstart repository][1].
 
 ## Create Your Account
 
 Once you've installed the Nuon CLI, we'll want to create a Nuon account by logging in.
 
-```sh
+```sh nuon cli
 nuon login
 ```
 
-Follow the prompts in the browser and login using a Google account. _We plan to support other identity providers in the near future._
+Follow the prompts in the browser and login using a Google account. _Nuon plans to support other identity providers in the near future._
 
 Once you've logged in you can verify you're Nuon token with the `nuon orgs api-token` command. If you're logged in you should see you're Nuon access token.
 
-## Create an org
-Now that you're logged in you can create your first Org. We'll create this Org in `--sandbox-mode`, which means we won't actually be creating cloud resources in the background. The purpose of sandbox mode is to allow you to test your app configuration without needing to wait on actual cloud resources.
+## Create an Org
+Now that you're logged in you can create your first Org. You'll create this Org in `--sandbox-mode`, which means it won't actually be creating cloud resources in the background. The purpose of sandbox mode is to allow you to test your app configuration without needing to wait on actual cloud resources. 
 
-```sh
+```sh nuon cli
 nuon orgs create --name {your-org-name} --sandbox-mode
 ```
 
 You can view the new Org using the `nuon orgs current` command.
 
-### (Optional) Connect a GitHub account
+### Connect a GitHub account
 While connecting a GitHub account isn't necessary you will more than likely be deploying applications from your source code. You can limit the connection to a single repository ([quickstart fork][#forking-the-quickstart-repo]) and can disconnect from within your GitHub settings whenever you'd like.
 
-```sh
+```sh nuon cli
 nuon orgs connect-github
 ```
 
 When you've completed the connection flow you should be able to list your connected repos using the `nuon orgs list-connected-repos` command.
 
-## Configure your app using Terraform
+## Configure your App using Terraform
+You'll now configure your application using the [Nuon Terraform provider][2]. While you can configure your App through our [API][3] we recommend using our Terraform provider so your Nuon App configuration is kept in version control.
 
+### Configuring your App
+From the `./nuon` directory you'll first rename the `/terraform.tfvars.example` file to `/terraform.tfvars` and update your repo name to match your fork.
 
-### Creating your app
 <CodeGroup>
 
-```hcl outputs.tf
-output "example" {
-  value = module.example
-}
+```hcl terraform.tfvars
+example_app_repo = "https://github.com/{your-account}/{your-repo}"
+install_count = 0
+install_region = "us-west-2"
+install_iam_role_arn = ""
 ```
-
-```hcl inputs.tf
-variable "example" {
-  type        = string
-  description = "example tf file"
-}
-```
-
-```hcl data.tf
-data "example" "current" {}
-```
-
-```hcl variables.tf
-variable "example" {
-  type        = string
-  description = "example tf file"
-}
-```
-
 </CodeGroup>
 
-### Configuring your app's components
+Run `terraform init`, `terraform plan` and `terraform apply`, just as you would for any other Terraform project. 
 
-### Creating installs of your app
+This will create an example App which you can view with the Nuon CLI using the `nuon apps ls` command.
 
-<CodeGroup>
+Now use the CLI to set your new App as the current one.
 
 ```sh nuon cli
-nuon installs create -n quickstart -r us-east-1 -o {aws-iam-role} --inputs eks_version=lastest
+nuon apps select
 ```
 
-```hcl variables.tf
-variable "install_id" {
-  type        = string
-  description = "install_id"
-}
+Now you can take a look at your Components.
 
-variable "region" {
-  type        = string
-  description = "region"
-}
-
-variable "public_domain" {
-  type        = string
-  description = "the root domain for the install. Usually {{.nuon.install.public_domain}}"
-}
-
-variable "public_domain_zone_id" {
-  type        = string
-  description = "the zone id for the public domain for the install"
-}
+```sh nuon cli
+nuon components ls
 ```
 
+You can inspect your individual Components by either their ID or name (e.g. `nuon components get -c dockerfile`).
+
+### Creating an Install of your App
+An install is a sandbox, with an instance of your app running in it. A sandbox defines the environment your app runs in. Currently, we have a pre-built sandbox that provides a VPC, an EKS cluster, and a Route53 zone. You don't need to own the AWS account you want to install to. Nuon just needs an IAM role with the requisite permissions to create a sandbox. You'll then be able to deploy your app to that sandbox, and will have a running install.
+
+To enable you to provide the best possible experience for your customers, we offer 2 ways to set up that IAM role.
+
+#### IAM with Terraform
+
+If you have admin access to the AWS account, there's a Terraform project in `./install-roles/terraform` directory you can use.
+
+1. Authenticate with whatever AWS account you want to create the install in.
+1. Run `terraform init`, `terraform plan`, and `terraform apply`, just as you would for any other Terraform project.
+
+#### Cloudformation Quick-Create
+
+If you do not have admin access to the AWS account, you can share a [Cloudformation Quick-Create](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html) link with someone who does.
+
+[Click here](https://us-west-2.console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateUrl=https://nuon-sandbox-boostrap-poc.s3.us-west-2.amazonaws.com/index.yaml&stackName=install-roles) to see an example of how this works. The Cloudformation template used for this can be found in [./install-roles/cloudformation-quickcreate](https://github.com/nuonco/quickstart/install-roles/cloudformation-quickcreate), which you can use to set up your own Quick-Create URL.
+
+
+### Creating the Install
+
+Once the IAM role has been created, you can use it with Terraform to create the Install. From the `./nuon` directory, you'll update the `terraform.tfvars` file with `install_count = 1` and `install_iam_role_arn = "{your-iam-arn}"`.
+
+<CodeGroup>
+
+```hcl terraform.tfvars
+example_app_repo = "https://github.com/{your-account}/{your-repo}"
+install_count = 1
+install_region = "us-west-2"
+install_iam_role_arn = "{your-iam-arn}"
+```
 </CodeGroup>
 
-### Plan/Apply
+Run `terraform init`, `terraform plan`, and `terraform apply`, just as you would for any other Terraform project.
+
+Now you can view the Install with the CLI with the `nuon installs ls` command.
+
+You can create as many Installs as you'd like. Having more than one will give you a fuller picture of what Nuon does.
 
 ## Releasing your app
 
-Now that you've configured your app and have some installs created we can release your app. To do this we have two steps to complete, first we will build the app components then deploy the artifacts to the installs.
+Now that you've configured your App and have some Installs created we can release your application. You can do this as two discret steps by building your application and then releasing it but we will use the shorthand way by creating a release with an `--auto-build` flag.
 
-### Create a build
-```sh
-nuon builds create -c {component-name || component-id}
+```sh nuon cli
+nuon releases create --auto-build -c dockerfile
 ```
 
-### Create a release
-```sh
-nuon releases create -c {component-name || component-id}
-```
+That's all there is to configuring your application with Nuon and releasing it to your customers' cloud account.
+
+## Next Steps
+
+You'll now want to try modeling your own application using the Nuon Terraform provider.
 
 [1]: https://github.com/nuonco/quickstart
+[2]: https://registry.terraform.io/providers/nuonco/nuon/latest/docs
+[3]: http://localhost:3002/api-ref/getting-started
