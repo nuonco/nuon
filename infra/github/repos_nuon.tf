@@ -126,10 +126,14 @@ module "nuon-sandboxes" {
 }
 
 module "nuon-actions-build" {
-  source           = "./modules/repository"
-  name             = "actions-build"
-  description      = "Action for building a Nuon component."
-  required_checks  = []
+  source      = "./modules/repository"
+  name        = "actions-build"
+  description = "Action for building a Nuon component."
+  required_checks = [
+    "check-pr / Run PR checks",
+    "check-pr / Update PR status",
+    "Integration tests",
+  ]
   is_public        = true
   owning_team_id   = github_team.nuon.id
   owning_team_name = "nuonco/${github_team.nuon.name}"
@@ -140,10 +144,14 @@ module "nuon-actions-build" {
 }
 
 module "nuon-actions-release" {
-  source           = "./modules/repository"
-  name             = "actions-release"
-  description      = "Action for releasing a Nuon build."
-  required_checks  = []
+  source      = "./modules/repository"
+  name        = "actions-release"
+  description = "Action for releasing a Nuon build."
+  required_checks = [
+    "check-pr / Run PR checks",
+    "check-pr / Update PR status",
+    "Integration tests",
+  ]
   is_public        = true
   owning_team_id   = github_team.nuon.id
   owning_team_name = "nuonco/${github_team.nuon.name}"
