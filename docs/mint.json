@@ -65,6 +65,7 @@
     {
       "group": "Guides",
       "pages": [
+        "guides/creating-a-release",
         "guides/view-logs",
         "guides/app-inputs",
         "guides/job-components",
