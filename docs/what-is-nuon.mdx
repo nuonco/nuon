@@ -4,18 +4,23 @@ description: "What is Nuon and B.Y.O.C.?"
 ---
 
 ## What is B.Y.O.C.?
-B.Y.O.C. or Bring Your Own Cloud...
+
+Bring Your Own Cloud (BYOC) represents a shift in how B2B software products are deployed and managed in the cloud. It allows vendors to run fully managed applications directly in their customer’s cloud account, rather than using the traditional deployment model where the software vendor hosts the application. Due to growing data privacy concerns, BYOC is gaining momentum for products that need to integrate with customer data or code to deliver value.
 
 ## What is Nuon?
+
 Nuon allows you to deploy your current application directly into your customers' cloud accounts. Nuon provides self-hosted security features for your customers through your existing software delivery lifecycle. Simply configure your application once and release it simultaneously to all your customers.
 
 ## How does Nuon work?
+
 Nuon establishes a series of release workflows connecting your application configuration to individual customer cloud accounts. When your application changes, you can release the updated version to all customers simultaneously. Upon adding a new customer to Nuon, they will automatically receive the latest version of your application deployed to their cloud.
 
 ### Configuring your application with Nuon
+
 Nuon seamlessly integrates into your existing development lifecycle, employing your software or infrastructure codebases to set up your application. It supports configuration using containers, Helm Charts, and Terraform, and provides options for managing your application configuration through either the [Nuon API](/api-ref/getting-started) or [Terraform Provider][1].
 
 ### Deploying to your customers' cloud
+
 Nuon establishes a link to your customers' cloud accounts through an IAM policy. Subsequently, Nuon provisions your customers' clouds with the infrastructure required for your applications and initiates the software deployment process. Whenever your application undergoes changes, you have the capability to release a new version to all your customers. Nuon seamlessly integrates with your CI/CD systems, providing convenient handling of installations and releases through our CLI or [Terraform Provider][1].
 
 [1]: https://registry.terraform.io/providers/nuonco/nuon/latest/docs
