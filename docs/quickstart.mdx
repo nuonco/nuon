@@ -1,50 +1,51 @@
 ---
 title: 'Quickstart'
-description: "Create a fully managed version of your app that runs in your customer’s cloud account."
+description: "Get up and running with Nuon in a few minutes."
 ---
 
 ## At a Glance
 
-Nuon provides two primary methods for configuring and managing your app: the Nuon CLI and the Nuon Terraform provider or the Nuon API. This guide will focus on the former, as it is the quickest way to start using Nuon.
+This guide will walk you through setting up an organization, configuring an application, and deploying to an install. Once you've completed it, you will be ready to configure and deploy your own app.
 
-In this quickstart guide, we will first install the Nuon CLI and Terraform providers. Next, we'll create an account and link it to GitHub. After that, we'll configure your app, create installs using Terraform, and finally, release your app.
+## Set up an Organization
 
-## Installing the CLI and Terraform Provider
+### Install the Nuon CLI
 
-You can install our CLI with the following command:
-```sh terminal
+Install the CLI with the following command:
+
+```sh
 echo "y" | /bin/bash -c "$(curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)"
 ```
 
-You can run `nuon version` to verify it's been installed.
+Run `nuon` to verify it's installed and see all the sub-commands.
 
-## Forking the Quickstart Repository
-
-Ultimately, this guide will have you releasing an example application in our [quickstart repository][1], so you should fork and clone the [quickstart repository][1].
-
-## Create Your Account
+### Create an Account
 
 Once you've installed the Nuon CLI, we'll want to create a Nuon account by logging in.
 
-```sh nuon cli
+```sh
 nuon login
 ```
 
-Follow the prompts in the browser and login using a Google account. _Nuon plans to support other identity providers in the near future._
+Follow the prompts in the browser and login using a Google account. Once you've logged in you can verify your API token with the `nuon orgs api-token` command. You should also now have a config file at `~/.nuon`. Values saved to this file will be used as CLI flag defaults.
 
-Once you've logged in you can verify you're Nuon token with the `nuon orgs api-token` command. If you're logged in you should see you're Nuon access token.
+### Create an Organization
 
-## Create an Org
-Now that you're logged in you can create your first Org. You'll create this Org in `--sandbox-mode`, which means it won't actually be creating cloud resources in the background. The purpose of sandbox mode is to allow you to test your app configuration without needing to wait on actual cloud resources. 
+Now that you're logged in you can create your first organization. We'll create a "sandbox" org, which means it won't create real cloud resources. This will save you time and money, and can be a useful way to test out app configurations even after you create real org.
 
-```sh nuon cli
+```sh terminal
 nuon orgs create --name {your-org-name} --sandbox-mode
 ```
 
-You can view the new Org using the `nuon orgs current` command.
+You can view the new org using the `nuon orgs current` command.
 
 ### Connect a GitHub account
-While connecting a GitHub account isn't necessary you will more than likely be deploying applications from your source code. You can limit the connection to a single repository ([quickstart fork][#forking-the-quickstart-repo]) and can disconnect from within your GitHub settings whenever you'd like.
+
+<Note>
+You don't need to connect to Github for this guide, since we're just deploying an open-source Docker image.
+</Note>
+
+To deploy code from private repos you'll need to connect to your Github account or organization.
 
 ```sh nuon cli
 nuon orgs connect-github
@@ -52,93 +53,246 @@ nuon orgs connect-github
 
 When you've completed the connection flow you should be able to list your connected repos using the `nuon orgs list-connected-repos` command.
 
-## Configure your App using Terraform
-You'll now configure your application using the [Nuon Terraform provider][2]. While you can configure your App through our [API][3] we recommend using our Terraform provider so your Nuon App configuration is kept in version control.
+## Configure an Application
 
-### Configuring your App
-From the `./nuon` directory you'll first rename the `/terraform.tfvars.example` file to `/terraform.tfvars` and update your repo name to match your fork.
+We'll configure a simple app, consisting of a single container. The recommended way to do this is using our Terraform provider. Set up a new Terraform project with the following code.
 
 <CodeGroup>
+```terraform versions.tf
+terraform {
+  required_version = ">= 1.3.7"
 
-```hcl terraform.tfvars
-example_app_repo = "https://github.com/{your-account}/{your-repo}"
-install_count = 0
+  required_providers {
+    nuon = {
+      source  = "nuonco/nuon"
+      version = ">= 0.9.0"
+    }
+  }
+}
+
+provider "nuon" {}
+```
+
+```terraform variables.tf
+variable "install_count" {
+  type        = number
+  description = "number of installs to create and manage with terraform"
+}
+
+variable "install_region" {
+  type        = string
+  description = "region to create installs in"
+  default     = "us-west-2"
+}
+
+variable "install_iam_role_arn" {
+  type        = string
+  description = "iam role arn to use for install access"
+  default     = ""
+}
+```
+
+```terraform terraform.tfvars
 install_region = "us-west-2"
+# we'll update these two later
+install_count = 0
 install_iam_role_arn = ""
 ```
+
+```terraform app.tf
+resource "nuon_app" "example" {
+  name = "quickstart_test_app"
+}
+```
+
+```terraform runner.tf
+resource "nuon_app_runner" "main" {
+    app_id = nuon_app.example.id
+    runner_type = "aws-eks"
+}
+```
+
+```terraform sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.example.id
+  terraform_version = "v1.6.3"
+
+  public_repo = {
+    repo      = "https://github.com/nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-eks"
+  }
+}
+```
+
+```terraform component.tf
+resource "nuon_container_image_component" "http_bin" {
+  name   = "http_bin"
+  app_id = nuon_app.example.id
+
+  public = {
+    image_url = "kennethreitz/httpbin"
+    tag       = "latest"
+  }
+}
+```
+
+```terraform installs.tf
+resource "nuon_install" "customer_one" {
+  count = var.install_count
+
+  name         = "quickstart-${count.index}"
+  app_id       = nuon_app.example.id
+  region       = var.install_region
+  iam_role_arn = var.install_iam_role_arn
+
+  depends_on = [
+    nuon_app_sandbox.main,
+  ]
+}
+```
 </CodeGroup>
 
-Run `terraform init`, `terraform plan` and `terraform apply`, just as you would for any other Terraform project. 
+Run `terraform init` and `terraform apply` just like you would for any Terraform project. The Nuon provider will use the same config as the CLI to create a new app in your current org.
 
-This will create an example App which you can view with the Nuon CLI using the `nuon apps ls` command.
+When it's done, run `nuon apps select` to see the new app ID and save it to the config file.
 
-Now use the CLI to set your new App as the current one.
+## Create and Deploy to an Install
 
-```sh nuon cli
-nuon apps select
-```
+Next we'll create some installs to deploy your app to. Typically, installs would be created by customers through a sign-up flow, but you can also create installs yourself via the Terraform provider. 
 
-Now you can take a look at your Components.
+### Set up Install Role
 
-```sh nuon cli
-nuon components ls
-```
+<Note>
+Since we're using a sandbox org, you don't need a real AWS account. You can provide any string as an IAM role ARN, and Nuon will simulate everything. This step is only required for real orgs.
+</Note>
 
-You can inspect your individual Components by either their ID or name (e.g. `nuon components get -c dockerfile`).
-
-### Creating an Install of your App
-An install is a sandbox, with an instance of your app running in it. A sandbox defines the environment your app runs in. Currently, we have a pre-built sandbox that provides a VPC, an EKS cluster, and a Route53 zone. You don't need to own the AWS account you want to install to. Nuon just needs an IAM role with the requisite permissions to create a sandbox. You'll then be able to deploy your app to that sandbox, and will have a running install.
-
-To enable you to provide the best possible experience for your customers, we offer 2 ways to set up that IAM role.
-
-#### IAM with Terraform
-
-If you have admin access to the AWS account, there's a Terraform project in `./install-roles/terraform` directory you can use.
-
-1. Authenticate with whatever AWS account you want to create the install in.
-1. Run `terraform init`, `terraform plan`, and `terraform apply`, just as you would for any other Terraform project.
-
-#### Cloudformation Quick-Create
-
-If you do not have admin access to the AWS account, you can share a [Cloudformation Quick-Create](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html) link with someone who does.
-
-[Click here](https://us-west-2.console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateUrl=https://nuon-sandbox-boostrap-poc.s3.us-west-2.amazonaws.com/index.yaml&stackName=install-roles) to see an example of how this works. The Cloudformation template used for this can be found in [./install-roles/cloudformation-quickcreate](https://github.com/nuonco/quickstart/install-roles/cloudformation-quickcreate), which you can use to set up your own Quick-Create URL.
-
-
-### Creating the Install
-
-Once the IAM role has been created, you can use it with Terraform to create the Install. From the `./nuon` directory, you'll update the `terraform.tfvars` file with `install_count = 1` and `install_iam_role_arn = "{your-iam-arn}"`.
+First, you'll need to create an IAM role in the target AWS account. This will provide your org runner with access to provision resources. Create a new Terraform project using the following code.
 
 <CodeGroup>
+```terraform versions.tf
+terraform {
+  required_version = ">= 1.3.7"
 
-```hcl terraform.tfvars
-example_app_repo = "https://github.com/{your-account}/{your-repo}"
-install_count = 1
-install_region = "us-west-2"
-install_iam_role_arn = "{your-iam-arn}"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {}
+```
+
+```terraform variables.tf
+variable "app_name" {
+  type        = string
+  description = "Name of the app to be installed."
+}
+
+locals {
+  default_tags = {
+    app_name = var.app_name
+  }
+
+  artifact_base_url = "https://github.com/nuonco/sandboxes/tree/main/aws-eks/artifacts"
+}
+```
+
+```terraform role.tf
+data "http" "sandbox_trust_policy" {
+  url = "${local.artifact_base_url}/trust.json"
+}
+
+module "install_access" {
+  tags        = local.default_tags
+  source      = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
+  version     = ">= 5.1.0"
+  create_role = true
+  role_name   = "${var.app_name}-install-access"
+
+  allow_self_assume_role          = true
+  create_custom_role_trust_policy = true
+  custom_role_trust_policy        = data.http.sandbox_trust_policy.response_body
+  custom_role_policy_arns = [
+    aws_iam_policy.deprovision.arn,
+    aws_iam_policy.provision.arn
+  ]
+}
+```
+
+```terraform policies.tf
+data "http" "sandbox_provision_policy" {
+  url = "${local.artifact_base_url}/provision.json"
+}
+
+resource "aws_iam_policy" "provision" {
+  tags        = local.default_tags
+  name        = "${var.app_name}-provision"
+  path        = "/"
+  description = "Provides access to provision a new install of ${var.app_name}"
+  policy      = data.http.sandbox_provision_policy.response_body
+}
+
+data "http" "sandbox_deprovision_policy" {
+  url = "${local.artifact_base_url}/deprovision.json"
+}
+
+resource "aws_iam_policy" "deprovision" {
+  tags        = local.default_tags
+  name        = "${var.app_name}-deprovision"
+  path        = "/"
+  description = "Provides access to deprovision an install  of ${var.app_name}"
+  policy      = data.http.sandbox_deprovision_policy.response_body
+}
 ```
 </CodeGroup>
 
-Run `terraform init`, `terraform plan`, and `terraform apply`, just as you would for any other Terraform project.
+Run `terraform init` and `terraform apply`. Copy the ARN of the newly-created install-access role.
 
-Now you can view the Install with the CLI with the `nuon installs ls` command.
+### Provisioning the Sandbox
 
-You can create as many Installs as you'd like. Having more than one will give you a fuller picture of what Nuon does.
+Go back to your app config Terraform project, update the value of `install_iam_role_arn` to the ARN of the IAM role you created, and set `install_count` to `1`. Run `terraform apply` to provision the sandbox to your install.
 
-## Releasing your app
+<Note>
+Since you're using a sandbox org, you can create as many installs as you want, using whatever string you want as the ARN for all of them.
+</Note>
 
-Now that you've configured your App and have some Installs created we can release your application. You can do this as two discret steps by building your application and then releasing it but we will use the shorthand way by creating a release with an `--auto-build` flag.
+### Deploying to your Install
 
-```sh nuon cli
-nuon releases create --auto-build -c dockerfile
+Once an install has been created, you can deploy your app to it.
+
+```sh terminal
+nuon releases create -c http_bin --auto-build
 ```
 
-That's all there is to configuring your application with Nuon and releasing it to your customers' cloud account.
+This will create a new build of your component, and release it. A release will create a deploy for each install.
+
+You can use the CLI to inspect the state of builds and releases.
+
+<CodeGroup>
+```sh list builds
+nuon builds list -c http_bin
+```
+
+```sh view build logs
+nuon builds logs -b {build_id} -c http_bin
+```
+
+```sh list deploys
+nuon installs list-deploys -i {install_id}
+```
+
+```sh view deploy logs
+nuon installs deploy-logs -i {install_id} -d {deploy_id}
+```
+</CodeGroup>
 
 ## Next Steps
 
-You'll now want to try modeling your own application using the Nuon Terraform provider.
+Now that you know the basics, the next step is to create a real org, configure your own app, and deploy it to real installs.
 
-[1]: https://github.com/nuonco/quickstart
-[2]: https://registry.terraform.io/providers/nuonco/nuon/latest/docs
-[3]: http://localhost:3002/api-ref/getting-started
+- Create an org without the `--sandbox-mode` flag to provision real resources.
+- Connect that org to Github to pull in your own source code.
+- Set up an IAM role in a real AWS account to provision a real install.
