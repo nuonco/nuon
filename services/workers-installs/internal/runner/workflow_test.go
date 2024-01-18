@@ -103,7 +103,7 @@ func TestProvisionRunner(t *testing.T) {
 			return CreateWaypointRunnerProfileResponse{}, nil
 		})
 
-	wkflow := NewWorkflow(cfg)
+	wkflow := NewWorkflow(nil, cfg)
 	env.ExecuteWorkflow(wkflow.ProvisionRunner, req)
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())

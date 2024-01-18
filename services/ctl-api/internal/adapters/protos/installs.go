@@ -47,6 +47,11 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) 
 		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
 	}
 
+	runnerTyp := installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
+	if install.AppRunnerConfig.Type == app.AppRunnerTypeAWSECS {
+		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AWS_ECS
+	}
+
 	req := &installsv1.ProvisionRequest{
 		OrgId:     install.OrgID,
 		AppId:     install.AppID,
@@ -57,6 +62,7 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) 
 			AwsRoleArn: install.AWSAccount.IAMRoleARN,
 		},
 		SandboxSettings: sandboxSettings,
+		RunnerType:      runnerTyp,
 	}
 
 	return req, nil

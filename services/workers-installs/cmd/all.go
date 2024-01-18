@@ -51,12 +51,13 @@ func runAll(cmd *cobra.Command, _ []string) {
 		}
 	}
 
+	v := validator.New()
+
 	prWorkflow := provision.NewWorkflow(cfg)
-	prRWorkflow := runner.NewWorkflow(cfg)
+	prRWorkflow := runner.NewWorkflow(v, cfg)
 	dprWorkflow := deprovision.NewWorkflow(cfg)
 	dnsWorkflow := dns.NewWorkflow(cfg)
 
-	v := validator.New()
 	wkr, err := worker.New(v, worker.WithConfig(&cfg.Config),
 		// register workflows
 		worker.WithWorkflow(prWorkflow.Provision),
