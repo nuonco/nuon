@@ -4,6 +4,12 @@ variable "app_name" {
   type        = string
 }
 
+variable "app_runner_type" {
+  description = "app runner type"
+  default = "aws-eks"
+  type = string
+}
+
 variable "install_role_arn" {
   description = "IAM role ARN"
   type        = string
