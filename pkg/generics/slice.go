@@ -1,5 +1,7 @@
 package generics
 
+import "fmt"
+
 func SliceContains[T comparable](val T, vals []T) bool {
 	for _, v := range vals {
 		if val == v {
@@ -8,6 +10,20 @@ func SliceContains[T comparable](val T, vals []T) bool {
 	}
 
 	return false
+}
+
+func ToStringSlice(vals []interface{}) []string {
+	strVals := make([]string, len(vals))
+	for idx, val := range vals {
+		strVal, ok := val.(string)
+		if !ok {
+			strVal = fmt.Sprintf("%s", val)
+		}
+
+		strVals[idx] = strVal
+	}
+
+	return strVals
 }
 
 func ToIntSlice[T any](vals []T) []interface{} {

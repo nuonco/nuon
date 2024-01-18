@@ -30,7 +30,7 @@ func execProvisionRunner(
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)
 
-	wkflow := runner.NewWorkflow(cfg)
+	wkflow := runner.NewWorkflow(nil, cfg)
 	fut := workflow.ExecuteChildWorkflow(ctx, wkflow.ProvisionRunner, iwrr)
 
 	if err := fut.Get(ctx, &resp); err != nil {
