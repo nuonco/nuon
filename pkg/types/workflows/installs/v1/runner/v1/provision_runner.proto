@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package installs.v1.runner.v1;
 
+import "installs/v1/runner_type.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -22,14 +23,18 @@ message ProvisionRunnerRequest {
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  KubeClusterInfo cluster_info = 4;
+  // credentials for installing into KubeCluster
+  KubeClusterInfo eks_cluster_info = 4;
 
-  string odr_iam_role_arn = 5 [
+  // credentials for installing into ECSCluster
+  ECSClusterInfo ecs_cluster_info = 5;
+
+  string odr_iam_role_arn = 6 [
     (validate.rules).string.min_len = 20,
     (tagger.tags) = "faker:\"len=20\""
   ];
 
-  string region = 6 [
+  string region = 7 [
     (validate.rules).string = {
       in: [
         "us-west-2",
@@ -40,6 +45,22 @@ message ProvisionRunnerRequest {
     },
     (tagger.tags) = "faker:\"oneof: us-west-2\""
   ];
+
+  installs.v1.RunnerType runner_type = 8;
+}
+
+message ECSClusterInfo {
+  string cluster_arn = 1 [
+    (validate.rules).string.min_len = 5,
+    (tagger.tags) = "faker:\"len=20\""
+  ];
+
+  string install_iam_role_arn = 2 [(validate.rules).string.min_len = 26];
+  string vpc_id = 3 [(validate.rules).string.min_len = 26];
+  repeated string subnet_ids = 4;
+  string security_group_id = 5 [(validate.rules).string.min_len = 26];
+  string runner_iam_role_arn = 6 [(validate.rules).string.min_len = 26];
+  string odr_iam_role_arn = 7 [(validate.rules).string.min_len = 26];
 }
 
 message KubeClusterInfo {
