@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package installs.v1;
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1";
+
+enum RunnerType {
+  RUNNER_TYPE_UNSPECIFIED = 0;
+  RUNNER_TYPE_AWS_ECS = 1;
+  RUNNER_TYPE_AWS_EKS = 2;
+}

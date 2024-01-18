@@ -19,6 +19,11 @@ func ToStringSlice(vals []interface{}) []string {
 	return strVals
 }
 
+type ECSClusterOutputs struct {
+	ARN  string `mapstructure:"arn" validate:"required"`
+	Name string `mapstructure:"name" validate:"required"`
+}
+
 type ClusterOutputs struct {
 	ARN                      string `mapstructure:"arn" validate:"required"`
 	CertificateAuthorityData string `mapstructure:"certificate_authority_data" validate:"required"`
@@ -37,6 +42,7 @@ type VPCOutputs struct {
 	PrivateSubnetIDs        []interface{} `mapstructure:"private_subnet_ids" validate:"required" faker:"stringSliceAsInt"`
 	PublicSubnetIDs         []interface{} `mapstructure:"public_subnet_ids" validate:"required" faker:"stringSliceAsInt"`
 	PublicSubnetCidrBlocks  []interface{} `mapstructure:"public_subnet_cidr_blocks" validate:"required" faker:"stringSliceAsInt"`
+	DefaultSecurityGroupID  string        `mapstructure:"default_security_group_id" validate:"required"`
 }
 
 type AccountOutputs struct {
@@ -53,7 +59,14 @@ type ECROutputs struct {
 }
 
 type RunnerOutputs struct {
-	DefaultIAMRoleARN string `mapstructure:"default_iam_role_arn" validate:"required"`
+	// eks outputs
+	DefaultIAMRoleARN string `mapstructure:"default_iam_role_arn"`
+
+	// ecs runner outputs
+	Type              string `mapstructure:"type"`
+	RunnerIAMRoleARN  string `mapstructure:"runner_iam_role_arn"`
+	ODRIAMRoleARN     string `mapstructure:"odr_iam_role_arn"`
+	InstallIAMRoleARN string `mapstructure:"install_iam_role_arn"`
 }
 
 type DomainOutputs struct {
@@ -64,12 +77,14 @@ type DomainOutputs struct {
 
 type TerraformOutputs struct {
 	// domain outputs
-	PublicDomain   DomainOutputs  `mapstructure:"public_domain"`
-	InternalDomain DomainOutputs  `mapstructure:"internal_domain"`
-	Cluster        ClusterOutputs `mapstructure:"cluster"`
-	ECR            ECROutputs     `mapstructure:"ecr"`
-	VPC            VPCOutputs     `mapstructure:"vpc"`
-	Runner         RunnerOutputs  `mapstructure:"runner"`
+	PublicDomain   DomainOutputs `mapstructure:"public_domain"`
+	InternalDomain DomainOutputs `mapstructure:"internal_domain"`
+	// TODO(jm): rename this to EKSCluster
+	Cluster    ClusterOutputs    `mapstructure:"cluster"`
+	ECSCluster ECSClusterOutputs `mapstructure:"ecs_cluster"`
+	ECR        ECROutputs        `mapstructure:"ecr"`
+	VPC        VPCOutputs        `mapstructure:"vpc"`
+	Runner     RunnerOutputs     `mapstructure:"runner"`
 }
 
 func (t *TerraformOutputs) Validate() error {

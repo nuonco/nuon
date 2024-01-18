@@ -6,6 +6,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
@@ -174,12 +175,26 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		InstallId:     req.InstallId,
 		OdrIamRoleArn: tfOutputs.Runner.DefaultIAMRoleARN,
 		Region:        req.AccountSettings.Region,
-		ClusterInfo: &runnerv1.KubeClusterInfo{
+		RunnerType:    req.RunnerType,
+	}
+
+	if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_ECS {
+		prReq.EcsClusterInfo = &runnerv1.ECSClusterInfo{
+			ClusterArn:        tfOutputs.ECSCluster.ARN,
+			InstallIamRoleArn: tfOutputs.Runner.InstallIAMRoleARN,
+			RunnerIamRoleArn:  tfOutputs.Runner.RunnerIAMRoleARN,
+			OdrIamRoleArn:     tfOutputs.Runner.ODRIAMRoleARN,
+			VpcId:             tfOutputs.VPC.ID,
+			SubnetIds:         generics.ToStringSlice(tfOutputs.VPC.PublicSubnetIDs),
+			SecurityGroupId:   tfOutputs.VPC.DefaultSecurityGroupID,
+		}
+	} else {
+		prReq.EksClusterInfo = &runnerv1.KubeClusterInfo{
 			Id:             tfOutputs.Cluster.Name,
 			Endpoint:       tfOutputs.Cluster.Endpoint,
 			CaData:         tfOutputs.Cluster.CertificateAuthorityData,
 			TrustedRoleArn: w.cfg.NuonAccessRoleArn,
-		},
+		}
 	}
 	if _, err = execProvisionRunner(ctx, w.cfg, prReq); err != nil {
 		err = fmt.Errorf("unable to provision install runner: %w", err)

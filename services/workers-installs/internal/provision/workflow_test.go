@@ -52,6 +52,7 @@ func TestProvision_finishWithErr(t *testing.T) {
 	assert.NoError(t, cfg.Validate())
 	req := generics.GetFakeObj[*installsv1.ProvisionRequest]()
 	req.PlanOnly = false
+	req.RunnerType = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
 	assert.NoError(t, req.Validate())
 
 	testSuite := &testsuite.WorkflowTestSuite{}
@@ -118,12 +119,13 @@ func TestProvision(t *testing.T) {
 	req := generics.GetFakeObj[*installsv1.ProvisionRequest]()
 	assert.NoError(t, req.Validate())
 	req.PlanOnly = false
+	req.RunnerType = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
 	planref := generics.GetFakeObj[*planv1.PlanRef]()
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
-	rWkflow := runner.NewWorkflow(cfg)
+	rWkflow := runner.NewWorkflow(nil, cfg)
 	dnsWkflow := dns.NewWorkflow(cfg)
 	env.RegisterWorkflow(rWkflow.ProvisionRunner)
 	env.RegisterWorkflow(dnsWkflow.ProvisionDNS)
@@ -230,12 +232,13 @@ func TestProvision_plan_only(t *testing.T) {
 	req := generics.GetFakeObj[*installsv1.ProvisionRequest]()
 	assert.NoError(t, req.Validate())
 	req.PlanOnly = true
+	req.RunnerType = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
 	planref := generics.GetFakeObj[*planv1.PlanRef]()
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
 
-	rWkflow := runner.NewWorkflow(cfg)
+	rWkflow := runner.NewWorkflow(nil, cfg)
 	dnsWkflow := dns.NewWorkflow(cfg)
 	env.RegisterWorkflow(rWkflow.ProvisionRunner)
 	env.RegisterWorkflow(dnsWkflow.ProvisionDNS)
