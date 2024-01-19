@@ -38,9 +38,18 @@ component_name=e2e_infra
 echo >&2 -e "switched to different component $component_name\n"
 echo >&2 -e "nuon releases create --auto-build -c $component_name\n"
 nuon -j releases create --auto-build -c $component_name
-sleep 10 # wait for the build to complete
-build_status=$(nuon -j builds ls -c $component_name | jq -r .[0].status)
-if [[ $build_status != "active" ]]; then
-    exit 1
-fi
-echo -e "\n"
+
+echo >&2 -e "polling until build is finished\n"
+building=true
+while [ $building = true ]
+do
+  build_status=$(nuon -j builds ls -c $component_name | jq -r .[0].status)
+  echo $build_status
+  if [[ $build_status == "active" ]]; then
+    echo >&2 -e "build is active\n"
+    building=false
+  fi
+
+  echo >&2 -e "waiting for build status to be active\n"
+  sleep 1
+done
