@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.16
+
+Promoting a fix to auto builds, as well as updates to ECS.
+
 ## v0.19.15
 
 Promoting the ability to auto-build on release, as well as various spec/api changes.
