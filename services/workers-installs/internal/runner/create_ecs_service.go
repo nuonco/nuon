@@ -14,6 +14,7 @@ type CreateECSServiceRequest struct {
 	IAMRoleARN string `validate:"required"`
 	ClusterARN string `validate:"required"`
 	InstallID  string `validate:"required"`
+	Region     string `validate:"required"`
 
 	SecurityGroupID   string   `validate:"required"`
 	SubnetIDs         []string `validate:"required"`
@@ -23,15 +24,49 @@ type CreateECSServiceRequest struct {
 type CreateECSServiceResponse struct{}
 
 func (a *Activities) CreateECSService(ctx context.Context, req *CreateECSServiceRequest) (*CreateECSServiceResponse, error) {
-	ecsClient, err := a.getECSClient(ctx, req.IAMRoleARN)
+	ecsClient, err := a.getECSClient(ctx, req.IAMRoleARN, req.Region)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get ecs client: %w", err)
 	}
 
+	svc, err := a.getECSService(ctx, ecsClient, req)
+	if err != nil {
+		return nil, fmt.Errorf("unable to describe services: %w", err)
+	}
+
+	if svc == nil {
+		return a.createECSService(ctx, ecsClient, req)
+	}
+
+	return a.updateECSService(ctx, ecsClient, req)
+}
+
+func (a *Activities) getECSService(ctx context.Context, ecsClient *ecs.Client, req *CreateECSServiceRequest) (*ecstypes.Service, error) {
+	inp := &ecs.DescribeServicesInput{
+		Services: []string{
+			fmt.Sprintf("waypoint-runner-%s", req.InstallID),
+		},
+		Cluster: generics.ToPtr(req.ClusterARN),
+	}
+
+	resp, err := ecsClient.DescribeServices(ctx, inp)
+	if err != nil {
+		return nil, fmt.Errorf("unable to describe services: %w", err)
+	}
+
+	if len(resp.Services) != 1 {
+		return nil, nil
+	}
+
+	return &resp.Services[0], nil
+}
+
+func (a *Activities) createECSService(ctx context.Context, ecsClient *ecs.Client, req *CreateECSServiceRequest) (*CreateECSServiceResponse, error) {
 	ecsReq := &ecs.CreateServiceInput{
 		Cluster:              generics.ToPtr(req.ClusterARN),
 		DesiredCount:         generics.ToPtr(int32(1)),
 		LaunchType:           ecstypes.LaunchTypeFargate,
+		ClientToken:          generics.ToPtr(req.InstallID),
 		ServiceName:          generics.ToPtr(fmt.Sprintf("waypoint-runner-%s", req.InstallID)),
 		EnableECSManagedTags: true,
 		TaskDefinition:       generics.ToPtr(req.TaskDefinitionARN),
@@ -54,8 +89,33 @@ func (a *Activities) CreateECSService(ctx context.Context, req *CreateECSService
 		},
 	}
 
-	if _, err := ecsClient.CreateService(ctx, ecsReq); err != nil {
-		return nil, fmt.Errorf("unable to create ecs service: %w", err)
+	_, err := ecsClient.CreateService(ctx, ecsReq)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create service: %w", err)
+	}
+
+	return &CreateECSServiceResponse{}, nil
+}
+
+func (a *Activities) updateECSService(ctx context.Context, ecsClient *ecs.Client, req *CreateECSServiceRequest) (*CreateECSServiceResponse, error) {
+	ecsReq := &ecs.UpdateServiceInput{
+		Cluster:              generics.ToPtr(req.ClusterARN),
+		DesiredCount:         generics.ToPtr(int32(1)),
+		Service:              generics.ToPtr(fmt.Sprintf("waypoint-runner-%s", req.InstallID)),
+		EnableECSManagedTags: generics.ToPtr(true),
+		TaskDefinition:       generics.ToPtr(req.TaskDefinitionARN),
+		NetworkConfiguration: &ecstypes.NetworkConfiguration{
+			AwsvpcConfiguration: &ecstypes.AwsVpcConfiguration{
+				Subnets:        req.SubnetIDs,
+				SecurityGroups: []string{req.SecurityGroupID},
+				AssignPublicIp: ecstypes.AssignPublicIpEnabled,
+			},
+		},
+	}
+
+	_, err := ecsClient.UpdateService(ctx, ecsReq)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create service: %w", err)
 	}
 
 	return &CreateECSServiceResponse{}, nil

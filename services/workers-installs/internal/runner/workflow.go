@@ -47,7 +47,7 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 		return resp, fmt.Errorf("invalid request: %w", err)
 	}
 
-	orgServerAddr := client.DefaultOrgServerAddress(req.OrgId, w.cfg.OrgServerRootDomain)
+	orgServerAddr := client.DefaultOrgServerAddress(w.cfg.OrgServerRootDomain, req.OrgId)
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 60 * time.Minute,
 	}

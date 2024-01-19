@@ -14,16 +14,19 @@ const (
 	defaultSessionName string = "workers-installs"
 )
 
-func (a *Activities) getEFSClient(ctx context.Context, iamRoleARN string) (*efs.Client, error) {
+func (a *Activities) getEFSClient(ctx context.Context, iamRoleARN, region string) (*efs.Client, error) {
 	cfg, err := credentials.Fetch(ctx, &credentials.Config{
 		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:     iamRoleARN,
-			SessionName: defaultSessionName,
+			RoleARN:        iamRoleARN,
+			SessionName:    defaultSessionName,
+			TwoStepRoleARN: a.cfg.NuonAccessRoleArn,
 		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create credential config: %w", err)
 	}
+
+	cfg.Region = region
 
 	svc := efs.NewFromConfig(cfg)
 	if err != nil {
@@ -33,16 +36,19 @@ func (a *Activities) getEFSClient(ctx context.Context, iamRoleARN string) (*efs.
 	return svc, nil
 }
 
-func (a *Activities) getECSClient(ctx context.Context, iamRoleARN string) (*ecs.Client, error) {
+func (a *Activities) getECSClient(ctx context.Context, iamRoleARN, region string) (*ecs.Client, error) {
 	cfg, err := credentials.Fetch(ctx, &credentials.Config{
 		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:     iamRoleARN,
-			SessionName: defaultSessionName,
+			RoleARN:        iamRoleARN,
+			SessionName:    defaultSessionName,
+			TwoStepRoleARN: a.cfg.NuonAccessRoleArn,
 		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create credential config: %w", err)
 	}
+
+	cfg.Region = region
 
 	svc := ecs.NewFromConfig(cfg)
 	if err != nil {
@@ -52,16 +58,18 @@ func (a *Activities) getECSClient(ctx context.Context, iamRoleARN string) (*ecs.
 	return svc, nil
 }
 
-func (a *Activities) getCloudwatchClient(ctx context.Context, iamRoleARN string) (*cloudwatchlogs.Client, error) {
+func (a *Activities) getCloudwatchClient(ctx context.Context, iamRoleARN, region string) (*cloudwatchlogs.Client, error) {
 	cfg, err := credentials.Fetch(ctx, &credentials.Config{
 		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:     iamRoleARN,
-			SessionName: defaultSessionName,
+			RoleARN:        iamRoleARN,
+			SessionName:    defaultSessionName,
+			TwoStepRoleARN: a.cfg.NuonAccessRoleArn,
 		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create credential config: %w", err)
 	}
+	cfg.Region = region
 
 	svc := cloudwatchlogs.NewFromConfig(cfg)
 	if err != nil {

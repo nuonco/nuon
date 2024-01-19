@@ -35,6 +35,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	efsReq := CreateEFSRequest{
 		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
 		InstallID:  req.InstallId,
+		Region:     req.Region,
 	}
 	if err := w.execAWSActivity(ctx, w.act.CreateEFS, efsReq, &efsResp); err != nil {
 		return fmt.Errorf("unable to create efs: %w", err)
@@ -45,6 +46,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	pollEFSReq := PollEFSRequest{
 		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
 		InstallID:  req.InstallId,
+		Region:     req.Region,
 	}
 	if err := w.execAWSActivity(ctx, w.act.PollEFS, pollEFSReq, &pollEFSResp); err != nil {
 		return fmt.Errorf("unable to poll efs: %w", err)
@@ -55,6 +57,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	createEFSMountTargetsReq := CreateEFSMountTargetsRequest{
 		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
 		FsID:       pollEFSResp.FsID,
+		Region:     req.Region,
 
 		VPCID:           req.EcsClusterInfo.VpcId,
 		SubnetIDs:       req.EcsClusterInfo.SubnetIds,
@@ -69,6 +72,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	createEFSAccessPointsReq := CreateEFSAccessPointsRequest{
 		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
 		FsID:       pollEFSResp.FsID,
+		Region:     req.Region,
 		VPCID:      req.EcsClusterInfo.VpcId,
 		SubnetIDs:  req.EcsClusterInfo.SubnetIds,
 	}
@@ -81,6 +85,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	pollMountTargetsReq := PollEFSMountTargetsRequest{
 		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
 		FsID:       pollEFSResp.FsID,
+		Region:     req.Region,
 	}
 	if err := w.execAWSActivity(ctx, w.act.PollEFSMountTargets, pollMountTargetsReq, &pollMountTargetsResp); err != nil {
 		return fmt.Errorf("unable to create efs access points: %w", err)
@@ -91,6 +96,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	createLogGroupReq := CreateCloudwatchLogGroupRequest{
 		IAMRoleARN:   req.EcsClusterInfo.InstallIamRoleArn,
 		LogGroupName: fmt.Sprintf("waypoint-runner-%s", req.InstallId),
+		Region:       req.Region,
 	}
 	if err := w.execAWSActivity(ctx, w.act.CreateCloudwatchLogGroup, createLogGroupReq, &createLogGroupResp); err != nil {
 		return fmt.Errorf("unable to create cloud watch log group: %w", err)
@@ -125,6 +131,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
 		ClusterARN: req.EcsClusterInfo.ClusterArn,
 		InstallID:  req.InstallId,
+		Region:     req.Region,
 
 		SecurityGroupID:   req.EcsClusterInfo.SecurityGroupId,
 		SubnetIDs:         req.EcsClusterInfo.SubnetIds,
@@ -132,6 +139,19 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	}
 	if err := w.execAWSActivity(ctx, w.act.CreateECSService, createServiceReq, &createServiceResp); err != nil {
 		return fmt.Errorf("unable to create service: %w", err)
+	}
+
+	awrReq := AdoptWaypointRunnerRequest{
+		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
+		OrgServerAddr:        orgServerAddr,
+		OrgID:                req.OrgId,
+		InstallID:            req.InstallId,
+		ClusterInfo:          w.clusterInfo,
+	}
+	_, err = w.adoptWaypointRunner(ctx, awrReq)
+	if err != nil {
+		err = fmt.Errorf("failed to adopt waypoint runner: %w", err)
+		return err
 	}
 
 	return nil

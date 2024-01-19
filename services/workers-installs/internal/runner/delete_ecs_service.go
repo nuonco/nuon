@@ -12,12 +12,13 @@ type DeleteServiceRequest struct {
 	IAMRoleARN string `validate:"required"`
 	ClusterARN string `validate:"required"`
 	InstallID  string `validate:"required"`
+	Region     string `validate:"required"`
 }
 
 type DeleteServiceResponse struct{}
 
 func (a *Activities) DeleteECSService(ctx context.Context, req DeleteServiceRequest) (*DeleteServiceResponse, error) {
-	ecsClient, err := a.getECSClient(ctx, req.IAMRoleARN)
+	ecsClient, err := a.getECSClient(ctx, req.IAMRoleARN, req.Region)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get ecs client: %w", err)
 	}
