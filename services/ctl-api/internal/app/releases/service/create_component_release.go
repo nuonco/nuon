@@ -127,6 +127,7 @@ func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateCo
 			return nil, fmt.Errorf("unable to create component build: %w", err)
 		}
 		buildID = build.ID
+		s.compHooks.BuildCreated(ctx, cmp.ID, buildID)
 	}
 
 	// create the component release

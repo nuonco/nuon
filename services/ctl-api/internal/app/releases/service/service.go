@@ -6,6 +6,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	componenthelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
+	componenthooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/hooks"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -19,6 +20,7 @@ type service struct {
 	cfg         *internal.Config
 	hooks       *hooks.Hooks
 	compHelpers *componenthelpers.Helpers
+	compHooks   *componenthooks.Hooks
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -44,6 +46,7 @@ func New(v *validator.Validate,
 	l *zap.Logger,
 	hooks *hooks.Hooks,
 	compHelpers *componenthelpers.Helpers,
+	compHooks *componenthooks.Hooks,
 ) *service {
 	return &service{
 		cfg:         cfg,
@@ -53,5 +56,6 @@ func New(v *validator.Validate,
 		mw:          mw,
 		hooks:       hooks,
 		compHelpers: compHelpers,
+		compHooks:   compHooks,
 	}
 }
