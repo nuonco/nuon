@@ -12,6 +12,16 @@ module "aws-ecs" {
   east_2_count = 0
   west_2_count = 0
 
-  install_role_arn = module.install_access.iam_role_arn
+  install_role_arn = module.ecs_access.iam_role_arn
+  install_inputs = [
+    {
+      name = "vpc_id"
+      description = "vpc id from user"
+      required = true
+      default = ""
+      value = "vpc-0e54b0ce97f3d67dc"
+      interpolation = "{{.nuon.install.inputs.vpc_id}}"
+    }
+  ]
 }
 

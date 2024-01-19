@@ -12,6 +12,7 @@ import (
 type CreateEFSAccessPointsRequest struct {
 	IAMRoleARN string `validate:"required"`
 	FsID       string
+	Region     string `validate:"required"`
 
 	VPCID           string
 	SubnetIDs       []string
@@ -23,7 +24,7 @@ type CreateEFSAccessPointsResponse struct {
 }
 
 func (a *Activities) CreateEFSAccessPoints(ctx context.Context, req CreateEFSAccessPointsRequest) (*CreateEFSAccessPointsResponse, error) {
-	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN)
+	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create efs client: %w", err)
 	}

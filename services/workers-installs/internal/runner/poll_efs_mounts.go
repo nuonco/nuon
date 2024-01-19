@@ -12,6 +12,7 @@ import (
 type PollEFSMountTargetsRequest struct {
 	IAMRoleARN string `validate:"required"`
 	FsID       string `validate:"required"`
+	Region     string `validate:"required"`
 }
 
 type PollEFSMountTargetsResponse struct {
@@ -19,7 +20,7 @@ type PollEFSMountTargetsResponse struct {
 }
 
 func (a *Activities) PollEFSMountTargets(ctx context.Context, req PollEFSMountTargetsRequest) (*PollEFSMountTargetsResponse, error) {
-	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN)
+	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create efs client: %w", err)
 	}
@@ -33,7 +34,7 @@ func (a *Activities) PollEFSMountTargets(ctx context.Context, req PollEFSMountTa
 
 	for _, mountTarget := range mountTargets.MountTargets {
 		if mountTarget.LifeCycleState != efstypes.LifeCycleStateAvailable {
-			return nil, fmt.Errorf("mount target is not available: %w", err)
+			return nil, fmt.Errorf("mount target is not available: %s", efstypes.LifeCycleStateAvailable)
 		}
 	}
 

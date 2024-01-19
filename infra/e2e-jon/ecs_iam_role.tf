@@ -1,5 +1,5 @@
 locals {
-  ecs_artifact_base_url = "https://raw.githubusercontent.com/nuonco/ecs_sandboxes/jm/aws-ecs-byo-vpc/aws-ecs-byovpc/ecs_artifacts"
+  ecs_artifact_base_url = "https://raw.githubusercontent.com/nuonco/sandboxes/jm/aws-ecs-byo-vpc/aws-ecs-byovpc/artifacts"
 }
 
 data "http" "ecs_sandbox_trust_policy" {
@@ -15,12 +15,12 @@ data "http" "ecs_sandbox_deprovision_policy" {
 }
 
 resource "aws_iam_policy" "ecs_deprovision" {
-  name   = "nuon-${local.name}-install-deprovision-access"
+  name   = "nuon-${local.name}-install-deprovision-access-ecs"
   policy = data.http.ecs_sandbox_deprovision_policy.response_body
 }
 
 resource "aws_iam_policy" "ecs_provision" {
-  name   = "nuon-${local.name}-install-provision-access"
+  name   = "nuon-${local.name}-install-provision-access-ecs"
   policy = data.http.ecs_sandbox_provision_policy.response_body
 }
 
