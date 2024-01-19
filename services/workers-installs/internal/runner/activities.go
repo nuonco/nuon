@@ -13,6 +13,7 @@ import (
 type Activities struct {
 	v             *validator.Validate
 	helmInstaller installer
+	cfg           workers.Config
 
 	// this is exposed for testing and should not otherwise be used
 	Kubeconfig *rest.Config
@@ -28,6 +29,7 @@ type Activities struct {
 func NewActivities(v *validator.Validate, cfg workers.Config) *Activities {
 	return &Activities{
 		v:                            v,
+		cfg:                          cfg,
 		helmInstaller:                helm.NewInstaller(),
 		waypointProjectCreator:       &wpProjectCreator{},
 		waypointServerCookieGetter:   &wpServerCookieGetter{},
