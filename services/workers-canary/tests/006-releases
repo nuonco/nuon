@@ -34,6 +34,8 @@ release_id=$(nuon -j releases ls -c $component_name | jq -r .[0].id)
 nuon -j releases steps -r $release_id
 echo -e "\n"
 
+component_name=e2e_infra
+echo >&2 -e "switched to different component $component_name\n"
 echo >&2 -e "nuon releases create --auto-build -c $component_name\n"
 nuon -j releases create --auto-build -c $component_name
 sleep 10 # wait for the build to complete
