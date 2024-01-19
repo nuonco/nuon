@@ -5,6 +5,7 @@ data "aws_iam_policy_document" "install_k8s" {
     actions = [
       "eks:DescribeCluster",
       "eks:ListCluster",
+      "sts:AssumeRole",
     ]
     resources = ["*", ]
   }
