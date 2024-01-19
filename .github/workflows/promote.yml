@@ -146,30 +146,11 @@ jobs:
         dir:
           - services/e2e
           - bins/cli
-          - sandboxes/aws-eks
-          - sandboxes/empty
     uses: ./.github/workflows/artifact.yml
     with:
       dir: ${{matrix.dir}}
       tag: ${{ needs.tag.outputs.semver }}
       is_promotion: true
-    secrets: inherit
-
-  sandboxes:
-    name: 🚢 sandbox
-    needs:
-      - tag
-      - merged_pr
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
-    strategy:
-      matrix:
-        sandbox: [empty, aws-eks]
-    uses: ./.github/workflows/sandbox.yml
-    with:
-      env: prod
-      publish: true
-      sandbox: ${{ matrix.sandbox }}
-      tag: ${{ needs.tag.outputs.semver }}
     secrets: inherit
 
   bump_tag:
@@ -178,7 +159,6 @@ jobs:
       - tag
       - merged_pr
       - services
-      - sandboxes
       - artifacts
     if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     runs-on: ubuntu-latest
@@ -220,7 +200,6 @@ jobs:
     needs:
       - merged_pr
       - services
-      - sandboxes
       - artifacts
       - tag
     if: ${{ needs.merged_pr.outputs.promote == 'true' }}
