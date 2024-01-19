@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nuonco/nuon-go/models"
+	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/pterm/pterm"
 )
@@ -16,7 +18,23 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 		s.SetCurrent(ctx, installID, asJSON)
 	} else {
 
-		installs, err := s.api.GetAppInstalls(ctx, appID)
+		var (
+			installs []*models.AppInstall
+			err      error
+		)
+
+		if appID != "" {
+			appID, err := lookup.AppID(ctx, s.api, appID)
+			if err != nil {
+				installs, err = s.api.GetAllInstalls(ctx)
+
+			} else {
+				installs, err = s.api.GetAppInstalls(ctx, appID)
+			}
+
+		} else {
+			installs, err = s.api.GetAllInstalls(ctx)
+		}
 		if err != nil {
 			view.Error(err)
 			return
