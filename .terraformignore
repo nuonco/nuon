@@ -6,5 +6,6 @@
 !services/workers-installs/infra/
 !services/workers-instances/infra/
 !services/workers-orgs/infra/
+!services/e2e/nuon/
 !infra/
 !charts/

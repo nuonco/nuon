@@ -14,6 +14,7 @@ type AssumeRoleConfig struct {
 	RoleARN                string `cty:"arn" hcl:"arn" validate:"required" mapstructure:"role_arn,omitempty"`
 	SessionName            string `cty:"session_name" hcl:"session_name" validate:"required" mapstructure:"session_name,omitempty"`
 	SessionDurationSeconds int    `cty:"session_duration_seconds" hcl:"session_duration_seconds" mapstructure:"session_duration_seconds,omitempty"`
+	TwoStepRoleARN         string
 }
 
 // StaticCredentials are used to create credentials ahead of time, and pass them around for use. Specifically, we do

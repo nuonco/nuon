@@ -21,7 +21,25 @@ func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, er
 	}
 
 	stsClient := sts.NewFromConfig(cfg)
-	creds, err := a.assumeIamRole(ctx, stsClient)
+
+	if a.TwoStepRoleARN != "" {
+		creds, err := a.assumeIamRole(ctx, stsClient, a.TwoStepRoleARN)
+		if err != nil {
+			return aws.Config{}, fmt.Errorf("unable to assume two step role: %w", err)
+		}
+
+		credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId,
+			*creds.SecretAccessKey,
+			*creds.SessionToken)
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(credsProvider))
+		if err != nil {
+			return aws.Config{}, fmt.Errorf("unable to create provider: %w", err)
+		}
+
+		stsClient = sts.NewFromConfig(cfg)
+	}
+
+	creds, err := a.assumeIamRole(ctx, stsClient, a.RoleARN)
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("failed to assume role: %w", err)
 	}
@@ -41,9 +59,9 @@ type awsClientIamRoleAssumer interface {
 		optFns ...func(*sts.Options)) (*sts.AssumeRoleOutput, error)
 }
 
-func (a *assumer) assumeIamRole(ctx context.Context, client awsClientIamRoleAssumer) (*sts_types.Credentials, error) {
+func (a *assumer) assumeIamRole(ctx context.Context, client awsClientIamRoleAssumer, role string) (*sts_types.Credentials, error) {
 	params := &sts.AssumeRoleInput{
-		RoleArn:         &a.RoleARN,
+		RoleArn:         &role,
 		RoleSessionName: &a.RoleSessionName,
 		DurationSeconds: generics.ToPtr(int32(a.RoleSessionDuration.Seconds())),
 	}

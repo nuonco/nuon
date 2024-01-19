@@ -13,12 +13,13 @@ import (
 type CreateEFSRequest struct {
 	IAMRoleARN string `validate:"required"`
 	InstallID  string `validate:"required"`
+	Region     string `validate:"required"`
 }
 
 type CreateEFSResponse struct{}
 
 func (a *Activities) CreateEFS(ctx context.Context, req *CreateEFSRequest) (*CreateEFSResponse, error) {
-	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN)
+	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get efs service: %w", err)
 	}
