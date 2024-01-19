@@ -56,6 +56,10 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	err = w.execTests(ctx, req, outputs, orgID, apiToken)
 	if err != nil {
 		w.sendNotification(ctx, notificationTypeTestsError, req.CanaryId, req.SandboxMode, err)
+
+		if err := w.execProvisionDeprovision(ctx, orgID, req); err != nil {
+			l.Error("unable to deprovision", zap.Error(err))
+		}
 		return nil, err
 	}
 
