@@ -7,21 +7,31 @@ description: "Get up and running with Nuon in a few minutes."
 
 This guide will walk you through setting up an organization, configuring an application, and deploying to an install. Once you've completed it, you will be ready to configure and deploy your own app.
 
+<Note>
+Everything in this guide will be done in sandbox mode to avoid incurring real-world costs. See [Using Sandbox Mode](guides/sandbox-mode) for info.
+</Note>
+
 ## Set up an Organization
 
 ### Install the Nuon CLI
 
-Install the CLI with the following command:
+Install the CLI and refresh your shell session to get autocompletion.
 
-```sh
+<CodeGroup>
+```sh install the CLI
 echo "y" | /bin/bash -c "$(curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)"
 ```
+
+```sh refresh shell session
+source ~/.bashrc # or ~/.zshrc, etc.
+```
+</CodeGroup>
 
 Run `nuon` to verify it's installed and see all the sub-commands.
 
 ### Create an Account
 
-Once you've installed the Nuon CLI, we'll want to create a Nuon account by logging in.
+Once you've installed the Nuon CLI, create a Nuon account by logging in.
 
 ```sh
 nuon login
@@ -31,27 +41,39 @@ Follow the prompts in the browser and login using a Google account. Once you've 
 
 ### Create an Organization
 
-Now that you're logged in you can create your first organization. We'll create a "sandbox" org, which means it won't create real cloud resources. This will save you time and money, and can be a useful way to test out app configurations even after you create real org.
+<Note>
+If you've already created a sandbox org, run `nuon orgs select` instead.
+</Note>
 
-```sh terminal
+Now that you're logged in you can create your first organization in sandbox mode.
+
+<CodeGroup>
+```sh create org
 nuon orgs create --name {your-org-name} --sandbox-mode
 ```
 
-You can view the new org using the `nuon orgs current` command.
+```sh view org
+nuon orgs current
+```
+</CodeGroup>
 
 ### Connect a GitHub account
 
 <Note>
-You don't need to connect to Github for this guide, since we're just deploying an open-source Docker image.
+You don't need to connect to Github for this guide, since we're deploying an open-source Docker image. This step is only required to deploy code from a private repo.
 </Note>
 
 To deploy code from private repos you'll need to connect to your Github account or organization.
 
-```sh nuon cli
+<CodeGroup>
+```sh connect
 nuon orgs connect-github
 ```
 
-When you've completed the connection flow you should be able to list your connected repos using the `nuon orgs list-connected-repos` command.
+```sh list repos
+nuon orgs list-connected-repos
+```
+</CodeGroup>
 
 ## Configure an Application
 
@@ -103,16 +125,12 @@ install_iam_role_arn = ""
 resource "nuon_app" "example" {
   name = "quickstart_test_app"
 }
-```
 
-```terraform runner.tf
 resource "nuon_app_runner" "main" {
     app_id = nuon_app.example.id
     runner_type = "aws-eks"
 }
-```
 
-```terraform sandbox.tf
 resource "nuon_app_sandbox" "main" {
   app_id            = nuon_app.example.id
   terraform_version = "v1.6.3"
@@ -125,7 +143,7 @@ resource "nuon_app_sandbox" "main" {
 }
 ```
 
-```terraform component.tf
+```terraform http_bin.tf
 resource "nuon_container_image_component" "http_bin" {
   name   = "http_bin"
   app_id = nuon_app.example.id
@@ -161,7 +179,7 @@ When it's done, run `nuon apps select` to see the new app ID and save it to the 
 
 Next we'll create some installs to deploy your app to. Typically, installs would be created by customers through a sign-up flow, but you can also create installs yourself via the Terraform provider. 
 
-### Set up Install Role
+### Set up an Install Role
 
 <Note>
 Since we're using a sandbox org, you don't need a real AWS account. You can provide any string as an IAM role ARN, and Nuon will simulate everything. This step is only required for real orgs.
@@ -263,31 +281,15 @@ Since you're using a sandbox org, you can create as many installs as you want, u
 
 Once an install has been created, you can deploy your app to it.
 
-```sh terminal
+```sh create release
 nuon releases create -c http_bin --auto-build
 ```
 
-This will create a new build of your component, and release it. A release will create a deploy for each install.
+This will create a new build of your component and release it. The release will create a deploy for each install.
 
-You can use the CLI to inspect the state of builds and releases.
-
-<CodeGroup>
-```sh list builds
-nuon builds list -c http_bin
-```
-
-```sh view build logs
-nuon builds logs -b {build_id} -c http_bin
-```
-
-```sh list deploys
-nuon installs list-deploys -i {install_id}
-```
-
-```sh view deploy logs
-nuon installs deploy-logs -i {install_id} -d {deploy_id}
-```
-</CodeGroup>
+<Note>
+See [Creating a Release](guides/creating-a-release) for more info on working with releases.
+</Note>
 
 ## Next Steps
 
