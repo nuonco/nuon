@@ -47,9 +47,14 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) 
 		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
 	}
 
-	runnerTyp := installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
-	if install.AppRunnerConfig.Type == app.AppRunnerTypeAWSECS {
+	var runnerTyp installsv1.RunnerType
+	switch install.AppRunnerConfig.Type {
+	case app.AppRunnerTypeAWSECS:
 		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AWS_ECS
+	case app.AppRunnerTypeAWSEKS:
+		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
+	default:
+		return nil, fmt.Errorf("unsupported runner type: %w", err)
 	}
 
 	req := &installsv1.ProvisionRequest{

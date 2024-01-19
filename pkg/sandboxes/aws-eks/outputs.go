@@ -20,17 +20,18 @@ func ToStringSlice(vals []interface{}) []string {
 }
 
 type ECSClusterOutputs struct {
-	ARN  string `mapstructure:"arn" validate:"required"`
-	Name string `mapstructure:"name" validate:"required"`
+	ARN  string `mapstructure:"arn"`
+	Name string `mapstructure:"name"`
+	ID   string `mapstructure:"id"`
 }
 
 type ClusterOutputs struct {
-	ARN                      string `mapstructure:"arn" validate:"required"`
-	CertificateAuthorityData string `mapstructure:"certificate_authority_data" validate:"required"`
-	Endpoint                 string `mapstructure:"endpoint" validate:"required"`
-	Name                     string `mapstructure:"name" validate:"required"`
-	PlatformVersion          string `mapstructure:"platform_version" validate:"required"`
-	Status                   string `mapstructure:"status" validate:"required"`
+	ARN                      string `mapstructure:"arn"`
+	CertificateAuthorityData string `mapstructure:"certificate_authority_data"`
+	Endpoint                 string `mapstructure:"endpoint"`
+	Name                     string `mapstructure:"name"`
+	PlatformVersion          string `mapstructure:"platform_version"`
+	Status                   string `mapstructure:"status"`
 }
 
 type VPCOutputs struct {

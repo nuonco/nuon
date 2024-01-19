@@ -188,6 +188,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 			SubnetIds:         generics.ToStringSlice(tfOutputs.VPC.PublicSubnetIDs),
 			SecurityGroupId:   tfOutputs.VPC.DefaultSecurityGroupID,
 		}
+		prReq.OdrIamRoleArn = tfOutputs.Runner.ODRIAMRoleARN
 	} else {
 		prReq.EksClusterInfo = &runnerv1.KubeClusterInfo{
 			Id:             tfOutputs.Cluster.Name,

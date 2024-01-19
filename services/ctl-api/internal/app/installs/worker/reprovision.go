@@ -20,6 +20,7 @@ func (w *Workflows) reprovision(ctx workflow.Context, installID string, dryRun b
 		w.updateStatus(ctx, installID, StatusError, "unable to get install from database")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
+
 	var installRun app.InstallSandboxRun
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateSandboxRun, activities.CreateSandboxRunRequest{
 		InstallID: installID,
@@ -30,6 +31,7 @@ func (w *Workflows) reprovision(ctx workflow.Context, installID string, dryRun b
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
+	w.updateRunStatus(ctx, installRun.ID, StatusProvisioning, "provisioning")
 	req, err := w.protos.ToInstallProvisionRequest(&install, installRun.ID)
 	if err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to create install provision request")
@@ -47,9 +49,12 @@ func (w *Workflows) reprovision(ctx workflow.Context, installID string, dryRun b
 		}
 
 		w.updateStatus(ctx, installID, StatusError, "unable to reprovision app resources")
+		w.updateRunStatus(ctx, installRun.ID, StatusError, "unable to provision install resources")
 		return fmt.Errorf("unable to provision install: %w", err)
 	}
 
 	w.updateStatus(ctx, installID, StatusActive, "app resources are provisioned")
+	w.updateRunStatus(ctx, installRun.ID, StatusActive, "install resources provisioned")
+
 	return nil
 }

@@ -81,7 +81,7 @@ func TestAssumer_assumeIamRole(t *testing.T) {
 				RoleSessionName: sessionName,
 			}
 			client := test.clientFn(t)
-			creds, err := a.assumeIamRole(context.Background(), client)
+			creds, err := a.assumeIamRole(context.Background(), client, a.RoleARN)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return

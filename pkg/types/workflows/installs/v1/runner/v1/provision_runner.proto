@@ -50,32 +50,20 @@ message ProvisionRunnerRequest {
 }
 
 message ECSClusterInfo {
-  string cluster_arn = 1 [
-    (validate.rules).string.min_len = 5,
-    (tagger.tags) = "faker:\"len=20\""
-  ];
+  string cluster_arn = 1 [(tagger.tags) = "faker:\"len=20\""];
 
-  string install_iam_role_arn = 2 [(validate.rules).string.min_len = 26];
-  string vpc_id = 3 [(validate.rules).string.min_len = 26];
+  string install_iam_role_arn = 2;
+  string vpc_id = 3;
   repeated string subnet_ids = 4;
-  string security_group_id = 5 [(validate.rules).string.min_len = 26];
-  string runner_iam_role_arn = 6 [(validate.rules).string.min_len = 26];
-  string odr_iam_role_arn = 7 [(validate.rules).string.min_len = 26];
+  string security_group_id = 5;
+  string runner_iam_role_arn = 6;
+  string odr_iam_role_arn = 7;
 }
 
 message KubeClusterInfo {
-  string id = 1 [
-    (validate.rules).string.min_len = 5,
-    (tagger.tags) = "faker:\"len=20\""
-  ];
-  string endpoint = 2 [
-    (validate.rules).string.min_len = 20,
-    (tagger.tags) = "faker:\"len=20\""
-  ];
-  string ca_data = 3 [
-    (validate.rules).string.min_len = 20,
-    (tagger.tags) = "faker:\"len=20\""
-  ];
+  string id = 1 [(tagger.tags) = "faker:\"len=20\""];
+  string endpoint = 2 [(tagger.tags) = "faker:\"len=20\""];
+  string ca_data = 3 [(tagger.tags) = "faker:\"len=20\""];
   string trusted_role_arn = 4;
 }
 
