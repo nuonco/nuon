@@ -248,7 +248,7 @@ func TestConfig_MarshalJSON(t *testing.T) {
 			},
 			assertFn: func(t *testing.T, val map[string]interface{}) {
 				assume := val["assume_role"].(map[string]interface{})
-				assert.Equal(t, 3, len(assume))
+				assert.Equal(t, 4, len(assume))
 
 				assert.Equal(t, "role-arn", assume["role_arn"])
 				assert.Equal(t, "session-name", assume["session_name"])

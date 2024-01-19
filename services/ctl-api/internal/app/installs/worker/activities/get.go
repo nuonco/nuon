@@ -26,6 +26,7 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Install, err
 		// load sandbox
 		Preload("AppSandboxConfig.SandboxRelease").
 		Preload("AppSandboxConfig.SandboxRelease.Sandbox").
+		Preload("AppRunnerConfig").
 
 		// load connected github
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").

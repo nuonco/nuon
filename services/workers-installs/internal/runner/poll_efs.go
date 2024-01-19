@@ -12,6 +12,7 @@ import (
 type PollEFSRequest struct {
 	IAMRoleARN string `validate:"required"`
 	InstallID  string `validate:"required"`
+	Region     string `validate:"required"`
 }
 
 type PollEFSResponse struct {
@@ -19,13 +20,13 @@ type PollEFSResponse struct {
 }
 
 func (a *Activities) PollEFS(ctx context.Context, req PollEFSRequest) (*PollEFSResponse, error) {
-	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN)
+	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create efs client: %w", err)
 	}
 
 	fss, err := efsClient.DescribeFileSystems(ctx, &efs.DescribeFileSystemsInput{
-		CreationToken: generics.ToPtr(req.IAMRoleARN),
+		CreationToken: generics.ToPtr(req.InstallID),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get efs: %w", err)
