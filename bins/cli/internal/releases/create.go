@@ -16,7 +16,7 @@ const (
 )
 
 var errMissingInput = fmt.Errorf("need either a build ID or a component ID")
-var errMissingBuildInput = fmt.Errorf("must pass in one of -build-id, -auto-build or -latest")
+var errMissingBuildInput = fmt.Errorf("must pass in one of -build-id, -auto-build or -latest-build")
 
 func (s *Service) Create(ctx context.Context, compID, buildID, delay string, autoBuild, latestBuild bool, installsPerStep int64, asJSON bool) {
 	var err error
