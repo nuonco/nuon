@@ -156,3 +156,31 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 
 	return nil
 }
+
+func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.DeprovisionRunnerRequest) error {
+	// poll mount targets to be ready
+	var deleteServiceResp DeleteServiceResponse
+	deleteServiceReq := DeleteServiceRequest{
+		InstallID:  req.InstallId,
+		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
+		ClusterARN: req.EcsClusterInfo.ClusterArn,
+		Region:     req.Region,
+	}
+	if err := w.execAWSActivity(ctx, w.act.DeleteECSService, deleteServiceReq, &deleteServiceResp); err != nil {
+		return fmt.Errorf("unable to delete service: %w", err)
+	}
+
+	// poll mount targets to be ready
+	var pollDeleteServiceResp PollDeleteECSServiceResponse
+	pollDeleteServiceReq := PollDeleteECSServiceRequest{
+		InstallID:  req.InstallId,
+		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
+		ClusterARN: req.EcsClusterInfo.ClusterArn,
+		Region:     req.Region,
+	}
+	if err := w.execAWSActivity(ctx, w.act.PollDeleteService, pollDeleteServiceReq, &pollDeleteServiceResp); err != nil {
+		return fmt.Errorf("unable to poll deleting ecs service: %w", err)
+	}
+
+	return nil
+}

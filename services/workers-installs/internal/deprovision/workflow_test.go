@@ -90,21 +90,6 @@ func TestDeprovision(t *testing.T) {
 
 	env.RegisterWorkflow(CreatePlan)
 
-	env.OnActivity(act.ListNamespaces, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, lReq ListNamespacesRequest) (ListNamespacesResponse, error) {
-			var resp ListNamespacesResponse
-			resp.Namespaces = []string{"test-namespace"}
-			assert.NoError(t, lReq.validate())
-			return resp, nil
-		})
-
-	env.OnActivity(act.DeleteNamespace, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, dReq DeleteNamespaceRequest) (DeleteNamespaceResponse, error) {
-			var resp DeleteNamespaceResponse
-			assert.Equal(t, dReq.Namespace, "test-namespace")
-			assert.NoError(t, dReq.validate())
-			return resp, nil
-		})
 	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
 		Return(func(_ workflow.Context, pr *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
 			assert.Nil(t, pr.Validate())

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client"
@@ -114,5 +115,41 @@ func (w *wkflow) installEKSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 		return err
 	}
 
+	return nil
+}
+
+func (w *wkflow) uninstallEKSRunner(ctx workflow.Context, req *runnerv1.DeprovisionRunnerRequest) error {
+	l := workflow.GetLogger(ctx)
+
+	// NOTE(jm): this is not a long term solution, eventually we will manage both the runner and the different
+	// components using nuon components, and then will just remove these by orchestrating the executors upstream.
+	//
+	// howe  er, for now, until this all works we just "cheat" and delete the builtin namespace
+	listResp, err := w.execListNamespaces(ctx, ListNamespacesRequest{
+		AppID:     req.AppId,
+		OrgID:     req.OrgId,
+		InstallID: req.InstallId,
+	})
+	if err != nil {
+		l.Debug("unable to list namespaces", "error", err)
+		return fmt.Errorf("unable to delete namespace: %w", err)
+	}
+
+	for _, namespace := range listResp.Namespaces {
+		if generics.SliceContains(namespace, terraformManagedNamespaces) {
+			continue
+		}
+
+		_, err = w.execDeleteNamespace(ctx, DeleteNamespaceRequest{
+			AppID:     req.AppId,
+			OrgID:     req.OrgId,
+			InstallID: req.InstallId,
+			Namespace: namespace,
+		})
+		if err != nil {
+			l.Debug("unable to delete namespace activity", "error", err)
+			return fmt.Errorf("unable to delete namespace: %w", err)
+		}
+	}
 	return nil
 }
