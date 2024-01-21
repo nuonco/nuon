@@ -24,4 +24,3 @@ module "aws-ecs" {
     }
   ]
 }
-

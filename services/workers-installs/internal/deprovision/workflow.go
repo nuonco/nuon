@@ -4,21 +4,26 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/activities"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 )
 
 // NewWorkflow returns a new workflow executor
 func NewWorkflow(cfg workers.Config) wkflow {
 	return wkflow{
-		cfg: cfg,
+		cfg:        cfg,
+		sharedActs: activities.NewActivities(nil, nil),
+		acts:       NewActivities(nil, nil, nil),
 	}
 }
 
 type wkflow struct {
-	cfg workers.Config
+	cfg        workers.Config
+	sharedActs *activities.Activities
+	acts       *Activities
 }
 
 func (w wkflow) finishWithErr(ctx workflow.Context, req *installsv1.DeprovisionRequest, act *Activities, step string, err error) {
@@ -50,9 +55,9 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 60 * time.Minute,
 	}
+	act := NewActivities(nil, nil, nil)
 
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
-	act := NewActivities(nil, nil, nil)
 
 	stReq := StartRequest{
 		DeprovisionRequest:  req,
@@ -64,38 +69,14 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 		return resp, fmt.Errorf("unable to execute start activity: %w", err)
 	}
 
-	// NOTE(jm): this is not a long term solution, eventually we will manage both the runner and the different
-	// components using nuon components, and then will just remove these by orchestrating the executors upstream.
-	//
-	// however, for now, until this all works we just "cheat" and delete the builtin namespace
-	listResp, err := execListNamespaces(ctx, act, ListNamespacesRequest{
-		AppID:     req.AppId,
-		OrgID:     req.OrgId,
-		InstallID: req.InstallId,
-	})
-	if err != nil {
-		l.Debug("unable to list namespaces", "error", err)
-		return resp, fmt.Errorf("unable to delete namespace: %w", err)
-	}
-
-	for _, namespace := range listResp.Namespaces {
-		if generics.SliceContains(namespace, terraformManagedNamespaces) {
-			continue
-		}
-
-		_, err = execDeleteNamespace(ctx, act, DeleteNamespaceRequest{
-			AppID:     req.AppId,
-			OrgID:     req.OrgId,
-			InstallID: req.InstallId,
-			Namespace: namespace,
-		})
-		if err != nil {
-			l.Debug("unable to delete namespace activity", "error", err)
-			return resp, fmt.Errorf("unable to delete namespace: %w", err)
-		}
-	}
 	if req.PlanOnly {
 		l.Info("skipping the rest of the workflow - plan only")
+		return resp, nil
+	}
+
+	if err := w.deprovisionRunner(ctx, req); err != nil {
+		err = fmt.Errorf("unable to deprovision runner: %w", err)
+		l.Info("error deprovisioning runner", zap.Error(err))
 		return resp, nil
 	}
 

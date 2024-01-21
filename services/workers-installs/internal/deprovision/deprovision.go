@@ -3,9 +3,13 @@ package deprovision
 import (
 	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
+	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/activities"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/sandbox"
 	"go.temporal.io/sdk/workflow"
 )
@@ -68,4 +72,51 @@ func (w wkflow) deprovisionSandbox(ctx workflow.Context, req *installsv1.Deprovi
 	}
 
 	return execResp, nil
+}
+
+func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.DeprovisionRequest) error {
+	outputs, err := w.execFetchSandboxOutputs(ctx, activities.FetchSandboxOutputsRequest{
+		OrgID:     req.OrgId,
+		AppID:     req.AppId,
+		InstallID: req.InstallId,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to fetch sandbox outputs: %w", err)
+	}
+
+	tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
+	if err != nil {
+		return fmt.Errorf("invalid sandbox outputs: %w", err)
+	}
+
+	prReq := &runnerv1.DeprovisionRunnerRequest{
+		OrgId:      req.OrgId,
+		AppId:      req.AppId,
+		InstallId:  req.InstallId,
+		Region:     req.AccountSettings.Region,
+		RunnerType: req.RunnerType,
+	}
+
+	if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_ECS {
+		prReq.EcsClusterInfo = &runnerv1.ECSClusterInfo{
+			ClusterArn:        tfOutputs.ECSCluster.ARN,
+			InstallIamRoleArn: tfOutputs.Runner.InstallIAMRoleARN,
+			RunnerIamRoleArn:  tfOutputs.Runner.RunnerIAMRoleARN,
+			OdrIamRoleArn:     tfOutputs.Runner.ODRIAMRoleARN,
+			VpcId:             tfOutputs.VPC.ID,
+			SubnetIds:         generics.ToStringSlice(tfOutputs.VPC.PublicSubnetIDs),
+			SecurityGroupId:   tfOutputs.VPC.DefaultSecurityGroupID,
+		}
+	} else {
+		prReq.EksClusterInfo = &runnerv1.KubeClusterInfo{
+			Id:             tfOutputs.Cluster.Name,
+			Endpoint:       tfOutputs.Cluster.Endpoint,
+			CaData:         tfOutputs.Cluster.CertificateAuthorityData,
+			TrustedRoleArn: w.cfg.NuonAccessRoleArn,
+		}
+	}
+	if _, err = execDeprovisionRunner(ctx, w.cfg, prReq); err != nil {
+		return fmt.Errorf("unable to provision install runner: %w", err)
+	}
+	return nil
 }

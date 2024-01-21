@@ -10,8 +10,8 @@ import "validate/validate.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1";
 
-// ProvisionRunnerRequest represents a workflow input for creating a deployment
-message ProvisionRunnerRequest {
+// DeprovisionRunnerRequest represents a workflow input for creating a deployment
+message DeprovisionRunnerRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
@@ -25,16 +25,11 @@ message ProvisionRunnerRequest {
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  // credentials for installing into KubeCluster
+  // credentials for uninstalling from KubeCluster
   KubeClusterInfo eks_cluster_info = 4;
 
-  // credentials for installing into ECSCluster
+  // credentials for uninstalling from ECSCluster
   ECSClusterInfo ecs_cluster_info = 5;
-
-  string odr_iam_role_arn = 6 [
-    (validate.rules).string.min_len = 20,
-    (tagger.tags) = "faker:\"len=20\""
-  ];
 
   string region = 7 [
     (validate.rules).string = {
@@ -52,4 +47,4 @@ message ProvisionRunnerRequest {
 }
 
 // StartResponse returns the response from a deployment workflow
-message ProvisionRunnerResponse {}
+message DeprovisionRunnerResponse {}
