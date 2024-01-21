@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package installs.v1.runner.v1;
+
+import "tagger/tagger.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1";
+
+message KubeClusterInfo {
+  string id = 1 [(tagger.tags) = "faker:\"len=20\""];
+  string endpoint = 2 [(tagger.tags) = "faker:\"len=20\""];
+  string ca_data = 3 [(tagger.tags) = "faker:\"len=20\""];
+  string trusted_role_arn = 4;
+}
