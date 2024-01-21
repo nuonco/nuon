@@ -1,4 +1,4 @@
-package deprovision
+package runner
 
 import (
 	"context"

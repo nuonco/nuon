@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/powertoolsdev/mono/services/workers-installs/internal"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/activities"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/dns"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
 )
@@ -57,7 +58,7 @@ func TestProvision_finishWithErr(t *testing.T) {
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	act := NewActivities(nil, internal.Config{}, nil)
+	act := NewActivities(nil, nil, nil)
 
 	errChildWorkflow := fmt.Errorf("unable to complete workflow")
 
@@ -135,7 +136,7 @@ func TestProvision(t *testing.T) {
 	provisionOutputs := generics.GetFakeObj[awseks.TerraformOutputs]()
 	assert.NoError(t, provisionOutputs.Validate())
 
-	act := NewActivities(nil, internal.Config{}, nil)
+	act := NewActivities(nil, nil, nil)
 	// Mock activity implementation
 	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
 		Return(func(_ workflow.Context, pr *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
@@ -245,7 +246,8 @@ func TestProvision_plan_only(t *testing.T) {
 	env.RegisterWorkflow(CreatePlan)
 	env.RegisterWorkflow(ExecutePlan)
 
-	act := NewActivities(nil, internal.Config{}, nil)
+	act := NewActivities(nil, nil, nil)
+	sharedActs := activities.NewActivities(nil, nil)
 	// Mock activity implementation
 	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
 		Return(func(_ workflow.Context, pr *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
@@ -287,8 +289,8 @@ func TestProvision_plan_only(t *testing.T) {
 			return resp, nil
 		})
 
-	env.OnActivity(act.FetchSandboxOutputs, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, r FetchSandboxOutputsRequest) (*structpb.Struct, error) {
+	env.OnActivity(sharedActs.FetchSandboxOutputs, mock.Anything, mock.Anything).
+		Return(func(_ context.Context, r activities.FetchSandboxOutputsRequest) (*structpb.Struct, error) {
 			return &structpb.Struct{}, nil
 		})
 

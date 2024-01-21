@@ -41,12 +41,7 @@ func (c *Adapter) toSandboxSettings(install *app.Install) (*installsv1.SandboxSe
 	return sandboxSettings, nil
 }
 
-func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) (*installsv1.ProvisionRequest, error) {
-	sandboxSettings, err := c.toSandboxSettings(install)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
-	}
-
+func (c *Adapter) toRunnerType(install *app.Install) (installsv1.RunnerType, error) {
 	var runnerTyp installsv1.RunnerType
 	switch install.AppRunnerConfig.Type {
 	case app.AppRunnerTypeAWSECS:
@@ -54,7 +49,21 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) 
 	case app.AppRunnerTypeAWSEKS:
 		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
 	default:
-		return nil, fmt.Errorf("unsupported runner type: %w", err)
+		return installsv1.RunnerType_RUNNER_TYPE_UNSPECIFIED, fmt.Errorf("unsupported runner type:  %s", install.AppRunnerConfig.Type)
+	}
+
+	return runnerTyp, nil
+}
+
+func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) (*installsv1.ProvisionRequest, error) {
+	sandboxSettings, err := c.toSandboxSettings(install)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
+	}
+
+	runnerTyp, err := c.toRunnerType(install)
+	if err != nil {
+		return nil, err
 	}
 
 	req := &installsv1.ProvisionRequest{
@@ -79,6 +88,11 @@ func (c *Adapter) ToInstallDeprovisionRequest(install *app.Install, runID string
 		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
 	}
 
+	runnerTyp, err := c.toRunnerType(install)
+	if err != nil {
+		return nil, err
+	}
+
 	req := &installsv1.DeprovisionRequest{
 		OrgId:     install.OrgID,
 		AppId:     install.AppID,
@@ -89,6 +103,7 @@ func (c *Adapter) ToInstallDeprovisionRequest(install *app.Install, runID string
 			AwsRoleArn: install.AWSAccount.IAMRoleARN,
 		},
 		SandboxSettings: sandboxSettings,
+		RunnerType:      runnerTyp,
 	}
 
 	return req, nil
