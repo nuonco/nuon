@@ -14,7 +14,7 @@ type Activities struct {
 	v      *validator.Validate
 	sender sender.NotificationSender
 
-	config workers.Config
+	config *workers.Config
 
 	// this is exposed for testing and should not otherwise be used
 	Kubeconfig *rest.Config
@@ -22,7 +22,7 @@ type Activities struct {
 	notifier
 }
 
-func NewActivities(v *validator.Validate, cfg workers.Config, sender sender.NotificationSender) *Activities {
+func NewActivities(v *validator.Validate, cfg *workers.Config, sender sender.NotificationSender) *Activities {
 	return &Activities{
 		v:        v,
 		config:   cfg,

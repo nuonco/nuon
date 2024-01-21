@@ -7,6 +7,7 @@ import (
 	dnsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/dns/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/activities"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/dns"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
 	enumspb "go.temporal.io/api/enums/v1"
@@ -88,10 +89,9 @@ func execCheckIAMRole(
 	return nil
 }
 
-func execFetchSandboxOutputs(
+func (w *wkflow) execFetchSandboxOutputs(
 	ctx workflow.Context,
-	act *Activities,
-	req FetchSandboxOutputsRequest,
+	req activities.FetchSandboxOutputsRequest,
 ) (*structpb.Struct, error) {
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 1 * time.Minute,
@@ -99,7 +99,7 @@ func execFetchSandboxOutputs(
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
 	var resp *structpb.Struct
-	fut := workflow.ExecuteActivity(ctx, act.FetchSandboxOutputs, req)
+	fut := workflow.ExecuteActivity(ctx, w.sharedActs.FetchSandboxOutputs, req)
 	if err := fut.Get(ctx, &resp); err != nil {
 		return nil, err
 	}

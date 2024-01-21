@@ -8,7 +8,6 @@ import (
 	sharedv1 "github.com/powertoolsdev/mono/pkg/types/workflows/shared/v1"
 	meta "github.com/powertoolsdev/mono/pkg/workflows/meta"
 	"github.com/powertoolsdev/mono/pkg/workflows/meta/prefix"
-	"github.com/powertoolsdev/mono/services/workers-installs/internal"
 	"go.temporal.io/sdk/workflow"
 	anypb "google.golang.org/protobuf/types/known/anypb"
 )
@@ -27,7 +26,7 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, req *installsv1.ProvisionRe
 		},
 	}
 
-	act := NewActivities(nil, internal.Config{}, nil)
+	act := NewActivities(nil, nil, nil)
 	if _, err := execStart(ctx, act, startReq); err != nil {
 		return fmt.Errorf("unable to start workflow: %w", err)
 	}
@@ -119,7 +118,7 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *installsv1.ProvisionR
 	}
 
 	// exec activity
-	act := NewActivities(nil, internal.Config{}, nil)
+	act := NewActivities(nil, nil, nil)
 	_, err = execFinish(ctx, act, finishReq)
 	if err != nil {
 		err = fmt.Errorf("unable to execute finish activity: %w", err)
