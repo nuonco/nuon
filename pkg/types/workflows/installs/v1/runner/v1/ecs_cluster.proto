@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package installs.v1.runner.v1;
+
+import "tagger/tagger.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1";
+
+message ECSClusterInfo {
+  string cluster_arn = 1 [(tagger.tags) = "faker:\"len=20\""];
+
+  string install_iam_role_arn = 2;
+  string vpc_id = 3;
+  repeated string subnet_ids = 4;
+  string security_group_id = 5;
+  string runner_iam_role_arn = 6;
+  string odr_iam_role_arn = 7;
+}

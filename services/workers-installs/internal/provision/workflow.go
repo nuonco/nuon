@@ -14,18 +14,23 @@ import (
 	dnsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/dns/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/activities"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/sandbox"
 )
 
 // NewWorkflow returns a new workflow executor
 func NewWorkflow(cfg workers.Config) wkflow {
 	return wkflow{
-		cfg: cfg,
+		cfg:        cfg,
+		sharedActs: activities.NewActivities(nil, nil),
+		acts:       NewActivities(nil, nil, nil),
 	}
 }
 
 type wkflow struct {
-	cfg workers.Config
+	cfg        workers.Config
+	acts       *Activities
+	sharedActs *activities.Activities
 }
 
 func (w wkflow) createPlanRequest(runTyp planv1.SandboxInputType, req *installsv1.ProvisionRequest) *planv1.CreatePlanRequest {
@@ -106,7 +111,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		ScheduleToCloseTimeout: 60 * time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
-	act := NewActivities(nil, workers.Config{}, nil)
+	act := NewActivities(nil, nil, nil)
 
 	if err := w.startWorkflow(ctx, req); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
@@ -140,7 +145,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		return resp, err
 	}
 
-	outputs, err := execFetchSandboxOutputs(ctx, act, FetchSandboxOutputsRequest{
+	outputs, err := w.execFetchSandboxOutputs(ctx, activities.FetchSandboxOutputsRequest{
 		OrgID:     req.OrgId,
 		AppID:     req.AppId,
 		InstallID: req.InstallId,

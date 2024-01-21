@@ -26,6 +26,7 @@ func (a *Activities) DeleteECSService(ctx context.Context, req DeleteServiceRequ
 	ecsReq := &ecs.DeleteServiceInput{
 		Cluster: generics.ToPtr(req.ClusterARN),
 		Service: generics.ToPtr(fmt.Sprintf("waypoint-runner-%s", req.InstallID)),
+		Force:   generics.ToPtr(true),
 	}
 	if _, err := ecsClient.DeleteService(ctx, ecsReq); err != nil {
 		return nil, fmt.Errorf("unable to delete service: %w", err)

@@ -1,4 +1,4 @@
-package provision
+package activities
 
 import (
 	"context"
@@ -31,9 +31,9 @@ func (a *Activities) FetchSandboxOutputs(ctx context.Context, req FetchSandboxOu
 func (s *Activities) getDalClient(orgID string) (dal.Client, error) {
 	dalClient, err := dal.New(s.v,
 		dal.WithSettings(dal.Settings{
-			InstallsBucket:                s.config.InstallationsBucket,
-			InstallsBucketIAMRoleTemplate: s.config.OrgInstallationsRoleTemplate,
-			OrgsBucket:                    s.config.InstallationsBucket,
+			InstallsBucket:                s.cfg.InstallationsBucket,
+			InstallsBucketIAMRoleTemplate: s.cfg.OrgInstallationsRoleTemplate,
+			OrgsBucket:                    s.cfg.InstallationsBucket,
 		}),
 		dal.WithOrgID(orgID))
 	if err != nil {

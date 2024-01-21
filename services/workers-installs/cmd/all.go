@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/sender"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-installs/internal"
+	"github.com/powertoolsdev/mono/services/workers-installs/internal/activities"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/deprovision"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/dns"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/provision"
@@ -63,13 +64,15 @@ func runAll(cmd *cobra.Command, _ []string) {
 		worker.WithWorkflow(prWorkflow.Provision),
 		worker.WithWorkflow(dprWorkflow.Deprovision),
 		worker.WithWorkflow(prRWorkflow.ProvisionRunner),
+		worker.WithWorkflow(prRWorkflow.DeprovisionRunner),
 		worker.WithWorkflow(dnsWorkflow.ProvisionDNS),
 
 		// register activities
-		worker.WithActivity(provision.NewActivities(v, cfg, n)),
+		worker.WithActivity(provision.NewActivities(v, &cfg, n)),
 		worker.WithActivity(runner.NewActivities(v, cfg)),
 		worker.WithActivity(deprovision.NewActivities(v, n, &cfg)),
 		worker.WithActivity(dns.NewActivities(v)),
+		worker.WithActivity(activities.NewActivities(v, &cfg)),
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize worker: %s", err.Error())
