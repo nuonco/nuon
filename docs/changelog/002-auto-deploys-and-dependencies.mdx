@@ -9,7 +9,7 @@ Jan 16th, 2024
 
 Last week, we shipped auto-deploys. Auto deploys mean that whenever a new install is created, all existing components are automatically deployed to the install in the correct order.
 
-![auto deploy](images/changelog/002_auto_deploy.png)
+![auto deploy](/images/changelog/002_auto_deploy.png)
 
 Now, when you create an app using the `nuon` cli, an [an sdk](./guides/sdk_integration.md), or using [an installer](./guides/app_installers.mdx) - each component in the app will
 automatically be deployed to, without you having to run a release. This requires an intelligent representation of apps
@@ -40,7 +40,7 @@ resource "nuon_helm_chart_component" "helm" {
 
 When you apply your app config, we will automatically look out for cycles and error if your dependencies are invalid:
 
-![dependency errors](images/changelog/002_dependency_cycle.png)
+![dependency errors](/images/changelog/002_dependency_cycle.png)
 
 ## Deprovisioning order
 
