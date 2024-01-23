@@ -28,6 +28,10 @@
   },
   "tabs": [
     {
+      "name": "Changelog",
+      "url": "changelog"
+    },
+    {
       "name": "API Reference",
       "url": "api-ref"
     },
@@ -52,6 +56,11 @@
       "url": "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
     },
     {
+      "name": "Changelog",
+      "icon": "building",
+      "url": "changelog"
+    },
+    {
       "name": "Blog",
       "icon": "newspaper",
       "url": "https://www.nuon.co/blog"
@@ -60,7 +69,7 @@
   "navigation": [
     {
       "group": "Get Started",
-    "pages": ["quickstart", "what-is-nuon", "glossary"]
+      "pages": ["quickstart", "what-is-nuon", "glossary"]
     },
     {
       "group": "Guides",
@@ -76,6 +85,15 @@
     {
       "group": "Get Started",
       "pages": ["api-ref/getting-started"]
+    },
+    {
+      "group": "Changelog",
+      "pages": [
+        "changelog/changelog",
+        "changelog/003-ecs-support",
+        "changelog/002-auto-deploys-and-dependencies",
+        "changelog/001-new-year-new-docs"
+      ]
     },
     {
       "group": "apps",
@@ -94,24 +112,20 @@
         "api-ref/apps/get-latest-app-sandbox-config",
         "api-ref/apps/render-an-app-installer",
         "api-ref/apps/get-an-app-installer",
-        "api-ref/apps/delete-an-app-installer",
-        "api-ref/apps/update-an-app-1"
+        "api-ref/apps/delete-an-app-installer"
       ]
     },
     {
       "group": "components",
       "pages": [
         "api-ref/components/get-all-components-for-an-app",
-        "api-ref/components/create-an-app-component",
         "api-ref/components/get-all-components-for-an-org",
         "api-ref/components/get-a-component",
-        "api-ref/components/delete-an-component",
         "api-ref/components/update-a-component",
         "api-ref/components/get-all-builds-for-a-component",
         "api-ref/components/create-component-build",
         "api-ref/components/get-latest-build-for-a-component",
         "api-ref/components/get-a-build-for-a-component",
-        "api-ref/components/get-install-build-logs",
         "api-ref/components/get-component-build-plan",
         "api-ref/components/get-all-configs-for-a-component",
         "api-ref/components/create-a-docker-build-component-config",
@@ -130,17 +144,14 @@
         "api-ref/installs/get-an-install",
         "api-ref/installs/create-an-app-install-from-an-installer",
         "api-ref/installs/get-all-installs-for-an-org",
-        "api-ref/installs/get-an-install-1",
         "api-ref/installs/delete-an-install",
         "api-ref/installs/update-an-install",
         "api-ref/installs/get-an-install-component",
         "api-ref/installs/get-an-installs-components",
         "api-ref/installs/get-an-install-components-deploys",
         "api-ref/installs/get-the-latest-deploy-for-an-install-component",
-        "api-ref/installs/get-an-installs-deploys",
         "api-ref/installs/deploy-a-build-to-an-install",
         "api-ref/installs/get-an-install-deploy",
-        "api-ref/installs/get-an-install-deploy-1",
         "api-ref/installs/get-install-deploy-logs",
         "api-ref/installs/get-install-deploy-plan",
         "api-ref/installs/get-an-installs-inputs",
