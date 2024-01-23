@@ -16,16 +16,16 @@ func (s *Service) GetInputConfig(ctx context.Context, appID string, asJSON bool)
 
 	view := ui.NewGetView()
 
-	sandboxCfg, err := s.api.GetAppInputLatestConfig(ctx, appID)
+	inputCfg, err := s.api.GetAppInputLatestConfig(ctx, appID)
 	if err != nil {
 		view.Error(err)
 		return
 	}
 
 	if asJSON {
-		ui.PrintJSON(sandboxCfg)
+		ui.PrintJSON(inputCfg)
 		return
 	}
 
-	ui.PrintJSON(sandboxCfg)
+	ui.PrintJSON(inputCfg)
 }
