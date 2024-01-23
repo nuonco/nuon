@@ -1,0 +1,91 @@
+---
+title: 003 - ECS Support
+description: Deploy apps without kubernetes, long live kubernetes!
+---
+
+## ECS Support
+
+Over the past few months, we have had a growing number of customers ask us about
+AWS ECS support. Or, more specifically ask us "what if we don't want to use kubernetes".
+
+Well, you asked and today we have answered! You can now create Nuon apps that do not rely on Kubernetes!
+
+![runner config](./changelog/images/003_runner_config.png)
+
+If you are reading this, you might be asking why? After all, isn't the promise of Kubernetes that you can "configure once, run anywhere"? - we're not about to turn our change log into a Kube vs everything else post (that is for another day), but we can share why our customer's wanted us to build this.
+
+* some teams didn't have Kube experience and/or want to learn it
+* they wanted to optimize cost, reduce complexity and create a faster install experience
+*  (whether AWS Lambda, ECS Fargate, or something else).
+* their customers did not require a shared responsibility model, where they manage part of the k8s cluster.
+
+Most Nuon apps using ECS can be installed into your customer's cloud account in < 1 min, and only cost a couple dollars a month. While not a fit for _all_ enterprise customers, there certainly are a lot of users who would rather know they aren't dependent on k8s.
+
+Creating a Nuon app that uses ECS is as simple as configuring an ECS runner, and selecting an ECS sandbox. You can configure an ECS runner using Terraform:
+
+```terraform runner.tf
+resource "nuon_app_runner" "main" {
+  app_id = nuon_app.main.id
+
+  runner_type = "aws-ecs"
+
+  env_var {
+    name = "YOUR_ENV_VAR"
+    value = "env-var"
+  }
+}
+```
+
+While you can always create any sandbox you like, we support both a [byo-vpc]() and [turnkey]() sandbox in our public
+  sandboxes. To use the `byo-vpc` ecs sandbox, where a customer can provide a vpc id to run your app in, use the
+  following terraform:
+
+<CodeGroup>
+```terraform sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-ecs-byovpc"
+  }
+
+  var {
+    name = "vpc_id"
+    interpolation = "{{.nuon.install.inputs.vpc_id}}"
+  }
+}
+```
+
+```terraform inputs.tf
+resource "nuon_app_input" "main" {
+  app_id = nuon_app.main.id
+
+  input {
+    name = "vpc_id"
+    description = "customer provided vpc id"
+    required = true
+  }
+}
+```
+</CodeGroup>
+
+## Improved CLI UX
+
+In the past month or so, we have continued to add more debugging capabilities into our CLI. You can now inspect specific
+components on an install, check sandbox runs, see different logs and more.
+
+Even further, most Nuon users are working with multiple apps (for different BYOC flavors), and managing many installs per app. To make this
+easier to work with, `nuon` now supports selecting different resources to work with.
+
+Before, if you wanted to inspect an install you had to pass the install id to each command:
+
+![install ids](./changelog/images/003_install_ids.png)
+
+Now, you can _select_ an install, and it will automatically be pinned for any commands:
+
+![install ids](./changelog/images/003_install_id_select.png)
+
+You can use `select` or `set-current` with most resource types, eg: `nuon apps select` or `nuon components set-current`.
