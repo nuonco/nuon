@@ -126,6 +126,7 @@ module "shared-commonfate" {
   collaborators = {
     chrnorm = "push"
     shwethaumashanker = "push"
+    JoshuaWilkes = "push"
   }
 
   providers = {
@@ -143,7 +144,10 @@ module "shared-streamkap" {
   is_private = true
   enable_branch_protection = false
 
-  collaborators = {}
+  collaborators = {
+    thomasr888 = "push"
+    quang-streamkap = "push"
+  }
 
   providers = {
     github = github.nuonco-shared
