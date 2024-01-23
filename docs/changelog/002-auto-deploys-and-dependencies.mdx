@@ -1,0 +1,106 @@
+---
+title: 002 - auto deploys, component dependencies and graphs
+description: Nuon automatically deploys all components to each new install.
+---
+
+Jan 16th, 2024
+
+## Auto Deployed Components
+
+Last week, we shipped auto-deploys. Auto deploys mean that whenever a new install is created, all existing components are automatically deployed to the install in the correct order.
+
+![auto deploy](./changelog/images/002_auto_deploy.png)
+
+Now, when you create an app using the `nuon` cli, an [an sdk](./guides/sdk_integration.md), or using [an installer](./guides/app_installers.mdx) - each component in the app will
+automatically be deployed to, without you having to run a release. This requires an intelligent representation of apps
+under the hood, and we have built out support for component dependencies and infra to model each app as a directed
+acyclic graph under the hood.
+
+## Component dependencies
+
+You can declare a dependency between any component using our `terraform` provider, simply add a `dependencies` block:
+
+```terraform
+resource "nuon_helm_chart_component" "helm" {
+  name   = "helm"
+  app_id = nuon_app.main.id
+
+  dependencies = [
+    nuon_terraform_module_component.database.id
+    nuon_docker_build_component.image.id
+  ]
+  chart_name = "helm"
+  connected_repo = {
+    directory = "helm"
+    repo      = "nuonco/mono"
+    branch    = "main"
+  }
+}
+```
+
+When you apply your app config, we will automatically look out for cycles and error if your dependencies are invalid:
+
+![dependency errors](./changelog/images/002_dependency_cycle.png)
+
+## Deprovisioning order
+
+Now, when you deprovision an install, Nuon will automatically walk through each deployed component on the install and
+deprovision it according to the dependencies. This prevents situations where installs could fail to deprovision due to
+leaked component resources and others.
+
+## Apps as graphs
+
+Under the hood, we use component dependencies to create a graph of each application, and model the relationships between each component properly. Let's say you are deploying a Helm packaged app, that requires a database managed by Terraform.
+
+Your Nuon config will have two components, your Terraform component and a Helm component.
+
+<CodeGroup>
+```terraform database.tf
+resource "nuon_terraform_module_component" "database" {
+  name   = "database"
+  app_id = nuon_app.main.id
+  terraform_version = "1.6.3"
+
+  connected_repo = {
+    directory = "infra"
+    repo      = "nuonco/mono"
+    branch    = "main"
+  }
+
+  env_var {
+    name  = "install_id"
+    value = "{{.nuon.install.id}}"
+  }
+}
+```
+
+```terraform helm.tf
+resource "nuon_helm_chart_component" "helm" {
+  name   = "helm"
+  app_id = nuon_app.main.id
+
+  chart_name = "helm"
+  connected_repo = {
+    directory = "helm"
+    repo      = "nuonco/mono"
+    branch    = "main"
+  }
+
+  value {
+    name = "DATABASE_PASSWORD"
+    value = "{{.nuon.components.database.outputs.password}}"
+  }
+
+  value {
+    name = "DATABASE_HOST"
+    value = "{{.nuon.components.database.outputs.host}}"
+  }
+}
+```
+</CodeGroup>
+
+However, in order for the Helm component to be properly deployed, it must know about the some of the outputs from the
+Terraform component. In this example, the database component must be provisioned _before_ the helm chart when creating
+the install. When destroying the install, the helm chart must be deprovisioned first.
+
+Now, with dependencies, these types of relationships can automatically be created.

@@ -1,4 +1,4 @@
-api_url: http://localhost:8081
+api_url: https://ctl.stage.nuon.co
 app_id: e2e-jon-aws-ecs
 github_app_name: nuon-connect-stage
 install_id: inl8ybt7gajofh33e0h3pqyw1t
