@@ -74,6 +74,19 @@ func (c *cli) appsCmd() *cobra.Command {
 	latestInputConfig.MarkFlagRequired("app-id")
 	appsCmd.AddCommand(latestInputConfig)
 
+	latestRunnerConfig := &cobra.Command{
+		Use:   "runner-config",
+		Short: "View app runner config",
+		Long:  "View latest app runner config",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.apiClient, c.cfg)
+			svc.GetRunnerConfig(cmd.Context(), appID, PrintJSON)
+		},
+	}
+	latestRunnerConfig.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	latestRunnerConfig.MarkFlagRequired("app-id")
+	appsCmd.AddCommand(latestRunnerConfig)
+
 	setCurrentCmd := &cobra.Command{
 		Use:   "set-current",
 		Short: "Set current app",
