@@ -1,5 +1,5 @@
 locals {
-  branch                = "main"
+  branch                = "ja/3705-aws-ecs-sandbox"
   ecs_artifact_base_url = "https://raw.githubusercontent.com/nuonco/sandboxes/${local.branch}/aws-ecs/artifacts"
 }
 
