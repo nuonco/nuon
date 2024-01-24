@@ -1,0 +1,117 @@
+---
+title: 'Terraform Components'
+description: "Terraform components allow you to provision infrastructure in your customer's cloud account to power your install."
+---
+
+Terraform components allow you to deploy Terraform from a public or connected repo, to provision infrastructure
+resources in customer installs. Please refer to the [Terraform
+reference](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/terraform_module_component) for
+full configuration options.
+
+<Note>
+In order for Terraform modules to properly work with Nuon, they must specify an `s3 {}` backend for state. [Read more below](#state-management) for more details.
+</Note>
+
+## Configuring a Terraform component
+
+To configure a Terraform component, specify a repo, the required build paramaters and Dockerfile path.
+
+<CodeGroup>
+```hcl terraform_module.tf
+resource "nuon_terraform_module_component" "terraform" {
+  name   = "terraform"
+  app_id = nuon_app.main.id
+  terraform_version = "1.6.3"
+
+  connected_repo = {
+    directory = "terraform"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+}
+```
+</CodeGroup>
+
+You can configure Terraform components to use either a public repo (using a `public_repo` block) or a private Github
+repo (using a `connected_repo` block). Read more about VCS configuration [here](../guides/vcs).
+
+## TF Var / Env Var Configuration
+
+You can configure both environment variables and terraform variables using [interpolation](../guides/interpolation).
+
+The interpolation can access inputs, other components, the sandbox, and details on the install itself.
+
+Some common examples:
+<CodeGroup>
+```hcl inputs.tf
+resource "nuon_terraform_module_component" "terraform" {
+  name   = "terraform"
+  app_id = nuon_app.main.id
+  terraform_version = "1.6.3"
+
+  connected_repo = {
+    directory = "terraform"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  var {
+    name = "database_instance"
+    value = "{{.nuon.installs.input.database_instance}}"
+  }
+}
+```
+```hcl sandbox.tf
+resource "nuon_terraform_module_component" "terraform" {
+  name   = "terraform"
+  app_id = nuon_app.main.id
+  terraform_version = "1.6.3"
+
+  connected_repo = {
+    directory = "terraform"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  env_var {
+    name = "AWS_REGION"
+    value = "{{.nuon.installs.sandbox.outputs.account.region}}"
+  }
+}
+```
+</CodeGroup>
+
+## State Management
+
+All Terraform state is managed using an S3 backend, within the Nuon platform.
+
+In order for Terraform modules to be compatible with Nuon, and not lose state, they must set the backend to the [s3
+backend](https://developer.hashicorp.com/terraform/language/settings/backends/s3).
+
+<CodeGroup>
+```hcl backend.tf
+terraform {
+  required_version = ">= 1.3.7"
+
+  backend "s3" {}
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 4.0"
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Execution and Permissions
+
+The [runner](./runners.mdx) is responsible for executing Terraform, which means that Terraform is executed from _within_
+the Kubernetes cluster in `aws-eks` sandboxes, and from with ECS Fargate for `aws-ecs` sandboxes. In both cases, this is
+inside of the install network.
+
+Since Terraform is executed from within the install sandbox, Terraform resources _can_ access both the local Kubernetes
+cluster, or resources within the network (such as internal APIs).
+
+The runner uses a dedicated IAM role defined in the sandbox when executing Terraform.

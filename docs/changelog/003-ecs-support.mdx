@@ -25,7 +25,7 @@ Most Nuon apps using ECS can be installed into your customer's cloud account in 
 
 Creating a Nuon app that uses ECS is as simple as configuring an ECS runner, and selecting an ECS sandbox. You can configure an ECS runner using Terraform:
 
-```terraform runner.tf
+```hcl runner.tf
 resource "nuon_app_runner" "main" {
   app_id = nuon_app.main.id
 
@@ -43,7 +43,7 @@ While you can always create any sandbox you like, we support both a [byo-vpc]() 
   following terraform:
 
 <CodeGroup>
-```terraform sandbox.tf
+```hcl sandbox.tf
 resource "nuon_app_sandbox" "main" {
   app_id            = nuon_app.main.id
   terraform_version = "v1.6.3"
@@ -61,7 +61,7 @@ resource "nuon_app_sandbox" "main" {
 }
 ```
 
-```terraform inputs.tf
+```hcl inputs.tf
 resource "nuon_app_input" "main" {
   app_id = nuon_app.main.id
 

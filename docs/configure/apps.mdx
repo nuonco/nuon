@@ -1,0 +1,72 @@
+---
+title: 'Apps'
+description: "Package your existing application code and infrastructure to create bring-your-own-cloud installable versions of your product."
+---
+
+Nuon apps are versions of your application code and infrastructure that can be deployed into a customer cloud account. Please refer to the [Terraform
+reference](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/app) for full configuration
+options.
+
+
+<Note>
+Nuon is designed to lift and shift your existing application and infrastructure code, so you can quickly create one or more B.Y.O.C. deployable versions of your product.
+
+In most cases, setting up your app should only take an afternoon.
+</Note>
+
+## What Is An App?
+
+When you first setup Nuon, you will map your existing product into one or more apps. A Nuon app is a fully configured version of your product that can be installed into your customer's cloud account.
+
+Each Nuon app consists of the following parts:
+
+* `sandbox` - the base infrastructure layer.
+* `runner` - the Nuon service that manages the install.
+* `inputs` - customer provider input values.
+* `components` - your application and infrastructure.
+
+Nuon is designed so you can lift and shift your _existing_ application and infrastructure into new deployment options. Most Nuon users will create multiple apps, to offer different "flavors" of B.Y.O.C. to their customers.
+
+## App Sandbox
+
+The app sandbox is the base layer of each app, and is responsible for setting up any shared infrastructure to configure an install. In most cases, sandboxes consist of the following resources:
+
+* basic cloud account access and controls (such as IAM on AWS).
+* basic network infrastructure (such as an AWS VPC).
+* compute infrastructure (such as a Kubernetes or ECS cluster).
+
+Read more about sandbox configuration [here](./sandboxes).
+
+## App Inputs
+
+App inputs allow you to define different inputs that customer's can provide. This enables you to create "configuration" knobs that your customers can manage to control your application.
+
+App inputs are commonly used to:
+
+* allow users to select regions, and provide access to an account.
+* customize infrastructure versions, such as pinning a kubernetes cluster version.
+* re-use existing infrastructure, such as providing a `vpc_id` that has been granted access.
+
+Read more about app inputs [here](./app-inputs).
+
+## App Components
+
+App components are used to connect your existing application and infrastructure code to your Nuon app.
+
+Components allow you to:
+* import existing images, or build Dockerfiles and sync these artifacts into customer accounts.
+* deploy helm charts
+* deploy terraform code
+
+Nuon apps allow you to create dependencies between components and exposes a rich configuration language to share outputs between components for configuration. Read more in our [interpolation guide](./../variable-interpolation).
+
+## App Runner
+
+Nuon deploys an app runner into each install, which is responsible for managing the install. This runner performs the following actions:
+
+* deploys new container artifacts and infrastructure
+* monitors running software
+* manages releases, and updating/deprovisioning parts of the app
+* operations such as logs, and more.
+
+Read more about app runner config [here](./app-runners).

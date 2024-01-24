@@ -1,0 +1,179 @@
+---
+title: 'App Inputs'
+description: "App inputs allow you to define customer provided values that can be used to configure your app."
+---
+
+Inputs are used to collect customer provider values, for configuring your app. Please refer to the [Terraform
+reference](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/app_input) for full configuration
+options.
+
+## Defining App Inputs
+
+You can define app inputs using Terraform:
+
+<CodeGroup>
+```hcl inputs.tf
+resource "nuon_app_input" "main" {
+  app_id = nuon_app.main.id
+
+  input {
+    name        = input.value.name
+    description = input.value.description
+    default     = input.value.default
+    required    = input.value.required
+  }
+}
+```
+</CodeGroup>
+
+Whenever an install is created, the Nuon platform will ensure that all inputs are properly configured:
+
+<CodeGroup>
+```sh install the CLI
+$ nuon installs create --name=auto-deploy --region=us-east-1 --role=iam-role --inputs=eks_version=1.28
+```
+</CodeGroup>
+
+## Configuration Using App Inputs
+
+App inputs can be used to configure both sandboxes and components. All inputs are made available via the
+[interpolation](../guides/interpolation) configuration.
+
+All inputs are accessed using `{{.nuon.install.inputs.<input-name>}}`, whereever interpolation is available.
+
+### Configuring Sandboxes
+
+You can configure sandboxes by using install inputs as `var`s.
+
+For example, to use the `vpc_id` input, as a variable to configure the `aws-eks-byovpc` sandbox:
+<CodeGroup>
+```hcl sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-eks-byovpc"
+  }
+
+  var {
+    name = "vpc_id"
+    value = "{{.nuon.install.inputs.vpc_id}}"
+  }
+}
+```
+</CodeGroup>
+
+### Configuring Components
+
+Depending upon the component type, you can use install inputs to configure components using Helm values, Terraform
+variables or environment variables.
+
+To use inputs from a component:
+<CodeGroup>
+```hcl terraform.tf
+resource "nuon_terraform_module_component" "database" {
+  name   = "database"
+  app_id = nuon_app.main.id
+  terraform_version = "1.6.3"
+
+  connected_repo = {
+    directory = "terraform"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  env_var {
+    name  = "DATABASE_PASSWORD"
+    value = "{{.nuon.install.inputs.database_password}}"
+  }
+
+  var {
+    name  = "DATABASE_HOST"
+    value = "{{.nuon.install.inputs.database_password}}"
+  }
+}
+```
+```hcl helm.tf
+resource "nuon_helm_chart_component" "app" {
+  name   = "database"
+  app_id = nuon_app.main.id
+
+  connected_repo = {
+    directory = "helm"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  value {
+    name  = "DATABASE_PASSWORD"
+    value = "{{.nuon.install.inputs.database_password}}"
+  }
+
+  value {
+    name  = "DATABASE_HOST"
+    value = "{{.nuon.install.inputs.database_password}}"
+  }
+}
+```
+```hcl docker.tf
+resource "nuon_docker_build_component" "docker-build" {
+  name   = "docker-build"
+  app_id = nuon_app.main.id
+
+  connected_repo = {
+    directory = "."
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  # use an input to pass in a docker registry password, when building an image
+  env_var {
+    name = "docker_build_registry_password"
+    value = "{{.nuon.install.inputs.docker_build_registry_password}}"
+  }
+}
+```
+```hcl job.tf
+resource "nuon_job_component" "job" {
+  name      = "job"
+  app_id    = nuon_app.main.id
+
+  image_url = "httpbin"
+  tag       = "latest"
+
+  # use an input to pass in some type of api token
+  env_var {
+    name  = "ENV_VAR_API_TOKEN"
+    value = "{{.nuon.install.inputs.api_token}}"
+  }
+}
+```
+</CodeGroup>
+
+## App Inputs For Customer Resources
+
+App inputs are commonly used to allow a customer to provide access to existing resources. For example, an input can be
+used for:
+
+* accepting a database url, or database ID to connect to
+* accepting a VPC ID to install an app into
+* accepting a token to access a third party cloud provider or account
+
+The [nuon managed sandboxes](./sandboxes#nuon-managed-sandboxes) offer "bring-your-own-vpc" options, where inputs are
+used to accept the ID of a customer managed VPC for installation.
+
+You can even use app inputs to manage resources from [third party cloud providers](./supported-platforms#supporting-custom-platforms).
+
+## Updating Inputs
+
+If you add a required input _after_ an install is created, the inputs must be added to the install before it can process
+  any new sandbox updates or component provision/deprovision jobs.
+
+Currently, updating inputs is only supported via our [api](../api-ref/installs/update-an-install).
+
+<Note>
+We recommend avoiding adding backwards incompatible input changes in the same app.
+</Note>
