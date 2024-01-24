@@ -72,14 +72,28 @@
       "pages": ["quickstart", "what-is-nuon", "glossary"]
     },
     {
+      "group": "Configuration",
+      "pages": [
+        "configure/apps",
+        "configure/supported-platforms",
+        "configure/sandboxes",
+        "configure/runners",
+        "configure/app-inputs",
+        "configure/docker-build-components",
+        "configure/container-image-components",
+        "configure/terraform-components",
+        "configure/helm-chart-components",
+        "configure/job-components",
+        "configure/component-dependencies",
+        "configure/configuration-management"
+      ]
+    },
+    {
       "group": "Guides",
       "pages": [
         "guides/creating-a-release",
         "guides/view-logs",
-        "guides/app-inputs",
-        "guides/job-components",
-        "guides/print-deploy-plans",
-        "guides/custom-sandbox"
+        "guides/print-deploy-plans"
       ]
     },
     {
