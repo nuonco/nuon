@@ -1,0 +1,185 @@
+---
+title: 'Supported Platforms'
+description: "You can deploy existing apps that use Kubernetes, AWS ECS, AWS Lambda or anything that can be containerized. We are currently testing Azure support with a handful of early customers."
+---
+
+Each Nuon app allows you to deploy to a single platform, by combining a `sandbox` with your application and
+infrastructure code. This document outlines the supported platforms, and how you can use a platform that is not
+currently supported by Nuon.
+
+<Note>
+While Nuon has first class support for the following platforms, [terraform components](./terraform-components) can be used to
+  provision _any_ custom resources in a customer's cloud account.
+</Note>
+
+## AWS EKS
+
+Nuon supports running your app via [AWS EKS](https://aws.amazon.com/eks/). You can create apps that provision a completely new network (VPC) and k8s cluster, or use an existing customer managed network or cluster (using [app-inputs](./app-inputs)).
+
+To use AWS EKS, configure your app with the following:
+
+An `aws-eks` runner:
+<CodeGroup>
+```hcl app_runner.tf
+resource "nuon_app_runner" "main" {
+  app_id = nuon_app.main.id
+
+  runner_type = "aws-eks"
+}
+```
+</CodeGroup>
+
+An `aws-eks` sandbox:
+<CodeGroup>
+```hcl app_sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-eks"
+  }
+}
+```
+</CodeGroup>
+
+<br />
+
+<Note>
+We provide a supported aws-eks sandbox that creates a new VPC, as well as a byo-vpc sandbox. Both sandbox support
+customization using app inputs, to override values such as the cluster version and more.
+
+Read more about this in [sandboxes](./sandboxes).
+</Note>
+
+## AWS ECS
+
+Nuon supports running your app via [AWS ECS](https://aws.amazon.com/ecs/). You can create apps that provision a completely new network (VPC) and ECS cluster, or use an existing customer managed network or cluster (using [app-inputs](./app-inputs)).
+
+To use AWS ECS, configure your app with the following:
+
+An `aws-ecs` runner:
+<CodeGroup>
+```hcl app_runner.tf
+resource "nuon_app_runner" "main" {
+  app_id = nuon_app.main.id
+
+  runner_type = "aws-ecs"
+}
+```
+</CodeGroup>
+
+An `aws-eks` sandbox:
+<CodeGroup>
+```hcl app_sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-ecs"
+  }
+}
+```
+</CodeGroup>
+
+## AWS Serverless
+
+Nuon supports running any app using [AWS Lambda](https://aws.amazon.com/lambda/), by configuring your app using the [AWS ECS](#aws_ecs) section above and configuring all serverless resources using terraform.
+
+You can configure any serverless infrastructure using [terraform components](./terraform-components), and can model your container images using either [docker](./docker-image-components) or [external](./external-image-components) image components.
+
+<Note>
+If you have a serverless use case, we would love to hear more. [Please get in touch](mailto:team@nuon.co).
+</Note>
+
+## Azure AKS
+
+We are currently building Azure AKS support with a handful of early customers.
+
+<Note>
+If you have an Azure app, customers who are asking for Azure deployments or are trying to sell into the EU, [please get in touch](mailto:team@nuon.co).
+</Note>
+
+## Custom Infrastructure as Code
+
+You can provision custom IAC resources on any platform using a [terraform component](./terraform-component).
+
+This is useful for configuring additional resources such as databases, storage buckets and other resources that your application requires.
+
+To provision third party cloud providers, please refer to [Supporting Custom Platforms](#supporting_custom_platforms).
+
+## Supporting Multiple Platforms
+
+You can support deploying your product to multiple platforms, by creating different apps. Each app can declare it's own sandbox, inputs and runner.
+
+Using our terraform provider, you can easily share components between different apps and create many different deployment varieties for your product.
+
+<CodeGroup>
+```hcl apps.tf
+resource "nuon_app" "aws-eks" {
+  name = "aws-eks"
+}
+
+resource "nuon_app" "aws-ecs" {
+  name = "aws-ecs"
+}
+
+resource "nuon_app" "aws-eks-byo-vpc" {
+  name = "aws-eks-byo-vpc"
+}
+```
+</CodeGroup>
+
+## Supporting Custom Platforms
+
+If you would like to support third party cloud providers, that Nuon does not natively support, you can use [app inputs](./app-inputs) and [terraform components](./terraform-components.mdx). This is useful for managing things such as third party databases, AI tools, or even CDN providers alongside your application.
+
+For example, if you would like to provision additional resources using a provider such as the [Cloudflare Terraform Provider](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs),
+
+First, define an app input to require a customer api token:
+
+<CodeGroup>
+```hcl app_inputs.tf
+resource "nuon_app_input" "main" {
+  app_id = nuon_app.main.id
+
+  input {
+    name = "cloudflare_api_token"
+    description = "Cloudflare API token"
+    required = true
+  }
+}
+```
+</CodeGroup>
+
+Second, configure your terraform component to use this api token. This will be set as a terraform variable and can be used to configure the provider.
+
+<CodeGroup>
+```hcl cloudflare.tf
+resource "nuon_terraform_module_component" "cloudflare" {
+  name   = "cloudflare"
+  app_id = nuon_app.main.id
+
+  env_var {
+    name  = "cloudflare_api_token"
+    value = "{{.nuon.install.inputs.cloudflare_api_token}}"
+  }
+
+  var {
+    name  = "CLOUDFLARE_API_TOKEN"
+    value = "{{.nuon.install.inputs.cloudflare_api_token}}"
+  }
+```
+</CodeGroup>
+
+<br />
+
+<Note>
+In some cases, customizations can be handled using a custom sandbox, if they do not require a different cloud provider.
+Read more about customizing sandboxes [here](./sandboxes).
+</Note>

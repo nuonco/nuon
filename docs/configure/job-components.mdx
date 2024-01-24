@@ -1,0 +1,115 @@
+---
+title: 'Job Components'
+description: "Job components are used to execute jobs inside of an install."
+---
+
+Job components allow you to execute one time jobs in an install. Please refer to the [Job Component
+reference](https://registry.helm_chart.io/providers/nuonco/nuon/latest/docs/resources/job_component) for
+full configuration options.
+
+<Note>
+Job components are currently _only_ supported by `aws-eks` sandboxes.
+
+If you have a use case for using jobs with an `aws-ecs` sandbox [please get in touch](mailto:team@nuon.co).
+</Note>
+
+## Configuring a Job component
+
+You can configure a job component using Terraform, and can use interpolation to configure the image, and environment variables.
+
+<CodeGroup>
+```hcl job.tf
+resource "nuon_job_component" "job" {
+  name      = "job"
+  app_id    = nuon_app.main.id
+
+  image_url = "bitnami/kubectl"
+  tag       = "latest"
+  cmd       = ["kubectl"]
+  args      = ["get", "pods", "-A"]
+
+  env_var {
+    name  = "NUON_APP_ID"
+    value = "{{.nuon.app.id}}"
+  }
+}
+```
+</CodeGroup>
+
+<Note>
+In order to use custom images with job components, you must specify either a [docker
+build](./docker-build-components.mdx) or [container image](./container-image-components.mdx) as a dependency and use
+interpolation.
+</Note>
+
+## Configuration
+
+You can use [interpolation](../guides/interpolation) to configure both the environment and images in a job component.
+
+Some common examples of using interpolation to configure job components:
+<CodeGroup>
+```hcl custom_image.tf
+// use a custom image
+resource "nuon_job_component" "job" {
+  name      = "job"
+  app_id    = nuon_app.main.id
+
+  image_url = "{{.nuon.components.custom_image.image.repository.uri}}"
+  tag       = "{{.nuon.components.custom_image.image.tag}}"
+  cmd       = ["kubectl"]
+  args      = ["get", "pods", "-A"]
+}
+```
+
+```hcl outputs.tf
+// accessing outputs from a terraform component
+resource "nuon_job_component" "job" {
+  name      = "job"
+  app_id    = nuon_app.main.id
+
+  image_url = "{{.nuon.components.custom_image.image.repository.uri}}"
+  tag       = "{{.nuon.components.custom_image.image.tag}}"
+  cmd       = ["kubectl"]
+  args      = ["get", "pods", "-A"]
+
+  env_var {
+    name  = "DATABASE_URL"
+    value = "{{.nuon.install.components.database.outputs.database_url}}"
+  }
+  env_var {
+    name  = "DATABASE_PASSWORD"
+    value = "{{.nuon.install.components.database.outputs.database_url}}"
+  }
+}
+```
+
+```hcl sandbox_outputs.tf
+// accessing sandbox outputs
+resource "nuon_job_component" "job" {
+  name      = "job"
+  app_id    = nuon_app.main.id
+
+  image_url = "{{.nuon.components.custom_image.image.repository.uri}}"
+  tag       = "{{.nuon.components.custom_image.image.tag}}"
+  cmd       = ["kubectl"]
+  args      = ["get", "pods", "-A"]
+
+  env_var {
+    name = "AWS_REGION"
+    value = "{{.nuon.install.sandbox.outputs.account.region}}"
+  }
+}
+```
+</CodeGroup>
+
+## Use cases
+
+Job components are designed to be an escape hatch to allow you to run any operational commands needed.
+
+Common use cases include:
+
+* running database imports to import data for a customer install.
+* running database migrations.
+* running operational debugging commands to inspect an install.
+* deploying or provisioning custom resources not supported by other components.
+* modifying `kubernetes` resources, such as adding secrets.

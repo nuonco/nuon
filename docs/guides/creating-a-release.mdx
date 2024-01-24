@@ -5,7 +5,7 @@ icon: 'terminal'
 
 ## At a Glance
 
-To deliver your application, create a Build and Release for each Component. When releasing, prioritize Components based on dependency (infrastructure first, then software). 
+To deliver your application, create a Build and Release for each Component. When releasing, prioritize Components based on dependency (infrastructure first, then software).
 
 This guide covers creating and inspecting Builds, followed by creating and inspecting Releases and their Deploys.
 
@@ -17,7 +17,7 @@ For active Installs with configured Components, releasing the latest versions is
 nuon releases create -c {component name or id} --auto-build
 ```
 
-For a deeper understanding of working with Builds, Releases and Deploys follow the guide below. 
+For a deeper understanding of working with Builds, Releases and Deploys follow the guide below.
 
 ## Working with Builds
 
@@ -27,7 +27,7 @@ A Build is a packaged component that you'll Release to your customers.
 
 First we'll create a Build of your Component.
 
-```sh nuon cli 
+```sh nuon cli
 nuon builds create -c {component name or id}
 ```
 
@@ -39,7 +39,7 @@ Once you've created your Build your can view them via the CLI with the `list` an
 nuon builds list -c {component name or id}
 ```
 
-```sh nuon cli 
+```sh nuon cli
 nuon builds get -b {build id}
 ```
 
@@ -54,7 +54,7 @@ nuon builds print-plan -b {build id}
 #### View the Build Logs
 
 During the build creation process, Nuon captures logs. You can review these logs using the CLI's `logs` sub-command after the build process is complete.
- 
+
 ```sh nuon cli
 nuon builds logs -b {build id}
 ```
@@ -111,19 +111,19 @@ _List by App_
 nuon releases list -a {app name or id}
 ```
 
-```sh nuon cli 
+```sh nuon cli
 nuon releases get -r {release id}
 ```
 
 ## Working with  Deploys
 
-As stated above a Deploy is created when Nuon tries to run a Build on an Install, this means a Deploy is one to one with an Install. 
+As stated above a Deploy is created when Nuon tries to run a Build on an Install, this means a Deploy is one to one with an Install.
 
 **Selecting an Install**
 
 From this point forward we will set an Install in our CLI context. This means all of the following CLI commands will be executed in the context of the selected Install. You can select an Install with the following command.
 
-```sh nuon cli 
+```sh nuon cli
 nuon installs select
 ```
 
@@ -132,15 +132,15 @@ nuon installs select
 With an Install selected you can view Deploys with the CLI via `list-deploys` and `get-deploy` sub-commands.
 
 ```sh nuon cli
-nuon installs list-deploys 
+nuon installs list-deploys
 ```
 
-```sh nuon cli 
+```sh nuon cli
 nuon installs get-deploy -d {deploy id}
 ```
 #### View the Deploy Plan
 
-Like builds, Nuon generates a Deploy plan when creating a Deploy. In the event of a Deploy failure, examining the Deploy plan can assist in identifying configuration issues. 
+Like builds, Nuon generates a Deploy plan when creating a Deploy. In the event of a Deploy failure, examining the Deploy plan can assist in identifying configuration issues.
 
 ```sh nuon cli
 nuon installs print-deploy-plan -d {deploy id}
