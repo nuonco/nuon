@@ -1,0 +1,222 @@
+---
+title: 'Container Image Components'
+description: "Container image components allow you to use prebuilt container images."
+---
+
+Container images allow you to import prebuilt container images from public sources, and private ECR repositories. Please refer to the [Terraform
+reference](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/container_image_component) for full configuration
+options.
+
+## Container Images vs Docker Build images
+
+Container images are used to import _prebuilt_ images, that have already been pushed to either a public registry, or a private ECR repository.
+
+### When to use a docker build component
+
+Use a docker build component if:
+
+* your container build process does not do any additional scanning/processing on your built container images
+* you do not need to access any internal resources during the build process
+* you want to get started faster
+
+### When to use a container image component
+
+* you want to leverage public images
+* you post process or scan built container images
+* your build process accesses internal resources (such as a private dependency registry)
+* you value building once, and using everywhere for consistency purposes
+
+<Note>
+If you have private prebuilt images in a registry other than AWS ECR, that you would like to use, [please get in touch](mailto:team@nuon.co)!
+</Note>
+
+## Configuring a container image component
+
+To configure a container image component, use either a public container image (from any registry), or a private container image from an [AWS ECR](https://aws.amazon.com/ecr/) repository.
+<CodeGroup>
+
+```hcl public.tf
+resource "nuon_container_image_component" "public" {
+  name   = "public"
+  app_id = nuon_app.main.id
+
+  public = {
+    image_url = "kennethreitz/httpbin"
+    tag       = "latest"
+  }
+}
+```
+
+```hcl ecr.tf
+resource "nuon_container_image_component" "ecr" {
+  name   = "ecr"
+  app_id = nuon_app.main.id
+
+  aws_ecr = {
+    image_url = "123927561584.dkr.ecr.us-west-2.amazonaws.com/repo-name"
+    tag       = "latest"
+    region = "us-west-2"
+    iam_role_arn = "arn:aws:iam::123927561584:role/nuon-container-image-access"
+  }
+}
+```
+</CodeGroup>
+
+To use an AWS ECR image, [please follow the directions](#ecr-access-iam-role) to setup an IAM role, granting access to Nuon to pull the image.
+
+## Deployments
+
+Container image components <u>can not</u> be deployed directly in a customer install. When an image is released, it will be <u>synced</u>
+into the customer install and made available to other components via [interpolation](../guides/interpolation).
+
+To deploy a Container image component, reference the image from a Helm component, Terraform component or Job component:
+
+<CodeGroup>
+```hcl helm.tf
+  name   = "helm"
+  app_id = nuon_app.main.id
+
+  value {
+    name = "env.IMAGE_TAG"
+    value = "{{.nuon.components.image.image.tag}}"
+  }
+  value {
+    name = "env.IMAGE_REPOSITORY"
+    value = "{{.nuon.components.image.image.repository_uri}}"
+  }
+}
+```
+
+```hcl terraform.tf
+  name   = "terraform"
+  app_id = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  var {
+    name = "image_tag"
+    value = "{{.nuon.components.image.image.tag}}"
+  }
+  value {
+    name = "image_repository"
+    value = "{{.nuon.components.image.image.repository_uri}}"
+  }
+}
+```
+
+```hcl job.tf
+  name   = "job"
+  app_id = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  image_url = "{{.nuon.components.image.image.repository.uri}}"
+  tag       = "{{.nuon.components.image.image.tag}}"
+}
+```
+</CodeGroup>
+
+## Image Syncing
+
+When a Container image component is released, Nuon will automatically sync the image into the end customer account. This
+image is stored in a local registry that is provisioned in the customer account.
+
+Nuon image syncing allows you to sync images into accounts, without worrying about cross account permissions, registry
+authentication or publishing public images. Any `Dockerfile` in a repo can be built, and synced.
+
+The sync process works by creating a 1-time authentication flow that grants the install runner access to pull the image
+from the org data plane, and copy it into the local registry.
+
+## ECR Access IAM Role
+
+To use an private ECR image, you must create an IAM role that grants Nuon access to clone your image.
+
+The following example provisions an IAM role, with a trust policy granting Nuon access, and a permission policy that
+grants access to a single ECR repository.
+
+<CodeGroup>
+```hcl role.tf
+module "nuon_ecr_access" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
+  version = ">= 5.1.0"
+
+  create_role = true
+
+  role_name = "nuon-ecr-access"
+
+  allow_self_assume_role   = false
+  custom_role_trust_policy = file("trust.json")
+  create_custom_role_trust_policy = true
+  custom_role_policy_arns = [
+    aws_iam_policy.nuon_ecr_access.arn
+  ]
+}
+```
+
+```hcl iam_policy.tf
+data "aws_iam_policy_document" "nuon_ecr_access" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:GetAuthorizationToken",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:BatchGetImage",
+      "ecr:ListImages",
+      "ecr:ListTagsForResource",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:DescribeImageReplicationStatus",
+      "ecr:DescribeImageScanFindings",
+      "ecr:DescribeImages",
+      "ecr:DescribePullThroughCacheRules",
+      "ecr:DescribeRegistry",
+      "ecr:DescribeRepositories",
+    ]
+    resources = [module.ecr_repo.repository_arn]
+  }
+}
+```
+
+```hcl trust_policy.json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::676549690856:root"
+      },
+      "Action": "sts:AssumeRole"
+    },
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::007754799877:root"
+      },
+      "Action": "sts:AssumeRole"
+    },
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::814326426574:root"
+      },
+      "Action": "sts:AssumeRole"
+    },
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::766121324316:root"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+</CodeGroup>

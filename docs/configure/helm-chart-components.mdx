@@ -1,0 +1,316 @@
+---
+title: 'Helm Chart Components'
+description: "Helm chart components allow you to connect an existing Helm chart and deploy it into your customer's cloud account."
+---
+
+Helm chart components allow you to deploy any helm from a public or connected repo. Please refer to the [Helm
+reference](https://registry.helm_chart.io/providers/nuonco/nuon/latest/docs/resources/helm_chart_chart_component) for
+full configuration
+options.
+
+## Configuring a Helm component
+
+To configure a Helm component, specify a repo, the required configuration values and version to deploy it with.
+
+<CodeGroup>
+```hcl helm_chart.tf
+resource "nuon_helm_chart_chart_component" "helm_chart" {
+  name   = "helm_chart"
+  app_id = nuon_app.main.id
+  helm_chart_version = "1.6.3"
+
+  connected_repo = {
+    directory = "helm_chart"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+}
+```
+</CodeGroup>
+
+You can configure Helm components to use either a public repo (using a `public_repo` block) or a private Github
+repo (using a `connected_repo` block). Read more about VCS configuration [here](../guides/vcs).
+
+## Open Source and Private Charts
+
+Nuon supports any Helm chart that can be accessed using git. It is common for apps to have both a combination of public,
+open source helm charts for deploying standard components and private helm charts for application specific
+configuration.
+
+## Helm Value Configuration
+
+One of the most important parts of deploying a Helm chart into a customer account, includes setting values properly.
+Values can be used for everything from accessing infrastructure, setting images or scaling pods.
+
+
+[Interpolation](../guides/interpolation) allows you to set default values for a Nuon app, expose customer configuration
+options, reference infrastructure from other components or access an image that was synced into the customer account.
+
+Examples for accessing common interpolated variables:
+<CodeGroup>
+```hcl images.tf
+// access a synced image
+resource "nuon_helm_chart_component" "images" {
+  name   = "images"
+  app_id = nuon_app.main.id
+
+  chart_name = "images"
+  connected_repo = {
+    directory = "chart"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  value {
+    name = "image_repository"
+    value = "{{.nuon.components.image.image.repository_uri}}"
+  }
+  value {
+    name = "image_tag"
+    value = "{{.nuon.components.image.image.tag}}"
+  }
+}
+```
+
+```hcl outputs.tf
+// access outputs from a terraform component
+resource "nuon_helm_chart_component" "outputs" {
+  name   = "outputs"
+  app_id = nuon_app.main.id
+
+  chart_name = "outputs"
+  connected_repo = {
+    directory = "chart"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  value {
+    name = "output_value"
+    value = "{{.nuon.components.terraform.outputs.output_value}}"
+  }
+}
+```
+
+```hcl sandbox.tf
+// access outputs from the sandbox
+resource "nuon_helm_chart_component" "sandbox" {
+  name   = "sandbox"
+  app_id = nuon_app.main.id
+
+  chart_name = "outputs"
+  connected_repo = {
+    directory = "chart"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  value {
+    name = "aws_region"
+    value = "{{.nuon.install.sandbox.outputs.aws_region}}"
+  }
+
+  value {
+    name = "vpc_id"
+    value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
+  }
+}
+```
+```hcl domains.tf
+// access information about the install domain
+resource "nuon_helm_chart_component" "domains" {
+  name   = "domains"
+  app_id = nuon_app.main.id
+
+  chart_name = "domains"
+  connected_repo = {
+    directory = "chart"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  value {
+    name = "public_root_domain"
+    value = "{{.nuon.install.public_domain}}"
+  }
+
+  value {
+    name = "internal_root_domain"
+    value = "{{.nuon.install.internal_domain}}"
+  }
+}
+```
+</CodeGroup>
+
+
+## Default Sandbox Components + DNS
+
+The managed sandboxes for `aws-eks` ship with standard Helm components + DNS zones to solve for common use cases, such
+as exposing a public or private https service. This includes:
+
+* [AWS ALB Ingress Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller)
+* [External DNS](https://github.com/kubernetes-sigs/external-dns)
+* [Cert Manager](https://cert-manager.io/)
+* [Nginx Ingress](https://docs.nginx.com/nginx-ingress-controller/)
+* [EBS CSI](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html)
+
+The sandboxes are [open source](https://github.com/nuonco/sandboxes) and can be [customized](./sandboxes#create-a-custom-sandbox), if these components do not work for your application.
+
+## Using Domains
+
+The Nuon managed sandboxes automatically deploy the components required to provision DNS, Certificate and Load Balancer resources using Helm.
+
+An example provisioning an NLB, that uses an ACM certificate:
+
+<CodeGroup>
+```hcl component.tf
+resource "nuon_helm_chart_component" "nlb" {
+  name   = "nlb"
+  app_id = nuon_app.main.id
+
+  chart_name = "nlb"
+  connected_repo = {
+    directory = "chart"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  value {
+    name = "nlbs.public_domain"
+    value = "nlb.{{.nuon.install.public_domain}}"
+  }
+
+  value {
+    name = "nlbs.public_domain_certificate_arn"
+    value = "{{.nuon.components.infra.outputs.public_domain_certificate_arn}}"
+  }
+}
+```
+
+```yaml values.yaml
+nlbs:
+  public_domain: nlb.INSTALL_PUBLIC_DOMAIN
+  internal_domain: nlb.internal.INSTALL_INTERNAL_DOMAIN
+  public_domain_certificate: nbl.PUBLIC_DOMAIN_CERTIFICATE
+```
+
+```yaml listeners.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nlb-public
+  namespace: {{ .Release.Namespace }}
+  labels: {}
+
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-target-group-attributes: preserve_client_ip.enabled=false
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.api.nlbs.public_domain_certificate_arn }}
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: https
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.api.nlbs.public_domain }}
+spec:
+  type: LoadBalancer
+  loadBalancerClass: service.k8s.aws/nlb
+  allocateLoadBalancerNodePorts: false
+  externalTrafficPolicy: Local
+  internalTrafficPolicy: Local
+  selector:
+    {}
+  ports:
+    - name: https
+      port: 443
+      targetPort: http
+```
+</CodeGroup>
+
+An example using `cert-manager` to provision a certificate, and using it with an Nginx Ingress:
+
+<CodeGroup>
+```hcl component.tf
+resource "nuon_helm_chart_component" "nlb" {
+  name   = "nlb"
+  app_id = nuon_app.main.id
+
+  chart_name = "nlb"
+  connected_repo = {
+    directory = "chart"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  value {
+    name = "nlbs.public_domain"
+    value = "nlb.{{.nuon.install.public_domain}}"
+  }
+
+  value {
+    name = "nlbs.public_domain_certificate_arn"
+    value = "{{.nuon.components.infra.outputs.public_domain_certificate_arn}}"
+  }
+}
+```
+
+```yaml values.yaml
+nginx:
+  public_domain: nlb.INSTALL_PUBLIC_DOMAIN
+```
+
+```yaml certificate.yaml
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: api-nginx
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "common.apiLabels" . | nindent 4 }}
+spec:
+  secretName: e2e-ingress-public-tls
+  dnsNames:
+    - {{ .Values.nginx.public_domain }}
+  issuerRef:
+    name: public-issuer
+    kind: ClusterIssuer
+```
+
+```yaml ingress.yaml
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-public
+  namespace: {{ .Release.Namespace }}
+  labels: {}
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.nginx.public_domain }}
+    kubernetes.io/ingress.class: nginx
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.nginx.public_domain }}
+    secretName: e2e-ingress-public-tls
+  rules:
+    - host: {{ .Values.nginx.public_domain}}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: api
+              port:
+                number: 80
+```
+</CodeGroup>
+
+<br />
+
+<Note>
+By default, Nuon provisions a custom domain for each install under the `nuon.run` domain (eg: inl8ybt7gajofh33e0h3pqyw1t.nuon.run).
+
+If you would like to use a customer provided domain, you can accept customer domains using [inputs](./inputs.mdx). We
+  are planning to improve support for this, and would love to [hear about](mailto:team@nuon.co) your use case.
+</Note>

@@ -1,0 +1,104 @@
+---
+title: 'Docker Build Components'
+description: "Docker build  components allow you to connect a Dockerfile that will be used to build a container image."
+---
+
+Docker build components allow you to build an existing `Dockerfile` in a public or connected repo, and sync it into your
+customer installs. Please refer to the [Terraform
+reference](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/docker_build_component) for full configuration
+options.
+
+
+## Configuring a Docker build component
+
+To configure a Docker build component, specify a repo, the required build paramaters and Dockerfile path.
+
+<CodeGroup>
+```hcl docker_build.tf
+resource "nuon_docker_build_component" "e2e" {
+name   = "e2e_docker_build"
+  app_id = nuon_app.main.id
+
+  dockerfile = "Dockerfile"
+
+  connected_repo = {
+    directory = "components/go-httpbin"
+    repo      = "powertoolsdev/demo"
+    branch    = "main"
+  }
+}
+```
+</CodeGroup>
+
+You can configure Docker build components to use either a public repo (using a `public_repo` block) or a private Github
+repo (using a `connected_repo` block). Read more about VCS configuration [here](../guides/vcs).
+
+## Deployments
+
+Docker build components <u>can not</u> be deployed directly in a customer install. When an image is released, it will be <u>synced</u>
+into the customer install and made available to other components via [interpolation](../guides/interpolation).
+
+To deploy a Docker build component, reference the image from a Helm component, Terraform component or Job component:
+
+<CodeGroup>
+```hcl helm.tf
+  name   = "helm"
+  app_id = nuon_app.main.id
+
+  value {
+    name = "env.IMAGE_TAG"
+    value = "{{.nuon.components.image.image.tag}}"
+  }
+  value {
+    name = "env.IMAGE_REPOSITORY"
+    value = "{{.nuon.components.image.image.repository_uri}}"
+  }
+}
+```
+
+```hcl terraform.tf
+  name   = "terraform"
+  app_id = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  var {
+    name = "image_tag"
+    value = "{{.nuon.components.image.image.tag}}"
+  }
+  value {
+    name = "image_repository"
+    value = "{{.nuon.components.image.image.repository_uri}}"
+  }
+}
+```
+
+```hcl job.tf
+  name   = "job"
+  app_id = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  image_url = "{{.nuon.components.image.image.repository.uri}}"
+  tag       = "{{.nuon.components.image.image.tag}}"
+}
+```
+</CodeGroup>
+
+## Image Syncing
+
+When a Docker build component is released, Nuon will automatically sync the image into the end customer account. This
+image is stored in a local registry that is provisioned in the customer account.
+
+Nuon image syncing allows you to sync images into accounts, without worrying about cross account permissions, registry
+authentication or publishing public images. Any `Dockerfile` in a repo can be built, and synced.
+
+The sync process works by creating a 1-time authentication flow that grants the install runner access to pull the image
+from the org data plane, and copy it into the local registry.
+
+## Build Arguments and Environment Variables
+
+You can specify custom build arguments and environment variables to be used when building an image:
+
+<Note>
+If you have custom build requirements, we recommend building your images from within your own CI/CD platform, and using
+  a [container image](././container-image-components.mdx) to import them.
+</Note>

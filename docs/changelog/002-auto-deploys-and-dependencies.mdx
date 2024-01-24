@@ -20,7 +20,7 @@ acyclic graph under the hood.
 
 You can declare a dependency between any component using our `terraform` provider, simply add a `dependencies` block:
 
-```terraform
+```hcl component.tf
 resource "nuon_helm_chart_component" "helm" {
   name   = "helm"
   app_id = nuon_app.main.id
@@ -55,7 +55,7 @@ Under the hood, we use component dependencies to create a graph of each applicat
 Your Nuon config will have two components, your Terraform component and a Helm component.
 
 <CodeGroup>
-```terraform database.tf
+```hcl database.tf
 resource "nuon_terraform_module_component" "database" {
   name   = "database"
   app_id = nuon_app.main.id
@@ -74,7 +74,7 @@ resource "nuon_terraform_module_component" "database" {
 }
 ```
 
-```terraform helm.tf
+```hcl helm.tf
 resource "nuon_helm_chart_component" "helm" {
   name   = "helm"
   app_id = nuon_app.main.id
