@@ -90,7 +90,7 @@ func execDeprovisionRunner(
 	resp := &runnerv1.DeprovisionRunnerResponse{}
 
 	cwo := workflow.ChildWorkflowOptions{
-		WorkflowID:               fmt.Sprintf("%s-provision-runner", iwrr.InstallId),
+		WorkflowID:               fmt.Sprintf("%s-deprovision-runner", iwrr.InstallId),
 		WorkflowExecutionTimeout: time.Minute * 10,
 		WorkflowTaskTimeout:      time.Minute * 5,
 		WorkflowIDReusePolicy:    enumspb.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,

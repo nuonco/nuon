@@ -34,7 +34,7 @@ func (a *Activities) PollEFSMountTargets(ctx context.Context, req PollEFSMountTa
 
 	for _, mountTarget := range mountTargets.MountTargets {
 		if mountTarget.LifeCycleState != efstypes.LifeCycleStateAvailable {
-			return nil, fmt.Errorf("mount target is not available: %s", efstypes.LifeCycleStateAvailable)
+			return nil, fmt.Errorf("mount target is not available: %s", mountTarget.LifeCycleState)
 		}
 	}
 
