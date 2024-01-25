@@ -10,6 +10,7 @@ import (
 )
 
 type CreateEFSAccessPointsRequest struct {
+	InstallID  string
 	IAMRoleARN string `validate:"required"`
 	FsID       string
 	Region     string `validate:"required"`
@@ -47,6 +48,12 @@ func (a *Activities) CreateEFSAccessPoints(ctx context.Context, req CreateEFSAcc
 					Permissions: generics.ToPtr("755"),
 				},
 				Path: generics.ToPtr("/waypointserverdata"),
+			},
+			Tags: []efstypes.Tag{
+				{
+					Key:   generics.ToPtr("Name"),
+					Value: generics.ToPtr(req.InstallID),
+				},
 			},
 		})
 		if err != nil {
