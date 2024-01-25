@@ -70,6 +70,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create efs access mounts
 	var createEFSAccessPointsResp CreateEFSAccessPointsResponse
 	createEFSAccessPointsReq := CreateEFSAccessPointsRequest{
+		InstallID:  req.InstallId,
 		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
 		FsID:       pollEFSResp.FsID,
 		Region:     req.Region,
@@ -170,7 +171,7 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 		return fmt.Errorf("unable to delete service: %w", err)
 	}
 
-	// poll mount targets to be ready
+	// poll that service was deleted
 	var pollDeleteServiceResp PollDeleteECSServiceResponse
 	pollDeleteServiceReq := PollDeleteECSServiceRequest{
 		InstallID:  req.InstallId,
@@ -180,6 +181,46 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 	}
 	if err := w.execAWSActivity(ctx, w.act.PollDeleteService, pollDeleteServiceReq, &pollDeleteServiceResp); err != nil {
 		return fmt.Errorf("unable to poll deleting ecs service: %w", err)
+	}
+
+	var deleteCloudwatchLogGroupResp DeleteCloudwatchLogGroupResponse
+	deleteCloudwatchLogGroupReq := DeleteCloudwatchLogGroupRequest{
+		IAMRoleARN:   req.EcsClusterInfo.InstallIamRoleArn,
+		LogGroupName: fmt.Sprintf("waypoint-runner-%s", req.InstallId),
+		Region:       req.Region,
+	}
+	if err := w.execAWSActivity(ctx, w.act.DeleteCloudwatchLogGroup, deleteCloudwatchLogGroupReq, &deleteCloudwatchLogGroupResp); err != nil {
+		return fmt.Errorf("unable to poll deleting ecs service: %w", err)
+	}
+
+	var deleteEFSAccessPointsResp DeleteEFSAccessPointsResponse
+	deleteEFSAccessPointsReq := DeleteEFSAccessPointsRequest{
+		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
+		InstallID:  req.InstallId,
+		Region:     req.Region,
+	}
+	if err := w.execAWSActivity(ctx, w.act.DeleteEFSAccessPoints, deleteEFSAccessPointsReq, &deleteEFSAccessPointsResp); err != nil {
+		return fmt.Errorf("unable to poll deleting ecs service: %w", err)
+	}
+
+	var deleteEFSMountTargetsResp DeleteEFSMountTargetsResponse
+	deleteEFSMountTargetsReq := DeleteEFSMountTargetsRequest{
+		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
+		InstallID:  req.InstallId,
+		Region:     req.Region,
+	}
+	if err := w.execAWSActivity(ctx, w.act.DeleteEFSMountTargets, deleteEFSMountTargetsReq, &deleteEFSMountTargetsResp); err != nil {
+		return fmt.Errorf("unable to poll deleting ecs service: %w", err)
+	}
+
+	var deleteEFSResp DeleteEFSResponse
+	deleteEFSReq := DeleteEFSRequest{
+		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
+		InstallID:  req.InstallId,
+		Region:     req.Region,
+	}
+	if err := w.execAWSActivity(ctx, w.act.DeleteEFS, deleteEFSReq, &deleteEFSResp); err != nil {
+		return fmt.Errorf("unable to delete efs: %w", err)
 	}
 
 	return nil
