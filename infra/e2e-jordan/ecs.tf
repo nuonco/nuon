@@ -43,7 +43,7 @@ module "ecs_access" {
 }
 
 module "aws-ecs" {
-  source = "./e2e"
+  source = "./nuon"
 
   app_name = "${local.name}-aws-ecs"
 
