@@ -29,6 +29,10 @@ func (a *Activities) CreateEFS(ctx context.Context, req *CreateEFSRequest) (*Cre
 		Encrypted:     generics.ToPtr(true),
 		Tags: []efstypes.Tag{
 			{
+				Key:   generics.ToPtr("Name"),
+				Value: generics.ToPtr(req.InstallID),
+			},
+			{
 				Key:   generics.ToPtr(defaultRunnerTagName),
 				Value: generics.ToPtr(defaultRunnerTagValue),
 			},
