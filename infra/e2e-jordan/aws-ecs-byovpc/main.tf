@@ -1,6 +1,9 @@
 locals {
-  branch                = "ja/3705-aws-ecs-sandbox"
-  ecs_artifact_base_url = "https://raw.githubusercontent.com/nuonco/sandboxes/${local.branch}/aws-ecs/artifacts"
+  name                  = "e2e-jordan"
+  sandbox_name          = "aws-ecs-byovpc"
+  sandboxes_repo        = "nuonco/sandboxes"
+  sandbox_branch        = "ja/3705-aws-ecs-sandbox"
+  ecs_artifact_base_url = "https://raw.githubusercontent.com/nuonco/sandboxes/${local.sandbox_branch}/${local.sandbox_name}/artifacts"
 }
 
 data "http" "ecs_sandbox_trust_policy" {
@@ -42,14 +45,14 @@ module "ecs_access" {
   ]
 }
 
-module "aws-ecs" {
-  source = "./nuon"
+module "e2e" {
+  source = "../nuon"
 
-  app_name = "${local.name}-aws-ecs"
+  app_name = "${local.name}-${local.sandbox_name}"
 
   sandbox_repo    = local.sandboxes_repo
-  sandbox_branch  = local.branch
-  sandbox_dir     = "aws-ecs"
+  sandbox_branch  = local.sandbox_branch
+  sandbox_dir     = local.sandbox_name
   app_runner_type = "aws-ecs"
 
   east_1_count = 0
@@ -57,5 +60,14 @@ module "aws-ecs" {
   west_2_count = 0
 
   install_role_arn = module.ecs_access.iam_role_arn
-  install_inputs   = []
+  install_inputs = [
+    {
+      name          = "vpc_id"
+      description   = "vpc id from user"
+      required      = true
+      default       = ""
+      value         = var.vpc_id
+      interpolation = "{{.nuon.install.inputs.vpc_id}}"
+    }
+  ]
 }
