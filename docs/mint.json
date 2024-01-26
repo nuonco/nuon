@@ -92,8 +92,7 @@
       "group": "Guides",
       "pages": [
         "guides/creating-a-release",
-        "guides/view-logs",
-        "guides/print-deploy-plans"
+        "guides/using-variables"
       ]
     },
     {
