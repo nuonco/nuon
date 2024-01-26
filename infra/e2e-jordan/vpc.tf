@@ -34,6 +34,24 @@ module "vpc" {
   #create_database_subnet_group = true
   #create_elasticache_subnet_group = true
 
+  default_security_group_egress = [
+    {
+      "protocol"  = "-1"
+      from_port   = 0
+      to_port     = 0
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+
+  default_security_group_ingress = [
+    {
+      "protocol"  = "-1"
+      from_port   = 0
+      to_port     = 0
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+
   public_subnet_tags = {
     "kubernetes.io/role/elb" = 1
   }
