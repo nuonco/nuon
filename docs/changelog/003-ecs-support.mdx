@@ -23,9 +23,11 @@ If you are reading this, you might be asking why? After all, isn't the promise o
 *  (whether AWS Lambda, ECS Fargate, or something else).
 * their customers did not require a shared responsibility model, where they manage part of the k8s cluster.
 
-Most Nuon apps using ECS can be installed into your customer's cloud account in < 1 min, and only cost a couple dollars a month. While not a fit for _all_ enterprise customers, there certainly are a lot of users who would rather know they aren't dependent on k8s.
+Nuon apps using ECS offer a simpler way to integrate with existing non-Kubernetes applications, without changing your
+product architecture.
 
-Creating a Nuon app that uses ECS is as simple as configuring an ECS runner, and selecting an ECS sandbox. You can configure an ECS runner using Terraform:
+Creating a Nuon app that uses ECS is as simple as configuring an ECS runner, and selecting an ECS sandbox. You can
+configure an ECS runner using Terraform:
 
 ```hcl runner.tf
 resource "nuon_app_runner" "main" {
