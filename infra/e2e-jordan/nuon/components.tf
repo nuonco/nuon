@@ -1,5 +1,5 @@
 resource "nuon_terraform_module_component" "ingress" {
-  name   = "Ingress"
+  name   = "ingress"
   app_id = nuon_app.main.id
 
   connected_repo = {
@@ -20,7 +20,7 @@ resource "nuon_terraform_module_component" "ingress" {
 }
 
 resource "nuon_terraform_module_component" "services" {
-  name   = "Services"
+  name   = "services"
   app_id = nuon_app.main.id
 
   connected_repo = {
