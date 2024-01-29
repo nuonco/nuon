@@ -1,0 +1,62 @@
+---
+title: 'CLI'
+description: "Install the Nuon CLI."
+---
+
+The Nuon CLI is used to manage apps, create or debug installs and update components. The CLI is a go binary that does
+not have any additional dependencies.
+
+### Default CLI Installation
+
+Install the CLI and refresh your shell session to get autocompletion.
+
+<CodeGroup>
+```sh install the CLI
+echo "y" | /bin/bash -c "$(curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)"
+```
+
+```sh refresh shell session
+source ~/.bashrc # or ~/.zshrc, etc.
+```
+</CodeGroup>
+
+Run `nuon` to verify it's installed and see all the sub-commands.
+
+### Manage Binaries Directly
+
+Binaries are published for the following OS and architecture combinations:
+
+* `darwin_amd64`
+* `darmin_arm64`
+* `linux_arm`
+* `linux_arm64`
+* `linux_386`
+* `linux_amd64`
+
+Binaries are published to https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli, and versioned by release. To download a
+binary, first look up the current API version, and then download the current binary for your platform.
+
+To look up the current API version:
+
+<CodeGroup>
+```sh curl
+$ curl https://ctl.prod.nuon.co/version
+{"git_ref":"8ebeb7e1","version":"0.19.19"}
+```
+</CodeGroup>
+
+To download the binaries for a specific version, substitute the version and platform into the following URL: `https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/$VERSION/nuon_${PLATFORM}`
+
+
+An example downloading the `0.19.19` version of the CLI for `darwin_arm64`:
+<CodeGroup>
+```sh curl
+$ wget -o nuon https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.19/nuon_darwin_arm64
+$ chmod +x nuon
+```
+</CodeGroup>
+
+### Updates
+
+We recommend updating the `nuon` CLI weekly, by re-downloading the binary or re-running the installation script.
+

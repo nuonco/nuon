@@ -19,7 +19,7 @@
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "support@nuon.co"
+      "url": "/support"
     }
   ],
   "topbarCtaButton": {
@@ -28,28 +28,19 @@
   },
   "tabs": [
     {
-      "name": "Changelog",
-      "url": "changelog"
+      "name": "Guides",
+      "url": "guides"
     },
     {
       "name": "API Reference",
       "url": "api-ref"
     },
     {
-      "name": "Go SDK",
-      "url": "https://github.com/nuonco/nuon-go/"
-    },
-    {
-      "name": "Terraform Provider",
-      "url": "https://registry.terraform.io/providers/nuonco/nuon/latest/docs"
+      "name": "Changelog",
+      "url": "changelog"
     }
   ],
   "anchors": [
-    {
-      "name": "Documentation",
-      "icon": "book-open-cover",
-      "url": "https://docs.nuon.co"
-    },
     {
       "name": "Community",
       "icon": "slack",
@@ -69,7 +60,21 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["quickstart", "what-is-nuon", "glossary"]
+      "pages": [
+          "quickstart",
+          "what-is-nuon",
+          "why-nuon",
+          "glossary"
+      ]
+    },
+    {
+      "group": "Resources",
+      "pages": [
+        "cli",
+        "terraform-provider",
+        "sdks",
+        "api-ref"
+      ]
     },
     {
       "group": "Configuration",
@@ -91,8 +96,22 @@
     {
       "group": "Guides",
       "pages": [
-        "guides/creating-a-release",
-        "guides/using-variables"
+        "guides/guides",
+        "guides/vcs",
+        "guides/terraform-configuration-management",
+        "guides/create-installs",
+        "guides/create-releases",
+        "guides/using-variables",
+        "guides/auto-deploys-and-dependencies",
+        "guides/sandbox-mode",
+        "guides/view-logs"
+      ]
+    },
+    {
+      "group": "Integrations",
+      "pages": [
+        "guides/sdk-integration",
+        "guides/github-actions"
       ]
     },
     {
@@ -228,5 +247,11 @@
     "twitter": "https://twitter.com/nuoninc",
     "github": "https://github.com/nuonco",
     "linkedin": "https://www.linkedin.com/company/nuonco/"
-  }
+  },
+  "redirects": [
+    {
+      "source": "/api-ref",
+      "destination": "/api-ref/getting-started"
+    }
+  ]
 }
