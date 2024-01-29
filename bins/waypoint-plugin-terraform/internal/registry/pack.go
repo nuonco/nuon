@@ -12,23 +12,24 @@ import (
 )
 
 func (b *Registry) packDirectory(ctx context.Context, log hclog.Logger, status terminal.Status, filePaths []fileRef) error {
-	fileDescriptors := make([]v1.Descriptor, len(filePaths))
-
+	fileDescriptors := make([]v1.Descriptor, 0, len(filePaths))
 	for idx, f := range filePaths {
 		fi, err := os.Stat(f.absPath)
 		if err != nil {
 			return fmt.Errorf("failed to stat %s: %w", f.absPath, err)
 		}
 		if fi.Size() == 0 {
+			status.Step(terminal.StatusOK, fmt.Sprintf("%d skipping packing %s as %s - empty", idx, f.absPath, f.relPath))
 			continue
 		}
+
 		status.Step(terminal.StatusOK, fmt.Sprintf("%d packing %s as %s", idx, f.absPath, f.relPath))
 		fileDescriptor, err := b.Store.Add(ctx, f.relPath, defaultFileType, f.absPath)
 		if err != nil {
 			return fmt.Errorf("unable to pack %s: %w", f.absPath, err)
 		}
 
-		fileDescriptors[idx] = fileDescriptor
+		fileDescriptors = append(fileDescriptors, fileDescriptor)
 	}
 
 	descriptor, err := oras.Pack(ctx, b.Store, defaultArtifactType, fileDescriptors, oras.PackOptions{
