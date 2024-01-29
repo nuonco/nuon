@@ -1,4 +1,4 @@
-module "alb" {
+module "ingress" {
   source = "terraform-aws-modules/alb/aws"
 
   name    = "ecs-ingress"
