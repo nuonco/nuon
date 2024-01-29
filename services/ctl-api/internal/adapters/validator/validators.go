@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	interpolatedNameRegex *regexp.Regexp = regexp.MustCompile("^[a-zA-Z0-9_]*$")
+	interpolatedNameRegex *regexp.Regexp = regexp.MustCompile("^[a-z0-9_]*$")
 )
 
 type interpolatedNameString struct {
