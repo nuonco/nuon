@@ -4,7 +4,7 @@ resource "nuon_terraform_module_component" "ingress" {
 
   connected_repo = {
     directory = "infra/e2e-jordan/components/ingress"
-    repo      = "mono"
+    repo      = "powertoolsdev/mono"
     branch    = "ja/3705-aws-ecs-sandbox"
   }
 
@@ -25,7 +25,7 @@ resource "nuon_terraform_module_component" "services" {
 
   connected_repo = {
     directory = "infra/e2e-jordan/components/services"
-    repo      = "mono"
+    repo      = "powertoolsdev/mono"
     branch    = "ja/3705-aws-ecs-sandbox"
   }
 
