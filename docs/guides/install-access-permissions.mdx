@@ -29,7 +29,7 @@ IAM roles can be created one of a few ways:
 You can use `terraform` to create and manage IAM roles for creating / destroying Nuon installs.
 
 <CodeGroup>
-```terraform iam-role.tf
+```hcl iam-role.tf
 locals {
   branch = "main"
   sandbox = "aws-ecs-byovpc"
@@ -157,5 +157,5 @@ you, instead of Nuon.
 In some cases, this might be helpful or required when selling into sensitive or enterprise customers.
 
 <Note>
-[mailto:team@nuon.co](Please get in touch) if you would like to learn more about running Nuon in your own account.
+[Please get in touch](mailto:team@nuon.co) if you would like to learn more about running Nuon in your own account.
 </Note>
