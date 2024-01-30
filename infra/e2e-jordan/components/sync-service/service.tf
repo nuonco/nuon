@@ -1,4 +1,4 @@
-module "services" {
+module "service" {
   source = "terraform-aws-modules/ecs/aws//modules/service"
 
   name        = "http_bin"
@@ -8,55 +8,52 @@ module "services" {
   memory = 4096
 
   container_definitions = {
-
-    fluent-bit = {
+    electric-sql = {
       cpu       = 512
       memory    = 1024
       essential = true
-      image     = "906394416424.dkr.ecr.us-west-2.amazonaws.com/aws-for-fluent-bit:stable"
-      firelens_configuration = {
-        type = "fluentbit"
-      }
-      memory_reservation = 50
-    }
-
-    ecs-sample = {
-      cpu       = 512
-      memory    = 1024
-      essential = true
-      image     = "public.ecr.aws/aws-containers/ecsdemo-frontend:776fd50"
+      image     = "docker.io/electricsql/electric"
       port_mappings = [
         {
-          name          = "ecs-sample"
-          containerPort = 80
+          name          = "satellite-http"
+          containerPort = 5133
+          protocol      = "tcp"
+        },
+        {
+          name          = "logical-publisher-tcp"
+          containerPort = 5433
+          protocol      = "tcp"
+        },
+        {
+          name          = "pg-proxy-tcp"
+          containerPort = 65432
           protocol      = "tcp"
         }
       ]
-
-      # Example image used requires access to write to root filesystem
-      readonly_root_filesystem = false
-
-      dependencies = [{
-        containerName = "fluent-bit"
-        condition     = "START"
-      }]
-
-      # enable_cloudwatch_logging = false
-      # log_configuration = {
-      #   logDriver = "awsfirelens"
-      #   options = {
-      #     Name                    = "firehose"
-      #     region                  = "eu-west-1"
-      #     delivery_stream         = "my-stream"
-      #     log-driver-buffer-limit = "2097152"
-      #   }
-      # }
       memory_reservation = 100
+      environment = [
+        {
+          name  = "DATABASE_URL"
+          value = var.database_url
+        },
+        {
+          name  = "AUTH_MODE"
+          value = var.auth_mode
+        },
+        {
+          name  = "LOGICAL_PUBLISHER_HOST"
+          value = var.domain_name
+        },
+        {
+          name  = "PG_PROXY_PASSWORD"
+          value = var.pg_proxy_password
+        },
+      ]
     }
   }
 
   service_connect_configuration = {
-    namespace = "example"
+    namespace = "electric-sql"
     service = {
       client_alias = {
         port     = 80
@@ -70,7 +67,7 @@ module "services" {
   load_balancer = {
     service = {
       target_group_arn = module.ingress.target_groups["ex-instance"].arn
-      container_name   = "ecs-sample"
+      container_name   = "electric-sql"
       container_port   = 80
     }
   }
@@ -83,7 +80,7 @@ module "services" {
       to_port                  = 80
       protocol                 = "tcp"
       description              = "Service port"
-      source_security_group_id = var.ingress_security_group_id
+      source_security_group_id = module.ingress.security_group_id
     }
     egress_all = {
       type        = "egress"

@@ -45,29 +45,29 @@ module "access" {
   ]
 }
 
-# module "e2e" {
-#   source = "../nuon"
-# 
-#   app_name = "${local.name}-${local.sandbox_name}"
-# 
-#   sandbox_repo    = local.sandboxes_repo
-#   sandbox_branch  = local.sandbox_branch
-#   sandbox_dir     = local.sandbox_name
-#   app_runner_type = "aws-ecs"
-# 
-#   east_1_count = 0
-#   east_2_count = 0
-#   west_2_count = 0
-# 
-#   install_role_arn = module.access.iam_role_arn
-#   install_inputs = [
-#     {
-#       name          = "vpc_id"
-#       description   = "vpc id from user"
-#       required      = true
-#       default       = ""
-#       value         = var.vpc_id
-#       interpolation = "{{.nuon.install.inputs.vpc_id}}"
-#     }
-#   ]
-# }
+module "e2e" {
+  source = "../nuon"
+
+  app_name = "${local.name}-${local.sandbox_name}"
+
+  sandbox_repo    = local.sandboxes_repo
+  sandbox_branch  = local.sandbox_branch
+  sandbox_dir     = local.sandbox_name
+  app_runner_type = "aws-ecs"
+
+  east_1_count = 0
+  east_2_count = 0
+  west_2_count = 0
+
+  install_role_arn = module.access.iam_role_arn
+  install_inputs = [
+    {
+      name          = "vpc_id"
+      description   = "vpc id from user"
+      required      = true
+      default       = ""
+      value         = var.vpc_id
+      interpolation = "{{.nuon.install.inputs.vpc_id}}"
+    }
+  ]
+}

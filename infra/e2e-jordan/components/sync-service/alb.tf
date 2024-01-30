@@ -1,9 +1,9 @@
-module "alb" {
+module "ingress" {
   source = "terraform-aws-modules/alb/aws"
 
   name    = "ecs-ingress"
   vpc_id  = var.vpc_id
-  subnets = var.subnet_ids
+  subnets = local.subnet_id_list
 
   # Security Group
   security_group_ingress_rules = {
@@ -46,7 +46,7 @@ module "alb" {
     ex-https = {
       port            = 443
       protocol        = "HTTPS"
-      certificate_arn = "arn:aws:iam::123456789012:server-certificate/test_cert-123456789012"
+      certificate_arn = module.cert.certificate_arn
 
       forward = {
         target_group_key = "ex-instance"
