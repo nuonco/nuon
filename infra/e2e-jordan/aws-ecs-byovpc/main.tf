@@ -57,7 +57,7 @@ module "e2e" {
 
   east_1_count = 0
   east_2_count = 0
-  west_2_count = 0
+  west_2_count = 1
 
   install_role_arn = module.access.iam_role_arn
   install_inputs = [
