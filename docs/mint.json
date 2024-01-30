@@ -99,6 +99,7 @@
         "guides/guides",
         "guides/vcs",
         "guides/terraform-configuration-management",
+        "guides/install-access-permissions",
         "guides/create-installs",
         "guides/create-releases",
         "guides/using-variables",
