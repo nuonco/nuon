@@ -18,7 +18,7 @@ Installers are generated web pages that can be used to create app installs. Inst
 To create an installer using terraform:
 
 <CodeGroup>
-```sh installer.tf
+```hcl installer.tf
 resource "nuon_app_installer" "main" {
   app_id = nuon_app.main.id
 
@@ -58,7 +58,7 @@ Installs can be created and managed using [Terraform](https://registry.terraform
 Example of creating an install using Terraform:
 
 <CodeGroup>
-```sh install.tf
+```hcl install.tf
 resource "nuon_install" "install" {
   app_id = nuon_app.main.id
 
