@@ -1,20 +1,22 @@
 ---
 title: 'Install Access Permissions'
-description: "Learn how to grant permissions to create an install, by sandbox."
+description: "Learn how to grant permissions to Nuon create installs in you or your customer's cloud account."
 icon: code
 ---
 
-In order to deploy your application into customer cloud accounts, or test accounts - cross account access must be
-granted to Nuon for the initial install.
+Before creating an install, cross account access must be granted to the _target_ account where the install will be
+deployed. This requires a customer to create a cross account IAM role for AWS in their own account (or in the case of a
+test install, in whichever account is desired).
 
+<Note>
 Permissions granting Nuon access to a customer account are _only_ required when first setting up the install. Once the
 install is initially provisioned, the [runner](../configure/runners.mdx) is responsible for all additional management.
+</Note>
 
 ## AWS Install Access
 
 For applications that use an AWS sandbox, a [cross account IAM
-  role](https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html) delegating access to
-  Nuon must be created.
+  role](https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html) delegating access to the target account.
 
 Each [managed sandbox](https://github.com/nuonco/sandboxes) defines a set of IAM policies that can be used to grant the
 proper permissions to create an install using that sandbox.
