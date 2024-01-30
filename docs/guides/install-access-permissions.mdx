@@ -1,0 +1,161 @@
+---
+title: 'Install Access Permissions'
+description: "Learn how to grant permissions to create an install, by sandbox."
+icon: code
+---
+
+In order to deploy your application into customer cloud accounts, or test accounts - cross account access must be
+granted to Nuon for the initial install.
+
+Permissions granting Nuon access to a customer account are _only_ required when first setting up the install. Once the
+install is initially provisioned, the [runner](../configure/runners.mdx) is responsible for all additional management.
+
+## AWS Install Access
+
+For applications that use an AWS sandbox, a [cross account IAM
+  role](https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html) delegating access to
+  Nuon must be created.
+
+Each [managed sandbox](https://github.com/nuonco/sandboxes) defines a set of IAM policies that can be used to grant the
+proper permissions to create an install using that sandbox.
+
+These policies can be found in the `artifacts` subdirectory of each sandbox, such as [AWS
+EKS](https://github.com/nuonco/sandboxes/tree/main/aws-eks/artifacts).
+
+IAM roles can be created one of a few ways:
+
+### Using Terraform
+
+You can use `terraform` to create and manage IAM roles for creating / destroying Nuon installs.
+
+<CodeGroup>
+```terraform iam-role.tf
+locals {
+  branch = "main"
+  sandbox = "aws-ecs-byovpc"
+  ecs_artifact_base_url = "https://raw.githubusercontent.com/nuonco/sandboxes/${local.branch}/${local.sandbox}/artifacts"
+}
+
+data "http" "ecs_sandbox_trust_policy" {
+  url = "${local.ecs_artifact_base_url}/trust.json"
+}
+
+data "http" "ecs_sandbox_provision_policy" {
+  url = "${local.ecs_artifact_base_url}/provision.json"
+}
+
+data "http" "ecs_sandbox_deprovision_policy" {
+  url = "${local.ecs_artifact_base_url}/deprovision.json"
+}
+
+resource "aws_iam_policy" "ecs_deprovision" {
+  name   = "nuon-${local.name}-install-deprovision-access-ecs"
+  policy = data.http.ecs_sandbox_deprovision_policy.response_body
+}
+
+resource "aws_iam_policy" "ecs_provision" {
+  name   = "nuon-${local.name}-install-provision-access-ecs"
+  policy = data.http.ecs_sandbox_provision_policy.response_body
+}
+
+module "ecs_access" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
+  version = ">= 5.1.0"
+
+  create_role = true
+
+  role_name = "${local.name}-customer-iam-role-ecs"
+
+  allow_self_assume_role   = true
+  custom_role_trust_policy        = data.http.ecs_sandbox_trust_policy.response_body
+  create_custom_role_trust_policy = true
+  custom_role_policy_arns = [
+    aws_iam_policy.ecs_deprovision.arn,
+    aws_iam_policy.ecs_provision.arn
+  ]
+}
+```
+```providers.tf
+provider "aws" {}
+```
+</CodeGroup>
+
+In order to use Terraform to provision IAM roles, please make sure to follow the [AWS
+Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration) to
+authenticate with AWS. Usually, this requires setting an `AWS_REGION` and `AWS_PROFILE`.
+
+### Using the AWS CLI
+
+The `aws` cli can be used to create an IAM role for Nuon install access. This requires creating the correct policies,
+creating a role that grants Nuon access to assume it, and attaching the policies to the role.
+
+By cloning the managed sandboxes, and changing directories into the `artifacts` directory of your chosen sandbox, you
+can create an IAM role using the following commands:
+<CodeGroup>
+```sh create-iam-role
+$ aws iam create-role \
+  --role-name=nuon-install-access \
+  --assume-role-policy-document file://trust.json
+```
+
+```sh create-provision-iam-policy
+$ aws iam create-policy \
+  --policy-name=nuon-install-provision-access \
+  --policy-document file://provision.json \
+  --description "Grants Nuon access to deprovision an install"
+
+$ aws iam attach-role-policy \
+  --role-name=nuon-install-access \
+  --policy-arn=PROVISION_POLICY_ARN
+```
+
+```sh create-deprovision-iam-policy
+$ aws iam create-policy \
+  --policy-name=nuon-install-deprovision-access \
+  --policy-document file://deprovision.json \
+  --description "Grants Nuon access to deprovision an install"
+
+$ aws iam attach-role-policy \
+  --role-name=nuon-install-access \
+  --policy-arn=DEPROVISION_POLICY_ARN
+```
+</CodeGroup>
+
+### Manually
+
+You can manually create an IAM role for Nuon using the AWS console in the following steps:
+
+1. Create an IAM role with the `trust.json` policy for your sandbox using [this guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-custom.html).
+2. Create a policy that contains both the `provison.json` and `deprovision.json` permissions for your sandbox using [this guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create-console.html).
+3. Attach the policy to your created IAM role from step 1 using [this guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html#add-policies-console).
+
+### 1-click Cloudformation stack
+
+Each sandbox has a sample 1-click Cloudformation stack template, which can be used to create a 1-click installation
+experience. This is found under `artifacts/stack-template.yaml` in each sandbox.
+
+We recommend that you offer customer's multiple ways of creating IAM roles, so that they can integrate into
+their stack of choice.
+
+<Note>
+Our sandbox 1-click templates are currently experimental. If you'd like to offer this to your customers, or use it for
+testing [please get in touch](mailto:team@nuon.co).
+</Note>
+
+## Nuon Trusted Accounts
+
+Nuon has two dedicated accounts that are used to assume external IAM roles for customer accounts:
+
+* Nuon Prod - 007754799877
+* Nuon Tenants Prod - 814326426574
+
+## Security
+
+Nuon can be deployed in _your_ account, upon request - meaning that initial access can be granted to an account owned by
+you, instead of Nuon.
+
+In some cases, this might be helpful or required when selling into sensitive or enterprise customers.
+
+<Note>
+[mailto:team@nuon.co](Please get in touch) if you would like to learn more about running Nuon in your own account.
+</Note>
