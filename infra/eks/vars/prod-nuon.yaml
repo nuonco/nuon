@@ -1,7 +1,7 @@
 ---
 managed_node_group:
   min_size: 2
-  max_size: 3
+  max_size: 10
   desired_size: 2
 tier: stable
 auth_map_additions:

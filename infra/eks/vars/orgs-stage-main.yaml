@@ -1,4 +1,8 @@
 ---
+managed_node_group:
+  desired_size: 2
+  min_size: 2
+  max_size: 5
 auth_map_additions:
   - name: eks-ctl-api
     account: stage
