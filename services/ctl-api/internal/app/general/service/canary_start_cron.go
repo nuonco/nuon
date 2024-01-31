@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
+	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 )
 
@@ -39,13 +40,16 @@ func (c *service) StartCanaryCron(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.startCanaryCron(ctx, sandboxCanaryCronID, true, sandboxCanaryCron); err != nil {
-		ctx.Error(fmt.Errorf("unable to create sandbox cron: %w", err))
-		return
-	}
-	if err := c.startCanaryCron(ctx, realCanaryCronID, true, realCanaryCron); err != nil {
-		ctx.Error(fmt.Errorf("unable to create sandbox cron: %w", err))
-		return
+	if req.SandboxMode {
+		if err := c.startCanaryCron(ctx, sandboxCanaryCronID, true, sandboxCanaryCron); err != nil {
+			ctx.Error(fmt.Errorf("unable to create sandbox cron: %w", err))
+			return
+		}
+	} else {
+		if err := c.startCanaryCron(ctx, realCanaryCronID, false, realCanaryCron); err != nil {
+			ctx.Error(fmt.Errorf("unable to create sandbox cron: %w", err))
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusCreated, map[string]string{
@@ -55,9 +59,10 @@ func (c *service) StartCanaryCron(ctx *gin.Context) {
 
 func (c *service) startCanaryCron(ctx context.Context, id string, sandboxMode bool, schedule string) error {
 	opts := tclient.StartWorkflowOptions{
-		ID:           id,
-		CronSchedule: schedule,
-		TaskQueue:    workflows.DefaultTaskQueue,
+		ID:                    id,
+		CronSchedule:          schedule,
+		TaskQueue:             workflows.DefaultTaskQueue,
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		Memo: map[string]interface{}{
 			"started-by": "ctl-api",
 		},
