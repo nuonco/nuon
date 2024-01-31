@@ -2,13 +2,12 @@ syntax = "proto3";
 
 package apps.v1;
 
-import "apps/v1/repository/v1/workflow.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/apps/v1";
 
-message ProvisionRequest {
+message DeprovisionRequest {
   string org_id = 1 [
     (validate.rules).string.len = 26,
     (tagger.tags) = "faker:\"shortID\""
@@ -19,6 +18,4 @@ message ProvisionRequest {
   ];
 }
 
-message ProvisionResponse {
-  apps.v1.repository.v1.ProvisionRepositoryResponse repository = 1;
-}
+message DeprovisionResponse {}

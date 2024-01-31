@@ -2,14 +2,17 @@ package runner
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/mono/pkg/kube"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/k8s"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -24,6 +27,11 @@ type CreateWaypointRunnerProfileRequest struct {
 	InstallID            string           `json:"install_id" validate:"required"`
 	AwsRegion            string           `json:"aws_region" validate:"required"`
 	ClusterInfo          kube.ClusterInfo `json:"cluster_info" validate:"required"`
+	RunnerType           installsv1.RunnerType
+
+	// additional information for ecs
+	LogGroupName   string
+	EcsClusterInfo *runnerv1.ECSClusterInfo
 }
 
 func (c CreateWaypointRunnerProfileRequest) validate() error {
@@ -67,22 +75,20 @@ func (a *Activities) CreateWaypointRunnerProfile(ctx context.Context, req Create
 	return resp, nil
 }
 
-type waypointRunnerProfileCreator interface {
-	createWaypointRunnerProfile(context.Context, waypointClientODRConfigUpserter, CreateWaypointRunnerProfileRequest) error
+func (a *Activities) roleNameFromARN(roleARN string) (string, error) {
+	pieces := strings.SplitN(roleARN, "role/", 2)
+	if len(pieces) != 2 {
+		return "", fmt.Errorf("unable to parse name from role arn")
+	}
+
+	return pieces[1], nil
 }
 
-type waypointClientODRConfigUpserter interface {
-	UpsertOnDemandRunnerConfig(context.Context, *gen.UpsertOnDemandRunnerConfigRequest, ...grpc.CallOption) (*gen.UpsertOnDemandRunnerConfigResponse, error)
-}
-
-var _ waypointRunnerProfileCreator = (*wpRunnerProfileCreator)(nil)
-
-type wpRunnerProfileCreator struct{}
-
-func (w *wpRunnerProfileCreator) createWaypointRunnerProfile(ctx context.Context, client waypointClientODRConfigUpserter, req CreateWaypointRunnerProfileRequest) error {
+func (a *Activities) createWaypointRunnerProfile(ctx context.Context, client gen.WaypointClient, req CreateWaypointRunnerProfileRequest) error {
 	odrServiceAccount := runnerOdrServiceAccountName(req.InstallID)
 
-	_, err := client.UpsertOnDemandRunnerConfig(ctx, &gen.UpsertOnDemandRunnerConfigRequest{
+	pluginCfg := map[string]interface{}{}
+	cfgReq := &gen.UpsertOnDemandRunnerConfigRequest{
 		Config: &gen.OnDemandRunnerConfig{
 			Name:   req.InstallID,
 			OciUrl: defaultODRImageURL,
@@ -93,18 +99,51 @@ func (w *wpRunnerProfileCreator) createWaypointRunnerProfile(ctx context.Context
 					},
 				},
 			},
-			PluginType: "kubernetes",
-			PluginConfig: []byte(fmt.Sprintf(`{
-"service_account": "%s",
-"image_pull_policy": "%s"
-}`, odrServiceAccount, defaultODRImagePullPolicy)),
 			ConfigFormat: gen.Hcl_JSON,
 			Default:      false,
 			EnvironmentVariables: map[string]string{
 				"AWS_REGION_DEFAULT": req.AwsRegion,
 			},
 		},
-	})
+	}
 
+	switch req.RunnerType {
+	case installsv1.RunnerType_RUNNER_TYPE_AWS_ECS:
+		// NOTE(jm): since waypoint requires role-names, instead of ARNs, but we require ARNs in other places,
+		// we just parse out the name here.
+		runnerRoleName, err := a.roleNameFromARN(req.EcsClusterInfo.RunnerIamRoleArn)
+		if err != nil {
+			return fmt.Errorf("invalid runner arn: %w", err)
+		}
+		odrRoleName, err := a.roleNameFromARN(req.EcsClusterInfo.OdrIamRoleArn)
+		if err != nil {
+			return fmt.Errorf("invalid runner arn: %w", err)
+		}
+
+		cfgReq.Config.PluginType = "aws-ecs"
+		pluginCfg["log_group"] = req.LogGroupName
+		pluginCfg["execution_role_name"] = runnerRoleName
+		pluginCfg["task_role_name"] = odrRoleName
+		pluginCfg["cluster"] = req.EcsClusterInfo.ClusterName
+		pluginCfg["region"] = req.AwsRegion
+		pluginCfg["odr_cpu"] = "512"
+		pluginCfg["odr_memory"] = "2048"
+		pluginCfg["security_group_id"] = req.EcsClusterInfo.SecurityGroupId
+		pluginCfg["subnets"] = strings.Join(req.EcsClusterInfo.SubnetIds, ",")
+	case installsv1.RunnerType_RUNNER_TYPE_AWS_EKS:
+		cfgReq.Config.PluginType = "kubernetes"
+		pluginCfg["service_account"] = odrServiceAccount
+		pluginCfg["image_pull_policy"] = defaultODRImagePullPolicy
+	default:
+		return fmt.Errorf("unsupported runner type")
+	}
+
+	cfgJson, err := json.MarshalIndent(pluginCfg, "", "\t")
+	if err != nil {
+		return fmt.Errorf("unable to marshal runner plugin config: %w", err)
+	}
+	cfgReq.Config.PluginConfig = cfgJson
+
+	_, err = client.UpsertOnDemandRunnerConfig(ctx, cfgReq)
 	return err
 }
