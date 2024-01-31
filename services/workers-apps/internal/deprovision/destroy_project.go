@@ -57,10 +57,10 @@ func (a *Activities) DestroyWaypointProject(ctx context.Context, req DestroyWayp
 	return resp, nil
 }
 
-func (a *Activities) destroyWaypointProject(ctx context.Context, client gen.WaypointClient, installID string) error {
+func (a *Activities) destroyWaypointProject(ctx context.Context, client gen.WaypointClient, appID string) error {
 	req := &gen.DestroyProjectRequest{
 		Project: &gen.Ref_Project{
-			Project: installID,
+			Project: appID,
 		},
 	}
 
