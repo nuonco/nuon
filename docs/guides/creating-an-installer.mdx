@@ -16,17 +16,19 @@ Learn more about [App configuration](/configure) or try the [quickstart guide](/
 
 ## What is an App Installer?
 
-An App Installer or Installer will create a public landing page for your application complete with everything needed for your customers to create BYOC Installs of your App. Think of an Installer like a [Stripe checkout page](https://stripe.com/payments/checkout), you add your application's branding and information, and Nuon will create a self service landing page that will provision Installs of your App in your customers' cloud account.
+An App Installer or Installer will create a public web page for your application complete with everything needed for your customers to create BYOC Installs of your App. Think of an Installer like a [Stripe checkout page](https://stripe.com/payments/checkout), you add your application's branding and information, and Nuon will create a self service landing page that will provision Installs of your App in your customers' cloud account.
 
 ## Creating an Installer
 
 <Warning>
-  If your using a sandbox Org you can still create an Installer but it will not provision resoucres or deploy software. 
+  If your using a sandbox Org you can still create an Installer but it will not provision resources or deploy software. 
 </Warning>
 
-To create an Installer we'll use the Nuon API. Check out the full [Nuon API reference here](/api-ref).
+To create an Installer we'll use Terraform and the [Nuon Terraform provider](/terraform-provider).
 
-To use the Rest API however you'll need an API token and the Org and App IDs you want to work with. There is a good chance you're already logged in with an active session via the [CLI](/cli) and if that is the case you can grab your current session by printing the CLI config.
+To use the Nuon Terraform provider on your local machine you'll need an API token and the Org and App IDs you want to work with. There is a good chance you're already logged in with an active session via the [CLI](/cli) and if that is the case you should be good to go because our Terraform provider will use the same config. 
+
+You can view your current session config via the CLI.
 
 ```sh
 nuon orgs print-config
@@ -52,12 +54,29 @@ nuon orgs print-config
 ```
 </CodeGroup>
 
-Now that you have a API token and current session IDs you can create an Installer using the Nuon API and cURL.
+Now that you have a valid session you can create your Installer using Terraform.
 
 <Warning>You will not be able to change the slug later.</Warning>
 
+<CodeGroup>
 
-```sh cURL Create Installer
+```hcl my_installer.tf
+resource "nuon_app_installer" "main" {
+  app_id = nuon_app.main.id
+  name = var.app_name
+  description = "${var.app_name} installer"
+  slug = nuon_app.main.id
+
+  documentation_url = "<url to your docs>"
+  community_url = "<url to your community>"
+  homepage_url = "<url to your homepage>"
+  github_url = "<url to your github>"
+  logo_url = "<url to your logo>"
+  demo_url = "<url to a demo video (youtube, vimeo, wistia, loom, etc)>"
+}
+```
+
+```sh cURL
 curl --request POST \
   --url https://ctl.prod.nuon.co/v1/apps/{your_app_id}/installer \
   --header 'Authorization: <your_api_token>' \
@@ -67,7 +86,7 @@ curl --request POST \
   "description": "<describe your application>",
   "links": {
     "community": "<url your community page>",
-    "demo": "<url to demo video on youtube>",
+    "demo": "<url to a demo video (youtube, vimeo, wistia, loom, etc)>",
     "documentation": "<url to your docs>",
     "github": "<url to your github>",
     "homepage": "<url to your homepage>",
@@ -77,38 +96,17 @@ curl --request POST \
   "slug": "<path you want your installer to live>"
 }'
 ```
+</CodeGroup>
 
-If the request is successful you can now view your Installers landing page at `https://app.nuon.co/<your-installer-slug>`.
+If Terraform plan / apply is successful you can now view your Installers page at `https://app.nuon.co/installer/<your-installer-slug>`.
 
 **Sourcegraph Installer example**
 
 ![Sourcegraph Installer landing page](/images/guides/sourcegraph-installer.png)
-<sub>Sourcegraph Installer landing page with links to Sourcegraph docs and demo video.</sub>
+<sub>Sourcegraph Installer landing page with links to Sourcegraph docs and demo video</sub>
 
 ![Sourcegraph Installer landing page form](/images/guides/sourcegraph-installer-form.png)
 <sub>Sourcegraph Installer landing page with IAM policy steps and Install form.</sub>
-
-You may need to make updates or corrections to your Installer which can also be done via the Nuon API and cURL.
-
-```sh cURL Update Installer
-curl --request PATCH \
-  --url https://ctl.prod.nuon.co/v1/installlers/{your_installer_id} \
-  --header 'Authorization: <your_api_token>' \
-  --header 'X-Nuon-Org-ID: <your_org_id>' \
-  --header 'Content-Type: application/json' \
-  --data '{
-  "description": "<describe your application>",
-  "links": {
-    "community": "<url your community page>",
-    "demo": "<url to demo video on youtube>",
-    "documentation": "<url to your docs>",
-    "github": "<url to your github>",
-    "homepage": "<url to your homepage>",
-    "logo": "<url to your logo>"
-  },
-  "name": "<name of your application>",
-}'
-```
 
 ## On-boarding customers using the landing page
 
@@ -116,7 +114,7 @@ At this point you should have a landing page for your Installer that you're happ
 
 <Info>Read more about [IAM Policies](/guides/install-access-permissions) and [creating Installs](/guides/create-installs) if you're new to working with Installs outside of a sandbox Org.</Info>
 
-After submitting the provision Install form you'll be redirected to a status page for the Install you just created (e.g. `https://app.nuon.co/<your-installer-slug>/<customer-installer-name>`).
+After submitting the provision Install form you'll be redirected to a status page for the Install you just created (e.g. `https://app.nuon.co/installer/<your-installer-slug>/<customer-installer-name>`).
 
 Depending on the App configuration the Install should be provisioned in 1-30 minutes, once the Install is active and running your application the status page should change to a green "active" status.
 
