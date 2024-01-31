@@ -1,6 +1,6 @@
-# module "aws-ecs" {
-#   source = "./aws-ecs"
-# }
+module "aws-ecs" {
+  source = "./aws-ecs"
+}
 
 module "aws-ecs-byovpc" {
   source = "./aws-ecs-byovpc"
