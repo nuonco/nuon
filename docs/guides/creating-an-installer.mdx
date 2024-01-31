@@ -1,0 +1,123 @@
+---
+title: Create an App Installer
+description: App Installers are the fastest way to create a self-service BYOC version of your application.
+icon: code
+---
+
+## At a glance
+
+App Installers are the fastest way to make a BYOC version of your application available for your customers. In this guide we'll cover what exactly is an Installer, how to create one and how to use it to on-board your customers.
+
+<Note>
+This guide assumes you have a working configuration of your Nuon App.
+
+Learn more about [App configuration](/configure) or try the [quickstart guide](/quickstart).
+</Note>
+
+## What is an App Installer?
+
+An App Installer or Installer will create a public landing page for your application complete with everything needed for your customers to create BYOC Installs of your App. Think of an Installer like a [Stripe checkout page](https://stripe.com/payments/checkout), you add your application's branding and information, and Nuon will create a self service landing page that will provision Installs of your App in your customers' cloud account.
+
+## Creating an Installer
+
+<Warning>
+  If your using a sandbox Org you can still create an Installer but it will not provision resoucres or deploy software. 
+</Warning>
+
+To create an Installer we'll use the Nuon API. Check out the full [Nuon API reference here](/api-ref).
+
+To use the Rest API however you'll need an API token and the Org and App IDs you want to work with. There is a good chance you're already logged in with an active session via the [CLI](/cli) and if that is the case you can grab your current session by printing the CLI config.
+
+```sh
+nuon orgs print-config
+```
+
+If you don't have a current valid CLI session you can create one by logging in, select an Org and App then print the CLI config as above.
+
+<CodeGroup>
+```sh Login to Nuon
+nuon login
+```
+
+```sh Select an Org
+nuon orgs select
+```
+
+```sh Select an App
+nuon apps select
+```
+
+```sh Print the CLI config
+nuon orgs print-config
+```
+</CodeGroup>
+
+Now that you have a API token and current session IDs you can create an Installer using the Nuon API and cURL.
+
+<Warning>You will not be able to change the slug later.</Warning>
+
+
+```sh cURL Create Installer
+curl --request POST \
+  --url https://ctl.prod.nuon.co/v1/apps/{your_app_id}/installer \
+  --header 'Authorization: <your_api_token>' \
+  --header 'X-Nuon-Org-ID: <your_org_id>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "description": "<describe your application>",
+  "links": {
+    "community": "<url your community page>",
+    "demo": "<url to demo video on youtube>",
+    "documentation": "<url to your docs>",
+    "github": "<url to your github>",
+    "homepage": "<url to your homepage>",
+    "logo": "<url to your logo>"
+  },
+  "name": "<name of your application>",
+  "slug": "<path you want your installer to live>"
+}'
+```
+
+If the request is successful you can now view your Installers landing page at `https://app.nuon.co/<your-installer-slug>`.
+
+**Sourcegraph Installer example**
+
+![Sourcegraph Installer landing page](/images/guides/sourcegraph-installer.png)
+<sub>Sourcegraph Installer landing page with links to Sourcegraph docs and demo video.</sub>
+
+![Sourcegraph Installer landing page form](/images/guides/sourcegraph-installer-form.png)
+<sub>Sourcegraph Installer landing page with IAM policy steps and Install form.</sub>
+
+You may need to make updates or corrections to your Installer which can also be done via the Nuon API and cURL.
+
+```sh cURL Update Installer
+curl --request PATCH \
+  --url https://ctl.prod.nuon.co/v1/installlers/{your_installer_id} \
+  --header 'Authorization: <your_api_token>' \
+  --header 'X-Nuon-Org-ID: <your_org_id>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "description": "<describe your application>",
+  "links": {
+    "community": "<url your community page>",
+    "demo": "<url to demo video on youtube>",
+    "documentation": "<url to your docs>",
+    "github": "<url to your github>",
+    "homepage": "<url to your homepage>",
+    "logo": "<url to your logo>"
+  },
+  "name": "<name of your application>",
+}'
+```
+
+## On-boarding customers using the landing page
+
+At this point you should have a landing page for your Installer that you're happy with that you can test. If you already have a ARN for a test IAM Policy you can go ahead and fill out the form in step 2 to provision the Install. If you need to create a IAM Policy for a test AWS account you can follow one of the options in step 1 of the landing page.
+
+<Info>Read more about [IAM Policies](/guides/install-access-permissions) and [creating Installs](/guides/create-installs) if you're new to working with Installs outside of a sandbox Org.</Info>
+
+After submitting the provision Install form you'll be redirected to a status page for the Install you just created (e.g. `https://app.nuon.co/<your-installer-slug>/<customer-installer-name>`).
+
+Depending on the App configuration the Install should be provisioned in 1-30 minutes, once the Install is active and running your application the status page should change to a green "active" status.
+
+
