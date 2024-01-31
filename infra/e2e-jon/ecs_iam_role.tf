@@ -1,6 +1,8 @@
 locals {
   branch = "main"
-  ecs_artifact_base_url = "https://raw.githubusercontent.com/nuonco/sandboxes/${local.branch}/aws-ecs-byovpc/artifacts"
+  repo = "nuonco/sandboxes"
+  dir = "aws-ecs"
+  ecs_artifact_base_url = "https://raw.githubusercontent.com/${local.repo}/${local.branch}/${local.dir}/artifacts"
 }
 
 data "http" "ecs_sandbox_trust_policy" {
