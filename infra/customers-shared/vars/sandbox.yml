@@ -1,5 +1,39 @@
 ---
 apps:
+  - name: warpstream
+    sandbox_install_count: 1
+    sandbox_install_inputs:
+      secret_role_arn: secret-role-arn
+      storage: 20Gi
+    installs: []
+    installer:
+      slug: warpstream
+      description: Stream more,manage less
+      name: WarpStream
+    urls:
+      documentation: https://docs.warpstream.com/warpstream/overview/readme
+      logo: https://www.gitbook.com/cdn-cgi/image/width=256,dpr=2,height=40,fit=contain,format=auto/https%3A%2F%2F3452791747-files.gitbook.io%2F~%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FjB7FxO8ty4EXO4HsQP4E%252Flogo%252FLuEylqap9lQE0AZtfzZk%252Flogo_bw.png%3Falt%3Dmedia%26token%3D031ee636-9873-46d9-bf2c-28bb849417e4
+      github: https://github.com/warpstreamlabs
+      community: https://console.warpstream.com/socials/slack
+      homepage: https://warpstream.com
+      demo: https://player.vimeo.com/video/851371577
+  - name: okteto
+    sandbox_install_count: 1
+    sandbox_install_inputs:
+      secret_role_arn: secret-role-arn
+      storage: 20Gi
+    installs: []
+    installer:
+      slug: okteto
+      description: The fastest way to turbocharge development velocity
+      name: Okteto
+    urls:
+      documentation: https://www.okteto.com/docs/
+      logo: https://avatars.githubusercontent.com/u/39767798?s=200&v=4
+      github: https://github.com/okteto
+      community: https://community.okteto.com/
+      homepage: https://www.okteto.com/
+      demo: https://www.youtube.com/embed/-lCTH8h_vLg?si=M-pzJ4xAM6s3AVBE
   - name: honeyhive
     sandbox_install_count: 5
     sandbox_install_inputs:
