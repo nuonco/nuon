@@ -112,7 +112,8 @@
       "group": "Integrations",
       "pages": [
         "guides/sdk-integration",
-        "guides/github-actions"
+        "guides/github-actions",
+        "guides/creating-an-installer"
       ]
     },
     {
