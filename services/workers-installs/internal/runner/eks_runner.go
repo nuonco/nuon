@@ -6,6 +6,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/kube"
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"go.temporal.io/sdk/workflow"
@@ -108,6 +109,7 @@ func (w *wkflow) installEKSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 		OrgID:                req.OrgId,
 		AwsRegion:            req.Region,
 		ClusterInfo:          w.clusterInfo,
+		RunnerType:           installsv1.RunnerType_RUNNER_TYPE_AWS_EKS,
 	}
 	_, err = w.createWaypointRunnerProfile(ctx, cwrpReq)
 	if err != nil {

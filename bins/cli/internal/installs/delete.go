@@ -36,5 +36,5 @@ func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) {
 		view.Fail(err)
 		return
 	}
-	view.Success()
+	view.SuccessQueued()
 }

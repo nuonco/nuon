@@ -23,19 +23,17 @@ type Activities struct {
 	waypointRunnerAdopter
 	waypointWorkspaceCreator
 	roleBindingCreator
-	waypointRunnerProfileCreator
 }
 
 func NewActivities(v *validator.Validate, cfg workers.Config) *Activities {
 	return &Activities{
-		v:                            v,
-		cfg:                          cfg,
-		helmInstaller:                helm.NewInstaller(),
-		waypointProjectCreator:       &wpProjectCreator{},
-		waypointServerCookieGetter:   &wpServerCookieGetter{},
-		waypointRunnerAdopter:        &wpRunnerAdopter{},
-		waypointWorkspaceCreator:     &wpWorkspaceCreator{},
-		waypointRunnerProfileCreator: &wpRunnerProfileCreator{},
-		roleBindingCreator:           &roleBindingCreatorImpl{},
+		v:                          v,
+		cfg:                        cfg,
+		helmInstaller:              helm.NewInstaller(),
+		waypointProjectCreator:     &wpProjectCreator{},
+		waypointServerCookieGetter: &wpServerCookieGetter{},
+		waypointRunnerAdopter:      &wpRunnerAdopter{},
+		waypointWorkspaceCreator:   &wpWorkspaceCreator{},
+		roleBindingCreator:         &roleBindingCreatorImpl{},
 	}
 }
