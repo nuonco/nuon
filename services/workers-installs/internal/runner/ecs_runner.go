@@ -3,6 +3,7 @@ package runner
 import (
 	"fmt"
 
+	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"go.temporal.io/sdk/workflow"
@@ -152,6 +153,24 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	_, err = w.adoptWaypointRunner(ctx, awrReq)
 	if err != nil {
 		err = fmt.Errorf("failed to adopt waypoint runner: %w", err)
+		return err
+	}
+
+	cwrpReq := CreateWaypointRunnerProfileRequest{
+		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
+		ClusterInfo:          w.clusterInfo,
+		OrgServerAddr:        orgServerAddr,
+		InstallID:            req.InstallId,
+		OrgID:                req.OrgId,
+		AwsRegion:            req.Region,
+		RunnerType:           installsv1.RunnerType_RUNNER_TYPE_AWS_ECS,
+		// specific fields for ECS runners
+		LogGroupName:   fmt.Sprintf("waypoint-runner-%s", req.InstallId),
+		EcsClusterInfo: req.EcsClusterInfo,
+	}
+	_, err = w.createWaypointRunnerProfile(ctx, cwrpReq)
+	if err != nil {
+		err = fmt.Errorf("failed to create waypoint runner profile: %w", err)
 		return err
 	}
 
