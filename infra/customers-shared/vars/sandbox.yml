@@ -1,7 +1,7 @@
 ---
 apps:
   - name: warpstream
-    sandbox_install_count: 1
+    sandbox_install_count: 0
     sandbox_install_inputs:
       secret_role_arn: secret-role-arn
       storage: 20Gi
@@ -18,7 +18,7 @@ apps:
       homepage: https://warpstream.com
       demo: https://player.vimeo.com/video/851371577
   - name: okteto
-    sandbox_install_count: 1
+    sandbox_install_count: 0
     sandbox_install_inputs:
       secret_role_arn: secret-role-arn
       storage: 20Gi
