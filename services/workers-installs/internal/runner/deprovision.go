@@ -69,5 +69,19 @@ func (w wkflow) DeprovisionRunner(ctx workflow.Context, req *runnerv1.Deprovisio
 		err = fmt.Errorf("failed to forget waypoint runner: %w", err)
 		return resp, err
 	}
+
+	drpReq := DeleteRunnerConfigRequest{
+		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
+		OrgServerAddr:        orgServerAddr,
+		OrgID:                req.OrgId,
+		InstallID:            req.InstallId,
+		ClusterInfo:          w.clusterInfo,
+	}
+	var drpResp DeleteRunnerConfigResponse
+	err = w.execWaypointActivity(ctx, w.act.DeleteRunnerConfig, drpReq, &drpResp)
+	if err != nil {
+		err = fmt.Errorf("failed to destroy waypoint project: %w", err)
+		return resp, err
+	}
 	return resp, nil
 }

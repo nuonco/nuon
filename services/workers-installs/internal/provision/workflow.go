@@ -186,6 +186,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_ECS {
 		prReq.EcsClusterInfo = &runnerv1.ECSClusterInfo{
 			ClusterArn:        tfOutputs.ECSCluster.ARN,
+			ClusterName:       tfOutputs.ECSCluster.Name,
 			InstallIamRoleArn: tfOutputs.Runner.InstallIAMRoleARN,
 			RunnerIamRoleArn:  tfOutputs.Runner.RunnerIAMRoleARN,
 			OdrIamRoleArn:     tfOutputs.Runner.ODRIAMRoleARN,
