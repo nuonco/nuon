@@ -7,6 +7,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-apps/internal"
+	"github.com/powertoolsdev/mono/services/workers-apps/internal/deprovision"
 	"github.com/powertoolsdev/mono/services/workers-apps/internal/provision"
 	"github.com/powertoolsdev/mono/services/workers-apps/internal/provision/project"
 	"github.com/powertoolsdev/mono/services/workers-apps/internal/provision/repository"
@@ -35,22 +36,26 @@ func runAll(cmd *cobra.Command, _ []string) {
 		log.Fatalf("unable to validate config: %v", err)
 	}
 
+	v := validator.New()
+
 	// parent workflow
-	wkflow := provision.NewWorkflow(cfg)
+	prWkflow := provision.NewWorkflow(cfg)
+	dprWkflow := deprovision.NewWorkflow(v, cfg)
 	// project child workflow
 	pwkflow := project.NewWorkflow(cfg)
 	// repository child workflow
 	rwkflow := repository.NewWorkflow(cfg)
 
-	v := validator.New()
 	wkr, err := worker.New(v, worker.WithConfig(&cfg.Config),
 		// register workflows
-		worker.WithWorkflow(wkflow.Provision),
+		worker.WithWorkflow(prWkflow.Provision),
+		worker.WithWorkflow(dprWkflow.Deprovision),
 		worker.WithWorkflow(pwkflow.ProvisionProject),
 		worker.WithWorkflow(rwkflow.ProvisionRepository),
 
 		// register activities
 		worker.WithActivity(provision.NewActivities()),
+		worker.WithActivity(deprovision.NewActivities(v, cfg)),
 		worker.WithActivity(project.NewActivities(v)),
 		worker.WithActivity(repository.NewActivities()),
 	)

@@ -8,6 +8,7 @@ option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/
 
 message ECSClusterInfo {
   string cluster_arn = 1 [(tagger.tags) = "faker:\"len=20\""];
+  string cluster_name = 8;
 
   string install_iam_role_arn = 2;
   string vpc_id = 3;

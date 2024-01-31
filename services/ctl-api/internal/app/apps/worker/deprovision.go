@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 	"go.temporal.io/sdk/workflow"
@@ -51,10 +52,21 @@ func (w *Workflows) deprovision(ctx workflow.Context, appID string, dryRun bool)
 	// update status
 	w.updateStatus(ctx, appID, StatusDeprovisioning, "deleting app resources")
 
-	// NOTE: we don't actually have a deprovision step, but we sleep here locally when a dry-run is enabled, to
-	// ensure that the status updating is working correctly.
-	if dryRun {
-		workflow.Sleep(ctx, w.cfg.SandboxSleep)
+	var currentApp app.App
+	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
+		AppID: appID,
+	}, &currentApp); err != nil {
+		w.updateStatus(ctx, appID, StatusError, "unable to get app from database")
+		return fmt.Errorf("unable to get app from database: %w", err)
+	}
+
+	_, err := w.execDeprovisionWorkflow(ctx, dryRun, &appsv1.DeprovisionRequest{
+		OrgId: currentApp.OrgID,
+		AppId: appID,
+	})
+	if err != nil {
+		w.updateStatus(ctx, appID, StatusError, "unable to deprovision app")
+		return fmt.Errorf("unable to deprovision app: %w", err)
 	}
 
 	// update status with response

@@ -18,6 +18,12 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
+	if install.Status != string(StatusActive) {
+		// automatically skipping
+		w.updateStatus(ctx, installID, Status(install.Status), "skipping deploying components since install did not provision")
+		return nil
+	}
+
 	var componentIDs []string
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetAppGraph, activities.GetAppGraphRequest{
 		AppID: install.AppID,
