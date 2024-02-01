@@ -1,31 +1,30 @@
 locals {
-  artifact_base_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox/aws-eks"
+  eks_branch = "main"
+  eks_repo = "nuonco/sandboxes"
+  eks_dir = "aws-ecs"
+  eks_artifact_base_url = "https://raw.githubusercontent.com/${local.repo}/${local.branch}/${local.dir}/artifacts"
 }
 
-data "http" "sandbox_version" {
-  url = "${local.artifact_base_url}/latest.txt"
+data "http" "eks_sandbox_trust_policy" {
+  url = "${local.eks_artifact_base_url}/trust.json"
 }
 
-data "http" "sandbox_trust_policy" {
-  url = "${local.artifact_base_url}/${chomp(data.http.sandbox_version.response_body)}/trust.json"
+data "http" "eks_sandbox_provision_policy" {
+  url = "${local.eks_artifact_base_url}/provision.json"
 }
 
-data "http" "sandbox_provision_policy" {
-  url = "${local.artifact_base_url}/${chomp(data.http.sandbox_version.response_body)}/provision.json"
+data "http" "eks_sandbox_deprovision_policy" {
+  url = "${local.eks_artifact_base_url}/deprovision.json"
 }
 
-data "http" "sandbox_deprovision_policy" {
-  url = "${local.artifact_base_url}/${chomp(data.http.sandbox_version.response_body)}/deprovision.json"
+resource "aws_iam_policy" "eks_deprovision" {
+  name   = "nuon-${local.name}-install-deprovision-access-eks"
+  policy = data.http.eks_sandbox_deprovision_policy.response_body
 }
 
-resource "aws_iam_policy" "install_deprovision" {
-  name   = "nuon-${local.name}-install-deprovision-access"
-  policy = data.http.sandbox_deprovision_policy.response_body
-}
-
-resource "aws_iam_policy" "install_provision" {
-  name   = "nuon-${local.name}-install-provision-access"
-  policy = data.http.sandbox_provision_policy.response_body
+resource "aws_iam_policy" "eks_provision" {
+  name   = "nuon-${local.name}-install-provision-access-eks"
+  policy = data.http.eks_sandbox_provision_policy.response_body
 }
 
 module "install_access" {
@@ -37,10 +36,10 @@ module "install_access" {
   role_name = "${local.name}-customer-iam-role"
 
   allow_self_assume_role   = true
-  custom_role_trust_policy        = data.http.sandbox_trust_policy.response_body
+  custom_role_trust_policy        = data.http.eks_sandbox_trust_policy.response_body
   create_custom_role_trust_policy = true
   custom_role_policy_arns = [
-    aws_iam_policy.install_deprovision.arn,
-    aws_iam_policy.install_provision.arn
+    aws_iam_policy.eks_deprovision.arn,
+    aws_iam_policy.eks_provision.arn
   ]
 }
