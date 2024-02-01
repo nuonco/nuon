@@ -103,7 +103,7 @@ jobs:
           aws s3 cp /tmp/latest.txt s3://${{ env.TFO_BUCKET_NAME }}/${{ env.ARTIFACT_BUCKET_PREFIX }}/latest.txt
 
       - name: Check install script existence
-        uses: andstor/file-existence-action@v2
+        uses: andstor/file-existence-action@v3
         id: check_install_script
         with:
           files: "${{inputs.dir}}/install.sh"
