@@ -121,13 +121,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Elixir
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v3
         with:
             token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
             repository: nuonco/nuon-elixir
             event-type: generate
       - name: Python
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v3
         with:
             token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
             repository: nuonco/nuon-python
