@@ -178,9 +178,9 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		OrgId:         req.OrgId,
 		AppId:         req.AppId,
 		InstallId:     req.InstallId,
-		OdrIamRoleArn: tfOutputs.Runner.DefaultIAMRoleARN,
 		Region:        req.AccountSettings.Region,
 		RunnerType:    req.RunnerType,
+		OdrIamRoleArn: tfOutputs.Runner.ODRIAMRoleARN,
 	}
 
 	if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_ECS {
@@ -189,12 +189,10 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 			ClusterName:       tfOutputs.ECSCluster.Name,
 			InstallIamRoleArn: tfOutputs.Runner.InstallIAMRoleARN,
 			RunnerIamRoleArn:  tfOutputs.Runner.RunnerIAMRoleARN,
-			OdrIamRoleArn:     tfOutputs.Runner.ODRIAMRoleARN,
 			VpcId:             tfOutputs.VPC.ID,
 			SubnetIds:         generics.ToStringSlice(tfOutputs.VPC.PublicSubnetIDs),
 			SecurityGroupId:   tfOutputs.VPC.DefaultSecurityGroupID,
 		}
-		prReq.OdrIamRoleArn = tfOutputs.Runner.ODRIAMRoleARN
 	} else {
 		prReq.EksClusterInfo = &runnerv1.KubeClusterInfo{
 			Id:             tfOutputs.Cluster.Name,
