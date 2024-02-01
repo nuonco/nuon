@@ -42,15 +42,15 @@ func (w wkflow) DeprovisionRunner(ctx workflow.Context, req *runnerv1.Deprovisio
 
 	// forget waypoint runner
 	orgServerAddr := client.DefaultOrgServerAddress(w.cfg.OrgServerRootDomain, req.OrgId)
-	dwpReq := DestroyWaypointProjectRequest{
+	drpReq := DeleteRunnerConfigRequest{
 		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
 		OrgServerAddr:        orgServerAddr,
 		OrgID:                req.OrgId,
 		InstallID:            req.InstallId,
 		ClusterInfo:          w.clusterInfo,
 	}
-	var dwpResp DestroyWaypointProjectResponse
-	err := w.execWaypointActivity(ctx, w.act.DestroyWaypointProject, dwpReq, &dwpResp)
+	var drpResp DeleteRunnerConfigResponse
+	err := w.execWaypointActivity(ctx, w.act.DeleteRunnerConfig, drpReq, &drpResp)
 	if err != nil {
 		err = fmt.Errorf("failed to destroy waypoint project: %w", err)
 		return resp, err
@@ -70,18 +70,19 @@ func (w wkflow) DeprovisionRunner(ctx workflow.Context, req *runnerv1.Deprovisio
 		return resp, err
 	}
 
-	drpReq := DeleteRunnerConfigRequest{
+	dwpReq := DestroyWaypointProjectRequest{
 		TokenSecretNamespace: w.cfg.TokenSecretNamespace,
 		OrgServerAddr:        orgServerAddr,
 		OrgID:                req.OrgId,
 		InstallID:            req.InstallId,
 		ClusterInfo:          w.clusterInfo,
 	}
-	var drpResp DeleteRunnerConfigResponse
-	err = w.execWaypointActivity(ctx, w.act.DeleteRunnerConfig, drpReq, &drpResp)
+	var dwpResp DestroyWaypointProjectResponse
+	err = w.execWaypointActivity(ctx, w.act.DestroyWaypointProject, dwpReq, &dwpResp)
 	if err != nil {
 		err = fmt.Errorf("failed to destroy waypoint project: %w", err)
 		return resp, err
 	}
+
 	return resp, nil
 }
