@@ -51,7 +51,7 @@ func (a *Activities) DeleteRunnerConfig(ctx context.Context, req DeleteRunnerCon
 	}
 
 	if err := a.deleteRunnerConfig(ctx, client, req.InstallID); err != nil {
-		return resp, fmt.Errorf("unable to create waypoint project: %w", err)
+		return resp, fmt.Errorf("unable to delete runner config: %w", err)
 	}
 
 	return resp, nil
@@ -60,7 +60,7 @@ func (a *Activities) DeleteRunnerConfig(ctx context.Context, req DeleteRunnerCon
 func (a *Activities) deleteRunnerConfig(ctx context.Context, client gen.WaypointClient, installID string) error {
 	req := &gen.DeleteOnDemandRunnerConfigRequest{
 		Config: &gen.Ref_OnDemandRunnerConfig{
-			Id: installID,
+			Name: installID,
 		},
 	}
 
