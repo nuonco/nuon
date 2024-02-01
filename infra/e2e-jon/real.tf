@@ -7,7 +7,7 @@ module "aws-eks" {
   sandbox_branch = local.sandboxes_branch
   sandbox_dir = "aws-byo-vpc"
 
-  east_1_count = 0
+  east_1_count = 1
   east_2_count = 0
   west_2_count = 0
 
