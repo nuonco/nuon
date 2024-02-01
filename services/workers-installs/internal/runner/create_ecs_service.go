@@ -58,6 +58,10 @@ func (a *Activities) getECSService(ctx context.Context, ecsClient *ecs.Client, r
 		return nil, nil
 	}
 
+	if *resp.Services[0].Status == "INACTIVE" {
+		return nil, nil
+	}
+
 	return &resp.Services[0], nil
 }
 
