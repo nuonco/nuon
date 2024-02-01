@@ -87,6 +87,17 @@ func (c *cli) orgsCmd() *cobra.Command {
 	}
 	orgsCmd.AddCommand(listConntectedRepos)
 
+	listVCSConnections := &cobra.Command{
+		Use:   "list-vcs-connections",
+		Short: "List VCS connections",
+		Long:  "List all connected GitHub accounts",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient, c.cfg)
+			svc.VCSConnections(cmd.Context(), PrintJSON)
+		},
+	}
+	orgsCmd.AddCommand(listVCSConnections)
+
 	connectGithubCmd := &cobra.Command{
 		Use:   "connect-github",
 		Short: "Connect GitHub account",
