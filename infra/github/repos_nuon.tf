@@ -160,3 +160,20 @@ module "nuon-actions-release" {
     github = github.nuon
   }
 }
+
+module "nuon-guides" {
+  source      = "./modules/repository"
+  name        = "guides"
+  description = "Project code for guides."
+  required_checks = [
+    "check-pr / Run PR checks",
+    "check-pr / Update PR status",
+  ]
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
