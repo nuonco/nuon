@@ -1,5 +1,22 @@
 ---
 apps:
+  - name: rocket-chat
+    sandbox_install_count: 0
+    sandbox_install_inputs:
+      secret_role_arn: secret-role-arn
+      storage: 20Gi
+    installs: []
+    installer:
+      slug: rocket-chat
+      description: Let every conversation flow - without compromise
+      name: RocketChat
+    urls:
+      documentation: https://docs.rocket.chat/
+      logo: https://www.gitbook.com/cdn-cgi/image/width=256,dpr=2,height=40,fit=contain,format=auto/https%3A%2F%2F1635978725-files.gitbook.io%2F~%2Ffiles%2Fv0%2Fb%2Fgitbook-legacy-files%2Fo%2Fspaces%252F-M418Ul0aSTwf2PYsyPW%252Favatar-rectangle-1618603990572.png%3Fgeneration%3D1618603991149148%26alt%3Dmedia
+      github: https://github.com/RocketChat
+      community: https://www.rocket.chat/community
+      homepage: https://rocket.chat
+      demo: https://www.youtube.com/embed/T2v29gK8fP4
   - name: warpstream
     sandbox_install_count: 0
     sandbox_install_inputs:
