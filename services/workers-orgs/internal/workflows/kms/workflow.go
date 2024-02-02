@@ -46,12 +46,13 @@ func (w wkflow) ProvisionKMS(ctx workflow.Context, req *kmsv1.ProvisionKMSReques
 			KeyARN:        fmt.Sprintf("alias/org-%s", req.OrgId),
 		}
 		keyResp, err := execGetKMSKey(ctx, act, getKeyReq)
-		if err != nil {
-			return resp, fmt.Errorf("unable to get kms key: %w", err)
+		if err == nil {
+			resp.KmsKeyArn = keyResp.KeyArn
+			resp.KmsKeyId = keyResp.KeyID
+			return resp, nil
 		}
-		resp.KmsKeyArn = keyResp.KeyArn
-		resp.KmsKeyId = keyResp.KeyID
-		return resp, nil
+
+		// if an error exists, attempt to re-run the workflow, regardless.
 	}
 
 	ckkReq := CreateKMSKeyRequest{
