@@ -19,6 +19,10 @@ func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, s
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
+	if len(install.InstallSandboxRuns) < 1 || install.InstallSandboxRuns[0].Status == string(StatusAccessError) {
+		return nil
+	}
+
 	var componentIDs []string
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetAppGraph, activities.GetAppGraphRequest{
 		AppID: install.AppID,

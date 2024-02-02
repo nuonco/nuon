@@ -30,6 +30,12 @@ variable "west_2_count" {
   type        = number
 }
 
+variable "eu_west_2_count" {
+  description = "Number of installs to create in eu-west-2"
+  type        = number
+  default = 0
+}
+
 variable "sandbox_repo" {
   description = "Sandbox repository to use, must be public."
   default     = "nuonco/sandboxes"

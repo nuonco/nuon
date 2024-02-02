@@ -1,3 +1,27 @@
+resource "nuon_install" "eu_west_2" {
+  count  = var.east_1_count
+  app_id = nuon_app.main.id
+
+  name         = "eu-west-2-${count.index}"
+  region       = "eu-west-2"
+  iam_role_arn = var.install_role_arn
+
+  dynamic "input" {
+    for_each = var.install_inputs
+    content {
+      name  = input.value.name
+      value = input.value.value
+    }
+  }
+
+  depends_on = [
+    nuon_app_sandbox.main,
+    nuon_app_runner.main,
+    nuon_job_component.e2e,
+    nuon_helm_chart_component.e2e,
+  ]
+}
+
 resource "nuon_install" "east_1" {
   count  = var.east_1_count
   app_id = nuon_app.main.id
