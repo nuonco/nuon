@@ -22,6 +22,9 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Install, err
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_inputs.created_at DESC")
 		}).
+		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_sandbox_runs.created_at DESC")
+		}).
 
 		// load sandbox
 		Preload("AppSandboxConfig.SandboxRelease").
