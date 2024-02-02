@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.23
+
+Re-promote.
+
 ## v0.19.21
 
 Promoting some fixes to syncing images, for ECS compatibility.
