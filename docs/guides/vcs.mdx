@@ -1,9 +1,73 @@
 ---
 title: 'Connect Github'
 description: 'Connect your Github account to use both public and private repositories in your Nuon apps.'
-icon: 'code'
+icon: 'github'
 ---
 
+## At a glance
+
+Connecting Nuon with your Version Control System (VCS) will give Nuon the ability to use your code when configuring your application. In this guide we'll use the [Nuon CLI](/cli) to connect your Nuon Org to a GitHub account or repository and verify the connection is working by listing the connected repositories.
+
 <Note>
-Coming soon.
+You may want to update an existing GitHub connection (e.g. add a new repository to the connection). To do this follow the steps below, make the updates with in the GitHub connection flow and your existing connection should be updated.
 </Note>
+
+## Select an Org
+
+Because a VCS connection is scoped to your Nuon Org you'll need to login using the CLI and select the Org you want to use.
+
+<CodeGroup>
+
+```sh Login
+nuon login
+```
+
+```sh Org select
+nuon orgs select
+```
+</CodeGroup>
+
+Alternatively if you already have an existing CLI session you can just verify the Org is correct before you start the connection flow.
+
+```sh
+nuon orgs current
+```
+
+## Start the connection flow
+
+Now that you're logged in with a valid Org selected you'll want to kick off the GitHub connection flow with the CLI.
+
+```sh
+nuon orgs connect-github
+```
+
+This command will open a tab in your browser asking you to install [Nuon Connect](https://github.com/apps/nuon-connect) app into your GitHub account. 
+
+## Select GitHub access
+
+At this point you'll follow the GitHub connection flow, selecting an account to install Nuon Connect and selecting which repositories Nuon can have access to.
+
+![Select GitHub account](/images/guides/github-connection.png)
+<sub>Select which GitHub account to want to install Nuon Connect</sub>
+
+![Select repos](/images/guides/select-repo.png)
+<sub>Select which repos Nuon Connect can have access to</sub>
+
+After you've selected which repositories Nuon Connect can access you'll be redirected to the [Nuon web app](https://app.nuon.co). If the connection was a success you'll see either a success message or you'll be redirected back to the [Nuon web app](https://app.nuon.co) if you have an active web session.
+
+## Verify connection works
+
+At this point you can close the browser tab and verify everything is correct in the terminal via the CLI.
+
+<CodeGroup>
+
+```sh View connections 
+nuon orgs list-vcs-connections
+```
+
+```sh View connected repositories
+nuon orgs list-connected-repos
+```
+</CodeGroup>
+
+If the connection was successful you should see a list on connected GitHub accounts and a list of connected repositories that you can now use to configure you're application in Nuon.
