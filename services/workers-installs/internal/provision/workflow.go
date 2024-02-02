@@ -189,6 +189,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 			ClusterName:       tfOutputs.ECSCluster.Name,
 			InstallIamRoleArn: tfOutputs.Runner.InstallIAMRoleARN,
 			RunnerIamRoleArn:  tfOutputs.Runner.RunnerIAMRoleARN,
+			OdrIamRoleArn:     tfOutputs.Runner.ODRIAMRoleARN,
 			VpcId:             tfOutputs.VPC.ID,
 			SubnetIds:         generics.ToStringSlice(tfOutputs.VPC.PublicSubnetIDs),
 			SecurityGroupId:   tfOutputs.VPC.DefaultSecurityGroupID,

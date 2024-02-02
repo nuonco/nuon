@@ -19,6 +19,10 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
+	if len(install.InstallSandboxRuns) < 1 || install.InstallSandboxRuns[0].Status == string(StatusAccessError) {
+		return nil
+	}
+
 	var installRun app.InstallSandboxRun
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateSandboxRun, activities.CreateSandboxRunRequest{
 		InstallID: installID,
