@@ -44,8 +44,9 @@ func (w *Workflows) provision(ctx workflow.Context, installID string, dryRun boo
 		accessError := credentials.ErrUnableToAssumeRole{
 			RoleARN: install.AWSAccount.IAMRoleARN,
 		}
-		if strings.Contains(err.Error(), accessError.Error()) {
+		if strings.Contains(err.Error(), accessError.Error()) || strings.Contains(err.Error(), "iam-role") {
 			w.updateStatus(ctx, installID, StatusAccessError, "unable to assume provided role to access account")
+			w.updateRunStatus(ctx, installRun.ID, StatusAccessError, "unable to assume provided role to access account")
 			return fmt.Errorf("unable to provision install: %w", err)
 		}
 
