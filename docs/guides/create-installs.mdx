@@ -93,7 +93,7 @@ type CreateInstallRequest struct {
   Name string `json:"name" validate:"required"`
 
   AWSAccount struct {
-    Region     string `json:"region" validate:"oneof=us-east-1 us-east-2 us-west-2"`
+    Region     string `json:"region"`
     IAMRoleARN string `json:"iam_role_arn" validate:"required"`
   } `json:"aws_account" validate:"required"`
 
