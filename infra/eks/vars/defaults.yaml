@@ -6,6 +6,6 @@ managed_node_group:
     - t3a.medium
   desired_size: 1
   min_size: 1
-  max_size: 4
+  max_size: 8
 region: "us-west-2"
 root_domain: "nuon.cloud"

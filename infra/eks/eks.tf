@@ -1,5 +1,5 @@
 locals {
-  cluster_version = "1.25"
+  cluster_version = "1.26"
   region          = local.vars.region
 
   # rearrange SSO roles by name for easier access
