@@ -1,5 +1,5 @@
 locals {
-  cluster_version = "1.26"
+  cluster_version = "1.27"
   region          = local.vars.region
 
   # rearrange SSO roles by name for easier access
@@ -82,6 +82,7 @@ module "eks" {
       username = "admin:{{SessionName}}"
       groups = [
         "system:masters",
+        "eks-console-dashboard-full-access",
       ]
     },
     {
