@@ -18,7 +18,7 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	if install.Status != string(StatusActive) {
+	if !w.isDeployable(install) {
 		// automatically skipping
 		w.updateStatus(ctx, installID, Status(install.Status), "skipping deploying components since install did not provision")
 		return nil
