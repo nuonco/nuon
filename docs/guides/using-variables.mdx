@@ -4,8 +4,6 @@ description: Using variables with your Nuon configurations.
 icon: code
 ---
 
-## Overview
-
 The components of your application can get custom configuration settings applied by using variables. Each deployed component instance can make use of a set of name/value variables to handle configuration settings that need to be set differently on each customer's instance. Nuon brings in a tree of information from the sources detailed below, which can then be accessed by the component using a templating syntax inspired by Go templates. This variable replacement templating syntax is used by several other infrastructure management tools.
 
 You can set these variables as vars in your Terraform configuration.
@@ -72,7 +70,7 @@ Settings common to all your installs can be set directly on the component and it
 
 Example: `cache_size` with value `4096`.
 
-## Unique Variable Value For Each Installs
+## Unique Variable Value For Each Install
 
 Settings that need to change for each specific install should be set as follows:
 
