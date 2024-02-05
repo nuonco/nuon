@@ -10,6 +10,38 @@ import (
 	"go.uber.org/zap"
 )
 
+func (w *Workflows) shouldTeardownInstallComponent(ctx workflow.Context, installID, compID string) (bool, error) {
+	var installComponent app.InstallComponent
+	if err := w.defaultExecGetActivity(ctx, w.acts.GetInstallComponent, activities.GetInstallComponentRequest{
+		InstallID:   installID,
+		ComponentID: compID,
+	}, &installComponent); err != nil {
+		return false, fmt.Errorf("unable to get install component: %w", err)
+	}
+
+	if len(installComponent.InstallDeploys) < 1 {
+		return false, nil
+	}
+	if installComponent.InstallDeploys[0].Status != string(StatusActive) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (w *Workflows) shouldTeardownComponents(install app.Install) bool {
+	if len(install.InstallSandboxRuns) < 1 {
+		return false
+	}
+
+	lastRun := install.InstallSandboxRuns[0]
+	if (lastRun.RunType == app.SandboxRunTypeProvision || lastRun.RunType == app.SandboxRunTypeReprovision) && lastRun.Status == string(StatusActive) {
+		return true
+	}
+
+	return false
+}
+
 func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, sandboxMode, async bool) error {
 	l := workflow.GetLogger(ctx)
 	var install app.Install
@@ -19,7 +51,8 @@ func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, s
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	if len(install.InstallSandboxRuns) < 1 || install.InstallSandboxRuns[0].Status == string(StatusAccessError) {
+	// reasons we should not try to teardown components
+	if !w.shouldTeardownComponents(install) {
 		return nil
 	}
 
@@ -36,12 +69,20 @@ func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, s
 
 	deploys := make([]app.InstallDeploy, 0)
 	for _, compID := range componentIDs {
+		shouldTeardown, err := w.shouldTeardownInstallComponent(ctx, installID, compID)
+		if err != nil {
+			return fmt.Errorf("unable to verify if component should be torn down: %w", err)
+		}
+
+		if !shouldTeardown {
+			continue
+		}
 
 		var componentBuild app.ComponentBuild
 		if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentLatestBuild, activities.GetComponentLatestBuildRequest{
 			ComponentID: compID,
 		}, &componentBuild); err != nil {
-			return fmt.Errorf("unable to create component build: %w", err)
+			return fmt.Errorf("unable to get latest component build: %w", err)
 		}
 
 		var installDeploy app.InstallDeploy
