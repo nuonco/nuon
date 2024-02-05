@@ -62,6 +62,6 @@ resource "helm_release" "cert_manager" {
   lifecycle {
     # destroying the release removes the CRDs and any custom resources
     # which would remove all certs issued by cert-manager
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
