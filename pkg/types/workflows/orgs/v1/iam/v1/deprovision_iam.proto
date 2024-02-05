@@ -16,5 +16,5 @@ message DeprovisionIAMRequest {
 }
 
 message DeprovisionIAMResponse {
-  google.protobuf.Struct status = 1;
+  google.protobuf.Struct status = 1 [(tagger.tags) = "faker:\"-\""];
 }

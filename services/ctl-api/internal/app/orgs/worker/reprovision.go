@@ -18,12 +18,13 @@ func (w *Workflows) reprovision(ctx workflow.Context, orgID string, dryRun bool)
 		OrgID: orgID,
 	}, &org); err != nil {
 		w.updateStatus(ctx, orgID, StatusError, "unable to get org from database")
-		return fmt.Errorf("unable to get install: %w", err)
+		return fmt.Errorf("unable to get org: %w", err)
 	}
 
 	_, err := w.execDeprovisionIAMWorkflow(ctx, dryRun, &iamv1.DeprovisionIAMRequest{
 		OrgId: orgID,
 	})
+	// NOTE(jm): we ignore errors deprovisioning, and make a best effort to reprovision regardless
 
 	_, err = w.execProvisionWorkflow(ctx, dryRun, &orgsv1.ProvisionRequest{
 		OrgId:       orgID,
@@ -34,6 +35,13 @@ func (w *Workflows) reprovision(ctx workflow.Context, orgID string, dryRun bool)
 	if err != nil {
 		w.updateStatus(ctx, orgID, StatusError, "unable to reprovision organization resources")
 		return fmt.Errorf("unable to provision org: %w", err)
+	}
+
+	if err := w.defaultExecGetActivity(ctx, w.acts.ReprovisionApps, activities.ReprovisionAppsRequest{
+		OrgID: orgID,
+	}, &org); err != nil {
+		w.updateStatus(ctx, orgID, StatusError, "unable to reprovision apps")
+		return fmt.Errorf("unable to reprovision apps: %w", err)
 	}
 
 	w.updateStatus(ctx, orgID, StatusActive, "organization resources are provisioned")
