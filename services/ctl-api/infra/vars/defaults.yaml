@@ -4,7 +4,7 @@ region: us-west-2
 pool: nuon
 rds:
   engine: postgres
-  engine_version: "14.7"
+  engine_version: "14.10"
   family: "postgres14"
   major_engine_version: "14"
   instance_class: "db.t4g.small"
