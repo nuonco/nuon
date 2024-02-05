@@ -1,5 +1,5 @@
 resource "nuon_install" "eu_west_2" {
-  count  = var.east_1_count
+  count  = var.eu_west_2_count
   app_id = nuon_app.main.id
 
   name         = "eu-west-2-${count.index}"
