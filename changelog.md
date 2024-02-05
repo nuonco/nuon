@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.24
+
+Re-promote after internal resources changed in stage.
+
 ## v0.19.23
 
 Re-promote.
