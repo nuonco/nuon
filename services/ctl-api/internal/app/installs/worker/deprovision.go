@@ -8,6 +8,17 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+func (w *Workflows) isDeprovisionable(install app.Install) bool {
+	if len(install.InstallSandboxRuns) < 1 {
+		return false
+	}
+	if install.InstallSandboxRuns[0].Status == string(StatusAccessError) {
+		return false
+	}
+
+	return true
+}
+
 func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun bool) error {
 	w.updateStatus(ctx, installID, StatusDeprovisioning, "deprovisioning install resources")
 
@@ -19,10 +30,6 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	if len(install.InstallSandboxRuns) < 1 || install.InstallSandboxRuns[0].Status == string(StatusAccessError) {
-		return nil
-	}
-
 	var installRun app.InstallSandboxRun
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateSandboxRun, activities.CreateSandboxRunRequest{
 		InstallID: installID,
@@ -30,6 +37,11 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 	}, &installRun); err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to create sandbox run")
 		return fmt.Errorf("unable to create install: %w", err)
+	}
+
+	if !w.isDeprovisionable(install) {
+		w.updateRunStatus(ctx, installRun.ID, StatusError, "install is not deprovisionable")
+		return nil
 	}
 
 	w.updateRunStatus(ctx, installRun.ID, StatusDeprovisioning, "deprovisioning")

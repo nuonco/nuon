@@ -11,6 +11,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+func (w *Workflows) isDeployable(install app.Install) bool {
+	return install.Status == string(StatusActive)
+}
+
 func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, sandboxMode bool) error {
 	var install app.Install
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
@@ -18,6 +22,11 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	}, &install); err != nil {
 		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get install from database")
 		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	if !w.isDeployable(install) {
+		w.updateDeployStatus(ctx, deployID, StatusError, "install is not active and can not be deployed too")
+		return nil
 	}
 
 	var installDeploy app.InstallDeploy
