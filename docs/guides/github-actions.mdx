@@ -1,10 +1,108 @@
 ---
-name: 'Github Actions'
-description: 'Automatically update your apps from Github Actions.'
+name: 'GitHub Actions'
+description: 'Automatically update your apps from GitHub Actions.'
 icon: code
 ---
 
-If you use Github Actions to implement your automation pipelines, we provide a collection of custom actions to make integrating with Nuon as easy as possible. Refence the README for each action for details and usage examples.
+You can use GitHub Actions to automatically build and release your components as part of your workflow. This can be used
+to update your Nuon applications, running in customer accounts alongside updating other platforms.
 
+We offer the following actions:
 - [Build](https://github.com/nuonco/actions-build)
 - [Release](https://github.com/nuonco/actions-release)
+
+Each GitHub action uses the [Nuon CLI](../cli) to perform operations. Please refer to [configuration](#configuration)
+for details on configuring each action.
+
+## Automatically Build Components
+
+In order to update customer applications with the latest version of a component, it must be built first. You can
+automatically build a component using GitHub actions.
+
+To automatically build from an Action:
+<CodeGroup>
+```yaml build.yml
+---
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - name: Checkout code
+        id: checkout
+        uses: actions/checkout@v2
+
+      - name: Build component
+        id: build
+        uses: nuonco/actions-build@v1
+        with:
+          api_token: ${{ secrets.nuon_api_token }}
+          org: ${{ vars.nuon_org_id }}
+          component_id: backend
+```
+</CodeGroup>
+
+## Automatically Release Components
+
+Release are used to update components in a Nuon application.
+
+To automatically build _and_ release a component from an Action:
+<CodeGroup>
+```yaml build-and-release.yml
+---
+on:
+  push:
+    branches:
+      - main
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - name: Checkout code
+        id: checkout
+        uses: actions/checkout@v2
+
+      - name: Build component
+        id: build
+        uses: nuonco/actions-build@v1
+        with:
+          api_token: ${{ secrets.nuon_api_token }}
+          org: ${{ vars.nuon_org_id }}
+          component_id: backend
+
+      - name: Release
+        id: release
+        uses: nuonco/actions-release@v1
+        with:
+          api_token: ${{ secrets.nuon_api_token }}
+          org: ${{ vars.nuon_org_id
+          build_id: ${{ steps.build.outputs.build_id }}
+```
+</CodeGroup>
+
+Please refer to [creating releases](./create-releases) for more details on releases.
+
+## Configuration
+
+Both an API token and an org ID are required to configure Nuon github actions. These can be fetched using the [Nuon CLI](../cli).
+
+To fetch an API token:
+```sh
+$ nuon orgs current -j
+```
+
+To fetch the current org ID:
+```sh
+$ nuon orgs api-token -j
+```
+
+It is recommended to set the API token using a [GitHub Action secret](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions).
+
+<Note>
+If you do not yet have an org setup, please follow the [quickstart guide](../quickstart).
+</Note>
+
