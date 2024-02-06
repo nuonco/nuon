@@ -8,15 +8,17 @@ import (
 )
 
 type GetDeployRequest struct {
-	DeployID	  string `validate:"required"`
+	DeployID string `validate:"required"`
 }
 
 func (a *Activities) GetDeploy(ctx context.Context, req GetDeployRequest) (*app.InstallDeploy, error) {
 	installDeploy := app.InstallDeploy{}
-	res := a.db.WithContext(ctx).First(&installDeploy, "id = ?", req.DeployID)
+	res := a.db.WithContext(ctx).
+		Preload("ComponentBuild").
+		First(&installDeploy, "id = ?", req.DeployID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
 	}
 
-	return	&installDeploy,nil
+	return &installDeploy, nil
 }

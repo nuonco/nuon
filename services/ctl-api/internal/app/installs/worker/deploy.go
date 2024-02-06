@@ -11,6 +11,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+func (w *Workflows) isBuildDeployable(bld app.ComponentBuild) bool {
+	return bld.Status == string(StatusActive)
+}
+
 func (w *Workflows) isDeployable(install app.Install) bool {
 	return install.Status == string(StatusActive)
 }
@@ -35,6 +39,11 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	}, &installDeploy); err != nil {
 		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get install deploy from database")
 		return fmt.Errorf("unable to get install deploy: %w", err)
+	}
+
+	if !w.isBuildDeployable(installDeploy.ComponentBuild) {
+		w.updateDeployStatus(ctx, deployID, StatusNoop, "build is not deployable")
+		return nil
 	}
 
 	var deployCfg componentsv1.Component
