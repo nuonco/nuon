@@ -53,7 +53,7 @@ func (s *service) UpdateComponent(ctx *gin.Context) {
 
 	component, err := s.updateComponent(ctx, componentID, &req)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get  app%s: %w", componentID, err))
+		ctx.Error(fmt.Errorf("unable to update %s: %w", componentID, err))
 		return
 	}
 
@@ -75,13 +75,14 @@ func (s *service) updateComponent(ctx context.Context, componentID string, req *
 	// clear dependencies
 	compDep := app.ComponentDependency{}
 	res = s.db.WithContext(ctx).
+		Unscoped().
 		Delete(&compDep, "component_id = ?", componentID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to clear component dependencies: %w", res.Error)
 	}
 
 	if err := s.helpers.CreateComponentDependencies(ctx, componentID, req.Dependencies); err != nil {
-		return nil, fmt.Errorf("unable to clear component dependencies: %w", res.Error)
+		return nil, fmt.Errorf("unable to create component dependencies: %w", res.Error)
 	}
 
 	return &currentComponent, nil

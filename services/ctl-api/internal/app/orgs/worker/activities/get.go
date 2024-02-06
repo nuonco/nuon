@@ -24,6 +24,7 @@ func (a *Activities) getOrg(ctx context.Context, orgID string) (*app.Org, error)
 	org := app.Org{}
 	res := a.db.WithContext(ctx).
 		Preload("Apps").
+		Preload("Apps.Installs").
 		First(&org, "id = ?", orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org: %w", res.Error)
