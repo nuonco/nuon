@@ -58,6 +58,10 @@ func NewMigrationID() string {
 	return shortid.NewNanoID("mig")
 }
 
+func NewHealthCheck() string {
+	return shortid.NewNanoID("hlt")
+}
+
 func NewOrgID() string {
 	return shortid.NewNanoID("org")
 }

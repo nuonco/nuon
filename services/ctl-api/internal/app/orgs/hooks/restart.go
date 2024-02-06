@@ -3,6 +3,7 @@ package hooks
 import (
 	"context"
 
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker"
 	"go.uber.org/zap"
 )
 
@@ -14,4 +15,8 @@ func (o *Hooks) Restart(ctx context.Context, orgID string, sandboxMode bool) {
 		)
 		return
 	}
+
+	o.sendSignal(ctx, orgID, worker.Signal{
+		Operation: worker.OperationRestart,
+	})
 }
