@@ -97,6 +97,7 @@
         {
             "group": "Guides",
             "pages": [
+                "guides/guides",
                 "guides/vcs",
                 "guides/terraform-configuration-management",
                 "guides/install-access-permissions",
