@@ -51,7 +51,7 @@ To deploy a Docker build component, reference the image from a Helm component, T
   }
   value {
     name = "env.IMAGE_REPOSITORY"
-    value = "{{.nuon.components.image.image.repository_uri}}"
+    value = "{{.nuon.components.image.image.repository.uri}}"
   }
 }
 ```
@@ -67,7 +67,7 @@ To deploy a Docker build component, reference the image from a Helm component, T
   }
   value {
     name = "image_repository"
-    value = "{{.nuon.components.image.image.repository_uri}}"
+    value = "{{.nuon.components.image.image.repository.uri}}"
   }
 }
 ```

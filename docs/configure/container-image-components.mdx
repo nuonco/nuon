@@ -82,7 +82,7 @@ To deploy a Container image component, reference the image from a Helm component
   }
   value {
     name = "env.IMAGE_REPOSITORY"
-    value = "{{.nuon.components.image.image.repository_uri}}"
+    value = "{{.nuon.components.image.image.repository.uri}}"
   }
 }
 ```
@@ -98,7 +98,7 @@ To deploy a Container image component, reference the image from a Helm component
   }
   value {
     name = "image_repository"
-    value = "{{.nuon.components.image.image.repository_uri}}"
+    value = "{{.nuon.components.image.image.repository.uri}}"
   }
 }
 ```
