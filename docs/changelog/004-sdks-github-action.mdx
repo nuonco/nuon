@@ -1,0 +1,113 @@
+---
+title: 004 - GitHub Actions and SDKs
+description: Integrate Nuon into your workflow and product using our GitHub Actions and SDKs.
+---
+
+![004 - Github Actions and SDKs](/images/changelog/004_header.jpg)
+
+Feb 5th, 2024
+
+## Github Actions
+
+We now offer GitHub Actions that enable you to automatically update your applications.
+
+* [actions-build](https://github.com/nuonco/actions-build) - build components automatically using GitHub Actions.
+* [actions-release](https://github.com/nuonco/actions-release) - release components automatically using GitHub Actions.
+
+You can add these actions to your CI/CD workflows to automatically update your Nuon apps with each code change.
+
+To automatically build a component using actions:
+<CodeGroup>
+```yaml build.yml
+---
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - name: Checkout code
+        id: checkout
+        uses: actions/checkout@v2
+
+      - name: Build component
+        id: build
+        uses: nuonco/actions-build@v1
+        with:
+          api_token: ${{ secrets.nuon_api_token }}
+          org: ${{ vars.nuon_org_id }}
+          component_id: backend
+```
+</CodeGroup>
+
+
+To automatically build _and_ release a component using actions:
+<CodeGroup>
+```yaml build-and-release.yml
+---
+on:
+  push:
+    branches:
+      - main
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - name: Checkout code
+        id: checkout
+        uses: actions/checkout@v2
+
+      - name: Build component
+        id: build
+        uses: nuonco/actions-build@v1
+        with:
+          api_token: ${{ secrets.nuon_api_token }}
+          org: ${{ vars.nuon_org_id }}
+          component_id: backend
+
+      - name: Release
+        id: release
+        uses: nuonco/actions-release@v1
+        with:
+          api_token: ${{ secrets.nuon_api_token }}
+          org: ${{ vars.nuon_org_id
+          build_id: ${{ steps.build.outputs.build_id }}
+```
+</CodeGroup>
+
+## Supported SDKs
+
+We now support several SDKs for working with the Nuon platform, which enable you to build Nuon directly into your
+product. By integrating Nuon into your product, you can unlock self-serve and other capabilities for your customers such
+as:
+
+* customer managed installs and updates
+* ability to self-serve agents
+* shared responsibility deployments
+
+While you can get started by using a turnkey installer or Terraform to manage installs, our hunch is that most products
+  will integrate Nuon into their BYOC offering more officially long term.
+
+We now support 3 official SDKs:
+
+* [nuon-go](https://github.com/nuonco/nuon-go)
+* [nuon-python](https://github.com/nuonco/nuon-python)
+* [nuon-elixir](https://github.com/nuonco/nuon-elixir)
+
+<Note>
+We build both our `cli` and Terraform provider using the official `nuon-go` sdk.
+</Note>
+
+You can learn more about our [SDKs here](../sdks).
+
+## Docs
+
+We launched [guides](/guides) on our docs site, and have a whole lot more planned here. Today, you can use the guides
+section to answer questions about the platform.
+
+<Note>
+Please share feedback on how we can improve our docs, or [let us know](mailto:team@nuon.co) if anything is missing.
+</Note>
