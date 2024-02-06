@@ -24,9 +24,10 @@ type Org struct {
 	SandboxMode bool `json:"sandbox_mode" gorm:"notnull"`
 	CustomCert  bool `json:"custom_cert" gorm:"notnull"`
 
-	Apps           []App           `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	VCSConnections []VCSConnection `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	UserOrgs       []UserOrg       `json:"users,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	Apps           []App            `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	VCSConnections []VCSConnection  `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	UserOrgs       []UserOrg        `json:"users,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	HealthChecks   []OrgHealthCheck `json:"health_checks,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (o *Org) BeforeCreate(tx *gorm.DB) error {
