@@ -9,7 +9,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w *Workflows) provision(ctx workflow.Context, orgID string, dryRun bool) error {
+func (w *Workflows) provision(ctx workflow.Context, orgID string, sandboxMode bool) error {
 	w.updateStatus(ctx, orgID, StatusProvisioning, "provisioning organization resources")
 
 	var org app.Org
@@ -20,7 +20,7 @@ func (w *Workflows) provision(ctx workflow.Context, orgID string, dryRun bool) e
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	_, err := w.execProvisionWorkflow(ctx, dryRun, &orgsv1.ProvisionRequest{
+	_, err := w.execProvisionWorkflow(ctx, sandboxMode, &orgsv1.ProvisionRequest{
 		OrgId:       orgID,
 		Region:      defaultOrgRegion,
 		Reprovision: false,
@@ -30,6 +30,11 @@ func (w *Workflows) provision(ctx workflow.Context, orgID string, dryRun bool) e
 		w.updateStatus(ctx, orgID, StatusError, "unable to provision organization resources")
 		return fmt.Errorf("unable to provision org: %w", err)
 	}
+
+	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
+		OrgID:       orgID,
+		SandboxMode: sandboxMode,
+	})
 
 	w.updateStatus(ctx, orgID, StatusActive, "organization resources are provisioned")
 	return nil

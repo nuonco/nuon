@@ -13,6 +13,7 @@ const (
 	OperationDelete      Operation = "delete"
 	OperationDeprovision Operation = "deprovision"
 	OperationReprovision Operation = "reprovision"
+	OperationRestart     Operation = "restart"
 )
 
 type Signal struct {
