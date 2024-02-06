@@ -127,6 +127,7 @@
             "group": "Changelog",
             "pages": [
                 "changelog/changelog",
+                "changelog/004-sdks-github-action",
                 "changelog/003-ecs-support",
                 "changelog/002-auto-deploys-and-dependencies",
                 "changelog/001-new-year-new-docs"
