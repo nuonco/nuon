@@ -24,6 +24,7 @@ type OrgEventLoopRequest struct {
 
 func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) error {
 	l := zap.L()
+	tags := w.defaultTags(req.OrgID, req.SandboxMode)
 
 	finished := false
 	signalChan := workflow.GetSignalChannel(ctx, req.OrgID)
@@ -41,28 +42,37 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 		}
 
 		switch signal.Operation {
+		// OperationProvision
 		case OperationProvision:
-			if err := w.provision(ctx, req.OrgID, req.SandboxMode); err != nil {
-				l.Info("unable to provision org: %w", zap.Error(err))
-			}
+			err := w.provision(ctx, req.OrgID, req.SandboxMode)
+			w.writeStatusMetric(ctx, "signal", err, tags, "signal", "provision")
+
+		// OperationReprovision
 		case OperationReprovision:
-			if err := w.reprovision(ctx, req.OrgID, req.SandboxMode); err != nil {
-				l.Info("unable to reprovision org: %w", zap.Error(err))
-			}
+			err := w.reprovision(ctx, req.OrgID, req.SandboxMode)
+			w.writeStatusMetric(ctx, "signal", err, tags, "signal", "reprovision")
+
+		// OperationDeprovision
 		case OperationDeprovision:
-			if err := w.deprovision(ctx, req.OrgID, req.SandboxMode); err != nil {
-				l.Info("unable to deprovision org: %w", zap.Error(err))
-			}
+			err := w.deprovision(ctx, req.OrgID, req.SandboxMode)
+			w.writeStatusMetric(ctx, "signal", err, tags, "signal", "deprovision")
+
+		// OperationRestart
 		case OperationRestart:
 			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
 				OrgID:       req.OrgID,
 				SandboxMode: req.SandboxMode,
 			})
+			w.writeStatusMetric(ctx, "signal", nil, tags, "signal", "restart")
+
+		// OperationDelete
 		case OperationDelete:
-			if err := w.delete(ctx, req.OrgID, req.SandboxMode); err != nil {
-				l.Info("unable to delete org: %w", zap.Error(err))
+			err := w.delete(ctx, req.OrgID, req.SandboxMode)
+			w.writeStatusMetric(ctx, "signal", err, tags, "signal", "delete")
+			if err != nil {
 				return
 			}
+
 			finished = true
 		}
 	})
