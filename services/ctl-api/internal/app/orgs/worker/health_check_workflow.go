@@ -41,6 +41,15 @@ func (w *Workflows) startHealthCheckWorkflow(ctx workflow.Context, req HealthChe
 }
 
 func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest) error {
+	err := w.orgHealthCheck(ctx, req)
+
+	tags := w.defaultTags(req.OrgID, req.SandboxMode)
+	w.writeStatusMetric(ctx, "health_check", err, tags)
+
+	return err
+}
+
+func (w *Workflows) orgHealthCheck(ctx workflow.Context, req HealthCheckRequest) error {
 	var healthCheck app.OrgHealthCheck
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateHealthCheck, activities.CreateHealthCheckRequest{
 		OrgID: req.OrgID,
