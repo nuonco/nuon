@@ -35,6 +35,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.DELETE("/v1/orgs/current", s.DeleteOrg)
 	api.PATCH("/v1/orgs/current", s.UpdateOrg)
 	api.POST("/v1/orgs/current/user", s.CreateUser)
+	api.GET("/v1/orgs/current/health-checks", s.GetOrgHealthChecks)
 	return nil
 }
 

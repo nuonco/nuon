@@ -10,7 +10,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w *Workflows) reprovision(ctx workflow.Context, orgID string, dryRun bool) error {
+func (w *Workflows) reprovision(ctx workflow.Context, orgID string, sandboxMode bool) error {
 	w.updateStatus(ctx, orgID, StatusProvisioning, "reprovisioning organization resources")
 
 	var org app.Org
@@ -21,12 +21,12 @@ func (w *Workflows) reprovision(ctx workflow.Context, orgID string, dryRun bool)
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
-	_, err := w.execDeprovisionIAMWorkflow(ctx, dryRun, &iamv1.DeprovisionIAMRequest{
+	_, err := w.execDeprovisionIAMWorkflow(ctx, sandboxMode, &iamv1.DeprovisionIAMRequest{
 		OrgId: orgID,
 	})
 	// NOTE(jm): we ignore errors deprovisioning, and make a best effort to reprovision regardless
 
-	_, err = w.execProvisionWorkflow(ctx, dryRun, &orgsv1.ProvisionRequest{
+	_, err = w.execProvisionWorkflow(ctx, sandboxMode, &orgsv1.ProvisionRequest{
 		OrgId:       orgID,
 		Region:      defaultOrgRegion,
 		Reprovision: true,
@@ -56,6 +56,11 @@ func (w *Workflows) reprovision(ctx workflow.Context, orgID string, dryRun bool)
 			}
 		}
 	}
+
+	w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
+		OrgID:       orgID,
+		SandboxMode: sandboxMode,
+	})
 
 	w.updateStatus(ctx, orgID, StatusActive, "organization resources are provisioned")
 	return nil

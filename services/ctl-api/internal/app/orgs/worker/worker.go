@@ -39,6 +39,7 @@ func New(cfg *internal.Config,
 	})
 	wkr.RegisterActivity(acts)
 	wkr.RegisterWorkflow(wkflows.OrgEventLoop)
+	wkr.RegisterWorkflow(wkflows.OrgHealthCheck)
 
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
