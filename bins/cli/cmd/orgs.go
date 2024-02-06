@@ -10,6 +10,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		id      string
 		name    string
 		sandbox bool
+		limit   int64
 	)
 
 	orgsCmd := &cobra.Command{
@@ -28,6 +29,18 @@ func (c *cli) orgsCmd() *cobra.Command {
 		},
 	}
 	orgsCmd.AddCommand(currentCmd)
+
+	healthChecksCmd := &cobra.Command{
+		Use:   "health-checks",
+		Short: "List health checks",
+		Long:  "List recent helath checks for the org you are currently authenticated with",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient, c.cfg)
+			svc.ListHealthChecks(cmd.Context(), limit, PrintJSON)
+		},
+	}
+	healthChecksCmd.Flags().Int64VarP(&limit, "limit", "l", 60, "Maximum health checks to return")
+	orgsCmd.AddCommand(healthChecksCmd)
 
 	apiTokenCmd := &cobra.Command{
 		Use:   "api-token",
