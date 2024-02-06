@@ -45,5 +45,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "009-add-app-runner-configs",
 			Fn:   a.migration009AddAppRunnerConfigs,
 		},
+		{
+			Name: "010-remove-org-health-check-names",
+			Fn:   a.migration010RemoveHealthCheckName,
+		},
 	}
 }
