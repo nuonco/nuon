@@ -34,14 +34,27 @@ func (w *Workflows) reprovision(ctx workflow.Context, orgID string, dryRun bool)
 	})
 	if err != nil {
 		w.updateStatus(ctx, orgID, StatusError, "unable to reprovision organization resources")
-		return fmt.Errorf("unable to provision org: %w", err)
+		return fmt.Errorf("unable to reprovision org: %w", err)
 	}
 
-	if err := w.defaultExecGetActivity(ctx, w.acts.ReprovisionApps, activities.ReprovisionAppsRequest{
-		OrgID: orgID,
-	}, &org); err != nil {
-		w.updateStatus(ctx, orgID, StatusError, "unable to reprovision apps")
-		return fmt.Errorf("unable to reprovision apps: %w", err)
+	for _, app := range org.Apps {
+		if err := w.defaultExecGetActivity(ctx, w.acts.UpsertProject, activities.UpsertProjectRequest{
+			OrgID:     orgID,
+			ProjectID: app.ID,
+		}, &org); err != nil {
+			w.updateStatus(ctx, orgID, StatusError, "unable to upsert app project")
+			return fmt.Errorf("unable to reprovision org: %w", err)
+		}
+
+		for _, install := range app.Installs {
+			if err := w.defaultExecGetActivity(ctx, w.acts.UpsertProject, activities.UpsertProjectRequest{
+				OrgID:     orgID,
+				ProjectID: install.ID,
+			}, &org); err != nil {
+				w.updateStatus(ctx, orgID, StatusError, "unable to upsert install project")
+				return fmt.Errorf("unable to reprovision org: %w", err)
+			}
+		}
 	}
 
 	w.updateStatus(ctx, orgID, StatusActive, "organization resources are provisioned")
