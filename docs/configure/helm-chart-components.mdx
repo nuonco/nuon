@@ -63,7 +63,7 @@ resource "nuon_helm_chart_component" "images" {
 
   value {
     name = "image_repository"
-    value = "{{.nuon.components.image.image.repository_uri}}"
+    value = "{{.nuon.components.image.image.repository.uri}}"
   }
   value {
     name = "image_tag"
