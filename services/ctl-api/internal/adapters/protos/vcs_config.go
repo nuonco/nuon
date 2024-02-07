@@ -16,7 +16,7 @@ func (c *Adapter) ToVCSConfig(gitRef string, publicCfg *app.PublicGitVCSConfig, 
 	if publicCfg != nil {
 		return &vcsv1.Config{
 			Cfg: &vcsv1.Config_PublicGitConfig{
-				PublicGitConfig: c.toPublicGitConfig(gitRef, publicCfg),
+				PublicGitConfig: c.toPublicGitConfig(publicCfg.Branch, publicCfg),
 			},
 		}, nil
 	}
