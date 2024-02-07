@@ -58,7 +58,7 @@ func (s *service) CreateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.validateInstallInputs(ctx, install.AppID, req.Inputs); err != nil {
+	if err := s.helpers.ValidateInstallInputs(ctx, install.AppID, req.Inputs); err != nil {
 		ctx.Error(err)
 		return
 	}

@@ -15,5 +15,5 @@ func (a *Hooks) sendSignal(ctx context.Context, appID string, signal worker.Sign
 		appID,
 		signal,
 	)
-	a.l.Info("event workflow signaled", zap.Error(err))
+	a.l.Debug("event workflow signaled", zap.Error(err))
 }

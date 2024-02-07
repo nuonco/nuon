@@ -27,11 +27,6 @@ type service struct {
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
-	// public installer endpoints
-	api.GET("/v1/installer/:installer_slug/render", s.RenderAppInstaller)
-	api.POST("/v1/installer/:installer_slug/installs", s.CreateInstallerInstall)
-	api.GET("/v1/installer/:installer_slug/install/:install_id", s.GetInstallerInstall)
-
 	// manage apps
 	api.POST("/v1/apps", s.CreateApp)
 	api.GET("/v1/apps", s.GetApps)
@@ -54,12 +49,6 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id/input-latest-config", s.GetAppInputLatestConfig)
 	api.GET("/v1/apps/:app_id/input-configs", s.GetAppInputConfigs)
 
-	// installers
-	api.POST("/v1/apps/:app_id/installer", s.CreateAppInstaller)
-	api.PATCH("/v1/installers/:installer_id", s.UpdateAppInstaller)
-	api.DELETE("/v1/installers/:installer_id", s.DeleteAppInstaller)
-	api.GET("/v1/installers/:installer_id", s.GetAppInstaller)
-
 	return nil
 }
 
@@ -68,8 +57,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/admin-reprovision", s.AdminReprovisionApp)
 	api.POST("/v1/apps/:app_id/admin-restart", s.RestartApp)
 	api.POST("/v1/apps/:app_id/admin-delete", s.AdminDeleteApp)
-
-	api.GET("/v1/installers", s.GetAllAppInstallers)
 
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
 	componenthelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -23,6 +24,7 @@ type service struct {
 	orgsOutputs      *terraformcloud.OrgsOutputs
 	wpClient         multi.Client
 	componentHelpers *componenthelpers.Helpers
+	helpers          *helpers.Helpers
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -89,6 +91,7 @@ func New(v *validator.Validate,
 	orgsOutputs *terraformcloud.OrgsOutputs,
 	wpClient multi.Client,
 	componentHelpers *componenthelpers.Helpers,
+	helpers *helpers.Helpers,
 ) *service {
 	return &service{
 		cfg:              cfg,
@@ -100,5 +103,6 @@ func New(v *validator.Validate,
 		orgsOutputs:      orgsOutputs,
 		wpClient:         wpClient,
 		componentHelpers: componentHelpers,
+		helpers:          helpers,
 	}
 }
