@@ -32,7 +32,7 @@ func (s *Service) List(ctx context.Context, compID string, asJSON bool) {
 			"id",
 			"status",
 			"component id",
-			"git ref",
+			"git ref / branch",
 		},
 	}
 	for _, build := range builds {

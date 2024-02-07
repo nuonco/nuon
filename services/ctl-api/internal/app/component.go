@@ -32,6 +32,18 @@ type Component struct {
 
 	Dependencies  []*Component `gorm:"many2many:component_dependencies;constraint:OnDelete:CASCADE;" json:"-"`
 	DependencyIDs []string     `gorm:"-" json:"dependencies"`
+
+	// after query loaded items
+	LatestConfig *ComponentConfigConnection `gorm:"-" json:"-"`
+}
+
+func (c *Component) AfterQuery(tx *gorm.DB) error {
+	if len(c.ComponentConfigs) < 1 {
+		return nil
+	}
+
+	c.LatestConfig = &c.ComponentConfigs[0]
+	return nil
 }
 
 func (c *Component) BeforeCreate(tx *gorm.DB) error {
