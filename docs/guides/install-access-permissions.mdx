@@ -8,6 +8,9 @@ Before creating an install, cross account access must be granted to the _target_
 deployed. This requires a customer to create a cross account IAM role for AWS in their own account (or in the case of a
 test install, in whichever account is desired).
 
+There are many ways to create IAM roles and policies, but this document will show a few easy ways to create IAM roles
+for Nuon managed sandboxes.
+
 <Note>
 Permissions granting Nuon access to a customer account are _only_ required when first setting up the install. Once the
 install is initially provisioned, the [runner](../configure/runners.mdx) is responsible for all additional management.
@@ -28,53 +31,15 @@ IAM roles can be created one of a few ways:
 
 ### Using Terraform
 
-You can use `terraform` to create and manage IAM roles for creating / destroying Nuon installs.
+You can use `terraform` to create and manage IAM roles for creating / destroying Nuon installs using our `iam-role` module. This module is located in the [sandboxes](https://github.com/nuonco/sandboxes) repo.
 
+An example of creating an IAM role for the AWS ECS sandbox:
 <CodeGroup>
 ```hcl iam-role.tf
-locals {
-  branch = "main"
-  sandbox = "aws-ecs-byovpc"
-  ecs_artifact_base_url = "https://raw.githubusercontent.com/nuonco/sandboxes/${local.branch}/${local.sandbox}/artifacts"
-}
-
-data "http" "ecs_sandbox_trust_policy" {
-  url = "${local.ecs_artifact_base_url}/trust.json"
-}
-
-data "http" "ecs_sandbox_provision_policy" {
-  url = "${local.ecs_artifact_base_url}/provision.json"
-}
-
-data "http" "ecs_sandbox_deprovision_policy" {
-  url = "${local.ecs_artifact_base_url}/deprovision.json"
-}
-
-resource "aws_iam_policy" "ecs_deprovision" {
-  name   = "nuon-${local.name}-install-deprovision-access-ecs"
-  policy = data.http.ecs_sandbox_deprovision_policy.response_body
-}
-
-resource "aws_iam_policy" "ecs_provision" {
-  name   = "nuon-${local.name}-install-provision-access-ecs"
-  policy = data.http.ecs_sandbox_provision_policy.response_body
-}
-
 module "ecs_access" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
-  version = ">= 5.1.0"
-
-  create_role = true
-
-  role_name = "${local.name}-customer-iam-role-ecs"
-
-  allow_self_assume_role   = true
-  custom_role_trust_policy        = data.http.ecs_sandbox_trust_policy.response_body
-  create_custom_role_trust_policy = true
-  custom_role_policy_arns = [
-    aws_iam_policy.ecs_deprovision.arn,
-    aws_iam_policy.ecs_provision.arn
-  ]
+  source = "github.com/nuonco/sandboxes//iam-role"
+  sandbox = "aws-ecs"
+  prefix = "customer-test"
 }
 ```
 ```providers.tf
