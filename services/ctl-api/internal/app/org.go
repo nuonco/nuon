@@ -28,6 +28,18 @@ type Org struct {
 	VCSConnections []VCSConnection  `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	UserOrgs       []UserOrg        `json:"users,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	HealthChecks   []OrgHealthCheck `json:"health_checks,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+
+	// Filled in at read time
+	LatestHealthCheck OrgHealthCheck `json:"latest_health_check" gorm:"-"`
+}
+
+func (o *Org) AfterQuery(tx *gorm.DB) error {
+	if len(o.HealthChecks) < 1 {
+		return nil
+	}
+
+	o.LatestHealthCheck = o.HealthChecks[0]
+	return nil
 }
 
 func (o *Org) BeforeCreate(tx *gorm.DB) error {

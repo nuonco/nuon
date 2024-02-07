@@ -23,7 +23,8 @@ if [ ! -d "$DIR" ]; then
   fi
 fi
 
-read -ep "Installing nuon cli into $DIR, press \"y\" to proceed." -n 1 -r
+echo "Installing nuon cli into $DIR"
+read -ep "press \"y\" to proceed: " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
@@ -59,5 +60,22 @@ echo "✅ fetching binary for ${OS} ${ARCH}..."
 echo "making binary executable..."
 chmod +x $DIR/$NAME
 echo "✅ nuon should be ready to use"
+
+echo "ensuring installed correctly"
+set +e
+which nuon
+which_status=$?
+set -e
+if [ $which_status -ne 0 ]; then
+  echo "unable to find nuon, please make sure $DIR is on $PATH"
+  exit 1
+fi
+
+echo "ensuring version is correct"
+version=$(nuon version -j)
+if [ "$version" != "$VERSION" ]; then
+  echo "nuon version returned $version, expected $VERSION. This usually means nuon was installed to a separate location outside of this script"
+  exit 1
+fi
 
 echo "🚀 To get started, please run - nuon login"

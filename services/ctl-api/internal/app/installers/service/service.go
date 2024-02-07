@@ -24,6 +24,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/installer/:installer_slug/install/:install_id", s.GetInstallerInstall)
 
 	// installers
+	api.GET("/v1/installers", s.GetInstallers)
 	api.POST("/v1/installers", s.CreateAppInstaller)
 	api.PATCH("/v1/installers/:installer_id", s.UpdateAppInstaller)
 	api.DELETE("/v1/installers/:installer_id", s.DeleteAppInstaller)
