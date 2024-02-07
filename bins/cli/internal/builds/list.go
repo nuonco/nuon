@@ -33,6 +33,7 @@ func (s *Service) List(ctx context.Context, compID string, asJSON bool) {
 			"status",
 			"component id",
 			"git ref / branch",
+			"created at",
 		},
 	}
 	for _, build := range builds {
@@ -41,6 +42,7 @@ func (s *Service) List(ctx context.Context, compID string, asJSON bool) {
 			build.Status,
 			compID,
 			build.GitRef,
+			build.CreatedAt,
 		})
 	}
 	view.Render(data)
