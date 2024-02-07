@@ -69,5 +69,18 @@ func (c *cli) componentsCmd() *cobra.Command {
 	latestConfigCmd.MarkFlagRequired("id")
 	componentsCmd.AddCommand(latestConfigCmd)
 
+	listConfigsCmd := &cobra.Command{
+		Use:   "list-configs",
+		Short: "List component configs",
+		Long:  "List component configs",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := components.New(c.apiClient)
+			svc.ListConfigs(cmd.Context(), id, PrintJSON)
+		},
+	}
+	listConfigsCmd.Flags().StringVarP(&id, "component-id", "c", "", "The ID or name of the component you want to delete")
+	listConfigsCmd.MarkFlagRequired("id")
+	componentsCmd.AddCommand(listConfigsCmd)
+
 	return componentsCmd
 }
