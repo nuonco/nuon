@@ -1,12 +1,17 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+)
+
+const (
+	githubRawURLTemplate string = "https://raw.githubusercontent.com/%s/%s/%s/artifacts"
 )
 
 type AppSandboxConfig struct {
@@ -38,6 +43,30 @@ type AppSandboxConfig struct {
 
 	TerraformVersion   string              `json:"terraform_version" gorm:"notnull"`
 	InstallSandboxRuns []InstallSandboxRun `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+
+	// Links are dynamically loaded using an after query
+	Artifacts struct {
+		DeprovisionPolicy           string `json:"deprovision_policy" gorm:"-"`
+		ProvisionPolicy             string `json:"provision_policy" gorm:"-"`
+		TrustPolicy                 string `json:"trust_policy" gorm:"-"`
+		CloudformationStackTemplate string `json:"cloudformation_stack_template" gorm:"-"`
+	} `json:"artifacts" gorm:"-"`
+}
+
+// NOTE: currently, only public repo vcs configs are supported when rendering policies and artifacts
+func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
+	vcsCfg := c.PublicGitVCSConfig
+	if vcsCfg == nil {
+		return nil
+	}
+
+	baseURL := fmt.Sprintf(githubRawURLTemplate, vcsCfg.Repo, vcsCfg.Branch, vcsCfg.Directory)
+	c.Artifacts.DeprovisionPolicy = fmt.Sprintf("%s/deprovision.json", baseURL)
+	c.Artifacts.ProvisionPolicy = fmt.Sprintf("%s/provision.json", baseURL)
+	c.Artifacts.TrustPolicy = fmt.Sprintf("%s/trust.json", baseURL)
+	c.Artifacts.CloudformationStackTemplate = fmt.Sprintf("%s/template.yaml", baseURL)
+
+	return nil
 }
 
 func (a *AppSandboxConfig) BeforeCreate(tx *gorm.DB) error {
