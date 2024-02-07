@@ -11,7 +11,7 @@ import (
 // @Summary	get an app installer
 // @Description.markdown	get_app_installer.md
 // @Param			installer_id	path	string	true	"installer ID"
-// @Tags			apps
+// @Tags installers
 // @Accept			json
 // @Produce		json
 // @Security APIKey

@@ -61,7 +61,7 @@ func (w *Workflows) execCreatePlanWorkflow(
 	req *planv1.CreatePlanRequest,
 ) (*planv1.CreatePlanResponse, error) {
 	if dryRun {
-		w.l.Info("dry-run enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.SandboxSleep.String()))
+		w.l.Debug("sandbox-mode enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.SandboxSleep.String()))
 		workflow.Sleep(ctx, w.cfg.SandboxSleep)
 		return generics.GetFakeObj[*planv1.CreatePlanResponse](), nil
 	}
@@ -90,7 +90,7 @@ func (w *Workflows) execExecPlanWorkflow(
 	req *execv1.ExecutePlanRequest,
 ) (*execv1.ExecutePlanResponse, error) {
 	if dryRun {
-		w.l.Info("dry-run enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.SandboxSleep.String()))
+		w.l.Debug("sandbox-mode enabled, sleeping for to mimic executing plan", zap.String("duration", w.cfg.SandboxSleep.String()))
 		workflow.Sleep(ctx, w.cfg.SandboxSleep)
 		return generics.GetFakeObj[*execv1.ExecutePlanResponse](), nil
 	}
