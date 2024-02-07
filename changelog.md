@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.28
+
+Updating build management for public components, metrics, sandbox urls, and more.
+
 ## v0.19.27
 
 Promoting install changes + new commands in the cli.
