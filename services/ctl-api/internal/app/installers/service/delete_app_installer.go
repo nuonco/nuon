@@ -14,7 +14,7 @@ import (
 // @Summary	delete an app installer
 // @Description.markdown	delete_app_installer.md
 // @Param			installer_id	path	string	true	"installer ID"
-// @Tags			apps
+// @Tags installers
 // @Accept			json
 // @Produce		json
 // @Security APIKey

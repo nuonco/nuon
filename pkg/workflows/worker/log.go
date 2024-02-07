@@ -3,7 +3,6 @@ package worker
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/config"
 	"go.uber.org/zap"
 )
 
@@ -13,12 +12,11 @@ func (w *worker) getLogger() (*zap.Logger, error) {
 		err error
 	)
 
-	switch w.Config.Env {
-	case config.Development:
+	l, err = zap.NewProduction()
+	if w.Config.LogLevel == "DEBUG" {
 		l, err = zap.NewDevelopment()
-	default:
-		l, err = zap.NewProduction()
 	}
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to create logger: %w", err)
 	}

@@ -20,7 +20,6 @@ func (a *Activities) GetAppGraph(ctx context.Context, req GetAppGraphRequest) ([
 
 	componentIDs := make([]string, 0)
 	for _, rootID := range rootIDs {
-		fmt.Println("a new root id", rootID)
 		if err := graph.BFS(g, rootID, func(compID string) bool {
 			componentIDs = append(componentIDs, compID)
 			return false

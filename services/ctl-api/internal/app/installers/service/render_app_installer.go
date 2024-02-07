@@ -7,11 +7,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"gorm.io/gorm"
 )
 
 type AppInstaller struct {
-	App         app.App                  `json:"app"`
+	App        app.App              `json:"app"`
+	AppInputs  app.AppInputConfig   `json:"app_inputs"`
+	AppSandbox app.AppSandboxConfig `json:"app_sandbox"`
+
 	SandboxMode bool                     `json:"sandbox_mode"`
 	Metadata    app.AppInstallerMetadata `json:"metadata"`
 }
@@ -19,7 +23,7 @@ type AppInstaller struct {
 // @ID RenderAppInstaller
 // @Summary	render an app installer
 // @Description.markdown	render_app_installer.md
-// @Tags			apps
+// @Tags installers
 // @Accept			json
 // @Produce		json
 // @Param			installer_slug	path		string	true	"installer slug or ID"
@@ -43,8 +47,33 @@ func (s *service) RenderAppInstaller(ctx *gin.Context) {
 		return
 	}
 
+	if len(installer.App.AppSandboxConfigs) < 1 {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("app does not have any sandbox configs"),
+			Description: "please make create at least one app sandbox config first",
+		})
+		return
+	}
+	if len(installer.App.AppRunnerConfigs) < 1 {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("app does not have any runner configs"),
+			Description: "please make create at least one app runner config first",
+		})
+		return
+	}
+
+	if installer.App.AppSandboxConfigs[0].PublicGitVCSConfig == nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("installers currently only support sandboxes in public repos"),
+			Description: "installers currently do not support custom sandboxes from connected github repos. Please make the sandbox config public, or get in touch.",
+		})
+		return
+	}
+
 	ctx.JSON(http.StatusCreated, AppInstaller{
 		App:         installer.App,
+		AppInputs:   installer.App.AppInputConfigs[0],
+		AppSandbox:  installer.App.AppSandboxConfigs[0],
 		SandboxMode: installer.App.Org.SandboxMode,
 		Metadata:    installer.Metadata,
 	})
@@ -55,13 +84,24 @@ func (s *service) getAppInstaller(ctx context.Context, installerID string) (*app
 	res := s.db.WithContext(ctx).
 		Preload("App").
 		Preload("App.Org").
+
+		// preload sandbox
 		Preload("App.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
 		Preload("App.AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("App.AppSandboxConfigs.ConnectedGithubVCSConfig").
-		Preload("App.AppSandboxConfigs.SandboxRelease").
-		Preload("App.AppSandboxConfigs.SandboxRelease.Sandbox").
+
+		// preload app inputs
+		Preload("App.AppInputConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_input_configs.created_at DESC")
+		}).
+		Preload("App.AppInputConfigs.AppInputs").
+
+		// preload runner
+		Preload("App.AppRunnerConfigs").
+
+		// metadata
 		Preload("Metadata").
 		Where("slug = ?", installerID).
 		Or("id = ?", installerID).
