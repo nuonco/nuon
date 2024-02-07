@@ -41,15 +41,7 @@ func (w *Workflows) startHealthCheckWorkflow(ctx workflow.Context, req HealthChe
 }
 
 func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest) error {
-	err := w.orgHealthCheck(ctx, req)
-
 	tags := w.defaultTags(req.OrgID, req.SandboxMode)
-	w.writeStatusMetric(ctx, "health_check", err, tags)
-
-	return err
-}
-
-func (w *Workflows) orgHealthCheck(ctx workflow.Context, req HealthCheckRequest) error {
 	var healthCheck app.OrgHealthCheck
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateHealthCheck, activities.CreateHealthCheckRequest{
 		OrgID: req.OrgID,
@@ -62,16 +54,19 @@ func (w *Workflows) orgHealthCheck(ctx workflow.Context, req HealthCheckRequest)
 		OrgID: req.OrgID,
 	}, &org); err != nil {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusError, "unable to get org from database")
+		w.writeStatusMetric(ctx, "health_check", err, tags)
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
 	if org.Status != string(StatusActive) {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatus(org.Status), org.StatusDescription)
+		w.writeIncrMetric(ctx, "health_check", tags, "status", string(org.Status))
 		return nil
 	}
 
 	if req.SandboxMode {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusOK, "ok (sandbox mode)")
+		w.writeStatusMetric(ctx, "health_check", nil, tags)
 		return nil
 	}
 
@@ -83,9 +78,11 @@ func (w *Workflows) orgHealthCheck(ctx workflow.Context, req HealthCheckRequest)
 		OrgID: req.OrgID,
 	}, &healthCheck); err != nil {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusError, "unable to ping server")
+		w.writeStatusMetric(ctx, "health_check", err, tags)
 		return nil
 	}
 
 	w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusOK, "server is active and reachable")
+	w.writeStatusMetric(ctx, "health_check", nil, tags)
 	return nil
 }
