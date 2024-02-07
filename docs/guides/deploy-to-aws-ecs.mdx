@@ -1,0 +1,275 @@
+---
+title: 'Deploy to AWS ECS'
+description: 'How to deploy an application to AWS ECS.'
+icon: 'aws'
+---
+
+This guide walks you through creating a basic ECS application, that can be used to deploy into customer managed AWS accounts. This guide will walk you through setting up your Nuon app, and creating your first install with a running application.
+
+## Setup
+
+Before starting this guide, you should:
+
+1. Install the Nuon CLI and create an account. (Complete our [Quickstart](/quickstart) first if you have not done this yet.)
+1. Install Terraform.
+1. Set up an AWS account.
+
+<Warning>
+In this guide, you will be creating real resources in a real AWS account, which could incur charges from AWS. If you would like to avoid that, try following this guide in [Sandbox Mode](/guides/sandbox-mode).
+</Warning>
+
+## Configure the App
+
+For this guide, you will deploy an API service to ECS Fargate, and expose it to the internet with an ALB. The API will present info about the install it is running in, allowing you to inspect it and verify that everything is working.
+
+In each section below, we will provide you with Terraform you can copy to manage your Nuon app config. Before that, you will need to set up the Terraform project itself. Copy the code below into files with the indicated names.
+
+<CodeGroup>
+```sh versions.tf
+terraform {
+  required_version = ">= 1.3.7"
+
+  required_providers {
+    nuon = {
+      source  = "nuonco/nuon"
+      version = ">= 0.9.1"
+    }
+
+    utils = {
+      source  = "cloudposse/utils"
+      version = ">= 0.17.23"
+    }
+  }
+}
+```
+
+```hcl providers.tf
+provider "nuon" {}
+```
+</CodeGroup>
+
+Then run `terraform init`.
+
+### The App
+
+First, define the app itself and give it a name.
+
+```hcl app.tf
+resource "nuon_app" "my_ecs_app" {
+  name = "my_ecs_app"
+}
+```
+
+### The Installer
+
+Add an installer to make installing to your AWS account easy. Installers provide an out-of-the-box installation flow your customers can use to install your app.
+
+```hcl installer.tf
+resource "nuon_app_installer" "my_ecs_app" {
+  app_id            = nuon_app.my_ecs_app.id
+  name              = "My ECS App"
+  description       = "A demo app that runs on ECS."
+  slug              = nuon_app.my_ecs_app.name
+  documentation_url = "https://docs.nuon.co/"
+  community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+  logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+  github_url        = "https://github.com/nuonco"
+  homepage_url      = "https://www.nuon.co/"
+  demo_url          = "https://www.nuon.co/"
+}
+```
+
+### The Sandbox
+
+Use our turnkey ECS sandbox. It will provide provide everything you need to run ECS services, from the ECS Fargate cluster to the VPC.
+
+```hcl sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.my_ecs_app.id
+  terraform_version = "v1.6.3"
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-ecs"
+  }
+}
+```
+
+### The Runner
+
+The `aws-ecs` sandbox requires that we use the `aws-ecs` runner. The runner manages the sandbox, provisioning and deprovisioning AWS resources during deploys.
+
+<Tip>
+The `aws-ecs` runner is so named because it runs on ECS, but it can be used to manage any AWS resources. Since it runs on ECS Fargate, no resources beyond what is needed for the runner are provisioned. So, you can use our ECS sandbox and runner to manage Lambda or EC2 deployments without worrying about extraneous ECS costs.
+</Tip>
+
+```hcl runner.tf
+resource "nuon_app_runner" "main" {
+  app_id      = nuon_app.my_ecs_app.id
+  runner_type = "aws-ecs"
+}
+```
+
+### The Components
+
+This app consists of two components: one to build the Docker image, and another to provision the ECS service. The source code for both is available in [our guides repo](https://github.com/nuonco/guides/deploy-to-aws-ecs) if you would like more details.
+
+#### The Docker Image
+
+This is a [Docker build component](/configure/docker-build-components) that will build the API and create a Docker image containing it. When released, it will sync the image to each install's ECR so ECS can pull it when creating tasks.
+
+<Note>
+Do you still need a Docker build component if you have a pre-built Docker image? Technically, no. But, ECS Fargate does not cache images, and will pull from the remote source every time it starts a task. In such cases, we recommend using a [Container Image component](/configure/container-image-components).
+</Note>
+
+```hcl docker_image.tf
+resource "nuon_docker_build_component" "docker_image" {
+  app_id = nuon_app.my_ecs_app.id
+  name   = "docker_image"
+
+  public_repo = {
+    repo      = "nuonco/guides"
+    directory = "deploy-to-aws-ecs/components/docker-image"
+    branch    = "ja/3837-ecs-app-guide"
+  }
+}
+```
+
+#### The ECS Service
+
+This component will create an ECS service using the docker image, and expose it to the internet with an ALB. It requires some info about the install it will run in, so we use Nuon variables to interpolate the required info on a per-install basis. See our [Using Variables](/guides/using-variables) guide for more info about how this works.
+
+```hcl ecs_service.tf
+resource "nuon_terraform_module_component" "ecs_service" {
+  app_id = nuon_app.my_ecs_app.id
+  name   = "ecs_service"
+
+  public_repo = {
+    repo      = "nuonco/guides"
+    directory = "deploy-to-aws-ecs/components/ecs-service"
+    branch    = "ja/3837-ecs-app-guide"
+  }
+
+  # Service config
+
+  var {
+    name  = "cluster_arn"
+    value = "{{.nuon.install.sandbox.outputs.ecs_cluster.arn}}"
+  }
+
+  var {
+    name  = "image_url"
+    value = "{{.nuon.components.docker_image.image.repository.uri}}"
+  }
+
+  var {
+    name  = "image_tag"
+    value = "{{.nuon.components.docker_image.image.tag}}"
+  }
+
+  var {
+    name  = "app_id"
+    value = "{{.nuon.app.id}}"
+  }
+
+  var {
+    name  = "org_id"
+    value = "{{.nuon.org.id}}"
+  }
+
+  var {
+    name  = "install_id"
+    value = "{{.nuon.install.id}}"
+  }
+
+
+  # Load balancer config
+
+  var {
+    name  = "vpc_id"
+    value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
+  }
+
+  var {
+    name  = "subnet_ids"
+    value = "{{.nuon.install.sandbox.outputs.vpc.private_subnet_ids}}"
+  }
+
+  var {
+    name  = "domain_name"
+    value = "electric.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+  }
+
+  var {
+    name  = "zone_id"
+    value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+  }
+
+  dependencies = [
+    nuon_docker_build_component.docker_image.id
+  ]
+}
+```
+
+### Sync the App Config to Nuon
+
+Make sure you are logged into Nuon, then initialize and apply the project config.
+
+```sh
+terraform apply
+```
+
+You now have a Nuon app configured to deploy to ECS. An initial build will be created for each component, ready to be released.
+
+Use `nuon apps select` to run all commands in the context of the new app.
+
+## Create an Install
+
+There are a few ways to create an install. Follow our [Create Installs](guides/create-installs) guide to set one up, then come back.
+
+Use the Nuon CLI to monitor progress.
+
+<CodeGroup>
+```sh select your install
+nuon installs select
+```
+
+```sh see sandbox runs
+nuon installs sandbox-runs
+```
+
+```sh see sandbox run logs
+nuon installs sandbox-runs-logs -r {deploy_id}
+```
+</CodeGroup>
+
+### Release to the Install
+
+Create a release to deploy the app components to the install.
+
+```sh
+nuon releases create -c docker image --latest-build
+nuon releases create -c ecs_service --latest-build
+```
+
+Each release will create a deploy in the install. You can use the CLI to monitor these.
+
+<CodeGroup>
+```sh see deploys
+nuon installs list-deploys
+```
+
+```sh see deploy logs
+nuon installs deploy-logs -d {deploy_id}
+```
+</CodeGroup>
+
+You will know it is done when the install and deploy statuses are all "active". You should see the VPC, ECS cluster, and service in the AWS console.
+
+## Wrapping Up and Next Steps
+
+Congratulations, you just deployed an ECS service to AWS! A few suggestions for where to go next:
+
+- Check out our [TBD - Release Management](/guides/create-releases#working-with-releases) guide to learn how to update and deprovision components and installs.
+- Dig into our [TBD - App Configuration](/configure/apps) guide to learn how to configure more complex apps.
+- Share your installer with a friend and have them install your app in their AWS account.

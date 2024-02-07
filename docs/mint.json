@@ -106,7 +106,8 @@
                 "guides/using-variables",
                 "guides/auto-deploys-and-dependencies",
                 "guides/sandbox-mode",
-                "guides/view-logs"
+                "guides/view-logs",
+                "guides/deploy-to-aws-ecs"
             ]
         },
         {
