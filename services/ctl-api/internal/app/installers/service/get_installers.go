@@ -8,13 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
-	"gorm.io/gorm"
 )
 
-// @ID GetOrg
-// @Summary	Get an org
-// @Description.markdown	get_org.md
-// @Tags			orgs
+// @ID GetInstallers
+// @Summary	get installers for current org
+// @Description.markdown	get_installers.md
+// @Tags installers
 // @Accept			json
 // @Produce		json
 // @Security APIKey
@@ -24,36 +23,33 @@ import (
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.Org
-// @Router			/v1/orgs/current [GET]
-func (s *service) GetOrg(ctx *gin.Context) {
+// @Success		200	{array}	app.AppInstaller
+// @Router			/v1/installers [get]
+func (s *service) GetInstallers(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	org, err = s.getOrg(ctx, org.ID)
+	installers, err := s.getInstallers(ctx, org.ID)
 	if err != nil {
-		ctx.Error(err)
+		ctx.Error(fmt.Errorf("unable to get installers: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, org)
+	ctx.JSON(http.StatusOK, installers)
 }
 
-func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
-	org := app.Org{}
+func (s *service) getInstallers(ctx context.Context, orgID string) ([]*app.AppInstaller, error) {
+	var apps []*app.AppInstaller
 	res := s.db.WithContext(ctx).
-		Preload("UserOrgs").
-		Preload("HealthChecks", func(db *gorm.DB) *gorm.DB {
-			return db.Order("org_health_checks.created_at DESC").Limit(1)
-		}).
-		Preload("VCSConnections").
-		First(&org, "id = ?", orgID)
+		Where("org_id = ?", orgID).
+		Preload("Metadata").
+		Find(&apps)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get org %s: %w", orgID, res.Error)
+		return nil, fmt.Errorf("unable to get installers: %w", res.Error)
 	}
 
-	return &org, nil
+	return apps, nil
 }
