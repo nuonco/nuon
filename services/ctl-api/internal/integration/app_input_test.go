@@ -45,6 +45,7 @@ func (s *appInputSuite) SetupTest() {
 func (s *appInputSuite) TestCreateAppInputConfig() {
 	s.T().Run("successfully creates app input config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
+		req.Inputs = s.formatInputs(req.Inputs)
 		resp, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
@@ -61,6 +62,7 @@ func (s *appInputSuite) TestCreateAppInputConfig() {
 func (s *appInputSuite) TestGetAppLatestInputConfig() {
 	s.T().Run("returns latest config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
+		req.Inputs = s.formatInputs(req.Inputs)
 		_, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
 
@@ -93,10 +95,12 @@ func (s *appInputSuite) TestGetAppInputConfigs() {
 
 	s.T().Run("success with multiple configs", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
+		req.Inputs = s.formatInputs(req.Inputs)
 		cfg1, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
 
 		req = generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
+		req.Inputs = s.formatInputs(req.Inputs)
 		cfg2, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
 
