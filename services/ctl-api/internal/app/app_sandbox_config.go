@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	githubRawURLTemplate string = "https://raw.githubusercontent.com/%s/%s/%s/artifacts"
+	s3ArtifactTemplateURL    string = "s3://nuon-artifacts/sandbox/%s/%s"
+	httpsArtifactTemplateURL string = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox/%s/%s"
 )
 
 type AppSandboxConfig struct {
@@ -60,11 +61,10 @@ func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
 		return nil
 	}
 
-	baseURL := fmt.Sprintf(githubRawURLTemplate, vcsCfg.Repo, vcsCfg.Branch, vcsCfg.Directory)
-	c.Artifacts.DeprovisionPolicy = fmt.Sprintf("%s/deprovision.json", baseURL)
-	c.Artifacts.ProvisionPolicy = fmt.Sprintf("%s/provision.json", baseURL)
-	c.Artifacts.TrustPolicy = fmt.Sprintf("%s/trust.json", baseURL)
-	c.Artifacts.CloudformationStackTemplate = fmt.Sprintf("%s/template.yaml", baseURL)
+	c.Artifacts.DeprovisionPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "deprovision.json")
+	c.Artifacts.ProvisionPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "provision.json")
+	c.Artifacts.TrustPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "trust.json")
+	c.Artifacts.CloudformationStackTemplate = fmt.Sprintf(s3ArtifactTemplateURL, vcsCfg.Directory, "cloudformation-template.yaml")
 
 	return nil
 }
