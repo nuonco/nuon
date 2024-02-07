@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.27
+
+Promoting install changes + new commands in the cli.
+
 ## v0.19.26
 
 Promoting various improvements to event loops, health checks and installer API changes.
