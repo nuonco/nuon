@@ -46,6 +46,7 @@ func (s *appsTestSuite) SetupTest() {
 func (s *appsTestSuite) TestCreateApp() {
 	s.T().Run("success", func(t *testing.T) {
 		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 		app, err := s.apiClient.CreateApp(s.ctx, appReq)
 		require.Nil(t, err)
 		require.NotNil(t, app)
@@ -56,6 +57,7 @@ func (s *appsTestSuite) TestCreateApp() {
 
 	s.T().Run("returns app sandbox", func(t *testing.T) {
 		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 		app, err := s.apiClient.CreateApp(s.ctx, appReq)
 		require.Nil(t, err)
 		require.NotNil(t, app)
@@ -66,6 +68,7 @@ func (s *appsTestSuite) TestCreateApp() {
 
 	s.T().Run("errors on duplicate name", func(t *testing.T) {
 		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 		app, err := s.apiClient.CreateApp(s.ctx, appReq)
 		require.Nil(t, err)
 		require.NotNil(t, app)
@@ -82,6 +85,7 @@ func (s *appsTestSuite) TestCreateApp() {
 		t.Skip("can not test for success after deleting duplicated name because objects are deleted by workers")
 		return
 		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 		app, err := s.apiClient.CreateApp(s.ctx, appReq)
 		require.Nil(t, err)
 		require.NotNil(t, app)
@@ -104,6 +108,7 @@ func (s *appsTestSuite) TestCreateApp() {
 
 func (s *appsTestSuite) TestGetApp() {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.Nil(s.T(), err)
 	require.NotNil(s.T(), app)
@@ -134,6 +139,7 @@ func (s *appsTestSuite) TestGetApp() {
 
 func (s *appsTestSuite) TestUpdateApp() {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.Nil(s.T(), err)
 	require.NotNil(s.T(), app)
@@ -170,6 +176,7 @@ func (s *appsTestSuite) TestUpdateApp() {
 
 func (s *appsTestSuite) TestDeleteApp() {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.Nil(s.T(), err)
 	require.NotNil(s.T(), app)
@@ -200,6 +207,7 @@ func (s *appsTestSuite) TestDeleteApp() {
 
 func (s *appsTestSuite) TestGetApps() {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.Nil(s.T(), err)
 	require.NotNil(s.T(), app)

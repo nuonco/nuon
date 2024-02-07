@@ -43,6 +43,7 @@ func (s *componentsSuite) SetupTest() {
 func (s *componentsSuite) TestCreateComponent() {
 	s.T().Run("success", func(t *testing.T) {
 		createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+		createReq.Name = generics.ToPtr(s.formatInterpolatedString(*createReq.Name))
 		createReq.Dependencies = []string{}
 		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
 		require.Nil(t, err)
@@ -65,6 +66,7 @@ func (s *componentsSuite) TestCreateComponent() {
 		require.NotNil(t, install)
 
 		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+		compReq.Name = generics.ToPtr(s.formatInterpolatedString(*compReq.Name))
 		compReq.Dependencies = []string{}
 		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
 		require.NoError(t, err)
@@ -81,6 +83,7 @@ func (s *componentsSuite) TestUpdateComponent() {
 
 	s.T().Run("success", func(t *testing.T) {
 		updateReq := generics.GetFakeObj[*models.ServiceUpdateComponentRequest]()
+		updateReq.Name = generics.ToPtr(s.formatInterpolatedString(*updateReq.Name))
 		updateReq.Dependencies = []string{}
 		updatedComp, err := s.apiClient.UpdateComponent(s.ctx, comp.ID, updateReq)
 		require.Nil(t, err)
