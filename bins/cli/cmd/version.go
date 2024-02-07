@@ -11,7 +11,7 @@ func (c *cli) versionCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := version.New()
-			svc.Version(cmd.Context())
+			svc.Version(cmd.Context(), PrintJSON)
 		},
 	}
 
