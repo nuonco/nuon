@@ -12,7 +12,7 @@ import (
 // @ID GetAllAppInstallers
 // @Summary	get all app installers for all orgs
 // @Description.markdown	get_all_app_installers.md
-// @Tags			apps/admin
+// @Tags installers/admin
 // @Accept			json
 // @Produce		json
 // @Success		200	{array}	app.AppInstaller

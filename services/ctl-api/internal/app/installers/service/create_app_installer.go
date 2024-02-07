@@ -13,6 +13,7 @@ import (
 )
 
 type CreateAppInstallerRequest struct {
+	AppID       string `validate:"required" json:"app_id"`
 	Slug        string `validate:"required" json:"slug"`
 	Name        string `validate:"required" json:"name"`
 	Description string `validate:"required" json:"description"`
@@ -37,11 +38,10 @@ func (c *CreateAppInstallerRequest) Validate(v *validator.Validate) error {
 // @ID CreateAppInstaller
 // @Summary	create an app installer
 // @Description.markdown	create_app_installer.md
-// @Tags			apps
+// @Tags installers
 // @Accept			json
 // @Param			req	body	CreateAppInstallerRequest	true	"Input"
 // @Produce		json
-// @Param			app_id	path	string				true	"app ID"
 // @Security APIKey
 // @Security OrgID
 // @Failure		400				{object}	stderr.ErrResponse
@@ -50,15 +50,13 @@ func (c *CreateAppInstallerRequest) Validate(v *validator.Validate) error {
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
 // @Success		201				{object}	app.AppInstaller
-// @Router			/v1/apps/{app_id}/installer [post]
+// @Router			/v1/installers [POST]
 func (s *service) CreateAppInstaller(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-
-	appID := ctx.Param("app_id")
 
 	var req CreateAppInstallerRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -70,7 +68,7 @@ func (s *service) CreateAppInstaller(ctx *gin.Context) {
 		return
 	}
 
-	installer, err := s.createAppInstaller(ctx, org.ID, appID, &req)
+	installer, err := s.createAppInstaller(ctx, org.ID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app installer: %w", err))
 		return
@@ -79,10 +77,10 @@ func (s *service) CreateAppInstaller(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, installer)
 }
 
-func (s *service) createAppInstaller(ctx context.Context, orgID, appID string, req *CreateAppInstallerRequest) (*app.AppInstaller, error) {
+func (s *service) createAppInstaller(ctx context.Context, orgID string, req *CreateAppInstallerRequest) (*app.AppInstaller, error) {
 	installer := app.AppInstaller{
 		OrgID: orgID,
-		AppID: appID,
+		AppID: req.AppID,
 		Slug:  slug.Make(req.Slug),
 		Metadata: app.AppInstallerMetadata{
 			Description:      req.Description,

@@ -10,7 +10,7 @@ go run github.com/swaggo/swag/cmd/swag \
   --parseDependency \
   --markdownFiles docs/descriptions \
   -g main.go \
-  -t orgs,apps,installs,general,vcs,components,sandboxes,releases
+  -t apps,components,installs,installers,general,orgs,releases,sandboxes,vcs
 
 echo "validating public schema"
 go run github.com/go-swagger/go-swagger/cmd/swagger \
@@ -23,7 +23,7 @@ go run github.com/swaggo/swag/cmd/swag \
   --output admin \
   --parseGoList \
   --markdownFiles admin/descriptions \
-  -t orgs/admin,orgs/admin,apps/admin,general/admin,sandboxes/admin,installs/admin,components/admin
+  -t orgs/admin,orgs/admin,apps/admin,general/admin,sandboxes/admin,installs/admin,installers/admin,components/admin
 
 echo "validating admin schema"
 go run github.com/go-swagger/go-swagger/cmd/swagger \
