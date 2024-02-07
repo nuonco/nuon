@@ -31,7 +31,6 @@ type OrgHealthCheck struct {
 	StatusDescription string               `json:"status_description" gorm:"notnull"`
 
 	OrgID string `gorm:"notnull"`
-	Org   Org    `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 }
 
 func (o *OrgHealthCheck) BeforeCreate(tx *gorm.DB) error {
