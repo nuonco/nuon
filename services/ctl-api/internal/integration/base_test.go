@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"os"
+	"strings"
 
 	"github.com/avast/retry-go"
 	"github.com/go-playground/validator/v10"
@@ -115,6 +116,7 @@ func (s *baseIntegrationTestSuite) fakeInstallInputsForApp(appID string) map[str
 
 func (s *baseIntegrationTestSuite) createAppWithInputs(orgID string) *models.AppApp {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), app)
@@ -123,6 +125,8 @@ func (s *baseIntegrationTestSuite) createAppWithInputs(orgID string) *models.App
 	s.createAppRunnerConfig(app.ID)
 
 	inputReq := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
+	inputReq.Inputs = s.formatInputs(inputReq.Inputs)
+
 	cfg, err := s.apiClient.CreateAppInputConfig(s.ctx, app.ID, inputReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), cfg)
@@ -152,6 +156,7 @@ func (s *baseIntegrationTestSuite) createAppRunnerConfig(appID string) {
 
 func (s *baseIntegrationTestSuite) createApp() *models.AppApp {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), app)
@@ -161,8 +166,23 @@ func (s *baseIntegrationTestSuite) createApp() *models.AppApp {
 	return app
 }
 
+func (s *baseIntegrationTestSuite) formatInterpolatedString(val string) string {
+	val = strings.ReplaceAll(val, " ", "_")
+	return strings.ToLower(val)
+}
+
+func (s *baseIntegrationTestSuite) formatInputs(inputs map[string]models.ServiceAppInputRequest) map[string]models.ServiceAppInputRequest {
+	formattedInputs := make(map[string]models.ServiceAppInputRequest, len(inputs))
+	for k, input := range inputs {
+		formattedK := s.formatInterpolatedString(k)
+		formattedInputs[formattedK] = input
+	}
+	return formattedInputs
+}
+
 func (s *baseIntegrationTestSuite) createComponent(appID string) *models.AppComponent {
 	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+	compReq.Name = generics.ToPtr(s.formatInterpolatedString(*compReq.Name))
 	compReq.Dependencies = []string{}
 
 	comp, err := s.apiClient.CreateComponent(s.ctx, appID, compReq)
