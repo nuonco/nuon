@@ -1,12 +1,10 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 // @ID GetComponentConfigs
@@ -28,48 +26,11 @@ import (
 func (s *service) GetComponentConfigs(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 
-	component, err := s.getComponentConfigs(ctx, cmpID)
+	comp, err := s.helpers.GetComponent(ctx, cmpID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get component configs: %w", err))
 		return
 	}
-	ctx.JSON(http.StatusOK, component)
-}
 
-func (s *service) getComponentConfigs(ctx context.Context, cmpID string) ([]app.ComponentConfigConnection, error) {
-	var cfgs []app.ComponentConfigConnection
-	res := s.db.Model(&app.ComponentConfigConnection{
-		ComponentID: cmpID,
-	}).
-		// preload all terraform configs
-		Preload("TerraformModuleComponentConfig").
-		Preload("TerraformModuleComponentConfig.PublicGitVCSConfig").
-		Preload("TerraformModuleComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all helm configs
-		Preload("HelmComponentConfig").
-		Preload("HelmComponentConfig.PublicGitVCSConfig").
-		Preload("HelmComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all docker configs
-		Preload("DockerBuildComponentConfig").
-		Preload("DockerBuildComponentConfig.PublicGitVCSConfig").
-		Preload("DockerBuildComponentConfig.ConnectedGithubVCSConfig").
-
-		// preload all external image configs
-		Preload("ExternalImageComponentConfig").
-
-		// preload all job configs
-		Preload("JobComponentConfig").
-
-		// order by created at
-		Order("created_at DESC").
-
-		// find all configs
-		Find(&cfgs, "component_id = ?", cmpID)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to load component configs: %w", res.Error)
-	}
-
-	return cfgs, nil
+	ctx.JSON(http.StatusOK, comp.ComponentConfigs)
 }
