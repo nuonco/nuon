@@ -15,7 +15,7 @@ module "aws-eks-sandbox" {
 
   sandbox_repo = local.sandboxes_repo
   sandbox_branch = local.sandboxes_branch
-  sandbox_dir = "aws-byo-vpc"
+  sandbox_dir = "aws-eks"
 
   east_1_count = 5
   east_2_count = 5
@@ -34,7 +34,7 @@ module "aws-eks-byo-vpc-sandbox" {
 
   sandbox_repo = local.sandboxes_repo
   sandbox_branch = local.sandboxes_branch
-  sandbox_dir = "aws-byo-vpc"
+  sandbox_dir = "aws-eks-byovpc"
 
   east_1_count = 5
   east_2_count = 5

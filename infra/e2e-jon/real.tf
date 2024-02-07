@@ -11,7 +11,7 @@ module "aws-eks" {
   east_2_count = 0
   west_2_count = 0
 
-  install_role_arn = module.install_access.iam_role_arn
+  install_role_arn = module.eks_access.iam_role_arn
 }
 
 module "aws-eks-byo-vpc" {
@@ -27,5 +27,5 @@ module "aws-eks-byo-vpc" {
   east_2_count = 0
   west_2_count = 0
 
-  install_role_arn = module.install_access.iam_role_arn
+  install_role_arn = module.eks_access.iam_role_arn
 }
