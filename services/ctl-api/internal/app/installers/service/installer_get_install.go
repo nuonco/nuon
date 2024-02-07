@@ -12,7 +12,7 @@ import (
 // @ID InstallerGetInstall
 // @Summary	get an installer install
 // @Description.markdown	get_installer_install.md
-// @Tags			installs
+// @Tags installers
 // @Accept			json
 // @Produce		json
 // @Param			installer_slug	path		string	true	"installer slug or ID"

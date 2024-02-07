@@ -34,7 +34,7 @@ func (c *UpdateAppInstallerRequest) Validate(v *validator.Validate) error {
 // @ID UpdateAppInstaller
 // @Summary	update an app installer
 // @Description.markdown	update_app_installer.md
-// @Tags			apps
+// @Tags installers
 // @Accept			json
 // @Param			req	body	UpdateAppInstallerRequest	true	"Input"
 // @Produce		json

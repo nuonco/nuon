@@ -6,6 +6,7 @@ import (
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
 	componentsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/service"
+	installersservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installers/service"
 	installsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/service"
 	orgsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/service"
 	releasesservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/service"
@@ -55,6 +56,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(generalservice.New)),
 		fx.Provide(api.AsService(sandboxesservice.New)),
 		fx.Provide(api.AsService(installsservice.New)),
+		fx.Provide(api.AsService(installersservice.New)),
 		fx.Provide(api.AsService(componentsservice.New)),
 		fx.Provide(api.AsService(releasesservice.New)),
 

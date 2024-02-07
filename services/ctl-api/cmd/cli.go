@@ -16,6 +16,7 @@ import (
 	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
 	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	componentsshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
+	installshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	releaseshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/hooks"
@@ -42,16 +43,17 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(terraformcloud.NewOrgsOutputs),
 		fx.Provide(waypoint.New),
 
-		// add app hooks
+		// add hooks for each domain
 		fx.Provide(appshooks.New),
 		fx.Provide(installshooks.New),
 		fx.Provide(orgshooks.New),
 		fx.Provide(componentsshooks.New),
 		fx.Provide(releaseshooks.New),
 
-		// add app helpers
+		// add helpers for each domain
 		fx.Provide(vcshelpers.New),
 		fx.Provide(componentshelpers.New),
 		fx.Provide(appshelpers.New),
+		fx.Provide(installshelpers.New),
 	}
 }
