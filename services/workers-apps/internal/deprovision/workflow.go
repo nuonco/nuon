@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/go-playground/validator/v10"
@@ -54,6 +55,12 @@ func (w Workflow) Deprovision(ctx workflow.Context, req *appv1.DeprovisionReques
 		AppID:                req.AppId,
 		ClusterInfo:          w.clusterInfo,
 	}
+
+	// NOTE(jm): in some cases, it is possible for an org to not be active/alive, which is why the app is being torn
+	// down. In that case, we only try this 5 times, and trust that the event loops will handle the logic.
+	ctx = workflow.WithRetryPolicy(ctx, temporal.RetryPolicy{
+		MaximumAttempts: 5,
+	})
 	var dwpResp DestroyWaypointProjectResponse
 	err := w.execWaypointActivity(ctx, w.act.DestroyWaypointProject, dwpReq, &dwpResp)
 	if err != nil {
