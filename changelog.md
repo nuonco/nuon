@@ -4,6 +4,10 @@ This is a basic changelog where we track a minimal message whenever we do a prom
 
 ## v0.19.29
 
+Ignore apps-deprovision waypoint project errors (in case org is down).
+
+## v0.19.29
+
 Fix to only attempt app deprovisioning a few times.
 
 ## v0.19.28
