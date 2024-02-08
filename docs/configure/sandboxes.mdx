@@ -197,7 +197,7 @@ resource "nuon_app_sandbox" "main" {
 
 ## Sandbox Outputs
 
-Sandbox outputs are used by the Nuon platform to install the runner, and made accessible to all components using our variable interpolation.
+Sandbox outputs are used by the Nuon platform to install the runner, and made accessible to all components [using variables](../guides/using-variables).
 
 You can use any value from the `outputs.tf` file in your selected sandbox by setting a config value on your component:
 
@@ -251,7 +251,8 @@ resource "nuon_app_sandbox" "main" {
 
 ### Use App Inputs
 
-App inputs allow you to collect customer input values such as resource IDs, tokens and more. These inputs are accesible to all components and your sandbox, via our interpolation language.
+App inputs allow you to collect customer input values such as resource IDs, tokens and more. These inputs are accesible
+to all components and your sandbox, [using variables](../guides/using-variables#inputs).
 
 To configure a sandbox parameter using an app input:
 

@@ -15,7 +15,8 @@ If you have a use case for using jobs with an `aws-ecs` sandbox [please get in t
 
 ## Configuring a Job component
 
-You can configure a job component using Terraform, and can use interpolation to configure the image, and environment variables.
+You can configure a job component to execute commands in a container image. [Using variables](../guides/using-variables)
+you can reference other component images, and configure environment variables for the job.
 
 <CodeGroup>
 ```hcl job.tf
@@ -39,14 +40,14 @@ resource "nuon_job_component" "job" {
 <Note>
 In order to use custom images with job components, you must specify either a [docker
 build](./docker-build-components.mdx) or [container image](./container-image-components.mdx) as a dependency and use
-interpolation.
+[variables](../guides/using-variables).
 </Note>
 
 ## Configuration
 
-You can use [interpolation](../guides/interpolation) to configure both the environment and images in a job component.
+You can use [variables](../guides/using-variables) to configure both the environment and images in a job component.
 
-Some common examples of using interpolation to configure job components:
+Some common examples of using variables to configure job components:
 <CodeGroup>
 ```hcl custom_image.tf
 // use a custom image
