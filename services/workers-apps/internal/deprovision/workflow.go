@@ -64,8 +64,9 @@ func (w Workflow) Deprovision(ctx workflow.Context, req *appv1.DeprovisionReques
 	var dwpResp DestroyWaypointProjectResponse
 	err := w.execWaypointActivity(ctx, w.act.DestroyWaypointProject, dwpReq, &dwpResp)
 	if err != nil {
-		err = fmt.Errorf("failed to destroy waypoint project: %w", err)
-		return &resp, err
+		// NOTE(jm): if the app project can not be deleted, it usually means the org is not active anyway, so
+		// ignore the error.
+		return &resp, nil
 	}
 
 	return &resp, nil
