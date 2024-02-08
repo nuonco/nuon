@@ -120,6 +120,11 @@ Each deployed instance of this component will get a different value correspondin
 - `{{ .nuon.install.sandbox.outputs.odr_iam_role_arn }}`
   - ARN for the AWS IAM Role used by the On-Demand Runner for deployments
 
+### Install Inputs
+
+Any app input can be accessed using variables. For instance, given an app input, `foo`, it can be accessed using:
+
+- `{{ .nuon.install.inputs.foo }}`
 
 ### Output from Other Components in an Application
 

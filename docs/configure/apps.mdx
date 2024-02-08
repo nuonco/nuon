@@ -58,15 +58,18 @@ Components allow you to:
 * deploy helm charts
 * deploy terraform code
 
-Nuon apps allow you to create dependencies between components and exposes a rich configuration language to share outputs between components for configuration. Read more in our [interpolation guide](./../variable-interpolation).
+Nuon apps allow you to create dependencies between components and exposes a rich configuration language to share outputs
+between components for configuration. You can use [variables](../guides/using-variables) to configure components with
+the outputs of other components.
 
 ## App Runner
 
-Nuon deploys an app runner into each install, which is responsible for managing the install. This runner performs the following actions:
+Nuon deploys an app runner into each install, which is responsible for managing the install. This runner performs the
+following actions:
 
 * deploys new container artifacts and infrastructure
 * monitors running software
 * manages releases, and updating/deprovisioning parts of the app
 * operations such as logs, and more.
 
-Read more about app runner config [here](./app-runners).
+Read more about app runner config [here](./runners).
