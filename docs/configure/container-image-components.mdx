@@ -67,7 +67,7 @@ To use an AWS ECR image, [please follow the directions](#ecr-access-iam-role) to
 ## Deployments
 
 Container image components <u>can not</u> be deployed directly in a customer install. When an image is released, it will be <u>synced</u>
-into the customer install and made available to other components via [interpolation](../guides/interpolation).
+into the customer install and made available to other components via [variables](../guides/using-variables).
 
 To deploy a Container image component, reference the image from a Helm component, Terraform component or Job component:
 

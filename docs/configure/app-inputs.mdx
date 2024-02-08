@@ -36,10 +36,10 @@ $ nuon installs create --name=auto-deploy --region=us-east-1 --role=iam-role --i
 
 ## Configuration Using App Inputs
 
-App inputs can be used to configure both sandboxes and components. All inputs are made available via the
-[interpolation](../guides/interpolation) configuration.
+App inputs can be used to configure both sandboxes and components. All inputs are made available via
+[variable](../guides/using-variables) configuration.
 
-All inputs are accessed using `{{.nuon.install.inputs.<input-name>}}`, whereever interpolation is available.
+All inputs are accessed using `{{.nuon.install.inputs.<input-name>}}`.
 
 ### Configuring Sandboxes
 

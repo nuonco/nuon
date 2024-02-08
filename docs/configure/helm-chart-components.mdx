@@ -43,7 +43,7 @@ One of the most important parts of deploying a Helm chart into a customer accoun
 Values can be used for everything from accessing infrastructure, setting images or scaling pods.
 
 
-[Interpolation](../guides/interpolation) allows you to set default values for a Nuon app, expose customer configuration
+[Variables](../guides/using-variables) allow you to set default values for a Nuon app, expose customer configuration
 options, reference infrastructure from other components or access an image that was synced into the customer account.
 
 Examples for accessing common interpolated variables:
@@ -311,6 +311,6 @@ spec:
 <Note>
 By default, Nuon provisions a custom domain for each install under the `nuon.run` domain (eg: inl8ybt7gajofh33e0h3pqyw1t.nuon.run).
 
-If you would like to use a customer provided domain, you can accept customer domains using [inputs](./inputs.mdx). We
+If you would like to use a customer provided domain, you can accept customer domains using [inputs](./app-inputs.mdx). We
   are planning to improve support for this, and would love to [hear about](mailto:team@nuon.co) your use case.
 </Note>

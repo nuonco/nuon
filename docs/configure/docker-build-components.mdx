@@ -36,7 +36,7 @@ repo (using a `connected_repo` block). Read more about VCS configuration [here](
 ## Deployments
 
 Docker build components <u>can not</u> be deployed directly in a customer install. When an image is released, it will be <u>synced</u>
-into the customer install and made available to other components via [interpolation](../guides/interpolation).
+into the customer install and made available to other components via [variables](../guides/using-variables).
 
 To deploy a Docker build component, reference the image from a Helm component, Terraform component or Job component:
 
