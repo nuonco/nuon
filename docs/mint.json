@@ -97,8 +97,16 @@
         {
             "group": "Guides",
             "pages": [
-                "guides/guides",
-                "guides/create-an-aws-ecs-byoc-app",
+              "guides/guides"
+            ]
+        },
+        {
+            "group": "Tutorials",
+            "pages":["guides/aws-ecs-app-tutorial"]
+        },
+        {
+            "group": "Guides",
+            "pages": [
                 "guides/vcs",
                 "guides/terraform-configuration-management",
                 "guides/install-access-permissions",
