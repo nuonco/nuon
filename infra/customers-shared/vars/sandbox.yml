@@ -6,6 +6,7 @@ apps:
       secret_role_arn: secret-role-arn
       storage: 20Gi
     installs: []
+    install_inputs: []
     installer:
       slug: rocket-chat
       description: Let every conversation flow - without compromise
@@ -23,6 +24,11 @@ apps:
       secret_role_arn: secret-role-arn
       storage: 20Gi
     installs: []
+    install_inputs:
+      - name: vpc_id
+        description: VPC ID to install into
+        default: ""
+        required: true
     installer:
       slug: warpstream
       description: Stream more,manage less
@@ -36,6 +42,7 @@ apps:
       demo: https://player.vimeo.com/video/851371577
   - name: okteto
     sandbox_install_count: 0
+    install_inputs: []
     sandbox_install_inputs:
       secret_role_arn: secret-role-arn
       storage: 20Gi
@@ -56,6 +63,7 @@ apps:
     sandbox_install_inputs:
       secret_role_arn: secret-role-arn
       storage: 20Gi
+    install_inputs: []
     installs:
       - name: abc
         region: us-west-2
@@ -74,6 +82,7 @@ apps:
   - name: electric_sql
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: electric-sql
       description: Build reactive, realtime, local-first apps directly on Postgres.
@@ -88,6 +97,7 @@ apps:
   - name: flipt
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: flipt-sandbox
       description: Open Source Feature Management
@@ -102,6 +112,7 @@ apps:
   - name: streamkap
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: streamkap
       description: The streaming alternative to batch ETL
@@ -116,6 +127,7 @@ apps:
   - name: postman
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: postman
       description: Over 25 million developers use Postman.
@@ -130,6 +142,7 @@ apps:
   - name: signoz
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: signoz
       description: OpenTelemetry-Native Traces, Metrics, and Logs in a single pane
@@ -144,6 +157,7 @@ apps:
   - name: temporal
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: temporal
       description: Code for more reliable systems
@@ -158,6 +172,7 @@ apps:
   - name: sourcegraph
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: sourcegraph
       description: Code search and an AI assistant with the context of the code graph.
@@ -172,6 +187,7 @@ apps:
   - name: retool
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: retool
       description: The fastest way to develop effective software.
@@ -186,6 +202,7 @@ apps:
   - name: unstructured
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: unstructured
       description: ETL for LLMs
@@ -201,6 +218,7 @@ apps:
   - name: airbyte
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: airbyte
       description: The only tool you need to move data
@@ -215,6 +233,7 @@ apps:
   - name: clickhouse
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: clickhouse
       description: ClickHouse is the fastest and most resource efficient open-source database for real-time apps and analytics.
@@ -230,6 +249,7 @@ apps:
   - name: weaviate
     sandbox_install_count: 5
     sandbox_install_inputs: {}
+    install_inputs: []
     installer:
       slug: weaviate-sandbox
       description: The AI Native Vector Database
@@ -244,6 +264,7 @@ apps:
 
   - name: meroxa
     sandbox_install_count: 5
+    install_inputs: []
     sandbox_install_inputs:
       secret_role_arn: secret-role-arn
       storage: 20Gi

@@ -31,6 +31,23 @@ resource "nuon_app" "sandbox" {
   name     = each.value.name
 }
 
+resource "nuon_app_input" "sandbox" {
+  for_each = { for app in local.sandbox.apps : app.name => app }
+  app_id   = nuon_app.sandbox[each.value.name].id
+
+  provider = nuon.sandbox
+
+  dynamic "input" {
+    for_each = each.value.install_inputs
+    content {
+      name        = input.value.name
+      description = input.value.description
+      default     = input.value.default
+      required    = input.value.required
+    }
+  }
+}
+
 resource "nuon_app_sandbox" "sandbox" {
   for_each = { for app in local.sandbox.apps : app.name => app }
 
