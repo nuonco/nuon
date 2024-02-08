@@ -91,7 +91,7 @@ resource "nuon_app_sandbox" "main" {
 
 Nuon supports running any app using [AWS Lambda](https://aws.amazon.com/lambda/), by configuring your app using the [AWS ECS](#aws_ecs) section above and configuring all serverless resources using terraform.
 
-You can configure any serverless infrastructure using [terraform components](./terraform-components), and can model your container images using either [docker](./docker-image-components) or [external](./external-image-components) image components.
+You can configure any serverless infrastructure using [terraform components](./terraform-components), and can model your container images using either [docker](./docker-build-components) or [external](./container-image-components) image components.
 
 <Note>
 If you have a serverless use case, we would love to hear more. [Please get in touch](mailto:team@nuon.co).
@@ -107,7 +107,7 @@ If you have an Azure app, customers who are asking for Azure deployments or are 
 
 ## Custom Infrastructure as Code
 
-You can provision custom IAC resources on any platform using a [terraform component](./terraform-component).
+You can provision custom IAC resources on any platform using a [terraform component](./terraform-components).
 
 This is useful for configuring additional resources such as databases, storage buckets and other resources that your application requires.
 
