@@ -59,6 +59,12 @@
     ],
     "navigation": [
         {
+            "group": "",
+            "pages": [
+                "home"
+            ]
+        },
+        {
             "group": "Get Started",
             "pages": [
                 "quickstart",
@@ -95,14 +101,16 @@
             ]
         },
         {
-            "group": "Guides",
+            "group": "",
             "pages": [
-              "guides/guides"
+                "guides/guides"
             ]
         },
         {
             "group": "Tutorials",
-            "pages":["guides/aws-ecs-app-tutorial"]
+            "pages": [
+                "guides/aws-ecs-app-tutorial"
+            ]
         },
         {
             "group": "Guides",
