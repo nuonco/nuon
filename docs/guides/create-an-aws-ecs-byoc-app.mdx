@@ -1,10 +1,10 @@
 ---
-title: 'Deploy to AWS ECS'
-description: 'How to deploy an application to AWS ECS.'
+title: 'Create an AWS ECS BYOC App'
+description: 'How to deploy a BYOC app to AWS ECS Fargate.'
 icon: 'aws'
 ---
 
-This guide walks you through creating a basic ECS application, that can be used to deploy into customer managed AWS accounts. This guide will walk you through setting up your Nuon app, and creating your first install with a running application.
+This guide walks you through creating a BYOC ECS application, that can be used to deploy to customer managed AWS accounts. You will set up a Nuon app, create an install in AWS, and deploy the app to the install.
 
 ## Setup
 
@@ -18,7 +18,7 @@ Before starting this guide, you should:
 In this guide, you will be creating real resources in a real AWS account, which could incur charges from AWS. If you would like to avoid that, try following this guide in [Sandbox Mode](/guides/sandbox-mode).
 </Warning>
 
-## Configure the App
+## Configure App
 
 For this guide, you will deploy an API service to ECS Fargate, and expose it to the internet with an ALB. The API will present info about the install it is running in, allowing you to inspect it and verify that everything is working.
 
@@ -50,7 +50,7 @@ provider "nuon" {}
 
 Then run `terraform init`.
 
-### The App
+### Setup App
 
 First, define the app itself and give it a name.
 
@@ -60,7 +60,7 @@ resource "nuon_app" "my_ecs_app" {
 }
 ```
 
-### The Installer
+### Installer
 
 Add an installer to make installing to your AWS account easy. Installers provide an out-of-the-box installation flow your customers can use to install your app.
 
@@ -79,7 +79,7 @@ resource "nuon_app_installer" "my_ecs_app" {
 }
 ```
 
-### The Sandbox
+### Sandbox
 
 Use our turnkey ECS sandbox. It will provide provide everything you need to run ECS services, from the ECS Fargate cluster to the VPC.
 
@@ -95,7 +95,7 @@ resource "nuon_app_sandbox" "main" {
 }
 ```
 
-### The Runner
+### Runner
 
 The `aws-ecs` sandbox requires that we use the `aws-ecs` runner. The runner manages the sandbox, provisioning and deprovisioning AWS resources during deploys.
 
@@ -110,11 +110,11 @@ resource "nuon_app_runner" "main" {
 }
 ```
 
-### The Components
+## Connect Components
 
 This app consists of two components: one to build the Docker image, and another to provision the ECS service. The source code for both is available in [our guides repo](https://github.com/nuonco/guides/deploy-to-aws-ecs) if you would like more details.
 
-#### The Docker Image
+### Docker Image
 
 This is a [Docker build component](/configure/docker-build-components) that will build the API and create a Docker image containing it. When released, it will sync the image to each install's ECR so ECS can pull it when creating tasks.
 
@@ -135,7 +135,7 @@ resource "nuon_docker_build_component" "docker_image" {
 }
 ```
 
-#### The ECS Service
+### ECS Service
 
 This component will create an ECS service using the docker image, and expose it to the internet with an ALB. It requires some info about the install it will run in, so we use Nuon variables to interpolate the required info on a per-install basis. See our [Using Variables](/guides/using-variables) guide for more info about how this works.
 
@@ -211,7 +211,7 @@ resource "nuon_terraform_module_component" "ecs_service" {
 }
 ```
 
-### Sync the App Config to Nuon
+## Sync the App Config to Nuon
 
 Make sure you are logged into Nuon, then initialize and apply the project config.
 
@@ -225,25 +225,15 @@ Use `nuon apps select` to run all commands in the context of the new app.
 
 ## Create an Install
 
-There are a few ways to create an install. Follow our [Create Installs](guides/create-installs) guide to set one up, then come back.
+### Create an IAM Role
 
-Use the Nuon CLI to monitor progress.
+To be able to provision an install in the AWS account, you need to grant Nuon access via an IAM Role. There are a few ways to do this. Follow our [Install Access Permissions](/guides/install-access-permissions) guide, then continue with this tutorial.
 
-<CodeGroup>
-```sh select your install
-nuon installs select
-```
+### Create an Install
 
-```sh see sandbox runs
-nuon installs sandbox-runs
-```
+There are a few ways to create an install. Follow our [Create Installs](/guides/create-installs) guide to set one up, then come back.
 
-```sh see sandbox run logs
-nuon installs sandbox-runs-logs -r {deploy_id}
-```
-</CodeGroup>
-
-### Release to the Install
+## Create a Release
 
 Create a release to deploy the app components to the install.
 
@@ -270,6 +260,6 @@ You will know it is done when the install and deploy statuses are all "active". 
 
 Congratulations, you just deployed an ECS service to AWS! A few suggestions for where to go next:
 
-- Check out our [TBD - Release Management](/guides/create-releases#working-with-releases) guide to learn how to update and deprovision components and installs.
-- Dig into our [TBD - App Configuration](/configure/apps) guide to learn how to configure more complex apps.
+- Check out our [Release Management](/guides/create-releases) guide to learn how to update installs.
+- Dig into our [App Configuration](/configure/apps) guide to learn how to configure more complex apps.
 - Share your installer with a friend and have them install your app in their AWS account.
