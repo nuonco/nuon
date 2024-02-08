@@ -70,9 +70,14 @@ func (s *service) RenderAppInstaller(ctx *gin.Context) {
 		return
 	}
 
+	var inputs app.AppInputConfig
+	if len(installer.App.AppInputConfigs) > 0 {
+		inputs = installer.App.AppInputConfigs[0]
+	}
+
 	ctx.JSON(http.StatusCreated, AppInstaller{
 		App:         installer.App,
-		AppInputs:   installer.App.AppInputConfigs[0],
+		AppInputs:   inputs,
 		AppSandbox:  installer.App.AppSandboxConfigs[0],
 		SandboxMode: installer.App.Org.SandboxMode,
 		Metadata:    installer.Metadata,
