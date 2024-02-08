@@ -30,6 +30,19 @@ resource "nuon_app" "real" {
   depends_on = [nuon_app.sandbox]
 }
 
+resource "nuon_app_runner" "real" {
+  for_each = { for app in local.real.apps : app.name => app }
+
+  provider = nuon.sandbox
+  app_id   = nuon_app.real[each.value.name].id
+
+  runner_type = "aws-eks"
+  env_var {
+    name = "NUON_RUNNER_TYPE"
+    value = "aws-eks"
+  }
+}
+
 resource "nuon_app_sandbox" "real" {
   for_each = { for app in local.real.apps : app.name => app }
 

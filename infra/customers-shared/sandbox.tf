@@ -45,6 +45,19 @@ resource "nuon_app_sandbox" "sandbox" {
   }
 }
 
+resource "nuon_app_runner" "sandbox" {
+  for_each = { for app in local.sandbox.apps : app.name => app }
+
+  provider = nuon.sandbox
+  app_id   = nuon_app.sandbox[each.value.name].id
+
+  runner_type = "aws-eks"
+  env_var {
+    name = "NUON_RUNNER_TYPE"
+    value = "aws-eks"
+  }
+}
+
 resource "random_pet" "sandbox" {
   for_each = local.sandbox_installs
   keepers = {
