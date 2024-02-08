@@ -112,7 +112,7 @@ resource "nuon_app_runner" "main" {
 
 ## Connect Components
 
-This app consists of two components: one to build the Docker image, and another to provision the ECS service. The source code for both is available in [our guides repo](https://github.com/nuonco/guides/deploy-to-aws-ecs) if you would like more details.
+This app consists of two components: one to build the Docker image, and another to provision the ECS service. The source code for both is available in [our guides repo](https://github.com/nuonco/guides/tree/main/create-an-aws-ecs-byoc-app) if you would like more details.
 
 ### Docker Image
 
@@ -129,7 +129,7 @@ resource "nuon_docker_build_component" "docker_image" {
 
   public_repo = {
     repo      = "nuonco/guides"
-    directory = "deploy-to-aws-ecs/components/docker-image"
+    directory = "create-an-aws-ecs-byoc-app/components/docker-image"
     branch    = "ja/3837-ecs-app-guide"
   }
 }
@@ -146,7 +146,7 @@ resource "nuon_terraform_module_component" "ecs_service" {
 
   public_repo = {
     repo      = "nuonco/guides"
-    directory = "deploy-to-aws-ecs/components/ecs-service"
+    directory = "create-an-aws-ecs-byoc-app/components/ecs-service"
     branch    = "ja/3837-ecs-app-guide"
   }
 
