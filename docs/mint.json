@@ -16,12 +16,6 @@
             "to": "#07C983"
         }
     },
-    "topbarLinks": [
-        {
-            "name": "Support",
-            "url": "/support"
-        }
-    ],
     "topbarCtaButton": {
         "name": "Sign in",
         "url": "https://app.nuon.co"
@@ -55,6 +49,11 @@
             "name": "Blog",
             "icon": "newspaper",
             "url": "https://www.nuon.co/blog"
+        },
+        {
+            "name": "Support",
+            "icon": "headset",
+            "url": "https://docs.nuon.co/support"
         }
     ],
     "navigation": [
@@ -113,7 +112,7 @@
             ]
         },
         {
-            "group": "Guides",
+            "group": "How To",
             "pages": [
                 "guides/vcs",
                 "guides/terraform-configuration-management",
