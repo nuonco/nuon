@@ -140,7 +140,7 @@
             ]
         },
         {
-            "group": "Changelog",
+            "group": "",
             "pages": [
                 "changelog/changelog",
                 "changelog/004-sdks-github-action",
