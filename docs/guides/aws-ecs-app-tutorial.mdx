@@ -4,25 +4,45 @@ description: 'Learn how to create an AWS ECS BYOC application.'
 icon: 'aws'
 ---
 
-This guide walks you through creating a BYOC application using AWS ECS. At the end of this tutorial, you should know how to configure an existing application with Nuon, and how to create a new BYOC application.
+import { Diagram } from '/snippets/diagram.mdx';
+
+This guide walks you through creating a BYOC application using AWS ECS, and deploying it to an install. At the end of this tutorial, you should know how to create a new BYOC deployment offering with your existing application.
+
+Here's an overview of the application you will deploy to your AWS account during this tutorial.
+
+<Diagram title="ECS Service Architecture Diagram" src="/images/guides/aws-ecs-app-tutorial.jpg" />
 
 ## Setup
 
-Before starting this guide, you should:
+### Create an Account
 
-1. Install the Nuon CLI and create an account. (Complete our [Quickstart](/quickstart) first if you have not done this yet.)
-1. Install Terraform.
-1. Set up an AWS account.
+Install the [Nuon CLI](/cli), and sign up for an account.
 
-<Warning>
-In this guide, you will be creating real resources in a real AWS account, which could incur charges from AWS. If you would like to avoid that, try following this guide in [Sandbox Mode](/guides/sandbox-mode).
-</Warning>
+```sh sign up
+nuon login
+```
+
+Create an organization.
+
+```sh create org
+nuon orgs create
+```
+
+### Install Terraform
+
+Since this guide uses the Nuon Terraform provider, [install Terraform](https://developer.hashicorp.com/terraform/install).
+
+### Set Up an AWS Account
+
+[Set up an AWS account](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html). This is the account you will create an install in.
 
 ## Configure App
 
 For this guide, you will deploy an API service to ECS Fargate, and expose it to the internet with an ALB. The API will present info about the install it is running in, allowing you to inspect it and verify that everything is working.
 
 In each section below, we will provide you with Terraform you can copy to manage your Nuon app config. Before that, you will need to set up the Terraform project itself. Copy the code below into files with the indicated names.
+
+All the configuration and component code used in this guide can be found in our [Guides repo](https://github.com/nuonco/guides/tree/main/create-an-aws-ecs-byoc-app).
 
 <CodeGroup>
 ```sh versions.tf
@@ -109,6 +129,22 @@ resource "nuon_app_runner" "main" {
   runner_type = "aws-ecs"
 }
 ```
+
+### Sync App Config to Nuon
+
+You now have a complete Nuon app config. This is a good place to stop and sync it to Nuon.
+
+```sh
+terraform apply
+```
+
+Once the config is synced, you should be able to select it using the CLI.
+
+```sh
+nuon apps select
+```
+
+All subsequent commands will be run in the context of the new app.
 
 ## Connect Components
 
@@ -211,19 +247,31 @@ resource "nuon_terraform_module_component" "ecs_service" {
 }
 ```
 
-## Sync the App Config to Nuon
+### Sync Component Configs to Nuon
 
-Make sure you are logged into Nuon, then initialize and apply the project config.
+Run `terraform apply` again to sync the component configs to Nuon. Just like the app, you can use the CLI to verify they were synced successfully.
 
 ```sh
-terraform apply
+nuon components list
 ```
 
-You now have a Nuon app configured to deploy to ECS. An initial build will be created for each component, ready to be released.
+Initial buids for each components will also have been created. Verify with the CLI that they were successful.
 
-Use `nuon apps select` to run all commands in the context of the new app.
+<CodeGroup>
+```sh verify docker_image build
+nuon builds list -c docker_image
+```
+
+```sh verify ecs_service build
+nuon builds list -c ecs_service
+```
+</CodeGroup>
+
+When an install is provisioned, it will check to see if there are any builds available. If there are, it will automatically create deploys to update itself.
 
 ## Create an Install
+
+Creating an install requires two steps, granting access to the AWS acount via an IAM role, and then provisioning the sandbox to that account.
 
 ### Create an IAM Role
 
@@ -233,28 +281,77 @@ To be able to provision an install in the AWS account, you need to grant Nuon ac
 
 There are a few ways to create an install. Follow our [Create Installs](/guides/create-installs) guide to set one up, then come back.
 
-## Create a Release
+### Monitor Install Creation
 
-Create a release to deploy the app components to the install.
-
-```sh
-nuon releases create -c docker image --latest-build
-nuon releases create -c ecs_service --latest-build
-```
-
-Each release will create a deploy in the install. You can use the CLI to monitor these.
+Monitor the install's creation using the CLI.
 
 <CodeGroup>
-```sh see deploys
+```sh select the install
+nuon installs select
+```
+
+```sh list sandbox runs
+nuon installs sandbox-runs
+```
+
+```sh view sandbox run logs
+nuon installs sandbox-run-logs -r {run_id}
+```
+</CodeGroup>
+
+You will know the install is provisioned when it's status is "active".
+
+### Monitor Deploys
+
+When the install is ready, it will check to see if there any builds available for the app components. If there are, it will create deploys to update itself. You can monitor these with the CLI as well.
+
+<CodeGroup>
+```sh list deploys
 nuon installs list-deploys
 ```
 
-```sh see deploy logs
+```sh view deploy logs
 nuon installs deploy-logs -d {deploy_id}
 ```
 </CodeGroup>
 
-You will know it is done when the install and deploy statuses are all "active". You should see the VPC, ECS cluster, and service in the AWS console.
+You will know the deploys are complete when their statuses are "active".
+
+### Inspect the Install
+
+When the install is created, and the deploys have completed, get the install ID and curl the API to verify it's running.
+
+<CodeGroup>
+```sh get install ID
+nuon installs list
+```
+
+```sh curl api
+curl https://api.{install_id}.nuon.run/introspect/env
+```
+</CodeGroup>
+
+### Update the Install
+
+Now that you have a working install of the app in AWS, you can update it by creating releases.
+
+In `ecs_service.tf`, update the value of the `app_id` var to `updated manually`, and sync it to Nuon.
+
+```sh
+terraform apply
+```
+
+Then create a release to update the install. You do not need a new build, since you did not change the componet source code, just the config.
+
+```sh
+nuon releases create -c ecs_service
+```
+
+When the release is active, curl the API to verify the value was updated.
+
+```sh
+curl https://api.{install_id}.nuon.run/introspect/env
+```
 
 ## Wrapping Up and Next Steps
 
