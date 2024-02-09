@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	s3ArtifactTemplateURL    string = "s3://nuon-artifacts/sandbox/%s/%s"
 	httpsArtifactTemplateURL string = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox/%s/%s"
 )
 
@@ -64,7 +63,7 @@ func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
 	c.Artifacts.DeprovisionPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "deprovision.json")
 	c.Artifacts.ProvisionPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "provision.json")
 	c.Artifacts.TrustPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "trust.json")
-	c.Artifacts.CloudformationStackTemplate = fmt.Sprintf(s3ArtifactTemplateURL, vcsCfg.Directory, "cloudformation-template.yaml")
+	c.Artifacts.CloudformationStackTemplate = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "cloudformation-template.yaml")
 
 	return nil
 }
