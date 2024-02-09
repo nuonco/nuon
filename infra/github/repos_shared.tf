@@ -1,3 +1,22 @@
+module "shared-okteto" {
+  source = "./modules/repository"
+
+  name            = "okteto"
+  description     = "Nuon configuration for Okteto."
+  required_checks = []
+  owning_team_id  = github_team.nuonco-shared.id
+  is_private = true
+  enable_branch_protection = false
+
+  collaborators = {
+      rberrelleza = "push"
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
 module "shared-meroxa" {
   source = "./modules/repository"
 
