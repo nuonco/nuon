@@ -42,7 +42,6 @@ func (s *service) findInstall(ctx context.Context, installID string) (*app.Insta
 		Preload("AWSAccount").
 		Preload("App").
 		Preload("App.Org").
-		Preload("SandboxRelease").
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
