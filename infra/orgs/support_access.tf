@@ -5,6 +5,7 @@ data "aws_iam_policy_document" "support" {
       "eks:DescribeCluster",
       "eks:ListCluster",
       "sts:AssumeRole",
+      "ecr:*",
     ]
     resources = ["*", ]
   }
