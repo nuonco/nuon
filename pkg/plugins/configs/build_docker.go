@@ -4,5 +4,6 @@ package configs
 type DockerBuild struct {
 	Plugin string `hcl:"plugin,label"`
 
-	Dockerfile string `hcl:"dockerfile"`
+	Dockerfile        string `hcl:"dockerfile"`
+	DisableEntrypoint bool   `hcl:"disable_entrypoint"`
 }
