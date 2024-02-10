@@ -27,7 +27,7 @@ func (w *wkflow) installEKSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 		Dir:     w.cfg.WaypointChartDir,
 	}
 
-	orgServerAddr := client.DefaultOrgServerAddress(req.OrgId, w.cfg.OrgServerRootDomain)
+	orgServerAddr := client.DefaultOrgServerAddress(w.cfg.OrgServerRootDomain, req.OrgId)
 
 	// get waypoint server cookie
 	gwscReq := GetWaypointServerCookieRequest{
