@@ -56,7 +56,7 @@ func (a *Activities) GetWaypointServerCookie(ctx context.Context, req GetWaypoin
 
 	cookie, err := a.getWaypointServerCookie(ctx, client)
 	if err != nil {
-		return resp, fmt.Errorf("unable to create waypoint runner cookie: %w", err)
+		return resp, fmt.Errorf("unable to get waypoint runner cookie: %w", err)
 	}
 	resp.Cookie = cookie
 	return resp, nil
