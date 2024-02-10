@@ -22,7 +22,7 @@ schema:
     enabled: false
 
 server:
-  replicaCount: 2
+  replicaCount: 3
   config:
     persistence:
       default:
