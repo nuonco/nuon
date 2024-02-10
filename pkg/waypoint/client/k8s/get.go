@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"context"
+	"time"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint/pkg/serverclient"
@@ -9,7 +10,8 @@ import (
 )
 
 const (
-	defaultHCLogName string = "nuon"
+	defaultHCLogName      string        = "nuon"
+	defaultConnectTimeout time.Duration = time.Minute
 )
 
 // getClient returns a waypoint client
@@ -31,5 +33,5 @@ func (p *k8sClient) getClient(ctx context.Context, addr, token string) (*grpc.Cl
 		Level: hclog.LevelFromString("DEBUG"),
 	})
 	logOpt := serverclient.Logger(appLogger)
-	return serverclient.Connect(ctx, primaryOpts, logOpt)
+	return serverclient.Connect(ctx, primaryOpts, logOpt, serverclient.Timeout(defaultConnectTimeout))
 }
