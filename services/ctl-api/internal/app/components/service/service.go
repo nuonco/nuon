@@ -53,12 +53,12 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 	// builds are immutable
 	api.POST("/v1/components/:component_id/builds", s.CreateComponentBuild)
-	api.GET("/v1/components/:component_id/builds", s.GetComponentBuilds)
 	api.GET("/v1/components/:component_id/builds/latest", s.GetComponentLatestBuild)
 	api.GET("/v1/components/:component_id/builds/:build_id", s.GetComponentBuild)
 	api.GET("/v1/components/:component_id/builds/:build_id/logs", s.GetComponentBuildLogs)
 	api.GET("/v1/components/:component_id/builds/:build_id/plan", s.GetComponentBuildPlan)
 
+	api.GET("/v1/builds", s.GetComponentBuilds)
 	api.GET("/v1/components/builds/:build_id", s.GetBuild)
 
 	return nil
