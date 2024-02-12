@@ -120,14 +120,14 @@ func (s *componentBuildsSuite) TestGetComponentBuilds() {
 	require.NotNil(s.T(), bld)
 
 	s.T().Run("returns builds", func(t *testing.T) {
-		blds, err := s.apiClient.GetComponentBuilds(s.ctx, s.compID)
+		blds, err := s.apiClient.GetComponentBuilds(s.ctx, s.compID, "", nil)
 		require.Nil(t, err)
 		require.NotEmpty(t, blds)
 		require.Equal(t, blds[0].ID, bld.ID)
 	})
 
 	s.T().Run("errors on invalid component id", func(t *testing.T) {
-		blds, err := s.apiClient.GetComponentBuilds(s.ctx, generics.GetFakeObj[string]())
+		blds, err := s.apiClient.GetComponentBuilds(s.ctx, generics.GetFakeObj[string](), "", nil)
 		require.NotNil(t, err)
 		require.Empty(t, blds)
 	})
@@ -137,7 +137,7 @@ func (s *componentBuildsSuite) TestGetComponentBuilds() {
 		require.Nil(s.T(), err)
 		require.NotNil(s.T(), secondBuild)
 
-		blds, err := s.apiClient.GetComponentBuilds(s.ctx, s.compID)
+		blds, err := s.apiClient.GetComponentBuilds(s.ctx, s.compID, "", nil)
 		require.Nil(t, err)
 		require.NotEmpty(t, blds)
 		require.Len(t, blds, 2)
