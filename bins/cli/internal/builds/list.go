@@ -7,16 +7,26 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context, compID string, asJSON bool) {
-	compID, err := lookup.ComponentID(ctx, s.api, compID)
-	if err != nil {
-		ui.PrintError(err)
-		return
+func (s *Service) List(ctx context.Context, compID, appID string, limit *int64, asJSON bool) {
+	var err error
+	if compID != "" {
+		compID, err = lookup.ComponentID(ctx, s.api, compID)
+		if err != nil {
+			ui.PrintError(err)
+			return
+		}
+	}
+	if appID != "" {
+		appID, err = lookup.AppID(ctx, s.api, appID)
+		if err != nil {
+			ui.PrintError(err)
+			return
+		}
 	}
 
 	view := ui.NewListView()
 
-	builds, err := s.api.GetComponentBuilds(ctx, compID)
+	builds, err := s.api.GetComponentBuilds(ctx, compID, appID, limit)
 	if err != nil {
 		view.Error(err)
 		return
@@ -31,7 +41,7 @@ func (s *Service) List(ctx context.Context, compID string, asJSON bool) {
 		{
 			"id",
 			"status",
-			"component id",
+			"component name",
 			"git ref / branch",
 			"created at",
 		},
@@ -40,7 +50,7 @@ func (s *Service) List(ctx context.Context, compID string, asJSON bool) {
 		data = append(data, []string{
 			build.ID,
 			build.Status,
-			compID,
+			build.ComponentName,
 			build.GitRef,
 			build.CreatedAt,
 		})

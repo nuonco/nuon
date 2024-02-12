@@ -10,6 +10,8 @@ func (c *cli) buildsCmd() *cobra.Command {
 	var (
 		buildID string
 		compID  string
+		appID   string
+		limit   int64
 	)
 
 	buildsCmd := &cobra.Command{
@@ -26,11 +28,12 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Long:    "List your app's builds",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := builds.New(c.apiClient)
-			svc.List(cmd.Context(), compID, PrintJSON)
+			svc.List(cmd.Context(), compID, appID, &limit, PrintJSON)
 		},
 	}
 	listCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of a component to filter builds by")
-	listCmd.MarkFlagRequired("component-id")
+	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the component to filter builds by")
+	listCmd.Flags().Int64VarP(&limit, "limit", "l", 60, "Maximum health checks to return")
 	buildsCmd.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
