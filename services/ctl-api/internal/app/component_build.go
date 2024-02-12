@@ -32,7 +32,8 @@ type ComponentBuild struct {
 	GitRef            *string `json:"git_ref"`
 
 	// Read-only fields set on the object to de-nest data
-	ComponentID string `gorm:"-" json:"component_id"`
+	ComponentID   string `gorm:"-" json:"component_id"`
+	ComponentName string `gorm:"-" json:"component_name"`
 }
 
 func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {
@@ -44,5 +45,6 @@ func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {
 
 func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
 	c.ComponentID = c.ComponentConfigConnection.ComponentID
+	c.ComponentName = c.ComponentConfigConnection.Component.Name
 	return nil
 }
