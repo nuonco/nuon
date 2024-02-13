@@ -1,3 +1,19 @@
+module "shared-warpstream" {
+  source = "./modules/repository"
+
+  name            = "warpstream"
+  description     = "Nuon configuration for Warpstream."
+  required_checks = []
+  owning_team_id  = github_team.nuonco-shared.id
+  is_private = true
+  enable_branch_protection = false
+
+  collaborators = {}
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
 module "shared-okteto" {
   source = "./modules/repository"
 
