@@ -8,7 +8,11 @@ module "shared-warpstream" {
   is_private = true
   enable_branch_protection = false
 
-  collaborators = {}
+  collaborators = {
+    #"caleb-warpstream" = "push"
+    #"richard-artoul" = "push"
+    #"ryanworl" = "push"
+  }
 
   providers = {
     github = github.nuonco-shared
