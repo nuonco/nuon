@@ -10,9 +10,6 @@ locals {
 ################################################################################
 module "security_group_rds" {
   source  = "terraform-aws-modules/security-group/aws"
-  # NOTE: the module was updated to 6.x.x and that causes issues with how we use this, because it removes support for
-  # using the master database key. We use the key to provision both replicas, as well as the helm chart.
-  version = "= 5.1.0"
 
   name        = local.name
   description = "RDS security group for ${local.name}"
@@ -32,7 +29,6 @@ module "security_group_rds" {
 
 module "subnet_group" {
   source  = "terraform-aws-modules/rds/aws//modules/db_subnet_group"
-  version = "~> 5.0"
 
   name        = local.name
   description = "Subnet group for ${local.name}"
@@ -44,7 +40,6 @@ module "subnet_group" {
 ################################################################################
 module "primary" {
   source  = "terraform-aws-modules/rds/aws"
-  version = "~> 5.0"
 
   identifier = "primary-${local.name}"
 
@@ -63,6 +58,7 @@ module "primary" {
   multi_az               = local.vars.rds.multi_az
   db_subnet_group_name   = module.subnet_group.db_subnet_group_id
   vpc_security_group_ids = [module.security_group_rds.security_group_id]
+  manage_master_user_password = true
 
   maintenance_window              = "Mon:00:00-Mon:03:00"
   backup_window                   = "03:00-06:00"
@@ -97,12 +93,11 @@ resource "aws_route53_record" "primary" {
 module "replica" {
   count   = local.vars.rds.enable_replica ? 1 : 0
   source  = "terraform-aws-modules/rds/aws"
-  version = "~> 5.0"
 
   identifier = "replica-${local.name}"
 
   # Source database. For cross-region use db_instance_arn
-  replicate_source_db    = module.primary.db_instance_id
+  replicate_source_db    = module.primary.db_instance_identifier
 
   engine               = local.vars.rds.engine
   engine_version       = local.vars.rds.engine_version
@@ -149,7 +144,6 @@ resource "aws_route53_record" "replica" {
 module "security_group_elasticache" {
   count   = local.vars.elasticache.enabled ? 1 : 0
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 5.0"
 
   name        = local.name
   description = "elasticache security group for ${local.name}"
@@ -221,7 +215,6 @@ locals {
 module "security_group_elasticsearch" {
   count   = local.vars.elasticsearch.enabled ? 1 : 0
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 5.0"
 
   name        = local.name
   description = "elasticsearch security group for ${local.name}"

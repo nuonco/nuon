@@ -5,9 +5,6 @@ set -euo pipefail
 function main() {
     [[ -n "${TRACE:-}" ]] && set -x
 
-    local version
-    read -r -p "Which version are you upgrading to? (no v prefix) " version
-
     local context
     context=$(kubectl config current-context)
 
@@ -47,12 +44,12 @@ function main() {
     port=$(echo "$output" | jq -r '.db_instance_port.value')
     user=$(echo "$output" | jq -r '.db_instance_username.value')
     pass=$(echo "$output" | jq -r '.db_instance_password.value')
+    version=$(echo "$output" | jq -r '.image_tag.value')
 
 
     echo "Dropping you into the admin tools image..."
     echo "Environment variables will be set for use with temporal-sql-tool..."
-
-    run "$address" "$port" "$user" "$pass"
+    run "$address" "$port" "$user" "$pass" "$version"
 
     return
 }
@@ -62,6 +59,7 @@ function run() {
     local port="$2"
     local user="$3"
     local pass="$4"
+    local version="$5"
 
     kubectl \
         run \
@@ -75,6 +73,7 @@ function run() {
         --env="SQL_USER=$user" \
         --env="SQL_PASSWORD=$pass" \
         --env="SQL_PLUGIN=postgres" \
+        --env="VERSION=$version" \
         --command \
         -- sh
 }

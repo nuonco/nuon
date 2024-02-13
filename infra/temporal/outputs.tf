@@ -37,16 +37,6 @@ output "db_instance_hosted_zone_id" {
   value       = module.primary.db_instance_hosted_zone_id
 }
 
-output "db_instance_id" {
-  description = "The RDS instance ID"
-  value       = module.primary.db_instance_id
-}
-
-output "db_instance_resource_id" {
-  description = "The RDS Resource ID of this instance"
-  value       = module.primary.db_instance_resource_id
-}
-
 output "db_instance_status" {
   description = "The RDS instance status"
   value       = module.primary.db_instance_status
@@ -60,6 +50,12 @@ output "db_instance_name" {
 output "db_instance_username" {
   description = "The master username for the database"
   value       = module.primary.db_instance_username
+  sensitive   = true
+}
+
+output "db_instance_password" {
+  description = "The master master for the database"
+  value       = local.db_password
   sensitive   = true
 }
 
@@ -283,5 +279,13 @@ output "frontend_url" {
 
 output "web_url" {
   value = local.temporal.web_url
+}
+
+output "image_tag" {
+  value = local.temporal.image_tag
+}
+
+output "helm_version" {
+  value = local.temporal.version
 }
 
