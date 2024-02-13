@@ -1,0 +1,10 @@
+---
+datadog:
+  confd:
+    "temporal.yaml": |-
+      init_config:
+      instances:
+        - openmetrics_endpoint: "http://temporal-frontend-headless.temporal.svc.cluster.local:9090/metrics"
+        - openmetrics_endpoint: "http://temporal-worker-headless.temporal.svc.cluster.local:9090/metrics"
+        - openmetrics_endpoint: "http://temporal-matching-headless.temporal.svc.cluster.local:9090/metrics"
+        - openmetrics_endpoint: "http://temporal-history-headless.temporal.svc.cluster.local:9090/metrics"

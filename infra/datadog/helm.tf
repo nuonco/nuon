@@ -1,6 +1,7 @@
 locals {
   datadog = {
     value_file = "values/datadog.yaml"
+    override_file = "values/${var.env}.yaml"
   }
 }
 
@@ -15,6 +16,7 @@ resource "helm_release" "datadog" {
 
   values = [
     file(local.datadog.value_file),
+    fileexists(local.datadog.override_file) ? file(local.datadog.override_file) : "",
 
     // TODO(jm): add tags for environments
     yamlencode({

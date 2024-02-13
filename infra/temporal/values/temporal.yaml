@@ -3,7 +3,6 @@ fullnameOverride: temporal
 
 cassandra:
   enabled: false
-# TODO(jdt): enable AWS elasticsearch?
 elasticsearch:
   enabled: false
 grafana:
@@ -24,6 +23,9 @@ schema:
 server:
   replicaCount: 3
   config:
+    prometheus:
+      framework: opentelemetry
+      listenAddress: "0.0.0.0:9090"
     persistence:
       default:
         driver: sql
@@ -39,6 +41,7 @@ server:
           driver: postgres
           maxConnLifetime: 1h
           maxConns: 20
+
 web:
   additionalEnv:
     - name: TEMPORAL_CSRF_COOKIE_INSECURE
