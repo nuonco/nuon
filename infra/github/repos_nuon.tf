@@ -177,3 +177,20 @@ module "nuon-guides" {
     github = github.nuon
   }
 }
+
+module "nuon-homebrew-tap" {
+  source      = "./modules/repository"
+  name        = "homebrew-tap"
+  description = "Homebrew tap for the Nuon CLI."
+  required_checks = [
+    "check-pr / Run PR checks",
+    "check-pr / Update PR status",
+  ]
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
