@@ -157,3 +157,16 @@ jobs:
             ${{ steps.check.outputs.status == 'success' && '🏁🏁' || '🚨🚨' }} integration test finished
             *stage* - true
             *status* - ${{steps.check.outputs.status}}
+      - name: Update datadog
+        uses: masci/datadog@v1
+        with:
+          api-key: ${{ secrets.DATADOG_API_KEY }}
+          api-url: "https://us5.datadoghq.com"
+          metrics: |
+            - type: "count"
+              name: "integration.runs.count"
+              value: 1.0
+              host: ${{ github.repository_owner }}
+              tags:
+                - "branch:${{ github.head_ref }}"
+                - "status:${{ steps.check.outputs.status }}"
