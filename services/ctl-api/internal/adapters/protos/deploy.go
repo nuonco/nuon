@@ -12,31 +12,48 @@ func (c *Adapter) FromDeploy(deploy *app.InstallDeploy, installDeploys []app.Ins
 	build := deploy.ComponentBuild
 
 	compCfg := build.ComponentConfigConnection
+
+	var (
+		cfg *componentv1.Component
+		err error
+	)
 	if compCfg.TerraformModuleComponentConfig != nil {
-		return c.ToTerraformModuleComponentConfig(compCfg.TerraformModuleComponentConfig,
+		cfg, err = c.ToTerraformModuleComponentConfig(
+			compCfg.TerraformModuleComponentConfig,
 			installDeploys,
 			generics.FromPtrStr(build.GitRef))
 	}
 
 	if compCfg.HelmComponentConfig != nil {
-		return c.ToHelmComponentConfig(compCfg.HelmComponentConfig,
+		cfg, err = c.ToHelmComponentConfig(
+			compCfg.HelmComponentConfig,
 			installDeploys,
 			generics.FromPtrStr(build.GitRef))
 	}
 
 	if compCfg.ExternalImageComponentConfig != nil {
-		return c.ToExternalImageConfig(compCfg.ExternalImageComponentConfig, installDeploys)
+		cfg, err = c.ToExternalImageConfig(compCfg.ExternalImageComponentConfig, installDeploys)
 	}
 
 	if compCfg.JobComponentConfig != nil {
-		return c.ToJobConfig(compCfg.JobComponentConfig, installDeploys)
+		cfg, err = c.ToJobConfig(compCfg.JobComponentConfig, installDeploys)
 	}
 
 	if compCfg.DockerBuildComponentConfig != nil {
-		return c.ToDockerBuildConfig(compCfg.DockerBuildComponentConfig,
+		cfg, err = c.ToDockerBuildConfig(
+			compCfg.DockerBuildComponentConfig,
 			installDeploys,
 			generics.FromPtrStr(build.GitRef))
 	}
 
-	return nil, fmt.Errorf("unable to convert component to proto component")
+	if err != nil {
+		return nil, fmt.Errorf("unable to create component config: %w", err)
+	}
+
+	cfg.InstallInputs, err = c.toInstallInputs(deploy.InstallComponent.Install)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create install inputs: %w", err)
+	}
+
+	return cfg, nil
 }
