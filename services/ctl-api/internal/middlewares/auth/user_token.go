@@ -57,6 +57,7 @@ func (m *middleware) saveUserToken(ctx context.Context, token string, claims *va
 
 	userToken := app.UserToken{
 		Token:       token,
+		TokenType:   app.TokenTypeAuth0,
 		Subject:     claims.RegisteredClaims.Subject,
 		ExpiresAt:   time.Unix(claims.RegisteredClaims.Expiry, 0),
 		IssuedAt:    time.Unix(claims.RegisteredClaims.IssuedAt, 0),

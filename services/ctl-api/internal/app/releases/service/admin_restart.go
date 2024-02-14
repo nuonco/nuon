@@ -40,6 +40,6 @@ func (s *service) RestartRelease(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Restart(ctx, release.ID, org.SandboxMode)
+	s.hooks.Restart(ctx, release.ID, org.OrgType)
 	ctx.JSON(http.StatusOK, true)
 }
