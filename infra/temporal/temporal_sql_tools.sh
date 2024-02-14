@@ -65,7 +65,7 @@ function run() {
         run \
         -it \
         --rm \
-        --namespace=temporal \
+        --namespace=default \
         "nuon-temporal-admintools-$(date +"%s")" \
         --image=temporalio/admin-tools:"$version" \
         --env="SQL_HOST=$address" \
