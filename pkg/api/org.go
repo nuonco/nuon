@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 type Org struct {
@@ -28,6 +29,12 @@ func (c *client) ListOrgs(ctx context.Context) ([]Org, error) {
 }
 
 func (c *client) DeleteOrg(ctx context.Context, orgID string) error {
+	origTimeout := c.Timeout
+	defer func() {
+		c.Timeout = origTimeout
+	}()
+	c.Timeout = time.Second * 10
+
 	endpoint := fmt.Sprintf("/v1/orgs/%s/admin-delete", orgID)
 	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
 	if err != nil {
