@@ -22,12 +22,13 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/installer/:installer_slug/render", s.RenderAppInstaller)
 	api.POST("/v1/installer/:installer_slug/installs", s.CreateInstallerInstall)
 	api.GET("/v1/installer/:installer_slug/install/:install_id", s.GetInstallerInstall)
+	api.GET("/v1/installer/:installer_slug/install/:install_id/render", s.RenderInstallerInstall)
 
 	// installers
 	api.GET("/v1/installers", s.GetInstallers)
 	api.POST("/v1/installers", s.CreateAppInstaller)
-	api.PATCH("/v1/installers/:installer_id", s.UpdateAppInstaller)
-	api.DELETE("/v1/installers/:installer_id", s.DeleteAppInstaller)
+	api.PATCH("/v1/installers/:installer_id", s.UpdateInstaller)
+	api.DELETE("/v1/installers/:installer_id", s.DeleteInstaller)
 	api.GET("/v1/installers/:installer_id", s.GetAppInstaller)
 
 	return nil

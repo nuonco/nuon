@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @ID GetAppInstaller
-// @Summary	get an app installer
-// @Description.markdown	get_app_installer.md
+// @ID GetInstaller
+// @Summary	get an installer
+// @Description.markdown	get_installer.md
 // @Param			installer_id	path	string	true	"installer ID"
 // @Tags installers
 // @Accept			json
