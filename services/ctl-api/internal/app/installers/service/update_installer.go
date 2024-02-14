@@ -10,9 +10,10 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-type UpdateAppInstallerRequest struct {
-	Name        string `validate:"required" json:"name"`
-	Description string `validate:"required" json:"description"`
+type UpdateInstallerRequest struct {
+	Name                string `validate:"required" json:"name"`
+	Description         string `validate:"required" json:"description"`
+	PostInstallMarkdown string `json:"post_install_markdown"`
 
 	Links struct {
 		Documentation string `validate:"required" json:"documentation"`
@@ -24,19 +25,19 @@ type UpdateAppInstallerRequest struct {
 	} `json:"links"`
 }
 
-func (c *UpdateAppInstallerRequest) Validate(v *validator.Validate) error {
+func (c *UpdateInstallerRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
 	return nil
 }
 
-// @ID UpdateAppInstaller
-// @Summary	update an app installer
-// @Description.markdown	update_app_installer.md
+// @ID UpdateInstaller
+// @Summary	update an installer
+// @Description.markdown	update_installer.md
 // @Tags installers
 // @Accept			json
-// @Param			req	body	UpdateAppInstallerRequest	true	"Input"
+// @Param			req	body	UpdateInstallerRequest	true	"Input"
 // @Produce		json
 // @Param			installer_id	path		string	true	"installer ID"
 // @Security APIKey
@@ -48,10 +49,10 @@ func (c *UpdateAppInstallerRequest) Validate(v *validator.Validate) error {
 // @Failure		500				{object}	stderr.ErrResponse
 // @Success		201				{object}	app.AppInstaller
 // @Router			/v1/installers/{installer_id} [PATCH]
-func (s *service) UpdateAppInstaller(ctx *gin.Context) {
+func (s *service) UpdateInstaller(ctx *gin.Context) {
 	installerID := ctx.Param("installer_id")
 
-	var req UpdateAppInstallerRequest
+	var req UpdateInstallerRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
@@ -70,16 +71,17 @@ func (s *service) UpdateAppInstaller(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, installer)
 }
 
-func (s *service) updateAppInstaller(ctx context.Context, installerID string, req *UpdateAppInstallerRequest) (*app.AppInstaller, error) {
+func (s *service) updateAppInstaller(ctx context.Context, installerID string, req *UpdateInstallerRequest) (*app.AppInstaller, error) {
 	updates := app.AppInstallerMetadata{
-		DocumentationURL: req.Links.Documentation,
-		GithubURL:        req.Links.Github,
-		LogoURL:          req.Links.Logo,
-		HomepageURL:      req.Links.Homepage,
-		CommunityURL:     req.Links.Community,
-		DemoURL:          req.Links.Demo,
-		Description:      req.Description,
-		Name:             req.Name,
+		DocumentationURL:    req.Links.Documentation,
+		GithubURL:           req.Links.Github,
+		LogoURL:             req.Links.Logo,
+		HomepageURL:         req.Links.Homepage,
+		CommunityURL:        req.Links.Community,
+		DemoURL:             req.Links.Demo,
+		Description:         req.Description,
+		Name:                req.Name,
+		PostInstallMarkdown: req.PostInstallMarkdown,
 	}
 
 	metadata := app.AppInstallerMetadata{}

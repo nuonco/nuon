@@ -10,9 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// @ID DeleteAppInstaller
-// @Summary	delete an app installer
-// @Description.markdown	delete_app_installer.md
+// @ID DeleteInstaller
+// @Summary	delete an installer
+// @Description.markdown	delete_installer.md
 // @Param			installer_id	path	string	true	"installer ID"
 // @Tags installers
 // @Accept			json
@@ -26,7 +26,7 @@ import (
 // @Failure		500				{object}	stderr.ErrResponse
 // @Success		200				{boolean}	true
 // @Router			/v1/installers/{installer_id} [DELETE]
-func (s *service) DeleteAppInstaller(ctx *gin.Context) {
+func (s *service) DeleteInstaller(ctx *gin.Context) {
 	installerID := ctx.Param("installer_id")
 
 	err := s.deleteAppInstaller(ctx, installerID)

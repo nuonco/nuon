@@ -26,6 +26,8 @@ type CreateAppInstallerRequest struct {
 		Community     string `validate:"required" json:"community"`
 		Demo          string `json:"demo"`
 	} `json:"links"`
+
+	PostInstallMarkdown string `json:"post_install_markdown"`
 }
 
 func (c *CreateAppInstallerRequest) Validate(v *validator.Validate) error {
@@ -35,9 +37,9 @@ func (c *CreateAppInstallerRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-// @ID CreateAppInstaller
+// @ID CreateInstaller
 // @Summary	create an app installer
-// @Description.markdown	create_app_installer.md
+// @Description.markdown	create_installer.md
 // @Tags installers
 // @Accept			json
 // @Param			req	body	CreateAppInstallerRequest	true	"Input"
@@ -83,14 +85,15 @@ func (s *service) createAppInstaller(ctx context.Context, orgID string, req *Cre
 		AppID: req.AppID,
 		Slug:  slug.Make(req.Slug),
 		Metadata: app.AppInstallerMetadata{
-			Description:      req.Description,
-			Name:             req.Name,
-			CommunityURL:     req.Links.Community,
-			HomepageURL:      req.Links.Homepage,
-			DocumentationURL: req.Links.Documentation,
-			GithubURL:        req.Links.Github,
-			LogoURL:          req.Links.Logo,
-			DemoURL:          req.Links.Demo,
+			Description:         req.Description,
+			PostInstallMarkdown: req.PostInstallMarkdown,
+			Name:                req.Name,
+			CommunityURL:        req.Links.Community,
+			HomepageURL:         req.Links.Homepage,
+			DocumentationURL:    req.Links.Documentation,
+			GithubURL:           req.Links.Github,
+			LogoURL:             req.Links.Logo,
+			DemoURL:             req.Links.Demo,
 		},
 	}
 

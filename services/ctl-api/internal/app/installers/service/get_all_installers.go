@@ -9,9 +9,9 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-// @ID GetAllAppInstallers
-// @Summary	get all app installers for all orgs
-// @Description.markdown	get_all_app_installers.md
+// @ID GetAllInstallers
+// @Summary	get all installers for all orgs
+// @Description.markdown	get_all_installers.md
 // @Tags installers/admin
 // @Accept			json
 // @Produce		json
