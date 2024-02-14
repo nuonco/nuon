@@ -53,7 +53,7 @@ func (s *Service) Get(ctx context.Context, compID, buildID string, asJSON bool) 
 		{"created at", build.CreatedAt},
 		{"updated at", build.UpdatedAt},
 		{"created by", build.CreatedByID},
-		{"component id", build.ComponentConfigConnectionID},
+		{"component id", build.ComponentID},
 
 		{"vcs connection id", vcsConnectionID},
 		{"commit sha", commitSha},
