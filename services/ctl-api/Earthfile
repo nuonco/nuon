@@ -36,6 +36,10 @@ integration:
     ENV INTEGRATION_API_URL=$api_url
     ENV INTEGRATION_INTERNAL_API_URL=$internal_api_url
 
+    # NOTE(jm): twingate occasionally times out and fails to lookup the first record. It's unclear which dns resolver is
+    # being used, and this will print that resolve stack, hopefully revealing something.
+    ENV GODEBUG=netdns=2
+
     WORKDIR internal/integration
     RUN go test -count=1 -parallel=1 -v -run TestAppsSuite
     RUN go test -count=1 -parallel=1 -v -run TestAppInputSuite
