@@ -17,7 +17,7 @@ type CreateInstallParams struct {
 		IAMRoleARN string `json:"iam_role_arn" validate:"required"`
 	} `json:"aws_account" validate:"required"`
 
-	Inputs map[string]*string `json:"inputs" validate:"required"`
+	Inputs map[string]*string `json:"inputs"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
@@ -28,6 +28,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}).
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_runner_configs.created_at DESC")
+		}).
+		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_input_configs.created_at DESC")
 		}).
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
@@ -59,13 +62,16 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			Region:     req.AWSAccount.Region,
 			IAMRoleARN: req.AWSAccount.IAMRoleARN,
 		},
-		InstallInputs: []app.InstallInputs{
-			{
-				Values: req.Inputs,
-			},
-		},
 		AppSandboxConfigID: parentApp.AppSandboxConfigs[0].ID,
 		AppRunnerConfigID:  parentApp.AppRunnerConfigs[0].ID,
+	}
+	if len(parentApp.AppInputConfigs) > 0 {
+		install.InstallInputs = []app.InstallInputs{
+			{
+				Values:           req.Inputs,
+				AppInputConfigID: parentApp.AppInputConfigs[0].ID,
+			},
+		}
 	}
 
 	res = s.db.WithContext(ctx).Create(&install)

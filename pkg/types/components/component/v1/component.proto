@@ -7,6 +7,7 @@ import "connections/v1/connections.proto";
 import "deploy/v1/config.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
+import "variables/v1/install_inputs.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/component/v1";
 
@@ -20,4 +21,5 @@ message Component {
   build.v1.Config build_cfg = 2 [(tagger.tags) = "faker:\"buildConfig\""];
   deploy.v1.Config deploy_cfg = 3 [(tagger.tags) = "faker:\"deployConfig\""];
   connections.v1.Connections connections = 4;
+  variables.v1.InstallInputs install_inputs = 5;
 }

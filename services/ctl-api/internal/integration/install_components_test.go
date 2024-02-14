@@ -13,9 +13,9 @@ import (
 type installComponentsTestSuite struct {
 	baseIntegrationTestSuite
 
-	orgID     string
-	appID     string
-	compID    string
+	orgID	  string
+	appID	  string
+	compID	  string
 	buildID   string
 	installID string
 }
@@ -61,11 +61,7 @@ func (s *installComponentsTestSuite) SetupTest() {
 	s.buildID = build.ID
 
 	// create install
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
-	fakeReq.AwsAccount.Region = "us-west-2"
-	install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
-	require.NoError(s.T(), err)
-	require.NotNil(s.T(), install)
+	install := s.createInstall(s.appID)
 	s.installID = install.ID
 }
 

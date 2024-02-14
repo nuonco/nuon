@@ -49,5 +49,17 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "010-remove-org-health-check-names",
 			Fn:   a.migration010RemoveHealthCheckName,
 		},
+		{
+			Name: "011-remove-app-input-config",
+			Fn:   a.migration011RemoveAppInputConfig,
+		},
+		{
+			Name: "012-add-install-input-config-parents",
+			Fn:   a.migration012AddInstallInputConfigParents,
+		},
+		{
+			Name: "013-add-install-input-config-parent-not-null",
+			Fn:   a.migration013InstallInputParentNotNull,
+		},
 	}
 }
