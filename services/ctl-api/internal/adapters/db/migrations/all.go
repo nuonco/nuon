@@ -61,5 +61,13 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "013-add-install-input-config-parent-not-null",
 			Fn:   a.migration013InstallInputParentNotNull,
 		},
+		{
+			Name: "014-app-input-display-name",
+			Fn:   a.migration014AppInputDisplayName,
+		},
+		{
+			Name: "015-app-input-display-name-not-nullable",
+			Fn:   a.migration015DisplayNameNotNullable,
+		},
 	}
 }

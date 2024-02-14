@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type AppInstaller struct {
+type RenderedInstaller struct {
 	App        app.App              `json:"app"`
 	AppInputs  app.AppInputConfig   `json:"app_inputs"`
 	AppSandbox app.AppSandboxConfig `json:"app_sandbox"`
@@ -20,9 +20,9 @@ type AppInstaller struct {
 	Metadata    app.AppInstallerMetadata `json:"metadata"`
 }
 
-// @ID RenderAppInstaller
-// @Summary	render an app installer
-// @Description.markdown	render_app_installer.md
+// @ID RenderInstaller
+// @Summary	render an installer
+// @Description.markdown	render_installer.md
 // @Tags installers
 // @Accept			json
 // @Produce		json
@@ -32,7 +32,7 @@ type AppInstaller struct {
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	AppInstaller
+// @Success		200				{object}	RenderedInstaller
 // @Router			/v1/installer/{installer_slug}/render [GET]
 func (s *service) RenderAppInstaller(ctx *gin.Context) {
 	slugOrID := ctx.Param("installer_slug")
@@ -75,13 +75,14 @@ func (s *service) RenderAppInstaller(ctx *gin.Context) {
 		inputs = installer.App.AppInputConfigs[0]
 	}
 
-	ctx.JSON(http.StatusCreated, AppInstaller{
-		App:         installer.App,
-		AppInputs:   inputs,
-		AppSandbox:  installer.App.AppSandboxConfigs[0],
-		SandboxMode: installer.App.Org.SandboxMode,
-		Metadata:    installer.Metadata,
-	})
+	ctx.JSON(http.StatusCreated,
+		RenderedInstaller{
+			App:         installer.App,
+			AppInputs:   inputs,
+			AppSandbox:  installer.App.AppSandboxConfigs[0],
+			SandboxMode: installer.App.Org.SandboxMode,
+			Metadata:    installer.Metadata,
+		})
 }
 
 func (s *service) getAppInstaller(ctx context.Context, installerID string) (*app.AppInstaller, error) {
