@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type RestartInstallRequest struct{}
@@ -44,6 +45,9 @@ func (s *service) getInstall(ctx context.Context, installID string) (*app.Instal
 	res := s.db.WithContext(ctx).
 		Preload("AWSAccount").
 		Preload("App").
+		Preload("App.AppInputConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_input_configs.created_at DESC")
+		}).
 		Preload("App.Org").
 		Preload("AppSandboxConfig").
 		Where("name = ?", installID).

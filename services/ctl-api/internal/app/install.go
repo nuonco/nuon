@@ -35,6 +35,9 @@ type Install struct {
 	InstallInputs      []InstallInputs     `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE;"`
 
 	AWSAccount AWSAccount `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;"`
+
+	// generated at read time for
+	CurrentInstallInputs *InstallInputs `json:"-" gorm:"-"`
 }
 
 func (i *Install) BeforeCreate(tx *gorm.DB) error {
@@ -44,5 +47,14 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 
 	i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	i.OrgID = orgIDFromContext(tx.Statement.Context)
+	return nil
+}
+
+func (i *Install) AfterQuery(tx *gorm.DB) error {
+	if len(i.InstallInputs) < 1 {
+		return nil
+	}
+
+	i.CurrentInstallInputs = &i.InstallInputs[0]
 	return nil
 }

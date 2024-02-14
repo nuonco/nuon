@@ -44,6 +44,7 @@ func (s *installsIntegrationTestSuite) SetupTest() {
 func (s *installsIntegrationTestSuite) TestCreateInstall() {
 	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 	fakeReq.AwsAccount.Region = "us-west-2"
+	fakeReq.Inputs = nil
 
 	s.T().Run("success", func(t *testing.T) {
 		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
@@ -55,6 +56,14 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 	s.T().Run("missing name", func(t *testing.T) {
 		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, &models.ServiceCreateInstallRequest{})
 		require.Error(t, err)
+		require.Nil(t, install)
+	})
+	s.T().Run("adding inputs", func(t *testing.T) {
+		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
+
+		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
+		require.Error(t, err)
+		require.True(t, nuon.IsBadRequest(err))
 		require.Nil(t, install)
 	})
 

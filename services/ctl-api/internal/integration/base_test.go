@@ -194,6 +194,8 @@ func (s *baseIntegrationTestSuite) createComponent(appID string) *models.AppComp
 func (s *baseIntegrationTestSuite) createInstall(appID string) *models.AppInstall {
 	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 	fakeReq.AwsAccount.Region = "us-west-2"
+	fakeReq.Inputs = nil
+
 	install, err := s.apiClient.CreateInstall(s.ctx, appID, fakeReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), install)
