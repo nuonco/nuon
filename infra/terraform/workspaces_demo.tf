@@ -18,32 +18,6 @@ resource "tfe_project" "demo" {
   organization = data.tfe_organization.main.name
 }
 
-module "quickstart" {
-  source = "./modules/workspace"
-
-  name          = "quickstart"
-  repo          = "nuonco/quickstart-test"
-  auto_apply    = true
-  dir           = "nuon"
-  variable_sets = ["aws-environment-credentials", "api-prod"]
-  project_id    = tfe_project.product.id
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-
-  // NOTE: we have to set the api token manually in the ui, so we don't leak it
-  env_vars = {
-    NUON_ORG_ID = local.prod.org_id
-  }
-
-  vars = {
-    example_app_repo     = "nuonco/quickstart-test"
-    install_count        = 1
-    install_region       = "us-west-2"
-    install_iam_role_arn = "arn:aws:iam::949309607565:role/e2e-prod-customer-iam-role"
-  }
-  trigger_workspaces = [module.infra-terraform.workspace_id]
-}
-
 module "customers-shared-stage" {
   source = "./modules/workspace"
 
@@ -88,31 +62,5 @@ module "customers-shared-prod" {
     // NOTE: we do not actually need to/want to create installs in prod.
     disable_installs = true
   }
-  trigger_workspaces = [module.infra-terraform.workspace_id]
-}
-
-module "electric_sql" {
-  source = "./modules/workspace"
-
-  name = "electric_sql"
-  repo = "nuonco-shared/electric-sql"
-  dir  = "nuon"
-
-  auto_apply    = true
-  variable_sets = ["aws-environment-credentials", "api-stage"]
-  project_id    = tfe_project.product.id
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-
-  // NOTE: we have to set the api token manually in the ui, so we don't leak it
-  env_vars = {
-    NUON_API_URL = local.stage.api_url
-  }
-
-  vars = {
-    sandbox_org_id = local.stage.sandbox_org_id
-    org_id         = local.stage.org_id
-  }
-
   trigger_workspaces = [module.infra-terraform.workspace_id]
 }
