@@ -58,22 +58,34 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.createOrg(ctx, user.Subject, &req)
+	org, err := s.createOrg(ctx, user, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org: %w", err))
 		return
 	}
 
-	s.hooks.Created(ctx, org.ID, org.SandboxMode)
+	s.hooks.Created(ctx, org.ID, org.OrgType)
 	ctx.JSON(http.StatusCreated, org)
 }
 
-func (s *service) createOrg(ctx context.Context, userID string, req *CreateOrgRequest) (*app.Org, error) {
+func (s *service) createOrg(ctx context.Context, user *app.UserToken, req *CreateOrgRequest) (*app.Org, error) {
+	orgTyp := app.OrgTypeReal
+	if req.UseSandboxMode {
+		orgTyp = app.OrgTypeSandbox
+	}
+	if user.TokenType == app.TokenTypeIntegration {
+		orgTyp = app.OrgTypeIntegration
+	}
+	if s.cfg.ForceSandboxMode {
+		orgTyp = app.OrgTypeSandbox
+	}
+
 	org := app.Org{
 		Name:              req.Name,
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start and provision org",
 		SandboxMode:       req.UseSandboxMode,
+		OrgType:           orgTyp,
 		CustomCert:        req.UseCustomCert,
 	}
 	if s.cfg.ForceSandboxMode {
@@ -85,7 +97,7 @@ func (s *service) createOrg(ctx context.Context, userID string, req *CreateOrgRe
 	}
 
 	userOrg := app.UserOrg{
-		UserID: userID,
+		UserID: user.Subject,
 		OrgID:  org.ID,
 	}
 	if err := s.db.WithContext(ctx).Create(&userOrg).Error; err != nil {

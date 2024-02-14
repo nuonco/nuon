@@ -4,13 +4,18 @@ import (
 	"context"
 
 	"github.com/powertoolsdev/mono/pkg/workflows"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/signals"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 )
 
-func (a *Hooks) startEventLoop(ctx context.Context, componentID string, sandboxMode bool) error {
+func (a *Hooks) startEventLoop(ctx context.Context, componentID string, orgType app.OrgType) error {
+	if orgType == app.OrgTypeIntegration {
+		return nil
+	}
+
 	workflowID := signals.EventLoopWorkflowID(componentID)
 	opts := tclient.StartWorkflowOptions{
 		ID:        workflowID,
@@ -25,7 +30,7 @@ func (a *Hooks) startEventLoop(ctx context.Context, componentID string, sandboxM
 
 	req := signals.ComponentEventLoopRequest{
 		ComponentID: componentID,
-		SandboxMode: sandboxMode,
+		SandboxMode: orgType == app.OrgTypeSandbox,
 	}
 	wkflowRun, err := a.client.ExecuteWorkflowInNamespace(ctx,
 		defaultNamespace,
@@ -45,8 +50,8 @@ func (a *Hooks) startEventLoop(ctx context.Context, componentID string, sandboxM
 	return nil
 }
 
-func (a *Hooks) Created(ctx context.Context, componentID string, sandboxMode bool) {
-	if err := a.startEventLoop(ctx, componentID, sandboxMode); err != nil {
+func (a *Hooks) Created(ctx context.Context, componentID string, orgType app.OrgType) {
+	if err := a.startEventLoop(ctx, componentID, orgType); err != nil {
 		a.l.Error("error starting event loop",
 			zap.String("component-id", componentID),
 			zap.Error(err),

@@ -56,6 +56,7 @@ func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.U
 	token := app.UserToken{
 		CreatedByID: canaryID,
 		Token:       domains.NewUserTokenID(),
+		TokenType:   app.TokenTypeCanary,
 		Subject:     canaryID,
 		ExpiresAt:   time.Now().Add(time.Hour),
 		IssuedAt:    time.Now(),

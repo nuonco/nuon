@@ -8,6 +8,14 @@ import (
 	"gorm.io/plugin/soft_delete"
 )
 
+type OrgType string
+
+const (
+	OrgTypeSandbox     OrgType = "sandbox"
+	OrgTypeReal        OrgType = "real"
+	OrgTypeIntegration OrgType = "integration"
+)
+
 type Org struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
@@ -23,6 +31,8 @@ type Org struct {
 	// NOTE: these are starting as nullable, so we can update stage/prod before resetting locally.
 	SandboxMode bool `json:"sandbox_mode" gorm:"notnull"`
 	CustomCert  bool `json:"custom_cert" gorm:"notnull"`
+
+	OrgType OrgType `json:"-"`
 
 	Apps           []App            `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	VCSConnections []VCSConnection  `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
