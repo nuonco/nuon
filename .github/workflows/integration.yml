@@ -115,9 +115,16 @@ jobs:
           setup_helm: "false"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      # NOTE(jm): the dns chain using twingate does not seem to work with the tests running in the image. This is most
+      # likely because netgo is being used (instead of cgo), to resolve the domain.
+      #
+      # We attempt to resolve it here, and pass in an actual IP address, to hopefully work around this.
+      - name: Resolve internal api
+        run: |
+          echo "INTERNAL_API_HOST=$(dig +short ctl.nuon.us-west-2.stage.nuon.cloud)" >> $GITHUB_ENV
+
       - name: Earthly test target
         working-directory: services/ctl-api
-        if: always()
         run: |
           earthly \
             --allow-privileged \
@@ -126,8 +133,7 @@ jobs:
             --remote-cache=ghcr.io/${{ github.repository }}-pkg:cache \
             +integration \
             --api_url=https://ctl.stage.nuon.co \
-            --internal_api_url=http://ctl.nuon.us-west-2.stage.nuon.cloud
-
+            --internal_api_url=http://${{ env.INTERNAL_API_HOST }}
   status_slack_notifications:
     name: update integration channel
     if: needs.merged_pr.outputs.integration == 'true' && always()
