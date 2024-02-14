@@ -18,7 +18,11 @@ type InstallInputs struct {
 	OrgID       string                `json:"org_id" gorm:"notnull;default null"`
 
 	InstallID string        `json:"install_id" gorm:"notnull;default null"`
+	Install   Install       `json:"-"`
 	Values    pgtype.Hstore `json:"values" gorm:"type:hstore" swaggertype:"object,string"`
+
+	AppInputConfigID string         `json:"app_input_config_id"`
+	AppInputConfig   AppInputConfig `json:"-"`
 }
 
 func (a *InstallInputs) BeforeCreate(tx *gorm.DB) error {

@@ -113,3 +113,16 @@ func fakeTerraformVariables(v reflect.Value) (interface{}, error) {
 		},
 	}, nil
 }
+
+func fakeInstallInputs(v reflect.Value) (interface{}, error) {
+	return []*InstallInput{
+		{
+			Name:  "nuon_test_input_1",
+			Value: "NUON_TEST_VALUE_1",
+		},
+		{
+			Name:  "nuon_test_input_2",
+			Value: "NUON_TEST_VALUE_2",
+		},
+	}, nil
+}

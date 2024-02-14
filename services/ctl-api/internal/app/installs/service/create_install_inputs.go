@@ -9,10 +9,11 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 type CreateInstallInputsRequest struct {
-	Inputs map[string]*string `json:"inputs" validate:"required"`
+	Inputs map[string]*string `json:"inputs" validate:"required,gte=1"`
 }
 
 func (c *CreateInstallInputsRequest) Validate(v *validator.Validate) error {
@@ -58,12 +59,19 @@ func (s *service) CreateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
+	if len(install.App.AppInputConfigs) < 1 {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("no app input configs defined on app"),
+			Description: "no app input configs defined",
+		})
+		return
+	}
 	if err := s.helpers.ValidateInstallInputs(ctx, install.AppID, req.Inputs); err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	inputs, err := s.createInstallInputs(ctx, installID, req.Inputs)
+	inputs, err := s.createInstallInputs(ctx, install, req.Inputs)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
@@ -73,10 +81,11 @@ func (s *service) CreateInstallInputs(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, inputs)
 }
 
-func (s *service) createInstallInputs(ctx context.Context, installID string, inputs map[string]*string) (*app.InstallInputs, error) {
+func (s *service) createInstallInputs(ctx context.Context, install *app.Install, inputs map[string]*string) (*app.InstallInputs, error) {
 	obj := &app.InstallInputs{
-		InstallID: installID,
-		Values:    pgtype.Hstore(inputs),
+		AppInputConfigID: install.App.AppInputConfigs[0].ID,
+		InstallID:        install.ID,
+		Values:           pgtype.Hstore(inputs),
 	}
 	res := s.db.WithContext(ctx).Create(&obj)
 	if res.Error != nil {

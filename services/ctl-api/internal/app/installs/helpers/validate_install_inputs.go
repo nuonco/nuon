@@ -22,6 +22,13 @@ func (s *Helpers) ValidateInstallInputs(ctx context.Context, appID string, input
 	}
 
 	if len(parentApp.AppInputConfigs) < 1 {
+		if len(inputs) > 0 {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("invalid install inputs provided"),
+				Description: "inputs provided on install, that are not defined on the app",
+			}
+		}
+
 		return nil
 	}
 

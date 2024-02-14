@@ -59,11 +59,7 @@ func (s *componentsSuite) TestCreateComponent() {
 	})
 
 	s.T().Run("creates install components for prexisting installs", func(t *testing.T) {
-		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
-		fakeReq.AwsAccount.Region = "us-west-2"
-		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
-		require.Nil(t, err)
-		require.NotNil(t, install)
+		install := s.createInstall(s.appID)
 
 		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
 		compReq.Name = generics.ToPtr(s.formatInterpolatedString(*compReq.Name))
