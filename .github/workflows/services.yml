@@ -96,18 +96,6 @@ jobs:
       tag: ${{ needs.tag.outputs.git_ref }}
     secrets: inherit
 
-  # this is added here so that on main, we can listen for this workflow to be finished.
-  finished:
-    name: services-finished
-    if: always()
-    needs:
-      - services
-    runs-on: ubuntu-latest
-    steps:
-      - name: NOOP
-        run: |
-          echo "noop"
-
   update_status:
     name: update status
     if: github.event_name == 'pull_request' && always()
