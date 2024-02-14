@@ -35,11 +35,6 @@ integration:
     ENV INTEGRATION=true
     ENV INTEGRATION_API_URL=$api_url
     ENV INTEGRATION_INTERNAL_API_URL=$internal_api_url
-    ENV CGO_ENABLED=1
-
-    # NOTE(jm): twingate occasionally times out and fails to lookup the first record. It's unclear which dns resolver is
-    # being used, and this will print that resolve stack, hopefully revealing something.
-    ENV GODEBUG=netdns=cgo
 
     WORKDIR internal/integration
     RUN go test -count=1 -parallel=1 -v -run TestAppsSuite
