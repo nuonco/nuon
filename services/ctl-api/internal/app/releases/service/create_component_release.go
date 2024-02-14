@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 type CreateComponentReleaseRequest struct {
@@ -95,7 +96,10 @@ func (s *service) createReleaseSteps(installs []app.Install, req *CreateComponen
 
 		delay, err := time.ParseDuration(req.Strategy.Delay)
 		if err != nil {
-			return nil, fmt.Errorf("invalid delay for component release: %w", err)
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("invalid delay for component release: %w", err),
+				Description: "please use a valid go time duration string, such as 1m",
+			}
 		}
 		step.Delay = generics.ToPtr(delay.String())
 		steps = append(steps, step)
