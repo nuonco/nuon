@@ -7,10 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
-// @ID InstallerGetInstall
-// @Summary	get an installer install
+// @ID GetInstallerInstall
+// @Summary	render an installer install
 // @Description.markdown	get_installer_install.md
 // @Tags installers
 // @Accept			json
@@ -40,6 +41,11 @@ func (s *service) findInstall(ctx context.Context, installID string) (*app.Insta
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("AWSAccount").
+		Preload("AppSandboxConfig").
+		Preload("AppRunnerConfig").
+		Preload("InstallInputs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_inputs.created_at DESC")
+		}).
 		Preload("App").
 		Preload("App.Org").
 		First(&install, "id = ?", installID)
