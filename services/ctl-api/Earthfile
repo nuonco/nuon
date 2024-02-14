@@ -39,7 +39,7 @@ integration:
 
     # NOTE(jm): twingate occasionally times out and fails to lookup the first record. It's unclear which dns resolver is
     # being used, and this will print that resolve stack, hopefully revealing something.
-    ENV GODEBUG=netdns=2
+    ENV GODEBUG=netdns=cgo
 
     WORKDIR internal/integration
     RUN go test -count=1 -parallel=1 -v -run TestAppsSuite
