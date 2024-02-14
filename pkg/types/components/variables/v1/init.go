@@ -11,4 +11,5 @@ func init() {
 	_ = faker.AddProvider("terraformVariables", fakeTerraformVariables)
 	_ = faker.AddProvider("waypointVariables", fakeWaypointVariables)
 	_ = faker.AddProvider("intermediateData", fakeIntermediateData)
+	_ = faker.AddProvider("installInputs", fakeInstallInputs)
 }
