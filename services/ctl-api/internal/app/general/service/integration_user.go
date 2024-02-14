@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultIntegrationAPITokenTimeout time.Duration = time.Minute
+	defaultIntegrationAPITokenTimeout time.Duration = time.Minute * 10
 )
 
 type CreateIntegrationUserRequest struct{}
