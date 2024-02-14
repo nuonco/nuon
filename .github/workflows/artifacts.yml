@@ -76,6 +76,18 @@ jobs:
       is_promotion: false
     secrets: inherit
 
+  # this is added here so that on main, we can listen for this workflow to be finished.
+  finished:
+    name: artifacts-finished
+    if: always()
+    needs:
+      - services
+    runs-on: ubuntu-latest
+    steps:
+      - name: NOOP
+        run: |
+          echo "noop"
+
   update_status:
     name: update status
     if: github.event_name == 'pull_request' && always()
