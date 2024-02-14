@@ -19,6 +19,7 @@ type AppInput struct {
 	AppInputConfigID string `json:"app_input_id" gorm:"notnull; default null"`
 
 	Name        string `json:"name" gorm:"not null;default null"`
+	DisplayName string `json:"display_name"`
 	Description string `json:"description" gorm:"not null; default null"`
 	Default     string `json:"default"`
 	Required    bool   `json:"required"`
