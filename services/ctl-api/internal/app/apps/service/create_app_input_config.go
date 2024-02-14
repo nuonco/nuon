@@ -13,6 +13,7 @@ import (
 )
 
 type AppInputRequest struct {
+	DisplayName string `json:"display_name" validate:"required"`
 	Description string `json:"description" validate:"required"`
 	Default     string `json:"default"`
 	Required    bool   `json:"required"`
@@ -86,6 +87,7 @@ func (s *service) createAppInputs(ctx context.Context, orgID, appID string, req 
 		appInputs = append(appInputs, app.AppInput{
 			Name:        name,
 			Description: input.Description,
+			DisplayName: input.DisplayName,
 			Required:    input.Required,
 			Default:     input.Default,
 		})

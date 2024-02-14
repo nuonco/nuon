@@ -10,4 +10,11 @@ resource "nuon_app_installer" "main" {
   github_url = "https://github.com/nuonco"
   logo_url = "https://fakeimg.pl/250x100/"
   demo_url = "https://www.loom.com/share/aec62b468f9747c59ed5c30c79d473c4"
+
+  post_install_markdown = <<EOT
+  # Install Post
+
+  Your install with id {{.install.id}}.
+
+  EOT
 }

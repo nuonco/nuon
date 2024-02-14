@@ -8,6 +8,7 @@ resource "nuon_app_input" "main" {
       description = input.value.description
       default     = input.value.default
       required    = input.value.required
+      display_name = input.value.name
     }
   }
 }

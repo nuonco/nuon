@@ -20,6 +20,8 @@ type AppInstallerMetadata struct {
 	Name        string `json:"name" gorm:"notnull"`
 	Description string `json:"description" gorm:"notnull"`
 
+	PostInstallMarkdown string `json:"post_install_markdown"`
+
 	DocumentationURL string `json:"documentation_url" gorm:"notnull"`
 	LogoURL          string `json:"logo_url" gorm:"notnull"`
 	GithubURL        string `json:"github_url" gorm:"notnull"`

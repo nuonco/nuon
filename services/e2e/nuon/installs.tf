@@ -7,7 +7,7 @@ resource "nuon_install" "eu_west_2" {
   iam_role_arn = var.install_role_arn
 
   dynamic "input" {
-    for_each = var.install_inputs
+    for_each = var.inputs
     content {
       name  = input.value.name
       value = input.value.value
@@ -31,7 +31,7 @@ resource "nuon_install" "east_1" {
   iam_role_arn = var.install_role_arn
 
   dynamic "input" {
-    for_each = var.install_inputs
+    for_each = var.inputs
     content {
       name  = input.value.name
       value = input.value.value
@@ -55,7 +55,7 @@ resource "nuon_install" "east_2" {
   iam_role_arn = var.install_role_arn
 
   dynamic "input" {
-    for_each = var.install_inputs
+    for_each = var.inputs
     content {
       name  = input.value.name
       value = input.value.value
@@ -79,7 +79,7 @@ resource "nuon_install" "west_2" {
   iam_role_arn = var.install_role_arn
 
   dynamic "input" {
-    for_each = var.install_inputs
+    for_each = var.inputs
     content {
       name  = input.value.name
       value = input.value.value

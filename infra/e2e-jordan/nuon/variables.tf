@@ -52,6 +52,7 @@ variable "install_inputs" {
     required      = bool
     value         = string
     interpolation = string
+    display_name = string
   }))
   description = "Inputs that will be interpolated per install."
 
@@ -64,6 +65,7 @@ variable "install_inputs" {
       required      = true
       value         = "v1.27.8"
       interpolation = "{{.nuon.install.inputs.eks_version}}"
+      display_name = "EKS Version"
     },
     {
       name          = "admin_access_role_arn"
@@ -72,6 +74,7 @@ variable "install_inputs" {
       required      = false
       value         = "arn:aws:iam::676549690856:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_NuonAdmin_b8aea3365312317b"
       interpolation = "{{.nuon.install.inputs.admin_access_role_arn"
+      display_name = "Adming Access Role ARN"
     },
   ]
 }

@@ -9,7 +9,7 @@ resource "nuon_app_sandbox" "main" {
   }
 
   dynamic "var" {
-    for_each = var.install_inputs
+    for_each = var.inputs
     content {
       name  = var.value.name
       value = var.value.interpolation

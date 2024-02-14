@@ -14,5 +14,4 @@ module "aws-ecs" {
   west_2_count = 0
 
   install_role_arn = module.ecs_access.iam_role_arn
-  install_inputs = []
 }

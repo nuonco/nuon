@@ -50,7 +50,7 @@ variable "sandbox_branch" {
   default     = "main"
 }
 
-variable "install_inputs" {
+variable "inputs" {
   type = list(object({
     name          = string
     description   = string
@@ -58,13 +58,14 @@ variable "install_inputs" {
     required      = bool
     value         = string
     interpolation = string
+    display_name = string
   }))
-  description = "Inputs that will be interpolated per install."
+  description = "Inputs that will be used for app inputs, and then set on each install"
 
-  # The previously hard-coded install inputs. We'll need to update all callers of this module to remove this.
   default = [
     {
       name          = "eks_version"
+      display_name = "EKS Version"
       description   = "Version of k8s to use with EKS."
       default       = ""
       required      = true
@@ -73,6 +74,7 @@ variable "install_inputs" {
     },
     {
       name          = "admin_access_role_arn"
+      display_name = "Admin Access Role ARN"
       description   = "The IAM role that provides access to manage the install."
       default       = "default"
       required      = false
