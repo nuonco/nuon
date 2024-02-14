@@ -72,7 +72,7 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Created(ctx, component.ID, org.SandboxMode)
+	s.hooks.Created(ctx, component.ID, org.OrgType)
 	ctx.JSON(http.StatusCreated, component)
 }
 
