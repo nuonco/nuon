@@ -18,7 +18,8 @@ type AppInputConfig struct {
 	OrgID string `json:"org_id" gorm:"notnull;default null"`
 	AppID string `json:"app_id"`
 
-	AppInputs []AppInput `json:"app_inputs" gorm:"constraint:OnDelete:CASCADE;"`
+	AppInputs     []AppInput      `json:"app_inputs" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallInputs []InstallInputs `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE"`
 }
 
 func (a *AppInputConfig) BeforeCreate(tx *gorm.DB) error {

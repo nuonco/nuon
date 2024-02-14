@@ -49,6 +49,7 @@ func (s *service) createIntegrationUser(ctx context.Context) (*app.UserToken, er
 	token := app.UserToken{
 		CreatedByID: intID,
 		Token:       domains.NewUserTokenID(),
+		TokenType:   app.TokenTypeIntegration,
 		Subject:     intID,
 		ExpiresAt:   time.Now().Add(defaultIntegrationAPITokenTimeout),
 		IssuedAt:    time.Now(),
