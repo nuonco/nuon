@@ -25,7 +25,7 @@ import { tutorials } from '/snippets/guides.mdx';
 ## Docs
 
 <CardGroup cols={2}>
-  <Card title="Get Started" icon="code" href="/quickstart">
+  <Card title="Get Started" icon="code" href="/get-started/quickstart">
     Learn how to create different BYOC apps.
   </Card>
 
@@ -40,16 +40,4 @@ import { tutorials } from '/snippets/guides.mdx';
   <Card title="Support" icon="headset" href="/support">
     The fastest way to get help with the Nuon platform is via our community slack, or by directly booking a call.
   </Card>
-</CardGroup>
-
-## Tutorials
-
-Learn how to create a BYOC app using different platforms.
-
-<CardGroup>
-    {tutorials.map((tut, key) => (
-        <Card key={key} title={tut.title} icon={tut.icon} href={tut.href}>
-            {tut.description}
-        </Card>
-    ))}
 </CardGroup>
