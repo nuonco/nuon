@@ -3,7 +3,15 @@ output "canary_slack_webhooks_url" {
 }
 
 output "canary_install_iam_role_arn" {
-  value = module.install_access.iam_role_arn
+  value = module.eks_access.iam_role_arn
+}
+
+output "canary_eks_iam_role_arn" {
+  value = module.eks_access.iam_role_arn
+}
+
+output "canary_ecs_iam_role_arn" {
+  value = module.ecs_access.iam_role_arn
 }
 
 output "api_url" {
