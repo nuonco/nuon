@@ -54,7 +54,7 @@ func (w *Workflows) execDeprovisionWorkflow(
 
 	cwo := workflow.ChildWorkflowOptions{
 		TaskQueue:                workflows.DefaultTaskQueue,
-		WorkflowID:               fmt.Sprintf("%s-provision", req.AppId),
+		WorkflowID:               fmt.Sprintf("%s-deprovision", req.AppId),
 		WorkflowExecutionTimeout: time.Minute * 20,
 		WorkflowTaskTimeout:      time.Minute * 10,
 		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
