@@ -6,6 +6,7 @@ import (
 
 	componentsv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 type GetComponentConfigRequest struct {
@@ -18,6 +19,11 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetComponentCon
 	dep := app.InstallDeploy{}
 	res := a.db.WithContext(ctx).
 		Preload("InstallComponent.Install").
+		Preload("InstallComponent.Install.InstallInputs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_inputs.created_at DESC")
+		}).
+		Preload("InstallComponent.Install.InstallInputs.AppInputConfig").
+		Preload("InstallComponent.Install.InstallInputs.AppInputConfig.AppInputs").
 		Preload("InstallComponent.Install.App").
 		Preload("InstallComponent.Install.App.Org").
 
