@@ -1,8 +1,17 @@
 package migrations
 
-import "context"
+import (
+	"context"
+
+	"github.com/powertoolsdev/mono/pkg/config"
+)
 
 func (a *Migrations) migration016InputCascades(ctx context.Context) error {
+	// This field was removed locally
+	if a.cfg.Env == config.Development {
+		return nil
+	}
+
 	sql := `
 ALTER TABLE install_inputs DROP CONSTRAINT IF EXISTS fk_install_inputs_app_input_config;
 ALTER TABLE install_inputs ADD CONSTRAINT fk_install_inputs_app_input_config
