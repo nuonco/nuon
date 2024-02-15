@@ -1,0 +1,62 @@
+---
+title: 'Quickstart'
+description: "Get up and running with Nuon in a few minutes."
+---
+
+import { tutorials } from '/snippets/guides.mdx';
+
+This guide will walk you through setting up an organization, configuring an application, and deploying to an install. Once you've completed it, you will be ready to configure and deploy your own app.
+
+## Install the CLI
+
+Refer to [cli installation](./cli.mdx) to install the CLI before proceeding.
+
+## Create an Account
+
+Once you've installed the Nuon CLI, create a Nuon account by logging in.
+
+```sh
+nuon login
+```
+
+Follow the prompts in the browser and login using a Google account. Once you've logged in you can verify your API token with the `nuon orgs api-token` command. You should also now have a config file at `~/.nuon`. Values saved to this file will be used as CLI flag defaults.
+
+## Create an Organization
+
+Now that you're logged in you can create your first organization in sandbox mode.
+
+<CodeGroup>
+```sh create org
+nuon orgs create --name {your-org-name} --sandbox-mode
+```
+
+```sh view org
+nuon orgs current
+```
+</CodeGroup>
+
+## Connect your GitHub Account
+
+To deploy code from private repos you'll need to connect to your GitHub account or organization.
+
+<CodeGroup>
+```sh connect
+nuon orgs connect-github
+```
+
+```sh list repos
+nuon orgs list-connected-repos
+```
+</CodeGroup>
+
+## Create an App
+
+Now that you're set up, the next step is to configure and deploy an app. We have tutorials for the most popular architectures and platforms.
+
+<CardGroup>
+    {tutorials.map((tut, key) => (
+        <Card key={key} title={tut.title} icon={tut.icon} href={tut.href}>
+            {tut.description}
+        </Card>
+    ))}
+</CardGroup>
