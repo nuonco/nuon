@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.34
+
+Updating with bug fixes and cli improvements.
+
 ## v0.19.29
 
 Ignore apps-deprovision waypoint project errors (in case org is down).
