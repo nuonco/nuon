@@ -42,25 +42,10 @@ jobs:
         if: contains( steps.merged_pr.outputs.labels, 'integration')
         run: echo "integration=true" >> "$GITHUB_OUTPUT"
 
-  wait_on_statuses:
-    name: wait on statuses
-    if: ${{ needs.merged_pr.outputs.integration == 'true' }}
-    needs:
-      - merged_pr
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Wait for status checks'
-        uses: "WyriHaximus/github-action-wait-for-status@v1.8"
-        with:
-          checkInterval: 13
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
   terraform:
     name: Get terraform outputs
     uses: ./.github/workflows/terraform_outputs.yml
     needs:
-      - wait_on_statuses
       - merged_pr
     secrets: inherit
     if: ${{ needs.merged_pr.outputs.integration == 'true' }}
@@ -75,7 +60,6 @@ jobs:
     if: ${{ needs.merged_pr.outputs.integration == 'true' }}
     needs:
       - merged_pr
-      - wait_on_statuses
       - terraform
     permissions:
       contents: read

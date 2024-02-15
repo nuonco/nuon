@@ -22,6 +22,9 @@ type Config struct {
 	Env         config.Env `config:"env" validate:"required"`
 	ServiceName string     `config:"service_name" validate:"required"`
 
+	GitRef  string `config:"git_ref" validate:"required"`
+	Version string `config:"version" validate:"required"`
+
 	// temporal configuration
 	TemporalHost                    string `config:"temporal_host" validate:"required"`
 	TemporalNamespace               string `config:"temporal_namespace" validate:"required"`
