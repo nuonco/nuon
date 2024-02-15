@@ -43,7 +43,7 @@ func (s *service) findInstall(ctx context.Context, installID string) (*app.Insta
 		Preload("AWSAccount").
 		Preload("AppSandboxConfig").
 		Preload("AppRunnerConfig").
-		Preload("InstallInputs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
+		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_inputs.created_at DESC")
 		}).
 		Preload("App").
