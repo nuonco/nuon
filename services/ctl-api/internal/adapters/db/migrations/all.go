@@ -85,5 +85,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "019-org-and-user-types-required",
 			Fn:   a.migration019OrgAndUserTypesNotNullable,
 		},
+		{
+			Name: "020-install-component-cascades",
+			Fn:   a.migration020InstallComponentCascades,
+		},
 	}
 }
