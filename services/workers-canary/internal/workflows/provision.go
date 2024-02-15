@@ -34,11 +34,13 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 
 	canaryID, err := w.getCanaryID(ctx, req)
 	if err != nil {
+		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:get_canary_id")
 		return nil, fmt.Errorf("unable to get canary ID: %w", err)
 	}
 	req.CanaryId = canaryID
 
 	if err := req.Validate(); err != nil {
+		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:validate_request")
 		return nil, err
 	}
 
@@ -68,6 +70,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	}
 
 	w.sendNotification(ctx, notificationTypeCanarySuccess, req.CanaryId, req.SandboxMode, nil)
+	w.metricsWriter.Incr(ctx, "provision", 1, "status:ok")
 	return &canaryv1.ProvisionResponse{
 		CanaryId: req.CanaryId,
 		OrgId:    orgID,

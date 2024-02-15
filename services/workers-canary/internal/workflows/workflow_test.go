@@ -26,7 +26,7 @@ func TestProvision(t *testing.T) {
 	v := validator.New()
 	cfg := generics.GetFakeObj[workers.Config]()
 
-	wkflow, err := New(v, cfg)
+	wkflow, err := New(v, cfg, nil)
 	assert.NoError(t, err)
 
 	req := generics.GetFakeObj[*canaryv1.ProvisionRequest]()

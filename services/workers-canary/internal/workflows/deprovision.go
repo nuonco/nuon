@@ -20,5 +20,7 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 		w.sendNotification(ctx, notificationTypeDeprovisionError, req.CanaryId, req.SandboxMode, err)
 		return nil, err
 	}
+
+	w.metricsWriter.Incr(ctx, "deprovision", 1, "status:ok")
 	return resp, nil
 }

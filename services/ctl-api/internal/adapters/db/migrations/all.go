@@ -81,13 +81,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "018-add-user-types",
 			Fn:   a.migration018AddUserTypes,
 		},
-
-		// NOTE(jm): due to the number of undeleted orgs + all the children, we need to run delete manually in
-		// stage/prod to remove all soft-deleted orgs.
-		// Once that is done, we can re-run this
-		//{
-		//Name: "019-org-and-user-types-required",
-		//Fn:	a.migration019OrgAndUserTypesNotNullable,
-		//},
+		{
+			Name: "019-org-and-user-types-required",
+			Fn:   a.migration019OrgAndUserTypesNotNullable,
+		},
 	}
 }

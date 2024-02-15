@@ -16,6 +16,7 @@ func (w *wkflow) execTests(ctx workflow.Context,
 ) error {
 	var testsResp activities.ListTestsResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.ListTests, &activities.ListTestsRequest{}, &testsResp); err != nil {
+		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:list_tests")
 		return fmt.Errorf("unable to list tests: %w", err)
 	}
 
@@ -39,6 +40,7 @@ func (w *wkflow) execTests(ctx workflow.Context,
 
 		var testResp activities.ExecTestScriptResponse
 		if err := w.defaultExecTestActivity(ctx, w.acts.ExecTestScript, req, &testResp); err != nil {
+			w.metricsWriter.Incr(ctx, "provision", 1, "status:error", fmt.Sprintf("step:execute_test_%d", idx))
 			return fmt.Errorf("unable to execute test: %w", err)
 		}
 	}

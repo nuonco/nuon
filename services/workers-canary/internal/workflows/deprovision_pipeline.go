@@ -14,6 +14,7 @@ func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.Deprovision
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateUser, &activities.CreateUserRequest{
 		CanaryID: req.CanaryId,
 	}, &userResp); err != nil {
+		w.metricsWriter.Incr(ctx, "deprovision", 1, "status:error", "step:create_user")
 		return fmt.Errorf("unable to create user: %w", err)
 	}
 
@@ -21,6 +22,7 @@ func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.Deprovision
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetOrg, &activities.GetOrgRequest{
 		CanaryID: req.CanaryId,
 	}, &getOrgResponse); err != nil {
+		w.metricsWriter.Incr(ctx, "deprovision", 1, "status:error", "step:get_org")
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
@@ -31,6 +33,7 @@ func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.Deprovision
 		OrgID:    getOrgResponse.OrgID,
 		APIToken: userResp.APIToken,
 	}, &runResp, 3); err != nil {
+		w.metricsWriter.Incr(ctx, "deprovision", 1, "status:error", "step:terraform_destroy")
 		w.l.Info("error running terraform destroy", zap.Error(err))
 	}
 	w.l.Info("run terraform", zap.Any("response", runResp))
@@ -40,6 +43,7 @@ func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.Deprovision
 		CanaryID: req.CanaryId,
 		OrgID:    getOrgResponse.OrgID,
 	}, &orgResp); err != nil {
+		w.metricsWriter.Incr(ctx, "deprovision", 1, "status:error", "step:delete_org")
 		return fmt.Errorf("unable to delete org: %w", err)
 	}
 	w.l.Info("deleted org", zap.Any("response", orgResp))

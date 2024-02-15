@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/config"
+	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	sharedactivities "github.com/powertoolsdev/mono/pkg/workflows/activities"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-canary/internal"
@@ -36,7 +37,16 @@ func runAll(cmd *cobra.Command, _ []string) {
 	}
 
 	v := validator.New()
-	wkflow, err := workflows.New(v, cfg)
+	tmetricsWriter, err := tmetrics.New(v, tmetrics.WithTags(map[string]string{
+		"git_ref":   cfg.GitRef,
+		"service":   cfg.ServiceName,
+		"namespace": cfg.TemporalNamespace,
+	}))
+	if err != nil {
+		log.Fatalf("unable to create new temporal metrics writer: %s", err.Error())
+	}
+
+	wkflow, err := workflows.New(v, cfg, tmetricsWriter)
 	if err != nil {
 		log.Fatalf("unable to create workflows: %s", err.Error())
 	}
