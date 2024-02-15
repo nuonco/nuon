@@ -6,7 +6,7 @@ icon: 'aws'
 
 This guide walks you through creating a BYOC application using AWS ECS, and deploying it to an install. At the end of this tutorial, you should know how to create a new BYOC deployment offering with your existing application.
 
-Here's an overview of the application you will deploy to your AWS account during this tutorial.
+You will deploy an API service to ECS Fargate, and expose it to the internet with an ALB. The API will present info about the install it is running in, allowing you to inspect it and verify that everything is working.
 
 ![ECS Service Architecture Diagram](/images/guides/aws-ecs-app-tutorial.jpg)
 
@@ -14,17 +14,7 @@ Here's an overview of the application you will deploy to your AWS account during
 
 ### Create an Account
 
-Install the [Nuon CLI](/cli), and sign up for an account.
-
-```sh sign up
-nuon login
-```
-
-Create an organization.
-
-```sh create org
-nuon orgs create
-```
+Install the CLI, sign up for an account, and create an org. If you haven't done this yet, refer to our [Quickstart](/get-started/quickstart).
 
 ### Install Terraform
 
@@ -36,11 +26,11 @@ Since this guide uses the Nuon Terraform provider, [install Terraform](https://d
 
 ## Configure App
 
-For this guide, you will deploy an API service to ECS Fargate, and expose it to the internet with an ALB. The API will present info about the install it is running in, allowing you to inspect it and verify that everything is working.
-
 In each section below, we will provide you with Terraform you can copy to manage your Nuon app config. Before that, you will need to set up the Terraform project itself. Copy the code below into files with the indicated names.
 
+<Note>
 All the configuration and component code used in this guide can be found in our [Guides repo](https://github.com/nuonco/guides/tree/main/create-an-aws-ecs-byoc-app).
+</Note>
 
 <CodeGroup>
 ```sh versions.tf
@@ -70,7 +60,7 @@ Then run `terraform init`.
 
 ### Setup App
 
-First, define the app itself and give it a name.
+Define the app itself and give it a name.
 
 ```hcl app.tf
 resource "nuon_app" "my_ecs_app" {
@@ -99,7 +89,7 @@ resource "nuon_app_installer" "my_ecs_app" {
 
 ### Sandbox
 
-Use our turnkey ECS sandbox. It will provide provide everything you need to run ECS services, from the ECS Fargate cluster to the VPC.
+Use our turnkey ECS sandbox. It will provide provide everything you need to run ECS services, from the ECS Fargate cluster down to the VPC.
 
 ```hcl sandbox.tf
 resource "nuon_app_sandbox" "main" {
@@ -136,7 +126,7 @@ You now have a complete Nuon app config. This is a good place to stop and sync i
 terraform apply
 ```
 
-Once the config is synced, you should be able to select it using the CLI.
+Once the config is synced, you should be able to select the newly-created app using the CLI.
 
 ```sh
 nuon apps select
@@ -146,15 +136,15 @@ All subsequent commands will be run in the context of the new app.
 
 ## Connect Components
 
-This app consists of two components: one to build the Docker image, and another to provision the ECS service. The source code for both is available in [our guides repo](https://github.com/nuonco/guides/tree/main/create-an-aws-ecs-byoc-app) if you would like more details.
+This app consists of two components: one to build the Docker image, and another to provision the ECS service.
 
 ### Docker Image
 
 This is a [Docker build component](/configure/docker-build-components) that will build the API and create a Docker image containing it. When released, it will sync the image to each install's ECR so ECS can pull it when creating tasks.
 
-<Note>
+<Tip>
 Do you still need a Docker build component if you have a pre-built Docker image? Technically, no. But, ECS Fargate does not cache images, and will pull from the remote source every time it starts a task. In such cases, we recommend using a [Container Image component](/configure/container-image-components).
-</Note>
+</Tip>
 
 ```hcl docker_image.tf
 resource "nuon_docker_build_component" "docker_image" {
@@ -253,7 +243,7 @@ Run `terraform apply` again to sync the component configs to Nuon. Just like the
 nuon components list
 ```
 
-Initial buids for each components will also have been created. Verify with the CLI that they were successful.
+Initial buids for each component will also have been created. Verify with the CLI that they were successful.
 
 <CodeGroup>
 ```sh verify docker_image build
@@ -265,11 +255,9 @@ nuon builds list -c ecs_service
 ```
 </CodeGroup>
 
-When an install is provisioned, it will check to see if there are any builds available. If there are, it will automatically create deploys to update itself.
-
 ## Create an Install
 
-Creating an install requires two steps, granting access to the AWS acount via an IAM role, and then provisioning the sandbox to that account.
+Creating an install requires two steps: granting access to the AWS acount via an IAM role, and then provisioning the sandbox to that account.
 
 ### Create an IAM Role
 

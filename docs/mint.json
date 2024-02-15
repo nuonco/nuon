@@ -12,8 +12,8 @@
         "dark": "#4E17FF",
         "light": "#08a5fd",
         "anchors": {
-            "from": "#0D9373",
-            "to": "#07C983"
+            "from": "#4E17FF",
+            "to": "#08a5fd"
         }
     },
     "topbarCtaButton": {
@@ -22,12 +22,16 @@
     },
     "tabs": [
         {
+            "name": "API Reference",
+            "url": "api-ref"
+        },
+        {
             "name": "Guides",
             "url": "guides"
         },
         {
-            "name": "API Reference",
-            "url": "api-ref"
+            "name": "Support",
+            "url": "support"
         },
         {
             "name": "Changelog",
@@ -36,14 +40,9 @@
     ],
     "anchors": [
         {
-            "name": "Community",
-            "icon": "slack",
-            "url": "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-        },
-        {
-            "name": "Changelog",
-            "icon": "building",
-            "url": "changelog"
+            "name": "Github",
+            "icon": "github",
+            "url": "https://github.com/nuonco"
         },
         {
             "name": "Blog",
@@ -51,26 +50,20 @@
             "url": "https://www.nuon.co/blog"
         },
         {
-            "name": "Support",
-            "icon": "headset",
-            "url": "https://docs.nuon.co/support"
+            "name": "Community",
+            "icon": "slack",
+            "url": "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
         }
     ],
     "navigation": [
         {
-            "group": "",
-            "pages": [
-                "home"
-            ]
-        },
-        {
             "group": "Get Started",
             "pages": [
-                "quickstart",
-                "what-is-nuon",
-                "why-nuon",
-                "why-byoc",
-                "glossary"
+                "get-started/introduction",
+                "get-started/quickstart",
+                "get-started/concepts",
+                "get-started/why-nuon",
+                "get-started/why-byoc"
             ]
         },
         {
@@ -78,25 +71,7 @@
             "pages": [
                 "cli",
                 "terraform-provider",
-                "sdks",
-                "api-ref"
-            ]
-        },
-        {
-            "group": "Configuration",
-            "pages": [
-                "configure/apps",
-                "configure/supported-platforms",
-                "configure/sandboxes",
-                "configure/runners",
-                "configure/app-inputs",
-                "configure/docker-build-components",
-                "configure/container-image-components",
-                "configure/terraform-components",
-                "configure/helm-chart-components",
-                "configure/job-components",
-                "configure/component-dependencies",
-                "configure/configuration-management"
+                "sdks"
             ]
         },
         {
@@ -106,9 +81,26 @@
             ]
         },
         {
+            "group": "Configuration",
+            "pages": [
+                "guides/apps",
+                "guides/supported-platforms",
+                "guides/sandboxes",
+                "guides/runners",
+                "guides/app-inputs",
+                "guides/docker-build-components",
+                "guides/container-image-components",
+                "guides/terraform-components",
+                "guides/helm-chart-components",
+                "guides/job-components",
+                "guides/component-dependencies",
+                "guides/configuration-management"
+            ]
+        },
+        {
             "group": "Tutorials",
             "pages": [
-                "guides/aws-ecs-app-tutorial"
+                "tutorials/aws-ecs-app-tutorial"
             ]
         },
         {
@@ -134,7 +126,7 @@
             ]
         },
         {
-            "group": "Get Started",
+            "group": "",
             "pages": [
                 "api-ref/getting-started"
             ]
@@ -147,6 +139,15 @@
                 "changelog/003-ecs-support",
                 "changelog/002-auto-deploys-and-dependencies",
                 "changelog/001-new-year-new-docs"
+            ]
+        },
+        {
+            "group": "",
+            "pages": [
+                "support/support",
+                "support/faq",
+                "support/status",
+                "support/compliance"
             ]
         },
         {
@@ -267,7 +268,6 @@
     "footerSocials": {
         "website": "https://www.nuon.co",
         "twitter": "https://twitter.com/nuoninc",
-        "github": "https://github.com/nuonco",
         "linkedin": "https://www.linkedin.com/company/nuonco/"
     },
     "redirects": [
