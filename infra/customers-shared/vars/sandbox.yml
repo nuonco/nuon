@@ -69,7 +69,7 @@ apps:
         region: us-west-2
         iam_role_arn: iam-role-arn
     installer:
-      slug: honeyhive
+      slug: honeyhive-nuon-demo
       description: Open Source Feature Management
       name: Honeyhive
     urls:
@@ -84,7 +84,7 @@ apps:
     sandbox_install_inputs: {}
     install_inputs: []
     installer:
-      slug: electric-sql
+      slug: electric-sql-nuon-demo
       description: Build reactive, realtime, local-first apps directly on Postgres.
       name: Electric SQL
     urls:
