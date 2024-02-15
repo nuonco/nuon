@@ -14,7 +14,7 @@ type DeleteRequest struct {
 }
 
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
-	res := a.db.WithContext(ctx).Delete(&app.Component{
+	res := a.db.WithContext(ctx).Unscoped().Delete(&app.Component{
 		ID: req.ComponentID,
 	})
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
