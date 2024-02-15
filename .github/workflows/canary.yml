@@ -42,25 +42,10 @@ jobs:
         if: contains( steps.merged_pr.outputs.labels, 'canary')
         run: echo "canary=true" >> "$GITHUB_OUTPUT"
 
-  wait_on_statuses:
-    name: wait on statuses
-    if: ${{ needs.merged_pr.outputs.canary == 'true' }}
-    needs:
-      - merged_pr
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Wait for status checks'
-        uses: "WyriHaximus/github-action-wait-for-status@v1.8"
-        with:
-          checkInterval: 13
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
   trigger_canary:
     name: trigger canary
     needs:
       - merged_pr
-      - wait_on_statuses
     if: ${{ needs.merged_pr.outputs.canary == 'true' }}
     uses: ./.github/workflows/internal_api.yml
     with:
