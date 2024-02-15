@@ -25,3 +25,4 @@ output "cluster_name" {
 output "cluster_gh_role_arn" {
   value = module.service.cluster_gh_role_arn
 }
+
