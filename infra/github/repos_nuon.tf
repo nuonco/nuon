@@ -185,6 +185,8 @@ module "nuon-homebrew-tap" {
   required_checks = [
     "check-pr / Run PR checks",
     "check-pr / Update PR status",
+    "test-bot (ubuntu-22.04)",
+    "test-bot (macos-13)",
   ]
   is_public        = true
   owning_team_id   = github_team.nuon.id
