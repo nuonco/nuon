@@ -153,6 +153,20 @@ jobs:
       is_promotion: true
     secrets: inherit
 
+  homebrew_tap:
+    name: Update Homebrew Tap
+    needs:
+      - artifacts
+    secrets: inherit
+    steps:
+      - name: Update Homebrew Tap
+        uses: peter-evans/repository-dispatch@v3
+        with:
+            token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
+            repository: nuonco/homebrew-tap
+            event-type: generate
+            client-payload: '{"version": "${{ needs.tag.outputs.semver }}" }'
+
   bump_tag:
     name: bump tag
     needs:
