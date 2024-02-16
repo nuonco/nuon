@@ -21,6 +21,13 @@ func (w *writer) handleErr(err error) {
 	w.Log.Error("unable to write", zap.String("addr", w.Address))
 }
 
+func (w *writer) Flush() {
+	if w.Disable {
+		w.Log.Info("flush")
+		return
+	}
+}
+
 func (w *writer) Incr(name string, value int, tags []string) {
 	if w.Disable {
 		w.Log.Info(fmt.Sprintf("incr.%s", name))
