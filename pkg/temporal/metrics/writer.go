@@ -19,6 +19,8 @@ type Writer interface {
 
 	// datadog specific
 	Event(workflow.Context, *statsd.Event)
+
+	Flush(workflow.Context)
 }
 
 type writer struct {
