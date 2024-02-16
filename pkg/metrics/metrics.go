@@ -25,6 +25,8 @@ type Writer interface {
 
 	// datadog specific
 	Event(e *statsd.Event)
+
+	Flush()
 }
 
 type writer struct {
