@@ -133,6 +133,8 @@ func (a *AutoMigrate) execMigrations(ctx context.Context) error {
 		if err := a.execMigration(ctx, migration); err != nil {
 			return fmt.Errorf("migration %s failed: %w", migration.Name, err)
 		}
+
+		a.metricsWriter.Flush()
 	}
 
 	return nil
