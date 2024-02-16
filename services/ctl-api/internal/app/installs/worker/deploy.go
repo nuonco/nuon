@@ -19,6 +19,18 @@ func (w *Workflows) isDeployable(install app.Install) bool {
 	return install.Status == string(StatusActive)
 }
 
+func (w *Workflows) isTeardownable(install app.Install) bool {
+	if install.Status == string(StatusError) {
+		return false
+	}
+
+	if install.Status == string(StatusAccessError) {
+		return false
+	}
+
+	return true
+}
+
 func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, sandboxMode bool) error {
 	var install app.Install
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
@@ -28,17 +40,24 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	if !w.isDeployable(install) {
-		w.updateDeployStatus(ctx, deployID, StatusError, "install is not active and can not be deployed too")
-		return nil
-	}
-
 	var installDeploy app.InstallDeploy
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetDeploy, activities.GetDeployRequest{
 		DeployID: deployID,
 	}, &installDeploy); err != nil {
 		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get install deploy from database")
 		return fmt.Errorf("unable to get install deploy: %w", err)
+	}
+
+	if installDeploy.Type == app.InstallDeployTypeTeardown {
+		if !w.isTeardownable(install) {
+			w.updateDeployStatus(ctx, deployID, StatusError, "install is not in a delete_queued, deprovisioning or active state to tear down components")
+			return nil
+		}
+	} else {
+		if !w.isDeployable(install) {
+			w.updateDeployStatus(ctx, deployID, StatusError, "install is not active and can not be deployed too")
+			return nil
+		}
 	}
 
 	if !w.isBuildDeployable(installDeploy.ComponentBuild) {
