@@ -113,6 +113,13 @@ resource "nuon_app_input" "main" {
 ```
 </CodeGroup>
 
+<Note>
+In order for components to work with both `aws-ecs` and `aws-ecs-byovpc` sandboxes, subnets must be tagged consistently.
+
+We recommend each VPC used with `byo-vpc` adds a tag of `visibility:private` to all private subnets, and
+`visibility:public` to all public subnets to match the tagging in `aws-ecs`.
+</Note>
+
 ### AWS ECS
 
 [AWS ECS](https://github.com/nuonco/sandboxes/tree/main/aws-ecs) is a sandbox for provisioning an ECS app. This sandbox
