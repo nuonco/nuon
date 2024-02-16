@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/DataDog/datadog-go/v5/statsd"
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.uber.org/zap"
@@ -68,16 +70,36 @@ func (a *AutoMigrate) execMigration(ctx context.Context, migration migrations.Mi
 		return nil
 	}
 
+	status := "error"
+	statusDescription := ""
+	defer func() {
+		a.metricsWriter.Event(&statsd.Event{
+			Title: "migration",
+			Text:  fmt.Sprintf("migration %s", migration.Name),
+			Tags: metrics.ToTags(map[string]string{
+				"status":             status,
+				"status_description": statusDescription,
+			}),
+		})
+		a.l.Error("success_migration_metric")
+		a.metricsWriter.Incr("migration.count", 1, metrics.ToTags(map[string]string{
+			"status":             status,
+			"status_description": statusDescription}))
+	}()
+
 	if err := a.createMigration(ctx, migration.Name); err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			a.l.Info("migration already in progress", zap.String("name", migration.Name))
+			statusDescription = "already_in_progress"
 			return nil
 		}
 
+		statusDescription = "db"
 		return fmt.Errorf("unable to create migration: %w", err)
 	}
 
 	if err := migration.Fn(ctx); err != nil {
+		statusDescription = "unable_to_exec"
 		if updateErr := a.updateMigrationStatus(ctx, migration.Name, app.MigrationStatusError); updateErr != nil {
 			a.l.Info("unable to update migration status", zap.Error(err))
 		}
@@ -86,8 +108,11 @@ func (a *AutoMigrate) execMigration(ctx context.Context, migration migrations.Mi
 
 	if err := a.updateMigrationStatus(ctx, migration.Name, app.MigrationStatusApplied); err != nil {
 		a.l.Info("unable to update migration status", zap.Error(err))
+		statusDescription = "unable_to_update_migration_status"
 	}
 
+	status = "ok"
+	statusDescription = "ok"
 	return nil
 }
 
