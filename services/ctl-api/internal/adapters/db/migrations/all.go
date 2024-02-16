@@ -89,5 +89,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "020-install-component-cascades",
 			Fn:   a.migration020InstallComponentCascades,
 		},
+		{
+			Name: "021-noop-datadog-event-test-v2",
+			Fn:   a.migration021NoopDatadogTest,
+		},
 	}
 }
