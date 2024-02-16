@@ -35,3 +35,10 @@ func (w *writer) Event(ctx workflow.Context, e *statsd.Event) {
 		return nil
 	})
 }
+
+func (w *writer) Flush(ctx workflow.Context) {
+	workflow.SideEffect(ctx, func(workflow.Context) interface{} {
+		w.MetricsWriter.Flush()
+		return nil
+	})
+}
