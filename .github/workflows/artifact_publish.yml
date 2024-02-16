@@ -92,20 +92,16 @@ jobs:
             --artifact +artifacts/out \
             --version=${{ inputs.tag }}
 
-      - name: push artifacts to s3
-        working-directory: ${{ inputs.dir }}
-        run: aws s3 sync ./out s3://${{ env.TFO_BUCKET_NAME }}/${{ env.ARTIFACT_BUCKET_PREFIX }}/${{ inputs.tag }}/
-
       - name: create artifact checksums
         uses: jmgilman/actions-generate-checksum@v1
         with:
           method: sha256
           patterns: ${{ inputs.dir }}/out/*
-          output: ${{ inputs.dir }}/checksum.txt
+          output: ${{ inputs.dir }}/out/checksum.txt
 
-      - name: push artifact checksums to s3
+      - name: push artifacts to s3
         working-directory: ${{ inputs.dir }}
-        run: aws s3 sync ./checksum.txt s3://${{ env.TFO_BUCKET_NAME }}/${{ env.ARTIFACT_BUCKET_PREFIX }}/${{ inputs.tag }}/checksum.txt
+        run: aws s3 sync ./out s3://${{ env.TFO_BUCKET_NAME }}/${{ env.ARTIFACT_BUCKET_PREFIX }}/${{ inputs.tag }}/
 
       - name: push latest file manifest to s3
         working-directory: ${{ inputs.dir }}
