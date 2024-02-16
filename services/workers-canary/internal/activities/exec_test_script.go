@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"github.com/powertoolsdev/mono/pkg/command"
+	"go.temporal.io/sdk/activity"
+	"go.uber.org/zap"
 )
 
 const (
@@ -26,6 +28,8 @@ type ExecTestScriptRequest struct {
 type ExecTestScriptResponse struct{}
 
 func (a *Activities) ExecTestScript(ctx context.Context, req *ExecTestScriptRequest) (*ExecTestScriptResponse, error) {
+	l := activity.GetLogger(ctx)
+	l.Info("executing test", zap.String("path", req.Path))
 	if req.InstallCLI {
 		if err := a.installCLI(ctx); err != nil {
 			return nil, fmt.Errorf("unable to install cli: %w", err)
@@ -38,6 +42,7 @@ func (a *Activities) ExecTestScript(ctx context.Context, req *ExecTestScriptRequ
 
 	err := a.execTestScript(ctx, req)
 	if err != nil {
+		l.Info("error executing test", zap.String("path", req.Path), zap.Error(err))
 		return nil, fmt.Errorf("unable to execute cli command: %w", err)
 	}
 
