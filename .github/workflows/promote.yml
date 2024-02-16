@@ -157,9 +157,9 @@ jobs:
     name: Update Homebrew Tap
     needs:
       - artifacts
-    secrets: inherit
+    runs-on: ubuntu-latest
     steps:
-      - name: Update Homebrew Tap
+      - name: Call nuonco/homebrew-tap generate workflow
         uses: peter-evans/repository-dispatch@v3
         with:
             token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
