@@ -66,6 +66,16 @@ func (a *AutoMigrate) execMigration(ctx context.Context, migration migrations.Mi
 		return fmt.Errorf("unable to see if %s was applied", migration.Name)
 	}
 	if isApplied {
+		a.metricsWriter.Incr("migration.count", 1, metrics.ToTags(map[string]string{
+			"status": "already_applied",
+		}))
+		a.metricsWriter.Event(&statsd.Event{
+			Title: "migration",
+			Text:  fmt.Sprintf("migration %s", migration.Name),
+			Tags: metrics.ToTags(map[string]string{
+				"status": "already_applied",
+			}),
+		})
 		a.l.Info("migration already applied", zap.String("name", migration.Name))
 		return nil
 	}
