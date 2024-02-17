@@ -17,8 +17,9 @@ func (w *Workflows) execProvisionWorkflow(
 	sandboxMode bool,
 	req *appsv1.ProvisionRequest,
 ) (*appsv1.ProvisionResponse, error) {
+	l := workflow.GetLogger(ctx)
 	if sandboxMode {
-		w.l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
+		l.Debug("sandbox-mode enabled, sleeping for to mimic provisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
 		workflow.Sleep(ctx, w.cfg.SandboxSleep)
 		return generics.GetFakeObj[*appsv1.ProvisionResponse](), nil
 	}
@@ -46,8 +47,9 @@ func (w *Workflows) execDeprovisionWorkflow(
 	sandboxMode bool,
 	req *appsv1.DeprovisionRequest,
 ) (*appsv1.DeprovisionResponse, error) {
+	l := workflow.GetLogger(ctx)
 	if sandboxMode {
-		w.l.Debug("sandbox-mode enabled, sleeping for to mimic depprovisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
+		l.Debug("sandbox-mode enabled, sleeping for to mimic depprovisioning", zap.String("duration", w.cfg.SandboxSleep.String()))
 		workflow.Sleep(ctx, w.cfg.SandboxSleep)
 		return generics.GetFakeObj[*appsv1.DeprovisionResponse](), nil
 	}
