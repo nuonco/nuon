@@ -24,7 +24,8 @@ func (w *Workflows) updateStatus(ctx workflow.Context, compID string, status Sta
 		return
 	}
 
-	w.l.Error("unable to update org status",
+	l := workflow.GetLogger(ctx)
+	l.Error("unable to update org status",
 		zap.String("organization-id", compID),
 		zap.Error(err))
 }

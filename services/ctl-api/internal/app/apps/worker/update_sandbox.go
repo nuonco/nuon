@@ -6,6 +6,7 @@ import (
 )
 
 func (w *Workflows) updateSandbox(ctx workflow.Context, appID, sandboxReleaseID string, dryRun bool) error {
-	w.l.Info("updating sandbox release", zap.String("app-id", appID), zap.String("release-id", sandboxReleaseID))
+	l := workflow.GetLogger(ctx)
+	l.Info("updating sandbox release", zap.String("app-id", appID), zap.String("release-id", sandboxReleaseID))
 	return nil
 }

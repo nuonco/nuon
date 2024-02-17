@@ -26,7 +26,8 @@ func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status
 		return
 	}
 
-	w.l.Error("unable to update build status",
+	l := workflow.GetLogger(ctx)
+	l.Error("unable to update build status",
 		zap.String("build-id", bldID),
 		zap.Error(err))
 }
