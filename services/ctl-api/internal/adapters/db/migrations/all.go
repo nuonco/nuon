@@ -93,5 +93,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "021-noop-datadog-event-test-v2",
 			Fn:   a.migration021NoopDatadogTest,
 		},
+		{
+			Name: "022-remove-duplicate-user-tokens",
+			Fn:   a.migration022RemoveDuplicateUserTokens,
+		},
 	}
 }
