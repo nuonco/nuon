@@ -2,8 +2,11 @@ package worker
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	enumsv1 "go.temporal.io/api/enums/v1"
@@ -41,11 +44,28 @@ func (w *Workflows) startHealthCheckWorkflow(ctx workflow.Context, req HealthChe
 }
 
 func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest) error {
-	tags := w.defaultTags(req.OrgID, req.SandboxMode)
+	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
+	startTS := workflow.Now(ctx)
+	status := "ok"
+	op := ""
+
+	defer func() {
+		tags := generics.MergeMap(map[string]string{
+			"op":     op,
+			"status": status,
+		}, defaultTags)
+		dur := workflow.Now(ctx).Sub(startTS)
+
+		w.mw.Timing(ctx, "health_check.duration", dur, metrics.ToTags(tags)...)
+		w.mw.Incr(ctx, "health_check.count", 1, metrics.ToTags(tags)...)
+	}()
+
 	var healthCheck app.OrgHealthCheck
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateHealthCheck, activities.CreateHealthCheckRequest{
 		OrgID: req.OrgID,
 	}, &healthCheck); err != nil {
+		status = "error"
+		op = "create_health_check"
 		return fmt.Errorf("unable to create org health check: %w", err)
 	}
 
@@ -54,19 +74,20 @@ func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest)
 		OrgID: req.OrgID,
 	}, &org); err != nil {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusError, "unable to get org from database")
-		w.writeStatusMetric(ctx, "health_check", err, tags)
+		status = "error"
+		op = "get_health_check"
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
 	if org.Status != string(StatusActive) {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatus(org.Status), org.StatusDescription)
-		w.writeIncrMetric(ctx, "health_check", tags, "status", string(org.Status))
+		status = "error"
+		op = "invalid_status"
 		return nil
 	}
 
 	if req.SandboxMode {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusOK, "ok (sandbox mode)")
-		w.writeStatusMetric(ctx, "health_check", nil, tags)
 		return nil
 	}
 
@@ -78,11 +99,11 @@ func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest)
 		OrgID: req.OrgID,
 	}, &healthCheck); err != nil {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusError, "unable to ping server")
-		w.writeStatusMetric(ctx, "health_check", err, tags)
+		status = "error"
+		op = "update_health_check"
 		return nil
 	}
 
 	w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatusOK, "server is active and reachable")
-	w.writeStatusMetric(ctx, "health_check", nil, tags)
 	return nil
 }

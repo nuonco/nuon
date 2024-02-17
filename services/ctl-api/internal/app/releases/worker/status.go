@@ -29,7 +29,8 @@ func (w *Workflows) updateStatus(ctx workflow.Context, releaseID string, status 
 		return
 	}
 
-	w.l.Error("unable to update release status",
+	l := workflow.GetLogger(ctx)
+	l.Error("unable to update release status",
 		zap.String("release-id", releaseID),
 		zap.Error(err))
 }
