@@ -25,7 +25,8 @@ func (w *Workflows) updateStatus(ctx workflow.Context, appID string, status Stat
 		return
 	}
 
-	w.l.Error("unable to update status",
+	l := workflow.GetLogger(ctx)
+	l.Error("unable to update status",
 		zap.String("app-id", appID),
 		zap.Error(err))
 }
