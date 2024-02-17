@@ -30,7 +30,8 @@ func (w *Workflows) updateStatus(ctx workflow.Context, orgID string, status Stat
 		return
 	}
 
-	w.l.Error("unable to update org status",
+	l := workflow.GetLogger(ctx)
+	l.Error("unable to update org status",
 		zap.String("organization-id", orgID),
 		zap.Error(err))
 }
@@ -45,7 +46,8 @@ func (w *Workflows) updateHealthCheckStatus(ctx workflow.Context, orgHealthCheck
 		return
 	}
 
-	w.l.Error("unable to update org health check status",
+	l := workflow.GetLogger(ctx)
+	l.Error("unable to update org health check status",
 		zap.String("health-check-id", orgHealthCheckID),
 		zap.Error(err))
 }
