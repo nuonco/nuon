@@ -38,7 +38,9 @@ type ComponentBuild struct {
 
 func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewBuildID()
-	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	if c.CreatedByID == "" {
+		c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
 }
