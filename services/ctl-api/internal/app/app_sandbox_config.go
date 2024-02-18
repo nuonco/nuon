@@ -26,6 +26,7 @@ type AppSandboxConfig struct {
 	// TODO(jm): add this back, once we have migrated all existing app sandbox configs
 	// `gorm:"not null;default null"`
 	AppID string `json:"app_id"`
+	App   App    `json:"-"`
 
 	// NOTE(jm): you can use one of a few different methods of creating an app sandbox, either a built in one, that
 	// Nuon manages, or one of the public git vcs configs.
