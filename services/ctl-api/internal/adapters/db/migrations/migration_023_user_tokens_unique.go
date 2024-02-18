@@ -16,6 +16,5 @@ ALTER TABLE user_tokens ADD CONSTRAINT idx_user_tokens_subject UNIQUE("subject")
 		return res.Error
 	}
 
-	a.l.Info("example migration - sql")
 	return nil
 }
