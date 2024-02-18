@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -24,7 +25,18 @@ func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 	// for now, run the automigrate script
 	providers := []fx.Option{
 		fx.Provide(db.NewAutoMigrate),
-		fx.Invoke(func(*db.AutoMigrate) {}),
+		fx.Invoke(func(l *zap.Logger, db *db.AutoMigrate, shutdowner fx.Shutdowner) {
+			ctx := context.Background()
+			ctx, cancelFn := context.WithTimeout(ctx, time.Minute*5)
+			defer cancelFn()
+			if err := db.Execute(ctx); err != nil {
+				l.Error("unable to auto migrate", zap.Error(err))
+			}
+
+			if err := shutdowner.Shutdown(); err != nil {
+				l.Error("unable to shut down", zap.Error(err))
+			}
+		}),
 	}
 	providers = append(providers, c.providers()...)
 	fx.New(providers...).Run()
