@@ -102,7 +102,7 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:   a.migration023UserTokensUniqueConstraint,
 		},
 		{
-			Name: "024-ensure-user-tokens",
+			Name: "024-ensure-user-tokens-for-orgs",
 			Fn:   a.migration024EnsureUserTokens,
 		},
 	}
