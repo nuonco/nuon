@@ -1,13 +1,9 @@
 package db
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db/migrations"
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -24,9 +20,7 @@ func NewAutoMigrate(db *gorm.DB,
 	cfg *internal.Config,
 	l *zap.Logger,
 	migrations *migrations.Migrations,
-	metricsWriter metrics.Writer,
-	lc fx.Lifecycle,
-	shutdowner fx.Shutdowner) *AutoMigrate {
+	metricsWriter metrics.Writer) *AutoMigrate {
 	a := AutoMigrate{
 		db:            db,
 		l:             l,
@@ -34,26 +28,6 @@ func NewAutoMigrate(db *gorm.DB,
 		migrations:    migrations,
 		metricsWriter: metricsWriter,
 	}
-
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			if err := a.migrateModels(ctx); err != nil {
-				return fmt.Errorf("unable to migrate models: %w", err)
-			}
-
-			if err := a.execMigrations(ctx); err != nil {
-				return fmt.Errorf("unable to execute migrations: %w", err)
-			}
-
-			if err := shutdowner.Shutdown(); err != nil {
-				return fmt.Errorf("unable to shut down: %w", err)
-			}
-			return nil
-		},
-		OnStop: func(_ context.Context) error {
-			return nil
-		},
-	})
 
 	return &a
 }
