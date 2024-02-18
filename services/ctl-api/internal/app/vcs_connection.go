@@ -25,6 +25,11 @@ type VCSConnection struct {
 
 func (v *VCSConnection) BeforeCreate(tx *gorm.DB) error {
 	v.ID = domains.NewVCSConnectionID()
-	v.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	if v.OrgID == "" {
+		v.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+	if v.CreatedByID == "" {
+		v.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
 	return nil
 }
