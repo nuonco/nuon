@@ -28,6 +28,12 @@ func (a *AppInstaller) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
 		a.ID = domains.NewAppID()
 	}
+	if a.OrgID == "" {
+		a.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+	if a.CreatedByID == "" {
+		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
 
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
