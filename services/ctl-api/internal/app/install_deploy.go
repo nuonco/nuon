@@ -47,8 +47,12 @@ type InstallDeploy struct {
 
 func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewDeployID()
-	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
-	c.OrgID = orgIDFromContext(tx.Statement.Context)
+	if c.CreatedByID == "" {
+		c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+	if c.OrgID == "" {
+		c.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
 	return nil
 }
 
