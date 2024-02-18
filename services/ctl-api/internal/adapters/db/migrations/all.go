@@ -94,8 +94,16 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:   a.migration021NoopDatadogTest,
 		},
 		{
-			Name: "022-remove-duplicate-user-tokens",
+			Name: "022-remove-duplicate-user-tokens-v2",
 			Fn:   a.migration022RemoveDuplicateUserTokens,
+		},
+		{
+			Name: "023-user-tokens-unique",
+			Fn:   a.migration023UserTokensUniqueConstraint,
+		},
+		{
+			Name: "024-ensure-user-tokens",
+			Fn:   a.migration024EnsureUserTokens,
 		},
 	}
 }
