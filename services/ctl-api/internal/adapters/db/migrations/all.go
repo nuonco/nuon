@@ -105,5 +105,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "024-ensure-user-tokens-for-orgs",
 			Fn:   a.migration024EnsureUserTokens,
 		},
+		{
+			Name: "025-ensure-created-by-ids-and-org-ids",
+			Fn:   a.migration025EnsureCreatedByIDs,
+		},
 	}
 }
