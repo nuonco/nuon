@@ -15,6 +15,7 @@ type AppInstallerMetadata struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index"`
 
+	OrgID          string `json:"org_id"`
 	AppInstallerID string `json:"app_installer_id" gorm:"notnull"`
 
 	Name        string `json:"name" gorm:"notnull"`

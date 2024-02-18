@@ -109,5 +109,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "025-ensure-created-by-ids-and-org-ids",
 			Fn:   a.migration025EnsureCreatedByIDs,
 		},
+		{
+			Name: "026-ensure-org-ids",
+			Fn:   a.migration026EnsureOrgIDs,
+		},
 	}
 }
