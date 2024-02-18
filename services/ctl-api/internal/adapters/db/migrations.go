@@ -91,7 +91,6 @@ func (a *AutoMigrate) execMigration(ctx context.Context, migration migrations.Mi
 				"status_description": statusDescription,
 			}),
 		})
-		a.l.Error("success_migration_metric")
 		a.metricsWriter.Incr("migration.count", 1, metrics.ToTags(map[string]string{
 			"status":             status,
 			"status_description": statusDescription}))

@@ -13,17 +13,49 @@ import (
 )
 
 func (a *Migrations) migration024EnsureUserTokens(ctx context.Context) error {
+	var deletedOrgs []*app.Org
+	res := a.db.Unscoped().WithContext(ctx).
+		Preload("Apps").
+		Preload("Apps.Installs").
+		Preload("Apps.Components").
+		Find(&deletedOrgs)
+	if res.Error != nil {
+		return res.Error
+	}
+
 	var orgs []*app.Org
-	res := a.db.WithContext(ctx).
+	res = a.db.WithContext(ctx).
+		Preload("Apps").
+		Preload("Apps.Installs").
+		Preload("Apps.Components").
 		Find(&orgs)
 	if res.Error != nil {
 		return res.Error
 	}
 
-	for _, org := range orgs {
+	allOrgs := append(orgs, deletedOrgs...)
+
+	userIDs := make([]string, 0)
+	for _, org := range allOrgs {
+		userIDs = append(userIDs, org.CreatedByID)
+
+		for _, app := range org.Apps {
+			userIDs = append(userIDs, app.CreatedByID)
+
+			for _, install := range app.Installs {
+				userIDs = append(userIDs, install.CreatedByID)
+			}
+
+			for _, comp := range app.Components {
+				userIDs = append(userIDs, comp.CreatedByID)
+			}
+		}
+	}
+
+	for _, userID := range userIDs {
 		var userToken *app.UserToken
 		res = a.db.WithContext(ctx).
-			Where("subject = ?", org.CreatedByID).
+			Where("subject = ?", userID).
 			First(&userToken)
 		if res.Error == nil {
 			continue
@@ -35,12 +67,13 @@ func (a *Migrations) migration024EnsureUserTokens(ctx context.Context) error {
 		res = a.db.WithContext(ctx).
 			Clauses(clause.OnConflict{DoNothing: true}).
 			Create(&app.UserToken{
-				Token:     generics.GetFakeObj[string](),
-				TokenType: app.TokenTypeAuth0,
-				Subject:   org.CreatedByID,
-				Issuer:    "auth0",
-				ExpiresAt: time.Now().Add(time.Hour * 24),
-				Email:     "",
+				CreatedByID: userID,
+				Token:       generics.GetFakeObj[string](),
+				TokenType:   app.TokenTypeAuth0,
+				Subject:     userID,
+				Issuer:      "auth0",
+				ExpiresAt:   time.Now().Add(time.Hour * 24),
+				Email:       "",
 			})
 		if res.Error != nil {
 			return res.Error
