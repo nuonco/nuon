@@ -90,8 +90,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 				})
 				return
 			}
-
-			panic("sql error not caught" + pgErr.Code)
 		}
 
 		// validation errors for any request inputs
