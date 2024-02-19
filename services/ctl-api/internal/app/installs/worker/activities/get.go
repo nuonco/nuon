@@ -13,6 +13,10 @@ type GetRequest struct {
 }
 
 func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Install, error) {
+	return a.getInstall(ctx, req.InstallID)
+}
+
+func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := a.db.WithContext(ctx).
 		Preload("App").
@@ -37,7 +41,7 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Install, err
 
 		// load public git
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
-		First(&install, "id = ?", req.InstallID)
+		First(&install, "id = ?", installID)
 
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)

@@ -67,7 +67,9 @@ func (m *middleware) saveUserToken(ctx context.Context, token string, claims *va
 	}
 
 	res := m.db.WithContext(ctx).
-		Clauses(clause.OnConflict{DoNothing: true}).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "subject"}},
+			UpdateAll: true}).
 		Create(&userToken)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to save user token: %w", res.Error)
