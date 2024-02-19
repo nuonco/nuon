@@ -156,6 +156,7 @@ jobs:
   homebrew_tap:
     name: Update Homebrew Tap
     needs:
+      - tag
       - artifacts
     runs-on: ubuntu-latest
     steps:
