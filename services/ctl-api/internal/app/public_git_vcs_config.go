@@ -17,6 +17,7 @@ type PublicGitVCSConfig struct {
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `json:"-" faker:"-"`
 
 	ComponentConfigID   string `json:"component_config_id" gorm:"notnull"`
 	ComponentConfigType string `json:"component_config_type" gorm:"notnull"`

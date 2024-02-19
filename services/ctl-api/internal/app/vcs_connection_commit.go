@@ -17,6 +17,7 @@ type VCSConnectionCommit struct {
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `json:"-" faker:"-"`
 
 	VCSConnection   VCSConnection `json:"-"`
 	VCSConnectionID string        `json:"component_config_connection_id" gorm:"notnull"`
