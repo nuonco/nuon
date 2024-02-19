@@ -16,7 +16,7 @@ type QueueComponentBuildRequest struct {
 func (a *Activities) QueueComponentBuild(ctx context.Context, req QueueComponentBuildRequest) (*app.ComponentBuild, error) {
 	// set the orgID on the context, for all writes
 	ctx = context.WithValue(ctx, "org_id", req.OrgID)
-	ctx = context.WithValue(ctx, "created_by_id", req.CreatedByID)
+	ctx = context.WithValue(ctx, "user_id", req.CreatedByID)
 
 	build, err := a.helpers.CreateComponentBuild(ctx, req.ComponentID, true, nil)
 	if err != nil {
