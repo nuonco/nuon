@@ -19,7 +19,7 @@ const (
 
 type UserToken struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
@@ -28,10 +28,10 @@ type UserToken struct {
 	TokenType TokenType `json:"token_type"`
 
 	// claim data
-	Subject   string    `json:"subject" gorm:"notnull"`
+	Subject   string    `json:"subject" gorm:"notnull;default null;unique"`
 	ExpiresAt time.Time `json:"expires_at" gorm:"notnull"`
 	IssuedAt  time.Time `json:"issued_at" gorm:"notnull"`
-	Issuer    string    `json:"issuer" gorm:"notnull"`
+	Issuer    string    `json:"issuer" gorm:"notnull;default null"`
 	Email     string    `json:"email"`
 }
 
