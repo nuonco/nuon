@@ -14,6 +14,7 @@ type ComponentDependency struct {
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `json:"-" faker:"-"`
 
 	ComponentID  string `gorm:"primary_key"`
 	DependencyID string `gorm:"primary_key"`

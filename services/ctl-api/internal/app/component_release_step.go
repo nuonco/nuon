@@ -18,6 +18,7 @@ type ComponentReleaseStep struct {
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `json:"-" faker:"-"`
 
 	// parent release ID
 	ComponentReleaseID string           `json:"component_release_id"`

@@ -17,6 +17,7 @@ type AWSAccount struct {
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `faker:"-" json:"-"`
 
 	InstallID string `json:"-" gorm:"notnull"`
 

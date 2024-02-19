@@ -25,6 +25,7 @@ type InstallDeploy struct {
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `json:"-" faker:"-"`
 
 	ComponentBuildID string         `json:"build_id" gorm:"notnull"`
 	ComponentBuild   ComponentBuild `faker:"-" json:"-"`

@@ -16,6 +16,7 @@ type AppInputConfig struct {
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
 	OrgID string `json:"org_id" gorm:"notnull;default null"`
+	Org   Org    `faker:"-" json:"-"`
 	AppID string `json:"app_id"`
 
 	AppInputs     []AppInput      `json:"app_inputs" gorm:"constraint:OnDelete:CASCADE;"`

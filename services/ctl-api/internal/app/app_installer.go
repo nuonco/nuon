@@ -16,6 +16,7 @@ type AppInstaller struct {
 	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_installer_slug,unique" json:"-"`
 
 	OrgID string `json:"org_id" gorm:"notnull"`
+	Org   Org    `faker:"-" json:"-"`
 	AppID string `json:"app_id" gorm:"notnull"`
 	App   App
 

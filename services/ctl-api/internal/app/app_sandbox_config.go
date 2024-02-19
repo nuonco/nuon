@@ -22,11 +22,12 @@ type AppSandboxConfig struct {
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
 	OrgID string `json:"org_id" gorm:"notnull;default null"`
+	Org   Org    `faker:"-" json:"-"`
 
 	// TODO(jm): add this back, once we have migrated all existing app sandbox configs
 	// `gorm:"not null;default null"`
 	AppID string `json:"app_id"`
-	App   App    `json:"-"`
+	App   App    `json:"-" faker:"-"`
 
 	// NOTE(jm): you can use one of a few different methods of creating an app sandbox, either a built in one, that
 	// Nuon manages, or one of the public git vcs configs.
