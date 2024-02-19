@@ -47,13 +47,14 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 		return
 	}
 
-	_, err := s.getOrg(ctx, req.OrgID)
+	org, err := s.getOrg(ctx, req.OrgID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org: %w", err))
 		return
 	}
 
-	vcsConn, err := s.createOrgConnection(ctx, req.OrgID, req.GithubInstallID)
+	dbCtx := context.WithValue(ctx, "user_id", org.CreatedByID)
+	vcsConn, err := s.createOrgConnection(dbCtx, req.OrgID, req.GithubInstallID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org connection: %w", err))
 		return

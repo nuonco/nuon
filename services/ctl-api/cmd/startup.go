@@ -29,11 +29,14 @@ func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 			ctx := context.Background()
 			ctx, cancelFn := context.WithTimeout(ctx, time.Minute*5)
 			defer cancelFn()
+
+			code := 0
 			if err := db.Execute(ctx); err != nil {
 				l.Error("unable to auto migrate", zap.Error(err))
+				code = 1
 			}
 
-			if err := shutdowner.Shutdown(); err != nil {
+			if err := shutdowner.Shutdown(fx.ExitCode(code)); err != nil {
 				l.Error("unable to shut down", zap.Error(err))
 			}
 		}),
