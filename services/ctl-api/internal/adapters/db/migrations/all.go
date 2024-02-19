@@ -121,5 +121,10 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "028-aws-ecr-image-configs",
 			Fn:   a.migration028AWSECRConfigs,
 		},
+		{
+
+			Name: "026-re-ensure-org-ids",
+			Fn:   a.migration026EnsureOrgIDs,
+		},
 	}
 }
