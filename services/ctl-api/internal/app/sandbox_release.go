@@ -27,6 +27,9 @@ type SandboxRelease struct {
 
 func (s *SandboxRelease) BeforeCreate(tx *gorm.DB) error {
 	s.ID = domains.NewSandboxReleaseID()
-	s.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+
+	if s.CreatedByID == "" {
+		s.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
 	return nil
 }
