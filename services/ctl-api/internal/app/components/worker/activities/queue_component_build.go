@@ -10,11 +10,13 @@ import (
 type QueueComponentBuildRequest struct {
 	ComponentID string `validate:"required"`
 	OrgID       string `validate:"required"`
+	CreatedByID string `validate:"required"`
 }
 
 func (a *Activities) QueueComponentBuild(ctx context.Context, req QueueComponentBuildRequest) (*app.ComponentBuild, error) {
 	// set the orgID on the context, for all writes
 	ctx = context.WithValue(ctx, "org_id", req.OrgID)
+	ctx = context.WithValue(ctx, "created_by_id", req.CreatedByID)
 
 	build, err := a.helpers.CreateComponentBuild(ctx, req.ComponentID, true, nil)
 	if err != nil {
