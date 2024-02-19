@@ -32,7 +32,10 @@ func (s *service) GetAllOrgs(ctx *gin.Context) {
 func (s *service) getAllOrgs(ctx context.Context) ([]*app.Org, error) {
 	var orgs []*app.Org
 	res := s.db.WithContext(ctx).
-		Order("created_at desc").
+		Preload("CreatedBy").
+		Joins("JOIN user_tokens ON user_tokens.subject=orgs.created_by_id").
+		Where("user_tokens.token_type = ?", app.TokenTypeAuth0).
+		Order("orgs.created_at desc").
 		Find(&orgs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all orgs: %w", res.Error)

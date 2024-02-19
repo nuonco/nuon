@@ -20,7 +20,8 @@ const (
 
 type ComponentRelease struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string                `json:"created_by_id"`
+	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
+	CreatedBy   UserToken             `json:"created_by" gorm:"references:Subject"`
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
