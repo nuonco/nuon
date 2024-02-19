@@ -156,7 +156,8 @@ func (a *Migrations) migration026AwsAccounts(ctx context.Context) error {
 				ID: obj.ID,
 			}).
 			Updates(app.AWSAccount{
-				OrgID: install.OrgID,
+				OrgID:       install.OrgID,
+				CreatedByID: install.CreatedByID,
 			})
 		if res.Error != nil {
 			return fmt.Errorf("unable to update app install: %w", res.Error)
