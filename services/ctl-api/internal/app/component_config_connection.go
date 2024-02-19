@@ -25,6 +25,7 @@ type ComponentConfigConnection struct {
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `json:"-" faker:"-"`
 
 	ComponentID string    `json:"component_id" gorm:"notnull"`
 	Component   Component `json:"-"`

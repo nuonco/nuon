@@ -25,6 +25,7 @@ type InstallSandboxRun struct {
 
 	// used for RLS
 	OrgID     string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org       Org    `json:"-" faker:"-"`
 	InstallID string `json:"install_id" gorm:"not null;default null"`
 
 	RunType           SandboxRunType `json:"run_type"`
