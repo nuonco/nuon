@@ -17,6 +17,7 @@ type AWSECRImageConfig struct {
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `faker:"-" json:"-"`
 
 	// connection to parent model
 	ComponentConfigID   string `json:"component_config_id" gorm:"notnull"`

@@ -16,6 +16,7 @@ type InstallInputs struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 	OrgID       string                `json:"org_id" gorm:"notnull;default null"`
+	Org         Org                   `json:"-" faker:"-"`
 
 	InstallID string        `json:"install_id" gorm:"notnull;default null"`
 	Install   Install       `json:"-"`

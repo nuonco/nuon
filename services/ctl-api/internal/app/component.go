@@ -17,6 +17,7 @@ type Component struct {
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `json:"-" faker:"-"`
 
 	Name string `json:"name" gorm:"notnull;index:idx_app_component_name,unique"`
 
