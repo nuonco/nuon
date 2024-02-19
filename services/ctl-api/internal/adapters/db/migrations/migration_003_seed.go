@@ -5,18 +5,37 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm/clause"
 )
 
 func (a *Migrations) createSandbox(ctx context.Context, sandboxName, version string) error {
+	id := domains.NewMigrationID()
+	token := app.UserToken{
+		CreatedByID: id,
+		Token:       id,
+		TokenType:   app.TokenTypeAdmin,
+		Subject:     id,
+		ExpiresAt:   time.Now().Add(time.Minute),
+		IssuedAt:    time.Now(),
+		Email:       "migrations@nuon.co",
+	}
+	res := a.db.WithContext(ctx).
+		Create(&token)
+	if res.Error != nil {
+		return fmt.Errorf("unable to create token: %w", res.Error)
+	}
+
 	// create the default sandbox
 	sandbox := app.Sandbox{
+		CreatedByID: token.CreatedByID,
 		Name:        sandboxName,
 		Description: "default aws sandbox",
 	}
-	res := a.db.WithContext(ctx).
+	res = a.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "name"}},
 			DoNothing: true,
@@ -36,6 +55,7 @@ func (a *Migrations) createSandbox(ctx context.Context, sandboxName, version str
 	}
 	baseURL += filepath.Join(sandboxName, version) + "/"
 	sandboxRelease := app.SandboxRelease{
+		CreatedByID:             id,
 		Version:                 version,
 		ProvisionPolicyURL:      baseURL + "provision.json",
 		TrustPolicyURL:          baseURL + "trust.json",

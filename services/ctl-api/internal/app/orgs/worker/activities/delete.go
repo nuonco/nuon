@@ -13,7 +13,16 @@ type DeleteRequest struct {
 }
 
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
-	res := a.db.WithContext(ctx).Unscoped().Delete(&app.Org{
+	// delete apps
+	res := a.db.WithContext(ctx).Unscoped().
+		Where("org_id = ?", req.OrgID).
+		Delete(&app.App{})
+	if res.Error != nil {
+		return fmt.Errorf("unable to delete org apps: %w", res.Error)
+	}
+
+	// delete org
+	res = a.db.WithContext(ctx).Unscoped().Delete(&app.Org{
 		ID: req.OrgID,
 	})
 	if res.Error != nil {

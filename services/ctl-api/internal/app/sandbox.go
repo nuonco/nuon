@@ -16,13 +16,15 @@ type Sandbox struct {
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
 
-	Name        string           `gorm:"unique" json:"name" gorm:"notnull"`
+	Name        string           `gorm:"unique;not null; default null" json:"name"`
 	Description string           `json:"description" gorm:"notnull"`
 	Releases    []SandboxRelease `json:"releases" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 func (s *Sandbox) BeforeCreate(tx *gorm.DB) error {
 	s.ID = domains.NewSandboxID()
-	s.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	if s.CreatedByID == "" {
+		s.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
 	return nil
 }

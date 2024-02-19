@@ -36,21 +36,5 @@ func (a *Migrations) migration018AddUserTypes(ctx context.Context) error {
 		}
 	}
 
-	// hard delete any soft-deleted orgs
-	var deletedUserTokens []app.UserToken
-	res = a.db.WithContext(ctx).Unscoped().Find(&deletedUserTokens)
-	if res.Error != nil {
-		return fmt.Errorf("unable to find deleted user tokens: %w", res.Error)
-	}
-
-	if len(deletedUserTokens) < 1 {
-		return nil
-	}
-
-	res = a.db.WithContext(ctx).Unscoped().Delete(&deletedUserTokens)
-	if res.Error != nil {
-		return fmt.Errorf("unable to hard delete deleted user tokens: %w", res.Error)
-	}
-
 	return nil
 }

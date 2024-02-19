@@ -41,6 +41,12 @@ type Org struct {
 	UserOrgs       []UserOrg        `json:"users,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	HealthChecks   []OrgHealthCheck `json:"health_checks,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
+	// NOTE(jm): with GORM, these cascades are not getting created properly. For now, we just add them here, but
+	// eventually we should be able to remove these and add them directly.
+	PublicGitVCSConfigs       []PublicGitVCSConfig       `gorm:"constraint:OnDelete:CASCADE;"`
+	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `gorm:"constraint:OnDelete:CASCADE;"`
+	AWSECRImageConfigs        []AWSECRImageConfig        `gorm:"constraint:OnDelete:CASCADE;"`
+
 	// Filled in at read time
 	LatestHealthCheck OrgHealthCheck `json:"latest_health_check" gorm:"-"`
 }
