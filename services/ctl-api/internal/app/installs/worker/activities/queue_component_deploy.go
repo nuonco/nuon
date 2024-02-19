@@ -25,13 +25,19 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		deployTyp = app.InstallDeployTypeTeardown
 	}
 
+	install, err := a.getInstall(ctx, req.InstallID)
+	if err != nil {
+		return nil, err
+	}
+
 	deploy := app.InstallDeploy{
+		CreatedByID:       install.CreatedByID,
 		Status:            "queued",
 		StatusDescription: "waiting to be deployed to install",
 		ComponentBuildID:  req.BuildID,
 		Type:              deployTyp,
 	}
-	err := a.db.WithContext(ctx).Where(&app.InstallComponent{
+	err = a.db.WithContext(ctx).Where(&app.InstallComponent{
 		InstallID:   req.InstallID,
 		ComponentID: req.ComponentID,
 	}).First(&installCmp).

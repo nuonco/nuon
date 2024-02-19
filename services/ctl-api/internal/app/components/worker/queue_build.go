@@ -18,6 +18,7 @@ func (w *Workflows) queueBuild(ctx workflow.Context, cmpID string) error {
 
 	var cmpBuild app.ComponentBuild
 	if err := w.defaultExecGetActivity(ctx, w.acts.QueueComponentBuild, activities.QueueComponentBuildRequest{
+		CreatedByID: cmp.CreatedByID,
 		ComponentID: cmpID,
 		OrgID:       cmp.OrgID,
 	}, &cmpBuild); err != nil {
