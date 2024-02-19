@@ -15,8 +15,10 @@ type AppInstallerMetadata struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index"`
 
-	OrgID          string `json:"org_id"`
 	AppInstallerID string `json:"app_installer_id" gorm:"notnull"`
+
+	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `json:"-" faker:"-"`
 
 	Name        string `json:"name" gorm:"notnull"`
 	Description string `json:"description" gorm:"notnull"`
@@ -36,6 +38,9 @@ func (a *AppInstallerMetadata) BeforeCreate(tx *gorm.DB) error {
 		a.ID = domains.NewAppID()
 	}
 
+	if a.OrgID == "" {
+		a.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
 }

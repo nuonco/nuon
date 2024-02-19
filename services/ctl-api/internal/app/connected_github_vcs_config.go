@@ -17,6 +17,7 @@ type ConnectedGithubVCSConfig struct {
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `json:"-" faker:"-"`
 
 	// parent component
 	ComponentConfigID   string `json:"component_config_id" gorm:"notnull"`

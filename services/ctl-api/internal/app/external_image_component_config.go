@@ -17,6 +17,7 @@ type ExternalImageComponentConfig struct {
 
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org   Org    `json:"-" faker:"-"`
 
 	// value
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id" gorm:"notnull"`
