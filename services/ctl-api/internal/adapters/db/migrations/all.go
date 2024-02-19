@@ -113,5 +113,13 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "026-ensure-org-ids",
 			Fn:   a.migration026EnsureOrgIDs,
 		},
+		{
+			Name: "027-delete-installs-with-deleted-orgs",
+			Fn:   a.migration027DeleteInstallsWithDeletedOrgs,
+		},
+		{
+			Name: "028-aws-ecr-image-configs",
+			Fn:   a.migration028AWSECRConfigs,
+		},
 	}
 }
