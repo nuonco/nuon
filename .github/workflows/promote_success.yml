@@ -1,0 +1,52 @@
+---
+name: promote_success
+"on":
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+    outputs: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  trigger_canary:
+    name: trigger canary
+    uses: ./.github/workflows/internal_api.yml
+    with:
+      env: prod
+      endpoint: /v1/general/provision-canary
+      method: POST
+      data: "{}"
+    secrets: inherit
+  sdks:
+    name: Update SDKs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Elixir
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
+          repository: nuonco/nuon-elixir
+          event-type: generate
+      - name: Python
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
+          repository: nuonco/nuon-python
+          event-type: generate
+  homebrew_tap:
+    name: Update Homebrew Tap
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call nuonco/homebrew-tap generate workflow
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
+          repository: nuonco/homebrew-tap
+          event-type: generate
+          client-payload: '{"version": "${{ inputs.tag }}" }'
