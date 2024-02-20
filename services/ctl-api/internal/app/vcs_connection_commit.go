@@ -34,7 +34,7 @@ type VCSConnectionCommit struct {
 func (v *VCSConnectionCommit) BeforeCreate(tx *gorm.DB) error {
 	v.ID = domains.NewVCSConnectionID()
 
-	if v.CreatedByID != "" {
+	if v.CreatedByID == "" {
 		v.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
 	if v.OrgID == "" {

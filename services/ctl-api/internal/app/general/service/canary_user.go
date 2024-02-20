@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm/clause"
 )
 
 const (
@@ -42,7 +43,7 @@ func (s *service) CreateCanaryUser(ctx *gin.Context) {
 
 	token, err := s.createCanaryUser(ctx, req.CanaryID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create integration user: %w", err))
+		ctx.Error(fmt.Errorf("unable to create canary user: %w", err))
 		return
 	}
 
@@ -65,6 +66,9 @@ func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.U
 	}
 
 	res := s.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "subject"}},
+			UpdateAll: true}).
 		Create(&token)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create integration user: %w", res.Error)

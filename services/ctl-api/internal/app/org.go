@@ -43,9 +43,10 @@ type Org struct {
 
 	// NOTE(jm): with GORM, these cascades are not getting created properly. For now, we just add them here, but
 	// eventually we should be able to remove these and add them directly.
-	PublicGitVCSConfigs       []PublicGitVCSConfig       `gorm:"constraint:OnDelete:CASCADE;"`
-	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `gorm:"constraint:OnDelete:CASCADE;"`
-	AWSECRImageConfigs        []AWSECRImageConfig        `gorm:"constraint:OnDelete:CASCADE;"`
+	PublicGitVCSConfigs       []PublicGitVCSConfig       `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
+	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
+	VCSConnectionCommits      []VCSConnectionCommit      `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
+	AWSECRImageConfigs        []AWSECRImageConfig        `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 
 	// Filled in at read time
 	LatestHealthCheck OrgHealthCheck `json:"latest_health_check" gorm:"-"`
