@@ -17,7 +17,7 @@ func (c *client) ListOrgs(ctx context.Context) ([]Org, error) {
 	endpoint := "/v1/orgs"
 	byts, err := c.execGetRequest(ctx, endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("unable to execute post request: %w", err)
+		return nil, fmt.Errorf("unable to execute get request: %w", err)
 	}
 
 	var response []Org
@@ -26,6 +26,21 @@ func (c *client) ListOrgs(ctx context.Context) ([]Org, error) {
 	}
 
 	return response, nil
+}
+
+func (c *client) GetOrg(ctx context.Context, nameOrID string) (*Org, error) {
+	endpoint := "/v1/orgs/admin-get?name=" + nameOrID
+	byts, err := c.execGetRequest(ctx, endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute get request: %w", err)
+	}
+
+	var response Org
+	if err := json.Unmarshal(byts, &response); err != nil {
+		return nil, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return &response, nil
 }
 
 func (c *client) DeleteOrg(ctx context.Context, orgID string) error {

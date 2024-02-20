@@ -126,5 +126,10 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "026-re-ensure-org-ids",
 			Fn:   a.migration026EnsureOrgIDs,
 		},
+		{
+
+			Name: "029-vcs-conns-cascade",
+			Fn:   a.migration029VcsConnectionsConstraint,
+		},
 	}
 }
