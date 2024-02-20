@@ -3,16 +3,17 @@ title: 'CLI'
 description: "Install the Nuon CLI."
 ---
 
-The Nuon CLI is used to manage apps, create or debug installs and update components. The CLI is a go binary that does
-not have any additional dependencies.
+The CLI is your primary interface to the Nuon platform.
 
-### Default CLI Installation
+## Installation
 
-Install the CLI and refresh your shell session to get autocompletion.
+### Homebrew
+
+We publish an official tap you can install with [Homebrew](https://brew.sh/).
 
 <CodeGroup>
 ```sh install the CLI
-echo "y" | /bin/bash -c "$(curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)"
+brew install nuonco/tap/nuon
 ```
 
 ```sh refresh shell session
@@ -24,7 +25,7 @@ Run `nuon` to verify it's installed and see all the sub-commands.
 
 ### Manage Binaries Directly
 
-Binaries are published for the following OS and architecture combinations:
+If you are not using Homebrew, you can dowload the binaries for MacOS or Linux:
 
 * `darwin_amd64`
 * `darmin_arm64`
@@ -46,7 +47,6 @@ $ curl https://ctl.prod.nuon.co/version
 </CodeGroup>
 
 To download the binaries for a specific version, substitute the version and platform into the following URL: `https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/$VERSION/nuon_${PLATFORM}`
-
 
 An example downloading the `0.19.19` version of the CLI for `darwin_arm64`:
 <CodeGroup>
