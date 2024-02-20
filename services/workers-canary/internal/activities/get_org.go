@@ -23,18 +23,12 @@ func (a *Activities) GetOrg(ctx context.Context, req *GetOrgRequest) (*GetOrgRes
 		return nil, fmt.Errorf("unable to create internal api client: %w", err)
 	}
 
-	orgs, err := internalAPIClient.ListOrgs(ctx)
+	org, err := internalAPIClient.GetOrg(ctx, req.CanaryID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create org: %w", err)
+		return nil, fmt.Errorf("unable to list orgs: %w", err)
 	}
 
-	for _, org := range orgs {
-		if org.Name == req.CanaryID {
-			return &GetOrgResponse{
-				OrgID: org.Id,
-			}, nil
-		}
-	}
-
-	return nil, fmt.Errorf("org %s not found", req.CanaryID)
+	return &GetOrgResponse{
+		OrgID: org.Id,
+	}, nil
 }
