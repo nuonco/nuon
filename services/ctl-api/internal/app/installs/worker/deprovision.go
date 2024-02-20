@@ -71,6 +71,14 @@ func (w *Workflows) delete(ctx workflow.Context, installID string, dryRun bool) 
 		return err
 	}
 
+	// fail all queued deploys
+	if err := w.defaultExecErrorActivity(ctx, w.acts.FailQueuedDeploys, activities.FailQueuedDeploysRequest{
+		InstallID: installID,
+	}); err != nil {
+		w.updateStatus(ctx, installID, StatusError, "unable to fail queued deploys database")
+		return fmt.Errorf("unable to fail queued install: %w", err)
+	}
+
 	// update status with response
 	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
 		InstallID: installID,
