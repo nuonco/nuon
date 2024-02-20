@@ -113,25 +113,6 @@ jobs:
       stage: true
     secrets: inherit
 
-  sdks:
-    name: Update SDKs
-    needs:
-      - services
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Elixir
-        uses: peter-evans/repository-dispatch@v3
-        with:
-            token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
-            repository: nuonco/nuon-elixir
-            event-type: generate
-      - name: Python
-        uses: peter-evans/repository-dispatch@v3
-        with:
-            token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
-            repository: nuonco/nuon-python
-            event-type: generate
 
   artifacts:
     # since this runs as a matrix, name shows as `🚢 (workers-orgs)`
@@ -153,21 +134,6 @@ jobs:
       is_promotion: true
     secrets: inherit
 
-  homebrew_tap:
-    name: Update Homebrew Tap
-    needs:
-      - tag
-      - artifacts
-    runs-on: ubuntu-latest
-    steps:
-      - name: Call nuonco/homebrew-tap generate workflow
-        uses: peter-evans/repository-dispatch@v3
-        with:
-            token: ${{ secrets.NUON_BOT_GITHUB_TOKEN }}
-            repository: nuonco/homebrew-tap
-            event-type: generate
-            client-payload: '{"version": "${{ needs.tag.outputs.semver }}" }'
-
   bump_tag:
     name: bump tag
     needs:
@@ -175,7 +141,7 @@ jobs:
       - merged_pr
       - services
       - artifacts
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
+    if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
     runs-on: ubuntu-latest
     steps:
       - name: Push tag
@@ -184,8 +150,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ needs.tag.outputs.semver }}
 
-  status_slack_notifications:
-    name: update promotions channel
+  update_statuses:
+    name: update statuses
     if: needs.merged_pr.outputs.promote == 'true' && always()
     needs:
       - tag
@@ -210,18 +176,32 @@ jobs:
             *prod* - true
             *status* - ${{steps.check.outputs.status}}
 
-  trigger_canary:
-    name: trigger canary
+      - name: Update datadog
+        uses: masci/datadog@v1
+        with:
+          api-key: ${{ secrets.DATADOG_API_KEY }}
+          api-url: "https://us5.datadoghq.com"
+          metrics: |
+            - type: "count"
+              name: "promotions.count"
+              value: 1.0
+              host: ${{ github.repository_owner }}
+              tags:
+                - "branch:${{ github.head_ref }}"
+                - "status:${{ steps.check.outputs.status }}"
+                - "version:${{ needs.tag.outputs.semver }}"
+
+  # this is called once the promotion has succeeded and the tag has been written
+  promote_success:
+    name: promote_success
     needs:
-      - merged_pr
-      - services
-      - artifacts
       - tag
+      - bump_tag
+      - merged_pr
+      - artifacts
+      - services
     if: ${{ needs.merged_pr.outputs.promote == 'true' }}
-    uses: ./.github/workflows/internal_api.yml
+    uses: ./.github/workflows/promote_success.yml
     with:
-      env: prod
-      endpoint: /v1/general/provision-canary
-      method: POST
-      data: "{}"
+      tag: ${{ needs.tag.outputs.semver }}
     secrets: inherit
