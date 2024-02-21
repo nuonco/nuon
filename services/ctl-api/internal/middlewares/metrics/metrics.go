@@ -25,8 +25,10 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		path := c.FullPath()
+		statusCode := c.Writer.Status()
 		tags := []string{
 			"status:" + status,
+			"status_code_class:" + fmt.Sprintf("%dxx", statusCode/100),
 			"endpoint:" + fmt.Sprintf("%s-%s", c.Request.Method, path),
 		}
 
