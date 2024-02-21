@@ -13,6 +13,7 @@ import (
 const defaultDeleteWait = time.Hour * 4
 
 func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) error {
+	// wait to delete so we have time to debug
 	workflow.Sleep(ctx, defaultDeleteWait)
 
 	var userResp activities.CreateUserResponse
@@ -42,9 +43,6 @@ func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.Deprovision
 		w.l.Info("error running terraform destroy", zap.Error(err))
 	}
 	w.l.Info("run terraform", zap.Any("response", runResp))
-
-	// wait to delete the org to give us a chance to debug provision failures
-	workflow.Sleep(ctx, defaultDeleteWait)
 
 	var orgResp activities.DeleteOrgResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.DeleteOrg, &activities.DeleteOrgRequest{
