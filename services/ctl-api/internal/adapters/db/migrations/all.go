@@ -131,5 +131,10 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "029-vcs-conns-cascade",
 			Fn:   a.migration029VcsConnectionsConstraint,
 		},
+		{
+
+			Name: "030-org-user-duplicate",
+			Fn:   a.migration030OrgUserDuplicates,
+		},
 	}
 }
