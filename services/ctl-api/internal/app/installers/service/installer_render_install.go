@@ -1,7 +1,11 @@
 package service
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -53,6 +57,12 @@ func (s *service) RenderInstallerInstall(ctx *gin.Context) {
 		inputs = installer.App.AppInputConfigs[0]
 	}
 
+	renderedContent, err := s.renderInstallContent(ctx, installer.Metadata.PostInstallMarkdown, install, installer)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to render install content: %w", err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, RenderedInstall{
 		Installer: RenderedInstaller{
 			App:         installer.App,
@@ -62,6 +72,58 @@ func (s *service) RenderInstallerInstall(ctx *gin.Context) {
 			Metadata:    installer.Metadata,
 		},
 		Install:          install,
-		InstallerContent: "coming soon",
+		InstallerContent: renderedContent,
 	})
+}
+
+func (s *service) renderInstallContent(ctx context.Context, templateStr string, install *app.Install, installer *app.AppInstaller) (string, error) {
+	installJSON, err := json.Marshal(install)
+	if err != nil {
+		return "", fmt.Errorf("unable to convert install to json: %w", err)
+	}
+
+	var installMap map[string]interface{}
+	if err := json.Unmarshal(installJSON, &installMap); err != nil {
+		return "", fmt.Errorf("unable to convert install to map: %w", err)
+	}
+
+	appJSON, err := json.Marshal(install.App)
+	if err != nil {
+		return "", fmt.Errorf("unable to convert app to json: %w", err)
+	}
+
+	var appMap map[string]interface{}
+	if err := json.Unmarshal(appJSON, &appMap); err != nil {
+		return "", fmt.Errorf("unable to convert app to map: %w", err)
+	}
+
+	installerJSON, err := json.Marshal(installer)
+	if err != nil {
+		return "", fmt.Errorf("unable to convert installer to json: %w", err)
+	}
+
+	var installerMap map[string]interface{}
+	if err := json.Unmarshal(installerJSON, &installerMap); err != nil {
+		return "", fmt.Errorf("unable to convert app to map: %w", err)
+	}
+
+	data := map[string]interface{}{
+		"nuon": map[string]interface{}{
+			"install":   installMap,
+			"installer": installerMap,
+			"app":       appMap,
+		},
+	}
+
+	temp, err := template.New("post-install").Parse(templateStr)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse template: %w", err)
+	}
+
+	buf := new(bytes.Buffer)
+	if err := temp.Execute(buf, data); err != nil {
+		return "", fmt.Errorf("unable to render template: %w", err)
+	}
+
+	return buf.String(), nil
 }
