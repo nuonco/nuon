@@ -55,7 +55,7 @@ func (s *service) CreateUser(ctx *gin.Context) {
 
 func (s *service) createUser(ctx context.Context, orgID, userID string) (*app.UserOrg, error) {
 	userOrg := &app.UserOrg{
-		OrgID:  orgID,
+		OrgID:   orgID,
 		UserID: userID,
 	}
 
