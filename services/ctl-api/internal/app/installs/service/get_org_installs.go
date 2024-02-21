@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"gorm.io/gorm"
 )
 
 // @ID GetOrgInstalls
@@ -44,8 +45,24 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Install, error) {
 	var installs []app.Install
 	res := s.db.WithContext(ctx).
+		Preload("AppSandboxConfig").
+		Preload("CreatedBy").
+		Preload("AWSAccount").
+		Preload("App").
+		Preload("App.Org").
+		Preload("App.AppSandboxConfigs").
+		Preload("InstallComponents").
+		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_deploys.created_at DESC")
+		}).
+		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_sandbox_runs.created_at DESC")
+		}).
+		Preload("InstallComponents.Component").
+		Joins("JOIN apps ON apps.id=installs.app_id").
+		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Order("created_at desc").
-		Find(&installs, "org_id = ?", orgID)
+		Find(&installs, "installs.org_id = ?", orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org installs: %w", res.Error)
 	}
