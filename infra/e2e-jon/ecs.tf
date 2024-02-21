@@ -8,7 +8,7 @@ module "aws-ecs" {
   sandbox_dir = "aws-ecs"
   app_runner_type = "aws-ecs"
 
-  east_1_count = 0
+  east_1_count = 1
   eu_west_2_count = 0
   east_2_count = 0
   west_2_count = 0

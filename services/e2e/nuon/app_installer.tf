@@ -12,9 +12,14 @@ resource "nuon_app_installer" "main" {
   demo_url = "https://www.loom.com/share/aec62b468f9747c59ed5c30c79d473c4"
 
   post_install_markdown = <<EOT
-  # Install Post
+# Install Post
 
-  Your install with id {{.install.id}}.
+Your install with id {{.nuon.install.id}} and your install {{.nuon.app.Name}} ({{.nuon.app.id}}) is
+{{if eq .nuon.install.Status "active" }}
+Please check our docs at {{.nuon.installer.metadata.documentation_url}}.
+{{else}}
+{{.nuon.install.Status}}.
+{{end}}
 
   EOT
 }
