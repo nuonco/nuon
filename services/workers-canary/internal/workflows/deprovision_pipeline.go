@@ -2,12 +2,15 @@ package workflows
 
 import (
 	"fmt"
+	"time"
 
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"github.com/powertoolsdev/mono/services/workers-canary/internal/activities"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
+
+const defaultDeleteWait = time.Hour * 4
 
 func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) error {
 	var userResp activities.CreateUserResponse
@@ -37,6 +40,9 @@ func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.Deprovision
 		w.l.Info("error running terraform destroy", zap.Error(err))
 	}
 	w.l.Info("run terraform", zap.Any("response", runResp))
+
+	// wait to delete the org to give us a chance to debug provision failures
+	workflow.Sleep(ctx, defaultDeleteWait)
 
 	var orgResp activities.DeleteOrgResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.DeleteOrg, &activities.DeleteOrgRequest{
