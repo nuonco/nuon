@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -33,8 +34,15 @@ var defaultSupportUsers = []string{
 func (s *service) CreateSupportUsers(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
+	org, err := s.getOrg(ctx, orgID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	cctx := context.WithValue(ctx, "user_id", org.CreatedByID)
 	for _, userID := range defaultSupportUsers {
-		if _, err := s.createUser(ctx, orgID, userID); err != nil {
+		if _, err := s.createUser(cctx, orgID, userID); err != nil {
 			ctx.Error(fmt.Errorf("unable to add users to org: %w", err))
 			return
 		}
