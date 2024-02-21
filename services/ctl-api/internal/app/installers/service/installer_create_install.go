@@ -55,7 +55,7 @@ func (s *service) CreateInstallerInstall(ctx *gin.Context) {
 	}
 
 	cctx := context.WithValue(ctx, "org_id", installer.App.OrgID)
-	cctx = context.WithValue(cctx, "user_id", installer.ID)
+	cctx = context.WithValue(cctx, "user_id", installer.CreatedByID)
 
 	install, err := s.installHelpers.CreateInstall(cctx, installer.App.ID, &req.CreateInstallParams)
 	if err != nil {
