@@ -9,6 +9,8 @@ env:
   INSTALL_SCRIPT_PATH: ./install-cli.sh
   DISABLE_NOTIFICATIONS: true
   DISABLE_TESTS: false
+  CANARY_DEBUG_PERIOD: 30s
+
 local_startup_cmds:
   - go build -o /tmp/svc-workers-canary .
 local_cmds:

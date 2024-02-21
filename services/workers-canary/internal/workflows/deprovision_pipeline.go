@@ -2,7 +2,6 @@ package workflows
 
 import (
 	"fmt"
-	"time"
 
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"github.com/powertoolsdev/mono/services/workers-canary/internal/activities"
@@ -10,12 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const defaultDeleteWait = time.Hour * 4
-
 func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) error {
-	// wait to delete so we have time to debug
-	workflow.Sleep(ctx, defaultDeleteWait)
-
 	var userResp activities.CreateUserResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateUser, &activities.CreateUserRequest{
 		CanaryID: req.CanaryId,

@@ -20,6 +20,7 @@ func init() {
 	config.RegisterDefault("terraform_state_base_dir", "/tmp/state")
 	config.RegisterDefault("default_install_count", 1)
 	config.RegisterDefault("sandbox_mode_install_count", 5)
+	config.RegisterDefault("canary_debug_period", "4h")
 }
 
 type Config struct {
@@ -42,6 +43,9 @@ type Config struct {
 
 	SandboxModeInstallCount int `config:"sandbox_mode_install_count"`
 	DefaultInstallCount     int `config:"default_install_count"`
+
+	// the canary will _not_ run deprovision until the period has finished, allowing us time to debug using the CLI.
+	CanaryDebugPeriod string `config:"canary_debug_period"`
 }
 
 func (c Config) Validate() error {

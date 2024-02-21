@@ -37,6 +37,15 @@ func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequ
 	}
 	w.l.Info("create org", zap.Any("response", orgResp))
 
+	var addSupportUsersResp activities.AddSupportUsersResponse
+	if err := w.defaultExecGetActivity(ctx, w.acts.AddSupportUsers, &activities.AddSupportUsersRequest{
+		OrgID: orgResp.OrgID,
+	}, &addSupportUsersResp); err != nil {
+		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:add_support_users")
+		return nil, orgResp.OrgID, userResp.APIToken, fmt.Errorf("unable to add support users: %w", err)
+	}
+	w.l.Info("create support users", zap.Any("response", addSupportUsersResp))
+
 	var vcsResp activities.CreateVCSConnectionResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateVCSConnection, &activities.CreateVCSConnectionRequest{
 		CanaryID:        req.CanaryId,

@@ -49,7 +49,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	if err != nil {
 		w.sendNotification(ctx, notificationTypeProvisionError, req.CanaryId, req.SandboxMode, err)
 
-		if err := w.execProvisionDeprovision(ctx, orgID, req); err != nil {
+		if err := w.execProvisionDeprovision(ctx, orgID, req, true); err != nil {
 			l.Error("unable to deprovision", zap.Error(err))
 		}
 		return nil, err
@@ -59,13 +59,13 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	if err != nil {
 		w.sendNotification(ctx, notificationTypeTestsError, req.CanaryId, req.SandboxMode, err)
 
-		if err := w.execProvisionDeprovision(ctx, orgID, req); err != nil {
+		if err := w.execProvisionDeprovision(ctx, orgID, req, true); err != nil {
 			l.Error("unable to deprovision", zap.Error(err))
 		}
 		return nil, err
 	}
 
-	if err := w.execProvisionDeprovision(ctx, orgID, req); err != nil {
+	if err := w.execProvisionDeprovision(ctx, orgID, req, false); err != nil {
 		l.Error("unable to deprovision", zap.Error(err))
 	}
 
@@ -77,10 +77,20 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	}, nil
 }
 
-func (w *wkflow) execProvisionDeprovision(ctx workflow.Context, orgID string, req *canaryv1.ProvisionRequest) error {
+func (w *wkflow) execProvisionDeprovision(ctx workflow.Context, orgID string, req *canaryv1.ProvisionRequest, wait bool) error {
 	l := workflow.GetLogger(ctx)
 	if orgID == "" {
 		l.Info("unable to cleanup, no org id present")
+		return nil
+	}
+
+	if wait {
+		waitDur, err := time.ParseDuration(w.cfg.CanaryDebugPeriod)
+		if err != nil {
+			return fmt.Errorf("unable to parse debug wait period: %w", err)
+		}
+
+		workflow.Sleep(ctx, waitDur)
 		return nil
 	}
 
