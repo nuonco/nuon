@@ -33,6 +33,7 @@ func (s *service) AdminGetOrg(ctx *gin.Context) {
 func (s *service) adminGetOrg(ctx context.Context, nameOrID string) (*app.Org, error) {
 	org := app.Org{}
 	res := s.db.WithContext(ctx).
+		Unscoped().
 		Preload("CreatedBy").
 		Where("name LIKE ?", nameOrID).
 		Or("id = ?", nameOrID).

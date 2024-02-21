@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
@@ -99,16 +97,6 @@ func (w *Workflows) AppEventLoop(ctx workflow.Context, req AppEventLoopRequest) 
 		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
 			w.mw.Incr(ctx, "event_loop.canceled", 1, metrics.ToTags(defaultTags)...)
 			l.Error("workflow canceled")
-			break
-		}
-
-		if temporal.IsPanicError(ctx.Err()) {
-			w.mw.Incr(ctx, "event_loop.panic", 1, metrics.ToTags(defaultTags)...)
-			w.mw.Event(ctx, &statsd.Event{
-				Title: "event loop panic",
-				Text:  "event loop panic\n\t-" + req.AppID,
-			})
-			l.Error("workflow panic", zap.Error(ctx.Err()))
 			break
 		}
 
