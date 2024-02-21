@@ -9,9 +9,9 @@ module "shared-warpstream" {
   enable_branch_protection = false
 
   collaborators = {
-    #"caleb-warpstream" = "push"
-    #"richard-artoul" = "push"
-    #"ryanworl" = "push"
+    "caleb-warpstream" = "push"
+    "richard-artoul" = "admin"
+    "ryanworl" = "push"
   }
 
   providers = {
