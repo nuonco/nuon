@@ -36,6 +36,7 @@ func New(cfg *internal.Config,
 	wkr := worker.New(client, workflows.APITaskQueue, worker.Options{
 		MaxConcurrentActivityExecutionSize: cfg.TemporalMaxConcurrentActivities,
 		Interceptors:                       []interceptor.WorkerInterceptor{},
+		WorkflowPanicPolicy:                worker.FailWorkflow,
 	})
 	wkr.RegisterActivity(acts)
 	wkr.RegisterWorkflow(wkflows.OrgEventLoop)
