@@ -13,6 +13,8 @@ import (
 const defaultDeleteWait = time.Hour * 4
 
 func (w *wkflow) execDeprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequest) error {
+	workflow.Sleep(ctx, defaultDeleteWait)
+
 	var userResp activities.CreateUserResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateUser, &activities.CreateUserRequest{
 		CanaryID: req.CanaryId,
