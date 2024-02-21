@@ -13,6 +13,21 @@ type Org struct {
 	Status string `json:"status"`
 }
 
+func (c *client) AddSupportUsers(ctx context.Context, orgID string) error {
+	endpoint := fmt.Sprintf("/v1/orgs/%s/admin-support-users", orgID)
+	byts, err := c.execPostRequest(ctx, endpoint, map[string]interface{}{})
+	if err != nil {
+		return fmt.Errorf("unable to execute post request: %w", err)
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal(byts, &response); err != nil {
+		return fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return nil
+}
+
 func (c *client) ListOrgs(ctx context.Context) ([]Org, error) {
 	endpoint := "/v1/orgs"
 	byts, err := c.execGetRequest(ctx, endpoint)

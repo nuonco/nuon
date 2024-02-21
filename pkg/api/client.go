@@ -17,6 +17,7 @@ type Client interface {
 	DeprovisionOrg(ctx context.Context, orgID string) error
 	ReprovisionOrg(ctx context.Context, orgID string) error
 	RestartOrg(ctx context.Context, orgID string) error
+	AddSupportUsers(ctx context.Context, orgID string) error
 
 	ListApps(ctx context.Context) ([]App, error)
 	ReprovisionApp(ctx context.Context, appID string) error
