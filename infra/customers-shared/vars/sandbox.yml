@@ -30,7 +30,7 @@ apps:
         default: ""
         required: true
     installer:
-      slug: warpstream
+      slug: warpstream-nuon
       description: Stream more,manage less
       name: WarpStream
     urls:
@@ -40,7 +40,7 @@ apps:
       community: https://console.warpstream.com/socials/slack
       homepage: https://warpstream.com
       demo: https://player.vimeo.com/video/851371577
-  - name: okteto
+  - name: okteto-nuon
     sandbox_install_count: 0
     install_inputs: []
     sandbox_install_inputs:
@@ -48,7 +48,7 @@ apps:
       storage: 20Gi
     installs: []
     installer:
-      slug: okteto
+      slug: okteto-nuon
       description: The fastest way to turbocharge development velocity
       name: Okteto
     urls:
