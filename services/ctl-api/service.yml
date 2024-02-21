@@ -14,7 +14,7 @@ env:
   DISABLE_METRICS: true
   HTTP_PORT: 8081
   INTERNAL_HTTP_PORT: 8082
-  MIDDLEWARES: error,metrics,public,global,auth,org,headers,cors
+  MIDDLEWARES: metrics,error,public,global,auth,org,headers,cors
   INTERNAL_MIDDLEWARES: metrics,error
   GITHUB_APP_ID: !!string 261597
   AUTH0_ISSUER_URL: "https://nuon.us.auth0.com/"
