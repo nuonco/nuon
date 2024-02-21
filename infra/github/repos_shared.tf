@@ -10,7 +10,7 @@ module "shared-warpstream" {
 
   collaborators = {
     "caleb-warpstream" = "push"
-    "richard-artoul" = "admin"
+    "richardartoul" = "push"
     "ryanworl" = "push"
   }
 
