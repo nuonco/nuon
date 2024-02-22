@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"go.temporal.io/sdk/workflow"
@@ -41,6 +43,19 @@ func (w *Workflows) provision(ctx workflow.Context, installID string, dryRun boo
 
 	_, err = w.execProvisionWorkflow(ctx, dryRun, req)
 	if err != nil {
+		w.mw.Event(ctx, &statsd.Event{
+			Title: "install failed to provision",
+			Text: fmt.Sprintf(
+				"install %s failed to provision\ncreated by %s\nerror: %s",
+				installID,
+				install.CreatedBy.Email,
+				err.Error(),
+			),
+			Tags: metrics.ToTags(map[string]string{
+				"status":             "error",
+				"status_description": "failed to provision",
+			}),
+		})
 		accessError := credentials.ErrUnableToAssumeRole{
 			RoleARN: install.AWSAccount.IAMRoleARN,
 		}
