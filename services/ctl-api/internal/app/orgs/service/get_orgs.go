@@ -46,9 +46,12 @@ func (s *service) getCurrentUserOrgs(ctx context.Context, userID string) ([]*app
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Org.VCSConnections").
+		Joins("JOIN orgs ON orgs.id=user_orgs.org_id").
 		Where(&app.UserOrg{
 			UserID: userID,
-		}).Find(&userOrgs)
+		}).
+		Order("orgs.Name asc").
+		Find(&userOrgs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get current user's orgs: %w", res.Error)
 	}

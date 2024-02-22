@@ -98,6 +98,18 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 				SandboxMode: req.SandboxMode,
 			})
 
+		// OperationForceDelete
+		case OperationForceDelete:
+			op = "force_delete"
+			err := w.forceDelete(ctx, req.OrgID, req.SandboxMode)
+			if err != nil {
+				status = "error"
+				l.Error("unable to force delete org", zap.Error(err))
+				return
+			}
+
+			finished = true
+
 		// OperationDelete
 		case OperationDelete:
 			op = "delete"
