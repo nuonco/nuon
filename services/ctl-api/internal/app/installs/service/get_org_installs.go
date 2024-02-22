@@ -50,7 +50,8 @@ func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Insta
 		Preload("AWSAccount").
 		Preload("App").
 		Preload("App.Org").
-		Preload("App.AppSandboxConfigs").
+		Preload("AppSandboxConfig.PublicGitVCSConfig").
+		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("InstallComponents").
 		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_deploys.created_at DESC")
@@ -58,6 +59,7 @@ func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Insta
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).
+		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("InstallComponents.Component").
 		Joins("JOIN apps ON apps.id=installs.app_id").
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
