@@ -31,7 +31,12 @@ func (w *Workflows) provision(ctx workflow.Context, orgID string, sandboxMode bo
 	if err != nil {
 		w.mw.Event(ctx, &statsd.Event{
 			Title: "org failed to provision",
-			Text:  fmt.Sprintf("org %s failed to provision\ncreated by %s\nerror: %s", org.ID, org.CreatedBy.Email, err.Error()),
+			Text: fmt.Sprintf(
+				"org %s failed to provision\ncreated by %s\nerror: %s",
+				org.ID,
+				org.CreatedBy.Email,
+				err.Error(),
+			),
 			Tags: metrics.ToTags(map[string]string{
 				"status":             "error",
 				"status_description": "failed to provision",
