@@ -1,5 +1,5 @@
 resource "nuon_terraform_module_component" "e2e" {
-  name   = "e2e_infra"
+  name   = "${var.component_prefix}e2e_infra"
   app_id = nuon_app.main.id
   terraform_version = "1.6.3"
 

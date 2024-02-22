@@ -1,6 +1,6 @@
 // nuon allows you to connect any helm chart in a connected or public repo to install in your application
 resource "nuon_helm_chart_component" "e2e" {
-  name   = "e2e_helm"
+  name   = "${var.component_prefix}e2e_helm"
   app_id = nuon_app.main.id
 
   dependencies = [

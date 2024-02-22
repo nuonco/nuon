@@ -25,6 +25,7 @@ module "aws-eks-byo-vpc" {
   source = "./e2e"
 
   app_name = "${local.name}-aws-byo-vpc"
+  component_prefix = "byovpc_"
 
   sandbox_repo = local.sandboxes_repo
   sandbox_branch = local.sandboxes_branch

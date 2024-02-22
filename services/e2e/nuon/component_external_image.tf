@@ -1,5 +1,5 @@
 resource "nuon_container_image_component" "e2e" {
-  name   = "e2e_external_image"
+  name   = "${var.component_prefix}e2e_external_image"
   app_id = nuon_app.main.id
 
   dependencies = [

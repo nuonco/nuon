@@ -4,6 +4,12 @@ variable "app_name" {
   type        = string
 }
 
+variable "component_prefix" {
+  description = "Prefix to add onto each component, to make looking up by name easier"
+  default     = ""
+  type        = string
+}
+
 variable "app_runner_type" {
   description = "app runner type"
   default = "aws-eks"
