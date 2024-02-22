@@ -10,6 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/workflows"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 )
 
 const (
@@ -63,6 +64,9 @@ func (c *service) startCanaryCron(ctx context.Context, id string, sandboxMode bo
 		CronSchedule:          schedule,
 		TaskQueue:             workflows.DefaultTaskQueue,
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
 		Memo: map[string]interface{}{
 			"started-by": "ctl-api",
 		},
