@@ -10,6 +10,7 @@ func (w *worker) getWorker(c client.Client) (tworker.Worker, error) {
 	return tworker.New(c, w.Config.TemporalTaskQueue, tworker.Options{
 		MaxConcurrentActivityExecutionSize: w.Config.TemporalMaxConcurrentActivities,
 		Interceptors:                       []interceptor.WorkerInterceptor{},
+		WorkflowPanicPolicy:                tworker.FailWorkflow,
 	}), nil
 }
 
