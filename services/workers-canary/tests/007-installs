@@ -15,11 +15,26 @@ echo >&2 -e "nuon installs list-deploys -i $install_name\n"
 nuon -j installs list-deploys -i $install_name
 echo -e "\n"
 
+echo >&2 -e "polling until deploy is finished\n"
+deploy_id=$(nuon -j installs list-deploys -i $install_name | jq -r .[0].id)
+deploying=true
+while [ $deploying = true ]
+do
+  deploy_status=$(nuon -j installs get-deploy -d $deploy_id -i $install_name | jq -r .status)
+  echo $deploy_status
+  if [[ $deploy_status == "active" ]]; then
+    echo >&2 -e "deploy is active\n"
+    deploying=false
+  fi
+
+  echo >&2 -e "waiting for deploy status to be active\n"
+  sleep 1
+done
+
 echo >&2 -e "[SANDBOX=false] nuon installs print-deploy-plan -i $install_name -d {deploy_id}\n"
 if [[ "$SANDBOX" == "true" ]]; then
   echo >&2 "skipping installs print-deploy-plan in sandbox mode"
 else
-  deploy_id=$(nuon -j installs list-deploys -i $install_name | jq -r .[0].id)
   nuon -j installs print-deploy-plan -i $install_name -d $deploy_id
 fi
 echo -e "\n"
