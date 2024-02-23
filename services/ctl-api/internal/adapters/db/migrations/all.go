@@ -146,5 +146,10 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "032-sensitive-inputs",
 			Fn:   a.migration033SensitiveInputs,
 		},
+		{
+
+			Name: "033-sensitive-input",
+			Fn:   a.migration033SensitiveInputs,
+		},
 	}
 }
