@@ -39,7 +39,15 @@ func (s *service) AdminDeleteIntegrationOrgs(ctx *gin.Context) {
 }
 
 func (s *service) hardDeleteOrg(ctx context.Context, orgID string) error {
-	res := s.db.WithContext(ctx).Unscoped().Delete(&app.Org{
+	// delete apps
+	res := s.db.WithContext(ctx).Unscoped().
+		Where("org_id = ?", orgID).
+		Delete(&app.App{})
+	if res.Error != nil {
+		return fmt.Errorf("unable to delete org apps: %w", res.Error)
+	}
+
+	res = s.db.WithContext(ctx).Unscoped().Delete(&app.Org{
 		ID: orgID,
 	})
 	if res.Error != nil {
