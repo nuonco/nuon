@@ -17,6 +17,7 @@ type AppInputRequest struct {
 	Description string `json:"description" validate:"required"`
 	Default     string `json:"default"`
 	Required    bool   `json:"required"`
+	Sensitive   bool   `json:"sensitive"`
 }
 
 type CreateAppInputConfigRequest struct {
@@ -90,6 +91,7 @@ func (s *service) createAppInputs(ctx context.Context, orgID, appID string, req 
 			DisplayName: input.DisplayName,
 			Required:    input.Required,
 			Default:     input.Default,
+			Sensitive:   input.Sensitive,
 		})
 	}
 

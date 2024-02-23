@@ -65,6 +65,7 @@ variable "inputs" {
     value         = string
     interpolation = string
     display_name = string
+    sensitive = bool
   }))
   description = "Inputs that will be used for app inputs, and then set on each install"
 
@@ -77,6 +78,7 @@ variable "inputs" {
       required      = true
       value         = "v1.27.8"
       interpolation = "{{.nuon.install.inputs.eks_version}}"
+      sensitive = false
     },
     {
       name          = "admin_access_role_arn"
@@ -85,7 +87,18 @@ variable "inputs" {
       default       = "default"
       required      = false
       value         = "arn:aws:iam::676549690856:role/aws-reserved/sso.amazonaws.com/us-east-2/AWSReservedSSO_NuonAdmin_b8aea3365312317b"
-      interpolation = "{{.nuon.install.inputs.admin_access_role_arn"
+      interpolation = "{{.nuon.install.inputs.admin_access_role_arn}}"
+      sensitive = false
+    },
+    {
+      name          = "api_key"
+      display_name = "API Key"
+      description   = "API key to access a third party provider"
+      default       = ""
+      required      = true
+      value         = "D066077E-F464-47F1-90EE-FE2466D0561C"
+      interpolation = "{{.nuon.install.inputs.api_key"
+      sensitive = true
     },
   ]
 }

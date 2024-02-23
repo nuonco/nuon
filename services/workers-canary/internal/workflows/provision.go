@@ -91,7 +91,6 @@ func (w *wkflow) execProvisionDeprovision(ctx workflow.Context, orgID string, re
 		}
 
 		workflow.Sleep(ctx, waitDur)
-		return nil
 	}
 
 	cwo := workflow.ChildWorkflowOptions{

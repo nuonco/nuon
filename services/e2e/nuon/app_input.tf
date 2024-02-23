@@ -10,6 +10,7 @@ resource "nuon_app_input" "main" {
       default     = input.value.default
       required    = input.value.required
       display_name = input.value.display_name
+      sensitive = input.value.sensitive
     }
   }
 }
