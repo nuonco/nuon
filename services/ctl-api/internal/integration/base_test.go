@@ -126,6 +126,7 @@ func (s *baseIntegrationTestSuite) createAppWithInputs(orgID string) *models.App
 
 	inputReq := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
 	inputReq.Inputs = s.formatInputs(inputReq.Inputs)
+	inputReq.Inputs[generics.GetFakeObj[string]()] = generics.GetFakeObj[models.ServiceAppInputRequest]()
 
 	cfg, err := s.apiClient.CreateAppInputConfig(s.ctx, app.ID, inputReq)
 	require.NoError(s.T(), err)

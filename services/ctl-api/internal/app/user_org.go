@@ -25,6 +25,8 @@ type UserOrg struct {
 
 func (u *UserOrg) BeforeCreate(tx *gorm.DB) error {
 	u.ID = domains.NewUserID()
-	u.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	if u.CreatedByID == "" {
+		u.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
 	return nil
 }
