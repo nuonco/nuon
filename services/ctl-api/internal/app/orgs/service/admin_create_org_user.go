@@ -28,13 +28,19 @@ type AdminCreateOrgUserRequest struct {
 func (s *service) CreateOrgUser(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
+	org, err := s.getOrg(ctx, orgID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org: %w", err))
+		return
+	}
+
 	var req AdminCreateOrgUserRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
 
-	userOrg, err := s.createUserByEmail(ctx, orgID, req.Email)
+	userOrg, err := s.createUserByEmail(ctx, org, req.Email)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create user: %w", err))
 		return
@@ -43,7 +49,7 @@ func (s *service) CreateOrgUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, userOrg)
 }
 
-func (s *service) createUserByEmail(ctx context.Context, orgID, email string) (*app.UserOrg, error) {
+func (s *service) createUserByEmail(ctx context.Context, org *app.Org, email string) (*app.UserOrg, error) {
 	var userToken app.UserToken
 	err := s.db.WithContext(ctx).Order("created_at DESC").First(&userToken, "email = ?", email).Error
 	if err != nil {
@@ -51,8 +57,9 @@ func (s *service) createUserByEmail(ctx context.Context, orgID, email string) (*
 	}
 
 	userOrg := &app.UserOrg{
-		OrgID:  orgID,
-		UserID: userToken.Subject,
+		CreatedByID: org.CreatedByID,
+		OrgID:       org.ID,
+		UserID:      userToken.Subject,
 	}
 
 	err = s.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&userOrg).Error
