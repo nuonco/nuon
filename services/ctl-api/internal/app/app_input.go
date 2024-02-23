@@ -25,6 +25,7 @@ type AppInput struct {
 	Description string `json:"description" gorm:"not null; default null"`
 	Default     string `json:"default"`
 	Required    bool   `json:"required"`
+	Sensitive   bool   `json:"sensitive"`
 }
 
 func (a *AppInput) BeforeCreate(tx *gorm.DB) error {

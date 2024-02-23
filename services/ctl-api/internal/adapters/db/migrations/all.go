@@ -141,5 +141,10 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "031-connected-config-cascade",
 			Fn:   a.migration031ConnectedVCSConfigCascadeConstraint,
 		},
+		{
+
+			Name: "032-sensitive-inputs",
+			Fn:   a.migration033SensitiveInputs,
+		},
 	}
 }
