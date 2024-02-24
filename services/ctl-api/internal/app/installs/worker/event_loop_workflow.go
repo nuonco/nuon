@@ -90,6 +90,10 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 			}
 		case signals.OperationForgotten:
 			op = "forgotten"
+			err = w.forget(ctx, req.InstallID)
+			if err != nil {
+				l.Error("unable to forget", zap.Error(err))
+			}
 			finished = true
 		case signals.OperationDeployComponents:
 			op = "deploy_components"
