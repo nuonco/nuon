@@ -11,6 +11,7 @@ type Helpers struct {
 	cfg      *internal.Config
 	ghClient *github.Client
 	db       *gorm.DB
+	v        *validator.Validate
 }
 
 func New(v *validator.Validate,
@@ -19,6 +20,7 @@ func New(v *validator.Validate,
 	db *gorm.DB,
 ) *Helpers {
 	return &Helpers{
+		v:        v,
 		cfg:      cfg,
 		ghClient: ghClient,
 		db:       db,

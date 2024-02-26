@@ -17,6 +17,7 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.App, error) 
 		Preload("Org").
 		Preload("Installs").
 		Preload("Components").
+		Preload("CreatedBy").
 		First(&currentApp, "id = ?", req.AppID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
