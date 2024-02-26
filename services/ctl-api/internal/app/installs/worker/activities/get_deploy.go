@@ -22,6 +22,7 @@ func (a *Activities) GetDeploy(ctx context.Context, req GetDeployRequest) (*app.
 			return db.Order("install_inputs.created_at DESC")
 		}).
 		Preload("InstallComponent.Install.InstallInputs.AppInputConfig").
+		Preload("InstallComponent.Install.InstallInputs").
 		Preload("InstallComponent.Install.AppSandboxConfig").
 		Preload("InstallComponent.Install.AppRunnerConfig").
 		First(&installDeploy, "id = ?", req.DeployID)

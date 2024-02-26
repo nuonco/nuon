@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"os"
 
 	"github.com/nuonco/nuon-go"
@@ -10,12 +11,32 @@ import (
 const (
 	defaultServerErrorMessage  string = "Oops, we have experienced a server error. Please try again in a few minutes."
 	defaultUnknownErrorMessage string = "Oops, we have experienced an unexpected error. Please let us know about this."
+	debugEnvVar                string = "NUON_DEBUG"
 )
 
+type CLIUserError struct {
+	Msg string
+}
+
+func (u *CLIUserError) Error() string {
+	return u.Msg
+}
+
 func PrintError(err error) {
-	userErr, ok := nuon.ToUserError(err)
+	if os.Getenv(debugEnvVar) != "" {
+		pterm.Error.Println(err.Error())
+	}
+
+	cliUserErr := &CLIUserError{}
+	if errors.As(err, &cliUserErr) {
+		pterm.Error.Println(err.Error())
+		os.Exit(1)
+		return
+	}
+
+	apiUserErr, ok := nuon.ToUserError(err)
 	if ok {
-		pterm.Error.Println(userErr.Description)
+		pterm.Error.Println(apiUserErr.Description)
 		os.Exit(1)
 		return
 	}

@@ -61,6 +61,32 @@ func (c *cli) appsCmd() *cobra.Command {
 	latestSandboxConfigCmd.MarkFlagRequired("app-id")
 	appsCmd.AddCommand(latestSandboxConfigCmd)
 
+	configs := &cobra.Command{
+		Use:   "configs",
+		Short: "List app configs",
+		Long:  "List app configs",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.apiClient, c.cfg)
+			svc.ListConfigs(cmd.Context(), appID, PrintJSON)
+		},
+	}
+	configs.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	configs.MarkFlagRequired("app-id")
+	appsCmd.AddCommand(configs)
+
+	exportTerraform := &cobra.Command{
+		Use:   "export-terraform",
+		Short: "Export terraform config",
+		Long:  "Export terraform config",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.apiClient, c.cfg)
+			svc.ExportTerraform(cmd.Context(), appID, PrintJSON)
+		},
+	}
+	exportTerraform.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	exportTerraform.MarkFlagRequired("app-id")
+	appsCmd.AddCommand(exportTerraform)
+
 	latestInputConfig := &cobra.Command{
 		Use:   "input-config",
 		Short: "View app input config",

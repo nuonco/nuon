@@ -1,0 +1,77 @@
+version = "v1"
+
+[installer]
+name = "installer"
+description = "one click installer"
+slug = "installer-abc"
+documentation_url = "docs-url"
+community_url = "community-url"
+homepage_url = "homepage-url"
+github_url = "github-url"
+logo_url = "logo-url"
+demo_url = "demo url"
+
+[runner]
+runner_type = "aws-ecs"
+
+[[runner.env_var]]
+name = "runner-env-var"
+value = "runner-env-var"
+
+[sandbox]
+terraform_version = "1.5.4"
+[sandbox.public_repo]
+directory = "aws-ecs-byo-vpc"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[[sandbox.var]]
+name = "vpc_id"
+value = "{{.nuon.install.inputs.vpc_id}}"
+
+[inputs]
+[[inputs.input]]
+name = "vpc_id"
+description = "vpc_id to install application into"
+default = ""
+sensitive = false
+display_name = "VPC ID"
+
+[[inputs.input]]
+name = "api_key"
+description = "API key"
+default = ""
+sensitive = true
+display_name = "API Key"
+
+[[components]]
+name = "abc"
+type = "terraform"
+terraform_version = "1.5.3"
+
+[components.connected_repo]
+directory = "infra"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[components.var]]
+name = "AWS_REGION"
+value = "{{.nuon.install.sandbox.account.region}}"
+
+[[components.var]]
+name = "ACCOUNT_ID"
+value = "{{.nuon.install.sandbox.account.id}}"
+
+[[components]]
+name = "foobar"
+
+dependencies = ["infra"]
+
+[components.connected_repo]
+directory = "deployment"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[components.var]]
+name = "iam_role"
+value = "{{.nuon.components.infra.outputs.iam_role}}"

@@ -49,6 +49,9 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Components").
+		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_configs.created_at DESC")
+		}).
 		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC")
 		}).

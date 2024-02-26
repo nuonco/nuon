@@ -27,6 +27,8 @@ func init() {
 
 	// defaults for sandbox mode
 	config.RegisterDefault("sandbox_sleep", "5s")
+
+	config.RegisterDefault("app_sync_api_url", "http://localhost:8081")
 }
 
 type Config struct {
@@ -80,6 +82,7 @@ type Config struct {
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
+	AppSyncAPIURL              string `config:"app_sync_api_url"`
 }
 
 func NewConfig() (*Config, error) {
