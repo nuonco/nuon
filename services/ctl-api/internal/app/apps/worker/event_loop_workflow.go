@@ -83,6 +83,10 @@ func (w *Workflows) AppEventLoop(ctx workflow.Context, req AppEventLoopRequest) 
 				status = "update_sandbox"
 				l.Info("unable to provision app: %w", zap.Error(err))
 			}
+		case OperationConfigCreated:
+			if err := w.syncConfig(ctx, req.AppID, signal.AppConfigID, req.SandboxMode); err != nil {
+				l.Info("unable to sync config: %w", zap.Error(err))
+			}
 		case OperationDeprovision:
 			op = "deprovision"
 			if err := w.deprovision(ctx, req.AppID, req.SandboxMode); err != nil {

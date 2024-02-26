@@ -22,7 +22,8 @@ type CreateInstallParams struct {
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
 	parentApp := app.App{}
-	res := s.db.WithContext(ctx).Preload("Components").
+	res := s.db.WithContext(ctx).
+		Preload("Components").
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
