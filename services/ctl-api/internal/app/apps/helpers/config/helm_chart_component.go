@@ -6,8 +6,10 @@ type HelmValue struct {
 }
 
 type HelmChartComponentConfig struct {
-	ChartName string      `mapstructure:"chart_name" toml:"chart_name"`
-	Values    []HelmValue `mapstructure:"values" toml:"values"`
+	Name         string      `mapstructure:"name" toml:"name"`
+	Dependencies []string    `mapstructure:"dependencies" toml:"-"`
+	ChartName    string      `mapstructure:"chart_name" toml:"chart_name"`
+	Values       []HelmValue `mapstructure:"values" toml:"values"`
 
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo" toml:"public_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo" toml:"connected_repo"`
