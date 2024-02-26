@@ -5,6 +5,27 @@ import (
 	"path/filepath"
 )
 
+type appConfig struct {
+	OrgID string
+	AppID string
+}
+
+func (i appConfig) toPath() string {
+	base := fmt.Sprintf("org=%s/app=%s",
+		i.OrgID,
+		i.AppID)
+	return base
+}
+
+// InstanceStatePath returns the prefix for an instance's state - meaning long lived files that need to persist through
+// runs, such as a terraform state file.
+func AppConfigPath(orgID, appID string) string {
+	return appConfig{
+		OrgID: orgID,
+		AppID: appID,
+	}.toPath()
+}
+
 type instanceState struct {
 	OrgID       string
 	AppID       string

@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/workers-apps/internal/provision"
 	"github.com/powertoolsdev/mono/services/workers-apps/internal/provision/project"
 	"github.com/powertoolsdev/mono/services/workers-apps/internal/provision/repository"
+	"github.com/powertoolsdev/mono/services/workers-apps/internal/sync"
 	"github.com/spf13/cobra"
 	tworker "go.temporal.io/sdk/worker"
 )
@@ -38,18 +39,20 @@ func runAll(cmd *cobra.Command, _ []string) {
 
 	v := validator.New()
 
-	// parent workflow
+	// parent workflows
 	prWkflow := provision.NewWorkflow(cfg)
 	dprWkflow := deprovision.NewWorkflow(v, cfg)
-	// project child workflow
+	syncWkflow := sync.NewWorkflow(v, cfg)
+
+	// child workflows
 	pwkflow := project.NewWorkflow(cfg)
-	// repository child workflow
 	rwkflow := repository.NewWorkflow(cfg)
 
 	wkr, err := worker.New(v, worker.WithConfig(&cfg.Config),
 		// register workflows
 		worker.WithWorkflow(prWkflow.Provision),
 		worker.WithWorkflow(dprWkflow.Deprovision),
+		worker.WithWorkflow(syncWkflow.Sync),
 		worker.WithWorkflow(pwkflow.ProvisionProject),
 		worker.WithWorkflow(rwkflow.ProvisionRepository),
 
@@ -58,6 +61,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 		worker.WithActivity(deprovision.NewActivities(v, cfg)),
 		worker.WithActivity(project.NewActivities(v)),
 		worker.WithActivity(repository.NewActivities()),
+		worker.WithActivity(sync.NewActivities(v, cfg)),
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize worker: %s", err.Error())

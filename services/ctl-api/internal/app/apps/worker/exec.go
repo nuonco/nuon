@@ -12,6 +12,29 @@ import (
 	"go.uber.org/zap"
 )
 
+func (w *Workflows) execSyncWorkflow(
+	ctx workflow.Context,
+	sandboxMode bool,
+	req *appsv1.SyncRequest,
+) (*appsv1.SyncResponse, error) {
+	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:                workflows.DefaultTaskQueue,
+		WorkflowID:               fmt.Sprintf("%s-sync-%s", req.AppId, req.AppConfigId),
+		WorkflowExecutionTimeout: time.Minute * 20,
+		WorkflowTaskTimeout:      time.Minute * 10,
+		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	var resp appsv1.SyncResponse
+	fut := workflow.ExecuteChildWorkflow(ctx, "Sync", req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return &resp, fmt.Errorf("unable to get workflow response: %w", err)
+	}
+
+	return &resp, nil
+}
+
 func (w *Workflows) execProvisionWorkflow(
 	ctx workflow.Context,
 	sandboxMode bool,
