@@ -1,11 +1,13 @@
 package config
 
 type JobComponentConfig struct {
-	ImageURL string                `mapstructure:"image_url" toml:"image_url"`
-	Tag      string                `mapstructure:"tag" toml:"tag"`
-	Cmd      []string              `mapstructure:"cmd" toml:"cmd"`
-	EnvVars  []EnvironmentVariable `mapstructure:"environment_variable" toml:"env_vars"`
-	Args     []string              `mapstructure:"args" toml:"args"`
+	Name         string                `mapstructure:"name" toml:"name"`
+	Dependencies []string              `mapstructure:"dependencies" toml:"-"`
+	ImageURL     string                `mapstructure:"image_url" toml:"image_url"`
+	Tag          string                `mapstructure:"tag" toml:"tag"`
+	Cmd          []string              `mapstructure:"cmd" toml:"cmd"`
+	EnvVars      []EnvironmentVariable `mapstructure:"env_vars" toml:"env_vars"`
+	Args         []string              `mapstructure:"args" toml:"args"`
 }
 
 func (t *JobComponentConfig) ToResource() (map[string]interface{}, error) {
