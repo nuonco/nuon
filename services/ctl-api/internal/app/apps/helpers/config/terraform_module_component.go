@@ -1,9 +1,11 @@
 package config
 
 type TerraformModuleComponentConfig struct {
+	Name             string                `mapstructure:"name" toml:"name"`
 	TerraformVersion string                `mapstructure:"terraform_version" toml:"terraform_version"`
-	Variables        []TerraformVariable   `mapstructure:"vars" toml:"variables"`
-	EnvVars          []EnvironmentVariable `mapstructure:"env_vars" toml:"env_vars"`
+	Dependencies     []string              `mapstructure:"dependencies" toml:"-"`
+	Variables        []TerraformVariable   `mapstructure:"var" toml:"variables"`
+	EnvVars          []EnvironmentVariable `mapstructure:"env_var" toml:"env_vars"`
 
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo" toml:"public_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo" toml:"connected_repo"`

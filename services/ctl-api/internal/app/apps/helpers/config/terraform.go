@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 func (a *AppConfig) ToTerraformJSON(env config.Env) ([]byte, error) {
@@ -31,9 +32,15 @@ func (a *AppConfig) ToTerraform(env config.Env) (map[string]interface{}, error) 
 		resources = append(resources, a.Installer)
 	}
 
-	//for _, comp := range a.Components {
-	////resources = append(resources, comp)
-	//}
+	for idx, comp := range a.Components {
+		if idx > 0 {
+			prevComp := a.Components[idx-1]
+			prevCompID := fmt.Sprintf("${%s.%s.id}", prevComp.ToResourceType(), prevComp.Name())
+			comp.AddDependency(prevCompID)
+		}
+
+		resources = append(resources, comp)
+	}
 
 	tfResources := map[string]interface{}{}
 	for _, resource := range resources {
@@ -48,7 +55,12 @@ func (a *AppConfig) ToTerraform(env config.Env) (map[string]interface{}, error) 
 			return nil, fmt.Errorf("unable to convert %s to terraform resource: %w", typ, err)
 		}
 
-		tfResources[typ] = tfResource
+		_, exists := tfResources[typ]
+		if exists {
+			tfResources[typ] = generics.MergeMap(tfResources[typ].(map[string]interface{}), tfResource)
+		} else {
+			tfResources[typ] = tfResource
+		}
 	}
 
 	backendType := "s3"
