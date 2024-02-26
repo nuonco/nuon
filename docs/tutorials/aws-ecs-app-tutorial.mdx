@@ -145,10 +145,6 @@ This app consists of two components: one to build the Docker image, and another 
 
 This is a [Docker Build component](/guides/docker-build-components) that will build the API and create a Docker image containing it. When released, it will sync the image to each install's ECR so ECS can pull it when creating tasks.
 
-<Tip>
-Do you still need a Docker Build component if you have a pre-built Docker image? Technically, no. But, ECS Fargate does not cache images, and will pull from the remote source every time it starts a task. In such cases, we recommend using a [Container Image component](/guides/container-image-components).
-</Tip>
-
 ```hcl docker_image.tf
 resource "nuon_docker_build_component" "docker_image" {
   app_id = nuon_app.my_ecs_app.id
@@ -157,7 +153,7 @@ resource "nuon_docker_build_component" "docker_image" {
   public_repo = {
     repo      = "nuonco/guides"
     directory = "create-an-aws-ecs-byoc-app/components/docker-image"
-    branch    = "ja/3837-ecs-app-guide"
+    branch    = "main"
   }
 }
 ```
@@ -174,7 +170,7 @@ resource "nuon_terraform_module_component" "ecs_service" {
   public_repo = {
     repo      = "nuonco/guides"
     directory = "create-an-aws-ecs-byoc-app/components/ecs-service"
-    branch    = "ja/3837-ecs-app-guide"
+    branch    = "main"
   }
 
   # Service config
@@ -260,7 +256,7 @@ nuon builds list -c ecs_service
 
 ## Create an Install
 
-Creating an install requires two steps: granting access to the AWS account via an IAM role, and then provisioning the sandbox to that account.
+Creating an install requires two steps: granting access to the AWS account via an IAM role, and then provisioning the install in that account.
 
 ### Create an IAM Role
 
@@ -319,28 +315,6 @@ nuon installs list
 curl https://api.{install_id}.nuon.run/introspect/env
 ```
 </CodeGroup>
-
-### Update the Install
-
-Now that you have a working install of the app in AWS, you can update it by creating releases.
-
-In `ecs_service.tf`, update the value of the `app_id` var to `updated manually`, and sync it to Nuon.
-
-```sh
-terraform apply
-```
-
-Then, create a release to update the install. You do not need a new build, since you did not change the component source code, just the config.
-
-```sh
-nuon releases create -c ecs_service
-```
-
-When the release is active, curl the API to verify the value was updated.
-
-```sh
-curl https://api.{install_id}.nuon.run/introspect/env
-```
 
 ## Wrapping Up and Next Steps
 
