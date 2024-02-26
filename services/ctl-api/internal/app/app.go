@@ -27,6 +27,7 @@ type App struct {
 	AppInputConfigs   []AppInputConfig   `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	AppSandboxConfigs []AppSandboxConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	AppRunnerConfigs  []AppRunnerConfig  `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	AppConfigs        []AppConfig        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description"`

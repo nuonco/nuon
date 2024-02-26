@@ -12,7 +12,7 @@ import (
 )
 
 type CreateAppRequest struct {
-	Name string `json:"name" validate:"required"`
+	Name string `json:"name" validate:"required,entityName"`
 }
 
 func (c *CreateAppRequest) Validate(v *validator.Validate) error {
