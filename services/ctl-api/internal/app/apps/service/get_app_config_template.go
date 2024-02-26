@@ -1,4 +1,76 @@
-version = "v1"
+package service
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+)
+
+type AppConfigTemplateType string
+
+const (
+	AppConfigTemplateTypeAwsECS       AppConfigTemplateType = "aws-ecs"
+	AppConfigTemplateTypeAwsECSBYOVPC AppConfigTemplateType = "aws-ecs-byovpc"
+	AppConfigTemplateTypeAwsEKS       AppConfigTemplateType = "aws-eks"
+	AppConfigTemplateTypeAwsEKSBYOVPC AppConfigTemplateType = "aws-eks-byovpc"
+)
+
+type AppConfigTemplate struct {
+	Format   app.AppConfigFmt
+	Type     AppConfigTemplateType
+	Filename string
+	Content  string
+}
+
+// @ID GetAppConfigTemplate
+// @Summary	get an app config template
+// @Description.markdown	get_app_config_template.md
+// @Tags			apps
+// @Accept			json
+// @Produce		json
+// @Security APIKey
+// @Security OrgID
+// @Param	app_id	path	string				true	"app ID"
+// @Param  type query AppConfigTemplateType true "app template type"
+// @Failure		400				{object}	stderr.ErrResponse
+// @Failure		401				{object}	stderr.ErrResponse
+// @Failure		403				{object}	stderr.ErrResponse
+// @Failure		404				{object}	stderr.ErrResponse
+// @Failure		500				{object}	stderr.ErrResponse
+// @Success		201				{object}	AppConfigTemplate
+// @Router			/v1/apps/{app_id}/template-config [get]
+func (s *service) GetAppConfigTemplate(ctx *gin.Context) {
+	org, err := orgmiddleware.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	appID := ctx.Param("app_id")
+	app, err := s.findApp(ctx, org.ID, appID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
+		return
+	}
+
+	tmpl, err := s.createAppTemplate(ctx, app, AppConfigTemplateTypeAwsECS)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create app: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, tmpl)
+}
+
+func (s *service) createAppTemplate(ctx context.Context, currentApp *app.App, typ AppConfigTemplateType) (*AppConfigTemplate, error) {
+	return &AppConfigTemplate{
+		Filename: fmt.Sprintf("nuon.%s.toml", currentApp.Name),
+		Format:   app.AppConfigFmtToml,
+		Content: `version = "v1"
 
 [installer]
 name = "installer"
@@ -106,9 +178,9 @@ name = "toml_job"
 type = "job"
 
 image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
-tag       = "{{.nuon.components.e2e_docker_build.image.tag}}"
-cmd       = ["printenv"]
-args      = [""]
+tag	  = "{{.nuon.components.e2e_docker_build.image.tag}}"
+cmd	  = ["printenv"]
+args	  = [""]
 
 [[components.env_var]]
 name = "PUBLIC_DOMAIN"
@@ -131,3 +203,6 @@ iam_role_arn = "iam_role_arn"
 image_url = "ecr-url"
 tag = "latest"
 region = "us-west-2"
+`,
+	}, nil
+}
