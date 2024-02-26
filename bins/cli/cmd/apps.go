@@ -138,5 +138,39 @@ func (c *cli) appsCmd() *cobra.Command {
 	selectAppCmd.Flags().StringVar(&appID, "app", "", "The ID of the app you want to use")
 	appsCmd.AddCommand(selectAppCmd)
 
+	var (
+		all  bool
+		file string
+	)
+	syncCmd := &cobra.Command{
+		Use:               "sync",
+		Short:             "Sync all .nuon.toml config files in the current directory.",
+		PersistentPreRunE: c.persistentPreRunE,
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.apiClient, c.cfg)
+			svc.Sync(cmd.Context(), all, file, PrintJSON)
+		},
+	}
+	syncCmd.Flags().StringVarP(&file, "file", "", "", "Config file to sync")
+	syncCmd.Flags().BoolVarP(&all, "all", "", true, "sync all config files found")
+	appsCmd.AddCommand(syncCmd)
+
+	var (
+		name     string
+		template string
+	)
+	createCmd := &cobra.Command{
+		Use:               "create",
+		Short:             "Create a new app.",
+		PersistentPreRunE: c.persistentPreRunE,
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.apiClient, c.cfg)
+			svc.Create(cmd.Context(), name, template, PrintJSON)
+		},
+	}
+	createCmd.Flags().StringVarP(&name, "name", "n", "", "app name")
+	createCmd.MarkFlagRequired("name")
+	createCmd.Flags().StringVarP(&template, "template", "", "aws-ecs", "app config template type")
+	appsCmd.AddCommand(createCmd)
 	return appsCmd
 }

@@ -16,6 +16,7 @@ import (
 
 const (
 	cfgFilePrefix string = "nuon."
+	defaultFormat string = "toml"
 )
 
 func (s *Service) findConfigFiles(format string) ([]string, error) {
@@ -63,20 +64,20 @@ func (s *Service) appIDFromFile(ctx context.Context, file, format string) (strin
 
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		return "", fmt.Errorf("unable to lookup app: %w", err)
+		return "", fmt.Errorf("app does not exist: %s", pieces[1])
 	}
 
 	return appID, nil
 }
 
-func (s *Service) Sync(ctx context.Context, all bool, file, format string, asJSON bool) {
+func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) {
 	var (
 		cfgFiles []string
 		err      error
 	)
 
 	if all {
-		cfgFiles, err = s.findConfigFiles(format)
+		cfgFiles, err = s.findConfigFiles(defaultFormat)
 		if err != nil {
 			ui.PrintError(err)
 			return
@@ -86,7 +87,7 @@ func (s *Service) Sync(ctx context.Context, all bool, file, format string, asJSO
 	}
 	if len(cfgFiles) < 1 {
 		ui.PrintError(&ui.CLIUserError{
-			Msg: fmt.Sprintf("must set -all or -file, and make sure at least one nuon.<app-name>.%s file exists", format),
+			Msg: fmt.Sprintf("must set -all or -file, and make sure at least one nuon.<app-name>.%s file exists", defaultFormat),
 		})
 		return
 	}
@@ -106,13 +107,13 @@ func (s *Service) Sync(ctx context.Context, all bool, file, format string, asJSO
 			return
 		}
 
-		appID, err := s.appIDFromFile(ctx, cfgFile, format)
+		appID, err := s.appIDFromFile(ctx, cfgFile, defaultFormat)
 		if err != nil {
 			ui.PrintError(err)
 			return
 		}
 
-		apiFmt, err := s.formatToAPIFormat(format)
+		apiFmt, err := s.formatToAPIFormat(defaultFormat)
 		if err != nil {
 			ui.PrintError(err)
 			return
