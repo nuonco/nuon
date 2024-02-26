@@ -34,6 +34,11 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id", s.GetApp)
 	api.DELETE("/v1/apps/:app_id", s.DeleteApp)
 
+	// app configs
+	api.POST("/v1/apps/:app_id/config", s.CreateAppConfig)
+	api.GET("/v1/apps/:app_id/latest-config", s.GetAppLatestConfig)
+	api.GET("/v1/apps/:app_id/configs", s.GetAppConfigs)
+
 	// app sandbox management
 	api.POST("/v1/apps/:app_id/sandbox-config", s.CreateAppSandboxConfig)
 	api.GET("/v1/apps/:app_id/sandbox-latest-config", s.GetAppSandboxLatestConfig)
