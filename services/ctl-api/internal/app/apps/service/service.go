@@ -35,6 +35,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.DELETE("/v1/apps/:app_id", s.DeleteApp)
 
 	// app configs
+	api.GET("/v1/apps/:app_id/template-config", s.GetAppConfigTemplate)
 	api.POST("/v1/apps/:app_id/config", s.CreateAppConfig)
 	api.GET("/v1/apps/:app_id/latest-config", s.GetAppLatestConfig)
 	api.GET("/v1/apps/:app_id/configs", s.GetAppConfigs)
