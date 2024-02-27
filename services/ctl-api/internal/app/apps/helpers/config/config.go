@@ -18,7 +18,7 @@ type AppConfig struct {
 	Runner    *AppRunnerConfig    `mapstructure:"runner"`
 	Installer *AppInstallerConfig `mapstructure:"installer,omitempty"`
 
-	Components []*Component `mapstructure:"components" validate:"gt=1"`
+	Components []*Component `mapstructure:"components" validate:"gte=1"`
 }
 
 func (a *AppConfig) Validate(v *validator.Validate) error {
