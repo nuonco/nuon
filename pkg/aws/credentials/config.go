@@ -11,7 +11,7 @@ import (
 
 // AssumeRoleConfig is used for assuming an IAM role
 type AssumeRoleConfig struct {
-	RoleARN                string `cty:"arn" hcl:"arn" validate:"required" mapstructure:"role_arn,omitempty"`
+	RoleARN                string `cty:"arn" hcl:"role_arn" validate:"required" mapstructure:"role_arn,omitempty"`
 	SessionName            string `cty:"session_name" hcl:"session_name" validate:"required" mapstructure:"session_name,omitempty"`
 	SessionDurationSeconds int    `cty:"session_duration_seconds" hcl:"session_duration_seconds" mapstructure:"session_duration_seconds,omitempty"`
 	TwoStepRoleARN         string
