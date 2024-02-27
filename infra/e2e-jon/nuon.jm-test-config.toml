@@ -1,0 +1,133 @@
+version = "v1"
+
+[installer]
+name = "jm-test-config"
+description = "one click installer"
+slug = "jm-test-config"
+documentation_url = "docs-url"
+community_url = "community-url"
+homepage_url = "homepage-url"
+github_url = "github-url"
+logo_url = "logo-url"
+demo_url = "demo url"
+
+[runner]
+runner_type = "aws-ecs"
+
+[[runner.env_var]]
+name = "runner-env-var"
+value = "runner-env-var"
+
+[sandbox]
+terraform_version = "1.5.4"
+[sandbox.public_repo]
+directory = "aws-ecs-byo-vpc"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[[sandbox.var]]
+name = "vpc_id"
+value = "{{.nuon.install.inputs.vpc_id}}"
+
+[inputs]
+[[inputs.input]]
+name = "vpc_id"
+description = "vpc_id to install application into"
+default = ""
+sensitive = false
+display_name = "VPC ID"
+
+[[inputs.input]]
+name = "api_key"
+description = "API key"
+default = ""
+sensitive = true
+display_name = "API Key"
+
+[[components]]
+name = "toml_terraform"
+type = "terraform_module"
+terraform_version = "1.5.3"
+
+[components.connected_repo]
+directory = "infra"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[components.var]]
+name = "AWS_REGION"
+value = "{{.nuon.install.sandbox.account.region}}"
+
+[[components.var]]
+name = "ACCOUNT_ID"
+value = "{{.nuon.install.sandbox.account.id}}"
+
+[[components]]
+name = "toml_infra"
+type = "terraform_module"
+terraform_version = "1.5.4"
+
+[components.connected_repo]
+directory = "deployment"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[components.var]]
+name = "iam_role"
+value = "{{.nuon.components.infra.outputs.iam_role}}"
+
+[[components]]
+name = "toml_helm"
+type = "helm_chart"
+chart_name = "e2e-helm"
+
+[components.connected_repo]
+directory = "deployment"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[components.value]]
+name = "api.ingresses.public_domain"
+value = "{{.nuon.components.infra.outputs.iam_role}}"
+
+[[components]]
+name = "toml_docker_build"
+type = "docker_build"
+
+dockerfile = "Dockerfile"
+
+[components.connected_repo]
+directory = "deployment"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[components]]
+name = "toml_job"
+type = "job"
+
+image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
+tag	  = "{{.nuon.components.e2e_docker_build.image.tag}}"
+cmd	  = ["printenv"]
+args	  = [""]
+
+[[components.env_var]]
+name = "PUBLIC_DOMAIN"
+value = "{{.nuon.components.infra.outputs.iam_role}}"
+
+[[components]]
+name = "toml_container_image"
+type = "container_image"
+
+[components.public]
+image_url = "kennethreitz/httpbin"
+tag = "latest"
+
+[[components]]
+name = "toml_container_image_ecr"
+type = "container_image"
+
+[components.aws_ecr]
+iam_role_arn = "iam_role_arn"
+image_url = "ecr-url"
+tag = "latest"
+region = "us-west-2"
