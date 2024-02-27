@@ -92,8 +92,9 @@ func (a *Activities) getWorkspace(ctx context.Context, req *ExecTerraformRequest
 		"app_id": req.AppID,
 	}),
 		staticvars.WithEnvVars(map[string]string{
-			"NUON_ORG_ID":  req.OrgID,
-			"NUON_API_URL": req.APIURL,
+			"NUON_ORG_ID":    req.OrgID,
+			"NUON_API_URL":   req.APIURL,
+			"NUON_API_TOKEN": req.APIToken,
 		}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create vars: %w", err)
