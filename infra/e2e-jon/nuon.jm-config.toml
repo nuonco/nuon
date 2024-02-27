@@ -1,9 +1,9 @@
 version = "v1"
 
 [installer]
-name = "jm-test-config"
+name = "installer"
 description = "one click installer"
-slug = "jm-test-config"
+slug = "jm-config"
 documentation_url = "docs-url"
 community_url = "community-url"
 homepage_url = "homepage-url"
