@@ -24,9 +24,12 @@ func NewWorkflows(v *validator.Validate,
 	metricsWriter metrics.Writer,
 	prt *protos.Adapter) (*Workflows, error) {
 
-	tmw, err := tmetrics.New(v, tmetrics.WithMetricsWriter(metricsWriter), tmetrics.WithTags(map[string]string{
-		"namespace": defaultNamespace,
-	}))
+	tmw, err := tmetrics.New(v,
+		tmetrics.WithMetricsWriter(metricsWriter),
+		tmetrics.WithTags(map[string]string{
+			"namespace": defaultNamespace,
+			"context":   "worker",
+		}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temporal metrics writer: %w", err)
 	}
