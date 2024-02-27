@@ -48,7 +48,7 @@ static {
 		"happy path - assume": {
 			hcl: `
 assume_role {
-	arn = "role-arn"
+	role_arn = "role-arn"
 	session_name = "session-name"
 	session_duration_seconds = 60
 }`,
@@ -65,7 +65,7 @@ assume_role {
 		"happy path - assume default duration": {
 			hcl: `
 assume_role {
-	arn = "role-arn"
+	role_arn = "role-arn"
 	session_name = "session-name"
 }`,
 
@@ -90,7 +90,7 @@ assume_role {
 		"missing - session name on assume_role": {
 			hcl: `
 assume_role {
-	arn = "role-arn"
+	role_arn = "role-arn"
 	session_duration_seconds = 60
 }`,
 
