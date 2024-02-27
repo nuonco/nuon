@@ -18,18 +18,27 @@ func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTS := time.Now()
 		status := "ok"
+		path := c.FullPath()
+		endpoint := fmt.Sprintf("%s-%s", c.Request.Method, path)
+
+		c.Set(ContextKey, &MetricContext{
+			Endpoint: endpoint,
+			Method:   c.Request.Method,
+			Context:  "public_api",
+		})
+
 		c.Next()
 
 		if len(c.Errors) > 0 {
 			status = "err"
 		}
 
-		path := c.FullPath()
 		statusCodeClass := fmt.Sprintf("%dxx", c.Writer.Status()/100)
 		tags := []string{
 			"status:" + status,
 			"status_code_class:" + statusCodeClass,
-			"endpoint:" + fmt.Sprintf("%s-%s", c.Request.Method, path),
+			"endpoint:" + endpoint,
+			"method:" + c.Request.Method,
 		}
 
 		m.writer.Incr("api.request.status", 1, tags)
