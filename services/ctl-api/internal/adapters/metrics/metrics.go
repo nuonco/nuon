@@ -16,7 +16,7 @@ func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (metrics.Wr
 	}
 
 	mw, err := metrics.New(v,
-		metrics.WithDisable(false),
+		metrics.WithDisable(cfg.DisableMetrics),
 		metrics.WithTags(tags...),
 		metrics.WithLogger(l),
 	)
