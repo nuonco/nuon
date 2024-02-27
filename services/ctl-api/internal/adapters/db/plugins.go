@@ -5,6 +5,10 @@ import (
 )
 
 func (d *database) registerPlugins(db *gorm.DB) error {
+	db.Use(&metricsWriterPlugin{
+		metricsWriter: d.MetricsWriter,
+	})
+
 	afterQueryPlug := &afterQueryPlugin{}
 	db.Callback().
 		Query().

@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
@@ -31,6 +32,8 @@ type database struct {
 	Password string
 
 	Logger zapgorm2.Logger `validate:"required"`
+
+	MetricsWriter metrics.Writer `validate:"required"`
 }
 
 func (d *database) Validate(v *validator.Validate) error {
@@ -58,16 +61,20 @@ func (c *database) connCfg() (*pgx.ConnConfig, error) {
 	return connCfg, nil
 }
 
-func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (*gorm.DB, error) {
+func New(v *validator.Validate,
+	l *zap.Logger,
+	metricsWriter metrics.Writer,
+	cfg *internal.Config) (*gorm.DB, error) {
 	database := &database{
-		Logger:     zapgorm2.New(l),
-		PasswordFn: FetchIamTokenPassword,
-		Host:       cfg.DBHost,
-		User:       cfg.DBUser,
-		Name:       cfg.DBName,
-		Port:       cfg.DBPort,
-		SSLMode:    cfg.DBSSLMode,
-		Region:     cfg.DBRegion,
+		Logger:        zapgorm2.New(l),
+		PasswordFn:    FetchIamTokenPassword,
+		Host:          cfg.DBHost,
+		User:          cfg.DBUser,
+		Name:          cfg.DBName,
+		Port:          cfg.DBPort,
+		SSLMode:       cfg.DBSSLMode,
+		Region:        cfg.DBRegion,
+		MetricsWriter: metricsWriter,
 	}
 	if cfg.DBPassword != "" {
 		database.PasswordFn = nil
