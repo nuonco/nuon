@@ -1,0 +1,75 @@
+---
+title: 005 - All new installer experience
+description: We have reworked our installers, added a new guide, and reworked some internal infrastructure.
+---
+
+![005 - Installers](/images/changelog/005_header.jpg)
+
+Feb 26th, 2024
+
+## Improved Installers
+
+It has been exciting hearing just how much you all love our app installers. Installers let you take your Nuon app, and
+give your customer a fully managed install experience. You can share your installer with prospects looking to do a POC,
+on your docs page, or as part of your product directly.
+
+We have shipped the following improvements:
+
+* you can now define inputs, and they will be added to your installer. Inputs allow you to collect customer inputs,
+expose configuration knobs and can even be used to support [third party cloud providers](/guides/supported-platforms#supporting-custom-platforms)
+
+* inputs can be now be marked as sensitive. This is useful for API Keys, certs and any data that needs to be hidden.
+
+```hcl inputs.tf
+resource "nuon_app_input" "inputs" {
+  app_id = nuon_app.main.id
+
+  input {
+    name = "api_key"
+    description = "api key to access a third party"
+    default = ""
+    sensitive = true
+    display_name = "API Key"
+  }
+}
+```
+
+* You can now customize the post-install page, after a customer install has successfully provisioned. We support a
+templating language which allows you to render out next steps for your customer.
+
+![005 installer customizations](/images/changelog/005_installer_post_install.png)
+
+
+<Note>
+If you are interested in getting an installer for your product set up, [get in touch](mailto:team@nuon.co). We are onboarding more users daily.
+</Note>
+
+## A New Self Service Guide
+
+We have slowly been letting folks self-serve with Nuon, and are making improvements to our onboarding experience (more
+on that later this week!). In the meantime, we have launched a new guide that you can follow to create a BYOC
+application that uses our ECS runner.
+
+You can find our first guide [here](https://docs.nuon.co/tutorials/aws-ecs-app-tutorial), and we would love your
+feedback! All you need is an AWS account and about 15 minutes of time, and you can go from 0 to fully set up on Nuon.
+
+Our customers are using the ECS runner applications to deploy everything from machine learning pipelines, to data
+streaming tools, to lambdas.
+
+## Internal Infrastructure Improvements
+
+As any infrastructure startup will tell you, your uptime _is_ your product. We run a growing set of single-tenant
+infrastructure for each of our customers - each customer gets their own install management server, build runner and we
+dispatch and schedule adhoc jobs for each.
+
+Beyond the single-tenant infrastructure, we use
+[Temporal](https://www.nuon.co/post/how-we-rebuilt-our-api-using-long-lived-workflows) to power just about every part of
+our product. Early on, we made the decision to self-host Temporal, so we could easily port our entire product into our
+customer's cloud accounts.
+
+We strive to test our system at least an order of magnitude greater than what our customers are running in prod. This
+means running internal automated tests, canaries and various stress tests that ensure the system limits are well
+understood, and headroom is monitored. Two weeks ago, this led us to realizing that we needed to rework our Temporal
+cluster - and we have since rebuilt our internal Temporal presence, and identified some improvements along the way.
+
+Look out for a blog post detailing more about our experience self-hosting Temporal!
