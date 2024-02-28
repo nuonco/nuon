@@ -35,7 +35,8 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
-	api.GET("/v1/installers", s.GetAllAppInstallers)
+	api.GET("/v1/installers", s.GetAllInstallers)
+	api.GET("/v1/installers/urls", s.GetAllInstallerURLs)
 
 	return nil
 }
