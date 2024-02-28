@@ -1,9 +1,11 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/config"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 )
@@ -24,6 +26,9 @@ type AppInstaller struct {
 	Slug string `json:"slug" gorm:"index:idx_app_installer_slug,unique"`
 
 	Metadata AppInstallerMetadata `json:"app_installer_metadata" gorm:"constraint:OnDelete:CASCADE;"`
+
+	// filled in via after query
+	InstallerURL string `json:"installer_url" gorm:"-"`
 }
 
 func (a *AppInstaller) BeforeCreate(tx *gorm.DB) error {
@@ -38,5 +43,15 @@ func (a *AppInstaller) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	return nil
+}
+
+func (a *AppInstaller) AfterQuery(tx *gorm.DB) error {
+	cfg, err := config.FromContext(tx.Statement.Context)
+	if err != nil {
+		return nil
+	}
+
+	a.InstallerURL = fmt.Sprintf("%s/installer/%s", cfg.InstallerBaseURL, a.Slug)
 	return nil
 }
