@@ -114,10 +114,9 @@ resource "nuon_app_input" "main" {
 </CodeGroup>
 
 <Note>
-In order for components to work with both `aws-ecs` and `aws-ecs-byovpc` sandboxes, subnets must be tagged consistently.
+In order for components to work with `aws-eks-byovpc` sandbox, subnets must be tagged in a way Nuon can look them up.
 
-We recommend each VPC used with `byo-vpc` adds a tag of `visibility:private` to all private subnets, and
-`visibility:public` to all public subnets to match the tagging in `aws-ecs`.
+The `eks-byovpc` sandbox requires adding a `"kubernetes.io/role/internal-elb:1"` tag to all private subnets, and a `"kubernetes.io/role/elb:1"` tag to all public subnets.
 </Note>
 
 ### AWS ECS
@@ -178,6 +177,12 @@ resource "nuon_app_input" "main" {
 }
 ```
 </CodeGroup>
+
+<Note>
+In order for components to work with `aws-ecs-byovpc` sandboxes, subnets must be tagged in a way Nuon can look them up.
+
+The `ecs-byovpc` sandbox requires adding a `visibility:private` tag to all private subnets, and a `visibility:public` tag to all public subnets.
+</Note>
 
 ## Sandbox Updates
 
