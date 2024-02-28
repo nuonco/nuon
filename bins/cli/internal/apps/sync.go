@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
@@ -15,8 +16,10 @@ import (
 )
 
 const (
-	cfgFilePrefix string = "nuon."
-	defaultFormat string = "toml"
+	cfgFilePrefix      string        = "nuon."
+	defaultFormat      string        = "toml"
+	defaultSyncTimeout time.Duration = time.Minute * 5
+	defaultSyncSleep   time.Duration = time.Second * 5
 )
 
 func (s *Service) findConfigFiles(format string) ([]string, error) {
@@ -70,6 +73,76 @@ func (s *Service) appIDFromFile(ctx context.Context, file, format string) (strin
 	return appID, nil
 }
 
+func (s *Service) sync(ctx context.Context, cfgFile string) error {
+	view := ui.NewCreateView(fmt.Sprintf("syncing %s", cfgFile), false)
+	view.Start()
+
+	byts, err := os.ReadFile(cfgFile)
+	if err != nil {
+		view.Fail(err)
+		return err
+	}
+
+	appID, err := s.appIDFromFile(ctx, cfgFile, defaultFormat)
+	if err != nil {
+		view.Fail(err)
+		return err
+	}
+
+	apiFmt, err := s.formatToAPIFormat(defaultFormat)
+	if err != nil {
+		view.Fail(err)
+		return err
+	}
+
+	cfg, err := s.api.CreateAppConfig(ctx, appID, &models.ServiceCreateAppConfigRequest{
+		Content: generics.ToPtr(string(byts)),
+		Format:  apiFmt.Pointer(),
+	})
+	if err != nil {
+		view.Fail(err)
+		return err
+	}
+
+	pollTimeout, cancel := context.WithTimeout(ctx, defaultSyncTimeout)
+	defer cancel()
+
+	view.Update("waiting for app to be synced")
+	for {
+		select {
+		case <-pollTimeout.Done():
+			err := fmt.Errorf("timeout syncing")
+			view.Fail(err)
+			return err
+		default:
+		}
+
+		cfg, err := s.api.GetAppConfig(ctx, appID, cfg.ID)
+		if err != nil {
+			view.Fail(err)
+			return err
+		}
+
+		switch cfg.Status {
+		case models.AppAppConfigStatusActive:
+			view.Success("successfully synced " + cfgFile)
+			return nil
+		case models.AppAppConfigStatusError:
+			view.Fail(fmt.Errorf("failed to sync :%s", cfg.Status))
+			return nil
+		case models.AppAppConfigStatusOutdated:
+			view.Success("config is out dated")
+			return nil
+		default:
+			view.Update(string(cfg.Status))
+		}
+
+		time.Sleep(defaultSyncSleep)
+	}
+
+	return nil
+}
+
 func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) {
 	var (
 		cfgFiles []string
@@ -82,7 +155,8 @@ func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) 
 			ui.PrintError(err)
 			return
 		}
-	} else if file != "" {
+	}
+	if file != "" {
 		cfgFiles = []string{file}
 	}
 	if len(cfgFiles) < 1 {
@@ -92,47 +166,9 @@ func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) 
 		return
 	}
 
-	view := ui.NewGetView()
-	rows := [][]string{
-		{
-			"file",
-			"app-id",
-			"status",
-		},
-	}
 	for _, cfgFile := range cfgFiles {
-		byts, err := os.ReadFile(cfgFile)
-		if err != nil {
-			ui.PrintError(err)
-			return
+		if err := s.sync(ctx, cfgFile); err != nil {
+			break
 		}
-
-		appID, err := s.appIDFromFile(ctx, cfgFile, defaultFormat)
-		if err != nil {
-			ui.PrintError(err)
-			return
-		}
-
-		apiFmt, err := s.formatToAPIFormat(defaultFormat)
-		if err != nil {
-			ui.PrintError(err)
-			return
-		}
-
-		cfg, err := s.api.CreateAppConfig(ctx, appID, &models.ServiceCreateAppConfigRequest{
-			Content: generics.ToPtr(string(byts)),
-			Format:  apiFmt.Pointer(),
-		})
-		if err != nil {
-			ui.PrintError(err)
-			return
-		}
-		rows = append(rows, []string{
-			cfgFile,
-			appID,
-			string(cfg.Status),
-		})
 	}
-
-	view.Render(rows)
 }
