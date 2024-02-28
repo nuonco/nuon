@@ -5,14 +5,15 @@ type HelmValue struct {
 	Value string `toml:"value" mapstructure:"value"`
 }
 
+// NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type HelmChartComponentConfig struct {
-	Name         string      `mapstructure:"name" toml:"name"`
-	Dependencies []string    `mapstructure:"dependencies" toml:"-"`
-	ChartName    string      `mapstructure:"chart_name" toml:"chart_name"`
-	Values       []HelmValue `mapstructure:"values" toml:"values"`
+	Name         string      `mapstructure:"name"`
+	Dependencies []string    `mapstructure:"dependencies"`
+	ChartName    string      `mapstructure:"chart_name"`
+	Values       []HelmValue `mapstructure:"value"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo" toml:"public_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo" toml:"connected_repo"`
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo"`
 }
 
 func (t *HelmChartComponentConfig) ToResource() (map[string]interface{}, error) {
@@ -21,10 +22,5 @@ func (t *HelmChartComponentConfig) ToResource() (map[string]interface{}, error) 
 		return nil, err
 	}
 	resource["app_id"] = "${var.app_id}"
-
-	// blocks in terraform are singular, and repeated but in our config are plural.
-	resource["value"] = resource["values"]
-	delete(resource, "values")
-
 	return resource, nil
 }
