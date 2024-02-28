@@ -33,5 +33,6 @@ type PrivateDockerPullBuild struct {
 	Tag   string `hcl:"tag"`
 
 	// the encoded auth that we use throughout our code looks something like the following,
-	EncodedAuth string `hcl:"encoded_auth"`
+	EncodedAuth       string `hcl:"encoded_auth"`
+	DisableEntrypoint bool   `hcl:"disable_entrypoint,optional"`
 }
