@@ -1,8 +1,15 @@
 package ui
 
 import (
+	"github.com/mattn/go-runewidth"
 	"github.com/nuonco/nuon-go"
 	"github.com/pterm/pterm"
+)
+
+const (
+	// in order to prevent tearing in the CLI, we ensure that the length of the spinner text is _always_ consistent
+	// this prevents the spinner from partially updating, where the text being a different size distorts it.
+	defaultSpinnerWidth int = 30
 )
 
 type SpinnerView struct {
@@ -17,12 +24,20 @@ func NewSpinnerView(json bool) *SpinnerView {
 	}
 }
 
+func (v *SpinnerView) formatText(text string) string {
+	return runewidth.FillRight(text, defaultSpinnerWidth)
+}
+
 func (v *SpinnerView) Start(text string) {
 	if v.json {
 		return
 	}
 
-	spinner, _ := pterm.DefaultSpinner.Start(text)
+	spinner, err := pterm.DefaultSpinner.Start(v.formatText(text))
+	if err != nil {
+		printDebugErr(err)
+		return
+	}
 	v.spinner = spinner
 }
 
@@ -31,12 +46,7 @@ func (v *SpinnerView) Update(text string) {
 		return
 	}
 
-	// force clearing the line
-	// TODO: this is a work-around for a pterm bug that we should be able to remove in the future
-	// we think it's related to this: https://github.com/pterm/pterm/pull/447
-	v.spinner.UpdateText("													 ")
-
-	v.spinner.UpdateText(text)
+	v.spinner.UpdateText(v.formatText(text))
 }
 
 func (v *SpinnerView) Fail(err error) {
@@ -47,16 +57,16 @@ func (v *SpinnerView) Fail(err error) {
 
 	userErr, ok := nuon.ToUserError(err)
 	if ok {
-		v.spinner.Fail(userErr.Description)
+		v.spinner.Fail(v.formatText(userErr.Description))
 		return
 	}
 
 	if nuon.IsServerError(err) {
-		v.spinner.Fail(defaultServerErrorMessage)
+		v.spinner.Fail(v.formatText(defaultServerErrorMessage))
 		return
 	}
 
-	v.spinner.Fail(err.Error())
+	v.spinner.Fail(v.formatText(err.Error()))
 }
 
 func (v *SpinnerView) Success(text string) {
@@ -65,5 +75,5 @@ func (v *SpinnerView) Success(text string) {
 		return
 	}
 
-	v.spinner.Success(text)
+	v.spinner.Success(v.formatText(text))
 }
