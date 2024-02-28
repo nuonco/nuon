@@ -4,7 +4,7 @@ type TerraformModuleComponentConfig struct {
 	Name             string                `mapstructure:"name" toml:"name"`
 	TerraformVersion string                `mapstructure:"terraform_version" toml:"terraform_version"`
 	Dependencies     []string              `mapstructure:"dependencies" toml:"-"`
-	Variables        []TerraformVariable   `mapstructure:"var" toml:"variables"`
+	Variables        []TerraformVariable   `mapstructure:"var" toml:"vars"`
 	EnvVars          []EnvironmentVariable `mapstructure:"env_var" toml:"env_vars"`
 
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo" toml:"public_repo"`
