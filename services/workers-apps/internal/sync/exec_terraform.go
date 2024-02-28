@@ -18,6 +18,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/run"
 	staticvars "github.com/powertoolsdev/mono/pkg/terraform/variables/static"
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
+	"go.temporal.io/sdk/temporal"
 )
 
 const (
@@ -66,7 +67,7 @@ func (a *Activities) ExecTerraform(ctx context.Context, req *ExecTerraformReques
 	}
 
 	if err := tfRun.Apply(ctx); err != nil {
-		return fmt.Errorf("unable to apply seed terraform: %w", err)
+		return temporal.NewNonRetryableApplicationError("unable to sync config", "terraform_failed", err)
 	}
 
 	return nil

@@ -151,7 +151,7 @@ func (c *cli) appsCmd() *cobra.Command {
 			svc.Sync(cmd.Context(), all, file, PrintJSON)
 		},
 	}
-	syncCmd.Flags().StringVarP(&file, "file", "", "", "Config file to sync")
+	syncCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
 	syncCmd.Flags().BoolVarP(&all, "all", "", true, "sync all config files found")
 	appsCmd.AddCommand(syncCmd)
 
