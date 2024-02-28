@@ -1,29 +1,26 @@
 package config
 
+import "fmt"
+
+// NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type TerraformModuleComponentConfig struct {
-	Name             string                `mapstructure:"name" toml:"name"`
-	TerraformVersion string                `mapstructure:"terraform_version" toml:"terraform_version"`
-	Dependencies     []string              `mapstructure:"dependencies" toml:"-"`
-	Variables        []TerraformVariable   `mapstructure:"var" toml:"vars"`
-	EnvVars          []EnvironmentVariable `mapstructure:"env_var" toml:"env_vars"`
+	Name             string                `mapstructure:"name"`
+	TerraformVersion string                `mapstructure:"terraform_version"`
+	Dependencies     []string              `mapstructure:"dependencies"`
+	Variables        []TerraformVariable   `mapstructure:"var"`
+	EnvVars          []EnvironmentVariable `mapstructure:"env_var"`
 
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo" toml:"public_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo" toml:"connected_repo"`
 }
 
 func (t *TerraformModuleComponentConfig) ToResource() (map[string]interface{}, error) {
+	fmt.Println(t.Variables)
 	resource, err := toMapStructure(t)
 	if err != nil {
 		return nil, err
 	}
 	resource["app_id"] = "${var.app_id}"
-
-	// blocks in terraform are singular, and repeated but in our config are plural.
-	resource["env_var"] = resource["env_vars"]
-	delete(resource, "env_vars")
-
-	resource["var"] = resource["vars"]
-	delete(resource, "vars")
 
 	return resource, nil
 }
