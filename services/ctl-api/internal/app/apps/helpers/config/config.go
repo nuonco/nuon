@@ -23,7 +23,7 @@ type AppConfig struct {
 	// eg: [[helm_chart_components]]
 	// we have one flat type, and convert the toml to a mapstructure.
 	// This requires a bit more work/indirection by us, but a bit less by our customers!
-	Components []*Component `mapstructure:"components" validate:"gte=1"`
+	Components []*Component `mapstructure:"components"`
 }
 
 func (a *AppConfig) Validate(v *validator.Validate) error {
