@@ -23,14 +23,21 @@ func (w *writer) handleErr(err error) {
 
 func (w *writer) Flush() {
 	if w.Disable {
-		w.Log.Info("flush")
+		w.Log.Debug("flush")
 		return
 	}
+
+	client, err := w.getClient()
+	if err != nil {
+		w.handleErr(err)
+		return
+	}
+	w.handleErr(client.Flush())
 }
 
 func (w *writer) Incr(name string, value int, tags []string) {
 	if w.Disable {
-		w.Log.Info(fmt.Sprintf("incr.%s", name))
+		w.Log.Debug(fmt.Sprintf("incr.%s", name))
 		return
 	}
 
@@ -45,7 +52,7 @@ func (w *writer) Incr(name string, value int, tags []string) {
 
 func (w *writer) Decr(name string, value int, tags []string) {
 	if w.Disable {
-		w.Log.Info(fmt.Sprintf("decr.%s", name))
+		w.Log.Debug(fmt.Sprintf("decr.%s", name))
 		return
 	}
 
@@ -60,7 +67,7 @@ func (w *writer) Decr(name string, value int, tags []string) {
 
 func (w *writer) Timing(name string, value time.Duration, tags []string) {
 	if w.Disable {
-		w.Log.Info(fmt.Sprintf("timing.%s", name))
+		w.Log.Debug(fmt.Sprintf("timing.%s", name))
 		return
 	}
 
@@ -75,7 +82,7 @@ func (w *writer) Timing(name string, value time.Duration, tags []string) {
 
 func (w *writer) Event(ev *statsd.Event) {
 	if w.Disable {
-		w.Log.Info(fmt.Sprintf("event.%s", ev.Title))
+		w.Log.Debug(fmt.Sprintf("event.%s", ev.Title))
 		return
 	}
 

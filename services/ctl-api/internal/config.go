@@ -29,6 +29,7 @@ func init() {
 	config.RegisterDefault("sandbox_sleep", "5s")
 
 	config.RegisterDefault("app_sync_api_url", "http://localhost:8081")
+	config.RegisterDefault("installer_base_url", "https://app.stage.nuon.co")
 }
 
 type Config struct {
@@ -63,8 +64,10 @@ type Config struct {
 	GithubAppKey           string `config:"github_app_key" validate:"required"`
 	GithubAppKeySecretName string `config:"github_app_key_secret_name" validate:"required"`
 
-	// sandbox artifacts
+	// base urls for filling in various fields on objects
 	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url" validate:"required"`
+	AppSyncAPIURL           string `config:"app_sync_api_url"`
+	InstallerBaseURL        string `config:"installer_base_url"`
 
 	// middleware configuration
 	Middlewares         []string `config:"middlewares"`
@@ -83,7 +86,6 @@ type Config struct {
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
-	AppSyncAPIURL              string `config:"app_sync_api_url"`
 }
 
 func NewConfig() (*Config, error) {
