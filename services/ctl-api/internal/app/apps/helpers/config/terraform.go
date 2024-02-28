@@ -24,9 +24,12 @@ func (a *AppConfig) ToTerraformJSON(env config.Env) ([]byte, error) {
 
 func (a *AppConfig) ToTerraform(env config.Env) (map[string]interface{}, error) {
 	resources := []resource{
-		a.Inputs,
 		a.Sandbox,
 		a.Runner,
+	}
+
+	if a.Inputs != nil && len(a.Inputs.Inputs) > 0 {
+		resources = append(resources, a.Inputs)
 	}
 	if a.Installer != nil && *a.Installer != (AppInstallerConfig{}) {
 		resources = append(resources, a.Installer)
