@@ -38,6 +38,8 @@ func (a *App) BeforeCreate(tx *gorm.DB) error {
 		a.ID = domains.NewAppID()
 	}
 
-	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	if a.CreatedByID == "" {
+		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
 	return nil
 }

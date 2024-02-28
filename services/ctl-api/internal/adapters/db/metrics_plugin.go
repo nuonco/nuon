@@ -53,9 +53,11 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
 	}
 	startTS := val.(time.Time)
 
-	tags := []string{
-		"table:" + schema.Table,
+	tags := []string{}
+	if schema != nil {
+		tags = append(tags, "table:"+schema.Table)
 	}
+
 	metricCtx, err := metrics_middleware.FromContext(ctx)
 	if err == nil {
 		tags = append(tags, []string{
