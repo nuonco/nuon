@@ -1,13 +1,14 @@
 package config
 
+// NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type JobComponentConfig struct {
-	Name         string                `mapstructure:"name" toml:"name"`
-	Dependencies []string              `mapstructure:"dependencies" toml:"-"`
-	ImageURL     string                `mapstructure:"image_url" toml:"image_url"`
-	Tag          string                `mapstructure:"tag" toml:"tag"`
-	Cmd          []string              `mapstructure:"cmd" toml:"cmd"`
-	EnvVars      []EnvironmentVariable `mapstructure:"env_vars" toml:"env_vars"`
-	Args         []string              `mapstructure:"args" toml:"args"`
+	Name         string                `mapstructure:"name"`
+	Dependencies []string              `mapstructure:"dependencies"`
+	ImageURL     string                `mapstructure:"image_url"`
+	Tag          string                `mapstructure:"tag"`
+	Cmd          []string              `mapstructure:"cmd"`
+	EnvVars      []EnvironmentVariable `mapstructure:"env_var"`
+	Args         []string              `mapstructure:"args"`
 }
 
 func (t *JobComponentConfig) ToResource() (map[string]interface{}, error) {
@@ -16,10 +17,6 @@ func (t *JobComponentConfig) ToResource() (map[string]interface{}, error) {
 		return nil, err
 	}
 	resource["app_id"] = "${var.app_id}"
-
-	// blocks in terraform are singular, and repeated but in our config are plural.
-	resource["env_var"] = resource["env_vars"]
-	delete(resource, "env_vars")
 
 	return resource, nil
 }

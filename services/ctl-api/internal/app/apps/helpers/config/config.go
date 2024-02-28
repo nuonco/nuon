@@ -18,6 +18,11 @@ type AppConfig struct {
 	Runner    *AppRunnerConfig    `mapstructure:"runner"`
 	Installer *AppInstallerConfig `mapstructure:"installer,omitempty"`
 
+	// NOTE: in order to prevent users having to declare multiple arrays of _different_ component types:
+	// eg: [[terraform_module_components]]
+	// eg: [[helm_chart_components]]
+	// we have one flat type, and convert the toml to a mapstructure.
+	// This requires a bit more work/indirection by us, but a bit less by our customers!
 	Components []*Component `mapstructure:"components" validate:"gte=1"`
 }
 
