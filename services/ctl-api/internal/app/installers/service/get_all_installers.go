@@ -4,35 +4,55 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 // @ID GetAllInstallers
 // @Summary	get all installers for all orgs
 // @Description.markdown	get_all_installers.md
-// @Tags installers/admin
+// @Tags			installers/admin
 // @Accept			json
+// @Param   limit  query int	 false	"limit of installers to return"	     Default(60)
 // @Produce		json
 // @Success		200	{array}	app.AppInstaller
 // @Router			/v1/installers [get]
-func (s *service) GetAllAppInstallers(ctx *gin.Context) {
-	apps, err := s.getAllAppInstallers(ctx)
+func (s *service) GetAllInstallers(ctx *gin.Context) {
+	limitStr := ctx.DefaultQuery("limit", "60")
+	limitVal, err := strconv.Atoi(limitStr)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get apps for: %w", err))
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("invalid limit %s: %w", limitStr, err),
+			Description: "invalid limit",
+		})
 		return
 	}
-	ctx.JSON(http.StatusOK, apps)
+
+	installs, err := s.getAllInstallers(ctx, limitVal)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get installs for: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, installs)
 }
 
-func (s *service) getAllAppInstallers(ctx context.Context) ([]*app.AppInstaller, error) {
-	var apps []*app.AppInstaller
+func (s *service) getAllInstallers(ctx context.Context, limitVal int) ([]*app.AppInstaller, error) {
+	var installers []*app.AppInstaller
 	res := s.db.WithContext(ctx).
+		Preload("CreatedBy").
 		Preload("Metadata").
-		Find(&apps)
+		Preload("App").
+		Preload("App.Org").
+		Order("created_at desc").
+		Limit(limitVal).
+		Find(&installers)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get all app installers: %w", res.Error)
+		return nil, fmt.Errorf("unable to get all installers: %w", res.Error)
 	}
-	return apps, nil
+
+	return installers, nil
 }
