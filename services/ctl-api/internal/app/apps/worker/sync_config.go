@@ -51,7 +51,7 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		ApiUrl:           w.cfg.AppSyncAPIURL,
 	})
 	if err != nil {
-		w.updateStatus(ctx, appID, StatusError, "unable to sync app config")
+		w.updateConfigStatus(ctx, appID, app.AppConfigStatusError, "unable to sync app config")
 		return fmt.Errorf("unable to provision app: %w", err)
 	}
 
