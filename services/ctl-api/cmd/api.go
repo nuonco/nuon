@@ -14,6 +14,7 @@ import (
 	vcsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/service"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/health"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/config"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/cors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/global"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/headers"
@@ -41,11 +42,13 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsMiddleware(stderr.New)),
 		fx.Provide(api.AsMiddleware(global.New)),
 		fx.Provide(api.AsMiddleware(metrics.New)),
+		fx.Provide(api.AsMiddleware(metrics.NewInternal)),
 		fx.Provide(api.AsMiddleware(headers.New)),
 		fx.Provide(api.AsMiddleware(auth.New)),
 		fx.Provide(api.AsMiddleware(org.New)),
 		fx.Provide(api.AsMiddleware(public.New)),
 		fx.Provide(api.AsMiddleware(cors.New)),
+		fx.Provide(api.AsMiddleware(config.New)),
 
 		// add endpoints
 		fx.Provide(api.AsService(docs.New)),
