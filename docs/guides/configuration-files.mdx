@@ -1,0 +1,294 @@
+---
+title: 'Configuration Files'
+description: "Configure apps using a single `.toml` file"
+---
+Config files allow you to define a BYOC application using a single `.toml` file. Under the hood, Nuon will handle
+keeping your configuration in sync.
+
+## Create an app
+
+Config files are used to sync the configuration for a single app. To create an app and an example config file:
+
+<CodeGroup>
+```sh
+$ nuon apps create --name=<app-name>
+```
+</CodeGroup>
+
+This will create an example config file named `nuon.<app-name>.toml`.
+
+## Sync an App
+
+To sync an app, and it's configuration run:
+
+```sh
+$ nuon apps sync
+```
+
+This will sync each configuration file in the current working directory.
+
+To sync only a single file:
+<CodeGroup>
+```sh
+$ nuon apps sync -c <file>
+```
+</CodeGroup>
+
+<Note>
+Nuon uses `terraform` to keep your application config in sync. If you would like to migrate from a config file to
+`terraform`, you can run `nuon apps export-terraform`.
+</Note>
+
+## Export Terraform
+
+You can export `terraform` from your application configuration using:
+
+<CodeGroup>
+```sh
+$ nuon apps export-terraform
+```
+</CodeGroup>
+
+## Configuration
+
+The configuration file allows you to configure an app similarly to the Nuon terraform provider.
+
+### Input Config
+
+Define [inputs](./app-inputs) for an app using the `[input]` block.
+
+To configure a sensitive `api_key` and `vpc_id` input:
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[inputs]
+[[inputs.input]]
+name = "vpc_id"
+description = "vpc_id to install application into"
+default = ""
+sensitive = false
+display_name = "VPC ID"
+
+[[inputs.input]]
+name = "api_key"
+description = "API key"
+default = ""
+sensitive = true
+display_name = "API Key"
+```
+</CodeGroup>
+
+<Note>
+Inputs are not required, unless you are using a sandbox that requires inputs (such as a byovpc one).
+</Note>
+
+### Runner Config
+
+Define the [runner](./runners) for an app using a `[runner]` block.
+
+To configure a runner for an `ecs` sandbox:
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[runner]
+runner_type = "aws-ecs"
+
+[[runner.env_var]]
+name = "runner-env-var"
+value = "runner-env-var"
+```
+</CodeGroup>
+
+<Note>
+Runners are a required configuration for all apps. In most cases, you do not need to customize them using environment variables.
+</Note>
+
+### Installer Config
+
+Define an [installer](./creating-an-installer) for an app using an `[installer]` block.
+
+To define an installer accessible at `https://nuon.co/installer/<your-app>`:
+
+<CodeGroup>
+```toml
+[installer]
+name = "installer"
+description = "one click installer"
+slug = "<your-app>"
+documentation_url = "docs-url"
+community_url = "community-url"
+homepage_url = "homepage-url"
+github_url = "github-url"
+logo_url = "logo-url"
+demo_url = "demo url"
+```
+</CodeGroup>
+
+### Sandbox Config
+
+Define the [sandbox](./sandboxes) for an app using a `[sandbox]` block.
+
+To define an `aws-ecs-byo-vpc` sandbox:
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[sandbox]
+terraform_version = "1.5.4"
+[sandbox.public_repo]
+directory = "aws-ecs-byo-vpc"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[[sandbox.var]]
+name = "vpc_id"
+value = "{{.nuon.install.inputs.vpc_id}}"
+```
+</CodeGroup>
+
+### Component Config
+
+You can define components using a `[components]` block. Components must declare a `type` field and any relevant component-specific configuration.
+
+<Note>
+Each component will have dependencies automatically defined based on the order in the config file. Learn more about depencencies [here](./component-dependencies).
+</Note>
+
+### Terraform Module Component
+
+To define a [terraform module component](./terraform-components) use the `terraform_module` type.
+
+To configure a terraform component using a connected repo:
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[[components]]
+name = "terraform"
+type = "terraform_module"
+terraform_version = "1.5.3"
+
+[components.connected_repo]
+directory = "infra"
+repo = "org/repo"
+branch = "main"
+
+[[components.env_var]]
+name = "AWS_REGION"
+value = "{{.nuon.install.sandbox.account.region}}"
+
+[[components.var]]
+name = "account_id"
+value = "{{.nuon.install.sandbox.account.id}}"
+
+```
+</CodeGroup>
+
+### Helm Chart Component
+
+To define a [helm chart component](./helm-chart-components) use the `helm_chart` type.
+
+To configure a helm chart in a connected repo:
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[[components]]
+name = "helm"
+type = "helm_chart"
+chart_name = "chart-name"
+
+[components.connected_repo]
+directory = "helm"
+repo = "org/repo"
+branch = "main"
+
+[[components.value]]
+name = "api.ingresses.public_domain"
+value = "{{.nuon.components.infra.outputs.iam_role}}"
+```
+</CodeGroup>
+
+### Docker Build Component
+
+To define a [docker build component](./docker-build-components) use the `docker_build` type.
+
+To configure a docker build component from a private repo:
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[[components]]
+name = "docker_build"
+type = "docker_build"
+
+dockerfile = "Dockerfile"
+
+[components.connected_repo]
+directory = "deployment"
+repo = "powertoolsdev/mono"
+branch = "main"
+```
+</CodeGroup>
+
+### Container Image Component
+
+To define a [container image component](./container-image-components) use the `container_image` type.
+
+To configure a public container image:
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[[components]]
+name = "container_image"
+type = "container_image"
+
+[components.public]
+image_url = "kennethreitz/httpbin"
+tag = "latest"
+```
+</CodeGroup>
+
+To configure a container image from an ECR repo:
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[[components]]
+name = "container_image_ecr"
+type = "container_image"
+
+[components.aws_ecr]
+iam_role_arn = "iam_role_arn"
+image_url = "ecr-url"
+tag = "latest"
+region = "us-west-2"
+```
+</CodeGroup>
+
+### Job Component
+
+To define a [job component](./job-components) use the `job` type.
+
+To configure a job using a docker image from another component:
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[[components]]
+name = "job"
+type = "job"
+
+image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
+tag   = "{{.nuon.components.e2e_docker_build.image.tag}}"
+cmd   = ["printenv"]
+args    = ["-a"]
+
+[[components.env_var]]
+name = "PUBLIC_DOMAIN"
+value = "{{.nuon.components.infra.outputs.iam_role}}"
+```
+</CodeGroup>
+
+To configure a job using a docker image from docker hub:
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[[components]]
+name = "job"
+type = "job"
+
+image_url = "bitnami/kubectl"
+tag   = "latest"
+cmd   = ["printenv"]
+args    = ["-a"]
+
+[[components.env_var]]
+name = "PUBLIC_DOMAIN"
+value = "{{.nuon.components.infra.outputs.iam_role}}"
+```
+</CodeGroup>
