@@ -94,7 +94,7 @@
                 "guides/helm-chart-components",
                 "guides/job-components",
                 "guides/component-dependencies",
-                "guides/configuration-management",
+                "guides/terraform-configuration-management",
                 "guides/configuration-files"
             ]
         },
@@ -108,7 +108,6 @@
             "group": "How To",
             "pages": [
                 "guides/vcs",
-                "guides/terraform-configuration-management",
                 "guides/install-access-permissions",
                 "guides/create-installs",
                 "guides/create-releases",
