@@ -113,7 +113,7 @@
                 "guides/create-releases",
                 "guides/using-variables",
                 "guides/auto-deploys-and-dependencies",
-                "guides/sandbox-mode",
+                "guides/sandbox-orgs",
                 "guides/view-logs"
             ]
         },
