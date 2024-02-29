@@ -41,17 +41,25 @@ type AppInstallerMetadata struct {
 func (a *AppInstallerMetadata) AfterQuery(tx *gorm.DB) error {
 	a.FormattedDemoURL = a.DemoURL
 	if !strings.HasPrefix(a.DemoURL, "https://www.youtube.com") {
+		fmt.Println("a")
 		return nil
 	}
 	if strings.HasPrefix(a.DemoURL, "https://www.youtube.com/embed") {
 		return nil
 	}
 
-	params, err := url.ParseQuery(a.DemoURL)
+	u, err := url.Parse(a.DemoURL)
 	if err != nil {
 		return nil
 	}
+
+	params, err := url.ParseQuery(u.RawQuery)
+	if err != nil {
+		return nil
+	}
+
 	ytID := params.Get("v")
+	fmt.Println(params)
 	if ytID == "" {
 		return nil
 	}
