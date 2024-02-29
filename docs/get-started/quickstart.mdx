@@ -5,7 +5,7 @@ description: "Get up and running with Nuon in a few minutes."
 
 import { tutorials } from '/snippets/guides.mdx';
 
-This guide will walk you through setting up an organization, configuring an application, and deploying to an install. Once you've completed it, you will be ready to configure and deploy your own app.
+This guide will walk you through setting up an organization, configuring an application, and deploying to an install. Once you have completed it, you will be ready to configure and deploy your own app.
 
 ## Install the CLI
 
@@ -14,12 +14,12 @@ brew install nuonco/tap/nuon
 ```
 
 <Note>
-If you are not using Hombrew, refer to our [CLI](/cli) documentation for other installation options.
+If you are not using Homebrew, refer to our [CLI](/cli) documentation for other installation options.
 </Note>
 
 ## Create an Account
 
-Once you've installed the Nuon CLI, create a Nuon account by logging in.
+Once you have installed the Nuon CLI, create a Nuon account by logging in.
 
 ```sh
 nuon login
@@ -29,11 +29,11 @@ Follow the prompts in the browser and login using a Google account. Once you've 
 
 ## Create an Organization
 
-Now that you're logged in you can create your first organization in sandbox mode.
+Now that you are logged in you can create an organization.
 
 <CodeGroup>
 ```sh create org
-nuon orgs create --name {your-org-name} --sandbox-mode
+nuon orgs create --name {your-org-name}
 ```
 
 ```sh view org
@@ -43,7 +43,7 @@ nuon orgs current
 
 ## Connect your GitHub Account
 
-To deploy code from private repos you'll need to connect to your GitHub account or organization.
+To deploy code from private repos you will need to connect to your GitHub account or organization.
 
 <CodeGroup>
 ```sh connect
@@ -57,7 +57,7 @@ nuon orgs list-connected-repos
 
 ## Create an App
 
-Now that you're set up, the next step is to configure and deploy an app. We have tutorials for the most popular architectures and platforms.
+Now that you are set up, the next step is to configure and deploy an app. We have tutorials for the most popular architectures and platforms.
 
 <CardGroup>
     {tutorials.map((tut, key) => (
