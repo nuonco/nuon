@@ -1,6 +1,9 @@
 package app
 
 import (
+	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
@@ -32,6 +35,29 @@ type AppInstallerMetadata struct {
 	CommunityURL     string `json:"community_url" gorm:"notnull"`
 	HomepageURL      string `json:"homepage_url" gorm:"notnull"`
 	DemoURL          string `json:"demo_url"`
+	FormattedDemoURL string `json:"formatted_demo_url" gorm:"-"`
+}
+
+func (a *AppInstallerMetadata) AfterQuery(tx *gorm.DB) error {
+	a.FormattedDemoURL = a.DemoURL
+	if !strings.HasPrefix(a.DemoURL, "https://www.youtube.com") {
+		return nil
+	}
+	if strings.HasPrefix(a.DemoURL, "https://www.youtube.com/embed") {
+		return nil
+	}
+
+	params, err := url.ParseQuery(a.DemoURL)
+	if err != nil {
+		return nil
+	}
+	ytID := params.Get("v")
+	if ytID == "" {
+		return nil
+	}
+
+	a.FormattedDemoURL = fmt.Sprintf("https://www.youtube.com/embed/%s", ytID)
+	return nil
 }
 
 func (a *AppInstallerMetadata) BeforeCreate(tx *gorm.DB) error {
