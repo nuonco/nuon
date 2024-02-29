@@ -94,7 +94,8 @@
                 "guides/helm-chart-components",
                 "guides/job-components",
                 "guides/component-dependencies",
-                "guides/configuration-management"
+                "guides/configuration-management",
+                "guides/configuration-files"
             ]
         },
         {
