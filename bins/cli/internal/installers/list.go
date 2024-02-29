@@ -25,6 +25,7 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 			"app-id",
 			"slug",
 			"name",
+			"url",
 		},
 	}
 	for _, installer := range installers {
@@ -32,6 +33,7 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 			installer.AppID,
 			installer.Slug,
 			installer.AppInstallerMetadata.Name,
+			installer.InstallerURL,
 		})
 	}
 	view.Render(data)
