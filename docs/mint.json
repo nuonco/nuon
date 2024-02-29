@@ -22,12 +22,12 @@
     },
     "tabs": [
         {
-            "name": "API Reference",
-            "url": "api-ref"
-        },
-        {
             "name": "Guides",
             "url": "guides"
+        },
+        {
+            "name": "API Reference",
+            "url": "api-ref"
         },
         {
             "name": "Support",
