@@ -18,7 +18,9 @@ import (
 const (
 	appConfigSyncTimeout time.Duration = time.Minute * 2
 	appConfigSyncSleep   time.Duration = time.Second * 2
-	orgName              string        = "customers-shared-sandbox"
+
+	// NOTE: app config files do not work with sandbox orgs currently
+	orgName string = "customers-shared"
 )
 
 const appConfigTemplate string = `
