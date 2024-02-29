@@ -13,19 +13,23 @@ const (
 )
 
 type SpinnerView struct {
-	json    bool
-	spinner *pterm.SpinnerPrinter
+	json     bool
+	spinner  *pterm.SpinnerPrinter
+	prevText string
 }
 
 func NewSpinnerView(json bool) *SpinnerView {
 	return &SpinnerView{
 		json,
 		nil,
+		"",
 	}
 }
 
 func (v *SpinnerView) formatText(text string) string {
-	return runewidth.FillRight(text, defaultSpinnerWidth)
+	updatedText := runewidth.FillRight(text, len(v.prevText))
+	v.prevText = text
+	return updatedText
 }
 
 func (v *SpinnerView) Start(text string) {
