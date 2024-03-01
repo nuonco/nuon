@@ -223,6 +223,7 @@ func (s *appSandboxesSuite) TestGetAppSandboxLatestConfig() {
 
 	s.T().Run("no sandbox config found", func(t *testing.T) {
 		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 		app, err := s.apiClient.CreateApp(s.ctx, appReq)
 		require.NoError(t, err)
 		require.NotNil(t, app)

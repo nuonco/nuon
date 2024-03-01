@@ -80,6 +80,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 
 	s.T().Run("errors when no app sandbox config exists", func(t *testing.T) {
 		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 		app, err := s.apiClient.CreateApp(s.ctx, appReq)
 		require.NoError(t, err)
 		require.NotNil(t, app)
@@ -95,6 +96,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 
 	s.T().Run("errors when no app runner config exists", func(t *testing.T) {
 		appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+		appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 		app, err := s.apiClient.CreateApp(s.ctx, appReq)
 		require.NoError(t, err)
 		require.NotNil(t, app)
