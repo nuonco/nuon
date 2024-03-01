@@ -72,6 +72,7 @@ resource "nuon_app_installer" "real" {
   github_url        = each.value.urls.github
   homepage_url      = each.value.urls.homepage
   demo_url          = each.value.urls.demo
+  post_install_markdown = ""
 }
 
 resource "nuon_install" "real" {

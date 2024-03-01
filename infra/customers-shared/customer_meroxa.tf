@@ -5,6 +5,7 @@ resource "nuon_app_input" "meroxa" {
   // NOTE: this can also just be a secret input, if needed - where a customer provides the secret directly, if desired.
   input {
     name        = "secret_role_arn"
+    display_name = "Secret Role ARN"
     required    = true
     description = "ARN for the secret that is placed into AWS SM"
     default     = ""
@@ -12,6 +13,7 @@ resource "nuon_app_input" "meroxa" {
 
   input {
     name        = "storage"
+    display_name = "Storage"
     default     = "20Gi"
     required    = false
     description = "description"

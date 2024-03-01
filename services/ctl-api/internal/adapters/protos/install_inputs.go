@@ -9,7 +9,7 @@ import (
 )
 
 func (c *Adapter) toInstallInputs(install app.Install) (*variablesv1.InstallInputs, error) {
-	if install.InstallInputs == nil {
+	if len(install.InstallInputs) < 1 || install.CurrentInstallInputs == nil {
 		return &variablesv1.InstallInputs{}, nil
 	}
 

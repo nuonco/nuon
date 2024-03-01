@@ -44,6 +44,7 @@ resource "nuon_app_input" "sandbox" {
       description = input.value.description
       default     = input.value.default
       required    = input.value.required
+      display_name = input.value.name
     }
   }
 }
@@ -120,4 +121,5 @@ resource "nuon_app_installer" "sandbox" {
   github_url        = each.value.urls.github
   homepage_url      = each.value.urls.homepage
   demo_url          = each.value.urls.demo
+  post_install_markdown = "Post Install"
 }
