@@ -51,6 +51,7 @@ func (s *componentBuildsSuite) SetupTest() {
 
 	// create an app
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
+	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), app)
