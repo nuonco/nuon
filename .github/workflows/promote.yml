@@ -139,8 +139,6 @@ jobs:
     needs:
       - tag
       - merged_pr
-      - services
-      - artifacts
     if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
     runs-on: ubuntu-latest
     steps:
