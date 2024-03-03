@@ -1,0 +1,38 @@
+---
+key_stroke_delay: 50ms
+command_delay: 200ms
+terminal: ~/nuon $
+env_vars:
+  NUON_CONFIG_FILE: ~/.seed.yml
+  AWS_PROFILE: canary.NuonAdmin
+
+steps:
+  - name: configure your app
+    cwd: /tmp/workspace1573256284/
+    display_cmd: terraform apply
+    cmd:
+      - terraform
+      - apply
+
+  - name: install into your customer's cloud account
+    cmd:
+      - nuon
+      - installs
+      - create
+      - --name=your-customer
+      - --region=us-west-2
+      - --role=your-customer-iam-role
+
+  - name: build your app
+    cmd:
+      - nuon
+      - builds
+      - create
+      - -c=e2e_helm
+
+  - name: release your app to your customer's cloud
+    cmd:
+      - nuon
+      - releases
+      - create
+      - -c=e2e_helm
