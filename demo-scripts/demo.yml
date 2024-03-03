@@ -1,0 +1,146 @@
+---
+key_stroke_delay: 50ms
+command_delay: 200ms
+terminal: ~/nuon $
+env_vars:
+  NUON_CONFIG_FILE: ~/.seed.yml
+  AWS_PROFILE: canary.NuonAdmin
+
+# VALUE PROP
+# use your existing infra / product
+# run in all your customer's cloud accounts
+# build and release with your existing workflow
+steps:
+  - name: "Clear screen to get started"
+    cmd:
+      - clear
+
+  - name: let me show you my app running in end customer installs
+    notes: |
+      Starting with the end in mind - show a real application
+    cmd:
+      - curl
+      - https://ctl.stage.nuon.co/livez
+
+  #- name: "install nuon"
+    #display_cmd: /bin/bash -c "$(curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)"
+    #notes: |
+      #You will interact with Nuon via our CLI, `terraform` and API. You can install the CLI in just a single command
+    #cmd:
+      #- bash
+      #- ./exp/demo-scripts/install-cli.sh
+
+  - name: show app using cli
+    display_cmd: nuon apps list
+    notes: |
+      we want to show the apps that nuon is managing, before digging into the architecture
+    cmd:
+      - nuon
+      - apps
+      - list
+
+  - name: discuss application architecture
+    display_cmd: browse mono repo
+    notes: |
+      This is an app that has terraform, a helm chart, multiple processes and provisions a load balancer using NLBs and ACM.
+
+      First, let's look at the infrastructure powering a real install.
+    cmd:
+      - open
+      - https://github.com/powertoolsdev/mono/tree/main/services/e2e
+
+  - name: show all installs of app
+    notes: |
+      Ok, now we have showed you our app - let's talk about how this is configured with Nuon
+
+      First, you have a concept of installs - each of your customer accounts is an "install" - a full working version of your app.
+    display_cmd: nuon installs list
+    cmd:
+      - nuon
+      - installs
+      - list
+
+  - name: nuon creates real infra each of these accounts
+    notes: |
+      Show the AWS S3 bucket, acm cert, k8s cluster, and more.
+
+      Point out that this is "my customer" account
+    cmd:
+      - aws
+      - s3
+      - ls
+
+  - name: show kubernetes cluster
+    cmd:
+      - aws
+      - eks
+      - list-clusters
+      - --no-cli-pager
+
+  - name: show ACM certificate
+    cmd:
+      - aws
+      - acm
+      - list-certificates
+      - --no-cli-pager
+
+  - name: application is modeled using nuon components
+    display_cmd: nuon components list
+    notes: |
+      Ok, so now we've showed you our application, and a live running install for it. Now, let's show you how to configure this using Nuon.
+    cmd:
+      - nuon
+      - components
+      - list
+
+  - name: how did we get here - you can follow our guide
+    notes: |
+      If you would like to get started, skip this video and just head to our quickstart!
+    cmd:
+      - open
+      - https://github.com/nuonco/quickstart
+
+  # sample component
+  - name: terraform component
+    display_cmd: nuon components get -c e2e_infra
+    cmd:
+      - nuon
+      - components
+      - get
+      - -c=e2e_infra
+
+  - name: terraform component code
+    cmd:
+      - nvim
+      - ./services/e2e/nuon/component_terraform_module.tf
+
+  - name: build new changes
+    cmd:
+      - nuon
+      - builds
+      - create
+      - -c=e2e_infra
+
+  - name: release new changes
+    cmd:
+      - nuon
+      - releases
+      - create
+      - -c=e2e_infra
+
+  - name: dogfooding our nuon config in terraform cloud
+    cmd:
+      - open
+      - https://app.terraform.io/app/nuonco/workspaces/e2e-prod
+
+  #- name: find documentation for our terraform provider
+    #cmd:
+      #- open
+      #- https://registry.terraform.io/providers/nuonco/nuon/latest/docs
+
+  - name: get started today!
+    notes: get started with Nuon today
+    display_cmd: open https://nuon.co
+    cmd:
+      - open
+      - https://nuon.webflow.io/landing-page

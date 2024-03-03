@@ -1,0 +1,109 @@
+---
+key_stroke_delay: 50ms
+command_delay: 200ms
+terminal: ~/nuon $
+env_vars:
+  ENV_VAR: env_var
+
+# before going into the terminal, complete these steps
+# - explain what BYOC is and the benefits it offers to vendors and customers
+# - explain what Nuon is and how we enable BYOC
+# - walk through the desired end-state with an existing demo install, to explain what we'll be creating
+
+# we now enter the terminal to demo the vendor experience of creating a BYOC app
+steps:
+  - name: Install the CLI
+    cmd:
+      - brew
+      - install
+      - nuonco/tap/nuon
+
+  - name: Log into Nuon
+    cmd:
+      - nuon
+      - login
+
+  - name: Select an org
+    notes: |
+      Since I work here, I'm already a member of the development org we're using for this demo.
+      If you don't have an org already, simply run nuon orgs create --name {your-org-name}.
+    cmd:
+      - nuon
+      - orgs
+      - select
+
+  - name: Create the app
+    cmd:
+      - nuon
+      - apps
+      - create
+      - --name=demo_byoc_ecs_app
+
+  - name: Configure the app
+    notes: |
+      Remember to update the installer slug!
+    cmd:
+      - nvim
+      - nuon.demo_byoc_ecs_app.toml
+
+  - name: Sync the app config
+    cmd:
+      - nuon
+      - apps
+      - sync
+
+  - name: Select the app
+    cmd:
+      - nuon
+      - apps
+      - select
+
+  - name: Connect the components
+    cmd:
+      - nvim
+      - nuon.demo_byoc_ecs_app.toml
+
+  - name: Sync the component configs
+    cmd:
+      - nuon
+      - apps
+      - sync
+
+  - name: View the components
+    cmd:
+      - nuon
+      - components
+      - list
+
+  - name: View the component builds
+    cmd:
+      - nuon
+      - builds
+      - list
+
+  - name: Create an install
+    notes: |
+      We're now going to switch roles, from the BYOC developer, to the BYOC customer.
+      As a customer, I'm going to visit the developer's installer to install their app in my cloud account.
+      To show how easy this is, let's use Cloudformation to create the IAM role.
+      Now that I have the ARN, I simply paste into the installer and go.
+      At this point, Nuon takes over. It will provision the install and deploy the app for me.
+    cmd:
+      - open
+      - https://app.stage.nuon.co/installer/demo-byoc-ecs-app
+
+  - name: Monitor installs in the dashboard
+    notes: |
+      Back on the developer side of things, if I open the Nuon dashboard, I'll see the new install being created for Acme Inc.
+      Clicking on the install in the list, the detail view shows my the sandbox being provisioned, the components the install has found, and the component deploys.
+    cmd:
+      - open
+      - https://app.stage.nuon.co
+
+  - name: Next steps
+    notes: |
+      Now you know how to create a BYOC app, and how easy it is for customers to install it.
+      Next, you may want to take a look at our docs to learn how you can configure your own BYOC app to deploy with Nuon.
+    cmd:
+      - open
+      - https://docs.nuon.co

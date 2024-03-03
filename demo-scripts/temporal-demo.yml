@@ -1,0 +1,127 @@
+---
+#key_stroke_delay: 50ms
+key_stroke_delay: 5ms
+command_delay: 200ms
+terminal: ~/nuon $
+env_vars:
+  NUON_CONFIG_FILE: ~/.seed.yml
+  AWS_PROFILE: canary.NuonAdmin
+
+steps:
+  # setup a demo to show the initial setup
+  - name: configure your app
+    cwd: /tmp/workspace3277961293
+    display_cmd: terraform apply
+    cmd:
+      - terraform
+      - apply
+      - -var-file=variables.json
+
+  - name: install into your customer's cloud account
+    cmd:
+      - nuon
+      - installs
+      - create
+      - --name=your-customer
+      - --region=us-west-2
+      - --role=your-customer-iam-role
+
+  - name: build and package
+    cmd:
+      - nuon
+      - builds
+      - create
+      - -c=e2e_helm
+
+  - name: release across all of your customer's cloud account
+    notes: point out how different installs have different requirements
+    cmd:
+      - nuon
+      - releases
+      - create
+      - -c=e2e_helm
+
+  # initial event loop + state management (win #1)
+  - name: install event loop
+    skip_animation: true
+    cmd:
+      - open
+      - http://localhost:8233/namespaces/installs/workflows
+
+  - name: basic API flow
+    skip_animation: true
+    cmd:
+      - nvim
+      - ./services/ctl-api/internal/app/installs/service/create_install.go
+
+  # dependency management
+  - name: polling
+    skip_animation: true
+    cmd:
+      - open
+      - http://localhost:8233/namespaces/installs/workflows
+
+  - name: polling using activities
+    skip_animation: true
+    cmd:
+      - nvim
+      - ./services/ctl-api/internal/app/installs/worker/poll_dependencies.go
+
+  # synchronizing / queueing / communication between loops
+  - name: build your app
+    cmd:
+      - nuon
+      - builds
+      - create
+      - -c=e2e_helm
+
+  - name: release your app to your customer's cloud
+    cmd:
+      - nuon
+      - releases
+      - create
+      - -c=e2e_helm
+
+  - name: signal another event loop
+    skip_animation: true
+    cmd:
+      - nvim
+      - ./services/ctl-api/internal/app/releases/worker/activities/create_install_deploy.go
+
+  - name: coordination in event loop
+    skip_animation: true
+    cmd:
+      - open
+      - http://localhost:8233/namespaces/installs/workflows
+
+  # sandbox mode
+  - name: api sandbox mode
+    skip_animation: true
+    cmd:
+      - open
+      - http://localhost:8081/docs/index.html#/orgs/post_v1_orgs
+
+  - name: executions loop
+    skip_animation: true
+    cmd:
+      - nvim
+      - ./services/ctl-api/internal/app/releases/worker/exec.go
+
+  - name: when not in sandbox mode
+    skip_animation: true
+    cmd:
+      - nvim
+      - ./services/workers-executors/internal/workflows/execute/workflow.go
+
+  # operational commands
+  - name: just emit a signal!
+    skip_animation: true
+    cmd:
+      - nvim
+      - ./services/ctl-api/internal/app/services/install/forget_install.go
+
+  - name: operational admin
+    skip_animation: true
+    cmd:
+      - open
+      - http://ctl.nuon.us-west-2.prod.nuon.cloud/docs/index.html
