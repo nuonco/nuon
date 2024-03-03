@@ -1,0 +1,87 @@
+---
+key_stroke_delay: 30ms
+command_delay: 200ms
+terminal: ~/nuon $
+env_vars:
+  NUON_CONFIG_FILE: ~/.seed.yml
+  AWS_PROFILE: canary.NuonAdmin
+
+# VALUE PROP
+# use your existing infra / product
+# run in all your customer's cloud accounts
+# build and release with your existing workflow
+steps:
+  - name: "Clear screen to get started"
+    cmd:
+      - clear
+
+  - name: BYOC/Self-Hosted/Managed SaaS for everyone
+    notes: get started with Nuon today
+    display_cmd: open https://nuon.co
+    skip_animation: true
+    cmd:
+      - open
+      - ./exp/demo-scripts/images/nuon-splash.png
+
+  - name: Example customer install page
+    notes: |
+      Starting with the end in mind - show a real application
+    skip_animation: true
+    cmd:
+      - open
+      - https://app.stage.nuon.co/installer/signoz
+
+  - name: manage your app config with terraform
+    cwd: /tmp/workspace1840660106/
+    display_cmd: terraform apply
+    cmd:
+      - terraform
+      - apply
+      - -var-file=variables.json
+
+  - name: simple configuration for even the most complex apps
+    display_cmd: terraform apply
+    cmd:
+      - nvim
+      - ./services/e2e/nuon/component_helm_chart.tf
+
+  - name: Build into your product
+    notes: |
+      Show some code that builds this into your product
+    display_cmd: nvim ./your-api/signup_handler.go
+    cmd:
+      - nvim
+      - ./exp/demo-scripts/snippets/signup.go
+
+  - name: Visibility into all your customer installs
+    notes: |
+      Show installs
+    display_cmd: nuon installs list
+    cmd:
+      - nuon
+      - installs
+      - list
+
+  - name: Build as part of your CI
+    display_cmd: nuon builds create
+    cmd:
+      - nuon
+      - builds
+      - create
+      - -c=e2e_infra
+
+  - name: Release as part of your CD
+    display_cmd: nuon releases create
+    cmd:
+      - nuon
+      - releases
+      - create
+      - -c=e2e_infra
+
+  - name: get started today!
+    notes: get started with Nuon today
+    display_cmd: open https://nuon.co
+    skip_animation: true
+    cmd:
+      - open
+      - https://nuon.webflow.io/landing-page-2
