@@ -1,0 +1,395 @@
+---
+title: 'Create an AWS EKS App'
+description: 'Learn how to create a BYOC app with Helm and Terraform.'
+icon: 'aws'
+---
+
+This guide will walk you through creating a BYOC app using Docker, Helm, and Terraform, and deploying it to AWS EKS. At the end of this tutorial, you should know how to create a new BYOC deployment offering with your existing application.
+
+<Note>
+All the configuration and component code used in this guide can be found in our [Guides repo](https://github.com/nuonco/guides/tree/main/aws-eks-tutorial).
+</Note>
+
+## Prerequisites
+
+- [Create a Nuon account](/get-started/quickstart). You will need a working Nuon org.
+- [Set up an AWS account](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html). This is the account you will create the install in.
+
+## What You Will Create
+
+This tutorial will walk you through creating the following:
+
+- An [App](/guides/apps)
+- A [Docker Build component](/guides/docker-build-components)
+- A [Terraform component](/guides/terraform-components)
+- A [Helm chart component](/guides/helm-chart-components)
+- An [Install](/guides/create-installs), using our [AWS EKS sandbox](/guides/sandboxes)
+
+## Configure App
+
+To configure the app, you will create a TOML config file using our CLI. In each section below we will provide you with configuration snippets for the app itself as well as it's components.
+
+If you would prefer to use Terraform, we also support configuring apps with our [Terraform provider](https://registry.terraform.io/providers/nuonco/nuon/latest).
+Copy the Terraform files below, and then use the Terraform snippets instead of the TOML ones.
+
+<CodeGroup>
+```sh versions.tf
+terraform {
+  required_version = ">= 1.3.7"
+
+  required_providers {
+    nuon = {
+      source  = "nuonco/nuon"
+      version = ">= 0.9.1"
+    }
+
+    utils = {
+      source  = "cloudposse/utils"
+      version = ">= 0.17.23"
+    }
+  }
+}
+```
+
+```hcl providers.tf
+provider "nuon" {}
+```
+</CodeGroup>
+
+### Create App
+
+Define the app itself and give it a name. This will create the app in Nuon and generate a config file named `nuon.my_eks_app.toml`. This file will be populated with sample config, which we will update in this guide.
+
+<CodeGroup>
+```sh CLI
+nuon apps create --name=my_eks_app
+```
+
+```hcl app.tf
+resource "nuon_app" "my_eks_app" {
+  name = "my_eks_app"
+}
+```
+</CodeGroup>
+
+### Installer
+
+Update the installer config. Installers provide an out-of-the-box installation flow your customers can use to install your app. You will use it later in this guide to create an install yourself.
+
+<CodeGroup>
+```toml TOML
+[installer]
+name              = "My EKS App"
+description       = "A demo app that runs on EKS."
+slug              = "my-eks-app"
+documentation_url = "https://docs.nuon.co/"
+community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+github_url        = "https://github.com/nuonco"
+homepage_url      = "https://www.nuon.co/"
+demo_url          = "https://www.nuon.co/"
+```
+
+```hcl installer.tf
+resource "nuon_app_installer" "my_eks_app" {
+  app_id            = nuon_app.my_eks_app.id
+  name              = "My EKS App"
+  description       = "A demo app that runs on EKS."
+  slug              = nuon_app.my_eks_app.name
+  documentation_url = "https://docs.nuon.co/"
+  community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+  logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+  github_url        = "https://github.com/nuonco"
+  homepage_url      = "https://www.nuon.co/"
+  demo_url          = "https://www.nuon.co/"
+}
+```
+</CodeGroup>
+
+### Sandbox
+
+Update the sandbox config. The aws-eks sandbox will provide everything you need to run EKS services, from the EKS cluster down to the VPC.
+
+<CodeGroup>
+```toml TOML
+[sandbox]
+terraform_version = "1.5.4"
+[sandbox.public_repo]
+directory = "aws-eks"
+repo = "nuonco/sandboxes"
+branch = "main"
+```
+
+```hcl sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.my_eks_app.id
+  terraform_version = "v1.6.3"
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-eks"
+  }
+}
+```
+</CodeGroup>
+
+### Runner
+
+Update the runner config. The `aws-eks` sandbox requires that we use the `aws-eks` runner. The runner manages the sandbox, provisioning and deprovisioning AWS resources during deploys.
+
+<CodeGroup>
+```toml TOML
+[runner]
+runner_type = "aws-eks"
+```
+
+```hcl runner.tf
+resource "nuon_app_runner" "main" {
+  app_id      = nuon_app.my_eks_app.id
+  runner_type = "aws-eks"
+}
+```
+</CodeGroup>
+
+### Sync App Config to Nuon
+
+You now have a complete Nuon app config. This is a good place to stop and sync it to Nuon.
+
+<CodeGroup>
+```sh CLI
+nuon apps sync
+```
+
+```sh Terraform
+terraform apply
+```
+</CodeGroup>
+
+Once the config is synced, select the newly created app using the CLI. This will scope CLI commands to the new app.
+
+```sh
+nuon apps select
+```
+
+## Connect Components
+
+This app consists of three components: one to build the Docker image, one to provision the EKS service, and one to create an HTTPS certificate.
+
+### Docker Image
+
+This is a [Docker Build component](/guides/docker-build-components) that will build the API and create a Docker image containing it. When released, it will sync the image to each install's ECR so Helm can pull it when creating pods.
+
+<CodeGroup>
+```toml TOML
+[[components]]
+name   = "docker_image"
+type = "docker_build"
+dockerfile = "Dockerfile"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "aws-eks-tutorial/components/docker-image"
+branch    = "main"
+```
+
+```hcl docker_image.tf
+resource "nuon_docker_build_component" "docker_image" {
+  app_id = nuon_app.my_eks_app.id
+  name   = "docker_image"
+  dockerfile = 'Dockerfile'
+  public_repo = {
+    repo      = "nuonco/guides"
+    directory = "aws-eks-tutorial/components/docker-image"
+    branch    = "main"
+  }
+}
+```
+</CodeGroup>
+
+### HTTPS Certificate
+
+This is a [Terraform Module](/guides/terraform-components) component that creates an ACM HTTPS certificate. The Helm chart will use this when creating the ALB.
+
+<CodeGroup>
+```toml TOML
+[[components]]
+name   = "certificate"
+type = "terraform_module"
+terraform_version = "1.5.3"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "aws-eks-tutorial/components/certificate"
+branch    = "main"
+[[components.var]]
+name  = "domain_name"
+value = "introspect.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+[[components.var]]
+name  = "zone_id"
+value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+```
+
+```hcl certificate.tf
+resource "nuon_terraform_module_component" "certificate" {
+  app_id = nuon_app.my_eks_app.id
+  name = "certificate"
+  connected_repo = {
+    repo      = "nuonco/guides"
+    directory = "aws-eks-tutorial/components/certificate"
+    branch    = "main"
+  }
+  var {
+    name  = "domain_name"
+    value = "introspect.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+  }
+  var {
+    name  = "zone_id"
+    value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+  }
+}
+```
+</CodeGroup>
+
+### Helm Chart
+
+This component will create a Helm release in EKS, pulling the Docker image and using it to create a Kubernetes pod. It will also create an ALB to expose the API to the internet.
+
+<CodeGroup>
+```toml TOML
+[[components]]
+name   = "helm_chart"
+type = "helm_chart"
+chart_name = "introspect"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "aws-eks-tutorial/components/helm-chart"
+branch    = "main"
+[[components.value]]
+name  = "image.repository"
+value = "{{.nuon.components.docker_image.image.repository.uri}}"
+[[components.value]]
+name  = "image.tag"
+value = "{{.nuon.components.docker_image.image.tag}}"
+[[components.value]]
+name  = "api.nlbs.public_domain_certificate"
+value = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
+[[components.value]]
+name  = "api.nlbs.public_domain"
+value = "introspect.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+[[components.value]]
+name  = "app_id"
+value = "{{.nuon.app.id}}"
+[[components.value]]
+name  = "org_id"
+value = "{{.nuon.org.id}}"
+[[components.value]]
+name  = "install_id"
+value = "{{.nuon.install.id}}"
+[[components.value]]
+name  = "vpc_id"
+value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
+```
+
+```hcl helm_chart.tf
+resource "nuon_helm_chart_component" "helm_chart" {
+  app_id = nuon_app.my_eks_app.id
+  name   = "helm_chart"
+  chart_name = "introspect"
+  public_repo = {
+    repo      = "nuonco/guides"
+    directory = "aws-eks-tutorial/components/helm-chart"
+    branch    = "main"
+  }
+  value {
+    name  = "image.repository"
+    value = "{{.nuon.components.docker_image.image.repository.uri}}"
+  }
+  value {
+    name  = "image.tag"
+    value = "{{.nuon.components.docker_image.image.tag}}"
+  }
+  value {
+     name  = "api.nlbs.public_domain_certificate"
+     value = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
+  }
+  value {
+    name  = "api.nlbs.public_domain"
+    value = "nlb.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+  }
+  value {
+    name  = "app_id"
+    value = "{{.nuon.app.id}}"
+  }
+  value {
+    name  = "org_id"
+    value = "{{.nuon.org.id}}"
+  }
+  value {
+    name  = "install_id"
+    value = "{{.nuon.install.id}}"
+  }
+  dependencies = [
+    nuon_docker_build_component.docker_image.id
+  ]
+}
+```
+</CodeGroup>
+
+### Sync Component Configs to Nuon
+
+Now that you have the components, sync the update config to Nuon.
+
+<CodeGroup>
+```sh CLI
+nuon apps sync
+```
+
+```sh Terraform
+terraform apply
+```
+</CodeGroup>
+
+Just like the app, you can use the CLI to verify they were synced successfully.
+
+```sh
+nuon components list
+```
+
+Initial builds for each component will also have been created. Verify with the CLI that they were successful.
+
+```sh
+nuon builds list
+```
+
+## Create an Install
+
+Creating an install requires two steps: granting access to the AWS account via an IAM role, and then provisioning the install in that account.
+There are a few ways to do this, but the easiest is to use the installer you configured earlier.
+In your web browser, navigate to [https://app.nuon.co/installer/your-installer-slug](https://app.nuon.co/installer/<your-installer-slug>), and follow steps in the UI.
+
+For other approaches, see our guides [Install Access Permissions](/guides/install-access-permissions)  and [Create Installs](/guides/create-installs).
+
+### Monitor Install Creation
+
+Monitor the install's creation using the Dashboard. Scroll down, and below the settings, you should see a card for your install.
+
+![Installs on Dashboard](/images/installs-on-dashboard.png)
+
+Click on the card, and in the sidebar you can verify that the components are deployed using in the Deploy History.
+
+![Install Details on Dashboard](/images/install-details-on-dashboard.png)
+
+### Inspect the Install
+
+When the install has provisioned, and the deploys have completed, copy the install ID from the UI and curl the API to verify it's running.
+
+
+```sh curl api
+curl https://api.{install_id}.nuon.run/introspect/env
+```
+
+## Wrapping Up and Next Steps
+
+Congratulations, you just deployed an EKS service to AWS! A few suggestions for where to go next:
+
+- Check out our [Release Management](/guides/create-releases) guide to learn how to update installs.
+- Dig into our [App Configuration](/guides/apps) guide to learn how to configure more complex apps.
+- Share your installer with a friend and have them install your app in their AWS account.
