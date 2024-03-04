@@ -1,0 +1,76 @@
+---
+title: 006 - Config Files
+description: Start your next Nuon app in just 2 commands!
+---
+
+![006 - Config Files](/images/changelog/006_header.jpg)
+
+March 4th, 2024
+
+## Config Files
+
+Until now, the only way to configure a Nuon app was using our [Terraform
+  Provider](https://registry.terraform.io/providers/nuonco/nuon/latest/docs). While this was a great way to get started,
+  not all of users regularly use Terraform, or wanted to get started with it.
+
+Now, you can manage your app configuration using a single file, and can create a new app in just two commands:
+<CodeGroup>
+```nuon sh
+$ nuon apps create --name=your-cool-app
+$ nuon apps sync
+```
+</CodeGroup>
+
+Config files use TOML syntax, and allow you to define each part of your application, including installers, components,
+sandboxes and more.
+
+<CodeGroup>
+```toml nuon.your-cool-app.toml
+[[components]]
+name = "toml_terraform"
+type = "terraform_module"
+terraform_version = "1.5.3"
+
+[components.connected_repo]
+directory = "infra"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[components.var]]
+name = "AWS_REGION"
+value = "{{.nuon.install.sandbox.account.region}}"
+
+[[components.var]]
+name = "ACCOUNT_ID"
+value = "{{.nuon.install.sandbox.account.id}}"
+```
+</CodeGroup>
+
+While some of you may still want to use Terraform to handle more complex applications (or multiple apps), we think these
+  config files will be a lot faster for most people to onboard :).
+
+Check our our [config docs](../guides/configuration-files) for more.
+
+## Export Terraform
+
+Under the hood, our config files generate Terraform, and use our Terraform provider to keep your app in sync. We went
+ahead and exposed this generated terraform, in case you would like to migrate from config files to terraform.
+
+To generate `terraform` json, simply run:
+
+<CodeGroup>
+```nuon sh
+$ nuon apps export-terraform
+```
+</CodeGroup>
+
+To work with this generated `terraform` json, simply write it to a file with a `.tf.json` suffix. All normal terraform
+commands will work like usual:
+
+<CodeGroup>
+```nuon sh
+$ nuon apps export-terraform > app.tf.json
+$ terraform init
+$ terraform plan
+```
+</CodeGroup>
