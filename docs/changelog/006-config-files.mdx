@@ -9,17 +9,22 @@ March 4th, 2024
 
 ## Config Files
 
-Until now, the only way to configure a Nuon app was using our [Terraform
-  Provider](https://registry.terraform.io/providers/nuonco/nuon/latest/docs). While this was a great way to get started,
-  not all of users regularly use Terraform, or wanted to get started with it.
 
-Now, you can manage your app configuration using a single file, and can create a new app in just two commands:
+Before Nuon, creating a BYOC application took months, or even years. Using our [Terraform Provider](https://registry.terraform.io/providers/nuonco/nuon/latest/docs), anyone can create a
+BYOC application in a few hours - however, we knew we could make it even faster.
+
+Today, we are happy to share that you can create BYOC apps with two simple commands:
+
 <CodeGroup>
 ```nuon sh
 $ nuon apps create --name=your-cool-app
 $ nuon apps sync
 ```
 </CodeGroup>
+
+This is a HUGE deal, you can now experiment with different versions of your BYOC app (such as fully-managed, byo-vpc or
+others), and get going in just a few minutes. All you need to do is modify the config file to point Nuon at the write
+components, and we'll handle the rest. Yes, it's that easy.
 
 Config files use TOML syntax, and allow you to define each part of your application, including installers, components,
 sandboxes and more.
@@ -74,3 +79,8 @@ $ terraform init
 $ terraform plan
 ```
 </CodeGroup>
+
+## Coming Soon
+
+As a teaser, we are heads down shipping an all new way to debug and manage Nuon installs. Early customer feedback has
+been great, and we'll be sharing this with the world next week - stay tuned!
