@@ -37,7 +37,7 @@ module "azure-stage" {
 module "azure-prod" {
   source = "./modules/workspace"
 
-  name          = "infra-azure"
+  name          = "infra-azure-prod"
   repo          = "powertoolsdev/mono"
   auto_apply    = true
   dir           = "infra/azure"
