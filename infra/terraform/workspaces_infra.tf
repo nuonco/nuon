@@ -18,6 +18,38 @@ module "infra-artifacts" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 }
 
+module "azure-stage" {
+  source = "./modules/workspace"
+
+  name          = "infra-azure-stage"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "infra/azure"
+  variable_sets = ["azure-stage"]
+  project_id    = tfe_project.infra.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  vars = {
+    env = "stage"
+  }
+}
+
+module "azure-prod" {
+  source = "./modules/workspace"
+
+  name          = "infra-azure"
+  repo          = "powertoolsdev/mono"
+  auto_apply    = true
+  dir           = "infra/azure"
+  variable_sets = ["azure-prod"]
+  project_id    = tfe_project.infra.id
+
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  vars = {
+    env = "prod"
+  }
+}
+
 module "aws" {
   source = "./modules/workspace"
 
