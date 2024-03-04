@@ -136,6 +136,7 @@
             "group": "",
             "pages": [
                 "changelog/changelog",
+                "changelog/006-config-files",
                 "changelog/005-improved-installers-guides",
                 "changelog/004-sdks-github-action",
                 "changelog/003-ecs-support",
