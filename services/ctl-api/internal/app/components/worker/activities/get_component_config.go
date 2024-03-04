@@ -43,6 +43,7 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetRequest) (*c
 		// preload all external image configs
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig.ComponentConfigConnection").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AWSECRImageConfig").
 
 		// preload all job configs
 		Preload("ComponentConfigConnection.JobComponentConfig").
