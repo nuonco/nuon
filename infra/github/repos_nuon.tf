@@ -197,9 +197,9 @@ module "nuon-homebrew-tap" {
   }
 }
 
-module "nuon-terraform-ecr-access" {
+module "nuon-terraform-aws-ecr-access" {
   source      = "./modules/repository"
-  name        = "terraform-ecr-access"
+  name        = "terraform-aws-ecr-access"
   description = "Terraform module for granting access for Nuon container image components."
   required_checks = []
   is_public        = true
