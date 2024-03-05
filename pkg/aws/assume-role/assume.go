@@ -45,7 +45,7 @@ func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, er
 	}
 
 	credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId, *creds.SecretAccessKey, *creds.SessionToken)
-	cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(credsProvider))
+	cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(credsProvider), config.WithRegion(a.Region))
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("failed to get config with STS creds: %w", err)
 	}
