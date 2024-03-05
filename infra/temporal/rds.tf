@@ -59,6 +59,8 @@ module "primary" {
   db_subnet_group_name   = module.subnet_group.db_subnet_group_id
   vpc_security_group_ids = [module.security_group_rds.security_group_id]
   manage_master_user_password = true
+  manage_master_user_password_rotation = true
+  master_user_password_rotation_automatically_after_days = 365
 
   maintenance_window              = "Mon:00:00-Mon:03:00"
   backup_window                   = "03:00-06:00"
