@@ -125,98 +125,42 @@ authentication or publishing public images. Any `Dockerfile` in a repo can be bu
 The sync process works by creating a 1-time authentication flow that grants the install runner access to pull the image
 from the org data plane, and copy it into the local registry.
 
-## ECR Access IAM Role
+## AWS ECR Access IAM Role
 
-To use an private ECR image, you must create an IAM role that grants Nuon access to clone your image.
+To use a private AWS ECR image, you must create an IAM role that grants Nuon access to pull your container image. When
+building your component, `nuon` will automatically assume the role and pull the image from your build runner.
 
-The following example provisions an IAM role, with a trust policy granting Nuon access, and a permission policy that
-grants access to a single ECR repository.
+The easiest way to setup an IAM role to configure your component with is using our [Terraform Module](https://registry.terraform.io/modules/nuonco/ecr-access/aws).
 
 <CodeGroup>
 ```hcl role.tf
 module "nuon_ecr_access" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
-  version = ">= 5.1.0"
+  source  = "nuonco/ecr-access/aws"
 
-  create_role = true
-
-  role_name = "nuon-ecr-access"
-
-  allow_self_assume_role   = false
-  custom_role_trust_policy = file("trust.json")
-  create_custom_role_trust_policy = true
-  custom_role_policy_arns = [
-    aws_iam_policy.nuon_ecr_access.arn
-  ]
+  repository_arns = ["<repository-arn>"]
 }
-```
 
-```hcl iam_policy.tf
-data "aws_iam_policy_document" "nuon_ecr_access" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "ecr:GetAuthorizationToken",
-    ]
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
-      "ecr:BatchGetImage",
-      "ecr:ListImages",
-      "ecr:ListTagsForResource",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:DescribeImageReplicationStatus",
-      "ecr:DescribeImageScanFindings",
-      "ecr:DescribeImages",
-      "ecr:DescribePullThroughCacheRules",
-      "ecr:DescribeRegistry",
-      "ecr:DescribeRepositories",
-    ]
-    resources = [module.ecr_repo.repository_arn]
-  }
-}
-```
-
-```hcl trust.json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::676549690856:root"
-      },
-      "Action": "sts:AssumeRole"
-    },
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::007754799877:root"
-      },
-      "Action": "sts:AssumeRole"
-    },
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::814326426574:root"
-      },
-      "Action": "sts:AssumeRole"
-    },
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::766121324316:root"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
+output "ecr_access_iam_role" {
+  value = module.nuon_ecr_access.ecr_access_iam_role
 }
 ```
 </CodeGroup>
+
+<Note>
+If you are having trouble finding the repository ARN in the AWS console, you can run `aws ecr describe-repositories` to
+  print the ARNs of all repositories in your current context.
+</Note>
+
+## Importing Images Outside of AWS ECR
+
+We currently _only_ support public container images and private container images pushed to AWS ECR private images.
+
+If your registry is supported by AWS ECR's [pull through
+  cache](https://docs.aws.amazon.com/AmazonECR/latest/userguide/pull-through-cache-working.html), the easiest way to
+  import the images into Nuon is to setup a pull through cache and configure your container image to use it.
+
+This works for [Docker Hub](https://hub.docker.com/), [Github Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) and [Microsoft Azure Container Registry](https://azure.microsoft.com/en-us/products/container-registry).
+
+<Note>
+If you would like to use a different private container registry than AWS ECR, we would love to know more. Please [get in touch](mailto:team@nuon.co) to tell us more about your use case.
+</Note>

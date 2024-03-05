@@ -5,7 +5,8 @@
       "Sid": "",
       "Effect": "Allow",
       "Principal": {
-        "AWS": "arn:aws:iam::676549690856:root"
+        "AWS":
+        "arn:aws:iam::676549690856:root"
       },
       "Action": "sts:AssumeRole"
     },
@@ -13,7 +14,8 @@
       "Sid": "",
       "Effect": "Allow",
       "Principal": {
-        "AWS": "arn:aws:iam::007754799877:root"
+        "AWS":
+        "arn:aws:iam::007754799877:root"
       },
       "Action": "sts:AssumeRole"
     },
