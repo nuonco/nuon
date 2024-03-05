@@ -196,3 +196,17 @@ module "nuon-homebrew-tap" {
     github = github.nuon
   }
 }
+
+module "nuon-terraform-ecr-access" {
+  source      = "./modules/repository"
+  name        = "terraform-ecr-access"
+  description = "Terraform module for granting access for Nuon container image components."
+  required_checks = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
