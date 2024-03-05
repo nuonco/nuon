@@ -1,5 +1,6 @@
-api_url: https://ctl.stage.nuon.co
-app_id: appavwqofng1fdm0bip0a72eax
+#api_url: https://ctl.stage.nuon.co
+api_url: http://localhost:8081
+app_id: appmjwszwksator51u0wsui862
 github_app_name: nuon-connect-stage
 install_id: inll2qdj7lcpex0uqtcv77r8ua
 org_id: orgzblonf9hol7jq92vkdriio4

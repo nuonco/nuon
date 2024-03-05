@@ -1,0 +1,25 @@
+version = "v1"
+
+[runner]
+runner_type = "aws-ecs"
+
+[[runner.env_var]]
+name = "runner-env-var"
+value = "runner-env-var"
+
+[sandbox]
+terraform_version = "1.5.4"
+[sandbox.public_repo]
+directory = "aws-ecs"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[[components]]
+name = "tonic_test_ecr"
+type = "container_image"
+
+[components.aws_ecr]
+iam_role_arn = "arn:aws:iam::949309607565:role/nuon-ecr-access"
+image_url = "949309607565.dkr.ecr.us-east-2.amazonaws.com/inl116lrng95ijmqweipezsf06"
+tag = "dpl169blh7ju9zuhbwgo31idqw"
+region = "us-east-2"
