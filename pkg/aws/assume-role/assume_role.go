@@ -26,6 +26,8 @@ type Settings struct {
 	// TwoStepRoleARN is an optional second role, to assume. This is useful for situations where nuon has a shared
 	// role that is assumable by our systems/workers, that our customer's grant access too.
 	TwoStepRoleARN string
+
+	Region string
 }
 
 func (s Settings) Validate(v *validator.Validate) error {
@@ -38,6 +40,7 @@ type assumer struct {
 	RoleSessionDuration time.Duration
 
 	TwoStepRoleARN string
+	Region         string
 
 	// internal state
 	v *validator.Validate
@@ -83,6 +86,7 @@ func WithSettings(s Settings) assumerOptions {
 		a.RoleARN = s.RoleARN
 		a.RoleSessionName = s.RoleSessionName
 		a.TwoStepRoleARN = s.TwoStepRoleARN
+		a.Region = s.Region
 
 		if s.RoleSessionDuration > 0 {
 			a.RoleSessionDuration = s.RoleSessionDuration
@@ -112,6 +116,14 @@ func WithRoleSessionName(s string) assumerOptions {
 func WithTwoStepRoleARN(s string) assumerOptions {
 	return func(a *assumer) error {
 		a.TwoStepRoleARN = s
+		return nil
+	}
+}
+
+// WithRegion specifies a region to return the config in
+func WithRegion(s string) assumerOptions {
+	return func(a *assumer) error {
+		a.Region = s
 		return nil
 	}
 }
