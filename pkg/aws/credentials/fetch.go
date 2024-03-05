@@ -88,6 +88,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 		RoleSessionName:     c.AssumeRole.SessionName,
 		RoleSessionDuration: time.Second * time.Duration(c.AssumeRole.SessionDurationSeconds),
 		TwoStepRoleARN:      c.AssumeRole.TwoStepRoleARN,
+		Region:              c.Region,
 	}))
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("unable to create role assumer: %w", err)
