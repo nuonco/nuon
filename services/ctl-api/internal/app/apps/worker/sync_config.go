@@ -14,6 +14,11 @@ const (
 )
 
 func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, dryRun bool) error {
+	if err := w.ensureOrg(ctx, appID); err != nil {
+		w.updateStatus(ctx, appID, StatusError, "org is unhealthy")
+		return err
+	}
+
 	w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusSyncing, "generating terraform config")
 
 	var currentApp app.App
