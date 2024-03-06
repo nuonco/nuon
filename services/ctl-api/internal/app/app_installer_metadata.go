@@ -41,7 +41,6 @@ type AppInstallerMetadata struct {
 func (a *AppInstallerMetadata) AfterQuery(tx *gorm.DB) error {
 	a.FormattedDemoURL = a.DemoURL
 	if !strings.HasPrefix(a.DemoURL, "https://www.youtube.com") {
-		fmt.Println("a")
 		return nil
 	}
 	if strings.HasPrefix(a.DemoURL, "https://www.youtube.com/embed") {
@@ -59,7 +58,6 @@ func (a *AppInstallerMetadata) AfterQuery(tx *gorm.DB) error {
 	}
 
 	ytID := params.Get("v")
-	fmt.Println(params)
 	if ytID == "" {
 		return nil
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -11,7 +12,7 @@ import (
 )
 
 type AdminForgetAccountInstallsRequest struct {
-	AccountID string
+	AccountID string `json:"account_id" validate:"required"`
 }
 
 func (c *AdminForgetAccountInstallsRequest) Validate(v *validator.Validate) error {
@@ -51,7 +52,9 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 	}
 
 	for _, install := range installs {
-		err := s.forgetInstall(ctx, install.ID)
+		s.hooks.Forgotten(ctx, install.ID)
+
+		err = s.forgetInstall(ctx, install.ID)
 		if err != nil {
 			ctx.Error(err)
 			return
@@ -66,12 +69,27 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 func (s *service) getAccountInstalls(ctx context.Context, accountID string) ([]app.Install, error) {
 	var installs []app.Install
 	res := s.db.WithContext(ctx).
-		Joins("JOIN aws_accounts on aws_accounts.install_id=installs.id").
-		Where("aws_accounts.iam_role_arn LIKE ?", "%"+accountID+"%").
+		Preload("AWSAccount").
+		Preload("App").
+		Preload("App.Org").
 		Find(&installs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get installs: %w", res.Error)
 	}
 
-	return installs, nil
+	// NOTE(jm): unfortunately, it's non trivial to use LIKE %foo% queries in gorm, so we just filter locally.
+	var accountInstalls []app.Install
+	for _, install := range installs {
+		if install.App.Org.SandboxMode {
+			continue
+		}
+
+		if !strings.Contains(install.AWSAccount.IAMRoleARN, accountID) {
+			continue
+		}
+
+		accountInstalls = append(accountInstalls, install)
+	}
+
+	return accountInstalls, nil
 }
