@@ -10,6 +10,11 @@ import (
 )
 
 func (w *Workflows) reprovision(ctx workflow.Context, appID string, dryRun bool) error {
+	if err := w.ensureOrg(ctx, appID); err != nil {
+		w.updateStatus(ctx, appID, StatusError, "org is unhealthy")
+		return err
+	}
+
 	w.updateStatus(ctx, appID, StatusProvisioning, "reprovisioning app resources")
 
 	var app app.App
