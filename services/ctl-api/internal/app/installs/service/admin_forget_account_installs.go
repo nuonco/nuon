@@ -46,7 +46,7 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 
 	installs, err := s.getAccountInstalls(ctx, req.AccountID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get org installs: %w", err))
+		ctx.Error(fmt.Errorf("unable to get account installs: %w", err))
 		return
 	}
 
@@ -66,9 +66,9 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 func (s *service) getAccountInstalls(ctx context.Context, accountID string) ([]app.Install, error) {
 	var installs []app.Install
 	res := s.db.WithContext(ctx).
-		Preload("JOIN aws_accounts on aws_accounts.install_id=installs.id").
+		Joins("JOIN aws_accounts on aws_accounts.install_id=installs.id").
 		Where("aws_accounts.iam_role_arn LIKE ?", "%"+accountID+"%").
-		First(&installs)
+		Find(&installs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get installs: %w", res.Error)
 	}
