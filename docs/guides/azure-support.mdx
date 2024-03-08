@@ -1,0 +1,40 @@
+---
+title: 'Azure Support'
+description: "Create BYOC apps that can be deployed to customer cloud accounts."
+---
+
+Azure has not been publicly announced yet, however this guide is a starting point to create an Azure BYOC app using Nuon.
+
+## App Sandbox
+
+Azure sandboxes can be found in our [public sandboxes repo](https://github.com/nuonco/sandboxes). We support two sandboxes:
+
+* `azure-aks` - a fully managed app sandbox that provisions the VPN/AKS cluster
+* `azure-aks-byovpn` - a shared-responsibility sandbox that uses a customer provided VPN.
+
+## Usage
+
+To create an Azure application, use the `azure-aks` runner-type and an `azure` sandbox.
+
+## Sandboxes
+
+We are offering two `azure` sandboxes:
+
+* turnkey / default - creates a VPN and cluster for a fully managed install.
+* byo-vpn - requires the customer to provide a VPN.
+
+We build these sandboxes using the standard [Azure modules](https://github.com/Azure/terraform-azure-modules).
+
+## Create Service Principal
+
+Installs are created and provisioned by offering a [Service Principal](https://learn.microsoft.com/en-us/azure/aks/learn/quick-kubernetes-deploy-terraform?tabs=bash#create-a-service-principal), that `nuon` can use to provision the sandbox.
+
+To create an Azure service principal locally:
+
+```bash
+$ az login
+$ az account list (to get the subscription ID)
+$ az ad sp create-for-rbac --name <name> --role Owner --scopes /subscriptions/<subscription-id>
+```
+
+In order to fully provision the application, the principal must be created with the `Contributor` role.
