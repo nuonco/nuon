@@ -1,0 +1,78 @@
+version = "v1"
+
+[inputs]
+[[inputs.input]]
+name = "service_name"
+description = "what to name the ECS service"
+default = "api"
+sensitive = false
+display_name = "Service Name"
+
+[installer]
+name              = "My ECS App"
+description       = "A demo app that runs on ECS."
+slug              = "jm-my-ecs-app"
+documentation_url = "https://docs.nuon.co/"
+community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+github_url        = "https://github.com/nuonco"
+homepage_url      = "https://www.nuon.co/"
+demo_url          = "https://www.nuon.co/"
+
+[sandbox]
+terraform_version = "1.5.4"
+[sandbox.public_repo]
+directory = "aws-ecs"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[runner]
+runner_type = "aws-ecs"
+
+[[components]]
+name   = "docker_image"
+type = "docker_build"
+dockerfile = "Dockerfile"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "create-an-aws-ecs-byoc-app/components/docker-image"
+branch    = "main"
+
+[[components]]
+name   = "ecs_service"
+type = "terraform_module"
+terraform_version = "1.5.3"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "create-an-aws-ecs-byoc-app/components/ecs-service"
+branch    = "main"
+[[components.var]]
+name  = "service_name"
+value = "{{.nuon.install.id}}-{{.nuon.install.inputs.service_name}}"
+[[components.var]]
+name  = "cluster_arn"
+value = "{{.nuon.install.sandbox.outputs.ecs_cluster.arn}}"
+[[components.var]]
+name  = "image_url"
+value = "{{.nuon.components.docker_image.image.repository.uri}}"
+[[components.var]]
+name  = "image_tag"
+value = "{{.nuon.components.docker_image.image.tag}}"
+[[components.var]]
+name  = "app_id"
+value = "{{.nuon.app.id}}"
+[[components.var]]
+name  = "org_id"
+value = "{{.nuon.org.id}}"
+[[components.var]]
+name  = "install_id"
+value = "{{.nuon.install.id}}"
+[[components.var]]
+name  = "vpc_id"
+value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
+[[components.var]]
+name  = "domain_name"
+value = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+[[components.var]]
+name  = "zone_id"
+value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"

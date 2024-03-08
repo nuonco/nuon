@@ -28,16 +28,3 @@ provider "aws" {
     tags = local.tags
   }
 }
-
-provider "aws" {
-  alias = "tonic-test"
-  region = "us-west-2"
-
-  assume_role {
-    role_arn = "arn:aws:iam::${local.accounts.demo.id}:role/terraform"
-  }
-
-  default_tags {
-    tags = local.tags
-  }
-}

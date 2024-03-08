@@ -1,0 +1,12 @@
+version = "v1"
+
+[runner]
+#runner_type = "azure-aks"
+runner_type = "aws-ecs"
+
+[sandbox]
+terraform_version = "1.6.4"
+[sandbox.public_repo]
+directory = "azure-aks"
+repo = "nuonco/sandboxes"
+branch = "main"
