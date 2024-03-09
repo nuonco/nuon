@@ -23,7 +23,46 @@ const (
 	orgName string = "customers-shared"
 )
 
-const appConfigTemplate string = `
+const byoVPCAppConfigTemplate string = `
+version = "v1"
+
+[installer]
+name = "{{.Name}}"
+description = "{{.Description}}"
+slug = "{{.Slug}}"
+documentation_url = "{{.Links.Documentation}}"
+community_url = "{{.Links.Community}}"
+homepage_url = "{{.Links.Homepage}}"
+github_url = "{{.Links.Github}}"
+logo_url = "{{.Links.Logo}}"
+demo_url = "{{.Links.Demo}}"
+
+[inputs]
+[[inputs.input]]
+name = "vpc_id"
+description = "VPC ID to install application into"
+default = ""
+sensitive = false
+required = true
+display_name = "VPC ID"
+
+[runner]
+runner_type = "aws-ecs"
+
+[sandbox]
+terraform_version = "1.5.4"
+
+[sandbox.public_repo]
+directory = "aws-ecs-byo-vpc"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[sandbox.var]
+name = "vpc_id"
+value = "{{.nuon.install.inputs.vpc_id}}"
+`
+
+const fullyManagedAppConfigTemplate string = `
 version = "v1"
 
 [installer]
@@ -44,12 +83,14 @@ runner_type = "aws-ecs"
 terraform_version = "1.5.4"
 
 [sandbox.public_repo]
-directory = "aws-ecs-byo-vpc"
+directory = "aws-ecs"
 repo = "nuonco/sandboxes"
 branch = "main"
 `
 
 type AdminCreateDemoInstallerRequest struct {
+	Template string `validate:"required" default:"fully_managed"`
+
 	Slug        string `validate:"required" json:"slug"`
 	Name        string `validate:"required" json:"name"`
 	Description string `validate:"required" json:"description"`
@@ -153,7 +194,17 @@ func (s *service) ensureApp(ctx context.Context, org *app.Org, name string) (*ap
 }
 
 func (s *service) renderTemplate(ctx context.Context, req *AdminCreateDemoInstallerRequest) ([]byte, error) {
-	temp, err := template.New("config").Parse(appConfigTemplate)
+	var tmplStr string
+	switch req.Template {
+	case "fully_managed":
+		tmplStr = fullyManagedAppConfigTemplate
+	case "byovpc":
+		tmplStr = byoVPCAppConfigTemplate
+	default:
+		return nil, fmt.Errorf("unsupported template type %s", req.Template)
+	}
+
+	temp, err := template.New("config").Parse(tmplStr)
 	if err != nil {
 		return nil, fmt.Errorf("unable to render template: %w", err)
 	}
