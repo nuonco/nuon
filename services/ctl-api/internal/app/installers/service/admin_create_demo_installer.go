@@ -59,7 +59,7 @@ branch = "main"
 
 [sandbox.var]
 name = "vpc_id"
-value = "{{.nuon.install.inputs.vpc_id}}"
+value = "{{"{{.nuon.install.inputs.vpc_id}}"}}"
 `
 
 const fullyManagedAppConfigTemplate string = `
