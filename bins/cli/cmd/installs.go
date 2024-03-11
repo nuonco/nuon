@@ -72,6 +72,7 @@ func (c *cli) installsCmd() *cobra.Command {
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	installsCmds.AddCommand(createCmd)
 
+	confirmDelete := false
 	deleteCmd := &cobra.Command{
 		Use:   "delete",
 		Short: "Delete install",
@@ -82,7 +83,9 @@ func (c *cli) installsCmd() *cobra.Command {
 		},
 	}
 	deleteCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
+	deleteCmd.Flags().BoolVar(&confirmDelete, "confirm", false, "Confirm you want to delete the install")
 	deleteCmd.MarkFlagRequired("install-id")
+	deleteCmd.MarkFlagRequired("confirm")
 	installsCmds.AddCommand(deleteCmd)
 
 	componentsCmd := &cobra.Command{
