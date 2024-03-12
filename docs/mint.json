@@ -53,6 +53,11 @@
             "name": "Community",
             "icon": "slack",
             "url": "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+        },
+        {
+            "name": "Youtube",
+            "icon": "youtube",
+            "url": "https://www.youtube.com/channel/UC5zHWPIfIIfgpPMNo_gonPw"
         }
     ],
     "navigation": [
