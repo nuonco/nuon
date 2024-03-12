@@ -279,3 +279,43 @@ apps:
       community: "tbd"
       homepage: https://meroxa.com
       demo: https://www.youtube.com/embed/KogwX5VI-TY?si=KE5fgyGA68sjFUOd
+  - name: nuon-demo-byovpc
+    sandbox_install_count: 0
+    sandbox_install_inputs:
+      secret_role_arn: secret-role-arn
+      storage: 20Gi
+    installs: []
+    install_inputs:
+      - name: vpc_id
+        description: VPC ID to install into
+        default: ""
+        required: true
+    installer:
+      slug: nuon-demo-byovpc
+      description: Composable infrastructure for BYOC.
+      name: Nuon
+    urls:
+      documentation: https://docs.nuon.co
+      logo: https://github.com/nuonco.png?size=50
+      github: https://github.com/nuonco
+      community: https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA
+      homepage: https://nuon.co
+      demo: https://www.youtube.com/watch?v=wCQVzYUa0w8
+  - name: nuon-demo-fully-managed
+    sandbox_install_count: 0
+    sandbox_install_inputs:
+      secret_role_arn: secret-role-arn
+      storage: 20Gi
+    installs: []
+    install_inputs: []
+    installer:
+      slug: nuon-demo
+      description: Composable infrastructure for BYOC.
+      name: Nuon
+    urls:
+      documentation: https://docs.nuon.co
+      logo: https://github.com/nuonco.png?size=50
+      github: https://github.com/nuonco
+      community: https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA
+      homepage: https://nuon.co
+      demo: https://www.youtube.com/watch?v=wCQVzYUa0w8
