@@ -1,0 +1,108 @@
+---
+key_stroke_delay: 50ms
+command_delay: 200ms
+terminal: ~/nuon $
+env_vars:
+  NUON_CONFIG_FILE: ~/.seed.yml
+  AWS_PROFILE: canary.NuonAdmin
+
+# VALUE PROP
+# use your existing infra / product
+# run in all your customer's cloud accounts
+# build and release with your existing workflow
+steps:
+  - name: "Clear screen to get started"
+    cmd:
+      - clear
+
+  - name: introduction to Nuon
+    display_cmd: introducing Nuon
+    skip_animation: true
+    notes: |
+      Nuon provides composable infrastructure for creating a BYOC offering. You can setup Nuon and start running your
+      app in customer clouds in minutes.
+    cmd:
+      - open
+      - https://app.pitch.com/app/player/5de1843d-c8df-4efa-9941-c35acd10eaea/daa91597-efd7-4ace-ac15-cf9654fb36bb/68be3f25-d385-4965-bed3-ab56cd1b1fde
+
+  - name: why byoc?
+    display_cmd: why byoc
+    skip_animation: true
+    notes: |
+      explain why BYOC is the best of both worlds, and enables you to make your app feel hosted while running in your
+      customer's cloud account.
+    cmd:
+      - open
+      - https://app.pitch.com/app/player/5de1843d-c8df-4efa-9941-c35acd10eaea/daa91597-efd7-4ace-ac15-cf9654fb36bb/68be3f25-d385-4965-bed3-ab56cd1b1fde
+
+  #
+  # Why BYOC?
+  #
+  - name: build an amazing customer experience to install your app
+    display_cmd: byoc installers
+    skip_animation: true
+    notes: |
+      Build an amazing experience to run your app in your customer's cloud account.
+    cmd:
+      - open
+      - https://app.nuon.co/installer/nuon-demo
+
+  # need a slide to discuss balancing this with customer needs, such as shared responsibility models.
+
+  #
+  # Product introduction section - what all does Nuon need to do?
+  #
+  # this used to take months, but now takes minutes
+  - name: everything you need to BYOC
+    display_cmd: why byoc
+    skip_animation: true
+    notes: |
+      Talk about how nuon offers everything you need to BYOC
+    cmd:
+      - open
+      - https://app.pitch.com/app/player/5de1843d-c8df-4efa-9941-c35acd10eaea/daa91597-efd7-4ace-ac15-cf9654fb36bb/68be3f25-d385-4965-bed3-ab56cd1b1fde
+
+  #
+  # show setup - create a new app config and sync it
+  #
+  - name: everything you need to BYOC
+    display_cmd: why byoc
+    skip_animation: true
+    notes: |
+      Talk about how nuon offers everything you need to BYOC
+    cmd:
+      - open
+      - https://app.pitch.com/app/player/5de1843d-c8df-4efa-9941-c35acd10eaea/daa91597-efd7-4ace-ac15-cf9654fb36bb/68be3f25-d385-4965-bed3-ab56cd1b1fde
+
+  - name: Create a BYOC app
+    cmd:
+      - nuon
+      - apps
+      - create
+      - --name=demo-app
+
+  - name: Connect your existing components
+    display_cmd: nvim nuon.demo-app.toml
+    cmd:
+      - nvim
+      - ./demo-scripts/homepage/nuon.demo-app.toml
+
+  - name: Sync app config
+    cmd:
+      - nuon
+      - apps
+      - sync
+
+  # show rich control plane with all of your installs
+  - name: Sync app config
+    skip_animation: true
+    cmd:
+      - open
+      - https://app.stage.nuon.co
+
+  # integrate using SDKs, Github Actions and push to your customers dozens of times a day
+  - name: Connect your existing components
+    display_cmd: nvim ./github/workflows/nuon.yml
+    cmd:
+      - nvim
+      - ./demo-scripts/homepage/actions.yml
