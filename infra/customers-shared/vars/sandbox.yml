@@ -18,28 +18,6 @@ apps:
       community: https://www.rocket.chat/community
       homepage: https://rocket.chat
       demo: https://www.youtube.com/embed/T2v29gK8fP4
-  - name: warpstream
-    sandbox_install_count: 0
-    sandbox_install_inputs:
-      secret_role_arn: secret-role-arn
-      storage: 20Gi
-    installs: []
-    install_inputs:
-      - name: vpc_id
-        description: VPC ID to install into
-        default: ""
-        required: true
-    installer:
-      slug: warpstream-nuon
-      description: Stream more,manage less
-      name: WarpStream
-    urls:
-      documentation: https://docs.warpstream.com/warpstream/overview/readme
-      logo: https://www.gitbook.com/cdn-cgi/image/width=256,dpr=2,height=40,fit=contain,format=auto/https%3A%2F%2F3452791747-files.gitbook.io%2F~%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FjB7FxO8ty4EXO4HsQP4E%252Flogo%252FLuEylqap9lQE0AZtfzZk%252Flogo_bw.png%3Falt%3Dmedia%26token%3D031ee636-9873-46d9-bf2c-28bb849417e4
-      github: https://github.com/warpstreamlabs
-      community: https://console.warpstream.com/socials/slack
-      homepage: https://warpstream.com
-      demo: https://player.vimeo.com/video/851371577
   - name: okteto-nuon
     sandbox_install_count: 0
     install_inputs: []
@@ -58,27 +36,6 @@ apps:
       community: https://community.okteto.com/
       homepage: https://www.okteto.com/
       demo: https://www.youtube.com/embed/-lCTH8h_vLg?si=M-pzJ4xAM6s3AVBE
-  - name: honeyhive
-    sandbox_install_count: 5
-    sandbox_install_inputs:
-      secret_role_arn: secret-role-arn
-      storage: 20Gi
-    install_inputs: []
-    installs:
-      - name: abc
-        region: us-west-2
-        iam_role_arn: iam-role-arn
-    installer:
-      slug: honeyhive-nuon-demo
-      description: Open Source Feature Management
-      name: Honeyhive
-    urls:
-      documentation: https://docs.honeyhive.ai/introduction
-      logo: https://assets-global.website-files.com/65483e3a00a324531a626c4e/65483e3a00a324531a626c95_63f13bee638d6993e08555fb_logo2-p-500.png
-      github: https://github.com
-      community: https://discord.com/invite/vqctGpqA97
-      homepage: https://www.honeyhive.ai/
-      demo:
   - name: electric_sql
     sandbox_install_count: 5
     sandbox_install_inputs: {}
