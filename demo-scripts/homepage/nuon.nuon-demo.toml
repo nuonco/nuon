@@ -1,0 +1,93 @@
+version = "v1"
+
+[installer]
+name = "Nuon"
+description = "Nuon provides composable infrastructure for BYOC."
+slug = "nuon-demo-byoc-toml"
+documentation_url = "https://docs.nuon.co"
+community_url = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+homepage_url = "https://nuon.co"
+github_url = "https://github.com/nuonco"
+logo_url = "https://github.com/nuonco.png?size=100"
+demo_url = "https://www.youtube.com/watch?v=wCQVzYUa0w8"
+
+[runner]
+runner_type = "aws-ecs"
+
+[[runner.env_var]]
+name = "runner-env-var"
+value = "runner-env-var"
+
+[sandbox]
+terraform_version = "1.5.4"
+[sandbox.public_repo]
+directory = "aws-ecs-byo-vpc"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[[sandbox.var]]
+name = "vpc_id"
+value = "{{.nuon.install.inputs.vpc_id}}"
+
+[inputs]
+[[inputs.input]]
+name = "vpc_id"
+description = "vpc_id to install application into"
+default = ""
+sensitive = false
+display_name = "VPC ID"
+
+[[inputs.input]]
+name = "api_key"
+description = "API key"
+default = ""
+sensitive = true
+display_name = "API Key"
+
+[[components]]
+name   = "docker_image"
+type = "docker_build"
+dockerfile = "Dockerfile"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "create-an-aws-ecs-byoc-app/components/docker-image"
+branch    = "main"
+
+[[components]]
+name   = "ecs_service"
+type = "terraform_module"
+terraform_version = "1.5.3"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "create-an-aws-ecs-byoc-app/components/ecs-service"
+branch    = "main"
+[[components.var]]
+name  = "service_name"
+value = "{{.nuon.install.inputs.service_name}}"
+[[components.var]]
+name  = "cluster_arn"
+value = "{{.nuon.install.sandbox.outputs.ecs_cluster.arn}}"
+[[components.var]]
+name  = "image_url"
+value = "{{.nuon.components.docker_image.image.repository.uri}}"
+[[components.var]]
+name  = "image_tag"
+value = "{{.nuon.components.docker_image.image.tag}}"
+[[components.var]]
+name  = "app_id"
+value = "{{.nuon.app.id}}"
+[[components.var]]
+name  = "org_id"
+value = "{{.nuon.org.id}}"
+[[components.var]]
+name  = "install_id"
+value = "{{.nuon.install.id}}"
+[[components.var]]
+name  = "vpc_id"
+value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
+[[components.var]]
+name  = "domain_name"
+value = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+[[components.var]]
+name  = "zone_id"
+value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
