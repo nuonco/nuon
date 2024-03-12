@@ -1,1 +1,29 @@
+# build and release components
 ---
+on:
+  push:
+    branches:
+      - main
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - name: Checkout code
+        id: checkout
+        uses: actions/checkout@v2
+
+      - name: Build component
+        id: build
+        uses: nuonco/actions-build@v1
+        with:
+          api_token: ${{ secrets.nuon_api_token }}
+          org: ${{ vars.nuon_org_id }}
+          component_id: backend
+
+      - name: Release
+        id: release
+        uses: nuonco/actions-release@v1
+        with:
+          api_token: ${{ secrets.nuon_api_token }}
+          org: ${{ vars.nuon_org_id
+          build_id: ${{ steps.build.outputs.build_id }}
