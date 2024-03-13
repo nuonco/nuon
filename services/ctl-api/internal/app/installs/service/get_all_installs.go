@@ -17,6 +17,7 @@ import (
 // @Tags			installs/admin
 // @Accept			json
 // @Param   limit  query int	 false	"limit of installs to return"	     Default(60)
+// @Param   type query string false "type of installs to return"	     Default(real)
 // @Produce		json
 // @Success		200	{array}	app.Install
 // @Router			/v1/installs [get]
@@ -30,8 +31,9 @@ func (s *service) GetAllInstalls(ctx *gin.Context) {
 		})
 		return
 	}
+	orgTyp := ctx.DefaultQuery("type", "real")
 
-	installs, err := s.getAllInstalls(ctx, limitVal)
+	installs, err := s.getAllInstalls(ctx, limitVal, orgTyp)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs for: %w", err))
 		return
@@ -40,7 +42,7 @@ func (s *service) GetAllInstalls(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installs)
 }
 
-func (s *service) getAllInstalls(ctx context.Context, limitVal int) ([]*app.Install, error) {
+func (s *service) getAllInstalls(ctx context.Context, limitVal int, orgTyp string) ([]*app.Install, error) {
 	var installs []*app.Install
 	res := s.db.WithContext(ctx).
 		Preload("AppSandboxConfig").
@@ -51,7 +53,7 @@ func (s *service) getAllInstalls(ctx context.Context, limitVal int) ([]*app.Inst
 		Preload("App.AppSandboxConfigs").
 		Joins("JOIN apps ON apps.id=installs.app_id").
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
-		Where("sandbox_mode = ?", false).
+		Where("org_type = ?", orgTyp).
 		Order("created_at desc").
 		Limit(limitVal).
 		Find(&installs)
