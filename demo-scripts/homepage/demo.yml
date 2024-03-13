@@ -25,15 +25,15 @@ steps:
       - open
       - ./demo-scripts/homepage/slide_1.pdf
 
-  - name: why byoc?
-    display_cmd: why byoc
-    skip_animation: true
-    notes: |
-      explain why BYOC is the best of both worlds, and enables you to make your app feel hosted while running in your
-      customer's cloud account.
-    cmd:
-      - open
-      - ./demo-scripts/homepage/slide_2.pdf
+  #- name: why byoc?
+    #display_cmd: why byoc
+    #skip_animation: true
+    #notes: |
+      #explain why BYOC is the best of both worlds, and enables you to make your app feel hosted while running in your
+      #customer's cloud account.
+    #cmd:
+      #- open
+      #- ./demo-scripts/homepage/slide_2.pdf
 
   #
   # Why BYOC?
@@ -45,7 +45,7 @@ steps:
       Build an amazing experience to run your app in your customer's cloud account.
     cmd:
       - open
-      - https://app.nuon.co/installer/nuon-demo
+      - https://app.stage.nuon.co/installer/nuon-demo
 
   # need a slide to discuss balancing this with customer needs, such as shared responsibility models.
 
