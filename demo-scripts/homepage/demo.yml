@@ -3,7 +3,7 @@ key_stroke_delay: 50ms
 command_delay: 200ms
 terminal: ~/nuon $
 env_vars:
-  NUON_CONFIG_FILE: ~/.seed.yml
+  #NUON_CONFIG_FILE: ~/.seed.yml
   AWS_PROFILE: canary.NuonAdmin
 
 # VALUE PROP
@@ -23,7 +23,7 @@ steps:
       app in customer clouds in minutes.
     cmd:
       - open
-      - https://app.pitch.com/app/player/5de1843d-c8df-4efa-9941-c35acd10eaea/daa91597-efd7-4ace-ac15-cf9654fb36bb/68be3f25-d385-4965-bed3-ab56cd1b1fde
+      - ./demo-scripts/homepage/slide_1.pdf
 
   - name: why byoc?
     display_cmd: why byoc
@@ -33,7 +33,7 @@ steps:
       customer's cloud account.
     cmd:
       - open
-      - https://app.pitch.com/app/player/5de1843d-c8df-4efa-9941-c35acd10eaea/daa91597-efd7-4ace-ac15-cf9654fb36bb/68be3f25-d385-4965-bed3-ab56cd1b1fde
+      - ./demo-scripts/homepage/slide_2.pdf
 
   #
   # Why BYOC?
@@ -60,19 +60,15 @@ steps:
       Talk about how nuon offers everything you need to BYOC
     cmd:
       - open
-      - https://app.pitch.com/app/player/5de1843d-c8df-4efa-9941-c35acd10eaea/daa91597-efd7-4ace-ac15-cf9654fb36bb/68be3f25-d385-4965-bed3-ab56cd1b1fde
+      - ./demo-scripts/homepage/slide_3.pdf
 
   #
   # show setup - create a new app config and sync it
   #
-  - name: everything you need to BYOC
-    display_cmd: why byoc
+  - name: "Clear screen to get started"
     skip_animation: true
-    notes: |
-      Talk about how nuon offers everything you need to BYOC
     cmd:
-      - open
-      - https://app.pitch.com/app/player/5de1843d-c8df-4efa-9941-c35acd10eaea/daa91597-efd7-4ace-ac15-cf9654fb36bb/68be3f25-d385-4965-bed3-ab56cd1b1fde
+      - clear
 
   - name: Create a BYOC app
     cmd:
@@ -85,16 +81,17 @@ steps:
     display_cmd: nvim nuon.demo-app.toml
     cmd:
       - nvim
-      - ./demo-scripts/homepage/nuon.demo-app.toml
+      - ./demo-scripts/homepage/nuon.nuon-demo.toml
 
   - name: Sync app config
+    cwd: ./demo-scripts/homepage
     cmd:
       - nuon
       - apps
       - sync
 
   # show rich control plane with all of your installs
-  - name: Sync app config
+  - name: Debug and manage apps
     skip_animation: true
     cmd:
       - open
@@ -106,3 +103,18 @@ steps:
     cmd:
       - nvim
       - ./demo-scripts/homepage/actions.yml
+
+  - name: Build into your product
+    display_cmd: nvim ./api/signup_handler.go
+    cmd:
+      - nvim
+      - ./demo-scripts/snippets/signup.go
+
+  - name: everything you need to BYOC
+    display_cmd: why byoc
+    skip_animation: true
+    notes: |
+      Talk about how nuon offers everything you need to BYOC
+    cmd:
+      - open
+      - ./demo-scripts/homepage/slide_5.pdf
