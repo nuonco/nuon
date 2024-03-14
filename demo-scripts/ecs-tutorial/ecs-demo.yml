@@ -12,6 +12,23 @@ env_vars:
 
 # we now enter the terminal to demo the vendor experience of creating a BYOC app
 steps:
+  - name: Intro
+    notes: |
+       Today I'm going to walk you through creating a BYOC app that you can deploy to Amazon EKS.
+    cmd:
+      - open
+      - slides/1.pdf
+
+  - name: Configuring the App
+    cmd:
+      - open
+      - slides/2.pdf
+
+  - name: Demo API
+    cmd:
+      - open
+      - https://api.inlw08dvgm06ji6wozm8n2psad.stage.nuon.run
+
   - name: Install the CLI
     cmd:
       - brew
@@ -31,20 +48,21 @@ steps:
       - nuon
       - orgs
       - select
+      - --org=orgzblonf9hol7jq92vkdriio4
 
   - name: Create the app
     cmd:
       - nuon
       - apps
       - create
-      - --name=demo_byoc_eks_app
+      - --name=my_ecs_app
 
   - name: Configure the app
     notes: |
       Remember to update the installer slug!
     cmd:
       - nvim
-      - nuon.demo_byoc_eks_app.toml
+      - nuon.my_ecs_app.toml
 
   - name: Sync the app config
     cmd:
@@ -57,11 +75,12 @@ steps:
       - nuon
       - apps
       - select
+      - --app=my_ecs_app
 
   - name: Connect the components
     cmd:
       - nvim
-      - nuon.demo_byoc_eks_app.toml
+      - nuon.my_ecs_app.toml
 
   - name: Sync the component configs
     cmd:
@@ -81,6 +100,11 @@ steps:
       - builds
       - list
 
+  - name: Installing the App
+    cmd:
+      - open
+      - slides/3.pdf
+
   - name: Create an install
     notes: |
       We're now going to switch roles, from the BYOC developer, to the BYOC customer.
@@ -90,7 +114,12 @@ steps:
       At this point, Nuon takes over. It will provision the install and deploy the app for me.
     cmd:
       - open
-      - https://app.stage.nuon.co/installer/demo-byoc-eks-app
+      - https://app.stage.nuon.co/installer/my-ecs-app
+
+  - name: Monitoring the Install
+    cmd:
+      - open
+      - slides/4.pdf
 
   - name: Monitor installs in the dashboard
     notes: |
