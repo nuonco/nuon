@@ -108,7 +108,8 @@
             "group": "Tutorials",
             "pages": [
                 "tutorials/aws-ecs-app-tutorial",
-                "tutorials/aws-eks-app-tutorial"
+                "tutorials/aws-eks-app-tutorial",
+                "tutorials/shared-responsibility-tutorial"
             ]
         },
         {
