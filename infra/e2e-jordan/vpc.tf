@@ -35,10 +35,10 @@ module "vpc" {
   #create_elasticache_subnet_group = true
 
   public_subnet_tags = {
-    "visibility:public" = 1
+    "visibility" = "public"
   }
 
   private_subnet_tags = {
-    "visibility:private" = 1
+    "visibility" = "private"
   }
 }
