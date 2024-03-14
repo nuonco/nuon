@@ -1,5 +1,5 @@
 ---
-key_stroke_delay: 50ms
+key_stroke_delay: 40ms
 command_delay: 200ms
 terminal: ~/nuon $
 env_vars:
@@ -12,6 +12,41 @@ env_vars:
 
 # we now enter the terminal to demo the vendor experience of creating a BYOC app
 steps:
+  - name: Intro
+    notes: |
+       Today I'm going to walk you through creating a BYOC app that you can deploy to Amazon EKS.
+    cmd:
+      - open
+      - slides/1.pdf
+
+  - name: Configuring the App
+    cmd:
+      - open
+      - slides/2.pdf
+
+  - name: Demo EKS pods
+    notes: |
+    cmd:
+      - kubectl
+      - get
+      - pods
+      - -n
+      - inlmmk9vt0bv07zcxyduy5k2ti
+ 
+  - name: Demo API logs
+    cmd:
+      - kubectl
+      - logs
+      - --tail=10
+      - introspect-api-7f9d5ff4f8-8mwh8
+      - -n
+      - inlmmk9vt0bv07zcxyduy5k2ti
+ 
+  - name: Demo API
+    cmd:
+      - open
+      - https://introspect.inlmmk9vt0bv07zcxyduy5k2ti.stage.nuon.run/introspect/env
+
   - name: Install the CLI
     cmd:
       - brew
@@ -31,20 +66,21 @@ steps:
       - nuon
       - orgs
       - select
+      - --org=orgzblonf9hol7jq92vkdriio4
 
   - name: Create the app
     cmd:
       - nuon
       - apps
       - create
-      - --name=demo_byoc_ecs_app
+      - --name=awesome_eks_app
 
   - name: Configure the app
     notes: |
       Remember to update the installer slug!
     cmd:
       - nvim
-      - nuon.demo_byoc_ecs_app.toml
+      - nuon.awesome_eks_app.toml
 
   - name: Sync the app config
     cmd:
@@ -57,11 +93,12 @@ steps:
       - nuon
       - apps
       - select
+      - --app=awesome_eks_app
 
   - name: Connect the components
     cmd:
       - nvim
-      - nuon.demo_byoc_ecs_app.toml
+      - nuon.awesome_eks_app.toml
 
   - name: Sync the component configs
     cmd:
@@ -81,6 +118,11 @@ steps:
       - builds
       - list
 
+  - name: Installing the App
+    cmd:
+      - open
+      - slides/3.pdf
+
   - name: Create an install
     notes: |
       We're now going to switch roles, from the BYOC developer, to the BYOC customer.
@@ -90,7 +132,12 @@ steps:
       At this point, Nuon takes over. It will provision the install and deploy the app for me.
     cmd:
       - open
-      - https://app.stage.nuon.co/installer/demo-byoc-ecs-app
+      - https://app.stage.nuon.co/installer/awesome-eks-app
+
+  - name: Monitoring the Install
+    cmd:
+      - open
+      - slides/4.pdf
 
   - name: Monitor installs in the dashboard
     notes: |
