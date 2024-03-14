@@ -3,7 +3,7 @@ data "aws_organizations_organization" "orgs" {
 }
 
 locals {
-  region = "us-east-1"
+  region = "us-west-2"
   accounts = {
     for acct in data.aws_organizations_organization.orgs.accounts : acct.name => { id : acct.id }
   }
