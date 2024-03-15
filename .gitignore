@@ -49,3 +49,6 @@ services/ctl-api/admin/admin_docs.go
 services/ctl-api/admin/admin_swagger*
 pkg/api/client/client/
 pkg/api/client/models/
+
+# MacOS files
+.DS_Store
