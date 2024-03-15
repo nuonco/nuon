@@ -7,7 +7,7 @@ env_vars:
 steps:
   - name: Intro
     notes: |
-      I'm going to walk you through installing an app in a customer's already existing VPC.
+      I'm going to walk you through supporting a shared responsibility model with a BYOC app.
     cmd:
       - open
       - slides/1.pdf
@@ -17,14 +17,10 @@ steps:
       - open
       - slides/2.pdf
  
-  - name: Demo the AWS Resources
-    cmd:
-      - open
- 
   - name: Demo the API
     cmd:
       - open
-      - https://introspect.inlmmk9vt0bv07zcxyduy5k2ti.stage.nuon.run/introspect/env
+      - https://introspect.inlflmd19kv4wfwenk1f2eki50.stage.nuon.run/introspect/env
 
   - name: Install the CLI
     cmd:
@@ -52,14 +48,14 @@ steps:
       - nuon
       - apps
       - create
-      - --name=my_byovpc_app
+      - --name=awesome_byovpc_app
 
   - name: Configure the app
     notes: |
       Remember to update the installer slug!
     cmd:
       - nvim
-      - nuon.my_byovpc_app.toml
+      - nuon.awesome_byovpc_app.toml
 
   - name: Sync the app config
     cmd:
@@ -72,12 +68,12 @@ steps:
       - nuon
       - apps
       - select
-      - --app=my_byovpc_app
+      - --app=awesome_byovpc_app
 
   - name: Connect the components
     cmd:
       - nvim
-      - nuon.my_byovpc_app.toml
+      - nuon.awesome_byovpc_app.toml
 
   - name: Sync the component configs
     cmd:
@@ -111,7 +107,7 @@ steps:
       At this point, Nuon takes over. It will provision the install and deploy the app for me.
     cmd:
       - open
-      - https://app.stage.nuon.co/installer/my-byovpc-app
+      - https://app.stage.nuon.co/installer/awesome-byovpc-app
 
   - name: Monitoring the Install
     cmd:
