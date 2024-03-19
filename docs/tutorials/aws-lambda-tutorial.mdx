@@ -1,0 +1,481 @@
+---
+title: "Create an AWS Lambda App"
+description: "Learn how to create an AWS Lambda BYOC application."
+icon: "aws"
+---
+
+This guide walks you through creating an AWS Lambda app that can be deployed to a customer's AWS account. This app will provide an HTTP API that you can use to create and read "widgets" from a DynamoDB table.
+
+<Note>
+The component code used in this guide can be found in our [Guides repo](https://github.com/nuonco/guides/aws-lambda-tutorial).
+</Note>
+
+## Prerequisites
+
+- [Create a Nuon account](/get-started/quickstart). You will need a working Nuon org.
+- [Set up an AWS account](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html). This is the account you will create the install in.
+
+## What You Will Create
+
+This tutorial will walk you through creating the following:
+
+- An [App](/guides/apps)
+- A [Docker Build component](/guides/docker-build-components)
+- Four [Terraform components](/guides/terraform-components)
+- An [Install](/guides/create-installs), using our [AWS ECS sandbox](/guides/sandboxes#aws-ecs)
+
+## Configure App
+
+To configure the app, you will create a TOML config file using our CLI. In each section below we will provide you with configuration snippets for the app itself as well as it's components.
+
+<Note>
+If you would prefer to use Terraform, see our [Terraform Configuration Management](/guides/terraform-configuration-management) guide. We provide Terraform sample code you can use throughout this guide.
+</Note>
+
+### Create App
+
+Define the app itself and give it a name. This will create the app in Nuon and generate a config file named `nuon.my_aws_lambda_app.toml`. This file will be populated with sample config, which we will update in this guide.
+
+<CodeGroup>
+```sh CLI
+nuon apps create --name=my_aws_lambda_app
+```
+
+```hcl app.tf
+resource "nuon_app" "my_aws_lambda_app" {
+  name = "my_aws_lambda_app"
+}
+```
+</CodeGroup>
+
+### Installer
+
+Update the installer config. Installers provide an out-of-the-box installation flow your customers can use to install your app. You will use it later in this guide to create an install yourself.
+
+<CodeGroup>
+```toml TOML
+[installer]
+name              = "My AWS Lambda App"
+description       = "A demo AWS Lambda app."
+slug              = "my-aws-lambda-app"
+documentation_url = "https://docs.nuon.co/"
+community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+github_url        = "https://github.com/nuonco"
+homepage_url      = "https://www.nuon.co/"
+demo_url          = "https://www.nuon.co/"
+```
+
+```hcl installer.tf
+resource "nuon_app_installer" "my_aws_lambda_app" {
+  app_id            = nuon_app.my_aws_lambda_app.id
+  name              = "My ECS App"
+  description       = "A demo app that runs on ECS."
+  slug              = nuon_app.my_aws_lambda_app.name
+  documentation_url = "https://docs.nuon.co/"
+  community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+  logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+  github_url        = "https://github.com/nuonco"
+  homepage_url      = "https://www.nuon.co/"
+  demo_url          = "https://www.nuon.co/"
+}
+```
+</CodeGroup>
+
+### Sandbox
+
+Update the sandbox config.
+
+<CodeGroup>
+```toml TOML
+[sandbox]
+terraform_version = "1.5.4"
+[sandbox.public_repo]
+directory = "aws-ecs"
+repo = "nuonco/sandboxes"
+branch = "main"
+```
+
+```hcl sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.my_aws_lambda_app.id
+  terraform_version = "v1.6.3"
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-ecs"
+  }
+}
+```
+</CodeGroup>
+
+### Runner
+
+Update the runner config. The `aws-ecs` sandbox requires that we use the `aws-ecs` runner. The runner manages the sandbox, provisioning and deprovisioning AWS resources during deploys.
+
+<Tip>
+The `aws-ecs` runner is so named because it runs on ECS, but it can be used to manage any AWS resources. Since it runs on ECS Fargate, no resources beyond what is needed for the runner are provisioned by default. You can use our ECS sandbox and runner to manage Lambda or EC2 deployments without worrying about extraneous ECS costs.
+</Tip>
+
+<CodeGroup>
+```toml TOML
+[runner]
+runner_type = "aws-ecs"
+```
+
+```hcl runner.tf
+resource "nuon_app_runner" "main" {
+  app_id      = nuon_app.my_aws_lambda_app.id
+  runner_type = "aws-ecs"
+}
+```
+</CodeGroup>
+
+### Sync App Config to Nuon
+
+You now have a complete Nuon app config. This is a good place to stop and sync it to Nuon.
+
+<CodeGroup>
+```sh CLI
+nuon apps sync
+```
+
+```sh Terraform
+terraform apply
+```
+</CodeGroup>
+
+Once the config is synced, select the newly created app using the CLI. This will scope CLI commands to the new app.
+
+```sh
+nuon apps select
+```
+
+## Connect Components
+
+This app consists of five components:
+
+- A DynamoDB table to store widgets in.
+- A docker image containing the widgets service.
+- A Lambda function that will run the docker image.
+- An API Gateway that will execute the Lambda function
+- An ACM Certificate for the API Gateway to use to support HTTPS
+
+### Docker Image
+
+This is a [Docker Build component](/guides/docker-build-components) that will build the widgets service and create a Docker image containing it. When released, it will sync the image to each install's ECR so Lambda can pull it when executing.
+
+<CodeGroup>
+```toml TOML
+[[components]]
+name   = "docker_image"
+type = "docker_build"
+dockerfile = "Dockerfile"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "aws-lambda-tutorial/components/api"
+branch    = "main"
+```
+
+```hcl docker_image.tf
+resource "nuon_docker_build_component" "docker_image" {
+  app_id = nuon_app.my_aws_lambda_app.id
+  name   = "docker_image"
+
+  public_repo = {
+    repo      = "nuonco/guides"
+    directory = "aws-lambda-tutorial/components/api"
+    branch    = "main"
+  }
+}
+```
+</CodeGroup>
+
+### DynamoDB Table
+
+This component will create a DynamoDB table to store widgets in.
+
+<CodeGroup>
+```toml TOML
+[[components]]
+name   = "dynamodb_table"
+type = "terraform_module"
+terraform_version = "1.5.3"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "aws-lambda-tutorial/components/dynamodb-table"
+branch    = "main"
+[[components.var]]
+name  = "name"
+value = "widgets"
+[[components.var]]
+name  = "hash_key"
+value = "ID"
+```
+
+```hcl dynamodb_table.tf
+resource "nuon_terraform_module_component" "dynamodb_table" {
+  app_id = nuon_app.my_aws_lambda_app.id
+  name   = "dynamodb_table"
+
+  public_repo = {
+    repo      = "nuonco/guides"
+    directory = "aws-lambda-tutorial/components/dynamodb-table"
+    branch    = "main"
+  }
+
+  # Service config
+
+  var {
+    name  = "name"
+    value = "widgets"
+  }
+
+  var {
+    name  = "hash_key"
+    value = "ID"
+  }
+
+  dependencies = [
+    nuon_docker_build_component.docker_image.id
+  ]
+}
+```
+</CodeGroup>
+
+### Lambda Function
+
+This component will create a Lambda function to run the docker image.
+
+<CodeGroup>
+```toml TOML
+[[components]]
+name   = "lambda_function"
+type = "terraform_module"
+terraform_version = "1.5.3"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "aws-lambda-tutorial/components/lambda-function"
+branch    = "main"
+[[components.var]]
+name  = "function_name"
+value = "widgets"
+[[components.var]]
+name  = "image_uri"
+value = "{{.nuon.components.docker_image.image.repository.uri}}:{{.nuon.components.docker_image.image.tag}}"
+```
+
+```hcl lambda_function.tf
+resource "nuon_terraform_module_component" "lambda_function" {
+  app_id = nuon_app.my_aws_lambda_app.id
+  name   = "lambda_function"
+
+  public_repo = {
+    repo      = "nuonco/guides"
+    directory = "aws-lambda-tutorial/components/lambda-function"
+    branch    = "main"
+  }
+
+  # Service config
+
+  var {
+    name  = "function_name"
+    value = "widgets"
+  }
+
+  var {
+    name  = "image_uri"
+    value = "{{.nuon.components.docker_image.image.repository.uri}}:{{.nuon.components.docker_image.image.tag}}"
+  }
+
+  dependencies = [
+    nuon_docker_build_component.docker_image.id
+  ]
+}
+```
+</CodeGroup>
+
+### ACM Certificate
+
+This component will create an ACM Certificate, so the API Gateway can handle HTTPS traffic.
+
+<CodeGroup>
+```toml TOML
+[[components]]
+name   = "certificate"
+type = "terraform_module"
+terraform_version = "1.5.3"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "aws-lambda-tutorial/components/certificate"
+branch    = "main"
+[[components.var]]
+name  = "domain_name"
+value = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+[[components.var]]
+name  = "zone_id"
+value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+```
+
+```hcl certificate.tf
+resource "nuon_terraform_module_component" "certificate" {
+  app_id = nuon_app.my_aws_lambda_app.id
+  name   = "certificate"
+
+  public_repo = {
+    repo      = "nuonco/guides"
+    directory = "aws-lambda-tutorial/components/certificate"
+    branch    = "main"
+  }
+
+  # Service config
+
+  var {
+    name  = "domain_name"
+    value = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+  }
+
+  var {
+    name  = "zone_id"
+    value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+  }
+
+  dependencies = [
+    nuon_docker_build_component.docker_image.id
+  ]
+}
+```
+</CodeGroup>
+
+### API Gateway
+
+This component will create an API Gateway, so we can call the lambda function via an HTTP API.
+
+<CodeGroup>
+```toml TOML
+[[components]]
+name   = "api_gateway"
+type = "terraform_module"
+terraform_version = "1.5.3"
+[components.public_repo]
+repo      = "nuonco/guides"
+directory = "aws-lambda-tutorial/components/api-gateway"
+branch    = "main"
+[[components.var]]
+name  = "name"
+value = "api"
+[[components.var]]
+name  = "domain_name"
+value = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+[[components.var]]
+name  = "domain_name_certificate_arn"
+value = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
+[[components.var]]
+name  = "lambda_function_arn"
+value = "{{.nuon.components.lambda_function.outputs.lambda_function_arn}}"
+```
+
+```hcl api_gateway.tf
+resource "nuon_terraform_module_component" "api_gateway" {
+  app_id = nuon_app.my_aws_lambda_app.id
+  name   = "api_gateway"
+
+  public_repo = {
+    repo      = "nuonco/guides"
+    directory = "aws-lambda-tutorial/components/api-gateway"
+    branch    = "main"
+  }
+
+  var {
+    name  = "name"
+    value = "api"
+  }
+
+  var {
+    name  = "domain_name"
+    value = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+  }
+
+  var {
+    name  = "domain_name_certificate_arn"
+    value = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
+  }
+
+  var {
+    name  = "lambda_function_arn"
+    value = "{{.nuon.components.lambda_function.outputs.lambda_function_arn}}"
+  }
+
+  dependencies = [
+    nuon_docker_build_component.docker_image.id
+  ]
+}
+```
+</CodeGroup>
+
+### Sync Component Configs to Nuon
+
+Now that you have the components, sync the updated config to Nuon.
+
+<CodeGroup>
+```sh CLI
+nuon apps sync
+```
+
+```sh Terraform
+terraform apply
+```
+</CodeGroup>
+
+Just like the app, you can use the CLI to verify they were synced successfully.
+
+```sh
+nuon components list
+```
+
+Initial builds for each component will also have been created. Verify with the CLI that they were successful.
+
+```sh verify builds
+nuon builds list
+```
+
+## Create an Install
+
+Creating an install requires two steps: granting access to the AWS account via an IAM role, and then provisioning the install in that account.
+There are a few ways to do this, but the easiest is to use the installer you configured earlier.
+
+In your web browser, navigate to [https://app.nuon.co/installer/your-installer-slug](https://app.nuon.co/installer/<your-installer-slug>), and follow the steps in the UI.
+For other approaches, see our guides [Install Access Permissions](/guides/install-access-permissions)  and [Create Installs](/guides/create-installs).
+
+### Monitor Install Creation
+
+Monitor the install's creation using the Dashboard. Scroll down, and below the settings, you should see a card for your install.
+
+![Installs on Dashboard](/images/installs-on-dashboard.png)
+
+Click on the card, and in the sidebar you can verify that the components are deployed in the Deploy History.
+
+![Install Details on Dashboard](/images/install-details-on-dashboard.png)
+
+### Inspect the Install
+
+When the install has provisioned, create a widget and then read it from the API, to verify everything is working.
+
+```sh create widget
+curl --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"id":"1"}' \
+  https://api.{install_id}.nuon.run/widgets
+```
+
+```sh read widget
+curl https://api.{install_id}.nuon.run/widgets/1
+```
+
+## Wrapping Up and Next Steps
+
+Congratulations, you just deployed an AWS Lambda app to AWS! A few suggestions for where to go next:
+
+- Check out our [Release Management](/guides/create-releases) guide to learn how to update installs.
+- Dig into our [App Configuration](/guides/apps) guide to learn how to configure more complex apps.
+- Share your installer with a friend and have them install your app in their AWS account.
