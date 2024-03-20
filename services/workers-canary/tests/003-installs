@@ -52,5 +52,5 @@ echo >&2 -e "[SANDBOX=true] nuon installs delete -i cli-canary-test\n"
 if [[ "$SANDBOX" == "false" ]]; then
   echo >&2 "skipping installs delete outside of sandbox mode"
 else
-  nuon -j installs delete -i "cli-canary-test"
+  nuon -j installs delete -i "cli-canary-test" --confirm
 fi
