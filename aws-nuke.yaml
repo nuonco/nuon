@@ -61,6 +61,15 @@ presets:
         - type: contains
           value: token.actions.githubusercontent.com
 
+      S3Bucket:
+        - type: glob
+          value: nuon-canary-*
+      S3Object:
+        - type: regex
+          value: "s3://nuon-canary-stage/.*"
+        - type: regex
+          value: "s3://nuon-canary-prod/.*"
+
       IAMRole:
         - type: glob
           value: AWSServiceRole*
