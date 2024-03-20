@@ -5,21 +5,26 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
 
 func (w *Workflows) deployComponents(ctx workflow.Context, installID string, sandboxMode, async bool) error {
+	w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusStarted)
+
 	l := workflow.GetLogger(ctx)
 	var install app.Install
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		InstallID: installID,
 	}, &install); err != nil {
+		w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
 	if !w.isDeployable(install) {
 		// automatically skipping
+		w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 		w.updateStatus(ctx, installID, Status(install.Status), "skipping deploying components since install did not provision")
 		return nil
 	}
@@ -28,6 +33,7 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetAppGraph, activities.GetAppGraphRequest{
 		AppID: install.AppID,
 	}, &componentIDs); err != nil {
+		w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get app graph: %w", err)
 	}
 
@@ -37,6 +43,7 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 		if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentLatestBuild, activities.GetComponentLatestBuildRequest{
 			ComponentID: componentID,
 		}, &componentBuild); err != nil {
+			w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 			return fmt.Errorf("unable to get component build: %w", err)
 		}
 
@@ -47,6 +54,7 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 			BuildID:     componentBuild.ID,
 			Signal:      async,
 		}, &installDeploy); err != nil {
+			w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
 			return fmt.Errorf("unable to create install deploy: %w", err)
 		}
 
@@ -64,5 +72,6 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 		}
 	}
 
+	w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFinished)
 	return nil
 }

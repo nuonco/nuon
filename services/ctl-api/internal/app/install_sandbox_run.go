@@ -25,9 +25,10 @@ type InstallSandboxRun struct {
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
 	// used for RLS
-	OrgID     string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
-	Org       Org    `json:"-" faker:"-"`
-	InstallID string `json:"install_id" gorm:"not null;default null"`
+	OrgID     string  `json:"org_id" gorm:"notnull" swaggerignore:"true"`
+	Org       Org     `json:"-" faker:"-"`
+	InstallID string  `json:"install_id" gorm:"not null;default null"`
+	Install   Install `swaggerignore:"true" json:"-"`
 
 	RunType           SandboxRunType `json:"run_type"`
 	Status            string         `json:"status" gorm:"notnull"`
