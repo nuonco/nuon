@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -38,4 +39,8 @@ func ToTags(inputs map[string]string, addtlTags ...string) []string {
 	}
 
 	return tags
+}
+
+func ToBoolTag(name string, val bool) string {
+	return fmt.Sprintf("%s:%s", name, strconv.FormatBool(val))
 }
