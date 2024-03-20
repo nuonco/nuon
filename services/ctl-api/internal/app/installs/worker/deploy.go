@@ -8,6 +8,7 @@ import (
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -32,11 +33,14 @@ func (w *Workflows) isTeardownable(install app.Install) bool {
 }
 
 func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, sandboxMode bool) error {
+	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusStarted)
+
 	var install app.Install
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		InstallID: installID,
 	}, &install); err != nil {
 		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get install from database")
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
@@ -45,23 +49,27 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 		DeployID: deployID,
 	}, &installDeploy); err != nil {
 		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get install deploy from database")
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install deploy: %w", err)
 	}
 
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
 		if !w.isTeardownable(install) {
 			w.updateDeployStatus(ctx, deployID, StatusError, "install is not in a delete_queued, deprovisioning or active state to tear down components")
+			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusNoop)
 			return nil
 		}
 	} else {
 		if !w.isDeployable(install) {
 			w.updateDeployStatus(ctx, deployID, StatusError, "install is not active and can not be deployed too")
+			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusNoop)
 			return nil
 		}
 	}
 
 	if !w.isBuildDeployable(installDeploy.ComponentBuild) {
 		w.updateDeployStatus(ctx, deployID, StatusNoop, "build is not deployable")
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return nil
 	}
 
@@ -70,6 +78,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 		DeployID: deployID,
 	}, &deployCfg); err != nil {
 		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get component config")
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get deploy component config: %w", err)
 	}
 
@@ -92,6 +101,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	})
 	if err != nil {
 		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to create sync plan: %s", err))
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to create sync plan: %w", err)
 	}
 
@@ -103,6 +113,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	})
 	if err != nil {
 		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to execute sync plan: %s", err))
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to execute sync plan: %w", err)
 	}
 
@@ -131,6 +142,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	})
 	if err != nil {
 		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to create deploy plan: %s", err))
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to create deploy plan: %w", err)
 	}
 
@@ -142,9 +154,11 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	})
 	if err != nil {
 		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to execute deploy plan: %s", err))
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to execute deploy plan: %w", err)
 	}
 
+	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFinished)
 	w.updateDeployStatus(ctx, deployID, StatusActive, "deploy is active")
 	return nil
 }
