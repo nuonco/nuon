@@ -9,6 +9,9 @@ configmap:
     API_URL: $TFO_API_URL
     INTERNAL_API_URL: $TFO_INTERNAL_API_URL
 
+    STATE_BUCKET_NAME: $TFO_STATE_BUCKET_NAME
+    STATE_BUCKET_REGION: $TFO_STATE_BUCKET_REGION
+
 serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: $TFO_EKS_ROLE_ARN

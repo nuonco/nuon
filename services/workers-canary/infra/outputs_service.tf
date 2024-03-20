@@ -21,3 +21,11 @@ output "api_url" {
 output "internal_api_url" {
   value = var.internal_api_url
 }
+
+output "state_bucket_name" {
+  value = local.bucket_name
+}
+
+output "state_bucket_region" {
+  value = local.region
+}
