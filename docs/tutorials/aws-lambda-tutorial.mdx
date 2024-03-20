@@ -373,6 +373,9 @@ value = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
 [[components.var]]
 name  = "lambda_function_arn"
 value = "{{.nuon.components.lambda_function.outputs.lambda_function_arn}}"
+[[components.var]]
+name  = "zone_id"
+value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 ```
 
 ```hcl api_gateway.tf
@@ -404,6 +407,11 @@ resource "nuon_terraform_module_component" "api_gateway" {
   var {
     name  = "lambda_function_arn"
     value = "{{.nuon.components.lambda_function.outputs.lambda_function_arn}}"
+  }
+
+  var {
+    name  = "zone_id"
+    value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
   }
 
   dependencies = [
