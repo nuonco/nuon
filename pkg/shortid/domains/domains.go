@@ -42,6 +42,10 @@ func NewDomainID() string {
 	return shortid.NewNanoID("dom")
 }
 
+func NewEventID() string {
+	return shortid.NewNanoID("eve")
+}
+
 func NewRunID() string {
 	return shortid.NewNanoID("run")
 }
