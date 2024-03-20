@@ -58,6 +58,7 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		// installs
 		&app.AWSAccount{},
 		&app.Install{},
+		&app.InstallEvent{},
 		&app.InstallInputs{},
 		&app.InstallSandboxRun{},
 
