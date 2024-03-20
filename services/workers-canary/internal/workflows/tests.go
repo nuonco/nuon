@@ -3,6 +3,7 @@ package workflows
 import (
 	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"github.com/powertoolsdev/mono/services/workers-canary/internal/activities"
 	"go.temporal.io/sdk/workflow"
@@ -16,7 +17,7 @@ func (w *wkflow) execTests(ctx workflow.Context,
 ) error {
 	var testsResp activities.ListTestsResponse
 	if err := w.defaultExecGetActivity(ctx, w.acts.ListTests, &activities.ListTestsRequest{}, &testsResp); err != nil {
-		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:list_tests")
+		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:list_tests", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 		return fmt.Errorf("unable to list tests: %w", err)
 	}
 
@@ -30,7 +31,7 @@ func (w *wkflow) execTests(ctx workflow.Context,
 	}
 
 	for idx, test := range testsResp.Tests {
-		req := activities.ExecTestScriptRequest{
+		testReq := activities.ExecTestScriptRequest{
 			Path:          test,
 			Env:           env,
 			TFOutputs:     outputs,
@@ -39,11 +40,11 @@ func (w *wkflow) execTests(ctx workflow.Context,
 		}
 
 		var testResp activities.ExecTestScriptResponse
-		if err := w.defaultExecTestActivity(ctx, w.acts.ExecTestScript, req, &testResp); err != nil {
-			w.metricsWriter.Incr(ctx, "provision", 1, "status:error", fmt.Sprintf("step:execute_test_%d", idx+1))
+		if err := w.defaultExecTestActivity(ctx, w.acts.ExecTestScript, testReq, &testResp); err != nil {
+			w.metricsWriter.Incr(ctx, "provision", 1, "status:error", fmt.Sprintf("step:execute_test_%d", idx+1), metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 			return fmt.Errorf("unable to execute test: %w", err)
 		}
-		w.metricsWriter.Incr(ctx, "provision", 1, "status:ok", fmt.Sprintf("step:execute_test_%d", idx+1))
+		w.metricsWriter.Incr(ctx, "provision", 1, "status:ok", fmt.Sprintf("step:execute_test_%d", idx+1), metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 	}
 
 	return nil

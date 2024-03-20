@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows"
@@ -34,13 +35,13 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 
 	canaryID, err := w.getCanaryID(ctx, req)
 	if err != nil {
-		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:get_canary_id")
+		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:get_canary_id", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 		return nil, fmt.Errorf("unable to get canary ID: %w", err)
 	}
 	req.CanaryId = canaryID
 
 	if err := req.Validate(); err != nil {
-		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:validate_request")
+		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:validate_request", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 		return nil, err
 	}
 
@@ -70,7 +71,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	}
 
 	w.sendNotification(ctx, notificationTypeCanarySuccess, req.CanaryId, req.SandboxMode, nil)
-	w.metricsWriter.Incr(ctx, "provision", 1, "status:ok")
+	w.metricsWriter.Incr(ctx, "provision", 1, "status:ok", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 	return &canaryv1.ProvisionResponse{
 		CanaryId: req.CanaryId,
 		OrgId:    orgID,

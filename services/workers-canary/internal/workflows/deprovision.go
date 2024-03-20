@@ -3,6 +3,7 @@ package workflows
 import (
 	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/metrics"
 	canaryv1 "github.com/powertoolsdev/mono/pkg/types/workflows/canary/v1"
 	"go.temporal.io/sdk/workflow"
 )
@@ -21,6 +22,6 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 		return nil, err
 	}
 
-	w.metricsWriter.Incr(ctx, "deprovision", 1, "status:ok")
+	w.metricsWriter.Incr(ctx, "deprovision", 1, "status:ok", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 	return resp, nil
 }
