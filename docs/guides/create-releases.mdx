@@ -1,186 +1,122 @@
 ---
-title: Creating a Release
+title: Create Releases
 description: "Learn how to create and manage releases."
 icon: 'terminal'
 ---
 
-To deliver your application, create a Build and Release for each Component. When releasing, prioritize Components based on dependency (infrastructure first, then software).
+Releases are how you update your application components in your customer's installs. This doc covers how releases work, how to create them, and how to monitor them.
 
-This guide covers creating and inspecting Builds, followed by creating and inspecting Releases and their Deploys.
+## How Release Work
 
-## TL;DR Release with Auto Build
+### Deploys
 
-For active Installs with configured Components, releasing the latest versions is straightforward. Use the `--auto-build` flag when creating Releases for your Components. This automatically generates a Build of the Component and releases it to your Installs upon completion.
+In order to run an app component in an install, you must create a deploy. A deploy does two things:
 
-```sh nuon cli
-nuon releases create -c {component name or id} --auto-build
-```
+1. Sync a component build artifact to an install's local registry.
+1. Provision that component in the install's sandbox.
 
-For a deeper understanding of working with Builds, Releases and Deploys follow the guide below.
+Creating a single deploy is pretty straightforward. But, when you have a lot of installs, managing deploys for all of them can quickly become a challenge. This is where releases come in.
 
-## Working with Builds
+### Managing Deploys at Scale
 
-A Build is a packaged component that you'll Release to your customers.
+A release will create and monitor multiple deploys for you. You can configure what installs to deploy to, how many deploys to create at a time, and how long to wait before creating them. Once created, a release will also monitor the deploys, so you can see if any of them fail.
 
-### Create a Build
+## Creating a Release
 
-First we'll create a Build of your Component.
-
-```sh nuon cli
-nuon builds create -c {component name or id}
-```
-
-### Inspect your Builds
-
-Once you've created your Build your can view them via the CLI with the `list` and `get` sub-commands.
-
-```sh nuon cli
-nuon builds list -c {component name or id}
-```
-
-```sh nuon cli
-nuon builds get -b {build id}
-```
-
-#### View the Build Plans
-
-Prior to creating a build, Nuon initiates a build plan detailing the creation process. If a build fails, examining the build plan is useful for identifying configuration issues.
+The simplest release you can create will immediately deploy the latest build of a component to all installs simultaneously.
 
 ```sh
-nuon builds print-plan -b {build id}
+nuon releases create -c {component_id} --latest-build
 ```
 
-#### View the Build Logs
+In practice, though, you will probably want to configure some options.
 
-During the build creation process, Nuon captures logs. You can review these logs using the CLI's `logs` sub-command after the build process is complete.
+### Build Options
 
-```sh nuon cli
-nuon builds logs -b {build id}
-```
+Instead of using the latest build, you can specify a build by ID.
 
-**NOTE: currently log retention is ~24hrs**
-
-Although the log line output is retained for only 24 hours, you can still view the metadata from the build log by using the `--json` or `-j` flag.
-
-```sh nuon cli
-nuon builds logs -b {build id} -j
-```
-
-## Working with Releases
-
-A Release comprises Deploys across one or more Installs. A Deploy is generated when a Build is initiated on an Install. Releases can be set up to roll out in steps, deploying the Build to a specified number of Installs per step.
-
-### Create a Release
-
-First we'll create a Release of your Build.
-
-```sh nuon cli
+```sh
 nuon releases create -c {component id} -b {build id}
 ```
 
-#### Installs per step
+You can also tell Nuon to create a new build. See the [Create Builds](/guides/create-builds) guide for more info.
 
-When initiating a release, you have the option to control the number of installs the release targets simultaneously. By default, Nuon releases to all installs at once. However, specifying a step count with the `--installs-per-step` or `-s` flag allows you to release to a limited number of installs per step.
-
-```sh nuon cli
-nuon releases create -c {component id} -b {build id} -s 5
+```sh
+nuon releases create -c {component id} --auto-build
 ```
 
-#### View the Release Steps
+### Install Options
 
-Viewing the steps after the Release was created.
+By default, a release will immediately deploy to all installs simultaneously. You can optionally configure a delay, as well as limit the number of deploys created at a time.
 
-```sh nuon cli
+For example: if you wanted to deploy to one install at a time, and wait an hour between each deploy, you would execute the following.
+
+```sh
+nuon releases create -c {component_id} --latest-build --delay 1h --installs-per-step 1
+```
+
+## Monitoring Releases
+
+### Monitor the Release
+
+Once a release has been created, you can use the CLI to see its status.
+
+```sh
+nuon releases get -r {release_id}
+```
+
+You can also see the status of each step and the deploys within them.
+
+```sh
 nuon releases steps -r {release id}
 ```
 
-### Inspect your Release
+### Monitor Deploys
 
-Once you've created a Release your can view them via the CLI with the `list` and `get` sub-commands.
+You can also see the status of each deploy. Since deploys are children of installs, you will use the `installs` sub-command instead of `releases`.
 
-_List by Component_
-
-```sh nuon cli
-nuon releases list -c {component name or id}
+```sh
+nuon installs get-deploy -i {install_id} -d {deploy_id}
 ```
 
-_List by App_
+### Debug Deploys
 
-```sh nuon cli
-nuon releases list -a {app name or id}
+If a deploy fails, you can look at the logs to see why.
+
+```sh
+nuon installs deploy-logs -i {install_id} -d {deploy_id}
 ```
 
-```sh nuon cli
-nuon releases get -r {release id}
+<Note>
+Deploy log retention is 24 hours, but you can still see metadata about the logs by passing in the `--json` flag.
+</Note>
+
+If the issue is not apparent from the logs, or there are no logs, look at the deploy plan for more information. A plan is created for each deploy, and it contains all the information used to execute the deploy job.
+
+<Tip>
+The deploy plan is a JSON object, so we recommend using [JQ](https://jqlang.github.io/jq/) to format it for readability.
+</Tip>
+
+```sh
+nuon installs print-deploy-plan -i {install_id} -d {deploy_id} | jq
 ```
 
-## Working with  Deploys
+Deploy plans can be quite large and complex, so the CLI has some options you can use to focus on the specific parts of the plan you should check first.
 
-As stated above a Deploy is created when Nuon tries to run a Build on an Install, this means a Deploy is one to one with an Install.
+The job config will show you how the deploy job was configured.
 
-**Selecting an Install**
-
-From this point forward we will set an Install in our CLI context. This means all of the following CLI commands will be executed in the context of the selected Install. You can select an Install with the following command.
-
-```sh nuon cli
-nuon installs select
+```sh
+nuon installs print-deploy-plan -i {install_id} -d {deploy_id} --print-job-config
 ```
 
-### Inspecting the Deploys
+The intermediate data contains all the data used to render the variables from the component config. You can use this to verify that all the data you need for your components is available.
 
-With an Install selected you can view Deploys with the CLI via `list-deploys` and `get-deploy` sub-commands.
-
-```sh nuon cli
-nuon installs list-deploys
+```sh
+nuon installs print-deploy-plan -i {install_id} -d {deploy_id} --intermediate-only | jq
 ```
 
-```sh nuon cli
-nuon installs get-deploy -d {deploy id}
-```
-#### View the Deploy Plan
+The rendered variables contain the values of the variables after they were rendered using the intermediate data. You can use this to verify that variables in the component config are being interpolated with the correct values.
 
-Like builds, Nuon generates a Deploy plan when creating a Deploy. In the event of a Deploy failure, examining the Deploy plan can assist in identifying configuration issues.
-
-```sh nuon cli
-nuon installs print-deploy-plan -d {deploy id}
-```
-
-##### View the Plan's Job Config
-
-You can view the plan's job config directly with the `--print-job-config` flag.
-
-```sh nuon cli
-nuon installs print-deploy-plan -d {deploy id} --print-job-config
-```
-
-##### View the Plan's Intermediate Variables
-
-When using variables and inputs you may want to inspect the intermediate variables that the Deploy is going to try to render.
-
-```sh nuon cli
-nuon installs print-deploy-plan -d {deploy id} --intermediate-only
-```
-
-##### View the Plan's Rendered Variables
-
-Same with intermediate variables you may need to inspect the rendered variables to validate your configuration.
-
-```sh nuon cli
-nuon installs print-deploy-plan -d {deploy id} --rendered-vars
-```
-
-#### View the Deploy Logs
-
-Similar to builds, deploy logs are captured and can be viewed using the `deploy-logs` sub-command.
-
-```sh nuon cli
-nuon installs deploy-logs -d {deploy id}
-```
-
-**NOTE: currently log retention is ~24hrs**
-
-Just like with builds, although the log line output is only kept for 24 hours, you can still view the metadata from the deploy log by using the `--json` or `-j` flag.
-
-```sh nuon cli
-nuon installls deploy-logs -d {deploy id} -j
+```sh
+nuon installs print-deploy-plan -i {install_id} -d {deploy_id} --rendered-vars
 ```

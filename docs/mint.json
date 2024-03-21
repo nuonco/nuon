@@ -119,11 +119,11 @@
                 "guides/vcs",
                 "guides/install-access-permissions",
                 "guides/create-installs",
+                "guides/create-builds",
                 "guides/create-releases",
                 "guides/using-variables",
                 "guides/auto-deploys-and-dependencies",
-                "guides/sandbox-orgs",
-                "guides/view-logs"
+                "guides/sandbox-orgs"
             ]
         },
         {
