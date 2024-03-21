@@ -55,6 +55,9 @@ resource "nuon_app" "my_byovpc_app" {
 
 ### App Input
 
+This is a setting that your customer will be able to configure when they install the app. It will be displayed on the installer page as a text field.
+For BYO-VPC, this is especially important, since it allows the customer to tell Nuon which VPC to install the app into.
+
 <CodeGroup>
 ```toml TOML
 [inputs]
