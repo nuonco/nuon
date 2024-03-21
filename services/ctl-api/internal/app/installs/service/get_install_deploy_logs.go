@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
@@ -38,6 +39,7 @@ type DeployLog interface{}
 // @Router			/v1/installs/{install_id}/deploys/{deploy_id}/logs [get]
 func (s *service) GetInstallDeployLogs(ctx *gin.Context) {
 	deployID := ctx.Param("deploy_id")
+	installID := ctx.Param("install_id")
 
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
@@ -45,7 +47,7 @@ func (s *service) GetInstallDeployLogs(ctx *gin.Context) {
 		return
 	}
 
-	logs, err := s.getLogs(ctx, org.ID, deployID)
+	logs, err := s.getLogs(ctx, org.ID, installID, deployID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get logs: %w", err))
 		return
@@ -54,13 +56,23 @@ func (s *service) GetInstallDeployLogs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, logs)
 }
 
-func (s *service) getLogs(ctx context.Context, orgID, deployID string) ([]DeployLog, error) {
+func (s *service) getLogs(ctx context.Context, orgID, installID, deployID string) ([]DeployLog, error) {
+	deploy, err := s.getInstallDeploy(ctx, installID, deployID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get deploy: %w", err)
+	}
+
+	phase := "deploy"
+	if deploy.Type == app.InstallDeployTypeTeardown {
+		phase = "destroy"
+	}
+
 	logs := make([]DeployLog, 0)
 	ctx, cancelFn := context.WithTimeout(ctx, defaultLogPollTimeout)
 	defer cancelFn()
 
 	logClient, err := s.wpClient.GetJobStream(ctx, orgID, &gen.GetJobStreamRequest{
-		JobId: fmt.Sprintf("deploy-%s", deployID),
+		JobId: fmt.Sprintf("%s-%s", phase, deployID),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get job stream: %w", err)
