@@ -147,7 +147,7 @@ func TestProvision(t *testing.T) {
 			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
 			assert.Equal(t, req.RunId, pr.GetSandbox().RunId)
 			assert.Equal(t, req.SandboxSettings, pr.GetSandbox().SandboxSettings)
-			assert.Equal(t, req.AccountSettings, pr.GetSandbox().AccountSettings)
+			assert.Equal(t, req.AwsSettings, pr.GetSandbox().AwsSettings)
 
 			return &planv1.CreatePlanResponse{Plan: planref}, nil
 		})
@@ -257,7 +257,7 @@ func TestProvision_plan_only(t *testing.T) {
 			assert.Equal(t, req.AppId, pr.GetSandbox().AppId)
 			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
 			assert.Equal(t, req.SandboxSettings, pr.GetSandbox().SandboxSettings)
-			assert.Equal(t, req.AccountSettings, pr.GetSandbox().AccountSettings)
+			assert.Equal(t, req.AwsSettings, pr.GetSandbox().AwsSettings)
 
 			return &planv1.CreatePlanResponse{Plan: planref}, nil
 		})
