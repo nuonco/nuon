@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"gorm.io/gorm"
 )
 
 // @ID GetInstall
@@ -50,8 +51,21 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 		Preload("AWSAccount").
 		Preload("App").
 		Preload("App.Org").
+		Preload("CreatedBy").
+		Preload("InstallInputs").
+		Preload("InstallComponents").
+		Preload("InstallComponents.Component").
+		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_deploys.created_at DESC")
+		}).
 		Preload("AppSandboxConfig").
+		Preload("AppSandboxConfig.PublicGitVCSConfig").
+		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppRunnerConfig").
+		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_sandbox_runs.created_at DESC")
+		}).
+		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Where("name = ? AND org_id = ?", installID, orgID).
 		Or("id = ?", installID).
 		First(&install)
