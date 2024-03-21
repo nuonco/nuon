@@ -109,7 +109,7 @@
             "pages": [
                 "tutorials/aws-ecs-app-tutorial",
                 "tutorials/aws-eks-app-tutorial",
-                "tutorials/shared-responsibility-tutorial",
+                "tutorials/byo-vpc-tutorial",
                 "tutorials/aws-lambda-tutorial"
             ]
         },
