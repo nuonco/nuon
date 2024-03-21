@@ -29,7 +29,8 @@ message SandboxInput {
 
   SandboxInputType type = 5;
   installs.v1.SandboxSettings sandbox_settings = 6;
-  installs.v1.AccountSettings account_settings = 7;
+  installs.v1.AWSSettings aws_settings = 7;
+  installs.v1.AzureSettings azure_settings = 8;
 }
 
 enum SandboxInputType {

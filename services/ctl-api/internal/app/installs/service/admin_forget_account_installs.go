@@ -70,6 +70,7 @@ func (s *service) getAccountInstalls(ctx context.Context, accountID string) ([]a
 	var installs []app.Install
 	res := s.db.WithContext(ctx).
 		Preload("AWSAccount").
+		Preload("AzureAccount").
 		Preload("App").
 		Preload("App.Org").
 		Find(&installs)

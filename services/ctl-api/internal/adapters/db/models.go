@@ -57,6 +57,7 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 
 		// installs
 		&app.AWSAccount{},
+		&app.AzureAccount{},
 		&app.Install{},
 		&app.InstallEvent{},
 		&app.InstallInputs{},

@@ -1,7 +1,7 @@
 version = "v1"
 
 [runner]
-#runner_type = "azure-aks"
+runner_type = "azure-aks"
 runner_type = "aws-ecs"
 
 [sandbox]

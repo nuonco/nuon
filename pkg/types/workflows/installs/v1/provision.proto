@@ -29,12 +29,13 @@ message ProvisionRequest {
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  AccountSettings account_settings = 5;
-  SandboxSettings sandbox_settings = 6;
+  AWSSettings aws_settings = 5;
+  AzureSettings azure_settings = 6;
+  SandboxSettings sandbox_settings = 7;
 
-  bool plan_only = 7;
-  RunnerType runner_type = 8;
+  bool plan_only = 8;
+  RunnerType runner_type = 9;
 }
 
-// StartResponse returns the response from a deployment workflow
+// ProvisionResponse returns the response from a deployment workflow
 message ProvisionResponse {}

@@ -14,6 +14,10 @@ func NewAWSAccountID() string {
 	return shortid.NewNanoID("aws")
 }
 
+func NewAzureAccountID() string {
+	return shortid.NewNanoID("azu")
+}
+
 func NewBuildID() string {
 	return shortid.NewNanoID("bld")
 }
