@@ -44,6 +44,9 @@ type Config struct {
 	SandboxModeInstallCount int `config:"sandbox_mode_install_count"`
 	DefaultInstallCount     int `config:"default_install_count"`
 
+	StateBucketName   string `config:"state_bucket_name"`
+	StateBucketRegion string `config:"state_bucket_region"`
+
 	// the canary will _not_ run deprovision until the period has finished, allowing us time to debug using the CLI.
 	CanaryDebugPeriod string `config:"canary_debug_period"`
 }

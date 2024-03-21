@@ -6,6 +6,9 @@ data "aws_iam_policy_document" "support" {
       "eks:ListCluster",
       "sts:AssumeRole",
       "ecr:*",
+      "s3:*",
+      "kms:GenerateDataKey",
+      "kms:Decrypt"
     ]
     resources = ["*", ]
   }

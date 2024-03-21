@@ -40,6 +40,7 @@ func (w *wkflow) defaultTerraformRunActivity(
 ) error {
 	ao := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: time.Duration(maxAttempts) * defaultTerraformRunTimeout,
+		HeartbeatTimeout:       time.Second * 10,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: maxAttempts,
 		},

@@ -4,23 +4,28 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
+	"sync"
+	"time"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/mitchellh/mapstructure"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive/dir"
-	"github.com/powertoolsdev/mono/pkg/terraform/backend/local"
+	"github.com/powertoolsdev/mono/pkg/terraform/backend"
+	s3backend "github.com/powertoolsdev/mono/pkg/terraform/backend/s3"
 	remotebinary "github.com/powertoolsdev/mono/pkg/terraform/binary/remote"
 	"github.com/powertoolsdev/mono/pkg/terraform/hooks/noop"
 	"github.com/powertoolsdev/mono/pkg/terraform/outputs"
 	"github.com/powertoolsdev/mono/pkg/terraform/run"
 	staticvars "github.com/powertoolsdev/mono/pkg/terraform/variables/static"
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
+	"go.temporal.io/sdk/activity"
 )
 
 const (
-	defaultTerraformVersion string = "v1.5.3"
+	defaultTerraformVersion  string        = "v1.5.3"
+	defaultHeartBeatInterval time.Duration = time.Second * 1
 )
 
 type RunType string
@@ -88,8 +93,20 @@ func (a *Activities) getWorkspace(moduleDir string, req *RunTerraformRequest) (w
 		return nil, fmt.Errorf("unable to create vars: %w", err)
 	}
 
-	stateFp := filepath.Join(a.cfg.TerraformStateBaseDir, fmt.Sprintf("%s-terraform.tfstate", req.CanaryID))
-	back, err := local.New(a.v, local.WithFilepath(stateFp))
+	var back backend.Backend
+	back, err = s3backend.New(a.v,
+		s3backend.WithCredentials(&credentials.Config{
+			UseDefault: true,
+		}),
+		s3backend.WithBucketConfig(&s3backend.BucketConfig{
+			Name:   a.cfg.StateBucketName,
+			Key:    fmt.Sprintf("%s/state.tfstate", req.CanaryID),
+			Region: a.cfg.StateBucketRegion,
+		}))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create backend: %w", err)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local backend: %w", err)
 	}
@@ -156,6 +173,27 @@ func (a *Activities) runTerraform(ctx context.Context, moduleDir string, req *Ru
 }
 
 func (a *Activities) RunTerraform(ctx context.Context, req *RunTerraformRequest) (*RunTerraformResponse, error) {
+	// TODO(jm): this heartbeating step should probably be pulled into pkg/workflows
+	var wg sync.WaitGroup
+	wg.Add(1)
+	defer wg.Wait()
+
+	ch := make(chan struct{})
+	defer close(ch)
+	go func() {
+		defer wg.Done()
+		ticker := time.NewTicker(defaultHeartBeatInterval)
+		for {
+			select {
+			case <-ch:
+				ticker.Stop()
+				return
+			case <-ticker.C:
+				activity.RecordHeartbeat(ctx, map[string]interface{}{})
+			}
+		}
+	}()
+
 	moduleDir := a.cfg.TerraformModuleDir
 	rawOutputs, err := a.runTerraform(ctx, moduleDir, req)
 	if err != nil {

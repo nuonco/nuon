@@ -66,7 +66,7 @@ func (w *wkflow) execProvision(ctx workflow.Context, req *canaryv1.ProvisionRequ
 		CanaryID:     req.CanaryId,
 		OrgID:        orgResp.OrgID,
 		InstallCount: w.getInstallCount(req.SandboxMode),
-	}, &runResp, 1); err != nil {
+	}, &runResp, 2); err != nil {
 		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:run_terraform", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 		return nil, orgResp.OrgID, userResp.APIToken, fmt.Errorf("unable to run terraform: %w", err)
 	}
