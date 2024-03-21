@@ -49,6 +49,7 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("AWSAccount").
+		Preload("AzureAccount").
 		Preload("App").
 		Preload("App.Org").
 		Preload("CreatedBy").

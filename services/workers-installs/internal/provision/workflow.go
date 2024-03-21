@@ -43,7 +43,8 @@ func (w wkflow) createPlanRequest(runTyp planv1.SandboxInputType, req *installsv
 				RunId:           req.RunId,
 				Type:            runTyp,
 				SandboxSettings: req.SandboxSettings,
-				AccountSettings: req.AccountSettings,
+				AwsSettings:     req.AwsSettings,
+				AzureSettings:   req.AzureSettings,
 			},
 		},
 	}
@@ -119,7 +120,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	}
 
 	if err := execCheckIAMRole(ctx, act, CheckIAMRoleRequest{
-		RoleARN: req.AccountSettings.AwsRoleArn,
+		RoleARN: req.AwsSettings.AwsRoleArn,
 	}); err != nil {
 		err = fmt.Errorf("unable to validate IAM role: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
@@ -178,12 +179,12 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		OrgId:         req.OrgId,
 		AppId:         req.AppId,
 		InstallId:     req.InstallId,
-		Region:        req.AccountSettings.Region,
 		RunnerType:    req.RunnerType,
 		OdrIamRoleArn: tfOutputs.Runner.ODRIAMRoleARN,
 	}
 
 	if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_ECS {
+		prReq.Region = req.AwsSettings.Region
 		prReq.EcsClusterInfo = &runnerv1.ECSClusterInfo{
 			ClusterArn:        tfOutputs.ECSCluster.ARN,
 			ClusterName:       tfOutputs.ECSCluster.Name,
@@ -195,6 +196,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 			SecurityGroupId:   tfOutputs.VPC.DefaultSecurityGroupID,
 		}
 	} else {
+		prReq.Region = req.AwsSettings.Region
 		prReq.EksClusterInfo = &runnerv1.KubeClusterInfo{
 			Id:             tfOutputs.Cluster.Name,
 			Endpoint:       tfOutputs.Cluster.Endpoint,

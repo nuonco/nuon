@@ -69,6 +69,7 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 	res := s.db.WithContext(ctx).
 		Model(&currentInstall).
 		Preload("AWSAccount").
+		Preload("AzureAccount").
 		Preload("AppSandboxConfig").
 		Updates(app.Install{Name: req.Name})
 	if res.Error != nil {

@@ -68,8 +68,16 @@ const startNotificationTemplate = `:package: _started provisioning sandbox_ :pac
 func (n *notifierImpl) sendStartNotification(ctx context.Context, bucket string, req *installsv1.ProvisionRequest) error {
 	prefix := prefix.InstallPath(req.OrgId, req.AppId, req.InstallId)
 
+	var roleOrSubscription string
+	if req.AwsSettings != nil {
+		roleOrSubscription = req.AwsSettings.AwsRoleArn
+	}
+	if req.AzureSettings != nil {
+		roleOrSubscription = req.AzureSettings.SubscriptionId
+	}
+
 	msg := fmt.Sprintf(startNotificationTemplate, bucket, prefix,
-		req.AccountSettings.AwsRoleArn,
+		roleOrSubscription,
 		req.InstallId,
 	)
 

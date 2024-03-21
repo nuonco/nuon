@@ -23,7 +23,8 @@ func (w wkflow) createPlanRequest(runTyp planv1.SandboxInputType, req *installsv
 				InstallId:       req.InstallId,
 				RunId:           req.RunId,
 				Type:            runTyp,
-				AccountSettings: req.AccountSettings,
+				AwsSettings:     req.AwsSettings,
+				AzureSettings:   req.AzureSettings,
 				SandboxSettings: req.SandboxSettings,
 			},
 		},
@@ -93,11 +94,11 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 		OrgId:      req.OrgId,
 		AppId:      req.AppId,
 		InstallId:  req.InstallId,
-		Region:     req.AccountSettings.Region,
 		RunnerType: req.RunnerType,
 	}
 
 	if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_ECS {
+		prReq.Region = req.AwsSettings.Region
 		prReq.EcsClusterInfo = &runnerv1.ECSClusterInfo{
 			ClusterArn:        tfOutputs.ECSCluster.ARN,
 			InstallIamRoleArn: tfOutputs.Runner.InstallIAMRoleARN,
@@ -108,6 +109,7 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 			SecurityGroupId:   tfOutputs.VPC.DefaultSecurityGroupID,
 		}
 	} else {
+		prReq.Region = req.AwsSettings.Region
 		prReq.EksClusterInfo = &runnerv1.KubeClusterInfo{
 			Id:             tfOutputs.Cluster.Name,
 			Endpoint:       tfOutputs.Cluster.Endpoint,

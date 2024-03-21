@@ -41,6 +41,7 @@ func (s *service) findInstall(ctx context.Context, installID string) (*app.Insta
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("AWSAccount").
+		Preload("AzureAccount").
 		Preload("AppSandboxConfig").
 		Preload("AppRunnerConfig").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {

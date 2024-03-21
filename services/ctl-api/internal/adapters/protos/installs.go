@@ -48,6 +48,10 @@ func (c *Adapter) toRunnerType(install *app.Install) (installsv1.RunnerType, err
 		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AWS_ECS
 	case app.AppRunnerTypeAWSEKS:
 		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
+	case app.AppRunnerTypeAzureAKS:
+		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS
+	case app.AppRunnerTypeAzureACS:
+		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AZURE_ACS
 	default:
 		return installsv1.RunnerType_RUNNER_TYPE_UNSPECIFIED, fmt.Errorf("unsupported runner type:  %s", install.AppRunnerConfig.Type)
 	}
@@ -67,16 +71,25 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) 
 	}
 
 	req := &installsv1.ProvisionRequest{
-		OrgId:     install.OrgID,
-		AppId:     install.AppID,
-		InstallId: install.ID,
-		RunId:     runID,
-		AccountSettings: &installsv1.AccountSettings{
-			Region:     install.AWSAccount.Region,
-			AwsRoleArn: install.AWSAccount.IAMRoleARN,
-		},
+		OrgId:           install.OrgID,
+		AppId:           install.AppID,
+		InstallId:       install.ID,
+		RunId:           runID,
 		SandboxSettings: sandboxSettings,
 		RunnerType:      runnerTyp,
+	}
+	if install.AWSAccount != nil {
+		req.AwsSettings = &installsv1.AWSSettings{
+			Region:     install.AWSAccount.Region,
+			AwsRoleArn: install.AWSAccount.IAMRoleARN,
+		}
+	}
+	if install.AzureAccount != nil {
+		req.AzureSettings = &installsv1.AzureSettings{
+			Location:             install.AzureAccount.Location,
+			SubscriptionId:       install.AzureAccount.SubscriptionID,
+			SubscriptionTenantId: install.AzureAccount.SubscriptionTenantID,
+		}
 	}
 
 	return req, nil
@@ -94,16 +107,25 @@ func (c *Adapter) ToInstallDeprovisionRequest(install *app.Install, runID string
 	}
 
 	req := &installsv1.DeprovisionRequest{
-		OrgId:     install.OrgID,
-		AppId:     install.AppID,
-		InstallId: install.ID,
-		RunId:     runID,
-		AccountSettings: &installsv1.AccountSettings{
-			Region:     install.AWSAccount.Region,
-			AwsRoleArn: install.AWSAccount.IAMRoleARN,
-		},
+		OrgId:           install.OrgID,
+		AppId:           install.AppID,
+		InstallId:       install.ID,
+		RunId:           runID,
 		SandboxSettings: sandboxSettings,
 		RunnerType:      runnerTyp,
+	}
+	if install.AWSAccount != nil {
+		req.AwsSettings = &installsv1.AWSSettings{
+			Region:     install.AWSAccount.Region,
+			AwsRoleArn: install.AWSAccount.IAMRoleARN,
+		}
+	}
+	if install.AzureAccount != nil {
+		req.AzureSettings = &installsv1.AzureSettings{
+			Location:             install.AzureAccount.Location,
+			SubscriptionId:       install.AzureAccount.SubscriptionID,
+			SubscriptionTenantId: install.AzureAccount.SubscriptionTenantID,
+		}
 	}
 
 	return req, nil
