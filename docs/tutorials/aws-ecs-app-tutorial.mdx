@@ -9,7 +9,7 @@ import { YoutubeEmbed } from '/snippets/youtube-embed.mdx'
 This guide walks you through creating a BYOC application using AWS ECS, and deploying it to an install. At the end of this tutorial, you should know how to create a new BYOC deployment offering with your existing application.
 
 <Note>
-All the configuration and component code used in this guide can be found in our [Guides repo](https://github.com/nuonco/guides/tree/main/create-an-aws-ecs-byoc-app).
+All the configuration and component code used in this guide can be found in our [Guides repo](https://github.com/nuonco/guides/tree/main/aws-ecs-tutorial).
 </Note>
 
 <YoutubeEmbed src="https://www.youtube.com/embed/jGKHLKdAIPg?si=kxDuzpol9r8mp-K8"/>
@@ -214,7 +214,7 @@ type = "docker_build"
 dockerfile = "Dockerfile"
 [components.public_repo]
 repo      = "nuonco/guides"
-directory = "create-an-aws-ecs-byoc-app/components/docker-image"
+directory = "aws-ecs-tutorial/components/docker-image"
 branch    = "main"
 ```
 
@@ -225,7 +225,7 @@ resource "nuon_docker_build_component" "docker_image" {
 
   public_repo = {
     repo      = "nuonco/guides"
-    directory = "create-an-aws-ecs-byoc-app/components/docker-image"
+    directory = "aws-ecs-tutorial/components/docker-image"
     branch    = "main"
   }
 }
@@ -244,7 +244,7 @@ type = "terraform_module"
 terraform_version = "1.5.3"
 [components.public_repo]
 repo      = "nuonco/guides"
-directory = "create-an-aws-ecs-byoc-app/components/ecs-service"
+directory = "aws-ecs-tutorial/components/ecs-service"
 branch    = "main"
 [[components.var]]
 name  = "service_name"
@@ -285,7 +285,7 @@ resource "nuon_terraform_module_component" "ecs_service" {
 
   public_repo = {
     repo      = "nuonco/guides"
-    directory = "create-an-aws-ecs-byoc-app/components/ecs-service"
+    directory = "aws-ecs-tutorial/components/ecs-service"
     branch    = "main"
   }
 
