@@ -33,32 +33,9 @@ This tutorial will walk you through creating the following:
 
 To configure the app, you will create a TOML config file using our CLI. In each section below we will provide you with configuration snippets for the app itself as well as it's components.
 
-If you would prefer to use Terraform, we also support configuring apps with our [Terraform provider](https://registry.terraform.io/providers/nuonco/nuon/latest).
-Copy the Terraform files below, and then use the Terraform snippets instead of the TOML ones.
-
-<CodeGroup>
-```sh versions.tf
-terraform {
-  required_version = ">= 1.3.7"
-
-  required_providers {
-    nuon = {
-      source  = "nuonco/nuon"
-      version = ">= 0.9.1"
-    }
-
-    utils = {
-      source  = "cloudposse/utils"
-      version = ">= 0.17.23"
-    }
-  }
-}
-```
-
-```hcl providers.tf
-provider "nuon" {}
-```
-</CodeGroup>
+<Note>
+If you would prefer to use Terraform, see our [Terraform Configuration Management](/guides/terraform-configuration-management) guide. We provide Terraform sample code you can use throughout this guide.
+</Note>
 
 ### Create App
 
