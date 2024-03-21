@@ -206,7 +206,7 @@ type = "docker_build"
 dockerfile = "Dockerfile"
 [components.public_repo]
 repo      = "nuonco/guides"
-directory = "aws-ecs-tutorial/components/docker-image"
+directory = "byo-vpc-tutorial/components/docker-image"
 branch    = "main"
 ```
 
@@ -217,7 +217,7 @@ resource "nuon_docker_build_component" "docker_image" {
 
   public_repo = {
     repo      = "nuonco/guides"
-    directory = "aws-ecs-tutorial/components/docker-image"
+    directory = "byo-vpc-tutorial/components/docker-image"
     branch    = "main"
   }
 }
@@ -236,7 +236,7 @@ type = "terraform_module"
 terraform_version = "1.5.3"
 [components.public_repo]
 repo      = "nuonco/guides"
-directory = "aws-ecs-tutorial/components/ecs-service"
+directory = "byo-vpc-tutorial/components/ecs-service"
 branch    = "main"
 [[components.var]]
 name  = "service_name"
@@ -277,7 +277,7 @@ resource "nuon_terraform_module_component" "ecs_service" {
 
   public_repo = {
     repo      = "nuonco/guides"
-    directory = "aws-ecs-tutorial/components/ecs-service"
+    directory = "byo-vpc-tutorial/components/ecs-service"
     branch    = "main"
   }
 
