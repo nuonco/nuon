@@ -99,7 +99,7 @@ func TestDeprovision(t *testing.T) {
 			assert.Equal(t, req.InstallId, pr.GetSandbox().InstallId)
 			assert.Equal(t, req.RunId, pr.GetSandbox().RunId)
 			assert.Equal(t, req.SandboxSettings, pr.GetSandbox().SandboxSettings)
-			assert.Equal(t, req.AccountSettings, pr.GetSandbox().AccountSettings)
+			assert.Equal(t, req.AwsSettings, pr.GetSandbox().AwsSettings)
 
 			return &planv1.CreatePlanResponse{Plan: planref}, nil
 		})

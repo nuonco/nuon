@@ -48,6 +48,7 @@ func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Insta
 		Preload("AppSandboxConfig").
 		Preload("CreatedBy").
 		Preload("AWSAccount").
+		Preload("AzureAccount").
 		Preload("App").
 		Preload("App.Org").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").

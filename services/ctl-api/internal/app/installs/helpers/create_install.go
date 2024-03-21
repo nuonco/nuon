@@ -12,10 +12,18 @@ import (
 type CreateInstallParams struct {
 	Name string `json:"name" validate:"required"`
 
-	AWSAccount struct {
+	AWSAccount *struct {
 		Region     string `json:"region"`
 		IAMRoleARN string `json:"iam_role_arn" validate:"required"`
-	} `json:"aws_account" validate:"required"`
+	} `json:"aws_account"`
+
+	AzureAccount *struct {
+		Location                 string `json:"location"`
+		SubscriptionID           string `json:"subscription_id"`
+		SubscriptionTenantID     string `json:"subscription_tenant_id"`
+		ServicePrincipalAppID    string `json:"service_principal_app_id"`
+		ServicePrincipalPassword string `json:"service_principal_password"`
+	} `json:"azure_account"`
 
 	Inputs map[string]*string `json:"inputs"`
 }
@@ -55,16 +63,27 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	install := app.Install{
-		AppID:             appID,
-		Name:              req.Name,
-		Status:            "queued",
-		StatusDescription: "waiting for event loop to start and provision install",
-		AWSAccount: app.AWSAccount{
-			Region:     req.AWSAccount.Region,
-			IAMRoleARN: req.AWSAccount.IAMRoleARN,
-		},
+		AppID:              appID,
+		Name:               req.Name,
+		Status:             "queued",
+		StatusDescription:  "waiting for event loop to start and provision install",
 		AppSandboxConfigID: parentApp.AppSandboxConfigs[0].ID,
 		AppRunnerConfigID:  parentApp.AppRunnerConfigs[0].ID,
+	}
+	if req.AWSAccount != nil {
+		install.AWSAccount = &app.AWSAccount{
+			Region:     req.AWSAccount.Region,
+			IAMRoleARN: req.AWSAccount.IAMRoleARN,
+		}
+	}
+	if req.AzureAccount != nil {
+		install.AzureAccount = &app.AzureAccount{
+			Location:                 req.AzureAccount.Location,
+			SubscriptionID:           req.AzureAccount.SubscriptionID,
+			SubscriptionTenantID:     req.AzureAccount.SubscriptionTenantID,
+			ServicePrincipalAppID:    req.AzureAccount.ServicePrincipalAppID,
+			ServicePrincipalPassword: req.AzureAccount.ServicePrincipalPassword,
+		}
 	}
 	if len(parentApp.AppInputConfigs) > 0 {
 		install.InstallInputs = []app.InstallInputs{

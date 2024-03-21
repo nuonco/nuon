@@ -12,8 +12,10 @@ import (
 type AppRunnerType string
 
 const (
-	AppRunnerTypeAWSECS AppRunnerType = "aws-ecs"
-	AppRunnerTypeAWSEKS AppRunnerType = "aws-eks"
+	AppRunnerTypeAWSECS   AppRunnerType = "aws-ecs"
+	AppRunnerTypeAWSEKS   AppRunnerType = "aws-eks"
+	AppRunnerTypeAzureAKS AppRunnerType = "azure-aks"
+	AppRunnerTypeAzureACS AppRunnerType = "azure-acs"
 )
 
 type AppRunnerConfig struct {
