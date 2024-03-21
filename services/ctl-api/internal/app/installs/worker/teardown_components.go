@@ -22,9 +22,10 @@ func (w *Workflows) shouldTeardownInstallComponent(ctx workflow.Context, install
 	if len(installComponent.InstallDeploys) < 1 {
 		return false, nil
 	}
-	if installComponent.InstallDeploys[0].Status != string(StatusActive) {
-		return false, nil
-	}
+
+	//if installComponent.InstallDeploys[0].Status != string(StatusActive) {
+	//return false, nil
+	//}
 
 	return true, nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/dal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
@@ -55,7 +56,7 @@ func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
 		install.AppID,
 		deploy.ComponentBuild.ComponentConfigConnection.ComponentID,
 		deployID,
-		installID)
+		installID, deploy.Type)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install deploy plan: %w", err))
 		return
@@ -64,7 +65,7 @@ func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, plan)
 }
 
-func (s *service) getInstallDeployPlan(ctx context.Context, orgID, appID, componentID, deployID, installID string) (*planv1.Plan, error) {
+func (s *service) getInstallDeployPlan(ctx context.Context, orgID, appID, componentID, deployID, installID string, deployTyp app.InstallDeployType) (*planv1.Plan, error) {
 	wkflowDal, err := dal.New(s.v, dal.WithSettings(dal.Settings{
 		DeploymentsBucket:                s.orgsOutputs.Buckets.Deployments.Name,
 		DeploymentsBucketIAMRoleTemplate: s.orgsOutputs.OrgsIAMRoleNameTemplateOutputs.DeploymentsAccess,
@@ -73,9 +74,17 @@ func (s *service) getInstallDeployPlan(ctx context.Context, orgID, appID, compon
 		return nil, fmt.Errorf("unable to get dal for deploy plan: %w", err)
 	}
 
-	plan, err := wkflowDal.GetInstanceDeployPlan(ctx, orgID, appID, componentID, deployID, installID)
+	var (
+		plan *planv1.Plan
+	)
+	switch deployTyp {
+	case app.InstallDeployTypeTeardown:
+		plan, err = wkflowDal.GetInstanceDestroyPlan(ctx, orgID, appID, componentID, deployID, installID)
+	default:
+		plan, err = wkflowDal.GetInstanceDeployPlan(ctx, orgID, appID, componentID, deployID, installID)
+	}
 	if err != nil {
-		return nil, fmt.Errorf("unable to get build plan: %w", err)
+		return nil, fmt.Errorf("unable to get plan: %w", err)
 	}
 
 	return plan, nil
