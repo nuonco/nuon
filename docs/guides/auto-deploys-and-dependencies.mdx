@@ -3,6 +3,78 @@ name: "Auto Deploys and Dependencies"
 description: "Define dependencies between components to control how installs are first configured, and ensure teardown is properly ordered."
 icon: code
 ---
-<Note>
-Coming soon.
-</Note>
+
+When you create an app using the `nuon` cli, an [an sdk](../guides/sdk-integration), or using [an installer](../guides/creating-an-installer) - each component in the app will
+automatically be deployed to new installs, without you having to run a release.
+
+![auto deploy](/images/changelog/002_auto_deploy.png)
+
+To support this, we model apps as directed acyclic graphs. Each component is a node in that graph. When provisioning an install, the components will be provisioned in the order of their dependencies. When deprovisioning an install, the components will be deprovisioned in the reverse order.
+
+You can control this order by declaring component dependencies in your app config.
+
+## Component Dependencies
+
+Let's say you are deploying a Helm packaged app that requires a database managed by Terraform.
+
+Your Nuon config will have two components, your Terraform component and a Helm component.
+In order for the Helm component to be properly deployed, it must know about the some of the outputs from the
+Terraform component. In this example, the Terraform component must be provisioned _before_ the Helm component when provisioning
+the install. When destroying the install, the Helm component must be deprovisioned first.
+
+To ensure that happens, add the `dependencies` attribute to the Helm component, referencing the Terraform component ID.
+
+<CodeGroup>
+```hcl helm.tf
+resource "nuon_helm_chart_component" "helm" {
+  name   = "helm"
+  app_id = nuon_app.main.id
+
+  chart_name = "helm"
+  connected_repo = {
+    directory = "helm"
+    repo      = "nuonco/mono"
+    branch    = "main"
+  }
+
+  value {
+    name = "DATABASE_PASSWORD"
+    value = "{{.nuon.components.database.outputs.password}}"
+  }
+
+  value {
+    name = "DATABASE_HOST"
+    value = "{{.nuon.components.database.outputs.host}}"
+  }
+
+  dependencies = [
+    nuon_terraform_module_component.database.id
+  ]
+}
+```
+
+```hcl database.tf
+resource "nuon_terraform_module_component" "database" {
+  name   = "database"
+  app_id = nuon_app.main.id
+  terraform_version = "1.6.3"
+
+  connected_repo = {
+    directory = "infra"
+    repo      = "nuonco/mono"
+    branch    = "main"
+  }
+
+  env_var {
+    name  = "install_id"
+    value = "{{.nuon.install.id}}"
+  }
+}
+```
+</CodeGroup>
+
+## Cyclic Dependencies
+
+Nuon does not support cycling dependencies. When you apply your app config, we will automatically look out for cycles and error if your dependencies are invalid:
+
+![dependency errors](/images/changelog/002_dependency_cycle.png)
