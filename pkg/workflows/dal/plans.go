@@ -50,6 +50,23 @@ func (r *client) GetInstanceDeployPlan(ctx context.Context, orgID, appID, compon
 	return plan, nil
 }
 
+func (r *client) GetInstanceDestroyPlan(ctx context.Context, orgID, appID, componentID, deployID, installID string) (*planv1.Plan, error) {
+	creds := r.deploymentsCredentials(ctx)
+	client, err := s3downloader.New(r.Settings.DeploymentsBucket, s3downloader.WithCredentials(creds))
+	if err != nil {
+		return nil, fmt.Errorf("unable to get downloader: %w", err)
+	}
+
+	bucketDir := prefix.InstancePhasePath(orgID, appID, componentID, deployID, installID, "destroy")
+	bucketKey := filepath.Join(bucketDir, defaultPlanFilename)
+	plan, err := r.getPlan(ctx, client, bucketKey)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get plan: %w", err)
+	}
+
+	return plan, nil
+}
+
 func (r *client) GetBuildPlan(ctx context.Context, orgID, appID, componentID, buildID string) (*planv1.Plan, error) {
 	creds := r.deploymentsCredentials(ctx)
 	client, err := s3downloader.New(r.Settings.DeploymentsBucket, s3downloader.WithCredentials(creds))
