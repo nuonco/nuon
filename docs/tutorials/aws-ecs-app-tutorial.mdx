@@ -67,10 +67,24 @@ This is a setting that your customer will be able to configure when they install
 [inputs]
 [[inputs.input]]
 name = "service_name"
-description = "what to name the ECS service"
+description = "What to name the ECS service"
 default = "api"
 sensitive = false
 display_name = "Service Name"
+```
+
+```hcl inputs.tf
+resource "nuon_app_input" "main" {
+  app_id = nuon_app.my_byovpc_app.id
+
+  input {
+    name         = "service_name"
+    description  = "What to name the ECS service"
+    default      = "api"
+    sensitive    = false
+    display_name = "Service Name"
+  }
+}
 ```
 </CodeGroup>
 
