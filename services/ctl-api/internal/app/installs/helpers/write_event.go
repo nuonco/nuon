@@ -12,6 +12,7 @@ import (
 func (h *Helpers) getInstallRun(ctx context.Context, runID string) (*app.InstallSandboxRun, error) {
 	var run app.InstallSandboxRun
 	res := h.db.WithContext(ctx).
+		Preload("AppSandboxConfig").
 		First(&run, "id = ?", runID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install sandbox run: %w", res.Error)
@@ -24,6 +25,8 @@ func (h *Helpers) getInstallDeploy(ctx context.Context, deployID string) (*app.I
 	var deploy app.InstallDeploy
 	res := h.db.WithContext(ctx).
 		Preload("InstallComponent").
+		Preload("InstallComponent.Component").
+		Preload("CreatedBy").
 		First(&deploy, "id = ?", deployID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
@@ -35,6 +38,8 @@ func (h *Helpers) getInstallDeploy(ctx context.Context, deployID string) (*app.I
 func (h *Helpers) getInstall(ctx context.Context, installID string) (*app.Install, error) {
 	var install app.Install
 	res := h.db.WithContext(ctx).
+		Preload("CreatedBy").
+		Preload("App").
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to find install: %w", res.Error)
