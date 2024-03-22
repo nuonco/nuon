@@ -65,6 +65,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 	// install events
 	api.GET("/v1/installs/:install_id/events", s.GetInstallEvents)
+	api.GET("/v1/installs/:install_id/events/:event_id", s.GetInstallEvent)
 
 	return nil
 }
