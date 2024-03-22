@@ -50,7 +50,7 @@ jobs:
       - merged_pr
     if: |
       needs.merged_pr.outputs.canary == 'true' ||
-      github.event.repository_dispatch
+      github.event.event_type == 'provision_canary'
     uses: ./.github/workflows/internal_api.yml
     with:
       env: stage
