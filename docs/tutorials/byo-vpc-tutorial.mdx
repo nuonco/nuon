@@ -105,8 +105,8 @@ demo_url          = "https://www.nuon.co/"
 ```hcl installer.tf
 resource "nuon_app_installer" "my_byovpc_app" {
   app_id            = nuon_app.my_byovpc_app.id
-  name              = "My ECS App"
-  description       = "A demo app that runs on ECS."
+  name              = "My BYOVPC App"
+  description       = "A demo app that runs in a customer's VPC."
   slug              = nuon_app.my_byovpc_app.name
   documentation_url = "https://docs.nuon.co/"
   community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
