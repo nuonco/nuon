@@ -51,9 +51,9 @@ jobs:
     steps:
       - name: print info
         run: |
-          echo ${{ needs.merged_pr.outputs.canary == 'true' }}
-          echo ${{ github.event.event_type == 'provision_canary' }}
-          echo ${{ github.event }}
+          echo ${{ github.event_name == 'repository_dispatch' }}
+          echo ${{ github.event_name }}
+          echo ${{ github.event.action }}
 
   trigger_canary:
     name: trigger canary
