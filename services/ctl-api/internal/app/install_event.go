@@ -36,6 +36,8 @@ type InstallEvent struct {
 	OperationStatus OperationStatus   `json:"operation_status"`
 
 	Payload []byte `json:"payload" gorm:"type:jsonb" swaggertype:"object,string"`
+
+	OperationName string `gorm:"-" json:"operation_name"`
 }
 
 func (a *InstallEvent) BeforeCreate(tx *gorm.DB) error {
@@ -46,5 +48,10 @@ func (a *InstallEvent) BeforeCreate(tx *gorm.DB) error {
 	if a.CreatedByID == "" {
 		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
+	return nil
+}
+
+func (i *InstallEvent) AfterQuery(tx *gorm.DB) error {
+	i.OperationName = i.Operation.DisplayName()
 	return nil
 }
