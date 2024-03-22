@@ -4,5 +4,5 @@ module "aws-ecs" {
 
 module "aws-ecs-byovpc" {
   source = "./aws-ecs-byovpc"
-  vpc_id = "vpc-0ea815210f55e3c7c"
+  vpc_id = module.byovpc.vpc_id
 }
