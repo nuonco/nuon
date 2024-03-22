@@ -48,7 +48,9 @@ jobs:
     name: trigger canary
     needs:
       - merged_pr
-    if: ${{ needs.merged_pr.outputs.canary == 'true' }}
+    if: |
+      needs.merged_pr.outputs.canary == 'true' ||
+      github.event.repository_dispatch
     uses: ./.github/workflows/internal_api.yml
     with:
       env: stage
