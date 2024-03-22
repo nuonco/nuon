@@ -41,8 +41,7 @@ jobs:
 
       - name: update canary output
         id: output
-        if: contains( steps.merged_pr.outputs.labels, 'canary')
-        run: echo "canary=true" >> "$GITHUB_OUTPUT"
+        run: echo "canary=${{ contains(steps.merged_pr.outputs.labels, 'canary') }}" >> "$GITHUB_OUTPUT"
 
   trigger_canary:
     name: trigger canary
