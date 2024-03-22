@@ -48,6 +48,7 @@ jobs:
     needs:
       - merged_pr
     if: |
+      always() &&
       needs.merged_pr.outputs.canary == 'true' ||
       github.event.event_type == 'provision_canary'
     uses: ./.github/workflows/internal_api.yml
