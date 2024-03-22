@@ -43,25 +43,13 @@ jobs:
         id: output
         run: echo "canary=${{ contains(steps.merged_pr.outputs.labels, 'canary') }}" >> "$GITHUB_OUTPUT"
 
-  print_info:
-    name: print info
-    runs-on: ubuntu-latest
-    needs:
-      - merged_pr
-    steps:
-      - name: print info
-        run: |
-          echo ${{ github.event_name == 'repository_dispatch' }}
-          echo ${{ github.event_name }}
-          echo ${{ github.event.action }}
-
   trigger_canary:
     name: trigger canary
     needs:
       - merged_pr
     if: |
       needs.merged_pr.outputs.canary == 'true' ||
-      github.event.event_type == 'provision_canary'
+      github.event.action == 'provision_canary'
     uses: ./.github/workflows/internal_api.yml
     with:
       env: stage
