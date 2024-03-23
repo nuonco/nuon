@@ -1,5 +1,5 @@
 resource "nuon_app" "my_byovpc_app" {
-  name = "my_byovpc_app"
+  name = "e2e_jordan_aws_eks_byovpc"
 }
 
 resource "nuon_app_input" "main" {
@@ -44,7 +44,7 @@ resource "nuon_docker_build_component" "docker_image" {
 resource "nuon_terraform_module_component" "certificate" {
   app_id = nuon_app.my_byovpc_app.id
   name   = "certificate"
-  connected_repo = {
+  public_repo = {
     repo      = "nuonco/guides"
     directory = "aws-eks-tutorial/components/certificate"
     branch    = "main"

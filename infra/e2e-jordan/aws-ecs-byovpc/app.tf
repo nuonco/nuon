@@ -1,5 +1,5 @@
 resource "nuon_app" "my_byovpc_app" {
-  name = "my_byovpc_app"
+  name = "e2e_jordan_aws_ecs_byovpc"
 }
 
 resource "nuon_app_input" "main" {

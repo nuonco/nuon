@@ -1,5 +1,5 @@
 resource "nuon_app" "my_ecs_app" {
-  name = "my_ecs_app"
+  name = "e2e_jordan_aws_ecs"
 }
 
 resource "nuon_app_input" "main" {
