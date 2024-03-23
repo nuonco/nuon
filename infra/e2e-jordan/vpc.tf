@@ -40,10 +40,12 @@ module "byovpc" {
   #create_elasticache_subnet_group = true
 
   public_subnet_tags = {
-    "visibility" = "public"
+    "visibility"             = "public",
+    "kubernetes.io/role/elb" = "1"
   }
 
   private_subnet_tags = {
-    "visibility" = "private"
+    "visibility"                      = "private",
+    "kubernetes.io/role/internal-elb" = "1"
   }
 }
