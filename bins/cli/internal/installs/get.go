@@ -26,14 +26,22 @@ func (s *Service) Get(ctx context.Context, installID string, asJSON bool) {
 		return
 	}
 
-	view.Render([][]string{
+	fields := [][]string{
 		{"id", install.ID},
 		{"name", install.Name},
 		{"created at", install.CreatedAt},
 		{"updated at", install.UpdatedAt},
 		{"created by", install.CreatedByID},
 		{"status", install.StatusDescription},
-		{"region", install.AwsAccount.Region},
-		{"role", install.AwsAccount.IamRoleArn},
-	})
+	}
+	if install.AwsAccount != nil {
+		fields = append(fields, []string{"region", install.AwsAccount.Region})
+		fields = append(fields, []string{"role", install.AwsAccount.IamRoleArn})
+	}
+	if install.AzureAccount != nil {
+		fields = append(fields, []string{"location", install.AzureAccount.Location})
+		fields = append(fields, []string{"subscription", install.AzureAccount.SubscriptionID})
+	}
+
+	view.Render(fields)
 }
