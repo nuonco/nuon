@@ -1,6 +1,6 @@
 locals {
   name              = "e2e-jordan"
-  sandbox_name      = "aws-ecs-byovpc"
+  sandbox_name      = "aws-eks-byovpc"
   sandboxes_repo    = "nuonco/sandboxes"
   sandbox_branch    = "main"
   artifact_base_url = "https://raw.githubusercontent.com/nuonco/sandboxes/${local.sandbox_branch}/${local.sandbox_name}/artifacts"
