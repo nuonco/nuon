@@ -20,10 +20,25 @@ provider "registry.terraform.io/hashicorp/random" {
   ]
 }
 
-provider "terraform.local/local/nuon" {
-  version     = "0.0.1"
-  constraints = "0.0.1"
+provider "registry.terraform.io/nuonco/nuon" {
+  version     = "0.15.0"
+  constraints = ">= 0.7.0, >= 0.8.0"
   hashes = [
-    "h1:72SRSyGr1Yc/tqQMLXikOIKPy2uRlo9VuJl9NvvxC1g=",
+    "h1:ZpjMcQ7kNqjkIgi1dYrWB7tX7df/PzjRUxhs0wS04cU=",
+    "zh:00eb242fca0f4c9dc0a03b059a483e6a44190e288f4f6b6cb67e2c9beb1217b0",
+    "zh:110fa49a5e3be5e2aec30bd608cd50ca79f30b310d269e2f1ae4edfa3ad3e15c",
+    "zh:1c06358b08db7724b896ac0da5e195efd99398241de10ac217ab6004d5828b29",
+    "zh:2da3e29a4366237814618082bb19de36d8ab57c08dc3d19292a36e8ce709278e",
+    "zh:3e2d86e80c70b408ce647f02e06daedff210b312a492fecd5c56c84fbe34296c",
+    "zh:40c95c49620741c3cf894faf6d43a83e368584ac7861d1f6b300fc67cb233633",
+    "zh:4ba556340c0e02af332f70711652ef457411a5e64099956c0f331284f3d5591b",
+    "zh:545bf573bec731501e5c809965d2ace074abc1086f8767d53801442ee471ab13",
+    "zh:62865c7323bf14718e1a069929ba192470234eb1c638dc5e9c2977fbc208dab2",
+    "zh:660679220875448b65cb3ca2f67050bee4e2f5df46f4746ea3c1d3d4753b6f51",
+    "zh:890df766e9b839623b1f0437355032a3c006226a6c200cd911e15ee1a9014e9f",
+    "zh:a3b29425257fa361461e68a594565c35b76fe48f328a6a33c313f3fcdd58313f",
+    "zh:cb2214709dcb6be9838aa02950c28fcb6e01798028bd77a36c9d7728b36e0b9b",
+    "zh:ce6b4f6484939264f2ef7fcf522deb492d59a4b6a17225060e4eb8dab1a60016",
+    "zh:cf8d1f05a12e26e7d234fa3dea44def21554d4e7cf26601e20ef2c57c0dd4775",
   ]
 }
