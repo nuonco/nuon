@@ -35,17 +35,9 @@ output "components" {
 }
 
 output "install_ids" {
-  value = concat(
-    nuon_install.east_2.*.id,
-    nuon_install.east_1.*.id,
-    nuon_install.west_2.*.id,
-  )
+  value = nuon_install.main.*.id
 }
 
 output "installs" {
-  value = {
-    "east-1" : nuon_install.east_1,
-    "west-2" : nuon_install.west_2,
-    "east-2" : nuon_install.east_2,
-  }
+  value = nuon_install.main.*.name
 }

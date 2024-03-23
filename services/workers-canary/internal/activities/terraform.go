@@ -79,10 +79,9 @@ func (a *Activities) getWorkspace(moduleDir string, req *RunTerraformRequest) (w
 	}
 
 	vars, err := staticvars.New(a.v, staticvars.WithFileVars(map[string]interface{}{
-		"install_role_arn": a.cfg.InstallIamRoleArn,
-		"east_1_count":     req.InstallCount,
-		"east_2_count":     req.InstallCount,
-		"west_2_count":     req.InstallCount,
+		"aws_eks_role_arn": a.cfg.AWSEKSIAMRoleArn,
+		"aws_ecs_role_arn": a.cfg.AWSECSIAMRoleArn,
+		"install_count":    req.InstallCount,
 	}),
 		staticvars.WithEnvVars(map[string]string{
 			"NUON_ORG_ID":    req.OrgID,

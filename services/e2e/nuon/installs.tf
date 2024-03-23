@@ -1,10 +1,8 @@
-resource "nuon_install" "eu_west_2" {
-  count  = var.eu_west_2_count
+resource "nuon_install" "main" {
+  count  = var.install_count
   app_id = nuon_app.main.id
 
-  name         = "eu-west-2-${count.index}"
-  region       = "eu-west-2"
-  iam_role_arn = var.install_role_arn
+  name         = "${var.install_prefix}${count.index}"
 
   dynamic "input" {
     for_each = var.inputs
@@ -14,75 +12,22 @@ resource "nuon_install" "eu_west_2" {
     }
   }
 
-  depends_on = [
-    nuon_app_sandbox.main,
-    nuon_app_runner.main,
-    nuon_job_component.e2e,
-    nuon_helm_chart_component.e2e,
-  ]
-}
-
-resource "nuon_install" "east_1" {
-  count  = var.east_1_count
-  app_id = nuon_app.main.id
-
-  name         = "east-1-${count.index}"
-  region       = "us-east-1"
-  iam_role_arn = var.install_role_arn
-
-  dynamic "input" {
-    for_each = var.inputs
+  dynamic "aws" {
+    for_each = var.aws
     content {
-      name  = input.value.name
-      value = input.value.value
+      iam_role_arn = aws.value.iam_role_arn
+      region = aws.value.regions[count.index]
     }
   }
 
-  depends_on = [
-    nuon_app_sandbox.main,
-    nuon_app_runner.main,
-    nuon_job_component.e2e,
-    nuon_helm_chart_component.e2e,
-  ]
-}
-
-resource "nuon_install" "east_2" {
-  count  = var.east_2_count
-  app_id = nuon_app.main.id
-
-  name         = "east-2-${count.index}"
-  region       = "us-east-2"
-  iam_role_arn = var.install_role_arn
-
-  dynamic "input" {
-    for_each = var.inputs
+  dynamic "azure" {
+    for_each = var.azure
     content {
-      name  = input.value.name
-      value = input.value.value
-    }
-  }
-
-  depends_on = [
-    nuon_app_sandbox.main,
-    nuon_app_runner.main,
-    nuon_job_component.e2e,
-    nuon_helm_chart_component.e2e,
-  ]
-}
-
-resource "nuon_install" "west_2" {
-  count  = var.west_2_count
-  app_id = nuon_app.main.id
-
-  name         = "west-2-${count.index}"
-  region       = "us-west-2"
-  iam_role_arn = var.install_role_arn
-
-  dynamic "input" {
-    for_each = var.inputs
-    content {
-      name  = input.value.name
-      value = input.value.value
+      location = azure.value.locations[count.index]
+      subscription_id = azure.value.subscription_id
+      subscription_tenant_id = azure.value.subscription_tenant_id
+      service_principal_app_id = azure.value.service_principal_app_id
+      service_principal_password = azure.value.service_principal_password
     }
   }
 

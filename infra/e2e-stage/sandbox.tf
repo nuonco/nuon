@@ -17,11 +17,13 @@ module "aws-eks-sandbox" {
   sandbox_branch = local.sandboxes_branch
   sandbox_dir = "aws-eks"
 
-  east_1_count = 5
-  east_2_count = 5
-  west_2_count = 5
-
-  install_role_arn = module.install_access.iam_role_arn
+  install_count = 0
+  aws = [
+    {
+      iam_role_arn = module.install_access.iam_role_arn
+      regions = ["us-west-2"]
+    }
+  ]
 }
 
 module "aws-eks-byo-vpc-sandbox" {
@@ -36,9 +38,11 @@ module "aws-eks-byo-vpc-sandbox" {
   sandbox_branch = local.sandboxes_branch
   sandbox_dir = "aws-eks-byovpc"
 
-  east_1_count = 5
-  east_2_count = 5
-  west_2_count = 5
-
-  install_role_arn = module.install_access.iam_role_arn
+  install_count = 0
+  aws = [
+    {
+      iam_role_arn = module.install_access.iam_role_arn
+      regions = ["us-west-2"]
+    }
+  ]
 }

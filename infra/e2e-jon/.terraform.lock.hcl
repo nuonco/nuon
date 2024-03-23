@@ -69,3 +69,11 @@ provider "registry.terraform.io/nuonco/nuon" {
     "zh:fab8e1db6d3a51106e3d622ce93a8c47ea72de0795473c299405b377ecbb8ec7",
   ]
 }
+
+provider "terraform.local/local/nuon" {
+  version     = "0.0.1"
+  constraints = "0.0.1"
+  hashes = [
+    "h1:72SRSyGr1Yc/tqQMLXikOIKPy2uRlo9VuJl9NvvxC1g=",
+  ]
+}

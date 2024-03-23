@@ -3,6 +3,13 @@ locals {
 
   sandboxes_repo = "nuonco/sandboxes"
   sandboxes_branch = "main"
+  aws_regions = ["us-east-1", "us-east-2", "us-west-1", "us-west-2", "eu-west-1", "eu-west-2"]
+}
+
+
+resource "random_shuffle" "aws_eks_regions" {
+  input        = local.aws_regions
+  result_count = var.install_count
 }
 
 module "aws-eks" {
@@ -14,26 +21,36 @@ module "aws-eks" {
   sandbox_branch = local.sandboxes_branch
   sandbox_dir = "aws-eks"
 
-  east_1_count = var.east_1_count
-  east_2_count = var.east_2_count
-  west_2_count = var.west_2_count
+  install_prefix = "aws-eks-"
 
-  install_role_arn = var.install_role_arn
+  aws = [
+    {
+      iam_role_arn = var.aws_eks_iam_role_arn
+      regions = random_shuffle.aws_eks_regions.result
+    }
+  ]
 }
 
-module "aws-eks-byo-vpc" {
+resource "random_shuffle" "aws_ecs_regions" {
+  input        = local.aws_regions
+  result_count = var.install_count
+}
+
+module "aws-ecs" {
   source = "./e2e"
 
-  app_name = "${local.name}-aws-byo-vpc"
-  component_prefix = "byovpc_"
+  app_name = "${local.name}-aws-ecs"
 
   sandbox_repo = local.sandboxes_repo
   sandbox_branch = local.sandboxes_branch
-  sandbox_dir = "aws-eks-byovpc"
+  sandbox_dir = "aws-ecs"
 
-  east_1_count = 0
-  east_2_count = 0
-  west_2_count = 0
-
-  install_role_arn = var.install_role_arn
+  install_prefix = "aws-eks-"
+  install_count = var.install_count
+  aws = [
+    {
+      iam_role_arn = var.aws_ecs_iam_role_arn
+      regions = random_shuffle.aws_ecs_regions.result
+    }
+  ]
 }

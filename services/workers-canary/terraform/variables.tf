@@ -1,18 +1,12 @@
-variable "install_role_arn" {
-  description = "install role arn"
+variable "aws_eks_iam_role_arn" {
+  description = "IAM role for AWS EKS sandbox"
 }
 
-variable "east_1_count" {
-  default = 5
-  type = number
+variable "aws_ecs_iam_role_arn" {
+  description = "IAM role for AWS ECS sandbox"
 }
 
-variable "east_2_count" {
-  default = 5
-  type = number
-}
-
-variable "west_2_count" {
+variable "install_count" {
   default = 5
   type = number
 }

@@ -26,8 +26,9 @@ func init() {
 type Config struct {
 	worker.Config `config:",squash"`
 
-	SlackWebhookURL   string `config:"slack_webhook_url" validate:"required"`
-	InstallIamRoleArn string `config:"install_iam_role_arn"  validate:"required"`
+	SlackWebhookURL  string `config:"slack_webhook_url" validate:"required"`
+	AWSEKSIAMRoleArn string `config:"aws_eks_iam_role_arn" validate:"required"`
+	AWSECSIAMRoleArn string `config:"aws_ecs_iam_role_arn" validate:"required"`
 
 	APIURL         string `config:"api_url" validate:"required"`
 	InternalAPIURL string `config:"internal_api_url" validate:"required"`

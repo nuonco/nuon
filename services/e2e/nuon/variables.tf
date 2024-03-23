@@ -16,32 +16,6 @@ variable "app_runner_type" {
   type = string
 }
 
-variable "install_role_arn" {
-  description = "IAM role ARN"
-  type        = string
-}
-
-variable "east_1_count" {
-  description = "Number of installs to create in us-east-1"
-  type        = number
-}
-
-variable "east_2_count" {
-  description = "Number of installs to create in us-east-2"
-  type        = number
-}
-
-variable "west_2_count" {
-  description = "Number of installs to create in us-west-2"
-  type        = number
-}
-
-variable "eu_west_2_count" {
-  description = "Number of installs to create in eu-west-2"
-  type        = number
-  default = 0
-}
-
 variable "sandbox_repo" {
   description = "Sandbox repository to use, must be public."
   default     = "nuonco/sandboxes"
@@ -54,6 +28,38 @@ variable "sandbox_dir" {
 variable "sandbox_branch" {
   description = "Sandbox branch to use."
   default     = "main"
+}
+
+variable "install_count" {
+  description = "install count"
+  default     = 0
+  type = number
+}
+
+variable "install_prefix" {
+  default = "e2e-"
+  type = string
+}
+
+variable "aws" {
+  type = list(object({
+    regions = list(string)
+    iam_role_arn = string
+  }))
+  description = "Inputs for an aws e2e install"
+  default = []
+}
+
+variable "azure" {
+  type = list(object({
+    locations = list(string)
+    subscription_id = string
+    subscription_tenant_id = string
+    service_principal_app_id = string
+    service_principal_password = string
+  }))
+  description = "Inputs for an azure e2e install"
+  default = []
 }
 
 variable "inputs" {
