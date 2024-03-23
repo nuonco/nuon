@@ -1,7 +1,7 @@
 locals {
   temporal = {
     version = "0.33.0"
-    image_tag = "1.22.5"
+    image_tag = "1.22.6"
     value_file    = "values/temporal.yaml"
     override_file = "values/${local.name}.yaml"
     namespace     = "temporal"
