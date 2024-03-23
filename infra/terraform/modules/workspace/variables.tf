@@ -57,7 +57,7 @@ variable "project_id" {
 
 variable "terraform_version" {
   type    = string
-  default = "1.5.3"
+  default = "1.7.5"
 }
 
 variable "trigger_workspaces" {
