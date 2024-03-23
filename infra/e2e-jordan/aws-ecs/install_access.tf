@@ -44,21 +44,3 @@ module "access" {
     aws_iam_policy.provision.arn
   ]
 }
-
-module "aws-ecs" {
-  source = "../nuon"
-
-  app_name = "${local.name}-${local.sandbox_name}"
-
-  sandbox_repo    = local.sandboxes_repo
-  sandbox_branch  = local.sandbox_branch
-  sandbox_dir     = local.sandbox_name
-  app_runner_type = "aws-ecs"
-
-  east_1_count = 0
-  east_2_count = 0
-  west_2_count = 1
-
-  install_role_arn = module.access.iam_role_arn
-  install_inputs   = []
-}

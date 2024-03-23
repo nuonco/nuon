@@ -1,5 +1,36 @@
+resource "nuon_app" "my_ecs_app" {
+  name = "my_ecs_app"
+}
+
+resource "nuon_app_input" "main" {
+  app_id = nuon_app.my_ecs_app.id
+
+  input {
+    name         = "service_name"
+    description  = "What to name the ECS service"
+    default      = "api"
+    sensitive    = false
+    display_name = "Service Name"
+  }
+}
+
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.my_ecs_app.id
+  terraform_version = "v1.6.3"
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-ecs"
+  }
+}
+
+resource "nuon_app_runner" "main" {
+  app_id      = nuon_app.my_ecs_app.id
+  runner_type = "aws-ecs"
+}
+
 resource "nuon_docker_build_component" "docker_image" {
-  app_id = nuon_app.main.id
+  app_id = nuon_app.my_ecs_app.id
   name   = "docker_image"
 
   public_repo = {
@@ -10,7 +41,7 @@ resource "nuon_docker_build_component" "docker_image" {
 }
 
 resource "nuon_terraform_module_component" "ecs_service" {
-  app_id = nuon_app.main.id
+  app_id = nuon_app.my_ecs_app.id
   name   = "ecs_service"
 
   public_repo = {
@@ -23,7 +54,7 @@ resource "nuon_terraform_module_component" "ecs_service" {
 
   var {
     name  = "service_name"
-    value = var.app_name
+    value = "api"
   }
 
   var {
