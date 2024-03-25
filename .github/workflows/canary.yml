@@ -26,34 +26,39 @@ defaults:
     shell: bash
 
 jobs:
-  # if the PR was labeled `canary`, then we automatically will run a canary on it, when the PR lands.
-  merged_pr:
-    name: Get merged PR
+  configure_canary:
+    name: Configure canary
     runs-on: ubuntu-latest
     outputs:
-      canary: ${{steps.output.outputs.canary}}
+      run_canary: 'false'
+      sandbox_mode: 'true'
     steps:
-      - uses: actions-ecosystem/action-get-merged-pull-request@v1
-        name: get merged pr
+      - name: get merged pr for push event
         id: merged_pr
+        if: github.event_name == 'push'
+        uses: actions-ecosystem/action-get-merged-pull-request@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: configure canary from push event
+        id: push
+        if: github.event_name == 'push'
+        run: echo "run_canary=${{ contains(steps.merged_pr.outputs.labels, 'canary') }}" >> "$GITHUB_OUTPUT"
+      - name: configure canary from repository_dispatch event
+        id: repository_dispatch
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          echo "run_canary=true" >> "$GITHUB_OUTPUT"
+          echo "sandbox_mode=${{ github.event.client_payload.sandbox_mode }}" >> "$GITHUB_OUTPUT"
 
-      - name: update canary output
-        id: output
-        run: echo "canary=${{ contains(steps.merged_pr.outputs.labels, 'canary') }}" >> "$GITHUB_OUTPUT"
-
-  trigger_canary:
-    name: trigger canary
+  provision_canary:
+    name: Provision canary
     needs:
-      - merged_pr
-    if: |
-      needs.merged_pr.outputs.canary == 'true' ||
-      github.event.action == 'provision_canary'
+      - configure_canary
+    if: needs.configure_canary.outputs.canary == 'true'
     uses: ./.github/workflows/internal_api.yml
     with:
       env: stage
       endpoint: /v1/general/provision-canary
       method: POST
-      data: '{"sandbox_mode":true}'
+      data: '{"sandbox_mode":${{ needs.configure_canary.outputs.sandbox_mode }}}'
     secrets: inherit
