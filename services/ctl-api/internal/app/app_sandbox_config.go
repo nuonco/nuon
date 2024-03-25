@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -54,13 +55,24 @@ type AppSandboxConfig struct {
 		TrustPolicy                 string `json:"trust_policy" gorm:"-"`
 		CloudformationStackTemplate string `json:"cloudformation_stack_template" gorm:"-"`
 	} `json:"artifacts" gorm:"-"`
+
+	// filled in via after query
+	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
 }
 
 // NOTE: currently, only public repo vcs configs are supported when rendering policies and artifacts
 func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
+	c.CloudPlatform = CloudPlatformUnknown
 	vcsCfg := c.PublicGitVCSConfig
 	if vcsCfg == nil {
 		return nil
+	}
+
+	if strings.HasPrefix(vcsCfg.Directory, "aws") {
+		c.CloudPlatform = CloudPlatformAWS
+	}
+	if strings.HasPrefix(vcsCfg.Directory, "azure") {
+		c.CloudPlatform = CloudPlatformAzure
 	}
 
 	c.Artifacts.DeprovisionPolicy = fmt.Sprintf(httpsArtifactTemplateURL, vcsCfg.Directory, "deprovision.json")
