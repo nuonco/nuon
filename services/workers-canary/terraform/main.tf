@@ -47,6 +47,7 @@ module "aws-ecs" {
 
   install_prefix = "aws-eks-"
   install_count = var.install_count
+  app_runner_type = "aws-ecs"
   aws = [
     {
       iam_role_arn = var.aws_ecs_iam_role_arn
