@@ -24,6 +24,7 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 		{
 			"id",
 			"name",
+			"platform",
 			"status",
 		},
 	}
@@ -31,6 +32,7 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 		data = append(data, []string{
 			app.ID,
 			app.Name,
+			string(app.CloudPlatform),
 			app.Status,
 		})
 	}
