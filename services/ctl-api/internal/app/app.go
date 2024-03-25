@@ -31,6 +31,9 @@ type App struct {
 
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description"`
+
+	// filled in via after query
+	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
 }
 
 func (a *App) BeforeCreate(tx *gorm.DB) error {
@@ -41,5 +44,15 @@ func (a *App) BeforeCreate(tx *gorm.DB) error {
 	if a.CreatedByID == "" {
 		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
+	return nil
+}
+
+func (a *App) AfterQuery(tx *gorm.DB) error {
+	a.CloudPlatform = CloudPlatformUnknown
+	if len(a.AppRunnerConfigs) < 1 {
+		return nil
+	}
+
+	a.CloudPlatform = a.AppRunnerConfigs[0].CloudPlatform
 	return nil
 }
