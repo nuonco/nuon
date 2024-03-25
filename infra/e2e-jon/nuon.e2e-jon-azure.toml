@@ -1,7 +1,18 @@
 version = "v1"
 
+[installer]
+name              = "Test Azure App"
+description       = "A demo app that runs on Azure."
+slug              = "jm-azure"
+documentation_url = "https://docs.nuon.co/"
+community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+github_url        = "https://github.com/nuonco"
+homepage_url      = "https://www.nuon.co/"
+demo_url          = "https://www.nuon.co/"
+
 [runner]
-runner_type = "azure-aks"
+#runner_type = "azure-aks"
 runner_type = "aws-ecs"
 
 [sandbox]
