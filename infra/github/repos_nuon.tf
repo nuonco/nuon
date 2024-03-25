@@ -125,6 +125,20 @@ module "nuon-sandboxes" {
   }
 }
 
+module "nuon-aws-eks-sandbox" {
+  source           = "./modules/repository"
+  name             = "aws-eks-sandbox"
+  description      = "Turnkey AWS EKS sandbox for Nuon apps."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
+
 module "nuon-actions-build" {
   source      = "./modules/repository"
   name        = "actions-build"
@@ -198,10 +212,10 @@ module "nuon-homebrew-tap" {
 }
 
 module "nuon-terraform-aws-ecr-access" {
-  source      = "./modules/repository"
-  name        = "terraform-aws-ecr-access"
-  description = "Terraform module for granting access for Nuon container image components."
-  required_checks = []
+  source           = "./modules/repository"
+  name             = "terraform-aws-ecr-access"
+  description      = "Terraform module for granting access for Nuon container image components."
+  required_checks  = []
   is_public        = true
   owning_team_id   = github_team.nuon.id
   owning_team_name = "nuonco/${github_team.nuon.name}"
