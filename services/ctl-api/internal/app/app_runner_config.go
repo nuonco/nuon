@@ -42,7 +42,8 @@ type AppRunnerConfig struct {
 	EnvVars pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 	Type    AppRunnerType `json:"app_runner_type" gorm:"not null;default null;"`
 
-	// set via after query
+	// fields set via after query
+
 	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
 }
 
