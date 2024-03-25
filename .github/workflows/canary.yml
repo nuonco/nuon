@@ -54,7 +54,7 @@ jobs:
     name: Provision canary
     needs:
       - configure_canary
-    if: needs.configure_canary.outputs.canary == 'true'
+    if: needs.configure_canary.outputs.run_canary == 'true'
     uses: ./.github/workflows/internal_api.yml
     with:
       env: stage
