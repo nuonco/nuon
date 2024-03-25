@@ -56,7 +56,8 @@ type AppSandboxConfig struct {
 		CloudformationStackTemplate string `json:"cloudformation_stack_template" gorm:"-"`
 	} `json:"artifacts" gorm:"-"`
 
-	// filled in via after query
+	// fields set via after query
+
 	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
 }
 

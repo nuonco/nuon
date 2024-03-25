@@ -32,7 +32,8 @@ type App struct {
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description"`
 
-	// filled in via after query
+	// fields set via after query
+
 	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
 }
 
