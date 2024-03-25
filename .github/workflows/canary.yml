@@ -25,13 +25,21 @@ defaults:
   run:
     shell: bash
 
+
 jobs:
+  # Configure the outputs used to provision a canary.
+  #
+  # Can't set the same output from different steps, and can't pass env context isn't available in "with".
+  # So, we set env vars from steps, then set outputs from env vars.
   configure_canary:
     name: Configure canary
     runs-on: ubuntu-latest
+    env:
+      RUN_CANARY: false
+      SANDBOX_MODE: true
     outputs:
-      run_canary: 'false'
-      sandbox_mode: 'true'
+      run_canary: ${{ steps.set_outputs.outputs.run_canary }}
+      sandbox_mode: ${{ steps.set_outputs.outputs.sandbox_mode }}
     steps:
       - name: get merged pr if push event
         id: merged_pr
@@ -39,16 +47,24 @@ jobs:
         uses: actions-ecosystem/action-get-merged-pull-request@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: configure canary if push event
         id: push
         if: github.event_name == 'push'
-        run: echo "run_canary=${{ contains(steps.merged_pr.outputs.labels, 'canary') }}" >> "$GITHUB_OUTPUT"
+        run: echo "RUN_CANARY=${{ contains(steps.merged_pr.outputs.labels, 'canary') }}" >> $GITHUB_ENV
+
       - name: configure canary if repository_dispatch event
         id: repository_dispatch
         if: github.event_name == 'repository_dispatch'
         run: |
-          echo "run_canary=true" >> "$GITHUB_OUTPUT"
-          echo "sandbox_mode=${{ github.event.client_payload.sandbox_mode }}" >> "$GITHUB_OUTPUT"
+          echo "RUN_CANARY=true" >> $GITHUB_ENV
+          echo "SANDBOX_MODE=${{ github.event.client_payload.sandbox_mode }}" >> $GITHUB_ENV
+
+      - name: set outputs
+        id: set_outputs
+        run: |
+          echo "run_canary=$RUN_CANARY" >> $GITHUB_OUTPUT
+          echo "sandbox_mode=$SANDBOX_MODE" >> $GITHUB_OUTPUT
 
   provision_canary:
     name: Provision canary
@@ -60,5 +76,5 @@ jobs:
       env: stage
       endpoint: /v1/general/provision-canary
       method: POST
-      data: '{"sandbox_mode":${{ needs.configure_canary.outputs.sandbox_mode }}}'
+      data: '{"sandbox_mode": ${{ needs.configure_canary.outputs.run_canary }}}'
     secrets: inherit
