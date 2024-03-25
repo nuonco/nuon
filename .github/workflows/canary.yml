@@ -33,17 +33,17 @@ jobs:
       run_canary: 'false'
       sandbox_mode: 'true'
     steps:
-      - name: get merged pr for push event
+      - name: get merged pr if push event
         id: merged_pr
         if: github.event_name == 'push'
         uses: actions-ecosystem/action-get-merged-pull-request@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: configure canary from push event
+      - name: configure canary if push event
         id: push
         if: github.event_name == 'push'
         run: echo "run_canary=${{ contains(steps.merged_pr.outputs.labels, 'canary') }}" >> "$GITHUB_OUTPUT"
-      - name: configure canary from repository_dispatch event
+      - name: configure canary if repository_dispatch event
         id: repository_dispatch
         if: github.event_name == 'repository_dispatch'
         run: |
