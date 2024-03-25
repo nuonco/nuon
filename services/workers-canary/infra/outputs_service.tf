@@ -6,10 +6,6 @@ output "canary_install_iam_role_arn" {
   value = module.eks_access.iam_role_arn
 }
 
-output "canary_eks_iam_role_arn" {
-  value = module.eks_access.iam_role_arn
-}
-
 output "canary_ecs_iam_role_arn" {
   value = module.ecs_access.iam_role_arn
 }
@@ -28,4 +24,13 @@ output "state_bucket_name" {
 
 output "state_bucket_region" {
   value = local.region
+}
+
+# for actually running canaries and creating installs
+output "aws_eks_iam_role_arn" {
+  value = module.eks_access.iam_role_arn
+}
+
+output "aws_ecs_iam_role_arn" {
+  value = module.ecs_access.iam_role_arn
 }
