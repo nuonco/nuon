@@ -48,6 +48,9 @@ func (s *service) getApps(ctx context.Context, orgID string) ([]*app.App, error)
 	}
 
 	err := s.db.WithContext(ctx).
+		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_runner_configs.created_at DESC")
+		}).
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
