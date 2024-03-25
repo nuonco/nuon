@@ -9,6 +9,14 @@ import (
 	"gorm.io/plugin/soft_delete"
 )
 
+type CloudPlatform string
+
+const (
+	CloudPlatformAWS     CloudPlatform = "aws"
+	CloudPlatformAzure   CloudPlatform = "azure"
+	CloudPlatformUnknown CloudPlatform = "unknown"
+)
+
 type AppRunnerType string
 
 const (
@@ -33,6 +41,9 @@ type AppRunnerConfig struct {
 
 	EnvVars pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 	Type    AppRunnerType `json:"app_runner_type" gorm:"not null;default null;"`
+
+	// set via after query
+	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
 }
 
 func (a *AppRunnerConfig) BeforeCreate(tx *gorm.DB) error {
@@ -44,6 +55,18 @@ func (a *AppRunnerConfig) BeforeCreate(tx *gorm.DB) error {
 	}
 	if a.OrgID == "" {
 		a.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+	return nil
+}
+
+func (a *AppRunnerConfig) AfterQuery(tx *gorm.DB) error {
+	switch a.Type {
+	case AppRunnerTypeAWSECS, AppRunnerTypeAWSEKS:
+		a.CloudPlatform = CloudPlatformAWS
+	case AppRunnerTypeAzureAKS, AppRunnerTypeAzureACS:
+		a.CloudPlatform = CloudPlatformAzure
+	default:
+		a.CloudPlatform = CloudPlatformUnknown
 	}
 	return nil
 }
