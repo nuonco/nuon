@@ -76,5 +76,5 @@ jobs:
       env: stage
       endpoint: /v1/general/provision-canary
       method: POST
-      data: '{"sandbox_mode": ${{ needs.configure_canary.outputs.run_canary }}}'
+      data: '{"sandbox_mode": ${{ needs.configure_canary.outputs.sandbox_mode }}}'
     secrets: inherit
