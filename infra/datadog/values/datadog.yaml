@@ -23,3 +23,4 @@ datadog:
   dogstatsd:
     useHostPort: true
     port: 8125
+  monitors: []

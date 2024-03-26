@@ -51,6 +51,21 @@ data "utils_deep_merge_yaml" "vars" {
   ]
 }
 
+locals {
+  values_env_path = "${path.module}/values/${var.env}.yaml"
+}
+
+data "utils_deep_merge_yaml" "values" {
+  input = [
+    file("${path.module}/values/datadog.yaml"),
+    fileexists(local.values_env_path) ? file(local.values_env_path) : "",
+  ]
+}
+
+locals {
+  values = yamldecode(data.utils_deep_merge_yaml.values.output)
+}
+
 data "tfe_outputs" "infra-eks-nuon" {
   organization = local.terraform_organization
   workspace    = "infra-eks-${var.env}-${local.vars.pool}"
