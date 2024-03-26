@@ -119,12 +119,27 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		return resp, err
 	}
 
-	if err := execCheckIAMRole(ctx, act, CheckIAMRoleRequest{
-		RoleARN: req.AwsSettings.AwsRoleArn,
-	}); err != nil {
-		err = fmt.Errorf("unable to validate IAM role: %w", err)
-		w.finishWorkflow(ctx, req, resp, err)
-		return resp, err
+	// check access for install
+	if req.AwsSettings != nil {
+		if err := execCheckIAMRole(ctx, act, CheckIAMRoleRequest{
+			RoleARN: req.AwsSettings.AwsRoleArn,
+		}); err != nil {
+			err = fmt.Errorf("unable to validate IAM role: %w", err)
+			w.finishWorkflow(ctx, req, resp, err)
+			return resp, err
+		}
+	}
+	if req.AzureSettings != nil {
+		if err := execCheckAzurePrincipal(ctx, act, CheckAzurePrincipalRequest{
+			Location:                 req.AzureSettings.Location,
+			SubscriptionID:           req.AzureSettings.SubscriptionId,
+			SubscriptionTenantID:     req.AzureSettings.SubscriptionTenantId,
+			ServicePrincipalAppID:    req.AzureSettings.ServicePrincipalAppId,
+			ServicePrincipalPassword: req.AzureSettings.ServicePrincipalPassword,
+		}); err != nil {
+			w.finishWorkflow(ctx, req, resp, err)
+			return resp, err
+		}
 	}
 
 	if req.PlanOnly {
