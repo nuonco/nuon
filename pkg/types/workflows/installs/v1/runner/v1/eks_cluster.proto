@@ -6,7 +6,7 @@ import "tagger/tagger.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1";
 
-message KubeClusterInfo {
+message EKSClusterInfo {
   string id = 1 [(tagger.tags) = "faker:\"len=20\""];
   string endpoint = 2 [(tagger.tags) = "faker:\"len=20\""];
   string ca_data = 3 [(tagger.tags) = "faker:\"len=20\""];

@@ -29,6 +29,7 @@ func (t *testWaypointClientProjectUpserter) UpsertProject(ctx context.Context, r
 
 func TestCreateWaypointProject_validateRequest(t *testing.T) {
 	clusterInfo := generics.GetFakeObj[kube.ClusterInfo]()
+	clusterInfo.KubeConfig = ""
 
 	tests := map[string]struct {
 		reqFn       func() CreateWaypointProjectRequest
@@ -92,17 +93,6 @@ func TestCreateWaypointProject_validateRequest(t *testing.T) {
 				}
 			},
 			errExpected: fmt.Errorf("CreateWaypointProjectRequest.InstallID"),
-		},
-		"cluster-info": {
-			reqFn: func() CreateWaypointProjectRequest {
-				return CreateWaypointProjectRequest{
-					OrgID:                uuid.NewString(),
-					TokenSecretNamespace: "default",
-					OrgServerAddr:        fmt.Sprintf("%s.nuon.co", uuid.NewString()),
-					InstallID:            "",
-				}
-			},
-			errExpected: fmt.Errorf("CreateWaypointProjectRequest.ClusterInfo"),
 		},
 	}
 

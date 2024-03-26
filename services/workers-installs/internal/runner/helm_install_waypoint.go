@@ -17,7 +17,7 @@ type RunnerConfig struct {
 	ID            string `validate:"required" json:"id"`
 	Cookie        string `validate:"required" json:"cookie"`
 	ServerAddr    string `validate:"required" json:"server_addr"`
-	OdrIAMRoleArn string `validate:"required" json:"odr_iam_role_arn"`
+	OdrIAMRoleArn string `json:"odr_iam_role_arn"`
 }
 
 type InstallWaypointRequest struct {
