@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
+	azureaks "github.com/powertoolsdev/mono/pkg/sandboxes/azure-aks"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -172,33 +173,23 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		return resp, nil
 	}
 
-	tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
-	if err != nil {
-		err = fmt.Errorf("invalid sandbox outputs: %w", err)
-		w.finishWorkflow(ctx, req, resp, err)
-		return resp, err
-	}
-
-	dnsReq := &dnsv1.ProvisionDNSRequest{
-		Domain:      tfOutputs.PublicDomain.Name,
-		Nameservers: awseks.ToStringSlice(tfOutputs.PublicDomain.Nameservers),
-	}
-	_, err = execProvisionDNS(ctx, w.cfg, dnsReq, req.InstallId)
-	if err != nil {
-		err = fmt.Errorf("unable to provision dns: %w", err)
-		w.finishWorkflow(ctx, req, resp, err)
-		return resp, err
-	}
-
 	prReq := &runnerv1.ProvisionRunnerRequest{
-		OrgId:         req.OrgId,
-		AppId:         req.AppId,
-		InstallId:     req.InstallId,
-		RunnerType:    req.RunnerType,
-		OdrIamRoleArn: tfOutputs.Runner.ODRIAMRoleARN,
+		OrgId:      req.OrgId,
+		AppId:      req.AppId,
+		InstallId:  req.InstallId,
+		RunnerType: req.RunnerType,
 	}
 
+	// parse runner type and use it to build the runner provision request
 	if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_ECS {
+		tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
+		if err != nil {
+			err = fmt.Errorf("invalid sandbox outputs: %w", err)
+			w.finishWorkflow(ctx, req, resp, err)
+			return resp, err
+		}
+
+		prReq.OdrIamRoleArn = tfOutputs.Runner.ODRIAMRoleARN
 		prReq.Region = req.AwsSettings.Region
 		prReq.EcsClusterInfo = &runnerv1.ECSClusterInfo{
 			ClusterArn:        tfOutputs.ECSCluster.ARN,
@@ -210,17 +201,56 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 			SubnetIds:         generics.ToStringSlice(tfOutputs.VPC.PublicSubnetIDs),
 			SecurityGroupId:   tfOutputs.VPC.DefaultSecurityGroupID,
 		}
-	} else {
+	} else if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_EKS {
+		tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
+		if err != nil {
+			err = fmt.Errorf("invalid sandbox outputs: %w", err)
+			w.finishWorkflow(ctx, req, resp, err)
+			return resp, err
+		}
+
+		prReq.OdrIamRoleArn = tfOutputs.Runner.ODRIAMRoleARN
 		prReq.Region = req.AwsSettings.Region
-		prReq.EksClusterInfo = &runnerv1.KubeClusterInfo{
+		prReq.EksClusterInfo = &runnerv1.EKSClusterInfo{
 			Id:             tfOutputs.Cluster.Name,
 			Endpoint:       tfOutputs.Cluster.Endpoint,
 			CaData:         tfOutputs.Cluster.CertificateAuthorityData,
 			TrustedRoleArn: w.cfg.NuonAccessRoleArn,
 		}
+	} else if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS {
+		tfOutputs, err := azureaks.ParseTerraformOutputs(outputs)
+		if err != nil {
+			err = fmt.Errorf("invalid sandbox outputs: %w", err)
+			w.finishWorkflow(ctx, req, resp, err)
+			return resp, err
+		}
+		prReq.AksClusterInfo = &runnerv1.AKSClusterInfo{
+			Location:   req.AzureSettings.Location,
+			KubeConfig: tfOutputs.Cluster.KubeAdminConfigRaw,
+		}
+	} else {
+		return resp, fmt.Errorf("unsupported runner type")
 	}
+
 	if _, err = execProvisionRunner(ctx, w.cfg, prReq); err != nil {
 		err = fmt.Errorf("unable to provision install runner: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, err
+	}
+
+	tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
+	if err != nil {
+		err = fmt.Errorf("invalid sandbox outputs: %w", err)
+		w.finishWorkflow(ctx, req, resp, err)
+		return resp, err
+	}
+	dnsReq := &dnsv1.ProvisionDNSRequest{
+		Domain:      tfOutputs.PublicDomain.Name,
+		Nameservers: awseks.ToStringSlice(tfOutputs.PublicDomain.Nameservers),
+	}
+	_, err = execProvisionDNS(ctx, w.cfg, dnsReq, req.InstallId)
+	if err != nil {
+		err = fmt.Errorf("unable to provision dns: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
 	}
