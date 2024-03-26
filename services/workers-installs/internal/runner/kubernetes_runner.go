@@ -12,7 +12,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w *wkflow) installEKSRunner(ctx workflow.Context, req *runnerv1.ProvisionRunnerRequest) error {
+func (w *wkflow) installKubernetesRunner(ctx workflow.Context, req *runnerv1.ProvisionRunnerRequest) error {
 	l := workflow.GetLogger(ctx)
 
 	// install waypoint
@@ -42,6 +42,17 @@ func (w *wkflow) installEKSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 		return err
 	}
 
+	clusterInfo := kube.ClusterInfo{}
+	if req.EksClusterInfo != nil {
+		clusterInfo.ID = req.EksClusterInfo.Id
+		clusterInfo.Endpoint = req.EksClusterInfo.Endpoint
+		clusterInfo.CAData = req.EksClusterInfo.CaData
+		clusterInfo.TrustedRoleARN = req.EksClusterInfo.TrustedRoleArn
+	}
+	if req.AksClusterInfo != nil {
+		clusterInfo.KubeConfig = req.AksClusterInfo.KubeConfig
+	}
+
 	l.Info("runner chart version", wpChart.Metadata.Version)
 	iwReq := InstallWaypointRequest{
 		InstallID:       req.InstallId,
@@ -50,13 +61,7 @@ func (w *wkflow) installEKSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 		Chart:           chart,
 		Atomic:          false,
 		CreateNamespace: true,
-		ClusterInfo: kube.ClusterInfo{
-			ID:             req.EksClusterInfo.Id,
-			Endpoint:       req.EksClusterInfo.Endpoint,
-			CAData:         req.EksClusterInfo.CaData,
-			TrustedRoleARN: req.EksClusterInfo.TrustedRoleArn,
-		},
-
+		ClusterInfo:     clusterInfo,
 		RunnerConfig: RunnerConfig{
 			OdrIAMRoleArn: req.OdrIamRoleArn,
 			Cookie:        gwscResp.Cookie,
@@ -76,12 +81,7 @@ func (w *wkflow) installEKSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 		OrgServerAddr:        orgServerAddr,
 		InstallID:            req.InstallId,
 		NamespaceName:        req.InstallId,
-		ClusterInfo: kube.ClusterInfo{
-			ID:             req.EksClusterInfo.Id,
-			Endpoint:       req.EksClusterInfo.Endpoint,
-			CAData:         req.EksClusterInfo.CaData,
-			TrustedRoleARN: req.EksClusterInfo.TrustedRoleArn,
-		},
+		ClusterInfo:          clusterInfo,
 	}
 	_, err = w.createRoleBinding(ctx, crbReq)
 	if err != nil {
@@ -120,7 +120,7 @@ func (w *wkflow) installEKSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	return nil
 }
 
-func (w *wkflow) uninstallEKSRunner(ctx workflow.Context, req *runnerv1.DeprovisionRunnerRequest) error {
+func (w *wkflow) uninstallKubernetesRunner(ctx workflow.Context, req *runnerv1.DeprovisionRunnerRequest) error {
 	l := workflow.GetLogger(ctx)
 
 	// NOTE(jm): this is not a long term solution, eventually we will manage both the runner and the different

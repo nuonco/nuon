@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package installs.v1.runner.v1;
 
+import "installs/v1/runner/v1/aks_cluster.proto";
 import "installs/v1/runner/v1/ecs_cluster.proto";
 import "installs/v1/runner/v1/eks_cluster.proto";
 import "installs/v1/runner_type.proto";
@@ -26,52 +27,15 @@ message ProvisionRunnerRequest {
   ];
 
   // credentials for installing into KubeCluster
-  KubeClusterInfo eks_cluster_info = 4;
+  EKSClusterInfo eks_cluster_info = 4;
 
   // credentials for installing into ECSCluster
   ECSClusterInfo ecs_cluster_info = 5;
 
-  string odr_iam_role_arn = 6 [
-    (validate.rules).string.min_len = 20,
-    (tagger.tags) = "faker:\"len=20\""
-  ];
+  AKSClusterInfo aks_cluster_info = 9;
 
-  string region = 7 [
-    (validate.rules).string = {
-      in: [
-        "us-east-2",
-        "us-east-1",
-        "us-west-1",
-        "us-west-2",
-        "af-south-1",
-        "ap-east-1",
-        "ap-south-2",
-        "ap-southeast-3",
-        "ap-southeast-4",
-        "ap-south-1",
-        "ap-northeast-3",
-        "ap-northeast-2",
-        "ap-southeast-1",
-        "ap-southeast-2",
-        "ap-northeast-1",
-        "ca-central-1",
-        "ca-west-1",
-        "eu-central-1",
-        "eu-west-1",
-        "eu-west-2",
-        "eu-south-1",
-        "eu-west-3",
-        "eu-south-2",
-        "eu-north-1",
-        "eu-central-2",
-        "il-central-1",
-        "me-south-1",
-        "me-central-1",
-        "sa-east-1"
-      ]
-    },
-    (tagger.tags) = "faker:\"oneof: us-west-2\""
-  ];
+  string odr_iam_role_arn = 6 [(tagger.tags) = "faker:\"len=20\""];
+  string region = 7 [(tagger.tags) = "faker:\"oneof: us-west-2\""];
 
   installs.v1.RunnerType runner_type = 8;
 }
