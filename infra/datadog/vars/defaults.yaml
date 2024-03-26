@@ -80,4 +80,3 @@ aws_permissions:
   - "tag:GetTagValues"
   - "xray:BatchGetTraces"
   - "xray:GetTraceSummaries"
-monitors: []
