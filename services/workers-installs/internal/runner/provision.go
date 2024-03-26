@@ -86,9 +86,9 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 		if err := w.installECSRunner(ctx, req); err != nil {
 			return resp, fmt.Errorf("unable to install ecs runner: %w", err)
 		}
-	case installsv1.RunnerType_RUNNER_TYPE_AWS_EKS:
-		if err := w.installEKSRunner(ctx, req); err != nil {
-			return resp, fmt.Errorf("unable to install eks runner: %w", err)
+	case installsv1.RunnerType_RUNNER_TYPE_AWS_EKS, installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS:
+		if err := w.installKubernetesRunner(ctx, req); err != nil {
+			return resp, fmt.Errorf("unable to install kubernetes runner: %w", err)
 		}
 	default:
 		return resp, fmt.Errorf("unsupported runner type")

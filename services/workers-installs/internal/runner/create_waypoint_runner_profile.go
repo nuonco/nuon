@@ -25,13 +25,15 @@ type CreateWaypointRunnerProfileRequest struct {
 	OrgServerAddr        string           `json:"org_server_address" validate:"required"`
 	OrgID                string           `json:"org_id" validate:"required"`
 	InstallID            string           `json:"install_id" validate:"required"`
-	AwsRegion            string           `json:"aws_region" validate:"required"`
 	ClusterInfo          kube.ClusterInfo `json:"cluster_info" validate:"required"`
 	RunnerType           installsv1.RunnerType
 
 	// additional information for ecs
 	LogGroupName   string
 	EcsClusterInfo *runnerv1.ECSClusterInfo
+
+	// additional information for aws eks
+	AwsRegion string `json:"aws_region"`
 }
 
 func (c CreateWaypointRunnerProfileRequest) validate() error {
@@ -99,11 +101,9 @@ func (a *Activities) createWaypointRunnerProfile(ctx context.Context, client gen
 					},
 				},
 			},
-			ConfigFormat: gen.Hcl_JSON,
-			Default:      false,
-			EnvironmentVariables: map[string]string{
-				"AWS_REGION_DEFAULT": req.AwsRegion,
-			},
+			ConfigFormat:         gen.Hcl_JSON,
+			Default:              false,
+			EnvironmentVariables: map[string]string{},
 		},
 	}
 
@@ -131,6 +131,11 @@ func (a *Activities) createWaypointRunnerProfile(ctx context.Context, client gen
 		pluginCfg["security_group_id"] = req.EcsClusterInfo.SecurityGroupId
 		pluginCfg["subnets"] = strings.Join(req.EcsClusterInfo.SubnetIds, ",")
 	case installsv1.RunnerType_RUNNER_TYPE_AWS_EKS:
+		cfgReq.Config.PluginType = "kubernetes"
+		pluginCfg["service_account"] = odrServiceAccount
+		pluginCfg["image_pull_policy"] = defaultODRImagePullPolicy
+		cfgReq.Config.EnvironmentVariables["AWS_REGION_DEFAULT"] = req.AwsRegion
+	case installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS:
 		cfgReq.Config.PluginType = "kubernetes"
 		pluginCfg["service_account"] = odrServiceAccount
 		pluginCfg["image_pull_policy"] = defaultODRImagePullPolicy
