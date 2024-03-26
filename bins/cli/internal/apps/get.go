@@ -30,6 +30,7 @@ func (s *Service) Get(ctx context.Context, appID string, asJSON bool) {
 	view.Render([][]string{
 		{"id", app.ID},
 		{"name", app.Name},
+		{"platform", string(app.CloudPlatform)},
 		{"status", app.Status},
 		{"created at", app.CreatedAt},
 		{"updated at", app.UpdatedAt},

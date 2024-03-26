@@ -12,8 +12,7 @@ homepage_url      = "https://www.nuon.co/"
 demo_url          = "https://www.nuon.co/"
 
 [runner]
-#runner_type = "azure-aks"
-runner_type = "aws-ecs"
+runner_type = "azure-aks"
 
 [sandbox]
 terraform_version = "1.6.4"
