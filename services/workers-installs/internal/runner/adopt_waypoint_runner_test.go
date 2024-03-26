@@ -78,14 +78,6 @@ func TestAdoptWaypointRunner_validateRequest(t *testing.T) {
 			},
 			errExpected: fmt.Errorf("AdoptWaypointRunnerRequest.InstallID"),
 		},
-		"no-cluster-info": {
-			reqFn: func() AdoptWaypointRunnerRequest {
-				req := getFakeAdoptWaypointRunnerRequest()
-				req.ClusterInfo = kube.ClusterInfo{}
-				return req
-			},
-			errExpected: fmt.Errorf("AdoptWaypointRunnerRequest.ClusterInfo"),
-		},
 	}
 
 	for name, test := range tests {

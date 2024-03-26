@@ -110,7 +110,7 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 		}
 	} else {
 		prReq.Region = req.AwsSettings.Region
-		prReq.EksClusterInfo = &runnerv1.KubeClusterInfo{
+		prReq.EksClusterInfo = &runnerv1.EKSClusterInfo{
 			Id:             tfOutputs.Cluster.Name,
 			Endpoint:       tfOutputs.Cluster.Endpoint,
 			CaData:         tfOutputs.Cluster.CertificateAuthorityData,

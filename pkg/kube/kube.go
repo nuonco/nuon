@@ -26,16 +26,28 @@ func GetKubeConfig() (*rest.Config, error) {
 
 type ClusterInfo struct {
 	// ID is the ID of the EKS cluster
-	ID string `json:"id" validate:"required"`
+	ID string `json:"id"`
 	// Endpoint is the URL of the k8s api server
-	Endpoint string `json:"endpoint" validate:"required"`
+	Endpoint string `json:"endpoint"`
 	// CAData is the base64 encoded public certificate
-	CAData string `json:"ca_data" validate:"required"`
+	CAData string `json:"ca_data"`
 	// TrustedRoleARN is the arn of the role that should be assumed to interact with the cluster
 	TrustedRoleARN string `json:"trusted_role_arn"`
+
+	// KubeConfig will override the kube config, and be parsed instead of generating a new one
+	KubeConfig string `json:"kube_config" faker:"-"`
 }
 
 func ConfigForCluster(cInfo *ClusterInfo) (*rest.Config, error) {
+	if cInfo.KubeConfig != "" {
+		config, err := clientcmd.RESTConfigFromKubeConfig([]byte(cInfo.KubeConfig))
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse kube config: %w", err)
+		}
+
+		return config, nil
+	}
+
 	if err := validateClusterInfo(cInfo); err != nil {
 		return nil, err
 	}

@@ -32,9 +32,9 @@ func (w wkflow) DeprovisionRunner(ctx workflow.Context, req *runnerv1.Deprovisio
 		if err := w.uninstallECSRunner(ctx, req); err != nil {
 			return resp, fmt.Errorf("unable to uninstall ecs runner: %w", err)
 		}
-	case installsv1.RunnerType_RUNNER_TYPE_AWS_EKS:
-		if err := w.uninstallEKSRunner(ctx, req); err != nil {
-			return resp, fmt.Errorf("unable to uninstall eks runner: %w", err)
+	case installsv1.RunnerType_RUNNER_TYPE_AWS_EKS, installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS:
+		if err := w.uninstallKubernetesRunner(ctx, req); err != nil {
+			return resp, fmt.Errorf("unable to uninstall kubernetes runner: %w", err)
 		}
 	default:
 		return resp, fmt.Errorf("unsupported runner type")
@@ -49,6 +49,7 @@ func (w wkflow) DeprovisionRunner(ctx workflow.Context, req *runnerv1.Deprovisio
 		InstallID:            req.InstallId,
 		ClusterInfo:          w.clusterInfo,
 	}
+
 	var drpResp DeleteRunnerConfigResponse
 	err := w.execWaypointActivity(ctx, w.act.DeleteRunnerConfig, drpReq, &drpResp)
 	if err != nil {
