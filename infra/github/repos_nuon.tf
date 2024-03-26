@@ -127,7 +127,7 @@ module "nuon-sandboxes" {
 
 module "nuon-aws-eks-sandbox" {
   source           = "./modules/repository"
-  name             = "aws-eks-sandbox"
+  name             = "terraform-aws-eks-sandbox"
   description      = "Turnkey AWS EKS sandbox for Nuon apps."
   required_checks  = []
   is_public        = true
