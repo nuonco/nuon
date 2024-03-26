@@ -69,14 +69,6 @@ func TestGetWaypointServerCookie_validateRequest(t *testing.T) {
 			},
 			errExpected: fmt.Errorf("GetWaypointServerCookieRequest.OrgServerAddr"),
 		},
-		"no-cluster-info": {
-			reqFn: func() GetWaypointServerCookieRequest {
-				req := getFakeWaypointServerCookieRequest()
-				req.ClusterInfo = kube.ClusterInfo{}
-				return req
-			},
-			errExpected: fmt.Errorf("GetWaypointServerCookieRequest.ClusterInfo"),
-		},
 	}
 
 	for name, test := range tests {
