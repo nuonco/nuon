@@ -52,6 +52,7 @@ func TestProvision_finishWithErr(t *testing.T) {
 	cfg := newFakeConfig()
 	assert.NoError(t, cfg.Validate())
 	req := generics.GetFakeObj[*installsv1.ProvisionRequest]()
+	req.AzureSettings = nil
 	req.PlanOnly = false
 	req.RunnerType = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
 	assert.NoError(t, req.Validate())
@@ -118,6 +119,7 @@ func TestProvision(t *testing.T) {
 	cfg := newFakeConfig()
 	assert.NoError(t, cfg.Validate())
 	req := generics.GetFakeObj[*installsv1.ProvisionRequest]()
+	req.AzureSettings = nil
 	assert.NoError(t, req.Validate())
 	req.PlanOnly = false
 	req.RunnerType = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
@@ -231,6 +233,7 @@ func TestProvision_plan_only(t *testing.T) {
 	cfg := newFakeConfig()
 	assert.NoError(t, cfg.Validate())
 	req := generics.GetFakeObj[*installsv1.ProvisionRequest]()
+	req.AzureSettings = nil
 	assert.NoError(t, req.Validate())
 	req.PlanOnly = true
 	req.RunnerType = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
