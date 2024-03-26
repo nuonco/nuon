@@ -33,6 +33,7 @@ func TestDeprovision_finishWithErr(t *testing.T) {
 	assert.NoError(t, cfg.Validate())
 
 	req := generics.GetFakeObj[*installsv1.DeprovisionRequest]()
+	req.AzureSettings = nil
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
@@ -80,6 +81,7 @@ func TestDeprovision(t *testing.T) {
 	cfg := generics.GetFakeObj[workers.Config]()
 	assert.NoError(t, cfg.Validate())
 	req := generics.GetFakeObj[*installsv1.DeprovisionRequest]()
+	req.AzureSettings = nil
 	assert.NoError(t, req.Validate())
 
 	planref := generics.GetFakeObj[*planv1.PlanRef]()

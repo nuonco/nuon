@@ -86,9 +86,11 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) 
 	}
 	if install.AzureAccount != nil {
 		req.AzureSettings = &installsv1.AzureSettings{
-			Location:             install.AzureAccount.Location,
-			SubscriptionId:       install.AzureAccount.SubscriptionID,
-			SubscriptionTenantId: install.AzureAccount.SubscriptionTenantID,
+			Location:                 install.AzureAccount.Location,
+			SubscriptionId:           install.AzureAccount.SubscriptionID,
+			SubscriptionTenantId:     install.AzureAccount.SubscriptionTenantID,
+			ServicePrincipalAppId:    install.AzureAccount.ServicePrincipalAppID,
+			ServicePrincipalPassword: install.AzureAccount.ServicePrincipalPassword,
 		}
 	}
 

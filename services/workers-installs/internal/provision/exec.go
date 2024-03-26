@@ -106,3 +106,25 @@ func (w *wkflow) execFetchSandboxOutputs(
 
 	return resp, nil
 }
+
+func execCheckAzurePrincipal(
+	ctx workflow.Context,
+	act *Activities,
+	req CheckAzurePrincipalRequest,
+) error {
+	activityOpts := workflow.ActivityOptions{
+		ScheduleToCloseTimeout: 1 * time.Minute,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 5,
+		},
+	}
+	ctx = workflow.WithActivityOptions(ctx, activityOpts)
+
+	var resp CheckAzurePrincipalResponse
+	fut := workflow.ExecuteActivity(ctx, act.CheckAzurePrincipal, req)
+	if err := fut.Get(ctx, &resp); err != nil {
+		return err
+	}
+
+	return nil
+}
