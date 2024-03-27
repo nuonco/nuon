@@ -35,9 +35,9 @@ output "components" {
 }
 
 output "install_ids" {
-  value = nuon_install.main.*.id
+  value = nuon_install.main[*].id
 }
 
 output "installs" {
-  value = nuon_install.main.*.name
+  value = nuon_install.main[*].name
 }

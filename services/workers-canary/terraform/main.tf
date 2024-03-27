@@ -22,7 +22,7 @@ module "aws-eks" {
   sandbox_dir = "aws-eks"
 
   install_prefix = "aws-eks-"
-
+  install_count = var.install_count
   aws = [
     {
       iam_role_arn = var.aws_eks_iam_role_arn

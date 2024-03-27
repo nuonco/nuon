@@ -3,7 +3,7 @@
 set -euo pipefail
 
 install_id=$(cat $TF_OUTPUTS_PATH | jq -r '.install_ids[0]')
-install_name="east-1-0"
+install_name=$(cat $TF_OUTPUTS_PATH | jq -r '.installs[0]')
 
 echo >&2 -e "testing nuon installs command\n"
 

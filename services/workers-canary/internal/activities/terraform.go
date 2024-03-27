@@ -44,8 +44,8 @@ type TerraformRunOutputs struct {
 	ComponentIDs []string               `mapstructure:"component_ids" json:"component_ids"`
 	Components   map[string]interface{} `mapstructure:"components" json:"components"`
 
-	InstallIDs []string               `mapstructure:"install_ids" json:"install_ids"`
-	Installs   map[string]interface{} `mapstructure:"installs" json:"installs"`
+	InstallIDs []string      `mapstructure:"install_ids" json:"install_ids"`
+	Installs   []interface{} `mapstructure:"installs" json:"installs"`
 }
 
 type RunTerraformRequest struct {
@@ -79,9 +79,9 @@ func (a *Activities) getWorkspace(moduleDir string, req *RunTerraformRequest) (w
 	}
 
 	vars, err := staticvars.New(a.v, staticvars.WithFileVars(map[string]interface{}{
-		"aws_eks_role_arn": a.cfg.AWSEKSIAMRoleArn,
-		"aws_ecs_role_arn": a.cfg.AWSECSIAMRoleArn,
-		"install_count":    req.InstallCount,
+		"aws_eks_iam_role_arn": a.cfg.AWSEKSIAMRoleArn,
+		"aws_ecs_iam_role_arn": a.cfg.AWSECSIAMRoleArn,
+		"install_count":        req.InstallCount,
 	}),
 		staticvars.WithEnvVars(map[string]string{
 			"NUON_ORG_ID":    req.OrgID,
