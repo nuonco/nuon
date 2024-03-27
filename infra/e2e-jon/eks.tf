@@ -8,6 +8,7 @@ module "aws-eks" {
   sandbox_dir = "aws-eks"
 
   install_count = 0
+  install_prefix = "aws-eks-"
   aws = [
     {
       iam_role_arn = module.eks_access.iam_role_arn
@@ -26,6 +27,7 @@ module "aws-eks-byo-vpc" {
   sandbox_dir = "aws-eks-byovpc"
 
   install_count = 0
+  install_prefix = "aws-eks-byovpc-"
   aws = [
     {
       iam_role_arn = module.eks_access.iam_role_arn
