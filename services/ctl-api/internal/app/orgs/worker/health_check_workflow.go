@@ -44,7 +44,7 @@ func (w *Workflows) startHealthCheckWorkflow(ctx workflow.Context, req HealthChe
 }
 
 func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest) error {
-	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
+	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode), "org_id": req.OrgID}
 	startTS := workflow.Now(ctx)
 	status := "ok"
 	op := ""
