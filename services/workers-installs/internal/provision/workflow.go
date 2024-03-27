@@ -7,6 +7,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/sandboxes"
+	awsecs "github.com/powertoolsdev/mono/pkg/sandboxes/aws-ecs"
 	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	azureaks "github.com/powertoolsdev/mono/pkg/sandboxes/azure-aks"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
@@ -182,7 +184,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 
 	// parse runner type and use it to build the runner provision request
 	if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_ECS {
-		tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
+		tfOutputs, err := awsecs.ParseTerraformOutputs(outputs)
 		if err != nil {
 			err = fmt.Errorf("invalid sandbox outputs: %w", err)
 			w.finishWorkflow(ctx, req, resp, err)
@@ -238,7 +240,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		return resp, err
 	}
 
-	tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
+	tfOutputs, err := sandboxes.ParseCommonOutputs(outputs)
 	if err != nil {
 		err = fmt.Errorf("invalid sandbox outputs: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
@@ -246,7 +248,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	}
 	dnsReq := &dnsv1.ProvisionDNSRequest{
 		Domain:      tfOutputs.PublicDomain.Name,
-		Nameservers: awseks.ToStringSlice(tfOutputs.PublicDomain.Nameservers),
+		Nameservers: sandboxes.ToStringSlice(tfOutputs.PublicDomain.Nameservers),
 	}
 	_, err = execProvisionDNS(ctx, w.cfg, dnsReq, req.InstallId)
 	if err != nil {
