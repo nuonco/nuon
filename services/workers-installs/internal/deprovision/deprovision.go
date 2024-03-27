@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
+	awsecs "github.com/powertoolsdev/mono/pkg/sandboxes/aws-ecs"
 	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
+	azureaks "github.com/powertoolsdev/mono/pkg/sandboxes/azure-aks"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -85,11 +87,6 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 		return fmt.Errorf("unable to fetch sandbox outputs: %w", err)
 	}
 
-	tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
-	if err != nil {
-		return fmt.Errorf("invalid sandbox outputs: %w", err)
-	}
-
 	prReq := &runnerv1.DeprovisionRunnerRequest{
 		OrgId:      req.OrgId,
 		AppId:      req.AppId,
@@ -98,6 +95,12 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 	}
 
 	if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_ECS {
+		tfOutputs, err := awsecs.ParseTerraformOutputs(outputs)
+		if err != nil {
+			err = fmt.Errorf("invalid sandbox outputs: %w", err)
+			return err
+		}
+
 		prReq.Region = req.AwsSettings.Region
 		prReq.EcsClusterInfo = &runnerv1.ECSClusterInfo{
 			ClusterArn:        tfOutputs.ECSCluster.ARN,
@@ -108,7 +111,12 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 			SubnetIds:         generics.ToStringSlice(tfOutputs.VPC.PublicSubnetIDs),
 			SecurityGroupId:   tfOutputs.VPC.DefaultSecurityGroupID,
 		}
-	} else {
+	} else if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_EKS {
+		tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
+		if err != nil {
+			return fmt.Errorf("invalid sandbox outputs: %w", err)
+		}
+
 		prReq.Region = req.AwsSettings.Region
 		prReq.EksClusterInfo = &runnerv1.EKSClusterInfo{
 			Id:             tfOutputs.Cluster.Name,
@@ -116,7 +124,20 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 			CaData:         tfOutputs.Cluster.CertificateAuthorityData,
 			TrustedRoleArn: w.cfg.NuonAccessRoleArn,
 		}
+	} else if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS {
+		tfOutputs, err := azureaks.ParseTerraformOutputs(outputs)
+		if err != nil {
+			err = fmt.Errorf("invalid sandbox outputs: %w", err)
+			return err
+		}
+		prReq.AksClusterInfo = &runnerv1.AKSClusterInfo{
+			Location:   req.AzureSettings.Location,
+			KubeConfig: tfOutputs.Cluster.KubeAdminConfigRaw,
+		}
+	} else {
+		return fmt.Errorf("unsupported runner type")
 	}
+
 	if _, err = execDeprovisionRunner(ctx, w.cfg, prReq); err != nil {
 		return fmt.Errorf("unable to provision install runner: %w", err)
 	}
