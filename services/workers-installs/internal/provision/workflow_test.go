@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/sandboxes"
 	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
@@ -166,7 +167,7 @@ func TestProvision(t *testing.T) {
 			resp := &dnsv1.ProvisionDNSResponse{}
 
 			assert.Nil(t, r.Validate())
-			assert.Equal(t, r.Nameservers, awseks.ToStringSlice(provisionOutputs.PublicDomain.Nameservers))
+			assert.Equal(t, r.Nameservers, sandboxes.ToStringSlice(provisionOutputs.PublicDomain.Nameservers))
 			assert.Equal(t, r.Domain, provisionOutputs.PublicDomain.Name)
 			return resp, nil
 		})

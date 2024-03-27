@@ -5,10 +5,12 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/gogo/status"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/k8s"
+	"google.golang.org/grpc/codes"
 )
 
 type DeleteRunnerConfigRequest struct {
@@ -51,6 +53,12 @@ func (a *Activities) DeleteRunnerConfig(ctx context.Context, req DeleteRunnerCon
 	}
 
 	if err := a.deleteRunnerConfig(ctx, client, req.InstallID); err != nil {
+		// check if not found
+		st, ok := status.FromError(err)
+		if ok && st.Code() == codes.NotFound {
+			return resp, nil
+		}
+
 		return resp, fmt.Errorf("unable to delete runner config: %w", err)
 	}
 
