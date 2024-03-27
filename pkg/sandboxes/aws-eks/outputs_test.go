@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/powertoolsdev/mono/pkg/sandboxes"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -21,6 +22,6 @@ func TestParseTerraformOutputs(t *testing.T) {
 }
 
 func TestToStringSlice(t *testing.T) {
-	strVals := ToStringSlice([]interface{}{"abc"})
+	strVals := sandboxes.ToStringSlice([]interface{}{"abc"})
 	assert.Equal(t, "abc", strVals[0])
 }

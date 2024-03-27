@@ -5,19 +5,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
+	"github.com/powertoolsdev/mono/pkg/sandboxes"
 	"google.golang.org/protobuf/types/known/structpb"
 )
-
-// NOTE: structpb does not support []string type, so we have to use interface{} here
-func ToStringSlice(vals []interface{}) []string {
-	strVals := make([]string, len(vals))
-	for idx, val := range vals {
-		v := val
-		strVals[idx] = v.(string)
-	}
-
-	return strVals
-}
 
 type ClusterOutputs struct {
 	ID                   string `mapstructure:"id"`
@@ -32,40 +22,17 @@ type ClusterOutputs struct {
 	KubeAdminConfigRaw   string `mapstructure:"kube_admin_config_raw"`
 }
 
-type VPNOutputs struct {
-	Name      string        `mapstructure:"name" validate:"required"`
-	SubnetIDs []interface{} `mapstructure:"subnet_ids" validate:"required" faker:"stringSliceAsInt"`
-}
-
-type AccountOutputs struct {
-	SubscriptionID string `mapstructure:"subscription_id" validate:"required"`
-	Location       string `mapstructure:"location" validate:"required"`
-}
-
-type ACROutputs struct {
-	ID          string `mapstructure:"id" validate:"required"`
-	LoginServer string `mapstructure:"login_server" validate:"required"`
-	TokenID     string `mapstructure:"token_id" validate:"required"`
-	Password    string `mapstructure:"password" validate:"required"`
-}
-
 type RunnerOutputs struct{}
-
-type DomainOutputs struct {
-	Nameservers []interface{} `mapstructure:"nameservers" validate:"required" faker:"stringSliceAsInt"`
-	Name        string        `mapstructure:"name" validate:"required" faker:"domain"`
-	ZoneID      string        `mapstructure:"zone_id" validate:"required"`
-}
 
 type TerraformOutputs struct {
 	// domain outputs
-	//PublicDomain	 DomainOutputs `mapstructure:"public_domain"`
-	//InternalDomain DomainOutputs `mapstructure:"internal_domain"`
+	PublicDomain   sandboxes.DomainOutputs `mapstructure:"public_domain"`
+	InternalDomain sandboxes.DomainOutputs `mapstructure:"internal_domain"`
 
-	Cluster ClusterOutputs `mapstructure:"cluster"`
-	ACR     ACROutputs     `mapstructure:"acr"`
-	VPN     VPNOutputs     `mapstructure:"vpn"`
-	Runner  RunnerOutputs  `mapstructure:"runner"`
+	Cluster ClusterOutputs       `mapstructure:"cluster"`
+	ACR     sandboxes.ACROutputs `mapstructure:"acr"`
+	VPN     sandboxes.VPNOutputs `mapstructure:"vpn"`
+	Runner  RunnerOutputs        `mapstructure:"runner"`
 }
 
 func (t *TerraformOutputs) Validate() error {
