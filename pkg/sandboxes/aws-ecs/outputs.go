@@ -1,4 +1,4 @@
-package awseks
+package awsecs
 
 import (
 	"fmt"
@@ -9,13 +9,10 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type ClusterOutputs struct {
-	ARN                      string `mapstructure:"arn"`
-	CertificateAuthorityData string `mapstructure:"certificate_authority_data"`
-	Endpoint                 string `mapstructure:"endpoint"`
-	Name                     string `mapstructure:"name"`
-	PlatformVersion          string `mapstructure:"platform_version"`
-	Status                   string `mapstructure:"status"`
+type ECSClusterOutputs struct {
+	ARN  string `mapstructure:"arn"`
+	Name string `mapstructure:"name"`
+	ID   string `mapstructure:"id"`
 }
 
 type RunnerOutputs struct {
@@ -33,10 +30,11 @@ type TerraformOutputs struct {
 	// domain outputs
 	PublicDomain   sandboxes.DomainOutputs `mapstructure:"public_domain"`
 	InternalDomain sandboxes.DomainOutputs `mapstructure:"internal_domain"`
-	Cluster        ClusterOutputs          `mapstructure:"cluster"`
-	ECR            sandboxes.ECROutputs    `mapstructure:"ecr"`
-	VPC            sandboxes.VPCOutputs    `mapstructure:"vpc"`
-	Runner         RunnerOutputs           `mapstructure:"runner"`
+
+	ECSCluster ECSClusterOutputs    `mapstructure:"ecs_cluster"`
+	ECR        sandboxes.ECROutputs `mapstructure:"ecr"`
+	VPC        sandboxes.VPCOutputs `mapstructure:"vpc"`
+	Runner     RunnerOutputs        `mapstructure:"runner"`
 }
 
 func (t *TerraformOutputs) Validate() error {
