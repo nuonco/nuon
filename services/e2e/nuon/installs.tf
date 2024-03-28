@@ -2,7 +2,7 @@ resource "nuon_install" "main" {
   count  = var.install_count
   app_id = nuon_app.main.id
 
-  name         = "${var.install_prefix}${count.index}"
+  name = "${var.install_prefix}${count.index}"
 
   dynamic "input" {
     for_each = var.inputs
@@ -16,17 +16,17 @@ resource "nuon_install" "main" {
     for_each = var.aws
     content {
       iam_role_arn = aws.value.iam_role_arn
-      region = aws.value.regions[count.index]
+      region       = aws.value.regions[count.index]
     }
   }
 
   dynamic "azure" {
     for_each = var.azure
     content {
-      location = azure.value.locations[count.index]
-      subscription_id = azure.value.subscription_id
-      subscription_tenant_id = azure.value.subscription_tenant_id
-      service_principal_app_id = azure.value.service_principal_app_id
+      location                   = azure.value.locations[count.index]
+      subscription_id            = azure.value.subscription_id
+      subscription_tenant_id     = azure.value.subscription_tenant_id
+      service_principal_app_id   = azure.value.service_principal_app_id
       service_principal_password = azure.value.service_principal_password
     }
   }

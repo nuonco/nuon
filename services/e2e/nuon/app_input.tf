@@ -5,12 +5,12 @@ resource "nuon_app_input" "main" {
     for_each = var.inputs
 
     content {
-      name        = input.value.name
-      description = input.value.description
-      default     = input.value.default
-      required    = input.value.required
+      name         = input.value.name
+      description  = input.value.description
+      default      = input.value.default
+      required     = input.value.required
       display_name = input.value.display_name
-      sensitive = input.value.sensitive
+      sensitive    = input.value.sensitive
     }
   }
 }

@@ -1,6 +1,8 @@
 resource "nuon_terraform_module_component" "e2e" {
-  name   = "${var.component_prefix}e2e_infra"
-  app_id = nuon_app.main.id
+  count = var.create_components ? 1 : 0
+
+  name              = "${var.component_prefix}e2e_infra"
+  app_id            = nuon_app.main.id
   terraform_version = "1.6.3"
 
   dependencies = []

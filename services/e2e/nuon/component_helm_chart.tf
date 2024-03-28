@@ -1,11 +1,13 @@
 // nuon allows you to connect any helm chart in a connected or public repo to install in your application
 resource "nuon_helm_chart_component" "e2e" {
+  count = var.create_components ? 1 : 0
+
   name   = "${var.component_prefix}e2e_helm"
   app_id = nuon_app.main.id
 
   dependencies = [
-    nuon_docker_build_component.e2e.id,
-    nuon_container_image_component.e2e.id,
+    nuon_docker_build_component.e2e[0].id,
+    nuon_container_image_component.e2e[0].id,
   ]
 
   chart_name = "e2e-helm"

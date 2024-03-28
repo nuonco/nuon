@@ -3,6 +3,7 @@ syntax = "proto3";
 package executors.v1.plan.v1;
 
 import "component/v1/component.proto";
+import "installs/v1/runner_type.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -23,6 +24,7 @@ message ComponentInput {
 
   component.v1.Component component = 5;
   ComponentInputType type = 6;
+  installs.v1.RunnerType runner_type = 9;
 }
 
 enum ComponentInputType {

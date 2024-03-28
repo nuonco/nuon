@@ -3,7 +3,7 @@ resource "nuon_app_runner" "main" {
 
   runner_type = var.app_runner_type
   env_var {
-    name = "NUON_RUNNER_TYPE"
+    name  = "NUON_RUNNER_TYPE"
     value = "aws-eks"
   }
 }

@@ -10,6 +10,7 @@ module "azure-aks" {
   source = "./e2e"
 
   app_name = "${local.name}-azure-aks"
+  create_components = false
 
   sandbox_repo = local.sandboxes_repo
   sandbox_branch = "main"
@@ -28,4 +29,28 @@ module "azure-aks" {
       subscription_tenant_id = local.tenant_id
     }
   ]
+}
+
+resource "nuon_terraform_module_component" "aks-blob" {
+  name   = "blob_storage"
+  app_id = module.azure-aks.app_id
+  terraform_version = "1.6.3"
+
+  dependencies = []
+
+  connected_repo = {
+    directory = "components/storage"
+    repo      = "nuonco-shared/100xdev"
+    branch    = "main"
+  }
+
+  var {
+    name  = "nuon_id"
+    value = "{{.nuon.install.id}}"
+  }
+
+  var {
+    name  = "resource_group_name_sandbox_output"
+    value = "{{.nuon.install.sandbox.outputs.account.resource_group_name}}"
+  }
 }
