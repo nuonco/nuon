@@ -62,9 +62,17 @@ func (s *service) getLogs(ctx context.Context, orgID, installID, deployID string
 		return nil, fmt.Errorf("unable to get deploy: %w", err)
 	}
 
+	comp, err := s.componentHelpers.GetComponent(ctx, deploy.InstallComponent.ComponentID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get component: %w", err)
+	}
+
 	phase := "deploy"
 	if deploy.Type == app.InstallDeployTypeTeardown {
 		phase = "destroy"
+	}
+	if comp.LatestConfig.DockerBuildComponentConfig != nil || comp.LatestConfig.ExternalImageComponentConfig != nil {
+		phase = "sync"
 	}
 
 	logs := make([]DeployLog, 0)

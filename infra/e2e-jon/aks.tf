@@ -54,3 +54,16 @@ resource "nuon_terraform_module_component" "aks-blob" {
     value = "{{.nuon.install.sandbox.outputs.account.resource_group_name}}"
   }
 }
+
+resource "nuon_docker_build_component" "e2e" {
+  name   = "image"
+  app_id = module.azure-aks.app_id
+
+  dockerfile = "Dockerfile"
+  dependencies = []
+  public_repo = {
+    directory = "aws-ecs-tutorial/components/docker-image"
+    repo      = "nuonco/guides"
+    branch    = "main"
+  }
+}

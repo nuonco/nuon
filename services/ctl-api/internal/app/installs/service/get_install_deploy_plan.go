@@ -74,6 +74,11 @@ func (s *service) getInstallDeployPlan(ctx context.Context, orgID, appID, compon
 		return nil, fmt.Errorf("unable to get dal for deploy plan: %w", err)
 	}
 
+	comp, err := s.componentHelpers.GetComponent(ctx, componentID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get component: %w", err)
+	}
+
 	var (
 		plan *planv1.Plan
 	)
@@ -81,7 +86,11 @@ func (s *service) getInstallDeployPlan(ctx context.Context, orgID, appID, compon
 	case app.InstallDeployTypeTeardown:
 		plan, err = wkflowDal.GetInstanceDestroyPlan(ctx, orgID, appID, componentID, deployID, installID)
 	default:
-		plan, err = wkflowDal.GetInstanceDeployPlan(ctx, orgID, appID, componentID, deployID, installID)
+		if comp.LatestConfig.DockerBuildComponentConfig != nil || comp.LatestConfig.ExternalImageComponentConfig != nil {
+			plan, err = wkflowDal.GetInstanceSyncPlan(ctx, orgID, appID, componentID, deployID, installID)
+		} else {
+			plan, err = wkflowDal.GetInstanceDeployPlan(ctx, orgID, appID, componentID, deployID, installID)
+		}
 	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to get plan: %w", err)

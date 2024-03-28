@@ -3,7 +3,7 @@ package runner
 import (
 	"fmt"
 
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	contextv1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"go.temporal.io/sdk/workflow"
@@ -163,7 +163,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 		InstallID:            req.InstallId,
 		OrgID:                req.OrgId,
 		AwsRegion:            req.Region,
-		RunnerType:           installsv1.RunnerType_RUNNER_TYPE_AWS_ECS,
+		RunnerType:           contextv1.RunnerType_RUNNER_TYPE_AWS_ECS,
 		// specific fields for ECS runners
 		LogGroupName:   fmt.Sprintf("waypoint-runner-%s", req.InstallId),
 		EcsClusterInfo: req.EcsClusterInfo,

@@ -26,8 +26,9 @@ type RunnerOutputs struct{}
 
 type TerraformOutputs struct {
 	// domain outputs
-	PublicDomain   sandboxes.DomainOutputs `mapstructure:"public_domain"`
-	InternalDomain sandboxes.DomainOutputs `mapstructure:"internal_domain"`
+	PublicDomain   sandboxes.DomainOutputs  `mapstructure:"public_domain"`
+	InternalDomain sandboxes.DomainOutputs  `mapstructure:"internal_domain"`
+	Account        sandboxes.AccountOutputs `mapstructure:"account"`
 
 	Cluster ClusterOutputs       `mapstructure:"cluster"`
 	ACR     sandboxes.ACROutputs `mapstructure:"acr"`

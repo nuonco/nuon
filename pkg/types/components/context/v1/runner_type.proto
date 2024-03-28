@@ -1,13 +1,18 @@
 syntax = "proto3";
 
-package installs.v1;
+package context.v1;
 
-option go_package = "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1";
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/context/v1";
 
 enum RunnerType {
   RUNNER_TYPE_UNSPECIFIED = 0;
+
+  // install runners
   RUNNER_TYPE_AWS_ECS = 1;
   RUNNER_TYPE_AWS_EKS = 2;
   RUNNER_TYPE_AZURE_AKS = 3;
   RUNNER_TYPE_AZURE_ACS = 4;
+
+  // build runners
+  RUNNER_TYPE_BUILD = 5;
 }
