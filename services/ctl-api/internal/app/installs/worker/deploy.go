@@ -6,7 +6,6 @@ import (
 	componentsv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	execv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/protos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
@@ -87,18 +86,17 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 
 	// execute the plan phase here
 	syncImagePlanWorkflowID := fmt.Sprintf("%s-sync-plan-%s", installID, deployID)
-	runnerTyp := protos.ToRunnerType(install.AppRunnerConfig.Type)
 	planResp, err := w.execCreatePlanWorkflow(ctx, sandboxMode, syncImagePlanWorkflowID, &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
-				OrgId:      install.App.OrgID,
-				AppId:      install.App.ID,
-				BuildId:    installDeploy.ComponentBuildID,
-				InstallId:  install.ID,
-				DeployId:   deployID,
-				Component:  &deployCfg,
-				Type:       planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE,
-				RunnerType: runnerTyp,
+				OrgId:     install.App.OrgID,
+				AppId:     install.App.ID,
+				BuildId:   installDeploy.ComponentBuildID,
+				InstallId: install.ID,
+				DeployId:  deployID,
+				Component: &deployCfg,
+				Type:      planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_SYNC_IMAGE,
+				Context:   w.protos.InstallContext(install),
 			},
 		},
 	})
@@ -133,14 +131,14 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	planResp, err = w.execCreatePlanWorkflow(ctx, sandboxMode, deployPlanWorkflowID, &planv1.CreatePlanRequest{
 		Input: &planv1.CreatePlanRequest_Component{
 			Component: &planv1.ComponentInput{
-				OrgId:      install.App.OrgID,
-				AppId:      install.App.ID,
-				InstallId:  install.ID,
-				BuildId:    installDeploy.ComponentBuildID,
-				DeployId:   deployID,
-				Component:  &deployCfg,
-				Type:       deployPlanTyp,
-				RunnerType: runnerTyp,
+				OrgId:     install.App.OrgID,
+				AppId:     install.App.ID,
+				InstallId: install.ID,
+				BuildId:   installDeploy.ComponentBuildID,
+				DeployId:  deployID,
+				Component: &deployCfg,
+				Type:      deployPlanTyp,
+				Context:   w.protos.InstallContext(install),
 			},
 		},
 	})

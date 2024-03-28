@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package context.v1;
+
+import "context/v1/build_context.proto";
+import "context/v1/install_context.proto";
+import "context/v1/runner_context.proto";
+
+option go_package = "github.com/powertoolsdev/mono/pkg/types/components/context/v1";
+
+// InstanceConnection represents a connection to another component in the same app, deployed to the same install.
+message Context {
+  BuildContext build_context = 1;
+  InstallContext install_context = 2;
+  RunnerContext runner_context = 3;
+}

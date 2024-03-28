@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package installs.v1;
 
+import "context/v1/runner_type.proto";
 import "installs/v1/account_settings.proto";
-import "installs/v1/runner_type.proto";
 import "installs/v1/sandbox_settings.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
@@ -34,7 +34,7 @@ message ProvisionRequest {
   SandboxSettings sandbox_settings = 7;
 
   bool plan_only = 8;
-  RunnerType runner_type = 9;
+  context.v1.RunnerType runner_type = 9;
 }
 
 // ProvisionResponse returns the response from a deployment workflow
