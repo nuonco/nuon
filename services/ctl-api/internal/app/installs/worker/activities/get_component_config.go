@@ -19,6 +19,8 @@ func (a *Activities) GetComponentConfig(ctx context.Context, req GetComponentCon
 	dep := app.InstallDeploy{}
 	res := a.db.WithContext(ctx).
 		Preload("InstallComponent.Install").
+		Preload("InstallComponent.Install.AWSAccount").
+		Preload("InstallComponent.Install.AzureAccount").
 		Preload("InstallComponent.Install.InstallInputs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_inputs.created_at DESC")
 		}).

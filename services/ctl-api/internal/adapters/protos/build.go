@@ -13,7 +13,7 @@ func (c *Adapter) FromBuild(build *app.ComponentBuild) (*componentv1.Component, 
 	if compCfg.TerraformModuleComponentConfig != nil {
 		return c.ToTerraformModuleComponentConfig(compCfg.TerraformModuleComponentConfig,
 			nil,
-			generics.FromPtrStr(build.GitRef))
+			generics.FromPtrStr(build.GitRef), nil)
 	}
 
 	if compCfg.HelmComponentConfig != nil {
