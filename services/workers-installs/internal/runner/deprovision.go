@@ -6,7 +6,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	contextv1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client"
 )
@@ -28,11 +28,11 @@ func (w wkflow) DeprovisionRunner(ctx workflow.Context, req *runnerv1.Deprovisio
 
 	// create waypoint project
 	switch req.RunnerType {
-	case installsv1.RunnerType_RUNNER_TYPE_AWS_ECS:
+	case contextv1.RunnerType_RUNNER_TYPE_AWS_ECS:
 		if err := w.uninstallECSRunner(ctx, req); err != nil {
 			return resp, fmt.Errorf("unable to uninstall ecs runner: %w", err)
 		}
-	case installsv1.RunnerType_RUNNER_TYPE_AWS_EKS, installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS:
+	case contextv1.RunnerType_RUNNER_TYPE_AWS_EKS, contextv1.RunnerType_RUNNER_TYPE_AZURE_AKS:
 		if err := w.uninstallKubernetesRunner(ctx, req); err != nil {
 			return resp, fmt.Errorf("unable to uninstall kubernetes runner: %w", err)
 		}

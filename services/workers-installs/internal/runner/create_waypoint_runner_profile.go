@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/mono/pkg/kube"
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	contextv1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/k8s"
@@ -26,7 +26,7 @@ type CreateWaypointRunnerProfileRequest struct {
 	OrgID                string           `json:"org_id" validate:"required"`
 	InstallID            string           `json:"install_id" validate:"required"`
 	ClusterInfo          kube.ClusterInfo `json:"cluster_info" validate:"required"`
-	RunnerType           installsv1.RunnerType
+	RunnerType           contextv1.RunnerType
 
 	// additional information for ecs
 	LogGroupName   string
@@ -108,7 +108,7 @@ func (a *Activities) createWaypointRunnerProfile(ctx context.Context, client gen
 	}
 
 	switch req.RunnerType {
-	case installsv1.RunnerType_RUNNER_TYPE_AWS_ECS:
+	case contextv1.RunnerType_RUNNER_TYPE_AWS_ECS:
 		// NOTE(jm): since waypoint requires role-names, instead of ARNs, but we require ARNs in other places,
 		// we just parse out the name here.
 		runnerRoleName, err := a.roleNameFromARN(req.EcsClusterInfo.RunnerIamRoleArn)
@@ -130,12 +130,12 @@ func (a *Activities) createWaypointRunnerProfile(ctx context.Context, client gen
 		pluginCfg["odr_memory"] = "2048"
 		pluginCfg["security_group_id"] = req.EcsClusterInfo.SecurityGroupId
 		pluginCfg["subnets"] = strings.Join(req.EcsClusterInfo.SubnetIds, ",")
-	case installsv1.RunnerType_RUNNER_TYPE_AWS_EKS:
+	case contextv1.RunnerType_RUNNER_TYPE_AWS_EKS:
 		cfgReq.Config.PluginType = "kubernetes"
 		pluginCfg["service_account"] = odrServiceAccount
 		pluginCfg["image_pull_policy"] = defaultODRImagePullPolicy
 		cfgReq.Config.EnvironmentVariables["AWS_REGION_DEFAULT"] = req.AwsRegion
-	case installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS:
+	case contextv1.RunnerType_RUNNER_TYPE_AZURE_AKS:
 		cfgReq.Config.PluginType = "kubernetes"
 		pluginCfg["service_account"] = odrServiceAccount
 		pluginCfg["image_pull_policy"] = defaultODRImagePullPolicy
