@@ -21,7 +21,9 @@ func (c *Adapter) FromDeploy(deploy *app.InstallDeploy, installDeploys []app.Ins
 		cfg, err = c.ToTerraformModuleComponentConfig(
 			compCfg.TerraformModuleComponentConfig,
 			installDeploys,
-			generics.FromPtrStr(build.GitRef))
+			generics.FromPtrStr(build.GitRef),
+			deploy,
+		)
 	}
 
 	if compCfg.HelmComponentConfig != nil {
