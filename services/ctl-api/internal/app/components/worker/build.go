@@ -40,6 +40,7 @@ func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bo
 				BuildId:   buildID,
 				Component: &buildCfg,
 				Type:      planv1.ComponentInputType_COMPONENT_INPUT_TYPE_WAYPOINT_BUILD,
+				Context:   w.protos.BuildContext(),
 			},
 		},
 	})

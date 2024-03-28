@@ -8,6 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/sandboxes"
 	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
+	contextv1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -55,7 +56,7 @@ func TestProvision_finishWithErr(t *testing.T) {
 	req := generics.GetFakeObj[*installsv1.ProvisionRequest]()
 	req.AzureSettings = nil
 	req.PlanOnly = false
-	req.RunnerType = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
+	req.RunnerType = contextv1.RunnerType_RUNNER_TYPE_AWS_EKS
 	assert.NoError(t, req.Validate())
 
 	testSuite := &testsuite.WorkflowTestSuite{}
@@ -123,7 +124,7 @@ func TestProvision(t *testing.T) {
 	req.AzureSettings = nil
 	assert.NoError(t, req.Validate())
 	req.PlanOnly = false
-	req.RunnerType = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
+	req.RunnerType = contextv1.RunnerType_RUNNER_TYPE_AWS_EKS
 	planref := generics.GetFakeObj[*planv1.PlanRef]()
 
 	testSuite := &testsuite.WorkflowTestSuite{}
@@ -237,7 +238,7 @@ func TestProvision_plan_only(t *testing.T) {
 	req.AzureSettings = nil
 	assert.NoError(t, req.Validate())
 	req.PlanOnly = true
-	req.RunnerType = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
+	req.RunnerType = contextv1.RunnerType_RUNNER_TYPE_AWS_EKS
 	planref := generics.GetFakeObj[*planv1.PlanRef]()
 
 	testSuite := &testsuite.WorkflowTestSuite{}

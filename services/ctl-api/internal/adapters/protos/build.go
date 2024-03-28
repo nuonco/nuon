@@ -10,10 +10,11 @@ import (
 
 func (c *Adapter) FromBuild(build *app.ComponentBuild) (*componentv1.Component, error) {
 	compCfg := build.ComponentConfigConnection
+
 	if compCfg.TerraformModuleComponentConfig != nil {
 		return c.ToTerraformModuleComponentConfig(compCfg.TerraformModuleComponentConfig,
 			nil,
-			generics.FromPtrStr(build.GitRef), nil)
+			generics.FromPtrStr(build.GitRef))
 	}
 
 	if compCfg.HelmComponentConfig != nil {
