@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.87
+
+Promote Azure support.
+
 ## v0.19.81
 
 Promoting to force a canary run.
