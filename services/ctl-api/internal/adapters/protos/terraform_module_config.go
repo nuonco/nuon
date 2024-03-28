@@ -35,43 +35,10 @@ func (c *Adapter) toTerraformVariables(inputVals map[string]*string) *variablesv
 	}
 }
 
-func (c *Adapter) awsAccess(install app.Install) *deployv1.AwsAccess {
-	if install.AWSAccount == nil {
-		return nil
-	}
-
-	return &deployv1.AwsAccess{
-		Region: install.AWSAccount.Region,
-	}
-}
-
-func (c *Adapter) azureAccess(install app.Install) *deployv1.AzureAccess {
-	if install.AzureAccount == nil {
-		return nil
-	}
-
-	return &deployv1.AzureAccess{
-		Location:       install.AzureAccount.Location,
-		SubscriptionId: install.AzureAccount.SubscriptionID,
-		TenantId:       install.AzureAccount.SubscriptionTenantID,
-		ClientId:       install.AzureAccount.ServicePrincipalAppID,
-		ClientSecret:   install.AzureAccount.ServicePrincipalPassword,
-	}
-}
-
-func (c *Adapter) ToTerraformModuleComponentConfig(cfg *app.TerraformModuleComponentConfig, connections []app.InstallDeploy, gitRef string, installDeploy *app.InstallDeploy) (*componentv1.Component, error) {
+func (c *Adapter) ToTerraformModuleComponentConfig(cfg *app.TerraformModuleComponentConfig, connections []app.InstallDeploy, gitRef string) (*componentv1.Component, error) {
 	vcsCfg, err := c.ToVCSConfig(gitRef, cfg.PublicGitVCSConfig, cfg.ConnectedGithubVCSConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get vcs config: %w", err)
-	}
-
-	var (
-		awsAccess   *deployv1.AwsAccess
-		azureAccess *deployv1.AzureAccess
-	)
-	if installDeploy != nil {
-		awsAccess = c.awsAccess(installDeploy.InstallComponent.Install)
-		azureAccess = c.azureAccess(installDeploy.InstallComponent.Install)
 	}
 
 	return &componentv1.Component{
@@ -91,8 +58,6 @@ func (c *Adapter) ToTerraformModuleComponentConfig(cfg *app.TerraformModuleCompo
 					TerraformVersion: cfg.Version,
 					Vars:             c.toTerraformVariables(cfg.Variables),
 					EnvVars:          c.toEnvVars(cfg.EnvVars),
-					AzureAccess:      azureAccess,
-					AwsAccess:        awsAccess,
 				},
 			},
 		},

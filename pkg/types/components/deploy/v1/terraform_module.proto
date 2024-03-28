@@ -7,25 +7,9 @@ import "variables/v1/terraform.proto";
 
 option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v1";
 
-message AwsAccess {
-  bool federated = 1;
-  string region = 2;
-}
-
-message AzureAccess {
-  string location = 1;
-  string subscription_id = 2;
-  string tenant_id = 3;
-  string client_id = 4;
-  string client_secret = 5;
-}
-
 // TerraformModuleConfig enables a customer to provision a terraform module in their customer's cloud account
 message TerraformModuleConfig {
   string terraform_version = 1;
   variables.v1.TerraformVariables vars = 3;
   variables.v1.EnvVars env_vars = 4;
-
-  AwsAccess aws_access = 5;
-  AzureAccess azure_access = 6;
 }

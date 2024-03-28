@@ -41,33 +41,10 @@ func (c *Adapter) toSandboxSettings(install *app.Install) (*installsv1.SandboxSe
 	return sandboxSettings, nil
 }
 
-func (c *Adapter) toRunnerType(install *app.Install) (installsv1.RunnerType, error) {
-	var runnerTyp installsv1.RunnerType
-	switch install.AppRunnerConfig.Type {
-	case app.AppRunnerTypeAWSECS:
-		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AWS_ECS
-	case app.AppRunnerTypeAWSEKS:
-		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AWS_EKS
-	case app.AppRunnerTypeAzureAKS:
-		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS
-	case app.AppRunnerTypeAzureACS:
-		runnerTyp = installsv1.RunnerType_RUNNER_TYPE_AZURE_ACS
-	default:
-		return installsv1.RunnerType_RUNNER_TYPE_UNSPECIFIED, fmt.Errorf("unsupported runner type:  %s", install.AppRunnerConfig.Type)
-	}
-
-	return runnerTyp, nil
-}
-
 func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) (*installsv1.ProvisionRequest, error) {
 	sandboxSettings, err := c.toSandboxSettings(install)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
-	}
-
-	runnerTyp, err := c.toRunnerType(install)
-	if err != nil {
-		return nil, err
 	}
 
 	req := &installsv1.ProvisionRequest{
@@ -76,7 +53,7 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) 
 		InstallId:       install.ID,
 		RunId:           runID,
 		SandboxSettings: sandboxSettings,
-		RunnerType:      runnerTyp,
+		RunnerType:      ToRunnerType(install.AppRunnerConfig.Type),
 	}
 	if install.AWSAccount != nil {
 		req.AwsSettings = &installsv1.AWSSettings{
@@ -103,18 +80,13 @@ func (c *Adapter) ToInstallDeprovisionRequest(install *app.Install, runID string
 		return nil, fmt.Errorf("unable to get sandbox settings: %w", err)
 	}
 
-	runnerTyp, err := c.toRunnerType(install)
-	if err != nil {
-		return nil, err
-	}
-
 	req := &installsv1.DeprovisionRequest{
 		OrgId:           install.OrgID,
 		AppId:           install.AppID,
 		InstallId:       install.ID,
 		RunId:           runID,
 		SandboxSettings: sandboxSettings,
-		RunnerType:      runnerTyp,
+		RunnerType:      ToRunnerType(install.AppRunnerConfig.Type),
 	}
 	if install.AWSAccount != nil {
 		req.AwsSettings = &installsv1.AWSSettings{

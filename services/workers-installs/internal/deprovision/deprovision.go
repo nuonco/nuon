@@ -7,6 +7,7 @@ import (
 	awsecs "github.com/powertoolsdev/mono/pkg/sandboxes/aws-ecs"
 	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
 	azureaks "github.com/powertoolsdev/mono/pkg/sandboxes/azure-aks"
+	contextv1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
 	executev1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
@@ -94,7 +95,7 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 		RunnerType: req.RunnerType,
 	}
 
-	if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_ECS {
+	if req.RunnerType == contextv1.RunnerType_RUNNER_TYPE_AWS_ECS {
 		tfOutputs, err := awsecs.ParseTerraformOutputs(outputs)
 		if err != nil {
 			err = fmt.Errorf("invalid sandbox outputs: %w", err)
@@ -111,7 +112,7 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 			SubnetIds:         generics.ToStringSlice(tfOutputs.VPC.PublicSubnetIDs),
 			SecurityGroupId:   tfOutputs.VPC.DefaultSecurityGroupID,
 		}
-	} else if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AWS_EKS {
+	} else if req.RunnerType == contextv1.RunnerType_RUNNER_TYPE_AWS_EKS {
 		tfOutputs, err := awseks.ParseTerraformOutputs(outputs)
 		if err != nil {
 			return fmt.Errorf("invalid sandbox outputs: %w", err)
@@ -124,7 +125,7 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 			CaData:         tfOutputs.Cluster.CertificateAuthorityData,
 			TrustedRoleArn: w.cfg.NuonAccessRoleArn,
 		}
-	} else if req.RunnerType == installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS {
+	} else if req.RunnerType == contextv1.RunnerType_RUNNER_TYPE_AZURE_AKS {
 		tfOutputs, err := azureaks.ParseTerraformOutputs(outputs)
 		if err != nil {
 			err = fmt.Errorf("invalid sandbox outputs: %w", err)

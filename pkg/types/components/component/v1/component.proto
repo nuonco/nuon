@@ -4,6 +4,7 @@ package component.v1;
 
 import "build/v1/build.proto";
 import "connections/v1/connections.proto";
+import "context/v1/context.proto";
 import "deploy/v1/config.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
@@ -22,4 +23,5 @@ message Component {
   deploy.v1.Config deploy_cfg = 3 [(tagger.tags) = "faker:\"deployConfig\""];
   connections.v1.Connections connections = 4;
   variables.v1.InstallInputs install_inputs = 5;
+  context.v1.Context context = 6;
 }
