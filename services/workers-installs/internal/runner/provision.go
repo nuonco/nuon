@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/kube"
-	installsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1"
+	contextv1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client"
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
@@ -82,11 +82,11 @@ func (w wkflow) ProvisionRunner(ctx workflow.Context, req *runnerv1.ProvisionRun
 	}
 
 	switch req.RunnerType {
-	case installsv1.RunnerType_RUNNER_TYPE_AWS_ECS:
+	case contextv1.RunnerType_RUNNER_TYPE_AWS_ECS:
 		if err := w.installECSRunner(ctx, req); err != nil {
 			return resp, fmt.Errorf("unable to install ecs runner: %w", err)
 		}
-	case installsv1.RunnerType_RUNNER_TYPE_AWS_EKS, installsv1.RunnerType_RUNNER_TYPE_AZURE_AKS:
+	case contextv1.RunnerType_RUNNER_TYPE_AWS_EKS, contextv1.RunnerType_RUNNER_TYPE_AZURE_AKS:
 		if err := w.installKubernetesRunner(ctx, req); err != nil {
 			return resp, fmt.Errorf("unable to install kubernetes runner: %w", err)
 		}
