@@ -7,7 +7,7 @@ rds:
   family: "postgres14"
   major_engine_version: "14"
   instance_class: "db.t4g.small"
-  allocated_storage: "20"
+  allocated_storage: "100"
   db_name: nuon
   port: 5432
   username: nuonadmin
