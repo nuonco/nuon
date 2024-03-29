@@ -294,3 +294,21 @@ module "nuon-terraform-aws-install-access" {
     github = github.nuon
   }
 }
+
+module "nuon-demo" {
+  source           = "./modules/repository"
+  name             = "demo"
+  description      = "Demo app built with Nuon."
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  required_checks = [
+    "check-pr / Run PR checks",
+    "check-pr / Update PR status",
+  ]
+
+  providers = {
+    github = github.nuon
+  }
+}
