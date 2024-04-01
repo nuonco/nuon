@@ -109,7 +109,7 @@
             "pages": [
                 "tutorials/aws-ecs-app-tutorial",
                 "tutorials/aws-eks-app-tutorial",
-                "tutorials/byo-vpc-tutorial",
+                "tutorials/byovpc-tutorial",
                 "tutorials/aws-lambda-tutorial"
             ]
         },
