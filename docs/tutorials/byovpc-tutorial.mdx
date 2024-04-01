@@ -1,5 +1,5 @@
 ---
-title: "Create a BYO-VPC App"
+title: "Create a BYOVPC App"
 description: "Learn how to create an app that can be deployed in a customer's VPC."
 icon: "aws"
 ---
@@ -56,7 +56,7 @@ resource "nuon_app" "my_byovpc_app" {
 ### App Input
 
 This is a setting that your customer will be able to configure when they install the app. It will be displayed on the installer page as a text field.
-For BYO-VPC, this is especially important, since it allows the customer to tell Nuon which VPC to install the app into.
+For BYOVPC, this is especially important, since it allows the customer to tell Nuon which VPC to install the app into.
 
 <CodeGroup>
 ```toml TOML
@@ -143,6 +143,11 @@ resource "nuon_app_sandbox" "main" {
     repo      = "nuonco/sandboxes"
     branch    = "main"
     directory = "aws-ecs-byovpc"
+  }
+
+  var {
+    name = "vpc_id"
+    value = "{{.nuon.install.inputs.vpc_id}}"
   }
 }
 ```
