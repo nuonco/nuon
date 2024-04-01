@@ -151,5 +151,10 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "033-sensitive-input",
 			Fn:   a.migration033SensitiveInputs,
 		},
+		{
+
+			Name: "033-install-events-cascade",
+			Fn:   a.migration033InstallEventsCascade,
+		},
 	}
 }
