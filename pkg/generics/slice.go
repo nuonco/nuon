@@ -35,6 +35,14 @@ func ToIntSlice[T any](vals []T) []interface{} {
 	return intVals
 }
 
+func MergeSlice[T comparable](a, b []T) []T {
+	vals := make([]T, 0, len(a)+len(b))
+	vals = append(vals, a...)
+	vals = append(vals, b...)
+
+	return vals
+}
+
 // SliceToGroups turns a slice into a set of groups, with the group size. If the group size is less than 1, we set it to
 // one.
 func SliceToGroups[T any](vals []T, grpSize int) [][]T {
