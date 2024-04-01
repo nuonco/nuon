@@ -9,6 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -33,10 +34,13 @@ func (w *Workflows) reprovision(ctx workflow.Context, installID string, dryRun b
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
+	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusStarted)
 	w.updateRunStatus(ctx, installRun.ID, StatusProvisioning, "provisioning")
+
 	req, err := w.protos.ToInstallProvisionRequest(&install, installRun.ID)
 	if err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to create install provision request")
+		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install provision request: %w", err)
 	}
 
@@ -68,11 +72,13 @@ func (w *Workflows) reprovision(ctx workflow.Context, installID string, dryRun b
 
 		w.updateStatus(ctx, installID, StatusError, "unable to reprovision app resources")
 		w.updateRunStatus(ctx, installRun.ID, StatusError, "unable to provision install resources")
+		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
 		return fmt.Errorf("unable to provision install: %w", err)
 	}
 
 	w.updateStatus(ctx, installID, StatusActive, "app resources are provisioned")
 	w.updateRunStatus(ctx, installRun.ID, StatusActive, "install resources provisioned")
+	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFinished)
 
 	return nil
 }
