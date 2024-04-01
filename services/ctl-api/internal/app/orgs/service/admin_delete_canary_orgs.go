@@ -28,6 +28,12 @@ func (s *service) AdminDeleteCanaryOrgs(ctx *gin.Context) {
 	}
 
 	for _, org := range orgs {
+		for _, app := range org.Apps {
+			for _, install := range app.Installs {
+				s.installHooks.Forgotten(ctx, install.ID)
+			}
+			s.appHooks.Deleted(ctx, app.ID)
+		}
 		s.hooks.ForceDelete(ctx, org.ID)
 	}
 
@@ -37,6 +43,8 @@ func (s *service) AdminDeleteCanaryOrgs(ctx *gin.Context) {
 func (s *service) getCanaryOrgs(ctx context.Context) ([]app.Org, error) {
 	var orgs []app.Org
 	res := s.db.WithContext(ctx).
+		Preload("Apps").
+		Preload("Apps.Installs").
 		Joins("JOIN user_tokens on orgs.created_by_id=user_tokens.subject").
 		Where("user_tokens.token_type = ?", "canary").
 		Find(&orgs)
