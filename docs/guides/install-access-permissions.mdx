@@ -31,15 +31,17 @@ IAM roles can be created one of a few ways:
 
 ### Using Terraform
 
-You can use `terraform` to create and manage IAM roles for creating / destroying Nuon installs using our `iam-role` module. This module is located in the [sandboxes](https://github.com/nuonco/sandboxes) repo.
+You can use Terraform to create and manage IAM roles for creating / destroying Nuon installs using our [Install Access](https://registry.terraform.io/modules/nuonco/install-access/aws/latest) module.
 
 An example of creating an IAM role for the AWS ECS sandbox:
 <CodeGroup>
 ```hcl iam-role.tf
-module "ecs_access" {
-  source = "github.com/nuonco/sandboxes//iam-role"
+module "iam-role" {
+  source = "nuonco/install-access/aws"
+  version = "1.0.0"
+
   sandbox = "aws-ecs"
-  prefix = "customer-test"
+  prefix = "iam-role-prefix"
 }
 ```
 ```providers.tf
