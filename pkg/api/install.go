@@ -12,8 +12,8 @@ type Install struct {
 	Status string `json:"status"`
 }
 
-func (c *client) ListInstalls(ctx context.Context) ([]Install, error) {
-	endpoint := "/v1/installs"
+func (c *client) ListInstalls(ctx context.Context, typ string) ([]Install, error) {
+	endpoint := "/v1/installs?type=" + typ
 	byts, err := c.execGetRequest(ctx, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute post request: %w", err)

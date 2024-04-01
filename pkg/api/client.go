@@ -12,7 +12,7 @@ const (
 )
 
 type Client interface {
-	ListOrgs(ctx context.Context) ([]Org, error)
+	ListOrgs(ctx context.Context, typ string) ([]Org, error)
 	DeleteOrg(ctx context.Context, orgID string) error
 	DeprovisionOrg(ctx context.Context, orgID string) error
 	ReprovisionOrg(ctx context.Context, orgID string) error
@@ -24,7 +24,7 @@ type Client interface {
 	RestartApp(ctx context.Context, appID string) error
 	UpdateAppSandbox(ctx context.Context, appID string) error
 
-	ListInstalls(ctx context.Context) ([]Install, error)
+	ListInstalls(ctx context.Context, typ string) ([]Install, error)
 	ReprovisionInstall(ctx context.Context, installID string) error
 	RestartInstall(ctx context.Context, installID string) error
 	DeprovisionInstall(ctx context.Context, installID string) error

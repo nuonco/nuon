@@ -28,8 +28,8 @@ func (c *client) AddSupportUsers(ctx context.Context, orgID string) error {
 	return nil
 }
 
-func (c *client) ListOrgs(ctx context.Context) ([]Org, error) {
-	endpoint := "/v1/orgs"
+func (c *client) ListOrgs(ctx context.Context, typ string) ([]Org, error) {
+	endpoint := "/v1/orgs?type=" + typ
 	byts, err := c.execGetRequest(ctx, endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute get request: %w", err)
