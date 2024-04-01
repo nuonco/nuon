@@ -109,9 +109,6 @@ func (s *service) getAppInstaller(ctx context.Context, installerID string) (*app
 		}).
 		Preload("App.AppInputConfigs.AppInputs").
 
-		// preload runner
-		Preload("App.AppRunnerConfigs").
-
 		// metadata
 		Preload("Metadata").
 		Where("slug = ?", installerID).
