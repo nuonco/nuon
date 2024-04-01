@@ -98,6 +98,11 @@ func (s *service) getAppInstaller(ctx context.Context, installerID string) (*app
 		Preload("App.AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("App.AppSandboxConfigs.ConnectedGithubVCSConfig").
 
+		// preload app runner
+		Preload("App.AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_runner_configs.created_at DESC")
+		}).
+
 		// preload app inputs
 		Preload("App.AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC")
