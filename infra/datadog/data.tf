@@ -44,10 +44,18 @@ data "aws_route53_zone" "private" {
   }
 }
 
+locals {
+  template_vars = {
+    "env" : var.env
+  }
+  default_vars = templatefile("vars/defaults.yaml", local.template_vars)
+  env_vars     = templatefile("vars/${var.env}.yaml", local.template_vars)
+}
+
 data "utils_deep_merge_yaml" "vars" {
   input = [
-    file("vars/defaults.yaml"),
-    file("vars/${var.env}.yaml"),
+    local.default_vars,
+    local.env_vars,
   ]
 }
 

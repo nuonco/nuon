@@ -80,3 +80,29 @@ aws_permissions:
   - "tag:GetTagValues"
   - "xray:BatchGetTraces"
   - "xray:GetTraceSummaries"
+monitors:
+  - json: >
+      {
+          "name": "${env} - Kubernetes Container Waiting",
+          "type": "query alert",
+          "query": "sum(last_2m):sum:kubernetes.containers.state.waiting{env:${env}} by {kube_container_name,kube_namespace} > 1",
+          "message": "@slack-nuon-alerts-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
+          "tags": [
+            "env:${env}"
+          ],
+          "options": {
+              "thresholds": {
+                  "critical": 1,
+                  "warning": 0.5
+              },
+              "notify_audit": false,
+              "include_tags": true,
+              "new_group_delay": 60,
+              "renotify_interval": 0,
+              "escalation_message": "",
+              "notify_no_data": false,
+              "silenced": {}
+          },
+          "priority": 1,
+          "restricted_roles": null
+      }
