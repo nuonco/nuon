@@ -130,3 +130,178 @@ monitors:
         "priority": 2,
         "restricted_roles": null
     }
+  temporal_schedule_to_start_timeout: >
+    {
+        "name": "${env} - Temporal schedule-to-start timeout",
+        "type": "query alert",
+        "query": "sum(last_5m):sum:temporal.server.schedule_to_start.timeout.count{env:${env}}.as_count() > 1",
+        "message": "@slack-alerts-infra",
+        "tags": [
+            "service:temporal",
+            "terraform:true",
+            "env:${env}"
+        ],
+        "options": {
+            "thresholds": {
+                "critical": 1
+            },
+            "notify_audit": false,
+            "include_tags": false,
+            "notify_no_data": false,
+            "silenced": {}
+        },
+        "priority": 1,
+        "restricted_roles": null
+    }
+  org_is_unhealthy: >
+    {
+        "name": "${env} - Org is unhealthy",
+        "type": "query alert",
+        "query": "sum(last_15m):sum:health_check{status:error, sandbox_mode:false, env:${env}} by {org_id}.as_count() > 15",
+        "message": "@slack-alerts-product \n\n{{org_id.name}} is unhealthy.",
+        "tags": [
+            "service: ctl-api",
+            "terraform:true",
+            "env:${env}"
+        ],
+        "options": {
+            "thresholds": {
+                "critical": 15,
+                "warning": 3
+            },
+            "notify_audit": false,
+            "include_tags": true,
+            "new_group_delay": 60,
+            "notify_no_data": false,
+            "silenced": {}
+        },
+        "priority": 1,
+        "restricted_roles": null
+    }
+  org_failed_to_provision: >
+    {
+        "name": "${env} - Org failed to provision",
+        "type": "event-v2 alert",
+        "query": "events(\"\\\"org failed to provision\\\" env:${env}\").rollup(\"count\").last(\"5m\") > 1",
+        "message": "@slack-alerts-product",
+        "tags": [
+            "service: ctl-api",
+            "terraform:true",
+            "env:${env}"
+        ],
+        "options": {
+            "thresholds": {
+                "critical": 1
+            },
+            "enable_logs_sample": false,
+            "notify_audit": false,
+            "on_missing_data": "default",
+            "include_tags": false,
+            "silenced": {}
+        },
+        "priority": 1,
+        "restricted_roles": null
+    }
+  install_failed_to_provision: >
+    {
+        "name": "${env} - Install failed to provision",
+        "type": "event-v2 alert",
+        "query": "events(\"\\\"install failed to provision\\\" env:${env}\").rollup(\"count\").last(\"5m\") > 1",
+        "message": "@slack-alerts-product",
+        "tags": [
+            "service: ctl-api",
+            "terraform:true",
+            "env:${env}"
+        ],
+        "options": {
+            "thresholds": {
+                "critical": 1
+            },
+            "enable_logs_sample": false,
+            "notify_audit": false,
+            "on_missing_data": "default",
+            "include_tags": false,
+            "silenced": {}
+        },
+        "priority": 4,
+        "restricted_roles": null
+    }
+  failed_to_queue_waypoint_job: >
+    {
+        "name": "${env} - Failed to queue waypoint job",
+        "type": "event-v2 alert",
+        "query": "events(\"\\\"Failed to queue waypoint job\\\" env:${env}\").rollup(\"count\").last(\"5m\") > 1",
+        "message": "@slack-alerts-infra",
+        "tags": [
+            "service:workers-executors",
+            "terraform:true",
+            "env:${env}"
+        ],
+        "options": {
+            "thresholds": {
+                "critical": 1
+            },
+            "enable_logs_sample": false,
+            "notify_audit": false,
+            "on_missing_data": "default",
+            "include_tags": false,
+            "silenced": {}
+        },
+        "priority": 1,
+        "restricted_roles": null
+    }
+  database_running_low_on_free_space: >
+    {
+        "name": "${env} - Database Running Low on Free Space",
+        "type": "query alert",
+        "query": "avg(last_1h):avg:aws.rds.free_storage_space{environment:${env}} by {dbname} < 1073741824",
+        "message": "@slack-alerts-infra \n{{dbname.name}} is running low on free space.",
+        "tags": [
+            "terraform:true",
+            "env:${env}"
+        ],
+        "options": {
+            "thresholds": {
+                "critical": 1073741824
+            },
+            "notify_audit": false,
+            "include_tags": true,
+            "evaluation_delay": 900,
+            "new_group_delay": 60,
+            "notify_no_data": false,
+            "silenced": {}
+        },
+        "priority": 1,
+        "restricted_roles": null
+    }
+  ctl_api_5xx_errors: >
+    {
+        "name": "${env} - 5xx Errors from CTL API",
+        "type": "query alert",
+        "query": "sum(last_5m):sum:api.request.status{env:${env}, status_code_class:5xx} by {endpoint}.as_count() > 1",
+        "message": "@slack-alerts-product",
+        "tags": [
+            "ingress.k8s.aws/stack:default/ctl-api-api",
+            "terraform:true",
+            "env:${env}"
+        ],
+        "options": {
+            "thresholds": {
+                "critical": 1
+            },
+            "notify_audit": false,
+            "threshold_windows": null,
+            "notify_no_data": false,
+            "include_tags": false,
+            "renotify_interval": 30,
+            "renotify_statuses": [
+                "alert",
+                "no data"
+            ],
+            "escalation_message": "",
+            "new_group_delay": 0,
+            "silenced": {}
+        },
+        "priority": 1,
+        "restricted_roles": null
+    }
