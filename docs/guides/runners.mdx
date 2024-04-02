@@ -15,6 +15,11 @@ have different capabilities (or not be compatible).
 
 To configure your app runner:
 <CodeGroup>
+```toml TOML
+[runner]
+runner_type = "aws-eks"
+```
+
 ```hcl runner.tf
 resource "nuon_app_runner" "main" {
   app_id = nuon_app.main.id
@@ -29,6 +34,14 @@ You can set environment variables in your runner config using an `env_var`. Envi
 are performing jobs such as provisioning, updating and monitoring.
 
 <CodeGroup>
+```toml TOML
+[runner]
+runner_type = "aws-eks"
+[[runner.env_var]]
+name = "ENV_VAR_KEY"
+value = "value"
+```
+
 ```hcl runner.tf
 resource "nuon_app_runner" "main" {
   app_id = nuon_app.main.id
@@ -58,6 +71,11 @@ This runner is granted `ClusterAdmin` permissions, so that it can properly manag
 To configure an AWS EKS runner:
 
 <CodeGroup>
+```toml TOML
+[runner]
+runner_type = "aws-eks"
+```
+
 ```hcl runner.tf
 resource "nuon_app_runner" "main" {
   app_id = nuon_app.main.id
@@ -79,6 +97,11 @@ The AWS ECS runner is deployed using ECS Fargate.
 
 To configure an ecs runner:
 <CodeGroup>
+```toml TOML
+[runner]
+runner_type = "aws-ecs"
+```
+
 ```hcl runner.tf
 resource "nuon_app_runner" "main" {
   app_id = nuon_app.main.id
@@ -91,10 +114,33 @@ resource "nuon_app_runner" "main" {
 <br />
 
 <Note>
-Technically, you can use an `aws-ecs` Fargate runner with an `aws-eks` app but is not recommended.
+Technically, you can use an `aws-ecs` Fargate runner with an `aws-eks` app but this is not recommended.
 
 If you have a use case for this runner/sandbox combination, we would love to hear more. Please [get in touch](mailto:team@nuon.co).
 </Note>
+
+### Azure AKS Runner
+
+The Azure AKS runner is deployed using Helm, into a dedicated namespace in the cluster.
+
+This runner is granted `ClusterAdmin` permissions, so that it can properly manage the _entire_ kubernetes cluster.
+
+To configure an Azure AKS runner:
+
+<CodeGroup>
+```toml TOML
+[runner]
+runner_type = "azure-aks"
+```
+
+```hcl runner.tf
+resource "nuon_app_runner" "main" {
+  app_id = nuon_app.main.id
+
+  runner_type = "azure-aks"
+}
+```
+</CodeGroup>
 
 ## Runner Responsibilities
 
