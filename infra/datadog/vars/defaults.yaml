@@ -109,8 +109,7 @@ monitors:
     }
   waypoint_job_queued: >
     {
-        "id": 418560,
-        "name": "${env} - Waypoint job queued for 2 minutes",
+        "name": "${env} - Waypoint Job Queued",
         "type": "query alert",
         "query": "max(last_5m):max:waypoint_executor.job_state_change.max{env:${env}, waypoint_job_state:queued} > 120000",
         "message": "@slack-nuon-alerts-infra",
