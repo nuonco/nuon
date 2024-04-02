@@ -103,7 +103,7 @@ resource "nuon_app_sandbox" "main" {
 [AWS EKS BYOVPC](https://registry.terraform.io/modules/nuonco/eks-byovpc-sandbox/aws/latest) is a sandbox for provisioning an EKS app
 in a customer provider VPC. This sandbox creates a new EKS cluster, IAM and installs a set of Helm resources.
 
-**NOTE** this sandbox requires an [app-input](./app-inputs) be declared to collect a customer provided `vpc_id`.
+This sandbox requires an [App Input](./app-inputs) be declared to collect a customer provided `vpc_id`.
 
 <CodeGroup>
 ```toml TOML
@@ -157,6 +157,8 @@ resource "nuon_app_input" "main" {
 ```
 </CodeGroup>
 
+<br />
+
 <Note>
 In order for components to work with `aws-eks-byovpc` sandbox, subnets must be tagged in a way Nuon can look them up.
 
@@ -197,9 +199,7 @@ resource "nuon_app_sandbox" "main" {
 [AWS ECS BYOVPC](https://registry.terraform.io/modules/nuonco/ecs-byovpc-sandbox/aws/latest) is a sandbox for provisioning an ECS app
 in a customer provider VPC. This sandbox creates a new ECS Fargate cluster and IAM resources.
 
-<Note>
-This sandbox requires an [app-input](./app-inputs) be declared to collect a customer provided `vpc_id`.
-</Note>
+This sandbox requires an [App Input](./app-inputs) be declared to collect a customer provided `vpc_id`.
 
 <CodeGroup>
 ```toml TOML
@@ -253,6 +253,8 @@ resource "nuon_app_input" "main" {
 ```
 </CodeGroup>
 
+<br />
+
 <Note>
 In order for components to work with `aws-ecs-byovpc` sandboxes, subnets must be tagged in a way Nuon can look them up.
 
@@ -298,6 +300,8 @@ resource "nuon_app_runner" "main" {
 ### Azure AKS BYOVPN
 
 The [Azure AKS BYOVPN](https://registry.terraform.io/modules/nuonco/aks-byovpn-sandbox/azure/latest) sandbox creates an AKS cluster in a customer-provided VPN.
+
+[App Inputs](./app-inputs) must be declared for the customer to provide the `resource_group_name`, `network_name`, and `subnet_name`.
 
 <CodeGroup>
 ```toml TOML
