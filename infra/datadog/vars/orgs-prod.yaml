@@ -1,13 +1,14 @@
 ---
 pool: main
 monitors:
-  - json: >
+  kubernetes_container_waiting: >
       {
           "name": "${env} - Kubernetes Container Waiting",
           "type": "query alert",
           "query": "sum(last_2m):sum:kubernetes.containers.state.waiting{env:${env}} by {kube_container_name,kube_namespace} > 2",
           "message": "@slack-nuon-alerts-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
           "tags": [
+            "terraform:true",
             "env:${env}"
           ],
           "options": {

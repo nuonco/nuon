@@ -81,28 +81,53 @@ aws_permissions:
   - "xray:BatchGetTraces"
   - "xray:GetTraceSummaries"
 monitors:
-  - json: >
-      {
-          "name": "${env} - Kubernetes Container Waiting",
-          "type": "query alert",
-          "query": "sum(last_2m):sum:kubernetes.containers.state.waiting{env:${env}} by {kube_container_name,kube_namespace} > 1",
-          "message": "@slack-nuon-alerts-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
-          "tags": [
-            "env:${env}"
-          ],
-          "options": {
-              "thresholds": {
-                  "critical": 1,
-                  "warning": 0.5
-              },
-              "notify_audit": false,
-              "include_tags": true,
-              "new_group_delay": 60,
-              "renotify_interval": 0,
-              "escalation_message": "",
-              "notify_no_data": false,
-              "silenced": {}
-          },
-          "priority": 1,
-          "restricted_roles": null
-      }
+  kubernetes_container_waiting: >
+    {
+        "name": "${env} - Kubernetes Container Waiting",
+        "type": "query alert",
+        "query": "sum(last_2m):sum:kubernetes.containers.state.waiting{env:${env}} by {kube_container_name,kube_namespace} > 1",
+        "message": "@slack-nuon-alerts-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
+        "tags": [
+          "terraform:true",
+          "env:${env}"
+        ],
+        "options": {
+            "thresholds": {
+                "critical": 1,
+                "warning": 0.5
+            },
+            "notify_audit": false,
+            "include_tags": true,
+            "new_group_delay": 60,
+            "renotify_interval": 0,
+            "escalation_message": "",
+            "notify_no_data": false,
+            "silenced": {}
+        },
+        "priority": 1,
+        "restricted_roles": null
+    }
+  waypoint_job_queued: >
+    {
+        "id": 418560,
+        "name": "${env} - Waypoint job queued for 2 minutes",
+        "type": "query alert",
+        "query": "max(last_5m):max:waypoint_executor.job_state_change.max{env:${env}, waypoint_job_state:queued} > 120000",
+        "message": "@slack-nuon-alerts-infra",
+        "tags": [
+            "terraform:true",
+            "env:${env}",
+            "service:workers-executors"
+        ],
+        "options": {
+            "thresholds": {
+                "critical": 120000
+            },
+            "notify_audit": false,
+            "include_tags": false,
+            "notify_no_data": false,
+            "silenced": {}
+        },
+        "priority": 2,
+        "restricted_roles": null
+    }

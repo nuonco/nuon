@@ -1,5 +1,5 @@
 resource "datadog_monitor_json" "kubernetes_container_waiting" {
-  for_each = { for monitor in local.vars.monitors : monitor.json => monitor }
+  for_each = local.vars.monitors
 
-  monitor = each.value.json
+  monitor = each.value
 }
