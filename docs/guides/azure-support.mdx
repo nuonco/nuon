@@ -7,15 +7,23 @@ Azure has not been publicly announced yet, however this guide is a starting poin
 
 ## Create Service Principal
 
-In order for Nuon to provision an install on Azure, it must be given access via a [Service Principal](https://learn.microsoft.com/en-us/azure/aks/learn/quick-kubernetes-deploy-terraform?tabs=bash#create-a-service-principal) that has been assigned the [Contributor](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/general#contributor) role.
+In order for Nuon to provision an install on Azure, it must be given access via a [Service Principal](https://learn.microsoft.com/en-us/azure/aks/learn/quick-kubernetes-deploy-terraform?tabs=bash#create-a-service-principal) that has been assigned the [Owner](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/general#owner) role.
 
 To create an Azure service principal locally:
 
-```bash
+<CodeGroup>
+```bash login
 $ az login
-$ az account list (to get the subscription ID)
-$ az ad sp create-for-rbac --name <name> --role Owner --scopes /subscriptions/<subscription-id>
 ```
+
+```bash get subscription ID
+$ az account list
+```
+
+```bash create principal
+$ az ad sp create-for-rbac --name <principal-name> --role Owner --scopes /subscriptions/<subscription-id>
+```
+</CodeGroup>
 
 ## Sandboxes
 
