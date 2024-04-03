@@ -92,6 +92,8 @@ monitors:
           "env:${env}"
         ],
         "options": {
+            "groupby_simple_monitor" : false,
+            "new_host_delay": 300,
             "thresholds": {
                 "critical": 1,
                 "warning": 0.5
@@ -119,6 +121,8 @@ monitors:
             "service:workers-executors"
         ],
         "options": {
+            "groupby_simple_monitor" : false,
+            "new_host_delay": 300,
             "thresholds": {
                 "critical": 120000
             },
@@ -142,6 +146,8 @@ monitors:
             "env:${env}"
         ],
         "options": {
+            "groupby_simple_monitor" : false,
+            "new_host_delay": 300,
             "thresholds": {
                 "critical": 1
             },
@@ -165,6 +171,8 @@ monitors:
             "env:${env}"
         ],
         "options": {
+            "groupby_simple_monitor" : false,
+            "new_host_delay": 300,
             "thresholds": {
                 "critical": 15,
                 "warning": 3
@@ -190,6 +198,8 @@ monitors:
             "env:${env}"
         ],
         "options": {
+            "groupby_simple_monitor" : false,
+            "new_host_delay": 300,
             "thresholds": {
                 "critical": 1
             },
@@ -214,6 +224,8 @@ monitors:
             "env:${env}"
         ],
         "options": {
+            "groupby_simple_monitor" : false,
+            "new_host_delay": 300,
             "thresholds": {
                 "critical": 1
             },
@@ -238,6 +250,8 @@ monitors:
             "env:${env}"
         ],
         "options": {
+            "groupby_simple_monitor" : false,
+            "new_host_delay": 300,
             "thresholds": {
                 "critical": 1
             },
@@ -261,6 +275,8 @@ monitors:
             "env:${env}"
         ],
         "options": {
+            "groupby_simple_monitor" : false,
+            "new_host_delay": 300,
             "thresholds": {
                 "critical": 1073741824
             },
@@ -286,6 +302,8 @@ monitors:
             "env:${env}"
         ],
         "options": {
+            "groupby_simple_monitor" : false,
+            "new_host_delay": 300,
             "thresholds": {
                 "critical": 1
             },
