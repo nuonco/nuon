@@ -1,2 +1,34 @@
 ---
 pool: nuon
+synthetics:
+  ctl_api_uptime:
+    name: "${env} - CTL API Uptime"
+    type: "api"
+    subtype: "http"
+    status: "live"
+    message: "@slack-alerts-product"
+    locations: [
+      "aws:ca-central-1",
+      "aws:ap-south-1",
+      "eu-west-1"
+    ]
+    tags: [
+      "service:ctl-api",
+      "terraform:true",
+      "env:${env}"
+    ]
+    request_definition:
+      method: "GET"
+      url: "https://ctl.${env}.nuon.co/livez"
+    request_headers: {}
+    assertion:
+      type: "statusCode"
+      operator: "is"
+      target: 200
+    options_list:
+      tick_every: 60
+      retry:
+        count: 2
+        interval: 1000
+      monitor_options:
+        renotify_interval: 30
