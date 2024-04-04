@@ -2,11 +2,11 @@
 pool: nuon
 synthetics:
   ctl_api_uptime:
-    name: "${env} - CTL API Uptime"
+    name: "${aws_account} - CTL API Uptime"
     type: "api"
     subtype: "http"
     status: "live"
-    message: "@slack-alerts-product"
+    message: "@slack-alerts-${env}-product"
     locations: [
       "aws:ca-central-1",
       "aws:ap-south-1",
@@ -15,11 +15,11 @@ synthetics:
     tags: [
       "service:ctl-api",
       "terraform:true",
-      "env:${env}"
+      "env:${aws_account}"
     ]
     request_definition:
       method: "GET"
-      url: "https://ctl.${env}.nuon.co/livez"
+      url: "https://ctl.${aws_account}.nuon.co/livez"
     request_headers: {}
     assertion:
       type: "statusCode"

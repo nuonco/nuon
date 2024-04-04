@@ -83,13 +83,13 @@ aws_permissions:
 monitors:
   kubernetes_container_waiting: >
     {
-        "name": "${env} - Kubernetes Container Waiting",
+        "name": "${aws_account} - Kubernetes Container Waiting",
         "type": "query alert",
-        "query": "sum(last_2m):sum:kubernetes.containers.state.waiting{env:${env}} by {kube_container_name,kube_namespace} > 1",
-        "message": "@slack-nuon-alerts-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
+        "query": "sum(last_2m):sum:kubernetes.containers.state.waiting{env:${aws_account}} by {kube_container_name,kube_namespace} > 1",
+        "message": "@slack-alerts-${env}-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
         "tags": [
           "terraform:true",
-          "env:${env}"
+          "env:${aws_account}"
         ],
         "options": {
             "groupby_simple_monitor" : false,
@@ -111,13 +111,13 @@ monitors:
     }
   waypoint_job_queued: >
     {
-        "name": "${env} - Waypoint Job Queued",
+        "name": "${aws_account} - Waypoint Job Queued",
         "type": "query alert",
-        "query": "max(last_5m):max:waypoint_executor.job_state_change.max{env:${env}, waypoint_job_state:queued} > 120000",
-        "message": "@slack-nuon-alerts-infra",
+        "query": "max(last_5m):max:waypoint_executor.job_state_change.max{env:${aws_account}, waypoint_job_state:queued} > 120000",
+        "message": "@slack-alerts-${env}-infra",
         "tags": [
             "terraform:true",
-            "env:${env}",
+            "env:${aws_account}",
             "service:workers-executors"
         ],
         "options": {
@@ -136,14 +136,14 @@ monitors:
     }
   temporal_schedule_to_start_timeout: >
     {
-        "name": "${env} - Temporal schedule-to-start timeout",
+        "name": "${aws_account} - Temporal schedule-to-start timeout",
         "type": "query alert",
-        "query": "sum(last_5m):sum:temporal.server.schedule_to_start.timeout.count{env:${env}}.as_count() > 1",
-        "message": "@slack-alerts-infra",
+        "query": "sum(last_5m):sum:temporal.server.schedule_to_start.timeout.count{env:${aws_account}}.as_count() > 1",
+        "message": "@slack-alerts-${env}-infra",
         "tags": [
             "service:temporal",
             "terraform:true",
-            "env:${env}"
+            "env:${aws_account}"
         ],
         "options": {
             "groupby_simple_monitor" : false,
@@ -161,14 +161,14 @@ monitors:
     }
   org_is_unhealthy: >
     {
-        "name": "${env} - Org is unhealthy",
+        "name": "${aws_account} - Org is unhealthy",
         "type": "query alert",
-        "query": "sum(last_15m):sum:health_check{status:error, sandbox_mode:false, env:${env}} by {org_id}.as_count() > 15",
-        "message": "@slack-alerts-product \n\n{{org_id.name}} is unhealthy.",
+        "query": "sum(last_15m):sum:health_check{status:error, sandbox_mode:false, env:${aws_account}} by {org_id}.as_count() > 15",
+        "message": "@slack-alerts-${env}-product \n\n{{org_id.name}} is unhealthy.",
         "tags": [
             "service:ctl-api",
             "terraform:true",
-            "env:${env}"
+            "env:${aws_account}"
         ],
         "options": {
             "groupby_simple_monitor" : false,
@@ -188,14 +188,14 @@ monitors:
     }
   org_failed_to_provision: >
     {
-        "name": "${env} - Org failed to provision",
+        "name": "${aws_account} - Org failed to provision",
         "type": "event-v2 alert",
-        "query": "events(\"\\\"org failed to provision\\\" env:${env}\").rollup(\"count\").last(\"5m\") > 1",
-        "message": "@slack-alerts-product",
+        "query": "events(\"\\\"org failed to provision\\\" env:${aws_account}\").rollup(\"count\").last(\"5m\") > 1",
+        "message": "@slack-alerts-${env}-product",
         "tags": [
             "service:ctl-api",
             "terraform:true",
-            "env:${env}"
+            "env:${aws_account}"
         ],
         "options": {
             "groupby_simple_monitor" : false,
@@ -214,14 +214,14 @@ monitors:
     }
   install_failed_to_provision: >
     {
-        "name": "${env} - Install failed to provision",
+        "name": "${aws_account} - Install failed to provision",
         "type": "event-v2 alert",
-        "query": "events(\"\\\"install failed to provision\\\" env:${env}\").rollup(\"count\").last(\"5m\") > 1",
-        "message": "@slack-alerts-product",
+        "query": "events(\"\\\"install failed to provision\\\" env:${aws_account}\").rollup(\"count\").last(\"5m\") > 1",
+        "message": "@slack-alerts-${env}-product",
         "tags": [
             "service:ctl-api",
             "terraform:true",
-            "env:${env}"
+            "env:${aws_account}"
         ],
         "options": {
             "groupby_simple_monitor" : false,
@@ -240,14 +240,14 @@ monitors:
     }
   failed_to_queue_waypoint_job: >
     {
-        "name": "${env} - Failed to queue waypoint job",
+        "name": "${aws_account} - Failed to queue waypoint job",
         "type": "event-v2 alert",
-        "query": "events(\"\\\"Failed to queue waypoint job\\\" env:${env}\").rollup(\"count\").last(\"5m\") > 1",
-        "message": "@slack-alerts-infra",
+        "query": "events(\"\\\"Failed to queue waypoint job\\\" env:${aws_account}\").rollup(\"count\").last(\"5m\") > 1",
+        "message": "@slack-alerts-${env}-infra",
         "tags": [
             "service:workers-executors",
             "terraform:true",
-            "env:${env}"
+            "env:${aws_account}"
         ],
         "options": {
             "groupby_simple_monitor" : false,
@@ -266,13 +266,13 @@ monitors:
     }
   database_running_low_on_free_space: >
     {
-        "name": "${env} - Database Running Low on Free Space",
+        "name": "${aws_account} - Database Running Low on Free Space",
         "type": "query alert",
-        "query": "avg(last_1h):avg:aws.rds.free_storage_space{environment:${env}} by {dbname} < 1073741824",
-        "message": "@slack-alerts-infra \n{{dbname.name}} is running low on free space.",
+        "query": "avg(last_1h):avg:aws.rds.free_storage_space{environment:${aws_account}} by {dbname} < 1073741824",
+        "message": "@slack-alerts-${env}-infra \n{{dbname.name}} is running low on free space.",
         "tags": [
             "terraform:true",
-            "env:${env}"
+            "env:${aws_account}"
         ],
         "options": {
             "groupby_simple_monitor" : false,
@@ -292,14 +292,14 @@ monitors:
     }
   ctl_api_5xx_errors: >
     {
-        "name": "${env} - 5xx Errors from CTL API",
+        "name": "${aws_account} - 5xx Errors from CTL API",
         "type": "query alert",
-        "query": "sum(last_5m):sum:api.request.status{env:${env}, status_code_class:5xx} by {endpoint}.as_count() > 1",
-        "message": "@slack-alerts-product",
+        "query": "sum(last_5m):sum:api.request.status{env:${aws_account}, status_code_class:5xx} by {endpoint}.as_count() > 1",
+        "message": "@slack-alerts-${env}-product",
         "tags": [
             "ingress.k8s.aws/stack:default/ctl-api-api",
             "terraform:true",
-            "env:${env}"
+            "env:${aws_account}"
         ],
         "options": {
             "groupby_simple_monitor" : false,

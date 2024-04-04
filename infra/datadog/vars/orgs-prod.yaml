@@ -3,13 +3,13 @@ pool: main
 monitors:
   kubernetes_container_waiting: >
     {
-        "name": "${env} - Kubernetes Container Waiting",
+        "name": "${aws_account} - Kubernetes Container Waiting",
         "type": "query alert",
-        "query": "sum(last_2m):sum:kubernetes.containers.state.waiting{env:${env}} by {kube_container_name,kube_namespace} > 2",
-        "message": "@slack-nuon-alerts-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
+        "query": "sum(last_2m):sum:kubernetes.containers.state.waiting{env:${aws_account}} by {kube_container_name,kube_namespace} > 2",
+        "message": "@slack-alerts-${env}-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
         "tags": [
           "terraform:true",
-          "env:${env}"
+          "env:${aws_account}"
         ],
         "options": {
             "groupby_simple_monitor" : false,

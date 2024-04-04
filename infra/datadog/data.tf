@@ -46,7 +46,8 @@ data "aws_route53_zone" "private" {
 
 locals {
   template_vars = {
-    "env" : var.env
+    "aws_account" : var.env,
+    "env" : strcontains(var.env, "stage") ? "stage" : "prod"
   }
   default_vars = templatefile("vars/defaults.yaml", local.template_vars)
   env_vars     = templatefile("vars/${var.env}.yaml", local.template_vars)

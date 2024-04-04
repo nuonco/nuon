@@ -6,7 +6,7 @@ synthetics:
     type: "api"
     subtype: "http"
     status: "live"
-    message: "@slack-alerts-product"
+    message: "@slack-alerts-${env}-product"
     locations: [
       "aws:ca-central-1",
       "aws:ap-south-1",
