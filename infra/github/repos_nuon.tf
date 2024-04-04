@@ -211,6 +211,20 @@ module "nuon-terraform-aws-install-access" {
   }
 }
 
+module "nuon-vpn-configuration-examples" {
+  source           = "./modules/repository"
+  name             = "vpn-configuration-examples"
+  description      = "Examples for configuring VPNs, for connecting to BYOC deployed applications."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
+
 module "nuon-demo" {
   source           = "./modules/repository"
   name             = "demo"
