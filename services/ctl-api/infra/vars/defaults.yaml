@@ -6,6 +6,11 @@ rds:
   engine: postgres
   engine_version: "14.10"
   family: "postgres14"
+  parameters:
+    - name: max_connections
+      value: 300
+    - name: idle_in_transaction_session_timeout
+      value: 3600000
   major_engine_version: "14"
   instance_class: "db.t4g.small"
   allocated_storage: "20"
