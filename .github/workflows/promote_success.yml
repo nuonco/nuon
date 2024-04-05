@@ -20,7 +20,7 @@ jobs:
       env: prod
       endpoint: /v1/general/provision-canary
       method: POST
-      data: "{}"
+      data: '{"sandbox_mode": true}'
     secrets: inherit
   sdks:
     name: Update SDKs
