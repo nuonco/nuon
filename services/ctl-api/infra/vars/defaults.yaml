@@ -9,6 +9,7 @@ rds:
   parameters:
     - name: max_connections
       value: 300
+      apply_method: pending-reboot
     - name: idle_in_transaction_session_timeout
       value: 3600000
   major_engine_version: "14"
