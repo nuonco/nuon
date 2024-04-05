@@ -28,12 +28,12 @@ func (c *service) StopCanaryCron(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.stopCanaryCron(ctx, realCanaryCronID); err != nil {
-		ctx.Error(fmt.Errorf("unable to stop sandbox cron: %w", err))
-		return
+	canaryID := realCanaryCronID
+	if req.SandboxMode {
+		canaryID = sandboxCanaryCronID
 	}
 
-	if err := c.stopCanaryCron(ctx, sandboxCanaryCronID); err != nil {
+	if err := c.stopCanaryCron(ctx, canaryID); err != nil {
 		ctx.Error(fmt.Errorf("unable to stop sandbox cron: %w", err))
 		return
 	}
