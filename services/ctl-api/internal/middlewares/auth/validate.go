@@ -12,7 +12,7 @@ import (
 )
 
 func (m *middleware) validateToken(ctx context.Context, token string) (*validator.ValidatedClaims, error) {
-	m.l.Info("debugging",
+	m.l.Debug("validating token",
 		zap.String("audience", m.cfg.Auth0Audience),
 		zap.String("issuer-url", m.cfg.Auth0IssuerURL),
 		zap.String("token", token),
