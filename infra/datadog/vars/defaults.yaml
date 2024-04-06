@@ -341,35 +341,5 @@ monitors:
           "priority": 1,
           "restricted_roles": null
       }
-  ctl_api_db_connection:
-    enabled: true
-    json: >
-      {
-          "name": "CTL API DB Connections",
-          "type": "query alert",
-          "query": "sum(last_5m):sum:aws.rds.database_connections{terraform:ctl-api-${env}} by {dbname}.weighted() > 20",
-          "message": "@slack-alerts-${env}-infra \nThe database {{dbname.name}} has {{value}} connections.",
-          "tags": [
-              "service:ctl-api",
-              "terraform:true",
-              "env:${aws_account}"
-          ],
-          "options": {
-              "groupby_simple_monitor" : false,
-              "new_host_delay": 300,
-              "thresholds": {
-                  "critical": 20
-              },
-              "notify_audit": false,
-              "include_tags": true,
-              "new_group_delay": 60,
-              "evaluation_delay": 900,
-              "renotify_interval": 30,
-              "renotify_statuses": [
-                  "alert",
-                  "no data"
-              ],
-              "escalation_message": ""
-          }
-      }
+
 synthetics: {}
