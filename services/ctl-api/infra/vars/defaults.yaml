@@ -8,10 +8,16 @@ rds:
   family: "postgres14"
   parameters:
     - name: max_connections
-      value: 300
+      # we limit each api and worker process to 10 connections at a time. This means we have head room to scale this up
+      # to 100 instances total, between the two.
+      value: 1000
       apply_method: pending-reboot
-    - name: idle_in_transaction_session_timeout
-      value: 3600000
+      # we require that each connection in our pools send a keepalive every 10 seconds max. If this is not received for
+    - name: tcp_keepalives_idle
+      value: 10
+      # after 3 lost/unacked keepalives, we consider the connection dead from the db side
+    - name: tcp_keepalives_count
+      value: 3
   major_engine_version: "14"
   instance_class: "db.t4g.small"
   allocated_storage: "20"
