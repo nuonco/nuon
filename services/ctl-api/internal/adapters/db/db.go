@@ -90,29 +90,18 @@ func New(v *validator.Validate,
 	}
 	l.Info("conn config", zap.Any("cfg", connCfg.ConnString()))
 
-	beforeConnectFn := func(ctx context.Context, connCfg *pgx.ConnConfig) error {
-		if database.PasswordFn == nil {
-			return nil
-		}
-
-		password, er := database.PasswordFn(ctx, *database)
-		if er != nil {
-			return err
-		}
-
-		c := connCfg.Config
-		c.Password = password
-		connCfg.Config = c
-		connCfg.Password = password
-		return nil
-	}
-
 	gormCfg := &gorm.Config{
 		Logger:         database.Logger,
 		TranslateError: true,
 	}
+
+	pool, err := database.pool()
+	if err != nil {
+		return nil, fmt.Errorf("unable to create database pool: %w", err)
+	}
+
 	postgresCfg := postgres.Config{
-		Conn: stdlib.OpenDB(*connCfg, stdlib.OptionBeforeConnect(beforeConnectFn)),
+		Conn: stdlib.OpenDBFromPool(pool),
 	}
 	db, err := gorm.Open(postgres.New(postgresCfg), gormCfg)
 	if err != nil {
