@@ -1,5 +1,5 @@
 resource "datadog_monitor_json" "main" {
-  for_each = local.vars.monitors
+  for_each = { for k, v in local.vars.monitors : k => v if v.enabled }
 
-  monitor = each.value
+  monitor = each.value.json
 }

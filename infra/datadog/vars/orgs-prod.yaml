@@ -1,31 +1,37 @@
 ---
 pool: main
 monitors:
-  kubernetes_container_waiting: >
-    {
-        "name": "${aws_account} - Kubernetes Container Waiting",
-        "type": "query alert",
-        "query": "sum(last_2m):sum:kubernetes.containers.state.waiting{env:${aws_account}} by {kube_container_name,kube_namespace} > 2",
-        "message": "@slack-alerts-${env}-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
-        "tags": [
-          "terraform:true",
-          "env:${aws_account}"
-        ],
-        "options": {
-            "groupby_simple_monitor" : false,
-            "new_host_delay": 300,
-            "thresholds": {
-                "critical": 2,
-                "warning": 1
-            },
-            "notify_audit": false,
-            "include_tags": true,
-            "new_group_delay": 60,
-            "renotify_interval": 0,
-            "escalation_message": "",
-            "notify_no_data": false,
-            "silenced": {}
-        },
-        "priority": 1,
-        "restricted_roles": null
-    }
+  ctl_api_5xx_errors:
+    enabled: false
+  ctl_api_db_connection:
+    enabled: false
+  kubernetes_container_waiting:
+    enabled: true
+    json: >
+      {
+          "name": "${aws_account} - Kubernetes Container Waiting",
+          "type": "query alert",
+          "query": "sum(last_2m):sum:kubernetes.containers.state.waiting{env:${aws_account}} by {kube_container_name,kube_namespace} > 2",
+          "message": "@slack-alerts-${env}-infra \n{{kube_container_name.name}} in {{kube_namespace.name}} has {{value}} containers waiting.",
+          "tags": [
+            "terraform:true",
+            "env:${aws_account}"
+          ],
+          "options": {
+              "groupby_simple_monitor" : false,
+              "new_host_delay": 300,
+              "thresholds": {
+                  "critical": 2,
+                  "warning": 1
+              },
+              "notify_audit": false,
+              "include_tags": true,
+              "new_group_delay": 60,
+              "renotify_interval": 0,
+              "escalation_message": "",
+              "notify_no_data": false,
+              "silenced": {}
+          },
+          "priority": 1,
+          "restricted_roles": null
+      }

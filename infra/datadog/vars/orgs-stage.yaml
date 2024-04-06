@@ -1,2 +1,7 @@
 ---
 pool: main
+monitors:
+  ctl_api_5xx_errors:
+    enabled: false
+  ctl_api_db_connection:
+    enabled: false
