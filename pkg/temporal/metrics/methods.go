@@ -8,16 +8,23 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (w *writer) Incr(ctx workflow.Context, name string, value int, tags ...string) {
+func (w *writer) Incr(ctx workflow.Context, name string, tags ...string) {
 	workflow.SideEffect(ctx, func(workflow.Context) interface{} {
-		w.MetricsWriter.Incr(name, value, metrics.ToTags(w.Tags, tags...))
+		w.MetricsWriter.Incr(name, metrics.ToTags(w.Tags, tags...))
 		return nil
 	})
 }
 
-func (w *writer) Decr(ctx workflow.Context, name string, value int, tags ...string) {
+func (w *writer) Decr(ctx workflow.Context, name string, tags ...string) {
 	workflow.SideEffect(ctx, func(workflow.Context) interface{} {
-		w.MetricsWriter.Decr(name, value, metrics.ToTags(w.Tags, tags...))
+		w.MetricsWriter.Decr(name, metrics.ToTags(w.Tags, tags...))
+		return true
+	})
+}
+
+func (w *writer) Gauge(ctx workflow.Context, name string, value float64, tags ...string) {
+	workflow.SideEffect(ctx, func(workflow.Context) interface{} {
+		w.MetricsWriter.Gauge(name, value, metrics.ToTags(w.Tags, tags...))
 		return true
 	})
 }

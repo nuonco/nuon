@@ -14,7 +14,6 @@ import (
 
 func Test_writer_Incr(t *testing.T) {
 	key := uuid.NewString()
-	value := 1000
 
 	tests := map[string]struct {
 		client func(*testing.T, *gomock.Controller) dogstatsdClient
@@ -29,7 +28,7 @@ func Test_writer_Incr(t *testing.T) {
 			},
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
-				client.EXPECT().Incr(key, []string{"key:value"}, float64(value)).Return(nil)
+				client.EXPECT().Incr(key, []string{"key:value"}, float64(1)).Return(nil)
 				return client
 			},
 		},
@@ -40,7 +39,7 @@ func Test_writer_Incr(t *testing.T) {
 			tags: []string{"key:value"},
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
-				client.EXPECT().Incr(key, []string{"key:value"}, float64(value)).Return(nil)
+				client.EXPECT().Incr(key, []string{"key:value"}, float64(1)).Return(nil)
 				return client
 			},
 		},
@@ -69,14 +68,13 @@ func Test_writer_Incr(t *testing.T) {
 			assert.NoError(t, err)
 			writer.client = client
 
-			writer.Incr(key, value, test.tags)
+			writer.Incr(key, test.tags)
 		})
 	}
 }
 
 func Test_writer_Decr(t *testing.T) {
 	key := uuid.NewString()
-	value := 1000
 
 	tests := map[string]struct {
 		client func(*testing.T, *gomock.Controller) dogstatsdClient
@@ -91,7 +89,7 @@ func Test_writer_Decr(t *testing.T) {
 			},
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
-				client.EXPECT().Decr(key, []string{"key:value"}, float64(value)).Return(nil)
+				client.EXPECT().Decr(key, []string{"key:value"}, float64(1)).Return(nil)
 				return client
 			},
 		},
@@ -102,7 +100,7 @@ func Test_writer_Decr(t *testing.T) {
 			tags: []string{"key:value"},
 			client: func(t *testing.T, mockCtl *gomock.Controller) dogstatsdClient {
 				client := NewMockdogstatsdClient(mockCtl)
-				client.EXPECT().Decr(key, []string{"key:value"}, float64(value)).Return(nil)
+				client.EXPECT().Decr(key, []string{"key:value"}, float64(1)).Return(nil)
 				return client
 			},
 		},
@@ -131,7 +129,7 @@ func Test_writer_Decr(t *testing.T) {
 			assert.NoError(t, err)
 			writer.client = client
 
-			writer.Decr(key, value, test.tags)
+			writer.Decr(key, test.tags)
 		})
 	}
 }
