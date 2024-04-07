@@ -24,6 +24,8 @@ env:
   SANDBOX_SLEEP: 3s
   INTEGRATION_GITHUB_INSTALL_ID: !!string 41323514
   APP_SYNC_API_URL: http://localhost:8081
+  # use this to write out debug logs locally
+  # LOG_LEVEL: DEBUG
 local_env:
   DB_HOST: localhost
 env_secrets:

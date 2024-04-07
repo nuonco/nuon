@@ -7,23 +7,31 @@ import (
 )
 
 type Incr struct {
-	Name  string   `json:"name"`
-	Value int      `json:"value"`
-	Tags  []string `json:"tags"`
+	Name string   `json:"name"`
+	Tags []string `json:"tags"`
 }
 
 func (m Incr) Write(mw Writer) {
-	mw.Incr(m.Name, m.Value, m.Tags)
+	mw.Incr(m.Name, m.Tags)
 }
 
 type Decr struct {
-	Name  string   `json:"name"`
-	Value int      `json:"value"`
-	Tags  []string `json:"tags"`
+	Name string   `json:"name"`
+	Tags []string `json:"tags"`
 }
 
 func (m Decr) Write(mw Writer) {
-	mw.Decr(m.Name, m.Value, m.Tags)
+	mw.Decr(m.Name, m.Tags)
+}
+
+type Gauge struct {
+	Name  string   `json:"name"`
+	Value float64  `json:"value"`
+	Tags  []string `json:"tags"`
+}
+
+func (m Gauge) Write(mw Writer) {
+	mw.Gauge(m.Name, m.Value, m.Tags)
 }
 
 type Timing struct {

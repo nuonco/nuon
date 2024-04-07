@@ -57,7 +57,7 @@ func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest)
 		dur := workflow.Now(ctx).Sub(startTS)
 
 		w.mw.Timing(ctx, "health_check.duration", dur, metrics.ToTags(tags)...)
-		w.mw.Incr(ctx, "health_check.count", 1, metrics.ToTags(tags)...)
+		w.mw.Incr(ctx, "health_check.count", metrics.ToTags(tags)...)
 	}()
 
 	var healthCheck app.OrgHealthCheck

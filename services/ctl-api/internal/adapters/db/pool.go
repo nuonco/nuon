@@ -13,6 +13,8 @@ const (
 	maxConnections  int32         = 10
 	maxConnIdleTime time.Duration = time.Second * 15
 	maxConnLifetime time.Duration = time.Minute * 5
+
+	poolMetricsPeriod time.Duration = time.Second * 10
 )
 
 func (c *database) poolCfg() (*pgxpool.Config, error) {
@@ -59,7 +61,7 @@ func (d *database) beforeConnect(ctx context.Context, connCfg *pgx.ConnConfig) e
 	return nil
 }
 
-func (d *database) pool() (*pgxpool.Pool, error) {
+func (d *database) createPool() (*pgxpool.Pool, error) {
 	connCfg, err := d.poolCfg()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create database connection config: %w", err)
@@ -71,4 +73,36 @@ func (d *database) pool() (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("unable to create pool: %w", err)
 	}
 	return pool, nil
+}
+
+func (d *database) recordPoolMetrics() {
+	stat := d.pool.Stat()
+
+	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.TotalConns()), []string{"conn_type:total"})
+	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.AcquiredConns()), []string{"conn_type:acquired"})
+	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.ConstructingConns()), []string{"conn_type:connecting"})
+	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.IdleConns()), []string{"conn_type:idle"})
+	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.MaxConns()), []string{"conn_type:max"})
+
+	avgAcquireDuration := stat.AcquireDuration() / time.Duration(stat.AcquireCount())
+	d.MetricsWriter.Timing("gorm_pool.average_acquire_duration", avgAcquireDuration, nil)
+}
+
+func (d *database) startPoolBackgroundJob() {
+	ticker := time.NewTicker(poolMetricsPeriod)
+	go func() {
+		for {
+			select {
+			case <-d.poolCtx.Done():
+				ticker.Stop()
+				return
+			case <-ticker.C:
+				d.recordPoolMetrics()
+			}
+		}
+	}()
+}
+
+func (d *database) stopPoolBackgroundJob() {
+	d.poolCtxCancel()
 }

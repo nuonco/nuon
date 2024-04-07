@@ -35,7 +35,7 @@ func (w *writer) Flush() {
 	w.handleErr(client.Flush())
 }
 
-func (w *writer) Incr(name string, value int, tags []string) {
+func (w *writer) Incr(name string, tags []string) {
 	if w.Disable {
 		w.Log.Debug(fmt.Sprintf("incr.%s", name))
 		return
@@ -47,10 +47,10 @@ func (w *writer) Incr(name string, value int, tags []string) {
 		return
 	}
 
-	w.handleErr(client.Incr(name, append(w.Tags, tags...), float64(value)))
+	w.handleErr(client.Incr(name, append(w.Tags, tags...), defaultRate))
 }
 
-func (w *writer) Decr(name string, value int, tags []string) {
+func (w *writer) Decr(name string, tags []string) {
 	if w.Disable {
 		w.Log.Debug(fmt.Sprintf("decr.%s", name))
 		return
@@ -62,7 +62,22 @@ func (w *writer) Decr(name string, value int, tags []string) {
 		return
 	}
 
-	w.handleErr(client.Decr(name, append(w.Tags, tags...), float64(value)))
+	w.handleErr(client.Decr(name, append(w.Tags, tags...), defaultRate))
+}
+
+func (w *writer) Gauge(name string, value float64, tags []string) {
+	if w.Disable {
+		w.Log.Debug(fmt.Sprintf("gauge.%s", name))
+		return
+	}
+
+	client, err := w.getClient()
+	if err != nil {
+		w.handleErr(err)
+		return
+	}
+
+	w.handleErr(client.Gauge(name, float64(value), append(w.Tags, tags...), defaultRate))
 }
 
 func (w *writer) Timing(name string, value time.Duration, tags []string) {
