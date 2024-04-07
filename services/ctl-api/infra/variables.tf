@@ -16,6 +16,7 @@ locals {
   tags = {
     service   = local.name
     terraform = "${local.name}-${var.env}"
+    env = var.env
   }
 }
 
