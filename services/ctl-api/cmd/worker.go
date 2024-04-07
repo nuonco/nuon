@@ -13,6 +13,7 @@ import (
 	releasesactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
+	"gorm.io/gorm"
 )
 
 func (c *cli) registerWorker() error {
@@ -27,6 +28,8 @@ func (c *cli) registerWorker() error {
 
 func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{
+		fx.Invoke(func(*gorm.DB) {}),
+
 		// orgs worker
 		fx.Provide(orgsactivities.New),
 		fx.Provide(orgsworker.NewWorkflows),
