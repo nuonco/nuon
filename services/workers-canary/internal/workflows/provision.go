@@ -35,13 +35,13 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 
 	canaryID, err := w.getCanaryID(ctx, req)
 	if err != nil {
-		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:get_canary_id", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
+		w.metricsWriter.Incr(ctx, "provision", "status:error", "step:get_canary_id", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 		return nil, fmt.Errorf("unable to get canary ID: %w", err)
 	}
 	req.CanaryId = canaryID
 
 	if err := req.Validate(); err != nil {
-		w.metricsWriter.Incr(ctx, "provision", 1, "status:error", "step:validate_request", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
+		w.metricsWriter.Incr(ctx, "provision", "status:error", "step:validate_request", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 		return nil, err
 	}
 
@@ -71,7 +71,7 @@ func (w *wkflow) Provision(ctx workflow.Context, req *canaryv1.ProvisionRequest)
 	}
 
 	w.sendNotification(ctx, notificationTypeCanarySuccess, req.CanaryId, req.SandboxMode, nil)
-	w.metricsWriter.Incr(ctx, "provision", 1, "status:ok", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
+	w.metricsWriter.Incr(ctx, "provision", "status:ok", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 	return &canaryv1.ProvisionResponse{
 		CanaryId: req.CanaryId,
 		OrgId:    orgID,

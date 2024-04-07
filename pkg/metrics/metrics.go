@@ -19,9 +19,10 @@ const (
 //go:generate mockgen -destination=mock_writer.go -source=metrics.go -package=metrics
 type Writer interface {
 	// dogstatsd metrics
-	Incr(string, int, []string)
-	Decr(string, int, []string)
+	Incr(string, []string)
+	Decr(string, []string)
 	Timing(string, time.Duration, []string)
+	Gauge(string, float64, []string)
 
 	// datadog specific
 	Event(e *statsd.Event)

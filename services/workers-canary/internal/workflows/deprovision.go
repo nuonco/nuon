@@ -22,6 +22,6 @@ func (w *wkflow) Deprovision(ctx workflow.Context, req *canaryv1.DeprovisionRequ
 		return nil, err
 	}
 
-	w.metricsWriter.Incr(ctx, "deprovision", 1, "status:ok", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
+	w.metricsWriter.Incr(ctx, "deprovision", "status:ok", metrics.ToBoolTag("sandbox_mode", req.SandboxMode))
 	return resp, nil
 }
