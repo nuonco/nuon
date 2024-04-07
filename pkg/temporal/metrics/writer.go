@@ -13,8 +13,9 @@ import (
 
 type Writer interface {
 	// dogstatsd metrics
-	Incr(workflow.Context, string, int, ...string)
-	Decr(workflow.Context, string, int, ...string)
+	Incr(workflow.Context, string, ...string)
+	Decr(workflow.Context, string, ...string)
+	Gauge(workflow.Context, string, float64, ...string)
 	Timing(workflow.Context, string, time.Duration, ...string)
 
 	// datadog specific

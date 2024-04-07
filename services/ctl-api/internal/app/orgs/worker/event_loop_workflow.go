@@ -27,7 +27,7 @@ type OrgEventLoopRequest struct {
 
 func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) error {
 	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
-	w.mw.Incr(ctx, "event_loop.start", 1, metrics.ToTags(defaultTags, "op", "started")...)
+	w.mw.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
 	l := workflow.GetLogger(ctx)
 
 	finished := false
@@ -56,7 +56,7 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 			dur := workflow.Now(ctx).Sub(startTS)
 
 			w.mw.Timing(ctx, "event_loop.signal_duration", dur, metrics.ToTags(tags)...)
-			w.mw.Incr(ctx, "event_loop.signal", 1, metrics.ToTags(tags)...)
+			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
 		switch signal.Operation {
@@ -125,7 +125,7 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 	})
 	for !finished {
 		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
-			w.mw.Incr(ctx, "event_loop.canceled", 1, metrics.ToTags(defaultTags)...)
+			w.mw.Incr(ctx, "event_loop.canceled", metrics.ToTags(defaultTags)...)
 			l.Error("workflow canceled")
 			break
 		}

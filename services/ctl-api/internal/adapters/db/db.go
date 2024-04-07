@@ -6,9 +6,11 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -34,6 +36,10 @@ type database struct {
 	Logger zapgorm2.Logger `validate:"required"`
 
 	MetricsWriter metrics.Writer `validate:"required"`
+
+	pool          *pgxpool.Pool
+	poolCtx       context.Context
+	poolCtxCancel context.CancelFunc
 }
 
 func (d *database) Validate(v *validator.Validate) error {
@@ -64,7 +70,12 @@ func (c *database) connCfg() (*pgx.ConnConfig, error) {
 func New(v *validator.Validate,
 	l *zap.Logger,
 	metricsWriter metrics.Writer,
+	lc fx.Lifecycle,
 	cfg *internal.Config) (*gorm.DB, error) {
+
+	ctx := context.Background()
+	ctx, cancelFn := context.WithCancel(ctx)
+
 	database := &database{
 		Logger:        zapgorm2.New(l),
 		PasswordFn:    FetchIamTokenPassword,
@@ -75,6 +86,8 @@ func New(v *validator.Validate,
 		SSLMode:       cfg.DBSSLMode,
 		Region:        cfg.DBRegion,
 		MetricsWriter: metricsWriter,
+		poolCtx:       ctx,
+		poolCtxCancel: cancelFn,
 	}
 	if cfg.DBPassword != "" {
 		database.PasswordFn = nil
@@ -84,33 +97,41 @@ func New(v *validator.Validate,
 		return nil, err
 	}
 
-	connCfg, err := database.connCfg()
-	if err != nil {
-		return nil, fmt.Errorf("unable to create database connection config: %w", err)
-	}
-	l.Info("conn config", zap.Any("cfg", connCfg.ConnString()))
-
-	gormCfg := &gorm.Config{
-		Logger:         database.Logger,
-		TranslateError: true,
-	}
-
-	pool, err := database.pool()
+	// create pool
+	pool, err := database.createPool()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create database pool: %w", err)
 	}
+	database.pool = pool
 
+	// create postgres config and setup gorm
 	postgresCfg := postgres.Config{
 		Conn: stdlib.OpenDBFromPool(pool),
+	}
+	gormCfg := &gorm.Config{
+		Logger:         database.Logger,
+		TranslateError: true,
 	}
 	db, err := gorm.Open(postgres.New(postgresCfg), gormCfg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
 
+	// register plugins
 	if err := database.registerPlugins(db); err != nil {
 		return nil, fmt.Errorf("unable to register plugins: %w", err)
 	}
+
+	lc.Append(fx.Hook{
+		OnStart: func(_ context.Context) error {
+			database.startPoolBackgroundJob()
+			return nil
+		},
+		OnStop: func(_ context.Context) error {
+			database.stopPoolBackgroundJob()
+			return nil
+		},
+	})
 
 	return db, err
 }

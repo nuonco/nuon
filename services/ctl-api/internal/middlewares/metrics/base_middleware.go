@@ -43,7 +43,7 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			"context:" + m.context,
 		}
 
-		m.writer.Incr("api.request.status", 1, tags)
+		m.writer.Incr("api.request.status", tags)
 		m.writer.Timing("api.request.latency", time.Since(startTS), tags)
 	}
 }

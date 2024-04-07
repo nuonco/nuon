@@ -24,6 +24,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
+	"gorm.io/gorm"
 )
 
 func (c *cli) registerAPI() error {
@@ -64,6 +65,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(releasesservice.New)),
 
 		fx.Provide(fx.Annotate(api.NewAPI, fx.ParamTags(`group:"services"`, `group:"middlewares"`))),
+		fx.Invoke(func(*gorm.DB) {}),
 		fx.Invoke(func(*api.API) {}),
 	}
 

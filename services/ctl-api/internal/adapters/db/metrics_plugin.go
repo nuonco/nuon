@@ -68,6 +68,6 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB) {
 		}...)
 	}
 
-	m.metricsWriter.Incr("gorm_operation", 1, tags)
+	m.metricsWriter.Incr("gorm_operation", tags)
 	m.metricsWriter.Timing("gorm_operation_latency", time.Since(startTS), tags)
 }
