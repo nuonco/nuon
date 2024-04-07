@@ -118,7 +118,6 @@ module "nuon-actions-build" {
   required_checks = [
     "check-pr / Run PR checks",
     "check-pr / Update PR status",
-    "Integration tests",
   ]
   is_public        = true
   owning_team_id   = github_team.nuon.id
@@ -136,7 +135,6 @@ module "nuon-actions-release" {
   required_checks = [
     "check-pr / Run PR checks",
     "check-pr / Update PR status",
-    "Integration tests",
   ]
   is_public        = true
   owning_team_id   = github_team.nuon.id
