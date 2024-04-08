@@ -15,6 +15,7 @@ const (
 	TokenTypeIntegration TokenType = "integration"
 	TokenTypeCanary      TokenType = "canary"
 	TokenTypeAdmin       TokenType = "admin"
+	TokenTypeStatic      TokenType = "static"
 )
 
 type UserToken struct {
