@@ -22,7 +22,7 @@ func (a *Activities) FetchSandboxOutputs(ctx context.Context, req FetchSandboxOu
 
 	outputs, err := dalClient.GetInstallSandboxOutputs(ctx, req.OrgID, req.AppID, req.InstallID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get outputs: %w", err)
+		return nil, fmt.Errorf("unable to get sandbox outputs: %w", err)
 	}
 
 	return outputs, nil
