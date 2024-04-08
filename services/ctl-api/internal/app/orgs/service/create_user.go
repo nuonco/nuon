@@ -55,8 +55,9 @@ func (s *service) CreateUser(ctx *gin.Context) {
 
 func (s *service) createUser(ctx context.Context, orgID, userID string) (*app.UserOrg, error) {
 	userOrg := &app.UserOrg{
-		OrgID:   orgID,
-		UserID: userID,
+		CreatedByID: userID,
+		OrgID:       orgID,
+		UserID:      userID,
 	}
 
 	err := s.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&userOrg).Error

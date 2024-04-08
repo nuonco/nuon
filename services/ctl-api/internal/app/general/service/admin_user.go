@@ -13,8 +13,8 @@ import (
 )
 
 type AdminUserRequest struct {
-	Email    string        `json:"email" validate:"required"`
-	Duration time.Duration `json:"duration" validate:"required" default:"24h"`
+	Email    string `json:"email" validate:"required"`
+	Duration string `json:"duration" validate:"required" default:"24h"`
 }
 
 func (c *AdminUserRequest) Validate(v *validator.Validate) error {
@@ -48,7 +48,13 @@ func (s *service) CreateAdminUser(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createAdminUser(ctx, req.Email, req.Duration)
+	duration, err := time.ParseDuration(req.Duration)
+	if err != nil {
+		ctx.Error(fmt.Errorf("invalid time duration: %w", err))
+		return
+	}
+
+	token, err := s.createAdminUser(ctx, req.Email, duration)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create integration user: %w", err))
 		return
