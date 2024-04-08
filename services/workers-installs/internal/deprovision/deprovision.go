@@ -85,7 +85,9 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 		InstallID: req.InstallId,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to fetch sandbox outputs: %w", err)
+		// NOTE(jm): when the outputs can not be fetched, this usually means that the sandbox never actually
+		// succeeded.
+		return nil
 	}
 
 	prReq := &runnerv1.DeprovisionRunnerRequest{
