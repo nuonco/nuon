@@ -84,6 +84,9 @@ func (s *service) getAccountInstalls(ctx context.Context, accountID string) ([]a
 		if install.App.Org.SandboxMode {
 			continue
 		}
+		if install.AWSAccount == nil {
+			continue
+		}
 
 		if !strings.Contains(install.AWSAccount.IAMRoleARN, accountID) {
 			continue
