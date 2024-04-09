@@ -156,5 +156,10 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "033-install-events-cascade",
 			Fn:   a.migration033InstallEventsCascade,
 		},
+		{
+
+			Name: "034-app-sandbox-config",
+			Fn:   a.migration034AppSandboxConfigAppID,
+		},
 	}
 }
