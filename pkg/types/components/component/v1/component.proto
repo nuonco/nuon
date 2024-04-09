@@ -21,7 +21,10 @@ message Component {
 
   build.v1.Config build_cfg = 2 [(tagger.tags) = "faker:\"buildConfig\""];
   deploy.v1.Config deploy_cfg = 3 [(tagger.tags) = "faker:\"deployConfig\""];
+
+  // TODO(jm): both the connections and inputs should be in the context object, for consistency.
   connections.v1.Connections connections = 4;
   variables.v1.InstallInputs install_inputs = 5;
+
   context.v1.Context context = 6;
 }

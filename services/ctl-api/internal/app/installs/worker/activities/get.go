@@ -31,6 +31,9 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).
 
+		// load app secrets for deploys
+		Preload("App.AppSecrets").
+
 		// load sandbox
 		Preload("AppSandboxConfig.SandboxRelease").
 		Preload("AppSandboxConfig.SandboxRelease.Sandbox").

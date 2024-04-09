@@ -12,4 +12,5 @@ func init() {
 	_ = faker.AddProvider("waypointVariables", fakeWaypointVariables)
 	_ = faker.AddProvider("intermediateData", fakeIntermediateData)
 	_ = faker.AddProvider("installInputs", fakeInstallInputs)
+	_ = faker.AddProvider("secrets", fakeSecrets)
 }

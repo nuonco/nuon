@@ -40,6 +40,7 @@ integration:
     RUN go test -count=1 -parallel=1 -v -run TestAppsSuite
     RUN go test -count=1 -parallel=1 -v -run TestAppInputSuite
     RUN go test -count=1 -parallel=1 -v -run TestAppSandboxesSuite
+    RUN go test -count=1 -parallel=1 -v -run TestAppSecretsSuite
     RUN go test -count=1 -parallel=1 -v -run TestAppsSuite
     RUN go test -count=1 -parallel=1 -v -run TestComponentBuildsSuite
     RUN go test -count=1 -parallel=1 -v -run TestComponentReleasesSuite

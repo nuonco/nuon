@@ -56,6 +56,11 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id/input-latest-config", s.GetAppInputLatestConfig)
 	api.GET("/v1/apps/:app_id/input-configs", s.GetAppInputConfigs)
 
+	// app secrets management
+	api.POST("/v1/apps/:app_id/secret", s.CreateAppSecret)
+	api.GET("/v1/apps/:app_id/secrets", s.GetAppSecrets)
+	api.DELETE("/v1/apps/:app_id/secret/:secret_id", s.DeleteAppSecret)
+
 	return nil
 }
 
