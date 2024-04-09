@@ -126,3 +126,16 @@ func fakeInstallInputs(v reflect.Value) (interface{}, error) {
 		},
 	}, nil
 }
+
+func fakeSecrets(v reflect.Value) (interface{}, error) {
+	return []*Secret{
+		{
+			Name:  "test_secret_1",
+			Value: "NUON_TEST_VALUE_1",
+		},
+		{
+			Name:  "nuon_secret_2",
+			Value: "NUON_TEST_VALUE_2",
+		},
+	}, nil
+}
