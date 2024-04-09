@@ -3,6 +3,7 @@ package integration
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -159,9 +160,15 @@ func (s *orgsIntegrationTestSuite) TestCreateOrgUser() {
 	s.apiClient.SetOrgID(seedOrg.ID)
 	defer s.deleteOrg(seedOrg.ID)
 
+	email := generics.GetFakeObj[string]()
+	user, err := s.intAPIClient.CreateAdminUser(s.ctx, email, time.Hour)
+	require.NoError(s.T(), err)
+	require.NotEmpty(s.T(), user)
+
 	s.T().Run("success", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateOrgUserRequest]()
-		resp, err := s.apiClient.CreateOrgUser(s.ctx, req)
+		resp, err := s.apiClient.CreateOrgUser(s.ctx, &models.ServiceCreateOrgUserRequest{
+			UserID: email,
+		})
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 

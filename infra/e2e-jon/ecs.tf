@@ -8,7 +8,7 @@ module "aws-ecs" {
   sandbox_dir = "aws-ecs"
   app_runner_type = "aws-ecs"
 
-  install_count =1
+  install_count = 0
   install_prefix = "aws-ecs-"
   aws = [
     {

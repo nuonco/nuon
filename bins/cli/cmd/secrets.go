@@ -1,0 +1,78 @@
+package cmd
+
+import (
+	"github.com/powertoolsdev/mono/bins/cli/internal/secrets"
+	"github.com/spf13/cobra"
+)
+
+func (c *cli) secretsCmd() *cobra.Command {
+	var (
+		appID    string
+		secretID string
+	)
+
+	secretsCmd := &cobra.Command{
+		Use:               "secrets",
+		Short:             "Create and manage secrets.",
+		PersistentPreRunE: c.persistentPreRunE,
+	}
+
+	// list command
+	listCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List all secrets ",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := secrets.New(c.apiClient, c.cfg)
+			svc.List(cmd.Context(), appID, PrintJSON)
+		},
+	}
+	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to delete the secret from")
+	listCmd.MarkFlagRequired("app-id")
+	secretsCmd.AddCommand(listCmd)
+
+	// delete command
+	confirmDelete := false
+	deleteCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete secret",
+		Long:  "Delete an app secret",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := secrets.New(c.apiClient, c.cfg)
+			svc.Delete(cmd.Context(), appID, secretID, PrintJSON)
+		},
+	}
+	deleteCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to delete the secret from")
+	deleteCmd.Flags().StringVarP(&secretID, "secret-id", "s", "", "The ID or name of the secret to delete")
+	deleteCmd.Flags().BoolVar(&confirmDelete, "confirm", false, "Confirm you want to delete the install")
+
+	deleteCmd.MarkFlagRequired("app-id")
+	deleteCmd.MarkFlagRequired("secret-id")
+	deleteCmd.MarkFlagRequired("confirm")
+	secretsCmd.AddCommand(deleteCmd)
+
+	// create command
+	var (
+		name  string
+		value string
+	)
+	createCmd := &cobra.Command{
+		Use:               "create",
+		Short:             "Create a new secret.",
+		PersistentPreRunE: c.persistentPreRunE,
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := secrets.New(c.apiClient, c.cfg)
+			svc.Create(cmd.Context(), appID, name, value, PrintJSON)
+		},
+	}
+	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name of the secret, must be alphanumeric, lower case and can use underscores.")
+	createCmd.Flags().StringVarP(&value, "value", "v", "", "The secret value.")
+	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to delete the secret from")
+
+	createCmd.MarkFlagRequired("name")
+	createCmd.MarkFlagRequired("value")
+	createCmd.MarkFlagRequired("app-id")
+	secretsCmd.AddCommand(createCmd)
+
+	return secretsCmd
+}
