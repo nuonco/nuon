@@ -50,6 +50,7 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		&app.AppInputConfig{},
 		&app.AppInstaller{},
 		&app.AppInstallerMetadata{},
+		&app.AppSecret{},
 
 		// built in sandboxes
 		&app.Sandbox{},
