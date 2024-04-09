@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package context.v1;
 
+import "context/v1/app_context.proto";
 import "context/v1/build_context.proto";
 import "context/v1/install_context.proto";
 import "context/v1/runner_context.proto";
@@ -13,4 +14,5 @@ message Context {
   BuildContext build_context = 1;
   InstallContext install_context = 2;
   RunnerContext runner_context = 3;
+  AppContext app_context = 4;
 }
