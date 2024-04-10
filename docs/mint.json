@@ -94,6 +94,7 @@
                 "guides/sandboxes",
                 "guides/runners",
                 "guides/app-inputs",
+                "guides/app-secrets",
                 "guides/docker-build-components",
                 "guides/container-image-components",
                 "guides/terraform-components",
