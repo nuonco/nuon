@@ -106,10 +106,6 @@ func (a *Activities) getWorkspace(moduleDir string, req *RunTerraformRequest) (w
 		return nil, fmt.Errorf("unable to create backend: %w", err)
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("unable to create local backend: %w", err)
-	}
-
 	hooks := noop.New()
 
 	// create workspace

@@ -6,7 +6,6 @@ locals {
   aws_regions = ["us-east-1", "us-east-2", "us-west-1", "us-west-2", "eu-west-1", "eu-west-2"]
 }
 
-
 resource "random_shuffle" "aws_eks_regions" {
   input        = local.aws_regions
   result_count = var.install_count
