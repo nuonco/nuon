@@ -2,10 +2,15 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"gorm.io/gorm"
 )
 
 var defaultSupportUsers = []string{
@@ -17,8 +22,6 @@ var defaultSupportUsers = []string{
 	"google-oauth2|106750268626571499868",
 	//Nat Hamilton
 	"google-oauth2|107796233904597398271",
-	// Pavi Sandhu
-	"google-oauth2|117375967099708763726",
 }
 
 // @ID AdminCreateSupportUsers
@@ -41,6 +44,13 @@ func (s *service) CreateSupportUsers(ctx *gin.Context) {
 	}
 
 	cctx := context.WithValue(ctx, "user_id", org.CreatedByID)
+
+	if err := s.ensureUsers(ctx, defaultSupportUsers); err != nil {
+		ctx.Error(fmt.Errorf("unable to ensure users: %w", err))
+		return
+	}
+
+	// add each user to this org
 	for _, userID := range defaultSupportUsers {
 		if _, err := s.createUser(cctx, orgID, userID); err != nil {
 			ctx.Error(fmt.Errorf("unable to add users to org: %w", err))
@@ -51,4 +61,50 @@ func (s *service) CreateSupportUsers(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, map[string]string{
 		"status": "ok",
 	})
+}
+
+func (s *service) ensureUsers(ctx context.Context, userIDs []string) error {
+	// make sure each user exists in the database first
+	for _, userID := range defaultSupportUsers {
+		_, err := s.getUser(ctx, userID)
+		if err == nil {
+			continue
+		}
+
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+
+		token := app.UserToken{
+			CreatedByID: userID,
+			Token:       domains.NewUserTokenID(),
+			Subject:     userID,
+			ExpiresAt:   time.Now(),
+			IssuedAt:    time.Now(),
+			Issuer:      userID,
+			Email:       userID,
+			TokenType:   app.TokenTypeAdmin,
+		}
+
+		res := s.db.WithContext(ctx).
+			Create(&token)
+		if res.Error != nil {
+			return fmt.Errorf("unable to create user: %w", res.Error)
+		}
+	}
+
+	return nil
+}
+
+func (s *service) getUser(ctx context.Context, subject string) (*app.UserToken, error) {
+	var user app.UserToken
+
+	res := s.db.WithContext(ctx).Where(app.UserToken{
+		Subject: subject,
+	}).First(&user)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return &user, nil
 }
