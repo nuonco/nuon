@@ -26,7 +26,7 @@ type AppSandboxConfig struct {
 	OrgID string `json:"org_id" gorm:"notnull;default null"`
 	Org   Org    `faker:"-" json:"-"`
 
-	AppID string `json:"app_id"` // gorm:"not null;default null"`
+	AppID string `json:"app_id" gorm:"not null;default null"`
 	App   App    `json:"-" faker:"-"`
 
 	// NOTE(jm): you can use one of a few different methods of creating an app sandbox, either a built in one, that
