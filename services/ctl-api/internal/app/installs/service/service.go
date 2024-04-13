@@ -75,6 +75,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/installs/admin-forget-account-installs", s.ForgetAccountInstalls)
 
 	api.POST("/v1/installs/:install_id/admin-restart", s.RestartInstall)
+	api.GET("/v1/installs/:install_id/admin-get", s.AdminGetInstall)
 	api.POST("/v1/installs/:install_id/admin-reprovision", s.ReprovisionInstall)
 	api.POST("/v1/installs/:install_id/admin-deprovision", s.AdminDeprovisionInstall)
 	api.POST("/v1/installs/:install_id/admin-delete", s.AdminDeleteInstall)
