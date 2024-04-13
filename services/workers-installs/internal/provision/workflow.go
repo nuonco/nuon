@@ -2,6 +2,7 @@ package provision
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -20,6 +21,10 @@ import (
 	workers "github.com/powertoolsdev/mono/services/workers-installs/internal"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/activities"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/sandbox"
+)
+
+const (
+	defaultNuonRunDomain string = "nuon.run"
 )
 
 // NewWorkflow returns a new workflow executor
@@ -246,6 +251,12 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		err = fmt.Errorf("invalid sandbox outputs: %w", err)
 		w.finishWorkflow(ctx, req, resp, err)
 		return resp, err
+	}
+
+	// If there is no `nuon.run`, then this is a custom domain and we should not bother setting up credentials.
+	if !strings.Contains(tfOutputs.PublicDomain.Name, defaultNuonRunDomain) {
+		w.finishWorkflow(ctx, req, resp, nil)
+		return resp, nil
 	}
 	dnsReq := &dnsv1.ProvisionDNSRequest{
 		Domain:      tfOutputs.PublicDomain.Name,
