@@ -1,75 +1,3 @@
-module "e2e-jon" {
-  source = "./modules/workspace"
-
-  name          = "e2e-jon"
-  repo          = "powertoolsdev/mono"
-  auto_apply    = true
-  dir           = "infra/e2e-jon"
-  variable_sets = ["aws-environment-credentials", "api-stage"]
-  project_id    = tfe_project.product.id
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-
-  env_vars = {
-    NUON_API_URL = local.stage.api_url
-  }
-
-  vars = {
-    org_id = local.stage.org_id
-    sandbox_org_id = local.stage.sandbox_org_id
-  }
-  trigger_workspaces = [module.infra-terraform.workspace_id]
-  trigger_prefixes = ["services/e2e/nuon"]
-}
-
-module "e2e-jordan" {
-  source = "./modules/workspace"
-
-  name          = "e2e-jordan"
-  repo          = "powertoolsdev/mono"
-  auto_apply    = true
-  dir           = "infra/e2e-jordan"
-  variable_sets = ["aws-environment-credentials", "api-stage"]
-  project_id    = tfe_project.product.id
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-
-  env_vars = {
-    NUON_API_URL = local.stage.api_url
-  }
-
-  vars = {
-    org_id = local.stage.org_id
-    sandbox_org_id = local.stage.sandbox_org_id
-  }
-  trigger_workspaces = [module.infra-terraform.workspace_id]
-  trigger_prefixes = ["services/e2e/nuon"]
-}
-
-module "e2e-nat" {
-  source = "./modules/workspace"
-
-  name          = "e2e-nat"
-  repo          = "powertoolsdev/mono"
-  auto_apply    = true
-  dir           = "infra/e2e-nat"
-  variable_sets = ["aws-environment-credentials", "api-stage"]
-  project_id    = tfe_project.product.id
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-
-  env_vars = {
-    NUON_API_URL = local.stage.api_url
-  }
-
-  vars = {
-    org_id = local.stage.org_id
-    sandbox_org_id = local.stage.sandbox_org_id
-  }
-  trigger_workspaces = [module.infra-terraform.workspace_id]
-  trigger_prefixes = ["services/e2e/nuon"]
-}
-
 module "e2e-stage" {
   source = "./modules/workspace"
 
@@ -87,11 +15,11 @@ module "e2e-stage" {
   }
 
   vars = {
-    org_id = local.stage.org_id
+    org_id         = local.stage.org_id
     sandbox_org_id = local.stage.sandbox_org_id
   }
   trigger_workspaces = [module.infra-terraform.workspace_id]
-  trigger_prefixes = ["services/e2e/nuon"]
+  trigger_prefixes   = ["services/e2e/nuon"]
 }
 
 module "e2e-prod" {
@@ -107,9 +35,9 @@ module "e2e-prod" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
 
   vars = {
-    org_id = local.prod.org_id
+    org_id         = local.prod.org_id
     sandbox_org_id = local.prod.sandbox_org_id
   }
   trigger_workspaces = [module.infra-terraform.workspace_id]
-  trigger_prefixes = ["services/e2e/nuon"]
+  trigger_prefixes   = ["services/e2e/nuon"]
 }

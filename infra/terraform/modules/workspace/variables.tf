@@ -26,6 +26,7 @@ variable "repo" {
 variable "slack_notifications_webhook_url" {
   description = "slack notifications webhook url for alerts"
   type        = string
+  default     = ""
 }
 
 variable "vars" {
