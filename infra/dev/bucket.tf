@@ -11,6 +11,17 @@ resource "aws_kms_alias" "dev_bucket" {
 }
 
 data "aws_iam_policy_document" "dev_bucket_key_policy" {
+  # enable IAM User Permissions
+  statement {
+    effect    = "Allow"
+    actions   = ["kms:*", ]
+    resources = ["*", ]
+    principals {
+      type        = "AWS"
+      identifiers = [local.accounts["stage"].id, ]
+    }
+  }
+
   # allow all principals in the nuon org that are authorized for s3
   statement {
     effect = "Allow"
