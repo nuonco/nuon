@@ -4,6 +4,7 @@ import React, { type FC, useEffect, useState } from 'react'
 import { FaAws, FaGitAlt, FaGithub } from 'react-icons/fa'
 import { Card, Heading, Link, Status, Text } from '@/components'
 import { TOrg } from '@/types'
+import { Interval } from 'luxon'
 
 export const OrgCard: FC<TOrg> = ({ status, status_description, id, name }) => {
   return (
@@ -73,7 +74,7 @@ export const OrgStatus: FC<{ org: TOrg; isCompact?: boolean }> = ({
     fetchStatus()
   }, [])
 
-  let pollStatus
+  let pollStatus: NodeJS.Timeout
   useEffect(() => {
     pollStatus = setInterval(fetchStatus, 5000)
     return () => clearInterval(pollStatus)

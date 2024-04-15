@@ -13,7 +13,7 @@ import {
 import { Heading, Link, Text } from '@/components'
 import type { TInstallEvent } from '@/types'
 
-export const EventStatus = ({ status }) =>
+export const EventStatus: FC<{ status?: string }> = ({ status = "waiting" }) =>
   status === 'finished' ? (
     <GoCheckCircleFill className="text-green-700 dark:text-green-500" />
   ) : status === 'failed' ? (
@@ -41,7 +41,7 @@ export const Event: FC<IEvent> = ({ event, feedId, orgId }) => {
       <EventStatus status={event?.operation_status} />
       <div className="flex flex-col flex-auto">
         <span className="text-xs text-gray-600 dark:text-gray-300">
-          {DateTime.fromISO(event?.created_at).toRelative()}
+          {DateTime.fromISO(event.created_at as string).toRelative()}
         </span>
         <span className="font-semibold text-sm">{`${event?.operation_name} ${event?.operation_status}`}</span>
         {event?.operation === 'deploy' ? (
@@ -81,7 +81,7 @@ export const EventsTimeline: FC<IEventsTimeline> = ({
     fetchEvents()
   }, [])
 
-  let pollEvents
+  let pollEvents: NodeJS.Timeout
   useEffect(() => {
     pollEvents = setInterval(fetchEvents, 3000)
     return () => clearInterval(pollEvents)

@@ -10,12 +10,12 @@ export type TWaypointLogTerminalEvent = {
 }
 
 export type TWaypointLog = {
-  Complete: Record<string, unkown>
+  Complete: Record<string, unknown>
   Open: Record<string, unknown>
   State: Record<string, unknown>
   Terminal: {
     buffered: boolean
-    events: Array<Record<string, unknown>>
+    events: Array<TWaypointLogTerminalEvent>
   }
 }
 

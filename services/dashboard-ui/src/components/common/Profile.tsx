@@ -17,8 +17,8 @@ export const Profile = () => {
           className="rounded-full"
           height="40px"
           width="40px"
-          src={user.picture}
-          alt={user.name}
+          src={user.picture as string}
+          alt={user.name as string}
         />
         <div className="flex flex-col gap-0">
           <Text className="truncate" variant="label">{user.name}</Text>
