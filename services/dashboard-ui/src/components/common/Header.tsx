@@ -1,7 +1,8 @@
+import React, { type FC } from 'react'
 import { Logo, Link, Nav, ProfileDropdown } from '@/components'
 
 // TODO: maybe LayoutHeader?
-export const Header = () => {
+export const Header: FC = () => {
   return (
     <header className="flex flex-wrap items-center justify-between gap-6 pb-6 border-b">
       <div className="flex items-center gap-6">

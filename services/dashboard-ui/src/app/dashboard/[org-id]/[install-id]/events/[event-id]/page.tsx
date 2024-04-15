@@ -1,3 +1,4 @@
+// @ts-nocheck
 // TODO: REMOVE THIS ROUTE
 
 
