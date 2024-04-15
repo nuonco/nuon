@@ -19,6 +19,7 @@ deps:
       .prettierrc \
       package-lock.json \
       next.config.mjs \
+      postcss.config.js \
       tailwind.config.ts \
       package.json \
       tsconfig.json \
