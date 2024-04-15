@@ -100,6 +100,7 @@ jobs:
       matrix:
         service:
           - ctl-api
+          - dashboard-ui
           - workers-apps
           - workers-canary
           - workers-executors
