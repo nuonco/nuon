@@ -11,6 +11,8 @@ services: |
     - go.mod
     - go.sum
     - pkg/types/workflows/executors/**
+  dashboard-ui:
+    - services/dashboard-ui/**
   workers-apps:
     - go.mod
     - go.sum
