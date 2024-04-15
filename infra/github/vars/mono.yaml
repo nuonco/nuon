@@ -4,7 +4,6 @@ ecr_repos:
   - api
   - api-gateway
   - orgs-api
-  - dashboard-ui
   - workers-apps
   - workers-canary
   - workers-deployments
@@ -13,6 +12,7 @@ ecr_repos:
   - workers-instances
   - workers-orgs
   - ctl-api
+  - dashboard-ui
 
 required_checks:
   # lints + tests + release + deploys for services and lib/infra.
