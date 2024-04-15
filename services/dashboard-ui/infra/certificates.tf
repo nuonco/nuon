@@ -10,7 +10,7 @@ module "certificate" {
   source  = "terraform-aws-modules/acm/aws"
   version = "~> 4.0"
 
-  domain_name         = "dashboard.${local.root_domain}"
+  domain_name         = local.domain
   zone_id             = data.aws_route53_zone.public.zone_id
   wait_for_validation = true
 }
