@@ -24,7 +24,7 @@ deps:
       tsconfig.json \
      ./
   RUN \
-    npm ci
+    npm install
 
   COPY --dir src src
 
