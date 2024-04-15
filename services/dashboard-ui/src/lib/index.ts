@@ -4,6 +4,7 @@ import type {
   TInstall,
   TInstallComponent,
   TInstallDeploy,
+  TInstallEvent,
   TOrg,
   TSandbox,
   TSandboxRun,
@@ -12,7 +13,16 @@ import { API_URL, getFetchOpts } from '@/utils'
 
 // CTL API fetch
 // ===========================================================================
-export async function getComponent({ componentId, orgId }): TComponent {
+
+interface IGetComponent {
+  componentId: string
+  orgId: string
+}
+
+export async function getComponent({
+  componentId,
+  orgId,
+}: IGetComponent): Promise<TComponent> {
   const res = await fetch(
     `${API_URL}/v1/components/${componentId}`,
     await getFetchOpts(orgId)
@@ -25,10 +35,15 @@ export async function getComponent({ componentId, orgId }): TComponent {
   return res.json()
 }
 
+interface IGetComponentConfig {
+  componentId: string
+  orgId: string
+}
+
 export async function getComponentConfig({
   componentId,
   orgId,
-}): TComponentConfig {
+}: IGetComponentConfig): Promise<TComponentConfig> {
   const res = await fetch(
     `${API_URL}/v1/components/${componentId}/configs`,
     await getFetchOpts(orgId)
@@ -41,11 +56,17 @@ export async function getComponentConfig({
   return res.json().then((cfgs) => cfgs?.[0])
 }
 
+interface IGetBuild {
+  buildId: string
+  componentId: string
+  orgId: string
+}
+
 export async function getBuild({
   buildId,
   componentId,
   orgId,
-}): Record<string, unknown> {
+}: IGetBuild): Promise<Record<string, unknown>> {
   const res = await fetch(
     `${API_URL}/v1/components/${componentId}/builds/${buildId}`,
     await getFetchOpts(orgId)
@@ -58,11 +79,17 @@ export async function getBuild({
   return res.json()
 }
 
+interface IGetInstallComponent {
+  installComponentId: string
+  installId: string
+  orgId: string
+}
+
 export async function getInstallComponent({
   installComponentId,
   installId,
   orgId,
-}): TInstallComponent {
+}: IGetInstallComponent): Promise<TInstallComponent> {
   const res = await fetch(
     `${API_URL}/v1/installs/${installId}/components`,
     await getFetchOpts(orgId)
@@ -74,14 +101,22 @@ export async function getInstallComponent({
 
   return res
     .json()
-    .then((comps) => comps.find((c) => c?.id === installComponentId))
+    .then((comps: Array<TInstallComponent>) =>
+      comps.find((c) => c?.id === installComponentId)
+    )
+}
+
+interface IGetDeploy {
+  deployId: string
+  installId: string
+  orgId: string
 }
 
 export async function getDeploy({
   orgId,
   installId,
   deployId,
-}): TInstallDeploy {
+}: IGetDeploy): Promise<TInstallDeploy> {
   const res = await fetch(
     `${API_URL}/v1/installs/${installId}/deploys/${deployId}`,
     await getFetchOpts(orgId)
@@ -94,7 +129,17 @@ export async function getDeploy({
   return res.json()
 }
 
-export async function getDeployLogs({ orgId, installId, deployId }) {
+interface IGetDeployLogs {
+  deployId: string
+  installId: string
+  orgId: string
+}
+
+export async function getDeployLogs({
+  orgId,
+  installId,
+  deployId,
+}: IGetDeployLogs) {
   const res = await fetch(
     `${API_URL}/v1/installs/${installId}/deploys/${deployId}/logs`,
     await getFetchOpts(orgId)
@@ -107,7 +152,17 @@ export async function getDeployLogs({ orgId, installId, deployId }) {
   return res.json()
 }
 
-export async function getDeployPlan({ orgId, installId, deployId }) {
+interface IGetDeployPlan {
+  deployId: string
+  installId: string
+  orgId: string
+}
+
+export async function getDeployPlan({
+  orgId,
+  installId,
+  deployId,
+}: IGetDeployPlan) {
   const res = await fetch(
     `${API_URL}/v1/installs/${installId}/deploys/${deployId}/plan`,
     await getFetchOpts(orgId)
@@ -120,7 +175,17 @@ export async function getDeployPlan({ orgId, installId, deployId }) {
   return res.json()
 }
 
-export async function getSandboxRun({ orgId, installId, runId }): TSandboxRun {
+interface IGetSandboxRun {
+  installId: string
+  orgId: string
+  runId: string
+}
+
+export async function getSandboxRun({
+  orgId,
+  installId,
+  runId,
+}: IGetSandboxRun): Promise<TSandboxRun> {
   const res = await fetch(
     `${API_URL}/v1/installs/${installId}/sandbox-runs`,
     await getFetchOpts(orgId)
@@ -130,10 +195,22 @@ export async function getSandboxRun({ orgId, installId, runId }): TSandboxRun {
     throw new Error('Failed to fetch data')
   }
 
-  return res.json().then((runs) => runs.find((r) => r?.id === runId))
+  return res
+    .json()
+    .then((runs: Array<TSandboxRun>) => runs.find((r) => r?.id === runId))
 }
 
-export async function getSandboxRunLogs({ orgId, installId, runId }) {
+interface IGetSandboxRunLogs {
+  installId: string
+  orgId: string
+  runId: string
+}
+
+export async function getSandboxRunLogs({
+  orgId,
+  installId,
+  runId,
+}: IGetSandboxRunLogs) {
   const res = await fetch(
     `${API_URL}/v1/installs/${installId}/sandbox-run/${runId}/logs`,
     await getFetchOpts(orgId)
@@ -146,7 +223,15 @@ export async function getSandboxRunLogs({ orgId, installId, runId }) {
   return res.json()
 }
 
-export async function getInstallEvents({ installId, orgId }): TInstall {
+interface IGetInstallEvents {
+  installId: string
+  orgId: string
+}
+
+export async function getInstallEvents({
+  installId,
+  orgId,
+}: IGetInstallEvents): Promise<Array<TInstallEvent>> {
   const res = await fetch(
     `${API_URL}/v1/installs/${installId}/events`,
     await getFetchOpts(orgId)
@@ -159,7 +244,15 @@ export async function getInstallEvents({ installId, orgId }): TInstall {
   return res.json()
 }
 
-export async function getInstall({ installId, orgId }): TInstall {
+interface IGetInstall {
+  installId: string
+  orgId: string
+}
+
+export async function getInstall({
+  installId,
+  orgId,
+}: IGetInstall): Promise<TInstall> {
   const data = await fetch(
     `${API_URL}/v1/installs/${installId}`,
     await getFetchOpts(orgId)
@@ -172,7 +265,13 @@ export async function getInstall({ installId, orgId }): TInstall {
   return data.json()
 }
 
-export async function getInstalls({ orgId }): Array<TInstall> {
+interface IGetInstalls {
+  orgId: string
+}
+
+export async function getInstalls({
+  orgId,
+}: IGetInstalls): Promise<Array<TInstall>> {
   const data = await fetch(`${API_URL}/v1/installs`, await getFetchOpts(orgId))
 
   if (!data.ok) {
@@ -182,7 +281,7 @@ export async function getInstalls({ orgId }): Array<TInstall> {
   return data.json()
 }
 
-export async function getOrgs(): Array<TOrg> {
+export async function getOrgs(): Promise<Array<TOrg>> {
   const res = await fetch(`${API_URL}/v1/orgs`, await getFetchOpts())
 
   if (!res.ok) {
@@ -192,7 +291,11 @@ export async function getOrgs(): Array<TOrg> {
   return res.json()
 }
 
-export async function getOrg({ orgId }): TOrg {
+interface IGetOrg {
+  orgId: string
+}
+
+export async function getOrg({ orgId }: IGetOrg): Promise<TOrg> {
   const data = await fetch(
     `${API_URL}/v1/orgs/current`,
     await getFetchOpts(orgId)
