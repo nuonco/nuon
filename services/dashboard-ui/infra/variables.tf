@@ -13,10 +13,11 @@ locals {
     for acct in data.aws_organizations_organization.orgs.accounts : acct.name => { id : acct.id }
   }
   region = "us-west-2"
+  domain = "dashboard.${local.root_domain}"
   tags = {
     service   = local.name
     terraform = "${local.name}-${var.env}"
-    env = var.env
+    env       = var.env
   }
 }
 

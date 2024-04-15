@@ -3,5 +3,5 @@ output "certificate_arn" {
 }
 
 output "public_domain" {
-  value = "dashboard.${local.root_domain}"
+  value = local.domain
 }
