@@ -13,7 +13,7 @@ export default async function InstallsDashboard({ params }) {
       <Grid>
         {installs?.map((install) => (
           <Card key={install?.id}>
-            <Install install={install} />
+            <Install install={install} orgId={orgId} />
             <Text variant="caption">
               <Link href={`/dashboard/${install?.org_id}/${install?.id}`}>
                 Details

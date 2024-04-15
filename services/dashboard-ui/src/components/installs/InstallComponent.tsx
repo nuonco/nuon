@@ -31,6 +31,7 @@ import {
   type THeadingVariant,
 } from '@/components'
 import type {
+  TBuild,
   TComponent,
   TComponentConfig,
   TInstall,
@@ -92,11 +93,11 @@ export const InstallComponent: FC<{ install_component: TInstallComponent }> = ({
         {activeDeploy ? (
           <Text className="flex flex-wrap gap-4 items-center" variant="caption">
             Last deployed{' '}
-            {DateTime.fromISO(activeDeploy?.created_at).toRelative()}
+            {DateTime.fromISO(activeDeploy?.created_at as string).toRelative()}
           </Text>
         ) : (
           <Text className="flex flex-wrap gap-4 items-center" variant="caption">
-            As of {DateTime.fromISO(updated_at).toRelative()}
+            As of {DateTime.fromISO(updated_at as string).toRelative()}
           </Text>
         )}
       </span>
@@ -141,7 +142,7 @@ export const InstallComponentStatus: FC<IInstallComponentStatus> = ({
     fetchStatus()
   }, [])
 
-  let pollStatus
+  let pollStatus: NodeJS.Timeout
   useEffect(() => {
     pollStatus = setInterval(fetchStatus, 5000)
     return () => clearInterval(pollStatus)
@@ -163,7 +164,7 @@ export const InstallComponentHeading: FC<{
   config: TComponentConfig
   install: TInstall
   installComponent: TInstallComponent
-  build: Record<string, unknown>
+  build: TBuild
 }> = ({ build, component, config, install, installComponent }) => {
   return (
     <div className="flex flex-wrap gap-8 items-end border-b pb-6">
@@ -183,7 +184,7 @@ export const InstallComponentHeading: FC<{
           <InstallComponentStatus component={installComponent} />
           <LatestDeploy
             {...{
-              ...installComponent?.install_deploys?.[0],
+              ...(installComponent?.install_deploys?.[0] as TInstallDeploy),
               install_id: install?.id,
             }}
           />
@@ -194,8 +195,7 @@ export const InstallComponentHeading: FC<{
           <span className="flex flex-col">
             <Text className="truncate" variant="caption">{build?.vcs_connection_commit?.message}</Text>
             <Text variant="overline">
-              {build?.vcs_connection_commit?.sha?.slice(0, 7)}{' '}
-              {build?.vcs_connection_commit?.author_name || 'Unkown author'}
+              {build?.vcs_connection_commit?.sha?.slice(0, 7)}           
             </Text>
           </span>
         </div>
@@ -243,12 +243,12 @@ export const InstallDeploys: FC<{
           <span className="flex flex-wrap items-center gap-6">
             <Status status={d?.status} />
             <Text variant="overline">
-              {DateTime.fromISO(d?.created_at).toRelative()}
+              {DateTime.fromISO(d?.created_at as string).toRelative()}
             </Text>
           </span>
           <Text variant="label">{d?.id}</Text>
           <Text variant="caption">
-            {DateTime.fromISO(d?.created_at).toLocaleString(
+            {DateTime.fromISO(d?.created_at as string).toLocaleString(
               DateTime.DATETIME_SHORT_WITH_SECONDS
             )}{' '}
           </Text>

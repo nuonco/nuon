@@ -14,6 +14,7 @@ import {
   getInstall,
   getInstallComponent,
 } from '@/lib'
+import type { TBuild, TInstallDeploy } from "@/types"
 
 export default async function InstallComponentDashboard({ params }) {
   const orgId = params?.['org-id']
@@ -39,8 +40,7 @@ export default async function InstallComponentDashboard({ params }) {
     <Page
       heading={
         <InstallComponentHeading
-          variant="title"
-          {...{ component, config, install, installComponent, build }}
+          {...{ component, config, install, installComponent, build: build as TBuild }}
         />
       }
       links={[
@@ -65,7 +65,7 @@ export default async function InstallComponentDashboard({ params }) {
           <Heading variant="subtitle">Deploy history</Heading>
           <Card>
             <InstallDeploys
-              deploys={installComponent?.install_deploys}
+              deploys={installComponent?.install_deploys as Array<TInstallDeploy>}
               installId={install?.id}
             />
           </Card>

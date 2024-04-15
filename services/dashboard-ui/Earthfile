@@ -21,7 +21,6 @@ deps:
       next.config.mjs \
       tailwind.config.ts \
       package.json \
-      tsconfig.build.json \
       tsconfig.json \
      ./
   RUN \
