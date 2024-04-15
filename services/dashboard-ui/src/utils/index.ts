@@ -1,4 +1,5 @@
 import { getSession } from '@auth0/nextjs-auth0'
+import { TInstall, TInstallComponent, TSandboxRun } from "@/types"
 
 // general utils
 export const API_URL = process?.env?.NEXT_PUBLIC_API_URL
@@ -11,17 +12,17 @@ export function getFlagEmoji(countryCode = "us") {
   const codePoints = countryCode
     .toUpperCase()
     .split('')
-    .map((char) => 127397 + char.charCodeAt())
+    .map((char) => 127397 + char.charCodeAt(0))
   return String.fromCodePoint(...codePoints)
 }
 
 // fetch helper
-export async function getFetchOpts(orgId) {
+export async function getFetchOpts(orgId = ""): Promise<RequestInit> {
   const session = await getSession()
   return {
     cache: 'no-store',
     headers: {
-      Authorization: `Bearer ${session.accessToken}`,
+      Authorization: `Bearer ${session?.accessToken}`,
       'Content-Type': 'application/json',
       'X-Nuon-Org-ID': orgId,
     },
@@ -50,8 +51,8 @@ export function getInstallComponentStatus(
   if (
     components.some(
       (c) =>
-        c?.install_deploys[0]?.status === 'failed' ||
-        c?.install_deploys[0]?.status === 'error'
+        c?.install_deploys?.[0]?.status === 'failed' ||
+        c?.install_deploys?.[0]?.status === 'error'
     )
   ) {
     status = {
@@ -60,7 +61,7 @@ export function getInstallComponentStatus(
     }
   }
 
-  if (components.every((c) => c?.install_deploys[0]?.status === 'active')) {
+  if (components.every((c) => c?.install_deploys?.[0]?.status === 'active')) {
     status = {
       status: 'active',
       status_description: 'All components are active',

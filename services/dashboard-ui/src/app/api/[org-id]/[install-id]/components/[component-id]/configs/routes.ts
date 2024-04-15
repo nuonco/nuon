@@ -10,5 +10,5 @@ export const GET = async (req: NextRequest) => {
   )
   const configs = await data.json()
   
-  return NextResponse.json({})
+  return NextResponse.json(configs?.[0])
 }

@@ -12,15 +12,7 @@ import {
   GoInfo,
 } from 'react-icons/go'
 import { VscAzure } from 'react-icons/vsc'
-import {
-  Card,
-  Code,
-  StatusTimeline,
-  Heading,
-  Link,
-  Status,
-  Text,
-} from '@/components'
+import { Card, Code, Heading, Link, Status, Text } from '@/components'
 import type {
   TInstall,
   TInstallAwsAccount,
@@ -92,7 +84,7 @@ export const InstallStatus: FC<IInstallStatus> = ({
     fetchStatus()
   }, [])
 
-  let pollStatus
+  let pollStatus: NodeJS.Timeout
   useEffect(() => {
     pollStatus = setInterval(fetchStatus, 5000)
     return () => clearInterval(pollStatus)
@@ -213,7 +205,7 @@ export const AzureAccount: FC<TInstallAzureAccount> = ({
 }
 
 export const CloudDetails: FC<TInstall> = ({
-  app_runner_config: { cloud_platform: platform, app_runner_type: runner_type },
+  app_runner_config,
   app_sandbox_config,
   aws_account,
   azure_account,
@@ -224,31 +216,35 @@ export const CloudDetails: FC<TInstall> = ({
 
       <span>
         <Text variant="caption" className="flex items-center gap-1">
-          <b>Platform:</b> <InstallPlatform {...{ app_sandbox_config }} />
+          <b>Platform:</b> <InstallPlatform {...app_sandbox_config} />
         </Text>
 
         <Text variant="caption" className="flex items-center gap-1">
-          <b>Runner type:</b> {runner_type}
+          <b>Runner type:</b> {app_runner_config?.app_runner_type}
         </Text>
 
-        {platform === 'azure' ? (
+        {app_runner_config?.cloud_platform === 'azure' ? (
           <AzureAccount {...azure_account} />
         ) : (
           <AwsAccount {...aws_account} />
         )}
       </span>
 
-      {platform !== 'azure' ? (
+      {app_runner_config?.cloud_platform !== 'azure' ? (
         <Policies {...app_sandbox_config?.artifacts} />
       ) : null}
     </div>
   )
 }
 
-export const Policies: FC<TSandboxConfig['artifacts']> = ({
-  deprovision_policy,
-  provision_policy,
-  trust_policy,
+export const Policies: FC<{
+  deprovision_policy?: string
+  provision_policy?: string
+  trust_policy?: string
+}> = ({
+  deprovision_policy = '',
+  provision_policy = '',
+  trust_policy = '',
 }) => {
   return (
     <>
@@ -299,10 +295,9 @@ export const InstallTitle: FC<TInstall> = ({ name, id }) => {
   return <></>
 }
 
-export const InstallPlatform: FC<TInstall & { hasTextHidden?: boolean }> = ({
-  app_sandbox_config: { cloud_platform: platform },
-  hasTextHidden = false,
-}) => {
+export const InstallPlatform: FC<
+  TSandboxConfig & { hasTextHidden?: boolean }
+> = ({ cloud_platform: platform, hasTextHidden = false }) => {
   return (
     <span className="flex items-center gap-2">
       {platform === 'azure' ? (
@@ -351,7 +346,7 @@ export const InstallHeading: FC<TInstall> = ({
 
         <Text className="flex flex-wrap gap-4 items-center" variant="caption">
           <Text variant="status">{app?.name}</Text>{' '}
-          <InstallPlatform {...{ app_sandbox_config }} hasTextHidden />{' '}
+          <InstallPlatform {...app_sandbox_config} hasTextHidden />{' '}
           <InstallRegion {...install} />
         </Text>
       </div>

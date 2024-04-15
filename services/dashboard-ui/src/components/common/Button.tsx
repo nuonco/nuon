@@ -15,7 +15,7 @@ export type TButtonVariant =
   | 'caution'
   | 'danger'
 
-export interface IButton extends HTMLProps<HTMLButtonElement> {
+export interface IButton extends React.HTMLAttributes<HTMLButtonElement> {
   variant?: TButtonVariant
 }
 

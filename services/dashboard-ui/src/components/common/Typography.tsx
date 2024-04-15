@@ -4,7 +4,6 @@ import React, { type FC } from 'react'
 export type THeadingVariant = 'heading' | 'subheading' | 'title' | 'subtitle'
 
 export interface IHeading extends React.HTMLAttributes<HTMLSpanElement> {
-  children: React.ReactElement
   level?: 1 | 2 | 3 | 4 | 5 | 6
   variant?: THeadingVariant
 }
@@ -24,7 +23,7 @@ export const Heading: FC<IHeading> = ({
         'text-md font-semibold': variant === 'subheading',
         'text-5xl font-semibold': variant === 'title',
         'text-3xl font-bold': variant === 'subtitle',
-        [className]: Boolean(className),
+        [`${className}`]: Boolean(className),
       })}
     >
       {children}
@@ -33,7 +32,6 @@ export const Heading: FC<IHeading> = ({
 }
 
 export interface IText extends React.HTMLAttributes<HTMLSpanElement> {
-  children: React.ReactElement
   variant?: 'base' | 'caption' | 'label' | 'overline' | 'status'
 }
 
@@ -55,7 +53,7 @@ export const Text: FC<IText> = ({
         ['text-xs tracking-wide leading-none text-gray-600 dark:text-gray-300']: isOverline,
         ['text-sm font-semibold']: isLabel,
         'text-xs': variant === 'caption',
-        [className]: Boolean(className),
+        [`${className}`]: Boolean(className),
       })}
       role="paragraph"
       {...props}
@@ -66,7 +64,6 @@ export const Text: FC<IText> = ({
 }
 
 export interface ICode extends React.HTMLAttributes<HTMLSpanElement> {
-  children: React.ReactElement
   variant?: 'default' | 'preformated'
 }
 

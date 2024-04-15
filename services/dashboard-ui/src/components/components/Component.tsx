@@ -17,17 +17,8 @@ import {
   SiHelm,
   SiTerraform,
 } from 'react-icons/si'
-import {
-  Card,
-  Code,
-  StatusTimeline,
-  Heading,
-  Link,
-  Status,
-  Text,
-  VCS,
-} from '@/components'
-import type { TComponent, TComponentConfig, TInstallComponent } from '@/types'
+import { Card, Code, Heading, Link, Status, Text, VCS } from '@/components'
+import { TComponent, TComponentConfig, TInstallComponent } from '@/types'
 
 export type TComponentType =
   | 'docker'
@@ -43,13 +34,11 @@ export function getComponentTypeFromConfig({
   job,
   terraform_module,
 }: TComponentConfig): TComponentType {
-  return (
-    (docker_build && 'docker') ||
+  return ((docker_build && 'docker') ||
     (external_image && 'external') ||
     (helm && 'helm') ||
     (terraform_module && 'terraform') ||
-    (job && 'job')
-  )
+    (job && 'job')) as TComponentType
 }
 
 export function getComponentConfigValues({
@@ -58,7 +47,7 @@ export function getComponentConfigValues({
   helm,
   job,
   terraform_module,
-}: TComponentConfig): Record<string, unknown> {
+}: TComponentConfig): false | Record<string, any> {
   return (
     (!!docker_build && docker_build) ||
     (!!external_image && external_image) ||
@@ -73,7 +62,8 @@ export const ComponentType: FC<{
   componentType?: TComponentType
   hasTextHidden?: boolean
 }> = ({ config, componentType, hasTextHidden }) => {
-  let ct = componentType || getComponentTypeFromConfig(config)
+  let ct =
+    componentType || getComponentTypeFromConfig(config as TComponentConfig)
   let el
 
   switch (ct) {
@@ -157,7 +147,7 @@ export const ComponentConfig: FC<{
 
 export const DockerConfig: FC<{
   cfg: TComponentConfig['docker_build']
-  version: number
+  version?: number
 }> = ({ cfg, version }) => {
   return (
     <div className="flex flex-col gap-2">
@@ -187,7 +177,7 @@ export const DockerConfig: FC<{
 
 export const TerraformConfig: FC<{
   cfg: TComponentConfig['terraform_module']
-  version: number
+  version?: number
 }> = ({ cfg, version }) => {
   return (
     <div className="flex flex-col gap-2">
@@ -196,7 +186,7 @@ export const TerraformConfig: FC<{
           <b>Config version:</b> {version}
         </Text>
         <Text variant="caption">
-          <b>Terraform version:</b> {cfg?.version}
+          <b>Terraform version:</b> {cfg?.version as string}
         </Text>
         <VCS {...cfg} />
       </span>
