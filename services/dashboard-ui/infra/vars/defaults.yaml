@@ -1,0 +1,4 @@
+---
+public_root_domain: nuon.co
+region: us-west-2
+pool: nuon
