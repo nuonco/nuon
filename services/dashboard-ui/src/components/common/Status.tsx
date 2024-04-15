@@ -7,11 +7,11 @@ import { sentanceCase } from "@/utils"
 export type TStatus = 'active' | 'failed' | 'error' | 'waiting'
 
 export interface IStatus {
-  description?: string;
+  description?: string | false;
   isStatusTextHidden?: boolean;
   isLabelStatusText?:boolean;
-  label?: string;
-  status?: TStatus;
+  label?: string | false;
+  status?: TStatus | string;
 }
 
 export const Status: FC<IStatus> = ({ description, isLabelStatusText = false, isStatusTextHidden = false, label, status = 'waiting' }) => {

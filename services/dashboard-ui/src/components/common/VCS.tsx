@@ -13,7 +13,6 @@ import { VscAzure } from 'react-icons/vsc'
 import {
   Card,
   Code,
-  StatusTimeline,
   Heading,
   Link,
   Status,
@@ -36,8 +35,8 @@ import {
 } from '@/utils'
 
 export interface IVCS {
-  connected_github_vcs_config: TVCSGitHub
-  public_git_vcs_config: TVCSGit
+  connected_github_vcs_config?: TVCSGitHub
+  public_git_vcs_config?: TVCSGit
 }
 
 export const VCS: FC<IVCS> = ({

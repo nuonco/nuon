@@ -5,29 +5,53 @@ export type TComponent = components['schemas']['app.Component']
 export type TComponentConfig = {
   id: string
   component_id: string
-  docker_build?: Record<string, unknown>
-  external_image?: Record<string, unknown>
-  helm?: Record<string, unknown>
-  terraform_module?: Record<string, unknown>
-  job?: Record<string, unknown>
+  docker_build?: Record<string, any>
+  external_image?: Record<string, any>
+  helm?: Record<string, any>
+  terraform_module?: Record<string, any>
+  job?: Record<string, any>
+}
+
+// build
+export type TBuild = {
+  id: string
+  created_at: string
+  updated_at: string
+  vcs_connection_commit: TVCSCommit
 }
 
 // org
 export type TOrg = components['schemas']['app.Org']
 
 // install
-export type TInstall = components['schemas']['app.Install']
+export type TInstall = components['schemas']['app.Install'] & {
+  app?: components['schemas']['app.App']
+  org_id?: string
+}
 export type TInstallAzureAccount = components['schemas']['app.AzureAccount']
 export type TInstallAwsAccount = components['schemas']['app.AWSAccount']
-export type TInstallComponent = components['schemas']['app.InstallComponent']
-export type TInstallEvent = components['schemas']['app.InstallEvent']
-export type TInstallDeploy = components['schemas']['app.InstallDeploy']
+export type TInstallComponent =
+  components['schemas']['app.InstallComponent'] & {
+    org_id?: string
+  }
+export type TInstallEvent = Omit<
+  components['schemas']['app.InstallEvent'],
+  'payload'
+> & {
+  payload: string
+}
+export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
+  org_id: string
+}
 
 // sandbox
 export type TSandbox = components['schemas']['app.Sandbox']
-export type TSandboxConfig = components['schemas']['app.AppSandboxConfig']
+export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {
+  cloud_platform?: string
+}
 export type TSandboxRun = components['schemas']['app.InstallSandboxRun']
 
 // vcs configs
 export type TVCSGitHub = components['schemas']['app.ConnectedGithubVCSConfig']
 export type TVCSGit = components['schemas']['app.PublicGitVCSConfig']
+export type TVCSCommit = components['schemas']['app.VCSConnectionCommit']

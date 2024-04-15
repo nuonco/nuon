@@ -13,7 +13,7 @@ export const Dashboard: FC<{ children: React.ReactElement }> = ({
 }
 
 export const Page: FC<{
-  children: React.ReactElement
+  children: React.ReactElement | any
   heading: React.ReactElement
   links?: Array<TLink>
 }> = ({ children, heading, links }) => {
