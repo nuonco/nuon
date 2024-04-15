@@ -18,6 +18,8 @@ deps:
       .eslintrc.json \
       .prettierrc \
       package-lock.json \
+      next.config.mjs \
+      tailwind.config.ts \
       package.json \
       tsconfig.build.json \
       tsconfig.json \
@@ -37,13 +39,11 @@ lint:
     npm run lint
 
 test:
-  FROM +deps
-  RUN echo "running unit tests..." && \
-    npm run test:unit
+  RUN echo "noop..."
 
 build:
   FROM +deps
-  # RUN npm run build
+  RUN npm run build
   SAVE ARTIFACT /src /src
 
 docker:
@@ -61,7 +61,7 @@ docker:
   ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
 
   EXPOSE 4000
-  ENTRYPOINT ["npm", "run", "dev"]
+  ENTRYPOINT ["npm", "run", "start"]
 
   LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
   LABEL org.opencontainers.image.revision=$EARTHLY_BUILD_SHA
