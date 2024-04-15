@@ -67,6 +67,8 @@ jobs:
          Terraform Cloud/nuonco/e2e-stage,
          Terraform Cloud/nuonco/ctl-api-prod,
          Terraform Cloud/nuonco/ctl-api-stage,
+         Terraform Cloud/nuonco/dashboard-ui-prod,
+         Terraform Cloud/nuonco/dashboard-ui-stage,
          Terraform Cloud/nuonco/workers-apps-prod,
          Terraform Cloud/nuonco/workers-apps-stage,
          Terraform Cloud/nuonco/workers-canary-prod,
