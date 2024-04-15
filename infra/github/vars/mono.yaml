@@ -4,6 +4,7 @@ ecr_repos:
   - api
   - api-gateway
   - orgs-api
+  - dashboard-ui
   - workers-apps
   - workers-canary
   - workers-deployments
