@@ -5,6 +5,7 @@ env:
   # use this to write out debug logs locally
   # LOG_LEVEL: DEBUG
   AUTH0_BASE_URL: http://localhost:4000
+  AUTH0_CLIENT_ID: q1GiyhLk6v6cmmsydNKp02ZghvgRMUTa
 env_secrets:
   AUTH0_CLIENT_SECRET:
     name: dashboard-ui-auth0-client-secret-dev
