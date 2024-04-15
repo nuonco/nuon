@@ -1,0 +1,19 @@
+---
+port: 4000
+type: api
+env:
+  # use this to write out debug logs locally
+  # LOG_LEVEL: DEBUG
+  AUTH0_BASE_URL: http://localhost:4000
+env_secrets:
+  AUTH0_CLIENT_SECRET:
+    name: dashboard-ui-auth0-client-secret-dev
+    key: auth0_client_secret
+  #AUTH0_SECRET:
+    #name: dashboard-ui-auth0-secret
+    #key: auth0_secret
+watch_ignore_dirs:
+  - .next/
+local_startup_cmds: []
+local_cmds:
+  - npm run dev
