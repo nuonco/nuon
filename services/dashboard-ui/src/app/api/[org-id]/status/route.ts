@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withApiAuthRequired } from '@auth0/nextjs-auth0'
 import { API_URL, getFetchOpts } from '@/utils'
 
-export const GET = async (req: NextRequest) => {
+export const GET = withApiAuthRequired(async (req: NextRequest) => {
   const [orgId] = req.url.split('/').slice(4, 5)
 
   const [org, health] = await Promise.all([fetch(
@@ -23,4 +23,4 @@ export const GET = async (req: NextRequest) => {
       status_description:  health?.[0]?.status_description
     }
   })
-}
+})

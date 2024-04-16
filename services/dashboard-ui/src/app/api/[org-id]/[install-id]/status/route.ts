@@ -8,7 +8,7 @@ import type {
 } from '@/types'
 import { API_URL, getFetchOpts, getFullInstallStatus } from '@/utils'
 
-export const GET = async (req: NextRequest) => {
+export const GET = withApiAuthRequired(async (req: NextRequest) => {
   const [orgId, installId] = req.url.split('/').slice(4, 6)
   const data = await fetch(
     `${API_URL}/v1/installs/${installId}`,
@@ -17,4 +17,4 @@ export const GET = async (req: NextRequest) => {
   const install = (await data.json()) as TInstall
 
   return NextResponse.json(getFullInstallStatus(install))
-}
+})
