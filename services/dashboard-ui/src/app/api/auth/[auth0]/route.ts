@@ -6,5 +6,6 @@ export const GET = handleAuth({
       audience: 'api.nuon.co',
       scope: 'openid profile email',
     },
+    returnTo: '/dashboard',
   }),
 })
