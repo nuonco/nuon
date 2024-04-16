@@ -57,7 +57,7 @@ func TestRegistry_getAccessInfo(t *testing.T) {
 				config: cfg,
 			}
 
-			accessInfo, err := registry.getAccessInfo(ctx, client)
+			accessInfo, err := registry.getECRAccessInfo(ctx, client)
 			if test.errExpected != nil {
 				assert.ErrorContains(t, err, test.errExpected.Error())
 				return
