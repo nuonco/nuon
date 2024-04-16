@@ -10,7 +10,7 @@ module "azure-aks" {
   source = "./e2e"
 
   app_name = "${local.name}-azure-aks"
-  create_components = false
+  create_components = true
 
   sandbox_repo = local.sandboxes_repo
   sandbox_branch = "main"
