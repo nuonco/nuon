@@ -17,6 +17,8 @@ deps:
     COPY \
       .eslintrc.json \
       .prettierrc \
+      jest.config.js \
+      jest.setup.ts \
       package-lock.json \
       next.config.mjs \
       postcss.config.js \
@@ -39,7 +41,10 @@ lint:
     npm run lint
 
 test:
-  RUN echo "noop..."
+  FROM +deps
+
+  RUN echo "running unit test..." && \
+    npm run test
 
 build:
   FROM +deps
