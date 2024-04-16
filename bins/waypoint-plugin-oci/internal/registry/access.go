@@ -3,12 +3,11 @@ package registry
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
-	ecrauthorization "github.com/powertoolsdev/mono/pkg/aws/ecr-authorization"
+	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	ociv1 "github.com/powertoolsdev/mono/pkg/types/plugins/oci/v1"
 )
 
@@ -26,36 +25,23 @@ func (r *Registry) AccessInfo(ctx context.Context,
 	ui terminal.UI,
 	src *component.Source,
 ) (*ociv1.AccessInfo, error) {
-	authProvider, err := ecrauthorization.New(r.v,
-		ecrauthorization.WithCredentials(&r.config.Auth),
-		ecrauthorization.WithUseDefault(true),
+	var (
+		accessInfo *ociv1.AccessInfo
+		err        error
 	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get auth provider: %w", err)
+
+	switch r.config.RegistryType {
+	case configs.OCIRegistryTypeACR:
+		accessInfo, err = r.getACR(ctx)
+	case configs.OCIRegistryTypeECR:
+		accessInfo, err = r.getECR(ctx)
+	default:
+		return nil, fmt.Errorf("unsupported registry type: %s", r.config.RegistryType)
 	}
 
-	accessInfo, err := r.getAccessInfo(ctx, authProvider)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get access info: %w", err)
 	}
 
 	return accessInfo, nil
-}
-
-func (r *Registry) getAccessInfo(ctx context.Context, client ecrauthorization.Client) (*ociv1.AccessInfo, error) {
-	authorization, err := client.GetAuthorization(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get authorization: %w", err)
-	}
-
-	serverAddr := strings.TrimPrefix(authorization.ServerAddress, "https://")
-	return &ociv1.AccessInfo{
-		Image: r.config.Repository,
-		Tag:   r.config.Tag,
-		Auth: &ociv1.Auth{
-			Username:      authorization.Username,
-			Password:      authorization.RegistryToken,
-			ServerAddress: serverAddr,
-		},
-	}, nil
 }
