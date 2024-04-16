@@ -1,10 +1,10 @@
 package credentials
 
 type ServicePrincipalCredentials struct {
-	SubscriptionID           string `json:"subscription_id" gorm:"not null;default null"`
-	SubscriptionTenantID     string `json:"subscription_tenant_id" gorm:"not null;default null"`
-	ServicePrincipalAppID    string `json:"service_principal_app_id" gorm:"not null;default null"`
-	ServicePrincipalPassword string `json:"service_principal_password" gorm:"not null;default null"`
+	SubscriptionID           string `json:"subscription_id" hcl:"subscription_id"`
+	SubscriptionTenantID     string `json:"subscription_tenant_id" hcl:"subscription_tenant_id"`
+	ServicePrincipalAppID    string `json:"service_principal_app_id" hcl:"service_principal_id"`
+	ServicePrincipalPassword string `json:"service_principal_password" hcl:"service_principal_password"`
 }
 
 type Config struct {
