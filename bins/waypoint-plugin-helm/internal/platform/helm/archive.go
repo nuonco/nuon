@@ -8,6 +8,8 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	ecrauthorization "github.com/powertoolsdev/mono/pkg/aws/ecr-authorization"
+	"github.com/powertoolsdev/mono/pkg/azure/acr"
+	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/registry/remote"
@@ -18,6 +20,20 @@ import (
 const (
 	defaultChartPackageFilename string = "chart.tgz"
 )
+
+func (o *Platform) initACRAuth(ctx context.Context) error {
+	token, err := acr.GetRepositoryToken(ctx, o.config.Archive.ACRAuth, o.config.Archive.LoginServer)
+	if err != nil {
+		return fmt.Errorf("unable to get acr token: %w", err)
+	}
+
+	o.auth = &ecrauthorization.Authorization{
+		Username:      acr.DefaultACRUsername,
+		RegistryToken: token,
+		ServerAddress: o.config.Archive.LoginServer,
+	}
+	return nil
+}
 
 func (o *Platform) initECRAuth(ctx context.Context) error {
 	authProvider, err := ecrauthorization.New(o.v,
@@ -59,11 +75,28 @@ func (o *Platform) getSrcRepo() (oras.ReadOnlyTarget, error) {
 	return repo, nil
 }
 
-func (p *Platform) unpackArchive(ctx context.Context) (string, error) {
-	if err := p.initECRAuth(ctx); err != nil {
-		return "", fmt.Errorf("unable initialize ecr auth: %w", err)
+func (p *Platform) initAuth(ctx context.Context) error {
+	switch p.config.Archive.RegistryType {
+	case configs.OCIRegistryTypeECR:
+		if err := p.initECRAuth(ctx); err != nil {
+			return fmt.Errorf("unable initialize ecr auth: %w", err)
+		}
+		p.log.Info("successfully initialized ECR auth")
+	case configs.OCIRegistryTypeACR:
+		if err := p.initACRAuth(ctx); err != nil {
+			return fmt.Errorf("unable initialize ecr auth: %w", err)
+		}
+		p.log.Info("successfully initialized ECR auth")
+
 	}
-	p.log.Info("successfully initialized ECR auth")
+
+	return nil
+}
+
+func (p *Platform) unpackArchive(ctx context.Context) (string, error) {
+	if err := p.initAuth(ctx); err != nil {
+		return "", fmt.Errorf("unable to initialize archive auth: %w", err)
+	}
 
 	src, err := p.getSrcRepo()
 	if err != nil {
