@@ -18,10 +18,27 @@ If you have a use case for using jobs with an `aws-ecs` sandbox [please get in t
 You can configure a job component to execute commands in a container image. [Using variables](../guides/using-variables)
 you can reference other component images, and configure environment variables for the job.
 
+### Using a Published Image
+
+You can run any published Docker image.
+
 <CodeGroup>
-```hcl job.tf
+```toml TOML
+[[components]]
+name = "kubectl_job"
+type = "job"
+image_url = "bitnami/kubectl"
+tag = "latest"
+cmd = ["kubectl"]
+args = ["get", "pods", "-A"]
+[[components.env_vars]]
+name  = "NUON_APP_ID"
+value = "{{.nuon.app.id}}"
+```
+
+```hcl kubectl_job.tf
 resource "nuon_job_component" "job" {
-  name      = "job"
+  name      = "my_job"
   app_id    = nuon_app.main.id
 
   image_url = "bitnami/kubectl"
@@ -36,6 +53,66 @@ resource "nuon_job_component" "job" {
 }
 ```
 </CodeGroup>
+
+### Using a Custom Image
+
+You can also use an image component.
+
+<CodeGroup>
+```toml TOML
+[[components]]
+name = "my_job_image"
+type = "docker_build"
+dockerfile = "Dockerfile"
+[components.connected_repo]
+directory = "my-repo/components/my-job-image"
+repo = "my-repo"
+branch = "master"
+
+[[components]]
+name = "my_job"
+type = "job"
+image_url = "{{.nuon.components.my_job_image.image.repository.uri}}"
+tag = "{{.nuon.components.my_job_image.image.tag}}"
+cmd = ["my-command"]
+args = ["arguments", "to", "pass", "to", "my-command"]
+[[components.env_vars]]
+name  = "MY_ENV_VAR"
+value = "value-for-my-command"
+```
+
+```hcl my_job_image.tf
+resource "nuon_docker_build_component" "my_job_image" {
+  app_id = nuon_app.main.id
+  name   = "my_job_image"
+
+  public_repo = {
+    repo      = "my-repo"
+    directory = "components/my-job-image"
+    branch    = "main"
+  }
+}
+```
+
+```hcl my_job.tf
+resource "nuon_job_component" "job" {
+  name      = "my_job"
+  app_id    = nuon_app.main.id
+
+  image_url = "{{.nuon.components.my_job_image.image.repository.uri}}"
+  tag       = "{{.nuon.components.my_job_image.image.tag}}"
+  cmd       = ["my-command"]
+  args      = ["arguments", "to", "pass", "to", "my-command"]
+
+  env_var {
+    name  = "MY_ENV_VAR"
+    value = "value-for-my-command"
+  }
+}
+```
+</CodeGroup>
+
+<br />
 
 <Note>
 In order to use custom images with job components, you must specify either a [docker
