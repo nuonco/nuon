@@ -1,5 +1,23 @@
 import { components } from '@/types/nuon-oapi-v3'
 
+// logs
+export type TWaypointLogTerminalEvent = {
+  line?: { msg: string }
+  raw?: { data: string }
+  step?: { msg: string }
+  status?: { msg: string }
+}
+
+export type TWaypointLog = {
+  Complete: Record<string, unknown>
+  Open: Record<string, unknown>
+  State: Record<string, unknown>
+  Terminal: {
+    buffered: boolean
+    events: Array<TWaypointLogTerminalEvent>
+  }
+}
+
 // component
 export type TComponent = components['schemas']['app.Component']
 export type TComponentConfig = {
@@ -18,7 +36,7 @@ export type TBuild = {
   created_at: string
   updated_at: string
   vcs_connection_commit: TVCSCommit
-}
+} & Record<string, unknown>
 
 // org
 export type TOrg = components['schemas']['app.Org']
@@ -40,9 +58,13 @@ export type TInstallEvent = Omit<
 > & {
   payload: string
 }
+
+// deploys
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string
 }
+export type TInstallDeployLogs = Array<TWaypointLog>
+export type TInstallDeployPlan = Record<string, any>
 
 // sandbox
 export type TSandbox = components['schemas']['app.Sandbox']
@@ -50,6 +72,7 @@ export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {
   cloud_platform?: string
 }
 export type TSandboxRun = components['schemas']['app.InstallSandboxRun']
+export type TSandboxRunLogs = Array<TWaypointLog>
 
 // vcs configs
 export type TVCSGitHub = components['schemas']['app.ConnectedGithubVCSConfig']

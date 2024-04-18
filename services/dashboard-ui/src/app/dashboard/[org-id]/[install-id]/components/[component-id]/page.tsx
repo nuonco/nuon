@@ -1,3 +1,4 @@
+import React, { type FC, Suspense } from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   Card,
@@ -17,6 +18,21 @@ import {
 } from '@/lib'
 import type { TBuild, TInstallDeploy } from '@/types'
 
+const Build: FC<{
+  buildId: string
+  componentId: string
+  orgId: string
+}> = async ({ buildId, componentId, orgId }) => {
+  let build: TBuild
+  try {
+    build = await getBuild({ buildId, componentId, orgId })
+  } catch (error) {
+    return <>No build found</>
+  }
+
+  return <>{build?.vcs_connection_commit?.message}</>
+}
+
 export default withPageAuthRequired(
   async function InstallComponentDashboard({ params }) {
     const orgId = params?.['org-id'] as string
@@ -31,24 +47,29 @@ export default withPageAuthRequired(
     const buildId = installComponent?.install_deploys?.[0]?.build_id
     const componentId = installComponent?.component_id
 
-    const [component, config, install, build] = await Promise.all([
+    const [component, config, install] = await Promise.all([
       getComponent({ componentId, orgId }),
       getComponentConfig({ componentId, orgId }),
       getInstall({ installId, orgId }),
-      getBuild({ componentId, buildId, orgId }),
     ])
 
     return (
       <Page
         heading={
           <InstallComponentHeading
-            {...{
-              component,
-              config,
-              install,
-              installComponent,
-              build: build as TBuild,
-            }}
+            component={component}
+            config={config}
+            install={install}
+            installComponent={installComponent}
+            buildInfo={
+              <Suspense fallback={<span>Loading...</span>}>
+                <Build
+                  buildId={buildId}
+                  componentId={componentId}
+                  orgId={orgId}
+                />
+              </Suspense>
+            }
           />
         }
         links={[
@@ -81,6 +102,14 @@ export default withPageAuthRequired(
             </Card>
           </div>
           <div className="flex flex-col gap-6 lg:col-span-2 overflow-auto">
+            <Suspense fallback={<span>Loading...</span>}>
+              <Build
+                buildId={buildId}
+                componentId={componentId}
+                orgId={orgId}
+              />
+            </Suspense>
+
             <Heading variant="subtitle">Details</Heading>
 
             <Card>

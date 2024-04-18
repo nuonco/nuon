@@ -164,8 +164,8 @@ export const InstallComponentHeading: FC<{
   config: TComponentConfig
   install: TInstall
   installComponent: TInstallComponent
-  build: TBuild
-}> = ({ build, component, config, install, installComponent }) => {
+  buildInfo?: React.ReactElement
+}> = ({ buildInfo = null, component, config, install, installComponent }) => {
   return (
     <div className="flex flex-wrap gap-8 items-end border-b pb-6">
       <div className="flex flex-col flex-auto gap-2">
@@ -190,15 +190,7 @@ export const InstallComponentHeading: FC<{
           />
         </div>
 
-        <div className="flex items-center gap-4">
-          <GoGitCommit className="text-xl" />{' '}
-          <span className="flex flex-col">
-            <Text className="truncate" variant="caption">{build?.vcs_connection_commit?.message}</Text>
-            <Text variant="overline">
-              {build?.vcs_connection_commit?.sha?.slice(0, 7)}           
-            </Text>
-          </span>
-        </div>
+        {buildInfo}
       </div>
     </div>
   )

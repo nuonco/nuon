@@ -1,7 +1,8 @@
+import { expect, test } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { Link } from './Link'
 
-it('renders a link', () => {
+test('renders a link', () => {
   render(<Link href="/test">Test</Link>)
   const link = screen.getByRole('link')
 
