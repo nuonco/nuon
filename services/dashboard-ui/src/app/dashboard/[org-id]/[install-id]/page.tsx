@@ -3,8 +3,8 @@ import {
   Card,
   EventsTimeline,
   Heading,
-  InstallHeading,
   InstallComponents,
+  InstallPageHeader,
   CloudDetails,
   Page,
   SandboxDetails,
@@ -23,7 +23,7 @@ export default withPageAuthRequired(
 
     return (
       <Page
-        heading={<InstallHeading {...install} />}
+        header={<InstallPageHeader {...install} />}
         links={[{ href: install?.org_id }, { href: install?.id }]}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-fit overflow-hidden overflow-x-auto">
