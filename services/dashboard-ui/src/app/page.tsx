@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <Dashboard>
       <Page
-        heading={
+        header={
           <Heading level={1} variant="title">
             Login to get started with Nuon
           </Heading>
