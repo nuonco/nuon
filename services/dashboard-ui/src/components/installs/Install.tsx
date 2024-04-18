@@ -1,23 +1,14 @@
 'use client'
 
-import { DateTime } from 'luxon'
 import React, { type FC, useEffect, useState } from 'react'
 import { FaAws, FaGitAlt, FaGithub } from 'react-icons/fa'
-import {
-  GoArrowLeft,
-  GoKebabHorizontal,
-  GoCheckCircleFill,
-  GoClockFill,
-  GoXCircleFill,
-  GoInfo,
-} from 'react-icons/go'
+import { GoInfo } from 'react-icons/go'
 import { VscAzure } from 'react-icons/vsc'
-import { Card, Code, Heading, Link, Status, Text } from '@/components'
+import { Code, Heading, Link, PageHeader, Status, Text } from '@/components'
 import type {
   TInstall,
   TInstallAwsAccount,
   TInstallAzureAccount,
-  TInstallComponent,
   TSandboxConfig,
 } from '@/types'
 import {
@@ -117,7 +108,6 @@ export const InstallStatus: FC<IInstallStatus> = ({
 }
 
 export const SandboxDetails: FC<TSandboxConfig> = ({
-  artifacts,
   connected_github_vcs_config,
   public_git_vcs_config,
   terraform_version,
@@ -291,10 +281,6 @@ export const Policies: FC<{
   )
 }
 
-export const InstallTitle: FC<TInstall> = ({ name, id }) => {
-  return <></>
-}
-
 export const InstallPlatform: FC<
   TSandboxConfig & { hasTextHidden?: boolean }
 > = ({ cloud_platform: platform, hasTextHidden = false }) => {
@@ -325,33 +311,37 @@ export const InstallRegion: FC<TInstall> = ({ aws_account, azure_account }) => {
   )
 }
 
-export const InstallHeading: FC<TInstall> = ({
+export const InstallTitle: FC<TInstall> = ({ id, name }) => {
+  return (
+    <span className="flex flex-col gap-2 max-w-xl">
+      <Text variant="overline">{id}</Text>
+      <Heading level={1} variant="title">
+        {name}
+      </Heading>
+    </span>
+  )
+}
+
+export const InstallSummary: FC<TInstall> = ({
   app,
   app_sandbox_config,
-  id,
-  name,
   ...install
 }) => {
-  console.log('install', name)
-
   return (
-    <div className="flex flex-wrap gap-8 items-end border-b pb-6">
-      <div className="flex flex-col flex-auto gap-2">
-        <span className="flex flex-col gap-0">
-          <Text variant="overline">{id}</Text>
-          <Heading level={1} variant="title">
-            {name}
-          </Heading>
-        </span>
+    <Text className="flex flex-wrap gap-4 items-center" variant="caption">
+      <Text variant="status">{app?.name}</Text>{' '}
+      <InstallPlatform {...app_sandbox_config} hasTextHidden />{' '}
+      <InstallRegion {...install} />
+    </Text>
+  )
+}
 
-        <Text className="flex flex-wrap gap-4 items-center" variant="caption">
-          <Text variant="status">{app?.name}</Text>{' '}
-          <InstallPlatform {...app_sandbox_config} hasTextHidden />{' '}
-          <InstallRegion {...install} />
-        </Text>
-      </div>
-
-      <InstallStatus install={{ id, ...install }} />
-    </div>
+export const InstallPageHeader: FC<TInstall> = (install) => {
+  return (
+    <PageHeader
+      info={<InstallStatus install={install} />}
+      title={<InstallTitle {...install} />}
+      summary={<InstallSummary {...install} />}
+    />
   )
 }

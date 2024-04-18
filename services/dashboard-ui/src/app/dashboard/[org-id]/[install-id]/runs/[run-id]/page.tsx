@@ -1,6 +1,14 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { DateTime } from 'luxon'
-import { Code, Heading, Logs, Page, Status, Text } from '@/components'
+import {
+  Code,
+  Heading,
+  Logs,
+  Page,
+  PageHeader,
+  Status,
+  Text,
+} from '@/components'
 import { getSandboxRun, getSandboxRunLogs } from '@/lib'
 import { sentanceCase } from '@/utils'
 
@@ -17,25 +25,28 @@ export default withPageAuthRequired(
 
     return (
       <Page
-        heading={
-          <div className="flex flex-wrap gap-8 items-end border-b pb-6">
-            <div className="flex flex-col flex-auto gap-2">
-              <Text variant="overline">{run?.id}</Text>
-              <Heading level={1} variant="title">
-                {sentanceCase(run?.run_type)}
-              </Heading>
-              <Text variant="caption">
-                Finished {DateTime.fromISO(run?.updated_at).toRelative()}
-              </Text>
-            </div>
-
-            <div className="flex flex-auto flex-col">
+        header={
+          <PageHeader
+            info={
               <Status
                 status={run?.status}
                 description={run?.status_description}
               />
-            </div>
-          </div>
+            }
+            title={
+              <span className="flex flex-col flex-auto gap-2">
+                <Text variant="overline">{run?.id}</Text>
+                <Heading level={1} variant="title">
+                  {sentanceCase(run?.run_type)}
+                </Heading>
+              </span>
+            }
+            summary={
+              <Text variant="caption">
+                Finished {DateTime.fromISO(run?.updated_at).toRelative()}
+              </Text>
+            }
+          />
         }
         links={[
           { href: orgId },
