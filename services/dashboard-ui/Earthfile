@@ -17,8 +17,8 @@ deps:
     COPY \
       .eslintrc.json \
       .prettierrc \
-      jest.config.js \
-      jest.setup.ts \
+      vitest.config.ts \
+      vitest.setup.ts \
       package-lock.json \
       next.config.mjs \
       postcss.config.js \
@@ -44,7 +44,7 @@ test:
   FROM +deps
 
   RUN echo "running unit test..." && \
-    npm run test
+    npm run test -- run
 
 build:
   FROM +deps
