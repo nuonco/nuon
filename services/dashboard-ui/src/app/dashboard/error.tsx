@@ -18,7 +18,7 @@ export default function Error({
   return (
     <div className="flex flex-col flex-auto items-center justify-start py-24">
       <Heading>Not found</Heading>
-      <Text>Unable to find this data, go back and try agian.</Text>
+      <Text>{error.message}</Text>
       <Text>If this issue persist conntact us at <Link href="mailto:support@nuon.co">support@nuon.co</Link></Text>
     </div>
   )
