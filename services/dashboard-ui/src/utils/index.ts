@@ -1,32 +1,19 @@
-import { getSession } from '@auth0/nextjs-auth0'
-import { TInstall, TInstallComponent, TSandboxRun } from "@/types"
+import { TInstall, TInstallComponent, TSandboxRun } from '@/types'
 
 // general utils
-export const API_URL = process?.env?.NEXT_PUBLIC_API_URL
+export const API_URL =
+  process?.env?.NEXT_PUBLIC_API_URL || 'https://ctl.prod.nuon.co'
 
 export const sentanceCase = (s = '') => s.charAt(0).toUpperCase() + s.slice(1)
 export const titleCase = (s = '') =>
   s.replace(/^_*(.)|_+(.)/g, (s, c, d) => (c ? c.toUpperCase() : ' ' + d))
 
-export function getFlagEmoji(countryCode = "us") {
+export function getFlagEmoji(countryCode = 'us') {
   const codePoints = countryCode
     .toUpperCase()
     .split('')
     .map((char) => 127397 + char.charCodeAt(0))
   return String.fromCodePoint(...codePoints)
-}
-
-// fetch helper
-export async function getFetchOpts(orgId = ""): Promise<RequestInit> {
-  const session = await getSession()
-  return {
-    cache: 'no-store',
-    headers: {
-      Authorization: `Bearer ${session?.accessToken}`,
-      'Content-Type': 'application/json',
-      'X-Nuon-Org-ID': orgId,
-    },
-  }
 }
 
 // install status helpers
@@ -120,3 +107,4 @@ export function getFullInstallStatus(install: TInstall): TFullInstallStatus {
 }
 
 export * from '@/utils/install-regions'
+export * from '@/utils/get-fetch-opts'
