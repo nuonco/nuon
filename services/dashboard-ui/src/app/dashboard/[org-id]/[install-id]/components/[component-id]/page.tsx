@@ -6,8 +6,11 @@ import {
   ComponentDependencies,
   Heading,
   InstallComponentHeading,
+  InstallComponentSummary,
   InstallDeploys,
   Page,
+  PageHeader,
+  LatestDeploy2,
 } from '@/components'
 import {
   getBuild,
@@ -16,7 +19,7 @@ import {
   getInstall,
   getInstallComponent,
 } from '@/lib'
-import type { TBuild, TInstallDeploy } from '@/types'
+import type { TBuild, TInstall, TInstallDeploy } from '@/types'
 
 const Build: FC<{
   buildId: string
@@ -30,7 +33,25 @@ const Build: FC<{
     return <>No build found</>
   }
 
-  return <>{build?.vcs_connection_commit?.message}</>
+  return (
+    <span className="text-xs">
+      <b>Commit SHA:</b> {build?.vcs_connection_commit?.sha.slice(0, 7)}
+    </span>
+  )
+}
+
+const ComponentApp: FC<{ installId: string; orgId: string }> = async ({
+  installId,
+  orgId,
+}) => {
+  let install: TInstall
+  try {
+    install = await getInstall({ installId, orgId })
+  } catch (error) {
+    return <>App not found</>
+  }
+
+  return <>{install?.app?.name}</>
 }
 
 export default withPageAuthRequired(
@@ -47,28 +68,37 @@ export default withPageAuthRequired(
     const buildId = installComponent?.install_deploys?.[0]?.build_id
     const componentId = installComponent?.component_id
 
-    const [component, config, install] = await Promise.all([
+    const [component, config] = await Promise.all([
       getComponent({ componentId, orgId }),
       getComponentConfig({ componentId, orgId }),
-      getInstall({ installId, orgId }),
     ])
 
     return (
       <Page
-        heading={
-          <InstallComponentHeading
-            component={component}
-            config={config}
-            install={install}
-            installComponent={installComponent}
-            buildInfo={
-              <Suspense fallback={<span>Loading...</span>}>
-                <Build
-                  buildId={buildId}
-                  componentId={componentId}
-                  orgId={orgId}
-                />
-              </Suspense>
+        header={
+          <PageHeader
+            info={
+              <div className="flex flex-col">
+                <LatestDeploy2 {...installComponent} />
+                <Suspense fallback={<span>Loading...</span>}>
+                  <Build
+                    buildId={buildId}
+                    componentId={componentId}
+                    orgId={orgId}
+                  />
+                </Suspense>
+              </div>
+            }
+            title={<InstallComponentHeading component={component} />}
+            summary={
+              <InstallComponentSummary
+                config={config}
+                appName={
+                  <Suspense fallback="loading...">
+                    <ComponentApp installId={installId} orgId={orgId} />
+                  </Suspense>
+                }
+              />
             }
           />
         }
@@ -97,19 +127,11 @@ export default withPageAuthRequired(
                 deploys={
                   installComponent?.install_deploys as Array<TInstallDeploy>
                 }
-                installId={install?.id}
+                installId={installComponent?.install_id}
               />
             </Card>
           </div>
           <div className="flex flex-col gap-6 lg:col-span-2 overflow-auto">
-            <Suspense fallback={<span>Loading...</span>}>
-              <Build
-                buildId={buildId}
-                componentId={componentId}
-                orgId={orgId}
-              />
-            </Suspense>
-
             <Heading variant="subtitle">Details</Heading>
 
             <Card>

@@ -1,6 +1,14 @@
 import { DateTime } from 'luxon'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { Code, Heading, Logs, Page, Status, Text } from '@/components'
+import {
+  Code,
+  Heading,
+  Logs,
+  Page,
+  PageHeader,
+  Status,
+  Text,
+} from '@/components'
 import {
   getBuild,
   getComponent,
@@ -31,37 +39,42 @@ export default withPageAuthRequired(
 
     return (
       <Page
-        heading={
-          <div className="flex flex-wrap items-end">
-            <div className="flex flex-col flex-auto gap-2">
-              <Text variant="overline">{deploy?.id}</Text>
-              <Heading
-                level={1}
-                variant="title"
-                className="flex gap-1 items-center"
-              >
-                {component?.name} deploy
-              </Heading>
+        header={
+          <PageHeader
+            info={
+              <>
+                <Status status={deploy?.status} />
+                <div className="flex flex-col flex-auto gap-1">
+                  <Text variant="caption">
+                    <b>Install ID:</b> {deploy?.install_id}
+                  </Text>
+                  <Text variant="caption">
+                    <b>Build ID:</b> {deploy?.build_id}
+                  </Text>
+                  <Text variant="caption">
+                    <b>Component ID:</b> {componentId}
+                  </Text>
+                </div>
+              </>
+            }
+            title={
+              <span className="flex flex-col gap-2">
+                <Text variant="overline">{deploy?.id}</Text>
+                <Heading
+                  level={1}
+                  variant="title"
+                  className="flex gap-1 items-center"
+                >
+                  {component?.name} deploy
+                </Heading>
+              </span>
+            }
+            summary={
               <Text variant="caption">
                 {DateTime.fromISO(deploy?.created_at).toRelative()}
               </Text>
-            </div>
-
-            <div className="flex flex-col flex-auto">
-              <Status status={deploy?.status} />
-              <div className="flex flex-col flex-auto gap-1">
-                <Text variant="caption">
-                  <b>Install ID:</b> {deploy?.install_id}
-                </Text>
-                <Text variant="caption">
-                  <b>Build ID:</b> {deploy?.build_id}
-                </Text>
-                <Text variant="caption">
-                  <b>Component ID:</b> {componentId}
-                </Text>
-              </div>
-            </div>
-          </div>
+            }
+          />
         }
         links={[
           { href: orgId },

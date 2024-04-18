@@ -2,46 +2,13 @@
 
 import { DateTime } from 'luxon'
 import React, { type FC, useEffect, useState } from 'react'
-import { FaAws, FaDocker, FaGitAlt, FaGithub } from 'react-icons/fa'
-import {
-  GoGitCommit,
-  GoArrowLeft,
-  GoKebabHorizontal,
-  GoCheckCircleFill,
-  GoClockFill,
-  GoContainer,
-  GoXCircleFill,
-  GoInfo,
-} from 'react-icons/go'
-import {
-  SiAwslambda,
-  SiOpencontainersinitiative,
-  SiHelm,
-  SiTerraform,
-} from 'react-icons/si'
-import { VscAzure } from 'react-icons/vsc'
-import {
-  Card,
-  Code,
-  ComponentType,
-  Heading,
-  Link,
-  Status,
-  Text,
-  type THeadingVariant,
-} from '@/components'
+import { ComponentType, Heading, Link, Status, Text } from '@/components'
 import type {
-  TBuild,
   TComponent,
   TComponentConfig,
-  TInstall,
-  TInstallAwsAccount,
-  TInstallAzureAccount,
   TInstallComponent,
   TInstallDeploy,
-  TSandboxConfig,
 } from '@/types'
-import { getFullInstallStatus } from '@/utils'
 
 export const InstallComponents: FC<{ components: TInstallComponent[] }> = ({
   components,
@@ -161,37 +128,38 @@ export const InstallComponentStatus: FC<IInstallComponentStatus> = ({
 
 export const InstallComponentHeading: FC<{
   component: TComponent
-  config: TComponentConfig
-  install: TInstall
-  installComponent: TInstallComponent
-  buildInfo?: React.ReactElement
-}> = ({ buildInfo = null, component, config, install, installComponent }) => {
+}> = ({ component }) => {
   return (
-    <div className="flex flex-wrap gap-8 items-end border-b pb-6">
-      <div className="flex flex-col flex-auto gap-2">
-        <Text variant="overline">{component?.id}</Text>
-        <Heading level={1} variant="title">
-          {component?.name}
-        </Heading>
-        <Text className="gap-4" variant="caption">
-          <Text variant="status">{install?.app?.name}</Text>
-          <ComponentType config={config} />
-        </Text>
-      </div>
+    <span className="flex flex-col gap-0">
+      <Text variant="overline">{component?.id}</Text>
+      <Heading level={1} variant="title">
+        {component?.name}
+      </Heading>
+    </span>
+  )
+}
 
-      <div className="flex flex-col flex-auto gap-6">
-        <div>
-          <InstallComponentStatus component={installComponent} />
-          <LatestDeploy
-            {...{
-              ...(installComponent?.install_deploys?.[0] as TInstallDeploy),
-              install_id: install?.id,
-            }}
-          />
-        </div>
+export const InstallComponentSummary: FC<{
+  appName: React.ReactNode
+  config: TComponentConfig
+}> = ({ appName, config }) => {
+  return (
+    <Text className="gap-4" variant="caption">
+      <Text variant="status">{appName}</Text>
+      <ComponentType config={config} />
+    </Text>
+  )
+}
 
-        {buildInfo}
-      </div>
+export const LatestDeploy2: FC<TInstallComponent> = (installComponent) => {
+  return (
+    <div>
+      <InstallComponentStatus component={installComponent} />
+      <LatestDeploy
+        {...{
+          ...(installComponent?.install_deploys?.[0] as TInstallDeploy),
+        }}
+      />
     </div>
   )
 }
@@ -199,7 +167,6 @@ export const InstallComponentHeading: FC<{
 export const LatestDeploy: FC<TInstallDeploy> = ({
   build_id,
   id,
-  install_id,
   install_deploy_type,
   release_id,
 }) => {
