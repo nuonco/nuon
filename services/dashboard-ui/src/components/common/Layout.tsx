@@ -13,19 +13,36 @@ export const Dashboard: FC<{ children: React.ReactElement }> = ({
 }
 
 export const Page: FC<{
-  children: React.ReactElement | any
-  heading: React.ReactElement
+  children: React.ReactNode | any
+  header: React.ReactNode
   links?: Array<TLink>
-}> = ({ children, heading, links }) => {
+}> = ({ children, header, links }) => {
   return (
     <main className="flex flex-col flex-auto items-start justify-start gap-6 w-full h-fit overflow-hidden">
       <div className="flex flex-col gap-6 w-full">
         {links && <Nav links={links} />}
-        {heading}
+        {header}
       </div>
       <div className="flex flex-auto flex-col gap-6 w-full h-fit overflow-auto">
         {children}
       </div>
     </main>
+  )
+}
+
+export const PageHeader: FC<{
+  info?: React.ReactNode | null
+  summary?: React.ReactNode | null
+  title: React.ReactNode
+}> = ({ info = null, summary = null, title }) => {
+  return (
+    <header className="flex flex-wrap gap-8 items-end border-b pb-6">
+      <div className="flex flex-col flex-auto gap-4">
+        {title}
+        {summary}
+      </div>
+
+      <div className="flex-auto">{info}</div>
+    </header>
   )
 }

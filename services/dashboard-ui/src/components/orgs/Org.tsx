@@ -1,10 +1,9 @@
 'use client'
 
 import React, { type FC, useEffect, useState } from 'react'
-import { FaAws, FaGitAlt, FaGithub } from 'react-icons/fa'
-import { Card, Heading, Link, Status, Text } from '@/components'
+import { FaGithub } from 'react-icons/fa'
+import { Card, Heading, Link, PageHeader, Status, Text } from '@/components'
 import { TOrg } from '@/types'
-import { Interval } from 'luxon'
 
 export const OrgCard: FC<TOrg> = ({ status, status_description, id, name }) => {
   return (
@@ -22,37 +21,37 @@ export const OrgCard: FC<TOrg> = ({ status, status_description, id, name }) => {
   )
 }
 
-export const OrgHeading: FC<TOrg> = ({
-  vcs_connections,
-  id,
-  name,
-  status,
-  status_description,
-}) => {
+export const OrgPageHeader: FC<TOrg> = (org) => {
   return (
-    <div className="flex flex-auto gap-8 items-end border-b pb-6">
-      <div className="flex flex-col flex-auto gap-2">
-        <span>
-          <Text variant="overline">{id}</Text>
-          <Heading level={1} variant="title">
-            {name}
-          </Heading>
-        </span>
+    <PageHeader
+      info={<OrgStatus org={org} />}
+      title={<OrgTitle {...org} />}
+      summary={<OrgVCSConnections {...org} />}
+    />
+  )
+}
 
-        <Text className="flex flex-wrap gap-4 items-center" variant="status">
-          {vcs_connections?.length &&
-            vcs_connections?.map((vcs) => (
-              <span key={vcs?.id} className="flex gap-1 items-center">
-                <FaGithub className="text-md" /> {vcs?.github_install_id}
-              </span>
-            ))}
-        </Text>
-      </div>
+export const OrgTitle: FC<TOrg> = ({ id, name }) => {
+  return (
+    <span className="flex flex-col gap-2">
+      <Text variant="overline">{id}</Text>
+      <Heading level={1} variant="title">
+        {name}
+      </Heading>
+    </span>
+  )
+}
 
-      <div className="flex flex-col flex-auto gap-4">
-        <OrgStatus org={{ id, status, status_description }} />
-      </div>
-    </div>
+export const OrgVCSConnections: FC<TOrg> = ({ vcs_connections }) => {
+  return (
+    <Text className="flex flex-wrap gap-4 items-center" variant="status">
+      {vcs_connections?.length &&
+        vcs_connections?.map((vcs) => (
+          <span key={vcs?.id} className="flex gap-1 items-center">
+            <FaGithub className="text-md" /> {vcs?.github_install_id}
+          </span>
+        ))}
+    </Text>
   )
 }
 

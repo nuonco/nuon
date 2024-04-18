@@ -1,5 +1,13 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { Card, Grid, Install, Link, OrgHeading, Page, Text } from '@/components'
+import {
+  Card,
+  Grid,
+  Install,
+  Link,
+  OrgPageHeader,
+  Page,
+  Text,
+} from '@/components'
 import { getInstalls, getOrg } from '@/lib'
 
 export default withPageAuthRequired(
@@ -11,7 +19,7 @@ export default withPageAuthRequired(
     ])
 
     return (
-      <Page heading={<OrgHeading {...org} />} links={[{ href: orgId }]}>
+      <Page header={<OrgPageHeader {...org} />} links={[{ href: orgId }]}>
         <Grid>
           {installs?.map((install) => (
             <Card key={install?.id}>
