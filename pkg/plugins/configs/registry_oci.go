@@ -15,11 +15,11 @@ const (
 type OCIRegistry struct {
 	Plugin string `hcl:"plugin,label"`
 
-	RegistryType OCIRegistryType `hcl:"registry_type,omitempty,optional"`
+	RegistryType OCIRegistryType `hcl:"registry_type,optional"`
 
-	Tag     string                   `hcl:"tag"`
-	Region  string                   `hcl:"region"`
-	ECRAuth *awscredentials.Config   `hcl:"ecr_auth,block"`
+	Tag	string			 `hcl:"tag"`
+	Region	string			 `hcl:"region"`
+	ECRAuth *awscredentials.Config	 `hcl:"ecr_auth,block"`
 	ACRAuth *azurecredentials.Config `hcl:"acr_auth,block"`
 
 	// based on the type of access, either the repository (ecr) or login server (acr) will be provided.
