@@ -21,34 +21,27 @@ func (p *Platform) deploy(
 	if err != nil {
 		return nil, err
 	}
-	p.logger.Debug("initialized logger")
 
-	// init k8s client
-	p.logger.Debug("getting k8s client set")
 	clientset, err := p.getClientset()
 	if err != nil {
-		p.logger.Error(err.Error())
 		return nil, err
 	}
-	p.logger.Debug("got k8s client set")
 
 	// start k8s job
-	p.logger.Debug("starting k8s job")
+	ui.Output("starting job")
 	job, err := p.startJob(ctx, clientset)
 	if err != nil {
-		p.logger.Error(err.Error())
+		ui.Output("error starting job: %v", err)
 		return nil, err
 	}
-	p.logger.Debug("started k8s job")
 
 	// monitor job
-	p.logger.Debug("monitoring k8s job")
-	err = p.monitorJob(ctx, clientset, job)
+	ui.Output("polling job")
+	err = p.pollJob(ctx, clientset, job)
 	if err != nil {
-		p.logger.Error(err.Error())
+		ui.Output("error polling job: %v", err)
 		return nil, err
 	}
-	p.logger.Debug("done monitoring k8s job")
 
 	return &jobv1.Deployment{}, nil
 }

@@ -8,10 +8,10 @@ resource "nuon_job_component" "e2e" {
     nuon_container_image_component.e2e[0].id,
   ]
 
-  image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
-  tag       = "{{.nuon.components.e2e_docker_build.image.tag}}"
-  cmd       = ["printenv"]
-  args      = [""]
+  image_url = "bitnami/kubectl"
+  tag       = "1.2.6"
+  cmd       = ["kubectl"]
+  args      = ["get", "pods", "-A"]
 
   env_var {
     name  = "NUON_APP_ID"
