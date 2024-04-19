@@ -45,7 +45,7 @@ export default withPageAuthRequired(
             </Card>
           </div>
 
-          <div className="flex flex-col gap-6 overflow-x-auto">
+          <div className="flex flex-col gap-6 overflow-hidden">
             <Heading variant="subtitle">Details</Heading>
 
             <Card>

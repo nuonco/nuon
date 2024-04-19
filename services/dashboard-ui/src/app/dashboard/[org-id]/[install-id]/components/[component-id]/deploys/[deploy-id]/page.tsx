@@ -1,11 +1,18 @@
 import { DateTime } from 'luxon'
+import React, { Suspense, type FC } from 'react'
+import { GoCommit } from 'react-icons/go'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
-  Code,
+  Card,
+  ComponentConfig,
+  Duration,
+  Grid,
   Heading,
+  Link,
   Logs,
   Page,
   PageHeader,
+  Plan,
   Status,
   Text,
 } from '@/components'
@@ -16,7 +23,121 @@ import {
   getDeploy,
   getDeployLogs,
   getDeployPlan,
+  type IGetBuild,
+  type IGetComponentConfig,
+  type IGetDeployLogs,
+  type IGetDeployPlan,
 } from '@/lib'
+import type {
+  TBuild,
+  TComponentConfig,
+  TInstallDeployLogs,
+  TInstallDeployPlan,
+} from '@/types'
+
+const DeployLogs: FC<IGetDeployLogs> = async (params) => {
+  let content = <>'Loading...'</>
+  let logs: TInstallDeployLogs
+  try {
+    logs = await getDeployLogs(params)
+    content = logs.length ? (
+      <Logs logs={logs} />
+    ) : (
+      <Text variant="label">No logs to show</Text>
+    )
+  } catch (error) {
+    content = <Text variant="label">Can't find deploy logs</Text>
+  }
+
+  return (
+    <Card className="flex-initial">
+      <Heading>Logs</Heading>
+      {content}
+    </Card>
+  )
+}
+
+const DeployPlan: FC<IGetDeployPlan> = async (params) => {
+  let content = <>'Loading...'</>
+  let plan: TInstallDeployPlan
+  try {
+    plan = await getDeployPlan(params)
+    content = <Plan plan={plan} />
+  } catch (error) {
+    content = <Text variant="label">No plan to show</Text>
+  }
+  return (
+    <Card className="flex-1">
+      <Heading>Deploy plan</Heading>
+      {content}
+    </Card>
+  )
+}
+
+const Build: FC<IGetBuild> = async (params) => {
+  let build: TBuild
+  try {
+    build = await getBuild(params)
+  } catch (error) {
+    return <>No build to show</>
+  }
+
+  return (
+    <Card>
+      <Heading>Build details</Heading>
+      <div>
+        <Text variant="caption">
+          <b>Build ID:</b>
+          {build?.id}
+        </Text>
+        <Text variant="caption">
+          Completed in
+          <Duration
+            variant="caption"
+            beginTime={build?.created_at}
+            endTime={build?.updated_at}
+          />
+        </Text>
+      </div>
+
+      {build?.vcs_connection_commit ? (
+        <div className="flex flex-col gap-2">
+          <Text variant="label">Commit details</Text>
+          <Text className="flex justify-between" variant="caption">
+            <span className="flex gap-2 items-center">
+              <GoCommit />
+              {build?.vcs_connection_commit?.author_name ? (
+                <b>{build?.vcs_connection_commit?.author_name}</b>
+              ) : null}
+
+              <span className="truncate">
+                {build?.vcs_connection_commit?.message}
+              </span>
+            </span>
+            <Link href="#">
+              {build?.vcs_connection_commit?.sha?.slice(0, 7)}
+            </Link>
+          </Text>
+        </div>
+      ) : null}
+    </Card>
+  )
+}
+
+const LoadComponentConfig: FC<IGetComponentConfig> = async (params) => {
+  let config: TComponentConfig
+  try {
+    config = await getComponentConfig(params)
+  } catch (error) {
+    return <>No config to show</>
+  }
+  return (
+    <Card>
+      <Heading>Component config</Heading>
+      <ComponentConfig config={config} version={1} />
+    </Card>
+  )
+}
 
 export default withPageAuthRequired(
   async function InstallDeployDashboard({ params }) {
@@ -29,13 +150,9 @@ export default withPageAuthRequired(
     const buildId = deploy?.build_id
     const componentId = deploy?.component_id
 
-    const [build, component, config, logs, plan] = await Promise.all([
-      getBuild({ buildId, componentId, orgId }),
-      getComponent({ componentId, orgId }),
-      getComponentConfig({ componentId, orgId }),
-      getDeployLogs({ orgId, installId, deployId }),
-      getDeployPlan({ orgId, installId, deployId }),
-    ])
+    const component = await getComponent({ componentId, orgId }).catch(
+      () => null
+    )
 
     return (
       <Page
@@ -86,56 +203,30 @@ export default withPageAuthRequired(
           { href: 'deploys/' + deployId, text: deployId },
         ]}
       >
-        <div className="h-fit overflow-auto">
-          <Heading>Deploy</Heading>
+        <Grid variant="3-cols">
+          <div className="flex flex-col gap-6 overflow-hidden">
+            <Heading variant="subtitle">Component details</Heading>
 
-          <Code variant="preformated">{JSON.stringify(deploy, null, 2)}</Code>
+            <Suspense fallback="Loading...">
+              <Build {...{ buildId, componentId, orgId }} />
+            </Suspense>
 
-          <Heading>Logs</Heading>
-          <Logs logs={logs} />
+            <Suspense fallback="Loading...">
+              <LoadComponentConfig {...{ componentId, orgId }} />
+            </Suspense>
+          </div>
 
-          <Heading>Deploy plan</Heading>
+          <div className="flex flex-col gap-6 lg:col-span-2 overflow-hidden">
+            <Heading variant="subtitle">Deploy details</Heading>
+            <Suspense fallback="Loading...">
+              <DeployLogs {...{ deployId, installId, orgId }} />
+            </Suspense>
 
-          <Heading variant="subheading">Rendered variables</Heading>
-          <Code>
-            {plan.actual?.waypoint_plan?.variables?.variables?.map((v, i) => {
-              let variable = null
-              if (v?.Actual?.TerraformVariable) {
-                variable = (
-                  <span className="flex" key={i?.toString()}>
-                    <b>{v?.Actual?.TerraformVariable?.name}:</b>{' '}
-                    {v?.Actual?.TerraformVariable?.value}
-                  </span>
-                )
-              }
-
-              if (v?.Actual?.HelmValue) {
-                variable = (
-                  <span className="flex" key={i?.toString()}>
-                    <b>{v?.Actual?.HelmValue?.name}:</b>{' '}
-                    {v?.Actual?.HelmValue?.value}
-                  </span>
-                )
-              }
-
-              return variable
-            })}
-          </Code>
-
-          <Heading variant="subheading">Intermediate variables</Heading>
-          <Code variant="preformated">
-            {JSON.stringify(
-              plan.actual?.waypoint_plan?.variables?.intermediate_data,
-              null,
-              2
-            )}
-          </Code>
-
-          <Heading variant="subheading">Job config</Heading>
-          <Code variant="preformated">
-            {plan.actual?.waypoint_plan?.waypoint_job?.hcl_config}
-          </Code>
-        </div>
+            <Suspense fallback="Loading...">
+              <DeployPlan {...{ deployId, installId, orgId }} />
+            </Suspense>
+          </div>
+        </Grid>
       </Page>
     )
   },
