@@ -34,6 +34,8 @@ export type TComponentConfig = {
 export type TBuild = {
   id: string
   created_at: string
+  status: string
+  status_description: string
   updated_at: string
   vcs_connection_commit: TVCSCommit
 } & Record<string, unknown>
