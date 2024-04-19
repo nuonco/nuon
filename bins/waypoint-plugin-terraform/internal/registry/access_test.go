@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/powertoolsdev/mono/pkg/plugins/configs"
+
 	"github.com/golang/mock/gomock"
 	ecrauthorization "github.com/powertoolsdev/mono/pkg/aws/ecr-authorization"
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -15,7 +17,7 @@ import (
 func TestRegistry_getAccessInfo(t *testing.T) {
 	errGetAccessInfo := fmt.Errorf("error get access info")
 	authorization := generics.GetFakeObj[*ecrauthorization.Authorization]()
-	cfg := generics.GetFakeObj[Config]()
+	cfg := generics.GetFakeObj[configs.TerraformBuildAWSECRRegistry]()
 
 	tests := map[string]struct {
 		clientFn    func(*gomock.Controller) ecrauthorization.Client
