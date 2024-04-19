@@ -4,6 +4,7 @@ import {
   Card,
   ComponentConfig,
   ComponentDependencies,
+  Grid,
   Heading,
   InstallComponentHeading,
   InstallComponentSummary,
@@ -119,7 +120,7 @@ export default withPageAuthRequired(
           },
         ]}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full h-fit overflow-hidden">
+        <Grid variant="3-cols" >
           <div className="flex flex-col gap-6 overflow-hidden">
             <Heading variant="subtitle">Deploy history</Heading>
             <Card>
@@ -149,7 +150,7 @@ export default withPageAuthRequired(
               </Card>
             ) : null}
           </div>
-        </div>
+        </Grid>
       </Page>
     )
   },
