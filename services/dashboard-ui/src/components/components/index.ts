@@ -1,1 +1,2 @@
-export * from '@/components/components/Component'
+export * from './Build'
+export * from './Component'
