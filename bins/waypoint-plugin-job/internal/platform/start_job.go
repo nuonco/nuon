@@ -2,6 +2,7 @@ package platform
 
 import (
 	"context"
+	"fmt"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +24,7 @@ func (p *Platform) startJob(ctx context.Context, clientset *kubernetes.Clientset
 					Containers: []corev1.Container{
 						{
 							Name:    p.Cfg.ContainerName,
-							Image:   p.Cfg.ImageURL,
+							Image:   fmt.Sprintf("%s:%s", p.Cfg.ImageURL, p.Cfg.Tag),
 							Command: p.Cfg.Cmd,
 							Args:    p.Cfg.Args,
 							Env:     toEnv(p.Cfg.EnvVars),
