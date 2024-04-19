@@ -2,6 +2,7 @@ package platform
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -13,8 +14,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// monitorJob monitors the job status and tails the logs. It assumes there is only one pod.
-func (p *Platform) monitorJob(ctx context.Context, clientSet *kubernetes.Clientset, job *batchv1.Job) error {
+// pollJob monitors the job status and tails the logs. It assumes there is only one pod.
+func (p *Platform) pollJob(ctx context.Context, clientSet *kubernetes.Clientset, job *batchv1.Job) error {
 	// get pod (once it's been created)
 	p.logger.Debug("getting pod")
 	timeout := int64(60)
@@ -35,8 +36,8 @@ func (p *Platform) monitorJob(ctx context.Context, clientSet *kubernetes.Clients
 			)
 			break
 			// case watch.Error:
-			// 	// item := event.Object.(*api.Status)
-			// 	p.logger.Debug("error event")
+			//	// item := event.Object.(*api.Status)
+			//	p.logger.Debug("error event")
 		}
 	}
 	if pod == nil {
@@ -57,14 +58,16 @@ func (p *Platform) monitorJob(ctx context.Context, clientSet *kubernetes.Clients
 	p.logger.Debug("reading logs from pod")
 	for {
 		buf := make([]byte, 2000)
-		_, err := logStream.Read(buf)
-		if err == io.EOF {
+		written, err := logStream.Read(buf)
+		// NOTE(jm): in the case of an EOF, we want to write any bytes that were copied into the buffer, to
+		// ensure we do not leak any logs
+		p.logger.Info(string(buf[:written]))
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
 			return err
 		}
-		p.logger.Info(string(buf))
 	}
 
 	return nil
