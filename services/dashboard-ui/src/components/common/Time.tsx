@@ -27,27 +27,40 @@ export interface IDuration extends IText {
   beginTime: string
   endTime: string
   durationUnits?: DurationUnits
+  listStyle?: 'narrow' | 'short' | 'long'
+  unitDisplay?: 'narrow' | 'short' | 'long'
+  format?: 'default' | 'timer'
 }
 
 export const Duration: FC<IDuration> = ({
   beginTime,
   endTime,
-  durationUnits = ['years', 'months', 'days', 'hours', 'minutes', 'seconds'],
+  durationUnits = [
+    'years',
+    'months',
+    'days',
+    'hours',
+    'minutes',
+    'seconds',
+    'milliseconds',
+  ],
+  format = 'default',
+  listStyle = 'narrow',
+  unitDisplay = 'narrow',
   ...props
 }) => {
   const bt = DateTime.fromISO(beginTime)
   const et = DateTime.fromISO(endTime)
-  const duration = et.diff(bt, durationUnits).toObject()
+  const duration = et.diff(bt, durationUnits)
 
   return (
     <Text {...props}>
-      {Object.keys(duration).map((k) =>
-        duration[k] !== 0 ? (
-          <span key={k + duration[k]}>
-            {duration[k]} {k}
-          </span>
-        ) : null
-      )}
+      {format === 'timer'
+        ? duration.toFormat('T-hh:mm:ss:SS')
+        : duration.rescale().toHuman({
+            listStyle,
+            unitDisplay,
+          })}
     </Text>
   )
 }
