@@ -36,7 +36,7 @@ import type {
 } from '@/types'
 
 const DeployLogs: FC<IGetDeployLogs> = async (params) => {
-  let content = <>'Loading...'</>
+  let content = <>Loading...</>
   let logs: TInstallDeployLogs
   try {
     logs = await getDeployLogs(params)
@@ -46,7 +46,7 @@ const DeployLogs: FC<IGetDeployLogs> = async (params) => {
       <Text variant="label">No logs to show</Text>
     )
   } catch (error) {
-    content = <Text variant="label">Can't find deploy logs</Text>
+    content = <Text variant="label">Can not find deploy logs</Text>
   }
 
   return (
@@ -58,7 +58,7 @@ const DeployLogs: FC<IGetDeployLogs> = async (params) => {
 }
 
 const DeployPlan: FC<IGetDeployPlan> = async (params) => {
-  let content = <>'Loading...'</>
+  let content = <>Loading...</>
   let plan: TInstallDeployPlan
   try {
     plan = await getDeployPlan(params)
