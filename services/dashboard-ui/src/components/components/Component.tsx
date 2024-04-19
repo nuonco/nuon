@@ -64,7 +64,7 @@ export const ComponentType: FC<{
 }> = ({ config, componentType, hasTextHidden }) => {
   let ct =
     componentType || getComponentTypeFromConfig(config as TComponentConfig)
-  let el
+  let el: React.ReactNode
 
   switch (ct) {
     case 'docker':
@@ -136,12 +136,15 @@ export const ComponentConfig: FC<{
   const componentType = getComponentTypeFromConfig(config)
 
   return (
-    (componentType === 'docker' && (
-      <DockerConfig {...{ cfg: config?.docker_build, version }} />
-    )) ||
-    (componentType === 'terraform' && (
-      <TerraformConfig {...{ cfg: config?.terraform_module, version }} />
-    ))
+    <div className="flex flex-col gap-2">
+      <ComponentType config={config} />
+      {(componentType === 'docker' && (
+        <DockerConfig {...{ cfg: config?.docker_build, version }} />
+      )) ||
+        (componentType === 'terraform' && (
+          <TerraformConfig {...{ cfg: config?.terraform_module, version }} />
+        ))}
+    </div>
   )
 }
 
@@ -150,7 +153,7 @@ export const DockerConfig: FC<{
   version?: number
 }> = ({ cfg, version }) => {
   return (
-    <div className="flex flex-col gap-2">
+    <>
       <span>
         <Text variant="caption">
           <b>Config version:</b> {version}
@@ -171,7 +174,7 @@ export const DockerConfig: FC<{
           </Code>
         </>
       )}
-    </div>
+    </>
   )
 }
 
@@ -180,7 +183,7 @@ export const TerraformConfig: FC<{
   version?: number
 }> = ({ cfg, version }) => {
   return (
-    <div className="flex flex-col gap-2">
+    <>
       <span>
         <Text variant="caption">
           <b>Config version:</b> {version}
@@ -204,6 +207,6 @@ export const TerraformConfig: FC<{
           </Code>
         </>
       )}
-    </div>
+    </>
   )
 }
