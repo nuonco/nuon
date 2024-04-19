@@ -25,6 +25,7 @@ export const Heading: FC<IHeading> = ({
         'text-3xl font-bold': variant === 'subtitle',
         [`${className}`]: Boolean(className),
       })}
+      {...props}
     >
       {children}
     </span>
@@ -50,7 +51,8 @@ export const Text: FC<IText> = ({
       className={classNames('flex flex-wrap items-center gap-1', {
         ['tracking-wider text-xs font-semibold uppercase leading-none word-wrap']:
           isStatus,
-        ['text-xs tracking-wide leading-none text-gray-600 dark:text-gray-300']: isOverline,
+        ['text-xs tracking-wide leading-none text-gray-600 dark:text-gray-300']:
+          isOverline,
         ['text-sm font-semibold']: isLabel,
         'text-xs': variant === 'caption',
         [`${className}`]: Boolean(className),
@@ -67,9 +69,14 @@ export interface ICode extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: 'default' | 'preformated'
 }
 
-export const Code: FC<ICode> = ({ children, variant = 'default' }) => {
+export const Code: FC<ICode> = ({
+  className,
+  children,
+  variant = 'default',
+}) => {
   const classes = classNames(
-    'text-xs p-6 bg-gray-800 text-gray-100 font-mono break-all rounded shadow-sm flex flex-col gap-2 max-h-[40rem] max-w-5xl overflow-auto'
+    'text-xs p-6 bg-gray-800 text-gray-100 font-mono break-all block rounded shadow-sm min-h-[3rem] max-h-[40rem] max-w-5xl overflow-auto',
+    { [`${className}`]: Boolean(className) }
   )
 
   return variant === 'preformated' ? (
