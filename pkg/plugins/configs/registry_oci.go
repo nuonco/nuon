@@ -15,7 +15,7 @@ const (
 type OCIRegistry struct {
 	Plugin string `hcl:"plugin,label"`
 
-	RegistryType OCIRegistryType `hcl:"registry_type"`
+	RegistryType OCIRegistryType `hcl:"registry_type,omitempty,optional"`
 
 	Tag     string                   `hcl:"tag"`
 	Region  string                   `hcl:"region"`
