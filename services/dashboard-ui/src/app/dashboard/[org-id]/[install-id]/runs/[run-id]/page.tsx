@@ -1,15 +1,19 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { DateTime } from 'luxon'
 import {
+  Card,
+  CloudDetails,
   Code,
+  Grid,
   Heading,
   Logs,
   Page,
   PageHeader,
+  SandboxDetails,
   Status,
   Text,
 } from '@/components'
-import { getSandboxRun, getSandboxRunLogs } from '@/lib'
+import { getSandboxRun, getSandboxRunLogs, getInstall } from '@/lib'
 import { sentanceCase } from '@/utils'
 
 export default withPageAuthRequired(
@@ -18,9 +22,10 @@ export default withPageAuthRequired(
     const installId = params?.['install-id'] as string
     const runId = params?.['run-id'] as string
 
-    const [run, logs] = await Promise.all([
+    const [run, logs, install] = await Promise.all([
       getSandboxRun({ installId, orgId, runId }),
       getSandboxRunLogs({ installId, orgId, runId }),
+      getInstall({ installId, orgId }),
     ])
 
     return (
@@ -54,11 +59,26 @@ export default withPageAuthRequired(
           { href: 'runs/' + runId, text: runId },
         ]}
       >
-        <Heading>Sandbox run</Heading>
-        <Code variant="preformated">{JSON.stringify(run, null, 2)}</Code>
+        <Grid variant="3-cols">
+          <div className="flex flex-col gap-6">
+            <Heading variant="subtitle">Install details</Heading>
+            <Card>
+              <SandboxDetails {...run?.app_sandbox_config} />
+            </Card>
 
-        <Heading>Sandbox run logs</Heading>
-        <Logs logs={logs} />
+            <Card>
+              <CloudDetails {...install} />
+            </Card>
+          </div>
+
+          <div className="flex flex-col gap-6 lg:col-span-2">
+            <Heading variant="subtitle">Run details</Heading>
+            <Card>
+              <Heading>Run logs</Heading>
+              <Logs logs={logs} />
+            </Card>
+          </div>
+        </Grid>
       </Page>
     )
   },
