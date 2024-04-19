@@ -45,7 +45,7 @@ func (r *Registry) Push(
 
 	u = ui.Status()
 	authProvider, err := ecrauthorization.New(r.v,
-		ecrauthorization.WithCredentials(&r.config.Auth),
+		ecrauthorization.WithCredentials(r.config.Auth),
 		ecrauthorization.WithRepository(r.config.Repository),
 	)
 	if err != nil {

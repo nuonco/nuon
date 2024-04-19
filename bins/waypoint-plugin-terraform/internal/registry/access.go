@@ -26,7 +26,7 @@ func (r *Registry) AccessInfo(ctx context.Context,
 	src *component.Source,
 ) (*terraformv1.AccessInfo, error) {
 	authProvider, err := ecrauthorization.New(r.v,
-		ecrauthorization.WithCredentials(&r.config.Auth),
+		ecrauthorization.WithCredentials(r.config.Auth),
 		ecrauthorization.WithRepository(r.config.Repository),
 	)
 	if err != nil {
