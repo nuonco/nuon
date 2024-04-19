@@ -1,14 +1,12 @@
 import { DateTime } from 'luxon'
 import React, { Suspense, type FC } from 'react'
-import { GoCommit } from 'react-icons/go'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
+  Build,
   Card,
   ComponentConfig,
-  Duration,
   Grid,
   Heading,
-  Link,
   Logs,
   Page,
   PageHeader,
@@ -17,19 +15,16 @@ import {
   Text,
 } from '@/components'
 import {
-  getBuild,
   getComponent,
   getComponentConfig,
   getDeploy,
   getDeployLogs,
   getDeployPlan,
-  type IGetBuild,
   type IGetComponentConfig,
   type IGetDeployLogs,
   type IGetDeployPlan,
 } from '@/lib'
 import type {
-  TBuild,
   TComponentConfig,
   TInstallDeployLogs,
   TInstallDeployPlan,
@@ -70,56 +65,6 @@ const DeployPlan: FC<IGetDeployPlan> = async (params) => {
     <Card className="flex-1">
       <Heading>Deploy plan</Heading>
       {content}
-    </Card>
-  )
-}
-
-const Build: FC<IGetBuild> = async (params) => {
-  let build: TBuild
-  try {
-    build = await getBuild(params)
-  } catch (error) {
-    return <>No build to show</>
-  }
-
-  return (
-    <Card>
-      <Heading>Build details</Heading>
-      <div>
-        <Text variant="caption">
-          <b>Build ID:</b>
-          {build?.id}
-        </Text>
-        <Text variant="caption">
-          Completed in
-          <Duration
-            variant="caption"
-            beginTime={build?.created_at}
-            endTime={build?.updated_at}
-          />
-        </Text>
-      </div>
-
-      {build?.vcs_connection_commit ? (
-        <div className="flex flex-col gap-2">
-          <Text variant="label">Commit details</Text>
-          <Text className="flex justify-between" variant="caption">
-            <span className="flex gap-2 items-center">
-              <GoCommit />
-              {build?.vcs_connection_commit?.author_name ? (
-                <b>{build?.vcs_connection_commit?.author_name}</b>
-              ) : null}
-
-              <span className="truncate">
-                {build?.vcs_connection_commit?.message}
-              </span>
-            </span>
-            <Link href="#">
-              {build?.vcs_connection_commit?.sha?.slice(0, 7)}
-            </Link>
-          </Text>
-        </div>
-      ) : null}
     </Card>
   )
 }
