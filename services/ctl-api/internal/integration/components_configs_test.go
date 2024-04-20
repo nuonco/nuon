@@ -120,7 +120,9 @@ func (s *componentConfigsSuite) TestCreateHelmComponentConfig() {
 		require.Nil(t, err)
 		require.NotNil(t, cfg)
 
-		// assert the fields
+		require.Equal(t, cfg.Values, req.Values)
+		require.Equal(t, cfg.ValuesFiles, req.ValuesFiles)
+		require.Equal(t, cfg.ChartName, *req.ChartName)
 	})
 
 	s.T().Run("success with public config", func(t *testing.T) {

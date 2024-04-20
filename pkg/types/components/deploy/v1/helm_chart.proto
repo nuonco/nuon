@@ -9,4 +9,5 @@ option go_package = "github.com/powertoolsdev/mono/pkg/types/components/deploy/v
 // HelmChartConfig enables a customer to install a helm chart from a repository.
 message HelmChartConfig {
   variables.v1.HelmValues values = 1;
+  repeated string values_files = 2;
 }

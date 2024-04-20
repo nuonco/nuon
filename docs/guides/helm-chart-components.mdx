@@ -142,6 +142,53 @@ resource "nuon_helm_chart_component" "domains" {
 ```
 </CodeGroup>
 
+## Helm Values Files
+
+You can add a values file, and set multiple values at once.
+
+<CodeGroup>
+```toml nuon.toml
+[[components]]
+name = "toml_helm"
+type = "helm_chart"
+chart_name = "e2e-helm"
+
+[components.connected_repo]
+directory = "deployment"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[components.values_file]]
+contents = """
+image.tag = {{.nuon.components.toml_docker_build.image.name}}
+"""
+```
+
+```hcl values.tf
+// access a synced image
+resource "nuon_helm_chart_component" "images" {
+  name   = "images"
+  app_id = nuon_app.main.id
+
+  chart_name = "images"
+  connected_repo = {
+    directory = "chart"
+    repo      = "your-org/your-repo"
+    branch    = "main"
+  }
+
+  values_file {
+    contents = yamlencode({
+      "key": "value"
+    })
+  }
+}
+```
+</CodeGroup>
+
+<Note>
+For now, we do not support reading values files from disk. If this is something that would make your configuration easier, [let us know](mailto:team@nuon.co)!
+</Note>
 
 ## Default Sandbox Components + DNS
 
