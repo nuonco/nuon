@@ -158,6 +158,11 @@ directory = "deployment"
 repo = "powertoolsdev/mono"
 branch = "main"
 
+[[components.values_file]]
+contents = """
+image.tag = {{.nuon.components.toml_docker_build.image.name}}
+"""
+
 [[components.value]]
 name = "api.ingresses.public_domain"
 value = "{{.nuon.components.infra.outputs.iam_role}}"
