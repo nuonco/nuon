@@ -3,6 +3,7 @@ locals {}
 provider "nuon" {
   alias = "sandbox"
   org_id = var.sandbox_org_id
+  api_token = var.sandbox_api_token
 }
 
 provider "nuon" {
