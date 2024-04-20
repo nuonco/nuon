@@ -23,7 +23,12 @@ resource "nuon_helm_chart_component" "e2e" {
 
   // dynamically set env vars from another source
   dynamic "value" {
-    for_each = local.all_available_helm_values
+    for_each = {
+      "aws-eks": local.aws_helm_values,
+      "aws-ecs": local.aws_helm_values,
+      "azure-aks": local.azure_helm_values,
+    }[var.app_runner_type]
+
     iterator = ev
     content {
       name  = ev.key
@@ -51,14 +56,22 @@ locals {
   helm_values = {
     "api.ingresses.public_domain"            = "api.{{.nuon.install.public_domain}}"
     "api.ingresses.internal_domain"          = "api.{{.nuon.install.internal_domain}}"
-    "api.nlbs.public_domain"                 = "nlb.{{.nuon.install.public_domain}}"
-    "api.nlbs.internal_domain"               = "nlb.internal.{{.nuon.install.internal_domain}}"
-    "api.nlbs.public_domain_certificate_arn" = "{{.nuon.components.e2e_infra.outputs.public_domain_certificate_arn}}"
 
     "env.DEFAULT_VALUE" = "set-by-terraform-provider-as-default"
   }
 
-  all_available_helm_values = {
+  azure_helm_values = {
+    // nuon built ins
+    "env.NUON_APP_ID"     = "{{.nuon.app.id}}"
+    "env.NUON_ORG_ID"     = "{{.nuon.org.id}}"
+    "env.NUON_INSTALL_ID" = "{{.nuon.install.id}}"
+  }
+
+  aws_helm_values = {
+    "api.nlbs.public_domain"                 = "nlb.{{.nuon.install.public_domain}}"
+    "api.nlbs.internal_domain"               = "nlb.internal.{{.nuon.install.internal_domain}}"
+    "api.nlbs.public_domain_certificate_arn" = "{{.nuon.components.e2e_infra.outputs.public_domain_certificate_arn}}"
+
     // nuon built ins
     "env.NUON_APP_ID"     = "{{.nuon.app.id}}"
     "env.NUON_ORG_ID"     = "{{.nuon.org.id}}"
