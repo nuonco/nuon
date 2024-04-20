@@ -56,7 +56,8 @@ func (c *Adapter) ToHelmComponentConfig(cfg *app.HelmComponentConfig, connection
 			Timeout: durationpb.New(defaultHelmDeployTimeout),
 			Cfg: &deployv1.Config_HelmChart{
 				HelmChart: &deployv1.HelmChartConfig{
-					Values: c.toHelmValues(cfg.Values),
+					Values:      c.toHelmValues(cfg.Values),
+					ValuesFiles: cfg.ValuesFiles,
 				},
 			},
 		},
