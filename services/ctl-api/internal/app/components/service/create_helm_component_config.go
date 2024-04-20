@@ -8,14 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type CreateHelmComponentConfigRequest struct {
 	basicVCSConfigRequest
 
-	Values    map[string]*string `json:"values,omitempty" validate:"required"`
-	ChartName string             `json:"chart_name,omitempty" validate:"required"`
+	Values      map[string]*string `json:"values,omitempty" validate:"required"`
+	ValuesFiles []string           `json:"values_files,omitempty"`
+	ChartName   string             `json:"chart_name,omitempty" validate:"required"`
 }
 
 func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error {
@@ -86,6 +88,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		PublicGitVCSConfig:       publicGitVCSConfig,
 		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 		Values:                   pgtype.Hstore(req.Values),
+		ValuesFiles:              pq.StringArray(req.ValuesFiles),
 		ChartName:                req.ChartName,
 	}
 	componentConfigConnection := app.ComponentConfigConnection{
