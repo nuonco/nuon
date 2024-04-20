@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
@@ -26,8 +27,9 @@ type HelmComponentConfig struct {
 	ComponentConfigConnection   ComponentConfigConnection `json:"-"`
 
 	// Helm specific configurations
-	ChartName string        `json:"chart_name" gorm:"notnull"`
-	Values    pgtype.Hstore `json:"values" gorm:"type:hstore" swaggertype:"object,string"`
+	ChartName   string         `json:"chart_name" gorm:"notnull"`
+	Values      pgtype.Hstore  `json:"values" gorm:"type:hstore" swaggertype:"object,string"`
+	ValuesFiles pq.StringArray `gorm:"type:text[]" json:"values_files" swaggertype:"array,string"`
 
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitempty"`

@@ -17,6 +17,10 @@ resource "nuon_helm_chart_component" "e2e" {
     branch    = data.nuon_connected_repo.mono.default_branch
   }
 
+  values_file {
+    contents = local.helm_values_file
+  }
+
   // dynamically set env vars from another source
   dynamic "value" {
     for_each = local.all_available_helm_values
@@ -38,6 +42,12 @@ resource "nuon_helm_chart_component" "e2e" {
 }
 
 locals {
+  helm_values_file = yamlencode({
+    "files_test": {
+      "key": "value",
+     }})
+
+
   helm_values = {
     "api.ingresses.public_domain"            = "api.{{.nuon.install.public_domain}}"
     "api.ingresses.internal_domain"          = "api.{{.nuon.install.internal_domain}}"
