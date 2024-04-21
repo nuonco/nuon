@@ -49,7 +49,99 @@ $ nuon apps export-terraform
 ```
 </CodeGroup>
 
-## Configuration
+## Reusable components
+
+You can reuse components by using a `source` field in your config file. This is useful for sharing components between applications or splitting up large configuration files.
+
+<CodeGroup>
+```toml nuon.your-app.toml
+[[components]]
+source = "./storage.toml"
+
+[[components]]
+source = "./container_image.toml"
+```
+
+```toml storage.toml
+name = "storage"
+type = "terraform_module"
+terraform_version = "1.5.3"
+
+[public_repo]
+directory = "components/storage"
+repo = "nuonco/demo"
+branch = "main"
+```
+
+```toml container_image.toml
+name = "container_image"
+type = "container_image"
+
+[aws_ecr]
+image_url = "ecr-repository"
+tag = "latest"
+region = "us-west-2"
+```
+</CodeGroup>
+
+<Note>
+When loading a component from a source, the `components` prefix is not needed for each field, like it is in the main config file.
+</Note>
+
+You can also override fields from a source config file, by setting the values directly in your main toml file:
+
+<CodeGroup>
+```toml nuon.your-app.toml
+[[components]]
+source = "./storage.toml"
+name = "storage"
+```
+
+```toml storage.toml
+type = "terraform_module"
+terraform_version = "1.5.3"
+```
+</CodeGroup>
+
+## Config Variables
+
+You can define config variables to be used throughout your config, allowing you to set variables for common values.
+
+To add a configuration variable, add the `config_vars` block to the top of your config file:
+
+<CodeGroup>
+```toml nuon.your-app.toml
+version = "v1"
+
+[config_vars]
+component_prefix = "app_"
+```
+</CodeGroup>
+
+You can then reference anywhere in your config:
+
+<CodeGroup>
+```toml nuon.your-app.toml
+[[components]]
+name = "{{.component_prefix}}_storage"
+```
+</CodeGroup>
+
+<Note>Config variables do not currently work with reusable component files.</Note>
+
+## Validate
+
+You can validate a config file using `nuon apps validate`:
+
+<CodeGroup>
+```sh
+$ nuon apps validate -c nuon.<your-app>.toml
+```
+</CodeGroup>
+
+The CLI will automatically generate Terraform code from your config and run `terraform validate` on it and print any errors.
+
+## Reference
 
 The configuration file allows you to configure an app similarly to the Nuon terraform provider.
 
