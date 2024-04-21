@@ -12,10 +12,10 @@ type TokenType string
 
 const (
 	TokenTypeAuth0       TokenType = "auth0"
-	TokenTypeIntegration TokenType = "integration"
-	TokenTypeCanary      TokenType = "canary"
 	TokenTypeAdmin       TokenType = "admin"
 	TokenTypeStatic      TokenType = "static"
+	TokenTypeIntegration TokenType = "integration"
+	TokenTypeCanary      TokenType = "canary"
 )
 
 type UserToken struct {
