@@ -3,7 +3,7 @@ package migrations
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/services/config"
 )
 
 func (a *Migrations) migration016InputCascades(ctx context.Context) error {
