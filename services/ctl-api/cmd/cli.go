@@ -6,6 +6,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/log"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/loops"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/protos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/temporal"
@@ -32,6 +33,7 @@ func (c *cli) providers() []fx.Option {
 
 		// various dependencies
 		fx.Provide(log.New),
+		fx.Provide(loops.New),
 		fx.Provide(github.New),
 		fx.Provide(metrics.New),
 		fx.Provide(migrations.New),
