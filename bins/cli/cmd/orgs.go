@@ -11,6 +11,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		name    string
 		sandbox bool
 		limit   int64
+		email   string
 	)
 
 	orgsCmd := &cobra.Command{
@@ -159,6 +160,30 @@ func (c *cli) orgsCmd() *cobra.Command {
 			svc.PrintConfig(PrintJSON)
 		},
 	})
+
+	createInviteCmd := &cobra.Command{
+		Use:   "invite",
+		Short: "Invite a user to org",
+		Long:  "Invite a user by email to org",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient, c.cfg)
+			svc.CreateInvite(cmd.Context(), email, PrintJSON)
+		},
+	}
+	createInviteCmd.Flags().StringVarP(&email, "email", "e", "", "Email of user to invite")
+	orgsCmd.AddCommand(createInviteCmd)
+
+	listInvitesCmd := &cobra.Command{
+		Use:   "list-invites",
+		Short: "List all org invites",
+		Long:  "List all org invites",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := orgs.New(c.apiClient, c.cfg)
+			svc.ListInvites(cmd.Context(), limit, PrintJSON)
+		},
+	}
+	listInvitesCmd.Flags().Int64VarP(&limit, "limit", "l", 5, "Maximum invites to return")
+	orgsCmd.AddCommand(listInvitesCmd)
 
 	return orgsCmd
 }

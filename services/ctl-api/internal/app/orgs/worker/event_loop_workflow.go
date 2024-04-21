@@ -98,6 +98,16 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 				SandboxMode: req.SandboxMode,
 			})
 
+		// OperationInviteUser
+		case OperationInviteCreated:
+			op = "invite_created"
+			err := w.inviteUser(ctx, req.OrgID, signal.Email)
+			if err != nil {
+				status = "error"
+				l.Error("unable to invite user to org", zap.Error(err))
+				return
+			}
+
 		// OperationForceDelete
 		case OperationForceDelete:
 			op = "force_delete"
