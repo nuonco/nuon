@@ -112,6 +112,7 @@ type Terraform interface {
 	Graph(ctx context.Context, opts ...tfexec.GraphOption) (string, error)
 	// Output represents the terraform output subcommand.
 	Output(ctx context.Context, opts ...tfexec.OutputOption) (map[string]tfexec.OutputMeta, error)
+	Validate(ctx context.Context) (*tfjson.ValidateOutput, error)
 	// Plan executes `terraform plan` with the specified options and waits for it
 	// to complete.
 	//

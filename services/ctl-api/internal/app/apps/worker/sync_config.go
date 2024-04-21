@@ -29,20 +29,38 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
-	var generateResponse activities.GenerateTerraformConfigResponse
-	if err := w.defaultExecGetActivity(ctx, w.acts.GenerateTerraformConfig, activities.GenerateTerraformConfigRequest{
+	var appCfg app.AppConfig
+	if err := w.defaultExecGetActivity(ctx, w.acts.GetAppConfig, activities.GetAppConfigRequest{
 		AppConfigID: appConfigID,
-	}, &generateResponse); err != nil {
-		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to generate terraform config - "+err.Error())
-		return fmt.Errorf("unable to generate terraform config: %w", err)
+	}, &appCfg); err != nil {
+		w.updateStatus(ctx, appID, StatusError, "unable to get app config from database")
+		return fmt.Errorf("unable to get app config from database: %w", err)
 	}
 
-	if err := w.defaultExecErrorActivity(ctx, w.acts.SaveTerraformConfig, activities.SaveTerraformConfigRequest{
-		AppConfigID:   appConfigID,
-		TerraformJSON: generateResponse.Byts,
-	}); err != nil {
-		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to generate terraform config - "+err.Error())
-		return fmt.Errorf("unable to generate terraform config: %w", err)
+	// NOTE(jm): eventually, this will be able to be removed, once all users of config files have migrated to newest
+	// cli.
+	if appCfg.GeneratedTerraform == "" {
+		var generateResponse activities.GenerateTerraformConfigResponse
+		if err := w.defaultExecGetActivity(ctx, w.acts.GenerateTerraformConfig, activities.GenerateTerraformConfigRequest{
+			AppConfigID: appConfigID,
+		}, &generateResponse); err != nil {
+			w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to generate terraform config - "+err.Error())
+			return fmt.Errorf("unable to generate terraform config: %w", err)
+		}
+
+		if err := w.defaultExecErrorActivity(ctx, w.acts.SaveTerraformConfig, activities.SaveTerraformConfigRequest{
+			AppConfigID:   appConfigID,
+			TerraformJSON: generateResponse.Byts,
+		}); err != nil {
+			w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to generate terraform config - "+err.Error())
+			return fmt.Errorf("unable to generate terraform config: %w", err)
+		}
+		if err := w.defaultExecGetActivity(ctx, w.acts.GetAppConfig, activities.GetAppConfigRequest{
+			AppConfigID: appConfigID,
+		}, &currentApp); err != nil {
+			w.updateStatus(ctx, appID, StatusError, "unable to get app config from database")
+			return fmt.Errorf("unable to get app config from database: %w", err)
+		}
 	}
 
 	w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusSyncing, "applying terraform config")
@@ -50,7 +68,7 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		OrgId:            currentApp.OrgID,
 		AppId:            appID,
 		AppConfigId:      appConfigID,
-		TerraformJson:    string(generateResponse.Byts),
+		TerraformJson:    appCfg.GeneratedTerraform,
 		TerraformVersion: defaultTerraformVersion,
 		ApiToken:         currentApp.CreatedBy.Token,
 		ApiUrl:           w.cfg.AppSyncAPIURL,

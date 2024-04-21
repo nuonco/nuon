@@ -11,6 +11,10 @@ func NewGetView() *GetView {
 	return &GetView{}
 }
 
+func (v *GetView) Print(msg string) {
+	pterm.DefaultBasicText.Println(msg)
+}
+
 func (v *GetView) Render(data [][]string) {
 	pterm.DefaultTable.
 		WithData(data).
