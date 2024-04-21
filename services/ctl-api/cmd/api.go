@@ -22,6 +22,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/userorgs"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
@@ -50,6 +51,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsMiddleware(public.New)),
 		fx.Provide(api.AsMiddleware(cors.New)),
 		fx.Provide(api.AsMiddleware(config.New)),
+		fx.Provide(api.AsMiddleware(userorgs.New)),
 
 		// add endpoints
 		fx.Provide(api.AsService(docs.New)),

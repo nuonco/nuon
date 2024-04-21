@@ -86,6 +86,9 @@ type Config struct {
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
+
+	// transactional emails
+	LoopsAPIKey string `config:"loops_api_key" validate:"required"`
 }
 
 func NewConfig() (*Config, error) {

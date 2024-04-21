@@ -1,0 +1,33 @@
+---
+title: 'Team Management'
+description: "Add team members to your Nuon org"
+---
+
+You can add users to your Nuon org using our CLI.
+
+## Invite a user to your org
+
+You can invite a user by email to your nuon org using our cli:
+
+<CodeGroup>
+```sh nuon
+$ nuon orgs invite --email=user@yourdomain.com
+```
+</CodeGroup>
+
+The invited user will get a welcome email, and when they sign into the dashboard next will automatically be added to
+your org.
+
+## View invites
+
+You can view invites for your org using our cli:
+
+<CodeGroup>
+```sh nuon
+$ nuon orgs list-invites
+```
+</CodeGroup>
+
+## Delete an invite / remove users
+
+If you need to delete an invite, or remove a user from your org, [please contact us](mailto:team@nuon.co).
