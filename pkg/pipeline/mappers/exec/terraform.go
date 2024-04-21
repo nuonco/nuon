@@ -94,3 +94,24 @@ func (p execStateFn) exec(ctx context.Context, l hclog.Logger, ui terminal.UI) (
 
 	return byts, nil
 }
+
+func MapTerraformValidate(fn execValidateFn) pipeline.ExecFn {
+	return fn.exec
+}
+
+// execValidateFn is a function that returns terraform validation as the response
+type execValidateFn func(context.Context, hclog.Logger) (*tfjson.ValidateOutput, error)
+
+func (p execValidateFn) exec(ctx context.Context, l hclog.Logger, ui terminal.UI) ([]uint8, error) {
+	out, err := p(ctx, l)
+	if err != nil {
+		return nil, fmt.Errorf("unable to validate: %w", err)
+	}
+
+	byts, err := json.Marshal(out)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal state: %w", err)
+	}
+
+	return byts, nil
+}

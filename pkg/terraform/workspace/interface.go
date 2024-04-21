@@ -35,5 +35,6 @@ type Workspace interface {
 	Plan(context.Context, hclog.Logger) ([]byte, error)
 	Output(context.Context, hclog.Logger) (map[string]tfexec.OutputMeta, error)
 	Show(context.Context, hclog.Logger) (*tfjson.State, error)
+	Validate(context.Context, hclog.Logger) (*tfjson.ValidateOutput, error)
 }
 

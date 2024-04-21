@@ -21,9 +21,7 @@ const (
 type AppConfigFmt string
 
 const (
-	AppConfigFmtJson AppConfigFmt = "json"
 	AppConfigFmtToml AppConfigFmt = "toml"
-	AppConfigFmtYaml AppConfigFmt = "yaml"
 )
 
 type AppConfig struct {

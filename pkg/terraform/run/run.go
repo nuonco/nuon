@@ -25,6 +25,7 @@ type OutputSettings struct {
 //go:generate mockgen -destination=run_mock.go -source=run.go -package=run
 type Run interface {
 	Apply(context.Context) error
+	Validate(context.Context) error
 	Plan(context.Context) error
 	Destroy(context.Context) error
 }

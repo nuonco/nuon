@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/config/parse"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -23,7 +25,12 @@ func (a *Activities) GenerateTerraformConfig(ctx context.Context, req GenerateTe
 		return nil, fmt.Errorf("unable to get app config: %w", res.Error)
 	}
 
-	byts, err := a.helpers.GenerateTerraformJSONFromConfig(ctx, []byte(appCfg.Content), appCfg.Format)
+	byts, err := parse.ToTerraformJSON(parse.ParseConfig{
+		V:           a.v,
+		BackendType: config.BackendTypeS3,
+		Bytes:       []byte(appCfg.Content),
+		Template:    true,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to generate terraform from config: %w", err)
 	}
