@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive/json"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend/local"
