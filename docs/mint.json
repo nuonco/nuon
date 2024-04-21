@@ -125,6 +125,8 @@
                 "guides/create-releases",
                 "guides/using-variables",
                 "guides/auto-deploys-and-dependencies",
+                "guides/migrations",
+                "guides/custom-domains",
                 "guides/sandbox-orgs"
             ]
         },
