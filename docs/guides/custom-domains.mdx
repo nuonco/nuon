@@ -1,0 +1,116 @@
+---
+title: 'Custom Domains'
+description: 'How to manage custom domains for an install'
+icon: 'url'
+---
+
+By default, each Nuon install will get configured with a `<install-id>.nuon.run` domain, which allows any component to
+create or managed DNS records.
+
+While the `nuon.run` domain works out of the box, it can be disabled or customized to support different types of
+  domains. By default, both a public and private DNS zone are created.
+
+## Vendor Managed Domain
+
+If you would like each of your installs to have a common root domain, such as `installs.<your-domain>.com`, you can set
+  up a DNS zone and delegate each install's nameservers.
+
+First, configure your sandbox to use this root domain:
+<CodeGroup>
+```toml nuon.your-app.toml
+[sandbox]
+terraform_version = "1.7.5"
+[sandbox.public_repo]
+directory = "azure-aks-byovpn"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[[sandbox.vars]]
+public_root_domain = "{{.nuon.install.id}}.your-domain.com"
+```
+</CodeGroup>
+
+Now, each when an install is provisioned it will automatically create the DNS zone named `install-id.your-domain.com`.
+
+Next, the root domain must _delegate_ to the install's DNS zone. This can be done by adding `NS` records on the root domain.
+
+First, find the nameservers for the public domain by inspecting the sandbox outputs:
+
+<CodeGroup>
+```sh nuon
+$ nuon installs sandbox-outputs
+```
+</CodeGroup>
+
+Next, set up a DNS record on your root domain that delegates the install subdomain. This can be done via your provider's
+console our if you are managing DNS using Terraform you can use a record similar to this:
+
+<CodeGroup>
+```hcl dns.tf
+resource "aws_route53_record" "docs" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "install-id"
+  type    = "NS"
+  ttl     = 3600
+  records = [
+    "ns-1",
+    "ns-2",
+    "ns-3",
+    "ns-4"
+  ]
+}
+```
+</CodeGroup>
+
+## Customer Managed Domain
+
+You can allow a customer to bring their own domain, by using an app input to ask for the domain. Once the install is
+provisioned, the customer will be responsible for forwarding DNS, please refer to the previous section for further
+information.
+
+To add a domain input, add the following to your config file:
+
+<CodeGroup>
+```toml nuon.your-app.toml
+[inputs]
+[[inputs.input]]
+name = "root_domain"
+description = "Root domain for install"
+default = ""
+sensitive = false
+required = true
+display_name = "Root"
+```
+</CodeGroup>
+
+Next, set the sandbox root domain to the input value:
+
+<CodeGroup>
+```toml nuon.your-app.toml
+[sandbox]
+terraform_version = "1.7.5"
+[sandbox.public_repo]
+directory = "azure-aks-byovpn"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[sandbox.vars]
+public_root_domain = "{{.nuon.install.inputs.root_domain}}"
+```
+</CodeGroup>
+
+## Disabling DNS Zones
+
+Currently, you can disable the `dns_zone` creation in sandboxes that support it by adding a sandbox var:
+
+<CodeGroup>
+```toml nuon.your-app.toml
+[[sandbox.var]]
+name = "enable_private_dns"
+value = "false"
+
+[[sandbox.var]]
+name = "enable_public_dns"
+value = "false"
+```
+</CodeGroup>

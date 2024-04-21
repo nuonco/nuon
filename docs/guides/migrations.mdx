@@ -1,0 +1,105 @@
+---
+title: 'Migrations'
+description: 'How to handle migrations with a BYOC app.'
+icon: 'gear'
+---
+
+Migrations can be added to a BYOC application to run operational scripts, make database schema changes and more.
+
+While Nuon does not enforce how migrations are dispatched for an install, this document outlines several common
+  approaches.
+
+## Kubernetes Applications
+
+If your application is using Kubernetes, and you are packaging via Helm you can use a [chart hook](https://helm.sh/docs/topics/charts_hooks/) to execute a migrations script.
+
+For example in your helm chart:
+
+<CodeGroup>
+```yml helm_chart
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrations
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrations
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - /bin/service
+            - migrations
+```
+</CodeGroup>
+
+Then, when Nuon installs or upgrades the chart in your install, the hooks will be executed:
+
+<CodeGroup>
+```toml nuon.your-app.toml
+[[components]]
+name = "helm"
+type = "helm_chart"
+chart_name = "helm"
+
+[components.connected_repo]
+directory = "k8s"
+repo = "your-org/repo"
+branch = "main"
+```
+</CodeGroup>
+
+## Job Components
+
+[Job components](./job-components) can be used to run any script within a container image as part of your install. They
+work just like any other component, and give you access to do powerful things such as run schema migrations, batch jobs
+and more.
+
+To use job components to manage migrations, first start by adding a container image or docker build component that combines your migration tool, and migrations:
+
+<CodeGroup>
+```toml nuon.your-app.toml
+[[components]]
+name = "migrations_image"
+type = "docker_build"
+dockerfile = "Dockerfile.migrations"
+
+[components.connected_repo]
+directory = "migrations"
+repo = "your-org/repo"
+branch = "main"
+```
+</CodeGroup>
+
+Next, declare a job config that executes your migrations image.
+
+<CodeGroup>
+[[components]]
+name = "migrations_job"
+type = "job"
+image_url = "{{.nuon.components.migrations_image.image.repository.uri}}"
+tag = "{{.nuon.components.migrations_image.image.tag}}"
+cmd = ["/bin/service"]
+args = ["migrate"]
+
+[[components.env_vars]]
+DB_URL = "database-url"
+```
+</CodeGroup>
+
+When the job component is released, the script will be executed just like any other component deploy.
+
+This approach can be used with common migration tools including:
+
+1. [Atlas](https://atlasgo.io/)
+1. [Flyway](https://flywaydb.org/)
+
+You can use an existing application container, and use the job component to run a command such as `npm run migrations`
+or `rake db:migrate` depending on your framework.
