@@ -88,17 +88,7 @@ Please refer to [creating releases](./create-releases) for more details on relea
 
 ## Configuration
 
-Both an API token and an org ID are required to configure Nuon github actions. These can be fetched using the [Nuon CLI](../cli).
-
-To fetch an API token:
-```sh
-$ nuon orgs current -j
-```
-
-To fetch the current org ID:
-```sh
-$ nuon orgs api-token -j
-```
+Both an API token and an org ID are required to configure Nuon github actions.
 
 It is recommended to set the API token using a [GitHub Action secret](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions).
 
@@ -106,3 +96,15 @@ It is recommended to set the API token using a [GitHub Action secret](https://do
 If you do not yet have an org setup, please follow the [quickstart guide](/get-started/quickstart).
 </Note>
 
+## API Tokens
+
+If you are just trying out the Nuon Github Actions, then you can get started using your personal auth token:
+
+<CodeGroup>
+```sh nuon
+$ nuon orgs api-token
+```
+</CodeGroup>
+
+For real use cases, we recommend using a static token. To request a static token, please [contact
+  us](mailto:team@nuon.co).
