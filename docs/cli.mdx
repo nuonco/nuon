@@ -60,3 +60,13 @@ $ chmod +x nuon
 
 We recommend updating the `nuon` CLI weekly, by re-downloading the binary or re-running the installation script.
 
+### Debug Mode
+
+In the case that something goes wrong, you can set the environment variable `NUON_DEBUG` to print verbose logs. These
+can be helpful to share with us, while debugging any issues.
+
+<CodeGroup>
+```sh nuon
+$ NUON_DEBUG=true nuon apps list
+```
+</CodeGroup>
