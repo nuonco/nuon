@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/powertoolsdev/mono/pkg/config"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -33,6 +34,16 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		// define common error handlers here
 		var uErr ErrUser
 		if errors.As(err, &uErr) {
+			c.JSON(http.StatusBadRequest, ErrResponse{
+				Error:       err.Error(),
+				UserError:   true,
+				Description: uErr.Description,
+			})
+			return
+		}
+
+		var cfgErr config.ErrConfig
+		if errors.As(err, &cfgErr) {
 			c.JSON(http.StatusBadRequest, ErrResponse{
 				Error:       err.Error(),
 				UserError:   true,

@@ -216,3 +216,26 @@ func (w *workspace) show(ctx context.Context, client Terraform) (*tfjson.State, 
 
 	return out, nil
 }
+
+func (w *workspace) Validate(ctx context.Context, log hclog.Logger) (*tfjson.ValidateOutput, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := w.validate(ctx, client, log)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (w *workspace) validate(ctx context.Context, client Terraform, log hclog.Logger) (*tfjson.ValidateOutput, error) {
+	out, err := client.Validate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error running apply: %w", err)
+	}
+
+	return out, nil
+}
