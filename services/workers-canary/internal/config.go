@@ -3,7 +3,7 @@ package internal
 import (
 	"github.com/go-playground/validator/v10"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 )
 
