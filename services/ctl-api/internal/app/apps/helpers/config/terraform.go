@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 

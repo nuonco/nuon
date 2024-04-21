@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/services/config"
 	workflowsclient "github.com/powertoolsdev/mono/pkg/workflows/client"
 )
 
