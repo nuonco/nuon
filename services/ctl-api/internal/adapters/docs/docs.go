@@ -2,7 +2,7 @@ package docs
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/services/ctl-api/admin"
 	"github.com/powertoolsdev/mono/services/ctl-api/docs"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
