@@ -37,3 +37,39 @@ func (a *AppConfig) Validate(v *validator.Validate) error {
 
 	return nil
 }
+
+type parseFn struct {
+	name string
+	fn   func() error
+}
+
+func (a *AppConfig) Parse() error {
+	parseFns := []parseFn{
+		{
+			"sandbox",
+			a.Sandbox.parse,
+		},
+		{
+			"runner",
+			a.Runner.parse,
+		},
+		{
+			"installer",
+			a.Installer.parse,
+		},
+	}
+	for idx, comp := range a.Components {
+		parseFns = append(parseFns, parseFn{
+			name: fmt.Sprintf("component.%v", idx),
+			fn:   comp.parse,
+		})
+	}
+
+	for _, parseFn := range parseFns {
+		if err := parseFn.fn(); err != nil {
+			return fmt.Errorf("error parsing %s: %w", parseFn.name, err)
+		}
+	}
+
+	return nil
+}

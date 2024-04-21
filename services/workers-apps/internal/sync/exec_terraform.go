@@ -11,7 +11,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive/json"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
-	"github.com/powertoolsdev/mono/pkg/terraform/backend/local"
 	s3backend "github.com/powertoolsdev/mono/pkg/terraform/backend/s3"
 	remotebinary "github.com/powertoolsdev/mono/pkg/terraform/binary/remote"
 	"github.com/powertoolsdev/mono/pkg/terraform/hooks/noop"
@@ -119,15 +118,18 @@ func (a *Activities) getWorkspace(ctx context.Context, req *ExecTerraformRequest
 	}
 
 	if a.cfg.Env == config.Development {
-		stateFP := fmt.Sprintf(localStateFileTemplate, req.AppID)
-		back, err = local.New(a.v, local.WithFilepath(stateFP))
+		back, err = s3backend.New(a.v,
+			s3backend.WithCredentials(&credentials.Config{
+				UseDefault: true,
+			}),
+			s3backend.WithBucketConfig(&s3backend.BucketConfig{
+				Name:   req.BackendBucket,
+				Key:    req.BackendKey,
+				Region: req.BackendRegion,
+			}))
 		if err != nil {
 			return nil, fmt.Errorf("unable to create local backend: %w", err)
 		}
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("unable to create local backend: %w", err)
 	}
 
 	hooks := noop.New()

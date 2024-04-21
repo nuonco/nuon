@@ -17,7 +17,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List all your apps",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.List(cmd.Context(), PrintJSON)
 		},
 	}
@@ -30,7 +30,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "Get an app",
 		Long:  "Get either the current app or an app by name or ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.Get(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -42,7 +42,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:   "current",
 		Short: "Get the current app",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.Get(cmd.Context(), c.cfg.GetString("app_id"), PrintJSON)
 		},
 	}
@@ -53,7 +53,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "View sandbox config",
 		Long:  "View apps latest sandbox config",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.GetSandboxConfig(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -66,7 +66,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "List app configs",
 		Long:  "List app configs",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.ListConfigs(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -79,7 +79,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "Export terraform config",
 		Long:  "Export terraform config",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.ExportTerraform(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -92,7 +92,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "View app input config",
 		Long:  "View latest app input config",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.GetInputConfig(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -105,7 +105,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "View app runner config",
 		Long:  "View latest app runner config",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.GetRunnerConfig(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -118,7 +118,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "Set current app",
 		Long:  "Set current app by app ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.SetCurrent(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -131,7 +131,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "Select your current app",
 		Long:  "Select your current app from a list or by app ID",
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.Select(cmd.Context(), appID, PrintJSON)
 		},
 	}
@@ -147,13 +147,26 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short:             "Sync all .nuon.toml config files in the current directory.",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.Sync(cmd.Context(), all, file, PrintJSON)
 		},
 	}
 	syncCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
 	syncCmd.Flags().BoolVarP(&all, "all", "", true, "sync all config files found")
 	appsCmd.AddCommand(syncCmd)
+
+	validateCmd := &cobra.Command{
+		Use:               "validate",
+		Short:             "Validate a toml config file",
+		PersistentPreRunE: c.persistentPreRunE,
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc.Validate(cmd.Context(), file, PrintJSON)
+		},
+	}
+	validateCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
+	validateCmd.MarkFlagRequired("file")
+	appsCmd.AddCommand(validateCmd)
 
 	var (
 		name     string
@@ -164,7 +177,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short:             "Create a new app.",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.apiClient, c.cfg)
+			svc := apps.New(c.v, c.apiClient, c.cfg)
 			svc.Create(cmd.Context(), name, template, PrintJSON)
 		},
 	}
