@@ -12,8 +12,8 @@ import (
 )
 
 type CreateAppConfigRequest struct {
-	Format  app.AppConfigFmt `json:"format" validate:"required"`
-	Content string           `json:"content" validate:"required,gte=1"`
+	Content                string `json:"content" validate:"required,gte=1"`
+	GeneratedTerraformJSON string `json:"generated_terraform_json"`
 }
 
 func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
@@ -71,12 +71,13 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 
 func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req *CreateAppConfigRequest) (*app.AppConfig, error) {
 	inputs := app.AppConfig{
-		OrgID:             orgID,
-		AppID:             appID,
-		Format:            req.Format,
-		Content:           req.Content,
-		Status:            app.AppConfigStatusPending,
-		StatusDescription: "waiting to be synced",
+		OrgID:              orgID,
+		AppID:              appID,
+		Format:             app.AppConfigFmtToml,
+		Content:            req.Content,
+		Status:             app.AppConfigStatusPending,
+		StatusDescription:  "waiting to be synced",
+		GeneratedTerraform: req.GeneratedTerraformJSON,
 	}
 
 	res := s.db.WithContext(ctx).Create(&inputs)

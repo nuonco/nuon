@@ -3,13 +3,17 @@ package config
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func (a *AppConfig) ToTerraformJSON(env config.Env) ([]byte, error) {
+const (
+	DefaultTerraformVersion string = "1.7.5"
+	DefaultModuleFileName   string = "module.tf.json"
+)
+
+func (a *AppConfig) ToTerraformJSON(backendType BackendType) ([]byte, error) {
 	json := newJSON()
-	tfMap, err := a.ToTerraform(env)
+	tfMap, err := a.ToTerraform(backendType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert to terraform: %w", err)
 	}
@@ -22,7 +26,7 @@ func (a *AppConfig) ToTerraformJSON(env config.Env) ([]byte, error) {
 	return byts, nil
 }
 
-func (a *AppConfig) ToTerraform(env config.Env) (map[string]interface{}, error) {
+func (a *AppConfig) ToTerraform(backendType BackendType) (map[string]interface{}, error) {
 	resources := []resource{
 		a.Sandbox,
 		a.Runner,
@@ -66,16 +70,16 @@ func (a *AppConfig) ToTerraform(env config.Env) (map[string]interface{}, error) 
 		}
 	}
 
-	backendType := "s3"
-	if env == config.Development {
-		backendType = "local"
+	backend := "s3"
+	if backendType == BackendTypeLocal {
+		backend = "local"
 	}
 
 	return map[string]interface{}{
 		"terraform": map[string]interface{}{
 			"required_version": ">= 1.5.3",
 			"backend": map[string]interface{}{
-				backendType: map[string]interface{}{},
+				backend: map[string]interface{}{},
 			},
 			"required_providers": map[string]interface{}{
 				"nuon": map[string]interface{}{
