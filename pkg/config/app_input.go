@@ -4,9 +4,9 @@ type AppInput struct {
 	Name        string `mapstructure:"name,omitempty" toml:"name"`
 	Description string `mapstructure:"description,omitempty" toml:"description"`
 	Default     string `mapstructure:"default" toml:"default"`
-	Required    bool   `mapstructure:"required,omitempty" toml:"required"`
+	Required    bool   `mapstructure:"required" toml:"required"`
 	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name"`
-	Sensitive   bool   `mapstructure:"sensitive,omitempty" toml:"sensitive"`
+	Sensitive   bool   `mapstructure:"sensitive" toml:"sensitive"`
 }
 
 type AppInputConfig struct {
