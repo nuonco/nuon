@@ -21,15 +21,8 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if global.IsGlobal(ctx) || public.IsPublic(ctx) {
+		if public.IsPublic(ctx) {
 			ctx.Next()
-			return
-		}
-
-		org, err := org.FromContext(ctx)
-		if err != nil {
-			ctx.Error(err)
-			ctx.Abort()
 			return
 		}
 
@@ -40,10 +33,20 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		if err := m.validate(ctx, org.ID, user.Subject); err != nil {
-			ctx.Error(err)
-			ctx.Abort()
-			return
+		// if the endpoint is an org protected endpoint, make sure the user has access to this org
+		if !global.IsGlobal(ctx) {
+			org, err := org.FromContext(ctx)
+			if err != nil {
+				ctx.Error(err)
+				ctx.Abort()
+				return
+			}
+
+			if err := m.validate(ctx, org.ID, user.Subject); err != nil {
+				ctx.Error(err)
+				ctx.Abort()
+				return
+			}
 		}
 
 		if err := m.handleInvites(ctx, user.Subject, user.Email); err != nil {
