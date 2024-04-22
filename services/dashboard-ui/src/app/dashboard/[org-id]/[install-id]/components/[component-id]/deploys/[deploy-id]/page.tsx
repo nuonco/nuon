@@ -149,7 +149,7 @@ export default withPageAuthRequired(
         ]}
       >
         <Grid variant="3-cols">
-          <div className="flex flex-col gap-6 overflow-hidden">
+          <div className="flex flex-col gap-6">
             <Heading variant="subtitle">Component details</Heading>
 
             <Suspense fallback="Loading...">
@@ -161,7 +161,7 @@ export default withPageAuthRequired(
             </Suspense>
           </div>
 
-          <div className="flex flex-col gap-6 lg:col-span-2 overflow-hidden">
+          <div className="flex flex-col gap-6 lg:col-span-2">
             <Heading variant="subtitle">Deploy details</Heading>
             <Suspense fallback="Loading...">
               <DeployLogs {...{ deployId, installId, orgId }} />
