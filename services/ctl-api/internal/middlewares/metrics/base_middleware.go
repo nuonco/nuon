@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,10 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 		startTS := time.Now()
 		status := "ok"
 		path := c.FullPath()
-		endpoint := fmt.Sprintf("%s-%s", c.Request.Method, path)
+
+		// https://docs.datadoghq.com/getting_started/tagging/ dashes are not permitted in tags
+		path = strings.ReplaceAll(path, "-", "_")
+		endpoint := fmt.Sprintf("%s__%s", c.Request.Method, path)
 
 		c.Set(ContextKey, &MetricContext{
 			Endpoint: endpoint,
