@@ -1,21 +1,23 @@
 ---
 title: 'Custom Domains'
-description: 'How to manage custom domains for an install'
+description: 'Manage custom domains for an install.'
 icon: 'browser'
 ---
 
-By default, each Nuon install will get configured with a `<install-id>.nuon.run` domain, which allows any component to
-create or managed DNS records.
+By default, each Nuon install will get configured with a `<install-id>.nuon.run` root domain, which allows any component to
+create or update DNS records.
 
 While the `nuon.run` domain works out of the box, it can be disabled or customized to support different types of
-  domains. By default, both a public and private DNS zone are created.
+  domains.
+
+By default, both a public and private DNS zone are created.
 
 ## Vendor Managed Domain
 
 If you would like each of your installs to have a common root domain, such as `installs.<your-domain>.com`, you can set
   up a DNS zone and delegate each install's nameservers.
 
-First, configure your sandbox to use this root domain:
+First, configure your sandbox to use a custom root domain using:
 <CodeGroup>
 ```toml nuon.your-app.toml
 [sandbox]
@@ -30,9 +32,11 @@ public_root_domain = "{{.nuon.install.id}}.your-domain.com"
 ```
 </CodeGroup>
 
-Now, each when an install is provisioned it will automatically create the DNS zone named `install-id.your-domain.com`.
+Now, when an install is provisioned it will automatically create the DNS zone named `install-id.your-domain.com`.
 
-Next, the root domain must _delegate_ to the install's DNS zone. This can be done by adding `NS` records on the root domain.
+Next, the root domain must _delegate_ to the install's DNS zone.
+
+This can be done by adding `NS` records on the root domain.
 
 First, find the nameservers for the public domain by inspecting the sandbox outputs:
 
@@ -64,11 +68,11 @@ resource "aws_route53_record" "docs" {
 
 ## Customer Managed Domain
 
-You can allow a customer to bring their own domain, by using an app input to ask for the domain. Once the install is
-provisioned, the customer will be responsible for forwarding DNS, please refer to the previous section for further
-information.
+You can allow a customer to bring their own domain, by using an app input allow the customer to provide their domain. Once the install is
+provisioned, the customer will be responsible for delegating the DNS subdomain. Please refer to the previous section for
+more details on how to delegate the domain.
 
-To add a domain input, add the following to your config file:
+To offer custom install domains, add the following to your config file:
 
 <CodeGroup>
 ```toml nuon.your-app.toml
@@ -101,7 +105,7 @@ public_root_domain = "{{.nuon.install.inputs.root_domain}}"
 
 ## Disabling DNS Zones
 
-Currently, you can disable the `dns_zone` creation in sandboxes that support it by adding a sandbox var:
+You can completely disable DNS in any sandbox by adding the following to your sandbox config:
 
 <CodeGroup>
 ```toml nuon.your-app.toml
