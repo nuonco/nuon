@@ -83,7 +83,7 @@ export const EventsTimeline: FC<IEventsTimeline> = ({
 
   let pollEvents: NodeJS.Timeout
   useEffect(() => {
-    pollEvents = setInterval(fetchEvents, 3000)
+    pollEvents = setInterval(fetchEvents, 10000)
     return () => clearInterval(pollEvents)
   }, [events])
 

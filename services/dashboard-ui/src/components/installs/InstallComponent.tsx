@@ -111,7 +111,7 @@ export const InstallComponentStatus: FC<IInstallComponentStatus> = ({
 
   let pollStatus: NodeJS.Timeout
   useEffect(() => {
-    pollStatus = setInterval(fetchStatus, 5000)
+    pollStatus = setInterval(fetchStatus, 15000)
     return () => clearInterval(pollStatus)
   }, [status])
 
