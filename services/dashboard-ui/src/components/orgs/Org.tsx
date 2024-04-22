@@ -75,7 +75,7 @@ export const OrgStatus: FC<{ org: TOrg; isCompact?: boolean }> = ({
 
   let pollStatus: NodeJS.Timeout
   useEffect(() => {
-    pollStatus = setInterval(fetchStatus, 5000)
+    pollStatus = setInterval(fetchStatus, 15000)
     return () => clearInterval(pollStatus)
   }, [orgHealth, orgStatus])
 
