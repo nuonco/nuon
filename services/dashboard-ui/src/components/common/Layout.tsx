@@ -5,7 +5,7 @@ export const Dashboard: FC<{ children: React.ReactElement }> = ({
   children,
 }) => {
   return (
-    <div className="flex flex-col gap-6 p-6 xl:px-24 w-full h-dvh overflow-hidden">
+    <div className="flex flex-col gap-6 p-6 xl:px-24 w-full h-dvh overflow-auto">
       <Header />
       {children}
     </div>
@@ -18,12 +18,12 @@ export const Page: FC<{
   links?: Array<TLink>
 }> = ({ children, header, links }) => {
   return (
-    <main className="flex flex-col flex-auto items-start justify-start gap-6 w-full h-fit overflow-hidden">
+    <main className="flex flex-col flex-auto items-start justify-start gap-6 w-full h-fit">
       <div className="flex flex-col gap-6 w-full">
         {links && <Nav links={links} />}
         {header}
       </div>
-      <div className="flex flex-auto flex-col gap-6 w-full h-fit overflow-auto">
+      <div className="flex flex-auto flex-col gap-6 w-full h-fit">
         {children}
       </div>
     </main>
