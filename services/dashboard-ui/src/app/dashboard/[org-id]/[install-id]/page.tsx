@@ -26,10 +26,10 @@ export default withPageAuthRequired(
         header={<InstallPageHeader {...install} />}
         links={[{ href: install?.org_id }, { href: install?.id }]}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-fit overflow-hidden overflow-x-auto">
-          <div className="flex flex-col gap-6 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-fit">
+          <div className="flex flex-col gap-6">
             <Heading variant="subtitle">History</Heading>
-            <Card>
+            <Card className="max-h-[40rem]">
               <EventsTimeline
                 feedId={install?.id}
                 orgId={install?.org_id}
@@ -38,14 +38,14 @@ export default withPageAuthRequired(
             </Card>
           </div>
 
-          <div className="flex flex-col gap-6 overflow-x-auto">
+          <div className="flex flex-col gap-6">
             <Heading variant="subtitle">Components</Heading>
-            <Card>
+            <Card className="max-h-[40rem]">
               <InstallComponents components={install?.install_components} />
             </Card>
           </div>
 
-          <div className="flex flex-col gap-6 overflow-hidden">
+          <div className="flex flex-col gap-6">
             <Heading variant="subtitle">Details</Heading>
 
             <Card>

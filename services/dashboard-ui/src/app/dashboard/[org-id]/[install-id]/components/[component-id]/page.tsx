@@ -121,7 +121,7 @@ export default withPageAuthRequired(
         ]}
       >
         <Grid variant="3-cols" >
-          <div className="flex flex-col gap-6 overflow-hidden">
+          <div className="flex flex-col gap-6">
             <Heading variant="subtitle">Deploy history</Heading>
             <Card>
               <InstallDeploys
@@ -132,7 +132,7 @@ export default withPageAuthRequired(
               />
             </Card>
           </div>
-          <div className="flex flex-col gap-6 lg:col-span-2 overflow-auto">
+          <div className="flex flex-col gap-6 lg:col-span-2">
             <Heading variant="subtitle">Details</Heading>
 
             <Card>
