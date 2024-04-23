@@ -1,14 +1,6 @@
-import { DateTime } from 'luxon'
-import React, { type FC, useEffect, useState } from 'react'
-import { FaDocker, FaGitAlt, FaGithub } from 'react-icons/fa'
+import React, { type FC, } from 'react'
+import { FaDocker} from 'react-icons/fa'
 import {
-  GoArrowLeft,
-  GoKebabHorizontal,
-  GoCheckCircleFill,
-  GoClockFill,
-  GoContainer,
-  GoXCircleFill,
-  GoInfo,
   GoQuestion,
 } from 'react-icons/go'
 import {
@@ -17,8 +9,8 @@ import {
   SiHelm,
   SiTerraform,
 } from 'react-icons/si'
-import { Card, Code, Heading, Link, Status, Text, VCS } from '@/components'
-import { TComponent, TComponentConfig, TInstallComponent } from '@/types'
+import { Code, Heading, Text, VCS } from '@/components'
+import { TComponentConfig } from '@/types'
 
 export type TComponentType =
   | 'docker'

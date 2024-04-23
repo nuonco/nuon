@@ -14,6 +14,7 @@ import type {
 import {
   AWS_REGIONS,
   AZURE_REGIONS,
+  POLL_DURATION,
   getFlagEmoji,
   getFullInstallStatus,
 } from '@/utils'
@@ -77,7 +78,7 @@ export const InstallStatus: FC<IInstallStatus> = ({
 
   let pollStatus: NodeJS.Timeout
   useEffect(() => {
-    pollStatus = setInterval(fetchStatus, 5000)
+    pollStatus = setInterval(fetchStatus, POLL_DURATION)
     return () => clearInterval(pollStatus)
   }, [status])
 
