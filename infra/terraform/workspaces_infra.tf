@@ -268,3 +268,15 @@ module "powertools" {
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   project_id                      = tfe_project.infra.id
 }
+
+module "infra-vercel" {
+  source = "./modules/workspace"
+
+  name                            = "infra-vercel"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/vercel"
+  auto_apply                      = true
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = []
+  project_id                      = tfe_project.infra.id
+}

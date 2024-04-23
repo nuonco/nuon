@@ -1,0 +1,25 @@
+# This file is maintained automatically by "terraform init".
+# Manual edits may be lost in future updates.
+
+provider "registry.terraform.io/vercel/vercel" {
+  version     = "1.8.0"
+  constraints = "~> 1.0"
+  hashes = [
+    "h1:HZsGHYzWOSlpLNw0vc/wGzQi/0sg6mhRi0wTKxplWvk=",
+    "zh:1e938ad1348d616a35c31541365f40ee05b3ef9a5102ac2c1977ed35d8b9a421",
+    "zh:292023abfa72b6cb1b579d7b76654976fa505e50e29408174838c6fc1c6f732a",
+    "zh:2e21cd4359c8c47351c9efa896e0f952b941f11a2c2abbeb5830e62226093550",
+    "zh:318833b610d30d65da0d4c4669b4a7ea702c4337fdc08d4e1a193b1f7d8f39ec",
+    "zh:3919a379a2a1ba8afe9a92926016e491819d99b647cb55bd724ee2778a396f33",
+    "zh:6e78145bf9128f824c96ed496e6056d3c8cf3979b163672c96a232a8a9710bab",
+    "zh:7082557bf4e5f637cd0a4b4a2e3038615195626a6c707cfe82598f264a19740d",
+    "zh:79b82f7f1628915d8d55ac75de154442abdd81be1e020c3e6a3d7b420376eedb",
+    "zh:819a7462d928079d6b0b193b53cce72a7a89a175889ea599b0ea05a272390310",
+    "zh:84fbeb3ec54e7679bd1e594eb10859fd94baf9022024df090202d647daefa6f2",
+    "zh:ad6195b425d39a6c64bd6670ec66c2514866bf3bf82c404c9e1bf70c200861cf",
+    "zh:c653f4f935457a081c37efd998ebfbc3582c50f5462775857285eb647a2aec93",
+    "zh:dce3bbacac0c8d6dc56ac33678f3a7d13b89410e824a2134fb1b680b91d4f4bb",
+    "zh:f26e0763dbe6a6b2195c94b44696f2110f7f55433dc142839be16b9697fa5597",
+    "zh:f5bff9552302703ce87695f925712bf23ef693ae42c225bda46dd561bb35ddb6",
+  ]
+}
