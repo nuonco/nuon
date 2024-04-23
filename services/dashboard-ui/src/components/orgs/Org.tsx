@@ -4,6 +4,7 @@ import React, { type FC, useEffect, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { Card, Heading, Link, PageHeader, Status, Text } from '@/components'
 import { TOrg } from '@/types'
+import { POLL_DURATION } from "@/utils"
 
 export const OrgCard: FC<TOrg> = ({ status, status_description, id, name }) => {
   return (
@@ -72,10 +73,10 @@ export const OrgStatus: FC<{ org: TOrg; isCompact?: boolean }> = ({
   useEffect(() => {
     fetchStatus()
   }, [])
-
+  
   let pollStatus: NodeJS.Timeout
   useEffect(() => {
-    pollStatus = setInterval(fetchStatus, 15000)
+    pollStatus = setInterval(fetchStatus, POLL_DURATION)
     return () => clearInterval(pollStatus)
   }, [orgHealth, orgStatus])
 

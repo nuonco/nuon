@@ -9,6 +9,7 @@ import type {
   TInstallComponent,
   TInstallDeploy,
 } from '@/types'
+import { POLL_DURATION } from "@/utils"
 
 export const InstallComponents: FC<{ components: TInstallComponent[] }> = ({
   components,
@@ -111,7 +112,7 @@ export const InstallComponentStatus: FC<IInstallComponentStatus> = ({
 
   let pollStatus: NodeJS.Timeout
   useEffect(() => {
-    pollStatus = setInterval(fetchStatus, 15000)
+    pollStatus = setInterval(fetchStatus, POLL_DURATION)
     return () => clearInterval(pollStatus)
   }, [status])
 
