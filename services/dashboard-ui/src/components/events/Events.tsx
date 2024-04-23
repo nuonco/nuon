@@ -2,18 +2,12 @@
 
 import { DateTime } from 'luxon'
 import React, { type FC, useEffect, useState } from 'react'
-import {
-  GoArrowLeft,
-  GoKebabHorizontal,
-  GoCheckCircleFill,
-  GoClockFill,
-  GoXCircleFill,
-  GoInfo,
-} from 'react-icons/go'
-import { Heading, Link, Text } from '@/components'
+import { GoCheckCircleFill, GoClockFill, GoXCircleFill } from 'react-icons/go'
+import { Link } from '@/components'
 import type { TInstallEvent } from '@/types'
+import { POLL_DURATION } from '@/utils'
 
-export const EventStatus: FC<{ status?: string }> = ({ status = "waiting" }) =>
+export const EventStatus: FC<{ status?: string }> = ({ status = 'waiting' }) =>
   status === 'finished' ? (
     <GoCheckCircleFill className="text-green-700 dark:text-green-500" />
   ) : status === 'failed' ? (
@@ -83,7 +77,7 @@ export const EventsTimeline: FC<IEventsTimeline> = ({
 
   let pollEvents: NodeJS.Timeout
   useEffect(() => {
-    pollEvents = setInterval(fetchEvents, 10000)
+    pollEvents = setInterval(fetchEvents, POLL_DURATION - 15000)
     return () => clearInterval(pollEvents)
   }, [events])
 

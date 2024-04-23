@@ -1,20 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withApiAuthRequired } from '@auth0/nextjs-auth0'
-import type {
-  TInstall,
-  TInstallComponent,
-  TInstallDeploy,
-  TSandboxRun,
-} from '@/types'
+import type { TInstall } from '@/types'
 import { API_URL, getFetchOpts, getFullInstallStatus } from '@/utils'
 
 export const GET = withApiAuthRequired(async (req: NextRequest) => {
   const [orgId, installId] = req.url.split('/').slice(4, 6)
-  const data = await fetch(
-    `${API_URL}/v1/installs/${installId}`,
-    await getFetchOpts(orgId)
-  )
-  const install = (await data.json()) as TInstall
 
-  return NextResponse.json(getFullInstallStatus(install))
+  let status = {
+    componentStatus: {
+      status: 'error',
+      status_description: 'Failed to get component statuses',
+    },
+    installStatus: {
+      status: 'error',
+      status_description: 'Failed to get install status',
+    },
+    sandboxStatus: {
+      status: 'error',
+      status_description: 'Failed to get sandbox status',
+    },
+  }
+  try {
+    const data = await fetch(
+      `${API_URL}/v1/installs/${installId}`,
+      await getFetchOpts(orgId)
+    )
+    const install = (await data.json()) as TInstall
+    status = getFullInstallStatus(install)
+  } catch (error) {
+    console.error(error)
+  }
+
+  return NextResponse.json(status)
 })
