@@ -6,6 +6,6 @@ resource "vercel_project" "website" {
 
   git_repository = {
     type = "github"
-    repo = "nuonco/mono"
+    repo = "powertoolsdev/mono"
   }
 }
