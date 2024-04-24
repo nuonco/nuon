@@ -21,8 +21,8 @@ resource "vercel_project_domain" "website" {
 
 resource "vercel_project_domain" "www-website" {
   project_id = vercel_project.website.id
-  domain     = local.website_domain
+  domain = "www.${local.website_domain}"
 
-  redirect             = "www.${local.website_domain}"
+  redirect = local.website_domain
   redirect_status_code = 308
 }
