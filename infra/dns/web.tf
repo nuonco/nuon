@@ -5,8 +5,7 @@ resource "aws_route53_record" "www-naked" {
   type    = "A"
   ttl     = 300
   records = [
-    "75.2.70.75",
-    "99.83.190.102"
+    "76.76.21.21"
   ]
 }
 
@@ -16,6 +15,6 @@ resource "aws_route53_record" "www" {
   type    = "CNAME"
   ttl     = 300
   records = [
-    "proxy-ssl.webflow.com"
+    "cname.vercel-dns.com"
   ]
 }
