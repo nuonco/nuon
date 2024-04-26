@@ -124,6 +124,7 @@
                 "guides/create-builds",
                 "guides/create-releases",
                 "guides/using-variables",
+                "guides/bring-your-own-network",
                 "guides/auto-deploys-and-dependencies",
                 "guides/migrations",
                 "guides/custom-domains",
