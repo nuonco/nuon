@@ -49,3 +49,23 @@ module "byovpc" {
     "kubernetes.io/role/internal-elb" = "1"
   }
 }
+
+module "byovpc_untagged" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.5"
+
+  name = "byovpc-untagged"
+  cidr = local.networks["sandbox"]["cidr"]
+
+  azs              = data.aws_availability_zones.available.zone_ids
+  private_subnets  = local.networks["sandbox"]["private_subnets"]
+  public_subnets   = local.networks["sandbox"]["public_subnets"]
+  database_subnets = local.networks["sandbox"]["database_subnets"]
+
+  enable_nat_gateway   = true
+  single_nat_gateway   = true
+  enable_dns_hostnames = true
+
+  create_database_subnet_group = true
+  #create_elasticache_subnet_group = true
+}
