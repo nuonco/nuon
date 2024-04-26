@@ -1,0 +1,298 @@
+---
+title: 'Bring your Own Network'
+description: "How to install an app into customer-provided network."
+icon: code
+---
+
+Often, customers have their own AWS VPC or Azure VNet already set up, and would prefer to install BYOC applications there. This guide will walk you through supporting this use-case using app inputs and configurable sandboxes.
+
+## Installing in a Customer-Provided Network
+
+To enable a customer to install your app in their own network, you need 2 things:
+
+- [App inputs](/guides/app-inputs) to enable the customer to provide information about the network during the installation process.
+- A [Sandbox](/guides/sandboxes) that accepts the inputs as [Terraform variables](https://developer.hashicorp.com/terraform/language/values/variables), and uses them to create [Terraform data sources](https://developer.hashicorp.com/terraform/language/data-sources).
+
+The sandbox can then use those data sources to read the information it needs to provision resources in the customer-provided network.
+
+## Sandboxes
+
+To give you a head start, we provide managed sandboxes for the most popular platforms. The sandboxes listed here are identical to our [turnkey managed sandboxes](/guides/sandboxes#nuon-managed-sandboxes), except they do not provision network infrastructure of their own and have extra variables for the required network info.
+
+### AWS EKS BYOVPC
+
+[AWS EKS BYOVPC](https://registry.terraform.io/modules/nuonco/eks-byovpc-sandbox/aws/latest) is a sandbox for provisioning an EKS app in a customer-provided VPC.
+It requires a `vpc_id` input.
+
+<Note>
+In order for components to work with `aws-eks-byovpc` sandbox, subnets must be tagged in a way Nuon can look them up.
+
+The `eks-byovpc` sandbox requires adding a `"kubernetes.io/role/internal-elb:1"` tag to all private subnets, and a `"kubernetes.io/role/elb:1"` tag to all public subnets.
+</Note>
+
+<CodeGroup>
+```toml TOML
+[inputs]
+[[inputs.input]]
+name = "vpc_id"
+description = "The VPC to install the app in"
+sensitive = false
+display_name = "VPC ID"
+required = true
+
+[sandbox]
+terraform_version = "v1.6.3"
+[sandbox.public_repo]
+repo = "nuonco/sandboxes"
+directory = "aws-eks-byovpc"
+branch = "main"
+[sandbox.vars]
+vpc_id = "{{.nuon.install.inputs.vpc_id}}"
+```
+
+```hcl sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    directory = "aws-eks"
+    branch    = "main"
+  }
+
+  var {
+    name = "vpc_id"
+    value = "{{.nuon.install.inputs.vpc_id}}"
+  }
+}
+```
+
+```hcl inputs.tf
+resource "nuon_app_input" "main" {
+  app_id            = nuon_app.main.id
+
+  input {
+    name = "vpc_id"
+    description = "customer-provided vpc id"
+    required = true
+  }
+}
+```
+</CodeGroup>
+
+### AWS ECS BYOVPC
+
+[AWS ECS BYOVPC](https://registry.terraform.io/modules/nuonco/ecs-byovpc-sandbox/aws/latest) is a sandbox for provisioning an ECS app in a customer-provided VPC.
+It requires a `vpc_id` app input.
+
+This sandbox also needs to be given private and public subnets to use. There are 2 way to do this:
+
+1. Tag the public subnets in the target VPC with `visibility:public`, and the private subnets with `visibility:private`. This is the default behavior
+1. Define app inputs named `private_subnet_ids` and `public_subnet_ids` that each accept a comma-separated string of subnet IDs, and pass them to the sandbox using vars. These will override any tagged subnets that are found.
+
+<CodeGroup>
+```toml TOML
+[inputs]
+[[inputs.input]]
+name = "vpc_id"
+description = "The VPC to install the app in"
+sensitive = false
+display_name = "VPC ID"
+required = true
+# Delete these inputs to use tagged subnets instead.
+[[inputs.input]]
+name = "private_subnet_ids"
+description = "Subnets for private resources"
+sensitive = false
+display_name = "Private Subnet IDs"
+required = false
+[[inputs.input]]
+name = "public_subnet_ids"
+description = "Subnets for public resources"
+sensitive = false
+display_name = "Public Subnets"
+required = false
+
+[sandbox]
+terraform_version = "v1.6.3"
+[sandbox.public_repo]
+repo = "nuonco/sandboxes"
+directory = "aws-ecs-byovpc"
+branch = "main"
+[sandbox.vars]
+vpc_id = "{{.nuon.install.inputs.vpc_id}}"
+# Delete these vars to use tagged subnets instead.
+private_subnet_ids = "{{.nuon.install.inputs.private_subnet_ids}}"
+public_subnet_ids = "{{.nuon.install.inputs.public_subnet_ids}}"
+```
+
+```hcl sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id            = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  public_repo = {
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+    directory = "aws-ecs"
+  }
+
+  var {
+    name = "vpc_id"
+    value = "{{.nuon.install.inputs.vpc_id}}"
+  }
+
+  # Delete these to use tagged subnets instead.
+
+  var {
+    name = "private_subnet_ids"
+    value = "{{.nuon.install.inputs.private_subnet_ids}}"
+  }
+
+  var {
+    name = "public_subnet_ids"
+    value = "{{.nuon.install.inputs.public_subnet_ids}}"
+  }
+}
+```
+
+```hcl inputs.tf
+resource "nuon_app_input" "main" {
+  app_id            = nuon_app.main.id
+
+  input {
+    name = "vpc_id"
+    description = "customer-provided vpc id"
+    required = true
+    sensitive = false
+    display_name = "VPC ID"
+    required = true
+  }
+
+  # Delete these to use tagged subnets instead.
+
+  input {
+    name = "private_subnet_ids"
+    description = "Subnets for private resources"
+    sensitive = false
+    display_name = "Private Subnet IDs"
+    required = false
+  }
+
+  input {
+    name = "public_subnet_ids"
+    description = "Subnets for public resources"
+    sensitive = false
+    display_name = "Public Subnets"
+    required = false
+  }
+}
+```
+</CodeGroup>
+
+### Azure AKS BYOVPN
+
+The [Azure AKS BYOVPN](https://registry.terraform.io/modules/nuonco/aks-byovpn-sandbox/azure/latest) sandbox creates an AKS cluster in a customer-provided VPN.
+It requires `resource_group_name`, `network_name`, and `subnet_name`.
+
+<CodeGroup>
+```toml TOML
+[inputs]
+[[inputs.input]]
+name = "resource_group_name"
+description = "The Resource Group of the VPN to install the app in."
+sensitive = false
+display_name = "Resource Group Name"
+required = true
+[[inputs.input]]
+name = "network_name"
+description = "The VPN to install the app in."
+sensitive = false
+display_name = "Network Name"
+required = true
+[[inputs.input]]
+name = "subnet_name"
+description = "The Subnet in the VPN to install the app in."
+sensitive = false
+display_name = "Subnet Name"
+required = true
+
+[sandbox]
+terraform_version = "1.5.4"
+[sandbox.public_repo]
+repo = "nuonco/sandboxes"
+directory = "azure-aks"
+branch = "main"
+[sandbox.vars]
+resource_group_name = "{{.nuon.install.inputs.resource_group_name}}"
+network_name = "{{.nuon.install.inputs.network_name}}"
+subnet_name = "{{.nuon.install.inputs.subnet_name}}"
+
+[runner]
+runner_type = "azure-aks"
+```
+
+```hcl sandbox.tf
+resource "nuon_app_sandbox" "main" {
+  app_id = nuon_app.main.id
+  terraform_version = "v1.6.3"
+
+  public_repo = {
+    repo = "nuonco/sandboxes"
+    branch = "main"
+    directory = "azure-aks-byovpn"
+  }
+
+  var {
+    name = "resource_group_name"
+    value = "{{.nuon.install.inputs.resource_group_name}}"
+  }
+
+  var {
+    name = "network_name"
+    value = "{{.nuon.install.inputs.network_name}}"
+  }
+
+  var {
+    name = "subnet_name"
+    value = "{{.nuon.install.inputs.subnet_name}}"
+  }
+}
+
+resource "nuon_app_runner" "main" {
+  app_id      = nuon_app.main.id
+  runner_type = "aws-aks"
+}
+```
+
+```hcl inputs.tf
+resource "nuon_app_input" "main" {
+  app_id = nuon_app.main.id
+
+  input {
+    name = "resource_group_name"
+    description = "The Resource Group of the VPN to install the app in."
+    sensitive = false
+    display_name = "Resource Group Name"
+    required = true
+  }
+
+  input {
+    name = "network_name"
+    description = "The VPN to install the app in."
+    sensitive = false
+    display_name = "Network Name"
+    required = true
+  }
+
+  input {
+    name = "subnet_name"
+    description = "The Subnet in the VPN to install the app in."
+    sensitive = false
+    display_name = "Subnet Name"
+    required = true
+  }
+}
+```
+</CodeGroup>
