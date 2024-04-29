@@ -4,6 +4,7 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   Build,
   Card,
+  Code,
   ComponentConfig,
   Grid,
   Heading,
@@ -163,6 +164,14 @@ export default withPageAuthRequired(
 
           <div className="flex flex-col gap-6 lg:col-span-2">
             <Heading variant="subtitle">Deploy details</Heading>
+            {deploy?.status === 'failed' ||
+              (deploy?.status === 'error' && (
+                <Card>
+                  <Heading>Deploy {deploy?.status}</Heading>
+                  <Code>{deploy?.status_description}</Code>
+                </Card>
+              ))}
+
             <Suspense fallback="Loading...">
               <DeployLogs {...{ deployId, installId, orgId }} />
             </Suspense>
