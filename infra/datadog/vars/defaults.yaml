@@ -171,7 +171,7 @@ monitors:
       {
           "name": "${aws_account} - Org is unhealthy",
           "type": "query alert",
-          "query": "sum(last_15m):sum:health_check.count{status:error, sandbox_mode:false, env:${aws_account}} by {org_id}.as_count() > 15",
+          "query": "sum(last_15m):sum:health_check.count{status:error, sandbox_mode:false, env:prod} by {org_id}.as_count() >= 1",
           "message": "@slack-alerts-${env}-product \n\n{{org_id.name}} is unhealthy.",
           "tags": [
               "service:ctl-api",
