@@ -1,6 +1,8 @@
 ---
 pool: main
 monitors:
+  org_is_unhealthy:
+    enabled: false
   ctl_api_5xx_errors:
     enabled: false
   ctl_api_db_connection:
