@@ -1,38 +1,7 @@
-import { DateTime } from 'luxon'
-import React, { type FC, useEffect, useState } from 'react'
-import { FaAws, FaGitAlt, FaGithub } from 'react-icons/fa'
-import {
-  GoArrowLeft,
-  GoKebabHorizontal,
-  GoCheckCircleFill,
-  GoClockFill,
-  GoXCircleFill,
-  GoInfo,
-} from 'react-icons/go'
-import { VscAzure } from 'react-icons/vsc'
-import {
-  Card,
-  Code,
-  Heading,
-  Link,
-  Status,
-  Text,
-} from '@/components'
-import type {
-  TInstall,
-  TInstallAwsAccount,
-  TInstallAzureAccount,
-  TInstallComponent,
-  TSandboxConfig,
-  TVCSGit,
-  TVCSGitHub,
-} from '@/types'
-import {
-  AWS_REGIONS,
-  AZURE_REGIONS,
-  getFlagEmoji,
-  getFullInstallStatus,
-} from '@/utils'
+import React, { type FC } from 'react'
+import { FaGitAlt, FaGithub } from 'react-icons/fa'
+import { Link, Text } from '@/components'
+import type { TVCSGit, TVCSGitHub } from '@/types'
 
 export interface IVCS {
   connected_github_vcs_config?: TVCSGitHub
