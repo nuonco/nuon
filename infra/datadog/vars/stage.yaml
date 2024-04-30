@@ -1,5 +1,8 @@
 ---
 pool: nuon
+monitors:
+  org_container_waiting:
+    enabled: false
 synthetics:
   ctl_api_uptime:
     name: "${env} - CTL API Uptime"

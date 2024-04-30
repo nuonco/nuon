@@ -7,3 +7,5 @@ monitors:
     enabled: false
   ctl_api_db_connection:
     enabled: false
+  kubernetes_container_waiting:
+    enabled: false
