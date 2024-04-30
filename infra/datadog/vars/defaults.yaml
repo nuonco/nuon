@@ -171,7 +171,7 @@ monitors:
       {
           "name": "${aws_account} - Org is unhealthy",
           "type": "query alert",
-          "query": "sum(last_15m):sum:health_check.count{status:error, sandbox_mode:false, env:${aws_account}} by {org_id}.as_count() >= 1",
+          "query": "sum(last_10m):sum:health_check.count{status:error, sandbox_mode:false, env:${aws_account}} by {org_id}.as_count() >= 3",
           "message": "@slack-alerts-${env}-product \n\n{{org_id.name}} is unhealthy.",
           "tags": [
               "service:ctl-api",
@@ -182,7 +182,7 @@ monitors:
               "groupby_simple_monitor" : false,
               "new_host_delay": 300,
               "thresholds": {
-                  "critical": 1,
+                  "critical": 3,
                   "warning": 0
               },
               "notify_audit": false,
