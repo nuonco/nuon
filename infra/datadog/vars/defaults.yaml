@@ -213,7 +213,7 @@ monitors:
               "new_host_delay": 300,
               "thresholds": {
                   "critical": 3,
-                  "warning": 0
+                  "warning": 2
               },
               "notify_audit": false,
               "include_tags": true,
