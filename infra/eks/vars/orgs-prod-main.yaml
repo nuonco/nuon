@@ -31,7 +31,7 @@ auth_map_additions:
     trust:
       - "arn:aws:iam::814326426574:role/nuon-internal-support-prod"
 managed_node_group:
-  desired_size: 6
+  desired_size: 12
   min_size: 2
   max_size: 15
   instance_types:
