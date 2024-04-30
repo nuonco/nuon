@@ -33,7 +33,7 @@ auth_map_additions:
 managed_node_group:
   desired_size: 6
   min_size: 2
-  max_size: 10
+  max_size: 15
   instance_types:
     - m5.large
 tier: stable
