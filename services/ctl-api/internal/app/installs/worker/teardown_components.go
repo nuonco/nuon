@@ -64,7 +64,6 @@ func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, s
 	}, &componentIDs); err != nil {
 		return fmt.Errorf("unable to get app graph: %w", err)
 	}
-
 	// NOTE(jm): it would probably be better, long term to have a proper way of inverting the graph and walking it
 	// in reverse, but for now, this is the only place we need to do so, so it is just localized here.
 	slices.Reverse(componentIDs)
