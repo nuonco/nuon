@@ -2,7 +2,8 @@ package worker
 
 import (
 	"fmt"
-	"sort"
+
+	"slices"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
@@ -66,7 +67,7 @@ func (w *Workflows) teardownComponents(ctx workflow.Context, installID string, s
 
 	// NOTE(jm): it would probably be better, long term to have a proper way of inverting the graph and walking it
 	// in reverse, but for now, this is the only place we need to do so, so it is just localized here.
-	sort.Sort(sort.Reverse(sort.StringSlice(componentIDs)))
+	slices.Reverse(componentIDs)
 
 	deploys := make([]app.InstallDeploy, 0)
 	for _, compID := range componentIDs {
