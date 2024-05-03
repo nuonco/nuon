@@ -65,22 +65,22 @@ export const InstallStatus: FC<IInstallStatus> = ({
   isStatusTextHidden = false,
   install,
 }) => {
-  const [status, setStatus] = useState(getFullInstallStatus(install))
-  const fetchStatus = () => {
-    fetch(`/api/${install?.org_id}/${install?.id}/status`)
-      .then((res) => res.json().then((s) => setStatus(s)))
-      .catch(console.error)
-  }
+  const [status, _] = useState(getFullInstallStatus(install))
+  /* const fetchStatus = () => {
+   *   fetch(`/api/${install?.org_id}/${install?.id}/status`)
+   *     .then((res) => res.json().then((s) => setStatus(s)))
+   *     .catch(console.error)
+   * }
 
-  useEffect(() => {
-    fetchStatus()
-  }, [])
+   * useEffect(() => {
+   *   fetchStatus()
+   * }, [])
 
-  let pollStatus: NodeJS.Timeout
-  useEffect(() => {
-    pollStatus = setInterval(fetchStatus, POLL_DURATION)
-    return () => clearInterval(pollStatus)
-  }, [status])
+   * let pollStatus: NodeJS.Timeout
+   * useEffect(() => {
+   *   pollStatus = setInterval(fetchStatus, POLL_DURATION)
+   *   return () => clearInterval(pollStatus)
+   * }, [status]) */
 
   return isCompositeStatus ? (
     <Status
