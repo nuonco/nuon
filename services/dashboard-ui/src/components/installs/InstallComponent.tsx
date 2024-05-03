@@ -100,21 +100,21 @@ export const InstallComponentStatus: FC<IInstallComponentStatus> = ({
     }
   )
 
-  const fetchStatus = () => {
-    fetch(`/api/${org_id}/${install_id}/components/${component_id}/status`)
-      .then((res) => res.json().then((s) => setStatus(s)))
-      .catch(console.error)
-  }
+  /* const fetchStatus = () => {
+   *   fetch(`/api/${org_id}/${install_id}/components/${component_id}/status`)
+   *     .then((res) => res.json().then((s) => setStatus(s)))
+   *     .catch(console.error)
+   * }
 
-  useEffect(() => {
-    fetchStatus()
-  }, [])
+   * useEffect(() => {
+   *   fetchStatus()
+   * }, [])
 
-  let pollStatus: NodeJS.Timeout
-  useEffect(() => {
-    pollStatus = setInterval(fetchStatus, POLL_DURATION)
-    return () => clearInterval(pollStatus)
-  }, [status])
+   * let pollStatus: NodeJS.Timeout
+   * useEffect(() => {
+   *   pollStatus = setInterval(fetchStatus, POLL_DURATION)
+   *   return () => clearInterval(pollStatus)
+   * }, [status]) */
 
   return (
     <Status
