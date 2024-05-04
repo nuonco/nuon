@@ -8,7 +8,7 @@ import (
 type OciArchive struct {
 	Image       string `hcl:"image"`
 	Tag         string `hcl:"tag"`
-	LoginServer string `hcl:"tag,optional"`
+	LoginServer string `hcl:"login_server,optional"`
 
 	RegistryType OCIRegistryType `hcl:"registry_type"`
 
