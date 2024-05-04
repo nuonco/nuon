@@ -10,6 +10,9 @@ env_secrets:
   AUTH0_CLIENT_SECRET:
     name: dashboard-ui-auth0-client-secret-dev
     key: auth0_client_secret
+  AUTH0_SECRET:
+    name: dashboard-ui-auth0-secret
+    key: auth0_secret
   NEXT_PUBLIC_DATADOG_CLIENT_TOKEN:
     name: dashboard-ui-datadog-api-key
     key: datadog_api_key
