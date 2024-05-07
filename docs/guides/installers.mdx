@@ -1,0 +1,80 @@
+---
+title: 'Installers'
+description: "Installers provide a UI your customers can use to install your app."
+---
+
+You can create an installer to provide a self-service UI that enables your users to deploy your BYOC applications. There are two steps to setting up an installer: configuring the metadata, and then setting up your desired UI.
+
+## Configuring an Installer
+
+Configure an installer for your app by updating your app config. For example, an installer config for an ECS app would look something like this.
+
+<CodeGroup>
+```toml nuon.<your-app>.toml
+[installer]
+name                  = "My ECS App"
+description           = "A demo app that runs on ECS."
+slug                  = "my-ecs-app"
+documentation_url     = "https://docs.nuon.co/"
+community_url         = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+logo_url              = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+github_url            = "https://github.com/nuonco"
+homepage_url          = "https://www.nuon.co/"
+demo_url              = "https://www.nuon.co/"
+post_install_markdown = """
+# My ECS App
+
+My ECS App is being deployed to your AWS account.
+"""
+```
+
+```hcl installer.tf
+resource "nuon_app_installer" "<your-app>" {
+  app_id                = nuon_app.<your-app>.id
+  name                  = "My ECS App"
+  description           = "A demo app that runs on ECS."
+  slug                  = nuon_app.<your-app>.name
+  documentation_url     = "https://docs.nuon.co/"
+  community_url         = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+  logo_url              = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+  github_url            = "https://github.com/nuonco"
+  homepage_url          = "https://www.nuon.co/"
+  demo_url              = "https://www.nuon.co/"
+  post_install_markdown = <<EOT
+# My ECS App
+
+My ECS App is being deployed to your AWS account.
+EOT
+}
+```
+</CodeGroup>
+
+You can run `nuon installers list` to confirm the installer was created.
+
+## Using the Default UI
+
+As soon as the installer is created, you can view the default UI at the configured URL slug. For the config above, the URL would be https://app.nuon.co/installer/my-ecs-app. This page will reflect any changes you make to the content in the config, but you cannot update the styles or layout.
+
+<Warning>
+Because all installers are automatically hosted this way, the slug you configure must be globally unique.
+</Warning>
+
+## Using the Custom Template
+
+If you would like to provide a custom, fully-branded experience to your customers, we provide an open-source template at https://github.com/nuonco/installer. It uses Next.js and Tailwind, to facilitate easy customization and deployment.
+
+To get started with the template, fork the template repo and run it locally following the directions in the README. When you're ready, it can be deployed to any platform that supports Next.js.
+
+### Deploying to Vercel
+
+To deploy your installer to Vercel:
+
+1. Contact Nuon support to get a static token for your org. You'll need this so the installer can make API calls without using your personal API token.
+1. Follow the Next.js docs to [create a project on Vercel](https://nextjs.org/learn-pages-router/basics/deploying-nextjs-app/deploy). 
+1. In the Vercel project settings, under Environment Variables, add the `NUON_ORG_ID` and `NUON_API_TOKEN` vars, using your org ID and the static token from step 1.
+1. Push to your repo, and Vercel should create a new deploy automatically.
+1. When you're ready to start serving customers, update the project's DNS settings to host the installer at your desired domain.
+
+## Integrating with the API
+
+Because installers are configured as part of your app's data model, you can also build your own custom UX and integrate with our API. While this required more effort, it allows you to build a fully custom UX into your product's sign-up flow, and integrate with Nuon from your backend.

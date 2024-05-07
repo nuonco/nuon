@@ -89,6 +89,7 @@
             "group": "Configuration",
             "pages": [
                 "guides/apps",
+                "guides/installers",
                 "guides/supported-platforms",
                 "guides/azure-support",
                 "guides/sandboxes",
@@ -135,8 +136,7 @@
             "group": "Integrations",
             "pages": [
                 "guides/sdk-integration",
-                "guides/github-actions",
-                "guides/creating-an-installer"
+                "guides/github-actions"
             ]
         },
         {
@@ -172,16 +172,12 @@
                 "api-ref/apps/get-an-app",
                 "api-ref/apps/delete-an-app",
                 "api-ref/apps/update-an-app",
-                "api-ref/apps/create-app-inputs-config",
+                "api-ref/apps/create-app-input-configs",
                 "api-ref/apps/get-app-input-configs",
                 "api-ref/apps/get-latest-app-input-config",
-                "api-ref/apps/create-an-app-installer",
                 "api-ref/apps/create-an-app-sandbox-config",
                 "api-ref/apps/get-app-sandbox-configs",
-                "api-ref/apps/get-latest-app-sandbox-config",
-                "api-ref/apps/render-an-app-installer",
-                "api-ref/apps/get-an-app-installer",
-                "api-ref/apps/delete-an-app-installer"
+                "api-ref/apps/get-latest-app-sandbox-config"
             ]
         },
         {
@@ -203,6 +199,15 @@
                 "api-ref/components/create-a-job-component-config",
                 "api-ref/components/get-latest-config-for-a-component",
                 "api-ref/components/create-a-terraform-component-config"
+            ]
+        },
+        {
+            "group": "installers",
+            "pages": [
+                "api-ref/apps/create-an-app-installer",
+                "api-ref/apps/render-an-app-installer",
+                "api-ref/apps/get-an-app-installer",
+                "api-ref/apps/delete-an-app-installer"
             ]
         },
         {
