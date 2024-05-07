@@ -1,17 +1,38 @@
 module "shared-warpstream" {
   source = "./modules/repository"
 
-  name            = "warpstream"
-  description     = "Nuon configuration for Warpstream."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
-  is_private = true
+  name                     = "warpstream"
+  description              = "Nuon configuration for Warpstream."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
   enable_branch_protection = false
 
   collaborators = {
     "caleb-warpstream" = "push"
-    "richardartoul" = "push"
-    "ryanworl" = "push"
+    "richardartoul"    = "push"
+    "ryanworl"         = "push"
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
+module "shared-warpstream-installer" {
+  source = "./modules/repository"
+
+  name                     = "warpstream-installer"
+  description              = "Installer for Warpstream."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+    "caleb-warpstream" = "push"
+    "richardartoul"    = "push"
+    "ryanworl"         = "push"
   }
 
   providers = {
@@ -22,15 +43,15 @@ module "shared-warpstream" {
 module "shared-okteto" {
   source = "./modules/repository"
 
-  name            = "okteto"
-  description     = "Nuon configuration for Okteto."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
-  is_private = true
+  name                     = "okteto"
+  description              = "Nuon configuration for Okteto."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
   enable_branch_protection = false
 
   collaborators = {
-      rberrelleza = "push"
+    rberrelleza = "push"
   }
 
   providers = {
@@ -41,15 +62,15 @@ module "shared-okteto" {
 module "shared-meroxa" {
   source = "./modules/repository"
 
-  name            = "meroxa"
-  description     = "Nuon configuration + demo for Meroxa."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
-  is_private = true
+  name                     = "meroxa"
+  description              = "Nuon configuration + demo for Meroxa."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
   enable_branch_protection = false
 
   collaborators = {
-      simonl2002 = "push"
+    simonl2002 = "push"
   }
 
   providers = {
@@ -60,15 +81,15 @@ module "shared-meroxa" {
 module "shared-weaviate" {
   source = "./modules/repository"
 
-  name            = "weaviate"
-  description     = "Nuon configuration + demo for Weaviate."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
-  is_private = true
+  name                     = "weaviate"
+  description              = "Nuon configuration + demo for Weaviate."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
   enable_branch_protection = false
 
   collaborators = {
-      aduis = "push"
+    aduis = "push"
   }
 
   providers = {
@@ -79,16 +100,16 @@ module "shared-weaviate" {
 module "shared-flipt" {
   source = "./modules/repository"
 
-  name            = "flipt"
-  description     = "Nuon configuration + demo for Flipt."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
-  is_private = true
+  name                     = "flipt"
+  description              = "Nuon configuration + demo for Flipt."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
   enable_branch_protection = false
 
   collaborators = {
-      georgemac = "push"
-      markphelps = "push"
+    georgemac  = "push"
+    markphelps = "push"
   }
 
   providers = {
@@ -99,16 +120,16 @@ module "shared-flipt" {
 module "shared-honeyhive" {
   source = "./modules/repository"
 
-  name            = "honeyhive"
-  description     = "Nuon configuration + demo for Honeyhive."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
+  name                     = "honeyhive"
+  description              = "Nuon configuration + demo for Honeyhive."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
   enable_branch_protection = false
-  is_private = true
+  is_private               = true
 
   collaborators = {
-      "michael-hhai" = "push"
-      "codehruv" = "push"
+    "michael-hhai" = "push"
+    "codehruv"     = "push"
   }
 
   providers = {
@@ -119,18 +140,18 @@ module "shared-honeyhive" {
 module "shared-electric-sql" {
   source = "./modules/repository"
 
-  name            = "electric-sql"
-  description     = "Nuon configuration + demo for Electric SQL."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
-  is_private = true
+  name                     = "electric-sql"
+  description              = "Nuon configuration + demo for Electric SQL."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
   enable_branch_protection = false
 
   collaborators = {
-      thruflo = "push"
-      samwillis = "push"
-      alco = "push"
-      balegas = "push"
+    thruflo   = "push"
+    samwillis = "push"
+    alco      = "push"
+    balegas   = "push"
   }
 
   providers = {
@@ -141,11 +162,11 @@ module "shared-electric-sql" {
 module "shared-clickhouse" {
   source = "./modules/repository"
 
-  name            = "clickhouse"
-  description     = "Nuon configuration for clickhouse."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
-  is_private = true
+  name                     = "clickhouse"
+  description              = "Nuon configuration for clickhouse."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
   enable_branch_protection = false
 
   providers = {
@@ -156,17 +177,17 @@ module "shared-clickhouse" {
 module "shared-commonfate" {
   source = "./modules/repository"
 
-  name            = "common-fate"
-  description     = "Nuon configuration for common-fate."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
-  is_private = true
+  name                     = "common-fate"
+  description              = "Nuon configuration for common-fate."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
   enable_branch_protection = false
 
   collaborators = {
-    chrnorm = "push"
+    chrnorm           = "push"
     shwethaumashanker = "push"
-    JoshuaWilkes = "push"
+    JoshuaWilkes      = "push"
   }
 
   providers = {
@@ -177,15 +198,15 @@ module "shared-commonfate" {
 module "shared-streamkap" {
   source = "./modules/repository"
 
-  name            = "streamkap"
-  description     = "Nuon configuration for streamkap."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
-  is_private = true
+  name                     = "streamkap"
+  description              = "Nuon configuration for streamkap."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
   enable_branch_protection = false
 
   collaborators = {
-    thomasr888 = "push"
+    thomasr888      = "push"
     quang-streamkap = "push"
   }
 
@@ -197,18 +218,18 @@ module "shared-streamkap" {
 module "shared-100xdev" {
   source = "./modules/repository"
 
-  name            = "100xdev"
-  description     = "Nuon configuration for 100xdev."
-  required_checks = []
-  owning_team_id  = github_team.nuonco-shared.id
-  is_private = true
+  name                     = "100xdev"
+  description              = "Nuon configuration for 100xdev."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
   enable_branch_protection = false
 
   collaborators = {
-    anandsainath = "push"
-    shaumik100x = "push"
+    anandsainath     = "push"
+    shaumik100x      = "push"
     sraibagiwith100x = "push"
-    gyx119 = "push"
+    gyx119           = "push"
   }
 
   providers = {
