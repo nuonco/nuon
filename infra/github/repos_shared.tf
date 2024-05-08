@@ -215,6 +215,26 @@ module "shared-streamkap" {
   }
 }
 
+module "shared-streamkap-installer" {
+  source = "./modules/repository"
+
+  name                     = "streamkap-installer"
+  description              = "Custom installer for streamkap."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+    thomasr888      = "push"
+    quang-streamkap = "push"
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
 module "shared-100xdev" {
   source = "./modules/repository"
 
