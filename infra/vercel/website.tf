@@ -26,13 +26,3 @@ resource "vercel_project_domain" "www-website" {
   redirect             = local.website_domain
   redirect_status_code = 308
 }
-
-resource "vercel_project" "warpstream_installer" {
-  name      = "warpstream-installer"
-  framework = "nextjs"
-
-  git_repository = {
-    type = "github"
-    repo = "nuonco-shared/warpstream-installer"
-  }
-}
