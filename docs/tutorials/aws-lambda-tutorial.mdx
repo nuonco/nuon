@@ -6,7 +6,8 @@ icon: "aws"
 
 import { YoutubeEmbed } from '/snippets/youtube-embed.mdx'
 
-This guide walks you through creating an AWS Lambda app that can be deployed to a customer's AWS account. This app will provide an HTTP API that you can use to create and read "widgets" from a DynamoDB table.
+This guide walks you through creating an AWS Lambda app that can be deployed to a customer's AWS account.
+This app will provide an HTTP API that you can use to create and read "widgets" from a DynamoDB table.
 
 <Note>
 The component code used in this guide can be found in our [Guides repo](https://github.com/nuonco/guides/aws-lambda-tutorial).
@@ -30,31 +31,37 @@ This tutorial will walk you through creating the following:
 
 ## Configure App
 
-To configure the app, you will create a TOML config file using our CLI. In each section below we will provide you with configuration snippets for the app itself as well as it's components.
+To configure the app, you will create a TOML config file using our CLI.
+In each section below we will provide you with configuration snippets for the app itself as well as it's components.
 
 <Note>
-If you would prefer to use Terraform, see our [Terraform Configuration Management](/guides/terraform-configuration-management) guide. We provide Terraform sample code you can use throughout this guide.
+If you would prefer to use Terraform, see our [Terraform Configuration Management](/guides/terraform-configuration-management) guide.
+We provide Terraform sample code you can use throughout this guide.
 </Note>
 
 ### Create App
 
-Define the app itself and give it a name. This will create the app in Nuon and generate a config file named `nuon.my_aws_lambda_app.toml`. This file will be populated with sample config, which we will update in this guide.
+Define the app itself and give it a name.
+This will create the app in Nuon and generate a config file named `nuon.<your-app>.toml`.
+This file will be populated with sample config, which we will update in this guide.
 
 <CodeGroup>
 ```sh CLI
-nuon apps create --name=my_aws_lambda_app
+nuon apps create --name=<your-app>
 ```
 
-```hcl app.tf
-resource "nuon_app" "my_aws_lambda_app" {
-  name = "my_aws_lambda_app"
+```hcl Terraform
+resource "nuon_app" "<your-app>" {
+  name = "<your-app>"
 }
 ```
 </CodeGroup>
 
 ### Installer
 
-Update the installer config. Installers provide an out-of-the-box installation flow your customers can use to install your app. You will use it later in this guide to create an install yourself.
+Update the installer config.
+Installers provide an out-of-the-box installation flow your customers can use to install your app.
+You will use it later in this guide to create an install yourself.
 
 <CodeGroup>
 ```toml TOML
@@ -70,12 +77,12 @@ homepage_url      = "https://www.nuon.co/"
 demo_url          = "https://www.nuon.co/"
 ```
 
-```hcl installer.tf
-resource "nuon_app_installer" "my_aws_lambda_app" {
-  app_id            = nuon_app.my_aws_lambda_app.id
+```hcl Terraform
+resource "nuon_app_installer" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   name              = "My AWS Lambda App"
   description       = "A demo app that runs on AWS Lambda."
-  slug              = nuon_app.my_aws_lambda_app.name
+  slug              = nuon_app.<your-app>.name
   documentation_url = "https://docs.nuon.co/"
   community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
   logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
@@ -100,9 +107,9 @@ repo = "nuonco/sandboxes"
 branch = "main"
 ```
 
-```hcl sandbox.tf
+```hcl Terraform
 resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.my_aws_lambda_app.id
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
   public_repo = {
     repo      = "nuonco/sandboxes"
@@ -115,10 +122,14 @@ resource "nuon_app_sandbox" "main" {
 
 ### Runner
 
-Update the runner config. The `aws-ecs` sandbox requires that we use the `aws-ecs` runner. The runner manages the sandbox, provisioning and deprovisioning AWS resources during deploys.
+Update the runner config.
+The `aws-ecs` sandbox requires that we use the `aws-ecs` runner.
+The runner manages the sandbox, provisioning and deprovisioning AWS resources during deploys.
 
 <Tip>
-The `aws-ecs` runner is so named because it runs on ECS, but it can be used to manage any AWS resources. Since it runs on ECS Fargate, no resources beyond what is needed for the runner are provisioned by default. You can use our ECS sandbox and runner to manage Lambda or EC2 deployments without worrying about extraneous ECS costs.
+The `aws-ecs` runner is so named because it runs on ECS, but it can be used to manage any AWS resources.
+Since it runs on ECS Fargate, no resources beyond what is needed for the runner are provisioned by default.
+You can use our ECS sandbox and runner to manage Lambda or EC2 deployments without worrying about extraneous ECS costs.
 </Tip>
 
 <CodeGroup>
@@ -127,9 +138,9 @@ The `aws-ecs` runner is so named because it runs on ECS, but it can be used to m
 runner_type = "aws-ecs"
 ```
 
-```hcl runner.tf
+```hcl Terraform
 resource "nuon_app_runner" "main" {
-  app_id      = nuon_app.my_aws_lambda_app.id
+  app_id      = nuon_app.<your-app>.id
   runner_type = "aws-ecs"
 }
 ```
@@ -137,7 +148,8 @@ resource "nuon_app_runner" "main" {
 
 ### Sync App Config to Nuon
 
-You now have a complete Nuon app config. This is a good place to stop and sync it to Nuon.
+You now have a complete Nuon app config.
+This is a good place to stop and sync it to Nuon.
 
 <CodeGroup>
 ```sh CLI
@@ -149,7 +161,8 @@ terraform apply
 ```
 </CodeGroup>
 
-Once the config is synced, select the newly created app using the CLI. This will scope CLI commands to the new app.
+Once the config is synced, select the newly created app using the CLI.
+This will scope CLI commands to the new app.
 
 ```sh
 nuon apps select
@@ -167,7 +180,8 @@ This app consists of five components:
 
 ### Docker Image
 
-This is a [Docker Build component](/guides/docker-build-components) that will build the widgets service and create a Docker image containing it. When released, it will sync the image to each install's ECR so Lambda can pull it when executing.
+This is a [Docker Build component](/guides/docker-build-components) that will build the widgets service and create a Docker image containing it.
+When released, it will sync the image to each install's ECR so Lambda can pull it when executing.
 
 <CodeGroup>
 ```toml TOML
@@ -181,9 +195,9 @@ directory = "aws-lambda-tutorial/components/api"
 branch    = "main"
 ```
 
-```hcl docker_image.tf
+```hcl Terraform
 resource "nuon_docker_build_component" "docker_image" {
-  app_id = nuon_app.my_aws_lambda_app.id
+  app_id = nuon_app.<your-app>.id
   name   = "docker_image"
 
   public_repo = {
@@ -217,9 +231,9 @@ name  = "hash_key"
 value = "ID"
 ```
 
-```hcl dynamodb_table.tf
+```hcl Terraform
 resource "nuon_terraform_module_component" "dynamodb_table" {
-  app_id = nuon_app.my_aws_lambda_app.id
+  app_id = nuon_app.<your-app>.id
   name   = "dynamodb_table"
 
   public_repo = {
@@ -269,9 +283,9 @@ name  = "image_uri"
 value = "{{.nuon.components.docker_image.image.repository.uri}}:{{.nuon.components.docker_image.image.tag}}"
 ```
 
-```hcl lambda_function.tf
+```hcl Terraform
 resource "nuon_terraform_module_component" "lambda_function" {
-  app_id = nuon_app.my_aws_lambda_app.id
+  app_id = nuon_app.<your-app>.id
   name   = "lambda_function"
 
   public_repo = {
@@ -321,9 +335,9 @@ name  = "zone_id"
 value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 ```
 
-```hcl certificate.tf
+```hcl Terraform
 resource "nuon_terraform_module_component" "certificate" {
-  app_id = nuon_app.my_aws_lambda_app.id
+  app_id = nuon_app.<your-app>.id
   name   = "certificate"
 
   public_repo = {
@@ -382,9 +396,9 @@ name  = "zone_id"
 value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 ```
 
-```hcl api_gateway.tf
+```hcl Terraform
 resource "nuon_terraform_module_component" "api_gateway" {
-  app_id = nuon_app.my_aws_lambda_app.id
+  app_id = nuon_app.<your-app>.id
   name   = "api_gateway"
 
   public_repo = {
@@ -445,9 +459,10 @@ Just like the app, you can use the CLI to verify they were synced successfully.
 nuon components list
 ```
 
-Initial builds for each component will also have been created. Verify with the CLI that they were successful.
+Initial builds for each component will also have been created.
+Verify with the CLI that they were successful.
 
-```sh verify builds
+```sh
 nuon builds list
 ```
 
@@ -461,7 +476,8 @@ For other approaches, see our guides [Install Access Permissions](/guides/instal
 
 ### Monitor Install Creation
 
-Monitor the install's creation using the Dashboard. Scroll down, and below the settings, you should see a card for your install.
+Monitor the install's creation using the Dashboard.
+Scroll down, and below the settings, you should see a card for your install.
 
 ![Installs on Dashboard](/images/installs-on-dashboard.png)
 
@@ -471,16 +487,18 @@ Click on the card, and in the sidebar you can verify that the components are dep
 
 ### Inspect the Install
 
-When the install has provisioned, create a widget and then read it from the API, to verify everything is working.
+When the install has provisioned, you should be able to create a widget.
 
-```sh create widget
+```sh
 curl --header "Content-Type: application/json" \
   --request POST \
   --data '{"id":"1"}' \
   https://api.{install_id}.nuon.run/widgets
 ```
 
-```sh read widget
+Then, you should be able to read the widget you just created.
+
+```sh
 curl https://api.{install_id}.nuon.run/widgets/1
 ```
 
