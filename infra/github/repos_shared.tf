@@ -195,6 +195,27 @@ module "shared-commonfate" {
   }
 }
 
+module "shared-common-fate-installer" {
+  source = "./modules/repository"
+
+  name                     = "common-fate-installer"
+  description              = "Customer installer for Common Fate."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+    chrnorm           = "push"
+    shwethaumashanker = "push"
+    JoshuaWilkes      = "push"
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
 module "shared-streamkap" {
   source = "./modules/repository"
 
