@@ -31,29 +31,35 @@ Follow the prompts in the browser and login using a Google account. Once you've 
 
 Now that you are logged in you can create an organization.
 
-<CodeGroup>
-```sh create org
+```sh
 nuon orgs create --name {your-org-name}
 ```
 
-```sh view org
+Select the organization to start using it.
+
+```sh
+nuon orgs select
+```
+
+Confirm you have selected the correct organization.
+
+```sh
 nuon orgs current
 ```
-</CodeGroup>
 
 ## Connect your GitHub Account
 
 To deploy code from private repos you will need to connect to your GitHub account or organization.
 
-<CodeGroup>
-```sh connect
+```sh
 nuon orgs connect-github
 ```
 
-```sh list repos
+Confirm the repo is connected.
+
+```sh
 nuon orgs list-connected-repos
 ```
-</CodeGroup>
 
 ## Create an App
 

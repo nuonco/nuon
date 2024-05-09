@@ -6,7 +6,8 @@ icon: 'aws'
 
 import { YoutubeEmbed } from '/snippets/youtube-embed.mdx'
 
-This guide will walk you through creating a BYOC app using Docker, Helm, and Terraform, and deploying it to AWS EKS. At the end of this tutorial, you should know how to create a new BYOC deployment offering with your existing application.
+This guide will walk you through creating a BYOC app using Docker, Helm, and Terraform, and deploying it to AWS EKS.
+At the end of this tutorial, you should know how to create a new BYOC deployment offering with your existing application.
 
 <Note>
 All the configuration and component code used in this guide can be found in our [Guides repo](https://github.com/nuonco/guides/tree/main/aws-eks-tutorial).
@@ -31,31 +32,37 @@ This tutorial will walk you through creating the following:
 
 ## Configure App
 
-To configure the app, you will create a TOML config file using our CLI. In each section below we will provide you with configuration snippets for the app itself as well as it's components.
+To configure the app, you will create a TOML config file using our CLI.
+In each section below we will provide you with configuration snippets for the app itself as well as it's components.
 
 <Note>
-If you would prefer to use Terraform, see our [Terraform Configuration Management](/guides/terraform-configuration-management) guide. We provide Terraform sample code you can use throughout this guide.
+If you would prefer to use Terraform, see our [Terraform Configuration Management](/guides/terraform-configuration-management) guide.
+We provide Terraform sample code you can use throughout this guide.
 </Note>
 
 ### Create App
 
-Define the app itself and give it a name. This will create the app in Nuon and generate a config file named `nuon.my_eks_app.toml`. This file will be populated with sample config, which we will update in this guide.
+Define the app itself and give it a name.
+This will create the app in Nuon and generate a config file named `nuon.<your-app>.toml`.
+This file will be populated with sample config, which we will update in this guide.
 
 <CodeGroup>
 ```sh CLI
-nuon apps create --name=my_eks_app
+nuon apps create --name=<your-app>
 ```
 
-```hcl app.tf
-resource "nuon_app" "my_eks_app" {
-  name = "my_eks_app"
+```hcl Terraform
+resource "nuon_app" "<your-app>" {
+  name = "<your-app>"
 }
 ```
 </CodeGroup>
 
 ### Installer
 
-Update the installer config. Installers provide an out-of-the-box installation flow your customers can use to install your app. You will use it later in this guide to create an install yourself.
+Update the installer config.
+Installers provide an out-of-the-box installation flow your customers can use to install your app.
+You will use it later in this guide to create an install yourself.
 
 <CodeGroup>
 ```toml TOML
@@ -71,12 +78,12 @@ homepage_url      = "https://www.nuon.co/"
 demo_url          = "https://www.nuon.co/"
 ```
 
-```hcl installer.tf
-resource "nuon_app_installer" "my_eks_app" {
-  app_id            = nuon_app.my_eks_app.id
+```hcl Terraform
+resource "nuon_app_installer" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   name              = "My EKS App"
   description       = "A demo app that runs on EKS."
-  slug              = nuon_app.my_eks_app.name
+  slug              = nuon_app.<your-app>.name
   documentation_url = "https://docs.nuon.co/"
   community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
   logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
@@ -89,7 +96,8 @@ resource "nuon_app_installer" "my_eks_app" {
 
 ### Sandbox
 
-Update the sandbox config. The aws-eks sandbox will provide everything you need to run EKS services, from the EKS cluster down to the VPC.
+Update the sandbox config.
+The aws-eks sandbox will provide everything you need to run EKS services, from the EKS cluster down to the VPC.
 
 <CodeGroup>
 ```toml TOML
@@ -101,9 +109,9 @@ repo = "nuonco/sandboxes"
 branch = "main"
 ```
 
-```hcl sandbox.tf
+```hcl Terraform
 resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.my_eks_app.id
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
   public_repo = {
     repo      = "nuonco/sandboxes"
@@ -116,7 +124,9 @@ resource "nuon_app_sandbox" "main" {
 
 ### Runner
 
-Update the runner config. The `aws-eks` sandbox requires that we use the `aws-eks` runner. The runner manages the sandbox, provisioning and deprovisioning AWS resources during deploys.
+Update the runner config.
+The `aws-eks` sandbox requires that we use the `aws-eks` runner.
+The runner manages the sandbox, provisioning and deprovisioning AWS resources during deploys.
 
 <CodeGroup>
 ```toml TOML
@@ -124,9 +134,9 @@ Update the runner config. The `aws-eks` sandbox requires that we use the `aws-ek
 runner_type = "aws-eks"
 ```
 
-```hcl runner.tf
+```hcl Terraform
 resource "nuon_app_runner" "main" {
-  app_id      = nuon_app.my_eks_app.id
+  app_id      = nuon_app.<your-app>.id
   runner_type = "aws-eks"
 }
 ```
@@ -134,11 +144,12 @@ resource "nuon_app_runner" "main" {
 
 ### Sync App Config to Nuon
 
-You now have a complete Nuon app config. This is a good place to stop and sync it to Nuon.
+You now have a complete Nuon app config.
+This is a good place to stop and sync it to Nuon.
 
 <CodeGroup>
 ```sh CLI
-nuon apps sync
+nuon apps sync --file=nuon.<your-app>.toml
 ```
 
 ```sh Terraform
@@ -146,7 +157,8 @@ terraform apply
 ```
 </CodeGroup>
 
-Once the config is synced, select the newly created app using the CLI. This will scope CLI commands to the new app.
+Once the config is synced, select the newly created app using the CLI.
+This will scope CLI commands to the new app.
 
 ```sh
 nuon apps select
@@ -158,7 +170,8 @@ This app consists of three components: one to build the Docker image, one to pro
 
 ### Docker Image
 
-This is a [Docker Build component](/guides/docker-build-components) that will build the API and create a Docker image containing it. When released, it will sync the image to each install's ECR so Helm can pull it when creating pods.
+This is a [Docker Build component](/guides/docker-build-components) that will build the API and create a Docker image containing it.
+When released, it will sync the image to each install's ECR so Helm can pull it when creating pods.
 
 <CodeGroup>
 ```toml TOML
@@ -172,9 +185,9 @@ directory = "aws-eks-tutorial/components/docker-image"
 branch    = "main"
 ```
 
-```hcl docker_image.tf
+```hcl Terraform
 resource "nuon_docker_build_component" "docker_image" {
-  app_id = nuon_app.my_eks_app.id
+  app_id = nuon_app.<your-app>.id
   name   = "docker_image"
   dockerfile = "Dockerfile"
   public_repo = {
@@ -188,7 +201,8 @@ resource "nuon_docker_build_component" "docker_image" {
 
 ### HTTPS Certificate
 
-This is a [Terraform Module](/guides/terraform-components) component that creates an ACM HTTPS certificate. The Helm chart will use this when creating the ALB.
+This is a [Terraform Module](/guides/terraform-components) component that creates an ACM HTTPS certificate.
+The Helm chart will use this when creating the ALB.
 
 <CodeGroup>
 ```toml TOML
@@ -208,9 +222,9 @@ name  = "zone_id"
 value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 ```
 
-```hcl certificate.tf
+```hcl Terraform
 resource "nuon_terraform_module_component" "certificate" {
-  app_id = nuon_app.my_eks_app.id
+  app_id = nuon_app.<your-app>.id
   name = "certificate"
   connected_repo = {
     repo      = "nuonco/guides"
@@ -231,7 +245,8 @@ resource "nuon_terraform_module_component" "certificate" {
 
 ### Helm Chart
 
-This component will create a Helm release in EKS, pulling the Docker image and using it to create a Kubernetes pod. It will also create an ALB to expose the API to the internet.
+This component will create a Helm release in EKS, pulling the Docker image and using it to create a Kubernetes pod.
+It will also create an ALB to expose the API to the internet.
 
 <CodeGroup>
 ```toml TOML
@@ -269,9 +284,9 @@ name  = "vpc_id"
 value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
 ```
 
-```hcl helm_chart.tf
+```hcl Terraform
 resource "nuon_helm_chart_component" "helm_chart" {
-  app_id = nuon_app.my_eks_app.id
+  app_id = nuon_app.<your-app>.id
   name   = "helm_chart"
   chart_name = "introspect"
   public_repo = {
@@ -320,7 +335,7 @@ Now that you have the components, sync the update config to Nuon.
 
 <CodeGroup>
 ```sh CLI
-nuon apps sync
+nuon apps sync --file=nuon.<your-app>.toml
 ```
 
 ```sh Terraform
@@ -334,7 +349,8 @@ Just like the app, you can use the CLI to verify they were synced successfully.
 nuon components list
 ```
 
-Initial builds for each component will also have been created. Verify with the CLI that they were successful.
+Initial builds for each component will also have been created.
+Verify with the CLI that they were successful.
 
 ```sh
 nuon builds list
@@ -350,7 +366,8 @@ For other approaches, see our guides [Install Access Permissions](/guides/instal
 
 ### Monitor Install Creation
 
-Monitor the install's creation using the Dashboard. Scroll down, and below the settings, you should see a card for your install.
+Monitor the install's creation using the Dashboard.
+Scroll down, and below the settings, you should see a card for your install.
 
 ![Installs on Dashboard](/images/installs-on-dashboard.png)
 
@@ -363,13 +380,14 @@ Click on the card, and in the sidebar you can verify that the components are dep
 When the install has provisioned, and the deploys have completed, copy the install ID from the UI and curl the API to verify it's running.
 
 
-```sh curl api
+```sh
 curl https://api.{install_id}.nuon.run/introspect/env
 ```
 
 ## Wrapping Up and Next Steps
 
-Congratulations, you just deployed an EKS service to AWS! A few suggestions for where to go next:
+Congratulations, you just deployed an EKS service to AWS!
+A few suggestions for where to go next:
 
 - Check out our [Release Management](/guides/create-releases) guide to learn how to update installs.
 - Dig into our [App Configuration](/guides/apps) guide to learn how to configure more complex apps.
