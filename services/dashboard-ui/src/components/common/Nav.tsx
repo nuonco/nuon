@@ -18,7 +18,7 @@ export const Nav: FC<{ links?: Array<TLink> }> = ({ links = [] }) => {
         path = `${path}/${l.href}`
         return (
           <span className="flex items-center gap-2" key={l.href}>
-            <span className="text-gray-500"> / </span>
+            <span className="text-slate-500"> / </span>
             <Link href={path}>{l?.text ? l?.text : l.href}</Link>
           </span>
         )
