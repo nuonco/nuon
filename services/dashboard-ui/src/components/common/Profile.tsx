@@ -45,7 +45,7 @@ export const ProfileDropdown = () => {
       <div className="z-10 relative inline-block text-left dropdown">
         <span className="rounded shadow-sm">
           <button
-            className="inline-flex justify-center w-full px-4 py-2 text-sm transition duration-150 ease-in-out bg-gray-50 dark:bg-gray-950 border rounded "
+            className="inline-flex justify-center w-full px-4 py-2 text-sm transition duration-150 ease-in-out bg-slate-50 dark:bg-slate-950 rounded"
             type="button"
             aria-haspopup="true"
             aria-expanded="true"
@@ -67,7 +67,7 @@ export const ProfileDropdown = () => {
         </span>
         <div className="hidden dropdown-menu">
           <div
-            className="absolute right-0 w-56 mt-2 origin-top-right bg-gray-50 dark:bg-gray-900 border divide-y rounded shadow-md outline-none"
+            className="absolute right-0 w-56 mt-2 origin-top-right bg-slate-50 dark:bg-slate-900 border divide-y rounded shadow-md outline-none"
             aria-labelledby="headlessui-menu-button-1"
             id="headlessui-menu-items-117"
             role="menu"
@@ -81,14 +81,14 @@ export const ProfileDropdown = () => {
             <div className="">
               {/* <a
                   href="javascript:void(0)"
-                  className="text-gray-700 flex justify-between w-full px-4 py-2 text-sm leading-5 text-left"
+                  className="text-slate-700 flex justify-between w-full px-4 py-2 text-sm leading-5 text-left"
                   role="menuitem"
                   >
                   Account settings
                   </a> */}
               <a
                 href="mailto:team@nuon.co"
-                className="hover:bg-gray-100 dark:hover:bg-gray-800 flex gap-2 items-center w-full px-4 py-2 text-sm leading-5 text-left"
+                className="hover:bg-slate-100 dark:hover:bg-slate-800 flex gap-2 items-center w-full px-4 py-2 text-sm leading-5 text-left"
                 role="menuitem"
               >
                 <GoMail /> Support
@@ -97,7 +97,7 @@ export const ProfileDropdown = () => {
             <div className="">
               <a
                 href="/api/auth/logout"
-                className="hover:bg-gray-100 dark:hover:bg-gray-800 flex justify-between w-full px-4 py-2 text-sm leading-5 text-left"
+                className="hover:bg-slate-100 dark:hover:bg-slate-800 flex justify-between w-full px-4 py-2 text-sm leading-5 text-left"
                 role="menuitem"
               >
                 Sign out
