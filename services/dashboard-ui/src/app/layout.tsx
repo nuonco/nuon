@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      className="bg-gray-50 text-gray-950 dark:bg-gray-950 dark:text-gray-50"
+      className="bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50 bg-[url('https://nuon.co/_astro/hero-background-gradient.Bpjm9v9t_Z1mFIaD.svg')]"
       lang="en"
     >
       {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
@@ -35,3 +35,4 @@ export default function RootLayout({
     </html>
   )
 }
+
