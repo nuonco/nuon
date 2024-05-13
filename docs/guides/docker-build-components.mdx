@@ -14,16 +14,26 @@ options.
 To configure a Docker build component, specify a repo, the required build paramaters and Dockerfile path.
 
 <CodeGroup>
-```hcl docker_build.tf
-resource "nuon_docker_build_component" "e2e" {
-name   = "e2e_docker_build"
-  app_id = nuon_app.main.id
+```toml TOML
+[[components]]
+name       = "app_image"
+type       = "docker_build"
+dockerfile = "Dockerfile"
+[components.connected_repo]
+directory = "components/app-image"
+repo      = "<your-app>"
+branch    = "main"
+```
 
+```hcl Terraform
+resource "nuon_docker_build_component" "e2e" {
+  name       = "app_image"
+  app_id     = nuon_app.<your-app>.id
   dockerfile = "Dockerfile"
 
   connected_repo = {
-    directory = "components/go-httpbin"
-    repo      = "powertoolsdev/demo"
+    directory = "components/app-image"
+    repo      = "<your-app>"
     branch    = "main"
   }
 }
@@ -35,50 +45,93 @@ repo (using a `connected_repo` block). Read more about VCS configuration [here](
 
 ## Deployments
 
-Docker build components <u>can not</u> be deployed directly in a customer install. When an image is released, it will be <u>synced</u>
+Docker build components _cannot_ be deployed directly in a customer install. When an image is released, it will be _synced_
 into the customer install and made available to other components via [variables](../guides/using-variables).
 
 To deploy a Docker build component, reference the image from a Helm component, Terraform component or Job component:
 
 <CodeGroup>
-```hcl helm.tf
-  name   = "helm"
-  app_id = nuon_app.main.id
+```toml TOML
+[[components]]
+name       = "eks_deployment"
+type       = "helm_chart"
+chart_name = "<your-app>"
+[components.connected_repo]
+repo      = "<your-app>"
+directory = "components/helm-chart"
+branch    = "main"
+[components.values]
+"env.IMAGE_TAG"        = "{{.nuon.components.app_image.image.tag}}"
+"env.IMAGE_REPOSITORY" = "{{.nuon.components.app_image.image.repository.uri}}"
 
-  value {
-    name = "env.IMAGE_TAG"
-    value = "{{.nuon.components.image.image.tag}}"
-  }
-  value {
-    name = "env.IMAGE_REPOSITORY"
-    value = "{{.nuon.components.image.image.repository.uri}}"
-  }
-}
+[[components]]
+name              = "ecs_service"
+type              = "terraform_module"
+terraform_version = "v1.6.3"
+[components.connected_repo]
+repo      = "<your-app>"
+directory = "components/ecs-service"
+branch    = "main"
+[components.vars]
+"image_tag"        = "{{.nuon.components.app_image.image.tag}}"
+"image_repository" = "{{.nuon.components.app_image.image.repository.uri}}"
+
+[[components]]
+name      = "eks_job"
+type      = "job"
+image_url = "{{.nuon.components.app_image.image.repository.uri}}"
+tag       = "{{.nuon.components.app_image.image.tag}}"
 ```
 
-```hcl terraform.tf
-  name   = "terraform"
-  app_id = nuon_app.main.id
+```hcl Terraform
+resource "nuon_helm_chart_component" "eks_deployment" {
+  name       = "eks_deployment"
+  app_id     = nuon_app.<your-app>.id
+  chart_name = "<your-app>"
+
+  connected_repo {
+    repo      = "<your-app>"
+    directory = "components/helm-chart"
+    branch    = "main"
+  }
+
+  value {
+    name  = "env.IMAGE_TAG"
+    value = "{{.nuon.components.app_image.image.tag}}"
+  }
+  value {
+    name  = "env.IMAGE_REPOSITORY"
+    value = "{{.nuon.components.app_image.image.repository.uri}}"
+  }
+}
+
+resource "nuon_terraform_component" "ecs_service" {
+  name              = "ecs_service"
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
+
+  connected_repo {
+    repo      = "<your-app>"
+    directory = "components/ecs-service"
+    branch    = "main"
+  }
 
   var {
-    name = "image_tag"
-    value = "{{.nuon.components.image.image.tag}}"
+    name  = "image_tag"
+    value = "{{.nuon.components.app_image.image.tag}}"
   }
+
   value {
-    name = "image_repository"
-    value = "{{.nuon.components.image.image.repository.uri}}"
+    name  = "image_repository"
+    value = "{{.nuon.components.app_image.image.repository.uri}}"
   }
 }
-```
 
-```hcl job.tf
-  name   = "job"
-  app_id = nuon_app.main.id
-  terraform_version = "v1.6.3"
-
-  image_url = "{{.nuon.components.image.image.repository.uri}}"
-  tag       = "{{.nuon.components.image.image.tag}}"
+resource "nuon_job_component" "eks_job" {
+  name      = "eks_job"
+  app_id    = nuon_app.<your-app>.id
+  image_url = "{{.nuon.components.app_image.image.repository.uri}}"
+  tag       = "{{.nuon.components.app_image.image.tag}}"
 }
 ```
 </CodeGroup>
