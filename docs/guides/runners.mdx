@@ -20,9 +20,9 @@ To configure your app runner:
 runner_type = "aws-eks"
 ```
 
-```hcl runner.tf
-resource "nuon_app_runner" "main" {
-  app_id = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_runner" "<your-app>" {
+  app_id = nuon_app.<your-app>.id
 
   runner_type = "aws-eks"
 }
@@ -42,9 +42,9 @@ name = "ENV_VAR_KEY"
 value = "value"
 ```
 
-```hcl runner.tf
-resource "nuon_app_runner" "main" {
-  app_id = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_runner" "<your-app>" {
+  app_id = nuon_app.<your-app>.id
 
   runner_type = "aws-eks"
   env_var {
@@ -76,9 +76,9 @@ To configure an AWS EKS runner:
 runner_type = "aws-eks"
 ```
 
-```hcl runner.tf
-resource "nuon_app_runner" "main" {
-  app_id = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_runner" "<your-app>" {
+  app_id = nuon_app.<your-app>.id
 
   runner_type = "aws-eks"
 }
@@ -102,9 +102,9 @@ To configure an ecs runner:
 runner_type = "aws-ecs"
 ```
 
-```hcl runner.tf
-resource "nuon_app_runner" "main" {
-  app_id = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_runner" "<your-app>" {
+  app_id = nuon_app.<your-app>.id
 
   runner_type = "aws-ecs"
 }
@@ -133,9 +133,9 @@ To configure an Azure AKS runner:
 runner_type = "azure-aks"
 ```
 
-```hcl runner.tf
-resource "nuon_app_runner" "main" {
-  app_id = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_runner" "<your-app>" {
+  app_id = nuon_app.<your-app>.id
 
   runner_type = "azure-aks"
 }

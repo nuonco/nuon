@@ -37,9 +37,9 @@ directory = "aws-eks"
 branch = "main"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   public_repo = {
@@ -84,9 +84,9 @@ directory = "aws-eks"
 branch = "main"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   public_repo = {
@@ -119,9 +119,9 @@ directory = "aws-ecs"
 branch = "main"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   public_repo = {
@@ -156,9 +156,9 @@ branch = "main"
 runner_type = "azure-aks"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   public_repo = {
@@ -169,7 +169,7 @@ resource "nuon_app_sandbox" "main" {
 }
 
 resource "nuon_app_runner" "main" {
-  app_id      = nuon_app.main.id
+  app_id      = nuon_app.<your-app>.id
   runner_type = "aws-aks"
 }
 ```
@@ -198,9 +198,9 @@ directory = "aws-eks"
 branch = "v0.0.1"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   public_repo = {
@@ -234,10 +234,10 @@ name  = "account_region"
 value = "{{.nuon.install.sandbox.outputs.account.region}}"
 ```
 
-```hcl helm.tf
+```hcl Terraform
 resource "nuon_helm_chart_component" "e2e" {
   name   = "e2e_helm"
-  app_id = nuon_app.main.id
+  app_id = nuon_app.<your-app>.id
 
   chart_name = "e2e-helm"
   connected_repo = {
@@ -274,9 +274,9 @@ name = "cluster_version"
 value = "1.28"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   public_repo = {
@@ -319,9 +319,9 @@ name = "cluster_version"
 value = "{{.nuon.install.inputs.cluster_version}}"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   public_repo = {
@@ -335,11 +335,9 @@ resource "nuon_app_sandbox" "main" {
     value = "{{.nuon.install.inputs.cluster_version}}"
   }
 }
-```
 
-```hcl input.tf
-resource "nuon_app_input" "main" {
-  app_id            = nuon_app.main.id
+resource "nuon_app_input" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
 
   input {
     name = "cluster_version"
@@ -367,9 +365,9 @@ directory = "sandbox"
 branch = "main"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   connected_repo = {
