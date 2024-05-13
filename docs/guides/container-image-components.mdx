@@ -32,13 +32,24 @@ If you have private prebuilt images in a registry other than AWS ECR, that you w
 
 ## Configuring a container image component
 
-To configure a container image component, use either a public container image (from any registry), or a private container image from an [AWS ECR](https://aws.amazon.com/ecr/) repository.
-<CodeGroup>
+### Using a Public Image
 
-```hcl public.tf
+To use a public image from any container registry, configure the `public` block.
+
+<CodeGroup>
+```toml TOML
+[[components]]
+name   = "public"
+type   = "container_image"
+[components.public]
+image_url = "kennethreitz/httpbin"
+tag       = "latest"
+```
+
+```hcl Terraform
 resource "nuon_container_image_component" "public" {
   name   = "public"
-  app_id = nuon_app.main.id
+  app_id = nuon_app.<your-app>.id
 
   public = {
     image_url = "kennethreitz/httpbin"
@@ -46,11 +57,27 @@ resource "nuon_container_image_component" "public" {
   }
 }
 ```
+</CodeGroup>
 
-```hcl ecr.tf
+### Using a Private AWS ECR Image
+
+To use an image from a private ECR registry, configure the `aws_ecr` block.
+
+<CodeGroup>
+```toml TOML
+name   = "ecr"
+type   = "container_image"
+[components.aws_ecr]
+image_url    = "123927561584.dkr.ecr.us-west-2.amazonaws.com/repo-name"
+tag          = "latest"
+region       = "us-west-2"
+iam_role_arn = "arn:aws:iam::123927561584:role/nuon-container-image-access"
+```
+
+```hcl Terraform
 resource "nuon_container_image_component" "ecr" {
   name   = "ecr"
-  app_id = nuon_app.main.id
+  app_id = nuon_app.<your-app>.id
 
   aws_ecr = {
     image_url = "123927561584.dkr.ecr.us-west-2.amazonaws.com/repo-name"
@@ -66,50 +93,93 @@ To use an AWS ECR image, [please follow the directions](#ecr-access-iam-role) to
 
 ## Deployments
 
-Container image components <u>can not</u> be deployed directly in a customer install. When an image is released, it will be <u>synced</u>
+Container image components _cannot_ be deployed directly in a customer install. When an image is released, it will be _synced_
 into the customer install and made available to other components via [variables](../guides/using-variables).
 
 To deploy a Container image component, reference the image from a Helm component, Terraform component or Job component:
 
 <CodeGroup>
-```hcl helm.tf
-  name   = "helm"
-  app_id = nuon_app.main.id
+```toml TOML
+[[components]]
+name       = "eks_deployment"
+type       = "helm_chart"
+chart_name = "<your-app>"
+[components.connected_repo]
+repo      = "<your-app>"
+directory = "components/helm-chart"
+branch    = "main"
+[components.values]
+"env.IMAGE_TAG"        = "{{.nuon.components.app_image.image.tag}}"
+"env.IMAGE_REPOSITORY" = "{{.nuon.components.app_image.image.repository.uri}}"
 
-  value {
-    name = "env.IMAGE_TAG"
-    value = "{{.nuon.components.image.image.tag}}"
-  }
-  value {
-    name = "env.IMAGE_REPOSITORY"
-    value = "{{.nuon.components.image.image.repository.uri}}"
-  }
-}
+[[components]]
+name              = "ecs_service"
+type              = "terraform_module"
+terraform_version = "v1.6.3"
+[components.connected_repo]
+repo      = "<your-app>"
+directory = "components/ecs-service"
+branch    = "main"
+[components.vars]
+"image_tag"        = "{{.nuon.components.app_image.image.tag}}"
+"image_repository" = "{{.nuon.components.app_image.image.repository.uri}}"
+
+[[components]]
+name      = "eks_job"
+type      = "job"
+image_url = "{{.nuon.components.app_image.image.repository.uri}}"
+tag       = "{{.nuon.components.app_image.image.tag}}"
 ```
 
-```hcl terraform.tf
-  name   = "terraform"
-  app_id = nuon_app.main.id
+```hcl Terraform
+resource "nuon_helm_chart_component" "eks_deployment" {
+  name       = "eks_deployment"
+  app_id     = nuon_app.<your-app>.id
+  chart_name = "<your-app>"
+
+  connected_repo {
+    repo      = "<your-app>"
+    directory = "components/helm-chart"
+    branch    = "main"
+  }
+
+  value {
+    name  = "env.IMAGE_TAG"
+    value = "{{.nuon.components.app_image.image.tag}}"
+  }
+  value {
+    name  = "env.IMAGE_REPOSITORY"
+    value = "{{.nuon.components.app_image.image.repository.uri}}"
+  }
+}
+
+resource "nuon_terraform_component" "ecs_service" {
+  name              = "ecs_service"
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
+
+  connected_repo {
+    repo      = "<your-app>"
+    directory = "components/ecs-service"
+    branch    = "main"
+  }
 
   var {
-    name = "image_tag"
-    value = "{{.nuon.components.image.image.tag}}"
+    name  = "image_tag"
+    value = "{{.nuon.components.app_image.image.tag}}"
   }
+
   value {
-    name = "image_repository"
-    value = "{{.nuon.components.image.image.repository.uri}}"
+    name  = "image_repository"
+    value = "{{.nuon.components.app_image.image.repository.uri}}"
   }
 }
-```
 
-```hcl job.tf
-  name   = "job"
-  app_id = nuon_app.main.id
-  terraform_version = "v1.6.3"
-
-  image_url = "{{.nuon.components.image.image.repository.uri}}"
-  tag       = "{{.nuon.components.image.image.tag}}"
+resource "nuon_job_component" "eks_job" {
+  name      = "eks_job"
+  app_id    = nuon_app.<your-app>.id
+  image_url = "{{.nuon.components.app_image.image.repository.uri}}"
+  tag       = "{{.nuon.components.app_image.image.tag}}"
 }
 ```
 </CodeGroup>
@@ -132,8 +202,7 @@ building your component, `nuon` will automatically assume the role and pull the 
 
 The easiest way to setup an IAM role to configure your component with is using our [Terraform Module](https://registry.terraform.io/modules/nuonco/ecr-access/aws).
 
-<CodeGroup>
-```hcl role.tf
+```hcl
 module "nuon_ecr_access" {
   source  = "nuonco/ecr-access/aws"
 
@@ -144,7 +213,6 @@ output "ecr_access_iam_role" {
   value = module.nuon_ecr_access.ecr_access_iam_role
 }
 ```
-</CodeGroup>
 
 <Note>
 If you are having trouble finding the repository ARN in the AWS console, you can run `aws ecr describe-repositories` to
@@ -153,7 +221,7 @@ If you are having trouble finding the repository ARN in the AWS console, you can
 
 ## Importing Images Outside of AWS ECR
 
-We currently _only_ support public container images and private container images pushed to AWS ECR private images.
+We currently _only_ support public container images and private container images pushed to AWS ECR private registries.
 
 If your registry is supported by AWS ECR's [pull through
   cache](https://docs.aws.amazon.com/AmazonECR/latest/userguide/pull-through-cache-working.html), the easiest way to
