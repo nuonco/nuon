@@ -1,16 +1,15 @@
 ---
 title: 'Job Components'
-description: "Job components are used to execute jobs inside of an install."
+description: "Job components are used to execute tasks inside of an install."
 ---
 
-Job components allow you to execute one time jobs in an install. Please refer to the [Job Component
-reference](https://registry.helm_chart.io/providers/nuonco/nuon/latest/docs/resources/job_component) for
-full configuration options.
+A job component runs a provided container image as a [Kubernetes Job workload](https://kubernetes.io/docs/concepts/workloads/controllers/job/).
+You can use this to execute one-off tasks as part of app deployments and updates.
 
 <Note>
-Job components are currently _only_ supported by `aws-eks` sandboxes.
+Because they run Kubernetes job workloads, job components are currently _only_ supported by Kubernetes sandboxes.
 
-If you have a use case for using jobs with an `aws-ecs` sandbox [please get in touch](mailto:team@nuon.co).
+If you have a use case for using jobs with other types of sandboxes [please get in touch](mailto:team@nuon.co).
 </Note>
 
 ## Configuring a Job component
@@ -25,30 +24,29 @@ You can run any published Docker image.
 <CodeGroup>
 ```toml TOML
 [[components]]
-name = "kubectl_job"
-type = "job"
+name      = "list_pods"
+type      = "job"
 image_url = "bitnami/kubectl"
-tag = "latest"
-cmd = ["kubectl"]
-args = ["get", "pods", "-A"]
-[[components.env_vars]]
-name  = "NUON_APP_ID"
-value = "{{.nuon.app.id}}"
+tag       = "latest"
+cmd       = ["kubectl"]
+args      = ["get", "pods", "-n", "$NAMESPACE"]
+[components.env_vars]
+NAMESPACE = "{{.nuon.install.id}}"
 ```
 
-```hcl kubectl_job.tf
-resource "nuon_job_component" "job" {
-  name      = "my_job"
-  app_id    = nuon_app.main.id
+```hcl Terraform
+resource "nuon_job_component" "list_pods" {
+  name      = "list_pods"
+  app_id    = nuon_app.<your-app>.id
 
   image_url = "bitnami/kubectl"
   tag       = "latest"
   cmd       = ["kubectl"]
-  args      = ["get", "pods", "-A"]
+  args      = ["get", "pods", "-n", "$NAMESPACE]
 
   env_var {
-    name  = "NUON_APP_ID"
-    value = "{{.nuon.app.id}}"
+    name  = "NAMESPACE"
+    value = "{{.nuon.install.id}}"
   }
 }
 ```
@@ -56,18 +54,20 @@ resource "nuon_job_component" "job" {
 
 ### Using a Custom Image
 
-You can also use an image component.
+You can use a custom image by referencing either a [docker
+build](./docker-build-components.mdx) or [container image](./container-image-components.mdx) using
+[variables](../guides/using-variables).
 
 <CodeGroup>
 ```toml TOML
 [[components]]
-name = "my_job_image"
-type = "docker_build"
+name       = "my_job_image"
+type       = "docker_build"
 dockerfile = "Dockerfile"
 [components.connected_repo]
-directory = "my-repo/components/my-job-image"
-repo = "my-repo"
-branch = "master"
+directory = "components/my-job-image"
+repo      = "<your-org>/<your-repo>"
+branch    = "master"
 
 [[components]]
 name = "my_job"
@@ -81,23 +81,21 @@ name  = "MY_ENV_VAR"
 value = "value-for-my-command"
 ```
 
-```hcl my_job_image.tf
+```hcl Terraform
 resource "nuon_docker_build_component" "my_job_image" {
-  app_id = nuon_app.main.id
+  app_id = nuon_app.<your-app>.id
   name   = "my_job_image"
 
   public_repo = {
-    repo      = "my-repo"
+    repo      = "<your-org>/<your-repo>"
     directory = "components/my-job-image"
     branch    = "main"
   }
 }
-```
 
-```hcl my_job.tf
 resource "nuon_job_component" "job" {
   name      = "my_job"
-  app_id    = nuon_app.main.id
+  app_id    = nuon_app.<your-app>.id
 
   image_url = "{{.nuon.components.my_job_image.image.repository.uri}}"
   tag       = "{{.nuon.components.my_job_image.image.tag}}"
@@ -107,74 +105,6 @@ resource "nuon_job_component" "job" {
   env_var {
     name  = "MY_ENV_VAR"
     value = "value-for-my-command"
-  }
-}
-```
-</CodeGroup>
-
-<br />
-
-<Note>
-In order to use custom images with job components, you must specify either a [docker
-build](./docker-build-components.mdx) or [container image](./container-image-components.mdx) as a dependency and use
-[variables](../guides/using-variables).
-</Note>
-
-## Configuration
-
-You can use [variables](../guides/using-variables) to configure both the environment and images in a job component.
-
-Some common examples of using variables to configure job components:
-<CodeGroup>
-```hcl custom_image.tf
-// use a custom image
-resource "nuon_job_component" "job" {
-  name      = "job"
-  app_id    = nuon_app.main.id
-
-  image_url = "{{.nuon.components.custom_image.image.repository.uri}}"
-  tag       = "{{.nuon.components.custom_image.image.tag}}"
-  cmd       = ["kubectl"]
-  args      = ["get", "pods", "-A"]
-}
-```
-
-```hcl outputs.tf
-// accessing outputs from a terraform component
-resource "nuon_job_component" "job" {
-  name      = "job"
-  app_id    = nuon_app.main.id
-
-  image_url = "{{.nuon.components.custom_image.image.repository.uri}}"
-  tag       = "{{.nuon.components.custom_image.image.tag}}"
-  cmd       = ["kubectl"]
-  args      = ["get", "pods", "-A"]
-
-  env_var {
-    name  = "DATABASE_URL"
-    value = "{{.nuon.install.components.database.outputs.database_url}}"
-  }
-  env_var {
-    name  = "DATABASE_PASSWORD"
-    value = "{{.nuon.install.components.database.outputs.database_url}}"
-  }
-}
-```
-
-```hcl sandbox_outputs.tf
-// accessing sandbox outputs
-resource "nuon_job_component" "job" {
-  name      = "job"
-  app_id    = nuon_app.main.id
-
-  image_url = "{{.nuon.components.custom_image.image.repository.uri}}"
-  tag       = "{{.nuon.components.custom_image.image.tag}}"
-  cmd       = ["kubectl"]
-  args      = ["get", "pods", "-A"]
-
-  env_var {
-    name = "AWS_REGION"
-    value = "{{.nuon.install.sandbox.outputs.account.region}}"
   }
 }
 ```
