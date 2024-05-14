@@ -3,43 +3,61 @@ title: 'Component Dependencies'
 description: "Component dependencies allow you to create dependencies between components, and model your app as a graph."
 ---
 
-Declare dependencies between components to control the order that installs provision/deprovision the parts of your app.
-
 ## Why Dependencies?
 
-Most applications have either explicit, or implicit dependencies between the different components that comprise them.
+Most applications have either explicit or implicit dependencies between the different components that comprise them.
 
 For example, given an app that comprises a [Helm chart](./helm-chart-components) component and a [Terraform component](./terraform-components):
 
 <CodeGroup>
-```hcl helm
+```toml TOML
+[[components]]
+name       = "helm"
+type       = "helm_chart"
+chart_name = "helm"
+[components.connected_repo]
+directory = "components/helm"
+repo      = "<your-org>/<your-repo>"
+branch    = "main"
+[components.values]
+database_url = "{{.nuon.components.database.outputs.database_url}}"
+
+[[components]]
+name              = "database"
+type              = "terraform_module"
+terraform_version = "v1.6.3"
+[components.connected_repo]
+directory = "components/database"
+repo      = "<your-org>/<your-repo>"
+branch    = "main"
+```
+
+```hcl Terraform
 resource "nuon_helm_chart_component" "helm" {
   name   = "helm"
-  app_id = nuon_app.main.id
+  app_id = nuon_app.<your-app>.id
 
   chart_name = "helm"
   connected_repo = {
-    directory = "helm"
-    repo      = "your-org/your-repo"
+    directory = "components/helm"
+    repo      = "<your-org>/<your-repo>"
     branch    = "main"
   }
 
   value {
-    name = "database_url"
+    name  = "database_url"
     value = "{{.nuon.components.database.outputs.database_url}}"
   }
 }
-```
 
-```hcl terraform
 resource "nuon_terraform_module_component" "terraform" {
-  name   = "helm"
-  app_id = nuon_app.main.id
+  name   = "database"
+  app_id = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   connected_repo = {
-    directory = "terraform"
-    repo      = "your-org/your-repo"
+    directory = "components/terraform"
+    repo      = "<your-org>/<your-repo>"
     branch    = "main"
   }
 }
@@ -54,34 +72,88 @@ dependencies exist, preventing the database from being shut down.
 
 ## Defining Component Dependencies
 
-To define a component dependency, add a `dependencies` field in the component config, that references the _parent_
-component it depends on.
+To support this, you can define one or more dependencies on each component, telling Nuon what other components it relies on.
+Nuon will use your configuration to build a dependency graph, to ensure components are provisioned and deprovisioned in the correct order.
 
-To define a dependency:
-<CodeGroup>
-```hcl component.tf
+<Warning>
+The dependency graph is directed and _acyclic_, which means circular dependencies are not supported.
+Nuon checks for cycles and will error if you attempt to define one.
+</Warning>
+
+### TOML
+
+If you're using the TOML config, dependencies will be inferred from the order of the components in the file.
+Every component will automatically depend on the component defined before it.
+If you re-order the components in the file, the dependencies will be updated.
+
+Taking the example above, you can make the Helm chart depend on the database by simply reversing their order in the file.
+
+```toml
+# Move the helm_chart component from up here...
+
+[[components]]
+name              = "database"
+type              = "terraform_module"
+terraform_version = "v1.6.3"
+[components.connected_repo]
+directory = "components/database"
+repo      = "<your-org>/<your-repo>"
+branch    = "main"
+
+# to down here.
+[[components]]
+name       = "helm"
+type       = "helm_chart"
+chart_name = "helm"
+[components.connected_repo]
+directory = "components/helm"
+repo      = "<your-org>/<your-repo>"
+branch    = "main"
+[components.values]
+database_url = "{{.nuon.components.database.outputs.database_url}}"
+```
+
+### Terraform
+
+Terraform doesn't care how you order resources in your configs, you must explicitly define dependencies when using the Terraform provider.
+While this requires a bit more work, it does give you full contol over the dependency graph.
+
+To define the dependencies for a component, add a `dependencies` field referencing the IDs of the other components that it depends on.
+
+```hcl
 resource "nuon_helm_chart_component" "helm" {
-  name   = "helm"
-  app_id = nuon_app.main.id
+  name       = "helm"
+  app_id     = nuon_app.<your-app>.id
+  chart_name = "helm"
+
+  connected_repo = {
+    directory = "components/helm"
+    repo      = "<your-org>/<your-repo>"
+    branch    = "main"
+  }
+
+  value = {
+    name  = "database_url"
+    value = "{{.nuon.components.database.outputs.database_url}}"
+  }
 
   dependencies = [
     nuon_terraform_module_component.database.id
   ]
-  chart_name = "helm"
+}
+
+resource "nuon_terraform_module_component" "terraform" {
+  name   = "database"
+  app_id = nuon_app.<your-app>.id
+  terraform_version = "v1.6.3"
+
   connected_repo = {
-    directory = "helm"
-    repo      = "nuonco/mono"
+    directory = "components/database"
+    repo      = "<your-org>/<your-repo>"
     branch    = "main"
   }
 }
 ```
-</CodeGroup>
-
-<br />
-
-<Note>
-Nuon automatically checks for cycles, and will error when trying to update a component config to contain a dependency cycle.
-</Note>
 
 ## Install Provisioning
 
@@ -90,18 +162,16 @@ Nuon will automatically deploy the _latest_ build of each component to the insta
 that the database component would be deployed _before_ the Helm chart.
 
 For example, when you create a new install, each component will automatically be deployed:
-<CodeGroup>
+
 ```sh
-$ nuon installs create
+nuon installs create
 ```
-</CodeGroup>
 
 To check the status of each component on the install:
-<CodeGroup>
+
 ```sh
-$ nuon installs components
+nuon installs components
 ```
-</CodeGroup>
 
 ## Install Deprovisioning
 
