@@ -47,8 +47,7 @@ The following best practices are recommended when working with the Nuon Terrafor
 We recommend configuring your Terraform to create _multiple_ apps, in order to offer multiple sandbox options. This can
 be done by parameterizing your terraform, or moving your application configuration into a module.
 
-<CodeGroup>
-```sh apps.tf
+```sh
 local {
   apps = [
     {
@@ -62,65 +61,33 @@ local {
   ]
 }
 
-resource "nuon_app" "main" {
+resource "nuon_app" "<your-app>" {
   for_each = { for app in local.apps : app.name => app }
 
   name     = each.value.name
 }
 ```
-</CodeGroup>
-
-### Sandbox Mode
-
-It is recommended to use `sandbox` mode, to create a sandbox version of your apps for testing.
-
-<CodeGroup>
-```sh providers.tf
-provider "nuon" {
-  alias  = "sandbox"
-  org_id = var.sandbox_org_id
-}
-
-provider "nuon" {
-  org_id = var.org_id
-}
-```
-
-```sh app.tf
-resource "nuon_app" "sandbox" {
-  provider = nuon.sandbox
-  name     = "sandbox-app"
-}
-
-resource "nuon_app" "real" {
-  provider = nuon
-  name     = "real-app"
-}
-```
-</CodeGroup>
 
 ### Managing installs
 
 If you plan on managing installs with the Nuon Terraform provider, please make sure to set dependencies on your application configuration:
 
-<CodeGroup>
-```sh installs.tf
+```sh
 resource "nuon_install" "east_1" {
-  app_id = nuon_app.main.id
+  app_id = nuon_app.<your-app>.id
 
   name         = "example"
   region       = "us-east-1"
   iam_role_arn = "iam-role"
 
   depends_on = [
-    nuon_app_sandbox.main,
-    nuon_app_runner.main,
+    nuon_app_sandbox.<your-app>,
+    nuon_app_runner.<your-app>,
     nuon_job_component.job,
     nuon_helm_chart_component.helm,
   ]
 }
 ```
-</CodeGroup>
 
 This is recommended to ensure your installs are _always_ created with the current application configuration, when auto
 deployed. Since installs can be created and evolved over time, this removes the need to go back and create a release
