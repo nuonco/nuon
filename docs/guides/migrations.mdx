@@ -15,8 +15,7 @@ If your application is using Kubernetes, and you are packaging via Helm you can 
 
 For example in your helm chart:
 
-<CodeGroup>
-```yml helm_chart
+```yml
 ---
 apiVersion: batch/v1
 kind: Job
@@ -38,21 +37,32 @@ spec:
             - /bin/service
             - migrations
 ```
-</CodeGroup>
 
 Then, when Nuon installs or upgrades the chart in your install, the hooks will be executed:
 
 <CodeGroup>
-```toml nuon.your-app.toml
+```toml TOML
 [[components]]
-name = "helm"
-type = "helm_chart"
+name       = "helm"
+type       = "helm_chart"
 chart_name = "helm"
-
 [components.connected_repo]
 directory = "k8s"
-repo = "your-org/repo"
-branch = "main"
+repo      = "your-org/repo"
+branch    = "main"
+```
+
+```hcl Terraform
+resource "nuon_helm_chart_component" "helm_chart" {
+  name       = "helm"
+  app_id     = nuon_app.<your-app>.id
+  chart_name = "helm"
+
+  connected_repo {
+    directory = "components/helm-chart"
+    repo      = "<your-org>/<your-repo>"
+    branch    = "main"
+  }
 ```
 </CodeGroup>
 
@@ -65,33 +75,61 @@ and more.
 To use job components to manage migrations, first start by adding a container image or docker build component that combines your migration tool, and migrations:
 
 <CodeGroup>
-```toml nuon.your-app.toml
+```toml TOML
 [[components]]
-name = "migrations_image"
-type = "docker_build"
+name       = "migrations_image"
+type       = "docker_build"
 dockerfile = "Dockerfile.migrations"
 
 [components.connected_repo]
 directory = "migrations"
-repo = "your-org/repo"
-branch = "main"
+repo      = "your-org/repo"
+branch    = "main"
+```
+
+```hcl Terraform
+resource "nuon_docker_build_component" "migrations_image" {
+  name       = "migrations_image"
+  app_id     = nuon_app.<your-app>.id
+  dockerfile = "Dockerfile.migrations"
+
+  connected_repo {
+    directory = "components/migrations-image"
+    repo      = "<your-org>/<your-repo>"
+    branch    = "main"
+  }
 ```
 </CodeGroup>
 
 Next, declare a job config that executes your migrations image.
 
 <CodeGroup>
-```toml nuon.your-app.toml
+```toml TOML
 [[components]]
-name = "migrations_job"
-type = "job"
+name      = "migrations_job"
+type      = "job"
 image_url = "{{.nuon.components.migrations_image.image.repository.uri}}"
-tag = "{{.nuon.components.migrations_image.image.tag}}"
-cmd = ["/bin/service"]
-args = ["migrate"]
-
+tag       = "{{.nuon.components.migrations_image.image.tag}}"
+cmd       = ["/bin/service"]
+args      = ["migrate"]
 [[components.env_vars]]
-DB_URL = "database-url"
+DB_URL = "<database-url>"
+```
+
+```hcl Terraform
+resource "nuon_job_component" "migrations_job" {
+  name      = "migrations_job"
+  app_id     = nuon_app.<your-app>.id
+  image_url = "{{.nuon.components.migrations_image.image.repository.uri}}"
+  tag       = "{{.nuon.components.migrations_image.image.tag}}"
+  cmd       = ["/bin/service"]
+  args      = ["migrate"]
+
+  env_var {
+    name  = "DB_URL"
+    value = "<database-url>"
+  }
+}
 ```
 </CodeGroup>
 
