@@ -34,25 +34,25 @@ The `eks-byovpc` sandbox requires adding a `"kubernetes.io/role/internal-elb:1"`
 ```toml TOML
 [inputs]
 [[inputs.input]]
-name = "vpc_id"
-description = "The VPC to install the app in"
-sensitive = false
+name         = "vpc_id"
+description  = "The VPC to install the app in"
+sensitive    = false
 display_name = "VPC ID"
-required = true
+required     = true
 
 [sandbox]
 terraform_version = "v1.6.3"
 [sandbox.public_repo]
-repo = "nuonco/sandboxes"
+repo      = "nuonco/sandboxes"
 directory = "aws-eks-byovpc"
-branch = "main"
+branch    = "main"
 [sandbox.vars]
 vpc_id = "{{.nuon.install.inputs.vpc_id}}"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   public_repo = {
@@ -62,20 +62,18 @@ resource "nuon_app_sandbox" "main" {
   }
 
   var {
-    name = "vpc_id"
+    name  = "vpc_id"
     value = "{{.nuon.install.inputs.vpc_id}}"
   }
 }
-```
 
-```hcl inputs.tf
-resource "nuon_app_input" "main" {
-  app_id            = nuon_app.main.id
+resource "nuon_app_input" "<your-app>" {
+  app_id = nuon_app.<your-app>.id
 
   input {
-    name = "vpc_id"
+    name        = "vpc_id"
     description = "customer-provided vpc id"
-    required = true
+    required    = true
   }
 }
 ```
@@ -94,42 +92,44 @@ This sandbox also needs to be given private and public subnets to use. There are
 <CodeGroup>
 ```toml TOML
 [inputs]
+
 [[inputs.input]]
-name = "vpc_id"
-description = "The VPC to install the app in"
-sensitive = false
+name         = "vpc_id"
+description  = "The VPC to install the app in"
+sensitive    = false
 display_name = "VPC ID"
-required = true
+required     = true
+
 # Delete these inputs to use tagged subnets instead.
 [[inputs.input]]
-name = "private_subnet_ids"
-description = "Subnets for private resources"
-sensitive = false
+name         = "private_subnet_ids"
+description  = "Subnets for private resources"
+sensitive    = false
 display_name = "Private Subnet IDs"
-required = false
+required     = false
 [[inputs.input]]
-name = "public_subnet_ids"
-description = "Subnets for public resources"
-sensitive = false
+name         = "public_subnet_ids"
+description  = "Subnets for public resources"
+sensitive    = false
 display_name = "Public Subnets"
-required = false
+required     = false
 
 [sandbox]
 terraform_version = "v1.6.3"
 [sandbox.public_repo]
-repo = "nuonco/sandboxes"
+repo      = "nuonco/sandboxes"
 directory = "aws-ecs-byovpc"
-branch = "main"
+branch    = "main"
 [sandbox.vars]
 vpc_id = "{{.nuon.install.inputs.vpc_id}}"
 # Delete these vars to use tagged subnets instead.
 private_subnet_ids = "{{.nuon.install.inputs.private_subnet_ids}}"
-public_subnet_ids = "{{.nuon.install.inputs.public_subnet_ids}}"
+public_subnet_ids  = "{{.nuon.install.inputs.public_subnet_ids}}"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   public_repo = {
@@ -139,53 +139,47 @@ resource "nuon_app_sandbox" "main" {
   }
 
   var {
-    name = "vpc_id"
+    name  = "vpc_id"
     value = "{{.nuon.install.inputs.vpc_id}}"
   }
 
-  # Delete these to use tagged subnets instead.
-
+  # Delete these vars to use tagged subnets instead.
   var {
-    name = "private_subnet_ids"
+    name  = "private_subnet_ids"
     value = "{{.nuon.install.inputs.private_subnet_ids}}"
   }
-
   var {
-    name = "public_subnet_ids"
+    name  = "public_subnet_ids"
     value = "{{.nuon.install.inputs.public_subnet_ids}}"
   }
 }
-```
 
-```hcl inputs.tf
-resource "nuon_app_input" "main" {
-  app_id            = nuon_app.main.id
+resource "nuon_app_input" "<your-app>" {
+  app_id = nuon_app.<your-app>.id
 
   input {
-    name = "vpc_id"
-    description = "customer-provided vpc id"
-    required = true
-    sensitive = false
+    name         = "vpc_id"
+    description  = "customer-provided vpc id"
+    required     = true
+    sensitive    = false
     display_name = "VPC ID"
-    required = true
+    required     = true
   }
 
-  # Delete these to use tagged subnets instead.
-
+  # Delete these inputs to use tagged subnets instead.
   input {
-    name = "private_subnet_ids"
-    description = "Subnets for private resources"
-    sensitive = false
+    name         = "private_subnet_ids"
+    description  = "Subnets for private resources"
+    sensitive    = false
     display_name = "Private Subnet IDs"
-    required = false
+    required     = false
   }
-
   input {
-    name = "public_subnet_ids"
-    description = "Subnets for public resources"
-    sensitive = false
+    name         = "public_subnet_ids"
+    description  = "Subnets for public resources"
+    sensitive    = false
     display_name = "Public Subnets"
-    required = false
+    required     = false
   }
 }
 ```
@@ -200,98 +194,98 @@ It requires `resource_group_name`, `network_name`, and `subnet_name`.
 ```toml TOML
 [inputs]
 [[inputs.input]]
-name = "resource_group_name"
-description = "The Resource Group of the VPN to install the app in."
-sensitive = false
+name         = "resource_group_name"
+description  = "The Resource Group of the VPN to install the app in."
+sensitive    = false
 display_name = "Resource Group Name"
-required = true
+required     = true
+
 [[inputs.input]]
-name = "network_name"
-description = "The VPN to install the app in."
-sensitive = false
+name         = "network_name"
+description  = "The VPN to install the app in."
+sensitive    = false
 display_name = "Network Name"
-required = true
+required     = true
+
 [[inputs.input]]
-name = "subnet_name"
-description = "The Subnet in the VPN to install the app in."
-sensitive = false
+name         = "subnet_name"
+description  = "The Subnet in the VPN to install the app in."
+sensitive    = false
 display_name = "Subnet Name"
-required = true
+required     = true
 
 [sandbox]
 terraform_version = "1.5.4"
 [sandbox.public_repo]
-repo = "nuonco/sandboxes"
+repo      = "nuonco/sandboxes"
 directory = "azure-aks"
-branch = "main"
+branch    = "main"
 [sandbox.vars]
 resource_group_name = "{{.nuon.install.inputs.resource_group_name}}"
-network_name = "{{.nuon.install.inputs.network_name}}"
-subnet_name = "{{.nuon.install.inputs.subnet_name}}"
+network_name        = "{{.nuon.install.inputs.network_name}}"
+subnet_name         = "{{.nuon.install.inputs.subnet_name}}"
 
 [runner]
 runner_type = "azure-aks"
 ```
 
-```hcl sandbox.tf
-resource "nuon_app_sandbox" "main" {
-  app_id = nuon_app.main.id
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
   terraform_version = "v1.6.3"
 
   public_repo = {
-    repo = "nuonco/sandboxes"
-    branch = "main"
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
     directory = "azure-aks-byovpn"
   }
 
   var {
-    name = "resource_group_name"
+    name  = "resource_group_name"
     value = "{{.nuon.install.inputs.resource_group_name}}"
   }
 
   var {
-    name = "network_name"
+    name  = "network_name"
     value = "{{.nuon.install.inputs.network_name}}"
   }
 
   var {
-    name = "subnet_name"
+    name  = "subnet_name"
     value = "{{.nuon.install.inputs.subnet_name}}"
   }
 }
 
-resource "nuon_app_runner" "main" {
-  app_id      = nuon_app.main.id
+resource "nuon_app_runner" "<your-app>" {
+  app_id      = nuon_app.<your-app>.id
   runner_type = "aws-aks"
 }
-```
 
-```hcl inputs.tf
-resource "nuon_app_input" "main" {
-  app_id = nuon_app.main.id
+resource "nuon_app_input" "<your-app>" {
+  app_id = nuon_app.<your-app>.id
 
   input {
-    name = "resource_group_name"
-    description = "The Resource Group of the VPN to install the app in."
-    sensitive = false
+    name         = "resource_group_name"
+    description  = "The Resource Group of the VPN to install the app in."
+    sensitive    = false
     display_name = "Resource Group Name"
-    required = true
+    required     = true
   }
 
   input {
-    name = "network_name"
-    description = "The VPN to install the app in."
-    sensitive = false
+    name         = "network_name"
+    description  = "The VPN to install the app in."
+    sensitive    = false
     display_name = "Network Name"
-    required = true
+    required     = true
   }
 
   input {
-    name = "subnet_name"
-    description = "The Subnet in the VPN to install the app in."
-    sensitive = false
+    name         = "subnet_name"
+    description  = "The Subnet in the VPN to install the app in."
+    sensitive    = false
     display_name = "Subnet Name"
-    required = true
+    required     = true
   }
 }
 ```
