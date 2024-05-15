@@ -4,7 +4,7 @@ description: "Learn how to create and manage installs using installers, sdks, th
 icon: code
 ---
 
-Nuon installs can be created in one of the following ways.
+Nuon offers multiple ways to create installs, allowing to implement and manage this important process in the way that best suits your business needs.
 
 <Note>
 This guide assumes that you have create an IAM role, granting Nuon access to provision an AWS install. If not, please follow [this guide](/guides/install-access-permissions) first.
@@ -12,44 +12,55 @@ This guide assumes that you have create an IAM role, granting Nuon access to pro
 
 ## Installers
 
-Installers are generated web pages that can be used to create app installs. Installers can be generated using
-[Terraform](https://registry.terraform.io/providers/nuonco/nuon/latest/docs/resources/app_installer).
+If you want to offer your customers a self-serve experience, you can create an installer. Installers bundle together all the config required to present a friendly UX your customers can use to install your app.
 
-To create an installer using terraform:
+You can create an installer for an app by adding an `installer` block to the app config.
 
 <CodeGroup>
-```hcl installer.tf
-resource "nuon_app_installer" "main" {
-  app_id = nuon_app.main.id
+```toml TOML
+[installer]
+name              = "Your App Name"
+description       = "Your App Name Installer"
+slug              = "<your-app>"
+documentation_url = "https://docs.nuon.co"
+community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+homepage_url      = "https://nuon.co"
+github_url        = "https://github.com/nuonco"
+logo_url          = "https://fakeimg.pl/250x100/"
+demo_url          = "https://www.loom.com/share/aec62b468f9747c59ed5c30c79d473c4"
+```
 
-  name = "Your App Name"
-  description = "Your App Name Installer"
-  slug = "your-app"
-
+```hcl Terraform
+resource "nuon_app_installer" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
+  name              = "Your App Name"
+  description       = "Your App Name Installer"
+  slug              = "<your-app>"
   documentation_url = "https://docs.nuon.co"
-  community_url = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-  homepage_url = "https://nuon.co"
-  github_url = "https://github.com/nuonco"
-  logo_url = "https://fakeimg.pl/250x100/"
-  demo_url = "https://www.loom.com/share/aec62b468f9747c59ed5c30c79d473c4"
+  community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+  homepage_url      = "https://nuon.co"
+  github_url        = "https://github.com/nuonco"
+  logo_url          = "https://fakeimg.pl/250x100/"
+  demo_url          = "https://www.loom.com/share/aec62b468f9747c59ed5c30c79d473c4"
 }
 ```
 </CodeGroup>
 
-Once an installer is created, it can be accessed at `<slug>.app.nuon.co`. The installer provides an automated way to
-create an install.
+### Default UI
+
+Once an installer is created, an out-of-the-box UI can be accessed at `<slug>.app.nuon.co`.
+
+### Custom UI
+
+You can also build a custom UI, and pull installer data from our API. We maintain an [open-source template](https://github.com/nuonco/installer) you can use to get started.
 
 ## CLI
 
 Installs can be created via the [Nuon CLI](../cli).
 
-To create an install:
-
-<CodeGroup>
-```sh create-install
+```sh
 nuon installs create  --name=auto-deploy --region=us-east-1 --role=iam-role --inputs=eks_version=1.28
 ```
-</CodeGroup>
 
 ## Terraform
 
@@ -57,10 +68,9 @@ Installs can be created and managed using [Terraform](https://registry.terraform
 
 Example of creating an install using Terraform:
 
-<CodeGroup>
-```hcl install.tf
+```hcl
 resource "nuon_install" "install" {
-  app_id = nuon_app.main.id
+  app_id = nuon_app.<your-app>.id
 
   name         = "nuon-test-install"
   region       = "us-east-1"
@@ -72,7 +82,6 @@ resource "nuon_install" "install" {
   }
 }
 ```
-</CodeGroup>
 
 <Note>
 Please refer to the [Terraform configuration management guide](./terraform-configuration-management.mdx) for more
