@@ -5,6 +5,7 @@ export const API_URL =
   process?.env?.NEXT_PUBLIC_API_URL || 'https://ctl.prod.nuon.co'
 export const POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_POLL_DURATION as unknown as number) || 45000
+export const GITHUB_APP_NAME = process?.env?.NEXT_PUBLIC_GITHUB_APP_NAME || "nat-test-local"
 
 export const sentanceCase = (s = '') => s.charAt(0).toUpperCase() + s.slice(1)
 export const titleCase = (s = '') =>
