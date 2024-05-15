@@ -4,7 +4,7 @@ import React, { type FC, useEffect, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
 import { Card, Heading, Link, PageHeader, Status, Text } from '@/components'
 import { TOrg } from '@/types'
-import { POLL_DURATION } from "@/utils"
+import { GITHUB_APP_NAME, POLL_DURATION } from "@/utils"
 
 export const OrgCard: FC<TOrg> = ({ status, status_description, id, name }) => {
   return (
@@ -43,7 +43,7 @@ export const OrgTitle: FC<TOrg> = ({ id, name }) => {
   )
 }
 
-export const OrgVCSConnections: FC<TOrg> = ({ vcs_connections }) => {
+export const OrgVCSConnections: FC<TOrg> = ({ vcs_connections, id }) => {
   return (
     <Text className="flex flex-wrap gap-4 items-center" variant="status">
       {vcs_connections?.length &&
@@ -51,7 +51,14 @@ export const OrgVCSConnections: FC<TOrg> = ({ vcs_connections }) => {
           <span key={vcs?.id} className="flex gap-1 items-center">
             <FaGithub className="text-md" /> {vcs?.github_install_id}
           </span>
-        ))}
+      ))}
+      <Link
+        className="flex items-center gap-1"
+        href={`https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=${id}`}
+      >
+        <FaGithub className="text-md" />
+        Connect GitHub
+      </Link>
     </Text>
   )
 }
