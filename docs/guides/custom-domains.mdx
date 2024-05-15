@@ -19,16 +19,33 @@ If you would like each of your installs to have a common root domain, such as `i
 
 First, configure your sandbox to use a custom root domain using:
 <CodeGroup>
-```toml nuon.your-app.toml
+```toml TOML
 [sandbox]
 terraform_version = "1.7.5"
 [sandbox.public_repo]
 directory = "azure-aks-byovpn"
-repo = "nuonco/sandboxes"
-branch = "main"
-
+repo      = "nuonco/sandboxes"
+branch    = "main"
 [[sandbox.vars]]
 public_root_domain = "{{.nuon.install.id}}.your-domain.com"
+```
+
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id            = nuon_app.<your-app>.id
+  terraform_version = "1.7.5"
+
+  public_repo = {
+    directory = "azure-aks-byovpn"
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+  }
+  
+  var {
+    name  = "public_root_domain"
+    value = "{{.nuon.install.id}}.your-domain.com"
+  }
+}
 ```
 </CodeGroup>
 
@@ -40,17 +57,14 @@ This can be done by adding `NS` records on the root domain.
 
 First, find the nameservers for the public domain by inspecting the sandbox outputs:
 
-<CodeGroup>
-```sh nuon
-$ nuon installs sandbox-outputs
+```sh
+nuon installs sandbox-outputs
 ```
-</CodeGroup>
 
 Next, set up a DNS record on your root domain that delegates the install subdomain. This can be done via your provider's
 console our if you are managing DNS using Terraform you can use a record similar to this:
 
-<CodeGroup>
-```hcl dns.tf
+```hcl
 resource "aws_route53_record" "docs" {
   zone_id = aws_route53_zone.main.zone_id
   name    = "install-id"
@@ -64,42 +78,74 @@ resource "aws_route53_record" "docs" {
   ]
 }
 ```
-</CodeGroup>
 
 ## Customer Managed Domain
 
-You can allow a customer to bring their own domain, by using an app input allow the customer to provide their domain. Once the install is
+You can allow a customer to bring their own domain by using an app input. Once the install is
 provisioned, the customer will be responsible for delegating the DNS subdomain. Please refer to the previous section for
 more details on how to delegate the domain.
 
 To offer custom install domains, add the following to your config file:
 
 <CodeGroup>
-```toml nuon.your-app.toml
+```toml TOML
 [inputs]
+
 [[inputs.input]]
-name = "root_domain"
-description = "Root domain for install"
-default = ""
-sensitive = false
-required = true
+name         = "root_domain"
+description  = "Root domain for install"
+default      = ""
+sensitive    = false
+required     = true
 display_name = "Root"
+```
+
+```hcl Terraform
+resource "nuon_app_input" "root_domain" {
+  app_id       = nuon_app.<your-app>.id
+
+  input {
+    name         = "root_domain"
+    description  = "Root domain for install"
+    default      = ""
+    sensitive    = false
+    required     = true
+    display_name = "Root"
+  }
+}
 ```
 </CodeGroup>
 
 Next, set the sandbox root domain to the input value:
 
 <CodeGroup>
-```toml nuon.your-app.toml
+```toml TOML
 [sandbox]
 terraform_version = "1.7.5"
 [sandbox.public_repo]
 directory = "azure-aks-byovpn"
-repo = "nuonco/sandboxes"
-branch = "main"
-
+repo      = "nuonco/sandboxes"
+branch    = "main"
 [sandbox.vars]
 public_root_domain = "{{.nuon.install.inputs.root_domain}}"
+```
+
+```hcl Terraform
+resource "nuon_app_sandbox" "<your-app>" {
+  app_id = nuon_app.<your-app>.id
+  terraform_version = "1.7.5"
+
+  public_repo = {
+    directory = "azure-aks-byovpn"
+    repo      = "nuonco/sandboxes"
+    branch    = "main"
+  }
+
+  var {
+    name  = "public_root_domain"
+    value = "{{.nuon.install.inputs.root_domain}}"
+  }
+}
 ```
 </CodeGroup>
 
@@ -108,13 +154,21 @@ public_root_domain = "{{.nuon.install.inputs.root_domain}}"
 You can completely disable DNS in any sandbox by adding the following to your sandbox config:
 
 <CodeGroup>
-```toml nuon.your-app.toml
-[[sandbox.var]]
-name = "enable_private_dns"
-value = "false"
+```toml TOML
+[sandbox.vars]
+enable_private_dns = "false"
+enable_public_dns  = "false"
+```
 
-[[sandbox.var]]
-name = "enable_public_dns"
-value = "false"
+```hcl Terraform
+var {
+  name  = "enable_private_dns"
+  value = "false"
+}
+
+var {
+  name  = "enable_public_dns"
+  value = "false"
+}
 ```
 </CodeGroup>

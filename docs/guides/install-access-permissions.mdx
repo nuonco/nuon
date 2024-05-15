@@ -34,8 +34,10 @@ IAM roles can be created one of a few ways:
 You can use Terraform to create and manage IAM roles for creating / destroying Nuon installs using our [Install Access](https://registry.terraform.io/modules/nuonco/install-access/aws/latest) module.
 
 An example of creating an IAM role for the AWS ECS sandbox:
-<CodeGroup>
-```hcl iam-role.tf
+
+```hcl
+provider "aws" {}
+
 module "iam-role" {
   source = "nuonco/install-access/aws"
   version = "1.0.0"
@@ -44,10 +46,6 @@ module "iam-role" {
   prefix = "iam-role-prefix"
 }
 ```
-```providers.tf
-provider "aws" {}
-```
-</CodeGroup>
 
 In order to use Terraform to provision IAM roles, please make sure to follow the [AWS
 Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration) to
@@ -59,36 +57,45 @@ The `aws` cli can be used to create an IAM role for Nuon install access. This re
 creating a role that grants Nuon access to assume it, and attaching the policies to the role.
 
 By cloning the managed sandboxes, and changing directories into the `artifacts` directory of your chosen sandbox, you
-can create an IAM role using the following commands:
-<CodeGroup>
-```sh create-iam-role
-$ aws iam create-role \
+can create an IAM role using the following commands.
+
+Create the install access role.
+
+```sh
+aws iam create-role \
   --role-name=nuon-install-access \
   --assume-role-policy-document file://trust.json
 ```
 
-```sh create-provision-iam-policy
-$ aws iam create-policy \
+Create the provision policy.
+
+```sh
+aws iam create-policy \
   --policy-name=nuon-install-provision-access \
   --policy-document file://provision.json \
   --description "Grants Nuon access to deprovision an install"
+```
 
-$ aws iam attach-role-policy \
+```sh
+aws iam attach-role-policy \
   --role-name=nuon-install-access \
   --policy-arn=PROVISION_POLICY_ARN
 ```
 
-```sh create-deprovision-iam-policy
-$ aws iam create-policy \
+Create the deprovision policy.
+
+```sh
+aws iam create-policy \
   --policy-name=nuon-install-deprovision-access \
   --policy-document file://deprovision.json \
   --description "Grants Nuon access to deprovision an install"
+```
 
-$ aws iam attach-role-policy \
+```sh
+aws iam attach-role-policy \
   --role-name=nuon-install-access \
   --policy-arn=DEPROVISION_POLICY_ARN
 ```
-</CodeGroup>
 
 ### Manually
 

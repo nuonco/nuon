@@ -126,7 +126,6 @@
                 "guides/create-releases",
                 "guides/using-variables",
                 "guides/bring-your-own-network",
-                "guides/auto-deploys-and-dependencies",
                 "guides/migrations",
                 "guides/custom-domains",
                 "guides/sandbox-orgs"
@@ -153,7 +152,6 @@
                 "changelog/005-improved-installers-guides",
                 "changelog/004-sdks-github-action",
                 "changelog/003-ecs-support",
-                "changelog/002-auto-deploys-and-dependencies",
                 "changelog/001-new-year-new-docs"
             ]
         },
