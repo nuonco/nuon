@@ -53,7 +53,7 @@ nuon apps create --name=<your-app>
 ```
 
 ```hcl Terraform
-resource "nuon_app" "<your-app>" {
+resource "nuon_app" "your_app" {
   name = "<your-app>"
 }
 ```
@@ -77,8 +77,8 @@ required = true
 ```
 
 ```hcl Terraform
-resource "nuon_app_input" "main" {
-  app_id = nuon_app.<your-app>.id
+resource "nuon_app_input" "your_app" {
+  app_id = nuon_app.your_app.id
 
   input {
     name = "vpc_id"
@@ -100,7 +100,7 @@ Update the installer config. Installers provide an out-of-the-box installation f
 [installer]
 name              = "My BYOVPC App"
 description       = "A demo app that runs in a customer's VPC."
-slug              = "my-byovpc-app"
+slug              = "<your-app>"
 documentation_url = "https://docs.nuon.co/"
 community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
 logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
@@ -110,11 +110,11 @@ demo_url          = "https://www.nuon.co/"
 ```
 
 ```hcl Terraform
-resource "nuon_app_installer" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
+resource "nuon_app_installer" "your_app" {
+  app_id            = nuon_app.your_app.id
   name              = "My BYOVPC App"
   description       = "A demo app that runs in a customer's VPC."
-  slug              = nuon_app.<your-app>.name
+  slug              = nuon_app.your_app.name
   documentation_url = "https://docs.nuon.co/"
   community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
   logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
@@ -144,8 +144,8 @@ value = "{{.nuon.install.inputs.vpc_id}}"
 ```
 
 ```hcl Terraform
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.<your-app>.id
+resource "nuon_app_sandbox" "your_app" {
+  app_id            = nuon_app.your_app.id
   terraform_version = "v1.6.3"
   public_repo = {
     repo      = "nuonco/sandboxes"
@@ -180,8 +180,8 @@ runner_type = "aws-ecs"
 ```
 
 ```hcl Terraform
-resource "nuon_app_runner" "main" {
-  app_id      = nuon_app.<your-app>.id
+resource "nuon_app_runner" "your_app" {
+  app_id      = nuon_app.your_app.id
   runner_type = "aws-ecs"
 }
 ```
@@ -232,7 +232,7 @@ branch    = "main"
 
 ```hcl Terraform
 resource "nuon_docker_build_component" "docker_image" {
-  app_id = nuon_app.<your-app>.id
+  app_id = nuon_app.your_app.id
   name   = "docker_image"
 
   public_repo = {
@@ -294,7 +294,7 @@ value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 
 ```hcl Terraform
 resource "nuon_terraform_module_component" "ecs_service" {
-  app_id = nuon_app.<your-app>.id
+  app_id = nuon_app.your_app.id
   name   = "ecs_service"
 
   public_repo = {
