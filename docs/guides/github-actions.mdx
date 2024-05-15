@@ -20,8 +20,8 @@ In order to update customer applications with the latest version of a component,
 automatically build a component using GitHub actions.
 
 To automatically build from an Action:
-<CodeGroup>
-```yaml build.yml
+
+```yaml
 ---
 on:
   push:
@@ -44,15 +44,14 @@ jobs:
           org: ${{ vars.nuon_org_id }}
           component_id: backend
 ```
-</CodeGroup>
 
 ## Automatically Release Components
 
 Release are used to update components in a Nuon application.
 
 To automatically build _and_ release a component from an Action:
-<CodeGroup>
-```yaml build-and-release.yml
+
+```yaml
 ---
 on:
   push:
@@ -82,7 +81,6 @@ on:
           org: ${{ vars.nuon_org_id
           build_id: ${{ steps.build.outputs.build_id }}
 ```
-</CodeGroup>
 
 Please refer to [creating releases](./create-releases) for more details on releases.
 
@@ -100,11 +98,9 @@ If you do not yet have an org setup, please follow the [quickstart guide](/get-s
 
 If you are just trying out the Nuon Github Actions, then you can get started using your personal auth token:
 
-<CodeGroup>
-```sh nuon
-$ nuon orgs api-token
+```sh
+nuon orgs api-token
 ```
-</CodeGroup>
 
 For real use cases, we recommend using a static token. To request a static token, please [contact
   us](mailto:team@nuon.co).

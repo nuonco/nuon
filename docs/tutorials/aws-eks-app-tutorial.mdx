@@ -52,7 +52,7 @@ nuon apps create --name=<your-app>
 ```
 
 ```hcl Terraform
-resource "nuon_app" "<your-app>" {
+resource "nuon_app" "your_app" {
   name = "<your-app>"
 }
 ```
@@ -69,7 +69,7 @@ You will use it later in this guide to create an install yourself.
 [installer]
 name              = "My EKS App"
 description       = "A demo app that runs on EKS."
-slug              = "my-eks-app"
+slug              = "<your-app>"
 documentation_url = "https://docs.nuon.co/"
 community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
 logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
@@ -79,11 +79,11 @@ demo_url          = "https://www.nuon.co/"
 ```
 
 ```hcl Terraform
-resource "nuon_app_installer" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
+resource "nuon_app_installer" "your_app" {
+  app_id            = nuon_app.your_app.id
   name              = "My EKS App"
   description       = "A demo app that runs on EKS."
-  slug              = nuon_app.<your-app>.name
+  slug              = nuon_app.your_app.name
   documentation_url = "https://docs.nuon.co/"
   community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
   logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
@@ -110,8 +110,8 @@ branch = "main"
 ```
 
 ```hcl Terraform
-resource "nuon_app_sandbox" "main" {
-  app_id            = nuon_app.<your-app>.id
+resource "nuon_app_sandbox" "your_app" {
+  app_id            = nuon_app.your_app.id
   terraform_version = "v1.6.3"
   public_repo = {
     repo      = "nuonco/sandboxes"
@@ -135,8 +135,8 @@ runner_type = "aws-eks"
 ```
 
 ```hcl Terraform
-resource "nuon_app_runner" "main" {
-  app_id      = nuon_app.<your-app>.id
+resource "nuon_app_runner" "your_app" {
+  app_id      = nuon_app.your_app.id
   runner_type = "aws-eks"
 }
 ```
@@ -187,7 +187,7 @@ branch    = "main"
 
 ```hcl Terraform
 resource "nuon_docker_build_component" "docker_image" {
-  app_id = nuon_app.<your-app>.id
+  app_id = nuon_app.your_app.id
   name   = "docker_image"
   dockerfile = "Dockerfile"
   public_repo = {
@@ -224,7 +224,7 @@ value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 
 ```hcl Terraform
 resource "nuon_terraform_module_component" "certificate" {
-  app_id = nuon_app.<your-app>.id
+  app_id = nuon_app.your_app.id
   name = "certificate"
   connected_repo = {
     repo      = "nuonco/guides"
@@ -286,7 +286,7 @@ value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
 
 ```hcl Terraform
 resource "nuon_helm_chart_component" "helm_chart" {
-  app_id = nuon_app.<your-app>.id
+  app_id = nuon_app.your_app.id
   name   = "helm_chart"
   chart_name = "introspect"
   public_repo = {
