@@ -66,7 +66,7 @@ export const EventsTimeline: FC<IEventsTimeline> = ({
   const [events, setEvents] = useState(initEvents)
 
   const fetchEvents = () => {
-    fetch(`/api/${orgId}/${feedId}/events`)
+    fetch(`/api/${orgId}/installs/${feedId}/events`)
       .then((res) => res.json().then((e) => setEvents(e)))
       .catch(console.error)
   }
