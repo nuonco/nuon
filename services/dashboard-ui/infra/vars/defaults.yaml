@@ -1,4 +1,5 @@
 ---
-public_root_domain: nuon.co
+use_root_domain: false
+subdomain: app
 region: us-west-2
 pool: nuon
