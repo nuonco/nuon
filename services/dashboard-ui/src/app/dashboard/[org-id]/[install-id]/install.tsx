@@ -67,7 +67,7 @@ export const ClientRefechInstallPage: FC<IInstallPage> = ({
 }) => {
   const [install, setInstall] = useState(ssrInstall)
   const fetchInstall = () => {
-    fetch(`/api/${install?.org_id}/${install?.id}`)
+    fetch(`/api/${install?.org_id}/installs/${install?.id}`)
       .then((res) => res.json().then((ins) => setInstall(ins)))
       .catch(console.error)
   }

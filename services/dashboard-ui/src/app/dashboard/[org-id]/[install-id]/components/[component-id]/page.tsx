@@ -24,12 +24,11 @@ import type { TBuild, TInstall, TInstallDeploy } from '@/types'
 
 const Build: FC<{
   buildId: string
-  componentId: string
   orgId: string
-}> = async ({ buildId, componentId, orgId }) => {
+}> = async ({ buildId, orgId }) => {
   let build: TBuild
   try {
-    build = await getBuild({ buildId, componentId, orgId })
+    build = await getBuild({ buildId, orgId })
   } catch (error) {
     return <>No build found</>
   }
@@ -82,11 +81,7 @@ export default withPageAuthRequired(
               <div className="flex flex-col">
                 <LatestDeploy2 {...installComponent} />
                 <Suspense fallback={<span>Loading...</span>}>
-                  <Build
-                    buildId={buildId}
-                    componentId={componentId}
-                    orgId={orgId}
-                  />
+                  <Build buildId={buildId} orgId={orgId} />
                 </Suspense>
               </div>
             }

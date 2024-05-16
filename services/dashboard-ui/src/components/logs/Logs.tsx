@@ -11,11 +11,11 @@ export const Logs: FC<ILogs> = ({ logs }) => {
   return (
     <Code>
       {logs?.length
-        ? logs.map((term) => {
+        ? logs.map((term, ii) => {
             // handle complete state
 
             return (
-              <>
+              <span  key={ii}>
                 {term?.Terminal?.events?.length
                   ? term?.Terminal?.events?.map((l, i) => {
                       let line = null
@@ -70,8 +70,8 @@ export const Logs: FC<ILogs> = ({ logs }) => {
                       return line
                     })
                   : null}{' '}
-                {term?.State?.current}
-              </>
+                {term?.State?.current as string}
+              </span>
             )
           })
         : 'no logs to show'}
