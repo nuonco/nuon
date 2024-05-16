@@ -4,10 +4,10 @@ import { Card, Duration, Heading, Link, Status, Text, Time } from '@/components'
 import { getBuild, type IGetBuild } from '@/lib'
 import type { TBuild } from '@/types'
 
-export const Build: FC<IGetBuild> = async (params) => {
+export const Build: FC<IGetBuild> = async (props) => {
   let build: TBuild
   try {
-    build = await getBuild(params)
+    build = await getBuild(props)
   } catch (error) {
     return <>No build to show</>
   }

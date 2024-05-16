@@ -1,3 +1,5 @@
+export * from '@/lib/get-build-logs'
+export * from '@/lib/get-build-plan'
 export * from '@/lib/get-build'
 export * from '@/lib/get-component'
 export * from '@/lib/get-component-config'

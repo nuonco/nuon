@@ -154,7 +154,7 @@ export default withPageAuthRequired(
             <Heading variant="subtitle">Component details</Heading>
 
             <Suspense fallback="Loading...">
-              <Build {...{ buildId, componentId, orgId }} />
+              <Build {...{ buildId, orgId }} />
             </Suspense>
 
             <Suspense fallback="Loading...">

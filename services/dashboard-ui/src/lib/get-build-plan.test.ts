@@ -1,16 +1,15 @@
 import { afterAll, expect, test, vi } from 'vitest'
-import { getBuild } from './get-build'
+import { getBuildPlan } from './get-build-plan'
 
 const buildId = 'build-id'
 const componentId = 'component-id'
 const orgId = 'org-id'
-const build = { id: buildId, component_id: componentId }
 
 global.fetch = vi
   .fn()
   .mockResolvedValueOnce({
     ok: true,
-    json: () => new Promise((resolve) => resolve(build)),
+    json: () => new Promise((resolve) => resolve({})),
   })
   .mockResolvedValueOnce({
     ok: false,
@@ -36,15 +35,16 @@ afterAll(() => {
   vi.restoreAllMocks()
 })
 
-test('getBuild should return a build object', async () => {
-  const spec = await getBuild({
+test('getBuildPlan should return a build object', async () => {
+  const spec = await getBuildPlan({
+    componentId,
     buildId,
     orgId,
   })
 
-  expect(spec).toEqual(build)
+  expect(spec).toEqual({})
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/components/builds/build-id',
+    'https://ctl.prod.nuon.co/v1/components/component-id/builds/build-id/plan',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -54,9 +54,10 @@ test('getBuild should return a build object', async () => {
   )
 })
 
-test('getBuild should throw an error when it can not find a build', async () => {
+test('getBuildPlan should throw an error when it can not find a build', async () => {
   try {
-    await getBuild({
+    await getBuildPlan({
+      componentId,
       buildId,
       orgId,
     })
@@ -65,7 +66,7 @@ test('getBuild should throw an error when it can not find a build', async () => 
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/components/builds/build-id',
+    'https://ctl.prod.nuon.co/v1/components/component-id/builds/build-id/plan',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
