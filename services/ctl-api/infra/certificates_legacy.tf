@@ -1,5 +1,6 @@
+// NOTE(jm): this can be deleted once we get rid of the ctl.prod.nuon.co domain
 locals {
-  root_domain = "${var.env}.${local.vars.public_root_domain}"
+  root_domain = "${var.env}.${local.vars.root_domain}"
 }
 
 data "aws_route53_zone" "public" {
