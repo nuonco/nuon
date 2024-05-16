@@ -9,11 +9,10 @@ locals {
   name                   = "dashboard-ui"
   vars                   = yamldecode(data.utils_deep_merge_yaml.vars.output)
   terraform_organization = "nuonco"
+
   accounts = {
     for acct in data.aws_organizations_organization.orgs.accounts : acct.name => { id : acct.id }
   }
-  region = "us-west-2"
-  domain = "dashboard.${local.root_domain}"
   tags = {
     service   = local.name
     terraform = "${local.name}-${var.env}"

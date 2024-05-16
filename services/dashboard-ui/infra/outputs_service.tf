@@ -3,5 +3,5 @@ output "certificate_arn" {
 }
 
 output "public_domain" {
-  value = local.domain
+  value = module.certificate.domain
 }
