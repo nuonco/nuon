@@ -9,6 +9,8 @@ data "aws_route53_zone" "root" {
 }
 
 module "root-certificate" {
+  count = var.use_root_domain ? 1 : 0
+
   source  = "terraform-aws-modules/acm/aws"
   version = "~> 4.0"
 
@@ -19,6 +21,8 @@ module "root-certificate" {
 }
 
 module "root-certificate-validation" {
+  count = var.use_root_domain ? 1 : 0
+
   source  = "terraform-aws-modules/acm/aws"
   version = "~> 4.0"
 
@@ -26,7 +30,7 @@ module "root-certificate-validation" {
   zone_id                                   = data.aws_route53_zone.root.zone_id
   wait_for_validation                       = true
   create_route53_records_only               = true
-  acm_certificate_domain_validation_options = module.root-certificate.acm_certificate_domain_validation_options
+  acm_certificate_domain_validation_options = module.root-certificate[0].acm_certificate_domain_validation_options
 
   providers = {
     aws = aws.root
