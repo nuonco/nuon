@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.123
+
+Updating the cname for the prod dashboard.
+
 ## v0.19.107
 
 Promote new config file changes.
