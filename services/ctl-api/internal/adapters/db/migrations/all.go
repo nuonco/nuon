@@ -110,21 +110,12 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:   a.migration025EnsureCreatedByIDs,
 		},
 		{
-			Name: "026-ensure-org-ids",
-			Fn:   a.migration026EnsureOrgIDs,
-		},
-		{
 			Name: "027-delete-installs-with-deleted-orgs",
 			Fn:   a.migration027DeleteInstallsWithDeletedOrgs,
 		},
 		{
 			Name: "028-aws-ecr-image-configs",
 			Fn:   a.migration028AWSECRConfigs,
-		},
-		{
-
-			Name: "026-re-ensure-org-ids",
-			Fn:   a.migration026EnsureOrgIDs,
 		},
 		{
 
@@ -160,6 +151,11 @@ func (a *Migrations) GetAll() []Migration {
 
 			Name: "034-app-sandbox-config",
 			Fn:   a.migration034AppSandboxConfigAppID,
+		},
+		{
+
+			Name: "035-installers",
+			Fn:   a.migration035Installers,
 		},
 	}
 }

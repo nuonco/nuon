@@ -12,12 +12,10 @@ import (
 )
 
 type RenderedInstaller struct {
-	App        app.App              `json:"app"`
-	AppInputs  app.AppInputConfig   `json:"app_inputs"`
-	AppSandbox app.AppSandboxConfig `json:"app_sandbox"`
+	Apps []app.App `json:"apps"`
 
-	SandboxMode bool                     `json:"sandbox_mode"`
-	Metadata    app.AppInstallerMetadata `json:"metadata"`
+	SandboxMode bool                  `json:"sandbox_mode"`
+	Metadata    app.InstallerMetadata `json:"metadata"`
 }
 
 // @ID RenderInstaller
@@ -26,96 +24,86 @@ type RenderedInstaller struct {
 // @Tags installers
 // @Accept			json
 // @Produce		json
-// @Param			installer_slug	path		string	true	"installer slug or ID"
+// @Param			installer_id	path		string	true	"installer ID"
 // @Failure		400				{object}	stderr.ErrResponse
 // @Failure		401				{object}	stderr.ErrResponse
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
 // @Success		200				{object}	RenderedInstaller
-// @Router			/v1/installer/{installer_slug}/render [GET]
+// @Router			/v1/installer/{installer_id}/render [GET]
 func (s *service) RenderAppInstaller(ctx *gin.Context) {
-	slugOrID := ctx.Param("installer_slug")
-	if slugOrID == "" {
-		ctx.Error(fmt.Errorf("slug or id must be set"))
-		return
-	}
+	installerID := ctx.Param("installer_id")
 
-	installer, err := s.getAppInstaller(ctx, slugOrID)
+	installer, err := s.getInstaller(ctx, installerID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app installer: %w", err))
 		return
 	}
 
-	if len(installer.App.AppSandboxConfigs) < 1 {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("app does not have any sandbox configs"),
-			Description: "please make create at least one app sandbox config first",
-		})
-		return
-	}
-	if len(installer.App.AppRunnerConfigs) < 1 {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("app does not have any runner configs"),
-			Description: "please make create at least one app runner config first",
-		})
-		return
-	}
+	for _, installerApp := range installer.Apps {
+		if len(installerApp.AppSandboxConfigs) < 1 {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("app does not have any sandbox configs"),
+				Description: "please make create at least one app sandbox config first",
+			})
+			return
+		}
 
-	if installer.App.AppSandboxConfigs[0].PublicGitVCSConfig == nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("installers currently only support sandboxes in public repos"),
-			Description: "installers currently do not support custom sandboxes from connected github repos. Please make the sandbox config public, or get in touch.",
-		})
-		return
-	}
+		if len(installerApp.AppRunnerConfigs) < 1 {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("app does not have any runner configs"),
+				Description: "please make create at least one app runner config first",
+			})
+			return
+		}
 
-	var inputs app.AppInputConfig
-	if len(installer.App.AppInputConfigs) > 0 {
-		inputs = installer.App.AppInputConfigs[0]
+		if installerApp.AppSandboxConfigs[0].PublicGitVCSConfig == nil {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("installers currently only support sandboxes in public repos"),
+				Description: "installers currently do not support custom sandboxes from connected github repos. Please make the sandbox config public, or get in touch.",
+			})
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusCreated,
 		RenderedInstaller{
-			App:         installer.App,
-			AppInputs:   inputs,
-			AppSandbox:  installer.App.AppSandboxConfigs[0],
-			SandboxMode: installer.App.Org.SandboxMode,
+			Apps:        installer.Apps,
+			SandboxMode: installer.Org.SandboxMode,
 			Metadata:    installer.Metadata,
 		})
 }
 
-func (s *service) getAppInstaller(ctx context.Context, installerID string) (*app.AppInstaller, error) {
-	app := app.AppInstaller{}
+func (s *service) getInstaller(ctx context.Context, installerID string) (*app.Installer, error) {
+	app := app.Installer{}
 	res := s.db.WithContext(ctx).
-		Preload("App").
-		Preload("App.Org").
+		Preload("Apps").
+		Preload("Apps.Org").
 
 		// preload sandbox
-		Preload("App.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+		Preload("Apps.AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).
-		Preload("App.AppSandboxConfigs.PublicGitVCSConfig").
-		Preload("App.AppSandboxConfigs.ConnectedGithubVCSConfig").
+		Preload("Apps.AppSandboxConfigs.PublicGitVCSConfig").
+		Preload("Apps.AppSandboxConfigs.ConnectedGithubVCSConfig").
 
 		// preload app runner
-		Preload("App.AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
+		Preload("Apps.AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_runner_configs.created_at DESC")
 		}).
 
 		// preload app inputs
-		Preload("App.AppInputConfigs", func(db *gorm.DB) *gorm.DB {
+		Preload("Apps.AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC")
 		}).
-		Preload("App.AppInputConfigs.AppInputs").
+		Preload("Apps.AppInputConfigs.AppInputs").
 
 		// metadata
 		Preload("Metadata").
-		Where("slug = ?", installerID).
-		Or("id = ?", installerID).
-		First(&app)
+		First(&app, "id = ?", installerID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+		return nil, fmt.Errorf("unable to get installer: %w", res.Error)
 	}
 
 	return &app, nil

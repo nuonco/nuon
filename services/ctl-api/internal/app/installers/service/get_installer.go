@@ -21,13 +21,13 @@ import (
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
-// @Success		200				{object}	app.AppInstaller
+// @Success		200				{object}	app.Installer
 // @Router			/v1/installers/{installer_id} [get]
-func (s *service) GetAppInstaller(ctx *gin.Context) {
+func (s *service) GetInstaller(ctx *gin.Context) {
 	installerID := ctx.Param("installer_id")
-	app, err := s.getAppInstaller(ctx, installerID)
+	app, err := s.getInstaller(ctx, installerID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app installer %s: %w", installerID, err))
+		ctx.Error(fmt.Errorf("unable to get installer %s: %w", installerID, err))
 		return
 	}
 

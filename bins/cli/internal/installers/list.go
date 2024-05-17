@@ -22,18 +22,12 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 
 	data := [][]string{
 		{
-			"app-id",
-			"slug",
 			"name",
-			"url",
 		},
 	}
 	for _, installer := range installers {
 		data = append(data, []string{
-			installer.AppID,
-			installer.Slug,
-			installer.AppInstallerMetadata.Name,
-			installer.InstallerURL,
+			installer.Metadata.Name,
 		})
 	}
 	view.Render(data)
