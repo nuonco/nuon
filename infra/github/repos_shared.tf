@@ -277,3 +277,25 @@ module "shared-100xdev" {
     github = github.nuonco-shared
   }
 }
+
+module "shared-100xdev-installer" {
+  source = "./modules/repository"
+
+  name                     = "100xdev-installer"
+  description              = "Custom installer for 100xdev."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+    anandsainath     = "push"
+    shaumik100x      = "push"
+    sraibagiwith100x = "push"
+    gyx119           = "push"
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
