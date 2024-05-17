@@ -72,8 +72,8 @@ jobs:
           aws_role: ${{ env.TFO_GH_ROLE_ARN }}
           aws_region: ${{ env.TFO_REGION }}
 
-      - name: Configure env
-        working-directory: services/${{inputs.service}}/k8s
+      - name: Configure tfo env for earthfile
+        working-directory: images/deploy
         run: |
           printenv | grep "TFO_" >> .tfenv
 
