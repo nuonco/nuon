@@ -23,7 +23,7 @@ import (
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
-// @Success		200	{array}	app.AppInstaller
+// @Success		200	{array}	app.Installer
 // @Router			/v1/installers [get]
 func (s *service) GetInstallers(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
@@ -41,10 +41,11 @@ func (s *service) GetInstallers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installers)
 }
 
-func (s *service) getInstallers(ctx context.Context, orgID string) ([]*app.AppInstaller, error) {
-	var apps []*app.AppInstaller
+func (s *service) getInstallers(ctx context.Context, orgID string) ([]*app.Installer, error) {
+	var apps []*app.Installer
 	res := s.db.WithContext(ctx).
 		Where("org_id = ?", orgID).
+		Preload("Apps").
 		Preload("Metadata").
 		Find(&apps)
 	if res.Error != nil {

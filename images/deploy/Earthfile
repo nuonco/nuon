@@ -1,0 +1,78 @@
+VERSION --use-cache-command 0.6
+
+FROM ghcr.io/powertoolsdev/ci-helm-releaser
+
+ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
+ARG GITHUB_ACTIONS=
+
+K8S_DEPLOY:
+    COMMAND
+    ARG EARTHLY_GIT_PROJECT_NAME
+    ARG EARTHLY_GIT_SHORT_HASH
+    ARG namespace=default
+    ARG --required service
+    ARG --required env
+    ARG --required cluster_name
+    ARG --required role_arn
+    ARG --required chart_name
+    ARG --required chart_version
+    ARG --required repository
+    ARG --required image_tag
+    RUN \
+        --push \
+        --no-cache \
+        --secret AWS_REGION \
+        --secret AWS_ACCESS_KEY_ID \
+        --secret AWS_SECRET_ACCESS_KEY \
+        --secret AWS_SESSION_TOKEN \
+        helm dependency build && \
+        aws \
+            eks \
+            update-kubeconfig \
+            --region "$AWS_REGION" \
+            --name "$cluster_name" \
+            --role-arn="$role_arn" \
+        && helm upgrade \
+            "$chart_name-$env" \
+            ../../services/$service/k8s \
+            --install \
+            --debug \
+            --atomic \
+            --namespace "$namespace" \
+            --version "$chart_version" \
+            --reset-values \
+            --values values.yaml \
+            --values "values.$env.yaml" \
+            --set fullnameOverride="$chart_name" \
+            --set-string env.GIT_REF="$EARTHLY_GIT_SHORT_HASH" \
+            --set-string env.VERSION="$image_tag" \
+            --set image.repository="$repository" \
+            --set image.tag="$image_tag"
+
+deploy:
+    ARG --required env
+    ARG --required service
+    ARG --required cluster_name
+    ARG --required role_arn
+    ARG --required chart_version
+    ARG --required chart_name
+    ARG --required repository
+    ARG --required image_tag
+    ARG tfenv=.tfenv
+
+    COPY $tfenv .
+    RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
+        && envsubst < "values.$env.tmpl" > "values.$env.yaml"
+
+    RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
+        && envsubst < "values.tmpl" > "values.yaml"
+
+    DO +K8S_DEPLOY \
+        --service=$service \
+        --env=$env \
+        --cluster_name=$cluster_name \
+        --role_arn=$role_arn \
+        --chart_version=$chart_version \
+        --chart_name=$chart_name \
+        --repository=$repository \
+        --image_tag=$image_tag
