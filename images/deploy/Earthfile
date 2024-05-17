@@ -1,9 +1,39 @@
 VERSION --use-cache-command 0.6
 
-FROM ghcr.io/powertoolsdev/ci-helm-releaser
+FROM golang:1.21
 
-ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}
 ARG GITHUB_ACTIONS=
+
+deps:
+  # configure repos for kubectl
+  RUN curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | \
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg && \
+    chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg && \
+    echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /'| \
+    tee /etc/apt/sources.list.d/kubernetes.list && \
+    chmod 644 /etc/apt/sources.list.d/kubernetes.list   # helps tools such as command-not-found to work correctly
+	
+   # configure repos for helm
+   RUN curl https://baltocdn.com/helm/signing.asc |\ 
+       gpg --dearmor |\
+       tee /usr/share/keyrings/helm.gpg > /dev/null && \
+       apt-get install apt-transport-https --yes && \
+       echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" |\ 
+       tee /etc/apt/sources.list.d/helm-stable-debian.list
+
+  RUN apt-get update && \
+    apt-get install -y ca-certificates \
+      coreutils \
+      make \
+      git \
+      helm \
+      kubectl \
+      gettext-base \
+      awscli \
+      less \
+      curl \
+      protobuf-compiler \
+      jq
 
 K8S_DEPLOY:
     COMMAND
@@ -50,6 +80,8 @@ K8S_DEPLOY:
             --set image.tag="$image_tag"
 
 deploy:
+    FROM +deps
+
     ARG --required service
     ARG --required env
     ARG --required cluster_name
