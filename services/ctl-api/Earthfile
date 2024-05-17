@@ -26,6 +26,10 @@ test:
     FROM +code
     RUN go test ./...
 
+k8s:
+   COPY --dir k8s/ .
+   SAVE ARTIFACT k8s k8s
+
 integration:
     FROM +code
 
