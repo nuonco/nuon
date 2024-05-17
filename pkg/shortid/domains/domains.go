@@ -6,6 +6,10 @@ func NewAppID() string {
 	return shortid.NewNanoID("app")
 }
 
+func NewInstallerID() string {
+	return shortid.NewNanoID("int")
+}
+
 func NewAppSecretID() string {
 	return shortid.NewNanoID("aps")
 }

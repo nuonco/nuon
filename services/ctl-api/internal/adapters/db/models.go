@@ -23,6 +23,11 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 			"Dependencies",
 			&app.ComponentDependency{},
 		},
+		{
+			&app.Installer{},
+			"Apps",
+			&app.InstallerApp{},
+		},
 	}
 	for _, joinTable := range joinTables {
 		if err := a.db.WithContext(ctx).SetupJoinTable(joinTable.model, joinTable.field, joinTable.joinTable); err != nil {
@@ -38,6 +43,11 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		&app.UserOrg{},
 		&app.UserToken{},
 
+		// installers
+		&app.Installer{},
+		&app.InstallerApp{},
+		&app.InstallerMetadata{},
+
 		// vcs basics
 		&app.VCSConnection{},
 		&app.VCSConnectionCommit{},
@@ -49,8 +59,6 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 		&app.AppRunnerConfig{},
 		&app.AppInput{},
 		&app.AppInputConfig{},
-		&app.AppInstaller{},
-		&app.AppInstallerMetadata{},
 		&app.AppSecret{},
 
 		// built in sandboxes
@@ -89,6 +97,10 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 
 		// internal
 		&app.Migration{},
+
+		// to remove
+		&app.AppInstaller{},
+		&app.AppInstallerMetadata{},
 	}
 	for _, model := range models {
 		if err := a.db.WithContext(ctx).AutoMigrate(model); err != nil {

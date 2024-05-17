@@ -20,26 +20,20 @@ type service struct {
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
-	// public installer endpoints
-	api.GET("/v1/installer/:installer_slug/render", s.RenderAppInstaller)
-	api.POST("/v1/installer/:installer_slug/installs", s.CreateInstallerInstall)
-	api.GET("/v1/installer/:installer_slug/install/:install_id", s.GetInstallerInstall)
-	api.GET("/v1/installer/:installer_slug/install/:install_id/render", s.RenderInstallerInstall)
-
 	// installers
 	api.GET("/v1/installers", s.GetInstallers)
-	api.POST("/v1/installers", s.CreateAppInstaller)
+	api.POST("/v1/installers", s.CreateInstaller)
+
 	api.PATCH("/v1/installers/:installer_id", s.UpdateInstaller)
 	api.DELETE("/v1/installers/:installer_id", s.DeleteInstaller)
-	api.GET("/v1/installers/:installer_id", s.GetAppInstaller)
+	api.GET("/v1/installers/:installer_id", s.GetInstaller)
 
+	api.GET("/v1/installers/:installer_id/render", s.RenderAppInstaller)
 	return nil
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.GET("/v1/installers", s.GetAllInstallers)
-	api.GET("/v1/installers/urls", s.GetAllInstallerURLs)
-	api.POST("/v1/installers/admin-demo-installer", s.AdminCreateDemoInstaller)
 
 	return nil
 }

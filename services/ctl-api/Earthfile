@@ -47,6 +47,7 @@ integration:
     RUN go test -count=1 -parallel=1 -v -run TestComponentReleasesSuite
     RUN go test -count=1 -parallel=1 -v -run TestComponentConfigsSuite
     RUN go test -count=1 -parallel=1 -v -run TestGeneralSuite
+    RUN go test -count=1 -parallel=1 -v -run TestInstallersSuite
     RUN go test -count=1 -parallel=1 -v -run TestInstallComponentsSuite
     RUN go test -count=1 -parallel=1 -v -run TestInstallDeploysSuite
     RUN go test -count=1 -parallel=1 -v -run TestInstallInputsSuite
