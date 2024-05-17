@@ -34,7 +34,7 @@ K8S_DEPLOY:
             --role-arn="$role_arn" \
         && helm upgrade \
             "$chart_name-$env" \
-            ../../services/$service/k8s \
+	    . \
             --install \
             --debug \
             --atomic \
@@ -50,22 +50,26 @@ K8S_DEPLOY:
             --set image.tag="$image_tag"
 
 deploy:
-    ARG --required env
     ARG --required service
+    ARG --required env
     ARG --required cluster_name
     ARG --required role_arn
     ARG --required chart_version
     ARG --required chart_name
     ARG --required repository
     ARG --required image_tag
+
+    COPY ../../services/$service+k8s/k8s k8s
+    WORKDIR k8s
+
     ARG tfenv=.tfenv
 
     COPY $tfenv .
     RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
         && envsubst < "values.$env.tmpl" > "values.$env.yaml"
 
-    RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
-        && envsubst < "values.tmpl" > "values.yaml"
+    # RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
+    # && envsubst < "values.yaml" > "values.yaml"
 
     DO +K8S_DEPLOY \
         --service=$service \
