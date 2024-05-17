@@ -46,6 +46,10 @@ test:
   RUN echo "running unit test..." && \
     npm run test -- run
 
+k8s:
+   COPY --dir k8s/ .
+   SAVE ARTIFACT k8s k8s
+
 build:
   FROM +deps
   RUN npm run build

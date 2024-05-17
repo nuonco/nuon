@@ -32,6 +32,10 @@ lint:
       --issues-exit-code 0 \
       ./...
 
+k8s:
+   COPY --dir k8s/ .
+   SAVE ARTIFACT k8s k8s
+
 build:
     FROM +code
     RUN go \
