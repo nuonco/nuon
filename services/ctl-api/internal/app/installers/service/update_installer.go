@@ -11,18 +11,23 @@ import (
 )
 
 type UpdateInstallerRequest struct {
-	Name                string `validate:"required" json:"name"`
-	Description         string `validate:"required" json:"description"`
-	PostInstallMarkdown string `json:"post_install_markdown"`
+	AppIDs []string `validate:"required" json:"app_ids"`
+	Name   string   `validate:"required" json:"name"`
 
-	Links struct {
-		Documentation string `validate:"required" json:"documentation"`
-		Logo          string `validate:"required" json:"logo"`
-		Github        string `validate:"required" json:"github"`
-		Homepage      string `validate:"required" json:"homepage"`
-		Community     string `validate:"required" json:"community"`
-		Demo          string `validate:"required" json:"demo"`
-	} `json:"links"`
+	Metadata struct {
+		Description      string `validate:"required" json:"description"`
+		DocumentationURL string `validate:"required" json:"documentation_url"`
+		LogoURL          string `validate:"required" json:"logo_url"`
+		GithubURL        string `validate:"required" json:"github_url"`
+		HomepageURL      string `validate:"required" json:"homepage_url"`
+		CommunityURL     string `validate:"required" json:"community_url"`
+		DemoURL          string `json:"demo_url"`
+		FaviconURL       string `json:"favicon_url"`
+
+		PostInstallMarkdown string `json:"post_install_markdown"`
+		FooterMarkdown      string `json:"footer_markdown"`
+		CopyrightMarkdown   string `json:"copyright_markdown"`
+	} `json:"metadata"`
 }
 
 func (c *UpdateInstallerRequest) Validate(v *validator.Validate) error {
@@ -47,7 +52,7 @@ func (c *UpdateInstallerRequest) Validate(v *validator.Validate) error {
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.AppInstaller
+// @Success		201				{object}	app.Installer
 // @Router			/v1/installers/{installer_id} [PATCH]
 func (s *service) UpdateInstaller(ctx *gin.Context) {
 	installerID := ctx.Param("installer_id")
@@ -62,7 +67,7 @@ func (s *service) UpdateInstaller(ctx *gin.Context) {
 		return
 	}
 
-	installer, err := s.updateAppInstaller(ctx, installerID, &req)
+	installer, err := s.updateInstaller(ctx, installerID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update app installer: %w", err))
 		return
@@ -71,35 +76,49 @@ func (s *service) UpdateInstaller(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, installer)
 }
 
-func (s *service) updateAppInstaller(ctx context.Context, installerID string, req *UpdateInstallerRequest) (*app.AppInstaller, error) {
-	updates := app.AppInstallerMetadata{
-		DocumentationURL:    req.Links.Documentation,
-		GithubURL:           req.Links.Github,
-		LogoURL:             req.Links.Logo,
-		HomepageURL:         req.Links.Homepage,
-		CommunityURL:        req.Links.Community,
-		DemoURL:             req.Links.Demo,
-		Description:         req.Description,
-		Name:                req.Name,
-		PostInstallMarkdown: req.PostInstallMarkdown,
+func (s *service) updateInstaller(ctx context.Context, installerID string, req *UpdateInstallerRequest) (*app.Installer, error) {
+	installer, err := s.getInstaller(ctx, installerID)
+	if err != nil {
+		return nil, err
 	}
 
-	metadata := app.AppInstallerMetadata{}
+	updates := app.InstallerMetadata{
+		Description:         req.Metadata.Description,
+		Name:                req.Name,
+		CommunityURL:        req.Metadata.CommunityURL,
+		HomepageURL:         req.Metadata.HomepageURL,
+		DocumentationURL:    req.Metadata.DocumentationURL,
+		GithubURL:           req.Metadata.GithubURL,
+		LogoURL:             req.Metadata.LogoURL,
+		DemoURL:             req.Metadata.DemoURL,
+		FaviconURL:          req.Metadata.FaviconURL,
+		PostInstallMarkdown: req.Metadata.PostInstallMarkdown,
+		CopyrightMarkdown:   req.Metadata.CopyrightMarkdown,
+		FooterMarkdown:      req.Metadata.FooterMarkdown,
+	}
+
+	metadata := app.InstallerMetadata{}
 	res := s.db.WithContext(ctx).
 		Model(&metadata).
-		Where("app_installer_id = ?", installerID).
+		Where("installer_id = ?", installerID).
 		Updates(updates)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app installer: %w", res.Error)
 	}
 
-	var installer app.AppInstaller
-	res = s.db.WithContext(ctx).
-		Preload("Metadata").
-		Find(&installer, "id = ?", installerID)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to find installer: %w", res.Error)
+	// update apps
+	var apps []app.App
+	for _, appID := range req.AppIDs {
+		apps = append(apps, app.App{
+			ID: appID,
+		})
+	}
+	err = s.db.WithContext(ctx).Model(&app.Installer{
+		ID: installerID,
+	}).Association("Apps").Replace(apps)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find installer: %w", err)
 	}
 
-	return &installer, nil
+	return installer, nil
 }

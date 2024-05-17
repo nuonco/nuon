@@ -47,6 +47,7 @@ func (s *service) GetApp(ctx *gin.Context) {
 func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, error) {
 	app := app.App{}
 	res := s.db.WithContext(ctx).
+		Preload("CreatedBy").
 		Preload("Org").
 		Preload("Components").
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {

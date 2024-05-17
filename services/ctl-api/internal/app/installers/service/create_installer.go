@@ -7,30 +7,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/gosimple/slug"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
-type CreateAppInstallerRequest struct {
-	AppID       string `validate:"required" json:"app_id"`
-	Slug        string `validate:"required" json:"slug"`
-	Name        string `validate:"required" json:"name"`
-	Description string `validate:"required" json:"description"`
+type CreateInstallerRequest struct {
+	AppIDs []string `validate:"required" json:"app_ids"`
+	Name   string   `validate:"required" json:"name"`
 
-	Links struct {
-		Documentation string `validate:"required" json:"documentation"`
-		Logo          string `validate:"required" json:"logo"`
-		Github        string `validate:"required" json:"github"`
-		Homepage      string `validate:"required" json:"homepage"`
-		Community     string `validate:"required" json:"community"`
-		Demo          string `json:"demo"`
-	} `json:"links"`
+	Metadata struct {
+		Description      string `validate:"required" json:"description"`
+		DocumentationURL string `validate:"required" json:"documentation_url"`
+		LogoURL          string `validate:"required" json:"logo_url"`
+		GithubURL        string `validate:"required" json:"github_url"`
+		HomepageURL      string `validate:"required" json:"homepage_url"`
+		CommunityURL     string `validate:"required" json:"community_url"`
+		DemoURL          string `json:"demo_url"`
+		FaviconURL       string `json:"favicon_url"`
 
-	PostInstallMarkdown string `json:"post_install_markdown"`
+		PostInstallMarkdown string `json:"post_install_markdown"`
+		FooterMarkdown      string `json:"footer_markdown"`
+		CopyrightMarkdown   string `json:"copyright_markdown"`
+	} `json:"metadata"`
 }
 
-func (c *CreateAppInstallerRequest) Validate(v *validator.Validate) error {
+func (c *CreateInstallerRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
@@ -38,11 +39,11 @@ func (c *CreateAppInstallerRequest) Validate(v *validator.Validate) error {
 }
 
 // @ID CreateInstaller
-// @Summary	create an app installer
+// @Summary	create an installer
 // @Description.markdown	create_installer.md
 // @Tags installers
 // @Accept			json
-// @Param			req	body	CreateAppInstallerRequest	true	"Input"
+// @Param			req	body	CreateInstallerRequest	true	"Input"
 // @Produce		json
 // @Security APIKey
 // @Security OrgID
@@ -51,16 +52,16 @@ func (c *CreateAppInstallerRequest) Validate(v *validator.Validate) error {
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.AppInstaller
+// @Success		201				{object}	app.Installer
 // @Router			/v1/installers [POST]
-func (s *service) CreateAppInstaller(ctx *gin.Context) {
+func (s *service) CreateInstaller(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	var req CreateAppInstallerRequest
+	var req CreateInstallerRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
@@ -70,36 +71,45 @@ func (s *service) CreateAppInstaller(ctx *gin.Context) {
 		return
 	}
 
-	installer, err := s.createAppInstaller(ctx, org.ID, &req)
+	installer, err := s.createInstaller(ctx, org.ID, &req)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create app installer: %w", err))
+		ctx.Error(fmt.Errorf("unable to create installer: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusCreated, installer)
 }
 
-func (s *service) createAppInstaller(ctx context.Context, orgID string, req *CreateAppInstallerRequest) (*app.AppInstaller, error) {
-	installer := app.AppInstaller{
+func (s *service) createInstaller(ctx context.Context, orgID string, req *CreateInstallerRequest) (*app.Installer, error) {
+	apps := make([]app.App, 0)
+	for _, appID := range req.AppIDs {
+		apps = append(apps, app.App{ID: appID})
+	}
+
+	installer := app.Installer{
 		OrgID: orgID,
-		AppID: req.AppID,
-		Slug:  slug.Make(req.Slug),
-		Metadata: app.AppInstallerMetadata{
-			Description:         req.Description,
-			PostInstallMarkdown: req.PostInstallMarkdown,
-			Name:                req.Name,
-			CommunityURL:        req.Links.Community,
-			HomepageURL:         req.Links.Homepage,
-			DocumentationURL:    req.Links.Documentation,
-			GithubURL:           req.Links.Github,
-			LogoURL:             req.Links.Logo,
-			DemoURL:             req.Links.Demo,
+		Apps:  apps,
+		Type:  app.InstallerTypeSelfHosted,
+		Metadata: app.InstallerMetadata{
+			Description:      req.Metadata.Description,
+			Name:             req.Name,
+			CommunityURL:     req.Metadata.CommunityURL,
+			HomepageURL:      req.Metadata.HomepageURL,
+			DocumentationURL: req.Metadata.DocumentationURL,
+			GithubURL:        req.Metadata.GithubURL,
+			LogoURL:          req.Metadata.LogoURL,
+			DemoURL:          req.Metadata.DemoURL,
+			FaviconURL:       req.Metadata.FaviconURL,
+
+			PostInstallMarkdown: req.Metadata.PostInstallMarkdown,
+			CopyrightMarkdown:   req.Metadata.CopyrightMarkdown,
+			FooterMarkdown:      req.Metadata.FooterMarkdown,
 		},
 	}
 
 	res := s.db.WithContext(ctx).Create(&installer)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create app installer: %w", res.Error)
+		return nil, fmt.Errorf("unable to create installer: %w", res.Error)
 	}
 
 	return &installer, nil

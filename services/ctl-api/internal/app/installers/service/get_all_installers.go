@@ -40,18 +40,18 @@ func (s *service) GetAllInstallers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installs)
 }
 
-func (s *service) getAllInstallers(ctx context.Context, limitVal int) ([]*app.AppInstaller, error) {
-	var installers []*app.AppInstaller
+func (s *service) getAllInstallers(ctx context.Context, limitVal int) ([]*app.Installer, error) {
+	var installers []*app.Installer
 	res := s.db.WithContext(ctx).
 		Preload("CreatedBy").
 		Preload("Metadata").
-		Preload("App").
-		Preload("App.Org").
+		Preload("Apps").
+		Preload("Apps.Org").
 		Order("created_at desc").
 		Limit(limitVal).
 		Find(&installers)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get all installers: %w", res.Error)
+		return nil, fmt.Errorf("unable to get installers: %w", res.Error)
 	}
 
 	return installers, nil

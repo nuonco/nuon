@@ -49,6 +49,9 @@ type Org struct {
 	VCSConnectionCommits      []VCSConnectionCommit      `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 	AWSECRImageConfigs        []AWSECRImageConfig        `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 
+	Installers        []Installer         `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
+	InstallerMetadata []InstallerMetadata `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
+
 	// Filled in at read time
 	LatestHealthCheck OrgHealthCheck `json:"latest_health_check" gorm:"-"`
 }
