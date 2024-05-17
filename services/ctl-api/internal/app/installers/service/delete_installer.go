@@ -29,7 +29,7 @@ import (
 func (s *service) DeleteInstaller(ctx *gin.Context) {
 	installerID := ctx.Param("installer_id")
 
-	err := s.deleteAppInstaller(ctx, installerID)
+	err := s.deleteInstaller(ctx, installerID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -38,15 +38,15 @@ func (s *service) DeleteInstaller(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, true)
 }
 
-func (s *service) deleteAppInstaller(ctx context.Context, appInstallerID string) error {
-	res := s.db.WithContext(ctx).Delete(&app.AppInstaller{
+func (s *service) deleteInstaller(ctx context.Context, appInstallerID string) error {
+	res := s.db.WithContext(ctx).Delete(&app.Installer{
 		ID: appInstallerID,
 	})
 	if res.Error != nil {
-		return fmt.Errorf("unable to delete app: %w", res.Error)
+		return fmt.Errorf("unable to delete installer: %w", res.Error)
 	}
 	if res.RowsAffected != 1 {
-		return fmt.Errorf("app installer not found: %w", gorm.ErrRecordNotFound)
+		return fmt.Errorf("installer not found: %w", gorm.ErrRecordNotFound)
 	}
 
 	return nil

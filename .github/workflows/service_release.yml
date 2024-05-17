@@ -64,18 +64,6 @@ jobs:
             --repo=${{ env.TFO_ECR_REPOSITORY_URL }} \
             --image_tag=${{ inputs.tag }}
 
-      - name: Bump and publish chart
-        working-directory: services/${{inputs.service}}/k8s
-        run: |
-          earthly \
-            ${{ env.EARTHLY_EXTRA_ARGS }} \
-            --remote-cache=ghcr.io/${{ github.repository }}-helm:cache \
-            --push \
-            --max-remote-cache \
-            +helm-bump-and-publish \
-            --chart_name=${{ inputs.service }} \
-            --chart_version=v0.0.1-${{ inputs.tag }}
-
       - name: Handle failures
         if: failure()
         run: |

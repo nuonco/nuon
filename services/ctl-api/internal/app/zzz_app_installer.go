@@ -42,7 +42,6 @@ func (a *AppInstaller) BeforeCreate(tx *gorm.DB) error {
 		a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
 
-	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
 }
 

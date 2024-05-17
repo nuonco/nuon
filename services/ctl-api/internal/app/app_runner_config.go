@@ -37,7 +37,6 @@ type AppRunnerConfig struct {
 	OrgID string `json:"org_id" gorm:"notnull;default null"`
 	Org   Org    `faker:"-" json:"-"`
 	AppID string `json:"app_id"`
-	App   App    `faker:"-" json:"-"`
 
 	EnvVars pgtype.Hstore `json:"env_vars" gorm:"type:hstore" swaggertype:"object,string"`
 	Type    AppRunnerType `json:"app_runner_type" gorm:"not null;default null;"`

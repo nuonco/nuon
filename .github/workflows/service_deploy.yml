@@ -78,18 +78,18 @@ jobs:
           printenv | grep "TFO_" >> .tfenv
 
       - name: Deploy to kubernetes
-        working-directory: services/${{inputs.service}}/k8s
+        working-directory: images/deploy
         run: |
           earthly \
             ${{ env.EARTHLY_EXTRA_ARGS }} \
             --push \
             +deploy \
-            --repos=nuon=${{ env.TFO_NUON_CHARTS }} \
             --env=${{ inputs.env }} \
+            --service=${{ inputs.service }} \
             --cluster_name=${{ env.TFO_CLUSTER_NAME }} \
             --role_arn=${{ env.TFO_CLUSTER_GH_ROLE_ARN }} \
-            --chart_name=${{ inputs.service }} \
             --chart_version=v0.0.1-${{ inputs.tag }} \
+            --chart_name=${{ inputs.service }} \
             --repository=${{ env.TFO_ECR_REPOSITORY_URL }} \
             --image_tag=${{ inputs.tag }} \
 
