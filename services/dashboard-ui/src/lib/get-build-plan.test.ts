@@ -44,7 +44,7 @@ test('getBuildPlan should return a build object', async () => {
 
   expect(spec).toEqual({})
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/components/component-id/builds/build-id/plan',
+    'https://api.nuon.co/v1/components/component-id/builds/build-id/plan',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -66,7 +66,7 @@ test('getBuildPlan should throw an error when it can not find a build', async ()
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/components/component-id/builds/build-id/plan',
+    'https://api.nuon.co/v1/components/component-id/builds/build-id/plan',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',

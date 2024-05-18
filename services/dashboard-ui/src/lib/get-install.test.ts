@@ -46,7 +46,7 @@ test('getInstall should return a install object', async () => {
 
   expect(spec).toEqual(install)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id',
+    'https://api.nuon.co/v1/installs/install-id',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -67,7 +67,7 @@ test('getInstall should throw an error when it can not find a install', async ()
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id',
+    'https://api.nuon.co/v1/installs/install-id',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',

@@ -36,14 +36,14 @@ afterAll(() => {
 })
 
 test('getComponentConfig should return a config object', async () => {
-  const spec = await getComponentConfig({    
+  const spec = await getComponentConfig({
     componentId,
     orgId,
   })
 
   expect(spec).toEqual(config)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/components/component-id/configs',
+    'https://api.nuon.co/v1/components/component-id/configs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -55,7 +55,7 @@ test('getComponentConfig should return a config object', async () => {
 
 test('getComponentConfig should throw an error when it can not find a config', async () => {
   try {
-    await getComponentConfig({      
+    await getComponentConfig({
       componentId,
       orgId,
     })
@@ -64,7 +64,7 @@ test('getComponentConfig should throw an error when it can not find a config', a
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/components/component-id/configs',
+    'https://api.nuon.co/v1/components/component-id/configs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',

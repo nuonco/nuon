@@ -2,7 +2,7 @@ import { TInstall, TInstallComponent, TSandboxRun } from '@/types'
 
 // general utils
 export const API_URL =
-  process?.env?.NEXT_PUBLIC_API_URL || 'https://ctl.prod.nuon.co'
+  process?.env?.NEXT_PUBLIC_API_URL || 'https://api.nuon.co'
 export const POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_POLL_DURATION as unknown as number) || 45000
 export const GITHUB_APP_NAME = process?.env?.NEXT_PUBLIC_GITHUB_APP_NAME || "nat-test-local"
