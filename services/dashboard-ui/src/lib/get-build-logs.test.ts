@@ -44,7 +44,7 @@ test('getBuildLogs should return a build object', async () => {
 
   expect(spec).toHaveLength(0)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/components/component-id/builds/build-id/logs',
+    'https://api.nuon.co/v1/components/component-id/builds/build-id/logs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -66,7 +66,7 @@ test('getBuildLogs should throw an error when it can not find a build', async ()
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/components/component-id/builds/build-id/logs',
+    'https://api.nuon.co/v1/components/component-id/builds/build-id/logs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
