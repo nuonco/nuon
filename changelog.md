@@ -4,7 +4,7 @@ This is a basic changelog where we track a minimal message whenever we do a prom
 
 ## v0.19.133
 
-Promoting new dependency changes to prod.
+Promoting new dependency changes and wiki to prod.
 
 ## v0.19.124
 
