@@ -1,0 +1,11 @@
+---
+port: 4321
+type: api
+local_only: true
+env:
+env_secrets:
+watch_ignore_dirs:
+  - .astro
+local_startup_cmds: []
+local_cmds:
+  - npm run dev

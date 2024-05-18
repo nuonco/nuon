@@ -1,0 +1,14 @@
+---
+environment: stage
+
+env:
+  ADMIN_API_URL: "http://ctl.nuon.us-west-2.stage.nuon.cloud/"
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: $TFO_EKS_ROLE_ARN
+
+ui:
+  alb:
+    domain: $TFO_DOMAIN
+    domain_certificate: $TFO_CERTIFICATE_ARN

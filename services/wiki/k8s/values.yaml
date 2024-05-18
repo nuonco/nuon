@@ -1,0 +1,39 @@
+---
+env:
+  HOST: !!string 0.0.0.0
+  PORT: !!string 4321
+
+envSecrets:
+
+image:
+  repository: ""
+  tag: ""
+
+serviceAccount:
+  name: wiki
+  annotations:
+    eks.amazonaws.com/role-arn: TFO_EKS_ROLE_ARN
+
+ui:
+  internal_port: 4321
+  liveness_probe: /
+  readiness_probe: /
+
+  resources:
+    limits:
+      cpu: 400m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+  alb:
+    scheme: internal
+    domain: TFO_DOMAIN
+    domain_certificate: TFO_CERTIFICATE_ARN
+
+  autoscaling:
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 50

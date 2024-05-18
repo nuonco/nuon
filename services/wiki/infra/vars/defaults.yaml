@@ -1,0 +1,5 @@
+---
+use_root_domain: false
+region: us-west-2
+subdomain: wiki
+pool: nuon

@@ -1,0 +1,3 @@
+---
+use_root_domain: true
+cluster_name: prod-nuon
