@@ -9,4 +9,4 @@ appVersion: "0.0.1"
 dependencies:
   - name: common
     version: 0.8.4
-    repository: "file://../../../charts/common"
+    repository: "file://common"
