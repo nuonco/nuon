@@ -32,7 +32,6 @@ jobs:
         uses: powertoolsdev/mono/actions/setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
-          setup_helm: "false"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup terraform environment
