@@ -61,6 +61,10 @@ func (a *AutoMigrate) updateMigrationStatus(ctx context.Context, name string, st
 }
 
 func (a *AutoMigrate) execMigration(ctx context.Context, migration migrations.Migration) error {
+	if migration.Disabled {
+		return nil
+	}
+
 	isApplied, err := a.isMigrationApplied(ctx, migration.Name)
 	if err != nil {
 		return fmt.Errorf("unable to see if %s was applied", migration.Name)

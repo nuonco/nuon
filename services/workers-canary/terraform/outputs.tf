@@ -6,14 +6,6 @@ output "app" {
   value = module.aws-eks.app
 }
 
-output "app_installer_slug" {
-  value = module.aws-eks.app_installer_slug
-}
-
-output "app_installer" {
-  value = module.aws-eks.app_installer
-}
-
 output "component_ids" {
   value = module.aws-eks.component_ids
 }
