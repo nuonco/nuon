@@ -24,15 +24,6 @@ inputs:
     description: |
       (Optional) The ECR registries to log into.
     default: ""
-  setup_helm:
-    description: |
-      (Optional) Whether to set up helm
-    default: "true"
-  helm_repos:
-    description: |
-      (Optional) The helm repos to add.
-      See actions/setup-helm for format.
-    default: ""
 
 runs:
   using: "composite"
@@ -124,12 +115,6 @@ runs:
                                       && [[ "${{ inputs.setup_helm }}" = 'true' ]] \
                                       && echo "NEEDS_HELM=true" >> "$GITHUB_ENV"
         exit 0
-
-    - name: Setup helm
-      if: ${{ env.NEEDS_HELM == 'true' }}
-      uses: powertoolsdev/mono/actions/setup-helm@main
-      with:
-        repos: ${{ inputs.helm_repos }}
 
 branding:
   icon: "check"
