@@ -14,7 +14,7 @@ import (
 
 const (
 	defaultFilePath         string = "~/.nuon"
-	defaultAPIURL           string = "https://ctl.prod.nuon.co"
+	defaultAPIURL           string = "https://api.nuon.co"
 	defaultConfigFileEnvVar string = "NUON_CONFIG_FILE"
 	defaultGitHubAppName    string = "nuon-connect"
 )

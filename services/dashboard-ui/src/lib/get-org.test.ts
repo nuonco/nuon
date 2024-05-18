@@ -44,7 +44,7 @@ test('getOrg should return a org object', async () => {
 
   expect(spec).toEqual(org)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/orgs/current',
+    'https://api.nuon.co/v1/orgs/current',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -64,7 +64,7 @@ test('getOrg should throw an error when it can not find an org', async () => {
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/orgs/current',
+    'https://api.nuon.co/v1/orgs/current',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',

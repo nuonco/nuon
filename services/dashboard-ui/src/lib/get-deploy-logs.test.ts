@@ -45,7 +45,7 @@ test('getDeployLogs should return an array of deploy log objects', async () => {
 
   expect(spec).toContain(log)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id/deploys/deploy-id/logs',
+    'https://api.nuon.co/v1/installs/install-id/deploys/deploy-id/logs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -67,7 +67,7 @@ test('getDeployLogs should throw an error when it can not find deploy logs', asy
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id/deploys/deploy-id/logs',
+    'https://api.nuon.co/v1/installs/install-id/deploys/deploy-id/logs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',

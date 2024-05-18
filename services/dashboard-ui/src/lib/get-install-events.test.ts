@@ -44,7 +44,7 @@ test('getInstallEvents should return an array of install event objects', async (
 
   expect(spec).toContain(event)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id/events',
+    'https://api.nuon.co/v1/installs/install-id/events',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -56,7 +56,7 @@ test('getInstallEvents should return an array of install event objects', async (
 
 test('getInstallEvents should throw an error when it can not find install events', async () => {
   try {
-    await getInstallEvents({      
+    await getInstallEvents({
       installId,
       orgId,
     })
@@ -65,7 +65,7 @@ test('getInstallEvents should throw an error when it can not find install events
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id/events',
+    'https://api.nuon.co/v1/installs/install-id/events',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
