@@ -87,7 +87,6 @@ jobs:
         uses: powertoolsdev/mono/actions/setup-ci@main
         with:
           tfcloud_token: ${{ secrets.TF_API_KEY }}
-          setup_helm: "false"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       # NOTE(jm): the dns chain using twingate does not seem to work with the tests running in the image. This is most

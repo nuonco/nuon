@@ -50,7 +50,6 @@ jobs:
           aws_role: ${{ env.TFO_GH_ROLE_ARN }}
           aws_region: ${{ env.TFO_REGION }}
           ecr_registries: ${{ env.TFO_ECR_REGISTRY_ID }}
-          setup_helm: "false"
 
       - name: Build and push container
         working-directory: services/${{inputs.service}}
