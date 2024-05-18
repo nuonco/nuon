@@ -33,8 +33,8 @@ lint:
       ./...
 
 k8s:
-   COPY ../../charts+code/charts .
    COPY --dir k8s/ .
+   COPY ../../charts+code/charts k8s/
    SAVE ARTIFACT k8s k8s
 
 build:
