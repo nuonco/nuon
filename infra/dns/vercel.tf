@@ -9,4 +9,3 @@ resource "aws_route53_record" "vercel" {
     "vc-domain-verify=docs.nuon.co,d405ffa1f9db2909d3bd"
   ]
 }
-
