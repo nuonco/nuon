@@ -48,7 +48,7 @@ test('getSandboxRun should return a sandbox run object', async () => {
 
   expect(spec).toEqual(run)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id/sandbox-runs',
+    'https://api.nuon.co/v1/installs/install-id/sandbox-runs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -70,7 +70,7 @@ test('getSandboxRun should throw an error when it can not find a sandbox run', a
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id/sandbox-runs',
+    'https://api.nuon.co/v1/installs/install-id/sandbox-runs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
