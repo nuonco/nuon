@@ -45,7 +45,7 @@ test('getDeploy should return a deploy object', async () => {
 
   expect(spec).toEqual(deploy)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id/deploys/deploy-id',
+    'https://api.nuon.co/v1/installs/install-id/deploys/deploy-id',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -67,7 +67,7 @@ test('getDeploy should throw an error when it can not find deploy', async () => 
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id/deploys/deploy-id',
+    'https://api.nuon.co/v1/installs/install-id/deploys/deploy-id',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',

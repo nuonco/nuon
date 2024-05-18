@@ -24,7 +24,7 @@ func (r *Docs) RegisterRoutes(g *gin.Engine) error {
 		docs.SwaggerInfo.Host = "localhost:8081"
 		docs.SwaggerInfo.Schemes = []string{"http"}
 	case config.Production:
-		docs.SwaggerInfo.Host = "ctl.prod.nuon.co"
+		docs.SwaggerInfo.Host = "api.nuon.co"
 	case config.Stage:
 		docs.SwaggerInfo.Host = "ctl.stage.nuon.co"
 	}
