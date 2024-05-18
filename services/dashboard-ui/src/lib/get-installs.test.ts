@@ -45,7 +45,7 @@ test('getInstalls should return an array of install object', async () => {
 
   expect(spec).toContain(install)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs',
+    'https://api.nuon.co/v1/installs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -65,7 +65,7 @@ test('getInstalls should throw an error when it can not find installs', async ()
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs',
+    'https://api.nuon.co/v1/installs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',

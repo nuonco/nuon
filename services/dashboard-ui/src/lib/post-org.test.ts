@@ -42,7 +42,7 @@ test('postOrg should return an array of install object', async () => {
 
   expect(spec).toEqual(org)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/orgs',
+    'https://api.nuon.co/v1/orgs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -61,7 +61,7 @@ test('postOrg should throw an error when it can not find orgs', async () => {
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/orgs',
+    'https://api.nuon.co/v1/orgs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',

@@ -45,7 +45,7 @@ test('getSandboxRunLogs should return an array of run log objects', async () => 
 
   expect(spec).toContain(log)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id/sandbox-run/run-id/logs',
+    'https://api.nuon.co/v1/installs/install-id/sandbox-run/run-id/logs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -67,7 +67,7 @@ test('getSandboxRunLogs should throw an error when it can not find run logs', as
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/installs/install-id/sandbox-run/run-id/logs',
+    'https://api.nuon.co/v1/installs/install-id/sandbox-run/run-id/logs',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',

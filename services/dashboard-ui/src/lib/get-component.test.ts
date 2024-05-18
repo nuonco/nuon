@@ -43,7 +43,7 @@ test('getComponent should return a component object', async () => {
 
   expect(spec).toEqual(component)
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/components/component-id',
+    'https://api.nuon.co/v1/components/component-id',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
@@ -64,7 +64,7 @@ test('getComponent should throw an error when it can not find a component', asyn
   }
 
   expect(fetch).toBeCalledWith(
-    'https://ctl.prod.nuon.co/v1/components/component-id',
+    'https://api.nuon.co/v1/components/component-id',
     expect.objectContaining({
       headers: expect.objectContaining({
         Authorization: 'Bearer test-token',
