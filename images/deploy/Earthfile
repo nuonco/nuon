@@ -48,6 +48,7 @@ K8S_DEPLOY:
     ARG --required chart_version
     ARG --required repository
     ARG --required image_tag
+
     RUN \
         --push \
         --no-cache \
@@ -55,6 +56,7 @@ K8S_DEPLOY:
         --secret AWS_ACCESS_KEY_ID \
         --secret AWS_SECRET_ACCESS_KEY \
         --secret AWS_SESSION_TOKEN \
+	helm dependency update && \
         helm dependency build && \
         aws \
             eks \
@@ -97,11 +99,12 @@ deploy:
     ARG tfenv=.tfenv
 
     COPY $tfenv .
+    RUN mv values.yaml values.yaml.tmpl
+    RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
+     && envsubst < "values.yaml.tmpl" > "values.yaml"
+     
     RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
         && envsubst < "values.$env.tmpl" > "values.$env.yaml"
-
-    # RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
-    # && envsubst < "values.yaml" > "values.yaml"
 
     DO +K8S_DEPLOY \
         --service=$service \
