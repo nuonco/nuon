@@ -3,154 +3,189 @@ package migrations
 import "context"
 
 type Migration struct {
-	Name string
-	Fn   func(context.Context) error
+	Name     string
+	Fn       func(context.Context) error
+	Disabled bool
 }
 
 func (a *Migrations) GetAll() []Migration {
 	return []Migration{
 		{
-			Name: "001-sql-example",
-			Fn:   a.migration001ExampleSQL,
+			Name:     "001-sql-example",
+			Fn:       a.migration001ExampleSQL,
+			Disabled: true,
 		},
 		{
-			Name: "002-model-migration",
-			Fn:   a.migration002ExampleModel,
+			Name:     "002-model-migration",
+			Fn:       a.migration002ExampleModel,
+			Disabled: true,
 		},
 		{
-			Name: "003-seed",
-			Fn:   a.migration003Seed,
+			Name:     "003-seed",
+			Fn:       a.migration003Seed,
+			Disabled: true,
 		},
 		{
-			Name: "004-fix-install-cascade-constraints",
-			Fn:   a.migration004InstallsCascadeInputs,
+			Name:     "004-fix-install-cascade-constraints",
+			Fn:       a.migration004InstallsCascadeInputs,
+			Disabled: true,
 		},
 		{
-			Name: "005-component-dependencies-primary-key",
-			Fn:   a.migration005ComponentDependencyPrimaryKey,
+			Name:     "005-component-dependencies-primary-key",
+			Fn:       a.migration005ComponentDependencyPrimaryKey,
+			Disabled: true,
 		},
 		{
-			Name: "006-component-dependencies-deleted-at-constraint",
-			Fn:   a.migration006ComponentDependencyDeletedAtConstraint,
+			Name:     "006-component-dependencies-deleted-at-constraint",
+			Fn:       a.migration006ComponentDependencyDeletedAtConstraint,
+			Disabled: true,
 		},
 		{
-			Name: "007-component-dependencies-cascading",
-			Fn:   a.migration007ComponentDependencyCascade,
+			Name:     "007-component-dependencies-cascading",
+			Fn:       a.migration007ComponentDependencyCascade,
+			Disabled: true,
 		},
 		{
-			Name: "008-install-deploy-types",
-			Fn:   a.migration008InstallDeployType,
+			Name:     "008-install-deploy-types",
+			Fn:       a.migration008InstallDeployType,
+			Disabled: true,
 		},
 		{
-			Name: "009-add-app-runner-configs",
-			Fn:   a.migration009AddAppRunnerConfigs,
+			Name:     "009-add-app-runner-configs",
+			Fn:       a.migration009AddAppRunnerConfigs,
+			Disabled: true,
 		},
 		{
-			Name: "010-remove-org-health-check-names",
-			Fn:   a.migration010RemoveHealthCheckName,
+			Name:     "010-remove-org-health-check-names",
+			Fn:       a.migration010RemoveHealthCheckName,
+			Disabled: true,
 		},
 		{
-			Name: "011-remove-app-input-config",
-			Fn:   a.migration011RemoveAppInputConfig,
+			Name:     "011-remove-app-input-config",
+			Fn:       a.migration011RemoveAppInputConfig,
+			Disabled: true,
 		},
 		{
-			Name: "012-add-install-input-config-parents",
-			Fn:   a.migration012AddInstallInputConfigParents,
+			Name:     "012-add-install-input-config-parents",
+			Fn:       a.migration012AddInstallInputConfigParents,
+			Disabled: true,
 		},
 		{
-			Name: "013-add-install-input-config-parent-not-null",
-			Fn:   a.migration013InstallInputParentNotNull,
+			Name:     "013-add-install-input-config-parent-not-null",
+			Fn:       a.migration013InstallInputParentNotNull,
+			Disabled: true,
 		},
 		{
-			Name: "014-app-input-display-name",
-			Fn:   a.migration014AppInputDisplayName,
+			Name:     "014-app-input-display-name",
+			Fn:       a.migration014AppInputDisplayName,
+			Disabled: true,
 		},
 		{
-			Name: "015-app-input-display-name-not-nullable",
-			Fn:   a.migration015DisplayNameNotNullable,
+			Name:     "015-app-input-display-name-not-nullable",
+			Fn:       a.migration015DisplayNameNotNullable,
+			Disabled: true,
 		},
 		{
-			Name: "016-input-cascades",
-			Fn:   a.migration016InputCascades,
+			Name:     "016-input-cascades",
+			Fn:       a.migration016InputCascades,
+			Disabled: true,
 		},
 		{
-			Name: "017-add-org-types",
-			Fn:   a.migration017AddOrgTypes,
+			Name:     "017-add-org-types",
+			Fn:       a.migration017AddOrgTypes,
+			Disabled: true,
 		},
 		{
-			Name: "018-add-user-types",
-			Fn:   a.migration018AddUserTypes,
+			Name:     "018-add-user-types",
+			Fn:       a.migration018AddUserTypes,
+			Disabled: true,
 		},
 		{
-			Name: "019-org-and-user-types-required",
-			Fn:   a.migration019OrgAndUserTypesNotNullable,
+			Name:     "019-org-and-user-types-required",
+			Fn:       a.migration019OrgAndUserTypesNotNullable,
+			Disabled: true,
 		},
 		{
-			Name: "020-install-component-cascades",
-			Fn:   a.migration020InstallComponentCascades,
+			Name:     "020-install-component-cascades",
+			Fn:       a.migration020InstallComponentCascades,
+			Disabled: true,
 		},
 		{
-			Name: "021-datadog-test-noop",
-			Fn:   a.migration021NoopDatadogTest,
+			Name:     "021-datadog-test-noop",
+			Fn:       a.migration021NoopDatadogTest,
+			Disabled: true,
 		},
 		{
-			Name: "022-remove-duplicate-user-tokens-v2",
-			Fn:   a.migration022RemoveDuplicateUserTokens,
+			Name:     "022-remove-duplicate-user-tokens-v2",
+			Fn:       a.migration022RemoveDuplicateUserTokens,
+			Disabled: true,
 		},
 		{
-			Name: "023-user-tokens-unique",
-			Fn:   a.migration023UserTokensUniqueConstraint,
+			Name:     "023-user-tokens-unique",
+			Fn:       a.migration023UserTokensUniqueConstraint,
+			Disabled: true,
 		},
 		{
-			Name: "024-ensure-user-tokens-for-orgs",
-			Fn:   a.migration024EnsureUserTokens,
+			Name:     "024-ensure-user-tokens-for-orgs",
+			Fn:       a.migration024EnsureUserTokens,
+			Disabled: true,
 		},
 		{
-			Name: "025-ensure-created-by-ids-and-org-ids",
-			Fn:   a.migration025EnsureCreatedByIDs,
+			Name:     "025-ensure-created-by-ids-and-org-ids",
+			Fn:       a.migration025EnsureCreatedByIDs,
+			Disabled: true,
 		},
 		{
-			Name: "027-delete-installs-with-deleted-orgs",
-			Fn:   a.migration027DeleteInstallsWithDeletedOrgs,
+			Name:     "027-delete-installs-with-deleted-orgs",
+			Fn:       a.migration027DeleteInstallsWithDeletedOrgs,
+			Disabled: true,
 		},
 		{
-			Name: "028-aws-ecr-image-configs",
-			Fn:   a.migration028AWSECRConfigs,
-		},
-		{
-
-			Name: "029-vcs-conns-cascade",
-			Fn:   a.migration029VcsConnectionsConstraint,
-		},
-		{
-
-			Name: "030-org-user-duplicate",
-			Fn:   a.migration030OrgUserDuplicates,
-		},
-		{
-
-			Name: "031-connected-config-cascade",
-			Fn:   a.migration031ConnectedVCSConfigCascadeConstraint,
-		},
-		{
-
-			Name: "032-sensitive-inputs",
-			Fn:   a.migration033SensitiveInputs,
-		},
-		{
-
-			Name: "033-sensitive-input",
-			Fn:   a.migration033SensitiveInputs,
-		},
-		{
-
-			Name: "033-install-events-cascade",
-			Fn:   a.migration033InstallEventsCascade,
+			Name:     "028-aws-ecr-image-configs",
+			Fn:       a.migration028AWSECRConfigs,
+			Disabled: true,
 		},
 		{
 
-			Name: "034-app-sandbox-config",
-			Fn:   a.migration034AppSandboxConfigAppID,
+			Name:     "029-vcs-conns-cascade",
+			Fn:       a.migration029VcsConnectionsConstraint,
+			Disabled: true,
+		},
+		{
+
+			Name:     "030-org-user-duplicate",
+			Fn:       a.migration030OrgUserDuplicates,
+			Disabled: true,
+		},
+		{
+
+			Name:     "031-connected-config-cascade",
+			Fn:       a.migration031ConnectedVCSConfigCascadeConstraint,
+			Disabled: true,
+		},
+		{
+
+			Name:     "032-sensitive-inputs",
+			Fn:       a.migration033SensitiveInputs,
+			Disabled: true,
+		},
+		{
+
+			Name:     "033-sensitive-input",
+			Fn:       a.migration033SensitiveInputs,
+			Disabled: true,
+		},
+		{
+
+			Name:     "033-install-events-cascade",
+			Fn:       a.migration033InstallEventsCascade,
+			Disabled: true,
+		},
+		{
+
+			Name:     "034-app-sandbox-config",
+			Fn:       a.migration034AppSandboxConfigAppID,
+			Disabled: true,
 		},
 		{
 
