@@ -106,6 +106,7 @@ jobs:
           - workers-executors
           - workers-installs
           - workers-orgs
+          - wiki
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
