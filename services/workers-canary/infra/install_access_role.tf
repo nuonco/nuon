@@ -1,5 +1,6 @@
 module "eks_access" {
-  source = "github.com/nuonco/sandboxes//iam-role"
+  source = "nuonco/install-access/aws"
+
   sandbox = "aws-eks"
   prefix = "workers-canary-${var.env}"
 
@@ -9,7 +10,8 @@ module "eks_access" {
 }
 
 module "ecs_access" {
-  source = "github.com/nuonco/sandboxes//iam-role"
+  source = "nuonco/install-access/aws"
+
   sandbox = "aws-ecs"
   prefix = "workers-canary-${var.env}"
 

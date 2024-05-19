@@ -8,6 +8,8 @@ resource "aws_kms_key" "canary_bucket" {
 
   description = "KMS key for ${local.bucket_name}"
   policy      = data.aws_iam_policy_document.canary_bucket_key_policy.json
+  rotation_period_in_days = 1000
+  enable_key_rotation = true
 
   deletion_window_in_days = 7
 }
