@@ -16,8 +16,8 @@ type App struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_app_name,unique"`
 
-	Name        string `json:"name" gorm:"index:idx_app_name,unique"`
-	Description string `json:"description"`
+	Name              string `json:"name" gorm:"index:idx_app_name,unique"`
+	Description       string `json:"description"`
 
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org   Org    `faker:"-" json:"-"`

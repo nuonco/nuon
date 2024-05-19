@@ -11,9 +11,10 @@ import (
 type Component map[string]interface{}
 
 type MinComponent struct {
-	Source string `mapstructure:"source,omitempty"`
-	Name   string `mapstructure:"name,omitempty"`
-	Type   string `mapstructure:"type,omitempty"`
+	Source  string `mapstructure:"source,omitempty"`
+	Name    string `mapstructure:"name,omitempty"`
+	VarName string `mapstructure:"var_name,omitempty"`
+	Type    string `mapstructure:"type,omitempty"`
 }
 
 func (c Component) toMinComponent() (MinComponent, error) {
