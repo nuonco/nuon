@@ -7,11 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type UpdateComponentRequest struct {
-	Name         string   `json:"name" validate:"required,interpolatedName"`
+	Name    string `json:"name" validate:"required,interpolatedName"`
+	VarName string `json:"var_name" validate:"interpolatedName"`
+
 	Dependencies []string `json:"dependencies"`
 }
 
@@ -67,17 +70,15 @@ func (s *service) updateComponent(ctx context.Context, componentID string, req *
 
 	res := s.db.WithContext(ctx).
 		Model(&currentComponent).
-		Updates(app.Component{Name: req.Name})
+		Updates(app.Component{
+			Name:    req.Name,
+			VarName: generics.First(req.VarName, req.Name),
+		})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
 
-	// clear dependencies
-	compDep := app.ComponentDependency{}
-	res = s.db.WithContext(ctx).
-		Unscoped().
-		Delete(&compDep, "component_id = ?", componentID)
-	if res.Error != nil {
+	if err := s.helpers.ClearComponentDependencies(ctx, componentID); err != nil {
 		return nil, fmt.Errorf("unable to clear component dependencies: %w", res.Error)
 	}
 
