@@ -195,8 +195,9 @@ func (a *Migrations) GetAll() []Migration {
 			Fn:   a.migration037ComponentVarNameRequired,
 		},
 		{
-			Name: "038-drop-app-installer-tables",
-			Fn:   a.migration038DropAppInstallers,
+			Name:     "038-drop-app-installer-tables",
+			Fn:       a.migration038DropAppInstallers,
+			Disabled: true,
 		},
 		{
 			Name: "039-drop-component-var-name-required",
