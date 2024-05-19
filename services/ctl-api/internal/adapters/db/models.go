@@ -97,10 +97,6 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 
 		// internal
 		&app.Migration{},
-
-		// to remove
-		&app.AppInstaller{},
-		&app.AppInstallerMetadata{},
 	}
 	for _, model := range models {
 		if err := a.db.WithContext(ctx).AutoMigrate(model); err != nil {

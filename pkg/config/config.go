@@ -13,10 +13,14 @@ const (
 type AppConfig struct {
 	Version string `mapstructure:"version"`
 
-	Inputs    *AppInputConfig     `mapstructure:"inputs,omitempty"`
-	Sandbox   *AppSandboxConfig   `mapstructure:"sandbox"`
-	Runner    *AppRunnerConfig    `mapstructure:"runner"`
-	Installer *AppInstallerConfig `mapstructure:"installer,omitempty"`
+	// Top level fields on the app itself, which are _not_ synced by this package
+	Description string `mapstgructure:"description,omitempty"`
+
+	// top level fields
+	Inputs    *AppInputConfig   `mapstructure:"inputs,omitempty"`
+	Sandbox   *AppSandboxConfig `mapstructure:"sandbox"`
+	Runner    *AppRunnerConfig  `mapstructure:"runner"`
+	Installer *InstallerConfig  `mapstructure:"installer,omitempty"`
 
 	// NOTE: in order to prevent users having to declare multiple arrays of _different_ component types:
 	// eg: [[terraform_module_components]]
