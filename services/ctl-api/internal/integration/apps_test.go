@@ -52,6 +52,7 @@ func (s *appsTestSuite) TestCreateApp() {
 		require.NotNil(t, app)
 
 		require.Equal(t, app.Name, *(appReq.Name))
+		require.Equal(t, app.Description, appReq.Description)
 		require.NotEmpty(t, app.ID)
 	})
 
@@ -151,6 +152,7 @@ func (s *appsTestSuite) TestUpdateApp() {
 		require.Nil(t, err)
 		require.NotNil(t, updatedApp)
 		require.Equal(t, updatedApp.Name, updateAppReq.Name)
+		require.Equal(t, updatedApp.Description, updateAppReq.Description)
 
 		// fetch the app
 		fetched, err := s.apiClient.GetApp(s.ctx, app.ID)

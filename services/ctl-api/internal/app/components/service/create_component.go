@@ -7,12 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 type CreateComponentRequest struct {
 	Name         string   `json:"name" validate:"required,interpolatedName"`
+	VarName      string   `json:"var_name" validate:"interpolatedName"`
 	Dependencies []string `json:"dependencies"`
 }
 
@@ -80,6 +82,7 @@ func (s *service) createComponent(ctx context.Context, appID string, req *Create
 	component := app.Component{
 		AppID:             appID,
 		Name:              req.Name,
+		VarName:           generics.First(req.VarName, req.Name),
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start for component",
 	}

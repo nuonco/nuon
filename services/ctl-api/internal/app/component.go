@@ -20,7 +20,8 @@ type Component struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	Name string `json:"name" gorm:"notnull;index:idx_app_component_name,unique"`
+	Name    string `json:"name" gorm:"notnull;index:idx_app_component_name,unique"`
+	VarName string `json:"var_name"`
 
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_component_name,unique"`
 	App   App    `faker:"-" json:"-"`

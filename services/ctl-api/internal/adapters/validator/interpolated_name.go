@@ -24,7 +24,7 @@ func InterpolatedName(v *validator.Validate, val string) error {
 
 func interpolatedNameValidator(fl validator.FieldLevel) bool {
 	if fl.Field().String() == "" {
-		return false
+		return true
 	}
 
 	return interpolatedNameRegex.MatchString(fl.Field().String())

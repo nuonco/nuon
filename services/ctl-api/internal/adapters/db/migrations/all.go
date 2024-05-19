@@ -23,7 +23,7 @@ func (a *Migrations) GetAll() []Migration {
 		{
 			Name:     "003-seed",
 			Fn:       a.migration003Seed,
-			Disabled: true,
+			Disabled: false,
 		},
 		{
 			Name:     "004-fix-install-cascade-constraints",
@@ -146,51 +146,57 @@ func (a *Migrations) GetAll() []Migration {
 			Disabled: true,
 		},
 		{
-
 			Name:     "029-vcs-conns-cascade",
 			Fn:       a.migration029VcsConnectionsConstraint,
 			Disabled: true,
 		},
 		{
-
 			Name:     "030-org-user-duplicate",
 			Fn:       a.migration030OrgUserDuplicates,
 			Disabled: true,
 		},
 		{
-
 			Name:     "031-connected-config-cascade",
 			Fn:       a.migration031ConnectedVCSConfigCascadeConstraint,
 			Disabled: true,
 		},
 		{
-
 			Name:     "032-sensitive-inputs",
 			Fn:       a.migration033SensitiveInputs,
 			Disabled: true,
 		},
 		{
-
 			Name:     "033-sensitive-input",
 			Fn:       a.migration033SensitiveInputs,
 			Disabled: true,
 		},
 		{
-
 			Name:     "033-install-events-cascade",
 			Fn:       a.migration033InstallEventsCascade,
 			Disabled: true,
 		},
 		{
-
 			Name:     "034-app-sandbox-config",
 			Fn:       a.migration034AppSandboxConfigAppID,
 			Disabled: true,
 		},
 		{
-
-			Name: "035-installers",
-			Fn:   a.migration035Installers,
+			// REMOVED since the AppInstaller table was removed, breaking the code.
+			Name:     "035-installers",
+			Fn:       nil,
+			Disabled: true,
+		},
+		{
+			Name: "036-component-var-names",
+			Fn:   a.migration036ComponentVarNames,
+		},
+		{
+			Name: "037-component-var-names-required",
+			Fn:   a.migration037ComponentVarNameRequired,
+		},
+		{
+			Name: "038-drop-app-installer-tables",
+			Fn:   a.migration038DropAppInstallers,
 		},
 	}
 }
