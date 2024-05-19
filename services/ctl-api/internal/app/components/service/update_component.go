@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -72,7 +71,7 @@ func (s *service) updateComponent(ctx context.Context, componentID string, req *
 		Model(&currentComponent).
 		Updates(app.Component{
 			Name:    req.Name,
-			VarName: generics.First(req.VarName, req.Name),
+			VarName: req.VarName,
 		})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
