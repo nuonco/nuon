@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
@@ -76,18 +77,28 @@ func (a *AppConfig) ToTerraform(backendType BackendType) (map[string]interface{}
 		backend = "local"
 	}
 
+	requiredProviders := map[string]interface{}{
+		"nuon": map[string]interface{}{
+			"source":  "nuonco/nuon",
+			"version": ">= 0.12.0",
+		},
+	}
+	if os.Getenv("NUON_CONFIG_LOCAL_TERRAFORM") != "" {
+		requiredProviders = map[string]interface{}{
+			"nuon": map[string]interface{}{
+				"source":  "terraform.local/local/nuon",
+				"version": "0.0.1",
+			},
+		}
+	}
+
 	return map[string]interface{}{
 		"terraform": map[string]interface{}{
 			"required_version": ">= 1.5.3",
 			"backend": map[string]interface{}{
 				backend: map[string]interface{}{},
 			},
-			"required_providers": map[string]interface{}{
-				"nuon": map[string]interface{}{
-					"source":  "nuonco/nuon",
-					"version": ">= 0.12.0",
-				},
-			},
+			"required_providers": requiredProviders,
 		},
 		"provider": map[string]interface{}{
 			"nuon": map[string]interface{}{},
