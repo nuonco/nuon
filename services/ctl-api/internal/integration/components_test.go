@@ -51,8 +51,11 @@ func (s *componentsSuite) TestCreateComponent() {
 		require.Nil(t, err)
 		require.NotNil(t, comp)
 
+		comp, err = s.apiClient.GetComponent(s.ctx, comp.ID)
+		require.Nil(t, err)
 		require.Equal(t, comp.Name, *(createReq.Name))
 		require.Equal(t, comp.VarName, createReq.VarName)
+		require.Equal(t, comp.ResolvedVarName, createReq.VarName)
 	})
 
 	s.T().Run("sets interpolation name as app name by default", func(t *testing.T) {
@@ -65,8 +68,10 @@ func (s *componentsSuite) TestCreateComponent() {
 		require.Nil(t, err)
 		require.NotNil(t, comp)
 
+		comp, err = s.apiClient.GetComponent(s.ctx, comp.ID)
+		require.Nil(t, err)
 		require.Equal(t, comp.Name, *(createReq.Name))
-		require.Equal(t, comp.VarName, *(createReq.Name))
+		require.Equal(t, comp.ResolvedVarName, *(createReq.Name))
 	})
 
 	s.T().Run("errors on invalid parameters", func(t *testing.T) {

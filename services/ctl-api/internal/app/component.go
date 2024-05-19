@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
@@ -20,8 +21,9 @@ type Component struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	Name    string `json:"name" gorm:"notnull;index:idx_app_component_name,unique"`
-	VarName string `json:"var_name"`
+	Name            string `json:"name" gorm:"notnull;index:idx_app_component_name,unique"`
+	VarName         string `json:"var_name"`
+	ResolvedVarName string `json:"resolved_var_name" gorm:"-"`
 
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_component_name,unique"`
 	App   App    `faker:"-" json:"-"`
@@ -41,6 +43,7 @@ type Component struct {
 }
 
 func (c *Component) AfterQuery(tx *gorm.DB) error {
+	c.ResolvedVarName = generics.First(c.VarName, c.Name)
 	if len(c.ComponentConfigs) < 1 {
 		return nil
 	}
