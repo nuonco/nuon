@@ -2,7 +2,6 @@ resource "nuon_job_component" "e2e" {
   count = var.create_components ? 1 : 0
 
   name   = "${var.component_prefix}e2e_job"
-  var_name = "e2e_job"
   app_id = nuon_app.main.id
   dependencies = [
     nuon_docker_build_component.e2e[0].id,
