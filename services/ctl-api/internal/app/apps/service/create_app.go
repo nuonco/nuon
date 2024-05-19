@@ -12,7 +12,8 @@ import (
 )
 
 type CreateAppRequest struct {
-	Name string `json:"name" validate:"required,entityName"`
+	Name        string `json:"name" validate:"required,entityName"`
+	Description string `json:"description"`
 }
 
 func (c *CreateAppRequest) Validate(v *validator.Validate) error {
@@ -69,6 +70,7 @@ func (s *service) createApp(ctx context.Context, orgID string, req *CreateAppReq
 	app := app.App{
 		OrgID:             orgID,
 		Name:              req.Name,
+		Description:       req.Description,
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start and provision app",
 	}

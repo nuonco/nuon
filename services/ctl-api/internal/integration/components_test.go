@@ -44,12 +44,29 @@ func (s *componentsSuite) TestCreateComponent() {
 	s.T().Run("success", func(t *testing.T) {
 		createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
 		createReq.Name = generics.ToPtr(s.formatInterpolatedString(*createReq.Name))
+		createReq.VarName = s.formatInterpolatedString(createReq.VarName)
+
 		createReq.Dependencies = []string{}
 		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
 		require.Nil(t, err)
 		require.NotNil(t, comp)
 
 		require.Equal(t, comp.Name, *(createReq.Name))
+		require.Equal(t, comp.VarName, createReq.VarName)
+	})
+
+	s.T().Run("sets interpolation name as app name by default", func(t *testing.T) {
+		createReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
+		createReq.Name = generics.ToPtr(s.formatInterpolatedString(*createReq.Name))
+		createReq.VarName = ""
+
+		createReq.Dependencies = []string{}
+		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, createReq)
+		require.Nil(t, err)
+		require.NotNil(t, comp)
+
+		require.Equal(t, comp.Name, *(createReq.Name))
+		require.Equal(t, comp.VarName, *(createReq.Name))
 	})
 
 	s.T().Run("errors on invalid parameters", func(t *testing.T) {
@@ -63,7 +80,9 @@ func (s *componentsSuite) TestCreateComponent() {
 
 		compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
 		compReq.Name = generics.ToPtr(s.formatInterpolatedString(*compReq.Name))
+		compReq.VarName = ""
 		compReq.Dependencies = []string{}
+
 		comp, err := s.apiClient.CreateComponent(s.ctx, s.appID, compReq)
 		require.NoError(t, err)
 		require.NotNil(t, comp)
@@ -80,10 +99,13 @@ func (s *componentsSuite) TestUpdateComponent() {
 	s.T().Run("success", func(t *testing.T) {
 		updateReq := generics.GetFakeObj[*models.ServiceUpdateComponentRequest]()
 		updateReq.Name = generics.ToPtr(s.formatInterpolatedString(*updateReq.Name))
+		updateReq.VarName = s.formatInterpolatedString(updateReq.VarName)
 		updateReq.Dependencies = []string{}
 		updatedComp, err := s.apiClient.UpdateComponent(s.ctx, comp.ID, updateReq)
+
 		require.Nil(t, err)
 		require.Equal(t, updatedComp.Name, *(updateReq.Name))
+		require.Equal(t, updatedComp.VarName, updateReq.VarName)
 	})
 
 	s.T().Run("errors on invalid parameters", func(t *testing.T) {

@@ -24,6 +24,6 @@ message InstanceConnection {
     (tagger.tags) = "faker:\"shortID\""
   ];
 
-  // component name is used to interpolate what the customer would be setting when looking up a field
   string component_name = 4;
+  string var_name = 5;
 }

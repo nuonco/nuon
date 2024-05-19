@@ -18,7 +18,7 @@ import (
 // @Accept			json
 // @Param   limit  query int	 false	"limit of installers to return"	     Default(60)
 // @Produce		json
-// @Success		200	{array}	app.AppInstaller
+// @Success		200	{array}	app.Installer
 // @Router			/v1/installers [get]
 func (s *service) GetAllInstallers(ctx *gin.Context) {
 	limitStr := ctx.DefaultQuery("limit", "60")

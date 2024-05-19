@@ -12,7 +12,8 @@ import (
 )
 
 type UpdateAppRequest struct {
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
@@ -66,7 +67,12 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 		ID: appID,
 	}
 
-	res := s.db.WithContext(ctx).Model(&currentApp).Updates(app.App{Name: req.Name})
+	res := s.db.WithContext(ctx).
+		Model(&currentApp).
+		Updates(app.App{
+			Name:        req.Name,
+			Description: req.Description,
+		})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app: %w", res.Error)
 	}
