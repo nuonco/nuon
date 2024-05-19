@@ -3,6 +3,7 @@ resource "nuon_helm_chart_component" "e2e" {
   count = var.create_components ? 1 : 0
 
   name   = "${var.component_prefix}e2e_helm"
+  var_name = "e2e_helm"
   app_id = nuon_app.main.id
 
   dependencies = [

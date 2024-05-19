@@ -185,6 +185,7 @@ func (s *baseIntegrationTestSuite) formatInputs(inputs map[string]models.Service
 func (s *baseIntegrationTestSuite) createComponent(appID string) *models.AppComponent {
 	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
 	compReq.Name = generics.ToPtr(s.formatInterpolatedString(*compReq.Name))
+	compReq.VarName = s.formatInterpolatedString(compReq.VarName)
 	compReq.Dependencies = []string{}
 
 	comp, err := s.apiClient.CreateComponent(s.ctx, appID, compReq)

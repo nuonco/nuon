@@ -2,6 +2,7 @@ resource "nuon_docker_build_component" "e2e" {
   count = var.create_components ? 1 : 0
 
   name   = "${var.component_prefix}e2e_docker_build"
+  var_name = "e2e_docker_build"
   app_id = nuon_app.main.id
 
   dockerfile = "Dockerfile"

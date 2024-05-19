@@ -17,7 +17,7 @@ module "azure-aks" {
   sandbox_dir = "azure-aks"
   app_runner_type = "azure-aks"
 
-  install_count = 1
+  install_count = 0
   install_prefix = "azure-aks-"
   azure = [
     {

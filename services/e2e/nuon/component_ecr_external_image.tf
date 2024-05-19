@@ -2,6 +2,7 @@ resource "nuon_container_image_component" "e2e-ecr" {
   count = var.create_components ? 1 : 0
 
   name   = "${var.component_prefix}e2e_ecr_external_image"
+  var_name = "e2e_ecr_external_image"
   app_id = nuon_app.main.id
 
   dependencies = [
