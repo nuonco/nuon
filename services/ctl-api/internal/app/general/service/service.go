@@ -23,6 +23,8 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/metrics", s.PublishMetrics)
 	api.GET("/v1/general/current-user", s.GetCurrentUser)
 	api.GET("/v1/general/cli-config", s.GetCLIConfig)
+	api.GET("/v1/general/cloud-platform/:cloud_platform/regions", s.GetCloudPlatformRegions)
+
 	return nil
 }
 
