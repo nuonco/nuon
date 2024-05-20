@@ -21,8 +21,9 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/oapi/v3"}:   {},
 
 	// cli / ui methods
-	{"GET", "/v1/general/cli-config"}:       {},
-	{"POST", "/v1/vcs/connection-callback"}: {},
+	{"GET", "/v1/general/cli-config"}:                             {},
+	{"GET", "/v1/general/cloud-platform/:cloud_platform/regions"}: {},
+	{"POST", "/v1/vcs/connection-callback"}:                       {},
 }
 
 func IsPublic(ctx *gin.Context) bool {
