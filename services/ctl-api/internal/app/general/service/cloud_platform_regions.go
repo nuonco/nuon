@@ -23,7 +23,7 @@ import (
 // @Success		200	{array}	app.CloudPlatformRegion
 // @Router			/v1/general/cloud-platform/{cloud_platform}/regions [GET]
 func (s *service) GetCloudPlatformRegions(ctx *gin.Context) {
-	platform := ctx.DefaultQuery("platform", "aws")
+	platform := ctx.Param("cloud_platform")
 	cloudPlatform, err := app.NewCloudPlatform(platform)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
