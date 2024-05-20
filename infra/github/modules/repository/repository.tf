@@ -14,17 +14,17 @@ resource "github_repository" "main" {
   has_issues   = true  # we used to turn off issues for archived repos. that causes issues so don't
   has_projects = false # we use org projects, not older projects v1
   has_wiki     = false # we use notion
-  auto_init    = var.auto_init
+  auto_init    = !var.is_fork
 
-  # merge commits are messy
-  # we don't want to see 100 "test","crap","fix", "etc" commits on main
+  # never allow merge commits, to prevent poorly formatted commits on main
   allow_merge_commit = false
-  # squash commits are cleaner and are "verified"
+
   # i.e. github will sign the commit for us
   # devs sign their commits, gh signs the squash, we are "verified" end-to-end
-  allow_squash_merge = true
-  # rebase can also be messy and cannot be signed by GH
-  allow_rebase_merge = false
+  # for forks, we do not allow squash merging, because it will mess up the upstream history
+  allow_squash_merge = var.is_fork ? false : true
+  # for forks, we want to rebase the commits and retain upstream history
+  allow_rebase_merge = var.is_fork ? true : false
   # if CI and other requirements are met, it's mergable.
   # if that's ever not the case, we should update CI / requirements, not turn this off
   allow_auto_merge = true
@@ -35,7 +35,7 @@ resource "github_repository" "main" {
 
   vulnerability_alerts = !var.archived # turn of dependabot alerts for archived repos
 
-  topics = concat(["managed-by-terraform"], var.topics)
+  topics = concat(["managed-by-terraform"], var.topics, var.is_fork ? ["terraform-managed-fork"] : [])
 }
 
 resource "github_team_repository" "owner" {
