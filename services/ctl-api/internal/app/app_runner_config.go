@@ -9,14 +9,6 @@ import (
 	"gorm.io/plugin/soft_delete"
 )
 
-type CloudPlatform string
-
-const (
-	CloudPlatformAWS     CloudPlatform = "aws"
-	CloudPlatformAzure   CloudPlatform = "azure"
-	CloudPlatformUnknown CloudPlatform = "unknown"
-)
-
 type AppRunnerType string
 
 const (
