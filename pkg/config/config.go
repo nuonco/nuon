@@ -14,7 +14,7 @@ type AppConfig struct {
 	Version string `mapstructure:"version"`
 
 	// Top level fields on the app itself, which are _not_ synced by this package
-	Description string `mapstgructure:"description,omitempty"`
+	Description string `mapstructure:"description,omitempty"`
 
 	// top level fields
 	Inputs    *AppInputConfig   `mapstructure:"inputs,omitempty"`
