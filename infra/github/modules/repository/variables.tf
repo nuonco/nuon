@@ -93,6 +93,11 @@ variable "is_fork" {
   description = "whether the repo is a fork or not"
 }
 
+variable "auto_init" {
+  default = true
+  description = "whether to create an init commit or not"
+}
+
 variable "collaborators" {
   type = map(string)
   default = {}
