@@ -185,5 +185,26 @@ func (c *cli) appsCmd() *cobra.Command {
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVarP(&template, "template", "", "aws-ecs", "app config template type")
 	appsCmd.AddCommand(createCmd)
+
+	var (
+		rename bool
+	)
+	renameCmd := &cobra.Command{
+		Use:               "rename",
+		Short:             "Rename an app.",
+		PersistentPreRunE: c.persistentPreRunE,
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc.Rename(cmd.Context(), appID, name, rename, PrintJSON)
+		},
+	}
+	renameCmd.Flags().StringVarP(&name, "name", "n", "", "app name")
+	renameCmd.MarkFlagRequired("name")
+	renameCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	renameCmd.MarkFlagRequired("app-id")
+	renameCmd.Flags().BoolVarP(&rename, "rename", "", true, "Rename config file if it exists")
+
+	appsCmd.AddCommand(renameCmd)
+
 	return appsCmd
 }
