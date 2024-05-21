@@ -229,5 +229,44 @@ func (c *cli) installsCmd() *cobra.Command {
 	selectInstallCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
 	installsCmds.AddCommand(selectInstallCmd)
 
+	reprovisionInstallCmd := &cobra.Command{
+		Use:   "reprovision",
+		Short: "Reproivision install",
+		Long:  "Reprovision an install sandbox",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient, c.cfg)
+			svc.Reprovision(cmd.Context(), id, PrintJSON)
+		},
+	}
+	reprovisionInstallCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	reprovisionInstallCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(reprovisionInstallCmd)
+
+	deprovisionInstallCmd := &cobra.Command{
+		Use:   "deprovision",
+		Short: "reproivision install",
+		Long:  "Deprovision an install sandbox",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient, c.cfg)
+			svc.Deprovision(cmd.Context(), id, PrintJSON)
+		},
+	}
+	deprovisionInstallCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	deprovisionInstallCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(deprovisionInstallCmd)
+
+	teardownInstallComponentsCmd := &cobra.Command{
+		Use:   "teardown-components",
+		Short: "Teardown components on install.",
+		Long:  "Teardown all deployed components on an install",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient, c.cfg)
+			svc.TeardownComponents(cmd.Context(), id, PrintJSON)
+		},
+	}
+	teardownInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	teardownInstallComponentsCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(teardownInstallComponentsCmd)
+
 	return installsCmds
 }
