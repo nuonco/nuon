@@ -34,28 +34,34 @@ export const Build: FC<IGetBuild> = async (props) => {
             endTime={build?.updated_at}
           />
         </Text>
+        <Text variant="caption">
+          <Link href={`/dashboard/${props.orgId}/builds/${props.buildId}`}>
+            Details
+          </Link>
+        </Text>
       </div>
 
-      {build?.vcs_connection_commit ? (
-        <div className="flex flex-col gap-0">
-          <Text variant="label">Commit details</Text>
-          <Text className="flex justify-between" variant="caption">
-            <span className="flex gap-2 items-center">
-              <GoCommit />
-              {build?.vcs_connection_commit?.author_name ? (
-                <b>{build?.vcs_connection_commit?.author_name}</b>
-              ) : null}
-
-              <span className="truncate">
-                {build?.vcs_connection_commit?.message}
-              </span>
-            </span>
-            <Link href="#">
-              {build?.vcs_connection_commit?.sha?.slice(0, 7)}
-            </Link>
-          </Text>
-        </div>
-      ) : null}
+      {build?.vcs_connection_commit ? <BuildCommit {...build} /> : null}
     </Card>
+  )
+}
+
+export const BuildCommit: FC<{
+  vcs_connection_commit: TBuild['vcs_connection_commit']
+}> = ({ vcs_connection_commit }) => {
+  return (
+    <div className="flex flex-col gap-0">
+      <Text variant="label">Commit details</Text>
+      <Text className="flex justify-between" variant="caption">
+        <span className="flex gap-2 items-center">
+          <GoCommit />
+          {vcs_connection_commit?.author_name ? (
+            <b>{vcs_connection_commit?.author_name}</b>
+          ) : null}
+          <span className="truncate">{vcs_connection_commit?.message}</span> (#
+          {vcs_connection_commit?.sha?.slice(0, 7)})
+        </span>
+      </Text>
+    </div>
   )
 }
