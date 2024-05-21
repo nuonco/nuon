@@ -39,6 +39,8 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/installs/:install_id", s.GetInstall)
 	api.PATCH("/v1/installs/:install_id", s.UpdateInstall)
 	api.DELETE("/v1/installs/:install_id", s.DeleteInstall)
+	api.POST("/v1/installs/:install_id/reprovision", s.ReprovisionInstall)
+	api.POST("/v1/installs/:install_id/deprovision", s.DeprovisionInstall)
 
 	// install deploys
 	api.GET("/v1/installs/:install_id/deploys", s.GetInstallDeploys)
@@ -59,6 +61,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 
 	// install components
 	api.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
+	api.POST("/v1/installs/:install_id/components/teardown-all", s.TeardownInstallComponents)
 	api.POST("/v1/installs/:install_id/components/:component_id/teardown", s.TeardownInstallComponent)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys", s.GetInstallComponentDeploys)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys/latest", s.GetInstallComponentLatestDeploy)
