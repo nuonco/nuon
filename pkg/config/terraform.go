@@ -33,13 +33,12 @@ func (a *AppConfig) ToTerraform(backendType BackendType) (map[string]interface{}
 		a.Runner,
 	}
 
-	if a.Inputs != nil && len(a.Inputs.Inputs) > 0 {
+	if a.Inputs != nil {
 		resources = append(resources, a.Inputs)
 	}
-	// TODO(jm): reenable installers once properly ported
-	//if a.Installer != nil {
-	//resources = append(resources, a.Installer)
-	//}
+	if a.Installer != nil {
+		resources = append(resources, a.Installer)
+	}
 
 	for idx, comp := range a.Components {
 		if idx > 0 {

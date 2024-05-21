@@ -2,6 +2,22 @@ package generics
 
 import "fmt"
 
+func DeleteSliceKey(obj interface{}, key string) {
+	objs, ok := obj.([]interface{})
+	if !ok {
+		return
+	}
+
+	for _, obj := range objs {
+		mapObj, ok := obj.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		delete(mapObj, key)
+	}
+}
+
 func SliceContains[T comparable](val T, vals []T) bool {
 	for _, v := range vals {
 		if val == v {

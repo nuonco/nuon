@@ -31,6 +31,7 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	}
 
 	tfJSON, err := parse.ToTerraformJSON(parse.ParseConfig{
+		Context:     config.ConfigContextSource,
 		Bytes:       byts,
 		BackendType: config.BackendTypeS3,
 		Template:    true,
