@@ -204,6 +204,7 @@ module "shared-common-fate-installer" {
   owning_team_id           = github_team.nuonco-shared.id
   is_private               = true
   enable_branch_protection = false
+  is_fork                  = true
 
   collaborators = {
     chrnorm           = "push"
