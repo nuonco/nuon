@@ -28,6 +28,7 @@ module "shared-warpstream-installer" {
   owning_team_id           = github_team.nuonco-shared.id
   is_private               = true
   enable_branch_protection = false
+  is_fork                  = true
 
   collaborators = {
     "caleb-warpstream" = "push"
@@ -246,6 +247,7 @@ module "shared-streamkap-installer" {
   owning_team_id           = github_team.nuonco-shared.id
   is_private               = true
   enable_branch_protection = false
+  is_fork                  = true
 
   collaborators = {
     thomasr888      = "push"
@@ -288,6 +290,7 @@ module "shared-100xdev-installer" {
   owning_team_id           = github_team.nuonco-shared.id
   is_private               = true
   enable_branch_protection = false
+  is_fork                  = true
 
   collaborators = {
     anandsainath     = "push"
