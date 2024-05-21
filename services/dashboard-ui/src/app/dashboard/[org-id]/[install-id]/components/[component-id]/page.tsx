@@ -1,6 +1,7 @@
 import React, { type FC, Suspense } from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
+  Build,
   Card,
   ComponentConfig,
   ComponentDependencies,
@@ -22,23 +23,23 @@ import {
 } from '@/lib'
 import type { TBuild, TInstall, TInstallDeploy } from '@/types'
 
-const Build: FC<{
-  buildId: string
-  orgId: string
-}> = async ({ buildId, orgId }) => {
-  let build: TBuild
-  try {
-    build = await getBuild({ buildId, orgId })
-  } catch (error) {
-    return <>No build found</>
-  }
-
-  return (
-    <span className="text-xs">
-      <b>Commit SHA:</b> {build?.vcs_connection_commit?.sha.slice(0, 7)}
-    </span>
-  )
-}
+/* const Build: FC<{
+ *   buildId: string
+ *   orgId: string
+ * }> = async ({ buildId, orgId }) => {
+ *   let build: TBuild
+ *   try {
+ *     build = await getBuild({ buildId, orgId })
+ *   } catch (error) {
+ *     return <>No build found</>
+ *   }
+ * 
+ *   return (
+ *     <span className="text-xs">
+ *       <b>Commit SHA:</b> {build?.vcs_connection_commit?.sha.slice(0, 7)}
+ *     </span>
+ *   )
+ * } */
 
 const ComponentApp: FC<{ installId: string; orgId: string }> = async ({
   installId,
@@ -80,9 +81,6 @@ export default withPageAuthRequired(
             info={
               <div className="flex flex-col">
                 <LatestDeploy2 {...installComponent} />
-                <Suspense fallback={<span>Loading...</span>}>
-                  <Build buildId={buildId} orgId={orgId} />
-                </Suspense>
               </div>
             }
             title={<InstallComponentHeading component={component} />}
@@ -131,16 +129,18 @@ export default withPageAuthRequired(
             <Heading variant="subtitle">Details</Heading>
 
             <Card>
-              <Heading variant="subheading">Configuration</Heading>
+              <Heading>Configuration</Heading>
               <ComponentConfig
                 config={config}
                 version={component?.config_versions}
               />
             </Card>
+        
+            <Build orgId={orgId} buildId={buildId}   />        
 
             {component?.dependencies?.length ? (
               <Card>
-                <Heading variant="subheading">Dependencies</Heading>
+                <Heading>Dependencies</Heading>
                 <ComponentDependencies deps={component?.dependencies} />
               </Card>
             ) : null}
