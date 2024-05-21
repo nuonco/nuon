@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
@@ -13,9 +14,9 @@ import (
 type installComponentsTestSuite struct {
 	baseIntegrationTestSuite
 
-	orgID	  string
-	appID	  string
-	compID	  string
+	orgID     string
+	appID     string
+	compID    string
 	buildID   string
 	installID string
 }
@@ -156,5 +157,18 @@ func (s *installComponentsTestSuite) TestGetInstallComponentLatestDeploy() {
 		require.NoError(t, err)
 		require.NotNil(t, installDeploy)
 		require.Equal(t, installDeploy.ID, deploy.ID)
+	})
+}
+
+func (s *installComponentsTestSuite) TestTeardownComponents() {
+	s.T().Run("success", func(t *testing.T) {
+		err := s.apiClient.TeardownInstallComponents(s.ctx, s.installID)
+		require.NoError(t, err)
+	})
+
+	s.T().Run("install not found", func(t *testing.T) {
+		err := s.apiClient.TeardownInstallComponents(s.ctx, generics.GetFakeObj[string]())
+		require.Error(t, err)
+		require.True(t, nuon.IsNotFound(err))
 	})
 }

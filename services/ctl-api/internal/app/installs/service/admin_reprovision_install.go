@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ReprovisionInstallRequest struct{}
+type AdminReprovisionInstallRequest struct{}
 
 // @ID AdminReprovisionInstall
 // @Description.markdown reprovision_install.md
@@ -17,7 +17,7 @@ type ReprovisionInstallRequest struct{}
 // @Produce		json
 // @Success		201	{string}	ok
 // @Router			/v1/installs/{install_id}/admin-reprovision [POST]
-func (s *service) ReprovisionInstall(ctx *gin.Context) {
+func (s *service) AdminReprovisionInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
 	_, err := s.getInstall(ctx, installID)

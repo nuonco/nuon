@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type TeardownInstallComponentsRequest struct{}
+type AdminTeardownInstallComponentsRequest struct{}
 
 // @ID AdminTeardownInstallComponents
 // @Summary	teardown all components on an install
@@ -22,7 +22,7 @@ type TeardownInstallComponentsRequest struct{}
 func (s *service) AdminTeardownInstallComponents(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
-	var req TeardownInstallComponentsRequest
+	var req AdminTeardownInstallComponentsRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
