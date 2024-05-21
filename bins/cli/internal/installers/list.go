@@ -22,12 +22,16 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 
 	data := [][]string{
 		{
+			"id",
 			"name",
+			"created at",
 		},
 	}
 	for _, installer := range installers {
 		data = append(data, []string{
+			installer.ID,
 			installer.Metadata.Name,
+			installer.CreatedAt,
 		})
 	}
 	view.Render(data)
