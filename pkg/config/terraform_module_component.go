@@ -26,7 +26,7 @@ func (t *TerraformModuleComponentConfig) ToResource() (map[string]interface{}, e
 	return resource, nil
 }
 
-func (t *TerraformModuleComponentConfig) parse() error {
+func (t *TerraformModuleComponentConfig) parse(ctx ConfigContext) error {
 	for k, v := range t.EnvVarMap {
 		t.EnvVars = append(t.EnvVars, EnvironmentVariable{
 			Name:  k,

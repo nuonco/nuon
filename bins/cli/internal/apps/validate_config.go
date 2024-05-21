@@ -38,6 +38,7 @@ func (s *Service) loadConfig(ctx context.Context, file string) ([]byte, error) {
 		Bytes:       byts,
 		BackendType: config.BackendTypeLocal,
 		Template:    true,
+		Context:     config.ConfigContextSource,
 		V:           validator.New(),
 	})
 	if err != nil {
