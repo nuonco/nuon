@@ -17,7 +17,7 @@ type DockerBuildComponentConfig struct {
 	//BuildArgs []string		`mapstructure:"build_args" toml:"build_args"`
 }
 
-func (t *DockerBuildComponentConfig) parse() error {
+func (t *DockerBuildComponentConfig) parse(ConfigContext) error {
 	for k, v := range t.EnvVarMap {
 		t.EnvVars = append(t.EnvVars, EnvironmentVariable{
 			Name:  k,

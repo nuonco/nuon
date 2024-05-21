@@ -1,11 +1,17 @@
 package config
 
+import (
+	"github.com/powertoolsdev/mono/pkg/config/source"
+	"github.com/powertoolsdev/mono/pkg/generics"
+)
+
 type HelmValue struct {
 	Name  string `toml:"name" mapstructure:"name,omitempty"`
 	Value string `toml:"value" mapstructure:"value,omitempty"`
 }
 
 type HelmValuesFile struct {
+	Source   string `toml:"source" mapstructure:"source,omitempty"`
 	Contents string `toml:"contents" mapstructure:"contents,omitempty"`
 }
 
@@ -23,22 +29,44 @@ type HelmChartComponentConfig struct {
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"`
 }
 
-func (t *HelmChartComponentConfig) ToResource() (map[string]interface{}, error) {
-	resource, err := toMapStructure(t)
+func (h *HelmChartComponentConfig) ToResource() (map[string]interface{}, error) {
+	resource, err := toMapStructure(h)
 	if err != nil {
 		return nil, err
 	}
 	resource["app_id"] = "${var.app_id}"
 	delete(resource, "values")
+
+	generics.DeleteSliceKey(resource["values_file"], "source")
+
 	return resource, nil
 }
 
-func (t *HelmChartComponentConfig) parse() error {
-	for k, v := range t.ValuesMap {
-		t.Values = append(t.Values, HelmValue{
+func (h *HelmChartComponentConfig) parse(ctx ConfigContext) error {
+	for k, v := range h.ValuesMap {
+		h.Values = append(h.Values, HelmValue{
 			Name:  k,
 			Value: v,
 		})
+	}
+	if ctx == ConfigContextConfigOnly {
+		return nil
+	}
+
+	for idx, valuesFile := range h.ValuesFiles {
+		if valuesFile.Source == "" {
+			continue
+		}
+
+		byts, err := source.ReadSource(valuesFile.Source)
+		if err != nil {
+			return ErrConfig{
+				Description: "error loading values file " + valuesFile.Source,
+				Err:         err,
+			}
+		}
+
+		h.ValuesFiles[idx].Contents = string(byts)
 	}
 
 	return nil

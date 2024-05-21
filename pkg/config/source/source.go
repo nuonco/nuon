@@ -9,7 +9,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-func LoadSource(val string) (map[string]interface{}, error) {
+func ReadSource(val string) ([]byte, error) {
 	path, err := expandSourcePath(val)
 	if err != nil {
 		return nil, fmt.Errorf("unable to expand source path: %w", err)
@@ -18,6 +18,16 @@ func LoadSource(val string) (map[string]interface{}, error) {
 	byts, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read file: %w", err)
+	}
+
+	return byts, nil
+
+}
+
+func LoadSource(val string) (map[string]interface{}, error) {
+	byts, err := ReadSource(val)
+	if err != nil {
+		return nil, err
 	}
 
 	var obj map[string]interface{}

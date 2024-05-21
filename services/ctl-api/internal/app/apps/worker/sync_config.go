@@ -19,8 +19,6 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		return err
 	}
 
-	w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusSyncing, "generating terraform config")
-
 	var currentApp app.App
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		AppID: appID,
@@ -37,30 +35,12 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		return fmt.Errorf("unable to get app config from database: %w", err)
 	}
 
-	// NOTE(jm): eventually, this will be able to be removed, once all users of config files have migrated to newest
-	// cli.
-	if appCfg.GeneratedTerraform == "" {
-		var generateResponse activities.GenerateTerraformConfigResponse
-		if err := w.defaultExecGetActivity(ctx, w.acts.GenerateTerraformConfig, activities.GenerateTerraformConfigRequest{
-			AppConfigID: appConfigID,
-		}, &generateResponse); err != nil {
-			w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to generate terraform config - "+err.Error())
-			return fmt.Errorf("unable to generate terraform config: %w", err)
-		}
-
-		if err := w.defaultExecErrorActivity(ctx, w.acts.SaveTerraformConfig, activities.SaveTerraformConfigRequest{
-			AppConfigID:   appConfigID,
-			TerraformJSON: generateResponse.Byts,
-		}); err != nil {
-			w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to generate terraform config - "+err.Error())
-			return fmt.Errorf("unable to generate terraform config: %w", err)
-		}
-		if err := w.defaultExecGetActivity(ctx, w.acts.GetAppConfig, activities.GetAppConfigRequest{
-			AppConfigID: appConfigID,
-		}, &currentApp); err != nil {
-			w.updateStatus(ctx, appID, StatusError, "unable to get app config from database")
-			return fmt.Errorf("unable to get app config from database: %w", err)
-		}
+	w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusSyncing, "syncing description")
+	if err := w.defaultExecErrorActivity(ctx, w.acts.SyncAppMetadata, activities.SyncAppMetadataRequest{
+		AppConfigID: appConfigID,
+	}); err != nil {
+		w.updateStatus(ctx, appID, StatusError, "unable to sync app metadata")
+		return fmt.Errorf("unable to sync app metadata: %w", err)
 	}
 
 	w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusSyncing, "applying terraform config")

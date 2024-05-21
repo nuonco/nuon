@@ -26,6 +26,7 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 			"name",
 			"platform",
 			"status",
+			"description",
 		},
 	}
 	for _, app := range apps {
@@ -34,6 +35,7 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 			app.Name,
 			string(app.CloudPlatform),
 			app.Status,
+			app.Description,
 		})
 	}
 	view.Render(data)

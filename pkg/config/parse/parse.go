@@ -13,9 +13,10 @@ type ParseConfig struct {
 	BackendType config.BackendType
 	V           *validator.Validate
 	Template    bool
+	Context     config.ConfigContext
 }
 
-func ToTerraformJSON(parseCfg ParseConfig) ([]byte, error) {
+func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 	var cfg config.AppConfig
 
 	byts, err := Template(parseCfg.Bytes)
@@ -27,18 +28,9 @@ func ToTerraformJSON(parseCfg ParseConfig) ([]byte, error) {
 		return nil, fmt.Errorf("unable to parse toml config: %w", err)
 	}
 
-	if err := cfg.Parse(); err != nil {
+	if err := cfg.Parse(parseCfg.Context); err != nil {
 		return nil, fmt.Errorf("unable to parse config: %w", err)
 	}
 
-	if err := cfg.Validate(parseCfg.V); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
-	}
-
-	tfJSON, err := cfg.ToTerraformJSON(parseCfg.BackendType)
-	if err != nil {
-		return nil, fmt.Errorf("unable to generate terraform json: %w", err)
-	}
-
-	return tfJSON, nil
+	return &cfg, nil
 }

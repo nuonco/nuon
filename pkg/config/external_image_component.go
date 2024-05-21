@@ -31,6 +31,6 @@ func (t *ExternalImageComponentConfig) ToResource() (map[string]interface{}, err
 	return resource, nil
 }
 
-func (t *ExternalImageComponentConfig) parse() error {
+func (t *ExternalImageComponentConfig) parse(ConfigContext) error {
 	return nil
 }

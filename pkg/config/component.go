@@ -76,7 +76,7 @@ func (c Component) ToResourceType() string {
 
 type genericComponent interface {
 	ToResource() (map[string]interface{}, error)
-	parse() error
+	parse(ConfigContext) error
 }
 
 func (c Component) ToResource() (map[string]interface{}, error) {
@@ -128,7 +128,7 @@ func (c Component) ToResource() (map[string]interface{}, error) {
 			Err:         fmt.Errorf("invalid component type: %s", c["type"]),
 		}
 	}
-	if err := comp.parse(); err != nil {
+	if err := comp.parse(ConfigContextSource); err != nil {
 		return nil, fmt.Errorf("unable to parse: %w", err)
 	}
 
@@ -140,7 +140,11 @@ func (c Component) ToResource() (map[string]interface{}, error) {
 	return nestWithName(minComponent.Name, cfg), nil
 }
 
-func (c Component) parse() error {
+func (c Component) parse(ctx ConfigContext) error {
+	if ctx != ConfigContextSource {
+		return nil
+	}
+
 	minComponent, err := c.toMinComponent()
 	if err != nil {
 		return err
