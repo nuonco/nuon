@@ -2,7 +2,15 @@
 
 import React, { type FC, useEffect, useState } from 'react'
 import { GoClock, GoPackage } from 'react-icons/go'
-import { Duration, Heading, PageHeader, Status, Text, Time } from '@/components'
+import {
+  BuildCommit,
+  Duration,
+  Heading,
+  PageHeader,
+  Status,
+  Text,
+  Time,
+} from '@/components'
 import { type IGetBuild } from '@/lib'
 import type { TComponent, TBuild } from '@/types'
 
@@ -38,6 +46,7 @@ export const BuildHeader: FC<
             <Text variant="caption">
               <b>Component ID:</b> {component?.id}
             </Text>
+            <BuildCommit {...build} />
           </div>
         </>
       }
