@@ -1,10 +1,20 @@
 package config
 
+import (
+	"fmt"
+
+	"github.com/mitchellh/mapstructure"
+	"github.com/powertoolsdev/mono/pkg/config/source"
+)
+
 type InstallerConfig struct {
+	Source string `mapstructure:"source,omitempty"`
+
 	Name        string   `mapstructure:"name,omitempty" toml:"name"`
 	Description string   `mapstructure:"description,omitempty" toml:"description"`
 	Slug        string   `mapstructure:"slug,omitempty" toml:"slug"`
-	AppIDs      []string `mapstructure:"app_ids,omitempty" toml:"app_ids"`
+	Apps        []string `mapstructure:"apps,omitempty" toml:"apps"`
+	AppIDs      []string `mapstructure:"app_ids,omitempty" toml:"-"`
 
 	DocumentationURL string `mapstructure:"documentation_url,omitempty" toml:"documentation_url"`
 	CommunityURL     string `mapstructure:"community_url,omitempty" toml:"community_url"`
@@ -20,7 +30,7 @@ type InstallerConfig struct {
 }
 
 func (a *InstallerConfig) ToResourceType() string {
-	return "installer"
+	return "nuon_installer"
 }
 
 func (a *InstallerConfig) ToResource() (map[string]interface{}, error) {
@@ -32,9 +42,36 @@ func (a *InstallerConfig) ToResource() (map[string]interface{}, error) {
 		return nil, nil
 	}
 
+	if len(a.Apps) < 1 {
+		resource["app_ids"] = []string{"${var.app_id}"}
+	} else {
+		resource["app_ids"] = a.Apps
+	}
+
+	delete(resource, "apps")
+	delete(resource, "source")
 	return nestWithName("installer", resource), nil
 }
 
-func (a *InstallerConfig) parse() error {
+func (a *InstallerConfig) parse(ctx ConfigContext) error {
+	if ctx != ConfigContextSource {
+		return nil
+	}
+
+	if a.Source == "" {
+		return nil
+	}
+
+	obj, err := source.LoadSource(a.Source)
+	if err != nil {
+		return ErrConfig{
+			Description: fmt.Sprintf("unable to load source %s", a.Source),
+			Err:         err,
+		}
+	}
+
+	if err := mapstructure.Decode(obj, &a); err != nil {
+		return err
+	}
 	return nil
 }

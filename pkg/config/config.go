@@ -44,10 +44,10 @@ func (a *AppConfig) Validate(v *validator.Validate) error {
 
 type parseFn struct {
 	name string
-	fn   func() error
+	fn   func(ConfigContext) error
 }
 
-func (a *AppConfig) Parse() error {
+func (a *AppConfig) Parse(ctx ConfigContext) error {
 	parseFns := []parseFn{
 		{
 			"sandbox",
@@ -57,11 +57,21 @@ func (a *AppConfig) Parse() error {
 			"runner",
 			a.Runner.parse,
 		},
-		{
+	}
+
+	if a.Installer != nil {
+		parseFns = append(parseFns, parseFn{
 			"installer",
 			a.Installer.parse,
-		},
+		})
 	}
+	if a.Inputs != nil {
+		parseFns = append(parseFns, parseFn{
+			"inputs",
+			a.Inputs.parse,
+		})
+	}
+
 	for idx, comp := range a.Components {
 		parseFns = append(parseFns, parseFn{
 			name: fmt.Sprintf("component.%v", idx),
@@ -70,7 +80,7 @@ func (a *AppConfig) Parse() error {
 	}
 
 	for _, parseFn := range parseFns {
-		if err := parseFn.fn(); err != nil {
+		if err := parseFn.fn(ctx); err != nil {
 			return fmt.Errorf("error parsing %s: %w", parseFn.name, err)
 		}
 	}
