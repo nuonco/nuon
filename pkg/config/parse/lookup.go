@@ -19,6 +19,10 @@ type File struct {
 	Path    string
 }
 
+func FilenameFromAppName(appName string) string {
+	return fmt.Sprintf("%s%s.%s", cfgFilePrefix, appName, defaultFormat)
+}
+
 func AppNameFromFilename(file string) (string, error) {
 	pieces := strings.SplitN(file, ".", 3)
 	if len(pieces) != 3 {
