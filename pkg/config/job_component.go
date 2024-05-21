@@ -23,7 +23,7 @@ func (t *JobComponentConfig) ToResource() (map[string]interface{}, error) {
 	return resource, nil
 }
 
-func (t *JobComponentConfig) parse() error {
+func (t *JobComponentConfig) parse(ConfigContext) error {
 	for k, v := range t.EnvVarMap {
 		t.EnvVars = append(t.EnvVars, EnvironmentVariable{
 			Name:  k,

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/nuonco/nuon-go"
+	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/pterm/pterm"
 )
 
@@ -44,6 +45,12 @@ func PrintError(err error) {
 	if nuon.IsServerError(err) {
 		pterm.Error.Println(defaultServerErrorMessage)
 		os.Exit(1)
+		return
+	}
+
+	var cfgErr config.ErrConfig
+	if errors.As(err, &cfgErr) {
+		pterm.Error.Println(cfgErr.Description)
 		return
 	}
 
