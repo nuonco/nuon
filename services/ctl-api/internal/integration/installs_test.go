@@ -179,6 +179,34 @@ func (s *installsIntegrationTestSuite) TestGetInstall() {
 	})
 }
 
+func (s *installsIntegrationTestSuite) TestReprovisionInstall() {
+	seedInstall := s.createInstall(s.appID)
+
+	s.T().Run("success", func(t *testing.T) {
+		err := s.apiClient.ReprovisionInstall(s.ctx, seedInstall.ID)
+		require.NoError(t, err)
+	})
+	s.T().Run("invalid id", func(t *testing.T) {
+		err := s.apiClient.ReprovisionInstall(s.ctx, generics.GetFakeObj[string]())
+		require.Error(t, err)
+		require.True(t, nuon.IsNotFound(err))
+	})
+}
+
+func (s *installsIntegrationTestSuite) TestDeprovisionInstall() {
+	seedInstall := s.createInstall(s.appID)
+
+	s.T().Run("success", func(t *testing.T) {
+		err := s.apiClient.DeprovisionInstall(s.ctx, seedInstall.ID)
+		require.NoError(t, err)
+	})
+	s.T().Run("invalid id", func(t *testing.T) {
+		err := s.apiClient.DeprovisionInstall(s.ctx, generics.GetFakeObj[string]())
+		require.Error(t, err)
+		require.True(t, nuon.IsNotFound(err))
+	})
+}
+
 func (s *installsIntegrationTestSuite) TestDeleteInstall() {
 	seedInstall := s.createInstall(s.appID)
 
