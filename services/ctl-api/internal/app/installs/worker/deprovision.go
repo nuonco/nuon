@@ -47,13 +47,13 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 	}
 
 	w.updateRunStatus(ctx, installRun.ID, StatusDeprovisioning, "deprovisioning")
-	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusStarted)
+	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusStarted)
 
 	req, err := w.protos.ToInstallDeprovisionRequest(&install, installRun.ID)
 	if err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to create install deprovision request")
 		w.updateRunStatus(ctx, installRun.ID, StatusError, "unable to create install deprovision request")
-		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
+		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
 		return fmt.Errorf("unable to create install deprovision request: %w", err)
 	}
 
@@ -61,13 +61,13 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 	if err != nil {
 		w.updateStatus(ctx, installID, StatusError, "unable to deprovision install resources")
 		w.updateRunStatus(ctx, installRun.ID, StatusError, "unable to deprovision install resources")
-		w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFailed)
+		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
 		return fmt.Errorf("unable to deprovision install: %w", err)
 	}
 
 	w.updateStatus(ctx, installID, StatusDeprovisioned, "successfully deprovisioned")
 	w.updateRunStatus(ctx, installRun.ID, StatusActive, "successfully deprovisioned")
-	w.writeRunEvent(ctx, installRun.ID, signals.OperationReprovision, app.OperationStatusFinished)
+	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFinished)
 	return nil
 }
 
