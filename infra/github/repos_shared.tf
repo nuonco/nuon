@@ -281,3 +281,21 @@ module "shared-100xdev-installer" {
     github = github.nuonco-shared
   }
 }
+
+module "shared-run-llm" {
+  source = "./modules/repository"
+
+  name                     = "run-llm"
+  description              = "Nuon configuration for Run LLM."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {}
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
