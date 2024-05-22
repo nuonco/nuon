@@ -18,7 +18,7 @@ const (
 var errMissingInput = fmt.Errorf("need either a build ID or a component ID")
 var errMissingBuildInput = fmt.Errorf("must pass in one of --build-id, --auto-build or --latest-build")
 
-func (s *Service) Create(ctx context.Context, compID, buildID, delay string, autoBuild, latestBuild bool, installsPerStep int64, asJSON bool) {
+func (s *Service) Create(ctx context.Context, appID, compID, buildID, delay string, autoBuild, latestBuild bool, installsPerStep int64, asJSON bool) {
 	var err error
 	view := ui.NewCreateView("release", asJSON)
 	view.Start()
@@ -41,7 +41,7 @@ func (s *Service) Create(ctx context.Context, compID, buildID, delay string, aut
 	}
 
 	if compID != "" {
-		compID, err = lookup.ComponentID(ctx, s.api, compID)
+		compID, err = lookup.ComponentID(ctx, s.api, appID, compID)
 		if err != nil {
 			ui.PrintError(err)
 			return
