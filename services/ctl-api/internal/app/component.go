@@ -3,10 +3,11 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type Component struct {
@@ -21,9 +22,8 @@ type Component struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	Name            string `json:"name" gorm:"notnull;index:idx_app_component_name,unique"`
-	VarName         string `json:"var_name"`
-	ResolvedVarName string `json:"resolved_var_name" gorm:"-"`
+	Name    string `json:"name" gorm:"notnull;index:idx_app_component_name,unique"`
+	VarName string `json:"var_name"`
 
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_component_name,unique"`
 	App   App    `faker:"-" json:"-"`
@@ -39,7 +39,8 @@ type Component struct {
 	DependencyIDs []string     `gorm:"-" json:"dependencies"`
 
 	// after query loaded items
-	LatestConfig *ComponentConfigConnection `gorm:"-" json:"-"`
+	LatestConfig    *ComponentConfigConnection `gorm:"-" json:"-"`
+	ResolvedVarName string                     `json:"resolved_var_name" gorm:"-"`
 }
 
 func (c *Component) AfterQuery(tx *gorm.DB) error {
