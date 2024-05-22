@@ -8,8 +8,8 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Get(ctx context.Context, compID, buildID string, asJSON bool) {
-	compID, err := lookup.ComponentID(ctx, s.api, compID)
+func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON bool) {
+	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
 		ui.PrintError(err)
 		return
