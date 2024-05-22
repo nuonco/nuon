@@ -13,7 +13,7 @@ func (c *Adapter) toConnections(installDeploys []app.InstallDeploy) *connections
 			InstallId:     deploy.InstallComponent.InstallID,
 			DeployId:      deploy.ID,
 			ComponentName: deploy.InstallComponent.Component.Name,
-			VarName:       deploy.InstallComponent.Component.VarName,
+			VarName:       deploy.InstallComponent.Component.ResolvedVarName,
 		})
 	}
 
