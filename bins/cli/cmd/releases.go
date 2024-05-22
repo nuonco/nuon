@@ -72,7 +72,7 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Long:  "Create a release of an app component",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := releases.New(c.apiClient)
-			svc.Create(cmd.Context(), compID, buildID, delay, autoBuild, latestBuild, installsPerStep, PrintJSON)
+			svc.Create(cmd.Context(), appID, compID, buildID, delay, autoBuild, latestBuild, installsPerStep, PrintJSON)
 		},
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of the component whose build you want to create a release for")
@@ -82,6 +82,8 @@ func (c *cli) releasesCmd() *cobra.Command {
 	createCmd.Flags().Int64VarP(&installsPerStep, "installs-per-step", "s", 10, "The number of deploys you want to execute each step. Set to 0 to deploy to all installs in parrallel")
 	createCmd.Flags().BoolVarP(&autoBuild, "auto-build", "", false, "automatically trigger a build for the provided component")
 	createCmd.Flags().BoolVarP(&latestBuild, "latest-build", "", false, "uses the latest build for a component")
+	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the component belongs to")
+	createCmd.MarkFlagRequired("app-id")
 	releasesCmd.AddCommand(createCmd)
 
 	// logsCmd := &cobra.Command{
