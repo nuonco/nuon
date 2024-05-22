@@ -10,7 +10,7 @@ import (
 func (s *Service) List(ctx context.Context, compID, appID string, limit *int64, asJSON bool) {
 	var err error
 	if compID != "" {
-		compID, err = lookup.ComponentID(ctx, s.api, compID)
+		compID, err = lookup.ComponentID(ctx, s.api, appID, compID)
 		if err != nil {
 			ui.PrintError(err)
 			return

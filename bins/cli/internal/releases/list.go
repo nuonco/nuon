@@ -17,7 +17,7 @@ func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) {
 	)
 
 	if compID != "" {
-		compID, err = lookup.ComponentID(ctx, s.api, compID)
+		compID, err = lookup.ComponentID(ctx, s.api, appID, compID)
 		if err != nil {
 			ui.PrintError(err)
 			return
