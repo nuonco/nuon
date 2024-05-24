@@ -41,7 +41,7 @@ func Test_Workflow(t *testing.T) {
 	env.RegisterWorkflow(run.ProvisionRunner)
 
 	wf := NewWorkflow(cfg)
-	a := NewActivities(nil)
+	a := NewActivities()
 
 	req := generics.GetFakeObj[*orgsv1.ProvisionRequest]()
 	iamResp := generics.GetFakeObj[*iamv1.ProvisionIAMResponse]()
@@ -49,11 +49,6 @@ func Test_Workflow(t *testing.T) {
 	serverResp := generics.GetFakeObj[*serverv1.ProvisionServerResponse]()
 
 	// Mock activity implementations
-	env.OnActivity(a.SendNotification, mock.Anything, mock.Anything).
-		Return(func(ctx context.Context, snr SendNotificationRequest) (SendNotificationResponse, error) {
-			return SendNotificationResponse{}, nil
-		})
-
 	env.OnActivity(a.StartSignupRequest, mock.Anything, mock.Anything).
 		Return(func(ctx context.Context, r *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
 			return &sharedv1.StartActivityResponse{}, nil

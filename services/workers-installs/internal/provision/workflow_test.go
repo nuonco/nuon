@@ -61,7 +61,7 @@ func TestProvision_finishWithErr(t *testing.T) {
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	act := NewActivities(nil, nil, nil)
+	act := NewActivities(nil, nil)
 
 	errChildWorkflow := fmt.Errorf("unable to complete workflow")
 
@@ -140,7 +140,7 @@ func TestProvision(t *testing.T) {
 	provisionOutputs := generics.GetFakeObj[awseks.TerraformOutputs]()
 	assert.NoError(t, provisionOutputs.Validate())
 
-	act := NewActivities(nil, nil, nil)
+	act := NewActivities(nil, nil)
 	// Mock activity implementation
 	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).
 		Return(func(_ workflow.Context, pr *planv1.CreatePlanRequest) (*planv1.CreatePlanResponse, error) {
@@ -251,7 +251,7 @@ func TestProvision_plan_only(t *testing.T) {
 	env.RegisterWorkflow(CreatePlan)
 	env.RegisterWorkflow(ExecutePlan)
 
-	act := NewActivities(nil, nil, nil)
+	act := NewActivities(nil, nil)
 	sharedActs := activities.NewActivities(nil, nil)
 	// Mock activity implementation
 	env.OnWorkflow("CreatePlan", mock.Anything, mock.Anything).

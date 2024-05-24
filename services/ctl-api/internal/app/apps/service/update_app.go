@@ -7,13 +7,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type UpdateAppRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	DisplayName     string `json:"display_name"`
+	SlackWebhookURL string `json:"slack_webhook_url"`
 }
 
 func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
@@ -70,8 +73,10 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 	res := s.db.WithContext(ctx).
 		Model(&currentApp).
 		Updates(app.App{
-			Name:        req.Name,
-			Description: req.Description,
+			Name:            req.Name,
+			Description:     req.Description,
+			DisplayName:     req.DisplayName,
+			SlackWebhookURL: req.SlackWebhookURL,
 		})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app: %w", res.Error)

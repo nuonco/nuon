@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/services/config"
-	"github.com/powertoolsdev/mono/pkg/sender"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-installs/internal"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/activities"
@@ -38,20 +37,6 @@ func runAll(cmd *cobra.Command, _ []string) {
 		log.Fatalf("unable to validate config: %v", err)
 	}
 
-	var (
-		n   sender.NotificationSender
-		err error
-	)
-	switch cfg.Env {
-	case config.Development:
-		n = sender.NewNoopSender()
-	default:
-		n, err = sender.NewSlackSender(cfg.InstallationBotsSlackWebhookURL)
-		if err != nil {
-			n = sender.NewNoopSender()
-		}
-	}
-
 	v := validator.New()
 
 	prWorkflow := provision.NewWorkflow(cfg)
@@ -68,9 +53,9 @@ func runAll(cmd *cobra.Command, _ []string) {
 		worker.WithWorkflow(dnsWorkflow.ProvisionDNS),
 
 		// register activities
-		worker.WithActivity(provision.NewActivities(v, &cfg, n)),
+		worker.WithActivity(provision.NewActivities(v, &cfg)),
 		worker.WithActivity(runner.NewActivities(v, cfg)),
-		worker.WithActivity(deprovision.NewActivities(v, n, &cfg)),
+		worker.WithActivity(deprovision.NewActivities(v, &cfg)),
 		worker.WithActivity(dns.NewActivities(v)),
 		worker.WithActivity(activities.NewActivities(v, &cfg)),
 	)

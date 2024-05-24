@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	tmetrics "github.com/powertoolsdev/mono/pkg/temporal/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"

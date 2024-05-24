@@ -9,13 +9,16 @@ import (
 	"net/url"
 )
 
+const (
+	defaultIconURL string = "https://github.com/nuonco.png?size=57"
+)
+
 type slackNotifier struct {
 	webhookURL string
+	iconURL    string
 }
 
-var (
-	errInvalidURL error = fmt.Errorf("unspecified or invalid webhook URL")
-)
+var errInvalidURL error = fmt.Errorf("unspecified or invalid webhook URL")
 
 // NewSlackSender instantiates a new sender that sends to Slack using maybeURL
 func NewSlackSender(maybeURL string) (*slackNotifier, error) {
@@ -28,15 +31,20 @@ func NewSlackSender(maybeURL string) (*slackNotifier, error) {
 		return nil, fmt.Errorf("invalid scheme or host: %q: %w", maybeURL, errInvalidURL)
 	}
 
-	return &slackNotifier{webhookURL: u.String()}, nil
+	return &slackNotifier{
+		webhookURL: u.String(),
+		iconURL:    defaultIconURL,
+	}, nil
 }
 
 // Send a message via Slack
 func (s *slackNotifier) Send(ctx context.Context, msg string) error {
 	bs, err := json.Marshal(struct {
-		Text string `json:"text"`
+		Text    string `json:"text"`
+		IconURL string `json:"icon_url"`
 	}{
-		Text: msg,
+		Text:    msg,
+		IconURL: s.iconURL,
 	})
 	if err != nil {
 		return err
