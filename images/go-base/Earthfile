@@ -42,5 +42,9 @@ alpine-base:
     bash \
     jq \
     git \
-    aws-cli \
-    zip
+    python3 \
+    py3-pip \
+    zip && \
+    pip3 install awscli --upgrade --user --break-system-packages
+
+  ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
