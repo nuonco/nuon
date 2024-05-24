@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -94,6 +95,7 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
+		Version:                      parentCmp.ConfigVersions + 1,
 		ExternalImageComponentConfig: &cfg,
 		ComponentID:                  parentCmp.ID,
 	}

@@ -203,5 +203,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "039-drop-component-var-name-required",
 			Fn:   a.migration039DropComponentVarNameRequired,
 		},
+		{
+			Name: "040-component-config-versions",
+			Fn:   a.migration040ComponentConfigVersions,
+		},
 	}
 }
