@@ -32,7 +32,7 @@ func NewWorkflow(cfg workers.Config) wkflow {
 	return wkflow{
 		cfg:        cfg,
 		sharedActs: activities.NewActivities(nil, nil),
-		acts:       NewActivities(nil, nil, nil),
+		acts:       NewActivities(nil, nil),
 	}
 }
 
@@ -121,7 +121,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		ScheduleToCloseTimeout: 60 * time.Minute,
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
-	act := NewActivities(nil, nil, nil)
+	act := NewActivities(nil, nil)
 
 	if err := w.startWorkflow(ctx, req); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)

@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+	"go.uber.org/fx"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/api"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/docs"
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
@@ -23,13 +27,10 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/userorgs"
-	"github.com/spf13/cobra"
-	"go.uber.org/fx"
-	"gorm.io/gorm"
 )
 
 func (c *cli) registerAPI() error {
-	var runApiCmd = &cobra.Command{
+	runApiCmd := &cobra.Command{
 		Use:   "api",
 		Short: "run api",
 		Run:   c.runAPI,

@@ -78,6 +78,10 @@ func NewHealthCheck() string {
 	return shortid.NewNanoID("hlt")
 }
 
+func NewNotificationsID() string {
+	return shortid.NewNanoID("ntf")
+}
+
 func NewOrgID() string {
 	return shortid.NewNanoID("org")
 }

@@ -36,12 +36,15 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 	}
 
 	models := []interface{}{
+		// management, auth and user management
+		&app.NotificationsConfig{},
+		&app.UserToken{},
+
 		// org basics
 		&app.Org{},
 		&app.OrgInvite{},
 		&app.OrgHealthCheck{},
 		&app.UserOrg{},
-		&app.UserToken{},
 
 		// installers
 		&app.Installer{},

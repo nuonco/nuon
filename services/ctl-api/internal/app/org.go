@@ -3,9 +3,10 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type OrgType string
@@ -35,6 +36,9 @@ type Org struct {
 	CustomCert  bool `json:"custom_cert" gorm:"notnull"`
 
 	OrgType OrgType `json:"-"`
+
+	NotificationsConfig   NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty"`
+	NotificationsConfigID string              `json:"-"`
 
 	Apps           []App            `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	VCSConnections []VCSConnection  `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
