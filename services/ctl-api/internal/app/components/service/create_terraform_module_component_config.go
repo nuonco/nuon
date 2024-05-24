@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -92,6 +93,7 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
+		Version:                        parentCmp.ConfigVersions + 1,
 		TerraformModuleComponentConfig: &cfg,
 		ComponentID:                    parentCmp.ID,
 	}
