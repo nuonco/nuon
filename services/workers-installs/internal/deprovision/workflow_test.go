@@ -60,6 +60,7 @@ func TestDeprovision(t *testing.T) {
 	assert.NoError(t, cfg.Validate())
 	req := generics.GetFakeObj[*installsv1.DeprovisionRequest]()
 	req.AzureSettings = nil
+	req.PlanOnly = true
 	assert.NoError(t, req.Validate())
 
 	planref := generics.GetFakeObj[*planv1.PlanRef]()

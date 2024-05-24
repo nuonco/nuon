@@ -3,9 +3,10 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type AppConfigStatus string
@@ -43,6 +44,13 @@ type AppConfig struct {
 	StatusDescription string          `json:"status_description" gorm:"notnull;default null"`
 
 	GeneratedTerraform string `json:"generated_terraform"`
+
+	// fields that are filled in via after query or views
+	Version int `json:"version" gorm:"->;-:migration"`
+}
+
+func (a AppConfig) ViewName() string {
+	return "app_configs_view"
 }
 
 func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {

@@ -1,10 +1,13 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
@@ -32,11 +35,29 @@ func (s *service) GetAppConfigs(ctx *gin.Context) {
 	}
 
 	appID := ctx.Param("app_id")
-	app, err := s.findApp(ctx, org.ID, appID)
+	cfgs, err := s.getAppConfigs(ctx, org.ID, appID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
+		ctx.Error(err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, app.AppConfigs)
+	ctx.JSON(http.StatusOK, cfgs)
+}
+
+func (s *service) getAppConfigs(ctx context.Context, orgID, appID string) ([]app.AppConfig, error) {
+	cfgs := make([]app.AppConfig, 0)
+
+	res := s.db.WithContext(ctx).
+		Table(app.AppConfig{}.ViewName()).
+		Preload("CreatedBy").
+		Where(app.AppConfig{
+			OrgID: orgID,
+			AppID: appID,
+		}).
+		Find(&cfgs)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get app configs: %w", res.Error)
+	}
+
+	return cfgs, nil
 }
