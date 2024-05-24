@@ -2,6 +2,7 @@ package apps
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -23,17 +24,19 @@ func (s *Service) ListConfigs(ctx context.Context, appID string, asJSON bool) {
 	data := [][]string{
 		{
 			"id",
+			"version",
 			"status",
-			"description",
+			"created by",
 			"created at",
 		},
 	}
-	for _, app := range cfgs {
+	for _, cfg := range cfgs {
 		data = append(data, []string{
-			app.ID,
-			string(app.Status),
-			app.StatusDescription,
-			app.CreatedAt,
+			cfg.ID,
+			fmt.Sprintf("%d", cfg.Version),
+			string(cfg.Status),
+			cfg.CreatedBy.Email,
+			cfg.CreatedAt,
 		})
 	}
 	view.Render(data)

@@ -97,7 +97,6 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
-		Version:                    parentCmp.ConfigVersions + 1,
 		DockerBuildComponentConfig: &cfg,
 		ComponentID:                parentCmp.ID,
 	}

@@ -10,7 +10,7 @@ const (
 
 	// app notifications
 	NotificationsTypeAppCreated   = "app_created"
-	NotificationsTypeAppSyncOK    = "app_sync_ok"
+	NotificationsTypeFirstAppSync = "first_app_sync"
 	NotificationsTypeAppSyncError = "app_sync_error"
 
 	// install notifications
@@ -51,8 +51,8 @@ func (n Type) SlackNotificationTemplate() string {
 		return "*{{.created_by}}* created a new app *{{.app_name}}*"
 	case NotificationsTypeAppSyncError:
 		return "{{.created_by}} had a failed config sync for app *{{.app_name}}*"
-	case NotificationsTypeAppSyncOK:
-		return "{{.created_by}} had a failed config sync for app *{{.app_name}}*"
+	case NotificationsTypeFirstAppSync:
+		return "{{.created_by}} synced their first config for app *{{.app_name}}*"
 
 		// install notifications
 	case NotificationsTypeFirstInstallCreated:

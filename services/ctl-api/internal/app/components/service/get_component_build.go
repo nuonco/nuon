@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -46,7 +47,10 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 	// query the build in a way where it will _only_ be returned if it belongs to the component id in question
 	res := s.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
-		Preload("ComponentConfigConnection").
+		Preload("ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
+			return db.Table(app.ComponentConfigConnection{}.ViewName()).
+				Order("component_config_connections_view.created_at DESC")
+		}).
 		Preload("ComponentConfigConnection.Component").
 		First(&bld, "id = ?", bldID)
 	if res.Error != nil {

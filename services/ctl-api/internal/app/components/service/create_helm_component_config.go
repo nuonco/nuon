@@ -93,7 +93,6 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		ChartName:                req.ChartName,
 	}
 	componentConfigConnection := app.ComponentConfigConnection{
-		Version:             parentCmp.ConfigVersions + 1,
 		HelmComponentConfig: &cfg,
 		ComponentID:         parentCmp.ID,
 	}
