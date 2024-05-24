@@ -45,8 +45,7 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 	// via the double join.
 	res := s.db.WithContext(ctx).
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Table(app.ComponentConfigConnection{}.ViewName()).
-				Order("component_config_connections_view.created_at DESC")
+			return db.Order("component_config_connections_view.created_at DESC")
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
 			return db.Order("component_builds.created_at DESC").Limit(1)

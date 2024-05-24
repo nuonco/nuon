@@ -8,13 +8,14 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"moul.io/zapgorm2"
+
+	"github.com/powertoolsdev/mono/pkg/metrics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 )
 
 // database represents the set of configuration options for creating a database connection. If UseIAM is set, we will
@@ -71,8 +72,8 @@ func New(v *validator.Validate,
 	l *zap.Logger,
 	metricsWriter metrics.Writer,
 	lc fx.Lifecycle,
-	cfg *internal.Config) (*gorm.DB, error) {
-
+	cfg *internal.Config,
+) (*gorm.DB, error) {
 	ctx := context.Background()
 	ctx, cancelFn := context.WithCancel(ctx)
 
@@ -110,6 +111,7 @@ func New(v *validator.Validate,
 	}
 	gormCfg := &gorm.Config{
 		Logger:         database.Logger,
+		NamingStrategy: viewsNamer{},
 		TranslateError: true,
 	}
 	db, err := gorm.Open(postgres.New(postgresCfg), gormCfg)
