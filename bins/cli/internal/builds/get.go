@@ -2,8 +2,10 @@ package builds
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mitchellh/go-wordwrap"
+
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
@@ -54,6 +56,7 @@ func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON
 		{"updated at", build.UpdatedAt},
 		{"created by", build.CreatedByID},
 		{"component id", build.ComponentID},
+		{"component config version", fmt.Sprintf("%d", build.ComponentConfigVersion)},
 
 		{"vcs connection id", vcsConnectionID},
 		{"commit sha", commitSha},
