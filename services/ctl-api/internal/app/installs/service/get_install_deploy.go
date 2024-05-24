@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -46,6 +47,7 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 		Preload("InstallComponent").
 		Preload("ComponentBuild").
 		Preload("ComponentBuild.ComponentConfigConnection").
+		Preload("ComponentBuild.ComponentConfigConnection.Component").
 		Where("install_components.install_id = ?", installID).
 		First(&installDeploy, "install_deploys.id = ?", deployID)
 	if res.Error != nil {

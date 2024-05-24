@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
@@ -58,17 +59,17 @@ func (s *service) findComponent(ctx context.Context, orgID, componentID string) 
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
 
-	component.ConfigVersions = len(component.ComponentConfigs)
-	for _, dep := range component.Dependencies {
-		component.DependencyIDs = append(component.DependencyIDs, dep.ID)
-	}
-
 	return &component, nil
 }
 
 func (s *service) getComponentWithParents(ctx context.Context, cmpID string) (*app.Component, error) {
 	parentCmp := app.Component{}
-	res := s.db.WithContext(ctx).Preload("App").Preload("App.Org").Preload("App.Org.VCSConnections").First(&parentCmp, "id = ?", cmpID)
+	res := s.db.WithContext(ctx).
+		Preload("ComponentConfigs").
+		Preload("App").
+		Preload("App.Org").
+		Preload("App.Org.VCSConnections").
+		First(&parentCmp, "id = ?", cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
