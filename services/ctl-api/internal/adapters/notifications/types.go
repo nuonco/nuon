@@ -56,7 +56,7 @@ func (n Type) SlackNotificationTemplate() string {
 
 		// install notifications
 	case NotificationsTypeFirstInstallCreated:
-		return "{{.created_by}} created the first install for *{{.app_name}}*"
+		return "{{.created_by}} created the first install ({{.install_name}}) for *{{.app_name}}*"
 	case NotificationsTypeInstallCreated:
 		return "{{.created_by}} created an install of *{{.app_name}}*"
 

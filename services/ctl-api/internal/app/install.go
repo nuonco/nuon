@@ -3,9 +3,10 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type Install struct {
@@ -42,6 +43,7 @@ type Install struct {
 
 	// generated at read time for
 	CurrentInstallInputs *InstallInputs `json:"-" gorm:"-"`
+	InstallNumber        int            `json:"install_number" gorm:"->;-:migration"`
 }
 
 func (i *Install) BeforeCreate(tx *gorm.DB) error {
