@@ -69,9 +69,7 @@ func (s *service) getAppBuilds(ctx context.Context, appID string, limit int) ([]
 	// query all builds that belong to the component id, starting at the component to ensure the component exists
 	// via the double join.
 	res := s.db.WithContext(ctx).
-		Preload("ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
-			return db.Table(app.ComponentConfigConnection{}.ViewName())
-		}).
+		Preload("ComponentConfigConnection").
 		Preload("VCSConnectionCommit").
 		Preload("ComponentConfigConnection.Component").
 		Joins("JOIN component_config_connections ON component_config_connections.id=component_builds.component_config_connection_id").
@@ -94,16 +92,13 @@ func (s *service) getComponentBuilds(ctx context.Context, cmpID string) ([]app.C
 	// via the double join.
 	res := s.db.WithContext(ctx).
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Table(app.ComponentConfigConnection{}.ViewName()).
-				Order("component_config_connections_view.created_at DESC")
+			return db.Order("component_config_connections_view.created_at DESC")
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
 			return db.Order("component_builds.created_at DESC")
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
-		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
-			return db.Table(app.ComponentConfigConnection{}.ViewName())
-		}).
+		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection").
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection.Component").
 		First(&cmp, "id = ?", cmpID)
 	if res.Error != nil {

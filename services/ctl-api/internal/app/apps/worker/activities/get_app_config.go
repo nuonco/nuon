@@ -14,7 +14,6 @@ type GetAppConfigRequest struct {
 func (a *Activities) GetAppConfig(ctx context.Context, req GetAppConfigRequest) (*app.AppConfig, error) {
 	cfg := app.AppConfig{}
 	res := a.db.WithContext(ctx).
-		Table(cfg.ViewName()).
 		First(&cfg, "id = ?", req.AppConfigID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app config: %w", res.Error)

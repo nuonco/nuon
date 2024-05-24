@@ -49,10 +49,6 @@ type AppConfig struct {
 	Version int `json:"version" gorm:"->;-:migration"`
 }
 
-func (a AppConfig) ViewName() string {
-	return "app_configs_view"
-}
-
 func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
 		a.ID = domains.NewAppID()
