@@ -4,11 +4,12 @@ import (
 	"errors"
 	"strconv"
 
+	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
+
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
-	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 )
 
 func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEventLoopRequest) error {
@@ -47,6 +48,14 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 
 		var err error
 		switch signal.Operation {
+		case signals.OperationCreated:
+			op = "created"
+			err = w.created(ctx, req.InstallID)
+			if err != nil {
+				status = "error"
+				l.Error("unable to handle created signal", zap.Error(err))
+				return
+			}
 		case signals.OperationPollDependencies:
 			op = "poll_dependencies"
 			err = w.pollDependencies(ctx, req.InstallID)

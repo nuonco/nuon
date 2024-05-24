@@ -1,11 +1,13 @@
 package activities
 
 import (
+	"gorm.io/gorm"
+
+	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/protos"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
-	"gorm.io/gorm"
 )
 
 type Activities struct {
@@ -14,6 +16,8 @@ type Activities struct {
 	appsHelpers *appshelpers.Helpers
 	helpers     *helpers.Helpers
 	hooks       *hooks.Hooks
+
+	*sharedactivities.Activities
 }
 
 func New(db *gorm.DB,
@@ -21,6 +25,7 @@ func New(db *gorm.DB,
 	appsHelpers *appshelpers.Helpers,
 	helpers *helpers.Helpers,
 	hooks *hooks.Hooks,
+	sharedActs *sharedactivities.Activities,
 ) (*Activities, error) {
 	return &Activities{
 		db:          db,
@@ -28,5 +33,6 @@ func New(db *gorm.DB,
 		appsHelpers: appsHelpers,
 		helpers:     helpers,
 		hooks:       hooks,
+		Activities:  sharedActs,
 	}, nil
 }

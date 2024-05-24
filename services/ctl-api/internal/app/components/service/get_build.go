@@ -53,8 +53,7 @@ func (s *service) getBuild(ctx context.Context, orgID, bldID string) (*app.Compo
 	res := s.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
 		Preload("ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
-			return db.Table(app.ComponentConfigConnection{}.ViewName()).
-				Order("component_config_connections_view.created_at DESC")
+			return db.Order("component_config_connections_view.created_at DESC")
 		}).
 		Where("org_id = ?", orgID).
 		First(&bld, "id = ?", bldID)

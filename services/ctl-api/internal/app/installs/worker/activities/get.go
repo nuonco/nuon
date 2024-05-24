@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type GetRequest struct {
@@ -19,6 +20,7 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Install, err
 func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := a.db.WithContext(ctx).
+		Preload("CreatedBy").
 		Preload("App").
 		Preload("App.Org").
 		Preload("AWSAccount").
