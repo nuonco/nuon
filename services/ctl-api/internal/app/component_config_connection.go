@@ -29,8 +29,6 @@ type ComponentConfigConnection struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	Version int `json:"version"`
-
 	ComponentID string    `json:"component_id" gorm:"notnull"`
 	Component   Component `json:"-"`
 
@@ -46,6 +44,12 @@ type ComponentConfigConnection struct {
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-"`
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"-" json:"-"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"-" json:"-"`
+
+	Version int `json:"version" gorm:"->;-:migration"`
+}
+
+func (c ComponentConfigConnection) ViewName() string {
+	return "component_config_connections_view"
 }
 
 func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {

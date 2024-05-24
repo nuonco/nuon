@@ -37,6 +37,13 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		return fmt.Errorf("unable to get app config from database: %w", err)
 	}
 
+	if appCfg.Version == 1 {
+		w.sendNotification(ctx, notifications.NotificationsTypeFirstAppSync, appID, map[string]string{
+			"app_name":   currentApp.Name,
+			"created_by": currentApp.CreatedBy.Email,
+		})
+	}
+
 	w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusSyncing, "syncing description")
 	if err := w.defaultExecErrorActivity(ctx, w.acts.SyncAppMetadata, activities.SyncAppMetadataRequest{
 		AppConfigID: appConfigID,
@@ -65,9 +72,5 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 	}
 
 	w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusActive, "synced")
-	w.sendNotification(ctx, notifications.NotificationsTypeAppSyncOK, appID, map[string]string{
-		"app_name":   currentApp.Name,
-		"created_by": currentApp.CreatedBy.Email,
-	})
 	return nil
 }

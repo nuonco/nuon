@@ -95,7 +95,6 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
-		Version:                      parentCmp.ConfigVersions + 1,
 		ExternalImageComponentConfig: &cfg,
 		ComponentID:                  parentCmp.ID,
 	}

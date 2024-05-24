@@ -83,7 +83,6 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
-		Version:            parentCmp.ConfigVersions + 1,
 		JobComponentConfig: &cfg,
 		ComponentID:        parentCmp.ID,
 	}
