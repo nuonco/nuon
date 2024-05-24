@@ -3,9 +3,10 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type VCSConnectionType string
@@ -27,6 +28,8 @@ type ComponentConfigConnection struct {
 	// used for RLS
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
+
+	Version int `json:"version"`
 
 	ComponentID string    `json:"component_id" gorm:"notnull"`
 	Component   Component `json:"-"`

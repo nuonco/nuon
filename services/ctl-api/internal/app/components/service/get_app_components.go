@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -47,10 +48,5 @@ func (s *service) getAppComponents(ctx context.Context, appID string) ([]app.Com
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	comps := currentApp.Components
-	for idx, comp := range comps {
-		comps[idx].ConfigVersions = len(comp.ComponentConfigs)
-	}
-
-	return comps, nil
+	return currentApp.Components, nil
 }

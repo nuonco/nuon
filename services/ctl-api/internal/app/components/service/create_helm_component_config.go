@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -92,6 +93,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		ChartName:                req.ChartName,
 	}
 	componentConfigConnection := app.ComponentConfigConnection{
+		Version:             parentCmp.ConfigVersions + 1,
 		HelmComponentConfig: &cfg,
 		ComponentID:         parentCmp.ID,
 	}

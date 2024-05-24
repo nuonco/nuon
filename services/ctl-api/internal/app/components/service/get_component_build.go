@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -45,7 +46,8 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 	// query the build in a way where it will _only_ be returned if it belongs to the component id in question
 	res := s.db.WithContext(ctx).
 		Preload("VCSConnectionCommit").
-		Preload("ComponentConfigConnection", "component_id = ?", cmpID).
+		Preload("ComponentConfigConnection").
+		Preload("ComponentConfigConnection.Component").
 		First(&bld, "id = ?", bldID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", res.Error)
