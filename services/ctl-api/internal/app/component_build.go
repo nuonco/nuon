@@ -3,9 +3,10 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type ComponentBuild struct {
@@ -34,8 +35,9 @@ type ComponentBuild struct {
 	GitRef            *string `json:"git_ref"`
 
 	// Read-only fields set on the object to de-nest data
-	ComponentID   string `gorm:"-" json:"component_id"`
-	ComponentName string `gorm:"-" json:"component_name"`
+	ComponentID            string `gorm:"-" json:"component_id"`
+	ComponentName          string `gorm:"-" json:"component_name"`
+  ComponentConfigVersion int    `gorm:"-" json:"component_config_version"`
 }
 
 func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {
@@ -50,5 +52,6 @@ func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {
 func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
 	c.ComponentID = c.ComponentConfigConnection.ComponentID
 	c.ComponentName = c.ComponentConfigConnection.Component.Name
+	c.ComponentConfigVersion = c.ComponentConfigConnection.Version
 	return nil
 }

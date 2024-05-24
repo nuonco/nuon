@@ -93,7 +93,6 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
-		Version:                        parentCmp.ConfigVersions + 1,
 		TerraformModuleComponentConfig: &cfg,
 		ComponentID:                    parentCmp.ID,
 	}

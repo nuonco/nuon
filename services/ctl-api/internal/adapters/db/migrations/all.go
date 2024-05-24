@@ -187,12 +187,14 @@ func (a *Migrations) GetAll() []Migration {
 			Disabled: true,
 		},
 		{
-			Name: "036-component-var-names",
-			Fn:   a.migration036ComponentVarNames,
+			Name:     "036-component-var-names",
+			Fn:       a.migration036ComponentVarNames,
+			Disabled: true,
 		},
 		{
-			Name: "037-component-var-names-required",
-			Fn:   a.migration037ComponentVarNameRequired,
+			Name:     "037-component-var-names-required",
+			Fn:       a.migration037ComponentVarNameRequired,
+			Disabled: true,
 		},
 		{
 			Name:     "038-drop-app-installer-tables",
@@ -200,12 +202,26 @@ func (a *Migrations) GetAll() []Migration {
 			Disabled: true,
 		},
 		{
-			Name: "039-drop-component-var-name-required",
-			Fn:   a.migration039DropComponentVarNameRequired,
+			Name:     "039-drop-component-var-name-required",
+			Fn:       a.migration039DropComponentVarNameRequired,
+			Disabled: true,
 		},
 		{
-			Name: "040-component-config-versions",
-			Fn:   a.migration040ComponentConfigVersions,
+			Name:     "040-component-config-versions",
+			Fn:       a.migration040ComponentConfigVersions,
+			Disabled: true,
+		},
+		{
+			Name: "041-app-config-view",
+			Fn:   a.migration041AppConfigVersions,
+		},
+		{
+			Name: "042-drop-component-config-connection-version",
+			Fn:   a.migration042ComponentConfigConnectionsDropVersion,
+		},
+		{
+			Name: "043-component-config-connections-view",
+			Fn:   a.migration043ComponentConfigConnectionsView,
 		},
 	}
 }
