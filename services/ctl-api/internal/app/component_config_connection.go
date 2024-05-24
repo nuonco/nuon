@@ -48,10 +48,6 @@ type ComponentConfigConnection struct {
 	Version int `json:"version" gorm:"->;-:migration"`
 }
 
-func (c ComponentConfigConnection) ViewName() string {
-	return "component_config_connections_view"
-}
-
 func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	// set the vcs connection type, by parsing the subfields on the relationship
 	if c.TerraformModuleComponentConfig != nil {

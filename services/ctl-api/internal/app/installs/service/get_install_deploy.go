@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -47,9 +46,7 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 		Joins("JOIN install_components ON install_components.id=install_deploys.install_component_id").
 		Preload("InstallComponent").
 		Preload("ComponentBuild").
-		Preload("ComponentBuild.ComponentConfigConnection", func(db *gorm.DB) *gorm.DB {
-			return db.Table(app.ComponentConfigConnection{}.ViewName())
-		}).
+		Preload("ComponentBuild.ComponentConfigConnection").
 		Preload("ComponentBuild.ComponentConfigConnection.Component").
 		Where("install_components.install_id = ?", installID).
 		First(&installDeploy, "install_deploys.id = ?", deployID)

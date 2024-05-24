@@ -12,6 +12,7 @@ import (
 type Operation string
 
 const (
+	OperationCreated            Operation = "created"
 	OperationProvision          Operation = "provision"
 	OperationDeprovision        Operation = "deprovision"
 	OperationDelete             Operation = "delete"
