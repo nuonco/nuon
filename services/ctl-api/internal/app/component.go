@@ -45,11 +45,18 @@ type Component struct {
 
 func (c *Component) AfterQuery(tx *gorm.DB) error {
 	c.ResolvedVarName = generics.First(c.VarName, c.Name)
-	if len(c.ComponentConfigs) < 1 {
-		return nil
+
+	// set dependency ids
+	for _, dep := range c.Dependencies {
+		c.DependencyIDs = append(c.DependencyIDs, dep.ID)
 	}
 
-	c.LatestConfig = &c.ComponentConfigs[0]
+	// set configs
+	c.ConfigVersions = len(c.ComponentConfigs)
+	if len(c.ComponentConfigs) > 0 {
+		c.LatestConfig = &c.ComponentConfigs[0]
+	}
+
 	return nil
 }
 
