@@ -3,9 +3,10 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type App struct {
@@ -16,20 +17,23 @@ type App struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_app_name,unique"`
 
-	Name              string `json:"name" gorm:"index:idx_app_name,unique"`
-	Description       string `json:"description"`
+	Name            string `json:"name" gorm:"index:idx_app_name,unique"`
+	Description     string `json:"description"`
+	DisplayName     string `json:"display_name"`
+	SlackWebhookURL string `json:"slack_webhook_url"`
 
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org   Org    `faker:"-" json:"-"`
 
-	Components        []Component        `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	Installs          []Install          `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
-	AppInputConfigs   []AppInputConfig   `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	AppSandboxConfigs []AppSandboxConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	AppRunnerConfigs  []AppRunnerConfig  `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	AppConfigs        []AppConfig        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	AppSecrets        []AppSecret        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
-	InstallerApps     []InstallerApp     `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	NotificationsConfig NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty"`
+	Components          []Component         `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	Installs            []Install           `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
+	AppInputConfigs     []AppInputConfig    `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	AppSandboxConfigs   []AppSandboxConfig  `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	AppRunnerConfigs    []AppRunnerConfig   `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	AppConfigs          []AppConfig         `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	AppSecrets          []AppSecret         `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
+	InstallerApps       []InstallerApp      `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description"`

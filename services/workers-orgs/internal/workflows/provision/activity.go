@@ -1,13 +1,7 @@
 package provision
 
-type Activities struct {
-	notifier
-}
+type Activities struct{}
 
-func NewActivities(sender NotificationSender) *Activities {
-	return &Activities{
-		notifier: &notifierImpl{
-			sender: sender,
-		},
-	}
+func NewActivities() *Activities {
+	return &Activities{}
 }

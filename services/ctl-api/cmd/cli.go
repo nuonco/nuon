@@ -1,13 +1,17 @@
 package cmd
 
 import (
+	"go.uber.org/fx"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/loops"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/metrics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/notifications"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/protos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/temporal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
@@ -22,7 +26,6 @@ import (
 	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	releaseshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/hooks"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
-	"go.uber.org/fx"
 )
 
 type cli struct{}
@@ -44,6 +47,8 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(terraformcloud.NewTerraformCloud),
 		fx.Provide(terraformcloud.NewOrgsOutputs),
 		fx.Provide(waypoint.New),
+		fx.Provide(activities.New),
+		fx.Provide(notifications.New),
 
 		// add hooks for each domain
 		fx.Provide(appshooks.New),
