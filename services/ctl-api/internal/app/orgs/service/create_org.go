@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 )
@@ -80,22 +81,40 @@ func (s *service) createOrg(ctx context.Context, user *app.UserToken, req *Creat
 		orgTyp = app.OrgTypeSandbox
 	}
 
+	notificationsCfg := app.NotificationsConfig{
+		EnableSlackNotifications: user.TokenType == app.TokenTypeAuth0,
+		EnableEmailNotifications: user.TokenType == app.TokenTypeAuth0,
+		InternalSlackWebhookURL:  s.cfg.InternalSlackWebhookURL,
+	}
+
 	org := app.Org{
-		Name:              req.Name,
-		Status:            "queued",
-		StatusDescription: "waiting for event loop to start and provision org",
-		SandboxMode:       req.UseSandboxMode,
-		OrgType:           orgTyp,
-		CustomCert:        req.UseCustomCert,
+		Name:                req.Name,
+		Status:              "queued",
+		StatusDescription:   "waiting for event loop to start and provision org",
+		SandboxMode:         req.UseSandboxMode,
+		OrgType:             orgTyp,
+		CustomCert:          req.UseCustomCert,
+		NotificationsConfig: notificationsCfg,
 	}
 	if s.cfg.ForceSandboxMode {
 		org.SandboxMode = true
 	}
-
 	if err := s.db.WithContext(ctx).Create(&org).Error; err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
 	}
 
+	// make sure the notifications config orgID is set
+	if res := s.db.WithContext(ctx).
+		Where(&app.NotificationsConfig{
+			OwnerID: org.ID,
+		}).
+		Updates(app.NotificationsConfig{
+			OrgID: org.ID,
+		}); res.Error != nil {
+		return nil, fmt.Errorf("unable to set org ID on notifications config: %w", res.Error)
+	}
+
+	// add the current user to the org
 	userOrg := app.UserOrg{
 		UserID: user.Subject,
 		OrgID:  org.ID,

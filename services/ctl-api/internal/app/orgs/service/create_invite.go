@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
@@ -49,7 +50,7 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.InviteCreated(ctx, org.ID, req.Email)
+	s.hooks.InviteCreated(ctx, org.ID, invite.ID)
 	ctx.JSON(http.StatusCreated, invite)
 }
 

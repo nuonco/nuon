@@ -26,7 +26,7 @@ func (w *wkflow) startWorkflow(ctx workflow.Context, req *installsv1.ProvisionRe
 		},
 	}
 
-	act := NewActivities(nil, nil, nil)
+	act := NewActivities(nil, nil)
 	if _, err := execStart(ctx, act, startReq); err != nil {
 		return fmt.Errorf("unable to start workflow: %w", err)
 	}
@@ -60,24 +60,11 @@ func (a *Activities) FinishProvisionRequest(ctx context.Context, req *sharedv1.F
 		return nil, fmt.Errorf("request was not set on input")
 	}
 
-	if req.Status != sharedv1.ResponseStatus_RESPONSE_STATUS_OK {
-		err = a.notifier.sendErrorNotification(ctx, req.MetadataBucket, &wkflowReq, req.ErrorMessage)
-	} else {
-		err = a.notifier.sendSuccessNotification(ctx, req.MetadataBucket, &wkflowReq)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("unable to send notification: %w", err)
-	}
-
 	act := meta.NewFinishActivity()
 	return act.FinishRequest(ctx, req)
 }
 
 func (a *Activities) StartProvisionRequest(ctx context.Context, req *sharedv1.StartActivityRequest) (*sharedv1.StartActivityResponse, error) {
-	if err := a.notifier.sendStartNotification(ctx, req.MetadataBucket, req.RequestRef.GetInstallProvision()); err != nil {
-		return nil, fmt.Errorf("unable to send start notification: %w", err)
-	}
-
 	act := meta.NewStartActivity()
 	return act.StartRequest(ctx, req)
 }
@@ -118,7 +105,7 @@ func (w *wkflow) finishWorkflow(ctx workflow.Context, req *installsv1.ProvisionR
 	}
 
 	// exec activity
-	act := NewActivities(nil, nil, nil)
+	act := NewActivities(nil, nil)
 	_, err = execFinish(ctx, act, finishReq)
 	if err != nil {
 		err = fmt.Errorf("unable to execute finish activity: %w", err)

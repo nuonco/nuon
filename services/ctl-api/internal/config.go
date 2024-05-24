@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 )
@@ -67,7 +68,6 @@ type Config struct {
 	// base urls for filling in various fields on objects
 	SandboxArtifactsBaseURL string `config:"sandbox_artifacts_base_url" validate:"required"`
 	AppSyncAPIURL           string `config:"app_sync_api_url"`
-	InstallerBaseURL        string `config:"installer_base_url"`
 
 	// middleware configuration
 	Middlewares         []string `config:"middlewares"`
@@ -87,8 +87,10 @@ type Config struct {
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
 
-	// transactional emails
-	LoopsAPIKey string `config:"loops_api_key" validate:"required"`
+	// notifications configuration
+	LoopsAPIKey             string `config:"loops_api_key" validate:"required"`
+	InternalSlackWebhookURL string `config:"internal_slack_webhook_url" validate:"required"`
+	DisableNotifications    bool   `config:"disable_notifications"`
 }
 
 func NewConfig() (*Config, error) {

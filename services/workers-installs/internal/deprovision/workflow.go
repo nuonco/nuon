@@ -16,7 +16,7 @@ func NewWorkflow(cfg workers.Config) wkflow {
 	return wkflow{
 		cfg:        cfg,
 		sharedActs: activities.NewActivities(nil, nil),
-		acts:       NewActivities(nil, nil, nil),
+		acts:       NewActivities(nil, nil),
 	}
 }
 
@@ -24,21 +24,6 @@ type wkflow struct {
 	cfg        workers.Config
 	sharedActs *activities.Activities
 	acts       *Activities
-}
-
-func (w wkflow) finishWithErr(ctx workflow.Context, req *installsv1.DeprovisionRequest, act *Activities, step string, err error) {
-	l := workflow.GetLogger(ctx)
-	finishReq := FinishRequest{
-		DeprovisionRequest:  req,
-		InstallationsBucket: w.cfg.InstallationsBucket,
-		Success:             false,
-		ErrorStep:           step,
-		ErrorMessage:        fmt.Sprintf("%s", err),
-	}
-
-	if resp, execErr := execFinish(ctx, act, finishReq); execErr != nil {
-		l.Debug("unable to finish with error", "error", execErr, "response", resp)
-	}
 }
 
 // Deprovision method destroys the infrastructure for an installation
@@ -55,20 +40,7 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: 60 * time.Minute,
 	}
-	act := NewActivities(nil, nil, nil)
-
 	ctx = workflow.WithActivityOptions(ctx, activityOpts)
-
-	stReq := StartRequest{
-		DeprovisionRequest:  req,
-		InstallationsBucket: w.cfg.InstallationsBucket,
-	}
-	_, err := execStart(ctx, act, stReq)
-	if err != nil {
-		l.Debug("unable to execute start activity", "error", err)
-		return resp, fmt.Errorf("unable to execute start activity: %w", err)
-	}
-
 	if req.PlanOnly {
 		l.Info("skipping the rest of the workflow - plan only")
 		return resp, nil
@@ -85,20 +57,10 @@ func (w wkflow) Deprovision(ctx workflow.Context, req *installsv1.DeprovisionReq
 		return resp, err
 	}
 
-	_, err = w.deprovisionSandbox(ctx, req)
+	_, err := w.deprovisionSandbox(ctx, req)
 	if err != nil {
 		err = fmt.Errorf("unable to deprovision sandbox: %w", err)
 		return resp, err
-	}
-
-	finishReq := FinishRequest{
-		DeprovisionRequest:  req,
-		InstallationsBucket: w.cfg.InstallationsBucket,
-		Success:             true,
-	}
-	if _, err = execFinish(ctx, act, finishReq); err != nil {
-		l.Debug("unable to execute finish step", "error", err)
-		return resp, fmt.Errorf("unable to execute finish activity: %w", err)
 	}
 
 	l.Debug("finished deprovisioning installation", "response", resp)

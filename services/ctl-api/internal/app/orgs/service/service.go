@@ -3,14 +3,15 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	apphooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
 	componenthooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	installhooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type service struct {
@@ -61,6 +62,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/admin-restart-children", s.RestartOrgChildren)
 	api.POST("/v1/orgs/:org_id/admin-rename", s.AdminRenameOrg)
 	api.POST("/v1/orgs/:org_id/admin-static-token", s.AdminCreateStaticToken)
+	api.POST("/v1/orgs/:org_id/admin-slack-webhook-url", s.AdminSetSlackWebhookURLOrg)
 	return nil
 }
 

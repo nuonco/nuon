@@ -1,7 +1,6 @@
 package deprovision
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -37,7 +36,6 @@ func TestDeprovision_finishWithErr(t *testing.T) {
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	act := NewActivities(nil, nil, nil)
 
 	errChildWorkflow := fmt.Errorf("unable to complete workflow")
 
@@ -52,26 +50,6 @@ func TestDeprovision_finishWithErr(t *testing.T) {
 	//	Return(func(_ workflow.Context, pr *executev1.ExecutePlanRequest) (*executev1.ExecutePlanResponse, error) {
 	//		return &executev1.ExecutePlanResponse{}, errChildWorkflow
 	//	})
-
-	env.OnActivity(act.Start, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, sReq StartRequest) (StartResponse, error) {
-			var resp StartResponse
-			assert.NoError(t, sReq.validate())
-			return resp, nil
-		})
-
-	env.OnActivity(act.FinishDeprovision, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, fReq FinishRequest) (FinishResponse, error) {
-			var resp FinishResponse
-			assert.NoError(t, fReq.validate())
-
-			// verify that when a step fails, the error handler calls finish with the right params
-			assert.Contains(t, fReq.ErrorMessage, errChildWorkflow.Error())
-			assert.Contains(t, fReq.ErrorStep, "sandbox_plan")
-			assert.False(t, fReq.Success)
-
-			return resp, nil
-		})
 
 	wkflow := NewWorkflow(cfg)
 	env.ExecuteWorkflow(wkflow.Deprovision, req)
@@ -88,7 +66,6 @@ func TestDeprovision(t *testing.T) {
 
 	testSuite := &testsuite.WorkflowTestSuite{}
 	env := testSuite.NewTestWorkflowEnvironment()
-	act := NewActivities(nil, nil, nil)
 
 	env.RegisterWorkflow(CreatePlan)
 
@@ -116,27 +93,6 @@ func TestDeprovision(t *testing.T) {
 		})
 
 	// Mock activity implementation
-	env.OnActivity(act.Start, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, stReq StartRequest) (StartResponse, error) {
-			var resp StartResponse
-			assert.NoError(t, stReq.validate())
-
-			assert.Equal(t, req.OrgId, stReq.DeprovisionRequest.OrgId)
-			assert.Equal(t, req.AppId, stReq.DeprovisionRequest.AppId)
-			assert.Equal(t, req.InstallId, stReq.DeprovisionRequest.InstallId)
-			return resp, nil
-		})
-
-	env.OnActivity(act.FinishDeprovision, mock.Anything, mock.Anything).
-		Return(func(_ context.Context, fReq FinishRequest) (FinishResponse, error) {
-			var resp FinishResponse
-			assert.NoError(t, fReq.validate())
-
-			assert.Equal(t, req.OrgId, fReq.DeprovisionRequest.OrgId)
-			assert.Equal(t, req.AppId, fReq.DeprovisionRequest.AppId)
-			assert.Equal(t, req.InstallId, fReq.DeprovisionRequest.InstallId)
-			return resp, nil
-		})
 
 	wkflow := NewWorkflow(cfg)
 	env.ExecuteWorkflow(wkflow.Deprovision, req)

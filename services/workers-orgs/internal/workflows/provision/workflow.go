@@ -9,7 +9,6 @@ import (
 	kmsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/kms/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/runner/v1"
 	serverv1 "github.com/powertoolsdev/mono/pkg/types/workflows/orgs/v1/server/v1"
-	waypoint "github.com/powertoolsdev/mono/pkg/waypoint/client"
 	workers "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/iam"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/kms"
@@ -43,18 +42,10 @@ func (w *wkflow) Provision(ctx workflow.Context, req *orgsv1.ProvisionRequest) (
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	waypointServerAddr := waypoint.DefaultOrgServerAddress(w.cfg.WaypointServerRootDomain, req.OrgId)
-	act := NewActivities(nil)
-
 	if err := w.startWorkflow(ctx, req); err != nil {
 		err = fmt.Errorf("unable to start workflow: %w", err)
 		return resp, err
 	}
-
-	sendNotification(ctx, act, SendNotificationRequest{
-		ID:      req.OrgId,
-		Started: true,
-	})
 
 	l.Debug("provisioning iam for org")
 	iamResp, err := execProvisionIAMWorkflow(ctx, w.cfg, &iamv1.ProvisionIAMRequest{
@@ -108,13 +99,6 @@ func (w *wkflow) Provision(ctx workflow.Context, req *orgsv1.ProvisionRequest) (
 		return resp, err
 	}
 
-	l.Debug("sending success notification")
-	sendNotification(ctx, act, SendNotificationRequest{
-		ID:                    req.OrgId,
-		Finished:              true,
-		WaypointServerAddress: waypointServerAddr,
-	})
-
 	w.finishWorkflow(ctx, req, resp, err)
 	l.Debug("finished signup", "response", resp)
 	return resp, nil
@@ -145,18 +129,6 @@ func execProvisionWaypointServerWorkflow(
 	}
 
 	return resp, nil
-}
-
-func sendNotification(ctx workflow.Context, act *Activities, snr SendNotificationRequest) {
-	var resp SendNotificationResponse
-	l := workflow.GetLogger(ctx)
-
-	l.Debug("executing send notification request activity")
-	fut := workflow.ExecuteActivity(ctx, act.SendNotification, snr)
-
-	if err := fut.Get(ctx, &resp); err != nil {
-		l.Error("error sending notification: %s", err)
-	}
 }
 
 func execInstallWaypointRunnerWorkflow(

@@ -3,12 +3,12 @@ package hooks
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/signals"
 )
 
 func (o *Hooks) Reprovision(ctx context.Context, orgID string) {
 	o.l.Info("sending signal")
-	o.sendSignal(ctx, orgID, worker.Signal{
-		Operation: worker.OperationReprovision,
+	o.sendSignal(ctx, orgID, signals.Signal{
+		Operation: signals.OperationReprovision,
 	})
 }
