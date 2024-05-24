@@ -3,9 +3,10 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type InstallDeployType string
@@ -42,9 +43,10 @@ type InstallDeploy struct {
 	Type              InstallDeployType `json:"install_deploy_type"`
 
 	// Fields that are de-nested at read time using AfterQuery
-	InstallID     string `json:"install_id" gorm:"-"`
-	ComponentID   string `json:"component_id" gorm:"-"`
-	ComponentName string `json:"component_name" gorm:"-"`
+	InstallID              string `json:"install_id" gorm:"-"`
+	ComponentID            string `json:"component_id" gorm:"-"`
+	ComponentName          string `json:"component_name" gorm:"-"`
+	ComponentConfigVersion int    `gorm:"-" json:"component_config_version"`
 }
 
 func (c *InstallDeploy) BeforeCreate(tx *gorm.DB) error {
@@ -62,5 +64,6 @@ func (c *InstallDeploy) AfterQuery(tx *gorm.DB) error {
 	c.InstallID = c.InstallComponent.InstallID
 	c.ComponentID = c.InstallComponent.ComponentID
 	c.ComponentName = c.InstallComponent.Component.Name
+	c.ComponentConfigVersion = c.ComponentBuild.ComponentConfigVersion
 	return nil
 }

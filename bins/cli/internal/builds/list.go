@@ -2,6 +2,7 @@ package builds
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -42,6 +43,7 @@ func (s *Service) List(ctx context.Context, compID, appID string, limit *int64, 
 			"id",
 			"status",
 			"component name",
+			"config version",
 			"git ref / branch",
 			"created at",
 		},
@@ -51,6 +53,7 @@ func (s *Service) List(ctx context.Context, compID, appID string, limit *int64, 
 			build.ID,
 			build.Status,
 			build.ComponentName,
+			fmt.Sprintf("%d", build.ComponentConfigVersion),
 			build.GitRef,
 			build.CreatedAt,
 		})
