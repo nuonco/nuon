@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 func (m *middleware) handleInvites(ctx context.Context, subject, email string) error {
@@ -56,6 +57,9 @@ func (m *middleware) acceptInvite(ctx context.Context, invite *app.OrgInvite, su
 	if res.RowsAffected < 1 {
 		return fmt.Errorf("invite not found %w", gorm.ErrRecordNotFound)
 	}
+
+	// send a notification to the correct org event flow that it was accepted
+	m.orgsHooks.InviteAccepted(ctx, invite.OrgID, invite.ID)
 
 	return nil
 }

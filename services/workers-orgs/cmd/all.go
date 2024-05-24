@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/services/config"
-	"github.com/powertoolsdev/mono/pkg/sender"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-orgs/internal"
 	"github.com/powertoolsdev/mono/services/workers-orgs/internal/workflows/deprovision"
@@ -39,20 +38,6 @@ func runAll(cmd *cobra.Command, _ []string) {
 		log.Fatalf("unable to validate config: %v", err)
 	}
 
-	var (
-		n   sender.NotificationSender
-		err error
-	)
-	switch cfg.Env {
-	case config.Development:
-		n = sender.NewNoopSender()
-	default:
-		n, err = sender.NewSlackSender(cfg.BotsSlackWebhookURL)
-		if err != nil {
-			n = sender.NewNoopSender()
-		}
-	}
-
 	wkflow := provision.NewWorkflow(cfg)
 	tdWkflow := deprovision.NewWorkflow(cfg)
 	runiFlow := runner.NewWorkflow(cfg)
@@ -73,7 +58,7 @@ func runAll(cmd *cobra.Command, _ []string) {
 		worker.WithWorkflow(kmsWkflow.ProvisionKMS),
 
 		// register activities
-		worker.WithActivity(provision.NewActivities(n)),
+		worker.WithActivity(provision.NewActivities()),
 		worker.WithActivity(runner.NewActivities(v, cfg)),
 		worker.WithActivity(deprovision.NewActivities()),
 		worker.WithActivity(server.NewActivities(v)),

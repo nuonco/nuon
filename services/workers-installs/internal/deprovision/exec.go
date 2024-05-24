@@ -13,32 +13,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// exec start executes the start activity
-func execStart(ctx workflow.Context, act *Activities, req StartRequest) (StartResponse, error) {
-	var resp StartResponse
-	l := workflow.GetLogger(ctx)
-
-	l.Debug("executing start", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.Start, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-	return resp, nil
-}
-
-// exec finish executes the finish activity
-func execFinish(ctx workflow.Context, act *Activities, req FinishRequest) (FinishResponse, error) {
-	var resp FinishResponse
-	l := workflow.GetLogger(ctx)
-
-	l.Debug("executing finish", "request", req)
-	fut := workflow.ExecuteActivity(ctx, act.FinishDeprovision, req)
-	if err := fut.Get(ctx, &resp); err != nil {
-		return resp, err
-	}
-	return resp, nil
-}
-
 func (w *wkflow) execFetchSandboxOutputs(
 	ctx workflow.Context,
 	req activities.FetchSandboxOutputsRequest,

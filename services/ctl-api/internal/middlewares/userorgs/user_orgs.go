@@ -2,17 +2,20 @@ package userorgs
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/global"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type middleware struct {
-	l  *zap.Logger
-	db *gorm.DB
+	l         *zap.Logger
+	db        *gorm.DB
+	orgsHooks *hooks.Hooks
 }
 
 func (m middleware) Name() string {
@@ -59,9 +62,13 @@ func (m middleware) Handler() gin.HandlerFunc {
 	}
 }
 
-func New(l *zap.Logger, db *gorm.DB) *middleware {
+func New(l *zap.Logger,
+	db *gorm.DB,
+	orgsHooks *hooks.Hooks,
+) *middleware {
 	return &middleware{
-		l:  l,
-		db: db,
+		l:         l,
+		db:        db,
+		orgsHooks: orgsHooks,
 	}
 }

@@ -3,13 +3,15 @@ package hooks
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/pkg/workflows"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/pkg/workflows"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/signals"
 )
 
 func (a *Hooks) startEventLoop(ctx context.Context, appID string, orgType app.OrgType) error {
@@ -63,10 +65,13 @@ func (a *Hooks) Created(ctx context.Context, appID string, orgType app.OrgType) 
 		return
 	}
 
-	a.sendSignal(ctx, appID, worker.Signal{
-		Operation: worker.OperationPollDependencies,
+	a.sendSignal(ctx, appID, signals.Signal{
+		Operation: signals.OperationCreated,
 	})
-	a.sendSignal(ctx, appID, worker.Signal{
-		Operation: worker.OperationProvision,
+	a.sendSignal(ctx, appID, signals.Signal{
+		Operation: signals.OperationPollDependencies,
+	})
+	a.sendSignal(ctx, appID, signals.Signal{
+		Operation: signals.OperationProvision,
 	})
 }

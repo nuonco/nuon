@@ -7,15 +7,15 @@ Read configuration values from Kubernetes ConfigMap or Secret resources. Note th
 config {
   env = {
     PORT = dynamic("kubernetes", {
-	  name = "my-config-map"
-	  key = "port"
-	})
+    name = "my-config-map"
+    key = "port"
+  })
 
     DATABASE_PASSWORD = dynamic("kubernetes", {
-	  name = "database-creds"
-	  key = "password"
-	  secret = true
-	})
+    name = "database-creds"
+    key = "password"
+    secret = true
+  })
   }
 }
 ```
