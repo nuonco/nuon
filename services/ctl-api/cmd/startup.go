@@ -5,14 +5,15 @@ import (
 	"os"
 	"time"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db"
 )
 
 func (c *cli) registerStartup() error {
-	var runStartupCmd = &cobra.Command{
+	runStartupCmd := &cobra.Command{
 		Use:   "startup",
 		Short: "startup hook that is run on deploy",
 		Run:   c.runStartup,
@@ -22,6 +23,10 @@ func (c *cli) registerStartup() error {
 }
 
 func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
+	l := zap.L()
+	l.Info("disabling view usage to run migrations")
+	db.DisableViews()
+
 	// for now, run the automigrate script
 	providers := []fx.Option{
 		fx.Provide(db.NewAutoMigrate),
@@ -45,7 +50,6 @@ func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 	fx.New(providers...).Run()
 
 	if os.Getenv("ENV") == "prod" || os.Getenv("ENV") == "stage" {
-		l := zap.L()
 		l.Info("sleeping for 1 minute to ensure data dog metrics are flushed")
 		time.Sleep(time.Minute)
 	}

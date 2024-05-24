@@ -223,5 +223,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "043-component-config-connections-view",
 			Fn:   a.migration043ComponentConfigConnectionsView,
 		},
+		{
+			Name: "044-installs-view",
+			Fn:   a.migration044InstallsView,
+		},
 	}
 }
