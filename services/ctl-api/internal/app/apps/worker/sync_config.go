@@ -3,10 +3,12 @@ package worker
 import (
 	"fmt"
 
+	"go.temporal.io/sdk/workflow"
+
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/notifications"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
-	"go.temporal.io/sdk/workflow"
 )
 
 const (
@@ -55,9 +57,17 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 	})
 	if err != nil {
 		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to sync app config")
+		w.sendNotification(ctx, notifications.NotificationsTypeAppSyncError, appID, map[string]string{
+			"app_name":   currentApp.Name,
+			"created_by": currentApp.CreatedBy.Email,
+		})
 		return fmt.Errorf("unable to provision app: %w", err)
 	}
 
 	w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusActive, "synced")
+	w.sendNotification(ctx, notifications.NotificationsTypeAppSyncOK, appID, map[string]string{
+		"app_name":   currentApp.Name,
+		"created_by": currentApp.CreatedBy.Email,
+	})
 	return nil
 }

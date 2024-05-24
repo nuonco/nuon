@@ -3,11 +3,13 @@ package hooks
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/signals"
 )
 
-func (a *Hooks) sendSignal(ctx context.Context, appID string, signal worker.Signal) {
+func (a *Hooks) sendSignal(ctx context.Context, appID string, signal signals.Signal) {
 	err := a.client.SignalWorkflowInNamespace(ctx,
 		defaultNamespace,
 		worker.EventLoopWorkflowID(appID),

@@ -41,6 +41,20 @@ func ToTags(inputs map[string]string, addtlTags ...string) []string {
 	return tags
 }
 
+// common conversions to make tagging even easier
 func ToBoolTag(name string, val bool) string {
 	return fmt.Sprintf("%s:%s", name, strconv.FormatBool(val))
+}
+
+func ToStatusTag(status string) []string {
+	return ToTags(map[string]string{
+		"status": status,
+	})
+}
+
+func ToStatusTypeTag(status, typ string) []string {
+	return ToTags(map[string]string{
+		"status": status,
+		"type":   typ,
+	})
 }

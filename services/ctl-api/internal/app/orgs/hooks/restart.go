@@ -3,9 +3,10 @@ package hooks
 import (
 	"context"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/signals"
 )
 
 func (o *Hooks) Restart(ctx context.Context, orgID string, orgType app.OrgType) {
@@ -17,7 +18,7 @@ func (o *Hooks) Restart(ctx context.Context, orgID string, orgType app.OrgType) 
 		return
 	}
 
-	o.sendSignal(ctx, orgID, worker.Signal{
-		Operation: worker.OperationRestart,
+	o.sendSignal(ctx, orgID, signals.Signal{
+		Operation: signals.OperationRestart,
 	})
 }

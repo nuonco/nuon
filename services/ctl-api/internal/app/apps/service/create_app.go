@@ -7,13 +7,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 type CreateAppRequest struct {
-	Name        string `json:"name" validate:"required,entityName"`
-	Description string `json:"description"`
+	Name            string `json:"name" validate:"required,entityName"`
+	Description     string `json:"description"`
+	DisplayName     string `json:"display_name"`
+	SlackWebhookURL string `json:"slack_webhook_url"`
 }
 
 func (c *CreateAppRequest) Validate(v *validator.Validate) error {
@@ -46,6 +50,12 @@ func (s *service) CreateApp(ctx *gin.Context) {
 		return
 	}
 
+	user, err := auth.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	var req CreateAppRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
@@ -56,7 +66,7 @@ func (s *service) CreateApp(ctx *gin.Context) {
 		return
 	}
 
-	app, err := s.createApp(ctx, org.ID, &req)
+	app, err := s.createApp(ctx, user, org, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
@@ -66,20 +76,27 @@ func (s *service) CreateApp(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, app)
 }
 
-func (s *service) createApp(ctx context.Context, orgID string, req *CreateAppRequest) (*app.App, error) {
-	app := app.App{
-		OrgID:             orgID,
+func (s *service) createApp(ctx context.Context, user *app.UserToken, org *app.Org, req *CreateAppRequest) (*app.App, error) {
+	newApp := app.App{
+		OrgID:             org.ID,
 		Name:              req.Name,
 		Description:       req.Description,
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start and provision app",
+		SlackWebhookURL:   req.SlackWebhookURL,
+		DisplayName:       req.DisplayName,
+	}
+	newApp.NotificationsConfig = app.NotificationsConfig{
+		EnableSlackNotifications: user.TokenType == app.TokenTypeAuth0,
+		EnableEmailNotifications: user.TokenType == app.TokenTypeAuth0,
+		InternalSlackWebhookURL:  org.NotificationsConfig.InternalSlackWebhookURL,
 	}
 
 	res := s.db.WithContext(ctx).
-		Create(&app)
+		Create(&newApp)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create app: %w", res.Error)
 	}
 
-	return &app, nil
+	return &newApp, nil
 }
