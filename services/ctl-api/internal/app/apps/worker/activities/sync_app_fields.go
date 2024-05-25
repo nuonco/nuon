@@ -6,7 +6,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/validator"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
 )

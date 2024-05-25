@@ -9,7 +9,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 )
 
 func (c *cli) registerStartup() error {
