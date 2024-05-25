@@ -6,9 +6,10 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type installComponentsTestSuite struct {
@@ -168,6 +169,19 @@ func (s *installComponentsTestSuite) TestTeardownComponents() {
 
 	s.T().Run("install not found", func(t *testing.T) {
 		err := s.apiClient.TeardownInstallComponents(s.ctx, generics.GetFakeObj[string]())
+		require.Error(t, err)
+		require.True(t, nuon.IsNotFound(err))
+	})
+}
+
+func (s *installComponentsTestSuite) TestDeployComponents() {
+	s.T().Run("success", func(t *testing.T) {
+		err := s.apiClient.DeployInstallComponents(s.ctx, s.installID)
+		require.NoError(t, err)
+	})
+
+	s.T().Run("install not found", func(t *testing.T) {
+		err := s.apiClient.DeployInstallComponents(s.ctx, generics.GetFakeObj[string]())
 		require.Error(t, err)
 		require.True(t, nuon.IsNotFound(err))
 	})

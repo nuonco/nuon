@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
 	releases "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, compID string) error {

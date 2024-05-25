@@ -24,8 +24,6 @@ func (c *cli) registerStartup() error {
 
 func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 	l := zap.L()
-	l.Info("disabling view usage to run migrations")
-	db.DisableViews()
 
 	// for now, run the automigrate script
 	providers := []fx.Option{

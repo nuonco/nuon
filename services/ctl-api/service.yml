@@ -27,7 +27,7 @@ env:
 
   # toggles for local development based on what you are working on
   DISABLE_METRICS: true
-  #DISABLE_NOTIFICATIONS: true
+  DISABLE_NOTIFICATIONS: true
   LOG_LEVEL_DEBUG: true
 
 local_env:
