@@ -3,6 +3,9 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
@@ -10,8 +13,6 @@ import (
 	componenthelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type service struct {
@@ -62,6 +63,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	// install components
 	api.GET("/v1/installs/:install_id/components", s.GetInstallComponents)
 	api.POST("/v1/installs/:install_id/components/teardown-all", s.TeardownInstallComponents)
+	api.POST("/v1/installs/:install_id/components/deploy-all", s.DeployInstallComponents)
 	api.POST("/v1/installs/:install_id/components/:component_id/teardown", s.TeardownInstallComponent)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys", s.GetInstallComponentDeploys)
 	api.GET("/v1/installs/:install_id/components/:component_id/deploys/latest", s.GetInstallComponentLatestDeploy)

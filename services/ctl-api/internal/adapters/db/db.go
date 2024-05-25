@@ -111,7 +111,6 @@ func New(v *validator.Validate,
 	}
 	gormCfg := &gorm.Config{
 		Logger:         database.Logger,
-		NamingStrategy: viewsNamer{},
 		TranslateError: true,
 	}
 	db, err := gorm.Open(postgres.New(postgresCfg), gormCfg)

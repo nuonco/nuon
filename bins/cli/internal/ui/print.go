@@ -5,8 +5,9 @@ import (
 	"os"
 
 	"github.com/nuonco/nuon-go"
-	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/pterm/pterm"
+
+	"github.com/powertoolsdev/mono/pkg/config"
 )
 
 const (
@@ -56,4 +57,8 @@ func PrintError(err error) {
 
 	pterm.Error.Println(defaultUnknownErrorMessage)
 	os.Exit(1)
+}
+
+func PrintLn(msg string) {
+	pterm.Info.Println(msg)
 }

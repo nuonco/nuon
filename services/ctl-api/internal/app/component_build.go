@@ -37,7 +37,7 @@ type ComponentBuild struct {
 	// Read-only fields set on the object to de-nest data
 	ComponentID            string `gorm:"-" json:"component_id"`
 	ComponentName          string `gorm:"-" json:"component_name"`
-  ComponentConfigVersion int    `gorm:"-" json:"component_config_version"`
+	ComponentConfigVersion int    `gorm:"-" json:"component_config_version"`
 }
 
 func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {

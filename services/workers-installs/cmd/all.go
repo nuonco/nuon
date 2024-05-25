@@ -4,6 +4,9 @@ import (
 	"log"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/spf13/cobra"
+	tworker "go.temporal.io/sdk/worker"
+
 	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/pkg/workflows/worker"
 	shared "github.com/powertoolsdev/mono/services/workers-installs/internal"
@@ -12,8 +15,6 @@ import (
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/dns"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/provision"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/runner"
-	"github.com/spf13/cobra"
-	tworker "go.temporal.io/sdk/worker"
 )
 
 var allCmd = &cobra.Command{
@@ -55,7 +56,6 @@ func runAll(cmd *cobra.Command, _ []string) {
 		// register activities
 		worker.WithActivity(provision.NewActivities(v, &cfg)),
 		worker.WithActivity(runner.NewActivities(v, cfg)),
-		worker.WithActivity(deprovision.NewActivities(v, &cfg)),
 		worker.WithActivity(dns.NewActivities(v)),
 		worker.WithActivity(activities.NewActivities(v, &cfg)),
 	)
