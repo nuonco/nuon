@@ -46,15 +46,16 @@ type Config struct {
 	InternalHTTPPort string `config:"internal_http_port" validate:"required"`
 
 	// database connection parameters
-	DBName     string `config:"db_name" validate:"required"`
-	DBHost     string `config:"db_host" validate:"required"`
-	DBPort     string `config:"db_port" validate:"required"`
-	DBSSLMode  string `config:"db_ssl_mode" validate:"required"`
-	DBPassword string `config:"db_password"`
-	DBUser     string `config:"db_user" validate:"required"`
-	DBZapLog   bool   `config:"db_use_zap"`
-	DBUseIAM   bool   `config:"db_use_iam"`
-	DBRegion   string `config:"db_region" validate:"required"`
+	DBName       string `config:"db_name" validate:"required"`
+	DBHost       string `config:"db_host" validate:"required"`
+	DBPort       string `config:"db_port" validate:"required"`
+	DBSSLMode    string `config:"db_ssl_mode" validate:"required"`
+	DBPassword   string `config:"db_password"`
+	DBUser       string `config:"db_user" validate:"required"`
+	DBZapLog     bool   `config:"db_use_zap"`
+	DBUseIAM     bool   `config:"db_use_iam"`
+	DBRegion     string `config:"db_region" validate:"required"`
+	DBLogQueries bool   `config:"db_log_queries"`
 
 	// temporal configuration
 	TemporalHost      string `config:"temporal_host"  validate:"required"`
