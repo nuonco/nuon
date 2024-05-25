@@ -25,10 +25,11 @@ env:
   APP_SYNC_API_URL: http://localhost:8081
   INTERNAL_SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
 
-  # toggles for local development based on what you are working on
+  # common toggles for local development based on what you are working on
   DISABLE_METRICS: true
   DISABLE_NOTIFICATIONS: true
-  LOG_LEVEL_DEBUG: true
+  # DB_LOG_QUERIES: true
+  #LOG_LEVEL: "DEBUG"
 
 local_env:
   DB_HOST: localhost
