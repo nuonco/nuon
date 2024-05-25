@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
 	"github.com/spf13/cobra"
+
+	"github.com/powertoolsdev/mono/bins/cli/internal/installs"
 )
 
 func (c *cli) installsCmd() *cobra.Command {
@@ -267,6 +268,19 @@ func (c *cli) installsCmd() *cobra.Command {
 	teardownInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	teardownInstallComponentsCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(teardownInstallComponentsCmd)
+
+	deployInstallComponentsCmd := &cobra.Command{
+		Use:   "deploy-components",
+		Short: "Deploy all components to an install.",
+		Long:  "Deploy all components to an install.",
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := installs.New(c.apiClient, c.cfg)
+			svc.DeployComponents(cmd.Context(), id, PrintJSON)
+		},
+	}
+	deployInstallComponentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	deployInstallComponentsCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(deployInstallComponentsCmd)
 
 	return installsCmds
 }

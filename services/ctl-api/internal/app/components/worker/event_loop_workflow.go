@@ -63,7 +63,7 @@ func (w *Workflows) ComponentEventLoop(ctx workflow.Context, req signals.Compone
 			op = "queue_build"
 			if err := w.queueBuild(ctx, req.ComponentID); err != nil {
 				status = "error"
-				l.Info("unable to handle config created: %w", zap.Error(err))
+				l.Info("unable to handle queue build: %w", zap.Error(err))
 			}
 		case signals.OperationBuild:
 			op = "build"

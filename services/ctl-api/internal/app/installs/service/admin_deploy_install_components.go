@@ -7,13 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DeployInstallComponentsRequest struct{}
+type AdminDeployInstallComponentsRequest struct{}
 
 // @ID AdminDeployInstallComponents
 // @Summary	deploy all components on an install
 // @Description.markdown deploy_install_components.md
 // @Param			install_id	path	string					true	"install ID"
-// @Param			req			body	DeployInstallComponentsRequest	true	"Input"
+// @Param			req			body	AdminDeployInstallComponentsRequest	true	"Input"
 // @Tags			installs/admin
 // @Accept			json
 // @Produce		json
@@ -22,7 +22,7 @@ type DeployInstallComponentsRequest struct{}
 func (s *service) AdminDeployInstallComponents(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
-	var req DeployInstallComponentsRequest
+	var req AdminDeployInstallComponentsRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return

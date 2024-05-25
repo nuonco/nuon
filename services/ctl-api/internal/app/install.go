@@ -46,6 +46,10 @@ type Install struct {
 	InstallNumber        int            `json:"install_number" gorm:"->;-:migration"`
 }
 
+func (i *Install) UseView() bool {
+	return true
+}
+
 func (i *Install) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
 		i.ID = domains.NewInstallID()

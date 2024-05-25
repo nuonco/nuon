@@ -2,6 +2,7 @@ package installs
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
@@ -36,6 +37,7 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, asJSON bool
 			"created at",
 			"component id",
 			"component name",
+			"component config version",
 		},
 	}
 	for _, deploy := range deploys {
@@ -47,6 +49,7 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, asJSON bool
 			deploy.CreatedAt,
 			deploy.ComponentID,
 			deploy.ComponentName,
+			fmt.Sprintf("%d", deploy.ComponentConfigVersion),
 		})
 	}
 	view.Render(data)

@@ -2,18 +2,14 @@ package db
 
 import (
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db/plugins"
 )
 
 func (d *database) registerPlugins(db *gorm.DB) error {
-	db.Use(&metricsWriterPlugin{
-		metricsWriter: d.MetricsWriter,
-	})
-
-	afterQueryPlug := &afterQueryPlugin{}
-	db.Callback().
-		Query().
-		After("gorm:query").
-		Register("nuon:after_query", afterQueryPlug.plugin)
+	db.Use(plugins.NewMetricsPlugin(d.MetricsWriter))
+	db.Use(plugins.NewAfterQueryPlugin())
+	db.Use(plugins.NewViewsPlugin(allModels()))
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -43,6 +44,7 @@ func (s *service) getInstallDeploys(ctx context.Context, installID string) ([]*a
 		Preload("InstallComponent").
 		Preload("InstallComponent.Component").
 		Preload("ComponentBuild").
+		Preload("ComponentBuild.ComponentConfigConnection").
 		Preload("ComponentBuild.VCSConnectionCommit").
 		Joins("JOIN install_components ON install_components.id=install_deploys.install_component_id").
 		Where("install_components.install_id = ?", installID).
