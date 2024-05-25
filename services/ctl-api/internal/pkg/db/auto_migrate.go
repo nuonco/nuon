@@ -3,7 +3,7 @@ package db
 import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/migrations"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )

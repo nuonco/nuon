@@ -6,7 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/terraformcloud"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 )
 
 func New(v *validator.Validate, orgsOutputs *terraformcloud.OrgsOutputs) (multi.Client, error) {
