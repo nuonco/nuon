@@ -6,9 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
-	"gorm.io/gorm"
 )
 
 // @ID GetOrgInstalls
@@ -62,10 +63,10 @@ func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Insta
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("InstallComponents.Component").
-		Joins("JOIN apps ON apps.id=installs.app_id").
+		Joins("JOIN apps ON apps.id=installs_view.app_id").
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Order("created_at desc").
-		Find(&installs, "installs.org_id = ?", orgID)
+		Find(&installs, "installs_view.org_id = ?", orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org installs: %w", res.Error)
 	}
