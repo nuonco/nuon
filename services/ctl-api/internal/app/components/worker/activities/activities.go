@@ -1,7 +1,7 @@
 package activities
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/protos"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	"gorm.io/gorm"
