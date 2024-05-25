@@ -19,4 +19,6 @@ func (s *Service) Deprovision(ctx context.Context, installID string, asJSON bool
 		ui.PrintJSONError(err)
 		return
 	}
+
+	ui.PrintLn("successfully triggered install deprovision")
 }

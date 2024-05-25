@@ -1,12 +1,13 @@
-package db
+package plugins
 
 import (
 	"context"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	metrics_middleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
-	"gorm.io/gorm"
 )
 
 type contextKey string
@@ -15,11 +16,19 @@ const (
 	defaultContextKey contextKey = "gorm_metrics_plugin"
 )
 
+var _ gorm.Plugin = (*metricsWriterPlugin)(nil)
+
 // This is a plugin that emits well-formed metrics to datadog based on queries/operations performed by gorm.
 //
 // It is semi-inspired by https://github.com/go-gorm/prometheus/blob/master/prometheus.go which takes this a step
 // further by pulling in database metrics and emitting them via prometheus, however prometheus is lower level than what
 // we have here.
+func NewMetricsPlugin(mw metrics.Writer) *metricsWriterPlugin {
+	return &metricsWriterPlugin{
+		metricsWriter: mw,
+	}
+}
+
 type metricsWriterPlugin struct {
 	metricsWriter metrics.Writer
 }
