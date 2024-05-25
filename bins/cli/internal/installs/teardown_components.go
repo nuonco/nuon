@@ -19,4 +19,6 @@ func (s *Service) TeardownComponents(ctx context.Context, installID string, asJS
 		ui.PrintJSONError(err)
 		return
 	}
+
+	ui.PrintLn("successfully triggered teardown of all install components")
 }
