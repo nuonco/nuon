@@ -19,14 +19,20 @@ func (w *Workflows) created(ctx workflow.Context, installID string) error {
 		return fmt.Errorf("unable to get app: %w", err)
 	}
 
-	if install.InstallNumber != 1 {
-		return nil
+	if install.InstallNumber == 1 {
+		w.sendNotification(ctx, notifications.NotificationsTypeFirstInstallCreated, install.AppID, map[string]string{
+			"install_name": install.Name,
+			"app_name":     install.App.Name,
+			"created_by":   install.CreatedBy.Email,
+		})
 	}
 
-	w.sendNotification(ctx, notifications.NotificationsTypeInstallCreated, installID, map[string]string{
-		"install_name": install.Name,
-		"app_name":     install.App.Name,
-		"created_by":   install.CreatedBy.Email,
-	})
+	if install.InstallNumber > 1 {
+		w.sendNotification(ctx, notifications.NotificationsTypeInstallCreated, install.AppID, map[string]string{
+			"install_name": install.Name,
+			"app_name":     install.App.Name,
+			"created_by":   install.CreatedBy.Email,
+		})
+	}
 	return nil
 }
