@@ -4,8 +4,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/notifications"
+	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
 func (w *Workflows) sendNotification(ctx workflow.Context, typ notifications.Type, appID string, vars map[string]string) {

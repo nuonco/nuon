@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	validatoradapter "github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/validator"
+	validatoradapter "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )

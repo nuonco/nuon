@@ -3,7 +3,7 @@ package db
 import (
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db/plugins"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/plugins"
 )
 
 func (d *database) registerPlugins(db *gorm.DB) error {
