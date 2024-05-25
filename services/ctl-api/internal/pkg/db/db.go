@@ -12,6 +12,8 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	gormlogger "gorm.io/gorm/logger"
 	"moul.io/zapgorm2"
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
@@ -77,8 +79,14 @@ func New(v *validator.Validate,
 	ctx := context.Background()
 	ctx, cancelFn := context.WithCancel(ctx)
 
+	dl := zapgorm2.New(l)
+	if cfg.LogLevel == "DEBUG" {
+		dl.LogMode(gormlogger.Info)
+	}
+	dl.IgnoreRecordNotFoundError = true
+
 	database := &database{
-		Logger:        zapgorm2.New(l),
+		Logger:        dl,
 		PasswordFn:    FetchIamTokenPassword,
 		Host:          cfg.DBHost,
 		User:          cfg.DBUser,
@@ -90,6 +98,7 @@ func New(v *validator.Validate,
 		poolCtx:       ctx,
 		poolCtxCancel: cancelFn,
 	}
+
 	if cfg.DBPassword != "" {
 		database.PasswordFn = nil
 		database.Password = cfg.DBPassword
@@ -113,6 +122,10 @@ func New(v *validator.Validate,
 		Logger:         database.Logger,
 		TranslateError: true,
 	}
+	if cfg.DBLogQueries {
+		gormCfg.Logger = logger.Default.LogMode(logger.Info)
+	}
+
 	db, err := gorm.Open(postgres.New(postgresCfg), gormCfg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
