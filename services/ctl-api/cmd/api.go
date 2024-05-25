@@ -5,8 +5,8 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/api"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/docs"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/docs"
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
 	componentsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/service"

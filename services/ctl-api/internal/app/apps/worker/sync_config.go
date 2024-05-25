@@ -6,7 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/notifications"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 )

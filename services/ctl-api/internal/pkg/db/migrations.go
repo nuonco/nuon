@@ -7,7 +7,7 @@ import (
 
 	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/db/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"go.uber.org/zap"
 	"gorm.io/gorm"

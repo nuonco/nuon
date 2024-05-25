@@ -3,8 +3,8 @@ package activities
 import (
 	"gorm.io/gorm"
 
-	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/protos"
+	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"

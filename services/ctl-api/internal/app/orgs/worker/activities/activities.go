@@ -5,7 +5,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 )
 
 type Activities struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/adapters/notifications"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
 type Activities struct {
