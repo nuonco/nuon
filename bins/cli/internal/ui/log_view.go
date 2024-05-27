@@ -31,7 +31,8 @@ type Terminal struct {
 			Data string
 		}
 		Step *struct {
-			Msg string
+			Msg    string
+			Output string
 		}
 		Status *struct {
 			Msg string
@@ -46,10 +47,10 @@ type Logs struct {
 	Complete Complete
 }
 
-func PrintBuildLog(log []models.ServiceBuildLog) {
+func PrintBuildLogs(logs []models.ServiceBuildLog) {
 	var lgs Logs
 
-	for _, l := range log {
+	for _, l := range logs {
 		err := mapstructure.Decode(l, &lgs)
 		if err != nil {
 			PrintError(err)
@@ -80,6 +81,15 @@ func PrintBuildLog(log []models.ServiceBuildLog) {
 			if line.Step != nil {
 				if line.Step.Msg != "" {
 					fmt.Println(line.Step.Msg)
+				}
+
+				if line.Step.Output != "" {
+					data, err := base64.StdEncoding.DecodeString(line.Step.Output)
+					if err != nil {
+						PrintError(err)
+						continue
+					}
+					fmt.Println(string(data))
 				}
 			}
 
@@ -135,6 +145,15 @@ func PrintDeployLogs(log []models.ServiceDeployLog) {
 				if line.Step.Msg != "" {
 					fmt.Println(line.Step.Msg)
 				}
+
+				if line.Step.Output != "" {
+					data, err := base64.StdEncoding.DecodeString(line.Step.Output)
+					if err != nil {
+						PrintError(err)
+						continue
+					}
+					fmt.Println(string(data))
+				}
 			}
 
 			if line.Status != nil {
@@ -188,6 +207,15 @@ func PrintLogsFromInterface(log []interface{}) {
 			if line.Step != nil {
 				if line.Step.Msg != "" {
 					fmt.Println(line.Step.Msg)
+				}
+
+				if line.Step.Output != "" {
+					data, err := base64.StdEncoding.DecodeString(line.Step.Output)
+					if err != nil {
+						PrintError(err)
+						continue
+					}
+					fmt.Println(string(data))
 				}
 			}
 
