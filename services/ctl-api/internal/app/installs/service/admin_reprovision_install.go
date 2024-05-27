@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type AdminReprovisionInstallRequest struct{}
@@ -20,12 +22,14 @@ type AdminReprovisionInstallRequest struct{}
 func (s *service) AdminReprovisionInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
-	_, err := s.getInstall(ctx, installID)
+	install, err := s.getInstall(ctx, installID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	s.hooks.Reprovision(ctx, installID)
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationReprovision,
+	})
 	ctx.JSON(http.StatusOK, true)
 }

@@ -5,6 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	appsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
+	componentsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	installsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 )
 
 type RestartOrgChildrenRequest struct{}
@@ -33,15 +39,25 @@ func (s *service) RestartOrgChildren(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Restart(ctx, org.ID, org.OrgType)
+	s.evClient.Send(ctx, org.ID, &sigs.Signal{
+		Type: sigs.OperationRestart,
+	})
+
 	for _, app := range org.Apps {
-		s.appHooks.Restart(ctx, app.ID, org.OrgType)
+		s.evClient.Send(ctx, app.ID, &appsignals.Signal{
+			Type: appsignals.OperationRestart,
+		})
+
 		for _, comp := range app.Components {
-			s.componentHooks.Restart(ctx, comp.ID, org.OrgType)
+			s.evClient.Send(ctx, comp.ID, &componentsignals.Signal{
+				Type: componentsignals.OperationDelete,
+			})
 		}
 
-		for _, comp := range app.Installs {
-			s.installHooks.Restart(ctx, comp.ID, org.OrgType)
+		for _, install := range app.Installs {
+			s.evClient.Send(ctx, install.ID, &installsignals.Signal{
+				Type: signals.OperationRestart,
+			})
 		}
 	}
 

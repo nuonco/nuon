@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
@@ -50,7 +51,10 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.InviteCreated(ctx, org.ID, invite.ID)
+	s.evClient.Send(ctx, org.ID, &sigs.Signal{
+		Type:     sigs.OperationInviteCreated,
+		InviteID: invite.ID,
+	})
 	ctx.JSON(http.StatusCreated, invite)
 }
 
