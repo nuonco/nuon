@@ -3,10 +3,11 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type OperationStatus string
@@ -32,8 +33,8 @@ type InstallEvent struct {
 	OrgID string `json:"org_id"`
 	Org   Org    `faker:"-" json:"-" swaggerignore:"-"`
 
-	Operation       signals.Operation `json:"operation"`
-	OperationStatus OperationStatus   `json:"operation_status"`
+	Operation       string          `json:"operation"`
+	OperationStatus OperationStatus `json:"operation_status"`
 
 	Payload []byte `json:"payload" gorm:"type:jsonb" swaggertype:"object,string"`
 
@@ -52,6 +53,6 @@ func (a *InstallEvent) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (i *InstallEvent) AfterQuery(tx *gorm.DB) error {
-	i.OperationName = i.Operation.DisplayName()
+	i.OperationName = generics.DisplayName(i.Operation)
 	return nil
 }

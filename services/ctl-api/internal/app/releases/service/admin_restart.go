@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/signals"
 )
 
 type RestartReleaseReleaseRequest struct{}
@@ -34,12 +36,8 @@ func (s *service) RestartRelease(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.getOrg(ctx, release.OrgID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get release org: %w", err))
-		return
-	}
-
-	s.hooks.Restart(ctx, release.ID, org.OrgType)
+	s.evClient.Send(ctx, release.ID, &signals.Signal{
+		Type: signals.OperationRestart,
+	})
 	ctx.JSON(http.StatusOK, true)
 }

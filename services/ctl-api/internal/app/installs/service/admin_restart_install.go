@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type RestartInstallRequest struct{}
@@ -36,7 +38,9 @@ func (s *service) RestartInstall(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Restart(ctx, install.ID, install.App.Org.OrgType)
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationRestart,
+	})
 	ctx.JSON(http.StatusOK, true)
 }
 

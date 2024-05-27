@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 func (m *middleware) handleInvites(ctx context.Context, subject, email string) error {
@@ -59,7 +61,11 @@ func (m *middleware) acceptInvite(ctx context.Context, invite *app.OrgInvite, su
 	}
 
 	// send a notification to the correct org event flow that it was accepted
-	m.orgsHooks.InviteAccepted(ctx, invite.OrgID, invite.ID)
+	orgmiddleware.SetContext(ctx, &invite.Org)
+	m.evClient.Send(ctx, invite.OrgID, &sigs.Signal{
+		Type:     sigs.OperationInviteAccepted,
+		InviteID: invite.ID,
+	})
 
 	return nil
 }

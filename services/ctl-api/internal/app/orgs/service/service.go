@@ -8,22 +8,18 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	apphooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
-	componenthooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
-	installhooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 type service struct {
-	v              *validator.Validate
-	l              *zap.Logger
-	db             *gorm.DB
-	mw             metrics.Writer
-	cfg            *internal.Config
-	hooks          *hooks.Hooks
-	appHooks       *apphooks.Hooks
-	installHooks   *installhooks.Hooks
-	componentHooks *componenthooks.Hooks
+	v   *validator.Validate
+	l   *zap.Logger
+	db  *gorm.DB
+	mw  metrics.Writer
+	cfg *internal.Config
+
+	// experimental
+	evClient eventloop.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -70,21 +66,15 @@ func New(v *validator.Validate,
 	db *gorm.DB,
 	mw metrics.Writer,
 	l *zap.Logger,
-	hooks *hooks.Hooks,
 	cfg *internal.Config,
-	appHooks *apphooks.Hooks,
-	installHooks *installhooks.Hooks,
-	componentHooks *componenthooks.Hooks,
+	evClient eventloop.Client,
 ) *service {
 	return &service{
-		l:              l,
-		v:              v,
-		db:             db,
-		mw:             mw,
-		cfg:            cfg,
-		hooks:          hooks,
-		appHooks:       appHooks,
-		installHooks:   installHooks,
-		componentHooks: componentHooks,
+		l:        l,
+		v:        v,
+		db:       db,
+		mw:       mw,
+		cfg:      cfg,
+		evClient: evClient,
 	}
 }

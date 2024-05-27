@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 )
 
 type ReprovisionOrgRequest struct{}
@@ -21,12 +23,14 @@ type ReprovisionOrgRequest struct{}
 func (s *service) AdminReprovisionOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
-	_, err := s.getOrg(ctx, orgID)
+	org, err := s.getOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	s.hooks.Reprovision(ctx, orgID)
+	s.evClient.Send(ctx, org.ID, &sigs.Signal{
+		Type: sigs.OperationReprovision,
+	})
 	ctx.JSON(http.StatusOK, true)
 }

@@ -2,38 +2,27 @@ package worker
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
+
+	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
-const (
-	EventLoopWorkflowName string = "ReleaseEventLoop"
-)
-
-func EventLoopWorkflowID(releaseID string) string {
-	return fmt.Sprintf("%s-event-loop", releaseID)
-}
-
-type ReleaseEventLoopRequest struct {
-	ReleaseID   string
-	SandboxMode bool
-}
-
-func (w *Workflows) ReleaseEventLoop(ctx workflow.Context, req ReleaseEventLoopRequest) error {
+func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest) error {
 	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
 	w.mw.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
 	l := workflow.GetLogger(ctx)
 
 	finished := false
-	signalChan := workflow.GetSignalChannel(ctx, req.ReleaseID)
+	signalChan := workflow.GetSignalChannel(ctx, req.ID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
-		var signal Signal
+		var signal signals.Signal
 		channelOpen := channel.Receive(ctx, &signal)
 		if !channelOpen {
 			l.Info("channel was closed")
@@ -58,16 +47,16 @@ func (w *Workflows) ReleaseEventLoop(ctx workflow.Context, req ReleaseEventLoopR
 			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
-		switch signal.Operation {
-		case OperationPollDependencies:
+		switch signal.SignalType() {
+		case signals.OperationPollDependencies:
 			op = "poll_dependencies"
-			if err := w.pollDependencies(ctx, req.ReleaseID); err != nil {
+			if err := w.pollDependencies(ctx, req.ID); err != nil {
 				status = "error"
 				l.Info("unable to poll dependencies: %w", zap.Error(err))
 			}
-		case OperationProvision:
+		case signals.OperationProvision:
 			op = "provision"
-			if err := w.provision(ctx, req.ReleaseID, req.SandboxMode); err != nil {
+			if err := w.provision(ctx, req.ID, req.SandboxMode); err != nil {
 				status = "error"
 				l.Info("unable to provision release: %w", zap.Error(err))
 			}

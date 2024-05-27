@@ -6,7 +6,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	appsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
+	componentsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
+	installsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 )
 
 type AdminDeleteCanaryOrgsRequest struct{}
@@ -30,14 +35,27 @@ func (s *service) AdminDeleteCanaryOrgs(ctx *gin.Context) {
 	for _, org := range orgs {
 		for _, app := range org.Apps {
 			for _, install := range app.Installs {
-				s.installHooks.Forgotten(ctx, install.ID)
+				s.evClient.Send(ctx, install.ID, &installsignals.Signal{
+					Type: installsignals.OperationForgotten,
+				})
 			}
+
 			for _, component := range app.Components {
-				s.componentHooks.Deleted(ctx, component.ID)
+				s.evClient.Send(ctx, component.ID, &componentsignals.Signal{
+					Type: componentsignals.OperationDelete,
+				})
 			}
-			s.appHooks.Deleted(ctx, app.ID)
+
+			s.evClient.Send(ctx, app.ID, &appsignals.Signal{
+				Type: appsignals.OperationDeleted,
+			})
+			s.evClient.Send(ctx, app.ID, &appsignals.Signal{
+				Type: appsignals.OperationDeprovision,
+			})
 		}
-		s.hooks.ForceDelete(ctx, org.ID)
+		s.evClient.Send(ctx, org.ID, &signals.Signal{
+			Type: signals.OperationForceDelete,
+		})
 	}
 
 	ctx.JSON(http.StatusOK, true)

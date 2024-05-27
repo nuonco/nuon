@@ -3,13 +3,13 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	componenthelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
-	componenthooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/hooks"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 type service struct {
@@ -18,9 +18,8 @@ type service struct {
 	db          *gorm.DB
 	mw          metrics.Writer
 	cfg         *internal.Config
-	hooks       *hooks.Hooks
 	compHelpers *componenthelpers.Helpers
-	compHooks   *componenthooks.Hooks
+	evClient    eventloop.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -44,9 +43,8 @@ func New(v *validator.Validate,
 	db *gorm.DB,
 	mw metrics.Writer,
 	l *zap.Logger,
-	hooks *hooks.Hooks,
 	compHelpers *componenthelpers.Helpers,
-	compHooks *componenthooks.Hooks,
+	evClient eventloop.Client,
 ) *service {
 	return &service{
 		cfg:         cfg,
@@ -54,8 +52,7 @@ func New(v *validator.Validate,
 		v:           v,
 		db:          db,
 		mw:          mw,
-		hooks:       hooks,
 		compHelpers: compHelpers,
-		compHooks:   compHooks,
+		evClient:    evClient,
 	}
 }

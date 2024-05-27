@@ -2,7 +2,6 @@ package worker
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
 	"go.temporal.io/sdk/workflow"
@@ -10,42 +9,38 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/signals"
+	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 const (
-	EventLoopWorkflowName string = "OrgEventLoop"
-	defaultOrgRegion      string = "us-west-2"
+	defaultOrgRegion string = "us-west-2"
 )
-
-func EventLoopWorkflowID(orgID string) string {
-	return fmt.Sprintf("%s-event-loop", orgID)
-}
 
 type OrgEventLoopRequest struct {
 	OrgID       string
 	SandboxMode bool
 }
 
-func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) error {
+func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest) error {
 	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
 	w.mw.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
 	l := workflow.GetLogger(ctx)
 
 	finished := false
-	signalChan := workflow.GetSignalChannel(ctx, req.OrgID)
+	signalChan := workflow.GetSignalChannel(ctx, req.ID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
-		var signal signals.Signal
-		channelOpen := channel.Receive(ctx, &signal)
+		var evSignal sigs.Signal
+		channelOpen := channel.Receive(ctx, &evSignal)
 		if !channelOpen {
 			l.Info("channel was closed")
 			return
 		}
 
-		if err := signal.Validate(w.v); err != nil {
-			l.Info("invalid signal", zap.Error(err))
-		}
+		//if err := signal.Validate(w.v); err != nil {
+		//l.Info("invalid signal", zap.Error(err))
+		//}
 
 		startTS := workflow.Now(ctx)
 		op := ""
@@ -61,20 +56,20 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
-		switch signal.Operation {
+		switch evSignal.SignalType() {
 		// OperationCreated
-		case signals.OperationCreated:
+		case sigs.OperationCreated:
 			op = "created"
-			err := w.created(ctx, req.OrgID, req.SandboxMode)
+			err := w.created(ctx, req.ID, req.SandboxMode)
 			if err != nil {
 				status = "error"
 				l.Error("unable to handle created signal", zap.Error(err))
 				return
 			}
 		// OperationProvision
-		case signals.OperationProvision:
+		case sigs.OperationProvision:
 			op = "provision"
-			err := w.provision(ctx, req.OrgID, req.SandboxMode)
+			err := w.provision(ctx, req.ID, req.SandboxMode)
 			if err != nil {
 				status = "error"
 				l.Error("unable to provision org", zap.Error(err))
@@ -82,9 +77,9 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 			}
 
 		// OperationReprovision
-		case signals.OperationReprovision:
+		case sigs.OperationReprovision:
 			op = "reprovision"
-			err := w.reprovision(ctx, req.OrgID, req.SandboxMode)
+			err := w.reprovision(ctx, req.ID, req.SandboxMode)
 			if err != nil {
 				status = "error"
 				l.Error("unable to reprovision org", zap.Error(err))
@@ -92,9 +87,9 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 			}
 
 		// OperationDeprovision
-		case signals.OperationDeprovision:
+		case sigs.OperationDeprovision:
 			op = "deprovision"
-			err := w.deprovision(ctx, req.OrgID, req.SandboxMode)
+			err := w.deprovision(ctx, req.ID, req.SandboxMode)
 			if err != nil {
 				status = "error"
 				l.Error("unable to deprovision org", zap.Error(err))
@@ -102,17 +97,17 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 			}
 
 		// OperationRestart
-		case signals.OperationRestart:
+		case sigs.OperationRestart:
 			op = "restart"
 			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
-				OrgID:       req.OrgID,
+				OrgID:       req.ID,
 				SandboxMode: req.SandboxMode,
 			})
 
 			// OperationInviteCreated
-		case signals.OperationInviteCreated:
+		case sigs.OperationInviteCreated:
 			op = "invite_created"
-			err := w.inviteUser(ctx, req.OrgID, signal.InviteID)
+			err := w.inviteUser(ctx, req.ID, evSignal.InviteID)
 			if err != nil {
 				status = "error"
 				l.Error("unable to handle invite created signal", zap.Error(err))
@@ -120,9 +115,9 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 			}
 
 			// OperationInviteAccepted
-		case signals.OperationInviteAccepted:
+		case sigs.OperationInviteAccepted:
 			op = "invite_accepted"
-			err := w.inviteAccepted(ctx, req.OrgID, signal.InviteID)
+			err := w.inviteAccepted(ctx, req.ID, evSignal.InviteID)
 			if err != nil {
 				status = "error"
 				l.Error("unable to handle invite accepted signal", zap.Error(err))
@@ -130,9 +125,9 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 			}
 
 			// OperationForceDelete
-		case signals.OperationForceDelete:
+		case sigs.OperationForceDelete:
 			op = "force_delete"
-			err := w.forceDelete(ctx, req.OrgID, req.SandboxMode)
+			err := w.forceDelete(ctx, req.ID, req.SandboxMode)
 			if err != nil {
 				status = "error"
 				l.Error("unable to force delete org", zap.Error(err))
@@ -142,9 +137,9 @@ func (w *Workflows) OrgEventLoop(ctx workflow.Context, req OrgEventLoopRequest) 
 			finished = true
 
 		// OperationDelete
-		case signals.OperationDelete:
+		case sigs.OperationDelete:
 			op = "delete"
-			err := w.delete(ctx, req.OrgID, req.SandboxMode)
+			err := w.delete(ctx, req.ID, req.SandboxMode)
 			if err != nil {
 				status = "error"
 				l.Error("unable to delete org", zap.Error(err))

@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 // @ID DeleteInstall
@@ -35,7 +37,12 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Deleted(ctx, installID)
+	s.evClient.Send(ctx, installID, &signals.Signal{
+		Type: signals.OperationTeardownComponents,
+	})
+	s.evClient.Send(ctx, installID, &signals.Signal{
+		Type: signals.OperationDelete,
+	})
 	ctx.JSON(http.StatusOK, true)
 }
 

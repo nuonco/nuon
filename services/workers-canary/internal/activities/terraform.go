@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
 	"github.com/mitchellh/mapstructure"
+	"go.temporal.io/sdk/activity"
+
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/terraform/archive/dir"
 	"github.com/powertoolsdev/mono/pkg/terraform/backend"
@@ -20,11 +22,10 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/run"
 	staticvars "github.com/powertoolsdev/mono/pkg/terraform/variables/static"
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
-	"go.temporal.io/sdk/activity"
 )
 
 const (
-	defaultTerraformVersion  string        = "v1.5.3"
+	defaultTerraformVersion  string        = "v1.8.4"
 	defaultHeartBeatInterval time.Duration = time.Second * 1
 )
 
