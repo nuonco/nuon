@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 )
 
 type awsECRImageConfigRequest struct {
@@ -77,7 +78,9 @@ func (s *service) CreateExternalImageComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.ConfigCreated(ctx, cmpID)
+	s.evClient.Send(ctx, cmpID, &signals.Signal{
+		Type: signals.OperationConfigCreated,
+	})
 	ctx.JSON(http.StatusCreated, cfg)
 }
 

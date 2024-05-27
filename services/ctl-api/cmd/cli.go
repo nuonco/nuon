@@ -4,9 +4,14 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
+	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
+	installshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
+	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/migrations"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/github"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/log"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/loops"
@@ -17,15 +22,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/waypoint"
-	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
-	appshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
-	componentshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
-	componentsshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
-	installshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
-	installshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
-	orgshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
-	releaseshooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/hooks"
-	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 )
 
 type cli struct{}
@@ -49,13 +45,7 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(waypoint.New),
 		fx.Provide(activities.New),
 		fx.Provide(notifications.New),
-
-		// add hooks for each domain
-		fx.Provide(appshooks.New),
-		fx.Provide(installshooks.New),
-		fx.Provide(orgshooks.New),
-		fx.Provide(componentsshooks.New),
-		fx.Provide(releaseshooks.New),
+		fx.Provide(eventloop.New),
 
 		// add helpers for each domain
 		fx.Provide(vcshelpers.New),

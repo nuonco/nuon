@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 )
 
 type AdminDeleteComponentRequest struct{}
@@ -20,6 +22,9 @@ type AdminDeleteComponentRequest struct{}
 // @Router			/v1/components/{component_id}/admin-delete [POST]
 func (s *service) AdminDeleteComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
-	s.hooks.Deleted(ctx, componentID)
+
+	s.evClient.Send(ctx, componentID, &signals.Signal{
+		Type: signals.OperationDeleted,
+	})
 	ctx.JSON(http.StatusOK, true)
 }

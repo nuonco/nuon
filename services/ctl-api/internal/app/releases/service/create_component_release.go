@@ -8,9 +8,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	componentsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -49,12 +51,6 @@ func (c *CreateComponentReleaseRequest) Validate(v *validator.Validate) error {
 // @Success		201				{object}	app.ComponentRelease
 // @Router			/v1/components/{component_id}/releases [post]
 func (s *service) CreateComponentRelease(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	cmpID := ctx.Param("component_id")
 
 	var req CreateComponentReleaseRequest
@@ -73,7 +69,15 @@ func (s *service) CreateComponentRelease(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Created(ctx, rel.ID, org.OrgType)
+	s.evClient.Send(ctx, rel.ID, &signals.Signal{
+		Type: signals.OperationCreated,
+	})
+	s.evClient.Send(ctx, rel.ID, &signals.Signal{
+		Type: signals.OperationPollDependencies,
+	})
+	s.evClient.Send(ctx, rel.ID, &signals.Signal{
+		Type: signals.OperationProvision,
+	})
 	ctx.JSON(http.StatusCreated, rel)
 }
 
@@ -131,7 +135,10 @@ func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateCo
 			return nil, fmt.Errorf("unable to create component build: %w", err)
 		}
 		buildID = build.ID
-		s.compHooks.BuildCreated(ctx, cmp.ID, buildID)
+		s.evClient.Send(ctx, cmpID, &componentsignals.Signal{
+			Type:    componentsignals.OperationBuild,
+			BuildID: build.ID,
+		})
 	}
 
 	// create the component release

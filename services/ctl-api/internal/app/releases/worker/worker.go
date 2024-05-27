@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
-	"github.com/powertoolsdev/mono/pkg/workflows"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	temporalclient "github.com/powertoolsdev/mono/pkg/temporal/client"
+	"github.com/powertoolsdev/mono/pkg/workflows"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
 )
 
 const (
@@ -39,7 +40,7 @@ func New(cfg *internal.Config,
 		WorkflowPanicPolicy:                worker.FailWorkflow,
 	})
 	wkr.RegisterActivity(acts)
-	wkr.RegisterWorkflow(wkflows.ReleaseEventLoop)
+	wkr.RegisterWorkflow(wkflows.EventLoop)
 	wkr.RegisterWorkflow(wkflows.ProvisionReleaseStep)
 
 	lc.Append(fx.Hook{

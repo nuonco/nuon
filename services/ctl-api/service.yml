@@ -48,8 +48,10 @@ local_startup_cmds:
   - go generate ./...
   - go build -o /tmp/svc-ctl-api
   - /tmp/svc-ctl-api startup
-local_cmds:
+local_build_cmds:
+  - rm -f /tmp/svc-ctl-api
   - go build -o /tmp/svc-ctl-api
+local_cmds:
   - /tmp/svc-ctl-api api
   - /tmp/svc-ctl-api worker
 earthly_cmd: server

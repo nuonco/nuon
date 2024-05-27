@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 )
 
 type ReprovisionAppRequest struct{}
@@ -27,6 +29,8 @@ func (s *service) AdminReprovisionApp(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Reprovision(ctx, appID)
+	s.evClient.Send(ctx, appID, &signals.Signal{
+		Type: signals.OperationReprovision,
+	})
 	ctx.JSON(http.StatusOK, true)
 }

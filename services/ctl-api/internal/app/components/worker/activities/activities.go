@@ -1,28 +1,29 @@
 package activities
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 type Activities struct {
-	db      *gorm.DB
-	protos  *protos.Adapter
-	helpers *helpers.Helpers
-	hooks   *hooks.Hooks
+	db       *gorm.DB
+	protos   *protos.Adapter
+	helpers  *helpers.Helpers
+	evClient eventloop.Client
 }
 
 func New(prt *protos.Adapter,
 	db *gorm.DB,
 	helpers *helpers.Helpers,
-	hooks *hooks.Hooks,
+	evClient eventloop.Client,
 ) (*Activities, error) {
 	return &Activities{
-		db:      db,
-		protos:  prt,
-		helpers: helpers,
-		hooks:   hooks,
+		db:       db,
+		protos:   prt,
+		helpers:  helpers,
+		evClient: evClient,
 	}, nil
 }

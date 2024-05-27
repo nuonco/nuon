@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type AdminDeleteInstallRequest struct{}
@@ -20,6 +22,17 @@ type AdminDeleteInstallRequest struct{}
 // @Router			/v1/installs/{install_id}/admin-delete [POST]
 func (s *service) AdminDeleteInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	s.hooks.Deleted(ctx, installID)
+	install, err := s.getInstall(ctx, installID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationTeardownComponents,
+	})
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationDelete,
+	})
 	ctx.JSON(http.StatusOK, true)
 }

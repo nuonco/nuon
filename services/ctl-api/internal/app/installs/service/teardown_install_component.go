@@ -7,7 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -56,7 +58,10 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.InstallDeployCreated(ctx, installID, deploy.ID)
+	s.evClient.Send(ctx, installID, &signals.Signal{
+		Type:     signals.OperationDeploy,
+		DeployID: deploy.ID,
+	})
 	ctx.JSON(http.StatusCreated, deploy)
 }
 

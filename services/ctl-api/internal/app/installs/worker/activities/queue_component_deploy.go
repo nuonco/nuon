@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type CreateInstallDeployRequest struct {
@@ -54,7 +56,10 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	}
 
 	if req.Signal {
-		a.hooks.InstallDeployCreated(ctx, req.InstallID, deploy.ID)
+		a.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type:     signals.OperationDeploy,
+			DeployID: deploy.ID,
+		})
 	}
 
 	return &deploy, nil

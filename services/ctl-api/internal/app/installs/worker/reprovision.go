@@ -5,12 +5,13 @@ import (
 	"strings"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (w *Workflows) reprovision(ctx workflow.Context, installID string, dryRun bool) error {

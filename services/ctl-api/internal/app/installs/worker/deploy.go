@@ -3,13 +3,14 @@ package worker
 import (
 	"fmt"
 
+	"go.temporal.io/sdk/workflow"
+
 	componentsv1 "github.com/powertoolsdev/mono/pkg/types/components/component/v1"
 	execv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/execute/v1"
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (w *Workflows) isBuildDeployable(bld app.ComponentBuild) bool {

@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
@@ -72,7 +73,15 @@ func (s *service) CreateApp(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Created(ctx, app.ID, org.OrgType)
+	s.evClient.Send(ctx, app.ID, &signals.Signal{
+		Type: signals.OperationCreated,
+	})
+	s.evClient.Send(ctx, app.ID, &signals.Signal{
+		Type: signals.OperationPollDependencies,
+	})
+	s.evClient.Send(ctx, app.ID, &signals.Signal{
+		Type: signals.OperationProvision,
+	})
 	ctx.JSON(http.StatusCreated, app)
 }
 
