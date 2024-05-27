@@ -1,3 +1,20 @@
+module "shared-turntable" {
+  source = "./modules/repository"
+
+  name                     = "turntable"
+  description              = "Nuon configuration for turntable."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {}
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
 module "shared-warpstream" {
   source = "./modules/repository"
 
