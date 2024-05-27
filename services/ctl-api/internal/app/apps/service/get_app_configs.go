@@ -53,6 +53,7 @@ func (s *service) getAppConfigs(ctx context.Context, orgID, appID string) ([]app
 			OrgID: orgID,
 			AppID: appID,
 		}).
+		Order("created_at desc").
 		Find(&cfgs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app configs: %w", res.Error)
