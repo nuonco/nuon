@@ -6,7 +6,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	appsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
+	componentsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
+	installsignals "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 )
 
 type AdminDeleteOrgRequest struct{}
@@ -38,17 +43,31 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 	}
 
 	for _, app := range org.Apps {
-		s.appHooks.Deleted(ctx, app.ID)
+		s.evClient.Send(ctx, app.ID, &appsignals.Signal{
+			Type: appsignals.OperationDeleted,
+		})
+		s.evClient.Send(ctx, app.ID, &appsignals.Signal{
+			Type: appsignals.OperationDeprovision,
+		})
+
 		for _, install := range app.Installs {
-			s.installHooks.Deleted(ctx, install.ID)
-			s.installHooks.Forgotten(ctx, install.ID)
+			s.evClient.Send(ctx, install.ID, &installsignals.Signal{
+				Type: installsignals.OperationDelete,
+			})
+			s.evClient.Send(ctx, install.ID, &installsignals.Signal{
+				Type: installsignals.OperationForgotten,
+			})
 		}
 
 		for _, comp := range app.Components {
-			s.componentHooks.Deleted(ctx, comp.ID)
+			s.evClient.Send(ctx, comp.ID, &componentsignals.Signal{
+				Type: componentsignals.OperationDelete,
+			})
 		}
 	}
-	s.hooks.Deleted(ctx, orgID)
+	s.evClient.Send(ctx, org.ID, &sigs.Signal{
+		Type: sigs.OperationDelete,
+	})
 	ctx.JSON(http.StatusOK, true)
 }
 

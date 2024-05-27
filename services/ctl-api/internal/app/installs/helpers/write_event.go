@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 func (h *Helpers) getInstallRun(ctx context.Context, runID string) (*app.InstallSandboxRun, error) {
@@ -50,9 +50,9 @@ func (h *Helpers) getInstall(ctx context.Context, installID string) (*app.Instal
 
 func (h *Helpers) WriteDeployEvent(ctx context.Context,
 	deployID string,
-	op signals.Operation,
-	status app.OperationStatus) error {
-
+	op eventloop.SignalType,
+	status app.OperationStatus,
+) error {
 	deploy, err := h.getInstallDeploy(ctx, deployID)
 	if err != nil {
 		return fmt.Errorf("unable to get install deploy: %w", err)
@@ -67,7 +67,7 @@ func (h *Helpers) WriteDeployEvent(ctx context.Context,
 		OrgID:           deploy.OrgID,
 		CreatedByID:     deploy.CreatedByID,
 		InstallID:       deploy.InstallID,
-		Operation:       op,
+		Operation:       string(op),
 		OperationStatus: status,
 		Payload:         byts,
 	}
@@ -82,9 +82,9 @@ func (h *Helpers) WriteDeployEvent(ctx context.Context,
 
 func (h *Helpers) WriteInstallEvent(ctx context.Context,
 	installID string,
-	op signals.Operation,
-	status app.OperationStatus) error {
-
+	op eventloop.SignalType,
+	status app.OperationStatus,
+) error {
 	install, err := h.getInstall(ctx, installID)
 	if err != nil {
 		return fmt.Errorf("unable to get installs: %w", err)
@@ -99,7 +99,7 @@ func (h *Helpers) WriteInstallEvent(ctx context.Context,
 		OrgID:           install.OrgID,
 		CreatedByID:     install.CreatedByID,
 		InstallID:       installID,
-		Operation:       op,
+		Operation:       string(op),
 		OperationStatus: status,
 		Payload:         byts,
 	}
@@ -114,9 +114,9 @@ func (h *Helpers) WriteInstallEvent(ctx context.Context,
 
 func (h *Helpers) WriteRunEvent(ctx context.Context,
 	runID string,
-	op signals.Operation,
-	status app.OperationStatus) error {
-
+	op eventloop.SignalType,
+	status app.OperationStatus,
+) error {
 	run, err := h.getInstallRun(ctx, runID)
 	if err != nil {
 		return fmt.Errorf("unable to get installs: %w", err)
@@ -130,7 +130,7 @@ func (h *Helpers) WriteRunEvent(ctx context.Context,
 	ev := &app.InstallEvent{
 		OrgID:           run.OrgID,
 		CreatedByID:     run.CreatedByID,
-		Operation:       op,
+		Operation:       string(op),
 		InstallID:       run.InstallID,
 		OperationStatus: status,
 		Payload:         byts,

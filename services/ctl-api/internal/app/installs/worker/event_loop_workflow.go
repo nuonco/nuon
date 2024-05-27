@@ -9,16 +9,17 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
-func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEventLoopRequest) error {
+func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest) error {
 	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
 	w.mw.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
 	l := workflow.GetLogger(ctx)
 
 	finished := false
-	signalChan := workflow.GetSignalChannel(ctx, req.InstallID)
+	signalChan := workflow.GetSignalChannel(ctx, req.ID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
 		var signal signals.Signal
@@ -47,10 +48,10 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 		}()
 
 		var err error
-		switch signal.Operation {
+		switch signal.SignalType() {
 		case signals.OperationCreated:
 			op = "created"
-			err = w.created(ctx, req.InstallID)
+			err = w.created(ctx, req.ID)
 			if err != nil {
 				status = "error"
 				l.Error("unable to handle created signal", zap.Error(err))
@@ -58,7 +59,7 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 			}
 		case signals.OperationPollDependencies:
 			op = "poll_dependencies"
-			err = w.pollDependencies(ctx, req.InstallID)
+			err = w.pollDependencies(ctx, req.ID)
 			if err != nil {
 				status = "error"
 				l.Error("unable to poll dependencies", zap.Error(err))
@@ -66,7 +67,7 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 			}
 		case signals.OperationProvision:
 			op = "provision"
-			err = w.provision(ctx, req.InstallID, req.SandboxMode)
+			err = w.provision(ctx, req.ID, req.SandboxMode)
 			if err != nil {
 				status = "error"
 				l.Error("unable to provision", zap.Error(err))
@@ -74,7 +75,7 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 			}
 		case signals.OperationReprovision:
 			op = "reprovision"
-			err = w.reprovision(ctx, req.InstallID, req.SandboxMode)
+			err = w.reprovision(ctx, req.ID, req.SandboxMode)
 			if err != nil {
 				status = "error"
 				l.Error("unable to reprovision", zap.Error(err))
@@ -82,7 +83,7 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 			}
 		case signals.OperationDelete:
 			op = "delete"
-			err = w.delete(ctx, req.InstallID, req.SandboxMode)
+			err = w.delete(ctx, req.ID, req.SandboxMode)
 			if err != nil {
 				status = "delete"
 				l.Error("unable to delete", zap.Error(err))
@@ -91,7 +92,7 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 			finished = true
 		case signals.OperationDeprovision:
 			op = "deprovision"
-			err = w.deprovision(ctx, req.InstallID, req.SandboxMode)
+			err = w.deprovision(ctx, req.ID, req.SandboxMode)
 			if err != nil {
 				status = "error"
 				l.Error("unable to deprovision", zap.Error(err))
@@ -99,14 +100,14 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 			}
 		case signals.OperationForgotten:
 			op = "forgotten"
-			err = w.forget(ctx, req.InstallID)
+			err = w.forget(ctx, req.ID)
 			if err != nil {
 				l.Error("unable to forget", zap.Error(err))
 			}
 			finished = true
 		case signals.OperationDeployComponents:
 			op = "deploy_components"
-			err = w.deployComponents(ctx, req.InstallID, req.SandboxMode, signal.Async)
+			err = w.deployComponents(ctx, req.ID, req.SandboxMode, signal.Async)
 			if err != nil {
 				status = "error"
 				l.Error("unable to queue deploys for components", zap.Error(err))
@@ -114,7 +115,7 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 			}
 		case signals.OperationTeardownComponents:
 			op = "teardown_components"
-			err = w.teardownComponents(ctx, req.InstallID, req.SandboxMode, signal.Async)
+			err = w.teardownComponents(ctx, req.ID, req.SandboxMode, signal.Async)
 			if err != nil {
 				status = "error"
 				l.Error("unable to queue teardown deploys for components", zap.Error(err))
@@ -122,7 +123,7 @@ func (w *Workflows) InstallEventLoop(ctx workflow.Context, req signals.InstallEv
 			}
 		case signals.OperationDeploy:
 			op = "deploy"
-			err = w.deploy(ctx, req.InstallID, signal.DeployID, req.SandboxMode)
+			err = w.deploy(ctx, req.ID, signal.DeployID, req.SandboxMode)
 			if err != nil {
 				status = "error"
 				l.Error("unable to deploy", zap.Error(err))

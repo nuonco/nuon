@@ -2,7 +2,6 @@ package worker
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
 	"go.temporal.io/sdk/workflow"
@@ -10,29 +9,17 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
-const (
-	EventLoopWorkflowName string = "AppEventLoop"
-)
-
-func EventLoopWorkflowID(appID string) string {
-	return fmt.Sprintf("%s-event-loop", appID)
-}
-
-type AppEventLoopRequest struct {
-	AppID       string
-	SandboxMode bool
-}
-
-func (w *Workflows) AppEventLoop(ctx workflow.Context, req AppEventLoopRequest) error {
+func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest) error {
 	defaultTags := map[string]string{"sandbox_mode": strconv.FormatBool(req.SandboxMode)}
 	w.mw.Incr(ctx, "event_loop.start", metrics.ToTags(defaultTags, "op", "started")...)
 	l := workflow.GetLogger(ctx)
 
 	finished := false
-	signalChan := workflow.GetSignalChannel(ctx, req.AppID)
+	signalChan := workflow.GetSignalChannel(ctx, req.ID)
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, _ bool) {
 		var signal signals.Signal
@@ -60,44 +47,44 @@ func (w *Workflows) AppEventLoop(ctx workflow.Context, req AppEventLoopRequest) 
 			w.mw.Incr(ctx, "event_loop.signal", metrics.ToTags(tags)...)
 		}()
 
-		switch signal.Operation {
+		switch signal.SignalType() {
 		case signals.OperationCreated:
 			op = "created"
-			if err := w.created(ctx, req.AppID); err != nil {
+			if err := w.created(ctx, req.ID); err != nil {
 				status = "error"
 				l.Info("unable to handle created signal: %w", zap.Error(err))
 			}
 		case signals.OperationPollDependencies:
 			op = "poll_dependencies"
-			if err := w.pollDependencies(ctx, req.AppID); err != nil {
+			if err := w.pollDependencies(ctx, req.ID); err != nil {
 				status = "error"
 				l.Info("unable to poll app dependencies: %w", zap.Error(err))
 			}
 		case signals.OperationProvision:
 			op = "provision"
-			if err := w.provision(ctx, req.AppID, req.SandboxMode); err != nil {
+			if err := w.provision(ctx, req.ID, req.SandboxMode); err != nil {
 				status = "error"
 				l.Info("unable to provision app: %w", zap.Error(err))
 			}
 		case signals.OperationReprovision:
 			op = "reprovision"
-			if err := w.reprovision(ctx, req.AppID, req.SandboxMode); err != nil {
+			if err := w.reprovision(ctx, req.ID, req.SandboxMode); err != nil {
 				status = "error"
 				l.Info("unable to reprovision app: %w", zap.Error(err))
 			}
 		case signals.OperationUpdateSandbox:
 			op = "update_sandbox"
-			if err := w.updateSandbox(ctx, req.AppID, signal.SandboxReleaseID, req.SandboxMode); err != nil {
+			if err := w.updateSandbox(ctx, req.ID, signal.SandboxReleaseID, req.SandboxMode); err != nil {
 				status = "update_sandbox"
 				l.Info("unable to provision app: %w", zap.Error(err))
 			}
 		case signals.OperationConfigCreated:
-			if err := w.syncConfig(ctx, req.AppID, signal.AppConfigID, req.SandboxMode); err != nil {
+			if err := w.syncConfig(ctx, req.ID, signal.AppConfigID, req.SandboxMode); err != nil {
 				l.Info("unable to sync config: %w", zap.Error(err))
 			}
 		case signals.OperationDeprovision:
 			op = "deprovision"
-			if err := w.deprovision(ctx, req.AppID, req.SandboxMode); err != nil {
+			if err := w.deprovision(ctx, req.ID, req.SandboxMode); err != nil {
 				status = "deprovision"
 				l.Info("unable to deprovision app: %w", zap.Error(err))
 				return

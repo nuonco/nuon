@@ -3,11 +3,11 @@ package activities
 import (
 	"gorm.io/gorm"
 
-	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
+	sharedactivities "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
 type Activities struct {
@@ -15,7 +15,7 @@ type Activities struct {
 	components  *protos.Adapter
 	appsHelpers *appshelpers.Helpers
 	helpers     *helpers.Helpers
-	hooks       *hooks.Hooks
+	evClient    eventloop.Client
 
 	*sharedactivities.Activities
 }
@@ -24,15 +24,15 @@ func New(db *gorm.DB,
 	prt *protos.Adapter,
 	appsHelpers *appshelpers.Helpers,
 	helpers *helpers.Helpers,
-	hooks *hooks.Hooks,
 	sharedActs *sharedactivities.Activities,
+	evClient eventloop.Client,
 ) (*Activities, error) {
 	return &Activities{
 		db:          db,
 		components:  prt,
 		appsHelpers: appsHelpers,
 		helpers:     helpers,
-		hooks:       hooks,
 		Activities:  sharedActs,
+		evClient:    evClient,
 	}, nil
 }

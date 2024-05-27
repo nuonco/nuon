@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 )
 
 type RestartOrgRequest struct{}
@@ -34,6 +36,8 @@ func (s *service) RestartOrg(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Restart(ctx, org.ID, org.OrgType)
+	s.evClient.Send(ctx, org.ID, &sigs.Signal{
+		Type: sigs.OperationRestart,
+	})
 	ctx.JSON(http.StatusOK, true)
 }

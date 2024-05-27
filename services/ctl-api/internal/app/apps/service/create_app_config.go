@@ -7,7 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
@@ -65,7 +67,10 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.ConfigCreated(ctx, appID, cfg.ID)
+	s.evClient.Send(ctx, appID, &signals.Signal{
+		Type:        signals.OperationConfigCreated,
+		AppConfigID: cfg.ID,
+	})
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
@@ -82,7 +87,6 @@ func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req 
 
 	res := s.db.WithContext(ctx).Create(&inputs)
 	if res.Error != nil {
-
 		return nil, fmt.Errorf("unable to create app inputs: %w", res.Error)
 	}
 

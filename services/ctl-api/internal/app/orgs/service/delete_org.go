@@ -6,9 +6,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
+	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
 // @ID DeleteOrg
@@ -40,7 +42,9 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Deleted(ctx, org.ID)
+	s.evClient.Send(ctx, org.ID, &sigs.Signal{
+		Type: sigs.OperationDelete,
+	})
 	ctx.JSON(http.StatusOK, true)
 }
 

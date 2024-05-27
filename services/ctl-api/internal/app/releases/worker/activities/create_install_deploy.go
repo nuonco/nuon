@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type CreateInstallDeployRequest struct {
@@ -82,6 +84,9 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 		return fmt.Errorf("unable to create install deploy: %w", err)
 	}
 
-	a.installHooks.InstallDeployCreated(ctx, req.InstallID, deploy.ID)
+	a.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type:     signals.OperationDeploy,
+		DeployID: deploy.ID,
+	})
 	return nil
 }

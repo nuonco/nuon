@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 )
 
 type CreateComponentBuildRequest struct {
@@ -55,7 +57,10 @@ func (s *service) CreateComponentBuild(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create component build: %w", err))
 		return
 	}
-	s.hooks.BuildCreated(ctx, cmpID, bld.ID)
+	s.evClient.Send(ctx, cmpID, &signals.Signal{
+		Type:    signals.OperationBuild,
+		BuildID: bld.ID,
+	})
 
 	ctx.JSON(http.StatusCreated, bld)
 }

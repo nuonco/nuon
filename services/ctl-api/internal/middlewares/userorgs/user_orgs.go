@@ -5,17 +5,17 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/hooks"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/global"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 type middleware struct {
-	l         *zap.Logger
-	db        *gorm.DB
-	orgsHooks *hooks.Hooks
+	l        *zap.Logger
+	db       *gorm.DB
+	evClient eventloop.Client
 }
 
 func (m middleware) Name() string {
@@ -64,11 +64,11 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 func New(l *zap.Logger,
 	db *gorm.DB,
-	orgsHooks *hooks.Hooks,
+	evClient eventloop.Client,
 ) *middleware {
 	return &middleware{
-		l:         l,
-		db:        db,
-		orgsHooks: orgsHooks,
+		l:        l,
+		db:       db,
+		evClient: evClient,
 	}
 }

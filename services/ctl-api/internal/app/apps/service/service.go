@@ -4,26 +4,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/go-github/v50/github"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
 	appshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/helpers"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/hooks"
-	componenthooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/hooks"
-	installhooks "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
-	"gorm.io/gorm"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 type service struct {
-	v              *validator.Validate
-	db             *gorm.DB
-	mw             metrics.Writer
-	cfg            *internal.Config
-	hooks          *hooks.Hooks
-	installHooks   *installhooks.Hooks
-	componentHooks *componenthooks.Hooks
-	vcsHelpers     *vcshelpers.Helpers
-	helpers        *appshelpers.Helpers
+	v          *validator.Validate
+	db         *gorm.DB
+	mw         metrics.Writer
+	cfg        *internal.Config
+	vcsHelpers *vcshelpers.Helpers
+	helpers    *appshelpers.Helpers
+	evClient   eventloop.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -76,22 +73,18 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 func New(v *validator.Validate,
 	cfg *internal.Config,
 	db *gorm.DB, mw metrics.Writer,
-	hooks *hooks.Hooks,
-	installHooks *installhooks.Hooks,
-	componentHooks *componenthooks.Hooks,
 	ghClient *github.Client,
 	vcsHelpers *vcshelpers.Helpers,
 	helpers *appshelpers.Helpers,
+	evClient eventloop.Client,
 ) *service {
 	return &service{
-		cfg:            cfg,
-		v:              v,
-		db:             db,
-		mw:             mw,
-		hooks:          hooks,
-		installHooks:   installHooks,
-		componentHooks: componentHooks,
-		vcsHelpers:     vcsHelpers,
-		helpers:        helpers,
+		cfg:        cfg,
+		v:          v,
+		db:         db,
+		mw:         mw,
+		vcsHelpers: vcsHelpers,
+		helpers:    helpers,
+		evClient:   evClient,
 	}
 }

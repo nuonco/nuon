@@ -1,21 +1,23 @@
 package activities
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 type Activities struct {
-	db           *gorm.DB
-	installHooks *hooks.Hooks
+	db       *gorm.DB
+	evClient eventloop.Client
 }
 
 func New(cfg *internal.Config,
-	installHooks *hooks.Hooks,
-	db *gorm.DB) (*Activities, error) {
+	evClient eventloop.Client,
+	db *gorm.DB,
+) (*Activities, error) {
 	return &Activities{
-		db:           db,
-		installHooks: installHooks,
+		db:       db,
+		evClient: evClient,
 	}, nil
 }

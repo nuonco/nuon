@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 )
 
 type CreateTerraformModuleComponentConfigRequest struct {
@@ -63,7 +64,9 @@ func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.ConfigCreated(ctx, cmpID)
+	s.evClient.Send(ctx, cmpID, &signals.Signal{
+		Type: signals.OperationConfigCreated,
+	})
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
