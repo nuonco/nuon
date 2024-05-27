@@ -227,5 +227,13 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "044-installs-view",
 			Fn:   a.migration044InstallsView,
 		},
+		{
+			Name: "045-notifications-configs-existing-orgs",
+			Fn:   a.migration045NotificationsConfigExistingOrgs,
+		},
+		{
+			Name: "046-notifications-configs-existing-apps",
+			Fn:   a.migration046NotifcationsExistingApps,
+		},
 	}
 }
