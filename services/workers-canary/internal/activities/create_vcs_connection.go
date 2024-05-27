@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
+
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -21,7 +22,8 @@ type CreateVCSConnectionResponse struct {
 }
 
 func (a *Activities) CreateVCSConnection(ctx context.Context, req *CreateVCSConnectionRequest) (*CreateVCSConnectionResponse, error) {
-	apiClient, err := nuon.New(a.v,
+	apiClient, err := nuon.New(
+		nuon.WithValidator(a.v),
 		nuon.WithURL(a.cfg.APIURL),
 		nuon.WithAuthToken(req.APIToken),
 		nuon.WithOrgID(req.OrgID),

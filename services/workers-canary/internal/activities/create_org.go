@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
+
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -20,7 +21,8 @@ type CreateOrgResponse struct {
 }
 
 func (a *Activities) CreateOrg(ctx context.Context, req *CreateOrgRequest) (*CreateOrgResponse, error) {
-	apiClient, err := nuon.New(a.v,
+	apiClient, err := nuon.New(
+		nuon.WithValidator(a.v),
 		nuon.WithURL(a.cfg.APIURL),
 		nuon.WithAuthToken(req.APIToken),
 	)
