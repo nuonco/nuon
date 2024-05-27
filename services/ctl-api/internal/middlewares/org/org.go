@@ -14,21 +14,6 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-const (
-	orgIDHeaderKey string = "X-Nuon-Org-ID"
-	orgCtxKey      string = "org"
-	orgIDCtxKey    string = "org_id"
-)
-
-func FromContext(ctx *gin.Context) (*app.Org, error) {
-	org, exists := ctx.Get(orgCtxKey)
-	if !exists {
-		return nil, fmt.Errorf("org was not set on middleware context")
-	}
-
-	return org.(*app.Org), nil
-}
-
 type middleware struct {
 	l  *zap.Logger
 	db *gorm.DB
@@ -68,8 +53,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		ctx.Set(orgCtxKey, &org)
-		ctx.Set(orgIDCtxKey, orgID)
+		SetGinContext(ctx, &org)
 
 		metricCtx, err := metrics.FromContext(ctx)
 		if err == nil {

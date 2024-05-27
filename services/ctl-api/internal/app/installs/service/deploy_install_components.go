@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type DeployInstallComponentsRequest struct{}
@@ -43,6 +45,8 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.DeployComponents(ctx, installID)
+	s.evClient.Send(ctx, installID, &signals.Signal{
+		Type: signals.OperationDeployComponents,
+	})
 	ctx.JSON(http.StatusCreated, "ok")
 }

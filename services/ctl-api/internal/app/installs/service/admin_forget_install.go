@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type AdminForgetInstallRequest struct{}
@@ -28,13 +30,21 @@ type AdminForgetInstallRequest struct{}
 func (s *service) ForgetInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
-	err := s.forgetInstall(ctx, installID)
+	install, err := s.getInstall(ctx, installID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	s.hooks.Forgotten(ctx, installID)
+	err = s.forgetInstall(ctx, installID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationForgotten,
+	})
 	ctx.JSON(http.StatusOK, true)
 }
 

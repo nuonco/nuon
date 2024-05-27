@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/signals"
 )
 
 type CreateHelmComponentConfigRequest struct {
@@ -64,7 +65,9 @@ func (s *service) CreateHelmComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.ConfigCreated(ctx, cmpID)
+	s.evClient.Send(ctx, cmpID, &signals.Signal{
+		Type: signals.OperationConfigCreated,
+	})
 	ctx.JSON(http.StatusCreated, cfg)
 }
 

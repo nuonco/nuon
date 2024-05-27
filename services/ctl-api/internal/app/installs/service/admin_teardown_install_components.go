@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type AdminTeardownInstallComponentsRequest struct{}
@@ -33,6 +35,8 @@ func (s *service) AdminTeardownInstallComponents(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.TeardownComponents(ctx, install.ID)
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationTeardownComponents,
+	})
 	ctx.JSON(http.StatusOK, true)
 }

@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 )
 
 type RestartAppRequest struct{}
@@ -36,7 +38,9 @@ func (s *service) RestartApp(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Restart(ctx, app.ID, app.Org.OrgType)
+	s.evClient.Send(ctx, app.ID, &signals.Signal{
+		Type: signals.OperationRestart,
+	})
 	ctx.JSON(http.StatusOK, true)
 }
 

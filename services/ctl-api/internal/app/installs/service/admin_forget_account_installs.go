@@ -8,7 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type AdminForgetAccountInstallsRequest struct {
@@ -52,7 +54,9 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 	}
 
 	for _, install := range installs {
-		s.hooks.Forgotten(ctx, install.ID)
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationForgotten,
+		})
 
 		err = s.forgetInstall(ctx, install.ID)
 		if err != nil {
@@ -60,7 +64,9 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 			return
 		}
 
-		s.hooks.Forgotten(ctx, install.ID)
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationForgotten,
+		})
 	}
 
 	ctx.JSON(http.StatusOK, true)

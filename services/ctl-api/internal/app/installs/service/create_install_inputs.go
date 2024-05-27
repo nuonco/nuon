@@ -8,7 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -77,7 +79,9 @@ func (s *service) CreateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Reprovision(ctx, installID)
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationReprovision,
+	})
 	ctx.JSON(http.StatusCreated, inputs)
 }
 

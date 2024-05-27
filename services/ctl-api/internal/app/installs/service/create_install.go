@@ -6,8 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type CreateInstallRequest struct {
@@ -39,12 +40,6 @@ func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 // @Success		201				{object}	app.Install
 // @Router			/v1/apps/{app_id}/installs [post]
 func (s *service) CreateInstall(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	appID := ctx.Param("app_id")
 
 	var req CreateInstallRequest
@@ -63,6 +58,17 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 
-	s.hooks.Created(ctx, install.ID, org.OrgType)
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationCreated,
+	})
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationPollDependencies,
+	})
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationProvision,
+	})
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationDeployComponents,
+	})
 	ctx.JSON(http.StatusCreated, install)
 }
