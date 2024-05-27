@@ -177,21 +177,38 @@ Runners are a required configuration for all apps. In most cases, you do not nee
 
 ### Installer Config
 
-Define an [installer](./creating-an-installer) for an app using an `[installer]` block.
-
-To define an installer accessible at `https://nuon.co/installer/<your-app>`:
+Define an [installer](/guides/installers) for an app using an `[installer]` block.
 
 ```toml
 [installer]
-name = "installer"
-description = "one click installer"
-slug = "<your-app>"
-documentation_url = "docs-url"
-community_url = "community-url"
-homepage_url = "homepage-url"
-github_url = "github-url"
-logo_url = "logo-url"
-demo_url = "demo url"
+name = "<your-app> Installer"
+description = "Install <your-app> in your cloud."
+homepage_url = "<your-homepage-url>"
+documentation_url = "<your-docs-url>"
+community_url = "<your-community-url>"
+github_url = "<your-github-url>"
+demo_url = "<your-demo-video-url>"
+logo_url = "<your-logo-url>"
+favicon_url = "<your-favicon-url>"
+
+copyright_markdown = """
+© 2024 <your-company>.
+"""
+
+footer_markdown = """
+[Terms of Service](<your-terms-url>)
+"""
+
+post_install_markdown = """
+# <your-app>
+
+<your-app> is being deployed.
+"""
+
+apps = [
+  "<your-app-id>",
+  "<your-other-app-id>"
+]
 ```
 
 ### Sandbox Config
