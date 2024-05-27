@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type AdminDeprovisionInstallRequest struct{}
@@ -20,6 +22,14 @@ type AdminDeprovisionInstallRequest struct{}
 // @Router			/v1/installs/{install_id}/admin-deprovision [POST]
 func (s *service) AdminDeprovisionInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	s.hooks.Deprovisioned(ctx, installID)
+	install, err := s.getInstall(ctx, installID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationDeprovision,
+	})
 	ctx.JSON(http.StatusOK, true)
 }

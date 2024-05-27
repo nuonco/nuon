@@ -9,10 +9,10 @@ import (
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client/multi"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 	componenthelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/hooks"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/terraformcloud"
 )
 
 type service struct {
@@ -21,11 +21,11 @@ type service struct {
 	db               *gorm.DB
 	mw               metrics.Writer
 	cfg              *internal.Config
-	hooks            *hooks.Hooks
 	orgsOutputs      *terraformcloud.OrgsOutputs
 	wpClient         multi.Client
 	componentHelpers *componenthelpers.Helpers
 	helpers          *helpers.Helpers
+	evClient         eventloop.Client
 }
 
 func (s *service) RegisterRoutes(api *gin.Engine) error {
@@ -99,11 +99,11 @@ func New(v *validator.Validate,
 	db *gorm.DB,
 	mw metrics.Writer,
 	l *zap.Logger,
-	hooks *hooks.Hooks,
 	orgsOutputs *terraformcloud.OrgsOutputs,
 	wpClient multi.Client,
 	componentHelpers *componenthelpers.Helpers,
 	helpers *helpers.Helpers,
+	evClient eventloop.Client,
 ) *service {
 	return &service{
 		cfg:              cfg,
@@ -111,10 +111,10 @@ func New(v *validator.Validate,
 		v:                v,
 		db:               db,
 		mw:               mw,
-		hooks:            hooks,
 		orgsOutputs:      orgsOutputs,
 		wpClient:         wpClient,
 		componentHelpers: componentHelpers,
 		helpers:          helpers,
+		evClient:         evClient,
 	}
 }

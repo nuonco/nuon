@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/signals"
 )
 
 type DeprovisionInstallRequest struct{}
@@ -37,12 +39,14 @@ func (c *DeprovisionInstallRequest) Validate(v *validator.Validate) error {
 func (s *service) DeprovisionInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
-	_, err := s.getInstall(ctx, installID)
+	install, err := s.getInstall(ctx, installID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	s.hooks.Deprovisioned(ctx, installID)
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationDeprovision,
+	})
 	ctx.JSON(http.StatusCreated, "ok")
 }

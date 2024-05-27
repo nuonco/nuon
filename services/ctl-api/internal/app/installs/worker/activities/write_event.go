@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/signals"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 type WriteEventRequest struct {
@@ -12,7 +12,7 @@ type WriteEventRequest struct {
 	InstallID    string
 	SandboxRunID string
 
-	Operation       signals.Operation
+	Operation       eventloop.SignalType
 	OperationStatus app.OperationStatus
 }
 

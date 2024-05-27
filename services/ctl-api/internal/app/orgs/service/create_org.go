@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
 )
 
@@ -59,14 +60,20 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.createOrg(ctx, user, &req)
+	newOrg, err := s.createOrg(ctx, user, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org: %w", err))
 		return
 	}
 
-	s.hooks.Created(ctx, org.ID, org.OrgType)
-	ctx.JSON(http.StatusCreated, org)
+	s.evClient.Send(ctx, newOrg.ID, &sigs.Signal{
+		Type: sigs.OperationCreated,
+	})
+	s.evClient.Send(ctx, newOrg.ID, &sigs.Signal{
+		Type: sigs.OperationProvision,
+	})
+
+	ctx.JSON(http.StatusCreated, newOrg)
 }
 
 func (s *service) createOrg(ctx context.Context, user *app.UserToken, req *CreateOrgRequest) (*app.Org, error) {
