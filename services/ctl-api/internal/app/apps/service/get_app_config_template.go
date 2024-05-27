@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
@@ -75,13 +76,18 @@ func (s *service) createAppTemplate(ctx context.Context, currentApp *app.App, ty
 [installer]
 name = "installer"
 description = "one click installer"
-slug = "installer-abc-test"
 documentation_url = "docs-url"
 community_url = "community-url"
 homepage_url = "homepage-url"
 github_url = "github-url"
 logo_url = "logo-url"
 demo_url = "demo url"
+favicon_url = "favicon url"
+
+# optional fields
+post_install_markdown = ""
+copyright_markdown = ""
+footer_markdown = ""
 
 [runner]
 runner_type = "aws-ecs"
