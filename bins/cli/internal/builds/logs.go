@@ -27,5 +27,5 @@ func (s *Service) Logs(ctx context.Context, appID, compID, buildID string, asJSO
 		return
 	}
 
-	ui.PrintBuildLog(log)
+	ui.PrintBuildLogs(log)
 }
