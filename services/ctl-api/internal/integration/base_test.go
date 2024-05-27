@@ -9,10 +9,11 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/api"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/powertoolsdev/mono/pkg/api"
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type baseIntegrationTestSuite struct {
@@ -57,7 +58,8 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 	apiURL := os.Getenv("INTEGRATION_API_URL")
 	require.NotEmpty(s.T(), apiURL)
 
-	apiClient, err := nuon.New(s.v,
+	apiClient, err := nuon.New(
+		nuon.WithValidator(s.v),
 		nuon.WithAuthToken(intUser.APIToken),
 		nuon.WithURL(apiURL),
 	)
