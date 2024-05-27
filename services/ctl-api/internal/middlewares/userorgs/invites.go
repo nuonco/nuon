@@ -17,7 +17,8 @@ func (m *middleware) handleInvites(ctx context.Context, subject, email string) e
 	res := m.db.
 		WithContext(ctx).
 		Where(&app.OrgInvite{
-			Email: email,
+			Email:  email,
+			Status: app.OrgInviteStatusPending,
 		}).
 		Find(&invites)
 	if res.Error != nil {
