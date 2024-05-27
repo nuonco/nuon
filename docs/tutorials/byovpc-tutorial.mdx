@@ -100,13 +100,25 @@ Update the installer config. Installers provide an out-of-the-box installation f
 [installer]
 name              = "My BYOVPC App"
 description       = "A demo app that runs in a customer's VPC."
-slug              = "<your-app>"
 documentation_url = "https://docs.nuon.co/"
 community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
 github_url        = "https://github.com/nuonco"
 homepage_url      = "https://www.nuon.co/"
 demo_url          = "https://www.nuon.co/"
+logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+favicon_url       = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+copyright_markdown = """
+© 2024 Nuon.
+"""
+footer_markdown = """
+[Terms of Service](https://nuon.co/terms)
+"""
+post_install_markdown = """
+# My EKS App
+
+My EKS App is being deployed.
+"""
+apps = ["<your-app-id>"]
 ```
 
 ```hcl Terraform
@@ -114,13 +126,26 @@ resource "nuon_app_installer" "your_app" {
   app_id            = nuon_app.your_app.id
   name              = "My BYOVPC App"
   description       = "A demo app that runs in a customer's VPC."
-  slug              = nuon_app.your_app.name
   documentation_url = "https://docs.nuon.co/"
   community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-  logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
   github_url        = "https://github.com/nuonco"
   homepage_url      = "https://www.nuon.co/"
   demo_url          = "https://www.nuon.co/"
+  logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+  favicon_url       = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+  copyright_markdown = <<EOT
+© 2024 Nuon.
+EOT
+  footer_markdown = <<EOT
+[Terms of Service](https://nuon.co/terms)
+EOT
+  post_install_markdown = <<EOT
+# My ECS App
+
+My ECS App is being deployed.
+EOT
+  apps = ["<your-app-id>"]
+}
 }
 ```
 </CodeGroup>
@@ -395,23 +420,23 @@ nuon builds list
 ## Create an Install
 
 Creating an install requires two steps: granting access to the AWS account via an IAM role, and then provisioning the install in that account.
-There are a few ways to do this, but the easiest is to use the installer you configured earlier.
+There are a few ways to do this, but the easiest is to use the installer you configured earlier, via our installer UI template.
 
-In your web browser, navigate to [https://app.nuon.co/installer/your-installer-slug](https://app.nuon.co/installer/<your-installer-slug>), and follow the steps in the UI.
-You should see a field where you can put the ID of the VPC you want to install the app in.
+You can find the template at https://github.com/nuonco/installer. Clone that and run it locally following the instructions in the README.
 
 For other approaches, see our guides [Install Access Permissions](/guides/install-access-permissions)  and [Create Installs](/guides/create-installs).
 
 ### Monitor Install Creation
 
-Monitor the install's creation using the Dashboard.
-Scroll down, and below the settings, you should see a card for your install.
+To monitor the install's status, log into the [Dashboard](https://app.nuon.co/) and select your org.
+You should see a card for the install.
 
-![Installs on Dashboard](/images/installs-on-dashboard.png)
+![Installs on Dashboard](/images/installs-on-dashboard.jpeg)
 
-Click on the card, and in the sidebar you can verify that the components are deployed in the Deploy History.
+Click on the card, and use the History to verify that the install is being provisioned.
+You should see events for the sandbox being provisioned and the components being deployed.
 
-![Install Details on Dashboard](/images/install-details-on-dashboard.png)
+![Install Details on Dashboard](/images/install-details-on-dashboard.jpeg)
 
 ### Inspect the Install
 
