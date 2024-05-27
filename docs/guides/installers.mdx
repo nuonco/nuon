@@ -3,30 +3,45 @@ title: 'Installers'
 description: "Installers provide a UI your customers can use to install your app."
 ---
 
-You can create an installer to provide a self-service UI that enables your users to deploy your BYOC applications.
-There are two steps to setting up an installer: configuring the metadata, and then setting up your desired UI.
+Installers help you provide a self-service UI your customers can use to deploy your app into their cloud environment.
+There are two steps to setting up an installer: configuring the isntaller metadata, and then setting up your desired UX.
 
 ## Configuring an Installer
 
-Configure an installer for your app by adding an installer block to your app config.
+Configure an installer for your app by adding an installer block to one of your app configs.
+For example, if you had both an AWS EKS and Azure AKS versions of your app, your config would look something like this.
 
 <CodeGroup>
 ```toml TOML
 [installer]
 name                  = "Your App"
 description           = "A demo app."
-slug                  = "<your-app>"
+homepage_url          = "https://www.nuon.co/"
 documentation_url     = "https://docs.nuon.co/"
 community_url         = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-logo_url              = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
 github_url            = "https://github.com/nuonco"
-homepage_url          = "https://www.nuon.co/"
 demo_url              = "https://www.nuon.co/"
+logo_url              = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+favicon_url           = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+
+copyright_markdown = """
+© 2024 Nuon.
+"""
+
+footer_markdown = """
+[Terms of Service](https://nuon.co/terms)
+"""
+
 post_install_markdown = """
 # Your App
 
 Your App is being deployed.
 """
+
+apps = [
+  "<your-aws-eks-app-id>",
+  "<your-azure-aks-app-id>"
+]
 ```
 
 ```hcl Terraform
@@ -34,45 +49,58 @@ resource "nuon_app_installer" "<your-app>" {
   app_id                = nuon_app.<your-app>.id
   name                  = "Your App"
   description           = "A demo app."
-  slug                  = nuon_app.<your-app>.name
+  homepage_url          = "https://www.nuon.co/"
   documentation_url     = "https://docs.nuon.co/"
   community_url         = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-  logo_url              = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
   github_url            = "https://github.com/nuonco"
-  homepage_url          = "https://www.nuon.co/"
   demo_url              = "https://www.nuon.co/"
+  logo_url              = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+  favicon_url           = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+
   post_install_markdown = <<EOT
 # Your App
 
 Your App is being deployed.
 EOT
+
+  copyright_markdown = <<EOT
+© 2024 Nuon.
+EOT
+
+  footer_markdown = <<EOT
+[Terms of Service](https://nuon.co/terms)
+EOT
+
+  apps = [
+    "<your-aws-eks-app-id>",
+    "<your-azure-aks-app-id>"
+  ]
 }
 ```
 </CodeGroup>
 
 You can run `nuon installers list` to confirm the installer was created.
+Once your installer has been created, you can set up a UI using either our template or the API.
 
-## Using the Default UI
+<Note>
+The `[installer]` block must be added to _one_ of your app configs in order to synced to Nuon.
+But, it does not "belong" to that app, and you do not need to add it to the rest of your app configs.
+Doing that will create multiple installers.
+</Note>
 
-As soon as the installer is created, you can view the default UI at the configured URL slug.
-For the config above, the URL would be https://app.nuon.co/installer/my-ecs-app.
-This page will reflect any changes you make to the content in the config, but you cannot update the styles or layout.
+## Using the UI Template
 
-<Warning>
-Because all installers are automatically hosted this way, the slug you configure must be globally unique.
-</Warning>
-
-## Using the Custom Template
-
-If you would like to provide a custom, fully-branded experience to your customers, we provide an open-source template at https://github.com/nuonco/installer.
+We provide an open-source installer UI template at https://github.com/nuonco/installer.
 It uses Next.js and Tailwind, to facilitate easy customization and deployment.
+
+### Forking the Template
 
 To get started with the template, fork the template repo and run it locally following the directions in the README.
 When you're ready, it can be deployed to any platform that supports Next.js.
 
 ### Deploying to Vercel
 
-To deploy your installer to Vercel:
+If you're using Vercel, follow these steps to deploy your fork of the template.
 
 1. Contact Nuon support to get a static token for your org. You'll need this so the installer can make API calls without using your personal API token.
 1. Follow the Next.js docs to [create a project on Vercel](https://nextjs.org/learn-pages-router/basics/deploying-nextjs-app/deploy). 
@@ -82,5 +110,4 @@ To deploy your installer to Vercel:
 
 ## Integrating with the API
 
-Because installers are configured as part of your app's data model, you can also build your own custom UX and integrate with our API.
-While this required more effort, it allows you to build a fully custom UX into your product's sign-up flow, and integrate with Nuon from your backend.
+If you want to provide a fully-custom experience to your customers, you can build your own UI against our API. Refer to the [installer API docs](/api-ref/apps/get-an-app-installer) to learn how to fetch installer data.
