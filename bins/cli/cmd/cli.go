@@ -32,7 +32,8 @@ func (c *cli) persistentPreRunE(cmd *cobra.Command, args []string) error {
 
 // Construct an API client for the services to use.
 func (c *cli) initAPIClient() error {
-	api, err := nuon.New(c.v,
+	api, err := nuon.New(
+		nuon.WithValidator(c.v),
 		nuon.WithAuthToken(c.cfg.APIToken),
 		nuon.WithOrgID(c.cfg.OrgID),
 		nuon.WithURL(c.cfg.APIURL),
