@@ -13,7 +13,7 @@ Last week, we shipped auto-deploys. Auto deploys mean that whenever a new instal
 
 ![auto deploy](/images/changelog/002_auto_deploy.png)
 
-Now, when you create an app using the `nuon` cli, an [an sdk](../guides/sdk-integration), or using [an installer](../guides/creating-an-installer) - each component in the app will
+Now, when you create an app using the `nuon` cli, an [an sdk](../guides/sdk-integration), or using [an installer](../guides/installers) - each component in the app will
 automatically be deployed to, without you having to run a release. This requires an intelligent representation of apps
 under the hood, and we have built out support for component dependencies and infra to model each app as a directed
 acyclic graph under the hood.
