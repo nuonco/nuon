@@ -12,47 +12,10 @@ This guide assumes that you have create an IAM role, granting Nuon access to pro
 
 ## Installers
 
-If you want to offer your customers a self-serve experience, you can create an installer. Installers bundle together all the config required to present a friendly UX your customers can use to install your app.
+If you want to offer your customers a self-serve experience, you can create an installer.
+Installers bundle together all the config required to present a friendly UX your customers can use to install your app.
 
-You can create an installer for an app by adding an `installer` block to the app config.
-
-<CodeGroup>
-```toml TOML
-[installer]
-name              = "Your App Name"
-description       = "Your App Name Installer"
-slug              = "<your-app>"
-documentation_url = "https://docs.nuon.co"
-community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-homepage_url      = "https://nuon.co"
-github_url        = "https://github.com/nuonco"
-logo_url          = "https://fakeimg.pl/250x100/"
-demo_url          = "https://www.loom.com/share/aec62b468f9747c59ed5c30c79d473c4"
-```
-
-```hcl Terraform
-resource "nuon_app_installer" "<your-app>" {
-  app_id            = nuon_app.<your-app>.id
-  name              = "Your App Name"
-  description       = "Your App Name Installer"
-  slug              = "<your-app>"
-  documentation_url = "https://docs.nuon.co"
-  community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-  homepage_url      = "https://nuon.co"
-  github_url        = "https://github.com/nuonco"
-  logo_url          = "https://fakeimg.pl/250x100/"
-  demo_url          = "https://www.loom.com/share/aec62b468f9747c59ed5c30c79d473c4"
-}
-```
-</CodeGroup>
-
-### Default UI
-
-Once an installer is created, an out-of-the-box UI can be accessed at `<slug>.app.nuon.co`.
-
-### Custom UI
-
-You can also build a custom UI, and pull installer data from our API. We maintain an [open-source template](https://github.com/nuonco/installer) you can use to get started.
+Reference the [Installers guide](/guides/installers) to learn more.
 
 ## CLI
 
