@@ -8,7 +8,9 @@ module "shared-turntable" {
   is_private               = true
   enable_branch_protection = false
 
-  collaborators = {}
+  collaborators = {
+    "turntable-justin" = "push"
+  }
 
   providers = {
     github = github.nuonco-shared
