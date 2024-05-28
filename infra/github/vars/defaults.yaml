@@ -6,6 +6,8 @@ members:
     role: admin
   - username: nnnnat
     role: admin
+  - username: sdboyer
+    role: admin
 
   # all other team members
   - username: ExecutiveDre
