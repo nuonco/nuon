@@ -318,3 +318,41 @@ module "shared-run-llm" {
   }
 }
 
+module "shared-stardog" {
+  source = "./modules/repository"
+
+  name                     = "stardog"
+  description              = "Nuon configuration for stardog."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+    "stardog-union" = "push"
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
+module "shared-stardog-installer" {
+  source = "./modules/repository"
+
+  name                     = "stardog-installer"
+  description              = "Custom installer for stardog."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+  is_fork                  = true
+
+  collaborators = {
+    "stardog-union" = "push"
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
