@@ -45,6 +45,9 @@ test:
 
 build:
   FROM +deps
+  RUN rm -f src/content/docs
+  COPY ../../wiki+wiki/* src/content/docs
+
   RUN npm run build
   SAVE ARTIFACT /dist /dist
 
