@@ -328,9 +328,7 @@ module "shared-stardog" {
   is_private               = true
   enable_branch_protection = false
 
-  collaborators = {
-    "stardog-union" = "push"
-  }
+  collaborators = {}
 
   providers = {
     github = github.nuonco-shared
@@ -348,9 +346,7 @@ module "shared-stardog-installer" {
   enable_branch_protection = false
   is_fork                  = true
 
-  collaborators = {
-    "stardog-union" = "push"
-  }
+  collaborators = {}
 
   providers = {
     github = github.nuonco-shared
