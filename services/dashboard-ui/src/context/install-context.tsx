@@ -27,6 +27,12 @@ export const InstallProvider: FunctionComponent<{
   const [install, setInstall] = useState<TInstall>(initInstall)
 
   useEffect(() => {
+    if (!shouldPoll) {
+      setInstall(initInstall)
+    }
+  }, [initInstall, shouldPoll])
+
+  useEffect(() => {
     const fetchInstall = () => {
       setIsFetching(true)
       fetch(`/api/${install?.org_id}/installs/${install?.id}`)
