@@ -1,136 +1,122 @@
-import React, { Suspense, type FC } from 'react'
+import React, { Suspense } from 'react'
+import { GoClock, GoPackage } from 'react-icons/go'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
-  BuildLogs,
+  BuildCommit,
+  BuildLogsCard,
+  BuildPlanCard,
   Card,
   Code,
+  ComponentBuildStatus,
   ComponentConfig,
+  Duration,
   Grid,
   Heading,
   Page,
-  Plan,
+  PageHeader,
+  PageSummary,
+  PageTitle,
   Text,
+  Time,
 } from '@/components'
-import {
-  getComponent,
-  getComponentConfig,
-  getBuild,
-  getBuildLogs,
-  getBuildPlan,
-  type IGetComponentConfig,
-  type IGetBuildLogs,
-  type IGetBuildPlan,
-} from '@/lib'
-import type {
-  TComponentConfig,
-  TComponentBuildLogs,
-  TComponentBuildPlan,
-} from '@/types'
-import { BuildHeader } from './build-header'
-
-const LoadBuildLogs: FC<IGetBuildLogs> = async (params) => {
-  let logs: TComponentBuildLogs
-  try {
-    logs = await getBuildLogs(params)
-  } catch (error) {
-    return <Text variant="label">Can not find build logs</Text>
-  }
-
-  return (
-    <Card className="flex-initial">
-      <Heading>Build logs</Heading>
-      <BuildLogs ssrLogs={logs} {...{ ...params }} />
-    </Card>
-  )
-}
-
-const BuildPlan: FC<IGetBuildPlan> = async (params) => {
-  let plan: TComponentBuildPlan
-  try {
-    plan = await getBuildPlan(params)
-  } catch (error) {
-    return <Text variant="label">No build plan to show</Text>
-  }
-  return (
-    <Card className="flex-1">
-      <Heading>Build plan</Heading>
-      <Plan plan={plan} />
-    </Card>
-  )
-}
-
-const LoadComponentConfig: FC<IGetComponentConfig> = async (params) => {
-  let config: TComponentConfig
-  try {
-    config = await getComponentConfig(params)
-  } catch (error) {
-    return <>No config to show</>
-  }
-  return (
-    <Card>
-      <Heading>Component config</Heading>
-      <ComponentConfig config={config} version={1} />
-    </Card>
-  )
-}
+import { BuildProvider } from '@/context'
+import { getBuild, getBuildLogs } from '@/lib'
 
 export default withPageAuthRequired(
-  async function BuildDashboard({ params }) {
+  async function ({ params }) {
     const orgId = params?.['org-id'] as string
     const buildId = params?.['build-id'] as string
 
     const build = await getBuild({ orgId, buildId })
-    const component = await getComponent({
-      componentId: build?.component_id as string,
+    const buildLogs = await getBuildLogs({
       orgId,
-    }).catch(() => null)
+      componentId: build.component_id,
+      buildId,
+    })
 
     return (
-      <Page
-        header={
-          <BuildHeader
-            ssrBuild={build}
-            component={component}
-            orgId={orgId}
-            buildId={buildId}
-          />
-        }
-        links={[{ href: orgId }, { href: buildId }]}
-      >
-        <Grid variant="3-cols">
-          <div className="flex flex-col gap-6">
-            <Heading variant="subtitle">Component details</Heading>
-            <Suspense fallback="Loading...">
-              <LoadComponentConfig
-                {...{ componentId: build?.component_id as string, orgId }}
-              />
-            </Suspense>
-          </div>
+      <BuildProvider initBuild={build} shouldPoll>
+        <Page
+          header={
+            <PageHeader
+              info={
+                <>
+                  <ComponentBuildStatus />
+                  <div className="flex flex-col flex-auto gap-1">
+                    <Text variant="caption">
+                      <b>Build ID:</b> {build.id}
+                    </Text>
+                    <Text variant="caption">
+                      <b>Component ID:</b> {build.component_id}
+                    </Text>
+                    {build?.vcs_connection_commit && <BuildCommit />}
+                  </div>
+                </>
+              }
+              title={
+                <PageTitle
+                  overline={build.id}
+                  title={`${build.component_name} build`}
+                />
+              }
+              summary={
+                <PageSummary>
+                  <Text variant="caption">
+                    <GoPackage />
+                    <Time time={build?.updated_at} />
+                  </Text>
+                  <Text variant="caption">
+                    <GoClock />
+                    <Duration
+                      unitDisplay="short"
+                      listStyle="long"
+                      variant="caption"
+                      beginTime={build?.created_at}
+                      endTime={build?.updated_at}
+                    />
+                  </Text>
+                </PageSummary>
+              }
+            />
+          }
+          links={[{ href: orgId }, { href: buildId }]}
+        >
+          <Grid variant="3-cols">
+            <div className="flex flex-col gap-6">
+              <Heading variant="subtitle">Configuration</Heading>
+              <Card>
+                <Suspense fallback="Loading component config...">
+                  <ComponentConfig
+                    orgId={orgId}
+                    componentId={build?.component_id}
+                    componentConfigId={build.component_config_connection_id}
+                    version={0}
+                  />
+                </Suspense>
+              </Card>
+            </div>
 
-          <div className="flex flex-col gap-6 lg:col-span-2">
-            <Heading variant="subtitle">Build details</Heading>
-            {build?.status === 'failed' ||
-              (build?.status === 'error' && (
-                <Card>
-                  <Heading>Build {build?.status}</Heading>
-                  <Code>{build?.status_description}</Code>
-                </Card>
-              ))}
+            <div className="flex flex-col gap-6 lg:col-span-2">
+              <Heading variant="subtitle">Build details</Heading>
+              {build?.status === 'failed' ||
+                (build?.status === 'error' && (
+                  <Card>
+                    <Heading>Build {build?.status}</Heading>
+                    <Code>{build?.status_description}</Code>
+                  </Card>
+                ))}
 
-            <Suspense fallback="Loading...">
-              <LoadBuildLogs
-                buildId={buildId}
-                componentId={component?.id}
+              <BuildLogsCard initLogs={buildLogs} shouldPoll />
+
+              <BuildPlanCard
                 orgId={orgId}
+                componentId={build.component_id}
+                buildId={build.id}
               />
-            </Suspense>
-
-            <Suspense fallback="Loading...">
-              <BuildPlan {...{ buildId, componentId: component?.id, orgId }} />
-            </Suspense>
-          </div>
-        </Grid>
-      </Page>
+            </div>
+          </Grid>
+        </Page>
+      </BuildProvider>
     )
   },
   { returnTo: '/dashboard' }

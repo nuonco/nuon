@@ -15,8 +15,8 @@ export async function getBuild({
     await getFetchOpts(orgId)
   )
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch data')
+  if (!res.ok) {  
+    throw new Error('Failed to fetch build')
   }
 
   return res.json()

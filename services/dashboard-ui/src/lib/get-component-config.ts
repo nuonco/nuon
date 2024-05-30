@@ -3,11 +3,13 @@ import { API_URL, getFetchOpts } from '@/utils'
 
 export interface IGetComponentConfig {
   componentId: string
+  componentConfigId?: string
   orgId: string
 }
 
 export async function getComponentConfig({
   componentId,
+  componentConfigId = 'latest',
   orgId,
 }: IGetComponentConfig): Promise<TComponentConfig> {
   const res = await fetch(
@@ -16,8 +18,14 @@ export async function getComponentConfig({
   )
 
   if (!res.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error('Failed to fetch component config')
   }
 
-  return res.json().then((cfgs) => cfgs?.[0])
+  return res
+    .json()
+    .then((cfgs) =>
+      componentConfigId === 'latest'
+        ? cfgs?.[0]
+        : cfgs?.find((cfg) => cfg.id === componentConfigId)
+    )
 }

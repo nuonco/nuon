@@ -57,7 +57,7 @@ test('postOrg should throw an error when it can not find orgs', async () => {
   try {
     await postOrg({ name: orgName })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to create org]`)
   }
 
   expect(fetch).toBeCalledWith(

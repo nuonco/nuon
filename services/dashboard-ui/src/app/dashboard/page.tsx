@@ -1,5 +1,6 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import { Heading, Grid, OrgCard, Page, PageHeader } from '@/components'
+import { OrgProvider } from '@/context'
 import { getOrgs } from '@/lib'
 import { createOrg } from './actions'
 
@@ -21,7 +22,13 @@ export default withPageAuthRequired(
         }
       >
         {hasOrgs ? (
-          <Grid>{orgs?.map((o) => <OrgCard key={o?.id} {...o} />)}</Grid>
+          <Grid>
+            {orgs?.map((o) => (
+              <OrgProvider key={o?.id} initOrg={o}>
+                <OrgCard />
+              </OrgProvider>
+            ))}
+          </Grid>
         ) : (
           <form className="flex flex-col gap-4 max-w-md" action={createOrg}>
             <label className="flex flex-col flex-auto gap-2">
