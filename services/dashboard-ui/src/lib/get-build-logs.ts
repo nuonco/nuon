@@ -18,7 +18,7 @@ export async function getBuildLogs({
   )
 
   if (!res.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error('Failed to fetch build logs')
   }
 
   return res.json()

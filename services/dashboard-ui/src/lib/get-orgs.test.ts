@@ -56,7 +56,7 @@ test('getOrgs should throw an error when it can not find orgs', async () => {
   try {
     await getOrgs()
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch orgs]`)
   }
 
   expect(fetch).toBeCalledWith(

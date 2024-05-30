@@ -16,7 +16,7 @@ export async function getInstallEvents({
   )
 
   if (!res.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error('Failed to fetch install events')
   }
 
   return res.json()
