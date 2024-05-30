@@ -60,7 +60,7 @@ test('getOrg should throw an error when it can not find an org', async () => {
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch current org]`)
   }
 
   expect(fetch).toBeCalledWith(

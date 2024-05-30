@@ -63,7 +63,7 @@ test('getInstall should throw an error when it can not find a install', async ()
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch install]`)
   }
 
   expect(fetch).toBeCalledWith(

@@ -62,7 +62,7 @@ test('getBuildLogs should throw an error when it can not find a build', async ()
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch build logs]`)
   }
 
   expect(fetch).toBeCalledWith(

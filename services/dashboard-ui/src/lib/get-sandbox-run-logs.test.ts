@@ -63,7 +63,7 @@ test('getSandboxRunLogs should throw an error when it can not find run logs', as
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch sandbox run logs]`)
   }
 
   expect(fetch).toBeCalledWith(

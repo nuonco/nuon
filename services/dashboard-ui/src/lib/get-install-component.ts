@@ -18,7 +18,7 @@ export async function getInstallComponent({
   )
 
   if (!res.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error('Failed to fetch install component')
   }
 
   return res

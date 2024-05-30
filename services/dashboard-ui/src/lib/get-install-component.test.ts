@@ -69,7 +69,7 @@ test('getInstallComponent should throw an error when it can not find a install c
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch install component]`)
   }
 
   expect(fetch).toBeCalledWith(
