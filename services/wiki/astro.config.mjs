@@ -22,38 +22,57 @@ export default defineConfig({
       },
       customCss: ["./src/tailwind.css"],
       pagination: false,
-      // sidebar: [
-      //   {
-      //     label: "Company",
-      //     autogenerate: {
-      //       directory: "company",
-      //     },
-      //   },
-      //   {
-      //     label: "Sales",
-      //     autogenerate: {
-      //       directory: "sales",
-      //     },
-      //   },
-      //   {
-      //     label: "Marketing",
-      //     autogenerate: {
-      //       directory: "marketing",
-      //     },
-      //   },
-      //   {
-      //     label: "Product",
-      //     autogenerate: {
-      //       directory: "product",
-      //     },
-      //   },
-      //   {
-      //     label: "Legacy Wiki",
-      //     autogenerate: {
-      //       directory: "../../wiki",
-      //     },
-      //   },
-      // ],
+      sidebar: [
+        {
+          label: "Nuon Wiki",
+          //collapsed: true,
+          items: [
+            {
+              label: "Home",
+              link: "/",
+            },
+            {
+              label: "Links",
+              link: "links",
+            },
+          ],
+        },
+        {
+          label: "Company",
+          collapsed: true,
+          autogenerate: {
+            directory: "company",
+          },
+        },
+        {
+          label: "Sales",
+          collapsed: true,
+          autogenerate: {
+            directory: "sales",
+          },
+        },
+        {
+          label: "Marketing",
+          collapsed: true,
+          autogenerate: {
+            directory: "marketing",
+          },
+        },
+        {
+          label: "Product",
+          collapsed: true,
+          autogenerate: {
+            directory: "product",
+          },
+        },
+        {
+          label: "Support",
+          collapsed: true,
+          autogenerate: {
+            directory: "support",
+          },
+        },
+      ],
     }),
     tailwind({
       applyBaseStyles: false,
