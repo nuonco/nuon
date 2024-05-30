@@ -12,7 +12,7 @@ export async function getOrg({ orgId }: IGetOrg): Promise<TOrg> {
   )
 
   if (!data.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error('Failed to fetch current org')
   }
 
   return data.json()

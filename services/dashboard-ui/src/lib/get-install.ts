@@ -16,7 +16,7 @@ export async function getInstall({
   )
 
   if (!data.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error('Failed to fetch install')
   }
 
   return data.json()

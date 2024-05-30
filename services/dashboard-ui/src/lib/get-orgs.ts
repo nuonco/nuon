@@ -5,7 +5,7 @@ export async function getOrgs(): Promise<Array<TOrg>> {
   const res = await fetch(`${API_URL}/v1/orgs`, await getFetchOpts())
 
   if (!res.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error('Failed to fetch orgs')
   }
 
   return res.json()

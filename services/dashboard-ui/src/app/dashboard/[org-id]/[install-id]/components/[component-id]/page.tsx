@@ -1,62 +1,31 @@
-import React, { type FC, Suspense } from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
-  Build,
   Card,
-  ComponentConfig,
-  ComponentDependencies,
+  ComponentBuildCard,
+  ComponentConfigCard,
+  ComponentConfigType,
+  ComponentDependenciesCard,
   Grid,
   Heading,
-  InstallComponentHeading,
-  InstallComponentSummary,
+  InstallComponentStatus,
   InstallDeploys,
   Page,
   PageHeader,
-  LatestDeploy2,
+  PageSummary,
+  PageTitle,
+  LatestDeploy,
+  Text,
 } from '@/components'
 import {
-  getBuild,
-  getComponent,
-  getComponentConfig,
-  getInstall,
-  getInstallComponent,
-} from '@/lib'
-import type { TBuild, TInstall, TInstallDeploy } from '@/types'
-
-/* const Build: FC<{
- *   buildId: string
- *   orgId: string
- * }> = async ({ buildId, orgId }) => {
- *   let build: TBuild
- *   try {
- *     build = await getBuild({ buildId, orgId })
- *   } catch (error) {
- *     return <>No build found</>
- *   }
- * 
- *   return (
- *     <span className="text-xs">
- *       <b>Commit SHA:</b> {build?.vcs_connection_commit?.sha.slice(0, 7)}
- *     </span>
- *   )
- * } */
-
-const ComponentApp: FC<{ installId: string; orgId: string }> = async ({
-  installId,
-  orgId,
-}) => {
-  let install: TInstall
-  try {
-    install = await getInstall({ installId, orgId })
-  } catch (error) {
-    return <>App not found</>
-  }
-
-  return <>{install?.app?.name}</>
-}
+  BuildProvider,
+  InstallProvider,
+  InstallComponentProvider,
+} from '@/context'
+import { getBuild, getComponent, getInstall, getInstallComponent } from '@/lib'
+import type { TInstallDeploy } from '@/types'
 
 export default withPageAuthRequired(
-  async function InstallComponentDashboard({ params }) {
+  async function ({ params }) {
     const orgId = params?.['org-id'] as string
     const installId = params?.['install-id'] as string
     const installComponentId = params?.['component-id'] as string
@@ -66,87 +35,97 @@ export default withPageAuthRequired(
       installId,
       orgId,
     })
+
     const buildId = installComponent?.install_deploys?.[0]?.build_id
     const componentId = installComponent?.component_id
 
-    const [component, config] = await Promise.all([
+    const [component, build, install] = await Promise.all([
       getComponent({ componentId, orgId }),
-      getComponentConfig({ componentId, orgId }),
+      getBuild({ orgId, buildId }),
+      getInstall({ installId, orgId }),
     ])
 
     return (
-      <Page
-        header={
-          <PageHeader
-            info={
-              <div className="flex flex-col">
-                <LatestDeploy2 {...installComponent} />
+      <InstallProvider initInstall={install}>
+        <InstallComponentProvider
+          initInstallComponent={{ ...installComponent, org_id: orgId }}
+          shouldPoll
+        >
+          <Page
+            header={
+              <PageHeader
+                title={
+                  <PageTitle overline={component.id} title={component.name} />
+                }
+                summary={
+                  <PageSummary>
+                    <Text variant="status">{install.app?.name}</Text>
+                    <ComponentConfigType
+                      orgId={orgId}
+                      componentId={componentId}
+                    />
+                  </PageSummary>
+                }
+                info={
+                  <div className="flex flex-col">
+                    <InstallComponentStatus />
+                    <LatestDeploy
+                      {...(installComponent
+                        ?.install_deploys?.[0] as TInstallDeploy)}
+                    />
+                  </div>
+                }
+              />
+            }
+            links={[
+              {
+                href: installComponent?.org_id,
+                text: installComponent?.org_id,
+              },
+
+              {
+                href: installComponent?.install_id,
+                text: installComponent?.install_id,
+              },
+
+              {
+                href: 'components/' + installComponent?.id,
+                text: installComponent?.id,
+              },
+            ]}
+          >
+            <Grid variant="3-cols">
+              <div className="flex flex-col gap-6">
+                <Heading variant="subtitle">Deploy history</Heading>
+                <Card>
+                  <InstallDeploys />
+                </Card>
               </div>
-            }
-            title={<InstallComponentHeading component={component} />}
-            summary={
-              <InstallComponentSummary
-                config={config}
-                appName={
-                  <Suspense fallback="loading...">
-                    <ComponentApp installId={installId} orgId={orgId} />
-                  </Suspense>
-                }
-              />
-            }
-          />
-        }
-        links={[
-          {
-            href: installComponent?.org_id,
-            text: installComponent?.org_id,
-          },
+              <div className="flex flex-col gap-6 lg:col-span-2">
+                <Heading variant="subtitle">Details</Heading>
 
-          {
-            href: installComponent?.install_id,
-            text: installComponent?.install_id,
-          },
+                <div className="grid grid-cols-2 gap-6">
+                  <BuildProvider initBuild={build}>
+                    <ComponentBuildCard heading="Latest build" />
+                  </BuildProvider>
 
-          {
-            href: 'components/' + installComponent?.id,
-            text: installComponent?.id,
-          },
-        ]}
-      >
-        <Grid variant="3-cols">
-          <div className="flex flex-col gap-6">
-            <Heading variant="subtitle">Deploy history</Heading>
-            <Card>
-              <InstallDeploys
-                deploys={
-                  installComponent?.install_deploys as Array<TInstallDeploy>
-                }
-                installId={installComponent?.install_id}
-              />
-            </Card>
-          </div>
-          <div className="flex flex-col gap-6 lg:col-span-2">
-            <Heading variant="subtitle">Details</Heading>
+                  <ComponentDependenciesCard
+                    orgId={orgId}
+                    componentId={componentId}
+                  />
+                </div>
 
-            <Card>
-              <Heading>Configuration</Heading>
-              <ComponentConfig
-                config={config}
-                version={component?.config_versions}
-              />
-            </Card>
-        
-            <Build orgId={orgId} buildId={buildId}   />        
-
-            {component?.dependencies?.length ? (
-              <Card>
-                <Heading>Dependencies</Heading>
-                <ComponentDependencies deps={component?.dependencies} />
-              </Card>
-            ) : null}
-          </div>
-        </Grid>
-      </Page>
+                <ComponentConfigCard
+                  heading="Latest config"
+                  componentId={componentId}
+                  orgId={orgId}
+                  version={component?.config_versions}
+                />
+              </div>
+            </Grid>
+          </Page>
+        </InstallComponentProvider>
+      </InstallProvider>
     )
   },
   { returnTo: '/dashboard' }
