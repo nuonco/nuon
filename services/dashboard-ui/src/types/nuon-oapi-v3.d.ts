@@ -6,275 +6,445 @@
 
 export interface paths {
   "/v1/apps": {
-    /** get all apps for all orgs */
-    get: operations["GetAllApps"];
+    /** get all apps for the current org */
+    get: operations["GetApps"];
+    /** create an app */
+    post: operations["CreateApp"];
   };
-  "/v1/apps/{app_id}/admin-delete": {
-    /**
-     * delete an app
-     * @description Delete an app by ID.
-     */
-    post: operations["AdminDeleteApp"];
+  "/v1/apps/{app_id}": {
+    /** get an app */
+    get: operations["GetApp"];
+    /** delete an app */
+    delete: operations["DeleteApp"];
+    /** update an app */
+    patch: operations["UpdateApp"];
   };
-  "/v1/apps/{app_id}/admin-reprovision": {
+  "/v1/apps/{app_id}/components": {
+    /** get all components for an app */
+    get: operations["GetAppComponents"];
+    /** create a component */
+    post: operations["CreateComponent"];
+  };
+  "/v1/apps/{app_id}/config": {
     /**
-     * reprovision an app
-     * @description Reprovision an app.
+     * @description Create an app config, by pushing the contents of a config file.
      *
-     * **NOTE** this does not do anything down stream in the provisioning layer, and is essentially the same as restarting an app.
+     * The API will automatically configure the app according to the config file in the background.
      */
-    post: operations["AdminReprovisionApp"];
+    post: operations["CreateAppConfig"];
   };
-  "/v1/apps/{app_id}/admin-restart": {
+  "/v1/apps/{app_id}/config/{app_config_id}": {
     /**
-     * restart an apps event loop
-     * @description Restart an app and it's event loop.
+     * get an app config
+     * @description Fetch an app config by id.
      */
-    post: operations["AdminRestartApp"];
+    get: operations["GetAppConfig"];
+  };
+  "/v1/apps/{app_id}/configs": {
+    /**
+     * get app configs
+     * @description Returns all configs for the app.
+     */
+    get: operations["GetAppConfigs"];
+  };
+  "/v1/apps/{app_id}/input-config": {
+    post: operations["CreateAppInputConfig"];
+  };
+  "/v1/apps/{app_id}/input-configs": {
+    /** get app input configs */
+    get: operations["GetAppInputConfigs"];
+  };
+  "/v1/apps/{app_id}/input-latest-config": {
+    /** get latest app input config */
+    get: operations["GetAppInputLatestConfig"];
+  };
+  "/v1/apps/{app_id}/installs": {
+    /** get all installs for an app */
+    get: operations["GetAppInstalls"];
+    /** create an app install */
+    post: operations["CreateInstall"];
+  };
+  "/v1/apps/{app_id}/latest-config": {
+    /**
+     * get latest app config
+     * @description Returns the most recent config for the provided app.
+     */
+    get: operations["GetAppLatestConfig"];
+  };
+  "/v1/apps/{app_id}/releases": {
+    /** get all releases for an app */
+    get: operations["GetAppReleases"];
+  };
+  "/v1/apps/{app_id}/runner-config": {
+    /** create an app runner config */
+    post: operations["CreateAppRunnerConfig"];
+  };
+  "/v1/apps/{app_id}/runner-configs": {
+    /** get app runner configs */
+    get: operations["GetAppRunnerConfigs"];
+  };
+  "/v1/apps/{app_id}/runner-latest-config": {
+    /** get latest app runner config */
+    get: operations["GetAppRunnerLatestConfig"];
+  };
+  "/v1/apps/{app_id}/sandbox-config": {
+    /** create an app sandbox config */
+    post: operations["CreateAppSandboxConfig"];
+  };
+  "/v1/apps/{app_id}/sandbox-configs": {
+    /** get app sandbox configs */
+    get: operations["GetAppSandboxConfigs"];
+  };
+  "/v1/apps/{app_id}/sandbox-latest-config": {
+    /** get latest app sandbox config */
+    get: operations["GetAppSandboxLatestConfig"];
+  };
+  "/v1/apps/{app_id}/secret": {
+    /**
+     * create an app secret
+     * @description Create an app secret that can be used to configure components. To reference an app secret, use `.nuon.secrets.<secret_name>`.
+     *
+     * **NOTE** secrets can only be written, or deleted, not read.
+     */
+    post: operations["CreateAppSecret"];
+  };
+  "/v1/apps/{app_id}/secret/{secret_id}": {
+    /**
+     * delete an app secret
+     * @description Delete an app secret.
+     */
+    delete: operations["DeleteAppSecret"];
+  };
+  "/v1/apps/{app_id}/secrets": {
+    /**
+     * get app secrets
+     * @description List all secrets for an app.
+     *
+     * **NOTE** this does not return any sensitive values, as secrets are write only.
+     */
+    get: operations["GetAppSecrets"];
+  };
+  "/v1/apps/{app_id}/template-config": {
+    /**
+     * get an app config template
+     * @description Create an application template which provides a fully rendered config that can be modified and used to kickstart any application.
+     */
+    get: operations["GetAppConfigTemplate"];
+  };
+  "/v1/builds": {
+    /** get builds for components */
+    get: operations["GetComponentBuilds"];
   };
   "/v1/components": {
-    /** get all components for all orgs */
-    get: operations["GetAllComponents"];
+    /** get all components for an org */
+    get: operations["GetOrgComponents"];
   };
-  "/v1/components/{component_id}/admin-delete": {
+  "/v1/components/builds/{build_id}": {
+    /**
+     * get a build
+     * @description Returns builds for one or all components in an app.
+     */
+    get: operations["GetBuild"];
+  };
+  "/v1/components/{component_id}": {
+    /** get a component */
+    get: operations["GetComponent"];
     /** delete a component */
-    post: operations["AdminDeleteComponent"];
+    delete: operations["DeleteComponent"];
+    /** update a component */
+    patch: operations["UpdateComponent"];
   };
-  "/v1/components/{component_id}/admin-restart": {
-    /** restart an components event loop */
-    post: operations["AdminRestartComponent"];
+  "/v1/components/{component_id}/builds": {
+    /** create component build */
+    post: operations["CreateComponentBuild"];
   };
-  "/v1/general/admin-user": {
+  "/v1/components/{component_id}/builds/latest": {
+    /** get latest build for a component */
+    get: operations["GetComponentLatestBuild"];
+  };
+  "/v1/components/{component_id}/builds/{build_id}": {
     /**
-     * create an admin user for internal purposes, such as testing.
-     * @description Create a long lived API token for admin purposes.
+     * get a build for a component
+     * @description Returns builds for one or all components in an app.
      */
-    post: operations["AdminUser"];
+    get: operations["GetComponentBuild"];
   };
-  "/v1/general/canary-user": {
-    /** create a temp user for running a canary */
-    post: operations["CreateCanaryUser"];
+  "/v1/components/{component_id}/builds/{build_id}/logs": {
+    /** get component build logs */
+    get: operations["GetComponentBuildLogs"];
   };
-  "/v1/general/deprovision-canary": {
-    /** deprovision a canary */
-    post: operations["CanaryDeprovision"];
+  "/v1/components/{component_id}/builds/{build_id}/plan": {
+    /** get component build plan */
+    get: operations["GetComponentBuildPlan"];
   };
-  "/v1/general/integration-user": {
-    /** create a temp user for running integration test */
-    post: operations["CreateIntegrationUser"];
+  "/v1/components/{component_id}/configs": {
+    /** get all configs for a component */
+    get: operations["GetComponentConfigs"];
   };
-  "/v1/general/provision-canary": {
-    /** provision a canary */
-    post: operations["ProvisionCanary"];
+  "/v1/components/{component_id}/configs/docker-build": {
+    /** create a docker build component config */
+    post: operations["CreateDockerBuildComponentConfig"];
   };
-  "/v1/general/start-canary-cron": {
-    /** start canary cron */
-    post: operations["StartCanaryCron"];
+  "/v1/components/{component_id}/configs/external-image": {
+    /** create an external image component config */
+    post: operations["CreateExternalImageComponentConfig"];
   };
-  "/v1/general/stop-canary-cron": {
+  "/v1/components/{component_id}/configs/helm": {
+    /** create a helm component config */
+    post: operations["CreateHelmComponentConfig"];
+  };
+  "/v1/components/{component_id}/configs/job": {
+    /** create a job component config */
+    post: operations["CreateJobComponentConfig"];
+  };
+  "/v1/components/{component_id}/configs/latest": {
+    /** get latest config for a component */
+    get: operations["GetComponentLatestConfig"];
+  };
+  "/v1/components/{component_id}/configs/terraform-module": {
+    /** create a terraform component config */
+    post: operations["CreateTerraformModuleComponentConfig"];
+  };
+  "/v1/components/{component_id}/releases": {
+    /** get all releases for a component */
+    get: operations["GetComponentReleases"];
+    /** create a release */
+    post: operations["CreateComponentRelease"];
+  };
+  "/v1/general/cli-config": {
+    /** Get config for cli */
+    get: operations["GetCLIConfig"];
+  };
+  "/v1/general/cloud-platform/{cloud_platform}/regions": {
     /**
-     * stop canary cron
-     * @description stop_canary_cron.md
+     * Get regions for a cloud platform
+     * @description Return region metadata for the Nuon supported cloud platforms.
      */
-    post: operations["StopCanaryCron"];
+    get: operations["GetCloudPlatformRegions"];
+  };
+  "/v1/general/current-user": {
+    /** Get current user */
+    get: operations["GetCurrentUser"];
+  };
+  "/v1/general/metrics": {
+    /** Publish a metric from different Nuon clients for telemetry purposes. */
+    post: operations["PublishMetrics"];
+  };
+  "/v1/installer/{installer_id}/render": {
+    /** render an installer */
+    get: operations["RenderInstaller"];
   };
   "/v1/installers": {
     /**
-     * get all installers for all orgs
-     * @description Return all installers, including information about who created them.
+     * get installers for current org
+     * @description Return all installers for the current org.
      */
-    get: operations["GetAllInstallers"];
+    get: operations["GetInstallers"];
+    /** create an installer */
+    post: operations["CreateInstaller"];
   };
-  "/v1/installers/admin-demo-installer": {
-    /**
-     * @description Create a demo installer in sandbox mode. This is useful for creating customer install demos and other types of POCs to show off the power of Nuon.
-     *
-     * To create an installer, you need the following:
-     *
-     * * Company Name
-     * * Installer slug (ie: the `nuon-demo` in https://app.nuon.co/installer/nuon-demo
-     * * Docs link
-     * * Demo url link (must have `embed` in it - https://total.wpexplorer.com/docs/get-embed-urllink-youtube-video/)
-     * * Logo URL
-     * * Github URL
-     * * Homepage URL
-     * * Description
-     *
-     * Behind the scenes, this will automatically kickstart a configuration file, and create a sample app that can be shared. You can use the other endpoints in this namespace to find urls, and existing installers.
-     */
-    post: operations["AdminCreateDemoInstaller"];
-  };
-  "/v1/installers/urls": {
-    /**
-     * get all installer urls for all orgs
-     * @description Return all installer urls, useful for scripting or looking for a specific one.
-     */
-    get: operations["GetAllInstallersURLs"];
+  "/v1/installers/{installer_id}": {
+    /** get an installer */
+    get: operations["GetInstaller"];
+    /** delete an installer */
+    delete: operations["DeleteInstaller"];
+    /** update an installer */
+    patch: operations["UpdateInstaller"];
   };
   "/v1/installs": {
-    /**
-     * get all installs for all orgs
-     * @description Return all installs for all orgs.
-     */
-    get: operations["GetAllInstalls"];
+    /** get all installs for an org */
+    get: operations["GetOrgInstalls"];
   };
-  "/v1/installs/admin-forget-account-installs": {
+  "/v1/installs/{install_id}": {
+    /** get an install */
+    get: operations["GetInstall"];
+    /** delete an install */
+    delete: operations["DeleteInstall"];
+    /** update an install */
+    patch: operations["UpdateInstall"];
+  };
+  "/v1/installs/{install_id}/component/{component_id}": {
+    /** get an install component */
+    get: operations["GetInstallComponent"];
+  };
+  "/v1/installs/{install_id}/components": {
+    /** get an installs components */
+    get: operations["GetInstallComponents"];
+  };
+  "/v1/installs/{install_id}/components/deploy-all": {
     /**
-     * forget all installs for an org
-     * @description Forget all installs that have a specific AWS account ID. Mainly, this is for us internally and useful for deleting installs in our canary and demo accounts:
+     * deploy all components on an install
+     * @description Deploy all components to an install.
      *
-     * * demo - 949309607565
-     * * canary - 543425801867
+     * This walks the graph order of the install's app, and will trigger a deploy for each on the specified install.
+     */
+    post: operations["DeployInstallComponents"];
+  };
+  "/v1/installs/{install_id}/components/teardown-all": {
+    /**
+     * teardown an install's components
+     * @description Teardown all components on an install.
+     */
+    post: operations["TeardownInstallComponents"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/deploys": {
+    /** get an install components deploys */
+    get: operations["GetInstallComponentDeploys"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/deploys/latest": {
+    /** get the latest deploy for an install component */
+    get: operations["GetInstallComponentLatestDeploy"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/teardown": {
+    /** teardown an install component */
+    post: operations["TeardownInstallComponent"];
+  };
+  "/v1/installs/{install_id}/deploys": {
+    /** get all deploys to an install */
+    get: operations["GetInstallDeploys"];
+    /** deploy a build to an install */
+    post: operations["CreateInstallDeploy"];
+  };
+  "/v1/installs/{install_id}/deploys/latest": {
+    /** get an install deploy */
+    get: operations["GetInstallLatestDeploy"];
+  };
+  "/v1/installs/{install_id}/deploys/{deploy_id}": {
+    /** get an install deploy */
+    get: operations["GetInstallDeploy"];
+  };
+  "/v1/installs/{install_id}/deploys/{deploy_id}/logs": {
+    /** get install deploy logs */
+    get: operations["GetInstallDeployLogs"];
+  };
+  "/v1/installs/{install_id}/deploys/{deploy_id}/plan": {
+    /** get install deploy plan */
+    get: operations["GetInstallDeployPlan"];
+  };
+  "/v1/installs/{install_id}/deprovision": {
+    /**
+     * deprovision an install
+     * @description Deprovision an install sandbox.
+     */
+    post: operations["DeprovisionInstall"];
+  };
+  "/v1/installs/{install_id}/events": {
+    /**
+     * get events for an install
+     * @description # Get Install Events
      *
-     * Ideally, this isn't needed too often but many changes can result in an install being leaked and needing to be manually cleaned up.
+     * Return an event stream for an install.
      */
-    post: operations["AdminForgetAccountInstalls"];
+    get: operations["GetInstallEvents"];
   };
-  "/v1/installs/{install_id}/admin-delete": {
+  "/v1/installs/{install_id}/events/{event_id}": {
     /**
-     * delete an install
-     * @description Delete an install using just the install ID. This will run a deprovision operation to tear down all resources.
+     * get an install event
+     * @description Get a single install event.
      */
-    post: operations["AdminDeleteInstall"];
+    get: operations["GetInstallEvent"];
   };
-  "/v1/installs/{install_id}/admin-deploy-components": {
-    /** deploy all components on an install */
-    post: operations["AdminDeployInstallComponents"];
+  "/v1/installs/{install_id}/inputs": {
+    /** get an installs inputs */
+    get: operations["GetInstallInputs"];
+    /** create install inputs */
+    post: operations["CreateInstallInputs"];
   };
-  "/v1/installs/{install_id}/admin-deprovision": {
+  "/v1/installs/{install_id}/inputs/current": {
+    /** get an installs current inputs */
+    get: operations["GetCurrentInstallInputs"];
+  };
+  "/v1/installs/{install_id}/reprovision": {
     /**
-     * deprovision an install, but keep it in the database
-     * @description Deprovision an install, while keeping it's event loop and database record in tact. This is useful for iterating on an install sandbox.
+     * reprovision an install
+     * @description Reprovision an install sandbox.
      */
-    post: operations["AdminDeprovisionInstall"];
+    post: operations["ReprovisionInstall"];
   };
-  "/v1/installs/{install_id}/admin-forget": {
-    /**
-     * forget an install
-     * @description Forget an install that has been deleted outside of nuon.
-     *
-     * This should only be used in cases where an install was broken in an unordinary way and needs to be manually deleted so the parent resources can be deleted.
-     */
-    post: operations["AdminForgetInstall"];
+  "/v1/installs/{install_id}/sandbox-run/{run_id}/logs": {
+    /** get install sandbox run logs */
+    get: operations["GetInstallSandboxRunLogs"];
   };
-  "/v1/installs/{install_id}/admin-reprovision": {
-    post: operations["AdminReprovisionInstall"];
-  };
-  "/v1/installs/{install_id}/admin-restart": {
-    /**
-     * restart an installs event loop
-     * @description Restart install.
-     *
-     * An admin endpoint which restarts the installs event loop.
-     */
-    post: operations["AdminRestartInstall"];
-  };
-  "/v1/installs/{install_id}/admin-teardown-components": {
-    /** teardown all components on an install */
-    post: operations["AdminTeardownInstallComponents"];
-  };
-  "/v1/installs/{install_id}/admin-update-sandbox": {
-    /**
-     * update an install to the latest sandbox
-     * @description update_install_sandbox.md
-     */
-    post: operations["AdminUpdateInstallSandbox"];
+  "/v1/installs/{install_id}/sandbox-runs": {
+    /** get an installs sandbox runs */
+    get: operations["GetInstallSandboxRuns"];
   };
   "/v1/orgs": {
-    /**
-     * Return all orgs
-     * @description return all orgs
-     */
-    get: operations["AdminGetAllOrgs"];
+    /** Return current user's orgs */
+    get: operations["GetOrgs"];
+    /** create a new org */
+    post: operations["CreateOrg"];
   };
-  "/v1/orgs/admin-delete-canarys": {
+  "/v1/orgs/current": {
+    /** Get an org */
+    get: operations["GetOrg"];
+    /** Delete an org */
+    delete: operations["DeleteOrg"];
+    /** Update current org */
+    patch: operations["UpdateOrg"];
+  };
+  "/v1/orgs/current/health-checks": {
     /**
-     * delete canary orgs
-     * @description Delete an org, and everything inside of it.
+     * Get an org's health checks
+     * @description Fetch the most recent health checks for an org. Health checks are automatically performed once every 60 seconds.
+     */
+    get: operations["GetOrgHealthChecks"];
+  };
+  "/v1/orgs/current/invites": {
+    /**
+     * Return org invites
+     * @description Returns a list of all invites to the org.
+     */
+    get: operations["GetOrgInvites"];
+    /**
+     * Invite a user to the current org
+     * @description Invite a user (by email) to an org.
      *
-     * This is extremely destructive, and should only be used sparingly.
+     * This user will receive an email, and when they next log into the application will be added to the org.
      */
-    post: operations["AdminDeleteCanaryOrgs"];
+    post: operations["CreateOrgInvite"];
   };
-  "/v1/orgs/admin-delete-integrations": {
-    /**
-     * delete leaked integration orgs
-     * @description Delete an org, and everything inside of it.
-     *
-     * This is extremely destructive, and should only be used sparingly.
-     */
-    post: operations["AdminDeleteIntegrationOrgs"];
+  "/v1/orgs/current/user": {
+    /** Add a user to the current org */
+    post: operations["AddUser"];
   };
-  "/v1/orgs/admin-get": {
-    /** get an org by name */
-    get: operations["AdminGetOrg"];
+  "/v1/releases/{release_id}": {
+    /** get a release */
+    get: operations["GetRelease"];
   };
-  "/v1/orgs/{org_id}/admin-add-user": {
-    /** Add a user to an org */
-    post: operations["AdminAddOrgUser"];
-  };
-  "/v1/orgs/{org_id}/admin-delete": {
-    /**
-     * delete an org and everything in it
-     * @description Delete an org, and everything inside of it.
-     *
-     * This is extremely destructive, and should only be used sparingly.
-     */
-    post: operations["AdminDeleteOrg"];
-  };
-  "/v1/orgs/{org_id}/admin-deprovision": {
-    /**
-     * deprovision an install, but keep it in the database
-     * @description Deprovision an org, but keep it in the database.
-     */
-    post: operations["AdminDeprovisionOrg"];
-  };
-  "/v1/orgs/{org_id}/admin-forget-installs": {
-    /**
-     * forget all installs for an org
-     * @description Forget all installs for an org.
-     *
-     * This should only be used in _dire_ cases where an org has been lost, and we need to deprovision it but do not know / care about the end installs. The primary use case for this is to be able to run aws-nuke on the canary account when things go wrong, but still allow us to cleanup the apps/orgs after.
-     */
-    post: operations["AdminForgetOrgInstalls"];
-  };
-  "/v1/orgs/{org_id}/admin-get-installs": {
-    /** get installs in an org */
-    get: operations["AdminGetOrgInstalls"];
-  };
-  "/v1/orgs/{org_id}/admin-rename": {
-    /** rename an org */
-    post: operations["AdminRenameOrg"];
-  };
-  "/v1/orgs/{org_id}/admin-reprovision": {
-    /**
-     * reprovision an org
-     * @description Reprovision an org.
-     */
-    post: operations["AdminReprovisionOrg"];
-  };
-  "/v1/orgs/{org_id}/admin-restart": {
-    /** restart an orgs event loop */
-    post: operations["AdminRestartOrg"];
-  };
-  "/v1/orgs/{org_id}/admin-restart-children": {
-    /** restart an org and all it's children event loops */
-    post: operations["AdminRestartOrgChildren"];
-  };
-  "/v1/orgs/{org_id}/admin-support-users": {
-    /** Add nuon users as support members */
-    post: operations["AdminCreateSupportUsers"];
+  "/v1/releases/{release_id}/steps": {
+    /** get a release */
+    get: operations["GetReleaseSteps"];
   };
   "/v1/sandboxes": {
-    /** create a new sandbox */
-    post: operations["AdminCreateSandbox"];
+    /** get all sandboxes */
+    get: operations["GetSandboxes"];
   };
-  "/v1/sandboxes/{sandbox_id}/release": {
-    /**
-     * create a new sandbox
-     * @description create_sandbox_release.md
-     */
-    post: operations["AdminCreateSandboxRelease"];
+  "/v1/sandboxes/{sandbox_id}": {
+    /** get a sandbox */
+    get: operations["GetSandbox"];
+  };
+  "/v1/sandboxes/{sandbox_id}/releases": {
+    /** get sandbox releases */
+    get: operations["GetSandboxReleases"];
+  };
+  "/v1/vcs/connected-repos": {
+    /** get all vcs connected repos for an org */
+    get: operations["GetAllVCSConnectedRepos"];
+  };
+  "/v1/vcs/connection-callback": {
+    /** public connection to create a vcs connection via a callback */
+    post: operations["CreateVCSConnectionCallback"];
+  };
+  "/v1/vcs/connections": {
+    /** get vcs connection for an org */
+    get: operations["GetOrgVCSConnections"];
+    /** create a vcs connection for Github */
+    post: operations["CreateVCSConnection"];
+  };
+  "/v1/vcs/connections/{connection_id}": {
+    /** returns a vcs connection for an org */
+    get: operations["GetVCSConnection"];
   };
 }
 
@@ -291,48 +461,83 @@ export interface components {
       region?: string;
       updated_at?: string;
     };
+    "app.AWSECRImageConfig": {
+      aws_region?: string;
+      /** @description connection to parent model */
+      component_config_id?: string;
+      component_config_type?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      /** @description actual configuration */
+      iam_role_arn?: string;
+      id?: string;
+      updated_at?: string;
+    };
     "app.App": {
       cloud_platform?: components["schemas"]["app.CloudPlatform"];
       created_at?: string;
       created_by?: components["schemas"]["app.UserToken"];
       created_by_id?: string;
+      description?: string;
+      display_name?: string;
       id?: string;
+      /** @description fields set via after query */
+      input_config?: components["schemas"]["app.AppInputConfig"];
       name?: string;
+      notifications_config?: components["schemas"]["app.NotificationsConfig"];
       org_id?: string;
+      runner_config?: components["schemas"]["app.AppRunnerConfig"];
+      sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
+      slack_webhook_url?: string;
       status?: string;
       status_description?: string;
       updated_at?: string;
     };
-    "app.AppInstaller": {
-      app?: components["schemas"]["app.App"];
+    "app.AppConfig": {
       app_id?: string;
-      app_installer_metadata?: components["schemas"]["app.AppInstallerMetadata"];
+      content?: string;
       created_at?: string;
       created_by?: components["schemas"]["app.UserToken"];
       created_by_id?: string;
+      format?: components["schemas"]["app.AppConfigFmt"];
+      generated_terraform?: string;
       id?: string;
-      /** @description filled in via after query */
-      installer_url?: string;
       org_id?: string;
-      slug?: string;
+      status?: components["schemas"]["app.AppConfigStatus"];
+      status_description?: string;
+      updated_at?: string;
+      /** @description fields that are filled in via after query or views */
+      version?: number;
+    };
+    /** @enum {string} */
+    "app.AppConfigFmt": "toml";
+    /** @enum {string} */
+    "app.AppConfigStatus": "active" | "pending" | "syncing" | "error" | "outdated";
+    "app.AppInput": {
+      app_input_id?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      default?: string;
+      description?: string;
+      display_name?: string;
+      id?: string;
+      name?: string;
+      org_id?: string;
+      required?: boolean;
+      sensitive?: boolean;
       updated_at?: string;
     };
-    "app.AppInstallerMetadata": {
-      app_installer_id?: string;
-      community_url?: string;
+    "app.AppInputConfig": {
+      app_id?: string;
+      app_inputs?: components["schemas"]["app.AppInput"][];
       created_at?: string;
       created_by?: components["schemas"]["app.UserToken"];
       created_by_id?: string;
-      demo_url?: string;
-      description?: string;
-      documentation_url?: string;
-      formatted_demo_url?: string;
-      github_url?: string;
-      homepage_url?: string;
       id?: string;
-      logo_url?: string;
-      name?: string;
-      post_install_markdown?: string;
+      install_inputs?: components["schemas"]["app.InstallInputs"][];
+      org_id?: string;
       updated_at?: string;
     };
     "app.AppRunnerConfig": {
@@ -352,10 +557,6 @@ export interface components {
     /** @enum {string} */
     "app.AppRunnerType": "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs";
     "app.AppSandboxConfig": {
-      /**
-       * @description TODO(jm): add this back, once we have migrated all existing app sandbox configs
-       * `gorm:"not null;default null"`
-       */
       app_id?: string;
       /** @description Links are dynamically loaded using an after query */
       artifacts?: {
@@ -380,6 +581,18 @@ export interface components {
         [key: string]: string;
       };
     };
+    "app.AppSecret": {
+      app_id?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      id?: string;
+      /** @description after query fields */
+      length?: number;
+      name?: string;
+      org_id?: string;
+      updated_at?: string;
+    };
     "app.AzureAccount": {
       created_at?: string;
       created_by?: components["schemas"]["app.UserToken"];
@@ -395,6 +608,12 @@ export interface components {
     };
     /** @enum {string} */
     "app.CloudPlatform": "aws" | "azure" | "unknown";
+    "app.CloudPlatformRegion": {
+      display_name?: string;
+      icon?: string;
+      name?: string;
+      value?: string;
+    };
     "app.Component": {
       app_id?: string;
       config_versions?: number;
@@ -404,6 +623,71 @@ export interface components {
       dependencies?: string[];
       id?: string;
       name?: string;
+      resolved_var_name?: string;
+      status?: string;
+      status_description?: string;
+      updated_at?: string;
+      var_name?: string;
+    };
+    "app.ComponentBuild": {
+      component_config_connection_id?: string;
+      component_config_version?: number;
+      /** @description Read-only fields set on the object to de-nest data */
+      component_id?: string;
+      component_name?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      git_ref?: string;
+      id?: string;
+      install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      releases?: components["schemas"]["app.ComponentRelease"][];
+      status?: string;
+      status_description?: string;
+      updated_at?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+    };
+    "app.ComponentConfigConnection": {
+      component_id?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      docker_build?: components["schemas"]["app.DockerBuildComponentConfig"];
+      external_image?: components["schemas"]["app.ExternalImageComponentConfig"];
+      helm?: components["schemas"]["app.HelmComponentConfig"];
+      id?: string;
+      job?: components["schemas"]["app.JobComponentConfig"];
+      terraform_module?: components["schemas"]["app.TerraformModuleComponentConfig"];
+      updated_at?: string;
+      version?: number;
+    };
+    "app.ComponentRelease": {
+      build_id?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      id?: string;
+      release_steps?: components["schemas"]["app.ComponentReleaseStep"][];
+      status?: string;
+      status_description?: string;
+      total_release_steps?: number;
+      updated_at?: string;
+    };
+    "app.ComponentReleaseStep": {
+      /** @description parent release ID */
+      component_release_id?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      /** @description fields to control the delay of the individual step, as this is set based on the parent strategy */
+      delay?: string;
+      id?: string;
+      install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      /**
+       * @description When a step is created, a set of installs are targeted. However, by the time the release step goes out, the
+       * install might have been setup in any order of ways.
+       */
+      requested_install_ids?: string[];
       status?: string;
       status_description?: string;
       updated_at?: string;
@@ -425,6 +709,52 @@ export interface components {
       vcs_connection?: components["schemas"]["app.VCSConnection"];
       vcs_connection_id?: string;
     };
+    "app.DockerBuildComponentConfig": {
+      build_args?: string[];
+      /** @description value */
+      component_config_connection_id?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      dockerfile?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      target?: string;
+      updated_at?: string;
+    };
+    "app.ExternalImageComponentConfig": {
+      aws_ecr_image_config?: components["schemas"]["app.AWSECRImageConfig"];
+      /** @description value */
+      component_config_connection_id?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      id?: string;
+      image_url?: string;
+      tag?: string;
+      updated_at?: string;
+    };
+    "app.HelmComponentConfig": {
+      /** @description Helm specific configurations */
+      chart_name?: string;
+      /** @description parent reference */
+      component_config_connection_id?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      updated_at?: string;
+      values?: {
+        [key: string]: string;
+      };
+      values_files?: string[];
+    };
     "app.Install": {
       app_id?: string;
       app_runner_config?: components["schemas"]["app.AppRunnerConfig"];
@@ -438,6 +768,7 @@ export interface components {
       install_components?: components["schemas"]["app.InstallComponent"][];
       install_events?: components["schemas"]["app.InstallEvent"][];
       install_inputs?: components["schemas"]["app.InstallInputs"][];
+      install_number?: number;
       install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
       name?: string;
       status?: string;
@@ -457,6 +788,7 @@ export interface components {
     };
     "app.InstallDeploy": {
       build_id?: string;
+      component_config_version?: number;
       component_id?: string;
       component_name?: string;
       created_at?: string;
@@ -480,7 +812,7 @@ export interface components {
       created_by_id?: string;
       id?: string;
       install_id?: string;
-      operation?: components["schemas"]["github_com_powertoolsdev_mono_services_ctl-api_internal_app_installs_worker_signals.Operation"];
+      operation?: string;
       operation_name?: string;
       operation_status?: components["schemas"]["app.OperationStatus"];
       org_id?: string;
@@ -514,6 +846,68 @@ export interface components {
       status_description?: string;
       updated_at?: string;
     };
+    "app.Installer": {
+      apps?: components["schemas"]["app.App"][];
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      id?: string;
+      metadata?: components["schemas"]["app.InstallerMetadata"];
+      org_id?: string;
+      type?: components["schemas"]["app.InstallerType"];
+      updated_at?: string;
+    };
+    "app.InstallerMetadata": {
+      community_url?: string;
+      copyright_markdown?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      demo_url?: string;
+      description?: string;
+      documentation_url?: string;
+      favicon_url?: string;
+      footer_markdown?: string;
+      formatted_demo_url?: string;
+      github_url?: string;
+      homepage_url?: string;
+      id?: string;
+      installer_id?: string;
+      logo_url?: string;
+      name?: string;
+      post_install_markdown?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.InstallerType": "self_hosted";
+    "app.JobComponentConfig": {
+      args?: string[];
+      cmd?: string[];
+      /** @description value */
+      component_config_connection_id?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      /** @description Image attributes, copied from a docker_buid or external_image component. */
+      image_url?: string;
+      tag?: string;
+      updated_at?: string;
+    };
+    "app.NotificationsConfig": {
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      slack_webhook_url?: string;
+      updated_at?: string;
+    };
     /** @enum {string} */
     "app.OperationStatus": "started" | "finished" | "noop" | "failed";
     "app.Org": {
@@ -526,6 +920,7 @@ export interface components {
       /** @description Filled in at read time */
       latest_health_check?: components["schemas"]["app.OrgHealthCheck"];
       name?: string;
+      notifications_config?: components["schemas"]["app.NotificationsConfig"];
       /**
        * @description These fields are used to control the behaviour of the org
        * NOTE: these are starting as nullable, so we can update stage/prod before resetting locally.
@@ -549,6 +944,19 @@ export interface components {
     };
     /** @enum {string} */
     "app.OrgHealthCheckStatus": "ok" | "error" | "in-progress" | "provisioning" | "deprovisioning";
+    "app.OrgInvite": {
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      email?: string;
+      id?: string;
+      /** @description parent relationship */
+      orgID?: string;
+      status?: components["schemas"]["app.OrgInviteStatus"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.OrgInviteStatus": "pending" | "accepted";
     "app.PublicGitVCSConfig": {
       branch?: string;
       component_config_id?: string;
@@ -586,8 +994,27 @@ export interface components {
     };
     /** @enum {string} */
     "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
+    "app.TerraformModuleComponentConfig": {
+      /** @description parent reference */
+      component_config_connection_id?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      updated_at?: string;
+      variables?: {
+        [key: string]: string;
+      };
+      /** @description terraform configuration values */
+      version?: string;
+    };
     /** @enum {string} */
-    "app.TokenType": "auth0" | "integration" | "canary" | "admin";
+    "app.TokenType": "auth0" | "admin" | "static" | "integration" | "canary";
     "app.UserOrg": {
       created_at?: string;
       created_by?: components["schemas"]["app.UserToken"];
@@ -632,89 +1059,321 @@ export interface components {
       sha?: string;
       updated_at?: string;
     };
+    "metrics.Decr": {
+      name?: string;
+      tags?: string[];
+    };
+    "metrics.Event": {
+      event?: components["schemas"]["statsd.Event"];
+    };
+    "metrics.Incr": {
+      name?: string;
+      tags?: string[];
+    };
+    "metrics.Timing": {
+      name?: string;
+      tags?: string[];
+      value?: number;
+    };
+    "planv1.Plan": {
+      /**
+       * @description Types that are assignable to Actual:
+       *
+       * 	*Plan_WaypointPlan
+       * 	*Plan_NoopPlan
+       */
+      actual?: unknown;
+    };
+    "service.AppConfigTemplate": {
+      content?: string;
+      filename?: string;
+      format?: components["schemas"]["app.AppConfigFmt"];
+      type?: components["schemas"]["service.AppConfigTemplateType"];
+    };
     /** @enum {string} */
-    "github_com_powertoolsdev_mono_services_ctl-api_internal_app_installs_worker_signals.Operation": "provision" | "deprovision" | "delete" | "reprovision" | "deploy" | "forgotten" | "poll_dependencies" | "deploy_components" | "teardown_components";
-    "service.AdminCreateDemoInstallerRequest": {
+    "service.AppConfigTemplateType": "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc";
+    "service.AppInputRequest": {
+      default?: string;
       description: string;
-      links?: {
-        community: string;
-        demo?: string;
-        documentation: string;
-        github: string;
-        homepage: string;
-        logo: string;
+      display_name: string;
+      required?: boolean;
+      sensitive?: boolean;
+    };
+    "service.CLIConfig": {
+      auth_audience?: string;
+      auth_client_id?: string;
+      auth_domain?: string;
+    };
+    "service.ConnectedGithubVCSConfigRequest": {
+      branch?: string;
+      directory: string;
+      gitRef?: string;
+      repo: string;
+    };
+    "service.ConnectedGithubVCSSandboxConfigRequest": {
+      branch?: string;
+      directory: string;
+      gitRef?: string;
+      repo: string;
+    };
+    "service.CreateAppConfigRequest": {
+      content: string;
+      generated_terraform_json?: string;
+    };
+    "service.CreateAppInputConfigRequest": {
+      inputs: {
+        [key: string]: components["schemas"]["service.AppInputRequest"];
+      };
+    };
+    "service.CreateAppRequest": {
+      description?: string;
+      display_name?: string;
+      name: string;
+      slack_webhook_url?: string;
+    };
+    "service.CreateAppRunnerConfigRequest": {
+      env_vars?: {
+        [key: string]: string;
+      };
+      type?: components["schemas"]["app.AppRunnerType"];
+    };
+    "service.CreateAppSandboxConfigRequest": {
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSSandboxConfigRequest"];
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSSandboxConfigRequest"];
+      sandbox_inputs: {
+        [key: string]: string;
+      };
+      sandbox_release_id?: string;
+      terraform_version: string;
+    };
+    "service.CreateAppSecretRequest": {
+      name: string;
+      value: string;
+    };
+    "service.CreateComponentBuildRequest": {
+      git_ref?: string;
+      use_latest?: boolean;
+    };
+    "service.CreateComponentReleaseRequest": {
+      auto_build?: boolean;
+      build_id?: string;
+      strategy?: {
+        delay?: string;
+        installs_per_step?: number;
+      };
+    };
+    "service.CreateComponentRequest": {
+      dependencies?: string[];
+      name: string;
+      var_name?: string;
+    };
+    "service.CreateConnectionCallbackRequest": {
+      github_install_id: string;
+      org_id: string;
+    };
+    "service.CreateConnectionRequest": {
+      github_install_id: string;
+    };
+    "service.CreateDockerBuildComponentConfigRequest": {
+      build_args?: string[];
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      dockerfile: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
+      target?: string;
+    };
+    "service.CreateExternalImageComponentConfigRequest": {
+      aws_ecr_image_config?: components["schemas"]["service.awsECRImageConfigRequest"];
+      image_url: string;
+      tag: string;
+    };
+    "service.CreateHelmComponentConfigRequest": {
+      chart_name: string;
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
+      values: {
+        [key: string]: string;
+      };
+      values_files?: string[];
+    };
+    "service.CreateInstallDeployRequest": {
+      build_id?: string;
+    };
+    "service.CreateInstallInputsRequest": {
+      inputs: {
+        [key: string]: string;
+      };
+    };
+    "service.CreateInstallRequest": {
+      aws_account?: {
+        iam_role_arn: string;
+        region?: string;
+      };
+      azure_account?: {
+        location?: string;
+        service_principal_app_id?: string;
+        service_principal_password?: string;
+        subscription_id?: string;
+        subscription_tenant_id?: string;
+      };
+      inputs?: {
+        [key: string]: string;
       };
       name: string;
-      slug: string;
-      /** @default fully_managed */
-      template: string;
     };
-    "service.AdminCreateOrgUserRequest": {
-      email?: string;
-    };
-    "service.AdminDeleteAppRequest": Record<string, never>;
-    "service.AdminDeleteCanaryOrgsRequest": Record<string, never>;
-    "service.AdminDeleteComponentRequest": Record<string, never>;
-    "service.AdminDeleteInstallRequest": Record<string, never>;
-    "service.AdminDeleteIntegrationOrgsRequest": Record<string, never>;
-    "service.AdminDeleteOrgRequest": Record<string, never>;
-    "service.AdminDeprovisionInstallRequest": Record<string, never>;
-    "service.AdminDeprovisionOrgRequest": Record<string, never>;
-    "service.AdminForgetAccountInstallsRequest": {
-      account_id: string;
-    };
-    "service.AdminForgetInstallRequest": Record<string, never>;
-    "service.AdminForgetOrgInstallsRequest": Record<string, never>;
-    "service.AdminUpdateSandboxRequest": Record<string, never>;
-    "service.AdminUserRequest": Record<string, never>;
-    "service.AdminUserResponse": {
-      api_token?: string;
-    };
-    "service.CreateCanaryUserRequest": {
-      canary_id?: string;
-    };
-    "service.CreateCanaryUserResponse": {
-      api_token?: string;
-      github_install_id?: string;
-    };
-    "service.CreateIntegrationUserRequest": Record<string, never>;
-    "service.CreateIntegrationUserResponse": {
-      api_token?: string;
-      github_install_id?: string;
-    };
-    "service.CreateSandboxReleaseRequest": {
-      terraform_version: string;
-      version: string;
-    };
-    "service.CreateSandboxRequest": {
-      description?: string;
-      name?: string;
-    };
-    "service.DeployInstallComponentsRequest": Record<string, never>;
-    "service.DeprovisionCanaryRequest": {
-      canary_id?: string;
-    };
-    "service.ProvisionCanaryRequest": {
-      sandbox_mode?: boolean;
-    };
-    "service.RenameOrgRequest": {
+    "service.CreateInstallerRequest": {
+      app_ids: string[];
+      metadata?: {
+        community_url: string;
+        copyright_markdown?: string;
+        demo_url?: string;
+        description: string;
+        documentation_url: string;
+        favicon_url?: string;
+        footer_markdown?: string;
+        github_url: string;
+        homepage_url: string;
+        logo_url: string;
+        post_install_markdown?: string;
+      };
       name: string;
     };
-    "service.ReprovisionAppRequest": Record<string, never>;
+    "service.CreateJobComponentConfigRequest": {
+      args?: string[];
+      cmd?: string[];
+      env_vars?: {
+        [key: string]: string;
+      };
+      image_url: string;
+      tag: string;
+    };
+    "service.CreateOrgInviteRequest": {
+      email?: string;
+    };
+    "service.CreateOrgRequest": {
+      name: string;
+      /** @description These fields are used to control the behaviour of the org. */
+      use_custom_cert?: boolean;
+      use_sandbox_mode?: boolean;
+    };
+    "service.CreateOrgUserRequest": {
+      user_id?: string;
+    };
+    "service.CreateTerraformModuleComponentConfigRequest": {
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      env_vars: {
+        [key: string]: string;
+      };
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
+      variables: {
+        [key: string]: string;
+      };
+      version?: string;
+    };
+    "service.DeployInstallComponentsRequest": Record<string, never>;
+    "service.DeprovisionInstallRequest": Record<string, never>;
+    "service.PublicGitVCSConfigRequest": {
+      branch: string;
+      directory: string;
+      repo: string;
+    };
+    "service.PublicGitVCSSandboxConfigRequest": {
+      branch: string;
+      directory: string;
+      repo: string;
+    };
+    "service.PublishMetricInput": {
+      decr?: components["schemas"]["metrics.Decr"];
+      event?: components["schemas"]["metrics.Event"];
+      incr?: components["schemas"]["metrics.Incr"];
+      timing?: components["schemas"]["metrics.Timing"];
+    };
+    "service.RenderedInstaller": {
+      apps?: components["schemas"]["app.App"][];
+      metadata?: components["schemas"]["app.InstallerMetadata"];
+      sandbox_mode?: boolean;
+    };
+    "service.Repository": {
+      clone_url: string;
+      default_branch: string;
+      full_name: string;
+      git_url: string;
+      github_install_id: string;
+      name: string;
+      user_name: string;
+    };
     "service.ReprovisionInstallRequest": Record<string, never>;
-    "service.ReprovisionOrgRequest": Record<string, never>;
-    "service.RestartAppRequest": Record<string, never>;
-    "service.RestartComponentRequest": Record<string, never>;
-    "service.RestartInstallRequest": Record<string, never>;
-    "service.RestartOrgChildrenRequest": Record<string, never>;
-    "service.RestartOrgRequest": Record<string, never>;
-    "service.StartCanaryCronRequest": {
-      sandbox_mode?: boolean;
-    };
-    "service.StopCanaryCronRequest": {
-      sandbox_mode?: boolean;
-    };
     "service.TeardownInstallComponentsRequest": Record<string, never>;
+    "service.UpdateAppRequest": {
+      description?: string;
+      display_name?: string;
+      name?: string;
+      slack_webhook_url?: string;
+    };
+    "service.UpdateComponentRequest": {
+      dependencies?: string[];
+      name: string;
+      var_name?: string;
+    };
+    "service.UpdateInstallRequest": {
+      name?: string;
+    };
+    "service.UpdateInstallerRequest": {
+      app_ids: string[];
+      metadata?: {
+        community_url: string;
+        copyright_markdown?: string;
+        demo_url?: string;
+        description: string;
+        documentation_url: string;
+        favicon_url?: string;
+        footer_markdown?: string;
+        github_url: string;
+        homepage_url: string;
+        logo_url: string;
+        post_install_markdown?: string;
+      };
+      name: string;
+    };
+    "service.UpdateOrgRequest": {
+      name: string;
+    };
+    "service.awsECRImageConfigRequest": {
+      aws_region?: string;
+      iam_role_arn?: string;
+    };
+    "statsd.Event": {
+      /** @description AggregationKey groups this event with others of the same key. */
+      aggregationKey?: string;
+      /**
+       * @description AlertType can be statsd.Info, statsd.Error, statsd.Warning, or statsd.Success.
+       * If absent, the default value applied by the dogstatsd server is Info.
+       */
+      alertType?: components["schemas"]["statsd.EventAlertType"];
+      /** @description Hostname for the event. */
+      hostname?: string;
+      /** @description Priority of the event.  Can be statsd.Low or statsd.Normal. */
+      priority?: components["schemas"]["statsd.EventPriority"];
+      /** @description SourceTypeName is a source type for the event. */
+      sourceTypeName?: string;
+      /** @description Tags for the event. */
+      tags?: string[];
+      /** @description Text is the description of the event. */
+      text?: string;
+      /**
+       * @description Timestamp is a timestamp for the event.  If not provided, the dogstatsd
+       * server will set this to the current time.
+       */
+      timestamp?: string;
+      /** @description Title of the event.  Required. */
+      title?: string;
+    };
+    /** @enum {string} */
+    "statsd.EventAlertType": "info" | "error" | "warning" | "success";
+    /** @enum {string} */
+    "statsd.EventPriority": "normal" | "low";
     "stderr.ErrResponse": {
       description?: string;
       error?: string;
@@ -734,8 +1393,8 @@ export type external = Record<string, never>;
 
 export interface operations {
 
-  /** get all apps for all orgs */
-  GetAllApps: {
+  /** get all apps for the current org */
+  GetApps: {
     responses: {
       /** @description OK */
       200: {
@@ -743,384 +1402,138 @@ export interface operations {
           "application/json": components["schemas"]["app.App"][];
         };
       };
-    };
-  };
-  /**
-   * delete an app
-   * @description Delete an app by ID.
-   */
-  AdminDeleteApp: {
-    parameters: {
-      path: {
-        /** @description app id */
-        app_id: string;
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
       };
     };
+  };
+  /** create an app */
+  CreateApp: {
     /** @description Input */
     requestBody: {
       content: {
-        "application/json": components["schemas"]["service.AdminDeleteAppRequest"];
+        "application/json": components["schemas"]["service.CreateAppRequest"];
       };
     };
     responses: {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.App"];
         };
       };
-    };
-  };
-  /**
-   * reprovision an app
-   * @description Reprovision an app.
-   *
-   * **NOTE** this does not do anything down stream in the provisioning layer, and is essentially the same as restarting an app.
-   */
-  AdminReprovisionApp: {
-    parameters: {
-      path: {
-        /** @description app ID for your current app */
-        app_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.ReprovisionAppRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
+      /** @description Bad Request */
+      400: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
   };
-  /**
-   * restart an apps event loop
-   * @description Restart an app and it's event loop.
-   */
-  AdminRestartApp: {
+  /** get an app */
+  GetApp: {
     parameters: {
       path: {
         /** @description app ID */
         app_id: string;
       };
     };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.RestartAppRequest"];
-      };
-    };
     responses: {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.App"];
         };
       };
-    };
-  };
-  /** get all components for all orgs */
-  GetAllComponents: {
-    parameters: {
-      header: {
-        /** @description org ID */
-        "X-Nuon-Org-ID": string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
+      /** @description Bad Request */
+      400: {
         content: {
-          "application/json": components["schemas"]["app.Component"][];
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
-    };
-  };
-  /** delete a component */
-  AdminDeleteComponent: {
-    parameters: {
-      path: {
-        /** @description component ID */
-        component_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminDeleteComponentRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
+      /** @description Unauthorized */
+      401: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
   };
-  /** restart an components event loop */
-  AdminRestartComponent: {
+  /** delete an app */
+  DeleteApp: {
     parameters: {
       path: {
-        /** @description component ID */
-        component_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.RestartComponentRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": boolean;
-        };
-      };
-    };
-  };
-  /**
-   * create an admin user for internal purposes, such as testing.
-   * @description Create a long lived API token for admin purposes.
-   */
-  AdminUser: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminUserRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["service.AdminUserResponse"];
-        };
-      };
-    };
-  };
-  /** create a temp user for running a canary */
-  CreateCanaryUser: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.CreateCanaryUserRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["service.CreateCanaryUserResponse"];
-        };
-      };
-    };
-  };
-  /** deprovision a canary */
-  CanaryDeprovision: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.DeprovisionCanaryRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /** create a temp user for running integration test */
-  CreateIntegrationUser: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.CreateIntegrationUserRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["service.CreateIntegrationUserResponse"];
-        };
-      };
-    };
-  };
-  /** provision a canary */
-  ProvisionCanary: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.ProvisionCanaryRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /** start canary cron */
-  StartCanaryCron: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.StartCanaryCronRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /**
-   * stop canary cron
-   * @description stop_canary_cron.md
-   */
-  StopCanaryCron: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.StopCanaryCronRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /**
-   * get all installers for all orgs
-   * @description Return all installers, including information about who created them.
-   */
-  GetAllInstallers: {
-    parameters: {
-      query?: {
-        /** @description limit of installers to return */
-        limit?: number;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.AppInstaller"][];
-        };
-      };
-    };
-  };
-  /**
-   * @description Create a demo installer in sandbox mode. This is useful for creating customer install demos and other types of POCs to show off the power of Nuon.
-   *
-   * To create an installer, you need the following:
-   *
-   * * Company Name
-   * * Installer slug (ie: the `nuon-demo` in https://app.nuon.co/installer/nuon-demo
-   * * Docs link
-   * * Demo url link (must have `embed` in it - https://total.wpexplorer.com/docs/get-embed-urllink-youtube-video/)
-   * * Logo URL
-   * * Github URL
-   * * Homepage URL
-   * * Description
-   *
-   * Behind the scenes, this will automatically kickstart a configuration file, and create a sample app that can be shared. You can use the other endpoints in this namespace to find urls, and existing installers.
-   */
-  AdminCreateDemoInstaller: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminCreateDemoInstallerRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /**
-   * get all installer urls for all orgs
-   * @description Return all installer urls, useful for scripting or looking for a specific one.
-   */
-  GetAllInstallersURLs: {
-    parameters: {
-      query?: {
-        /** @description limit of installers to return */
-        limit?: number;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": string[];
-        };
-      };
-    };
-  };
-  /**
-   * get all installs for all orgs
-   * @description Return all installs for all orgs.
-   */
-  GetAllInstalls: {
-    parameters: {
-      query?: {
-        /** @description limit of installs to return */
-        limit?: number;
-        /** @description type of installs to return */
-        type?: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.Install"][];
-        };
-      };
-    };
-  };
-  /**
-   * forget all installs for an org
-   * @description Forget all installs that have a specific AWS account ID. Mainly, this is for us internally and useful for deleting installs in our canary and demo accounts:
-   *
-   * * demo - 949309607565
-   * * canary - 543425801867
-   *
-   * Ideally, this isn't needed too often but many changes can result in an install being leaked and needing to be manually cleaned up.
-   */
-  AdminForgetAccountInstalls: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminForgetAccountInstallsRequest"];
+        /** @description app ID */
+        app_id: string;
       };
     };
     responses: {
@@ -1132,6 +1545,171 @@ export interface operations {
       };
       /** @description Bad Request */
       400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** update an app */
+  UpdateApp: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateAppRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.App"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all components for an app */
+  GetAppComponents: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a component */
+  CreateComponent: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateComponentRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Component"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -1151,33 +1729,2770 @@ export interface operations {
     };
   };
   /**
-   * delete an install
-   * @description Delete an install using just the install ID. This will run a deprovision operation to tear down all resources.
+   * @description Create an app config, by pushing the contents of a config file.
+   *
+   * The API will automatically configure the app according to the config file in the background.
    */
-  AdminDeleteInstall: {
+  CreateAppConfig: {
     parameters: {
       path: {
-        /** @description install id */
-        install_id: string;
+        /** @description app ID */
+        app_id: string;
       };
     };
     /** @description Input */
     requestBody: {
       content: {
-        "application/json": components["schemas"]["service.AdminDeleteInstallRequest"];
+        "application/json": components["schemas"]["service.CreateAppConfigRequest"];
       };
     };
     responses: {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
   };
-  /** deploy all components on an install */
-  AdminDeployInstallComponents: {
+  /**
+   * get an app config
+   * @description Fetch an app config by id.
+   */
+  GetAppConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        app_config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app configs
+   * @description Returns all configs for the app.
+   */
+  GetAppConfigs: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  CreateAppInputConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppInputConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppInputConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get app input configs */
+  GetAppInputConfigs: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppInputConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get latest app input config */
+  GetAppInputLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppInputConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all installs for an app */
+  GetAppInstalls: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create an app install */
+  CreateInstall: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app config
+   * @description Returns the most recent config for the provided app.
+   */
+  GetAppLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all releases for an app */
+  GetAppReleases: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentRelease"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create an app runner config */
+  CreateAppRunnerConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppRunnerConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppRunnerConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get app runner configs */
+  GetAppRunnerConfigs: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppRunnerConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get latest app runner config */
+  GetAppRunnerLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppRunnerConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create an app sandbox config */
+  CreateAppSandboxConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppSandboxConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get app sandbox configs */
+  GetAppSandboxConfigs: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get latest app sandbox config */
+  GetAppSandboxLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app secret
+   * @description Create an app secret that can be used to configure components. To reference an app secret, use `.nuon.secrets.<secret_name>`.
+   *
+   * **NOTE** secrets can only be written, or deleted, not read.
+   */
+  CreateAppSecret: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppSecretRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppSecret"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete an app secret
+   * @description Delete an app secret.
+   */
+  DeleteAppSecret: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description secret ID */
+        secret_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app secrets
+   * @description List all secrets for an app.
+   *
+   * **NOTE** this does not return any sensitive values, as secrets are write only.
+   */
+  GetAppSecrets: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSecret"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app config template
+   * @description Create an application template which provides a fully rendered config that can be modified and used to kickstart any application.
+   */
+  GetAppConfigTemplate: {
+    parameters: {
+      query: {
+        /** @description app template type */
+        type: "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc";
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.AppConfigTemplate"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get builds for components */
+  GetComponentBuilds: {
+    parameters: {
+      query?: {
+        /** @description limit of builds to return */
+        limit?: number;
+        /** @description component id to filter by */
+        component_id?: string;
+        /** @description app id to filter by */
+        app_id?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all components for an org */
+  GetOrgComponents: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a build
+   * @description Returns builds for one or all components in an app.
+   */
+  GetBuild: {
+    parameters: {
+      path: {
+        /** @description build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a component */
+  GetComponent: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** delete a component */
+  DeleteComponent: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** update a component */
+  UpdateComponent: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateComponentRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create component build */
+  CreateComponentBuild: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateComponentBuildRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get latest build for a component */
+  GetComponentLatestBuild: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a build for a component
+   * @description Returns builds for one or all components in an app.
+   */
+  GetComponentBuild: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+        /** @description build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get component build logs */
+  GetComponentBuildLogs: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+        /** @description build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": unknown[];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get component build plan */
+  GetComponentBuildPlan: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+        /** @description build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["planv1.Plan"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all configs for a component */
+  GetComponentConfigs: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentConfigConnection"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a docker build component config */
+  CreateDockerBuildComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateDockerBuildComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.DockerBuildComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create an external image component config */
+  CreateExternalImageComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateExternalImageComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ExternalImageComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a helm component config */
+  CreateHelmComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateHelmComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.HelmComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a job component config */
+  CreateJobComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateJobComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.JobComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get latest config for a component */
+  GetComponentLatestConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentConfigConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a terraform component config */
+  CreateTerraformModuleComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateTerraformModuleComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformModuleComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all releases for a component */
+  GetComponentReleases: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentRelease"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a release */
+  CreateComponentRelease: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateComponentReleaseRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentRelease"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** Get config for cli */
+  GetCLIConfig: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.CLIConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get regions for a cloud platform
+   * @description Return region metadata for the Nuon supported cloud platforms.
+   */
+  GetCloudPlatformRegions: {
+    parameters: {
+      path: {
+        /** @description cloud platform */
+        cloud_platform: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.CloudPlatformRegion"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** Get current user */
+  GetCurrentUser: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.UserToken"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** Publish a metric from different Nuon clients for telemetry purposes. */
+  PublishMetrics: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.PublishMetricInput"][];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** render an installer */
+  RenderInstaller: {
+    parameters: {
+      path: {
+        /** @description installer ID */
+        installer_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.RenderedInstaller"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get installers for current org
+   * @description Return all installers for the current org.
+   */
+  GetInstallers: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Installer"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create an installer */
+  CreateInstaller: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallerRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Installer"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an installer */
+  GetInstaller: {
+    parameters: {
+      path: {
+        /** @description installer ID */
+        installer_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Installer"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** delete an installer */
+  DeleteInstaller: {
+    parameters: {
+      path: {
+        /** @description installer ID */
+        installer_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** update an installer */
+  UpdateInstaller: {
+    parameters: {
+      path: {
+        /** @description installer ID */
+        installer_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateInstallerRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Installer"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all installs for an org */
+  GetOrgInstalls: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an install */
+  GetInstall: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** delete an install */
+  DeleteInstall: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** update an install */
+  UpdateInstall: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an install component */
+  GetInstallComponent: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallComponent"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an installs components */
+  GetInstallComponents: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallComponent"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * deploy all components on an install
+   * @description Deploy all components to an install.
+   *
+   * This walks the graph order of the install's app, and will trigger a deploy for each on the specified install.
+   */
+  DeployInstallComponents: {
     parameters: {
       path: {
         /** @description install ID */
@@ -1191,68 +4506,26 @@ export interface operations {
       };
     };
     responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": boolean;
-        };
-      };
-    };
-  };
-  /**
-   * deprovision an install, but keep it in the database
-   * @description Deprovision an install, while keeping it's event loop and database record in tact. This is useful for iterating on an install sandbox.
-   */
-  AdminDeprovisionInstall: {
-    parameters: {
-      path: {
-        /** @description org ID for your current org */
-        install_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminDeprovisionInstallRequest"];
-      };
-    };
-    responses: {
       /** @description Created */
       201: {
         content: {
           "application/json": string;
         };
       };
-    };
-  };
-  /**
-   * forget an install
-   * @description Forget an install that has been deleted outside of nuon.
-   *
-   * This should only be used in cases where an install was broken in an unordinary way and needs to be manually deleted so the parent resources can be deleted.
-   */
-  AdminForgetInstall: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminForgetInstallRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": boolean;
-        };
-      };
       /** @description Bad Request */
       400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -1271,10 +4544,818 @@ export interface operations {
       };
     };
   };
-  AdminReprovisionInstall: {
+  /**
+   * teardown an install's components
+   * @description Teardown all components on an install.
+   */
+  TeardownInstallComponents: {
     parameters: {
       path: {
-        /** @description install ID for your current install */
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.TeardownInstallComponentsRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an install components deploys */
+  GetInstallComponentDeploys: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get the latest deploy for an install component */
+  GetInstallComponentLatestDeploy: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** teardown an install component */
+  TeardownInstallComponent: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all deploys to an install */
+  GetInstallDeploys: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** deploy a build to an install */
+  CreateInstallDeploy: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallDeployRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an install deploy */
+  GetInstallLatestDeploy: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an install deploy */
+  GetInstallDeploy: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description deploy ID */
+        deploy_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get install deploy logs */
+  GetInstallDeployLogs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description deploy ID */
+        deploy_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": unknown[];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get install deploy plan */
+  GetInstallDeployPlan: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description deploy ID */
+        deploy_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["planv1.Plan"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * deprovision an install
+   * @description Deprovision an install sandbox.
+   */
+  DeprovisionInstall: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.DeprovisionInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get events for an install
+   * @description # Get Install Events
+   *
+   * Return an event stream for an install.
+   */
+  GetInstallEvents: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallEvent"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install event
+   * @description Get a single install event.
+   */
+  GetInstallEvent: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description event ID */
+        event_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallEvent"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an installs inputs */
+  GetInstallInputs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallInputs"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create install inputs */
+  CreateInstallInputs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallInputsRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallInputs"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an installs current inputs */
+  GetCurrentInstallInputs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallInputs"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * reprovision an install
+   * @description Reprovision an install sandbox.
+   */
+  ReprovisionInstall: {
+    parameters: {
+      path: {
+        /** @description install ID */
         install_id: string;
       };
     };
@@ -1291,271 +5372,20 @@ export interface operations {
           "application/json": string;
         };
       };
-    };
-  };
-  /**
-   * restart an installs event loop
-   * @description Restart install.
-   *
-   * An admin endpoint which restarts the installs event loop.
-   */
-  AdminRestartInstall: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.RestartInstallRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": boolean;
-        };
-      };
-    };
-  };
-  /** teardown all components on an install */
-  AdminTeardownInstallComponents: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.TeardownInstallComponentsRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": boolean;
-        };
-      };
-    };
-  };
-  /**
-   * update an install to the latest sandbox
-   * @description update_install_sandbox.md
-   */
-  AdminUpdateInstallSandbox: {
-    parameters: {
-      path: {
-        /** @description app ID */
-        install_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminUpdateSandboxRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": boolean;
-        };
-      };
-    };
-  };
-  /**
-   * Return all orgs
-   * @description return all orgs
-   */
-  AdminGetAllOrgs: {
-    parameters: {
-      query?: {
-        /** @description type of orgs to return */
-        type?: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.Org"][];
-        };
-      };
-    };
-  };
-  /**
-   * delete canary orgs
-   * @description Delete an org, and everything inside of it.
-   *
-   * This is extremely destructive, and should only be used sparingly.
-   */
-  AdminDeleteCanaryOrgs: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminDeleteCanaryOrgsRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /**
-   * delete leaked integration orgs
-   * @description Delete an org, and everything inside of it.
-   *
-   * This is extremely destructive, and should only be used sparingly.
-   */
-  AdminDeleteIntegrationOrgs: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminDeleteIntegrationOrgsRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /** get an org by name */
-  AdminGetOrg: {
-    parameters: {
-      query?: {
-        /** @description org name or id */
-        name?: string;
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /** Add a user to an org */
-  AdminAddOrgUser: {
-    parameters: {
-      path: {
-        /** @description org ID to add user too */
-        org_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminCreateOrgUserRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /**
-   * delete an org and everything in it
-   * @description Delete an org, and everything inside of it.
-   *
-   * This is extremely destructive, and should only be used sparingly.
-   */
-  AdminDeleteOrg: {
-    parameters: {
-      path: {
-        /** @description org ID for your current org */
-        org_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminDeleteOrgRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /**
-   * deprovision an install, but keep it in the database
-   * @description Deprovision an org, but keep it in the database.
-   */
-  AdminDeprovisionOrg: {
-    parameters: {
-      path: {
-        /** @description org ID for your current org */
-        org_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminDeprovisionOrgRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": string;
-        };
-      };
-    };
-  };
-  /**
-   * forget all installs for an org
-   * @description Forget all installs for an org.
-   *
-   * This should only be used in _dire_ cases where an org has been lost, and we need to deprovision it but do not know / care about the end installs. The primary use case for this is to be able to run aws-nuke on the canary account when things go wrong, but still allow us to cleanup the apps/orgs after.
-   */
-  AdminForgetOrgInstalls: {
-    parameters: {
-      path: {
-        /** @description org ID */
-        org_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.AdminForgetOrgInstallsRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": boolean;
-        };
-      };
       /** @description Bad Request */
       400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -1574,86 +5404,233 @@ export interface operations {
       };
     };
   };
-  /** get installs in an org */
-  AdminGetOrgInstalls: {
+  /** get install sandbox run logs */
+  GetInstallSandboxRunLogs: {
     parameters: {
       path: {
         /** @description install ID */
-        org_id: string;
+        install_id: string;
+        /** @description run ID */
+        run_id: string;
       };
     };
     responses: {
       /** @description OK */
       200: {
         content: {
-          "application/json": string;
+          "application/json": unknown[];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
   };
-  /** rename an org */
-  AdminRenameOrg: {
+  /** get an installs sandbox runs */
+  GetInstallSandboxRuns: {
     parameters: {
       path: {
-        /** @description org ID for your current org */
-        org_id: string;
+        /** @description install ID */
+        install_id: string;
       };
     };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallSandboxRun"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** Return current user's orgs */
+  GetOrgs: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Org"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a new org */
+  CreateOrg: {
     /** @description Input */
     requestBody: {
       content: {
-        "application/json": components["schemas"]["service.RenameOrgRequest"];
+        "application/json": components["schemas"]["service.CreateOrgRequest"];
       };
     };
     responses: {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.Org"];
         };
       };
-    };
-  };
-  /**
-   * reprovision an org
-   * @description Reprovision an org.
-   */
-  AdminReprovisionOrg: {
-    parameters: {
-      path: {
-        /** @description org ID for your current org */
-        org_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.ReprovisionOrgRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
+      /** @description Bad Request */
+      400: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
   };
-  /** restart an orgs event loop */
-  AdminRestartOrg: {
-    parameters: {
-      path: {
-        /** @description org ID */
-        org_id: string;
+  /** Get an org */
+  GetOrg: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Org"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
       };
     };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.RestartOrgRequest"];
-      };
-    };
+  };
+  /** Delete an org */
+  DeleteOrg: {
     responses: {
       /** @description OK */
       200: {
@@ -1661,87 +5638,702 @@ export interface operations {
           "application/json": boolean;
         };
       };
-    };
-  };
-  /** restart an org and all it's children event loops */
-  AdminRestartOrgChildren: {
-    parameters: {
-      path: {
-        /** @description org ID */
-        org_id: string;
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
       };
     };
+  };
+  /** Update current org */
+  UpdateOrg: {
     /** @description Input */
     requestBody: {
       content: {
-        "application/json": components["schemas"]["service.RestartOrgChildrenRequest"];
+        "application/json": components["schemas"]["service.UpdateOrgRequest"];
       };
     };
     responses: {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.Org"];
         };
       };
-    };
-  };
-  /** Add nuon users as support members */
-  AdminCreateSupportUsers: {
-    parameters: {
-      path: {
-        /** @description org ID for your current org */
-        org_id: string;
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
+      /** @description Bad Request */
+      400: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
-    };
-  };
-  /** create a new sandbox */
-  AdminCreateSandbox: {
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.CreateSandboxRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
+      /** @description Unauthorized */
+      401: {
         content: {
-          "application/json": components["schemas"]["app.Sandbox"];
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
   };
   /**
-   * create a new sandbox
-   * @description create_sandbox_release.md
+   * Get an org's health checks
+   * @description Fetch the most recent health checks for an org. Health checks are automatically performed once every 60 seconds.
    */
-  AdminCreateSandboxRelease: {
+  GetOrgHealthChecks: {
+    parameters: {
+      query?: {
+        /** @description limit of health checks to return */
+        limit?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OrgHealthCheck"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Return org invites
+   * @description Returns a list of all invites to the org.
+   */
+  GetOrgInvites: {
+    parameters: {
+      query?: {
+        /** @description limit of health checks to return */
+        limit?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OrgInvite"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Invite a user to the current org
+   * @description Invite a user (by email) to an org.
+   *
+   * This user will receive an email, and when they next log into the application will be added to the org.
+   */
+  CreateOrgInvite: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateOrgInviteRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.OrgInvite"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** Add a user to the current org */
+  AddUser: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateOrgUserRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.UserOrg"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a release */
+  GetRelease: {
+    parameters: {
+      path: {
+        /** @description release ID */
+        release_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentRelease"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a release */
+  GetReleaseSteps: {
+    parameters: {
+      path: {
+        /** @description release ID */
+        release_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentReleaseStep"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all sandboxes */
+  GetSandboxes: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Sandbox"][];
+        };
+      };
+    };
+  };
+  /** get a sandbox */
+  GetSandbox: {
     parameters: {
       path: {
         /** @description sandbox ID */
         sandbox_id: string;
       };
     };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Sandbox"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get sandbox releases */
+  GetSandboxReleases: {
+    parameters: {
+      path: {
+        /** @description sandbox ID */
+        sandbox_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.SandboxRelease"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all vcs connected repos for an org */
+  GetAllVCSConnectedRepos: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.Repository"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** public connection to create a vcs connection via a callback */
+  CreateVCSConnectionCallback: {
     /** @description Input */
     requestBody: {
       content: {
-        "application/json": components["schemas"]["service.CreateSandboxReleaseRequest"];
+        "application/json": components["schemas"]["service.CreateConnectionCallbackRequest"];
       };
     };
     responses: {
       /** @description Created */
       201: {
         content: {
-          "application/json": components["schemas"]["app.Sandbox"];
+          "application/json": components["schemas"]["app.VCSConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get vcs connection for an org */
+  GetOrgVCSConnections: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.VCSConnection"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a vcs connection for Github */
+  CreateVCSConnection: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateConnectionRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.VCSConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** returns a vcs connection for an org */
+  GetVCSConnection: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.VCSConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
