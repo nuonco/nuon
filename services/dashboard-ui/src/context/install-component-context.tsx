@@ -29,6 +29,12 @@ export const InstallComponentProvider: FunctionComponent<{
     useState<TInstallComponent>(initInstallComponent)
 
   useEffect(() => {
+    if (!shouldPoll) {
+      setInstallComponent(initInstallComponent)
+    }
+  }, [initInstallComponent, shouldPoll])
+
+  useEffect(() => {
     const fetchInstallComponent = () => {
       setIsFetching(true)
       fetch(
