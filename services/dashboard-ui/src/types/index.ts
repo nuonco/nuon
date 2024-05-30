@@ -31,18 +31,8 @@ export type TComponentConfig = {
 }
 
 // build
-export type TBuild = {
-  id: string
-  component_id: string
-  component_name: string
-  component_config_connection_id: string
-  created_at: string
-  org_id: string
-  status: string
-  status_description: string
-  updated_at: string
-  vcs_connection_commit: TVCSCommit
-} & Record<string, unknown>
+export type TComponentBuild = components['schemas']['app.ComponentBuild']
+export type TBuild = TComponentBuild & { org_id: string }
 export type TComponentBuildLogs = Array<TWaypointLog>
 export type TComponentBuildPlan = Record<string, any>
 
