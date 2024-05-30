@@ -15,6 +15,7 @@ services: |
     - services/dashboard-ui/**
   wiki:
     - services/wiki/**
+    - wiki/**
   workers-apps:
     - go.mod
     - go.sum
