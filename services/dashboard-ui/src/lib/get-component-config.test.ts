@@ -60,7 +60,7 @@ test('getComponentConfig should throw an error when it can not find a config', a
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch component config]`)
   }
 
   expect(fetch).toBeCalledWith(

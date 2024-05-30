@@ -61,7 +61,7 @@ test('getInstallEvents should throw an error when it can not find install events
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch install events]`)
   }
 
   expect(fetch).toBeCalledWith(

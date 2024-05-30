@@ -63,7 +63,7 @@ test('getDeployLogs should throw an error when it can not find deploy logs', asy
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch deploy logs]`)
   }
 
   expect(fetch).toBeCalledWith(

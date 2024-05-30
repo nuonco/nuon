@@ -66,7 +66,7 @@ test('getSandboxRun should throw an error when it can not find a sandbox run', a
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch sandbox run]`)
   }
 
   expect(fetch).toBeCalledWith(
