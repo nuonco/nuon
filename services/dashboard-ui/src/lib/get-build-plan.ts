@@ -18,7 +18,7 @@ export async function getBuildPlan({
   )
 
   if (!res.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error('Failed to fetch build plan')
   }
 
   return res.json()

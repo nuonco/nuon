@@ -1,92 +1,26 @@
 import { DateTime } from 'luxon'
-import React, { Suspense, type FC } from 'react'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
-  Build,
   Card,
   Code,
-  ComponentConfig,
+  ComponentBuildCard,
+  ComponentConfigCard,
+  DeployLogsCard,
+  DeployPlanCard,
   Grid,
   Heading,
-  Logs,
   Page,
   PageHeader,
-  Plan,
+  PageSummary,
+  PageTitle,
   Status,
   Text,
 } from '@/components'
-import {
-  getComponent,
-  getComponentConfig,
-  getDeploy,
-  getDeployLogs,
-  getDeployPlan,
-  type IGetComponentConfig,
-  type IGetDeployLogs,
-  type IGetDeployPlan,
-} from '@/lib'
-import type {
-  TComponentConfig,
-  TInstallDeployLogs,
-  TInstallDeployPlan,
-} from '@/types'
-
-const DeployLogs: FC<IGetDeployLogs> = async (params) => {
-  let content = <>Loading...</>
-  let logs: TInstallDeployLogs
-  try {
-    logs = await getDeployLogs(params)
-    content = logs.length ? (
-      <Logs logs={logs} />
-    ) : (
-      <Text variant="label">No logs to show</Text>
-    )
-  } catch (error) {
-    content = <Text variant="label">Can not find deploy logs</Text>
-  }
-
-  return (
-    <Card className="flex-initial">
-      <Heading>Logs</Heading>
-      {content}
-    </Card>
-  )
-}
-
-const DeployPlan: FC<IGetDeployPlan> = async (params) => {
-  let content = <>Loading...</>
-  let plan: TInstallDeployPlan
-  try {
-    plan = await getDeployPlan(params)
-    content = <Plan plan={plan} />
-  } catch (error) {
-    content = <Text variant="label">No plan to show</Text>
-  }
-  return (
-    <Card className="flex-1">
-      <Heading>Deploy plan</Heading>
-      {content}
-    </Card>
-  )
-}
-
-const LoadComponentConfig: FC<IGetComponentConfig> = async (params) => {
-  let config: TComponentConfig
-  try {
-    config = await getComponentConfig(params)
-  } catch (error) {
-    return <>No config to show</>
-  }
-  return (
-    <Card>
-      <Heading>Component config</Heading>
-      <ComponentConfig config={config} version={1} />
-    </Card>
-  )
-}
+import { BuildProvider, InstallDeployProvider } from '@/context'
+import { getBuild, getComponent, getDeploy, getDeployLogs } from '@/lib'
 
 export default withPageAuthRequired(
-  async function InstallDeployDashboard({ params }) {
+  async function ({ params }) {
     const orgId = params?.['org-id'] as string
     const installId = params?.['install-id'] as string
     const installComponentId = params?.['component-id'] as string
@@ -96,92 +30,95 @@ export default withPageAuthRequired(
     const buildId = deploy?.build_id
     const componentId = deploy?.component_id
 
-    const component = await getComponent({ componentId, orgId }).catch(
-      () => null
-    )
+    const [component, build, logs] = await Promise.all([
+      getComponent({ componentId, orgId }),
+      getBuild({ orgId, buildId }),
+      getDeployLogs({ orgId, deployId, installId }),
+    ])
 
     return (
-      <Page
-        header={
-          <PageHeader
-            info={
-              <>
-                <Status status={deploy?.status} />
-                <div className="flex flex-col flex-auto gap-1">
-                  <Text variant="caption">
-                    <b>Install ID:</b> {deploy?.install_id}
-                  </Text>
-                  <Text variant="caption">
-                    <b>Build ID:</b> {deploy?.build_id}
-                  </Text>
-                  <Text variant="caption">
-                    <b>Component ID:</b> {componentId}
-                  </Text>
-                </div>
-              </>
-            }
-            title={
-              <span className="flex flex-col gap-2">
-                <Text variant="overline">{deploy?.id}</Text>
-                <Heading
-                  level={1}
-                  variant="title"
-                  className="flex gap-1 items-center"
-                >
-                  {component?.name} deploy
-                </Heading>
-              </span>
-            }
-            summary={
-              <Text variant="caption">
-                {DateTime.fromISO(deploy?.created_at).toRelative()}
-              </Text>
-            }
-          />
-        }
-        links={[
-          { href: orgId },
-          { href: installId },
-          {
-            href: 'components/' + installComponentId,
-            text: installComponentId,
-          },
-          { href: 'deploys/' + deployId, text: deployId },
-        ]}
-      >
-        <Grid variant="3-cols">
-          <div className="flex flex-col gap-6">
-            <Heading variant="subtitle">Component details</Heading>
+      <InstallDeployProvider initDeploy={deploy} shouldPoll>
+        <Page
+          header={
+            <PageHeader
+              info={
+                <>
+                  <Status status={deploy?.status} />
+                  <div className="flex flex-col flex-auto gap-1">
+                    <Text variant="caption">
+                      <b>Install ID:</b> {installId}
+                    </Text>
+                    <Text variant="caption">
+                      <b>Build ID:</b> {buildId}
+                    </Text>
+                    <Text variant="caption">
+                      <b>Component ID:</b> {componentId}
+                    </Text>
+                  </div>
+                </>
+              }
+              title={
+                <PageTitle
+                  overline={deployId}
+                  title={`${component?.name} deployment`}
+                />
+              }
+              summary={
+                <PageSummary>
+                  {DateTime.fromISO(deploy?.created_at).toRelative()}
+                </PageSummary>
+              }
+            />
+          }
+          links={[
+            { href: orgId },
+            { href: installId },
+            {
+              href: 'components/' + installComponentId,
+              text: installComponentId,
+            },
+            { href: 'deploys/' + deployId, text: deployId },
+          ]}
+        >
+          <Grid variant="3-cols">
+            <div className="flex flex-col gap-6">
+              <Heading variant="subtitle">Component details</Heading>
 
-            <Suspense fallback="Loading...">
-              <Build {...{ buildId, orgId }} />
-            </Suspense>
+              <BuildProvider initBuild={build}>
+                <ComponentBuildCard />
+              </BuildProvider>
 
-            <Suspense fallback="Loading...">
-              <LoadComponentConfig {...{ componentId, orgId }} />
-            </Suspense>
-          </div>
+              <ComponentConfigCard
+                orgId={orgId}
+                componentId={componentId}
+                componentConfigId={build?.component_config_connection_id}
+                version={0}
+              />
+            </div>
 
-          <div className="flex flex-col gap-6 lg:col-span-2">
-            <Heading variant="subtitle">Deploy details</Heading>
-            {deploy?.status === 'failed' ||
-              (deploy?.status === 'error' && (
-                <Card>
-                  <Heading>Deploy {deploy?.status}</Heading>
-                  <Code>{deploy?.status_description}</Code>
-                </Card>
-              ))}
+            <div className="flex flex-col gap-6 lg:col-span-2">
+              <Heading variant="subtitle">Deploy details</Heading>
+              {deploy?.status === 'failed' ||
+                (deploy?.status === 'error' && (
+                  <Card>
+                    <Heading className="text-red-500">
+                      Deploy {deploy?.status}
+                    </Heading>
+                    <Code>{deploy?.status_description}</Code>
+                  </Card>
+                ))}
 
-            <Suspense fallback="Loading...">
-              <DeployLogs {...{ deployId, installId, orgId }} />
-            </Suspense>
+              <DeployLogsCard initLogs={logs} shouldPoll />
 
-            <Suspense fallback="Loading...">
-              <DeployPlan {...{ deployId, installId, orgId }} />
-            </Suspense>
-          </div>
-        </Grid>
-      </Page>
+              <DeployPlanCard
+                orgId={orgId}
+                installId={installId}
+                deployId={deployId}
+              />
+            </div>
+          </Grid>
+        </Page>
+      </InstallDeployProvider>
     )
   },
   { returnTo: '/dashboard' }

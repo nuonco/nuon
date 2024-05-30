@@ -63,7 +63,7 @@ test('getDeployPlan should throw an error when it can not find deploy plan', asy
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch deploy plan]`)
   }
 
   expect(fetch).toBeCalledWith(

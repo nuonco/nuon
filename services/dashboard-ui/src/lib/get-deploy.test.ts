@@ -63,7 +63,7 @@ test('getDeploy should throw an error when it can not find deploy', async () => 
       orgId,
     })
   } catch (error) {
-    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch data]`)
+    expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch deploy]`)
   }
 
   expect(fetch).toBeCalledWith(

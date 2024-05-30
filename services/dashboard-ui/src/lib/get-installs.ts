@@ -11,7 +11,7 @@ export async function getInstalls({
   const data = await fetch(`${API_URL}/v1/installs`, await getFetchOpts(orgId))
 
   if (!data.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error('Failed to fetch installs')
   }
 
   return data.json()

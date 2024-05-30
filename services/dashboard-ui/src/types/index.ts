@@ -35,7 +35,9 @@ export type TBuild = {
   id: string
   component_id: string
   component_name: string
+  component_config_connection_id: string
   created_at: string
+  org_id: string
   status: string
   status_description: string
   updated_at: string
@@ -57,6 +59,7 @@ export type TInstallAwsAccount = components['schemas']['app.AWSAccount']
 export type TInstallComponent =
   components['schemas']['app.InstallComponent'] & {
     org_id?: string
+    install_deploys?: Array<TInstallDeploy>
   }
 export type TInstallEvent = Omit<
   components['schemas']['app.InstallEvent'],
@@ -77,7 +80,9 @@ export type TSandbox = components['schemas']['app.Sandbox']
 export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {
   cloud_platform?: string
 }
-export type TSandboxRun = components['schemas']['app.InstallSandboxRun']
+export type TSandboxRun = components['schemas']['app.InstallSandboxRun'] & {
+  org_id: string
+}
 export type TSandboxRunLogs = Array<TWaypointLog>
 
 // vcs configs
