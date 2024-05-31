@@ -21,6 +21,7 @@ import {
 } from '@/components'
 import { BuildProvider } from '@/context'
 import { getBuild, getBuildLogs } from '@/lib'
+import type { TComponentBuildLogs } from '@/types'
 
 export default withPageAuthRequired(
   async function ({ params }) {
@@ -32,7 +33,7 @@ export default withPageAuthRequired(
       orgId,
       componentId: build.component_id,
       buildId,
-    })
+    }).catch(console.error)
 
     return (
       <BuildProvider initBuild={build} shouldPoll>
@@ -106,7 +107,10 @@ export default withPageAuthRequired(
                   </Card>
                 ))}
 
-              <BuildLogsCard initLogs={buildLogs} shouldPoll />
+              <BuildLogsCard
+                initLogs={buildLogs as TComponentBuildLogs}
+                shouldPoll
+              />
 
               <BuildPlanCard
                 orgId={orgId}

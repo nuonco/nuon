@@ -30,9 +30,11 @@ export const InstallEvent: FC<IInstallEvent> = ({ event }) => {
   const eventUrl =
     (event?.operation === 'deploy' &&
       `/dashboard/${install.org_id}/${install.id}/components/${payload?.install_component_id}/deploys/${payload?.id}`) ||
-    ((event?.operation === 'provision' || event?.operation === 'reprovision') &&
+    ((event?.operation === 'provision' ||
+      event?.operation === 'reprovision' ||
+      event?.operation === 'deprovision') &&
       `/dashboard/${install.org_id}/${install.id}/runs/${payload?.id}`) ||
-    `/dashboard/${install.org_id}/${install.id}/events/${event?.id}`
+    null
   return (
     <div className="flex flex-wrap items-center gap-6 py-4">
       <InstallEventStatus status={event?.operation_status} />
@@ -46,12 +48,12 @@ export const InstallEvent: FC<IInstallEvent> = ({ event }) => {
             <small>{payload?.component_name}</small>
           </Text>
         ) : null}
-        {event?.operation_status === 'finished' ||
-        event?.operation_status === 'failed' ? (
+
+        {eventUrl && (
           <Text variant="caption">
             <Link href={eventUrl}>Details</Link>
           </Text>
-        ) : null}
+        )}
       </div>
     </div>
   )
