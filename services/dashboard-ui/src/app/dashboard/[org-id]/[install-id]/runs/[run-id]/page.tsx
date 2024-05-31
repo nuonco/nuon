@@ -17,6 +17,7 @@ import {
 } from '@/components'
 import { InstallProvider, SandboxRunProvider } from '@/context'
 import { getSandboxRun, getSandboxRunLogs, getInstall } from '@/lib'
+import type { TSandboxRunLogs } from '@/types'
 
 export default withPageAuthRequired(
   async function RunDashboard({ params }) {
@@ -26,7 +27,7 @@ export default withPageAuthRequired(
 
     const [run, logs, install] = await Promise.all([
       getSandboxRun({ installId, orgId, runId }),
-      getSandboxRunLogs({ installId, orgId, runId }),
+      getSandboxRunLogs({ installId, orgId, runId }).catch(console.error),
       getInstall({ installId, orgId }),
     ])
 
@@ -90,7 +91,10 @@ export default withPageAuthRequired(
 
               <div className="flex flex-col gap-6 lg:col-span-2">
                 <Heading variant="subtitle">Run details</Heading>
-                <InstallSandboxRunLogsCard initLogs={logs} shouldPoll />
+                <InstallSandboxRunLogsCard
+                  initLogs={logs as TSandboxRunLogs}
+                  shouldPoll
+                />
               </div>
             </Grid>
           </Page>
