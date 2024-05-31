@@ -18,6 +18,7 @@ import {
 } from '@/components'
 import { BuildProvider, InstallDeployProvider } from '@/context'
 import { getBuild, getComponent, getDeploy, getDeployLogs } from '@/lib'
+import type { TInstallDeployLogs } from '@/types'
 
 export default withPageAuthRequired(
   async function ({ params }) {
@@ -33,7 +34,7 @@ export default withPageAuthRequired(
     const [component, build, logs] = await Promise.all([
       getComponent({ componentId, orgId }),
       getBuild({ orgId, buildId }),
-      getDeployLogs({ orgId, deployId, installId }),
+      getDeployLogs({ orgId, deployId, installId }).catch(console.error),
     ])
 
     return (
@@ -108,7 +109,10 @@ export default withPageAuthRequired(
                   </Card>
                 ))}
 
-              <DeployLogsCard initLogs={logs} shouldPoll />
+              <DeployLogsCard
+                initLogs={logs as TInstallDeployLogs}
+                shouldPoll
+              />
 
               <DeployPlanCard
                 orgId={orgId}
