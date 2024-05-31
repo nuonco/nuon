@@ -72,6 +72,13 @@ export default defineConfig({
             directory: "support",
           },
         },
+        {
+          label: "New Hire",
+          collapsed: true,
+          autogenerate: {
+            directory: "new-hire",
+          },
+        },
       ],
     }),
     tailwind({
