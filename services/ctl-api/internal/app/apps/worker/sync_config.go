@@ -6,9 +6,9 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	appsv1 "github.com/powertoolsdev/mono/pkg/types/workflows/apps/v1"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
 const (
@@ -18,6 +18,7 @@ const (
 func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, dryRun bool) error {
 	if err := w.ensureOrg(ctx, appID); err != nil {
 		w.updateStatus(ctx, appID, StatusError, "org is unhealthy")
+		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "internal error")
 		return err
 	}
 
@@ -26,6 +27,7 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		AppID: appID,
 	}, &currentApp); err != nil {
 		w.updateStatus(ctx, appID, StatusError, "unable to get app from database")
+		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "internal error")
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
@@ -34,6 +36,7 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		AppConfigID: appConfigID,
 	}, &appCfg); err != nil {
 		w.updateStatus(ctx, appID, StatusError, "unable to get app config from database")
+		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "internal error")
 		return fmt.Errorf("unable to get app config from database: %w", err)
 	}
 
@@ -49,6 +52,11 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		AppConfigID: appConfigID,
 	}); err != nil {
 		w.updateStatus(ctx, appID, StatusError, "unable to sync app metadata")
+		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to sync app metadata")
+		w.sendNotification(ctx, notifications.NotificationsTypeAppSyncError, appID, map[string]string{
+			"app_name":   currentApp.Name,
+			"created_by": currentApp.CreatedBy.Email,
+		})
 		return fmt.Errorf("unable to sync app metadata: %w", err)
 	}
 
