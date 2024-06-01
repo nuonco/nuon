@@ -72,7 +72,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oklog/ulid/v2 v2.0.2
-	github.com/opencontainers/image-spec v1.1.0-rc2
+	github.com/opencontainers/image-spec v1.1.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
 	github.com/shurcooL/githubv4 v0.0.0-20230704064427-599ae7bbf278
@@ -94,11 +94,9 @@ require (
 	go.temporal.io/sdk v1.25.1
 	go.uber.org/fx v1.20.1
 	go.uber.org/zap v1.24.0
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/oauth2 v0.20.0
 	golang.org/x/sync v0.6.0
 	google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240515191416-fc5f0ca64291
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1
 	gopkg.in/ini.v1 v1.67.0
@@ -114,7 +112,7 @@ require (
 	k8s.io/client-go v0.26.2
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 	moul.io/zapgorm2 v1.3.0
-	oras.land/oras-go/v2 v2.1.0
+	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/aws-iam-authenticator v0.6.8
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -155,7 +153,9 @@ require (
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	go.opentelemetry.io/otel/metric v1.26.0 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.25.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240515191416-fc5f0ca64291 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 )
 
