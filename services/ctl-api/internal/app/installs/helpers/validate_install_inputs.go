@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
-	"gorm.io/gorm"
 )
 
 func (s *Helpers) ValidateInstallInputs(ctx context.Context, appID string, inputs map[string]*string) error {

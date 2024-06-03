@@ -232,6 +232,52 @@ resource "nuon_job_component" "job" {
 ```
 </CodeGroup>
 
+## App Input Groups
+
+You can organize inputs into groups, which are useful for structuring how they are visualized in the installer. By 
+default, all inputs are created in the `default` group.
+
+To create a group, and add an input to it, simply declare the group in your config or terraform and set the `group` 
+field on any input belonging to it.
+
+<CodeGroup>
+```toml TOML
+[[inputs.group]]
+name = "sandbox"
+description = "Sandbox inputs"
+display_name = "Sandbox inputs"
+
+[[inputs.input]]
+name = "vpc_id"
+description = "vpc_id to install application into"
+default = ""
+sensitive = false
+display_name = "VPC ID"
+group = "sandbox"
+```
+
+```hcl Terraform
+resource "nuon_app_input_config" "app" {
+  app_id = nuon_app.<your-app>.id
+
+  group {
+    name = "sandbox_inputs"
+    description = "inputs for a sandbox"
+    display_name = "Sandbox Inputs"
+  }
+
+  input {
+    name         = "vpc id"
+    description = "vpc id"
+    required     = true
+    display_name = "vpc ID"
+    sensitive    = false
+    group = "sandbox_inputs"
+  }
+}
+```
+</CodeGroup>
+
 ## App Inputs For Customer Resources
 
 App inputs are commonly used to allow a customer to provide access to existing resources. For example, an input can be

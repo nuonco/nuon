@@ -6,9 +6,10 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type installInputsSuite struct {
@@ -39,7 +40,7 @@ func (s *installInputsSuite) SetupTest() {
 	org := s.createOrg()
 	s.orgID = org.ID
 
-	app := s.createAppWithInputs(s.orgID)
+	app := s.createAppWithInputs()
 	s.appID = app.ID
 
 	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
