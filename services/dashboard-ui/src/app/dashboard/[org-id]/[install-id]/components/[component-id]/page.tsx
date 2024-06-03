@@ -97,7 +97,7 @@ export default withPageAuthRequired(
             <Grid variant="3-cols">
               <div className="flex flex-col gap-6">
                 <Heading variant="subtitle">Deploy history</Heading>
-                <Card>
+                <Card className="max-h-[40rem]">
                   <InstallDeploys />
                 </Card>
               </div>
