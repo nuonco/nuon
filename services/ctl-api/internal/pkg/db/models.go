@@ -30,6 +30,7 @@ func allModels() []interface{} {
 		&app.AppSandboxConfig{},
 		&app.AppRunnerConfig{},
 		&app.AppInput{},
+		&app.AppInputGroup{},
 		&app.AppInputConfig{},
 		&app.AppSecret{},
 

@@ -3,9 +3,10 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type AppInput struct {
@@ -16,9 +17,14 @@ type AppInput struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
-	OrgID            string `json:"org_id" gorm:"notnull;default null"`
-	Org              Org    `faker:"-" json:"-"`
-	AppInputConfigID string `json:"app_input_id" gorm:"notnull; default null"`
+	OrgID string `json:"org_id" gorm:"notnull;default null"`
+	Org   Org    `faker:"-" json:"-"`
+
+	AppInputConfigID string         `json:"app_input_id" gorm:"notnull; default null"`
+	AppInputConfig   AppInputConfig `json:"-"`
+
+	AppInputGroup   AppInputGroup `json:"group"`
+	AppInputGroupID string        `json:"group_id"`
 
 	Name        string `json:"name" gorm:"not null;default null"`
 	DisplayName string `json:"display_name"`

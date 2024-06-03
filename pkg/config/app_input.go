@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/powertoolsdev/mono/pkg/config/source"
 )
 
@@ -16,8 +17,15 @@ type AppInput struct {
 	Sensitive   bool   `mapstructure:"sensitive" toml:"sensitive"`
 }
 
+type AppInputGroup struct {
+	Name        string `mapstructure:"name,omitempty" toml:"name"`
+	Description string `mapstructure:"description,omitempty" toml:"description"`
+	Default     string `mapstructure:"default" toml:"default"`
+}
+
 type AppInputConfig struct {
-	Inputs []AppInput `mapstructure:"input,omitempty" toml:"input"`
+	Inputs []AppInput      `mapstructure:"input,omitempty" toml:"input"`
+	Groups []AppInputGroup `mapstructure:"group,omitempty" toml:"group"`
 
 	Source  string   `mapstructure:"source,omitempty"`
 	Sources []string `mapstructure:"sources,omitempty"`

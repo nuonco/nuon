@@ -6,9 +6,10 @@ import (
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type installsIntegrationTestSuite struct {
@@ -112,7 +113,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 	})
 
 	s.T().Run("errors when app has inputs declared but are not provided", func(t *testing.T) {
-		app := s.createAppWithInputs(s.orgID)
+		app := s.createAppWithInputs()
 
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 		fakeReq.AwsAccount.Region = "us-west-2"
@@ -125,7 +126,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 	})
 
 	s.T().Run("errors install input is empty", func(t *testing.T) {
-		app := s.createAppWithInputs(s.orgID)
+		app := s.createAppWithInputs()
 
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 		fakeReq.AwsAccount.Region = "us-west-2"
@@ -141,7 +142,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 	})
 
 	s.T().Run("successfully sets the inputs when valid", func(t *testing.T) {
-		app := s.createAppWithInputs(s.orgID)
+		app := s.createAppWithInputs()
 
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 		fakeReq.AwsAccount.Region = "us-west-2"
