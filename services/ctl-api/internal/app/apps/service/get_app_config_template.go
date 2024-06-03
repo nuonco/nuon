@@ -108,12 +108,18 @@ name = "vpc_id"
 value = "{{.nuon.install.inputs.vpc_id}}"
 
 [inputs]
+[[inputs.group]]
+name = "sandbox"
+description = "Sandbox inputs"
+display_name = "Sandbox inputs"
+
 [[inputs.input]]
 name = "vpc_id"
 description = "vpc_id to install application into"
 default = ""
 sensitive = false
 display_name = "VPC ID"
+group = "sandbox"
 
 [[inputs.input]]
 name = "api_key"

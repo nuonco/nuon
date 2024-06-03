@@ -68,6 +68,23 @@ variable "azure" {
   default     = []
 }
 
+variable "groups" {
+  type = list(object({
+    name          = string
+    description   = string
+    display_name  = string
+  }))
+  description = "Input groups"
+
+  default = [
+    {
+      name          = "sandbox_inputs"
+      display_name  = "Sandbox Inputs"
+      description   = "Inputs related to the sandbox"
+    },
+  ]
+}
+
 variable "inputs" {
   type = list(object({
     name          = string
