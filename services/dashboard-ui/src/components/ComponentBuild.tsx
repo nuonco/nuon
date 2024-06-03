@@ -44,18 +44,20 @@ export const BuildCommit: FC = () => {
   } = useBuildContext()
 
   return (
-    <div className="flex flex-col gap-0">
+    <div className="flex flex-col gap-0 items-start justify-start">
       <Text variant="label">Commit details</Text>
-      <Text className="flex justify-between" variant="caption">
-        <span className="flex gap-2 items-center">
-          <GoCommit />
+      <span className="flex flex-col gap-0">
+        <Text className="flex gap-2 items-center" variant="caption">
+          <GoCommit /> (#
+          {vcs_connection_commit?.sha?.slice(0, 7)})
           {vcs_connection_commit?.author_name ? (
             <b>{vcs_connection_commit?.author_name}</b>
           ) : null}
-          <span className="truncate">{vcs_connection_commit?.message}</span> (#
-          {vcs_connection_commit?.sha?.slice(0, 7)})
-        </span>
-      </Text>
+        </Text>
+        <Text className="truncate" variant="caption">
+          {vcs_connection_commit?.message}
+        </Text>
+      </span>
     </div>
   )
 }
