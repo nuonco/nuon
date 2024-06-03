@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
-type AppInputConfig struct {
+type AppInputGroup struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedBy   UserToken             `json:"created_by" gorm:"references:Subject"`
@@ -19,15 +19,20 @@ type AppInputConfig struct {
 
 	OrgID string `json:"org_id" gorm:"notnull;default null"`
 	Org   Org    `faker:"-" json:"-"`
-	AppID string `json:"app_id"`
 
-	AppInputs      []AppInput      `json:"inputs" gorm:"constraint:OnDelete:CASCADE;"`
-	AppInputGroups []AppInputGroup `json:"input_groups" gorm:"constraint:OnDelete:CASCADE;"`
+	AppInputConfigID string         `json:"app_input_id" gorm:"notnull; default null"`
+	AppInputConfig   AppInputConfig `json:"-"`
 
-	InstallInputs []InstallInputs `json:"install_inputs" gorm:"constraint:OnDelete:CASCADE"`
+	Name        string `json:"name" gorm:"not null;default null"`
+	DisplayName string `json:"display_name"`
+	Description string `json:"description" gorm:"not null; default null"`
+
+	IsDefault bool `json:"is_default"`
+
+	AppInputs []AppInput `json:"app_inputs" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
-func (a *AppInputConfig) BeforeCreate(tx *gorm.DB) error {
+func (a *AppInputGroup) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
 		a.ID = domains.NewAppID()
 	}

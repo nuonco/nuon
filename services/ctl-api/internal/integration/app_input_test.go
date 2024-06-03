@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/nuonco/nuon-go"
-	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type appInputSuite struct {
@@ -43,16 +43,39 @@ func (s *appInputSuite) SetupTest() {
 }
 
 func (s *appInputSuite) TestCreateAppInputConfig() {
-	s.T().Run("successfully creates app input config", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
-		req.Inputs = s.formatInputs(req.Inputs)
+	s.T().Run("successfully creates app inputs and groups", func(t *testing.T) {
+		req := s.fakeInputRequest()
+
 		resp, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 	})
 
+	s.T().Run("successfully creates app inputs with default group", func(t *testing.T) {
+		req := s.fakeInputRequest()
+		for key, input := range req.Inputs {
+			input.Group = generics.ToPtr("")
+			req.Inputs[key] = input
+		}
+
+		resp, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
+		require.NoError(t, err)
+		require.NotEmpty(t, resp)
+	})
+
+	s.T().Run("errors on missing group", func(t *testing.T) {
+		req := s.fakeInputRequest()
+		req.Groups = nil
+
+		resp, err := s.apiClient.CreateAppInputConfig(s.ctx, generics.GetFakeObj[string](), req)
+
+		require.Error(t, err)
+		require.Empty(t, resp)
+		require.True(t, nuon.IsBadRequest(err))
+	})
+
 	s.T().Run("errors on invalid app id", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
+		req := s.fakeInputRequest()
 		resp, err := s.apiClient.CreateAppInputConfig(s.ctx, generics.GetFakeObj[string](), req)
 		require.Error(t, err)
 		require.Empty(t, resp)
@@ -61,8 +84,7 @@ func (s *appInputSuite) TestCreateAppInputConfig() {
 
 func (s *appInputSuite) TestGetAppLatestInputConfig() {
 	s.T().Run("returns latest config", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
-		req.Inputs = s.formatInputs(req.Inputs)
+		req := s.fakeInputRequest()
 		_, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
 
@@ -94,13 +116,11 @@ func (s *appInputSuite) TestGetAppInputConfigs() {
 	})
 
 	s.T().Run("success with multiple configs", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
-		req.Inputs = s.formatInputs(req.Inputs)
+		req := s.fakeInputRequest()
 		cfg1, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
 
-		req = generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
-		req.Inputs = s.formatInputs(req.Inputs)
+		req = s.fakeInputRequest()
 		cfg2, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
 
