@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon'
+import { GoClock, GoCloud } from 'react-icons/go'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   Card,
@@ -7,6 +8,7 @@ import {
   ComponentConfigCard,
   DeployLogsCard,
   DeployPlanCard,
+  Duration,
   Grid,
   Heading,
   Page,
@@ -15,6 +17,7 @@ import {
   PageTitle,
   Status,
   Text,
+  Time,
 } from '@/components'
 import { BuildProvider, InstallDeployProvider } from '@/context'
 import { getBuild, getComponent, getDeploy, getDeployLogs } from '@/lib'
@@ -44,16 +47,24 @@ export default withPageAuthRequired(
             <PageHeader
               info={
                 <>
-                  <Status status={deploy?.status} />
+                  <Status
+                    status={deploy?.status}
+                    label={
+                      deploy.install_deploy_type === 'install'
+                        ? 'deploy'
+                        : deploy.install_deploy_type
+                    }
+                    isLabelStatusText
+                  />
                   <div className="flex flex-col flex-auto gap-1">
                     <Text variant="caption">
                       <b>Install ID:</b> {installId}
                     </Text>
                     <Text variant="caption">
-                      <b>Build ID:</b> {buildId}
+                      <b>Component ID:</b> {componentId}
                     </Text>
                     <Text variant="caption">
-                      <b>Component ID:</b> {componentId}
+                      <b>Build ID:</b> {buildId}
                     </Text>
                   </div>
                 </>
@@ -66,7 +77,20 @@ export default withPageAuthRequired(
               }
               summary={
                 <PageSummary>
-                  {DateTime.fromISO(deploy?.created_at).toRelative()}
+                  <Text variant="caption">
+                    <GoCloud />
+                    <Time time={deploy.updated_at} />
+                  </Text>
+                  <Text variant="caption">
+                    <GoClock />
+                    <Duration
+                      unitDisplay="short"
+                      listStyle="long"
+                      variant="caption"
+                      beginTime={deploy.created_at}
+                      endTime={deploy.updated_at}
+                    />
+                  </Text>
                 </PageSummary>
               }
             />
