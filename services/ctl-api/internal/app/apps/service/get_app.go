@@ -54,13 +54,21 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_configs_view.created_at DESC")
 		}).
+
+		//
 		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC")
 		}).
 		Preload("AppInputConfigs.AppInputs").
+		Preload("AppInputConfigs.AppInputs.AppInputGroup").
+		Preload("AppInputConfigs.AppInputGroups.AppInputs").
+
+		// runner config
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_runner_configs.created_at DESC")
 		}).
+
+		// sandbox configs
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC")
 		}).

@@ -109,14 +109,14 @@ func (s *baseIntegrationTestSuite) fakeInstallInputsForApp(appID string) map[str
 	require.NotNil(s.T(), inputCfg)
 
 	vals := make(map[string]string, 0)
-	for _, input := range inputCfg.AppInputs {
+	for _, input := range inputCfg.Inputs {
 		vals[input.Name] = generics.GetFakeObj[string]()
 	}
 
 	return vals
 }
 
-func (s *baseIntegrationTestSuite) createAppWithInputs(orgID string) *models.AppApp {
+func (s *baseIntegrationTestSuite) createAppWithInputs() *models.AppApp {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
 	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
@@ -126,10 +126,7 @@ func (s *baseIntegrationTestSuite) createAppWithInputs(orgID string) *models.App
 	s.createAppSandboxConfig(app.ID)
 	s.createAppRunnerConfig(app.ID)
 
-	inputReq := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
-	inputReq.Inputs[generics.GetFakeObj[string]()] = generics.GetFakeObj[models.ServiceAppInputRequest]()
-	inputReq.Inputs = s.formatInputs(inputReq.Inputs)
-
+	inputReq := s.fakeInputRequest()
 	cfg, err := s.apiClient.CreateAppInputConfig(s.ctx, app.ID, inputReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), cfg)
@@ -182,6 +179,20 @@ func (s *baseIntegrationTestSuite) formatInputs(inputs map[string]models.Service
 		formattedInputs[formattedK] = input
 	}
 	return formattedInputs
+}
+
+func (s *baseIntegrationTestSuite) fakeInputRequest() *models.ServiceCreateAppInputConfigRequest {
+	req := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
+	req.Inputs = s.formatInputs(req.Inputs)
+
+	for _, input := range req.Inputs {
+		req.Groups[*input.Group] = models.ServiceAppGroupRequest{
+			Description: generics.GetFakeObj[*string](),
+			DisplayName: generics.GetFakeObj[*string](),
+		}
+	}
+
+	return req
 }
 
 func (s *baseIntegrationTestSuite) createComponent(appID string) *models.AppComponent {

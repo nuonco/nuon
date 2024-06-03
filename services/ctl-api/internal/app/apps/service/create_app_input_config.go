@@ -7,9 +7,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	validatoradapter "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	validatoradapter "github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
+)
+
+const (
+	defaultGroupName        string = "default"
+	defaultGroupDisplayName string = "Default"
+	defaultGroupDescription string = "Default inputs"
 )
 
 type AppInputRequest struct {
@@ -18,10 +26,17 @@ type AppInputRequest struct {
 	Default     string `json:"default"`
 	Required    bool   `json:"required"`
 	Sensitive   bool   `json:"sensitive"`
+	Group       string `json:"group" validate:"required"`
+}
+
+type AppGroupRequest struct {
+	DisplayName string `json:"display_name" validate:"required"`
+	Description string `json:"description" validate:"required"`
 }
 
 type CreateAppInputConfigRequest struct {
 	Inputs map[string]AppInputRequest `json:"inputs" validate:"required"`
+	Groups map[string]AppGroupRequest `json:"groups" validate:"required"`
 }
 
 func (c *CreateAppInputConfigRequest) Validate(v *validator.Validate) error {
@@ -29,10 +44,45 @@ func (c *CreateAppInputConfigRequest) Validate(v *validator.Validate) error {
 		return fmt.Errorf("invalid request: %w", err)
 	}
 
-	for k := range c.Inputs {
-		if err := validatoradapter.InterpolatedName(v, k); err != nil {
-			return fmt.Errorf("invalid input %s - %w", k, err)
+	_, ok := c.Groups[defaultGroupName]
+	if ok {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("invalid group name %s", defaultGroupName),
+			Description: fmt.Sprintf("The %s group is reserved and managed internally", defaultGroupName),
 		}
+	}
+
+	for k, input := range c.Inputs {
+		if err := validatoradapter.InterpolatedName(v, k); err != nil {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("invalid input %s - %w", k, err),
+				Description: fmt.Sprintf("Please use a valid input name: %s", k),
+			}
+		}
+
+		if _, ok := c.Groups[input.Group]; !ok && input.Group != defaultGroupName {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("invalid group %s", input.Group),
+				Description: fmt.Sprintf("Please use a valid group, or add %s as a group", input.Group),
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *CreateAppInputConfigRequest) parse() error {
+	if c.Groups == nil {
+		c.Groups = make(map[string]AppGroupRequest, 0)
+	}
+
+	for idx, input := range c.Inputs {
+		if input.Group != "" {
+			continue
+		}
+
+		input.Group = defaultGroupName
+		c.Inputs[idx] = input
 	}
 
 	return nil
@@ -68,44 +118,90 @@ func (s *service) CreateAppInputsConfig(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
 	}
+	if err := req.parse(); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
 	if err := req.Validate(s.v); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 
-	inputs, err := s.createAppInputs(ctx, org.ID, appID, &req)
+	cfg, err := s.createAppInputGroups(ctx, org.ID, appID, &req)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create app input groups and config: %w", err))
+		return
+	}
+
+	inputs, err := s.createAppInputs(ctx, cfg, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app inputs config: %w", err))
 		return
 	}
+	cfg.AppInputs = inputs
 
-	ctx.JSON(http.StatusCreated, inputs)
+	ctx.JSON(http.StatusCreated, cfg)
 }
 
-func (s *service) createAppInputs(ctx context.Context, orgID, appID string, req *CreateAppInputConfigRequest) (*app.AppInputConfig, error) {
-	appInputs := make([]app.AppInput, 0, len(req.Inputs))
-	for name, input := range req.Inputs {
-		appInputs = append(appInputs, app.AppInput{
+func (s *service) createAppInputGroups(ctx context.Context, orgID, appID string, req *CreateAppInputConfigRequest) (*app.AppInputConfig, error) {
+	groups := make([]app.AppInputGroup, 0, len(req.Groups))
+	for name, grp := range req.Groups {
+		groups = append(groups, app.AppInputGroup{
 			Name:        name,
-			Description: input.Description,
-			DisplayName: input.DisplayName,
-			Required:    input.Required,
-			Default:     input.Default,
-			Sensitive:   input.Sensitive,
+			Description: grp.Description,
+			DisplayName: grp.DisplayName,
+			IsDefault:   false,
 		})
 	}
+	groups = append(groups, app.AppInputGroup{
+		Name:        defaultGroupName,
+		Description: defaultGroupDescription,
+		DisplayName: defaultGroupDisplayName,
+		IsDefault:   true,
+	})
 
-	inputs := app.AppInputConfig{
-		OrgID:     orgID,
-		AppID:     appID,
-		AppInputs: appInputs,
+	cfg := app.AppInputConfig{
+		OrgID:          orgID,
+		AppID:          appID,
+		AppInputGroups: groups,
+	}
+
+	res := s.db.WithContext(ctx).Create(&cfg)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create app groups: %w", res.Error)
+	}
+
+	return &cfg, nil
+}
+
+func (s *service) createAppInputs(ctx context.Context, cfg *app.AppInputConfig, req *CreateAppInputConfigRequest) ([]app.AppInput, error) {
+	inputs := make([]app.AppInput, 0, len(req.Inputs))
+	for name, input := range req.Inputs {
+		var groupID string
+		for _, group := range cfg.AppInputGroups {
+			if group.Name == input.Group {
+				groupID = group.ID
+				break
+			}
+		}
+
+		inputs = append(inputs, app.AppInput{
+			OrgID:            cfg.OrgID,
+			AppInputConfigID: cfg.ID,
+			AppInputGroupID:  groupID,
+			Name:             name,
+			Description:      input.Description,
+			DisplayName:      input.DisplayName,
+			Required:         input.Required,
+			Default:          input.Default,
+			Sensitive:        input.Sensitive,
+		})
 	}
 
 	res := s.db.WithContext(ctx).Create(&inputs)
 	if res.Error != nil {
-
 		return nil, fmt.Errorf("unable to create app inputs: %w", res.Error)
 	}
 
-	return &inputs, nil
+	return inputs, nil
 }
