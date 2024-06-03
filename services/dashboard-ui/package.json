@@ -8,7 +8,8 @@
     "start": "next start -p 4000",
     "lint": "next lint",
     "fmt": "prettier src",
-    "test": "vitest"
+    "test": "vitest",
+    "tsc": "tsc --noEmit"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^3.5.0",
