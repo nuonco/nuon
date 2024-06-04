@@ -24,11 +24,12 @@ deps:
       postcss.config.js \
       tailwind.config.ts \
       package.json \
-      tsconfig.json \
+      tsconfig.json \      
      ./
   RUN \
     npm install
 
+  COPY --dir test test
   COPY --dir src src
 
 test-integration:
