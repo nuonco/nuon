@@ -8,9 +8,10 @@ export const DeployPlan: FC<IGetDeployPlan> = async (props) => {
   try {
     plan = await getDeployPlan(props)
   } catch (error) {
+    console.log('error?', error)
     return <Text variant="label">No deploy plan to show</Text>
   }
-  return <Plan plan={plan} />
+  return <Plan plan={plan} data-testid="deploy-plan" />
 }
 
 export const DeployPlanCard: FC<IGetDeployPlan> = (props) => (
