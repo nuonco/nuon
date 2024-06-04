@@ -8,6 +8,7 @@
     "prebuild": "npm run generate-api-types",
     "build": "next build",
     "generate-api-types": "openapi-typescript https://api.nuon.co/oapi/v3 -o ./src/types/nuon-oapi-v3.d.ts",
+    "generate-api-mocks": "msw-auto-mock https://api.nuon.co/oapi/v3 -o ./test/mock-api-handlers.js --node --base-url https://api.nuon.co",
     "start": "next start -p 4000",
     "lint": "next lint",
     "fmt": "prettier src",
@@ -26,6 +27,7 @@
     "react-icons": "^5.0.1"
   },
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^15.0.2",
     "@types/jest": "^29.5.12",
@@ -38,6 +40,9 @@
     "eslint": "^8",
     "eslint-config-next": "14.1.3",
     "jsdom": "^24.0.0",
+    "msw": "^2.3.1",
+    "msw-auto-mock": "^0.18.0",
+    "npm-run-all": "^4.1.5",
     "openapi-typescript": "^6.7.6",
     "postcss": "^8",
     "prettier": "^3.2.5",
