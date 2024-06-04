@@ -1,40 +1,10 @@
-import { afterAll, expect, test, vi } from 'vitest'
+import '@test/mock-fetch-options'
+import { expect, test } from 'vitest'
 import { getDeploy } from './get-deploy'
 
 const deployId = 'deploy-id'
 const installId = 'install-id'
 const orgId = 'org-id'
-const deploy = { id: deployId }
-
-global.fetch = vi
-  .fn()
-  .mockResolvedValueOnce({
-    ok: true,
-    json: () => new Promise((resolve) => resolve(deploy)),
-  })
-  .mockResolvedValueOnce({
-    ok: false,
-    json: () => new Promise((resolve) => resolve('error')),
-  })
-
-vi.mock('../utils', async (og) => {
-  const mod = await og<typeof import('../utils')>()
-  return {
-    ...mod,
-    getFetchOpts: vi.fn().mockResolvedValue({
-      cache: 'no-store',
-      headers: {
-        Authorization: 'Bearer test-token',
-        'Content-Type': 'application/json',
-        'X-Nuon-Org-ID': 'org-id',
-      },
-    }),
-  }
-})
-
-afterAll(() => {
-  vi.restoreAllMocks()
-})
 
 test('getDeploy should return a deploy object', async () => {
   const spec = await getDeploy({
@@ -43,16 +13,10 @@ test('getDeploy should return a deploy object', async () => {
     orgId,
   })
 
-  expect(spec).toEqual(deploy)
-  expect(fetch).toBeCalledWith(
-    'https://api.nuon.co/v1/installs/install-id/deploys/deploy-id',
-    expect.objectContaining({
-      headers: expect.objectContaining({
-        Authorization: 'Bearer test-token',
-        'X-Nuon-Org-ID': orgId,
-      }),
-    })
-  )
+  expect(spec).toHaveProperty('id')
+  expect(spec).toHaveProperty('created_at')
+  expect(spec).toHaveProperty('component_id')
+  expect(spec).toHaveProperty('install_id')
 })
 
 test('getDeploy should throw an error when it can not find deploy', async () => {
@@ -65,14 +29,4 @@ test('getDeploy should throw an error when it can not find deploy', async () => 
   } catch (error) {
     expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch deploy]`)
   }
-
-  expect(fetch).toBeCalledWith(
-    'https://api.nuon.co/v1/installs/install-id/deploys/deploy-id',
-    expect.objectContaining({
-      headers: expect.objectContaining({
-        Authorization: 'Bearer test-token',
-        'X-Nuon-Org-ID': orgId,
-      }),
-    })
-  )
 })

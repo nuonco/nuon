@@ -2,9 +2,9 @@ import React, { type FC } from 'react'
 import { Code, Heading } from '@/components'
 import type { TInstallDeployPlan } from '@/types'
 
-export const Plan: FC<{ plan: TInstallDeployPlan }> = ({ plan }) => {
+export const Plan: FC<{ plan: TInstallDeployPlan } & React.HTMLAttributes<HTMLDivElement>> = ({ plan, ...props }) => {
   return (
-    <>
+    <div {...props}>
       <div className="flex flex-col gap-2">
         <Heading variant="subheading">Rendered variables</Heading>
         <Code>
@@ -49,6 +49,6 @@ export const Plan: FC<{ plan: TInstallDeployPlan }> = ({ plan }) => {
           {plan.actual?.waypoint_plan?.waypoint_job?.hcl_config}
           </Code>
           </div> */}
-    </>
+    </div>
   )
 }
