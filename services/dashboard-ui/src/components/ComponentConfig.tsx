@@ -88,15 +88,10 @@ export const ComponentConfigType: FC<
   )
 }
 
-export interface IComponentConfig extends IGetComponentConfig {
-  version?: number
-}
-
-export const ComponentConfig: FC<IComponentConfig> = async ({
+export const ComponentConfig: FC<IGetComponentConfig> = async ({
   componentId,
   componentConfigId,
   orgId,
-  version,
 }) => {
   let config: TComponentConfig
   try {
@@ -104,8 +99,8 @@ export const ComponentConfig: FC<IComponentConfig> = async ({
   } catch (error) {
     return <>No config found</>
   }
-
   const configType = getComponentConfigType(config)
+  const { version } = config
 
   return (
     <div className="flex flex-col gap-2">
@@ -131,7 +126,7 @@ export const ComponentConfig: FC<IComponentConfig> = async ({
 }
 
 export const ComponentConfigCard: FC<
-  IComponentConfig & { heading?: string }
+  IGetComponentConfig & { heading?: string }
 > = ({ heading = 'Component config', ...props }) => (
   <Card>
     <Heading>{heading}</Heading>
@@ -249,15 +244,6 @@ export const ComponentConfigOCI: FC<{
           <b>Tag:</b> {cfg?.tag}
         </Text>
       </span>
-
-      {cfg?.env_vars ? (
-        <>
-          <Heading variant="subheading">Enviornment variables</Heading>
-          <Code variant="preformated">
-            {JSON.stringify(cfg?.env_vars, null, 4)}
-          </Code>
-        </>
-      ) : null}
     </>
   )
 }
