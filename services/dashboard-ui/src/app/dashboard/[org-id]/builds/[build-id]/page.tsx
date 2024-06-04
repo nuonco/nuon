@@ -91,7 +91,6 @@ export default withPageAuthRequired(
                     orgId={orgId}
                     componentId={build?.component_id}
                     componentConfigId={build.component_config_connection_id}
-                    version={0}
                   />
                 </Suspense>
               </Card>
