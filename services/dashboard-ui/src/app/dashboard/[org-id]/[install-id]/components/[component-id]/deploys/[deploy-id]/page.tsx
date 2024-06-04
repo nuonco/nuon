@@ -117,7 +117,6 @@ export default withPageAuthRequired(
                 orgId={orgId}
                 componentId={componentId}
                 componentConfigId={build?.component_config_connection_id}
-                version={0}
               />
             </div>
 

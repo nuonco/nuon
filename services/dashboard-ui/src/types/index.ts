@@ -20,15 +20,7 @@ export type TWaypointLog = {
 
 // component
 export type TComponent = components['schemas']['app.Component']
-export type TComponentConfig = {
-  id: string
-  component_id: string
-  docker_build?: Record<string, any>
-  external_image?: Record<string, any>
-  helm?: Record<string, any>
-  terraform_module?: Record<string, any>
-  job?: Record<string, any>
-}
+export type TComponentConfig = components['schemas']['app.ComponentConfigConnection']
 
 // build
 export type TComponentBuild = components['schemas']['app.ComponentBuild']

@@ -119,7 +119,6 @@ export default withPageAuthRequired(
                   heading="Latest config"
                   componentId={componentId}
                   orgId={orgId}
-                  version={component?.config_versions}
                 />
               </div>
             </Grid>
