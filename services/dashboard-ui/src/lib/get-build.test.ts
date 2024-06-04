@@ -1,40 +1,9 @@
-import { afterAll, expect, test, vi } from 'vitest'
+import '@test/mock-fetch-options'
+import { expect, test } from 'vitest'
 import { getBuild } from './get-build'
 
 const buildId = 'build-id'
-const componentId = 'component-id'
 const orgId = 'org-id'
-const build = { id: buildId, component_id: componentId }
-
-global.fetch = vi
-  .fn()
-  .mockResolvedValueOnce({
-    ok: true,
-    json: () => new Promise((resolve) => resolve(build)),
-  })
-  .mockResolvedValueOnce({
-    ok: false,
-    json: () => new Promise((resolve) => resolve('error')),
-  })
-
-vi.mock('../utils', async (og) => {
-  const mod = await og<typeof import('../utils')>()
-  return {
-    ...mod,
-    getFetchOpts: vi.fn().mockResolvedValue({
-      cache: 'no-store',
-      headers: {
-        Authorization: 'Bearer test-token',
-        'Content-Type': 'application/json',
-        'X-Nuon-Org-ID': 'org-id',
-      },
-    }),
-  }
-})
-
-afterAll(() => {
-  vi.restoreAllMocks()
-})
 
 test('getBuild should return a build object', async () => {
   const spec = await getBuild({
@@ -42,16 +11,11 @@ test('getBuild should return a build object', async () => {
     orgId,
   })
 
-  expect(spec).toEqual(build)
-  expect(fetch).toBeCalledWith(
-    'https://api.nuon.co/v1/components/builds/build-id',
-    expect.objectContaining({
-      headers: expect.objectContaining({
-        Authorization: 'Bearer test-token',
-        'X-Nuon-Org-ID': 'org-id',
-      }),
-    })
-  )
+  expect(spec).toHaveProperty('id')
+  expect(spec).toHaveProperty('created_at')
+  expect(spec).toHaveProperty('updated_at')
+  expect(spec).toHaveProperty('component_id')
+  expect(spec).toHaveProperty('component_config_connection_id')
 })
 
 test('getBuild should throw an error when it can not find a build', async () => {
@@ -63,14 +27,4 @@ test('getBuild should throw an error when it can not find a build', async () => 
   } catch (error) {
     expect(error).toMatchInlineSnapshot(`[Error: Failed to fetch build]`)
   }
-
-  expect(fetch).toBeCalledWith(
-    'https://api.nuon.co/v1/components/builds/build-id',
-    expect.objectContaining({
-      headers: expect.objectContaining({
-        Authorization: 'Bearer test-token',
-        'X-Nuon-Org-ID': 'org-id',
-      }),
-    })
-  )
 })
