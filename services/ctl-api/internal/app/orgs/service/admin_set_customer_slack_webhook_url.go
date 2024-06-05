@@ -11,21 +11,21 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-type SetSlackWebhookURLRequest struct {
+type SetCustomerSlackWebhookURLRequest struct {
 	Name string `validate:"required"`
 }
 
-// @ID AdminSetInternalSlackWebhookURLOrg
-// @Summary set an internal slack webhook url for an org
+// @ID AdminSetCustomerSlackWebhookURLOrg
+// @Summary set a customer slack webhook url for an org
 // @Description.markdown admin_set_org_slack_webhook_url.md
 // @Param			org_id	path	string	true	"org ID for org"
 // @Tags			orgs/admin
 // @Accept			json
-// @Param			req	body	SetSlackWebhookURLRequest	true	"Input"
+// @Param			req	body	SetCustomerSlackWebhookURLRequest	true	"Input"
 // @Produce		json
 // @Success		201	{string}	ok
-// @Router			/v1/orgs/{org_id}/admin-internal-slack-webhook-url [POST]
-func (s *service) AdminSetInternalSlackWebhookURLOrg(ctx *gin.Context) {
+// @Router			/v1/orgs/{org_id}/admin-customer-slack-webhook-url [POST]
+func (s *service) AdminSetCustomerSlackWebhookURLOrg(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
 	_, err := s.getOrg(ctx, orgID)
@@ -34,13 +34,13 @@ func (s *service) AdminSetInternalSlackWebhookURLOrg(ctx *gin.Context) {
 		return
 	}
 
-	var req SetSlackWebhookURLRequest
+	var req SetCustomerSlackWebhookURLRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 
-	if err := s.setInternalOrgSlackWebhookURL(ctx, orgID, req.Name); err != nil {
+	if err := s.setOrgSlackWebhookURL(ctx, orgID, req.Name); err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -48,12 +48,12 @@ func (s *service) AdminSetInternalSlackWebhookURLOrg(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, true)
 }
 
-func (s *service) setInternalOrgSlackWebhookURL(ctx context.Context, orgID string, webhookURL string) error {
+func (s *service) setOrgSlackWebhookURL(ctx context.Context, orgID string, webhookURL string) error {
 	res := s.db.WithContext(ctx).
 		Where(&app.NotificationsConfig{
-			OrgID: orgID,
+			OwnerID: orgID,
 		}).Updates(app.NotificationsConfig{
-		InternalSlackWebhookURL: webhookURL,
+		SlackWebhookURL: webhookURL,
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to update slack webhook url: %w", res.Error)
