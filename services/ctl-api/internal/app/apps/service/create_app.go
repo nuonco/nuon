@@ -92,13 +92,13 @@ func (s *service) createApp(ctx context.Context, user *app.UserToken, org *app.O
 		Description:       req.Description,
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start and provision app",
-		SlackWebhookURL:   req.SlackWebhookURL,
 		DisplayName:       req.DisplayName,
 	}
 	newApp.NotificationsConfig = app.NotificationsConfig{
 		EnableSlackNotifications: user.TokenType == app.TokenTypeAuth0,
 		EnableEmailNotifications: user.TokenType == app.TokenTypeAuth0,
 		InternalSlackWebhookURL:  org.NotificationsConfig.InternalSlackWebhookURL,
+		SlackWebhookURL:          req.SlackWebhookURL,
 	}
 
 	res := s.db.WithContext(ctx).
