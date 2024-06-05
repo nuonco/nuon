@@ -46,6 +46,11 @@ export const InstallEvent: FC<IInstallEvent> = ({ event }) => {
         {event?.operation === 'deploy' ? (
           <Text variant="status">
             <small>{payload?.component_name}</small>
+            <small>
+              {payload?.install_deploy_type === 'install'
+                ? 'deploy'
+                : payload?.install_deploy_type}
+            </small>
           </Text>
         ) : null}
 
