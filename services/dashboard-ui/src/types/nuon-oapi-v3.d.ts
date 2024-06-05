@@ -48,6 +48,10 @@ export interface paths {
     get: operations["GetAppConfigs"];
   };
   "/v1/apps/{app_id}/input-config": {
+    /**
+     * @description App input configs allow you to declare the inputs for your application, and do things such as require customer inputs or
+     * expose configuration knobs in your application.
+     */
     post: operations["CreateAppInputConfig"];
   };
   "/v1/apps/{app_id}/input-configs": {
@@ -522,6 +526,8 @@ export interface components {
       default?: string;
       description?: string;
       display_name?: string;
+      group?: components["schemas"]["app.AppInputGroup"];
+      group_id?: string;
       id?: string;
       name?: string;
       org_id?: string;
@@ -531,12 +537,27 @@ export interface components {
     };
     "app.AppInputConfig": {
       app_id?: string;
-      app_inputs?: components["schemas"]["app.AppInput"][];
       created_at?: string;
       created_by?: components["schemas"]["app.UserToken"];
       created_by_id?: string;
       id?: string;
+      input_groups?: components["schemas"]["app.AppInputGroup"][];
+      inputs?: components["schemas"]["app.AppInput"][];
       install_inputs?: components["schemas"]["app.InstallInputs"][];
+      org_id?: string;
+      updated_at?: string;
+    };
+    "app.AppInputGroup": {
+      app_input_id?: string;
+      app_inputs?: components["schemas"]["app.AppInput"][];
+      created_at?: string;
+      created_by?: components["schemas"]["app.UserToken"];
+      created_by_id?: string;
+      description?: string;
+      display_name?: string;
+      id?: string;
+      is_default?: boolean;
+      name?: string;
       org_id?: string;
       updated_at?: string;
     };
@@ -1092,10 +1113,15 @@ export interface components {
     };
     /** @enum {string} */
     "service.AppConfigTemplateType": "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc";
+    "service.AppGroupRequest": {
+      description: string;
+      display_name: string;
+    };
     "service.AppInputRequest": {
       default?: string;
       description: string;
       display_name: string;
+      group: string;
       required?: boolean;
       sensitive?: boolean;
     };
@@ -1121,6 +1147,9 @@ export interface components {
       generated_terraform_json?: string;
     };
     "service.CreateAppInputConfigRequest": {
+      groups: {
+        [key: string]: components["schemas"]["service.AppGroupRequest"];
+      };
       inputs: {
         [key: string]: components["schemas"]["service.AppInputRequest"];
       };
@@ -1887,6 +1916,10 @@ export interface operations {
       };
     };
   };
+  /**
+   * @description App input configs allow you to declare the inputs for your application, and do things such as require customer inputs or
+   * expose configuration knobs in your application.
+   */
   CreateAppInputConfig: {
     parameters: {
       path: {
