@@ -58,7 +58,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/orgs/:org_id/admin-restart-children", s.RestartOrgChildren)
 	api.POST("/v1/orgs/:org_id/admin-rename", s.AdminRenameOrg)
 	api.POST("/v1/orgs/:org_id/admin-static-token", s.AdminCreateStaticToken)
-	api.POST("/v1/orgs/:org_id/admin-slack-webhook-url", s.AdminSetSlackWebhookURLOrg)
+	api.POST("/v1/orgs/:org_id/admin-internal-slack-webhook-url", s.AdminSetInternalSlackWebhookURLOrg)
+	api.POST("/v1/orgs/:org_id/admin-customer-slack-webhook-url", s.AdminSetCustomerSlackWebhookURLOrg)
 	return nil
 }
 

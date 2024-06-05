@@ -2313,6 +2313,8 @@ github.com/nuonco/nuon-go v0.28.1 h1:mFcFDtoM5BFjRvt50aK2w9/Lgzz5i+fuVLumgMSfeHA
 github.com/nuonco/nuon-go v0.28.1/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nuonco/nuon-go v0.29.0 h1:xX/Co0Cdb7joWwGTNwLW9OMNcdMTvEN3znIuHEctZUE=
 github.com/nuonco/nuon-go v0.29.0/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
+github.com/nuonco/nuon-go v0.29.1 h1:cIPOvfbGHCsFsKfwMbBOpf3r1RWdVP2HGtfmY1ebh24=
+github.com/nuonco/nuon-go v0.29.1/go.mod h1:9hQTXgG2MUXaAtW8SN3X6yiWPs4Z4LcIr+CqhECklGI=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2 h1:e3mzJFJs4k83GXBEiTaQ5HgSc/kOK8q0rDaRO0MPaOk=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.2/go.mod h1:yntwv/HfMc/Hbvtq9I19D1n58te3h6KsqCf3GxyfBGY=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=

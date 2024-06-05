@@ -235,5 +235,13 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "046-notifications-configs-existing-apps",
 			Fn:   a.migration046NotifcationsExistingApps,
 		},
+		{
+			Name: "047-notifications-configs-id",
+			Fn:   a.migration047NotificationsConfig,
+		},
+		{
+			Name: "048-app-slack-webhook-url",
+			Fn:   a.migration048AppSlackWebhookURL,
+		},
 	}
 }
