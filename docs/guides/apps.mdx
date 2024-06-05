@@ -73,3 +73,27 @@ following actions:
 * operations such as logs, and more.
 
 Read more about app runner config [here](./runners).
+
+## App Metadata
+
+You can add the following metadata to your application, which is used in installers:
+
+* `display_name`
+* `description`
+
+This metadata can be added via a config file or `terraform`:
+
+<CodeGroup>
+```toml TOML
+display_name = "Your App"
+description = "your app"
+```
+
+```hcl Terraform
+resource "nuon_app" "<your-app>" {
+  name = "your_app"
+  display_name = "Your App"
+  description = "App description"
+}
+```
+</CodeGroup>
