@@ -1,10 +1,12 @@
 'use client'
 
+import React, { type FC } from 'react';
 import { GoMail } from "react-icons/go"
+import Image from 'next/image'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { Text } from '@/components'
 
-export const Profile = () => {
+export const Profile: FC = () => {
   const { user, error, isLoading } = useUser()
 
   if (isLoading) return <div>Loading...</div>
@@ -13,10 +15,10 @@ export const Profile = () => {
   return (
     user && (
       <div className="flex gap-4 items-center">
-        <img
+        <Image
           className="rounded-full"
-          height="40px"
-          width="40px"
+          height={40}
+          width={40}
           src={user.picture as string}
           alt={user.name as string}
         />
@@ -30,7 +32,7 @@ export const Profile = () => {
 }
 
 
-export const ProfileDropdown = () => {
+export const ProfileDropdown: FC = () => {
   const { user, error, isLoading } = useUser()
   if (isLoading) return <div className="min-h-[56px] flex items-center">Loading...</div>
   if (error) return <div>{error.message}</div>
