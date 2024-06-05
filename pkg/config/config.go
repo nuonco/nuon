@@ -11,10 +11,12 @@ const (
 )
 
 type AppConfig struct {
-	Version string `mapstructure:"version"`
+	Version string `mapstructure:"version" toml:"version"`
 
 	// Top level fields on the app itself, which are _not_ synced by this package
-	Description string `mapstructure:"description,omitempty"`
+	Description     string `mapstructure:"description,omitempty" toml:"description"`
+	DisplayName     string `mapstructure:"display_name,omitempty" toml:"display_name"`
+	SlackWebhookURL string `mapstructure:"slack_webhook_url,omitempty" toml:"slack_webhook_url"`
 
 	// top level fields
 	Inputs    *AppInputConfig   `mapstructure:"inputs,omitempty"`

@@ -104,7 +104,8 @@
                 "guides/component-dependencies",
                 "guides/terraform-configuration-management",
                 "guides/configuration-files",
-                "guides/team-management"
+                "guides/team-management",
+                "guides/notifications"
             ]
         },
         {
