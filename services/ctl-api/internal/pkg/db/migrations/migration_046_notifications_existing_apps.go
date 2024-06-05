@@ -19,10 +19,10 @@ func (m *Migrations) migration046NotifcationsExistingApps(ctx context.Context) e
 	}
 
 	for _, currentApp := range apps {
-		if currentApp.NotificationsConfigID != "" {
-			m.l.Info("org already has notifications config")
-			continue
-		}
+		//if currentApp.NotificationsConfigID != "" {
+		//m.l.Info("org already has notifications config")
+		//continue
+		//}
 
 		notificationsCfg := app.NotificationsConfig{
 			CreatedByID:              currentApp.CreatedByID,

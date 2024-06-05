@@ -17,16 +17,14 @@ type App struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_app_name,unique"`
 
-	Name            string `json:"name" gorm:"index:idx_app_name,unique"`
-	Description     string `json:"description"`
-	DisplayName     string `json:"display_name"`
-	SlackWebhookURL string `json:"slack_webhook_url"`
+	Name        string `json:"name" gorm:"index:idx_app_name,unique"`
+	Description string `json:"description"`
+	DisplayName string `json:"display_name"`
 
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org   Org    `faker:"-" json:"-"`
 
-	NotificationsConfig   NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty"`
-	NotificationsConfigID string              `json:"-"`
+	NotificationsConfig NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty"`
 
 	Components        []Component        `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`
 	Installs          []Install          `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;"`

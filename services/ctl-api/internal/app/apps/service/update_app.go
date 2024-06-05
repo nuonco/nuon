@@ -73,16 +73,27 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 	res := s.db.WithContext(ctx).
 		Model(&currentApp).
 		Updates(app.App{
-			Name:            req.Name,
-			Description:     req.Description,
-			DisplayName:     req.DisplayName,
-			SlackWebhookURL: req.SlackWebhookURL,
+			Name:        req.Name,
+			Description: req.Description,
+			DisplayName: req.DisplayName,
 		})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
 		return nil, fmt.Errorf("app not found %s %w", appID, gorm.ErrRecordNotFound)
+	}
+
+	res = s.db.WithContext(ctx).
+		Model(&app.NotificationsConfig{}).
+		Where(&app.NotificationsConfig{
+			OwnerID: currentApp.ID,
+		}).
+		Updates(app.NotificationsConfig{
+			SlackWebhookURL: req.SlackWebhookURL,
+		})
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to sync app notifications config: %w", res.Error)
 	}
 
 	return &currentApp, nil
