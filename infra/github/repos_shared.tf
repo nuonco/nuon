@@ -352,3 +352,20 @@ module "shared-stardog-installer" {
     github = github.nuonco-shared
   }
 }
+
+module "shared-berri-ai" {
+  source = "./modules/repository"
+
+  name                     = "berri-ai"
+  description              = "Nuon configuration for Berri AI."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {}
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
