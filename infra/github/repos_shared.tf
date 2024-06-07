@@ -363,7 +363,11 @@ module "shared-berri-ai" {
   is_private               = true
   enable_branch_protection = false
 
-  collaborators = {}
+  collaborators = {
+    ishaan-jaff    = "push"
+    krrishdholakia = "push"
+
+  }
 
   providers = {
     github = github.nuonco-shared
