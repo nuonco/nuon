@@ -44,11 +44,11 @@ resource "nuon_terraform_module_component" "infra" {
 </CodeGroup>
 
 You can configure Terraform components to use either a public repo (using a `public_repo` block) or a private GitHub
-repo (using a `connected_repo` block). Read more about VCS configuration [here](../guides/vcs).
+repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
 
 ## Configuring Terraform Vars
 
-You can configure terraform variables for a component using [component variables](../guides/using-variables).
+You can configure terraform variables for a component using [component variables](/guides/using-variables).
 
 These variables can access inputs, other components, the sandbox, and details on the install itself.
 
@@ -119,7 +119,7 @@ terraform {
 
 ## Execution and Permissions
 
-The [runner](./runners.mdx) is responsible for executing Terraform, which means that Terraform is executed from _within_
+The [runner](/concepts/runners) is responsible for executing Terraform, which means that Terraform is executed from _within_
 the Kubernetes cluster in K8S sandboxes, and from within ECS Fargate for `aws-ecs` sandboxes. In both cases, this is
 inside of the install network.
 

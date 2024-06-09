@@ -40,7 +40,7 @@ resource "nuon_helm_chart_chart_component" "helm_chart" {
 </CodeGroup>
 
 You can configure Helm components to use either a public repo (using a `public_repo` block) or a private GitHub
-repo (using a `connected_repo` block). Read more about VCS configuration [here](../guides/vcs).
+repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
 
 ## Open Source and Private Charts
 
@@ -54,7 +54,7 @@ One of the most important parts of deploying a Helm chart into a customer accoun
 Values can be used for everything from accessing infrastructure, setting images or scaling pods.
 
 
-[Variables](../guides/using-variables) allow you to set default values for a Nuon app, expose customer configuration
+[Variables](/guides/using-variables) allow you to set default values for a Nuon app, expose customer configuration
 options, reference infrastructure from other components or access an image that was synced into the customer account.
 
 Examples for accessing common interpolated variables:
@@ -191,7 +191,7 @@ as exposing a public or private https service. This includes:
 * [Nginx Ingress](https://docs.nginx.com/nginx-ingress-controller/)
 * [EBS CSI](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html)
 
-The sandboxes are [open source](https://github.com/nuonco/sandboxes) and can be [customized](./sandboxes#create-a-custom-sandbox), if these components do not work for your application.
+The sandboxes are [open source](https://github.com/nuonco/sandboxes) and can be [customized](/concepts/sandboxes#create-a-custom-sandbox), if these components do not work for your application.
 
 ## Using Domains
 
@@ -374,6 +374,6 @@ resource "nuon_helm_chart_component" "nlb" {
 <Note>
 By default, Nuon provisions a custom domain for each install under the `nuon.run` domain (eg: inl8ybt7gajofh33e0h3pqyw1t.nuon.run).
 
-If you would like to use a customer provided domain, you can accept customer domains using [inputs](./app-inputs.mdx). We
+If you would like to use a customer provided domain, you can accept customer domains using [inputs](/concepts/app-inputs.mdx). We
   are planning to improve support for this, and would love to [hear about](mailto:team@nuon.co) your use case.
 </Note>

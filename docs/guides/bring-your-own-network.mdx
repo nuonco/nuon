@@ -10,14 +10,14 @@ Often, customers have their own AWS VPC or Azure VNet already set up, and would 
 
 To enable a customer to install your app in their own network, you need 2 things:
 
-- [App inputs](/guides/app-inputs) to enable the customer to provide information about the network during the installation process.
-- A [Sandbox](/guides/sandboxes) that accepts the inputs as [Terraform variables](https://developer.hashicorp.com/terraform/language/values/variables), and uses them to create [Terraform data sources](https://developer.hashicorp.com/terraform/language/data-sources).
+- [App inputs](/concepts/app-inputs) to enable the customer to provide information about the network during the installation process.
+- A [Sandbox](/concepts/sandboxes) that accepts the inputs as [Terraform variables](https://developer.hashicorp.com/terraform/language/values/variables), and uses them to create [Terraform data sources](https://developer.hashicorp.com/terraform/language/data-sources).
 
 The sandbox can then use those data sources to read the information it needs to provision resources in the customer-provided network.
 
 ## Sandboxes
 
-To give you a head start, we provide managed sandboxes for the most popular platforms. The sandboxes listed here are identical to our [turnkey managed sandboxes](/guides/sandboxes#nuon-managed-sandboxes), except they do not provision network infrastructure of their own and have extra variables for the required network info.
+To give you a head start, we provide managed sandboxes for the most popular platforms. The sandboxes listed here are identical to our [turnkey managed sandboxes](/concepts/sandboxes#nuon-managed-sandboxes), except they do not provision network infrastructure of their own and have extra variables for the required network info.
 
 ### AWS EKS BYOVPC
 
