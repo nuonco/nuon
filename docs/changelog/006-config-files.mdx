@@ -16,9 +16,9 @@ BYOC application in a few hours - however, we knew we could make it even faster.
 Today, we are happy to share that you can create BYOC apps with two simple commands:
 
 <CodeGroup>
-```nuon sh
-$ nuon apps create --name=your-cool-app
-$ nuon apps sync
+```sh nuon
+nuon apps create --name=your-cool-app
+nuon apps sync
 ```
 </CodeGroup>
 
@@ -54,7 +54,7 @@ value = "{{.nuon.install.sandbox.account.id}}"
 While some of you may still want to use Terraform to handle more complex applications (or multiple apps), we think these
   config files will be a lot faster for most people to onboard :).
 
-Check our our [config docs](../guides/configuration-files) for more.
+Check our our [config docs](/configuration-files) for more.
 
 ## Export Terraform
 
@@ -64,8 +64,8 @@ ahead and exposed this generated terraform, in case you would like to migrate fr
 To generate `terraform` json, simply run:
 
 <CodeGroup>
-```nuon sh
-$ nuon apps export-terraform
+```sh nuon
+nuon apps export-terraform
 ```
 </CodeGroup>
 
@@ -73,10 +73,10 @@ To work with this generated `terraform` json, simply write it to a file with a `
 commands will work like usual:
 
 <CodeGroup>
-```nuon sh
-$ nuon apps export-terraform > app.tf.json
-$ terraform init
-$ terraform plan
+```sh nuon
+nuon apps export-terraform > app.tf.json
+terraform init
+terraform plan
 ```
 </CodeGroup>
 

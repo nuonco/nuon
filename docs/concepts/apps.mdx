@@ -35,7 +35,7 @@ The app sandbox is the base layer of each app, and is responsible for setting up
 * basic network infrastructure (such as an AWS VPC).
 * compute infrastructure (such as a Kubernetes or ECS cluster).
 
-Read more about sandbox configuration [here](./sandboxes).
+Read more about sandbox configuration [here](/concepts/sandboxes).
 
 ## App Inputs
 
@@ -47,7 +47,7 @@ App inputs are commonly used to:
 * customize infrastructure versions, such as pinning a kubernetes cluster version.
 * re-use existing infrastructure, such as providing a `vpc_id` that has been granted access.
 
-Read more about app inputs [here](./app-inputs).
+Read more about app inputs [here](/concepts/app-inputs).
 
 ## App Components
 
@@ -59,7 +59,7 @@ Components allow you to:
 * deploy terraform code
 
 Nuon apps allow you to create dependencies between components and exposes a rich configuration language to share outputs
-between components for configuration. You can use [variables](../guides/using-variables) to configure components with
+between components for configuration. You can use [variables](/guides/using-variables) to configure components with
 the outputs of other components.
 
 ## App Runner
@@ -72,7 +72,7 @@ following actions:
 * manages releases, and updating/deprovisioning parts of the app
 * operations such as logs, and more.
 
-Read more about app runner config [here](./runners).
+Read more about app runner config [here](/concepts/runners).
 
 ## App Metadata
 
