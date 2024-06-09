@@ -22,6 +22,10 @@
     },
     "tabs": [
         {
+            "name": "Concepts",
+            "url": "concepts"
+        },
+        {
             "name": "Guides",
             "url": "guides"
         },
@@ -74,6 +78,7 @@
         {
             "group": "Resources",
             "pages": [
+                "configuration-files",
                 "cli",
                 "terraform-provider",
                 "sdks"
@@ -82,30 +87,21 @@
         {
             "group": "",
             "pages": [
-                "guides/guides"
+                "concepts/concepts"
             ]
         },
         {
-            "group": "Configuration",
+            "group": "Concepts",
             "pages": [
-                "guides/apps",
-                "guides/installers",
-                "guides/supported-platforms",
-                "guides/azure-support",
-                "guides/sandboxes",
-                "guides/runners",
-                "guides/app-inputs",
-                "guides/app-secrets",
-                "guides/docker-build-components",
-                "guides/container-image-components",
-                "guides/terraform-components",
-                "guides/helm-chart-components",
-                "guides/job-components",
-                "guides/component-dependencies",
-                "guides/terraform-configuration-management",
-                "guides/configuration-files",
-                "guides/team-management",
-                "guides/notifications"
+                "concepts/apps",
+                "concepts/components",
+                "concepts/installs",
+                "concepts/installers",
+                "concepts/platforms",
+                "concepts/runners",
+                "concepts/sandboxes",
+                "concepts/app-inputs",
+                "concepts/app-secrets"
             ]
         },
         {
@@ -118,24 +114,45 @@
             ]
         },
         {
-            "group": "How To",
+            "group": "",
+            "pages": [
+                "guides/guides"
+            ]
+        },
+        {
+            "group": "Configuration",
             "pages": [
                 "guides/vcs",
+                "guides/docker-build-components",
+                "guides/container-image-components",
+                "guides/terraform-components",
+                "guides/helm-chart-components",
+                "guides/job-components",
+                "guides/component-dependencies"
+            ]
+        },
+        {
+            "group": "How To",
+            "pages": [
                 "guides/install-access-permissions",
                 "guides/create-installs",
                 "guides/create-builds",
+                "guides/migrations",
                 "guides/create-releases",
                 "guides/using-variables",
                 "guides/bring-your-own-network",
-                "guides/migrations",
                 "guides/custom-domains",
-                "guides/sandbox-orgs"
+                "guides/azure-support",
+                "guides/sandbox-orgs",
+                "guides/team-management",
+                "guides/terraform-configuration-management"
             ]
         },
         {
             "group": "Integrations",
             "pages": [
                 "guides/sdk-integration",
+                "guides/notifications",
                 "guides/github-actions"
             ]
         },
