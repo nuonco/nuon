@@ -74,6 +74,132 @@ following actions:
 
 Read more about app runner config [here](/concepts/runners).
 
+## App Management
+
+The [cli](/cli) exposes many operational commands to manage apps.
+
+To see all available commands, run: `nuon apps --help`.
+
+### Pinning an App
+
+You can pin an app, which will set it's ID as a default argument to all app commands. This is helpful to avoid 
+having to pass `-a` to each command.
+
+<CodeGroup>
+```sh nuon
+nuon apps select
+```
+</CodeGroup>
+
+<Note>
+Each example below assumes you have run `nuon apps select` first.
+</Note>
+
+To show the currently pinned app:
+
+<CodeGroup>
+```sh nuon
+nuon apps current
+```
+</CodeGroup>
+
+### App Management Commands
+
+Commands for creating, deleting and viewing apps.
+
+**Create an app** - create an app and kickstart a [config file](/configuration-files).
+
+<CodeGroup>
+```sh nuon
+nuon apps create  \
+  --name=your-app
+```
+</CodeGroup>
+
+**Get an app** - get an app
+
+<CodeGroup>
+```sh nuon
+nuon apps get
+```
+</CodeGroup>
+
+**List all apps** - list all apps
+
+<CodeGroup>
+```sh nuon
+nuon apps list
+```
+</CodeGroup>
+
+**rename** - rename an app
+
+<CodeGroup>
+```sh nuon
+nuon apps rename --name=new-name
+```
+</CodeGroup>
+
+### Configuration
+
+You can view various configs for an app, and sync configuration files using the [CLI](/cli).
+
+**sync** - sync config files
+
+Sync all config files in the current directory:
+<CodeGroup>
+```sh nuon
+nuon apps sync
+```
+</CodeGroup>
+
+Sync a single config file:
+<CodeGroup>
+```sh nuon
+nuon apps sync -c <path-to-config.toml>
+```
+</CodeGroup>
+
+**configs** - list all config versions for an app
+
+<CodeGroup>
+```sh nuon
+nuon apps configs
+```
+</CodeGroup>
+
+**export-terraform** - export the current application configuration as Terraform JSON.
+
+<CodeGroup>
+```sh nuon
+nuon apps export-terraform
+```
+</CodeGroup>
+
+**runner-config** - print the current runner config
+
+<CodeGroup>
+```sh nuon
+nuon apps runner-config
+```
+</CodeGroup>
+
+**sandbox-config** - print the current sandbox config
+
+<CodeGroup>
+```sh nuon
+nuon apps sandbox-config
+```
+</CodeGroup>
+
+**input-config** - print the current input config
+
+<CodeGroup>
+```sh nuon
+nuon apps input-config
+```
+</CodeGroup>
+
 ## App Metadata
 
 You can add the following metadata to your application, which is used in installers:
