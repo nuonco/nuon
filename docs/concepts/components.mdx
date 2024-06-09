@@ -1,0 +1,137 @@
+---
+title: 'Components'
+description: 'Connect and configure your application using your existing container images, infrastructure as code and devops automation.' 
+---
+
+Nuon supports several different component types which allow you to connect your existing devops automation, 
+infrastructure as code and containers to your app.
+
+## What is a Component?
+
+A component represents a part of your application, Nuon supports the following components:
+
+* [Docker](/guides/docker-build-components) - any Dockerfile that can be built.
+* [Container Images](/guides/container-image-components) - any prebuilt OCI image.
+* [Helm Charts](/guides/helm-chart-components) - any Helm chart located in a repository.
+* [Terraform](/guides/terraform-components) - any Terraform module.
+* [Jobs](/guides/job-components) - any script that can be executed using an OCI image.
+
+Setting up an application requires definining and testing your application configuration.
+
+## Component Management
+
+The [cli](/cli) exposes many operational commands to manage components.
+
+To see all available commands, run: `nuon components --help`.
+
+<Note>
+Make sure to select an app using `nuon apps select` before using the components commands, or pass the `-a` flag to each 
+component command.
+</Note>
+
+### Pinning a Component
+
+You can pin a component, which will set it's ID as a default argument to all component commands. This is helpful to avoid 
+having to pass `-c` to each command.
+
+<CodeGroup>
+```sh nuon
+nuon components select
+``
+</CodeGroup>
+
+<Note>
+Each example below assumes you have run `nuon components select` first.
+</Note>
+
+### Component Management Commands
+
+Commands for working with components
+
+<Note>
+Components can only be created using the Terraform provider or configuration file.
+</Note>
+
+**Get a component**
+<CodeGroup>
+```sh nuon
+nuon components get 
+```
+</CodeGroup>
+
+**List components** - List components for an app.
+
+<Note>
+It is not recommended to delete components using the CLI, but rather to manage them using Terraform or config files.
+</Note>
+
+<CodeGroup>
+```sh nuon
+nuon components delete
+```
+</CodeGroup>
+
+**Delete a component** - delete a component
+
+<Note>
+It is not recommended to delete components using the CLI, but rather to manage them using Terraform or config files.
+</Note>
+
+<CodeGroup>
+```sh nuon
+nuon components delete
+```
+</CodeGroup>
+
+**Print a component config** - print the latest configuration for a component.
+
+<CodeGroup>
+```sh nuon
+nuon components latest-config
+```
+</CodeGroup>
+
+### Component Builds
+
+All components must be built before releasing. The release commands support an `-auto-build` flag which will trigger a 
+build.
+
+**Create a build** - create a build using the latest component configuration.
+
+<CodeGroup>
+```sh nuon
+nuon builds create
+```
+</CodeGroup>
+
+**List builds** - list builds for a component.
+
+<CodeGroup>
+```sh nuon
+nuon builds list
+```
+</CodeGroup>
+
+**Get a build** - print out build details.
+
+<CodeGroup>
+```sh nuon
+nuon builds get -b <build-id>
+```
+</CodeGroup>
+
+**Logs** - show logs for a build.
+
+<CodeGroup>
+```sh nuon
+nuon builds logs -b <build-id>
+```
+</CodeGroup>
+
+**Print Plan** - print a build plan with configuration for the build.
+
+<CodeGroup>
+```sh nuon
+nuon builds print-plan -b <build-id>
+```
+</CodeGroup>

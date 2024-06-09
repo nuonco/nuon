@@ -12,28 +12,28 @@ In order for Nuon to provision an install on Azure, it must be given access via 
 You can create a service principal using the [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/get-started-with-azure-cli). First, log into the account you want to install into.
 
 ```sh
-$ az login
+az login
 ```
 
 List your accounts to get the subscription ID.
 
 ```sh
-$ az account list
+az account list
 ```
 
 Use the subscription ID to create a Service Principal.
 
 ```sh
-$ az ad sp create-for-rbac --name <principal-name> --role Owner --scopes /subscriptions/<subscription-id>
+az ad sp create-for-rbac --name <principal-name> --role Owner --scopes /subscriptions/<subscription-id>
 ```
 
 ## Sandboxes
 
 We support two sandboxes for Azure:
 
-* [Azure AKS](/guides/sandboxes#azure-aks) - A fully managed app sandbox that provisions both the VPN and AKS cluster.
-* [Azure AKS BYOVPN](/guides/sandboxes#azure-aks-byovpn) - A shared-responsibility sandbox that provisions the AKS cluster in a customer provided VPN.
+* [Azure AKS](/concepts/sandboxes#azure-aks) - A fully managed app sandbox that provisions both the VPN and AKS cluster.
+* [Azure AKS BYOVPN](/concepts/sandboxes#azure-aks-byovpn) - A shared-responsibility sandbox that provisions the AKS cluster in a customer provided VPN.
 
 We build these sandboxes using the standard [Azure modules](https://github.com/Azure/terraform-azure-modules).
 
-Reference the [Sandboxes Guide](./sandboxes) for more information on using sandboxes.
+Reference the [Sandboxes Guide](/concepts/sandboxes) for more information on using sandboxes.
