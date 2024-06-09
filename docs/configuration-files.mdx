@@ -9,8 +9,8 @@ keeping your configuration in sync.
 
 Config files are used to sync the configuration for a single app. To create an app and an example config file:
 
-```sh
-$ nuon apps create --name=<app-name>
+```sh nuon
+nuon apps create --name=<app-name>
 ```
 
 This will create an example config file named `nuon.<app-name>.toml`.
@@ -19,15 +19,15 @@ This will create an example config file named `nuon.<app-name>.toml`.
 
 To sync an app, and it's configuration run:
 
-```sh
-$ nuon apps sync
+```sh nuon
+nuon apps sync
 ```
 
 This will sync each configuration file in the current working directory.
 
 To sync only a single file:
-```sh
-$ nuon apps sync -c <file>
+```sh nuon
+nuon apps sync -c <file>
 ```
 
 <Note>
@@ -39,8 +39,8 @@ Nuon uses `terraform` to keep your application config in sync. If you would like
 
 You can export `terraform` from your application configuration using:
 
-```sh
-$ nuon apps export-terraform
+```sh nuon
+nuon apps export-terraform
 ```
 
 ## Reusable components
@@ -119,8 +119,8 @@ name = "{{.component_prefix}}_storage"
 
 You can validate a config file using `nuon apps validate`:
 
-```sh
-$ nuon apps validate -c nuon.<your-app>.toml
+```sh nuon
+nuon apps validate -c nuon.<your-app>.toml
 ```
 
 The CLI will automatically generate Terraform code from your config and run `terraform validate` on it and print any errors.
@@ -131,7 +131,7 @@ The configuration file allows you to configure an app similarly to the Nuon terr
 
 ### Input Config
 
-Define [inputs](./app-inputs) for an app using the `[input]` block.
+Define [inputs](/concepts/app-inputs) for an app using the `[input]` block.
 
 To configure a sensitive `api_key` and `vpc_id` input:
 
@@ -158,7 +158,7 @@ Inputs are not required, unless you are using a sandbox that requires inputs (su
 
 ### Runner Config
 
-Define the [runner](./runners) for an app using a `[runner]` block.
+Define the [runner](/concepts/runners) for an app using a `[runner]` block.
 
 To configure a runner for an `ecs` sandbox:
 
@@ -177,7 +177,7 @@ Runners are a required configuration for all apps. In most cases, you do not nee
 
 ### Installer Config
 
-Define an [installer](/guides/installers) for an app using an `[installer]` block.
+Define an [installer](/concepts/installers) for an app using an `[installer]` block.
 
 ```toml
 [installer]
@@ -213,7 +213,7 @@ apps = [
 
 ### Sandbox Config
 
-Define the [sandbox](./sandboxes) for an app using a `[sandbox]` block.
+Define the [sandbox](/concepts/sandboxes) for an app using a `[sandbox]` block.
 
 To define an `aws-ecs-byo-vpc` sandbox:
 
@@ -235,12 +235,12 @@ value = "{{.nuon.install.inputs.vpc_id}}"
 You can define components using a `[components]` block. Components must declare a `type` field and any relevant component-specific configuration.
 
 <Note>
-Each component will have dependencies automatically defined based on the order in the config file. Learn more about depencencies [here](./component-dependencies).
+Each component will have dependencies automatically defined based on the order in the config file. Learn more about depencencies [here](/guides/component-dependencies).
 </Note>
 
 ### Terraform Module Component
 
-To define a [terraform module component](./terraform-components) use the `terraform_module` type.
+To define a [terraform module component](/guides/terraform-components) use the `terraform_module` type.
 
 To configure a terraform component using a connected repo:
 
@@ -267,7 +267,7 @@ value = "{{.nuon.install.sandbox.account.id}}"
 
 ### Helm Chart Component
 
-To define a [helm chart component](./helm-chart-components) use the `helm_chart` type.
+To define a [helm chart component](/guides/helm-chart-components) use the `helm_chart` type.
 
 To configure a helm chart in a connected repo:
 
@@ -289,7 +289,7 @@ value = "{{.nuon.components.infra.outputs.iam_role}}"
 
 ### Docker Build Component
 
-To define a [docker build component](./docker-build-components) use the `docker_build` type.
+To define a [docker build component](/guides/docker-build-components) use the `docker_build` type.
 
 To configure a docker build component from a private repo:
 
@@ -308,7 +308,7 @@ branch = "main"
 
 ### Container Image Component
 
-To define a [container image component](./container-image-components) use the `container_image` type.
+To define a [container image component](/guides/container-image-components) use the `container_image` type.
 
 To configure a public container image:
 
@@ -338,7 +338,7 @@ region = "us-west-2"
 
 ### Job Component
 
-To define a [job component](./job-components) use the `job` type.
+To define a [job component](/guides/job-components) use the `job` type.
 
 To configure a job using a docker image from another component:
 

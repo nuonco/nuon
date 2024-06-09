@@ -15,11 +15,11 @@ This guide assumes that you have create an IAM role, granting Nuon access to pro
 If you want to offer your customers a self-serve experience, you can create an installer.
 Installers bundle together all the config required to present a friendly UX your customers can use to install your app.
 
-Reference the [Installers guide](/guides/installers) to learn more.
+Reference the [Installers guide](/concepts/installers) to learn more.
 
 ## CLI
 
-Installs can be created via the [Nuon CLI](../cli).
+Installs can be created via the [Nuon CLI](/cli).
 
 ```sh
 nuon installs create  --name=auto-deploy --region=us-east-1 --role=iam-role --inputs=eks_version=1.28
@@ -47,7 +47,7 @@ resource "nuon_install" "install" {
 ```
 
 <Note>
-Please refer to the [Terraform configuration management guide](./terraform-configuration-management.mdx) for more
+Please refer to the [Terraform configuration management guide](/guides/terraform-configuration-management) for more
 details on working with the terraform provider.
 </Note>
 
