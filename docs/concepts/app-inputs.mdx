@@ -40,7 +40,7 @@ resource "nuon_app_input" "<your-app>" {
 ## Configuration Using App Inputs
 
 App inputs can be used to configure both sandboxes and components. All inputs are made available via
-[variable](../guides/using-variables) configuration.
+[variable](/guides/using-variables) configuration.
 
 All inputs are accessed using `{{.nuon.install.inputs.<input-name>}}`.
 
@@ -287,17 +287,17 @@ used for:
 * accepting a VPC ID to install an app into
 * accepting a token to access a third party cloud provider or account
 
-The [nuon managed sandboxes](./sandboxes#nuon-managed-sandboxes) offer "bring-your-own-vpc" options, where inputs are
+The [nuon managed sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) offer "bring-your-own-vpc" options, where inputs are
 used to accept the ID of a customer managed VPC for installation.
 
-You can even use app inputs to manage resources from [third party cloud providers](./supported-platforms#supporting-custom-platforms).
+You can even use app inputs to manage resources from [third party cloud providers](/concepts/platforms#supporting-custom-platforms).
 
 ## Updating Inputs
 
 If you add a required input _after_ an install is created, the inputs must be added to the install before it can process
   any new sandbox updates or component provision/deprovision jobs.
 
-Currently, updating inputs is only supported via our [api](../api-ref/installs/update-an-install).
+Currently, updating inputs is only supported via our [api](/api-ref/installs/update-an-install).
 
 <Note>
 We recommend avoiding adding backwards incompatible input changes in the same app.

@@ -52,11 +52,11 @@ resource "nuon_app_sandbox" "<your-app>" {
 </CodeGroup>
 
 You can configure sandboxes to use either a public repo (using a `public_repo` block) or a private GitHub
-repo (using a `connected_repo` block). Read more about VCS configuration [here](../guides/vcs).
+repo (using a `connected_repo` block). Read more about VCS configuration [here](/guides/vcs).
 
 ## Nuon Managed Sandboxes
 
-We maintain managed sandboxes for each [platform](./supported-platforms) that we support. Each platform has both a
+We maintain managed sandboxes for each [platform](/concepts/platforms) that we support. Each platform has both a
 turnkey (where all resources are provisioned) and a bring-your-own-vpc sandbox.
 These sandboxes are designed to be a stable, configurable starting point and most relevant options around the network,
 cluster and compute are configurable.
@@ -215,7 +215,7 @@ resource "nuon_app_sandbox" "<your-app>" {
 
 ## Sandbox Outputs
 
-Sandbox outputs are used by the Nuon platform to install the runner, and made accessible to all components [using variables](../guides/using-variables).
+Sandbox outputs are used by the Nuon platform to install the runner, and made accessible to all components [using variables](/guides/using-variables).
 
 You can use any output from your selected sandbox by setting a config value on your component:
 
@@ -296,7 +296,7 @@ resource "nuon_app_sandbox" "<your-app>" {
 ### Use App Inputs
 
 App inputs allow you to collect customer input values such as resource IDs, tokens and more. These inputs are accesible
-to all components and your sandbox, [using variables](../guides/using-variables#inputs).
+to all components and your sandbox, [using variables](/guides/using-variables#inputs).
 
 To configure a sandbox parameter using an app input:
 
