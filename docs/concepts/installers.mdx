@@ -103,8 +103,9 @@ When you're ready, it can be deployed to any platform that supports Next.js.
 If you're using Vercel, follow these steps to deploy your fork of the template.
 
 1. Contact Nuon support to get a static token for your org. You'll need this so the installer can make API calls without using your personal API token.
+1. Fetch your current installer id, using `nuon installers list`.
 1. Follow the Next.js docs to [create a project on Vercel](https://nextjs.org/learn-pages-router/basics/deploying-nextjs-app/deploy). 
-1. In the Vercel project settings, under Environment Variables, add the `NUON_ORG_ID` and `NUON_API_TOKEN` vars, using your org ID and the static token from step 1.
+1. In the Vercel project settings, under Environment Variables, add the `NUON_ORG_ID` and `NUON_API_TOKEN`, `NUON_INSTALLER_ID` vars, using your org ID and the static token from step 1.
 1. Push to your repo, and Vercel should create a new deploy automatically.
 1. When you're ready to start serving customers, update the project's DNS settings to host the installer at your desired domain.
 
