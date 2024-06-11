@@ -16,10 +16,6 @@
             "to": "#08a5fd"
         }
     },
-    "topbarCtaButton": {
-        "name": "Sign in",
-        "url": "https://app.nuon.co"
-    },
     "tabs": [
         {
             "name": "Concepts",
@@ -310,5 +306,11 @@
             "source": "/api-ref",
             "destination": "/api-ref/getting-started"
         }
-    ]
+    ],
+  "analytics": {
+    "posthog": {
+      "apiKey": "phc_1NEQAphH0jxCX7opmp4Iyq2O6mu4tM552kMjJz8uKkl",
+      "apiHost": "https://us.i.posthog.com"
+    }
+  }
 }

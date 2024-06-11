@@ -42,7 +42,6 @@ export const InstallComponentProvider: FunctionComponent<{
       )
         .then((res) =>
           res.json().then((comp) => {
-            console.log('install component?', comp)
             setInstallComponent(comp)
             setIsFetching(false)
           })
