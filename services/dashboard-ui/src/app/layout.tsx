@@ -1,7 +1,7 @@
 import { UserProvider } from '@auth0/nextjs-auth0/client'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { InitDatadogLogs, InitDatadogRUM } from '@/utils'
+import { InitDatadogLogs, InitDatadogRUM, InitPosthogAnalytics } from '@/utils'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -30,9 +30,11 @@ export default function RootLayout({
         </>
       ) : null}
       <UserProvider>
-        <body className={inter.className}>{children}</body>
+        <body className={inter.className}>
+          {children}
+          {process?.env?.NEXT_PUBLIC_POSTHOG_TOKEN && <InitPosthogAnalytics />}
+        </body>
       </UserProvider>
     </html>
   )
 }
-

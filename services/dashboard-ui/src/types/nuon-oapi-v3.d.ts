@@ -493,7 +493,6 @@ export interface components {
       org_id?: string;
       runner_config?: components["schemas"]["app.AppRunnerConfig"];
       sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
-      slack_webhook_url?: string;
       status?: string;
       status_description?: string;
       updated_at?: string;
