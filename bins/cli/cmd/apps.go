@@ -174,7 +174,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	)
 	createCmd := &cobra.Command{
 		Use:               "create",
-		Short:             "Create a new app.",
+		Short:             "Create a new app",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
@@ -186,12 +186,27 @@ func (c *cli) appsCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&template, "template", "", "aws-ecs", "app config template type")
 	appsCmd.AddCommand(createCmd)
 
-	var (
-		rename bool
-	)
+	var confirmDelete bool
+	deleteCmd := &cobra.Command{
+		Use:               "delete",
+		Short:             "Delete an existing app",
+		PersistentPreRunE: c.persistentPreRunE,
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc.Delete(cmd.Context(), appID, PrintJSON)
+		},
+	}
+	deleteCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	deleteCmd.Flags().BoolVar(&confirmDelete, "confirm", false, "Confirm you want to delete the app")
+	deleteCmd.MarkFlagRequired("app-id")
+	deleteCmd.MarkFlagRequired("confirm")
+
+	appsCmd.AddCommand(deleteCmd)
+
+	var rename bool
 	renameCmd := &cobra.Command{
 		Use:               "rename",
-		Short:             "Rename an app.",
+		Short:             "Rename an app",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
