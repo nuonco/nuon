@@ -27,3 +27,7 @@ func (v *ListView) Render(data [][]string) {
 func (v *ListView) Error(err error) {
 	PrintError(err)
 }
+
+func (v *ListView) Print(msg string) {
+	pterm.DefaultBasicText.Println(msg)
+}
