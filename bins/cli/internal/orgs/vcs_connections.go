@@ -22,7 +22,7 @@ func (s *Service) VCSConnections(ctx context.Context, asJSON bool) {
 
 	data := [][]string{
 		{
-			"github install id",
+			"GITHUB INSTALL ID",
 		},
 	}
 

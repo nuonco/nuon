@@ -30,12 +30,12 @@ func (s *Service) SandboxRuns(ctx context.Context, installID string, asJSON bool
 
 	data := [][]string{
 		{
-			"id",
-			"run type",
-			"status",
-			"sandbox config type",
-			"sandbox repo",
-			"updated at",
+			"ID",
+			"RUN TYPE",
+			"STATUS",
+			"SANDBOX CONFIG TYPE",
+			"SANDBOX REPO",
+			"UPDATED AT",
 		},
 	}
 	for _, run := range runs {

@@ -40,12 +40,12 @@ func (s *Service) List(ctx context.Context, compID, appID string, limit *int64, 
 
 	data := [][]string{
 		{
-			"id",
-			"status",
-			"component name",
-			"config version",
-			"git ref / branch",
-			"created at",
+			"ID",
+			"STATUS",
+			"COMPONENT NAME",
+			"CONFIG VERSION",
+			"GIT REF / BRANCH",
+			"CREATED AT",
 		},
 	}
 	for _, build := range builds {

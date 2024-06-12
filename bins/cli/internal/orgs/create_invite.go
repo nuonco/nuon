@@ -25,9 +25,9 @@ func (s *Service) CreateInvite(ctx context.Context, email string, asJSON bool) {
 
 	data := [][]string{
 		{
-			"id",
-			"email",
-			"status",
+			"ID",
+			"EMAIL",
+			"STATUS",
 		},
 		{
 			invite.ID,
