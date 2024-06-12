@@ -22,11 +22,11 @@ func (s *Service) ConnectedRepos(ctx context.Context, asJSON bool) {
 
 	data := [][]string{
 		{
-			"user",
-			"name",
-			"default branch",
-			"git url",
-			"github install id",
+			"USER",
+			"NAME",
+			"DEFAULT BRANCH",
+			"GIT URL",
+			"GITHUB INSTALL ID",
 		},
 	}
 

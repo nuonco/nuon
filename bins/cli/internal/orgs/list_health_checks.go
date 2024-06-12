@@ -23,9 +23,9 @@ func (s *Service) ListHealthChecks(ctx context.Context, limit int64, asJSON bool
 
 	data := [][]string{
 		{
-			"created at",
-			"status",
-			"description",
+			"CREATED AT",
+			"STATUS",
+			"DESCRIPTION",
 		},
 	}
 
