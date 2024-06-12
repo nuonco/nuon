@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -74,8 +75,8 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 		Model(&currentApp).
 		Updates(app.App{
 			Name:        req.Name,
-			Description: req.Description,
-			DisplayName: req.DisplayName,
+			Description: generics.NewNullString(req.Description),
+			DisplayName: generics.NewNullString(req.DisplayName),
 		})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update app: %w", res.Error)

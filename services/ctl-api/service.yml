@@ -27,7 +27,7 @@ env:
 
   # common toggles for local development based on what you are working on
   DISABLE_METRICS: true
-  DISABLE_NOTIFICATIONS: false
+  DISABLE_NOTIFICATIONS: true
   # DB_LOG_QUERIES: true
   #LOG_LEVEL: "DEBUG"
 
