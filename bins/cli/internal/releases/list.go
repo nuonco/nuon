@@ -45,10 +45,10 @@ func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) {
 
 	data := [][]string{
 		{
-			"id",
-			"status",
-			"build id",
-			"created at",
+			"ID",
+			"STATUS",
+			"BUILD ID",
+			"CREATED AT",
 		},
 	}
 	for _, release := range releases {

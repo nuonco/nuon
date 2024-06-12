@@ -30,14 +30,14 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, asJSON bool
 
 	data := [][]string{
 		{
-			"id",
-			"status",
-			"type",
-			"build id",
-			"created at",
-			"component id",
-			"component name",
-			"component config version",
+			"ID",
+			"STATUS",
+			"TYPE",
+			"BUILD ID",
+			"CREATED AT",
+			"COMPONENT ID",
+			"COMPONENT NAME",
+			"COMPONENT CONFIG VERSION",
 		},
 	}
 	for _, deploy := range deploys {

@@ -22,10 +22,10 @@ func (s *Service) Steps(ctx context.Context, releaseID string, asJSON bool) {
 
 	data := [][]string{
 		{
-			"id",
-			"status",
-			"created at",
-			"delay",
+			"ID",
+			"STATUS",
+			"CREATED AT",
+			"DELAY",
 		},
 	}
 	for _, step := range steps {

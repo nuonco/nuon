@@ -22,9 +22,9 @@ func (s *Service) ListInvites(ctx context.Context, limit int64, asJSON bool) {
 
 	data := [][]string{
 		{
-			"id",
-			"email",
-			"status",
+			"ID",
+			"EMAIL",
+			"STATUS",
 		},
 	}
 

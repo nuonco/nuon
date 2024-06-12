@@ -31,11 +31,11 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 
 	data := [][]string{
 		{
-			"id",
-			"name",
-			"value",
-			"created-by",
-			"created-at",
+			"ID",
+			"NAME",
+			"VALUE",
+			"CREATED-BY",
+			"CREATED-AT",
 		},
 	}
 	for _, secret := range secrets {
