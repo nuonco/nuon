@@ -6,9 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type InstallerMetadata struct {
@@ -27,31 +29,31 @@ type InstallerMetadata struct {
 	Name        string `json:"name" gorm:"notnull"`
 	Description string `json:"description" gorm:"notnull"`
 
-	PostInstallMarkdown string `json:"post_install_markdown"`
-	FooterMarkdown      string `json:"footer_markdown"`
-	CopyrightMarkdown   string `json:"copyright_markdown"`
+	PostInstallMarkdown generics.NullString `json:"post_install_markdown" swaggertype:"string"`
+	FooterMarkdown      generics.NullString `json:"footer_markdown" swaggertype:"string"`
+	CopyrightMarkdown   generics.NullString `json:"copyright_markdown" swaggertype:"string"`
 
-	DocumentationURL string `json:"documentation_url" gorm:"notnull"`
-	LogoURL          string `json:"logo_url" gorm:"notnull"`
-	GithubURL        string `json:"github_url" gorm:"notnull"`
-	CommunityURL     string `json:"community_url" gorm:"notnull"`
-	HomepageURL      string `json:"homepage_url" gorm:"notnull"`
-	DemoURL          string `json:"demo_url"`
-	FaviconURL       string `json:"favicon_url"`
+	DocumentationURL string              `json:"documentation_url" gorm:"notnull"`
+	LogoURL          string              `json:"logo_url" gorm:"notnull"`
+	GithubURL        string              `json:"github_url" gorm:"notnull"`
+	CommunityURL     string              `json:"community_url" gorm:"notnull"`
+	HomepageURL      string              `json:"homepage_url" gorm:"notnull"`
+	DemoURL          generics.NullString `json:"demo_url" swaggertype:"string"`
+	FaviconURL       string              `json:"favicon_url"`
 
 	FormattedDemoURL string `json:"formatted_demo_url" gorm:"-"`
 }
 
 func (a *InstallerMetadata) AfterQuery(tx *gorm.DB) error {
-	a.FormattedDemoURL = a.DemoURL
-	if !strings.HasPrefix(a.DemoURL, "https://www.youtube.com") {
+	a.FormattedDemoURL = a.DemoURL.String
+	if !strings.HasPrefix(a.DemoURL.String, "https://www.youtube.com") {
 		return nil
 	}
-	if strings.HasPrefix(a.DemoURL, "https://www.youtube.com/embed") {
+	if strings.HasPrefix(a.DemoURL.String, "https://www.youtube.com/embed") {
 		return nil
 	}
 
-	u, err := url.Parse(a.DemoURL)
+	u, err := url.Parse(a.DemoURL.String)
 	if err != nil {
 		return nil
 	}
