@@ -23,11 +23,11 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 
 	data := [][]string{
 		{
-			"id",
-			"name",
-			"status",
-			"sandbox mode",
-			"updated at",
+			"ID",
+			"NAME",
+			"STATUS",
+			"SANDBOX MODE",
+			"UPDATED AT",
 		},
 	}
 
