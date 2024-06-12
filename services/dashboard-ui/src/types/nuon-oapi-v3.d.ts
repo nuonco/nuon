@@ -555,7 +555,6 @@ export interface components {
       description?: string;
       display_name?: string;
       id?: string;
-      is_default?: boolean;
       name?: string;
       org_id?: string;
       updated_at?: string;

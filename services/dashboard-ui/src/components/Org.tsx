@@ -118,3 +118,23 @@ export const OrgHealthStatus: FC<{
     />
   )
 }
+
+export const CreateOrgForm: FC<{ action: any }> = ({ action }) => {
+  return (
+    <form className="flex flex-col gap-4 max-w-md" action={action}>
+      <label className="flex flex-col flex-auto gap-2">
+        <span className="font-semibold">Organization name</span>
+        <input
+          className="border bg-inherit rounded px-4 py-1.5 shadow-inner"
+          name="name"
+          type="text"
+          required
+        />
+      </label>
+
+      <button className="rounded text-sm text-gray-50 bg-fuchsia-600 hover:bg-fuchsia-700 focus:bg-fuchsia-700 active:bg-fuchsia-800 px-4 py-1.5 w-fit">
+        Create organization
+      </button>
+    </form>
+  )
+}
