@@ -86,8 +86,6 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 
 		time.Sleep(defaultSyncSleep)
 	}
-
-	return nil
 }
 
 func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) {

@@ -27,8 +27,6 @@ type AppInputGroup struct {
 	DisplayName string `json:"display_name"`
 	Description string `json:"description" gorm:"not null; default null"`
 
-	IsDefault bool `json:"is_default"`
-
 	AppInputs []AppInput `json:"app_inputs" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
