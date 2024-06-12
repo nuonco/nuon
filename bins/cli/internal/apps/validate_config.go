@@ -139,40 +139,83 @@ func (a *Service) execTerraformValidate(ctx context.Context, appID string, tfJSO
 	return validateOut, nil
 }
 
-func (s *Service) Validate(ctx context.Context, file string, asJSON bool) {
+func (s *Service) Validate(ctx context.Context, all bool, file string, asJSON bool) {
 	view := ui.NewGetView()
 
-	appName, err := parse.AppNameFromFilename(file)
-	if err != nil {
-		ui.PrintError(err)
-		return
+	var (
+		cfgFiles []parse.File
+		err      error
+	)
+
+	if all {
+		view.Print("searching for config files in current directory")
+		cfgFiles, err = parse.FindConfigFiles(".")
+		if err != nil {
+			view.Error(err)
+			return
+		}
 	}
-	appID, err := lookup.AppID(ctx, s.api, appName)
-	if err != nil {
-		ui.PrintError(err)
+	if file != "" {
+		appName, err := parse.AppNameFromFilename(file)
+		if err != nil {
+			view.Error(err)
+			return
+		}
+
+		view.Print(fmt.Sprintf("found %s", file))
+		cfgFiles = []parse.File{
+			{
+				Path:    file,
+				AppName: appName,
+			},
+		}
+	}
+
+	if len(cfgFiles) < 1 {
+		view.Error(&ui.CLIUserError{
+			Msg: fmt.Sprintf("must set --all or --file, and make sure at least one \"nuon.<app-name>.toml\" file exists"),
+		})
 		return
 	}
 
-	tfJSON, err := s.loadConfig(ctx, file)
+	for _, cfgFile := range cfgFiles {
+		view.Print(fmt.Sprintf("validating file \"%s\"", cfgFile.Path))
+		if err := s.validate(ctx, cfgFile, asJSON); err != nil {
+			view.Error(err)
+			break
+		}
+	}
+}
+
+func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) error {
+	view := ui.NewListView()
+
+	appID, err := lookup.AppID(ctx, s.api, file.AppName)
 	if err != nil {
 		ui.PrintError(err)
-		return
+		return err
+	}
+
+	tfJSON, err := s.loadConfig(ctx, file.Path)
+	if err != nil {
+		ui.PrintError(err)
+		return err
 	}
 
 	validateOutput, err := s.execTerraformValidate(ctx, appID, tfJSON)
 	if err != nil {
 		ui.PrintError(err)
-		return
+		return err
 	}
 
 	if asJSON {
 		ui.PrintJSON(validateOutput)
-		return
+		return nil
 	}
 
 	if len(validateOutput.Diagnostics) < 1 {
 		view.Print("ok")
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -186,6 +229,7 @@ func (s *Service) Validate(ctx context.Context, file string, asJSON bool) {
 		})
 	}
 
+	view.Print(fmt.Sprintf("%d errors found", len(validateOutput.Diagnostics)))
 	view.Render(data)
-	view.Print(fmt.Sprintf("%d errors", len(validateOutput.Diagnostics)))
+	return nil
 }
