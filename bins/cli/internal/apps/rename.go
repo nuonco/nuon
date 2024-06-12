@@ -55,7 +55,7 @@ func (s *Service) Rename(ctx context.Context, appID string, name string, rename,
 		return
 	}
 
-	if err == nil && rename {
+	if err != nil && rename {
 		view.Update("renaming config file")
 		err := os.Rename(origFp, newFp)
 		if err != nil {

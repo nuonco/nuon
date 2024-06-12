@@ -18,6 +18,7 @@ resource "nuon_app_input" "main" {
       name         = input.value.name
       description  = input.value.description
       default      = input.value.default
+      group = input.value.group
       required     = input.value.required
       display_name = input.value.display_name
       sensitive    = input.value.sensitive

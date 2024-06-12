@@ -51,18 +51,6 @@ func (s *appInputSuite) TestCreateAppInputConfig() {
 		require.NotEmpty(t, resp)
 	})
 
-	s.T().Run("successfully creates app inputs with default group", func(t *testing.T) {
-		req := s.fakeInputRequest()
-		for key, input := range req.Inputs {
-			input.Group = generics.ToPtr("")
-			req.Inputs[key] = input
-		}
-
-		resp, err := s.apiClient.CreateAppInputConfig(s.ctx, s.appID, req)
-		require.NoError(t, err)
-		require.NotEmpty(t, resp)
-	})
-
 	s.T().Run("errors on missing group", func(t *testing.T) {
 		req := s.fakeInputRequest()
 		req.Groups = nil

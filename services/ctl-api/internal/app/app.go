@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -17,9 +18,9 @@ type App struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_app_name,unique"`
 
-	Name        string `json:"name" gorm:"index:idx_app_name,unique"`
-	Description string `json:"description"`
-	DisplayName string `json:"display_name"`
+	Name        string              `json:"name" gorm:"index:idx_app_name,unique"`
+	Description generics.NullString `json:"description" swaggertype:"string"`
+	DisplayName generics.NullString `json:"display_name" swaggertype:"string"`
 
 	OrgID string `json:"org_id" gorm:"index:idx_app_name,unique"`
 	Org   Org    `faker:"-" json:"-"`
