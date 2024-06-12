@@ -1,8 +1,15 @@
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
-import { Heading, Grid, OrgCard, Page, PageHeader } from '@/components'
+import {
+  Heading,
+  Grid,
+  Link,
+  OrgCard,
+  Page,
+  PageHeader,
+  Text,
+} from '@/components'
 import { OrgProvider } from '@/context'
 import { getOrgs } from '@/lib'
-import { createOrg } from './actions'
 
 export default withPageAuthRequired(
   async function OrgDashboard() {
@@ -15,7 +22,7 @@ export default withPageAuthRequired(
           <PageHeader
             title={
               <Heading level={1} variant="title">
-                {hasOrgs ? 'Your organizations' : 'Create your organization'}
+                {hasOrgs ? 'Your organizations' : 'Welcome to Nuon'}
               </Heading>
             }
           />
@@ -30,21 +37,19 @@ export default withPageAuthRequired(
             ))}
           </Grid>
         ) : (
-          <form className="flex flex-col gap-4 max-w-md" action={createOrg}>
-            <label className="flex flex-col flex-auto gap-2">
-              <span className="font-semibold">Organization name</span>
-              <input
-                className="border bg-inherit rounded px-4 py-1.5 shadow-inner"
-                name="name"
-                type="text"
-                required
-              />
-            </label>
-
-            <button className="rounded text-sm text-gray-50 bg-fuchsia-600 hover:bg-fuchsia-700 focus:bg-fuchsia-700 active:bg-fuchsia-800 px-4 py-1.5 w-fit">
-              Create organization
-            </button>
-          </form>
+          <div className="max-w-lg flex flex-col gap-4">
+            <Heading variant="subtitle">
+              You need to create an organization
+            </Heading>
+            <Text className="inline-flex">
+              To create your organization and get started with Nuon please
+              contact us at{' '}
+              <Link className="inline-flex" href="mailto:team@nuon.co">
+                team@nuon.co
+              </Link>
+              .
+            </Text>
+          </div>
         )}
       </Page>
     )
