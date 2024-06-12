@@ -62,9 +62,9 @@ func (s *Service) PrintDeployPlan(ctx context.Context, installID, deployID strin
 			}
 
 			data := [][]string{{
-				"type",
-				"name",
-				"value",
+				"TYPE",
+				"NAME",
+				"VALUE",
 			}}
 
 			for _, v := range p.Waypoint_Plan.Variables.Variables {

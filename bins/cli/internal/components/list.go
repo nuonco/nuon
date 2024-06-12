@@ -38,12 +38,12 @@ func (s *Service) List(ctx context.Context, appNameOrID string, asJSON bool) {
 
 	data := [][]string{
 		{
-			"id",
-			"name",
-			"created at",
-			"updated at",
-			"created by",
-			"config versions",
+			"ID",
+			"NAME",
+			"CREATED AT",
+			"UPDATED AT",
+			"CREATED BY",
+			"CONFIG VERSIONS",
 		},
 	}
 	for _, component := range components {

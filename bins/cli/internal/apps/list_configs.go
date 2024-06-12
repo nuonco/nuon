@@ -23,11 +23,11 @@ func (s *Service) ListConfigs(ctx context.Context, appID string, asJSON bool) {
 
 	data := [][]string{
 		{
-			"id",
-			"version",
-			"status",
-			"created by",
-			"created at",
+			"ID",
+			"VERSION",
+			"STATUS",
+			"CREATED BY",
+			"CREATED AT",
 		},
 	}
 	for _, cfg := range cfgs {

@@ -22,9 +22,9 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 
 	data := [][]string{
 		{
-			"id",
-			"name",
-			"created at",
+			"ID",
+			"NAME",
+			"CREATED AT",
 		},
 	}
 	for _, installer := range installers {
