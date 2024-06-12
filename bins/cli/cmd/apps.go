@@ -6,6 +6,11 @@ import (
 )
 
 func (c *cli) appsCmd() *cobra.Command {
+	var (
+		all  bool
+		file string
+	)
+
 	appsCmd := &cobra.Command{
 		Use:               "apps",
 		Short:             "View the apps in your org",
@@ -138,10 +143,6 @@ func (c *cli) appsCmd() *cobra.Command {
 	selectAppCmd.Flags().StringVar(&appID, "app", "", "The ID of the app you want to use")
 	appsCmd.AddCommand(selectAppCmd)
 
-	var (
-		all  bool
-		file string
-	)
 	syncCmd := &cobra.Command{
 		Use:               "sync",
 		Short:             "Sync all .nuon.toml config files in the current directory.",
@@ -152,7 +153,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		},
 	}
 	syncCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
-	syncCmd.Flags().BoolVarP(&all, "all", "", true, "sync all config files found")
+	syncCmd.Flags().BoolVarP(&all, "all", "", false, "sync all config files found")
 	appsCmd.AddCommand(syncCmd)
 
 	validateCmd := &cobra.Command{
@@ -161,11 +162,11 @@ func (c *cli) appsCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Validate(cmd.Context(), file, PrintJSON)
+			svc.Validate(cmd.Context(), all, file, PrintJSON)
 		},
 	}
 	validateCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
-	validateCmd.MarkFlagRequired("file")
+	validateCmd.Flags().BoolVarP(&all, "all", "", false, "sync all config files found")
 	appsCmd.AddCommand(validateCmd)
 
 	var (
