@@ -8,6 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/validator"
 )
@@ -38,7 +39,8 @@ func (a *Activities) SyncAppMetadata(ctx context.Context, req SyncAppMetadataReq
 			ID: appCfg.AppID,
 		}).
 		Updates(app.App{
-			Description: cfg.Description,
+			Description: generics.NewNullString(cfg.Description),
+			DisplayName: generics.NewNullString(cfg.DisplayName),
 		})
 	if res.Error != nil {
 		return fmt.Errorf("unable to sync app metadata: %w", res.Error)

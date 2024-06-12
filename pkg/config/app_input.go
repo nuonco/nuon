@@ -11,6 +11,7 @@ import (
 type AppInput struct {
 	Name        string `mapstructure:"name,omitempty" toml:"name"`
 	Description string `mapstructure:"description,omitempty" toml:"description"`
+	Group       string `mapstructure:"group,omitempty" toml:"group"`
 	Default     string `mapstructure:"default" toml:"default"`
 	Required    bool   `mapstructure:"required" toml:"required"`
 	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name"`
@@ -20,7 +21,7 @@ type AppInput struct {
 type AppInputGroup struct {
 	Name        string `mapstructure:"name,omitempty" toml:"name"`
 	Description string `mapstructure:"description,omitempty" toml:"description"`
-	Default     string `mapstructure:"default" toml:"default"`
+	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name"`
 }
 
 type AppInputConfig struct {
@@ -78,6 +79,7 @@ func (a *AppInputConfig) parse(ctx ConfigContext) error {
 		}
 
 		a.Inputs = append(a.Inputs, inpCfg.Inputs...)
+		a.Groups = append(a.Groups, inpCfg.Groups...)
 	}
 
 	return nil

@@ -7,6 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
@@ -98,12 +100,12 @@ func (s *service) createInstaller(ctx context.Context, orgID string, req *Create
 			DocumentationURL: req.Metadata.DocumentationURL,
 			GithubURL:        req.Metadata.GithubURL,
 			LogoURL:          req.Metadata.LogoURL,
-			DemoURL:          req.Metadata.DemoURL,
+			DemoURL:          generics.NewNullString(req.Metadata.DemoURL),
 			FaviconURL:       req.Metadata.FaviconURL,
 
-			PostInstallMarkdown: req.Metadata.PostInstallMarkdown,
-			CopyrightMarkdown:   req.Metadata.CopyrightMarkdown,
-			FooterMarkdown:      req.Metadata.FooterMarkdown,
+			PostInstallMarkdown: generics.NewNullString(req.Metadata.PostInstallMarkdown),
+			CopyrightMarkdown:   generics.NewNullString(req.Metadata.CopyrightMarkdown),
+			FooterMarkdown:      generics.NewNullString(req.Metadata.FooterMarkdown),
 		},
 	}
 
