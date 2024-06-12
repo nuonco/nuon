@@ -133,11 +133,11 @@ func (s *service) createAppInputGroups(ctx context.Context, orgID, appID string,
 }
 
 func (s *service) createAppInputs(ctx context.Context, cfg *app.AppInputConfig, req *CreateAppInputConfigRequest) ([]app.AppInput, error) {
-	inputs := make([]app.AppInput, 0, len(req.Inputs))
-
-	if len(inputs) == 0 {
+	if len(req.Inputs) == 0 {
 		return []app.AppInput{}, nil
 	}
+
+	inputs := make([]app.AppInput, 0, len(req.Inputs))
 
 	for name, input := range req.Inputs {
 		var groupID string
