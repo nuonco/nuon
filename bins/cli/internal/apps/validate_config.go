@@ -176,7 +176,7 @@ func (s *Service) Validate(ctx context.Context, file string, asJSON bool) {
 	}
 
 	data := [][]string{
-		{"resource", "summary", "error"},
+		{"RESOURCE", "SUMMARY", "ERROR"},
 	}
 	for _, diag := range validateOutput.Diagnostics {
 		data = append(data, []string{

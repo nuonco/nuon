@@ -28,11 +28,11 @@ func (s *Service) Components(ctx context.Context, installID string, asJSON bool)
 
 	data := [][]string{
 		{
-			"id",
-			"name",
-			"status",
-			"latest deploy",
-			"latest release",
+			"ID",
+			"NAME",
+			"STATUS",
+			"LATEST DEPLOY",
+			"LATEST RELEASE",
 		},
 	}
 	for _, comp := range components {
