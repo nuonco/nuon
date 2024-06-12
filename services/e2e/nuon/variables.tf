@@ -70,17 +70,22 @@ variable "azure" {
 
 variable "groups" {
   type = list(object({
-    name          = string
-    description   = string
-    display_name  = string
+    name         = string
+    description  = string
+    display_name = string
   }))
   description = "Input groups"
 
   default = [
     {
-      name          = "sandbox_inputs"
-      display_name  = "Sandbox Inputs"
-      description   = "Inputs related to the sandbox"
+      name         = "sandbox_inputs"
+      display_name = "Sandbox Inputs"
+      description  = "Inputs related to the sandbox"
+    },
+    {
+      name         = "app_inputs"
+      display_name = "App Inputs"
+      description  = "Inputs related to the app"
     },
   ]
 }
@@ -105,7 +110,7 @@ variable "inputs" {
       display_name  = "EKS Version"
       description   = "Version of k8s to use with EKS."
       default       = ""
-      group = "sandbox_inputs"
+      group         = "sandbox_inputs"
       required      = true
       value         = "v1.27.8"
       interpolation = "{{.nuon.install.inputs.eks_version}}"
@@ -114,7 +119,7 @@ variable "inputs" {
     {
       name          = "admin_access_role_arn"
       display_name  = "Admin Access Role ARN"
-      group = "default"
+      group         = "sandbox_inputs"
       description   = "The IAM role that provides access to manage the install."
       default       = "default"
       required      = false
@@ -127,7 +132,7 @@ variable "inputs" {
       display_name  = "API Key"
       description   = "API key to access a third party provider"
       default       = ""
-      group = "default"
+      group         = "app_inputs"
       required      = true
       value         = "D066077E-F464-47F1-90EE-FE2466D0561C"
       interpolation = "{{.nuon.install.inputs.api_key"
