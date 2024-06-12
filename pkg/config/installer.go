@@ -24,9 +24,9 @@ type InstallerConfig struct {
 	DemoURL          string `mapstructure:"demo_url,omitempty" toml:"demo_url"`
 	FaviconURL       string `mapstructure:"favicon_url,omitempty" toml:"favicon_url"`
 
-	PostInstallMarkdown string `mapstructure:"post_install_markdown,omitempty" toml:"post_install_markdown"`
-	CopyrightMarkdown   string `mapstructure:"copyright_markdown,omitempty" toml:"copyright_markdown"`
-	FooterMarkdown      string `mapstructure:"footer_markdown,omitempty" toml:"footer_markdown"`
+	PostInstallMarkdown string `mapstructure:"post_install_markdown" toml:"post_install_markdown"`
+	CopyrightMarkdown   string `mapstructure:"copyright_markdown" toml:"copyright_markdown"`
+	FooterMarkdown      string `mapstructure:"footer_markdown" toml:"footer_markdown"`
 }
 
 func (a *InstallerConfig) ToResourceType() string {

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
@@ -89,10 +90,10 @@ func (s *service) createApp(ctx context.Context, user *app.UserToken, org *app.O
 	newApp := app.App{
 		OrgID:             org.ID,
 		Name:              req.Name,
-		Description:       req.Description,
+		Description:       generics.NewNullString(req.Description),
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start and provision app",
-		DisplayName:       req.DisplayName,
+		DisplayName:       generics.NewNullString(req.DisplayName),
 	}
 	newApp.NotificationsConfig = app.NotificationsConfig{
 		EnableSlackNotifications: user.TokenType == app.TokenTypeAuth0,
