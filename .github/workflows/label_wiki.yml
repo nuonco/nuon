@@ -1,0 +1,36 @@
+---
+name: add labels based on changes
+on: pull_request
+
+jobs:
+  changes:
+    name: 🔍 changes
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.changes.outputs.changes }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            wiki: wiki/**
+            docs: docs/**
+            api: services/ctl-api/**
+
+  add-label:
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+    if: ${{ needs.changes.outputs.changes != '[]' && needs.changes.outputs.changes != '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        label: ${{ fromJSON(needs.changes.outputs.changes) }}
+    steps:
+      - name: add auto deploy label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: ${{ matrix.label }}
