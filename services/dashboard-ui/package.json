@@ -12,7 +12,7 @@
     "start": "next start -p 4000",
     "lint": "next lint",
     "fmt": "prettier src",
-    "test": "vitest",
+    "test": "vitest run",
     "tsc": "tsc --noEmit"
   },
   "dependencies": {
