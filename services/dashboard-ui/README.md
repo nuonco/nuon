@@ -2,17 +2,18 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
+First, you'll need to create an `.env.local` file. You can copy the `.example.env.local` file and update the required values.
 
-First, run the development server:
+``` bash
+cp .example.env.local .env.local
+```
+
+Install the project dependencies using `npm install`.
+
+Then, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:4000](http://localhost:4000) with your browser to see the result.
@@ -26,14 +27,16 @@ This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-opti
 To learn more about Next.js, take a look at the following resources:
 
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## Integrity checks
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+We aim to make changes quickly and safely, using integrity checks that run in GitHub actions when you create a PR. Most text editors can be configured to format and lint code automatically and you can run these checks locally using either Earthly (e.g. `earthly +test --image_tag=local --repo=mono`) or `npm`.
 
 
+- lint (default next eslint): `npm run lint`
+
+- typecheck (typescript): `npm run tsc`, `npm run tsc -- --watch`
+
+- fmt (prettier): `npm run fmt`, `npm run fmt -- --write` (to format code in src)
+
+- unit test (vitest + react-testing-lib + msw): `npm run test`, `npm run test -- --watch`
