@@ -46,7 +46,7 @@ test:
   FROM +deps
 
   RUN echo "running unit test..." && \
-    npm run test -- run
+    npm run test
 
 k8s:
    COPY --dir k8s/ .
