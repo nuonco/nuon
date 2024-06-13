@@ -3,11 +3,12 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	temporal "github.com/powertoolsdev/mono/pkg/temporal/client"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type service struct {
@@ -37,6 +38,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/integration-user", s.CreateIntegrationUser)
 	api.POST("/v1/general/canary-user", s.CreateCanaryUser)
 	api.POST("/v1/general/admin-user", s.CreateAdminUser)
+
+	api.GET("/v1/general/migrations", s.GetMigrations)
 
 	return nil
 }
