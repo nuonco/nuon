@@ -5,8 +5,6 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/docs"
 	appsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/service"
 	componentsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/general/service"
@@ -14,7 +12,6 @@ import (
 	installsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/service"
 	orgsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/service"
 	releasesservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/service"
-	sandboxesservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/sandboxes/service"
 	vcsservice "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/service"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/health"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
@@ -22,11 +19,13 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/cors"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/global"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/headers"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/invites"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/userorgs"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/api"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/docs"
 )
 
 func (c *cli) registerAPI() error {
@@ -52,7 +51,7 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsMiddleware(public.New)),
 		fx.Provide(api.AsMiddleware(cors.New)),
 		fx.Provide(api.AsMiddleware(config.New)),
-		fx.Provide(api.AsMiddleware(userorgs.New)),
+		fx.Provide(api.AsMiddleware(invites.New)),
 
 		// add endpoints
 		fx.Provide(api.AsService(docs.New)),
@@ -61,7 +60,6 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 		fx.Provide(api.AsService(appsservice.New)),
 		fx.Provide(api.AsService(vcsservice.New)),
 		fx.Provide(api.AsService(generalservice.New)),
-		fx.Provide(api.AsService(sandboxesservice.New)),
 		fx.Provide(api.AsService(installsservice.New)),
 		fx.Provide(api.AsService(installersservice.New)),
 		fx.Provide(api.AsService(componentsservice.New)),

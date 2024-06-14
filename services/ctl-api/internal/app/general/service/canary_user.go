@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm/clause"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"gorm.io/gorm/clause"
 )
 
 const (
@@ -23,6 +24,7 @@ type CreateCanaryUserRequest struct {
 type CreateCanaryUserResponse struct {
 	APIToken        string `json:"api_token"`
 	GithubInstallID string `json:"github_install_id"`
+	Email           string `json:"email"`
 }
 
 // @ID CreateCanaryUser
@@ -41,34 +43,46 @@ func (s *service) CreateCanaryUser(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.createCanaryUser(ctx, req.CanaryID)
+	acct, err := s.createCanaryUser(ctx, req.CanaryID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create canary user: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusCreated, CreateCanaryUserResponse{
-		APIToken:        token.Token,
+		APIToken:        acct.Token,
 		GithubInstallID: s.cfg.IntegrationGithubInstallID,
+		Email:           acct.Email,
 	})
 }
 
-func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.UserToken, error) {
-	token := app.UserToken{
+func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.Token, error) {
+	acct := app.Account{
+		Email:       fmt.Sprintf("%s@nuon.co", canaryID),
+		Subject:     canaryID,
+		AccountType: app.AccountTypeCanary,
+	}
+	res := s.db.WithContext(ctx).
+		Create(&acct)
+
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create integration account: %w", res.Error)
+	}
+
+	token := app.Token{
 		CreatedByID: canaryID,
 		Token:       domains.NewUserTokenID(),
 		TokenType:   app.TokenTypeCanary,
-		Subject:     canaryID,
 		ExpiresAt:   time.Now().Add(time.Hour),
 		IssuedAt:    time.Now(),
 		Issuer:      canaryID,
-		Email:       canaryID,
 	}
 
-	res := s.db.WithContext(ctx).
+	res = s.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "subject"}},
-			UpdateAll: true}).
+			UpdateAll: true,
+		}).
 		Create(&token)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create integration user: %w", res.Error)

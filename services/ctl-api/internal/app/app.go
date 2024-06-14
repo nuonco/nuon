@@ -13,7 +13,7 @@ import (
 type App struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
-	CreatedBy   UserToken             `json:"created_by" gorm:"references:Subject"`
+	CreatedBy   Account               `json:"created_by"`
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_app_name,unique"`

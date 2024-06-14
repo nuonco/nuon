@@ -18,9 +18,9 @@ const (
 )
 
 type Org struct {
-	ID          string    `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
-	CreatedByID string    `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   UserToken `json:"created_by" gorm:"references:Subject"`
+	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
+	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
+	CreatedBy   Account `json:"created_by"`
 
 	CreatedAt time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
@@ -42,7 +42,6 @@ type Org struct {
 
 	Apps           []App            `faker:"-" swaggerignore:"true" json:"apps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	VCSConnections []VCSConnection  `json:"vcs_connections,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
-	UserOrgs       []UserOrg        `json:"users,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 	Invites        []OrgInvite      `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	HealthChecks   []OrgHealthCheck `json:"health_checks,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
@@ -55,6 +54,10 @@ type Org struct {
 
 	Installers        []Installer         `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
 	InstallerMetadata []InstallerMetadata `gorm:"constraint:OnDelete:CASCADE;" json:"-"`
+
+	Roles        []Role        `faker:"-" swaggerignore:"true" json:"roles,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	Policies     []Policy      `faker:"-" swaggerignore:"true" json:"policies,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+	AccountRoles []AccountRole `faker:"-" swaggerignore:"true" json:"account_roles,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
 	// Filled in at read time
 	LatestHealthCheck OrgHealthCheck `json:"latest_health_check" gorm:"-"`

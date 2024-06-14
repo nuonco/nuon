@@ -28,6 +28,11 @@ func (a *AutoMigrate) migrateModels(ctx context.Context) error {
 			"Apps",
 			&app.InstallerApp{},
 		},
+		{
+			&app.Account{},
+			"Roles",
+			&app.AccountRole{},
+		},
 	}
 	for _, joinTable := range joinTables {
 		if err := a.db.WithContext(ctx).SetupJoinTable(joinTable.model, joinTable.field, joinTable.joinTable); err != nil {
