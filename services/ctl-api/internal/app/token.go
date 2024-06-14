@@ -31,10 +31,6 @@ type Token struct {
 	Token     string    `gorm:"uniqueIndex;notnull" json:"-"`
 	TokenType TokenType `json:"token_type"`
 
-	// Deprecated
-	Email   string
-	Subject string
-
 	// claim data
 	ExpiresAt time.Time `json:"expires_at" gorm:"notnull"`
 	IssuedAt  time.Time `json:"issued_at" gorm:"notnull"`

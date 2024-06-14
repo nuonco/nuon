@@ -42,20 +42,20 @@ func (s *service) CreateCanaryUser(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := s.createCanaryUser(ctx, req.CanaryID)
+	acct, token, err := s.createCanaryUser(ctx, req.CanaryID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create canary user: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusCreated, CreateCanaryUserResponse{
-		APIToken:        acct.Token,
+		APIToken:        token.Token,
 		GithubInstallID: s.cfg.IntegrationGithubInstallID,
 		Email:           acct.Email,
 	})
 }
 
-func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.Token, error) {
+func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.Account, *app.Token, error) {
 	acct := app.Account{
 		Email:       fmt.Sprintf("%s@nuon.co", canaryID),
 		Subject:     canaryID,
@@ -65,7 +65,7 @@ func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.T
 		Create(&acct)
 
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create integration account: %w", res.Error)
+		return nil, nil, fmt.Errorf("unable to create integration account: %w", res.Error)
 	}
 
 	token := app.Token{
@@ -81,8 +81,8 @@ func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.T
 	res = s.db.WithContext(ctx).
 		Create(&token)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create canary user: %w", res.Error)
+		return nil, nil, fmt.Errorf("unable to create canary user: %w", res.Error)
 	}
 
-	return &token, nil
+	return &acct, &token, nil
 }
