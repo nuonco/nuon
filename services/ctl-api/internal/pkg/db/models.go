@@ -6,14 +6,18 @@ import "github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 func allModels() []interface{} {
 	return []interface{}{
 		// management, auth and user management
+		&app.Role{},
+		&app.Account{},
+		&app.AccountRole{},
+		&app.Token{},
+		&app.Policy{},
+
 		&app.NotificationsConfig{},
-		&app.UserToken{},
 
 		// org basics
 		&app.Org{},
 		&app.OrgInvite{},
 		&app.OrgHealthCheck{},
-		&app.UserOrg{},
 
 		// installers
 		&app.Installer{},
@@ -33,10 +37,6 @@ func allModels() []interface{} {
 		&app.AppInputGroup{},
 		&app.AppInputConfig{},
 		&app.AppSecret{},
-
-		// built in sandboxes
-		&app.Sandbox{},
-		&app.SandboxRelease{},
 
 		// installs
 		&app.AWSAccount{},

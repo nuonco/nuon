@@ -9,14 +9,17 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth/context"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 )
 
 type middleware struct {
-	cfg *internal.Config
-	l   *zap.Logger
-	db  *gorm.DB
+	cfg             *internal.Config
+	l               *zap.Logger
+	db              *gorm.DB
+	authzClient *authz.Client
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
@@ -45,15 +48,21 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		userToken, err := m.fetchUserToken(ctx, token)
+		acctToken, err := m.fetchAccountToken(ctx, token)
 		if err != nil {
 			ctx.Error(err)
 			ctx.Abort()
 			return
 		}
-		if userToken != nil {
-			ctx.Set(userTokenCtxKey, userToken)
-			ctx.Set(userIDCtxKey, userToken.Subject)
+		if acctToken != nil {
+			acct, err := m.authzClient.FetchAccount(ctx, acctToken.AccountID)
+			if err != nil {
+				ctx.Error(err)
+				ctx.Abort()
+				return
+			}
+
+			authcontext.SetContext(ctx, acct)
 			ctx.Next()
 			return
 		}
@@ -70,15 +79,21 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		// store the token
-		userToken, err = m.saveUserToken(ctx, token, claims)
+		acctToken, err = m.saveAccountToken(ctx, token, claims)
 		if err != nil {
-			ctx.Error(fmt.Errorf("unable to save user token: %w", err))
+			ctx.Error(fmt.Errorf("unable to save account token: %w", err))
 			ctx.Abort()
 			return
 		}
 
-		ctx.Set(userTokenCtxKey, userToken)
-		ctx.Set(userIDCtxKey, userToken.Subject)
+		acct, err := m.authzClient.FetchAccount(ctx, acctToken.AccountID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to fetch: %w", err))
+			ctx.Abort()
+			return
+		}
+
+		authcontext.SetContext(ctx, acct)
 		ctx.Next()
 	}
 }
@@ -87,10 +102,15 @@ func (m *middleware) Name() string {
 	return "auth"
 }
 
-func New(l *zap.Logger, cfg *internal.Config, db *gorm.DB) *middleware {
+func New(l *zap.Logger,
+	cfg *internal.Config,
+	db *gorm.DB,
+	authzClient *authz.Client,
+) *middleware {
 	return &middleware{
-		l:   l,
-		cfg: cfg,
-		db:  db,
+		l:               l,
+		cfg:             cfg,
+		db:              db,
+		authzClient: authzClient,
 	}
 }

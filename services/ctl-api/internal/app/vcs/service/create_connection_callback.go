@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -53,7 +54,7 @@ func (s *service) CreateConnectionCallback(ctx *gin.Context) {
 		return
 	}
 
-	dbCtx := context.WithValue(ctx, "user_id", org.CreatedByID)
+	dbCtx := context.WithValue(ctx, "account_id", org.CreatedByID)
 	vcsConn, err := s.createOrgConnection(dbCtx, req.OrgID, req.GithubInstallID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org connection: %w", err))

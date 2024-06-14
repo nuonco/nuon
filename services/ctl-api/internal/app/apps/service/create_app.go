@@ -11,7 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
+	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth/context"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
 )
 
@@ -52,7 +52,7 @@ func (s *service) CreateApp(ctx *gin.Context) {
 		return
 	}
 
-	user, err := auth.FromContext(ctx)
+	user, err := authcontext.FromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -86,7 +86,7 @@ func (s *service) CreateApp(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, app)
 }
 
-func (s *service) createApp(ctx context.Context, user *app.UserToken, org *app.Org, req *CreateAppRequest) (*app.App, error) {
+func (s *service) createApp(ctx context.Context, acct *app.Account, org *app.Org, req *CreateAppRequest) (*app.App, error) {
 	newApp := app.App{
 		OrgID:             org.ID,
 		Name:              req.Name,
@@ -96,8 +96,8 @@ func (s *service) createApp(ctx context.Context, user *app.UserToken, org *app.O
 		DisplayName:       generics.NewNullString(req.DisplayName),
 	}
 	newApp.NotificationsConfig = app.NotificationsConfig{
-		EnableSlackNotifications: user.TokenType == app.TokenTypeAuth0,
-		EnableEmailNotifications: user.TokenType == app.TokenTypeAuth0,
+		EnableSlackNotifications: acct.AccountType == app.AccountTypeAuth0,
+		EnableEmailNotifications: acct.AccountType == app.AccountTypeAuth0,
 		InternalSlackWebhookURL:  org.NotificationsConfig.InternalSlackWebhookURL,
 		SlackWebhookURL:          req.SlackWebhookURL,
 	}
