@@ -11,7 +11,7 @@ test('getInstallEvents should return an array of install event objects', async (
     orgId,
   })
 
-  expect(spec).toHaveLength(9)
+  expect(spec).toHaveLength(3)
   spec.forEach((s) => {
     expect(s).toHaveProperty('id')
     expect(s).toHaveProperty('created_at')

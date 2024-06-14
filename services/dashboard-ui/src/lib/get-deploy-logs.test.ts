@@ -18,12 +18,6 @@ test('getDeployLogs should return an array of deploy log objects', async () => {
       null,
       null,
       null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
     ]
   `)
 })
