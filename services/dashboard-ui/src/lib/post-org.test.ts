@@ -2,7 +2,7 @@ import '@test/mock-fetch-options'
 import { expect, test } from 'vitest'
 import { postOrg } from './post-org'
 
-test('postOrg should return an array of install object', async () => {
+test('postOrg should return an new org object', async () => {
   const spec = await postOrg({ name: 'test' })
 
   expect(spec).toHaveProperty('id')
