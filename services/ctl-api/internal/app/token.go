@@ -41,10 +41,6 @@ type Token struct {
 	Issuer    string    `json:"issuer" gorm:"notnull;default null"`
 }
 
-func (a *Token) TableName() string {
-	return "user_tokens"
-}
-
 func (a *Token) BeforeCreate(tx *gorm.DB) error {
 	a.ID = domains.NewUserTokenID()
 	return nil
