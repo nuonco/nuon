@@ -18,12 +18,6 @@ test('getSandboxRunLogs should return an array of run log objects', async () => 
       null,
       null,
       null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
     ]
   `)
 })
