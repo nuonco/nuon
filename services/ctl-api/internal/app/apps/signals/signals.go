@@ -31,11 +31,11 @@ const (
 type Signal struct {
 	Type eventloop.SignalType `validate:"required"`
 
-	// required for updated sandbox
-	SandboxReleaseID string `validate:"required_if=Operation update_sandbox"`
-
 	// required for new app config
 	AppConfigID string `validate:"required_if=Operation config_created"`
+
+	// required for app sandbox config being updated
+	AppSandboxConfigID string `validate:"required_if=Operation sandbox_update"`
 
 	eventloop.BaseSignal
 }

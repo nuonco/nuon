@@ -9,6 +9,7 @@ import (
 	installshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/powertoolsdev/mono/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/db/migrations"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
@@ -46,6 +47,7 @@ func (c *cli) providers() []fx.Option {
 		fx.Provide(activities.New),
 		fx.Provide(notifications.New),
 		fx.Provide(eventloop.New),
+		fx.Provide(authz.New),
 
 		// add helpers for each domain
 		fx.Provide(vcshelpers.New),

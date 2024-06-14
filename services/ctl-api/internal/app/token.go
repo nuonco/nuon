@@ -3,9 +3,10 @@ package app
 import (
 	"time"
 
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
 type TokenType string
@@ -18,25 +19,33 @@ const (
 	TokenTypeCanary      TokenType = "canary"
 )
 
-type UserToken struct {
+type Token struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
 	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-"`
 
+	AccountID string `json:"account_id"`
+
 	Token     string    `gorm:"uniqueIndex;notnull" json:"-"`
 	TokenType TokenType `json:"token_type"`
 
+	// Deprecated
+	Email   string
+	Subject string
+
 	// claim data
-	Subject   string    `json:"subject" gorm:"notnull;default null;unique"`
 	ExpiresAt time.Time `json:"expires_at" gorm:"notnull"`
 	IssuedAt  time.Time `json:"issued_at" gorm:"notnull"`
 	Issuer    string    `json:"issuer" gorm:"notnull;default null"`
-	Email     string    `json:"email"`
 }
 
-func (u *UserToken) BeforeCreate(tx *gorm.DB) error {
-	u.ID = domains.NewUserTokenID()
+func (a *Token) TableName() string {
+	return "user_tokens"
+}
+
+func (a *Token) BeforeCreate(tx *gorm.DB) error {
+	a.ID = domains.NewUserTokenID()
 	return nil
 }

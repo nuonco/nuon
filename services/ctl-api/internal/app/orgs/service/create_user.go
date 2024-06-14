@@ -1,14 +1,14 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth/context"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
-	"gorm.io/gorm/clause"
 )
 
 type CreateOrgUserRequest struct {
@@ -29,11 +29,22 @@ type CreateOrgUserRequest struct {
 // @Failure		403				{object}	stderr.ErrResponse
 // @Failure		404				{object}	stderr.ErrResponse
 // @Failure		500				{object}	stderr.ErrResponse
-// @Success		201				{object}	app.UserOrg
+// @Success		201				{object}	app.Account
 // @Router			/v1/orgs/current/user [POST]
 func (s *service) CreateUser(ctx *gin.Context) {
 	org, err := orgmiddleware.FromContext(ctx)
 	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	acct, err := authcontext.FromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if err := s.authzClient.AddAccountRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -44,25 +55,5 @@ func (s *service) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	userOrg, err := s.createUser(ctx, org.ID, req.UserID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create user: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, userOrg)
-}
-
-func (s *service) createUser(ctx context.Context, orgID, userID string) (*app.UserOrg, error) {
-	userOrg := &app.UserOrg{
-		CreatedByID: userID,
-		OrgID:       orgID,
-		UserID:      userID,
-	}
-
-	err := s.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&userOrg).Error
-	if err != nil {
-		return nil, fmt.Errorf("unable to add user to org: %w", err)
-	}
-	return userOrg, nil
+	ctx.JSON(http.StatusCreated, acct)
 }

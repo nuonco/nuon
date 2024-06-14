@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type appSandboxesSuite struct {
@@ -42,27 +43,6 @@ func (s *appSandboxesSuite) SetupTest() {
 }
 
 func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
-	s.T().Run("success with built in sandbox", func(t *testing.T) {
-		sandbox, err := s.apiClient.GetSandbox(s.ctx, "aws-eks")
-		require.NoError(t, err)
-		require.NotEmpty(t, sandbox.Releases[0].ID)
-
-		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-		req.SandboxReleaseID = sandbox.Releases[0].ID
-		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig = nil
-
-		cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
-		require.NoError(t, err)
-		require.NotNil(t, cfg)
-
-		// grab latest and ensure it is correctly configured
-		latestCfg, err := s.apiClient.GetAppSandboxLatestConfig(s.ctx, s.appID)
-		require.NoError(t, err)
-		require.NotNil(t, latestCfg)
-		require.Equal(t, latestCfg.SandboxReleaseID, sandbox.Releases[0].ID)
-	})
-
 	s.T().Run("updates installs to reference new sandbox", func(t *testing.T) {
 		install := s.createInstall(s.appID)
 
@@ -78,17 +58,6 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 		require.NoError(t, err)
 		require.NotEmpty(t, updatedInstall)
 		require.Equal(t, updatedInstall.AppSandboxConfig.ID, appSandboxCfg.ID)
-	})
-
-	s.T().Run("errors on invalid built-in sandbox id", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-		req.SandboxReleaseID = generics.GetFakeObj[string]()
-		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig = nil
-
-		cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
-		require.Error(t, err)
-		require.Empty(t, cfg)
 	})
 
 	s.T().Run("successfully stores public vcs config", func(t *testing.T) {
@@ -171,24 +140,6 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 }
 
 func (s *appSandboxesSuite) TestGetAppSandboxLatestConfig() {
-	s.T().Run("success with built in sandbox", func(t *testing.T) {
-		sandbox, err := s.apiClient.GetSandbox(s.ctx, "aws-eks")
-		require.NoError(t, err)
-		require.NotEmpty(t, sandbox.Releases[0].ID)
-
-		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-		req.SandboxReleaseID = sandbox.Releases[0].ID
-		req.PublicGitVcsConfig = nil
-		req.ConnectedGithubVcsConfig = nil
-		_, err = s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
-		require.NoError(t, err)
-
-		cfg, err := s.apiClient.GetAppSandboxLatestConfig(s.ctx, s.appID)
-		require.NoError(t, err)
-		require.NotNil(t, cfg)
-		require.NotEmpty(t, cfg.SandboxRelease)
-	})
-
 	s.T().Run("success with connected github", func(t *testing.T) {
 		if s.githubInstallID == "" {
 			t.Skip("skipping because INTEGRATION_GITHUB_INSTALL_ID is not set")
