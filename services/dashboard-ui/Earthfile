@@ -7,6 +7,7 @@ WORKDIR /src
 ARG EARTHLY_GIT_PROJECT_NAME
 ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}-dashboard-ui
 ARG SERVICE=dashboard-ui
+ARG NUON_API_URL=https://api.stage.nuon.co
 
 deps:
     RUN apk add --update build-base \

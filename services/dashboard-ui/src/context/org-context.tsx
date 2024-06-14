@@ -2,7 +2,7 @@
 
 import React, {
   FunctionComponent,
-  ReactElement,
+  ReactNode,
   createContext,
   useContext,
   useEffect,
@@ -19,20 +19,20 @@ type TOrgContext = {
 export const OrgContext = createContext<TOrgContext | null>(null)
 
 export const OrgProvider: FunctionComponent<{
-  children?: ReactElement
+  children?: ReactNode
   initOrg: TOrg
   shouldPoll?: boolean
 }> = ({ children, initOrg, shouldPoll = false }) => {
   const [isFetching, setIsFetching] = useState<boolean>(false)
   const [org, setOrg] = useState<TOrg>(initOrg)
 
-  useEffect(() => {
+  useEffect(() => {   
     const fetchOrg = () => {
       setIsFetching(true)
       fetch(`/api/${org?.id}`)
         .then((res) =>
-          res.json().then((ins) => {
-            setOrg(ins)
+          res.json().then((org) => {
+            setOrg(org)
             setIsFetching(false)
           })
         )

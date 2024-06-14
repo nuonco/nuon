@@ -2,7 +2,7 @@ import { TInstall, TInstallComponent, TSandboxRun } from '@/types'
 
 // general utils
 export const API_URL =
-  process?.env?.NEXT_PUBLIC_API_URL || 'https://api.nuon.co'
+  (process?.env?.NEXT_PUBLIC_API_URL || process?.env?.NUON_API_URL) || 'https://api.nuon.co'
 export const POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_POLL_DURATION as unknown as number) || 45000
 export const SHORT_POLL_DURATION =

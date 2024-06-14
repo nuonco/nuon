@@ -18,12 +18,6 @@ test('getBuildLogs should return a build object', async () => {
       null,
       null,
       null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
     ]
   `)  
 })

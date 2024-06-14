@@ -2,7 +2,7 @@
 
 import React, {
   FunctionComponent,
-  ReactElement,
+  ReactNode,
   createContext,
   useContext,
   useEffect,
@@ -19,7 +19,7 @@ type TInstallContext = {
 export const InstallContext = createContext<TInstallContext | null>(null)
 
 export const InstallProvider: FunctionComponent<{
-  children?: ReactElement
+  children?: ReactNode
   initInstall: TInstall
   shouldPoll?: boolean
 }> = ({ children, initInstall, shouldPoll = false }) => {
