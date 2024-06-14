@@ -42,8 +42,6 @@ func (s *service) getInstallSandboxRuns(ctx context.Context, installID string) (
 	res := s.db.WithContext(ctx).
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig").
-		Preload("AppSandboxConfig.SandboxRelease").
-		Preload("AppSandboxConfig.SandboxRelease.Sandbox").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").

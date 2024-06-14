@@ -10,7 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth"
+	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth/context"
 )
 
 type CreateOrgRequest struct {
@@ -44,7 +44,7 @@ func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
 // @Success		201				{object}	app.Org
 // @Router			/v1/orgs [POST]
 func (s *service) CreateOrg(ctx *gin.Context) {
-	user, err := auth.FromContext(ctx)
+	user, err := authcontext.FromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -76,12 +76,12 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, newOrg)
 }
 
-func (s *service) createOrg(ctx context.Context, user *app.UserToken, req *CreateOrgRequest) (*app.Org, error) {
+func (s *service) createOrg(ctx context.Context, acct *app.Account, req *CreateOrgRequest) (*app.Org, error) {
 	orgTyp := app.OrgTypeReal
 	if req.UseSandboxMode {
 		orgTyp = app.OrgTypeSandbox
 	}
-	if user.TokenType == app.TokenTypeIntegration {
+	if acct.AccountType == app.AccountTypeIntegration {
 		orgTyp = app.OrgTypeIntegration
 	}
 	if s.cfg.ForceSandboxMode {
@@ -89,8 +89,8 @@ func (s *service) createOrg(ctx context.Context, user *app.UserToken, req *Creat
 	}
 
 	notificationsCfg := app.NotificationsConfig{
-		EnableSlackNotifications: user.TokenType == app.TokenTypeAuth0,
-		EnableEmailNotifications: user.TokenType == app.TokenTypeAuth0,
+		EnableSlackNotifications: acct.AccountType == app.AccountTypeAuth0,
+		EnableEmailNotifications: acct.AccountType == app.AccountTypeAuth0,
 		InternalSlackWebhookURL:  s.cfg.InternalSlackWebhookURL,
 	}
 
@@ -121,13 +121,12 @@ func (s *service) createOrg(ctx context.Context, user *app.UserToken, req *Creat
 		return nil, fmt.Errorf("unable to set org ID on notifications config: %w", res.Error)
 	}
 
-	// add the current user to the org
-	userOrg := app.UserOrg{
-		UserID: user.Subject,
-		OrgID:  org.ID,
+	if err := s.authzClient.CreateOrgRoles(ctx, org.ID); err != nil {
+		return nil, fmt.Errorf("unable to create org roles: %w", err)
 	}
-	if err := s.db.WithContext(ctx).Create(&userOrg).Error; err != nil {
-		return nil, fmt.Errorf("unable to create user org: %w", err)
+
+	if err := s.authzClient.AddAccountRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
+		return nil, fmt.Errorf("unable to add user to org: %w", err)
 	}
 
 	return &org, nil

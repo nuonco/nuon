@@ -7,9 +7,10 @@ import (
 	"gorm.io/plugin/soft_delete"
 )
 
+// ComponentDependency is a many2many table used by gorm under the hood
 type ComponentDependency struct {
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
-	CreatedBy   UserToken             `json:"created_by" gorm:"references:Subject"`
+	CreatedBy   Account               `json:"created_by"`
 	CreatedAt   time.Time             `json:"created_at" gorm:"notnull"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`

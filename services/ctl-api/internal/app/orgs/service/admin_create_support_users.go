@@ -3,25 +3,25 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/pkg/shortid/domains"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
-var defaultSupportUsers = []string{
+var defaultSupportUsers = [][2]string{
 	// Dre Smith
-	"google-oauth2|113884954942864770921",
-	//Jon Morehouse
-	"google-oauth2|114670241124324496631",
-	//Jordan Acosta
-	"google-oauth2|106750268626571499868",
-	//Nat Hamilton
-	"google-oauth2|107796233904597398271",
+	{"google-oauth2|113884954942864770921", "andre@nuon.co"},
+	// Jon Morehouse
+	{"google-oauth2|114670241124324496631", "jon@nuon.co"},
+	// Jordan Acosta
+	{"google-oauth2|106750268626571499868", "jordan@nuon.co"},
+	// Nat Hamilton
+	{"google-oauth2|107796233904597398271", "nat@nuon.co"},
+	// Sam Boyer
+	{"google-oauth2|112612105639694013121", "sam@nuon.co"},
 }
 
 // @ID AdminCreateSupportUsers
@@ -43,17 +43,10 @@ func (s *service) CreateSupportUsers(ctx *gin.Context) {
 		return
 	}
 
-	cctx := context.WithValue(ctx, "user_id", org.CreatedByID)
-
-	if err := s.ensureUsers(ctx, defaultSupportUsers); err != nil {
-		ctx.Error(fmt.Errorf("unable to ensure users: %w", err))
-		return
-	}
-
-	// add each user to this org
-	for _, userID := range defaultSupportUsers {
-		if _, err := s.createUser(cctx, orgID, userID); err != nil {
-			ctx.Error(fmt.Errorf("unable to add users to org: %w", err))
+	cctx := context.WithValue(ctx, "account_id", org.CreatedByID)
+	for _, user := range defaultSupportUsers {
+		if err := s.createSupportUser(cctx, user[0], user[1], orgID); err != nil {
+			ctx.Error(err)
 			return
 		}
 	}
@@ -63,48 +56,22 @@ func (s *service) CreateSupportUsers(ctx *gin.Context) {
 	})
 }
 
-func (s *service) ensureUsers(ctx context.Context, userIDs []string) error {
-	// make sure each user exists in the database first
-	for _, userID := range defaultSupportUsers {
-		_, err := s.getUser(ctx, userID)
-		if err == nil {
-			continue
-		}
-
+func (s *service) createSupportUser(ctx context.Context, email, subject, orgID string) error {
+	acct, err := s.authzClient.FindAccount(ctx, email)
+	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
 
-		token := app.UserToken{
-			CreatedByID: userID,
-			Token:       domains.NewUserTokenID(),
-			Subject:     userID,
-			ExpiresAt:   time.Now(),
-			IssuedAt:    time.Now(),
-			Issuer:      userID,
-			Email:       userID,
-			TokenType:   app.TokenTypeAdmin,
+		acct, err = s.authzClient.CreateAccount(ctx, email, subject)
+		if err != nil {
+			return err
 		}
+	}
 
-		res := s.db.WithContext(ctx).
-			Create(&token)
-		if res.Error != nil {
-			return fmt.Errorf("unable to create user: %w", res.Error)
-		}
+	if err := s.authzClient.AddAccountRole(ctx, app.RoleTypeOrgAdmin, orgID, acct.ID); err != nil {
+		return err
 	}
 
 	return nil
-}
-
-func (s *service) getUser(ctx context.Context, subject string) (*app.UserToken, error) {
-	var user app.UserToken
-
-	res := s.db.WithContext(ctx).Where(app.UserToken{
-		Subject: subject,
-	}).First(&user)
-	if res.Error != nil {
-		return nil, res.Error
-	}
-
-	return &user, nil
 }

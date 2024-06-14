@@ -8,9 +8,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm/clause"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"gorm.io/gorm/clause"
 )
 
 type StaticTokenRequest struct {
@@ -64,7 +65,7 @@ func (s *service) AdminCreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	_, err = s.createUser(ctx, orgID, token.Subject)
+	//_, err = s.createUser(ctx, orgID, token.Subject)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to add static token user to org: %w", err))
 		return
@@ -75,17 +76,17 @@ func (s *service) AdminCreateStaticToken(ctx *gin.Context) {
 	})
 }
 
-func (s *service) createStaticToken(ctx context.Context, orgID string, duration time.Duration) (*app.UserToken, error) {
+func (s *service) createStaticToken(ctx context.Context, orgID string, duration time.Duration) (*app.Token, error) {
 	email := fmt.Sprintf("%s-static@nuon.co", orgID)
-	token := app.UserToken{
+	token := app.Token{
 		CreatedByID: email,
 		Token:       domains.NewUserTokenID(),
-		Subject:     email,
-		ExpiresAt:   time.Now().Add(duration),
-		IssuedAt:    time.Now(),
-		Issuer:      email,
-		Email:       email,
-		TokenType:   app.TokenTypeStatic,
+		// Subject:     email,
+		ExpiresAt: time.Now().Add(duration),
+		IssuedAt:  time.Now(),
+		Issuer:    email,
+		// Email:     email,
+		TokenType: app.TokenTypeStatic,
 	}
 
 	res := s.db.WithContext(ctx).

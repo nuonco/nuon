@@ -8,15 +8,17 @@ import (
 
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
 type service struct {
-	v   *validator.Validate
-	l   *zap.Logger
-	db  *gorm.DB
-	mw  metrics.Writer
-	cfg *internal.Config
+	v           *validator.Validate
+	l           *zap.Logger
+	db          *gorm.DB
+	mw          metrics.Writer
+	cfg         *internal.Config
+	authzClient *authz.Client
 
 	// experimental
 	evClient eventloop.Client
@@ -69,13 +71,15 @@ func New(v *validator.Validate,
 	l *zap.Logger,
 	cfg *internal.Config,
 	evClient eventloop.Client,
+	authzClient *authz.Client,
 ) *service {
 	return &service{
-		l:        l,
-		v:        v,
-		db:       db,
-		mw:       mw,
-		cfg:      cfg,
-		evClient: evClient,
+		l:           l,
+		v:           v,
+		db:          db,
+		mw:          mw,
+		cfg:         cfg,
+		evClient:    evClient,
+		authzClient: authzClient,
 	}
 }

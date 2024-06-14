@@ -7,17 +7,18 @@ import (
 	"time"
 
 	"github.com/auth0/go-jwt-middleware/v2/validator"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
-func (m *middleware) fetchUserToken(ctx context.Context, token string) (*app.UserToken, error) {
-	var userToken app.UserToken
+func (m *middleware) fetchAccountToken(ctx context.Context, token string) (*app.Token, error) {
+	var userToken app.Token
 	res := m.db.
 		WithContext(ctx).
-		Where(&app.UserToken{
+		Where(&app.Token{
 			Token: token,
 		}).
 		First(&userToken)
@@ -27,7 +28,7 @@ func (m *middleware) fetchUserToken(ctx context.Context, token string) (*app.Use
 		return nil, nil
 	}
 	if res.Error != nil {
-		return nil, fmt.Errorf("error occurred querying user tokens: %w", res.Error)
+		return nil, fmt.Errorf("error occurred querying account tokens: %w", res.Error)
 	}
 
 	// make sure this is not an expired token
@@ -49,31 +50,44 @@ func (c customClaims) Validate(ctx context.Context) error {
 	return nil
 }
 
-func (m *middleware) saveUserToken(ctx context.Context, token string, claims *validator.ValidatedClaims) (*app.UserToken, error) {
+func (m *middleware) saveAccountToken(ctx context.Context, token string, claims *validator.ValidatedClaims) (*app.Token, error) {
 	customClaims, ok := claims.CustomClaims.(*customClaims)
 	if !ok {
 		return nil, fmt.Errorf("unable to get custom claims")
 	}
 
-	userToken := app.UserToken{
+	acct, err := m.authzClient.FindAccount(ctx, customClaims.Email)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("unable to get account: %w", err)
+		}
+
+		// create account
+		acct, err = m.authzClient.CreateAccount(ctx, customClaims.Email, claims.RegisteredClaims.Subject)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create account: %w", err)
+		}
+	}
+
+	acctToken := app.Token{
 		Token:       token,
 		TokenType:   app.TokenTypeAuth0,
-		Subject:     claims.RegisteredClaims.Subject,
 		ExpiresAt:   time.Unix(claims.RegisteredClaims.Expiry, 0),
 		IssuedAt:    time.Unix(claims.RegisteredClaims.IssuedAt, 0),
 		Issuer:      claims.RegisteredClaims.Issuer,
 		CreatedByID: claims.RegisteredClaims.Subject,
-		Email:       customClaims.Email,
+		AccountID:   acct.ID,
 	}
 
 	res := m.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "subject"}},
-			UpdateAll: true}).
-		Create(&userToken)
+			Columns:   []clause.Column{{Name: "token"}},
+			UpdateAll: true,
+		}).
+		Create(&acctToken)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to save user token: %w", res.Error)
 	}
 
-	return &userToken, nil
+	return &acctToken, nil
 }
