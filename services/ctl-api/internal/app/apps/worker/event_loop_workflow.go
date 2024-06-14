@@ -74,7 +74,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			}
 		case signals.OperationUpdateSandbox:
 			op = "update_sandbox"
-			if err := w.updateSandbox(ctx, req.ID, signal.SandboxReleaseID, req.SandboxMode); err != nil {
+			if err := w.updateSandbox(ctx, req.ID, "", req.SandboxMode); err != nil {
 				status = "update_sandbox"
 				l.Info("unable to provision app: %w", zap.Error(err))
 			}

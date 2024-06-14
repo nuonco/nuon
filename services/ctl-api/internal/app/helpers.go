@@ -7,7 +7,7 @@ import (
 // createdByIDFromContext returns the user id from the context. Notably, this depends on the `middlewares/auth` to set
 // this, but we do not use that code to prevent a cycle import
 func createdByIDFromContext(ctx context.Context) string {
-	val := ctx.Value("user_id")
+	val := ctx.Value("account_id")
 	valStr, ok := val.(string)
 	if !ok {
 		return ""

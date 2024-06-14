@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
@@ -30,7 +31,6 @@ func (s *service) getAllApps(ctx context.Context) ([]*app.App, error) {
 	var apps []*app.App
 	res := s.db.WithContext(ctx).
 		Preload("AppSandboxConfigs").
-		Preload("AppSandboxConfigs.SandboxRelease").
 		Preload("Installs").
 		Preload("Components").
 		Order("created_at desc").

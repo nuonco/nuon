@@ -11,6 +11,7 @@ type CreateIntegrationUserRequest struct{}
 type CreateIntegrationUserResponse struct {
 	APIToken        string `json:"api_token"`
 	GithubInstallID string `json:"github_install_id"`
+	Email           string `json:"email"`
 }
 
 func (c *client) CreateIntegrationUser(ctx context.Context) (*CreateIntegrationUserResponse, error) {
@@ -35,6 +36,7 @@ type CreateCanaryUserRequest struct {
 type CreateCanaryUserResponse struct {
 	APIToken        string `json:"api_token"`
 	GithubInstallID string `json:"github_install_id"`
+	Email           string `json:"email"`
 }
 
 func (c *client) CreateCanaryUser(ctx context.Context, canaryID string) (*CreateCanaryUserResponse, error) {

@@ -6,6 +6,18 @@ func NewAppID() string {
 	return shortid.NewNanoID("app")
 }
 
+func NewAccountID() string {
+	return shortid.NewNanoID("acc")
+}
+
+func NewAccountPolicyID() string {
+	return shortid.NewNanoID("acp")
+}
+
+func NewAccountRoleID() string {
+	return shortid.NewNanoID("acp")
+}
+
 func NewInstallerID() string {
 	return shortid.NewNanoID("int")
 }

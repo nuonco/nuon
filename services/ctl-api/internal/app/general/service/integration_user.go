@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
@@ -20,6 +21,7 @@ type CreateIntegrationUserRequest struct{}
 type CreateIntegrationUserResponse struct {
 	APIToken        string `json:"api_token"`
 	GithubInstallID string `json:"github_install_id"`
+	Email           string `json:"email"`
 }
 
 // @ID CreateIntegrationUser
@@ -44,20 +46,31 @@ func (s *service) CreateIntegrationUser(ctx *gin.Context) {
 	})
 }
 
-func (s *service) createIntegrationUser(ctx context.Context) (*app.UserToken, error) {
+func (s *service) createIntegrationUser(ctx context.Context) (*app.Token, error) {
 	intID := domains.NewIntegrationUserID()
-	token := app.UserToken{
+
+	acct := app.Account{
+		Email:       fmt.Sprintf("%s@nuon.co", intID),
+		Subject:     intID,
+		AccountType: app.AccountTypeIntegration,
+	}
+	res := s.db.WithContext(ctx).
+		Create(&acct)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create integration account: %w", res.Error)
+	}
+
+	token := app.Token{
 		CreatedByID: intID,
+		AccountID:   acct.ID,
 		Token:       domains.NewUserTokenID(),
 		TokenType:   app.TokenTypeIntegration,
-		Subject:     intID,
 		ExpiresAt:   time.Now().Add(defaultIntegrationAPITokenTimeout),
 		IssuedAt:    time.Now(),
 		Issuer:      intID,
-		Email:       intID,
 	}
 
-	res := s.db.WithContext(ctx).
+	res = s.db.WithContext(ctx).
 		Create(&token)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create integration user: %w", res.Error)
