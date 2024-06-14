@@ -36,7 +36,7 @@ func (s *service) getAllOrgs(ctx context.Context, typ string) ([]*app.Org, error
 	var orgs []*app.Org
 	res := s.db.WithContext(ctx).
 		Preload("CreatedBy").
-		Joins("JOIN user_tokens ON user_tokens.subject=orgs.created_by_id").
+		Joins("JOIN accounts ON accounts.id=orgs.created_by_id").
 		Where("org_type = ?", typ).
 		Order("orgs.created_at desc").
 		Find(&orgs)
