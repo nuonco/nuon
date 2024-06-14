@@ -5,13 +5,14 @@
   "scripts": {
     "predev": "npm run generate-api-types",
     "dev": "next dev -p 4000",
-    "prebuild": "npm run generate-api-types",
     "build": "next build",
-    "generate-api-types": "openapi-typescript https://api.nuon.co/oapi/v3 -o ./src/types/nuon-oapi-v3.d.ts",
-    "generate-api-mocks": "msw-auto-mock https://api.nuon.co/oapi/v3 -o ./test/mock-api-handlers.js --node --base-url https://api.nuon.co",
+    "prebuild": "npm run generate-api-types",
+    "generate-api-types": "openapi-typescript ${NUON_API_URL:=https://api.nuon.co}/oapi/v3 -o ./src/types/nuon-oapi-v3.d.ts",
+    "generate-api-mocks": "msw-auto-mock ${NUON_API_URL:=https://api.nuon.co}/oapi/v3 -o ./test/mock-api-handlers.js -m 5 --node --base-url $NUON_API_URL",
     "start": "next start -p 4000",
     "lint": "next lint",
     "fmt": "prettier src",
+    "pretest": "npm run generate-api-mocks",
     "test": "vitest run",
     "tsc": "tsc --noEmit"
   },
