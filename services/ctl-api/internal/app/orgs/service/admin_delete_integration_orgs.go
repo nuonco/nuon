@@ -63,8 +63,8 @@ func (s *service) hardDeleteOrg(ctx context.Context, orgID string) error {
 func (s *service) getIntegrationOrgs(ctx context.Context) ([]app.Org, error) {
 	var orgs []app.Org
 	res := s.db.WithContext(ctx).
-		Joins("JOIN user_tokens on orgs.created_by_id=user_tokens.subject").
-		Where("user_tokens.token_type = ?", "integration").
+		Joins("JOIN  accounts on orgs.created_by_id=accounts.id").
+		Where("accounts.account_type = ?", "integration").
 		Find(&orgs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get canary orgs: %w", res.Error)
