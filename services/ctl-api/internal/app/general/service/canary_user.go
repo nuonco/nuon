@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm/clause"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -76,16 +75,13 @@ func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.T
 		ExpiresAt:   time.Now().Add(time.Hour),
 		IssuedAt:    time.Now(),
 		Issuer:      canaryID,
+		AccountID:   acct.ID,
 	}
 
 	res = s.db.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "subject"}},
-			UpdateAll: true,
-		}).
 		Create(&token)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create integration user: %w", res.Error)
+		return nil, fmt.Errorf("unable to create canary user: %w", res.Error)
 	}
 
 	return &token, nil
