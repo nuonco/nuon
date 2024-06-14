@@ -60,9 +60,10 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 
 func (s *service) createInvite(ctx context.Context, orgID, email string) (*app.OrgInvite, error) {
 	invite := app.OrgInvite{
-		OrgID:  orgID,
-		Email:  email,
-		Status: app.OrgInviteStatusPending,
+		OrgID:    orgID,
+		Email:    email,
+		Status:   app.OrgInviteStatusPending,
+		RoleType: app.RoleTypeOrgAdmin,
 	}
 
 	err := s.db.WithContext(ctx).

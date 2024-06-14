@@ -67,7 +67,7 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		AppConfigId:      appConfigID,
 		TerraformJson:    appCfg.GeneratedTerraform,
 		TerraformVersion: defaultTerraformVersion,
-		ApiToken:         currentApp.CreatedBy.Token,
+		ApiToken:         currentApp.CreatedBy.ID,
 		ApiUrl:           w.cfg.AppSyncAPIURL,
 	})
 	if err != nil {

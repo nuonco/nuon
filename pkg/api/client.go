@@ -44,7 +44,6 @@ type Client interface {
 
 	CreateIntegrationUser(ctx context.Context) (*CreateIntegrationUserResponse, error)
 	CreateCanaryUser(ctx context.Context, canaryID string) (*CreateCanaryUserResponse, error)
-	CreateAdminUser(ctx context.Context, email string, duration time.Duration) (*AdminUserResponse, error)
 }
 
 var _ Client = (*client)(nil)
@@ -59,7 +58,8 @@ type client struct {
 type clientOption func(*client) error
 
 func New(v *validator.Validate, opts ...clientOption) (*client, error) {
-	c := &client{v: v,
+	c := &client{
+		v:       v,
 		Timeout: defaultTimeout,
 	}
 	for _, opt := range opts {

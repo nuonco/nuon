@@ -3,12 +3,12 @@ package integration
 import (
 	"os"
 	"testing"
-	"time"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type orgsIntegrationTestSuite struct {
@@ -67,9 +67,16 @@ func (s *orgsIntegrationTestSuite) TestCreateOrg() {
 		require.NotNil(t, org)
 
 		s.apiClient.SetOrgID(org.ID)
-		fetchedOrg, err := s.apiClient.GetOrg(s.ctx)
 		require.NoError(t, err)
-		require.Len(t, fetchedOrg.Users, 1)
+
+		user, err := s.apiClient.GetCurrentUser(s.ctx)
+		require.NoError(t, err)
+
+		orgIDs := make([]string, 0)
+		for _, org := range user.Orgs {
+			orgIDs = append(orgIDs, org.ID)
+		}
+		require.True(t, generics.SliceContains(org.ID, orgIDs))
 
 		s.deleteOrg(org.ID)
 	})
@@ -151,7 +158,7 @@ func (s *orgsIntegrationTestSuite) TestGetOrgs() {
 	})
 }
 
-func (s *orgsIntegrationTestSuite) TestCreateOrgUser() {
+func (s *orgsIntegrationTestSuite) TestCreateOrgInvite() {
 	fakeReq := s.fakeOrgRequest()
 
 	seedOrg, err := s.apiClient.CreateOrg(s.ctx, fakeReq)
@@ -160,22 +167,20 @@ func (s *orgsIntegrationTestSuite) TestCreateOrgUser() {
 	s.apiClient.SetOrgID(seedOrg.ID)
 	defer s.deleteOrg(seedOrg.ID)
 
-	email := generics.GetFakeObj[string]()
-	user, err := s.intAPIClient.CreateAdminUser(s.ctx, email, time.Hour)
+	user, err := s.intAPIClient.CreateIntegrationUser(s.ctx)
 	require.NoError(s.T(), err)
 	require.NotEmpty(s.T(), user)
 
 	s.T().Run("success", func(t *testing.T) {
-		resp, err := s.apiClient.CreateOrgUser(s.ctx, &models.ServiceCreateOrgUserRequest{
-			UserID: email,
+		resp, err := s.apiClient.CreateOrgInvite(s.ctx, &models.ServiceCreateOrgInviteRequest{
+			Email: user.Email,
 		})
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
 
-		fetchedOrg, err := s.apiClient.GetOrg(s.ctx)
+		invites, err := s.apiClient.GetOrgInvites(s.ctx, generics.ToPtr(int64(100)))
 		require.NoError(t, err)
-		require.NotNil(t, fetchedOrg)
-		require.Len(t, fetchedOrg.Users, 2)
+		require.Len(t, invites, 1)
 	})
 }
 

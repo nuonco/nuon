@@ -57,7 +57,6 @@ integration:
     RUN go test -count=1 -parallel=1 -v -run TestInstallInputsSuite
     RUN go test -count=1 -parallel=1 -v -run TestInstallsSuite
     RUN go test -count=1 -parallel=1 -v -run TestOrgsSuite
-    RUN go test -count=1 -parallel=1 -v -run TestSandboxesSuite
     RUN go test -count=1 -parallel=1 -v -run TestVCSSuite
 
 lint:

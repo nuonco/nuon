@@ -6,9 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
-	"gorm.io/gorm"
 )
 
 // @ID GetOrg
@@ -45,7 +46,6 @@ func (s *service) GetOrg(ctx *gin.Context) {
 func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
 	org := app.Org{}
 	res := s.db.WithContext(ctx).
-		Preload("UserOrgs").
 		Preload("HealthChecks", func(db *gorm.DB) *gorm.DB {
 			return db.Order("org_health_checks.created_at DESC").Limit(1)
 		}).

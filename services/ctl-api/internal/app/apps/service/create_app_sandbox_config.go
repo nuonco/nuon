@@ -8,14 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 )
 
 type CreateAppSandboxConfigRequest struct {
 	basicVCSConfigRequest
 
 	TerraformVersion string             `json:"terraform_version" validate:"required"`
-	SandboxReleaseID *string            `json:"sandbox_release_id,omitempty"`
 	SandboxInputs    map[string]*string `json:"sandbox_inputs" validate:"required"`
 }
 
@@ -62,6 +63,10 @@ func (s *service) CreateAppSandboxConfig(ctx *gin.Context) {
 		return
 	}
 
+	s.evClient.Send(ctx, appID, &signals.Signal{
+		Type:               signals.OperationUpdateSandbox,
+		AppSandboxConfigID: sandboxConfig.ID,
+	})
 	ctx.JSON(http.StatusCreated, sandboxConfig)
 }
 
@@ -88,7 +93,6 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 
 	appSandboxConfig := app.AppSandboxConfig{
 		AppID:                    appID,
-		SandboxReleaseID:         req.SandboxReleaseID,
 		PublicGitVCSConfig:       publicGitConfig,
 		ConnectedGithubVCSConfig: githubVCSConfig,
 		Variables:                pgtype.Hstore(req.SandboxInputs),
