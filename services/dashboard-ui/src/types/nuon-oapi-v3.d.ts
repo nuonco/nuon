@@ -420,18 +420,6 @@ export interface paths {
     /** get a release */
     get: operations["GetReleaseSteps"];
   };
-  "/v1/sandboxes": {
-    /** get all sandboxes */
-    get: operations["GetSandboxes"];
-  };
-  "/v1/sandboxes/{sandbox_id}": {
-    /** get a sandbox */
-    get: operations["GetSandbox"];
-  };
-  "/v1/sandboxes/{sandbox_id}/releases": {
-    /** get sandbox releases */
-    get: operations["GetSandboxReleases"];
-  };
   "/v1/vcs/connected-repos": {
     /** get all vcs connected repos for an org */
     get: operations["GetAllVCSConnectedRepos"];
@@ -458,7 +446,7 @@ export interface components {
   schemas: {
     "app.AWSAccount": {
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       iam_role_arn?: string;
       id?: string;
@@ -471,17 +459,32 @@ export interface components {
       component_config_id?: string;
       component_config_type?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       /** @description actual configuration */
       iam_role_arn?: string;
       id?: string;
       updated_at?: string;
     };
+    "app.Account": {
+      account_type?: components["schemas"]["app.AccountType"];
+      created_at?: string;
+      email?: string;
+      id?: string;
+      /** @description ReadOnly Fields */
+      org_ids?: string[];
+      orgs?: components["schemas"]["app.Org"][];
+      permissions?: components["schemas"]["permissions.Set"];
+      roles?: components["schemas"]["app.Role"][];
+      subject?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.AccountType": "auth0" | "service" | "canary" | "integration";
     "app.App": {
       cloud_platform?: components["schemas"]["app.CloudPlatform"];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       description?: string;
       display_name?: string;
@@ -501,7 +504,7 @@ export interface components {
       app_id?: string;
       content?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       format?: components["schemas"]["app.AppConfigFmt"];
       generated_terraform?: string;
@@ -520,7 +523,7 @@ export interface components {
     "app.AppInput": {
       app_input_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       default?: string;
       description?: string;
@@ -537,7 +540,7 @@ export interface components {
     "app.AppInputConfig": {
       app_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       input_groups?: components["schemas"]["app.AppInputGroup"][];
@@ -550,7 +553,7 @@ export interface components {
       app_input_id?: string;
       app_inputs?: components["schemas"]["app.AppInput"][];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       description?: string;
       display_name?: string;
@@ -564,7 +567,7 @@ export interface components {
       app_runner_type?: components["schemas"]["app.AppRunnerType"];
       cloud_platform?: components["schemas"]["app.CloudPlatform"];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       env_vars?: {
         [key: string]: string;
@@ -587,13 +590,11 @@ export interface components {
       cloud_platform?: components["schemas"]["app.CloudPlatform"];
       connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       org_id?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
-      sandbox_release?: components["schemas"]["app.SandboxRelease"];
-      sandbox_release_id?: string;
       terraform_version?: string;
       updated_at?: string;
       variables?: {
@@ -603,7 +604,7 @@ export interface components {
     "app.AppSecret": {
       app_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       /** @description after query fields */
@@ -614,7 +615,7 @@ export interface components {
     };
     "app.AzureAccount": {
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       install?: components["schemas"]["app.Install"];
@@ -637,7 +638,7 @@ export interface components {
       app_id?: string;
       config_versions?: number;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       dependencies?: string[];
       id?: string;
@@ -655,7 +656,7 @@ export interface components {
       component_id?: string;
       component_name?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       git_ref?: string;
       id?: string;
@@ -669,7 +670,7 @@ export interface components {
     "app.ComponentConfigConnection": {
       component_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       docker_build?: components["schemas"]["app.DockerBuildComponentConfig"];
       external_image?: components["schemas"]["app.ExternalImageComponentConfig"];
@@ -683,7 +684,7 @@ export interface components {
     "app.ComponentRelease": {
       build_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       release_steps?: components["schemas"]["app.ComponentReleaseStep"][];
@@ -696,7 +697,7 @@ export interface components {
       /** @description parent release ID */
       component_release_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       /** @description fields to control the delay of the individual step, as this is set based on the parent strategy */
       delay?: string;
@@ -717,7 +718,7 @@ export interface components {
       component_config_id?: string;
       component_config_type?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       directory?: string;
       id?: string;
@@ -734,7 +735,7 @@ export interface components {
       component_config_connection_id?: string;
       connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       dockerfile?: string;
       env_vars?: {
@@ -750,7 +751,7 @@ export interface components {
       /** @description value */
       component_config_connection_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       image_url?: string;
@@ -764,7 +765,7 @@ export interface components {
       component_config_connection_id?: string;
       connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
@@ -781,7 +782,7 @@ export interface components {
       aws_account?: components["schemas"]["app.AWSAccount"];
       azure_account?: components["schemas"]["app.AzureAccount"];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       install_components?: components["schemas"]["app.InstallComponent"][];
@@ -798,7 +799,7 @@ export interface components {
       component?: components["schemas"]["app.Component"];
       component_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
@@ -811,7 +812,7 @@ export interface components {
       component_id?: string;
       component_name?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       install_component_id?: string;
@@ -827,7 +828,7 @@ export interface components {
     "app.InstallDeployType": "release" | "install" | "teardown";
     "app.InstallEvent": {
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       install_id?: string;
@@ -843,7 +844,7 @@ export interface components {
     "app.InstallInputs": {
       app_input_config_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       install_id?: string;
@@ -856,7 +857,7 @@ export interface components {
     "app.InstallSandboxRun": {
       app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       install_id?: string;
@@ -868,7 +869,7 @@ export interface components {
     "app.Installer": {
       apps?: components["schemas"]["app.App"][];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       metadata?: components["schemas"]["app.InstallerMetadata"];
@@ -880,7 +881,7 @@ export interface components {
       community_url?: string;
       copyright_markdown?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       demo_url?: string;
       description?: string;
@@ -905,7 +906,7 @@ export interface components {
       /** @description value */
       component_config_connection_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       env_vars?: {
         [key: string]: string;
@@ -918,7 +919,7 @@ export interface components {
     };
     "app.NotificationsConfig": {
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       org_id?: string;
@@ -931,7 +932,7 @@ export interface components {
     "app.OperationStatus": "started" | "finished" | "noop" | "failed";
     "app.Org": {
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       custom_cert?: boolean;
       health_checks?: components["schemas"]["app.OrgHealthCheck"][];
@@ -948,12 +949,11 @@ export interface components {
       status?: string;
       status_description?: string;
       updated_at?: string;
-      users?: components["schemas"]["app.UserOrg"][];
       vcs_connections?: components["schemas"]["app.VCSConnection"][];
     };
     "app.OrgHealthCheck": {
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       orgID?: string;
@@ -965,23 +965,39 @@ export interface components {
     "app.OrgHealthCheckStatus": "ok" | "error" | "in-progress" | "provisioning" | "deprovisioning";
     "app.OrgInvite": {
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       email?: string;
       id?: string;
       /** @description parent relationship */
       orgID?: string;
+      role_type?: components["schemas"]["app.RoleType"];
       status?: components["schemas"]["app.OrgInviteStatus"];
       updated_at?: string;
     };
     /** @enum {string} */
     "app.OrgInviteStatus": "pending" | "accepted";
+    "app.Policy": {
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      id?: string;
+      name?: components["schemas"]["app.PolicyName"];
+      /** @description Permissions are used to track granular permissions for each domain */
+      permissions?: {
+        [key: string]: string;
+      };
+      role_id?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.PolicyName": "org_admin" | "installer" | "runner";
     "app.PublicGitVCSConfig": {
       branch?: string;
       component_config_id?: string;
       component_config_type?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       directory?: string;
       id?: string;
@@ -989,28 +1005,17 @@ export interface components {
       repo?: string;
       updated_at?: string;
     };
-    "app.Sandbox": {
+    "app.Role": {
+      createdBy?: components["schemas"]["app.Account"];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
       created_by_id?: string;
-      description?: string;
       id?: string;
-      name?: string;
-      releases?: components["schemas"]["app.SandboxRelease"][];
+      policies?: components["schemas"]["app.Policy"][];
+      role_type?: components["schemas"]["app.RoleType"];
       updated_at?: string;
     };
-    "app.SandboxRelease": {
-      created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
-      created_by_id?: string;
-      deprovision_policy_url?: string;
-      id?: string;
-      one_click_role_template_url?: string;
-      provision_policy_url?: string;
-      trust_policy_url?: string;
-      updated_at?: string;
-      version?: string;
-    };
+    /** @enum {string} */
+    "app.RoleType": "org_admin" | "installer" | "runner";
     /** @enum {string} */
     "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
     "app.TerraformModuleComponentConfig": {
@@ -1018,7 +1023,7 @@ export interface components {
       component_config_connection_id?: string;
       connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       env_vars?: {
         [key: string]: string;
@@ -1032,34 +1037,9 @@ export interface components {
       /** @description terraform configuration values */
       version?: string;
     };
-    /** @enum {string} */
-    "app.TokenType": "auth0" | "admin" | "static" | "integration" | "canary";
-    "app.UserOrg": {
-      created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
-      created_by_id?: string;
-      id?: string;
-      /** @description parent relationship */
-      orgID?: string;
-      updated_at?: string;
-      userID?: string;
-    };
-    "app.UserToken": {
-      created_at?: string;
-      created_by_id?: string;
-      email?: string;
-      expires_at?: string;
-      id?: string;
-      issued_at?: string;
-      issuer?: string;
-      /** @description claim data */
-      subject?: string;
-      token_type?: components["schemas"]["app.TokenType"];
-      updated_at?: string;
-    };
     "app.VCSConnection": {
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       github_install_id?: string;
       id?: string;
@@ -1071,7 +1051,7 @@ export interface components {
       author_name?: string;
       component_config_connection_id?: string;
       created_at?: string;
-      created_by?: components["schemas"]["app.UserToken"];
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       id?: string;
       message?: string;
@@ -1093,6 +1073,11 @@ export interface components {
       name?: string;
       tags?: string[];
       value?: number;
+    };
+    /** @enum {string} */
+    "permissions.Permission": "unknown" | "all" | "create" | "read" | "update" | "delete";
+    "permissions.Set": {
+      [key: string]: components["schemas"]["permissions.Permission"];
     };
     "planv1.Plan": {
       /**
@@ -1170,7 +1155,6 @@ export interface components {
       sandbox_inputs: {
         [key: string]: string;
       };
-      sandbox_release_id?: string;
       terraform_version: string;
     };
     "service.CreateAppSecretRequest": {
@@ -3866,7 +3850,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["app.UserToken"];
+          "application/json": components["schemas"]["app.Account"];
         };
       };
       /** @description Bad Request */
@@ -5912,7 +5896,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": components["schemas"]["app.UserOrg"];
+          "application/json": components["schemas"]["app.Account"];
         };
       };
       /** @description Bad Request */
@@ -6007,111 +5991,6 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.ComponentReleaseStep"][];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /** get all sandboxes */
-  GetSandboxes: {
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.Sandbox"][];
-        };
-      };
-    };
-  };
-  /** get a sandbox */
-  GetSandbox: {
-    parameters: {
-      path: {
-        /** @description sandbox ID */
-        sandbox_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.Sandbox"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /** get sandbox releases */
-  GetSandboxReleases: {
-    parameters: {
-      path: {
-        /** @description sandbox ID */
-        sandbox_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.SandboxRelease"][];
         };
       };
       /** @description Bad Request */

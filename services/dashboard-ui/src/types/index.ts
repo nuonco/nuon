@@ -20,7 +20,8 @@ export type TWaypointLog = {
 
 // component
 export type TComponent = components['schemas']['app.Component']
-export type TComponentConfig = components['schemas']['app.ComponentConfigConnection']
+export type TComponentConfig =
+  components['schemas']['app.ComponentConfigConnection']
 
 // build
 export type TComponentBuild = components['schemas']['app.ComponentBuild']
@@ -58,7 +59,6 @@ export type TInstallDeployLogs = Array<TWaypointLog>
 export type TInstallDeployPlan = Record<string, any>
 
 // sandbox
-export type TSandbox = components['schemas']['app.Sandbox']
 export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {
   cloud_platform?: string
 }
