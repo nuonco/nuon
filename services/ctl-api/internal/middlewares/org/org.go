@@ -8,10 +8,13 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/global"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+)
+
+const (
+	orgIDHeaderKey string = "X-Nuon-Org-ID"
 )
 
 type middleware struct {
@@ -25,7 +28,7 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if global.IsGlobal(ctx) || public.IsPublic(ctx) {
+		if middlewares.IsGlobal(ctx) || middlewares.IsPublic(ctx) {
 			ctx.Next()
 			return
 		}
@@ -53,7 +56,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		SetGinContext(ctx, &org)
+		middlewares.SetOrgGinContext(ctx, &org)
 
 		metricCtx, err := metrics.FromContext(ctx)
 		if err == nil {
