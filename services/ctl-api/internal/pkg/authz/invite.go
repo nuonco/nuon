@@ -8,7 +8,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *app.Account) error {
@@ -26,7 +26,7 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 	}
 
 	// send a notification to the correct org event flow that it was accepted
-	orgmiddleware.SetContext(ctx, &invite.Org)
+	middlewares.SetOrgContext(ctx, &invite.Org)
 	h.evClient.Send(ctx, invite.OrgID, &signals.Signal{
 		Type:     signals.OperationInviteAccepted,
 		InviteID: invite.ID,

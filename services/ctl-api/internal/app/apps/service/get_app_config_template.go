@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 type AppConfigTemplateType string
@@ -45,7 +45,7 @@ type AppConfigTemplate struct {
 // @Success		201				{object}	AppConfigTemplate
 // @Router			/v1/apps/{app_id}/template-config [get]
 func (s *service) GetAppConfigTemplate(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
