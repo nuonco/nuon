@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 // @ID GetApp
@@ -29,7 +29,7 @@ import (
 // @Success		200				{object}	app.App
 // @Router			/v1/apps/{app_id} [get]
 func (s *service) GetApp(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

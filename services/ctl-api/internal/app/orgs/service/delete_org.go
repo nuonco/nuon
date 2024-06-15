@@ -10,7 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 // @ID DeleteOrg
@@ -30,7 +30,7 @@ import (
 // @Success		200				{boolean}	ok
 // @Router			/v1/orgs/current [DELETE]
 func (s *service) DeleteOrg(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

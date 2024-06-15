@@ -5,10 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-)
 
-const (
-	isGlobalKey string = "is_global"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
@@ -19,15 +17,6 @@ var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/v1/sandboxes"}:                      {},
 	{"GET", "/v1/sandboxes/:sandbox_id"}:          {},
 	{"GET", "/v1/sandboxes/:sandbox_id/releases"}: {},
-}
-
-func IsGlobal(ctx *gin.Context) bool {
-	isGlobal, exists := ctx.Get(isGlobalKey)
-	if !exists {
-		return false
-	}
-
-	return isGlobal.(bool)
 }
 
 type middleware struct {
@@ -53,7 +42,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 			m.l.Debug("marking request as global", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
 		}
 
-		ctx.Set(isGlobalKey, found)
+		middlewares.SetIsGlobal(ctx, found)
 	}
 }
 

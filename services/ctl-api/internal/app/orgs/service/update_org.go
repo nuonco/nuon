@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"gorm.io/gorm"
 )
 
@@ -40,7 +40,7 @@ func (c *UpdateOrgRequest) Validate(v *validator.Validate) error {
 // @Success		200				{object}	app.Org
 // @Router			/v1/orgs/current [PATCH]
 func (s *service) UpdateOrg(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

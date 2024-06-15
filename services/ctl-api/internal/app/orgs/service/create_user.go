@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth/context"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 type CreateOrgUserRequest struct {
@@ -32,7 +32,7 @@ type CreateOrgUserRequest struct {
 // @Success		201				{object}	app.Account
 // @Router			/v1/orgs/current/user [POST]
 func (s *service) CreateUser(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
