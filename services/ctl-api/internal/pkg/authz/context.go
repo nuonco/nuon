@@ -3,7 +3,7 @@ package authz
 import (
 	"github.com/gin-gonic/gin"
 
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth/context"
+	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz/permissions"
 )
 

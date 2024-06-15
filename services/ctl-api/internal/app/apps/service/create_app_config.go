@@ -10,7 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 type CreateAppConfigRequest struct {
@@ -43,7 +43,7 @@ func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
 // @Success		201				{object}	app.AppConfig
 // @Router			/v1/apps/{app_id}/config [post]
 func (s *service) CreateAppConfig(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

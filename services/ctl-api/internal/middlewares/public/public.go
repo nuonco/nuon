@@ -4,11 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"go.uber.org/zap"
-)
-
-const (
-	isPublicKey string = "is_public"
 )
 
 var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
@@ -24,15 +21,6 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/v1/general/cli-config"}:                             {},
 	{"GET", "/v1/general/cloud-platform/:cloud_platform/regions"}: {},
 	{"POST", "/v1/vcs/connection-callback"}:                       {},
-}
-
-func IsPublic(ctx *gin.Context) bool {
-	isPublic, exists := ctx.Get(isPublicKey)
-	if !exists {
-		return false
-	}
-
-	return isPublic.(bool)
 }
 
 type middleware struct {
@@ -55,7 +43,7 @@ func (m middleware) Handler() gin.HandlerFunc {
 		_, found := publicEndpointList[key]
 		if found {
 			m.l.Debug("marking request as public", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
-			ctx.Set(isPublicKey, true)
+			middlewares.SetPublicContext(ctx, true)
 			return
 		}
 
@@ -66,11 +54,11 @@ func (m middleware) Handler() gin.HandlerFunc {
 		_, found = publicEndpointList[wildcardKey]
 		if found {
 			m.l.Debug("marking request as public due to wildcard", zap.String("endpoint", fmt.Sprintf("%s:%s", method, path)))
-			ctx.Set(isPublicKey, true)
+			middlewares.SetPublicContext(ctx, true)
 			return
 		}
 
-		ctx.Set(isPublicKey, false)
+		middlewares.SetPublicContext(ctx, false)
 	}
 }
 

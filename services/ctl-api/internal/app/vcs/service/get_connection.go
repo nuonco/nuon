@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 // @ID GetVCSConnection
@@ -29,7 +29,7 @@ import (
 func (s *service) GetConnection(ctx *gin.Context) {
 	vcsID := ctx.Param("connection_id")
 
-	currentOrg, err := org.FromContext(ctx)
+	currentOrg, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

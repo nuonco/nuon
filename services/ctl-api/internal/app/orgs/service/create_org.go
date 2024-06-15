@@ -10,7 +10,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth/context"
+	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 type CreateOrgRequest struct {
