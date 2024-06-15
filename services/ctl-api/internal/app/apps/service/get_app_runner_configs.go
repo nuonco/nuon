@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 // @ID GetAppRunnerConfigs
@@ -25,7 +25,7 @@ import (
 // @Success		200				{object}	[]app.AppRunnerConfig
 // @Router			/v1/apps/{app_id}/runner-configs [get]
 func (s *service) GetAppRunnerConfigs(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

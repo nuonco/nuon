@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 // @ID GetOrgVCSConnections
@@ -26,7 +26,7 @@ import (
 // @Success		200				{array}		app.VCSConnection
 // @Router			/v1/vcs/connections [get]
 func (s *service) GetConnections(ctx *gin.Context) {
-	currentOrg, err := org.FromContext(ctx)
+	currentOrg, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
