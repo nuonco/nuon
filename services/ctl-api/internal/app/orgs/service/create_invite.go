@@ -9,7 +9,7 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 type CreateOrgInviteRequest struct {
@@ -33,7 +33,7 @@ type CreateOrgInviteRequest struct {
 // @Success		201				{object}	app.OrgInvite
 // @Router			/v1/orgs/current/invites [POST]
 func (s *service) CreateOrgInvite(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

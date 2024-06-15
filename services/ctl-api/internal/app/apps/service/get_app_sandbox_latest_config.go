@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"gorm.io/gorm"
 )
 
@@ -26,7 +26,7 @@ import (
 // @Success		200				{object}	app.AppSandboxConfig
 // @Router			/v1/apps/{app_id}/sandbox-latest-config [get]
 func (s *service) GetAppSandboxLatestConfig(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return

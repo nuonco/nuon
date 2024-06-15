@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/eventloop"
 )
 
@@ -69,7 +69,7 @@ func (s *Signal) Start() bool {
 }
 
 func (s *Signal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error) {
-	org, err := org.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err == nil {
 		return org, nil
 	}

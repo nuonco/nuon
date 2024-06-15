@@ -9,22 +9,22 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal"
-	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/auth/context"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/public"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz"
 )
 
 type middleware struct {
-	cfg             *internal.Config
-	l               *zap.Logger
-	db              *gorm.DB
+	cfg         *internal.Config
+	l           *zap.Logger
+	db          *gorm.DB
 	authzClient *authz.Client
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if public.IsPublic(ctx) {
+		if middlewares.IsPublic(ctx) {
 			ctx.Next()
 			return
 		}
@@ -108,9 +108,9 @@ func New(l *zap.Logger,
 	authzClient *authz.Client,
 ) *middleware {
 	return &middleware{
-		l:               l,
-		cfg:             cfg,
-		db:              db,
+		l:           l,
+		cfg:         cfg,
+		db:          db,
 		authzClient: authzClient,
 	}
 }

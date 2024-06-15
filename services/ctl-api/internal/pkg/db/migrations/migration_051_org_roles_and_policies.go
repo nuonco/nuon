@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 func (m *Migrations) migration051OrgRolesAndPolicies(ctx context.Context) error {
@@ -17,7 +18,7 @@ func (m *Migrations) migration051OrgRolesAndPolicies(ctx context.Context) error 
 	}
 
 	for _, org := range orgs {
-		ctx = context.WithValue(ctx, "account_id", org.CreatedByID)
+		ctx = middlewares.SetAccountIDContext(ctx, org.CreatedByID)
 		if err := m.authzClient.CreateOrgRoles(ctx, org.ID); err != nil {
 			return err
 		}

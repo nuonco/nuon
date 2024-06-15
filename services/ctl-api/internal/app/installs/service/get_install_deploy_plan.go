@@ -9,7 +9,7 @@ import (
 	planv1 "github.com/powertoolsdev/mono/pkg/types/workflows/executors/v1/plan/v1"
 	"github.com/powertoolsdev/mono/pkg/workflows/dal"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 // @ID GetInstallDeployPlan
@@ -30,7 +30,7 @@ import (
 // @Success		200				{object} planv1.Plan
 // @Router			/v1/installs/{install_id}/deploys/{deploy_id}/plan [get]
 func (s *service) GetInstallDeployPlan(ctx *gin.Context) {
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -79,9 +79,7 @@ func (s *service) getInstallDeployPlan(ctx context.Context, orgID, appID, compon
 		return nil, fmt.Errorf("unable to get component: %w", err)
 	}
 
-	var (
-		plan *planv1.Plan
-	)
+	var plan *planv1.Plan
 	switch deployTyp {
 	case app.InstallDeployTypeTeardown:
 		plan, err = wkflowDal.GetInstanceDestroyPlan(ctx, orgID, appID, componentID, deployID, installID)

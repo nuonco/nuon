@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/waypoint/pkg/server/gen"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	orgmiddleware "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 const (
@@ -41,7 +41,7 @@ func (s *service) GetInstallDeployLogs(ctx *gin.Context) {
 	deployID := ctx.Param("deploy_id")
 	installID := ctx.Param("install_id")
 
-	org, err := orgmiddleware.FromContext(ctx)
+	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -107,7 +107,7 @@ func (s *service) getLogs(ctx context.Context, orgID, installID, deployID string
 		// TODO(jm): figure out how to parse the context exceeded part from waypoint
 		if err != nil {
 			break
-			//return nil, fmt.Errorf("unable to receive logs: %w", err)
+			// return nil, fmt.Errorf("unable to receive logs: %w", err)
 		}
 
 		logs = append(logs, resp.Event)

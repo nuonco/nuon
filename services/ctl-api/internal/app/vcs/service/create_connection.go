@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/org"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"gorm.io/gorm/clause"
 )
 
@@ -40,7 +40,7 @@ func (c *CreateConnectionRequest) Validate(v *validator.Validate) error {
 // @Success		201				{object}	app.VCSConnection
 // @Router			/v1/vcs/connections [post]
 func (s *service) CreateConnection(ctx *gin.Context) {
-	currentOrg, err := org.FromContext(ctx)
+	currentOrg, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
