@@ -2,7 +2,7 @@
 
 import React, {
   FunctionComponent,
-  ReactElement,
+  ReactNode,
   createContext,
   useContext,
   useEffect,
@@ -19,7 +19,7 @@ type TSandboxRunContext = {
 export const SandboxRunContext = createContext<TSandboxRunContext | null>(null)
 
 export const SandboxRunProvider: FunctionComponent<{
-  children?: ReactElement
+  children?: ReactNode
   initRun: TSandboxRun
   shouldPoll?: boolean
 }> = ({ children, initRun, shouldPoll = false }) => {
