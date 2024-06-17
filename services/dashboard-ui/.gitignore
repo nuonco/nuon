@@ -35,4 +35,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+test/mock-api-handlers.js
+src/types/nuon-oapi-v3.d.ts
 NOTES.md
