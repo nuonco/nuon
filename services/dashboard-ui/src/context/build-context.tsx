@@ -2,7 +2,7 @@
 
 import React, {
   FunctionComponent,
-  ReactElement,
+  ReactNode,
   createContext,
   useContext,
   useEffect,
@@ -19,7 +19,7 @@ type TBuildContext = {
 export const BuildContext = createContext<TBuildContext | null>(null)
 
 export const BuildProvider: FunctionComponent<{
-  children?: ReactElement
+  children?: ReactNode
   initBuild: TBuild
   shouldPoll?: boolean
 }> = ({ children, initBuild, shouldPoll = false }) => {
