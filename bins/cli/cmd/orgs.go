@@ -65,19 +65,6 @@ func (c *cli) orgsCmd() *cobra.Command {
 	}
 	orgsCmd.AddCommand(idCmd)
 
-	setCurrentCmd := &cobra.Command{
-		Use:   "set-current",
-		Short: "Set current org",
-		Long:  "Set current org by org ID",
-		Run: func(cmd *cobra.Command, _ []string) {
-			svc := orgs.New(c.apiClient, c.cfg)
-			svc.SetCurrent(cmd.Context(), id, PrintJSON)
-		},
-	}
-	setCurrentCmd.Flags().StringVarP(&id, "org-id", "o", "", "The ID of the org you want to use")
-	setCurrentCmd.MarkFlagRequired("org-id")
-	orgsCmd.AddCommand(setCurrentCmd)
-
 	listCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
