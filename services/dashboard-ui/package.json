@@ -14,6 +14,7 @@
     "fmt": "prettier src",
     "pretest": "npm run generate-api-mocks",
     "test": "vitest run",
+    "pretsc": "npm run generate-api-types",
     "tsc": "tsc --noEmit"
   },
   "dependencies": {
