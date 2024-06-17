@@ -204,19 +204,6 @@ func (c *cli) installsCmd() *cobra.Command {
 	currentInputs.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(currentInputs)
 
-	setCurrentCmd := &cobra.Command{
-		Use:   "set-current",
-		Short: "Set current install",
-		Long:  "Set current install by install ID",
-		Run: func(cmd *cobra.Command, _ []string) {
-			svc := installs.New(c.apiClient, c.cfg)
-			svc.SetCurrent(cmd.Context(), id, PrintJSON)
-		},
-	}
-	setCurrentCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
-	setCurrentCmd.MarkFlagRequired("install-id")
-	installsCmds.AddCommand(setCurrentCmd)
-
 	selectInstallCmd := &cobra.Command{
 		Use:   "select",
 		Short: "Select your current install",
