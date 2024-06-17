@@ -34,8 +34,8 @@
             "url": "support"
         },
         {
-            "name": "Changelog",
-            "url": "changelog"
+            "name": "Changelog & Roadmap",
+            "url": "updates"
         }
     ],
     "anchors": [
@@ -66,7 +66,6 @@
             "pages": [
                 "get-started/introduction",
                 "get-started/quickstart",
-                "get-started/concepts",
                 "get-started/why-nuon",
                 "get-started/why-byoc"
             ]
@@ -89,6 +88,7 @@
         {
             "group": "Concepts",
             "pages": [
+                "concepts/overview",
                 "concepts/apps",
                 "concepts/components",
                 "concepts/installs",
@@ -159,14 +159,20 @@
             ]
         },
         {
-            "group": "",
+            "group": "Updates",
             "pages": [
-                "changelog/changelog",
-                "changelog/006-config-files",
-                "changelog/005-improved-installers-guides",
-                "changelog/004-sdks-github-action",
-                "changelog/003-ecs-support",
-                "changelog/001-new-year-new-docs"
+                "updates/roadmap"
+            ]
+        },
+        {
+            "group": "Changelog",
+            "pages": [
+                "updates/changelog",
+                "updates/006-config-files",
+                "updates/005-improved-installers-guides",
+                "updates/004-sdks-github-action",
+                "updates/003-ecs-support",
+                "updates/001-new-year-new-docs"
             ]
         },
         {
@@ -243,7 +249,6 @@
                 "api-ref/installs/get-an-installs-inputs",
                 "api-ref/installs/create-install-inputs",
                 "api-ref/installs/get-an-installs-current-inputs",
-                "api-ref/installs/get-install-deploy-logs-1",
                 "api-ref/installs/get-an-installs-sandbox-runs"
             ]
         },
