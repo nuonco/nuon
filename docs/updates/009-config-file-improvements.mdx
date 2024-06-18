@@ -1,0 +1,143 @@
+---
+title: 009 - Config file improvements
+description: Split large app configs into multiple files, better variable support and validation.
+---
+
+![001 - New year, new docs](/images/changelog/001_header.jpg)
+
+May 13th, 2024
+
+More and more of your are using config files, and we keep adding better support for more complex apps.
+
+Now, you can split your config file into multiple smaller files and validate it locally.
+
+## Sources
+
+Each part of the config file now supports adding a source, which allows you to split up your configuration into 
+different files.
+
+```toml
+version = "v1"
+description = "Default seed app."
+display_name = "Default Seed App."
+slack_webhook_url = "seed-slack-webhook-url"
+
+[installer]
+source = "./installer.toml"
+
+[runner]
+source = "./runner.toml"
+
+[sandbox]
+source = "./sandbox.toml"
+
+[inputs]
+source = "./sandbox_inputs.toml"
+sources = ["./app_inputs.toml", "./app_input_groups.toml"]
+
+[[components]]
+source = "./helm_file.toml"
+```
+
+This should make it easier to maintain complex apps, and keep your configuration more DRY. You can even reuse components 
+between applications.
+
+## Template Name
+
+Some of our users were renaming components and running into issues where it was easy to inadvertently break the 
+template variables. This is because the interpolation name used when templating was the component name.
+
+Now, you can set a `template_name` on any component, and that will be used to reference it:
+
+```toml
+name = "your_app"
+var_name = "app"
+type = "terraform_module"
+terraform_version = "1.5.3"
+
+[connected_repo]
+directory = "components/terraform"
+repo = "nuon/demos"
+branch = "main"
+```
+
+Then, to reference an output from the `your_app` component, simply use: `{{.nuon.components.app.outputs}}`. This allows 
+  you to change the component name, without breaking your configs.
+
+## Config Vars
+
+You can now set variables that can be used throughout your config file. This is helpful if you want to configure a 
+branch, or other common configuration:
+
+<Note>Config vars do not currently support being referenced in sources. If you would like us to add support for this, <a 
+href="mailto:team@nuon.co">let us know!</a></Note>
+
+## Improved Variable Declarations
+
+Previously, you could only set Helm Values, Terraform Variables and other configuration settings using arrays in the 
+config file:
+
+```toml
+name = "storage"
+type = "terraform_module"
+terraform_version = "1.5.3"
+
+[connected_repo]
+directory = "components/storage"
+repo = "nuon/demos"
+branch = "main"
+
+[[var]]
+name = "resource_group_name"
+value = "{{.nuon.install.id}}"
+```
+
+Now, you can set multiple values using `vars`:
+```toml
+name = "storage"
+type = "terraform_module"
+terraform_version = "1.5.3"
+
+[connected_repo]
+directory = "components/storage"
+repo = "nuon/demos"
+branch = "main"
+
+[vars]
+resource_group_name = "{{.nuon.install.sandbox.outputs.account.resource_group_name}}"
+nuon_id = "{{.nuon.install.id}}"
+```
+
+This field will differ based on the component (ie: `vars` for terraform components, `values` for helm components, and 
+`env_vars` for environment variables).
+
+## Validate Locally
+
+You can now validate your configuration file locally:
+
+```bash
+$ nuon apps validate -c <your-config-file>
+```
+
+This will catch most common issues such as a bad source, missing fields and more.
+
+## Same Component Name in Different App Bug Fixed
+
+We found a bug where if you had components with the same name in different apps, some commands would pick the wrong 
+component.
+
+Now, when you have an app pinned, the CLI will make sure that even if a component exists in multiple apps, it will use 
+your current app.
+
+Make sure to pin an app whenever you are working in the CLI using:
+
+```bash
+$ nuon apps select 
+```
+
+## More config files!
+
+We keep hearing that these config files are way easier to work with than Terraform, and we're going to keep making them 
+even easier.
+
+Keep a look out in our [Config File reference](/configuration-files) for more.
