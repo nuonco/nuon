@@ -71,17 +71,29 @@ It will be displayed on the installer page as a text field.
 <CodeGroup>
 ```toml TOML
 [inputs]
+[[inputs.group]]
+name = "app"
+description = "App inputs"
+display_name = "App inputs"
+
 [[inputs.input]]
 name = "service_name"
 description = "What to name the ECS service"
 default = "api"
 sensitive = false
 display_name = "Service Name"
+group = "app"
 ```
 
 ```hcl Terraform
 resource "nuon_app_input" "your_app" {
   app_id = nuon_app.your_app.id
+
+  group {
+    name         = "app"
+    description  = "App inputs"
+    display_name = "App inputs"
+  }
 
   input {
     name         = "service_name"
@@ -89,6 +101,7 @@ resource "nuon_app_input" "your_app" {
     default      = "api"
     sensitive    = false
     display_name = "Service Name"
+    group        = "app"
   }
 }
 ```
