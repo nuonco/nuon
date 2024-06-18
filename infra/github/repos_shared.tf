@@ -67,7 +67,6 @@ module "shared-warpstream" {
   enable_branch_protection = false
 
   collaborators = {
-    "caleb-warpstream" = "push"
     "richardartoul"    = "push"
     "ryanworl"         = "push"
   }
@@ -89,7 +88,6 @@ module "shared-warpstream-installer" {
   is_fork                  = true
 
   collaborators = {
-    "caleb-warpstream" = "push"
     "richardartoul"    = "push"
     "ryanworl"         = "push"
   }
