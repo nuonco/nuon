@@ -68,17 +68,29 @@ For BYOVPC, this is especially important, since it allows the customer to tell N
 <CodeGroup>
 ```toml TOML
 [inputs]
+[[inputs.group]]
+name = "sandbox"
+description = "Sandbox inputs"
+display_name = "Sandbox inputs"
+
 [[inputs.input]]
 name = "vpc_id"
 description = "The VPC to install the app in"
 sensitive = false
 display_name = "VPC ID"
 required = true
+group = "sandbox"
 ```
 
 ```hcl Terraform
 resource "nuon_app_input" "your_app" {
   app_id = nuon_app.your_app.id
+
+  group {
+    name         = "sandbox"
+    description  = "Sandbox inputs"
+    display_name = "Sandbox inputs"
+  }
 
   input {
     name = "vpc_id"
@@ -86,6 +98,7 @@ resource "nuon_app_input" "your_app" {
     sensitive = false
     display_name = "VPC ID"
     required = true
+    group = "sandbox"
   }
 }
 ```
