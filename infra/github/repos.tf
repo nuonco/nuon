@@ -1,11 +1,4 @@
 // NOTE: most of the repos will here will eventually be deprecated and moved into the mono repo.
-module "eslint-config-nuon" {
-  source = "./modules/repository"
-
-  name        = "eslint-config-nuon"
-  description = "eslint config for typescript projects"
-}
-
 module "dot_github" {
   source = "./modules/repository"
 
@@ -36,13 +29,6 @@ module "graveyard" {
 
   name        = "graveyard"
   description = "dead code"
-}
-
-module "ui" {
-  source = "./modules/repository"
-
-  name        = "ui"
-  description = "github repo for our ui"
 }
 
 module "waypoint" {

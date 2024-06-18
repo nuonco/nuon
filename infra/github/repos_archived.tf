@@ -530,3 +530,21 @@ module "demo" {
   topics          = ["archived"]
   archived        = true
 }
+
+module "ui" {
+  source = "./modules/repository"
+
+  name        = "ui"
+  description = "github repo for our ui"
+  topics      = ["archived"]
+  archived    = true
+}
+
+module "eslint-config-nuon" {
+  source = "./modules/repository"
+
+  name        = "eslint-config-nuon"
+  description = "eslint config for typescript projects"
+  topics      = ["archived"]
+  archived    = true
+}
