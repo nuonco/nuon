@@ -36,7 +36,7 @@ type Account struct {
 
 	// ReadOnly Fields
 	OrgIDs         []string        `json:"org_ids" gorm:"-"`
-	Orgs           []Org           `json:"orgs" gorm:"-"`
+	Orgs           []Org           `json:"-" gorm:"-"`
 	AllPermissions permissions.Set `json:"permissions" gorm:"-"`
 }
 

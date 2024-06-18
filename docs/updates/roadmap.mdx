@@ -1,69 +1,68 @@
 ---
 title: Roadmap
 description: "Learn more about what we are working on"
+icon: road
 ---
 
-<CardGroup cols={2}>
-    <Card title="007 - installs web ui" icon="web" href="/changelog/007-installs-ui">
-      March 15, 2024
-      <br />
-      ![007 - Config Files](/images/changelog/007_header.jpg)
-      <br />
+Refer to our roadmap to learn more about the larger, foundational features we are building. For most smaller and 
+iterative features based on customer feedback, we generally ship within a week.
 
-      We're excited to announce our first iteration of the Nuon installs web UI!
-    </Card>
-        
-  <Card title="006 - config files" icon="typewriter" href="/changelog/006-config-files">
-    March 4th, 2024
-    <br />
-    ![006 - Config Files](/images/changelog/006_header.jpg)
-    <br />
+Please share your feedback on our roadmap and <a href="mailto:team@nuon.co">let us know</a> if you would like us to consider something not listed below.
 
-  We've shipped a whole new way to manage your application configure and get started faster. Create BYOC apps in
-  minutes, not months!
-  </Card>
+## Typescript SDK
 
-  <Card title="005 - improved installers, guides and infra" icon="terminal" href="/changelog/005-improved-installers-guides">
-    Feb 26th, 2024
-    <br />
-    ![005 - Installers, Guides, Infra](/images/changelog/005_header.jpg)
-    <br />
+_June 2024_
 
-    We have shipped new improvements to installers, added a self-service guide and a whole bunch of
-    infrastructure improvements.
-  </Card>
+We are building a Typescript SDK that will allow anyone to use our API directly from their own application.
 
-  <Card title="004 - GitHub Actions and SDKs" icon="terminal" href="/changelog/004-sdks-github-action">
-    Feb 5th, 2024
-    <br />
-    ![004 - GitHub Actions and SDKs](/images/changelog/004_header.jpg)
-    <br />
-    Integrate Nuon into your workflow and product using our GitHub Actions and SDKs.
-  </Card>
+## Runner V2
 
-  <Card title="003 - ECS Support" icon="terminal" href="/changelog/003-ecs-support">
-    Jan 26th, 2024
-    <br />
-    ![003 - ECS Support](/images/changelog/003_header.jpg)
-    <br />
-    Deploy apps without kubernetes, long live kubernetes!
-  </Card>
+_June 2024_
 
-  <Card title="002 - Auto Deploys and Dependencies" icon="terminal"
-  href="/changelog/002-auto-deploys-and-dependencies">
-    Jan 16th, 2024
-    <br />
-    ![002 - auto deploys, component dependencies and graphs](/images/changelog/002_header.jpg)
-    <br />
-    Nuon automatically deploys all components to each new install.
-  </Card>
+We are building a new runner, that will serve as the foundation of our day-2 operations, and replace our existing 
+runner. We are designing this runner to be more secure, faster and operationally simplified.
 
-  <Card title="001 - New year, new docs" icon="book" href="/changelog/001-new-year-new-docs">
-    Jan 8th, 2024
-    <br />
-    ![001 - New year, new docs](/images/changelog/001_header.jpg)
-    <br />
-    We shipped a new docs site, and cli login.
-  </Card>
-</CardGroup>
+This will allow us to build more custom day-2 operations tooling into the product.
 
+## Programmable Runner Diagnostics and OTEL
+
+_July 2024_
+
+We are building a custom diagnostics and scripting runtime on top of the runner. This will allow our customers to:
+
+1. Use template scripts, or write custom scripts to query logs, metrics and other observability data.
+1. Write custom diagnostic scripts that can be used to monitor your application.
+1. Run operational scripts such as `terraform`, `helm` and others.
+
+This will serve as the foundation for our day-2 tooling that allows you to integrate your existing stack and build more 
+visibility into your customer installs.
+
+## CLI V2
+
+_July 2024_
+
+We are shipping a redesigned CLI that will be extendable, easier to use and designed to interactively onboard.
+
+## GCP Support
+
+_July 2024_
+
+We are adding GCP support in early July, and will create a first class experience for kubernetes/non-kubernetes apps on 
+GCP.
+
+## Template Apps
+
+_August 2024_
+
+We will be adding a more PAAS (platform as a service) like experience which will allow anyone with a `Dockerfile` to 
+create a BYOC offering of their application.
+
+## Integrations into your stack 
+
+_August 2024_
+
+Our new runner, and programmable diagnostics will allow us to collect richer observability and health data on your 
+installs. From there, you will be able to integrate this data into your own stack and tools with everything from webhook 
+notifications, to forwarding of metrics and logs.
+
+Currently, we support [notifications](/guides/notifications) to get slack notifications for some install and app events.
