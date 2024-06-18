@@ -65,38 +65,45 @@ func (s *service) AdminCreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	//_, err = s.createUser(ctx, orgID, token.Subject)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to add static token user to org: %w", err))
-		return
-	}
-
 	ctx.JSON(http.StatusCreated, StaticTokenResponse{
 		APIToken: token.Token,
 	})
 }
 
 func (s *service) createStaticToken(ctx context.Context, orgID string, duration time.Duration) (*app.Token, error) {
-	email := fmt.Sprintf("%s-static@nuon.co", orgID)
-	token := app.Token{
-		CreatedByID: email,
-		Token:       domains.NewUserTokenID(),
-		// Subject:     email,
-		ExpiresAt: time.Now().Add(duration),
-		IssuedAt:  time.Now(),
-		Issuer:    email,
-		// Email:     email,
-		TokenType: app.TokenTypeStatic,
+	acct := app.Account{
+		Email:       fmt.Sprintf("%s-service-account@nuon.co", orgID),
+		Subject:     fmt.Sprintf("%s-service-account", orgID),
+		AccountType: app.AccountTypeService,
 	}
-
 	res := s.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "subject"}},
-			UpdateAll: true,
+			Columns: []clause.Column{
+				{Name: "email"},
+				{Name: "subject"},
+				{Name: "deleted_at"},
+			},
+			DoNothing: true,
 		}).
+		Create(&acct)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to create service account: %w", res.Error)
+	}
+
+	token := app.Token{
+		CreatedByID: acct.ID,
+		Token:       domains.NewUserTokenID(),
+		TokenType:   app.TokenTypeStatic,
+		ExpiresAt:   time.Now().Add(duration),
+		IssuedAt:    time.Now(),
+		Issuer:      orgID,
+		AccountID:   acct.ID,
+	}
+
+	res = s.db.WithContext(ctx).
 		Create(&token)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create static user token: %w", res.Error)
+		return nil, fmt.Errorf("unable to create service account user: %w", res.Error)
 	}
 
 	return &token, nil
