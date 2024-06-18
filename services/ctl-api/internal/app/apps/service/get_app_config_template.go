@@ -68,10 +68,18 @@ func (s *service) GetAppConfigTemplate(ctx *gin.Context) {
 }
 
 func (s *service) createAppTemplate(ctx context.Context, currentApp *app.App, typ AppConfigTemplateType) (*AppConfigTemplate, error) {
+	nam := fmt.Sprintf("nuon.%s.toml", currentApp.Name)
 	return &AppConfigTemplate{
-		Filename: fmt.Sprintf("nuon.%s.toml", currentApp.Name),
+		Filename: fmt.Sprintf("nuon-template.%s.toml", currentApp.Name),
 		Format:   app.AppConfigFmtToml,
-		Content: `version = "v1"
+		Content: fmt.Sprintf(`# This file contains template values for common Nuon application configuration options.
+# To use it for your app, edit as needed, then rename this file to %s and run
+#
+#   nuon apps sync -c %s
+#
+# See https://docs.nuon.co/concepts/apps for more information.
+
+version = "v1"
 
 [installer]
 name = "installer"
@@ -220,6 +228,6 @@ iam_role_arn = "iam_role_arn"
 image_url = "ecr-url"
 tag = "latest"
 region = "us-west-2"
-`,
+`, nam, nam),
 	}, nil
 }
