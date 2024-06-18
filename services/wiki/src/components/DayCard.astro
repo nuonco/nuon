@@ -1,0 +1,67 @@
+---
+import type { DayCard } from '../types';
+
+export interface Props {
+  dayCard: DayCard;
+}
+
+
+function datesToCount(start: Date, end: Date): number {
+  const startTS = start.getTime().valueOf()
+  const endTS = end.getTime().valueOf()
+
+  const delta = new Date(endTS - startTS).getTime().valueOf();
+  return Math.floor(delta / (1000 * 60 * 60 * 24));
+}
+
+const { dayCard:  dayCard } = Astro.props;
+
+const today = new Date()
+const pivotDate = new Date('October 11, 2021');
+const seriesADate = new Date('June 19, 2024');
+
+const startDayCount = datesToCount(pivotDate, dayCard.date);
+const seriesADayCount = datesToCount(seriesADate, dayCard.date);
+const todayDayCount = datesToCount(today, dayCard.date);
+
+const dateStr = dayCard.date.toLocaleDateString('en-us', { weekday:"long", year:"numeric", month:"short", day:"numeric"});
+---
+
+<article class="mb-6 transition">
+  <div class="relative md:h-80 bg-gray-400 dark:bg-slate-700 rounded shadow-lg mb-6 pt-2">
+    <div class="h-20">
+      <p class="dark:text-white dark:text-slate-400 text-lg text-center">
+      {dayCard.title}
+      <br />
+      <i class="text-sm">{dateStr}</i>
+      </p>
+
+    </div>
+
+  <div class="relative bg-gray-400 dark:bg-slate-700 rounded shadow-lg mb-6 pt-2">
+    <p class="text-muted dark:text-slate-400 text-md text-left ml-4">
+    From Today: <span class="text-2xl text-white">{todayDayCount}</span>
+    <br />
+    From Series A: <span class="text-2xl text-white">{seriesADayCount}</span>
+    <br />
+    From Pivot to Nuon: <span class="text-2xl text-white">{startDayCount}</span>
+    <br />
+    </p>
+  </div>
+
+  {
+  (dayCard.description || dayCard.link) && (
+  <div class="max-w-80 relative px-2">
+    <p class="text-sm text-left">
+      {dayCard.description}
+      <br />
+      {
+      dayCard.link && (
+        <a href={dayCard.link}>Link</a>
+      )
+      }
+    </p>
+  </div>
+  )
+  }
+</article>

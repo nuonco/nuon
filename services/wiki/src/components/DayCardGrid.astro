@@ -1,0 +1,15 @@
+---
+import Item from './DayCard.astro';
+import type { DayCard } from '../types';
+
+export interface Props {
+  cards: Array<DayCard>;
+}
+
+const { cards: cards } = Astro.props;
+const reversedCards = cards.reverse();
+---
+
+<div class="grid gap-6 row-gap-5 md:grid-cols-2 lg:grid-cols-3 -mb-6 pt-2">
+  {reversedCards.map((card) => <Item dayCard={card} />)}
+</div>

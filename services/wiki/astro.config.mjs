@@ -1,13 +1,21 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import tailwind from "@astrojs/tailwind";
 
 import node from "@astrojs/node";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 // https://astro.build/config
 export default defineConfig({
   vite: {
     resolve: {
+      alias: {
+        // NOTE(jm): this does not seem to be working
+        "~": path.resolve(__dirname, "./src"),
+      },
       preserveSymlinks: true,
     },
   },
