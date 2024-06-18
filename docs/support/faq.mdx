@@ -1,22 +1,159 @@
 ---
 name: Frequently Asked Questions
 sidebarTitle: FAQ
-description: "Common questions about Nuon."
+description: "Frequently asked questions"
 icon: circle-question
 ---
 
-## Can I run Nuon in my own cloud account?
+Common questions about BYOC, working with Nuon, and what types of applications we support.
 
-That's an option we've considered offfering. If it's important to you, reach out us.
+## Deployment Options
 
-## Do you support clouds other than AWS?
+### Do you support running Nuon in my own account?
 
-Not yet, but that's coming soon.
+Yes, for enterprise contracts we can deploy Nuon into your own cloud account.
 
-## What if my app doesn't run on EKS or AWS?
+### Can I use my own IAM role for delegating access for customer installs?
 
-You can use the aws-ecs sandbox to run just about anything on AWS.
+Currently, all application installs must grant one time access to a Nuon owned IAM role on AWS. We are adding support to 
+add your own role which all install access can be federated through.
 
-## What if none of your sandboxes support my app?
+Please watch our [roadmap](/roadmap) for more details.
 
-You can fork any of the sandboxes and modify them as needed, or even create your own from scratch!
+### Does my customer need to know about Nuon?
+
+Nuon is completely white label, and you should not need to communicate to your users that Nuon is powering your BYOC 
+install. 
+
+### Does Nuon need to be added as a data subprocessor?
+
+No, you should not need to add Nuon as a data subprocessor as no data is sent or stored on our servers beyond basic 
+debugging and telemetry data.
+
+## Support
+
+### Do you support self-service?
+
+Yes, but we currently encourage customers to go through a more white-glove onboarding experience. This allows us to 
+gather product feedback and address any challenges in the onboarding process faster, and make sure we help you get into 
+production.
+
+### Do you do slack support?
+
+Yes, we setup a shared slack channel with every customer to ensure we can deliver a consistent, fast support experience. 
+We currently do not support customers outside of slack.
+
+If you would like to use Nuon, but currently are not using slack please [let us know](mailto:team@nuon.co).
+
+### Do you offer support plans?
+
+Support is baked into each of our support plans, and we offer 7 day a week support in the EST -> PST timezones. For 
+annual contracts, we can offer custom support SLAs.
+
+### I have never gotten into production with a large enterprise customer, can you help?
+
+Yes, our mission is to help you get into production, powering real customer workloads. We often help companies in three ways:
+
+1. going through procurement, and preparing for any questions/feedback.
+1. sharing templates for pricing, documentation and architecture.
+1. joining customer calls, where applicable, to help any answer questions.
+
+### How long should it take to get into production with my first customer?
+
+We recommend about 1 month from sign up to production. We generally see the following timelines:
+
+1. 1 to 2 days to get your application fully configured.
+1. ~1 week of testing your application, pushing out updates and monitoring in different regions.
+1. ~1 week to set up your installer, get it integrated in your product and setup Github Actions for automatic updates.
+1. ~1 week for any customer specific requirements.
+
+## Application Support
+
+### I only have a Dockerfile, can you support my app?
+
+Most of our customers have existing infrastructure as code, deployment and devops automation so our platform currently 
+works best with some tooling experience there.
+
+In early Q4, we will be launching a PAAS-like experience which will allow any company to easily convert applications 
+from Render, Fly or Heroku to Nuon applications and offer BYOC deployments.
+
+### Do I have to know Kubernetes?
+
+No, Nuon supports any type of application that can be deployed on public clouds. From serverless, to container apps, to 
+any other cloud resource.
+
+In some cases, we will recommend supporting Kubernetes for large enterprise customers who may want to use their own 
+sandbox or have kubernetes specifi requirements.
+
+### Do you support serverless apps?
+
+Yes, any application that uses public cloud primitives can be deployed via Nuon.
+
+### Do you support GCP?
+
+Not yet, but this is on our short term roadmap. Please watch our [roadmap](/roadmap) for more details.
+
+### Do you support AWS Gov Cloud regions?
+
+Yes, you should be able to deploy a Nuon application into a Gov Cloud region, as long as the services you are using are 
+supported.
+
+### Do you support fed-ramp environments?
+
+Yes, depending on your application stack you can use Nuon to deploy into Fed Ramp environments.
+
+### Can I only use public cloud resources?
+
+No, you can use vertical cloud products such as [CloudFlare](https://cloudflare.com), [Fastly](https://fastly.com) and 
+many more to provision your applications. Simply declare an input to allow users to input credentials and use that to 
+configure any IAC or other tooling in your Nuon app.
+
+### Do you support bring your own key?
+
+Yes, you can allow users to add their own encryption keys, api keys and other credentials using 
+[inputs](/guides/app_inputs).
+
+## Updating my app
+
+### Can I deploy to a single install?
+
+Yes, you can deploy to a single install by setting an install id on a release using `nuon release create -i <install-id> 
+-c <component>`.
+
+### What if my customer wants monthly, or quarterly updates?
+
+You can support custom update schedules using our API, or SDKs. We do plan on adding better support for this 
+functionality, so if you would like this, please [get in touch](mailto:team@nuon.co).
+
+### My customer wants a VPC deployment, do you support this?
+
+Yes, we support VPC deployments with all of our common sandbox templates. We recommend testing your app with a 
+fully-managed sandbox and using that for POCs.
+
+In practice, we have found most production installs require a customer provider VPC.
+
+## Pricing
+
+### How does usage work?
+
+We believe that all installs should be free, and want to encourage each of our customers to offer BYOC to their entire 
+user base.
+
+We charge based on runner minutes, which are metered when the runner is executing scripts to power day-2 operations. 
+This includes custom diagnostics, logs, metrics and other import jobs.
+
+### Do you offer discounts for OSS companies?
+
+Yes, if you are an OSS company, please [reach out to us](mailto:team@nuon.co) to share more about your use case. On a 
+case by case basis we can offer custom annual contracts for large scale usage.
+
+### Do you offer an annual discount?
+
+Yes, we offer annual contracts for companies planning for more than 25 production installs.
+
+### Won't Nuon get too expensive if I offer it to my entire customer base?
+
+As you build out your day-2 tooling on top of Nuon, you can optimize cost by controlling how much visibility, alerting 
+and monitoring your configure for each install.
+
+We can work with you to create custom annual contracts, and optimize your Nuon runner minute budget.

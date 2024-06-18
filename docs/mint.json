@@ -5,7 +5,7 @@
         "dark": "/logo/dark.svg",
         "light": "/logo/light.svg"
     },
-    "openapi": "https://api.nuon.co/oapi/v3",
+    "openapi": "http://localhost:8081/oapi/v3",
     "favicon": "/favicon.png",
     "colors": {
         "primary": "#4E17FF",
@@ -30,12 +30,12 @@
             "url": "api-ref"
         },
         {
-            "name": "Support",
-            "url": "support"
+            "name": "Updates",
+            "url": "updates"
         },
         {
-            "name": "Changelog & Roadmap",
-            "url": "updates"
+            "name": "Support",
+            "url": "support"
         }
     ],
     "anchors": [
@@ -159,8 +159,9 @@
             ]
         },
         {
-            "group": "Updates",
+            "group": "",
             "pages": [
+                "updates/updates",
                 "updates/roadmap"
             ]
         },
@@ -168,6 +169,11 @@
             "group": "Changelog",
             "pages": [
                 "updates/changelog",
+                "updates/011-apps-metadata-helpers",
+                "updates/010-input-groups",
+                "updates/009-config-file-improvements",
+                "updates/008-self-hosted-installers",
+                "updates/007-installs-ui",
                 "updates/006-config-files",
                 "updates/005-improved-installers-guides",
                 "updates/004-sdks-github-action",
@@ -182,18 +188,18 @@
                 "support/faq"
             ]
         },
-        {
-            "group": "apps",
-            "pages": [
-                "api-ref/apps/get-all-apps-for-the-current-org",
-                "api-ref/apps/create-an-app",
-                "api-ref/apps/get-an-app",
-                "api-ref/apps/delete-an-app",
-                "api-ref/apps/update-an-app",
-                "api-ref/apps/create-app-input-configs",
-                "api-ref/apps/get-app-input-configs",
-                "api-ref/apps/get-latest-app-input-config",
-                "api-ref/apps/create-an-app-sandbox-config",
+          {
+              "group": "apps",
+              "pages": [
+                  "api-ref/apps/get-all-apps-for-the-current-org",
+                  "api-ref/apps/create-an-app",
+                  "api-ref/apps/get-an-app",
+                  "api-ref/apps/delete-an-app",
+                  "api-ref/apps/update-an-app",
+                  "api-ref/apps/create-app-input-configs",
+                  "api-ref/apps/get-app-input-configs",
+                  "api-ref/apps/get-latest-app-input-config",
+                  "api-ref/apps/create-an-app-sandbox-config",
                 "api-ref/apps/get-app-sandbox-configs",
                 "api-ref/apps/get-latest-app-sandbox-config"
             ]
@@ -310,8 +316,21 @@
         {
             "source": "/api-ref",
             "destination": "/api-ref/getting-started"
+        },
+        {
+            "source": "/changelog",
+            "destination": "/updates/changelog"
+        },
+        {
+            "source": "/roadmap",
+            "destination": "/updates/roadmap"
+        },
+        {
+            "source": "/faq",
+            "destination": "/support/faq"
         }
     ],
+
   "analytics": {
     "posthog": {
       "apiKey": "phc_1NEQAphH0jxCX7opmp4Iyq2O6mu4tM552kMjJz8uKkl",
