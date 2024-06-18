@@ -1,0 +1,66 @@
+---
+title: 008 - Self Hosted Installers
+description: Fork our installer UI and customize it, and build it into your product.
+---
+
+![001 - New year, new docs](/images/changelog/001_header.jpg)
+
+April 15th, 2024
+
+It turns out we were onto something with our [installer](/concepts/installers) idea, and you all kept coming up with 
+more and more awesome ideas on how you could embed them in your product.
+
+## Open Source Installer
+
+We recently open sourced our installer UI. You can now fork, deploy and customize it to build 
+your own installation experience.
+
+Under the hood, the installer is a [Next.js](https://nextjs.org) app with [Tailwind](https://tailwindcss.com/) wired up.
+
+You can fork the installer in our repo [here](https://github.com/nuonco/installer).
+
+<Note>We are actively working with each customer running an installer, and upstreaming whatever functionality we can. 
+Let us know all your ideas!</Note>
+
+## Multi App Installers
+
+Previously, installers only supported a single application, which meant you could end up with several different 
+installer links to share with customers. Since most customers support at least 2 application configurations and some 
+support up to 6, this was already becoming a problem.
+
+You can configure multiple apps in your config file, by adding the appIDs you want attached to the installer:
+
+```bash nuon
+$ nuon apps list
+```
+
+```toml
+name = "your installer"
+apps = [
+    "appx16i8wxxqjvzadc25lf56cz",
+    "appn8f101b3ei5vcfpmdewdtwb",
+]
+```
+
+## Prefilled Form Fields
+
+You can prefill form fields in your installer, by passing values via a query string. This allows you to create "magic 
+links" in your own signup flow, and inject things like API keys, regions and more.
+
+Any field that is declared as an input can be auto filled by adding the `?input_name=value` query parameter. For 
+example, if you have an input named `api_key`, you can pass in an API key via the link using: 
+`https://your-installer?api_key=<value>`.
+
+## Helm Components Support Values Files
+
+You can add custom Helm values file to an a [Helm Component](/guides/helm-chart-components) using our config file:
+
+```toml
+[[values_file]]
+source = "./charts/prod.values.yaml"
+
+[[values_file]]
+source = "./charts/byoc-overrides.values.yaml"
+```
+
+This allows you to re-use your existing values files.

@@ -1,0 +1,70 @@
+---
+title: 009 - Input Groups, App Secrets and more
+description: Better support for apps with many customer inputs.
+---
+
+![001 - New year, new docs](/images/changelog/001_header.jpg)
+
+May 25th, 2024
+
+## Input Groups
+
+You can now split up inputs into groups, allowing you to create step-based onboarding flows.
+
+To create an input group:
+
+```toml
+[[group]]
+name = "sandbox"
+description = "Sandbox inputs"
+display_name = "Sandbox inputs"
+
+[[group]]
+name = "default"
+description = "Default inputs"
+display_name = "Default Inputs"
+```
+
+Each input must declare a group that it belongs too:
+
+```toml
+[[input]]
+name = "api_key"
+description = "API key"
+default = ""
+sensitive = true
+display_name = "API Key"
+group = "default"
+```
+
+The self-hosted installers will automatically render each group.
+
+## App Secrets
+
+You can now add app secrets, which can be used to set sensitive values during configuration.
+
+To add a secret:
+
+```bash
+$ nuon secrets create --name=secret --value=secret-value
+```
+
+Now, to reference a secret in your configuration:
+
+```toml
+[connected_repo]
+directory = "deployment"
+repo = "nuon/demos"
+branch = "main"
+
+[[value]]
+value = "{{.nuon.app.secrets.secret}}"
+```
+
+## Installer Themes
+
+We have updated the installer to use a tailwind theme for most styles.
+
+To set your theme, simply export or create a Tailwind them and add it into your installer, under `theme.ts`.
+
+You can learn more about self-hosted installers [here](/concepts/installers).
