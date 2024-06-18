@@ -14,7 +14,7 @@ import (
 const (
 	statusError                  string      = "error"
 	statusActive                 string      = "active"
-	defaultConfigFilePermissions fs.FileMode = 0644
+	defaultConfigFilePermissions fs.FileMode = 0o644
 )
 
 func (s *Service) Create(ctx context.Context, appName string, appTemplate string, asJSON bool) {
@@ -57,12 +57,12 @@ success:
 		return
 	}
 
-	view.Update("writing app config to file")
+	view.Update("writing template config to file")
 	err = os.WriteFile(tmpl.Filename, []byte(tmpl.Content), defaultConfigFilePermissions)
 	if err != nil {
 		view.Fail(err)
 		return
 	}
 
-	view.Update("successfully wrote config file at " + tmpl.Filename + "\n")
+	view.Update("successfully wrote config template file at " + tmpl.Filename + "\n")
 }
