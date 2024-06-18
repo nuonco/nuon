@@ -67,8 +67,8 @@ module "shared-warpstream" {
   enable_branch_protection = false
 
   collaborators = {
-    "richardartoul"    = "push"
-    "ryanworl"         = "push"
+    "richardartoul" = "push"
+    "ryanworl"      = "push"
   }
 
   providers = {
@@ -88,8 +88,8 @@ module "shared-warpstream-installer" {
   is_fork                  = true
 
   collaborators = {
-    "richardartoul"    = "push"
-    "ryanworl"         = "push"
+    "richardartoul" = "push"
+    "ryanworl"      = "push"
   }
 
   providers = {
@@ -365,7 +365,9 @@ module "shared-stardog" {
   is_private               = true
   enable_branch_protection = false
 
-  collaborators = {}
+  collaborators = {
+    "paulplace" = "push"
+  }
 
   providers = {
     github = github.nuonco-shared
@@ -383,7 +385,9 @@ module "shared-stardog-installer" {
   enable_branch_protection = false
   is_fork                  = true
 
-  collaborators = {}
+  collaborators = {
+    "paulplace" = "push"
+  }
 
   providers = {
     github = github.nuonco-shared
