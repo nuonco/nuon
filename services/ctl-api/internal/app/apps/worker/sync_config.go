@@ -60,6 +60,15 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		return fmt.Errorf("unable to sync app metadata: %w", err)
 	}
 
+	var syncToken activities.CreateSyncTokenResponse
+	if err := w.defaultExecGetActivity(ctx, w.acts.CreateSyncToken, activities.CreateSyncTokenRequest{
+		AccountID: currentApp.CreatedBy.ID,
+	}, &syncToken); err != nil {
+		w.updateStatus(ctx, appID, StatusError, "unable to create sync token")
+		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to create sync token")
+		return fmt.Errorf("unable to create sync token: %w", err)
+	}
+
 	w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusSyncing, "applying terraform config")
 	_, err := w.execSyncWorkflow(ctx, dryRun, &appsv1.SyncRequest{
 		OrgId:            currentApp.OrgID,
@@ -67,7 +76,7 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 		AppConfigId:      appConfigID,
 		TerraformJson:    appCfg.GeneratedTerraform,
 		TerraformVersion: defaultTerraformVersion,
-		ApiToken:         currentApp.CreatedBy.ID,
+		ApiToken:         syncToken.Token,
 		ApiUrl:           w.cfg.AppSyncAPIURL,
 	})
 	if err != nil {

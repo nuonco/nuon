@@ -53,5 +53,5 @@ func (m *Client) CreateAccount(ctx context.Context, email, subject string) (*app
 		return nil, fmt.Errorf("unable to create account: %w", err)
 	}
 
-	return nil, nil
+	return &acct, nil
 }
