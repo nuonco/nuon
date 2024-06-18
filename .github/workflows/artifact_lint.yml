@@ -14,7 +14,7 @@ defaults:
 jobs:
   test:
     name: 🌏 lint
-    runs-on: [ubuntu-latest-16-cores, linux]
+    runs-on: mono
     permissions:
       contents: read
       packages: write
