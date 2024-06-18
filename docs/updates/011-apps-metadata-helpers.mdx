@@ -1,0 +1,57 @@
+---
+title: 011 - App metadata and notifications
+description: Rename apps, add metadata, notifications and more.
+---
+
+_June 17th, 2024_
+
+## Apps Rename
+
+You can now rename an application using our CLI.
+
+First, pin an app:
+
+```bash
+$ nuon apps select
+```
+
+Next, run the `apps rename` command:
+
+```bash
+$ nuon apps rename --name=<new-app-name>
+```
+
+## App Notifications
+
+You can setup a slack channel to receive notifications about your application, and get notified of new installs and 
+more.
+
+Simply generate a channel webhook URL, and add it into your app config:
+
+```toml
+slack_webhook_url = <your-url>
+````
+
+To learn more about setting up a channel, please refer to our [guide](/guides/notifications).
+
+<Note>We are planning on adding support for webhook notifications. If you would like this, please <a 
+href="mailto:team@nuon.co">get in touch</a></Note>.
+
+## App Metadata
+
+You can now declare a `display_name` and `description` on your app, which will then be rendered in your installer.
+
+```toml
+version = "v1"
+description = "App configuration for bring-your-own-network."
+display_name = "Bring your own network"
+```
+
+This is helpful for controlling the description of each app, and explaining the differences between configuration 
+options.
+
+## Foundational Improvements
+
+As always, what we are sharing here is not all that meets the eye. We've been hard at work productionizing our support 
+and Nat + Jon have been working on some foundational work for our new runner (namely, better authorization in our API 
+and some foundational UI tooling and testing).
