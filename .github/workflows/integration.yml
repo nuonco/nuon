@@ -56,7 +56,7 @@ jobs:
 
   run-integration-tests:
     name: 🌏 test
-    runs-on: [ubuntu-latest-16-cores, linux]
+    runs-on: mono
     if: ${{ needs.merged_pr.outputs.integration == 'true' }}
     needs:
       - merged_pr
