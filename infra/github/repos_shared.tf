@@ -1,3 +1,22 @@
+module "shared-athena" {
+  source = "./modules/repository"
+
+  name                     = "athena"
+  description              = "Nuon configuration for athena."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+    "bgeils" = "push"
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
 module "shared-turntable" {
   source = "./modules/repository"
 
