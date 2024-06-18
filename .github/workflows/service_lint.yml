@@ -18,7 +18,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
-    runs-on: [ubuntu-latest-16-cores, linux]
+    runs-on: mono
     timeout-minutes: 9
     steps:
       - name: Checkout repo
