@@ -17,7 +17,6 @@ func (c *client) handleStatusResponse(byts []byte) error {
 	}
 
 	return nil
-
 }
 
 type ProvisionCanaryRequest struct {
@@ -74,4 +73,31 @@ func (c *client) StopCanaryCron(ctx context.Context) error {
 	}
 
 	return c.handleStatusResponse(byts)
+}
+
+type CreateCanaryUserRequest struct {
+	CanaryID string `json:"canary_id"`
+}
+
+type CreateCanaryUserResponse struct {
+	APIToken        string `json:"api_token"`
+	GithubInstallID string `json:"github_install_id"`
+	Email           string `json:"email"`
+}
+
+func (c *client) CreateCanaryUser(ctx context.Context, canaryID string) (*CreateCanaryUserResponse, error) {
+	endpoint := "/v1/general/canary-user"
+	byts, err := c.execPostRequest(ctx, endpoint, CreateCanaryUserRequest{
+		CanaryID: canaryID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute post request: %w", err)
+	}
+
+	var resp CreateCanaryUserResponse
+	if err := json.Unmarshal(byts, &resp); err != nil {
+		return nil, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return &resp, nil
 }

@@ -32,6 +32,7 @@ func allModels() []interface{} {
 		&app.App{},
 		&app.AppConfig{},
 		&app.AppSandboxConfig{},
+		&app.AppAWSDelegationConfig{},
 		&app.AppRunnerConfig{},
 		&app.AppInput{},
 		&app.AppInputGroup{},

@@ -66,6 +66,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	api.POST("/v1/apps/:app_id/admin-reprovision", s.AdminReprovisionApp)
 	api.POST("/v1/apps/:app_id/admin-restart", s.RestartApp)
 	api.POST("/v1/apps/:app_id/admin-delete", s.AdminDeleteApp)
+	api.POST("/v1/apps/:app_id/admin-aws-delegation", s.AdminAddAWSDelegationConfig)
 
 	return nil
 }

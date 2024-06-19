@@ -2,6 +2,18 @@ package app
 
 import "fmt"
 
+type AWSRegionType string
+
+const (
+	AWSRegionTypeDefault  AWSRegionType = "default"
+	AWSRegionTypeGovCloud AWSRegionType = "govcloud"
+	AWSRegionTypeUnknown  AWSRegionType = ""
+)
+
+func (a AWSRegionType) String() string {
+	return string(a)
+}
+
 type CloudPlatformRegion struct {
 	Name        string `json:"name"`
 	Value       string `json:"value"`
@@ -10,6 +22,10 @@ type CloudPlatformRegion struct {
 }
 
 type CloudPlatform string
+
+func (c CloudPlatform) String() string {
+	return string(c)
+}
 
 const (
 	CloudPlatformAWS     CloudPlatform = "aws"
