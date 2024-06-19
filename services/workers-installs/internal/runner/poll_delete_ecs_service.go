@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
+
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -18,12 +20,14 @@ type PollDeleteECSServiceRequest struct {
 	ClusterARN string `validate:"required"`
 	InstallID  string `validate:"required"`
 	Region     string `validate:"required"`
+
+	TwoStepConfig *assumerole.TwoStepConfig `validate:"required"`
 }
 
 type PollDeleteECSServiceResponse struct{}
 
 func (a *Activities) PollDeleteService(ctx context.Context, req PollDeleteECSServiceRequest) (*PollDeleteECSServiceResponse, error) {
-	ecsClient, err := a.getECSClient(ctx, req.IAMRoleARN, req.Region)
+	ecsClient, err := a.getECSClient(ctx, req.IAMRoleARN, req.Region, req.TwoStepConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get ecs client: %w", err)
 	}

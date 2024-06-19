@@ -7,6 +7,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	cloudwatchlogstypes "github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs/types"
+
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -14,12 +16,14 @@ type DeleteCloudwatchLogGroupRequest struct {
 	IAMRoleARN   string `validate:"required"`
 	LogGroupName string `validate:"required"`
 	Region       string `validate:"required"`
+
+	TwoStepConfig *assumerole.TwoStepConfig `validate:"required"`
 }
 
 type DeleteCloudwatchLogGroupResponse struct{}
 
 func (a *Activities) DeleteCloudwatchLogGroup(ctx context.Context, req *DeleteCloudwatchLogGroupRequest) (*DeleteCloudwatchLogGroupResponse, error) {
-	cwClient, err := a.getCloudwatchClient(ctx, req.IAMRoleARN, req.Region)
+	cwClient, err := a.getCloudwatchClient(ctx, req.IAMRoleARN, req.Region, req.TwoStepConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get ecs client: %w", err)
 	}
