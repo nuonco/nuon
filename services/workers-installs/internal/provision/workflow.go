@@ -57,7 +57,6 @@ func (w wkflow) createPlanRequest(runTyp planv1.SandboxInputType, req *installsv
 			},
 		},
 	}
-
 }
 
 func (w wkflow) executorsWorkflowID(req *installsv1.ProvisionRequest, jobName string) string {
@@ -182,10 +181,13 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 	}
 
 	prReq := &runnerv1.ProvisionRunnerRequest{
-		OrgId:      req.OrgId,
-		AppId:      req.AppId,
-		InstallId:  req.InstallId,
-		RunnerType: req.RunnerType,
+		OrgId:           req.OrgId,
+		AppId:           req.AppId,
+		InstallId:       req.InstallId,
+		RunnerType:      req.RunnerType,
+		AwsSettings:     req.AwsSettings,
+		AzureSettings:   req.AzureSettings,
+		SandboxSettings: req.SandboxSettings,
 	}
 
 	// parse runner type and use it to build the runner provision request

@@ -6,6 +6,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/efs"
 	efstypes "github.com/aws/aws-sdk-go-v2/service/efs/types"
+
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -18,6 +20,8 @@ type CreateEFSAccessPointsRequest struct {
 	VPCID           string
 	SubnetIDs       []string
 	SecurityGroupID string
+
+	TwoStepConfig *assumerole.TwoStepConfig `validate:"required"`
 }
 
 type CreateEFSAccessPointsResponse struct {
@@ -25,7 +29,7 @@ type CreateEFSAccessPointsResponse struct {
 }
 
 func (a *Activities) CreateEFSAccessPoints(ctx context.Context, req CreateEFSAccessPointsRequest) (*CreateEFSAccessPointsResponse, error) {
-	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region)
+	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region, req.TwoStepConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create efs client: %w", err)
 	}

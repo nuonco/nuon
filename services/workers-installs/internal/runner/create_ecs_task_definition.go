@@ -8,6 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	ecstypes "github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/aws/aws-sdk-go/aws"
+
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -24,6 +26,8 @@ type CreateECSTaskDefinitionRequest struct {
 	FileSystemID  string            `validate:"required"`
 
 	Args []string
+
+	TwoStepConfig *assumerole.TwoStepConfig
 }
 
 type CreateECSTaskDefinitionResponse struct {
@@ -31,7 +35,7 @@ type CreateECSTaskDefinitionResponse struct {
 }
 
 func (a *Activities) CreateECSTaskDefinition(ctx context.Context, req *CreateECSTaskDefinitionRequest) (*CreateECSTaskDefinitionResponse, error) {
-	ecsClient, err := a.getECSClient(ctx, req.IAMRoleARN, req.Region)
+	ecsClient, err := a.getECSClient(ctx, req.IAMRoleARN, req.Region, req.TwoStepConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get ecs client: %w", err)
 	}
