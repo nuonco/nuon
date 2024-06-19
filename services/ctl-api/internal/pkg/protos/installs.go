@@ -35,6 +35,44 @@ func (c *Adapter) toSandboxSettings(install *app.Install) (*installsv1.SandboxSe
 	return sandboxSettings, nil
 }
 
+func (c *Adapter) toAWSSettings(install *app.Install) *installsv1.AWSSettings {
+	if install.AWSAccount == nil {
+		return nil
+	}
+
+	settings := &installsv1.AWSSettings{
+		Region:     install.AWSAccount.Region,
+		AwsRoleArn: install.AWSAccount.IAMRoleARN,
+		AwsRoleDelegation: &installsv1.AWSRoleDelegation{
+			Enabled: false,
+		},
+	}
+	if install.AppSandboxConfig.AWSDelegationConfig != nil {
+		settings.AwsRoleDelegation = &installsv1.AWSRoleDelegation{
+			Enabled:         true,
+			IamRoleArn:      install.AppSandboxConfig.AWSDelegationConfig.IAMRoleARN,
+			AccessKeyId:     install.AppSandboxConfig.AWSDelegationConfig.AccessKeyID,
+			SecretAccessKey: install.AppSandboxConfig.AWSDelegationConfig.SecretAccessKey,
+		}
+	}
+
+	return settings
+}
+
+func (c *Adapter) toAzureSettings(install *app.Install) *installsv1.AzureSettings {
+	if install.AzureAccount == nil {
+		return nil
+	}
+
+	return &installsv1.AzureSettings{
+		Location:                 install.AzureAccount.Location,
+		SubscriptionId:           install.AzureAccount.SubscriptionID,
+		SubscriptionTenantId:     install.AzureAccount.SubscriptionTenantID,
+		ServicePrincipalAppId:    install.AzureAccount.ServicePrincipalAppID,
+		ServicePrincipalPassword: install.AzureAccount.ServicePrincipalPassword,
+	}
+}
+
 func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) (*installsv1.ProvisionRequest, error) {
 	sandboxSettings, err := c.toSandboxSettings(install)
 	if err != nil {
@@ -48,21 +86,8 @@ func (c *Adapter) ToInstallProvisionRequest(install *app.Install, runID string) 
 		RunId:           runID,
 		SandboxSettings: sandboxSettings,
 		RunnerType:      ToRunnerType(install.AppRunnerConfig.Type),
-	}
-	if install.AWSAccount != nil {
-		req.AwsSettings = &installsv1.AWSSettings{
-			Region:     install.AWSAccount.Region,
-			AwsRoleArn: install.AWSAccount.IAMRoleARN,
-		}
-	}
-	if install.AzureAccount != nil {
-		req.AzureSettings = &installsv1.AzureSettings{
-			Location:                 install.AzureAccount.Location,
-			SubscriptionId:           install.AzureAccount.SubscriptionID,
-			SubscriptionTenantId:     install.AzureAccount.SubscriptionTenantID,
-			ServicePrincipalAppId:    install.AzureAccount.ServicePrincipalAppID,
-			ServicePrincipalPassword: install.AzureAccount.ServicePrincipalPassword,
-		}
+		AwsSettings:     c.toAWSSettings(install),
+		AzureSettings:   c.toAzureSettings(install),
 	}
 
 	return req, nil
@@ -81,21 +106,8 @@ func (c *Adapter) ToInstallDeprovisionRequest(install *app.Install, runID string
 		RunId:           runID,
 		SandboxSettings: sandboxSettings,
 		RunnerType:      ToRunnerType(install.AppRunnerConfig.Type),
-	}
-	if install.AWSAccount != nil {
-		req.AwsSettings = &installsv1.AWSSettings{
-			Region:     install.AWSAccount.Region,
-			AwsRoleArn: install.AWSAccount.IAMRoleARN,
-		}
-	}
-	if install.AzureAccount != nil {
-		req.AzureSettings = &installsv1.AzureSettings{
-			Location:                 install.AzureAccount.Location,
-			SubscriptionId:           install.AzureAccount.SubscriptionID,
-			SubscriptionTenantId:     install.AzureAccount.SubscriptionTenantID,
-			ServicePrincipalAppId:    install.AzureAccount.ServicePrincipalAppID,
-			ServicePrincipalPassword: install.AzureAccount.ServicePrincipalPassword,
-		}
+		AwsSettings:     c.toAWSSettings(install),
+		AzureSettings:   c.toAzureSettings(install),
 	}
 
 	return req, nil
