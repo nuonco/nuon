@@ -6,6 +6,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/efs"
 	efstypes "github.com/aws/aws-sdk-go-v2/service/efs/types"
+
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -13,6 +15,8 @@ type PollEFSMountTargetsRequest struct {
 	IAMRoleARN string `validate:"required"`
 	FsID       string `validate:"required"`
 	Region     string `validate:"required"`
+
+	TwoStepConfig *assumerole.TwoStepConfig `validate:"required"`
 }
 
 type PollEFSMountTargetsResponse struct {
@@ -20,7 +24,7 @@ type PollEFSMountTargetsResponse struct {
 }
 
 func (a *Activities) PollEFSMountTargets(ctx context.Context, req PollEFSMountTargetsRequest) (*PollEFSMountTargetsResponse, error) {
-	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region)
+	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region, req.TwoStepConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create efs client: %w", err)
 	}
