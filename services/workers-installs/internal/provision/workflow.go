@@ -7,6 +7,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/sandboxes"
 	awsecs "github.com/powertoolsdev/mono/pkg/sandboxes/aws-ecs"
@@ -129,8 +130,18 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 
 	// check access for install
 	if req.AwsSettings != nil {
+		twoStepCfg := &assumerole.TwoStepConfig{
+			IAMRoleARN: w.cfg.NuonAccessRoleArn,
+		}
+		if req.AwsSettings.AwsRoleDelegation != nil {
+			twoStepCfg.IAMRoleARN = req.AwsSettings.AwsRoleDelegation.IamRoleArn
+			twoStepCfg.AccessKeyID = req.AwsSettings.AwsRoleDelegation.AccessKeyId
+			twoStepCfg.SecretAccessKey = req.AwsSettings.AwsRoleDelegation.SecretAccessKey
+		}
+
 		if err := execCheckIAMRole(ctx, act, CheckIAMRoleRequest{
-			RoleARN: req.AwsSettings.AwsRoleArn,
+			RoleARN:       req.AwsSettings.AwsRoleArn,
+			TwoStepConfig: twoStepCfg,
 		}); err != nil {
 			err = fmt.Errorf("unable to validate IAM role: %w", err)
 			w.finishWorkflow(ctx, req, resp, err)
