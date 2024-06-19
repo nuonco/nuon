@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/go-playground/validator/v10"
+
 	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 )
 
@@ -87,7 +88,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 		RoleARN:             c.AssumeRole.RoleARN,
 		RoleSessionName:     c.AssumeRole.SessionName,
 		RoleSessionDuration: time.Second * time.Duration(c.AssumeRole.SessionDurationSeconds),
-		TwoStepRoleARN:      c.AssumeRole.TwoStepRoleARN,
+		TwoStepConfig:       c.AssumeRole.TwoStepConfig,
 		Region:              c.Region,
 	}))
 	if err != nil {

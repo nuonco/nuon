@@ -7,6 +7,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/efs"
 	efstypes "github.com/aws/aws-sdk-go-v2/service/efs/types"
+
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -18,12 +20,14 @@ type CreateEFSMountTargetsRequest struct {
 	VPCID           string
 	SubnetIDs       []string
 	SecurityGroupID string
+
+	TwoStepConfig *assumerole.TwoStepConfig `validate:"required"`
 }
 
 type CreateEFSMountTargetsResponse struct{}
 
 func (a *Activities) CreateEFSMountTargets(ctx context.Context, req CreateEFSMountTargetsRequest) (*CreateEFSMountTargetsResponse, error) {
-	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region)
+	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region, req.TwoStepConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create efs client: %w", err)
 	}

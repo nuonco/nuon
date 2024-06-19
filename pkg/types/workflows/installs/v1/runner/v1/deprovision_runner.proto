@@ -3,9 +3,11 @@ syntax = "proto3";
 package installs.v1.runner.v1;
 
 import "context/v1/runner_type.proto";
+import "installs/v1/account_settings.proto";
 import "installs/v1/runner/v1/aks_cluster.proto";
 import "installs/v1/runner/v1/ecs_cluster.proto";
 import "installs/v1/runner/v1/eks_cluster.proto";
+import "installs/v1/sandbox_settings.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
@@ -37,6 +39,11 @@ message DeprovisionRunnerRequest {
   string region = 7 [(tagger.tags) = "faker:\"oneof: us-west-2\""];
 
   context.v1.RunnerType runner_type = 8;
+
+  // contextual information for installing the container service
+  installs.v1.AWSSettings aws_settings = 10;
+  installs.v1.AzureSettings azure_settings = 11;
+  installs.v1.SandboxSettings sandbox_settings = 12;
 }
 
 // StartResponse returns the response from a deployment workflow
