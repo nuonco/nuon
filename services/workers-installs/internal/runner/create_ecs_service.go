@@ -7,6 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	ecstypes "github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/aws/aws-sdk-go/aws"
+
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
@@ -19,12 +21,14 @@ type CreateECSServiceRequest struct {
 	SecurityGroupID   string   `validate:"required"`
 	SubnetIDs         []string `validate:"required"`
 	TaskDefinitionARN string   `validate:"required"`
+
+	TwoStepConfig *assumerole.TwoStepConfig `validate:"required"`
 }
 
 type CreateECSServiceResponse struct{}
 
 func (a *Activities) CreateECSService(ctx context.Context, req *CreateECSServiceRequest) (*CreateECSServiceResponse, error) {
-	ecsClient, err := a.getECSClient(ctx, req.IAMRoleARN, req.Region)
+	ecsClient, err := a.getECSClient(ctx, req.IAMRoleARN, req.Region, req.TwoStepConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get ecs client: %w", err)
 	}

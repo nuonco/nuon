@@ -18,6 +18,20 @@ const (
 	maxSessionDuration time.Duration = time.Second * 3600
 )
 
+// TwoStepConfig is a configuration used when we need to jump through another IAM role, before assuming a customer role.
+// If _only_ IAMRoleARN is set, then the two-step IAMRole will be assumed using the default credentials.
+// If _only_ the static credentials are set, then the credentials will use that.
+// If _both_ the IAM Role ARN and the static credentials are set, then the static credentials will be used to assume the
+// two-step role
+//
+// The credentials created from the two step config are then used to assume the role
+type TwoStepConfig struct {
+	IAMRoleARN string
+
+	AccessKeyID     string
+	SecretAccessKey string
+}
+
 type Settings struct {
 	RoleARN             string `validate:"required"`
 	RoleSessionName     string `validate:"required"`
@@ -25,7 +39,7 @@ type Settings struct {
 
 	// TwoStepRoleARN is an optional second role, to assume. This is useful for situations where nuon has a shared
 	// role that is assumable by our systems/workers, that our customer's grant access too.
-	TwoStepRoleARN string
+	TwoStepConfig *TwoStepConfig
 
 	Region string
 }
@@ -39,8 +53,9 @@ type assumer struct {
 	RoleSessionName     string `validate:"required"`
 	RoleSessionDuration time.Duration
 
-	TwoStepRoleARN string
-	Region         string
+	Region string
+
+	TwoStepConfig *TwoStepConfig
 
 	// internal state
 	v *validator.Validate
@@ -85,7 +100,7 @@ func WithSettings(s Settings) assumerOptions {
 
 		a.RoleARN = s.RoleARN
 		a.RoleSessionName = s.RoleSessionName
-		a.TwoStepRoleARN = s.TwoStepRoleARN
+		a.TwoStepConfig = s.TwoStepConfig
 		a.Region = s.Region
 
 		if s.RoleSessionDuration > 0 {
@@ -112,10 +127,10 @@ func WithRoleSessionName(s string) assumerOptions {
 	}
 }
 
-// WithTwoStepRoleARN specifies a two-step role to assume, before assuming the final role
-func WithTwoStepRoleARN(s string) assumerOptions {
+// WithTwoStepConfig specifies a two-step role to assume, before assuming the final role
+func WithTwoStepConfig(s *TwoStepConfig) assumerOptions {
 	return func(a *assumer) error {
-		a.TwoStepRoleARN = s
+		a.TwoStepConfig = s
 		return nil
 	}
 }
