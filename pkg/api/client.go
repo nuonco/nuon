@@ -44,6 +44,7 @@ type Client interface {
 
 	CreateIntegrationUser(ctx context.Context) (*CreateIntegrationUserResponse, error)
 	CreateCanaryUser(ctx context.Context, canaryID string) (*CreateCanaryUserResponse, error)
+	CreateSeedUser(ctx context.Context) (*CreateSeedUserResponse, error)
 }
 
 var _ Client = (*client)(nil)
