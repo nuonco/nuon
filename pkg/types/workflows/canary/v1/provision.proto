@@ -10,7 +10,7 @@ option go_package = "github.com/powertoolsdev/mono/pkg/types/canary/v1";
 message ProvisionRequest {
   string canary_id = 1 [
     (validate.rules).string = {
-      ignore_empty: true,
+      ignore_empty: true
       len: 26
     },
     (tagger.tags) = "faker:\"shortID\""

@@ -76,5 +76,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "057-authz-cleanup",
 			Fn:   a.migration057CleanupOldAuthz,
 		},
+		{
+			Name: "058-aws-region-types",
+			Fn:   a.migration058AWSRegionTypes,
+		},
 	}
 }
