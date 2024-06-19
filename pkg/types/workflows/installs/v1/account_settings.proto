@@ -21,6 +21,8 @@ message AWSSettings {
         "ap-southeast-3",
         "ap-southeast-4",
         "ap-south-1",
+        "us-gov-west-1",
+        "us-gov-east-1",
         "ap-northeast-3",
         "ap-northeast-2",
         "ap-southeast-1",
@@ -46,6 +48,18 @@ message AWSSettings {
   ];
 
   string aws_role_arn = 3 [(tagger.tags) = "faker:\"len=20\""];
+
+  AWSRoleDelegation aws_role_delegation = 4;
+}
+
+message AWSRoleDelegation {
+  bool enabled = 1;
+  string iam_role_arn = 2;
+
+  // NOTE: in the future we do not plan to support using access_key_id and secret_access_key directly, but will actually
+  // run the gov cloud runners in a gov cloud account, which allows assuming this role.
+  string access_key_id = 3;
+  string secret_access_key = 4;
 }
 
 message AzureSettings {
