@@ -2,6 +2,7 @@ package docs
 
 import (
 	"github.com/gin-gonic/gin"
+
 	"github.com/powertoolsdev/mono/pkg/services/config"
 	"github.com/powertoolsdev/mono/services/ctl-api/admin"
 	"github.com/powertoolsdev/mono/services/ctl-api/docs"
@@ -33,6 +34,7 @@ func (r *Docs) RegisterRoutes(g *gin.Engine) error {
 	g.GET("/oapi/v2", r.getOAPI2PublicSpec)
 	g.GET("/docs/*any", swagger.WrapHandler(
 		swaggerfiles.Handler,
+		swagger.PersistAuthorization(true),
 	))
 
 	return nil
