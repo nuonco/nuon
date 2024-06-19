@@ -195,6 +195,20 @@ module "nuon-terraform-aws-ecr-access" {
   }
 }
 
+module "nuon-terraform-aws-access-delegation" {
+  source           = "./modules/repository"
+  name             = "terraform-aws-access-delegation"
+  description      = "Set up an IAM role that allows you to setup a delegation IAM role using Nuon."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
+
 module "nuon-terraform-aws-install-access" {
   source           = "./modules/repository"
   name             = "terraform-aws-install-access"
