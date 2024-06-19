@@ -1,0 +1,167 @@
+---
+title: 'Install Access Delegation'
+description: "Use your own IAM roles with customers, using install access delegation"
+icon: code
+---
+
+Set up a custom IAM role that customer's can grant access to, instead of using the Nuon built in roles.
+
+<Note>
+This feature is still in Beta, and currently can only be turned on by the Nuon team internally.
+</Note>
+
+## What Is Install Access Delegation
+
+By default, Nuon installs require that the customer grant one time access to one or more Nuon accounts to setup the 
+install. This is done via cross account IAM, by establishing a trust relationship with two Nuon AWS Accounts:
+
+* `814326426574` - our sandbox provisioner account
+* `007754799877` - our runner provisioner account
+
+If you would rather not have your customers grant access to a Nuon account, and instead use your own, you can set up 
+  delegation.
+
+This requires setting up an IAM role that your customer grant's access to, which allows Nuon to access it. When an install is created, Nuon will automatically use your IAM role to access permissions for the customer account.
+
+## Setup Delegation
+
+To setup delegation for your application, you will need to create a new IAM role that your customer's grant access to, 
+_instead_ of granting access to Nuon default IAM roles.
+
+Currently, for GovCloud installs, you must also setup a user and share static credentials to configure your app.
+
+### Default Setup
+
+You can create an IAM role in your own AWS account, that your customer's can grant access to, instead of the default 
+Nuon accounts. To set up delegation support, follow these steps:
+
+1. Create an IAM role in your own account, designed for cross-account access. This role must have the following IAM policy attached to it:
+
+```json
+{
+    "Statement": [
+        {
+            "Action": [
+              "sts:AssumeRole"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
+        }
+    ],
+    "Version": "2012-10-17"
+}
+```
+
+1. Add a cross-account trust policy to your IAM delegate role, that grants _nuon_ access to assume and use it:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::676549690856:root"
+            },
+            "Action": "sts:AssumeRole"
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::007754799877:root"
+            },
+            "Action": "sts:AssumeRole"
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::814326426574:root"
+            },
+            "Action": "sts:AssumeRole"
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::766121324316:root"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
+```
+
+1. Export the ARN of your IAM role, and share with the Nuon team to update your application. 
+
+1. You can follow the IAM role setup in your installers, terraform and other places by simply substituting the ARN roles 
+in the [default](https://github.com/nuonco/sandboxes/blob/main/aws-ecs/artifacts/trust.json) trust relationships for 
+your sandbox, with your delegation IAM role arn.
+
+<Note>
+Self-hosted installers do not currently work with delegated permissions for apps, so if you are creating a test install, 
+please be sure to update the trust policy to reference your IAM Role ARN.
+</Note>
+
+### GovCloud Setup
+
+You can support GovCloud installs using install access delegation. This requires creating a delegation similar to the 
+previous section, and creating a static user which has access to that role, and sharing static credentials with Nuon to 
+use it.
+
+First, create a delegation role to control access to customer installs:
+
+1. Create an IAM role in your own account, designed for cross-account access. This role must have the following IAM policy attached to it:
+```json
+{
+    "Statement": [
+        {
+            "Action": [
+              "sts:AssumeRole"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
+        }
+    ],
+    "Version": "2012-10-17"
+}
+```
+1. Export the ARN of your IAM role, and share with the Nuon team to configure delegation for your application.
+1. Publish your account IAM role in your installer, docs or wherever else customer's are installing your application.
+1. You can follow the IAM role setup in your installers, terraform and other places by simply substituting the ARN roles 
+in the [default](https://github.com/nuonco/sandboxes/blob/main/aws-ecs/artifacts/trust.json) trust relationships for 
+your sandbox, with your delegation IAM role arn.
+
+Next, create a user in AWS with this role, and export static credentials to setup delegation:
+
+1. Visit the [AWS Console](https://console.aws.amazon.com) and Navigate to **IAM** -> **Users** and **Create**.
+![export creds](/images/guides/install-access-delegation-create-user.png)
+1. Create a user, _without_ console access.
+1. Create a policy, and grant access for this user to assume your IAM role, by using the following JSON and substituting 
+your IAM role ARN.
+```json
+{
+    "Statement": [
+        {
+            "Action": [
+              "sts:AssumeRole"
+            ],
+            "Effect": "Allow",
+            "Resource": "<your-iam-role-arn>"
+        }
+    ],
+    "Version": "2012-10-17"
+}
+```
+1. Once your user has been created, click into the detail page and click "Create Access Key" at the top, and click 
+"Command Line Access".
+![export creds](/images/guides/install-access-delegation-creds.png)
+1. Copy the `AccessKeyID` and `SecretAccessKey`, and securely share them, with the Nuon team.
+1. Share your IAM Role ARN with the Nuon team.
+![export creds](/images/guides/install-access-delegation-creds-export.png)
+
+<Note>
+This is just a temporary solution until Nuon properly provisions a GovCloud environment, at which point we will switch 
+to using cross-account trust policies for gov cloud, instead of static credentials.
+</Note>
