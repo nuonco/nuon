@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -51,8 +52,11 @@ type AppSandboxConfig struct {
 		CloudformationStackTemplate string `json:"cloudformation_stack_template" gorm:"-"`
 	} `json:"artifacts" gorm:"-"`
 
-	// fields set via after query
+	// cloud specific fields
+	AWSDelegationConfig *AppAWSDelegationConfig `json:"aws_delegation_config"`
+	AWSRegionType       generics.NullString     `json:"aws_region_type" swaggertype:"string"`
 
+	// fields set via after query
 	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
 }
 
