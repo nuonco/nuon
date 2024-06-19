@@ -3,6 +3,8 @@ package deprovision
 import (
 	"fmt"
 
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/pkg/generics"
 	awsecs "github.com/powertoolsdev/mono/pkg/sandboxes/aws-ecs"
 	awseks "github.com/powertoolsdev/mono/pkg/sandboxes/aws-eks"
@@ -14,7 +16,6 @@ import (
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/activities"
 	"github.com/powertoolsdev/mono/services/workers-installs/internal/sandbox"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (w wkflow) createPlanRequest(runTyp planv1.SandboxInputType, req *installsv1.DeprovisionRequest) *planv1.CreatePlanRequest {
@@ -91,10 +92,13 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 	}
 
 	prReq := &runnerv1.DeprovisionRunnerRequest{
-		OrgId:      req.OrgId,
-		AppId:      req.AppId,
-		InstallId:  req.InstallId,
-		RunnerType: req.RunnerType,
+		OrgId:           req.OrgId,
+		AppId:           req.AppId,
+		InstallId:       req.InstallId,
+		RunnerType:      req.RunnerType,
+		AwsSettings:     req.AwsSettings,
+		AzureSettings:   req.AzureSettings,
+		SandboxSettings: req.SandboxSettings,
 	}
 
 	if req.RunnerType == contextv1.RunnerType_RUNNER_TYPE_AWS_ECS {

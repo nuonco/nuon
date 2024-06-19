@@ -7,6 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/efs"
+
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 
@@ -14,12 +16,15 @@ const (
 	defaultSessionName string = "workers-installs"
 )
 
-func (a *Activities) getEFSClient(ctx context.Context, iamRoleARN, region string) (*efs.Client, error) {
+func (a *Activities) getEFSClient(ctx context.Context, iamRoleARN, region string, twoStepCfg *assumerole.TwoStepConfig) (*efs.Client, error) {
 	cfg, err := credentials.Fetch(ctx, &credentials.Config{
 		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:        iamRoleARN,
-			SessionName:    defaultSessionName,
-			TwoStepRoleARN: a.cfg.NuonAccessRoleArn,
+			RoleARN:       iamRoleARN,
+			SessionName:   defaultSessionName,
+			TwoStepConfig: twoStepCfg,
+			//TwoStepConfig: &assumerole.TwoStepConfig{
+			//IAMRoleARN: a.cfg.NuonAccessRoleArn,
+			//},
 		},
 	})
 	if err != nil {
@@ -36,12 +41,15 @@ func (a *Activities) getEFSClient(ctx context.Context, iamRoleARN, region string
 	return svc, nil
 }
 
-func (a *Activities) getECSClient(ctx context.Context, iamRoleARN, region string) (*ecs.Client, error) {
+func (a *Activities) getECSClient(ctx context.Context, iamRoleARN, region string, twoStepConfig *assumerole.TwoStepConfig) (*ecs.Client, error) {
 	cfg, err := credentials.Fetch(ctx, &credentials.Config{
 		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:        iamRoleARN,
-			SessionName:    defaultSessionName,
-			TwoStepRoleARN: a.cfg.NuonAccessRoleArn,
+			RoleARN:       iamRoleARN,
+			SessionName:   defaultSessionName,
+			TwoStepConfig: twoStepConfig,
+			//TwoStepConfig: &assumerole.TwoStepConfig{
+			//IAMRoleARN: a.cfg.NuonAccessRoleArn,
+			//},
 		},
 	})
 	if err != nil {
@@ -58,12 +66,15 @@ func (a *Activities) getECSClient(ctx context.Context, iamRoleARN, region string
 	return svc, nil
 }
 
-func (a *Activities) getCloudwatchClient(ctx context.Context, iamRoleARN, region string) (*cloudwatchlogs.Client, error) {
+func (a *Activities) getCloudwatchClient(ctx context.Context, iamRoleARN, region string, twoStepConfig *assumerole.TwoStepConfig) (*cloudwatchlogs.Client, error) {
 	cfg, err := credentials.Fetch(ctx, &credentials.Config{
 		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:        iamRoleARN,
-			SessionName:    defaultSessionName,
-			TwoStepRoleARN: a.cfg.NuonAccessRoleArn,
+			RoleARN:       iamRoleARN,
+			SessionName:   defaultSessionName,
+			TwoStepConfig: twoStepConfig,
+			//TwoStepConfig: &assumerole.TwoStepConfig{
+			//IAMRoleARN: a.cfg.NuonAccessRoleArn,
+			//},
 		},
 	})
 	if err != nil {
