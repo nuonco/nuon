@@ -268,3 +268,22 @@ module "nuon-terraform-installer-ui" {
     github = github.nuon
   }
 }
+
+module "nuon-demo-installer" {
+  source = "./modules/repository"
+
+  name                     = "demo-installer"
+  description              = "Demo installer fork."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = false
+  enable_branch_protection = false
+  is_fork                  = true
+
+  collaborators = {
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
