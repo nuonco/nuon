@@ -1,5 +1,6 @@
 module "ecs_access" {
-  source = "github.com/nuonco/sandboxes//iam-role"
+  source = "nuonco/install-access/aws"
   sandbox = "aws-ecs"
   prefix = "e2e-jon"
+  enable_support_access = true
 }

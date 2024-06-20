@@ -1,5 +1,5 @@
 module "eks_access" {
-  source = "github.com/nuonco/sandboxes//iam-role"
+  source = "nuonco/install-access/aws"
   sandbox = "aws-eks"
   prefix = "e2e-jon"
 }

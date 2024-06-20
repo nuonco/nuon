@@ -1,11 +1,13 @@
 module "common-fate" {
-  source = "github.com/nuonco/sandboxes//iam-role"
+  source = "nuonco/install-access/aws"
   sandbox = "aws-ecs"
   prefix = "common-fate"
+  enable_support_access = true
 }
 
 module "warpstream" {
-  source = "github.com/nuonco/sandboxes//iam-role"
+  source = "nuonco/install-access/aws"
   sandbox = "aws-ecs"
   prefix = "warpstream"
+  enable_support_access = true
 }
