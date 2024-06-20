@@ -26,8 +26,9 @@ func (a *Activities) CheckIAMRole(ctx context.Context, req CheckIAMRoleRequest) 
 	var resp CheckIAMRoleResponse
 	cfg := &credentials.Config{
 		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:     req.RoleARN,
-			SessionName: "workers-installs-check-iam-role",
+			RoleARN:       req.RoleARN,
+			SessionName:   "workers-installs-check-iam-role",
+			TwoStepConfig: req.TwoStepConfig,
 		},
 	}
 	_, err := credentials.Fetch(ctx, cfg)
