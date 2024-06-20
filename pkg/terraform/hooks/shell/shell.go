@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 )
 
@@ -21,8 +23,8 @@ type shell struct {
 	v       *validator.Validate
 	rootDir string
 
-	EnvVars       map[string]string `validate:"required"`
-	AssumeRoleARN string
+	EnvVars map[string]string `validate:"required"`
+	Auth    *credentials.Config
 }
 
 var _ hooks.Hooks = (*shell)(nil)
@@ -53,9 +55,9 @@ func WithEnvVars(envVars map[string]string) shellOption {
 	}
 }
 
-func WithAssumeRoleARN(roleARN string) shellOption {
+func WithRunAuth(cfg *credentials.Config) shellOption {
 	return func(v *shell) error {
-		v.AssumeRoleARN = roleARN
+		v.Auth = cfg
 		return nil
 	}
 }

@@ -66,6 +66,7 @@ func (w *Workflows) reprovision(ctx workflow.Context, installID string, dryRun b
 				RoleARN: install.AWSAccount.IAMRoleARN,
 			}
 			if strings.Contains(err.Error(), accessError.Error()) {
+				w.updateRunStatus(ctx, installRun.ID, StatusAccessError, "unable to assume provided role to access account")
 				w.updateStatus(ctx, installID, StatusAccessError, "unable to assume provided role to access account")
 				return fmt.Errorf("unable to reprovision install: %w", err)
 			}

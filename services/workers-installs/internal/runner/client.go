@@ -19,12 +19,15 @@ const (
 func (a *Activities) getEFSClient(ctx context.Context, iamRoleARN, region string, twoStepCfg *assumerole.TwoStepConfig) (*efs.Client, error) {
 	cfg, err := credentials.Fetch(ctx, &credentials.Config{
 		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:       iamRoleARN,
-			SessionName:   defaultSessionName,
-			TwoStepConfig: twoStepCfg,
-			//TwoStepConfig: &assumerole.TwoStepConfig{
-			//IAMRoleARN: a.cfg.NuonAccessRoleArn,
-			//},
+			RoleARN:     iamRoleARN,
+			SessionName: defaultSessionName,
+
+			// NOTE(jm): it is not that clean that we have to assume an access role from nuon, even when
+			// delegation exists, but for now this is the best way we can achieve this
+			// TwoStepConfig: twoStepCfg,
+			TwoStepConfig: &assumerole.TwoStepConfig{
+				IAMRoleARN: a.cfg.NuonAccessRoleArn,
+			},
 		},
 	})
 	if err != nil {
@@ -44,12 +47,14 @@ func (a *Activities) getEFSClient(ctx context.Context, iamRoleARN, region string
 func (a *Activities) getECSClient(ctx context.Context, iamRoleARN, region string, twoStepConfig *assumerole.TwoStepConfig) (*ecs.Client, error) {
 	cfg, err := credentials.Fetch(ctx, &credentials.Config{
 		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:       iamRoleARN,
-			SessionName:   defaultSessionName,
-			TwoStepConfig: twoStepConfig,
-			//TwoStepConfig: &assumerole.TwoStepConfig{
-			//IAMRoleARN: a.cfg.NuonAccessRoleArn,
-			//},
+			RoleARN:     iamRoleARN,
+			SessionName: defaultSessionName,
+			// NOTE(jm): it is not that clean that we have to assume an access role from nuon, even when
+			// delegation exists, but for now this is the best way we can achieve this
+			// TwoStepConfig: twoStepCfg,
+			TwoStepConfig: &assumerole.TwoStepConfig{
+				IAMRoleARN: a.cfg.NuonAccessRoleArn,
+			},
 		},
 	})
 	if err != nil {
@@ -69,12 +74,14 @@ func (a *Activities) getECSClient(ctx context.Context, iamRoleARN, region string
 func (a *Activities) getCloudwatchClient(ctx context.Context, iamRoleARN, region string, twoStepConfig *assumerole.TwoStepConfig) (*cloudwatchlogs.Client, error) {
 	cfg, err := credentials.Fetch(ctx, &credentials.Config{
 		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:       iamRoleARN,
-			SessionName:   defaultSessionName,
-			TwoStepConfig: twoStepConfig,
-			//TwoStepConfig: &assumerole.TwoStepConfig{
-			//IAMRoleARN: a.cfg.NuonAccessRoleArn,
-			//},
+			RoleARN:     iamRoleARN,
+			SessionName: defaultSessionName,
+			// NOTE(jm): it is not that clean that we have to assume an access role from nuon, even when
+			// delegation exists, but for now this is the best way we can achieve this
+			// TwoStepConfig: twoStepCfg,
+			TwoStepConfig: &assumerole.TwoStepConfig{
+				IAMRoleARN: a.cfg.NuonAccessRoleArn,
+			},
 		},
 	})
 	if err != nil {

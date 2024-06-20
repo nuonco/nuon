@@ -15,6 +15,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/terraform/hooks"
 	"github.com/powertoolsdev/mono/pkg/terraform/hooks/noop"
 	"github.com/powertoolsdev/mono/pkg/terraform/hooks/shell"
+	authvars "github.com/powertoolsdev/mono/pkg/terraform/variables/auth"
 	staticvars "github.com/powertoolsdev/mono/pkg/terraform/variables/static"
 	"github.com/powertoolsdev/mono/pkg/terraform/workspace"
 )
@@ -81,9 +82,18 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 		cfgVars = generics.MergeMap(cfgVars, jsonVars)
 	}
 
-	vars, err := staticvars.New(p.v, staticvars.WithFileVars(cfgVars), staticvars.WithEnvVars(p.Cfg.EnvVars))
+	vars, err := staticvars.New(p.v,
+		staticvars.WithFileVars(cfgVars),
+		staticvars.WithEnvVars(p.Cfg.EnvVars))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create variable set: %w", err)
+	}
+
+	authVars, err := authvars.New(p.v,
+		authvars.WithAuth(&p.Cfg.RunAuth),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create auth vars: %w", err)
 	}
 
 	var hooks hooks.Hooks
@@ -91,7 +101,7 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 		hooks = noop.New()
 	} else {
 		hooks, err = shell.New(p.v,
-			shell.WithAssumeRoleARN(p.Cfg.Hooks.AssumeRoleArn),
+			shell.WithRunAuth(&p.Cfg.Hooks.RunAuth),
 			shell.WithEnvVars(p.Cfg.Hooks.EnvVars),
 		)
 		if err != nil {
@@ -105,6 +115,7 @@ func (p *Platform) GetWorkspace() (workspace.Workspace, error) {
 		workspace.WithBackend(back),
 		workspace.WithBinary(bin),
 		workspace.WithVariables(vars),
+		workspace.WithVariables(authVars),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)
