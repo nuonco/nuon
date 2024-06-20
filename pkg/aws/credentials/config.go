@@ -18,7 +18,7 @@ type AssumeRoleConfig struct {
 	SessionDurationSeconds int    `cty:"session_duration_seconds" hcl:"session_duration_seconds" mapstructure:"session_duration_seconds,omitempty"`
 
 	// configuration for two stepping before assuming this role
-	TwoStepConfig *assumerole.TwoStepConfig
+	TwoStepConfig *assumerole.TwoStepConfig `cty:"two_step_config" hcl:"two_step_config" mapstructure:"two_second_config,omitempty"`
 }
 
 // StaticCredentials are used to create credentials ahead of time, and pass them around for use. Specifically, we do

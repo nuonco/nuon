@@ -30,10 +30,30 @@ _instead_ of granting access to Nuon default IAM roles.
 
 Currently, for GovCloud installs, you must also setup a user and share static credentials to configure your app.
 
-### Default Setup
+## Delegation Role Setup
 
-You can create an IAM role in your own AWS account, that your customer's can grant access to, instead of the default 
-Nuon accounts. To set up delegation support, follow these steps:
+You can use our published terraform module to create a delegation IAM role, that will grant Nuon the ability to provision installs.
+
+<CodeGroup>
+```hcl module
+module "delegation" {
+  source = "nuonco/install-access-delegation/aws"
+  name = "your-app"
+  enable_support_access = true
+}
+```
+</CodeGroup>
+
+Please export the `iam_role_arn` and share that with the Nuon team to configure your app.
+
+<Note>
+We recommend enabling support access, so we can help you debug your delegation role while setting up your 
+application.
+</Note>
+
+### Manual Setup
+
+To manually setup IAM Role Delegation, you can follow these steps from the admin console.
 
 1. Create an IAM role in your own account, designed for cross-account access. This role must have the following IAM policy attached to it:
 
@@ -110,6 +130,10 @@ You can support GovCloud installs using install access delegation. This requires
 previous section, and creating a static user which has access to that role, and sharing static credentials with Nuon to 
 use it.
 
+<Note>
+If you create a delegation role using our terraform module, you only need do create the static user and credentials in the second half of this guide.
+</Note>
+
 First, create a delegation role to control access to customer installs:
 
 1. Create an IAM role in your own account, designed for cross-account access. This role must have the following IAM policy attached to it:
@@ -164,4 +188,27 @@ your IAM role ARN.
 <Note>
 This is just a temporary solution until Nuon properly provisions a GovCloud environment, at which point we will switch 
 to using cross-account trust policies for gov cloud, instead of static credentials.
+</Note>
+
+## Install Access
+
+If you are using delegation for your application, your customer's will need to set the `delegation_role_arn` when 
+  creating an install.
+
+If you are provisioning the IAM role with access via terraform, make sure to add the `delegation_role_arn` field:
+
+<CodeGroup>
+```hcl
+module "delegation_access" {
+  source = "nuonco/install-access/aws"
+  sandbox = "aws-ecs"
+  prefix = "your-app-install-access"
+  enable_support_access = false
+  delegation_role_arn = <your-delegation-role>
+}
+```
+</CodeGroup>
+
+<Note>
+This is going to be automated via our installers, for 1-click Cloudformation Role Creation soon.
 </Note>

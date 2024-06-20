@@ -20,6 +20,10 @@ const (
 func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionRunnerRequest) error {
 	orgServerAddr := client.DefaultOrgServerAddress(w.cfg.OrgServerRootDomain, req.OrgId)
 
+	// TODO(jm): this runner should not have to use the nuon role, but since we're planning to re-evaluate how we
+	// install the runner anyway, we just keep this as is, and document it.
+	// iamRoleARN := req.AwsSettings.AwsRoleArn
+	iamRoleARN := req.EcsClusterInfo.InstallIamRoleArn
 	twoStepCfg := &assumerole.TwoStepConfig{
 		IAMRoleARN: w.cfg.NuonAccessRoleArn,
 	}
@@ -45,7 +49,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create efs
 	var efsResp CreateEFSResponse
 	efsReq := CreateEFSRequest{
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		InstallID:     req.InstallId,
 		Region:        req.Region,
 		TwoStepConfig: twoStepCfg,
@@ -57,7 +61,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// poll efs
 	var pollEFSResp PollEFSResponse
 	pollEFSReq := PollEFSRequest{
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		InstallID:     req.InstallId,
 		Region:        req.Region,
 		TwoStepConfig: twoStepCfg,
@@ -69,7 +73,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create efs mount targets
 	var createEFSMountTargetsResp CreateEFSMountTargetsResponse
 	createEFSMountTargetsReq := CreateEFSMountTargetsRequest{
-		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN: iamRoleARN,
 		FsID:       pollEFSResp.FsID,
 		Region:     req.Region,
 
@@ -86,7 +90,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	var createEFSAccessPointsResp CreateEFSAccessPointsResponse
 	createEFSAccessPointsReq := CreateEFSAccessPointsRequest{
 		InstallID:     req.InstallId,
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		FsID:          pollEFSResp.FsID,
 		Region:        req.Region,
 		VPCID:         req.EcsClusterInfo.VpcId,
@@ -100,7 +104,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// poll mount targets to be ready
 	var pollMountTargetsResp PollEFSMountTargetsResponse
 	pollMountTargetsReq := PollEFSMountTargetsRequest{
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		FsID:          pollEFSResp.FsID,
 		Region:        req.Region,
 		TwoStepConfig: twoStepCfg,
@@ -112,7 +116,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create log group
 	var createLogGroupResp CreateCloudwatchLogGroupResponse
 	createLogGroupReq := CreateCloudwatchLogGroupRequest{
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		LogGroupName:  fmt.Sprintf("waypoint-runner-%s", req.InstallId),
 		Region:        req.Region,
 		TwoStepConfig: twoStepCfg,
@@ -124,7 +128,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create task definition
 	var createTaskDefResp CreateECSTaskDefinitionResponse
 	createTaskDefReq := CreateECSTaskDefinitionRequest{
-		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN: iamRoleARN,
 		InstallID:  req.InstallId,
 
 		RunnerRoleARN: req.EcsClusterInfo.RunnerIamRoleArn,
@@ -148,7 +152,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create ecs service
 	var createServiceResp CreateECSServiceResponse
 	createServiceReq := CreateECSServiceRequest{
-		IAMRoleARN: req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN: iamRoleARN,
 		ClusterARN: req.EcsClusterInfo.ClusterArn,
 		InstallID:  req.InstallId,
 		Region:     req.Region,
@@ -198,6 +202,8 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 }
 
 func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.DeprovisionRunnerRequest) error {
+	iamRoleARN := req.AwsSettings.AwsRoleArn
+
 	twoStepCfg := &assumerole.TwoStepConfig{
 		IAMRoleARN: w.cfg.NuonAccessRoleArn,
 	}
@@ -211,7 +217,7 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 	var deleteServiceResp DeleteServiceResponse
 	deleteServiceReq := DeleteServiceRequest{
 		InstallID:     req.InstallId,
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		ClusterARN:    req.EcsClusterInfo.ClusterArn,
 		Region:        req.Region,
 		TwoStepConfig: twoStepCfg,
@@ -224,7 +230,7 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 	var pollDeleteServiceResp PollDeleteECSServiceResponse
 	pollDeleteServiceReq := PollDeleteECSServiceRequest{
 		InstallID:     req.InstallId,
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		ClusterARN:    req.EcsClusterInfo.ClusterArn,
 		Region:        req.Region,
 		TwoStepConfig: twoStepCfg,
@@ -235,7 +241,7 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 
 	var deleteCloudwatchLogGroupResp DeleteCloudwatchLogGroupResponse
 	deleteCloudwatchLogGroupReq := DeleteCloudwatchLogGroupRequest{
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		LogGroupName:  fmt.Sprintf("waypoint-runner-%s", req.InstallId),
 		Region:        req.Region,
 		TwoStepConfig: twoStepCfg,
@@ -246,7 +252,7 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 
 	var deleteEFSAccessPointsResp DeleteEFSAccessPointsResponse
 	deleteEFSAccessPointsReq := DeleteEFSAccessPointsRequest{
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		InstallID:     req.InstallId,
 		Region:        req.Region,
 		TwoStepConfig: twoStepCfg,
@@ -257,7 +263,7 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 
 	var deleteEFSMountTargetsResp DeleteEFSMountTargetsResponse
 	deleteEFSMountTargetsReq := DeleteEFSMountTargetsRequest{
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		InstallID:     req.InstallId,
 		Region:        req.Region,
 		TwoStepConfig: twoStepCfg,
@@ -268,7 +274,7 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 
 	var deleteEFSResp DeleteEFSResponse
 	deleteEFSReq := DeleteEFSRequest{
-		IAMRoleARN:    req.EcsClusterInfo.InstallIamRoleArn,
+		IAMRoleARN:    iamRoleARN,
 		InstallID:     req.InstallId,
 		Region:        req.Region,
 		TwoStepConfig: twoStepCfg,

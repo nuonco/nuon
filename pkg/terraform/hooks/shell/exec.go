@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
+
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/command"
 	"github.com/powertoolsdev/mono/pkg/generics"
@@ -14,28 +15,12 @@ import (
 )
 
 func (s *shell) setCredentials(ctx context.Context) error {
-	if s.AssumeRoleARN == "" {
-		return nil
-	}
-
-	cfg := &credentials.Config{
-		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:                s.AssumeRoleARN,
-			SessionName:            "terraform-run-hooks",
-			SessionDurationSeconds: 900,
-		},
-	}
-	if err := cfg.Validate(s.v); err != nil {
-		return fmt.Errorf("unable to validate creds: %w", err)
-	}
-
-	envVars, err := credentials.FetchEnv(ctx, cfg)
+	envVars, err := credentials.FetchEnv(ctx, s.Auth)
 	if err != nil {
 		return fmt.Errorf("unable to fetch environment vars: %w", err)
 	}
 
 	s.EnvVars = generics.MergeMap(s.EnvVars, envVars)
-
 	return nil
 }
 

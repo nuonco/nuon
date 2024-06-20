@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 
 // backendConfig represents the full backend configuration
@@ -28,14 +30,29 @@ func (s *s3) ConfigFile(ctx context.Context) ([]byte, error) {
 		Key:    s.Bucket.Key,
 		Region: s.Bucket.Region,
 	}
+
 	if s.Credentials.Static != nil {
 		cfg.AccessKey = s.Credentials.Static.AccessKeyID
 		cfg.SecretKey = s.Credentials.Static.SecretAccessKey
 		cfg.Token = s.Credentials.Static.SessionToken
 	}
+
+	// NOTE: we assume the credentials here, and write creds into the config file, so we can use the run-auth to set
+	// the environment variable creds.
 	if s.Credentials.AssumeRole != nil {
-		cfg.RoleArn = s.Credentials.AssumeRole.RoleARN
-		cfg.SessionName = s.Credentials.AssumeRole.SessionName
+		awsCfg, err := credentials.Fetch(ctx, s.Credentials)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get config: %w", err)
+		}
+
+		creds, err := awsCfg.Credentials.Retrieve(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("unable to retrieve credentials from config: %w", err)
+		}
+
+		cfg.AccessKey = creds.AccessKeyID
+		cfg.SecretKey = creds.SecretAccessKey
+		cfg.Token = creds.SessionToken
 	}
 
 	byts, err := json.Marshal(cfg)

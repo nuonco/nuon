@@ -26,10 +26,10 @@ const (
 //
 // The credentials created from the two step config are then used to assume the role
 type TwoStepConfig struct {
-	IAMRoleARN string
+	IAMRoleARN string `cty:"iam_role_arn" hcl:"iam_role_arn" mapstructure:"iam_role_arn,omitempty"`
 
-	AccessKeyID     string
-	SecretAccessKey string
+	AccessKeyID     string `cty:"access_key_id" hcl:"access_key_id" mapstructure:"access_key_id,omitempty"`
+	SecretAccessKey string `cty:"secret_access_key" hcl:"secret_access_key" mapstructure:"secret_access_key,omitempty"`
 }
 
 type Settings struct {

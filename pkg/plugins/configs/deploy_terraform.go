@@ -51,9 +51,9 @@ type TerraformDeployOutputs struct {
 }
 
 type TerraformDeployHooks struct {
-	Enabled       bool              `hcl:"enabled"`
-	AssumeRoleArn string            `hcl:"assume_role_arn"`
-	EnvVars       map[string]string `hcl:"env_vars"`
+	Enabled bool               `hcl:"enabled"`
+	EnvVars map[string]string  `hcl:"env_vars"`
+	RunAuth credentials.Config `hcl:"run_auth,block"`
 }
 
 type TerraformDeploy struct {
