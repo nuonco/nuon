@@ -36,24 +36,30 @@ func (w *workspace) mergeMaps(a map[string]string, bs ...map[string]string) map[
 
 // LoadVariables initializes a variable set
 func (w *workspace) LoadVariables(ctx context.Context) error {
-	if err := w.Variables.Init(ctx); err != nil {
-		return fmt.Errorf("unable to init variables: %w", err)
-	}
+	w.envVars = w.getEnvironment()
 
-	defaultEnvVars := w.getEnvironment()
-	varEnvVars, err := w.Variables.GetEnv(ctx)
-	if err != nil {
-		return fmt.Errorf("unable to get env variables: %w", err)
-	}
-	w.envVars = w.mergeMaps(defaultEnvVars, varEnvVars)
+	for _, vars := range w.Variables {
+		if err := vars.Init(ctx); err != nil {
+			return fmt.Errorf("unable to init variables: %w", err)
+		}
 
-	byts, err := w.Variables.GetFile(ctx)
-	if err != nil {
-		return fmt.Errorf("unable to get file variables: %w", err)
-	}
+		varEnvVars, err := vars.GetEnv(ctx)
+		if err != nil {
+			return fmt.Errorf("unable to get env variables: %w", err)
+		}
+		w.envVars = w.mergeMaps(w.envVars, varEnvVars)
 
-	if err := w.writeFile(defaultVariablesFilename, byts, defaultFilePermissions); err != nil {
-		return fmt.Errorf("unable to write file: %w", err)
+		byts, err := vars.GetFile(ctx)
+		if err != nil {
+			return fmt.Errorf("unable to get file variables: %w", err)
+		}
+		if len(byts) < 1 {
+			continue
+		}
+
+		if err := w.writeFile(defaultVariablesFilename, byts, defaultFilePermissions); err != nil {
+			return fmt.Errorf("unable to write file: %w", err)
+		}
 	}
 
 	return nil

@@ -22,11 +22,11 @@ var _ Workspace = (*workspace)(nil)
 type workspace struct {
 	v *validator.Validate
 
-	Archive   archive.Archive     `validate:"required"`
-	Backend   backend.Backend     `validate:"required"`
-	Variables variables.Variables `validate:"required"`
-	Binary    binary.Binary       `validate:"required"`
-	Hooks     hooks.Hooks         `validate:"required"`
+	Archive   archive.Archive       `validate:"required"`
+	Backend   backend.Backend       `validate:"required"`
+	Variables []variables.Variables `validate:"required,min=1"`
+	Binary    binary.Binary         `validate:"required"`
+	Hooks     hooks.Hooks           `validate:"required"`
 
 	DisableCleanup bool
 
@@ -43,6 +43,7 @@ func New(v *validator.Validate, opts ...workspaceOption) (*workspace, error) {
 	w := &workspace{
 		v:          v,
 		tmpDirRoot: os.TempDir(),
+		Variables:  make([]variables.Variables, 0),
 	}
 
 	for idx, opt := range opts {
@@ -80,7 +81,7 @@ func WithBackend(back backend.Backend) workspaceOption {
 
 func WithVariables(vars variables.Variables) workspaceOption {
 	return func(w *workspace) error {
-		w.Variables = vars
+		w.Variables = append(w.Variables, vars)
 		return nil
 	}
 }

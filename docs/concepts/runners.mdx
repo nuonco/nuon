@@ -163,3 +163,10 @@ These IAM roles are defined in each sandbox, and outputs are used to allow the r
 Since the runner is deployed _into_ the customer install, no long-lived permissions are required after the initial
 install. This creates a more secure operating environment, as the _only_ thing that can dispatch work to the runner is
 the data plane server it belongs to.
+
+## Runner Installation (AWS)
+
+Each sandbox is provisioned with a `runner_install_role` that Nuon will use to install the runner. In most cases this is 
+the IAM role of the install.
+
+The sandbox grants access to internal resources such as ECS or EKS so that the runner can be installed.
