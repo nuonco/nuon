@@ -232,7 +232,7 @@ func (c *cli) installsCmd() *cobra.Command {
 
 	deprovisionInstallCmd := &cobra.Command{
 		Use:   "deprovision",
-		Short: "reproivision install",
+		Short: "reprovision install",
 		Long:  "Deprovision an install sandbox",
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := installs.New(c.apiClient, c.cfg)
