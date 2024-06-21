@@ -4,10 +4,10 @@ This plugin builds and applies terraform, using our internal terraform packaging
 
 ## Local development
 
-To run this plugin locally, you can log into a waypoint server (such as bootstrap) and use it directly:
-
+To run this plugin locally, you can log into a waypoint server (such as bootstrap) and use it directly.
 
 Login to waypoint:
+
 ```bash
 $ kubectx orgs-stage-main
 $ waypoint login -vvv -from-kubernetes-namespace=waypoint -from-kubernetes -server-addr=waypoint.orgs-stage.nuon.co:9701 -server-tls-skip-verify
