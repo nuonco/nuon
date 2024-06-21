@@ -11,8 +11,8 @@ export const InitPosthogAnalytics: FC = () => {
   const [showOptOut, setShowOptOut] = useState<boolean>(true)
 
   useEffect(() => {
-    posthog.init(process?.env?.NEXT_PUBLIC_POSTHOG_TOKEN, {
-      api_host: process?.env?.NEXT_PUBLIC_POSTHOG_HOST,
+    posthog.init(process?.env?.NEXT_PUBLIC_POSTHOG_TOKEN || "phc_1NEQAphH0jxCX7opmp4Iyq2O6mu4tM552kMjJz8uKkl", {
+      api_host: process?.env?.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
       person_profiles: 'identified_only',
     })
 
