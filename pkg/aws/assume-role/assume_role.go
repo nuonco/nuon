@@ -19,17 +19,21 @@ const (
 )
 
 // TwoStepConfig is a configuration used when we need to jump through another IAM role, before assuming a customer role.
-// If _only_ IAMRoleARN is set, then the two-step IAMRole will be assumed using the default credentials.
-// If _only_ the static credentials are set, then the credentials will use that.
-// If _both_ the IAM Role ARN and the static credentials are set, then the static credentials will be used to assume the
-// two-step role
 //
-// The credentials created from the two step config are then used to assume the role
+// The IAMRoleARN provided will be assumed, by either using default creds, the SrcAccessKeyID or the
+// SrcStaticCredentials
 type TwoStepConfig struct {
-	IAMRoleARN string `cty:"iam_role_arn" hcl:"iam_role_arn" mapstructure:"iam_role_arn,omitempty"`
+	IAMRoleARN string `cty:"iam_role_arn" hcl:"iam_role_arn" mapstructure:"iam_role_arn,omitempty" json:"iam_role_arn"`
 
-	AccessKeyID     string `cty:"access_key_id" hcl:"access_key_id" mapstructure:"access_key_id,omitempty"`
-	SecretAccessKey string `cty:"secret_access_key" hcl:"secret_access_key" mapstructure:"secret_access_key,omitempty"`
+	// Root Credentials
+	SrcStaticCredentials StaticCredentials `cty:"src_static_credentials" hcl:"src_static_credentials" mapstructure:"src_static_credentials,omitempty" json:"src_static_credentials"`
+	SrcIAMRoleARN        string            `cty:"src_iam_role_arn" hcl:"src_iam_role_arn" mapstructure:"src_iam_role_arn,omitempty" json:"src_iam_role_arn"`
+}
+
+type StaticCredentials struct {
+	AccessKeyID     string `cty:"access_key_id" hcl:"access_key_id" mapstructure:"access_key_id,omitempty" json:"access_key_id"`
+	SecretAccessKey string `cty:"secret_access_key" hcl:"secret_access_key" mapstructure:"secret_access_key,omitempty" json:"secret_access_key"`
+	SessionToken    string `cty:"session_token" hcl:"session_token" mapstructure:"session_token,omitempty" json:"session_token"`
 }
 
 type Settings struct {

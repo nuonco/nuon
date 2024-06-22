@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	"github.com/powertoolsdev/mono/pkg/terraform/run"
 	terraformv1 "github.com/powertoolsdev/mono/pkg/types/plugins/terraform/v1"
@@ -22,13 +23,13 @@ func (p *Platform) execRun(
 	p.Path = src.Path
 	wkspace, err := p.GetWorkspace()
 	if err != nil {
-		return nil, fmt.Errorf("unable to create workspace from config: %w", err)
+		return &terraformv1.Deployment{}, fmt.Errorf("unable to create workspace from config: %w", err)
 	}
 	p.Workspace = wkspace
 
 	stdout, _, err := ui.OutputWriters()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get output writers: %w", err)
+		return &terraformv1.Deployment{}, fmt.Errorf("unable to get output writers: %w", err)
 	}
 
 	runLog := hclog.New(&hclog.LoggerOptions{
@@ -47,21 +48,26 @@ func (p *Platform) execRun(
 		}),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create run: %w", err)
+		return &terraformv1.Deployment{}, fmt.Errorf("unable to create run: %w", err)
 	}
 
 	switch p.Cfg.RunType {
 	case configs.TerraformDeployRunTypeApply:
+		runLog.Info("executing terraform apply")
 		err = tfRun.Apply(ctx)
 	case configs.TerraformDeployRunTypeDestroy:
+		runLog.Info("executing terraform destroy")
 		err = tfRun.Destroy(ctx)
 	case configs.TerraformDeployRunTypePlan:
+		runLog.Info("executing terraform plan")
 		err = tfRun.Plan(ctx)
 	default:
-		return nil, fmt.Errorf("unsupported run type %s", p.Cfg.RunType)
+		runLog.Error("unsupported terraform run type %s", p.Cfg.RunType)
+		return &terraformv1.Deployment{}, fmt.Errorf("unsupported run type %s", p.Cfg.RunType)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("unable to execute %s run: %w", p.Cfg.RunType, err)
+		runLog.Error("terraform run errored - %s", err.Error())
+		return &terraformv1.Deployment{}, fmt.Errorf("unable to execute %s run: %w", p.Cfg.RunType, err)
 	}
 
 	return &terraformv1.Deployment{

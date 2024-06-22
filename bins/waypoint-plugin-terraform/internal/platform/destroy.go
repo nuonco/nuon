@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/waypoint-plugin-sdk/component"
 	"github.com/hashicorp/waypoint-plugin-sdk/terminal"
+
 	"github.com/powertoolsdev/mono/pkg/plugins/configs"
 	terraformv1 "github.com/powertoolsdev/mono/pkg/types/plugins/terraform/v1"
 )

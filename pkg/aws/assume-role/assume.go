@@ -18,7 +18,7 @@ import (
 func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, error) {
 	stsClient, err := a.fetchSTSClient(ctx)
 	if err != nil {
-		return aws.Config{}, nil
+		return aws.Config{}, err
 	}
 
 	creds, err := a.assumeIamRole(ctx, stsClient, a.RoleARN)
@@ -26,8 +26,13 @@ func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, er
 		return aws.Config{}, fmt.Errorf("failed to assume role: %w", err)
 	}
 
-	credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId, *creds.SecretAccessKey, *creds.SessionToken)
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(credsProvider), config.WithRegion(a.Region))
+	credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId,
+		*creds.SecretAccessKey,
+		*creds.SessionToken)
+
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithCredentialsProvider(credsProvider),
+		config.WithRegion(a.Region))
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("failed to get config with STS creds: %w", err)
 	}

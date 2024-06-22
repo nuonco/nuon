@@ -10,5 +10,4 @@ message EKSClusterInfo {
   string id = 1 [(tagger.tags) = "faker:\"len=20\""];
   string endpoint = 2 [(tagger.tags) = "faker:\"len=20\""];
   string ca_data = 3 [(tagger.tags) = "faker:\"len=20\""];
-  string trusted_role_arn = 4;
 }
