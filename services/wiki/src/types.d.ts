@@ -13,4 +13,9 @@ export interface DayCard {
 
   link?: string;
   description?: string;
+
+  // disable fields
+  disableToday?: boolean;
+  disableSeriesA?: boolean;
+  disablePivot?: boolean;
 }

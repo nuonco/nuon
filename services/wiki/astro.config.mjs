@@ -53,6 +53,13 @@ export default defineConfig({
           },
         },
         {
+          label: "Team",
+          collapsed: true,
+          autogenerate: {
+            directory: "team",
+          },
+        },
+        {
           label: "Sales",
           collapsed: true,
           autogenerate: {

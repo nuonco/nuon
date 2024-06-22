@@ -20,9 +20,9 @@ const today = new Date()
 const pivotDate = new Date('October 11, 2021');
 const seriesADate = new Date('June 19, 2024');
 
-const startDayCount = datesToCount(pivotDate, dayCard.date);
-const seriesADayCount = datesToCount(seriesADate, dayCard.date);
-const todayDayCount = datesToCount(today, dayCard.date);
+const startDayCount = datesToCount(dayCard.date,pivotDate);
+const seriesADayCount = datesToCount(dayCard.date,seriesADate);
+const todayDayCount = datesToCount( dayCard.date, today);
 
 const dateStr = dayCard.date.toLocaleDateString('en-us', { weekday:"long", year:"numeric", month:"short", day:"numeric"});
 ---
@@ -40,12 +40,26 @@ const dateStr = dayCard.date.toLocaleDateString('en-us', { weekday:"long", year:
 
   <div class="relative bg-gray-400 dark:bg-slate-700 rounded shadow-lg mb-6 pt-2">
     <p class="text-muted dark:text-slate-400 text-md text-left ml-4">
-    From Today: <span class="text-2xl text-white">{todayDayCount}</span>
-    <br />
-    From Series A: <span class="text-2xl text-white">{seriesADayCount}</span>
-    <br />
-    From Pivot to Nuon: <span class="text-2xl text-white">{startDayCount}</span>
-    <br />
+    {(!dayCard.disableToday) && (
+      <span>
+        From Today: <span class="text-2xl text-white">{todayDayCount}</span>
+        <br />
+      </span>
+    )}
+
+    {(!dayCard.disableSeriesA) && (
+    <span>
+      From Series A: <span class="text-2xl text-white">{seriesADayCount}</span>
+      <br />
+    </span>
+    )}
+
+    {(!dayCard.disablePivot) && (
+    <span>
+      From Pivot to Nuon: <span class="text-2xl text-white">{startDayCount}</span>
+      <br />
+    </span>
+    )}
     </p>
   </div>
 
