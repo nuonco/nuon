@@ -2,6 +2,10 @@
 
 This is a basic changelog where we track a minimal message whenever we do a promotion. There is currently no intention to publish this externally.
 
+## v0.19.170
+
+Promoting delegation tooling to prod.
+
 ## v0.19.162
 
 Promoting the new authorization framework in the api.
