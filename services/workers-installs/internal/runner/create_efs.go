@@ -8,22 +8,25 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/efs"
 	efstypes "github.com/aws/aws-sdk-go-v2/service/efs/types"
 
-	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type CreateEFSRequest struct {
-	IAMRoleARN string `validate:"required"`
-	InstallID  string `validate:"required"`
-	Region     string `validate:"required"`
+	InstallID string `validate:"required"`
+	Region    string `validate:"required"`
 
-	TwoStepConfig *assumerole.TwoStepConfig
+	Auth *credentials.Config `validate:"required"`
 }
 
 type CreateEFSResponse struct{}
 
 func (a *Activities) CreateEFS(ctx context.Context, req *CreateEFSRequest) (*CreateEFSResponse, error) {
-	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region, req.TwoStepConfig)
+	if req.Auth.AssumeRole.TwoStepConfig.SrcStaticCredentials.AccessKeyID == "" {
+		return nil, fmt.Errorf("no access key id")
+	}
+
+	efsClient, err := a.getEFSClient(ctx, req.Region, req.Auth)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get efs service: %w", err)
 	}

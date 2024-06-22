@@ -1,18 +1,18 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/components"
 	"github.com/spf13/cobra"
+
+	"github.com/powertoolsdev/mono/bins/cli/internal/components"
 )
 
 func (c *cli) componentsCmd() *cobra.Command {
-	var (
-		id string
-	)
+	var id string
 
 	componentsCmd := &cobra.Command{
 		Use:               "components",
 		Short:             "Manage app components",
+		Aliases:           []string{"c"},
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 

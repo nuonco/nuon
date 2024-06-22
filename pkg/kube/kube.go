@@ -31,8 +31,10 @@ type ClusterInfo struct {
 	Endpoint string `json:"endpoint"`
 	// CAData is the base64 encoded public certificate
 	CAData string `json:"ca_data"`
+
 	// TrustedRoleARN is the arn of the role that should be assumed to interact with the cluster
-	TrustedRoleARN string `json:"trusted_role_arn"`
+	TrustedRoleARN string            `json:"trusted_role_arn"`
+	EnvVars        map[string]string `json:"env_vars"`
 
 	// KubeConfig will override the kube config, and be parsed instead of generating a new one
 	KubeConfig string `json:"kube_config" faker:"-"`
@@ -57,7 +59,15 @@ func ConfigForCluster(cInfo *ClusterInfo) (*rest.Config, error) {
 		return nil, err
 	}
 
-	return &rest.Config{
+	envVars := make([]clientcmdapi.ExecEnvVar, 0)
+	for k, v := range cInfo.EnvVars {
+		envVars = append(envVars, clientcmdapi.ExecEnvVar{
+			Name:  k,
+			Value: v,
+		})
+	}
+
+	cfg := &rest.Config{
 		Host: cInfo.Endpoint,
 		TLSClientConfig: rest.TLSClientConfig{
 			ServerName: u.Hostname(),
@@ -66,10 +76,16 @@ func ConfigForCluster(cInfo *ClusterInfo) (*rest.Config, error) {
 		ExecProvider: &clientcmdapi.ExecConfig{
 			APIVersion:      "client.authentication.k8s.io/v1beta1",
 			Command:         "aws-iam-authenticator",
-			Args:            []string{"token", "-i", cInfo.ID, "-r", cInfo.TrustedRoleARN},
+			Env:             envVars,
+			Args:            []string{"token", "-i", cInfo.ID},
 			InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
 		},
-	}, nil
+	}
+	if cInfo.TrustedRoleARN != "" {
+		cfg.ExecProvider.Args = []string{"token", "-i", cInfo.ID, "-r", cInfo.TrustedRoleARN}
+	}
+
+	return cfg, nil
 }
 
 var (
