@@ -11,6 +11,10 @@ func FetchEnv(ctx context.Context, cfg *Config) (map[string]string, error) {
 		return nil, fmt.Errorf("unable to get credentials: %w", err)
 	}
 
+	if awsCfg.Credentials == nil {
+		return nil, fmt.Errorf("no credentials were set on aws config")
+	}
+
 	awsCreds, err := awsCfg.Credentials.Retrieve(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve credentials: %w", err)

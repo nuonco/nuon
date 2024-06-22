@@ -24,6 +24,7 @@ func (c *cli) installsCmd() *cobra.Command {
 	installsCmds := &cobra.Command{
 		Use:               "installs",
 		Short:             "Manage app installs",
+		Aliases:           []string{"i"},
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 

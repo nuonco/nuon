@@ -3,13 +3,16 @@ package runner
 import (
 	"fmt"
 
+	"go.temporal.io/sdk/workflow"
+
+	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	contextv1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (w *wkflow) installKubernetesRunner(ctx workflow.Context, req *runnerv1.ProvisionRunnerRequest) error {
@@ -47,10 +50,33 @@ func (w *wkflow) installKubernetesRunner(ctx workflow.Context, req *runnerv1.Pro
 		clusterInfo.ID = req.EksClusterInfo.Id
 		clusterInfo.Endpoint = req.EksClusterInfo.Endpoint
 		clusterInfo.CAData = req.EksClusterInfo.CaData
-		clusterInfo.TrustedRoleARN = req.EksClusterInfo.TrustedRoleArn
 	}
 	if req.AksClusterInfo != nil {
 		clusterInfo.KubeConfig = req.AksClusterInfo.KubeConfig
+	}
+
+	// configure auth using delegation
+	auth := &credentials.Config{}
+	if req.AwsSettings != nil {
+		auth = &credentials.Config{
+			Region: req.Region,
+			AssumeRole: &credentials.AssumeRoleConfig{
+				RoleARN:                req.AwsSettings.AwsRoleArn,
+				SessionName:            fmt.Sprintf("%s-runner-install", req.InstallId),
+				SessionDurationSeconds: 60 * 60,
+			},
+		}
+
+		if req.AwsSettings.AwsRoleDelegation != nil {
+			auth.AssumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
+				IAMRoleARN: req.AwsSettings.AwsRoleDelegation.IamRoleArn,
+				// NOTE: static creds are only used for gov-cloud installs
+				SrcStaticCredentials: assumerole.StaticCredentials{
+					AccessKeyID:     req.AwsSettings.AwsRoleDelegation.AccessKeyId,
+					SecretAccessKey: req.AwsSettings.AwsRoleDelegation.SecretAccessKey,
+				},
+			}
+		}
 	}
 
 	l.Info("runner chart version", wpChart.Metadata.Version)
@@ -68,6 +94,7 @@ func (w *wkflow) installKubernetesRunner(ctx workflow.Context, req *runnerv1.Pro
 			ID:            req.InstallId,
 			ServerAddr:    orgServerAddr,
 		},
+		Auth: auth,
 	}
 	_, err = w.installWaypoint(ctx, iwReq)
 	if err != nil {
@@ -82,6 +109,7 @@ func (w *wkflow) installKubernetesRunner(ctx workflow.Context, req *runnerv1.Pro
 		InstallID:            req.InstallId,
 		NamespaceName:        req.InstallId,
 		ClusterInfo:          clusterInfo,
+		Auth:                 auth,
 	}
 	_, err = w.createRoleBinding(ctx, crbReq)
 	if err != nil {

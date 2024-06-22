@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/builds"
 	"github.com/spf13/cobra"
+
+	"github.com/powertoolsdev/mono/bins/cli/internal/builds"
 )
 
 // newBuildsCmd constructs a new builds command
@@ -18,6 +19,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Use:               "builds",
 		Short:             "Manage component builds",
 		Long:              "Manage builds of your app components",
+		Aliases:           []string{"b"},
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 

@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/efs"
 
-	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
 	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 )
 
@@ -16,83 +15,37 @@ const (
 	defaultSessionName string = "workers-installs"
 )
 
-func (a *Activities) getEFSClient(ctx context.Context, iamRoleARN, region string, twoStepCfg *assumerole.TwoStepConfig) (*efs.Client, error) {
-	cfg, err := credentials.Fetch(ctx, &credentials.Config{
-		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:     iamRoleARN,
-			SessionName: defaultSessionName,
-
-			// NOTE(jm): it is not that clean that we have to assume an access role from nuon, even when
-			// delegation exists, but for now this is the best way we can achieve this
-			// TwoStepConfig: twoStepCfg,
-			TwoStepConfig: &assumerole.TwoStepConfig{
-				IAMRoleARN: a.cfg.NuonAccessRoleArn,
-			},
-		},
-	})
+func (a *Activities) getEFSClient(ctx context.Context, region string, auth *credentials.Config) (*efs.Client, error) {
+	cfg, err := credentials.Fetch(ctx, auth)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create credential config: %w", err)
+		return nil, fmt.Errorf("unable to get efs client credentials: %w", err)
 	}
-
 	cfg.Region = region
 
 	svc := efs.NewFromConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create credentials: %w", err)
-	}
-
 	return svc, nil
 }
 
-func (a *Activities) getECSClient(ctx context.Context, iamRoleARN, region string, twoStepConfig *assumerole.TwoStepConfig) (*ecs.Client, error) {
-	cfg, err := credentials.Fetch(ctx, &credentials.Config{
-		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:     iamRoleARN,
-			SessionName: defaultSessionName,
-			// NOTE(jm): it is not that clean that we have to assume an access role from nuon, even when
-			// delegation exists, but for now this is the best way we can achieve this
-			// TwoStepConfig: twoStepCfg,
-			TwoStepConfig: &assumerole.TwoStepConfig{
-				IAMRoleARN: a.cfg.NuonAccessRoleArn,
-			},
-		},
-	})
+func (a *Activities) getECSClient(ctx context.Context, region string, auth *credentials.Config) (*ecs.Client, error) {
+	cfg, err := credentials.Fetch(ctx, auth)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create credential config: %w", err)
+		return nil, fmt.Errorf("unable to get ecs client credentials: %w", err)
 	}
 
 	cfg.Region = region
 
 	svc := ecs.NewFromConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create credentials: %w", err)
-	}
-
 	return svc, nil
 }
 
-func (a *Activities) getCloudwatchClient(ctx context.Context, iamRoleARN, region string, twoStepConfig *assumerole.TwoStepConfig) (*cloudwatchlogs.Client, error) {
-	cfg, err := credentials.Fetch(ctx, &credentials.Config{
-		AssumeRole: &credentials.AssumeRoleConfig{
-			RoleARN:     iamRoleARN,
-			SessionName: defaultSessionName,
-			// NOTE(jm): it is not that clean that we have to assume an access role from nuon, even when
-			// delegation exists, but for now this is the best way we can achieve this
-			// TwoStepConfig: twoStepCfg,
-			TwoStepConfig: &assumerole.TwoStepConfig{
-				IAMRoleARN: a.cfg.NuonAccessRoleArn,
-			},
-		},
-	})
+func (a *Activities) getCloudwatchClient(ctx context.Context, region string, auth *credentials.Config) (*cloudwatchlogs.Client, error) {
+	cfg, err := credentials.Fetch(ctx, auth)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create credential config: %w", err)
+		return nil, fmt.Errorf("unable to create cloudwatch credentials: %w", err)
 	}
+
 	cfg.Region = region
 
 	svc := cloudwatchlogs.NewFromConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create credentials: %w", err)
-	}
-
 	return svc, nil
 }
