@@ -6,11 +6,13 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
+	"go.temporal.io/sdk/activity"
+	"helm.sh/helm/v3/pkg/release"
+
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/deprecated/helm"
 	"github.com/powertoolsdev/mono/pkg/kube"
 	waypointhelm "github.com/powertoolsdev/mono/pkg/waypoint/helm"
-	"go.temporal.io/sdk/activity"
-	"helm.sh/helm/v3/pkg/release"
 )
 
 type RunnerConfig struct {
@@ -21,13 +23,14 @@ type RunnerConfig struct {
 }
 
 type InstallWaypointRequest struct {
-	InstallID    string           `validate:"required" json:"install_id"`
-	Namespace    string           `validate:"required" json:"namespace"`
-	ReleaseName  string           `validate:"required" json:"release_name"`
-	Chart        *helm.Chart      `validate:"required" json:"chart"`
-	Atomic       bool             `json:"atomic"`
-	ClusterInfo  kube.ClusterInfo `validate:"required" json:"cluster_info"`
-	RunnerConfig RunnerConfig     `validate:"required" json:"runner_config"`
+	InstallID    string              `validate:"required" json:"install_id"`
+	Namespace    string              `validate:"required" json:"namespace"`
+	ReleaseName  string              `validate:"required" json:"release_name"`
+	Chart        *helm.Chart         `validate:"required" json:"chart"`
+	Atomic       bool                `json:"atomic"`
+	ClusterInfo  kube.ClusterInfo    `validate:"required" json:"cluster_info"`
+	RunnerConfig RunnerConfig        `validate:"required" json:"runner_config"`
+	Auth         *credentials.Config `validate:"required" json:"auth"`
 
 	// These are exposed for testing. Do not use otherwise
 	CreateNamespace bool `json:"create_namespace"`
@@ -87,12 +90,16 @@ func (a *Activities) InstallWaypoint(ctx context.Context, req InstallWaypointReq
 	l := activity.GetLogger(ctx)
 
 	var err error
-	kCfg := a.Kubeconfig
-	if kCfg == nil {
-		kCfg, err = kube.ConfigForCluster(&req.ClusterInfo)
-		if err != nil {
-			return resp, fmt.Errorf("failed to get config for cluster: %w", err)
-		}
+
+	envVars, err := credentials.FetchEnv(ctx, req.Auth)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get credentials: %w", err)
+	}
+	req.ClusterInfo.EnvVars = envVars
+
+	kCfg, err := kube.ConfigForCluster(&req.ClusterInfo)
+	if err != nil {
+		return resp, fmt.Errorf("failed to get config for cluster: %w", err)
 	}
 
 	vals, err := getWaypointRunnerValues(req)

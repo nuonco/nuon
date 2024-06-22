@@ -126,10 +126,9 @@ func (w *wkflow) deprovisionRunner(ctx workflow.Context, req *installsv1.Deprovi
 
 		prReq.Region = req.AwsSettings.Region
 		prReq.EksClusterInfo = &runnerv1.EKSClusterInfo{
-			Id:             tfOutputs.Cluster.Name,
-			Endpoint:       tfOutputs.Cluster.Endpoint,
-			CaData:         tfOutputs.Cluster.CertificateAuthorityData,
-			TrustedRoleArn: w.cfg.NuonAccessRoleArn,
+			Id:       tfOutputs.Cluster.Name,
+			Endpoint: tfOutputs.Cluster.Endpoint,
+			CaData:   tfOutputs.Cluster.CertificateAuthorityData,
 		}
 	} else if req.RunnerType == contextv1.RunnerType_RUNNER_TYPE_AZURE_AKS {
 		tfOutputs, err := azureaks.ParseTerraformOutputs(outputs)

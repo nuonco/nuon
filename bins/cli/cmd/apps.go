@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
 	"github.com/spf13/cobra"
+
+	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
 )
 
 func (c *cli) appsCmd() *cobra.Command {
@@ -14,6 +15,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd := &cobra.Command{
 		Use:               "apps",
 		Short:             "View the apps in your org",
+		Aliases:           []string{"a"},
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 

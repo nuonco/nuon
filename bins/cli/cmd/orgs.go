@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/orgs"
 	"github.com/spf13/cobra"
+
+	"github.com/powertoolsdev/mono/bins/cli/internal/orgs"
 )
 
 func (c *cli) orgsCmd() *cobra.Command {
@@ -17,6 +18,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 	orgsCmd := &cobra.Command{
 		Use:               "orgs",
 		Short:             "Manage your organizations",
+		Aliases:           []string{"a"},
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 

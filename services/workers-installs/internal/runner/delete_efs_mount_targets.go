@@ -8,22 +8,21 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/efs"
 	efstypes "github.com/aws/aws-sdk-go-v2/service/efs/types"
 
-	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type DeleteEFSMountTargetsRequest struct {
-	IAMRoleARN string `validate:"required"`
-	InstallID  string `validate:"required"`
-	Region     string `validate:"required"`
+	InstallID string `validate:"required"`
+	Region    string `validate:"required"`
 
-	TwoStepConfig *assumerole.TwoStepConfig `validate:"required"`
+	Auth *credentials.Config `validate:"required"`
 }
 
 type DeleteEFSMountTargetsResponse struct{}
 
-func (a *Activities) DeleteEFSMountTargets(ctx context.Context, req DeleteEFSMountTargetsRequest) (*DeleteEFSMountTargetsResponse, error) {
-	efsClient, err := a.getEFSClient(ctx, req.IAMRoleARN, req.Region, req.TwoStepConfig)
+func (a *Activities) DeleteEFSMountTargets(ctx context.Context, req *DeleteEFSMountTargetsRequest) (*DeleteEFSMountTargetsResponse, error) {
+	efsClient, err := a.getEFSClient(ctx, req.Region, req.Auth)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get efs service: %w", err)
 	}
