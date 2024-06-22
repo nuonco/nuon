@@ -6,7 +6,9 @@ export interface Props {
 }
 
 
-function datesToCount(start: Date, end: Date): number {
+function datesToCount(end: Date, start: Date): number {
+  start.setHours(0)
+  start.setMinutes(0)
   const startTS = start.getTime().valueOf()
   const endTS = end.getTime().valueOf()
 
@@ -18,11 +20,11 @@ const { dayCard:  dayCard } = Astro.props;
 
 const today = new Date()
 const pivotDate = new Date('October 11, 2021');
-const seriesADate = new Date('June 19, 2024');
+const seriesADate = new Date('June 21, 2024');
 
-const startDayCount = datesToCount(dayCard.date,pivotDate);
+const pivotDayCount = datesToCount(dayCard.date, pivotDate);
 const seriesADayCount = datesToCount(dayCard.date,seriesADate);
-const todayDayCount = datesToCount( dayCard.date, today);
+const todayDayCount = datesToCount(dayCard.date, today);
 
 const dateStr = dayCard.date.toLocaleDateString('en-us', { weekday:"long", year:"numeric", month:"short", day:"numeric"});
 ---
@@ -56,7 +58,7 @@ const dateStr = dayCard.date.toLocaleDateString('en-us', { weekday:"long", year:
 
     {(!dayCard.disablePivot) && (
     <span>
-      From Pivot to Nuon: <span class="text-2xl text-white">{startDayCount}</span>
+      From Pivot to Nuon: <span class="text-2xl text-white">{pivotDayCount}</span>
       <br />
     </span>
     )}
