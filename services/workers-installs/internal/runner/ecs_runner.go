@@ -6,6 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	assumerole "github.com/powertoolsdev/mono/pkg/aws/assume-role"
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
 	contextv1 "github.com/powertoolsdev/mono/pkg/types/components/context/v1"
 	runnerv1 "github.com/powertoolsdev/mono/pkg/types/workflows/installs/v1/runner/v1"
 	"github.com/powertoolsdev/mono/pkg/waypoint/client"
@@ -20,17 +21,27 @@ const (
 func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionRunnerRequest) error {
 	orgServerAddr := client.DefaultOrgServerAddress(w.cfg.OrgServerRootDomain, req.OrgId)
 
-	// TODO(jm): this runner should not have to use the nuon role, but since we're planning to re-evaluate how we
-	// install the runner anyway, we just keep this as is, and document it.
-	// iamRoleARN := req.AwsSettings.AwsRoleArn
-	iamRoleARN := req.EcsClusterInfo.InstallIamRoleArn
-	twoStepCfg := &assumerole.TwoStepConfig{
-		IAMRoleARN: w.cfg.NuonAccessRoleArn,
-	}
-	if req.AwsSettings.AwsRoleDelegation != nil {
-		twoStepCfg.IAMRoleARN = req.AwsSettings.AwsRoleDelegation.IamRoleArn
-		twoStepCfg.AccessKeyID = req.AwsSettings.AwsRoleDelegation.AccessKeyId
-		twoStepCfg.SecretAccessKey = req.AwsSettings.AwsRoleDelegation.SecretAccessKey
+	// to be able to access the runner, we assume the delegation role, to assume the runner role, to assume the
+	// runner install role
+	auth := &credentials.Config{
+		Region: req.Region,
+		AssumeRole: &credentials.AssumeRoleConfig{
+			RoleARN:                req.EcsClusterInfo.InstallIamRoleArn,
+			SessionName:            fmt.Sprintf("%s-runner-install", req.InstallId),
+			SessionDurationSeconds: 60 * 60,
+
+			TwoStepConfig: &assumerole.TwoStepConfig{
+				IAMRoleARN: req.AwsSettings.AwsRoleArn,
+
+				SrcIAMRoleARN: req.AwsSettings.AwsRoleDelegation.IamRoleArn,
+
+				// NOTE: static creds are only used for gov-cloud installs
+				SrcStaticCredentials: assumerole.StaticCredentials{
+					AccessKeyID:     req.AwsSettings.AwsRoleDelegation.AccessKeyId,
+					SecretAccessKey: req.AwsSettings.AwsRoleDelegation.SecretAccessKey,
+				},
+			},
+		},
 	}
 
 	// get waypoint server cookie
@@ -49,10 +60,9 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create efs
 	var efsResp CreateEFSResponse
 	efsReq := CreateEFSRequest{
-		IAMRoleARN:    iamRoleARN,
-		InstallID:     req.InstallId,
-		Region:        req.Region,
-		TwoStepConfig: twoStepCfg,
+		InstallID: req.InstallId,
+		Region:    req.Region,
+		Auth:      auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.CreateEFS, efsReq, &efsResp); err != nil {
 		return fmt.Errorf("unable to create efs: %w", err)
@@ -61,10 +71,9 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// poll efs
 	var pollEFSResp PollEFSResponse
 	pollEFSReq := PollEFSRequest{
-		IAMRoleARN:    iamRoleARN,
-		InstallID:     req.InstallId,
-		Region:        req.Region,
-		TwoStepConfig: twoStepCfg,
+		InstallID: req.InstallId,
+		Region:    req.Region,
+		Auth:      auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.PollEFS, pollEFSReq, &pollEFSResp); err != nil {
 		return fmt.Errorf("unable to poll efs: %w", err)
@@ -73,14 +82,13 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create efs mount targets
 	var createEFSMountTargetsResp CreateEFSMountTargetsResponse
 	createEFSMountTargetsReq := CreateEFSMountTargetsRequest{
-		IAMRoleARN: iamRoleARN,
-		FsID:       pollEFSResp.FsID,
-		Region:     req.Region,
+		FsID:   pollEFSResp.FsID,
+		Region: req.Region,
 
 		VPCID:           req.EcsClusterInfo.VpcId,
 		SubnetIDs:       req.EcsClusterInfo.SubnetIds,
 		SecurityGroupID: req.EcsClusterInfo.SecurityGroupId,
-		TwoStepConfig:   twoStepCfg,
+		Auth:            auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.CreateEFSMountTargets, createEFSMountTargetsReq, &createEFSMountTargetsResp); err != nil {
 		return fmt.Errorf("unable to create efs mount targets: %w", err)
@@ -89,13 +97,12 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create efs access mounts
 	var createEFSAccessPointsResp CreateEFSAccessPointsResponse
 	createEFSAccessPointsReq := CreateEFSAccessPointsRequest{
-		InstallID:     req.InstallId,
-		IAMRoleARN:    iamRoleARN,
-		FsID:          pollEFSResp.FsID,
-		Region:        req.Region,
-		VPCID:         req.EcsClusterInfo.VpcId,
-		SubnetIDs:     req.EcsClusterInfo.SubnetIds,
-		TwoStepConfig: twoStepCfg,
+		InstallID: req.InstallId,
+		FsID:      pollEFSResp.FsID,
+		Region:    req.Region,
+		VPCID:     req.EcsClusterInfo.VpcId,
+		SubnetIDs: req.EcsClusterInfo.SubnetIds,
+		Auth:      auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.CreateEFSAccessPoints, createEFSAccessPointsReq, &createEFSAccessPointsResp); err != nil {
 		return fmt.Errorf("unable to create efs access points: %w", err)
@@ -104,10 +111,9 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// poll mount targets to be ready
 	var pollMountTargetsResp PollEFSMountTargetsResponse
 	pollMountTargetsReq := PollEFSMountTargetsRequest{
-		IAMRoleARN:    iamRoleARN,
-		FsID:          pollEFSResp.FsID,
-		Region:        req.Region,
-		TwoStepConfig: twoStepCfg,
+		FsID:   pollEFSResp.FsID,
+		Region: req.Region,
+		Auth:   auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.PollEFSMountTargets, pollMountTargetsReq, &pollMountTargetsResp); err != nil {
 		return fmt.Errorf("unable to create efs access points: %w", err)
@@ -116,10 +122,9 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create log group
 	var createLogGroupResp CreateCloudwatchLogGroupResponse
 	createLogGroupReq := CreateCloudwatchLogGroupRequest{
-		IAMRoleARN:    iamRoleARN,
-		LogGroupName:  fmt.Sprintf("waypoint-runner-%s", req.InstallId),
-		Region:        req.Region,
-		TwoStepConfig: twoStepCfg,
+		LogGroupName: fmt.Sprintf("waypoint-runner-%s", req.InstallId),
+		Region:       req.Region,
+		Auth:         auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.CreateCloudwatchLogGroup, createLogGroupReq, &createLogGroupResp); err != nil {
 		return fmt.Errorf("unable to create cloud watch log group: %w", err)
@@ -128,8 +133,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create task definition
 	var createTaskDefResp CreateECSTaskDefinitionResponse
 	createTaskDefReq := CreateECSTaskDefinitionRequest{
-		IAMRoleARN: iamRoleARN,
-		InstallID:  req.InstallId,
+		InstallID: req.InstallId,
 
 		RunnerRoleARN: req.EcsClusterInfo.RunnerIamRoleArn,
 		EnvVars: map[string]string{
@@ -143,7 +147,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 		AccessPointID: createEFSAccessPointsResp.AccessPointIDs[0],
 		FileSystemID:  pollEFSResp.FsID,
 		Args:          []string{},
-		TwoStepConfig: twoStepCfg,
+		Auth:          auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.CreateECSTaskDefinition, createTaskDefReq, &createTaskDefResp); err != nil {
 		return fmt.Errorf("unable to create task definition: %w", err)
@@ -152,7 +156,6 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 	// create ecs service
 	var createServiceResp CreateECSServiceResponse
 	createServiceReq := CreateECSServiceRequest{
-		IAMRoleARN: iamRoleARN,
 		ClusterARN: req.EcsClusterInfo.ClusterArn,
 		InstallID:  req.InstallId,
 		Region:     req.Region,
@@ -161,7 +164,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 		SubnetIDs:         req.EcsClusterInfo.SubnetIds,
 		TaskDefinitionARN: createTaskDefResp.TaskDefinitionARN,
 
-		TwoStepConfig: twoStepCfg,
+		Auth: auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.CreateECSService, createServiceReq, &createServiceResp); err != nil {
 		return fmt.Errorf("unable to create service: %w", err)
@@ -202,25 +205,35 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 }
 
 func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.DeprovisionRunnerRequest) error {
-	iamRoleARN := req.AwsSettings.AwsRoleArn
+	// to be able to access the runner, we assume the delegation role, to assume the runner role, to assume the
+	// runner install role
+	auth := &credentials.Config{
+		Region: req.Region,
+		AssumeRole: &credentials.AssumeRoleConfig{
+			RoleARN:                req.EcsClusterInfo.InstallIamRoleArn,
+			SessionName:            fmt.Sprintf("%s-runner-install", req.InstallId),
+			SessionDurationSeconds: 60 * 60,
 
-	twoStepCfg := &assumerole.TwoStepConfig{
-		IAMRoleARN: w.cfg.NuonAccessRoleArn,
-	}
-	if req.AwsSettings.AwsRoleDelegation != nil {
-		twoStepCfg.IAMRoleARN = req.AwsSettings.AwsRoleDelegation.IamRoleArn
-		twoStepCfg.AccessKeyID = req.AwsSettings.AwsRoleDelegation.AccessKeyId
-		twoStepCfg.SecretAccessKey = req.AwsSettings.AwsRoleDelegation.SecretAccessKey
+			TwoStepConfig: &assumerole.TwoStepConfig{
+				IAMRoleARN: req.AwsSettings.AwsRoleArn,
+
+				SrcIAMRoleARN: req.AwsSettings.AwsRoleDelegation.IamRoleArn,
+				// NOTE: static creds are only used for gov-cloud installs
+				SrcStaticCredentials: assumerole.StaticCredentials{
+					AccessKeyID:     req.AwsSettings.AwsRoleDelegation.AccessKeyId,
+					SecretAccessKey: req.AwsSettings.AwsRoleDelegation.SecretAccessKey,
+				},
+			},
+		},
 	}
 
 	// poll mount targets to be ready
 	var deleteServiceResp DeleteServiceResponse
 	deleteServiceReq := DeleteServiceRequest{
-		InstallID:     req.InstallId,
-		IAMRoleARN:    iamRoleARN,
-		ClusterARN:    req.EcsClusterInfo.ClusterArn,
-		Region:        req.Region,
-		TwoStepConfig: twoStepCfg,
+		InstallID:  req.InstallId,
+		ClusterARN: req.EcsClusterInfo.ClusterArn,
+		Region:     req.Region,
+		Auth:       auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.DeleteECSService, deleteServiceReq, &deleteServiceResp); err != nil {
 		return fmt.Errorf("unable to delete service: %w", err)
@@ -229,11 +242,10 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 	// poll that service was deleted
 	var pollDeleteServiceResp PollDeleteECSServiceResponse
 	pollDeleteServiceReq := PollDeleteECSServiceRequest{
-		InstallID:     req.InstallId,
-		IAMRoleARN:    iamRoleARN,
-		ClusterARN:    req.EcsClusterInfo.ClusterArn,
-		Region:        req.Region,
-		TwoStepConfig: twoStepCfg,
+		InstallID:  req.InstallId,
+		ClusterARN: req.EcsClusterInfo.ClusterArn,
+		Region:     req.Region,
+		Auth:       auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.PollDeleteService, pollDeleteServiceReq, &pollDeleteServiceResp); err != nil {
 		return fmt.Errorf("unable to poll deleting ecs service: %w", err)
@@ -241,10 +253,9 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 
 	var deleteCloudwatchLogGroupResp DeleteCloudwatchLogGroupResponse
 	deleteCloudwatchLogGroupReq := DeleteCloudwatchLogGroupRequest{
-		IAMRoleARN:    iamRoleARN,
-		LogGroupName:  fmt.Sprintf("waypoint-runner-%s", req.InstallId),
-		Region:        req.Region,
-		TwoStepConfig: twoStepCfg,
+		LogGroupName: fmt.Sprintf("waypoint-runner-%s", req.InstallId),
+		Region:       req.Region,
+		Auth:         auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.DeleteCloudwatchLogGroup, deleteCloudwatchLogGroupReq, &deleteCloudwatchLogGroupResp); err != nil {
 		return fmt.Errorf("unable to poll deleting ecs service: %w", err)
@@ -252,10 +263,9 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 
 	var deleteEFSAccessPointsResp DeleteEFSAccessPointsResponse
 	deleteEFSAccessPointsReq := DeleteEFSAccessPointsRequest{
-		IAMRoleARN:    iamRoleARN,
-		InstallID:     req.InstallId,
-		Region:        req.Region,
-		TwoStepConfig: twoStepCfg,
+		InstallID: req.InstallId,
+		Region:    req.Region,
+		Auth:      auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.DeleteEFSAccessPoints, deleteEFSAccessPointsReq, &deleteEFSAccessPointsResp); err != nil {
 		return fmt.Errorf("unable to poll deleting ecs service: %w", err)
@@ -263,10 +273,9 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 
 	var deleteEFSMountTargetsResp DeleteEFSMountTargetsResponse
 	deleteEFSMountTargetsReq := DeleteEFSMountTargetsRequest{
-		IAMRoleARN:    iamRoleARN,
-		InstallID:     req.InstallId,
-		Region:        req.Region,
-		TwoStepConfig: twoStepCfg,
+		InstallID: req.InstallId,
+		Region:    req.Region,
+		Auth:      auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.DeleteEFSMountTargets, deleteEFSMountTargetsReq, &deleteEFSMountTargetsResp); err != nil {
 		return fmt.Errorf("unable to poll deleting ecs service: %w", err)
@@ -274,10 +283,9 @@ func (w *wkflow) uninstallECSRunner(ctx workflow.Context, req *runnerv1.Deprovis
 
 	var deleteEFSResp DeleteEFSResponse
 	deleteEFSReq := DeleteEFSRequest{
-		IAMRoleARN:    iamRoleARN,
-		InstallID:     req.InstallId,
-		Region:        req.Region,
-		TwoStepConfig: twoStepCfg,
+		InstallID: req.InstallId,
+		Region:    req.Region,
+		Auth:      auth,
 	}
 	if err := w.execAWSActivity(ctx, w.act.DeleteEFS, deleteEFSReq, &deleteEFSResp); err != nil {
 		return fmt.Errorf("unable to delete efs: %w", err)

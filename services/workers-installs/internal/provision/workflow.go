@@ -135,8 +135,10 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		}
 		if req.AwsSettings.AwsRoleDelegation != nil {
 			twoStepCfg.IAMRoleARN = req.AwsSettings.AwsRoleDelegation.IamRoleArn
-			twoStepCfg.AccessKeyID = req.AwsSettings.AwsRoleDelegation.AccessKeyId
-			twoStepCfg.SecretAccessKey = req.AwsSettings.AwsRoleDelegation.SecretAccessKey
+			twoStepCfg.SrcStaticCredentials = assumerole.StaticCredentials{
+				AccessKeyID:     req.AwsSettings.AwsRoleDelegation.AccessKeyId,
+				SecretAccessKey: req.AwsSettings.AwsRoleDelegation.SecretAccessKey,
+			}
 		}
 
 		if err := execCheckIAMRole(ctx, act, CheckIAMRoleRequest{
@@ -233,10 +235,9 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		prReq.OdrIamRoleArn = tfOutputs.Runner.ODRIAMRoleARN
 		prReq.Region = req.AwsSettings.Region
 		prReq.EksClusterInfo = &runnerv1.EKSClusterInfo{
-			Id:             tfOutputs.Cluster.Name,
-			Endpoint:       tfOutputs.Cluster.Endpoint,
-			CaData:         tfOutputs.Cluster.CertificateAuthorityData,
-			TrustedRoleArn: w.cfg.NuonAccessRoleArn,
+			Id:       tfOutputs.Cluster.Name,
+			Endpoint: tfOutputs.Cluster.Endpoint,
+			CaData:   tfOutputs.Cluster.CertificateAuthorityData,
 		}
 	} else if req.RunnerType == contextv1.RunnerType_RUNNER_TYPE_AZURE_AKS {
 		tfOutputs, err := azureaks.ParseTerraformOutputs(outputs)

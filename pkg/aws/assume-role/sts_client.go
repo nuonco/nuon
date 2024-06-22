@@ -10,7 +10,8 @@ import (
 )
 
 func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion(a.Region))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default config: %w", err)
 	}
@@ -21,10 +22,16 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 		return stsClient, nil
 	}
 
+	if a.TwoStepConfig.IAMRoleARN == "" {
+		return nil, fmt.Errorf("iam role arn must be set to use the two step config")
+	}
+
 	// if the static creds are set, we will create an STS client using them
-	if a.TwoStepConfig.AccessKeyID != "" {
-		credsProvider := credentials.NewStaticCredentialsProvider(a.TwoStepConfig.AccessKeyID,
-			a.TwoStepConfig.SecretAccessKey, "")
+	if a.TwoStepConfig.SrcStaticCredentials.AccessKeyID != "" {
+		credsProvider := credentials.NewStaticCredentialsProvider(
+			a.TwoStepConfig.SrcStaticCredentials.AccessKeyID,
+			a.TwoStepConfig.SrcStaticCredentials.SecretAccessKey,
+			a.TwoStepConfig.SrcStaticCredentials.SessionToken)
 
 		cfg, err = config.LoadDefaultConfig(ctx,
 			config.WithCredentialsProvider(credsProvider),
@@ -36,10 +43,21 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 		stsClient = sts.NewFromConfig(cfg)
 	}
 
-	// if no IAM role is set, we either return the default sts client, or the one that was provisioned using static
-	// creds
-	if a.TwoStepConfig.IAMRoleARN == "" {
-		return stsClient, nil
+	if a.TwoStepConfig.SrcIAMRoleARN != "" {
+		creds, err := a.assumeIamRole(ctx, stsClient, a.TwoStepConfig.SrcIAMRoleARN)
+		if err != nil {
+			return nil, fmt.Errorf("failed to assume two step src role: %w", err)
+		}
+
+		credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId,
+			*creds.SecretAccessKey,
+			*creds.SessionToken)
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(credsProvider))
+		if err != nil {
+			return nil, fmt.Errorf("unable to create provider: %w", err)
+		}
+
+		stsClient = sts.NewFromConfig(cfg)
 	}
 
 	// finally, if an IAM role is set, we create a set of credentials and then return an STS client using them
@@ -51,7 +69,9 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 	credsProvider := credentials.NewStaticCredentialsProvider(*creds.AccessKeyId,
 		*creds.SecretAccessKey,
 		*creds.SessionToken)
-	cfg, err = config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(credsProvider))
+	cfg, err = config.LoadDefaultConfig(ctx,
+		config.WithCredentialsProvider(credsProvider),
+		config.WithRegion(a.Region))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create provider: %w", err)
 	}
