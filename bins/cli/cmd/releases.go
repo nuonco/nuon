@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/releases"
 	"github.com/spf13/cobra"
+
+	"github.com/powertoolsdev/mono/bins/cli/internal/releases"
 )
 
 func (c *cli) releasesCmd() *cobra.Command {
@@ -21,6 +22,7 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Use:               "releases",
 		Short:             "Manage releases",
 		Long:              "Manages releases of app components to installs",
+		Aliases:           []string{"r"},
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 

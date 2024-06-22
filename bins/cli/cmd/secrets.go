@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/powertoolsdev/mono/bins/cli/internal/secrets"
 	"github.com/spf13/cobra"
+
+	"github.com/powertoolsdev/mono/bins/cli/internal/secrets"
 )
 
 func (c *cli) secretsCmd() *cobra.Command {
@@ -14,6 +15,7 @@ func (c *cli) secretsCmd() *cobra.Command {
 	secretsCmd := &cobra.Command{
 		Use:               "secrets",
 		Short:             "Create and manage secrets.",
+		Aliases:           []string{"s"},
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 

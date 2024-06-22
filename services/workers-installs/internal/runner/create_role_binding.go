@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/powertoolsdev/mono/pkg/kube"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apimetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rbacapplyv1 "k8s.io/client-go/applyconfigurations/rbac/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/powertoolsdev/mono/pkg/aws/credentials"
+	"github.com/powertoolsdev/mono/pkg/kube"
 )
 
 func runnerServiceAccountName(installID string) string {
@@ -21,11 +23,12 @@ func runnerOdrServiceAccountName(installID string) string {
 }
 
 type CreateRoleBindingRequest struct {
-	TokenSecretNamespace string           `json:"token_secret_namespace" validate:"required"`
-	OrgServerAddr        string           `json:"org_server_address" validate:"required"`
-	InstallID            string           `json:"org_id" validate:"required"`
-	NamespaceName        string           `json:"namespace_name" validate:"required"`
-	ClusterInfo          kube.ClusterInfo `json:"cluster_info" validate:"required"`
+	TokenSecretNamespace string              `json:"token_secret_namespace" validate:"required"`
+	OrgServerAddr        string              `json:"org_server_address" validate:"required"`
+	InstallID            string              `json:"org_id" validate:"required"`
+	NamespaceName        string              `json:"namespace_name" validate:"required"`
+	ClusterInfo          kube.ClusterInfo    `json:"cluster_info" validate:"required"`
+	Auth                 *credentials.Config `validate:"required" json:"auth"`
 }
 
 func (c CreateRoleBindingRequest) validate() error {
@@ -47,12 +50,15 @@ func (a *Activities) CreateRoleBinding(
 	}
 
 	var err error
-	kCfg := a.Kubeconfig
-	if kCfg == nil {
-		kCfg, err = kube.ConfigForCluster(&req.ClusterInfo)
-		if err != nil {
-			return resp, fmt.Errorf("failed to get config for cluster: %w", err)
-		}
+	envVars, err := credentials.FetchEnv(ctx, req.Auth)
+	if err != nil {
+		return resp, fmt.Errorf("unable to get credentials: %w", err)
+	}
+	req.ClusterInfo.EnvVars = envVars
+
+	kCfg, err := kube.ConfigForCluster(&req.ClusterInfo)
+	if err != nil {
+		return resp, fmt.Errorf("failed to get config for cluster: %w", err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(kCfg)
