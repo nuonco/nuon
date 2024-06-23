@@ -1,0 +1,19 @@
+---
+export interface Props {
+  repo?: string;
+  path: string
+}
+
+const { repo:  repo, path: path} = Astro.props;
+
+function formatRepo(path: string, repo?: string) {
+  repo = repo || 'powertoolsdev/mono'
+
+  return "https://github.com/" + repo + "/tree/main/" + path
+}
+---
+<span>
+  <a href={formatRepo(path, repo)}>
+    <slot />
+  </a>
+</span>

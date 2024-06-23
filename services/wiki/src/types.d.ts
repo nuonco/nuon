@@ -19,3 +19,8 @@ export interface DayCard {
   disableSeriesA?: boolean;
   disablePivot?: boolean;
 }
+
+export interface CodeLinkProps {
+  repo?: string;
+  title: string;
+}
