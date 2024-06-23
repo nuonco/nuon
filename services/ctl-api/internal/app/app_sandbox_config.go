@@ -57,7 +57,7 @@ type AppSandboxConfig struct {
 	AWSRegionType       generics.NullString     `json:"aws_region_type" swaggertype:"string"`
 
 	// fields set via after query
-	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
+	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-" swaggertype:"string"`
 }
 
 // NOTE: currently, only public repo vcs configs are supported when rendering policies and artifacts

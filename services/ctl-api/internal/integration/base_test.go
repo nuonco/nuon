@@ -137,7 +137,6 @@ func (s *baseIntegrationTestSuite) createAppWithInputs() *models.AppApp {
 func (s *baseIntegrationTestSuite) createAppSandboxConfig(appID string) {
 	// create app sandbox config
 	cfgReq := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-	cfgReq.SandboxReleaseID = ""
 	cfgReq.ConnectedGithubVcsConfig = nil
 
 	cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, appID, cfgReq)
