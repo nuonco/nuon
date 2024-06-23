@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon-go/models"
+
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
@@ -17,7 +18,7 @@ const (
 	defaultConfigFilePermissions fs.FileMode = 0o644
 )
 
-func (s *Service) Create(ctx context.Context, appName string, appTemplate string, asJSON bool) {
+func (s *Service) Create(ctx context.Context, appName string, appTemplate string, noTemplate, asJSON bool) {
 	view := ui.NewCreateView("app", asJSON)
 	view.Start()
 	view.Update("creating app")
@@ -49,6 +50,10 @@ func (s *Service) Create(ctx context.Context, appName string, appTemplate string
 	}
 
 success:
+	if noTemplate {
+		return
+	}
+
 	// create template
 	view.Update("generating app config template")
 	tmpl, err := s.api.GetAppConfigTemplate(ctx, app.ID, models.ServiceAppConfigTemplateType(appTemplate))
