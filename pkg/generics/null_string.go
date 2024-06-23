@@ -10,13 +10,13 @@ type NullString struct {
 	sql.NullString
 }
 
-func (s *NullString) UnmarshalJSON(data []byte) error {
+func (s NullString) UnmarshalJSON(data []byte) error {
 	s.String = strings.Trim(string(data), `"`)
 	s.Valid = true
 	return nil
 }
 
-func (s *NullString) MarshalJSON() ([]byte, error) {
+func (s NullString) MarshalJSON() ([]byte, error) {
 	if !s.Valid {
 		s.Valid = true
 		s.String = ""
