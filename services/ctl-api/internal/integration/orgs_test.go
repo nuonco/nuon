@@ -72,11 +72,7 @@ func (s *orgsIntegrationTestSuite) TestCreateOrg() {
 		user, err := s.apiClient.GetCurrentUser(s.ctx)
 		require.NoError(t, err)
 
-		orgIDs := make([]string, 0)
-		for _, org := range user.Orgs {
-			orgIDs = append(orgIDs, org.ID)
-		}
-		require.True(t, generics.SliceContains(org.ID, orgIDs))
+		require.True(t, generics.SliceContains(org.ID, user.OrgIds))
 
 		s.deleteOrg(org.ID)
 	})
