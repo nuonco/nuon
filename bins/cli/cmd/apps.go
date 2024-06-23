@@ -159,8 +159,9 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd.AddCommand(validateCmd)
 
 	var (
-		name     string
-		template string
+		name       string
+		template   string
+		noTemplate bool
 	)
 	createCmd := &cobra.Command{
 		Use:               "create",
@@ -168,12 +169,13 @@ func (c *cli) appsCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: func(cmd *cobra.Command, _ []string) {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Create(cmd.Context(), name, template, PrintJSON)
+			svc.Create(cmd.Context(), name, template, noTemplate, PrintJSON)
 		},
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "app name")
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVarP(&template, "template", "", "aws-ecs", "app config template type")
+	createCmd.Flags().BoolVarP(&noTemplate, "no-template", "", false, "do not write a template config file")
 	appsCmd.AddCommand(createCmd)
 
 	var confirmDelete bool
