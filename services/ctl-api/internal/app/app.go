@@ -44,7 +44,7 @@ type App struct {
 	AppSandboxConfig AppSandboxConfig `json:"sandbox_config" gorm:"-"`
 	AppRunnerConfig  AppRunnerConfig  `json:"runner_config" gorm:"-"`
 
-	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-"`
+	CloudPlatform CloudPlatform `json:"cloud_platform" gorm:"-" swaggertype:"string"`
 }
 
 func (a *App) BeforeCreate(tx *gorm.DB) error {
