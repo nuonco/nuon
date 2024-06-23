@@ -47,7 +47,6 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 		install := s.createInstall(s.appID)
 
 		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-		req.SandboxReleaseID = ""
 		req.ConnectedGithubVcsConfig = nil
 
 		appSandboxCfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
@@ -62,7 +61,6 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 
 	s.T().Run("successfully stores public vcs config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-		req.SandboxReleaseID = ""
 		req.ConnectedGithubVcsConfig = nil
 
 		cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
@@ -87,7 +85,6 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-		req.SandboxReleaseID = ""
 		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
@@ -113,7 +110,6 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-		req.SandboxReleaseID = ""
 		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("mono")
 
@@ -129,7 +125,6 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-		req.SandboxReleaseID = ""
 		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("some-other-user/mono")
 
@@ -147,7 +142,6 @@ func (s *appSandboxesSuite) TestGetAppSandboxLatestConfig() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-		req.SandboxReleaseID = ""
 		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 		_, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
@@ -161,7 +155,6 @@ func (s *appSandboxesSuite) TestGetAppSandboxLatestConfig() {
 
 	s.T().Run("success with public vcs connection", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-		req.SandboxReleaseID = ""
 		req.ConnectedGithubVcsConfig = nil
 		_, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
