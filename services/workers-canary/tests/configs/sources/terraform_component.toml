@@ -1,0 +1,17 @@
+name = "toml_terraform"
+type = "terraform_module"
+terraform_version = "1.5.3"
+
+[connected_repo]
+directory = "infra"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[var]]
+name = "AWS_REGION"
+value = "{{.nuon.install.sandbox.account.region}}"
+
+[vars]
+ACCOUNT_ID = "{{.nuon.install.sandbox.account.id}}"
+
+

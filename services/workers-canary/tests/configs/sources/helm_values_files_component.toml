@@ -1,0 +1,18 @@
+name = "toml_helm"
+type = "helm_chart"
+chart_name = "e2e-helm"
+
+[connected_repo]
+directory = "deployment"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[values_file]]
+source = "./sources/values.yaml"
+
+[[values_file]]
+source = "./sources/values-2.yaml"
+
+[[value]]
+name = "api.ingresses.public_domain"
+value = "{{.nuon.components.infra.outputs.iam_role}}"

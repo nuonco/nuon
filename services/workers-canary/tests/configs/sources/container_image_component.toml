@@ -1,0 +1,6 @@
+name = "toml_container_image"
+type = "container_image"
+
+[public]
+image_url = "kennethreitz/httpbin"
+tag = "latest"

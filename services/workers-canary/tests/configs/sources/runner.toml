@@ -1,0 +1,8 @@
+runner_type = "aws-ecs"
+
+[[env_var]]
+name = "runner-env-var"
+value = "runner-env-var"
+
+[runner.env_vars]
+runner-env-var = "runner-env-var"

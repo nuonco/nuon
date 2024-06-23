@@ -1,0 +1,9 @@
+[[group]]
+name = "sandbox"
+description = "Sandbox inputs"
+display_name = "Sandbox inputs"
+
+[[group]]
+name = "default"
+description = "Default inputs"
+display_name = "Default Inputs"

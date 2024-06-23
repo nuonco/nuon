@@ -1,0 +1,14 @@
+name = "toml_job"
+type = "job"
+
+image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
+tag	  = "{{.nuon.components.e2e_docker_build.image.tag}}"
+cmd	  = ["printenv"]
+args	  = [""]
+
+[[env_var]]
+name = "PUBLIC_DOMAIN"
+value = "{{.nuon.components.infra.outputs.iam_role}}"
+
+[env_vars]
+PUBLIC_DOMAIN = "{{.nuon.components.infra.outputs.iam_role}}"

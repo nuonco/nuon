@@ -1,0 +1,12 @@
+terraform_version = "1.5.4"
+[public_repo]
+directory = "aws-ecs-byo-vpc"
+repo = "nuonco/sandboxes"
+branch = "main"
+
+[[var]]
+name = "vpc_id"
+value = "{{.nuon.install.inputs.vpc_id}}"
+
+[vars]
+other_variable = "other-variable"

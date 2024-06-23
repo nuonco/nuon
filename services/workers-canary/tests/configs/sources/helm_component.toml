@@ -1,0 +1,17 @@
+name = "toml_helm"
+type = "helm_chart"
+chart_name = "e2e-helm"
+
+[connected_repo]
+directory = "deployment"
+repo = "powertoolsdev/mono"
+branch = "main"
+
+[[values_file]]
+contents = """
+image.tag = {{.nuon.components.toml_docker_build.image.name}}
+"""
+
+[[value]]
+name = "api.ingresses.public_domain"
+value = "{{.nuon.components.infra.outputs.iam_role}}"

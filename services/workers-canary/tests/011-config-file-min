@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -euo pipefail
+
+$APP_NAME="min"
+
+echo >&2 "creating app $app"
+nuon apps create --no-template --name=$APP_NAME
+
+echo >&2 "validating app configuration"
+nuon apps validate -c configs/nuon.$APP_NAME.toml
+
+echo >&2 "syncing app configuration"
+nuon apps sync -c configs/nuon.$APP_NAME.toml

@@ -1,0 +1,7 @@
+[[input]]
+name = "vpc_id"
+description = "vpc_id to install application into"
+default = ""
+sensitive = false
+display_name = "VPC ID"
+group = "sandbox"

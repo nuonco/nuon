@@ -1,0 +1,35 @@
+version = "v1"
+description = "all components"
+display_name = "All components"
+slack_webhook_url = "https://slack.nuon.co"
+
+[installer]
+source = "./sources/installer.toml"
+
+[runner]
+source = "./sources/runner.toml"
+
+[sandbox]
+source = "./sources/sandbox.toml"
+
+[inputs]
+source = "./sources/sandbox_inputs.toml"
+sources = ["./sources/app_inputs.toml", "./sources/app_input_groups.toml"]
+
+[[components]]
+source = "./sources/helm_component.toml"
+
+[[components]]
+source = "./sources/docker_build_component.toml"
+
+[[components]]
+source = "./sources/container_image_component.toml"
+
+[[components]]
+source = "./sources/ecr_container_image_component.toml"
+
+[[components]]
+source = "./sources/job_component.toml"
+
+[[components]]
+source = "./sources/terraform_component.toml"

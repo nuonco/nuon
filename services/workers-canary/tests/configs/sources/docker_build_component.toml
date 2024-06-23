@@ -1,0 +1,10 @@
+name = "toml_docker_build"
+type = "docker_build"
+
+dockerfile = "Dockerfile"
+
+[connected_repo]
+directory = "deployment"
+repo = "powertoolsdev/mono"
+branch = "main"
+

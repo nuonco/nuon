@@ -1,0 +1,7 @@
+[[input]]
+name = "api_key"
+description = "API key"
+default = ""
+sensitive = true
+display_name = "API Key"
+group = "default"
