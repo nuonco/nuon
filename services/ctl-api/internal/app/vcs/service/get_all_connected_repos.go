@@ -85,6 +85,10 @@ func (s *service) getConnectionRepos(ctx context.Context, conn *app.VCSConnectio
 		}
 
 		for _, repo := range repos.Repositories {
+			if *repo.Owner.Login == "nuonco-shared" {
+				continue
+			}
+
 			allRepos = append(allRepos, &Repository{
 				Name:            generics.FromPtrStr(repo.Name),
 				FullName:        generics.FromPtrStr(repo.FullName),
