@@ -31,8 +31,10 @@ func (a *Activities) CheckIAMRole(ctx context.Context, req CheckIAMRoleRequest) 
 			TwoStepConfig: req.TwoStepConfig,
 		},
 	}
+
 	_, err := credentials.Fetch(ctx, cfg)
 	if err != nil {
+		fmt.Println(err.Error())
 		return resp, temporal.NewNonRetryableApplicationError("unable to access iam role", "error", err)
 	}
 
