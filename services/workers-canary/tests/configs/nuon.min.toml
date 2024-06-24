@@ -10,7 +10,6 @@ github_url = "github-url"
 logo_url = "logo-url"
 favicon_url = "favicon-url"
 
-
 [runner]
 runner_type = "aws-ecs"
 

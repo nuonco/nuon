@@ -24,9 +24,9 @@ type CreateInstallerRequest struct {
 		GithubURL        string `validate:"required" json:"github_url"`
 		HomepageURL      string `validate:"required" json:"homepage_url"`
 		CommunityURL     string `validate:"required" json:"community_url"`
-		DemoURL          string `json:"demo_url"`
-		FaviconURL       string `json:"favicon_url"`
+		FaviconURL       string `validate:"required" json:"favicon_url" `
 
+		DemoURL             string `json:"demo_url"`
 		PostInstallMarkdown string `json:"post_install_markdown"`
 		FooterMarkdown      string `json:"footer_markdown"`
 		CopyrightMarkdown   string `json:"copyright_markdown"`
@@ -100,9 +100,9 @@ func (s *service) createInstaller(ctx context.Context, orgID string, req *Create
 			DocumentationURL: req.Metadata.DocumentationURL,
 			GithubURL:        req.Metadata.GithubURL,
 			LogoURL:          req.Metadata.LogoURL,
-			DemoURL:          generics.NewNullString(req.Metadata.DemoURL),
 			FaviconURL:       req.Metadata.FaviconURL,
 
+			DemoURL:             generics.NewNullString(req.Metadata.DemoURL),
 			PostInstallMarkdown: generics.NewNullString(req.Metadata.PostInstallMarkdown),
 			CopyrightMarkdown:   generics.NewNullString(req.Metadata.CopyrightMarkdown),
 			FooterMarkdown:      generics.NewNullString(req.Metadata.FooterMarkdown),

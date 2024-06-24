@@ -11,10 +11,6 @@ echo >&2 -e "nuon apps list\n"
 nuon -j apps list
 echo -e "\n"
 
-echo >&2 -e "nuon apps set-current\n"
-nuon -j apps set-current -a $app_id
-echo -e "\n"
-
 echo >&2 -e "nuon apps get\n"
 nuon -j apps get
 echo -e "\n"
