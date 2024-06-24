@@ -18,7 +18,7 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 	stsClient := sts.NewFromConfig(cfg)
 
 	// if now two step config is set, we use the default config
-	if a.TwoStepConfig == nil {
+	if a.TwoStepConfig == nil || *(a.TwoStepConfig) == (TwoStepConfig{}) {
 		return stsClient, nil
 	}
 
