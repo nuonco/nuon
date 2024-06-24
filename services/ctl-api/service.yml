@@ -15,7 +15,7 @@ env:
   INTERNAL_HTTP_PORT: 8082
   MIDDLEWARES: public_metrics,error,public,global,auth,org,invites,headers,cors,config
   INTERNAL_MIDDLEWARES: internal_metrics,error,config
-  GITHUB_APP_ID: !!string 261597
+  #GITHUB_APP_ID: !!string 261597
   AUTH0_ISSUER_URL: "https://nuon.us.auth0.com/"
   AUTH0_AUDIENCE: "api.nuon.co"
   AUTH0_CLIENT_ID: 7VLjCLy25IQVWx7yMLgp15x5IkXDS6Vr
