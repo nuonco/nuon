@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/powertoolsdev/mono/pkg/config/source"
 )
 
@@ -21,9 +22,9 @@ type InstallerConfig struct {
 	HomepageURL      string `mapstructure:"homepage_url,omitempty" toml:"homepage_url"`
 	GithubURL        string `mapstructure:"github_url,omitempty" toml:"github_url"`
 	LogoURL          string `mapstructure:"logo_url,omitempty" toml:"logo_url"`
-	DemoURL          string `mapstructure:"demo_url,omitempty" toml:"demo_url"`
 	FaviconURL       string `mapstructure:"favicon_url,omitempty" toml:"favicon_url"`
 
+	DemoURL             string `mapstructure:"demo_url" toml:"demo_url"`
 	PostInstallMarkdown string `mapstructure:"post_install_markdown" toml:"post_install_markdown"`
 	CopyrightMarkdown   string `mapstructure:"copyright_markdown" toml:"copyright_markdown"`
 	FooterMarkdown      string `mapstructure:"footer_markdown" toml:"footer_markdown"`

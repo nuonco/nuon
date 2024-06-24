@@ -32,14 +32,14 @@ type InstallerMetadata struct {
 	PostInstallMarkdown generics.NullString `json:"post_install_markdown" swaggertype:"string"`
 	FooterMarkdown      generics.NullString `json:"footer_markdown" swaggertype:"string"`
 	CopyrightMarkdown   generics.NullString `json:"copyright_markdown" swaggertype:"string"`
+	DemoURL             generics.NullString `json:"demo_url" swaggertype:"string"`
 
-	DocumentationURL string              `json:"documentation_url" gorm:"notnull"`
-	LogoURL          string              `json:"logo_url" gorm:"notnull"`
-	GithubURL        string              `json:"github_url" gorm:"notnull"`
-	CommunityURL     string              `json:"community_url" gorm:"notnull"`
-	HomepageURL      string              `json:"homepage_url" gorm:"notnull"`
-	DemoURL          generics.NullString `json:"demo_url" swaggertype:"string"`
-	FaviconURL       string              `json:"favicon_url"`
+	DocumentationURL string `json:"documentation_url" gorm:"notnull"`
+	LogoURL          string `json:"logo_url" gorm:"notnull"`
+	GithubURL        string `json:"github_url" gorm:"notnull"`
+	CommunityURL     string `json:"community_url" gorm:"notnull"`
+	HomepageURL      string `json:"homepage_url" gorm:"notnull"`
+	FaviconURL       string `json:"favicon_url"`
 
 	FormattedDemoURL string `json:"formatted_demo_url" gorm:"-"`
 }
