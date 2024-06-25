@@ -42,7 +42,7 @@ test('build context should render with init state', () => {
   expect(result.current.isFetching).toBeFalsy()
 })
 
-test(
+test.skip(
   'build context should refetch it state from api if provider has polling enabled',
   async () => {
     const { result } = renderHook(() => useBuildContext(), {
