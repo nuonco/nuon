@@ -22,10 +22,6 @@ type CreateEFSRequest struct {
 type CreateEFSResponse struct{}
 
 func (a *Activities) CreateEFS(ctx context.Context, req *CreateEFSRequest) (*CreateEFSResponse, error) {
-	if req.Auth.AssumeRole.TwoStepConfig.SrcStaticCredentials.AccessKeyID == "" {
-		return nil, fmt.Errorf("no access key id")
-	}
-
 	efsClient, err := a.getEFSClient(ctx, req.Region, req.Auth)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get efs service: %w", err)
