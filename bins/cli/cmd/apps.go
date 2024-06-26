@@ -136,9 +136,9 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:               "sync",
 		Short:             "Sync all .nuon.toml config files in the current directory.",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: func(cmd *cobra.Command, _ []string) {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Sync(cmd.Context(), all, file, PrintJSON)
+			return svc.Sync(cmd.Context(), all, file, PrintJSON)
 		},
 	}
 	syncCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
