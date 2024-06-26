@@ -31,7 +31,7 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 		return err
 	}
 
-	tfJSON, err := parse.ToTerraformJSON(parse.ParseConfig{
+	loctfJSON, err := parse.ToTerraformJSON(parse.ParseConfig{
 		Context:     config.ConfigContextSource,
 		Bytes:       byts,
 		BackendType: config.BackendTypeLocal,
@@ -43,7 +43,7 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 		return err
 	}
 
-	validateOutput, err := s.execTerraformValidate(ctx, appID, tfJSON)
+	validateOutput, err := s.execTerraformValidate(ctx, appID, loctfJSON)
 	if err != nil {
 		return err
 	}
@@ -69,6 +69,18 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 			WithHeaderRowSeparator("-").
 			Render()
 
+		return err
+	}
+
+	tfJSON, err := parse.ToTerraformJSON(parse.ParseConfig{
+		Context:     config.ConfigContextSource,
+		Bytes:       byts,
+		BackendType: config.BackendTypeS3,
+		Template:    true,
+		V:           validator.New(),
+	})
+	if err != nil {
+		view.Fail(err)
 		return err
 	}
 
