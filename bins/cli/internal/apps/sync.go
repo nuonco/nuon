@@ -13,6 +13,7 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
 	"github.com/powertoolsdev/mono/pkg/generics"
+	"github.com/pterm/pterm"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 )
 
 func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
-	view := ui.NewCreateView(fmt.Sprintf("syncing %s", cfgFile), false)
+	view := ui.NewCreateView(fmt.Sprintf("updated configs for %s", cfgFile), false)
 	view.Start()
 
 	byts, err := os.ReadFile(cfgFile)
@@ -33,12 +34,41 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	tfJSON, err := parse.ToTerraformJSON(parse.ParseConfig{
 		Context:     config.ConfigContextSource,
 		Bytes:       byts,
-		BackendType: config.BackendTypeS3,
+		BackendType: config.BackendTypeLocal,
 		Template:    true,
 		V:           validator.New(),
 	})
 	if err != nil {
 		view.Fail(err)
+		return err
+	}
+
+	validateOutput, err := s.execTerraformValidate(ctx, appID, tfJSON)
+	if err != nil {
+		return err
+	}
+
+	if len(validateOutput.Diagnostics) > 0 {
+		err = fmt.Errorf("configuration is invalid, %d errors found", len(validateOutput.Diagnostics))
+		view.Fail(err)
+
+		data := [][]string{
+			{"RESOURCE", "SUMMARY", "ERROR"},
+		}
+		for _, diag := range validateOutput.Diagnostics {
+			data = append(data, []string{
+				*diag.Snippet.Context,
+				diag.Summary,
+				diag.Detail,
+			})
+		}
+
+		pterm.DefaultTable.
+			WithData(data).
+			WithHasHeader().
+			WithHeaderRowSeparator("-").
+			Render()
+
 		return err
 	}
 
@@ -88,7 +118,7 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	}
 }
 
-func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) {
+func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) error {
 	var (
 		cfgFiles []parse.File
 		err      error
@@ -98,14 +128,14 @@ func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) 
 		cfgFiles, err = parse.FindConfigFiles(".")
 		if err != nil {
 			ui.PrintError(err)
-			return
+			return err
 		}
 	}
 	if file != "" {
 		appName, err := parse.AppNameFromFilename(file)
 		if err != nil {
 			ui.PrintError(err)
-			return
+			return err
 		}
 
 		cfgFiles = []parse.File{
@@ -118,20 +148,21 @@ func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) 
 
 	if len(cfgFiles) < 1 {
 		ui.PrintError(&ui.CLIUserError{
-			Msg: fmt.Sprintf("must set -all or -file, and make sure at least one nuon.<app-name>.toml file exists"),
+			Msg: "must set -all or -file, and make sure at least one nuon.<app-name>.toml file exists",
 		})
-		return
+		return err
 	}
 
 	for _, cfgFile := range cfgFiles {
 		appID, err := lookup.AppID(ctx, s.api, cfgFile.AppName)
 		if err != nil {
 			ui.PrintError(err)
-			return
+			return err
 		}
 
 		if err := s.sync(ctx, cfgFile.Path, appID); err != nil {
-			break
+			return err
 		}
 	}
+	return nil
 }
