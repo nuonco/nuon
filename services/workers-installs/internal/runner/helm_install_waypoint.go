@@ -90,7 +90,7 @@ func (a *Activities) InstallWaypoint(ctx context.Context, req InstallWaypointReq
 	l := activity.GetLogger(ctx)
 
 	var err error
-	if req.Auth == nil || *req.Auth == (credentials.Config{}) {
+	if (req.Auth != nil) && (*req.Auth != credentials.Config{}) {
 		envVars, err := credentials.FetchEnv(ctx, req.Auth)
 		if err != nil {
 			return resp, fmt.Errorf("unable to get credentials: %w", err)
