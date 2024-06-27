@@ -90,6 +90,7 @@ func (a *Activities) InstallWaypoint(ctx context.Context, req InstallWaypointReq
 	l := activity.GetLogger(ctx)
 
 	var err error
+	// if we're deploying to Azure, we don't need to fetch env vars
 	if (req.Auth != nil) && (*req.Auth != credentials.Config{}) {
 		envVars, err := credentials.FetchEnv(ctx, req.Auth)
 		if err != nil {
