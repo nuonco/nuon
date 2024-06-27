@@ -50,11 +50,13 @@ func (a *Activities) CreateRoleBinding(
 	}
 
 	var err error
-	envVars, err := credentials.FetchEnv(ctx, req.Auth)
-	if err != nil {
-		return resp, fmt.Errorf("unable to get credentials: %w", err)
+	if (req.Auth != nil) && (*req.Auth != credentials.Config{}) {
+		envVars, err := credentials.FetchEnv(ctx, req.Auth)
+		if err != nil {
+			return resp, fmt.Errorf("unable to get credentials: %w", err)
+		}
+		req.ClusterInfo.EnvVars = envVars
 	}
-	req.ClusterInfo.EnvVars = envVars
 
 	kCfg, err := kube.ConfigForCluster(&req.ClusterInfo)
 	if err != nil {
