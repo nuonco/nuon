@@ -30,7 +30,7 @@ type InstallWaypointRequest struct {
 	Atomic       bool                `json:"atomic"`
 	ClusterInfo  kube.ClusterInfo    `validate:"required" json:"cluster_info"`
 	RunnerConfig RunnerConfig        `validate:"required" json:"runner_config"`
-	Auth         *credentials.Config `validate:"required" json:"auth"`
+	Auth         *credentials.Config `json:"auth"`
 
 	// These are exposed for testing. Do not use otherwise
 	CreateNamespace bool `json:"create_namespace"`
@@ -90,12 +90,14 @@ func (a *Activities) InstallWaypoint(ctx context.Context, req InstallWaypointReq
 	l := activity.GetLogger(ctx)
 
 	var err error
+	if req.Auth == nil || *req.Auth == (credentials.Config{}) {
+		envVars, err := credentials.FetchEnv(ctx, req.Auth)
+		if err != nil {
+			return resp, fmt.Errorf("unable to get credentials: %w", err)
+		}
+		req.ClusterInfo.EnvVars = envVars
 
-	envVars, err := credentials.FetchEnv(ctx, req.Auth)
-	if err != nil {
-		return resp, fmt.Errorf("unable to get credentials: %w", err)
 	}
-	req.ClusterInfo.EnvVars = envVars
 
 	kCfg, err := kube.ConfigForCluster(&req.ClusterInfo)
 	if err != nil {
