@@ -23,6 +23,8 @@ func (w *wkflow) execTests(ctx workflow.Context,
 
 	tfOutputsPath := fmt.Sprintf("/tmp/%s.json", req.CanaryId)
 	env := map[string]string{
+		"TEST_DIR":        w.cfg.TestsDir,
+		"NUON_DEBUG":      "true",
 		"NUON_API_URL":    w.cfg.APIURL,
 		"NUON_API_TOKEN":  apiToken,
 		"NUON_ORG_ID":     orgID,

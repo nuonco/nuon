@@ -2,8 +2,14 @@
 
 set -euo pipefail
 
+app_id=$(cat $TF_OUTPUTS_PATH | jq -r .app.id)
+nuon apps select --app $app_id
+
 install_id=$(cat $TF_OUTPUTS_PATH | jq -r '.install_ids[0]')
 install_name=$(cat $TF_OUTPUTS_PATH | jq -r '.installs[0]')
+
+echo >&2 -e "pinning install"
+nuon installs select --install $install_id
 
 SANDBOX=true
 echo >&2 -e "forcing sandbox to TRUE to prevent flaky test\n"

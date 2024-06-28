@@ -80,9 +80,13 @@ func (a *Activities) getWorkspace(moduleDir string, req *RunTerraformRequest) (w
 	}
 
 	vars, err := staticvars.New(a.v, staticvars.WithFileVars(map[string]interface{}{
-		"aws_eks_iam_role_arn": a.cfg.AWSEKSIAMRoleArn,
-		"aws_ecs_iam_role_arn": a.cfg.AWSECSIAMRoleArn,
-		"install_count":        req.InstallCount,
+		"aws_eks_iam_role_arn":      a.cfg.AWSEKSIAMRoleArn,
+		"aws_ecs_iam_role_arn":      a.cfg.AWSECSIAMRoleArn,
+		"azure_aks_subscription_id": a.cfg.AzureAKSSubscriptionID,
+		"azure_aks_tenant_id":       a.cfg.AzureAKSTenantID,
+		"azure_aks_client_id":       a.cfg.AzureAKSClientID,
+		"azure_aks_client_secret":   a.cfg.AzureAKSClientSecret,
+		"install_count":             req.InstallCount,
 	}),
 		staticvars.WithEnvVars(map[string]string{
 			"NUON_ORG_ID":    req.OrgID,

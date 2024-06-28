@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+echo >&2 -e "pinning app"
+app_id=$(cat $TF_OUTPUTS_PATH | jq -r .app.id)
+nuon apps select --app $app_id
+
 component_id=$(cat $TF_OUTPUTS_PATH | jq -r '.component_ids[0]')
 component_name="e2e_external_image"
 
@@ -16,7 +20,7 @@ nuon -j components get -c $component_id
 echo -e "\n"
 
 echo >&2 -e "nuon components get -c $component_name\n"
-nuon -j components get -c $component_name
+nuon -j components get -c $component_name -a $app_id
 echo -e "\n"
 
 echo >&2 -e "nuon components latest-config -c $component_id\n"

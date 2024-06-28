@@ -2,7 +2,10 @@
 
 set -euo pipefail
 
+echo >&2 -e "pinning app"
 app_id=$(cat $TF_OUTPUTS_PATH | jq -r .app.id)
+nuon apps select --app $app_id
+
 component_name="e2e_external_image"
 build_id=$(nuon builds list -j -c $component_name | jq -r .[0].id)
 

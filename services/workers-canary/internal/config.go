@@ -26,9 +26,7 @@ func init() {
 type Config struct {
 	worker.Config `config:",squash"`
 
-	SlackWebhookURL  string `config:"slack_webhook_url" validate:"required"`
-	AWSEKSIAMRoleArn string `config:"aws_eks_iam_role_arn" validate:"required"`
-	AWSECSIAMRoleArn string `config:"aws_ecs_iam_role_arn" validate:"required"`
+	SlackWebhookURL string `config:"slack_webhook_url" validate:"required"`
 
 	APIURL         string `config:"api_url" validate:"required"`
 	InternalAPIURL string `config:"internal_api_url" validate:"required"`
@@ -50,6 +48,15 @@ type Config struct {
 
 	// the canary will _not_ run deprovision until the period has finished, allowing us time to debug using the CLI.
 	CanaryDebugPeriod string `config:"canary_debug_period"`
+
+	// fields for executing the canaries
+	AWSEKSIAMRoleArn string `config:"aws_eks_iam_role_arn" validate:"required"`
+	AWSECSIAMRoleArn string `config:"aws_ecs_iam_role_arn" validate:"required"`
+
+	AzureAKSSubscriptionID string `config:"azure_aks_subscrption_id" validate:"required"`
+	AzureAKSTenantID       string `config:"azure_aks_tenant_id" validate:"required"`
+	AzureAKSClientID       string `config:"azure_aks_client_id" validate:"required"`
+	AzureAKSClientSecret   string `config:"azure_aks_client_secret" validate:"required"`
 }
 
 func (c Config) Validate() error {

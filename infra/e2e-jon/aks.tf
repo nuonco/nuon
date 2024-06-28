@@ -17,7 +17,7 @@ module "azure-aks" {
   sandbox_dir = "azure-aks"
   app_runner_type = "azure-aks"
 
-  install_count = 0
+  install_count = 1
   install_prefix = "azure-aks-"
   azure = [
     {
@@ -31,39 +31,39 @@ module "azure-aks" {
   ]
 }
 
-resource "nuon_terraform_module_component" "aks-blob" {
-  name   = "blob_storage"
-  app_id = module.azure-aks.app_id
-  terraform_version = "1.6.3"
+#resource "nuon_terraform_module_component" "aks-blob" {
+  #name   = "blob_storage"
+  #app_id = module.azure-aks.app_id
+  #terraform_version = "1.6.3"
 
-  dependencies = []
+  #dependencies = []
 
-  connected_repo = {
-    directory = "components/storage"
-    repo      = "nuonco-shared/100xdev"
-    branch    = "main"
-  }
+  #connected_repo = {
+    #directory = "components/storage"
+    #repo      = "nuonco-shared/100xdev"
+    #branch    = "main"
+  #}
 
-  var {
-    name  = "nuon_id"
-    value = "{{.nuon.install.id}}"
-  }
+  #var {
+    #name  = "nuon_id"
+    #value = "{{.nuon.install.id}}"
+  #}
 
-  var {
-    name  = "resource_group_name_sandbox_output"
-    value = "{{.nuon.install.sandbox.outputs.account.resource_group_name}}"
-  }
-}
+  #var {
+    #name  = "resource_group_name_sandbox_output"
+    #value = "{{.nuon.install.sandbox.outputs.account.resource_group_name}}"
+  #}
+#}
 
-resource "nuon_docker_build_component" "e2e" {
-  name   = "image"
-  app_id = module.azure-aks.app_id
+#resource "nuon_docker_build_component" "e2e" {
+  #name   = "image"
+  #app_id = module.azure-aks.app_id
 
-  dockerfile = "Dockerfile"
-  dependencies = []
-  public_repo = {
-    directory = "aws-ecs-tutorial/components/docker-image"
-    repo      = "nuonco/guides"
-    branch    = "main"
-  }
-}
+  #dockerfile = "Dockerfile"
+  #dependencies = []
+  #public_repo = {
+    #directory = "aws-ecs-tutorial/components/docker-image"
+    #repo      = "nuonco/guides"
+    #branch    = "main"
+  #}
+#}

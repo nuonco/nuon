@@ -2,13 +2,16 @@
 
 set -euo pipefail
 
-$APP_NAME="components"
+APP_NAME="components"
 
-echo >&2 "creating app $app"
+echo >&2 "creating app $APP_NAME"
 nuon apps create --no-template --name=$APP_NAME
 
+echo >&2 "changing into test/configs dir"
+cd $TEST_DIR/configs
+
 echo >&2 "validating app configuration"
-nuon apps validate -c configs/nuon.$APP_NAME.toml
+nuon apps validate -c nuon.$APP_NAME.toml
 
 echo >&2 "syncing app configuration"
-nuon apps sync -c configs/nuon.$APP_NAME.toml
+nuon apps sync -c nuon.$APP_NAME.toml

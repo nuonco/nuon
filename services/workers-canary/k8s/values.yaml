@@ -7,6 +7,11 @@ configmap:
     GIT_REF: main
     TEMPORAL_HOST: temporal-frontend-headless.temporal.svc.cluster.local:7233
 
+    AZURE_AKS_SUBSCRIPTION_ID: $TFO_AZURE_AKS_SUBSCRIPTION_ID
+    AZURE_AKS_CLIENT_ID: $TFO_AZURE_AKS_CLIENT_ID
+    AZURE_AKS_TENANT_ID: $TFO_AZURE_AKS_TENANT_ID
+    AZURE_AKS_CLIENT_SECRET: $TFO_AZURE_AKS_CLIENT_SECRET
+
 envSecrets: []
 
 controller:

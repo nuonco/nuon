@@ -34,3 +34,19 @@ output "aws_eks_iam_role_arn" {
 output "aws_ecs_iam_role_arn" {
   value = module.ecs_access.iam_role_arn
 }
+
+output "azure_aks_subscription_id" {
+  value = var.azure_aks_subscription_id
+}
+
+output "azure_aks_tenant_id" {
+  value = var.azure_aks_tenant_id
+}
+
+output "azure_aks_client_id" {
+  value = var.azure_aks_client_id
+}
+
+output "azure_aks_client_id" {
+  value = var.azure_aks_client_secret
+}

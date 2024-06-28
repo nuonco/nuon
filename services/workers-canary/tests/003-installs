@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+echo >&2 -e "pinning app"
+app_id=$(cat $TF_OUTPUTS_PATH | jq -r .app.id)
+nuon apps select --app $app_id
+
 install_id=$(cat $TF_OUTPUTS_PATH | jq -r '.install_ids[0]')
 install_name=$(cat $TF_OUTPUTS_PATH | jq -r '.installs[0]')
 
@@ -44,7 +48,13 @@ echo >&2 -e "[SANDBOX=true] nuon installs create -n cli-canary-test -r us-east-1
 if [[ "$SANDBOX" == "false" ]]; then
   echo >&2 "skipping installs create outside of sandbox mode"
 else
-  nuon -j installs create -n "cli-canary-test" -r "us-east-1" -o "cli-canary-test" --inputs="eks_version=latest" --inputs="api_key=default"
+  nuon -j installs create \
+    -a $app_id \
+    -n "cli-canary-test" \
+    -r "us-east-1" \
+    -o "cli-canary-test" \
+    --inputs="eks_version=latest" \
+    --inputs="api_key=default"
 fi
 echo -e "\n"
 
