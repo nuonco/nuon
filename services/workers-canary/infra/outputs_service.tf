@@ -47,6 +47,6 @@ output "azure_aks_client_id" {
   value = var.azure_aks_client_id
 }
 
-output "azure_aks_client_id" {
+output "azure_aks_client_secret" {
   value = var.azure_aks_client_secret
 }
