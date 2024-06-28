@@ -71,7 +71,3 @@ required_checks:
   - Terraform Cloud/nuonco/workers-installs-stage
   - Terraform Cloud/nuonco/workers-orgs-prod
   - Terraform Cloud/nuonco/workers-orgs-stage
-
-  # demo spaces
-  - Terraform Cloud/nuonco/customers-shared-stage
-  - Terraform Cloud/nuonco/customers-shared-prod
