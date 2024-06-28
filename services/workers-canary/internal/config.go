@@ -53,7 +53,7 @@ type Config struct {
 	AWSEKSIAMRoleArn string `config:"aws_eks_iam_role_arn" validate:"required"`
 	AWSECSIAMRoleArn string `config:"aws_ecs_iam_role_arn" validate:"required"`
 
-	AzureAKSSubscriptionID string `config:"azure_aks_subscrption_id" validate:"required"`
+	AzureAKSSubscriptionID string `config:"azure_aks_subscription_id" validate:"required"`
 	AzureAKSTenantID       string `config:"azure_aks_tenant_id" validate:"required"`
 	AzureAKSClientID       string `config:"azure_aks_client_id" validate:"required"`
 	AzureAKSClientSecret   string `config:"azure_aks_client_secret" validate:"required"`
