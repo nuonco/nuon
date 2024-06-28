@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
@@ -57,24 +59,30 @@ func (s *service) CreateCanaryUser(ctx *gin.Context) {
 }
 
 func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.Account, *app.Token, error) {
-	acct := app.Account{
-		Email:       fmt.Sprintf("%s@nuon.co", canaryID),
-		Subject:     canaryID,
-		AccountType: app.AccountTypeCanary,
-	}
-	res := s.db.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{
-				{Name: "email"},
-				{Name: "subject"},
-				{Name: "deleted_at"},
-			},
-			UpdateAll: true,
-		}).
-		Create(&acct)
+	acct, err := s.authzClient.FindAccount(ctx, canaryID)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, err
+		}
 
-	if res.Error != nil {
-		return nil, nil, fmt.Errorf("unable to create canary account: %w", res.Error)
+		acct = &app.Account{
+			Email:       fmt.Sprintf("%s@nuon.co", canaryID),
+			Subject:     canaryID,
+			AccountType: app.AccountTypeCanary,
+		}
+		res := s.db.WithContext(ctx).
+			Clauses(clause.OnConflict{
+				Columns: []clause.Column{
+					{Name: "email"},
+					{Name: "subject"},
+					{Name: "deleted_at"},
+				},
+				UpdateAll: true,
+			}).
+			Create(acct)
+		if res.Error != nil {
+			return nil, nil, fmt.Errorf("unable to create canary account: %w", res.Error)
+		}
 	}
 
 	token := app.Token{
@@ -87,11 +95,11 @@ func (s *service) createCanaryUser(ctx context.Context, canaryID string) (*app.A
 		AccountID:   acct.ID,
 	}
 
-	res = s.db.WithContext(ctx).
+	res := s.db.WithContext(ctx).
 		Create(&token)
 	if res.Error != nil {
 		return nil, nil, fmt.Errorf("unable to create canary user: %w", res.Error)
 	}
 
-	return &acct, &token, nil
+	return acct, &token, nil
 }
