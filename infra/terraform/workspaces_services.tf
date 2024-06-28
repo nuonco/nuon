@@ -120,7 +120,12 @@ module "workers-canary-stage" {
     env               = "stage"
     github_install_id = "41323514"
   }
-  variable_sets                   = ["aws-environment-credentials", "slack-webhooks", "api-stage"]
+  variable_sets = [
+    "aws-environment-credentials",
+    "slack-webhooks",
+    "api-stage",
+    "canary-azure-stage"
+  ]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   trigger_workspaces              = [module.infra-eks-orgs-stage-main.workspace_id]
@@ -137,7 +142,12 @@ module "workers-canary-prod" {
     env               = "prod"
     github_install_id = "41959553"
   }
-  variable_sets                   = ["aws-environment-credentials", "slack-webhooks", "api-prod"]
+  variable_sets = [
+    "aws-environment-credentials",
+    "slack-webhooks",
+    "api-prod",
+    "canary-azure-prod",
+  ]
   project_id                      = tfe_project.services.id
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
   trigger_workspaces              = [module.infra-eks-orgs-prod-main.workspace_id]
