@@ -1,12 +1,22 @@
 ---
 members:
+  # Jon Morehouse
   - username: jonmorehouse
     role: admin
+  # Jordan Acosta
   - username: jordan-acosta
     role: admin
+  # Nat Hamilton
   - username: nnnnat
     role: admin
+  # Sam Boyer
   - username: sdboyer
+    role: admin
+  # Rob Bruce
+  - username: alphavibe
+    role: admin
+  # Fred Diego
+  - username: fidiego
     role: admin
 
   # all other team members
