@@ -67,7 +67,8 @@
                 "get-started/introduction",
                 "get-started/quickstart",
                 "get-started/why-nuon",
-                "get-started/why-byoc"
+                "get-started/why-byoc",
+                "pricing"
             ]
         },
         {
@@ -131,6 +132,7 @@
             "group": "How To",
             "pages": [
                 "guides/install-access-permissions",
+                "guides/install-access-delegation",
                 "guides/create-installs",
                 "guides/create-builds",
                 "guides/migrations",
