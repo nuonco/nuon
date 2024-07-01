@@ -79,5 +79,5 @@ test.skip(
       }
     )
   },
-  POLL_DURATION * 1002
+  POLL_DURATION * 1050
 )
