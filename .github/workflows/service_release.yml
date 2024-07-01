@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download terraform outputs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: env-${{ github.run_id }}-${{inputs.service}}-env
 
