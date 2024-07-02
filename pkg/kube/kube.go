@@ -103,10 +103,6 @@ func validateClusterInfo(c *ClusterInfo) error {
 		return fmt.Errorf("%w: empty ID", ErrInvalidCluster)
 	}
 
-	if c.TrustedRoleARN == "" {
-		return fmt.Errorf("%w: missing role ARN", ErrInvalidCredentials)
-	}
-
 	if c.CAData == "" {
 		return fmt.Errorf("%w: empty certificate data", ErrInvalidCert)
 	}
