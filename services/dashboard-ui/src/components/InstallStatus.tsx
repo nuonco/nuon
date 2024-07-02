@@ -3,7 +3,6 @@
 import React, { type FC } from 'react'
 import { Status } from '@/components'
 import { useInstallContext } from '@/context'
-import { getFullInstallStatus } from '@/utils'
 
 export interface IInstallStatus {
   isCompact?: boolean
@@ -17,26 +16,28 @@ export const InstallStatus: FC<IInstallStatus> = ({
   isStatusTextHidden = false,
 }) => {
   const { install } = useInstallContext()
-  const status = getFullInstallStatus(install)
 
   return isCompositeStatus ? (
     <Status
-      status={status?.installStatus?.status}
-      description={!isCompact && status?.installStatus?.status_description}
+      status={install.status}
       isStatusTextHidden={isStatusTextHidden}
     />
   ) : (
-    <div className="flex flex-auto gap-6">
+    <div className="flex flex-auto gap-6 flex-wrap">
       <Status
-        status={status?.sandboxStatus?.status}
-        description={!isCompact && status?.sandboxStatus?.status_description}
+        status={install.sandbox_status}
         isLabelStatusText={isCompact}
         isStatusTextHidden={isStatusTextHidden}
         label={!isStatusTextHidden && 'Sandbox'}
       />
       <Status
-        status={status?.componentStatus?.status}
-        description={!isCompact && status?.componentStatus?.status_description}
+        status={install.runner_status}
+        isLabelStatusText={isCompact}
+        isStatusTextHidden={isStatusTextHidden}
+        label={!isStatusTextHidden && 'Runner'}
+      />      
+      <Status
+        status={install.composite_component_status}
         isLabelStatusText={isCompact}
         isStatusTextHidden={isStatusTextHidden}
         label={!isStatusTextHidden && 'Components'}
