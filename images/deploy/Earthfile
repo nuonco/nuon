@@ -64,6 +64,7 @@ K8S_DEPLOY:
             --region "$AWS_REGION" \
             --name "$cluster_name" \
             --role-arn="$role_arn" \
+	&& helm rollback "$chart_name-$env" \
         && helm upgrade \
             "$chart_name-$env" \
 	    . \
