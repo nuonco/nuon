@@ -2,13 +2,13 @@ package worker
 
 import (
 	"fmt"
-
 	"slices"
+
+	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
-	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 )
 
 func (w *Workflows) shouldTeardownInstallComponent(ctx workflow.Context, installID, compID string) (bool, error) {
@@ -37,7 +37,9 @@ func (w *Workflows) shouldTeardownComponents(install app.Install) bool {
 	}
 
 	lastRun := install.InstallSandboxRuns[0]
-	if (lastRun.RunType == app.SandboxRunTypeProvision || lastRun.RunType == app.SandboxRunTypeReprovision) && lastRun.Status == string(StatusActive) {
+	if (lastRun.RunType == app.SandboxRunTypeProvision ||
+		lastRun.RunType == app.SandboxRunTypeReprovision) &&
+		lastRun.Status == app.SandboxRunStatusActive {
 		return true
 	}
 

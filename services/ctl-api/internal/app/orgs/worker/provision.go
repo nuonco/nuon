@@ -13,13 +13,13 @@ import (
 )
 
 func (w *Workflows) provision(ctx workflow.Context, orgID string, sandboxMode bool) error {
-	w.updateStatus(ctx, orgID, StatusProvisioning, "provisioning organization resources")
+	w.updateStatus(ctx, orgID, app.OrgStatusProvisioning, "provisioning organization resources")
 
 	var org app.Org
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		OrgID: orgID,
 	}, &org); err != nil {
-		w.updateStatus(ctx, orgID, StatusError, "unable to get org from database")
+		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to get org from database")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
@@ -43,7 +43,7 @@ func (w *Workflows) provision(ctx workflow.Context, orgID string, sandboxMode bo
 				"status_description": "failed to provision",
 			}),
 		})
-		w.updateStatus(ctx, orgID, StatusError, "unable to provision organization resources")
+		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to provision organization resources")
 		return fmt.Errorf("unable to provision org: %w", err)
 	}
 
@@ -52,6 +52,6 @@ func (w *Workflows) provision(ctx workflow.Context, orgID string, sandboxMode bo
 		SandboxMode: sandboxMode,
 	})
 
-	w.updateStatus(ctx, orgID, StatusActive, "organization resources are provisioned")
+	w.updateStatus(ctx, orgID, app.OrgStatusActive, "organization resources are provisioned")
 	return nil
 }

@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -21,11 +23,9 @@ type Install struct {
 	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
 	Org   Org    `json:"-" faker:"-"`
 
-	Name              string `json:"name" gorm:"notnull;index:idx_app_install_name,unique"`
-	App               App    `swaggerignore:"true" json:"app"`
-	AppID             string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique"`
-	Status            string `json:"status" gorm:"notnull"`
-	StatusDescription string `json:"status_description" gorm:"notnull"`
+	Name  string `json:"name" gorm:"notnull;index:idx_app_install_name,unique"`
+	App   App    `swaggerignore:"true" json:"app"`
+	AppID string `json:"app_id" gorm:"notnull;index:idx_app_install_name,unique"`
 
 	AppSandboxConfigID string           `json:"-" swaggerignore:"true"`
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config"`
@@ -41,13 +41,30 @@ type Install struct {
 	AWSAccount   *AWSAccount   `json:"aws_account" gorm:"constraint:OnDelete:CASCADE;"`
 	AzureAccount *AzureAccount `json:"azure_account" gorm:"constraint:OnDelete:CASCADE;"`
 
-	// generated at read time for
-	CurrentInstallInputs *InstallInputs `json:"-" gorm:"-"`
-	InstallNumber        int            `json:"install_number" gorm:"->;-:migration"`
+	// generated view current view
+
+	InstallNumber     int              `json:"install_number" gorm:"->;-:migration"`
+	SandboxStatus     SandboxRunStatus `json:"sandbox_status" gorm:"->;-:migration" swaggertype:"string"`
+	ComponentStatuses pgtype.Hstore    `json:"component_statuses" gorm:"type:hstore;->;-:migration" swaggertype:"object,string"`
+
+	// after queries
+
+	CurrentInstallInputs     *InstallInputs      `json:"-" gorm:"-"`
+	CompositeComponentStatus InstallDeployStatus `json:"composite_component_status" gorm:"-" swaggertype:"string"`
+	RunnerStatus             string              `json:"runner_status" gorm:"-" swaggertype:"string"`
+
+	// TODO(jm): deprecate these fields once the terraform provider has been updated
+
+	Status            string `json:"status" gorm:"-"`
+	StatusDescription string `json:"status_description" gorm:"-"`
 }
 
 func (i *Install) UseView() bool {
 	return true
+}
+
+func (i *Install) ViewVersion() string {
+	return "v2"
 }
 
 func (i *Install) BeforeCreate(tx *gorm.DB) error {
@@ -61,10 +78,31 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (i *Install) AfterQuery(tx *gorm.DB) error {
-	if len(i.InstallInputs) < 1 {
-		return nil
+	i.RunnerStatus = "ok"
+	if len(i.InstallInputs) > 0 {
+		i.CurrentInstallInputs = &i.InstallInputs[0]
 	}
 
-	i.CurrentInstallInputs = &i.InstallInputs[0]
+	if i.SandboxStatus == SandboxRunStatusUnknown || i.SandboxStatus == SandboxRunStatusEmpty {
+		i.SandboxStatus = SandboxRunStatusQueued
+	}
+
+	// NOTE(jm): this will be removed, and is only set for backwards compatibility
+	i.Status = string(i.SandboxStatus)
+
+	// create the install deploy status
+	status := InstallDeployStatusOK
+	for _, statusStr := range i.ComponentStatuses {
+		status := InstallDeployStatus(*statusStr)
+		if status == InstallDeployStatusOK {
+			continue
+		}
+
+		if status == InstallDeployStatusError {
+			break
+		}
+	}
+	i.CompositeComponentStatus = status
+
 	return nil
 }

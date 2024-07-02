@@ -19,6 +19,19 @@ const (
 	ComponentReleaseStrategySyncWithDelay ComponentReleaseStrategy = "sync_with_delay"
 )
 
+type ReleaseStatus string
+
+const (
+	ReleaseStatusPlanning       ReleaseStatus = "planning"
+	ReleaseStatusError          ReleaseStatus = "error"
+	ReleaseStatusActive         ReleaseStatus = "active"
+	ReleaseStatusProvisioning   ReleaseStatus = "provisioning"
+	ReleaseStatusDeprovisioning ReleaseStatus = "deprovisioning"
+
+	ReleaseStatusSyncing   ReleaseStatus = "syncing"
+	ReleaseStatusExecuting ReleaseStatus = "executing"
+)
+
 type ComponentRelease struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
@@ -37,8 +50,8 @@ type ComponentRelease struct {
 	TotalComponentReleaseSteps int                    `json:"total_release_steps" gorm:"-"`
 	ComponentReleaseSteps      []ComponentReleaseStep `json:"release_steps,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 
-	Status            string `json:"status"`
-	StatusDescription string `json:"status_description"`
+	Status            ReleaseStatus `json:"status" swaggertype:"string"`
+	StatusDescription string        `json:"status_description"`
 }
 
 func (a *ComponentRelease) BeforeCreate(tx *gorm.DB) error {
