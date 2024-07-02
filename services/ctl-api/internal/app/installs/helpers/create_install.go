@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
-	"gorm.io/gorm"
 )
 
 type CreateInstallParams struct {
@@ -58,6 +59,13 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
+	if parentApp.Status == "error" {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("app is in an error state"),
+			Description: "can not create an install when app is in error state",
+		}
+	}
+
 	if err := s.ValidateInstallInputs(ctx, appID, req.Inputs); err != nil {
 		return nil, err
 	}
@@ -65,8 +73,6 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	install := app.Install{
 		AppID:              appID,
 		Name:               req.Name,
-		Status:             "queued",
-		StatusDescription:  "waiting for event loop to start and provision install",
 		AppSandboxConfigID: parentApp.AppSandboxConfigs[0].ID,
 		AppRunnerConfigID:  parentApp.AppRunnerConfigs[0].ID,
 	}

@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
-	"go.temporal.io/sdk/workflow"
 )
 
 const (
@@ -19,7 +20,7 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, releaseID string) err
 		if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 			ReleaseID: releaseID,
 		}, &release); err != nil {
-			w.updateStatus(ctx, releaseID, StatusError, "unable to get release from database")
+			w.updateStatus(ctx, releaseID, app.ReleaseStatusError, "unable to get release from database")
 			return fmt.Errorf("unable to get release: %w", err)
 		}
 
@@ -27,7 +28,7 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, releaseID string) err
 			return nil
 		}
 		if release.ComponentBuild.Status == "error" {
-			w.updateStatus(ctx, releaseID, StatusError, "build failed")
+			w.updateStatus(ctx, releaseID, app.ReleaseStatusError, "build failed")
 			return fmt.Errorf("build failed: %s", release.StatusDescription)
 		}
 

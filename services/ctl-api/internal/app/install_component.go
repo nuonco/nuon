@@ -27,11 +27,23 @@ type InstallComponent struct {
 	Component   Component `faker:"-" json:"component"`
 
 	InstallDeploys []InstallDeploy `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"install_deploys"`
+
+	// after query fields filled in after querying
+	Status InstallDeployStatus `json:"status" gorm:"-" swaggertype:"string"`
 }
 
 func (c *InstallComponent) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewComponentID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
+	return nil
+}
+
+func (c *InstallComponent) AfterQuery(tx *gorm.DB) error {
+	c.Status = InstallDeployStatusUnknown
+	if len(c.InstallDeploys) > 0 {
+		c.Status = c.InstallDeploys[0].Status
+	}
+
 	return nil
 }

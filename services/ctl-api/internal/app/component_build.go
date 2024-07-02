@@ -9,6 +9,16 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
+type ComponentBuildStatus string
+
+const (
+	ComponentBuildStatusPlanning ComponentBuildStatus = "planning"
+	ComponentBuildStatusError    ComponentBuildStatus = "error"
+	ComponentBuildStatusBuilding ComponentBuildStatus = "building"
+	ComponentBuildStatusActive   ComponentBuildStatus = "active"
+	ComponentBuildStatusDeleting ComponentBuildStatus = "deleting"
+)
+
 type ComponentBuild struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
@@ -30,9 +40,9 @@ type ComponentBuild struct {
 	ComponentReleases []ComponentRelease `json:"releases" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallDeploys    []InstallDeploy    `json:"install_deploys" gorm:"constraint:OnDelete:CASCADE;"`
 
-	Status            string  `json:"status" gorm:"notnull"`
-	StatusDescription string  `json:"status_description" gorm:"notnull"`
-	GitRef            *string `json:"git_ref"`
+	Status            ComponentBuildStatus `json:"status" gorm:"notnull" swaggertype:"string"`
+	StatusDescription string               `json:"status_description" gorm:"notnull"`
+	GitRef            *string              `json:"git_ref"`
 
 	// Read-only fields set on the object to de-nest data
 	ComponentID            string `gorm:"-" json:"component_id"`

@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon-go/models"
+
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
-
 	view := ui.NewListView()
 
 	var (
@@ -42,7 +42,9 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 		{
 			"ID",
 			"NAME",
-			"STATUS",
+			"SANDBOX",
+			"RUNNER",
+			"COMPONENTS",
 			"CREATED AT",
 		},
 	}
@@ -50,7 +52,9 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 		data = append(data, []string{
 			install.ID,
 			install.Name,
-			install.Status,
+			install.SandboxStatus,
+			install.RunnerStatus,
+			install.CompositeComponentStatus,
 			install.CreatedAt,
 		})
 	}

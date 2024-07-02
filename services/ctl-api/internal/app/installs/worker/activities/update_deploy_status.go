@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type UpdateDeployStatusRequest struct {
-	DeployID          string `validate:"required"`
-	Status            string `validate:"required"`
-	StatusDescription string `validate:"required"`
+	DeployID          string                  `validate:"required"`
+	Status            app.InstallDeployStatus `validate:"required"`
+	StatusDescription string                  `validate:"required"`
 }
 
 func (a *Activities) UpdateDeployStatus(ctx context.Context, req UpdateDeployStatusRequest) error {

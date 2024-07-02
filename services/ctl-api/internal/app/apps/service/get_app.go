@@ -52,7 +52,7 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 		Preload("Org").
 		Preload("Components").
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_configs_view.created_at DESC")
+			return db.Order("app_configs_view_v1.created_at DESC")
 		}).
 
 		//
