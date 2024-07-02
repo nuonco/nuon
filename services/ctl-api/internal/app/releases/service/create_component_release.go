@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -117,7 +118,10 @@ func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateCo
 	cmp := app.Component{}
 	res := s.db.WithContext(ctx).
 		Preload("App").
-		Preload("App.Installs", "status IN ?", []string{"active", "queued", "provisioning"}).
+		Preload("App.Installs").
+		Preload("App.Installs.InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_sandbox_runs.created_at DESC")
+		}).
 		First(&cmp, "id = ?", cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)

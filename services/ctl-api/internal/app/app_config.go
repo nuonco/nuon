@@ -49,8 +49,12 @@ type AppConfig struct {
 	Version int `json:"version" gorm:"->;-:migration"`
 }
 
-func (a *AppConfig) UseView() bool {
+func (a AppConfig) UseView() bool {
 	return true
+}
+
+func (a AppConfig) ViewVersion() string {
+	return "v1"
 }
 
 func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {

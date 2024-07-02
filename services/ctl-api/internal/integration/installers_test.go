@@ -54,7 +54,7 @@ func (s *installersSuite) TestCreateAppInstaller() {
 		require.Equal(t, installer.Type, models.AppInstallerTypeSelfHosted)
 		require.Equal(t, installer.Apps[0].ID, s.appID)
 		require.Equal(t, installer.Metadata.LogoURL, *fakeReq.Metadata.LogoURL)
-		require.Equal(t, installer.Metadata.FaviconURL, fakeReq.Metadata.FaviconURL)
+		require.Equal(t, installer.Metadata.FaviconURL, *fakeReq.Metadata.FaviconURL)
 	})
 
 	s.T().Run("failure with no app id", func(t *testing.T) {

@@ -1,13 +1,10 @@
 package plugins
 
 import (
+	"fmt"
 	"reflect"
 
 	"gorm.io/gorm"
-)
-
-const (
-	viewsSuffix string = "_view"
 )
 
 var _ gorm.Plugin = (*viewsPlugin)(nil)
@@ -23,6 +20,7 @@ func NewViewsPlugin(models []interface{}) *viewsPlugin {
 
 type ViewModel interface {
 	UseView() bool
+	ViewVersion() string
 }
 
 type viewModel struct {
@@ -80,7 +78,7 @@ func (m *viewsPlugin) modelsToViewTables(db *gorm.DB) {
 		m.viewModels[tableName] = viewModel{
 			model: model,
 			table: tableName,
-			view:  tableName + viewsSuffix,
+			view:  fmt.Sprintf("%s_view_%s", tableName, vm.ViewVersion()),
 		}
 	}
 }

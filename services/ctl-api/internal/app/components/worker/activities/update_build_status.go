@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type UpdateBuildStatus struct {
-	BuildID           string `validate:"required"`
-	Status            string `validate:"required"`
-	StatusDescription string `validate:"required"`
+	BuildID           string                   `validate:"required"`
+	Status            app.ComponentBuildStatus `validate:"required"`
+	StatusDescription string                   `validate:"required"`
 }
 
 func (a *Activities) UpdateBuildStatus(ctx context.Context, req UpdateBuildStatus) error {

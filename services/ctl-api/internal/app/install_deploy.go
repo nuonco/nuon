@@ -17,6 +17,19 @@ const (
 	InstallDeployTypeTeardown InstallDeployType = "teardown"
 )
 
+type InstallDeployStatus string
+
+const (
+	InstallDeployStatusOK        InstallDeployStatus = "ok"
+	InstallDeployStatusError     InstallDeployStatus = "error"
+	InstallDeployStatusNoop      InstallDeployStatus = "noop"
+	InstallDeployStatusPlanning  InstallDeployStatus = "planning"
+	InstallDeployStatusSyncing   InstallDeployStatus = "syncing"
+	InstallDeployStatusExecuting InstallDeployStatus = "executing"
+	InstallDeployStatusUnknown   InstallDeployStatus = "unknown"
+	InstallDeployStatusPending   InstallDeployStatus = "pending"
+)
+
 type InstallDeploy struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
@@ -38,9 +51,9 @@ type InstallDeploy struct {
 	ComponentReleaseStepID *string               `json:"release_id"`
 	ComponentReleaseStep   *ComponentReleaseStep `json:"-"`
 
-	Status            string            `json:"status" gorm:"notnull"`
-	StatusDescription string            `json:"status_description" gorm:"notnull"`
-	Type              InstallDeployType `json:"install_deploy_type"`
+	Status            InstallDeployStatus `json:"status" gorm:"notnull" swaggertype:"string"`
+	StatusDescription string              `json:"status_description" gorm:"notnull"`
+	Type              InstallDeployType   `json:"install_deploy_type"`
 
 	// Fields that are de-nested at read time using AfterQuery
 	InstallID              string `json:"install_id" gorm:"-"`

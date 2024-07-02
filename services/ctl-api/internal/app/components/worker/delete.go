@@ -8,7 +8,6 @@ import (
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
-	releases "github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker"
 )
 
 func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, compID string) error {
@@ -28,7 +27,7 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, compID strin
 		for _, cfgVersion := range comp.ComponentConfigs {
 			for _, bld := range cfgVersion.ComponentBuilds {
 				for _, rel := range bld.ComponentReleases {
-					if rel.Status == string(releases.StatusActive) || rel.Status == string(releases.StatusError) {
+					if rel.Status == app.ReleaseStatusActive || rel.Status == app.ReleaseStatusError {
 						continue
 					}
 
@@ -49,13 +48,13 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, compID strin
 }
 
 func (w *Workflows) delete(ctx workflow.Context, componentID string, dryRun bool) error {
-	w.updateStatus(ctx, componentID, StatusActive, "polling for releases to finish")
+	w.updateStatus(ctx, componentID, app.ComponentStatusActive, "polling for releases to finish")
 	if err := w.pollChildrenDeprovisioned(ctx, componentID); err != nil {
 		return err
 	}
 
 	// update status
-	w.updateStatus(ctx, componentID, StatusDeprovisioning, "deleting component")
+	w.updateStatus(ctx, componentID, app.ComponentStatusDeprovisioning, "deleting component")
 	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
 		ComponentID: componentID,
 	}); err != nil {

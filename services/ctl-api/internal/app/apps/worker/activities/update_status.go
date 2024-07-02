@@ -10,9 +10,9 @@ import (
 )
 
 type UpdateStatusRequest struct {
-	AppID             string `validate:"required"`
-	Status            string `validate:"required"`
-	StatusDescription string `validate:"required"`
+	AppID             string        `validate:"required"`
+	Status            app.AppStatus `validate:"required"`
+	StatusDescription string        `validate:"required"`
 }
 
 func (a *Activities) UpdateStatus(ctx context.Context, req UpdateStatusRequest) error {

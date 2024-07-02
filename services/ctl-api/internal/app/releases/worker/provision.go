@@ -3,15 +3,16 @@ package worker
 import (
 	"fmt"
 
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
-	"go.temporal.io/sdk/workflow"
 )
 
 func (w *Workflows) provision(ctx workflow.Context, releaseID string, dryRun bool) error {
 	// TODO(ja): "provisioning" as a status for releases doesn't sound right.
 	// We may need to revisit release statuses.
-	w.updateStatus(ctx, releaseID, StatusProvisioning, "provisioning deploys")
+	w.updateStatus(ctx, releaseID, app.ReleaseStatusProvisioning, "provisioning deploys")
 
 	var release app.ComponentRelease
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
