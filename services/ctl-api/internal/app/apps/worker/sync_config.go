@@ -17,7 +17,7 @@ const (
 
 func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, dryRun bool) error {
 	if err := w.ensureOrg(ctx, appID); err != nil {
-		w.updateStatus(ctx, appID, StatusError, "org is unhealthy")
+		w.updateStatus(ctx, appID, app.AppStatusError, "org is unhealthy")
 		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "internal error")
 		return err
 	}
@@ -26,7 +26,7 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		AppID: appID,
 	}, &currentApp); err != nil {
-		w.updateStatus(ctx, appID, StatusError, "unable to get app from database")
+		w.updateStatus(ctx, appID, app.AppStatusError, "unable to get app from database")
 		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "internal error")
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
@@ -35,7 +35,7 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetAppConfig, activities.GetAppConfigRequest{
 		AppConfigID: appConfigID,
 	}, &appCfg); err != nil {
-		w.updateStatus(ctx, appID, StatusError, "unable to get app config from database")
+		w.updateStatus(ctx, appID, app.AppStatusError, "unable to get app config from database")
 		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "internal error")
 		return fmt.Errorf("unable to get app config from database: %w", err)
 	}
@@ -51,7 +51,7 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 	if err := w.defaultExecErrorActivity(ctx, w.acts.SyncAppMetadata, activities.SyncAppMetadataRequest{
 		AppConfigID: appConfigID,
 	}); err != nil {
-		w.updateStatus(ctx, appID, StatusError, "unable to sync app metadata")
+		w.updateStatus(ctx, appID, app.AppStatusError, "unable to sync app metadata")
 		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to sync app metadata")
 		w.sendNotification(ctx, notifications.NotificationsTypeAppSyncError, appID, map[string]string{
 			"app_name":   currentApp.Name,
@@ -64,7 +64,7 @@ func (w *Workflows) syncConfig(ctx workflow.Context, appID, appConfigID string, 
 	if err := w.defaultExecGetActivity(ctx, w.acts.CreateSyncToken, activities.CreateSyncTokenRequest{
 		AccountID: currentApp.CreatedBy.ID,
 	}, &syncToken); err != nil {
-		w.updateStatus(ctx, appID, StatusError, "unable to create sync token")
+		w.updateStatus(ctx, appID, app.AppStatusError, "unable to create sync token")
 		w.updateConfigStatus(ctx, appConfigID, app.AppConfigStatusError, "unable to create sync token")
 		return fmt.Errorf("unable to create sync token: %w", err)
 	}

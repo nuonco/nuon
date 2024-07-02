@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 )
 
 type UpdateRunStatusRequest struct {
-	RunID             string `validate:"required"`
-	Status            string `validate:"required"`
-	StatusDescription string `validate:"required"`
+	RunID             string               `validate:"required"`
+	Status            app.SandboxRunStatus `validate:"required"`
+	StatusDescription string               `validate:"required"`
 }
 
 func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusRequest) error {

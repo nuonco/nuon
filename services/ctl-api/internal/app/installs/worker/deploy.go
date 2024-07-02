@@ -14,19 +14,19 @@ import (
 )
 
 func (w *Workflows) isBuildDeployable(bld app.ComponentBuild) bool {
-	return bld.Status == string(StatusActive)
+	return bld.Status == app.ComponentBuildStatusActive
 }
 
 func (w *Workflows) isDeployable(install app.Install) bool {
-	return install.Status == string(StatusActive)
+	return install.InstallSandboxRuns[0].Status == app.SandboxRunStatusActive
 }
 
 func (w *Workflows) isTeardownable(install app.Install) bool {
-	if install.Status == string(StatusError) {
+	if install.InstallSandboxRuns[0].Status == app.SandboxRunStatusError {
 		return false
 	}
 
-	if install.Status == string(StatusAccessError) {
+	if install.InstallSandboxRuns[0].Status == app.SandboxRunStatusAccessError {
 		return false
 	}
 
@@ -40,7 +40,7 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		InstallID: installID,
 	}, &install); err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get install from database")
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get install from database")
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install: %w", err)
 	}
@@ -49,27 +49,27 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetDeploy, activities.GetDeployRequest{
 		DeployID: deployID,
 	}, &installDeploy); err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get install deploy from database")
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get install deploy from database")
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get install deploy: %w", err)
 	}
 
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
 		if !w.isTeardownable(install) {
-			w.updateDeployStatus(ctx, deployID, StatusError, "install is not in a delete_queued, deprovisioning or active state to tear down components")
+			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "install is not in a delete_queued, deprovisioning or active state to tear down components")
 			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusNoop)
 			return nil
 		}
 	} else {
 		if !w.isDeployable(install) {
-			w.updateDeployStatus(ctx, deployID, StatusError, "install is not active and can not be deployed too")
+			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "install is not active and can not be deployed too")
 			w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusNoop)
 			return nil
 		}
 	}
 
 	if !w.isBuildDeployable(installDeploy.ComponentBuild) {
-		w.updateDeployStatus(ctx, deployID, StatusNoop, "build is not deployable")
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusNoop, "build is not deployable")
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return nil
 	}
@@ -78,12 +78,12 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentConfig, activities.GetComponentConfigRequest{
 		DeployID: deployID,
 	}, &deployCfg); err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, "unable to get component config")
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to get component config")
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to get deploy component config: %w", err)
 	}
 
-	w.updateDeployStatus(ctx, deployID, StatusPlanning, "creating sync plan")
+	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusPlanning, "creating sync plan")
 
 	// execute the plan phase here
 	syncImagePlanWorkflowID := fmt.Sprintf("%s-sync-plan-%s", installID, deployID)
@@ -102,24 +102,24 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 		},
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to create sync plan: %s", err))
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("unable to create sync plan: %s", err))
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to create sync plan: %w", err)
 	}
 
-	w.updateDeployStatus(ctx, deployID, StatusSyncing, "executing sync plan")
+	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusSyncing, "executing sync plan")
 
 	syncExecuteWorkflowID := fmt.Sprintf("%s-sync-execute-%s", installID, deployID)
 	_, err = w.execExecPlanWorkflow(ctx, sandboxMode, syncExecuteWorkflowID, &execv1.ExecutePlanRequest{
 		Plan: planResp.Plan,
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to execute sync plan: %s", err))
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("unable to execute sync plan: %s", err))
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to execute sync plan: %w", err)
 	}
 
-	w.updateDeployStatus(ctx, deployID, StatusPlanning, "creating deploy plan")
+	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusPlanning, "creating deploy plan")
 
 	// execute the plan phase here
 	deployPlanWorkflowID := fmt.Sprintf("%s-deploy-plan-%s", installID, deployID)
@@ -144,24 +144,24 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 		},
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to create deploy plan: %s", err))
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("unable to create deploy plan: %s", err))
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to create deploy plan: %w", err)
 	}
 
-	w.updateDeployStatus(ctx, deployID, StatusExecuting, "executing deploy plan")
+	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusExecuting, "executing deploy plan")
 
 	deployExecuteWorkflowID := fmt.Sprintf("%s-deploy-execute-%s", installID, deployID)
 	_, err = w.execExecPlanWorkflow(ctx, sandboxMode, deployExecuteWorkflowID, &execv1.ExecutePlanRequest{
 		Plan: planResp.Plan,
 	})
 	if err != nil {
-		w.updateDeployStatus(ctx, deployID, StatusError, fmt.Sprintf("unable to execute deploy plan: %s", err))
+		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("unable to execute deploy plan: %s", err))
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return fmt.Errorf("unable to execute deploy plan: %w", err)
 	}
 
 	w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFinished)
-	w.updateDeployStatus(ctx, deployID, StatusActive, "deploy is active")
+	w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusOK, "deploy is active")
 	return nil
 }

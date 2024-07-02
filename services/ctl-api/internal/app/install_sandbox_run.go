@@ -17,6 +17,20 @@ const (
 	SandboxRunTypeDeprovision SandboxRunType = "deprovision"
 )
 
+type SandboxRunStatus string
+
+const (
+	SandboxRunStatusActive         SandboxRunStatus = "active"
+	SandboxRunStatusError          SandboxRunStatus = "error"
+	SandboxRunStatusQueued         SandboxRunStatus = "queued"
+	SandboxRunStatusDeprovisioning SandboxRunStatus = "deprovisioning"
+	SandboxRunStatusProvisioning   SandboxRunStatus = "provisioning"
+	SandboxRunStatusReprovisioning SandboxRunStatus = "reprovisioning"
+	SandboxRunStatusAccessError    SandboxRunStatus = "access_error"
+	SandboxRunStatusUnknown        SandboxRunStatus = "unknown"
+	SandboxRunStatusEmpty          SandboxRunStatus = "empty"
+)
+
 type InstallSandboxRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
@@ -31,9 +45,9 @@ type InstallSandboxRun struct {
 	InstallID string  `json:"install_id" gorm:"not null;default null"`
 	Install   Install `swaggerignore:"true" json:"-"`
 
-	RunType           SandboxRunType `json:"run_type"`
-	Status            string         `json:"status" gorm:"notnull"`
-	StatusDescription string         `json:"status_description" gorm:"notnull"`
+	RunType           SandboxRunType   `json:"run_type"`
+	Status            SandboxRunStatus `json:"status" gorm:"notnull" swaggertype:"string"`
+	StatusDescription string           `json:"status_description" gorm:"notnull"`
 
 	AppSandboxConfigID string           `json:"-"`
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config"`

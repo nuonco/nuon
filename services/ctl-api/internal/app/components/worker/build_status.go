@@ -1,25 +1,17 @@
 package worker
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/components/worker/activities"
 )
 
-type BuildStatus string
-
-const (
-	BuildStatusPlanning BuildStatus = "planning"
-	BuildStatusError    BuildStatus = "error"
-	BuildStatusBuilding BuildStatus = "building"
-	BuildStatusActive   BuildStatus = "active"
-	BuildStatusDeleting BuildStatus = "deleting"
-)
-
-func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status BuildStatus, statusDescription string) {
+func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) {
 	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateBuildStatus, activities.UpdateBuildStatus{
 		BuildID:           bldID,
-		Status:            string(status),
+		Status:            status,
 		StatusDescription: statusDescription,
 	})
 	if err == nil {

@@ -10,6 +10,14 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
+type ComponentStatus string
+
+const (
+	ComponentStatusError          ComponentStatus = "error"
+	ComponentStatusActive         ComponentStatus = "active"
+	ComponentStatusDeprovisioning ComponentStatus = "deprovisioning"
+)
+
 type Component struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26;" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
@@ -28,8 +36,8 @@ type Component struct {
 	AppID string `json:"app_id" gorm:"notnull;index:idx_app_component_name,unique"`
 	App   App    `faker:"-" json:"-"`
 
-	Status            string `json:"status"`
-	StatusDescription string `json:"status_description"`
+	Status            ComponentStatus `json:"status" swaggertype:"string"`
+	StatusDescription string          `json:"status_description"`
 
 	ConfigVersions    int                         `gorm:"-" json:"config_versions"`
 	ComponentConfigs  []ComponentConfigConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;"`

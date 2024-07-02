@@ -5,13 +5,14 @@ import (
 	"strconv"
 	"time"
 
+	enumsv1 "go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/temporal"
+	"go.temporal.io/sdk/workflow"
+
 	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
-	enumsv1 "go.temporal.io/api/enums/v1"
-	"go.temporal.io/sdk/temporal"
-	"go.temporal.io/sdk/workflow"
 )
 
 type HealthCheckRequest struct {
@@ -79,7 +80,7 @@ func (w *Workflows) OrgHealthCheck(ctx workflow.Context, req HealthCheckRequest)
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
-	if org.Status != string(StatusActive) {
+	if org.Status != app.OrgStatusActive {
 		w.updateHealthCheckStatus(ctx, healthCheck.ID, app.OrgHealthCheckStatus(org.Status), org.StatusDescription)
 		status = "error"
 		op = "invalid_status"

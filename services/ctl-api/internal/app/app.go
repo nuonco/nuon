@@ -10,6 +10,15 @@ import (
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
+type AppStatus string
+
+const (
+	AppStatusProvisioning   AppStatus = "provisioning"
+	AppStatusDeprovisioning AppStatus = "deprovisioning"
+	AppStatusActive         AppStatus = "active"
+	AppStatusError          AppStatus = "error"
+)
+
 type App struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"notnull"`
@@ -36,8 +45,8 @@ type App struct {
 	AppSecrets        []AppSecret        `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 	InstallerApps     []InstallerApp     `json:"-" gorm:"constraint:OnDelete:CASCADE;"`
 
-	Status            string `json:"status"`
-	StatusDescription string `json:"status_description"`
+	Status            AppStatus `json:"status" swaggertype:"string"`
+	StatusDescription string    `json:"status_description"`
 
 	// fields set via after query
 	AppInputConfig   AppInputConfig   `json:"input_config" gorm:"-"`

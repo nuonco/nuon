@@ -21,15 +21,15 @@ func (a *Migrations) GetAll() []Migration {
 			Disabled: true,
 		},
 		{
-			Name: "041-app-config-view",
+			Name: "041-app-config-view-version",
 			Fn:   a.migration041AppConfigVersions,
 		},
 		{
-			Name: "043-component-config-connections-view",
+			Name: "043-component-config-connections-view-version",
 			Fn:   a.migration043ComponentConfigConnectionsView,
 		},
 		{
-			Name: "044-installs-view",
+			Name: "044-installs-view-version",
 			Fn:   a.migration044InstallsView,
 		},
 		{
@@ -79,6 +79,14 @@ func (a *Migrations) GetAll() []Migration {
 		{
 			Name: "058-aws-region-types",
 			Fn:   a.migration058AWSRegionTypes,
+		},
+		{
+			Name: "059-install-status",
+			Fn:   a.migration059InstallStatus,
+		},
+		{
+			Name: "060-installs-view-v2",
+			Fn:   a.migration060InstallsViewV2,
 		},
 	}
 }

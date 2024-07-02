@@ -18,10 +18,13 @@ func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.App, error) 
 	res := a.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Installs").
+		Preload("Installs.InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_sandbox_runs.created_at DESC").Limit(1)
+		}).
 		Preload("Components").
 		Preload("CreatedBy").
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_configs_view.created_at DESC").Limit(1)
+			return db.Order("app_configs_view_v1.created_at DESC").Limit(1)
 		}).
 		First(&currentApp, "id = ?", req.AppID)
 	if res.Error != nil {
