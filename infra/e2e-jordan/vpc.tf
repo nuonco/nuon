@@ -24,7 +24,7 @@ module "byovpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.5"
 
-  name = "byoc"
+  name = "byovpc"
   cidr = local.networks["sandbox"]["cidr"]
 
   azs              = data.aws_availability_zones.available.zone_ids
