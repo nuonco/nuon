@@ -21,8 +21,8 @@ rds:
     - name: tcp_keepalives_count
       value: 3
   major_engine_version: "14"
-  instance_class: "db.t4g.small"
-  allocated_storage: "20"
+  instance_class: "db.t4g.large"
+  allocated_storage: "100"
   db_name: ctlapi
   port: 5432
   username: nuonadmin
