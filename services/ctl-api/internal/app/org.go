@@ -17,6 +17,19 @@ const (
 	OrgTypeIntegration OrgType = "integration"
 )
 
+type OrgStatus string
+
+const (
+	OrgStatusPlanning       OrgStatus = "planning"
+	OrgStatusError          OrgStatus = "error"
+	OrgStatusActive         OrgStatus = "active"
+	OrgStatusProvisioning   OrgStatus = "provisioning"
+	OrgStatusDeprovisioning OrgStatus = "deprovisioning"
+
+	OrgStatusSyncing   OrgStatus = "syncing"
+	OrgStatusExecuting OrgStatus = "executing"
+)
+
 type Org struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id"`
 	CreatedByID string  `json:"created_by_id" gorm:"not null;default:null"`
@@ -26,9 +39,9 @@ type Org struct {
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt soft_delete.DeletedAt `gorm:"index:idx_org_name,unique" json:"-"`
 
-	Name              string `gorm:"index:idx_org_name,unique;notnull" json:"name"`
-	Status            string `json:"status" gorm:"notnull"`
-	StatusDescription string `json:"status_description" gorm:"notnull"`
+	Name              string    `gorm:"index:idx_org_name,unique;notnull" json:"name"`
+	Status            OrgStatus `json:"status" gorm:"notnull" swaggertype:"string"`
+	StatusDescription string    `json:"status_description" gorm:"notnull"`
 
 	// These fields are used to control the behaviour of the org
 	// NOTE: these are starting as nullable, so we can update stage/prod before resetting locally.

@@ -32,7 +32,9 @@ func (s *Service) Get(ctx context.Context, installID string, asJSON bool) {
 		{"created at", install.CreatedAt},
 		{"updated at", install.UpdatedAt},
 		{"created by", install.CreatedByID},
-		{"status", install.StatusDescription},
+		{"sandbox", install.SandboxStatus},
+		{"runner", install.RunnerStatus},
+		{"components", install.CompositeComponentStatus},
 	}
 	if install.AwsAccount != nil {
 		fields = append(fields, []string{"region", install.AwsAccount.Region})

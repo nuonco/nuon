@@ -53,7 +53,7 @@ func (s *service) getAllInstalls(ctx context.Context, limitVal int, orgTyp strin
 		Preload("App").
 		Preload("App.Org").
 		Preload("App.AppSandboxConfigs").
-		Joins("JOIN apps ON apps.id=installs_view.app_id").
+		Joins("JOIN apps ON apps.id=installs_view_v2.app_id").
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Where("org_type = ?", orgTyp).
 		Order("created_at desc").

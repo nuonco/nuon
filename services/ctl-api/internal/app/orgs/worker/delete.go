@@ -3,8 +3,10 @@ package worker
 import (
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
 )
 
 func (w *Workflows) delete(ctx workflow.Context, orgID string, dryRun bool) error {
@@ -16,7 +18,7 @@ func (w *Workflows) delete(ctx workflow.Context, orgID string, dryRun bool) erro
 	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
 		OrgID: orgID,
 	}); err != nil {
-		w.updateStatus(ctx, orgID, StatusError, "unable to delete organization from database")
+		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to delete organization from database")
 		return fmt.Errorf("unable to delete org: %w", err)
 	}
 	return nil

@@ -4,7 +4,7 @@ import "context"
 
 func (a *Migrations) migration041AppConfigVersions(ctx context.Context) error {
 	sql := `
-  CREATE OR REPLACE VIEW app_configs_view AS
+  CREATE OR REPLACE VIEW app_configs_view_v1 AS
   SELECT *, row_number() OVER (PARTITION BY app_id
                                ORDER BY created_at) AS version
   FROM app_configs;

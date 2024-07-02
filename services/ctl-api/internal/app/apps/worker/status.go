@@ -1,25 +1,17 @@
 package worker
 
 import (
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/worker/activities"
 )
 
-type Status string
-
-const (
-	StatusProvisioning   Status = "provisioning"
-	StatusDeprovisioning Status = "deprovisioning"
-	StatusActive         Status = "active"
-	StatusError          Status = "error"
-)
-
-func (w *Workflows) updateStatus(ctx workflow.Context, appID string, status Status, statusDescription string) {
+func (w *Workflows) updateStatus(ctx workflow.Context, appID string, status app.AppStatus, statusDescription string) {
 	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateStatus, activities.UpdateStatusRequest{
 		AppID:             appID,
-		Status:            string(status),
+		Status:            status,
 		StatusDescription: statusDescription,
 	})
 	if err == nil {
