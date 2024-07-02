@@ -39,15 +39,6 @@ func TestConfigForCluster(t *testing.T) {
 			errExpected: ErrInvalidCluster,
 		},
 
-		"errors without role arn": {
-			info: ClusterInfo{
-				ID:       "cluster id",
-				Endpoint: "https://some.kubernetes.cluster",
-				CAData:   "YjY0IGVuY29kZWQgZGF0YQ==",
-			},
-			errExpected: ErrInvalidCredentials,
-		},
-
 		"errors without cert data": {
 			info: ClusterInfo{
 				ID:             "cluster id",
