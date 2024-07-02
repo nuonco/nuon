@@ -7,7 +7,7 @@ module "aws-eks" {
   sandbox_branch = local.sandboxes_branch
   sandbox_dir = "aws-eks"
 
-  install_count = 0
+  install_count = 1
   install_prefix = "aws-eks-"
   aws = [
     {

@@ -26,7 +26,6 @@ func (w *Workflows) deployComponents(ctx workflow.Context, installID string, san
 	if !w.isDeployable(install) {
 		// automatically skipping
 		w.writeInstallEvent(ctx, installID, signals.OperationDeployComponents, app.OperationStatusFailed)
-		w.updateStatus(ctx, installID, Status(install.Status), "skipping deploying components since install did not provision")
 		return nil
 	}
 

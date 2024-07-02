@@ -68,7 +68,7 @@ func (s *service) getCanaryOrgs(ctx context.Context) ([]app.Org, error) {
 		Preload("Apps.Installs").
 		Preload("Apps.Components").
 		Joins("JOIN accounts on orgs.created_by_id=accounts.id").
-		Where("accounts.token_type = ?", "canary").
+		Where("accounts.account_type = ?", "canary").
 		Find(&orgs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get canary orgs: %w", res.Error)

@@ -5,9 +5,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
 func (w *Workflows) created(ctx workflow.Context, installID string) error {
@@ -15,8 +15,7 @@ func (w *Workflows) created(ctx workflow.Context, installID string) error {
 	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
 		InstallID: installID,
 	}, &install); err != nil {
-		w.updateStatus(ctx, installID, StatusError, "unable to get install from database")
-		return fmt.Errorf("unable to get app: %w", err)
+		return fmt.Errorf("unable to get install: %w", err)
 	}
 
 	if install.InstallNumber == 1 {
