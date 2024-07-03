@@ -88,5 +88,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "060-installs-view-v2",
 			Fn:   a.migration060InstallsViewV2,
 		},
+		{
+			Name: "061-installs-view-v3",
+			Fn:   a.migration061InstallsViewV3,
+		},
 	}
 }
