@@ -15,18 +15,18 @@ type AppInput struct {
 	CreatedBy   Account               `json:"created_by"`
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `json:"-"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_app_input_unique_name,unique"`
 
 	OrgID string `json:"org_id" gorm:"notnull;default null"`
 	Org   Org    `faker:"-" json:"-"`
 
-	AppInputConfigID string         `json:"app_input_id" gorm:"notnull; default null"`
+	AppInputConfigID string         `json:"app_input_id" gorm:"notnull; default null;index:idx_app_input_unique_name,unique"`
 	AppInputConfig   AppInputConfig `json:"-"`
 
 	AppInputGroup   AppInputGroup `json:"group"`
 	AppInputGroupID string        `json:"group_id"`
 
-	Name        string `json:"name" gorm:"not null;default null"`
+	Name        string `json:"name" gorm:"not null;default null;index:idx_app_input_unique_name,unique"`
 	DisplayName string `json:"display_name"`
 	Description string `json:"description" gorm:"not null; default null"`
 	Default     string `json:"default"`
