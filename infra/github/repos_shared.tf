@@ -1,3 +1,57 @@
+module "shared-paradedb" {
+  source = "./modules/repository"
+
+  name                     = "paradedb"
+  description              = "Nuon configuration for paradedb."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
+module "shared-parededb-installer" {
+  source = "./modules/repository"
+
+  name                     = "paradedb-installer"
+  description              = "Installer for paradedb."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+  is_fork                  = true
+
+  collaborators = {}
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
+module "shared-carbon-installer" {
+  source = "./modules/repository"
+
+  name                     = "carbon-installer"
+  description              = "Installer for carbon."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+  is_fork                  = true
+
+  collaborators = {}
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
 module "shared-athena" {
   source = "./modules/repository"
 
@@ -128,6 +182,25 @@ module "shared-meroxa" {
 
   collaborators = {
     simonl2002 = "push"
+  }
+
+  providers = {
+    github = github.nuonco-shared
+  }
+}
+
+module "shared-weaviate-installer" {
+  source = "./modules/repository"
+
+  name                     = "weaviate-installer"
+  description              = "Nuon installer Weaviate."
+  required_checks          = []
+  owning_team_id           = github_team.nuonco-shared.id
+  is_private               = true
+  enable_branch_protection = false
+
+  collaborators = {
+    aduis = "push"
   }
 
   providers = {
