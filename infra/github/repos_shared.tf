@@ -9,6 +9,7 @@ module "shared-paradedb" {
   enable_branch_protection = false
 
   collaborators = {
+    philippemnoel = "push"
   }
 
   providers = {
@@ -27,7 +28,9 @@ module "shared-parededb-installer" {
   enable_branch_protection = false
   is_fork                  = true
 
-  collaborators = {}
+  collaborators = {
+    philippemnoel = "push"
+  }
 
   providers = {
     github = github.nuonco-shared
