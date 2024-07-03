@@ -10,6 +10,9 @@ module "shared-paradedb" {
 
   collaborators = {
     philippemnoel = "push"
+    sardination   = "push"
+    rebasedming   = "push"
+    neilyio       = "push"
   }
 
   providers = {
@@ -30,6 +33,9 @@ module "shared-parededb-installer" {
 
   collaborators = {
     philippemnoel = "push"
+    sardination   = "push"
+    rebasedming   = "push"
+    neilyio       = "push"
   }
 
   providers = {
