@@ -63,10 +63,10 @@ func (s *service) getOrgInstalls(ctx context.Context, orgID string) ([]app.Insta
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
 		Preload("InstallComponents.Component").
-		Joins("JOIN apps ON apps.id=installs_view_v2.app_id").
+		Joins("JOIN apps ON apps.id=installs_view_v3.app_id").
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Order("created_at desc").
-		Find(&installs, "installs_view_v2.org_id = ?", orgID)
+		Find(&installs, "installs_view_v3.org_id = ?", orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org installs: %w", res.Error)
 	}

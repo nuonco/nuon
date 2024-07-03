@@ -64,7 +64,7 @@ func (i *Install) UseView() bool {
 }
 
 func (i *Install) ViewVersion() string {
-	return "v2"
+	return "v3"
 }
 
 func (i *Install) BeforeCreate(tx *gorm.DB) error {
