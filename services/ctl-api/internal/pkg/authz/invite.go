@@ -12,7 +12,10 @@ import (
 )
 
 func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *app.Account) error {
-	// add the role to the invite
+	// add the role to the user
+	if err := h.AddAccountRole(ctx, app.RoleTypeOrgAdmin, invite.OrgID, acct.ID); err != nil {
+		return fmt.Errorf("unable to add account role: %w", err)
+	}
 
 	// update invite object
 	res := h.db.WithContext(ctx).
@@ -27,6 +30,7 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 
 	// send a notification to the correct org event flow that it was accepted
 	middlewares.SetOrgContext(ctx, &invite.Org)
+
 	h.evClient.Send(ctx, invite.OrgID, &signals.Signal{
 		Type:     signals.OperationInviteAccepted,
 		InviteID: invite.ID,
