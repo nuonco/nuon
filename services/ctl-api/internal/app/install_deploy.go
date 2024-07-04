@@ -20,7 +20,7 @@ const (
 type InstallDeployStatus string
 
 const (
-	InstallDeployStatusOK        InstallDeployStatus = "ok"
+	InstallDeployStatusOK        InstallDeployStatus = "active"
 	InstallDeployStatusError     InstallDeployStatus = "error"
 	InstallDeployStatusNoop      InstallDeployStatus = "noop"
 	InstallDeployStatusPlanning  InstallDeployStatus = "planning"
