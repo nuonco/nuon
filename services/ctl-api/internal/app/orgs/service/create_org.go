@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -11,6 +12,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	sigs "github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/signals"
 	authcontext "github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
 )
 
 type CreateOrgRequest struct {
@@ -47,6 +49,14 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	user, err := authcontext.FromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
+		return
+	}
+
+	if !strings.HasSuffix(user.Email, "nuon.co") {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("only nuon members can create orgs"),
+			Description: "please reach out to a Nuon team employee to try Nuon",
+		})
 		return
 	}
 
