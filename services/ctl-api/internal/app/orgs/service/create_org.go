@@ -52,7 +52,8 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
-	if !strings.HasSuffix(user.Email, "nuon.co") {
+	// TODO(jm): remove this, once we allow anyone to create an org.
+	if user.AccountType == app.AccountTypeAuth0 && !strings.HasSuffix(user.Email, "nuon.co") {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("only nuon members can create orgs"),
 			Description: "please reach out to a Nuon team employee to try Nuon",
