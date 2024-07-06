@@ -77,6 +77,20 @@ module "nuon-go" {
   }
 }
 
+module "nuon-runner-go" {
+  source           = "./modules/repository"
+  name             = "nuon-runner-go"
+  description      = "The SDK that powers the Nuon runner."
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
+
 module "nuon-elixir" {
   source      = "./modules/repository"
   name        = "nuon-elixir"
