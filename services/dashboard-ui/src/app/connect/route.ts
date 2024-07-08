@@ -7,6 +7,9 @@ export const GET = async (req: NextRequest) => {
   const github_install_id = req.nextUrl.searchParams.get('installation_id')
   const org_id = req.nextUrl.searchParams.get('state')
 
+
+  console.log('======================== redirect url ==================',  req.nextUrl.origin)
+
   await fetch(`${API_URL}/v1/vcs/connection-callback`, {
     ...(await getFetchOpts(org_id)),
     body: JSON.stringify({
@@ -16,5 +19,5 @@ export const GET = async (req: NextRequest) => {
     method: 'POST',
   }).catch(console.error)
 
-  return NextResponse.redirect(new URL(`/dashboard/${org_id}`, req.url))
+  return NextResponse.redirect(new URL(`/dashboard/${org_id}`, req.nextUrl.origin))
 }
