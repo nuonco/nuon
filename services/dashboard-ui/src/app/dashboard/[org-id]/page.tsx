@@ -1,3 +1,4 @@
+import { headers } from 'next/headers'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
   Grid,
@@ -22,6 +23,13 @@ export default withPageAuthRequired(
       getOrg({ orgId }),
     ])
 
+    const host = headers().get('x-forwarded-host')
+    const protocol = headers().get('x-forwarded-proto')
+    console.log('headers', protocol + host)
+
+    // TODO(nnnnat): REMOVE THIS
+    const TEMP = new URL('/dashboard', `${protocol}://${host}`) //JSON.stringify(process.env, null, 2) //new URL('/dashboard')
+
     return (
       <OrgProvider initOrg={org} shouldPoll>
         <Page
@@ -38,6 +46,7 @@ export default withPageAuthRequired(
             />
           }
         >
+          <pre>{TEMP.toJSON()}</pre>
           <Grid>
             {installs?.length ? (
               installs?.map((install) => (
