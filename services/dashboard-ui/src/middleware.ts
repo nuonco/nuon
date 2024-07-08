@@ -6,8 +6,6 @@ import type { NextRequest } from 'next/server'
 export default async function middleware(request: NextRequest) {
   const session = await getSession()
 
-  // console.log('============================= middleware url =======================', new URL('/dashboard', request.nextUrl.origin))
-
   if (session && new URL(request.url).pathname === '/') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
