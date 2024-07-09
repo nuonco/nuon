@@ -30,6 +30,23 @@ module "cli" {
   }
 }
 
+module "runner" {
+  source = "../modules/public-ecr"
+
+  name        = "runner"
+  description = "Nuon runner"
+  about       = "Nuon runner"
+  tags = {
+    artifact      = "runner"
+    artifact_type = "binary"
+  }
+
+  region = local.aws_settings.public_region
+  providers = {
+    aws = aws.public
+  }
+}
+
 module "e2e" {
   source = "../modules/public-ecr"
 

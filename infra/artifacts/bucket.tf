@@ -3,6 +3,7 @@ locals {
   account_id = local.accounts[local.aws_settings.account_name]
   public_prefixes = [
     "cli/*",
+    "runner/*",
     "nuonctl/*",
     "terraform-provider-nuon/*",
     "sandbox/*",

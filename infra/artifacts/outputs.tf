@@ -53,6 +53,11 @@ output "artifacts" {
       ecr            = module.nuonctl.all
       use_promotions = false
     }
+    "bins/runner" = {
+      bucket_prefix  = "runner"
+      ecr            = module.runner.all
+      use_promotions = true
+    }
     "bins/waypoint-plugin-exp" = {
       bucket_prefix  = "waypoint-plugin-exp"
       ecr            = module.waypoint_plugin_exp.all

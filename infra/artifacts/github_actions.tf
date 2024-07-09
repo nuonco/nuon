@@ -45,6 +45,8 @@ data "aws_iam_policy_document" "github_actions_policy_doc" {
     resources = [
       // public cli
       module.cli.repository_arn,
+      // public runner
+      module.runner.repository_arn,
 
       // helm charts
       module.helm_demo.repository_arn,
