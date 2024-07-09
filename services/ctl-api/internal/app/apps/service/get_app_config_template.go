@@ -93,6 +93,7 @@ demo_url = "demo url"
 favicon_url = "favicon url"
 
 # optional fields
+og_image_url = "og_image url"
 post_install_markdown = ""
 copyright_markdown = ""
 footer_markdown = ""

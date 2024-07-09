@@ -40,6 +40,7 @@ type InstallerMetadata struct {
 	CommunityURL     string `json:"community_url" gorm:"notnull"`
 	HomepageURL      string `json:"homepage_url" gorm:"notnull"`
 	FaviconURL       string `json:"favicon_url"`
+	OgImageUrl       string `json:"og_image_url"`
 
 	FormattedDemoURL string `json:"formatted_demo_url" gorm:"-"`
 }
