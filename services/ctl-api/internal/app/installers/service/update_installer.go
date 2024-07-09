@@ -26,6 +26,7 @@ type UpdateInstallerRequest struct {
 		DemoURL          string `json:"demo_url"`
 		FaviconURL       string `json:"favicon_url"`
 
+		OgImageUrl          string `json:"og_image_url" `
 		PostInstallMarkdown string `json:"post_install_markdown"`
 		FooterMarkdown      string `json:"footer_markdown"`
 		CopyrightMarkdown   string `json:"copyright_markdown"`
