@@ -251,6 +251,20 @@ module "nuon-vpn-configuration-examples" {
   }
 }
 
+module "nuon-terraform-installer-ui" {
+  source           = "./modules/repository"
+  name             = "installer"
+  description      = "Installer UI"
+  required_checks  = []
+  is_public        = true
+  owning_team_id   = github_team.nuon.id
+  owning_team_name = "nuonco/${github_team.nuon.name}"
+
+  providers = {
+    github = github.nuon
+  }
+}
+
 module "nuon-demo" {
   source           = "./modules/repository"
   name             = "demo"
@@ -263,20 +277,6 @@ module "nuon-demo" {
     "check-pr / Run PR checks",
     "check-pr / Update PR status",
   ]
-
-  providers = {
-    github = github.nuon
-  }
-}
-
-module "nuon-terraform-installer-ui" {
-  source           = "./modules/repository"
-  name             = "installer"
-  description      = "Installer UI"
-  required_checks  = []
-  is_public        = true
-  owning_team_id   = github_team.nuon.id
-  owning_team_name = "nuonco/${github_team.nuon.name}"
 
   providers = {
     github = github.nuon
@@ -298,6 +298,6 @@ module "nuon-demo-installer" {
   }
 
   providers = {
-    github = github.nuonco-shared
+    github = github.nuon
   }
 }
