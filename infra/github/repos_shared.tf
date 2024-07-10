@@ -211,6 +211,8 @@ module "shared-weaviate-installer" {
 
   collaborators = {
     aduis = "push"
+    scottalex1987 = "push"
+    hoppe-weaviate = "push"
   }
 
   providers = {
@@ -230,6 +232,8 @@ module "shared-weaviate" {
 
   collaborators = {
     aduis = "push"
+    scottalex1987 = "push"
+    hoppe-weaviate = "push"
   }
 
   providers = {
