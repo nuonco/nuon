@@ -136,6 +136,7 @@ description = "API key"
 default = ""
 sensitive = true
 display_name = "API Key"
+group = "sandbox"
 
 [[components]]
 name = "toml_terraform"
