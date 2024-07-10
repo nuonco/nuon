@@ -33,7 +33,7 @@ type InstallerMetadata struct {
 	FooterMarkdown      generics.NullString `json:"footer_markdown" swaggertype:"string"`
 	CopyrightMarkdown   generics.NullString `json:"copyright_markdown" swaggertype:"string"`
 	DemoURL             generics.NullString `json:"demo_url" swaggertype:"string"`
-	OgImageUrl          generics.NullString `json:"og_image_url" swaggertype:"string"`
+	OgImageURL          generics.NullString `json:"og_image_url" swaggertype:"string"`
 
 	DocumentationURL string `json:"documentation_url" gorm:"notnull"`
 	LogoURL          string `json:"logo_url" gorm:"notnull"`
