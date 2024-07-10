@@ -26,7 +26,7 @@ type CreateInstallerRequest struct {
 		CommunityURL     string `validate:"required" json:"community_url"`
 		FaviconURL       string `validate:"required" json:"favicon_url" `
 
-		OgImageUrl          string `json:"og_image_url" `
+		OgImageURL          string `json:"og_image_url" `
 		DemoURL             string `json:"demo_url"`
 		PostInstallMarkdown string `json:"post_install_markdown"`
 		FooterMarkdown      string `json:"footer_markdown"`
@@ -104,6 +104,7 @@ func (s *service) createInstaller(ctx context.Context, orgID string, req *Create
 			FaviconURL:       req.Metadata.FaviconURL,
 
 			DemoURL:             generics.NewNullString(req.Metadata.DemoURL),
+			OgImageURL:          generics.NewNullString(req.Metadata.OgImageURL),
 			PostInstallMarkdown: generics.NewNullString(req.Metadata.PostInstallMarkdown),
 			CopyrightMarkdown:   generics.NewNullString(req.Metadata.CopyrightMarkdown),
 			FooterMarkdown:      generics.NewNullString(req.Metadata.FooterMarkdown),
