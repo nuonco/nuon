@@ -8,12 +8,14 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon-go/models"
+	"github.com/pterm/pterm"
+
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
+	"github.com/powertoolsdev/mono/pkg/config/sync"
 	"github.com/powertoolsdev/mono/pkg/generics"
-	"github.com/pterm/pterm"
 )
 
 const (
@@ -130,6 +132,48 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	}
 }
 
+func (s *Service) syncV2(ctx context.Context, cfgFile, appID string) error {
+	view := ui.NewCreateView(fmt.Sprintf("updated configs for %s", cfgFile), false)
+	view.Start()
+
+	byts, err := os.ReadFile(cfgFile)
+	if err != nil {
+		view.Fail(err)
+		return err
+	}
+
+	cfg, err := parse.Parse(parse.ParseConfig{
+		Context:     config.ConfigContextSource,
+		Bytes:       byts,
+		BackendType: config.BackendTypeLocal,
+		Template:    true,
+		V:           validator.New(),
+	})
+	if err != nil {
+		view.Fail(err)
+		return err
+	}
+
+	_, err = s.api.CreateAppConfig(ctx, appID, &models.ServiceCreateAppConfigRequest{
+		Content: generics.ToPtr(string(byts)),
+	})
+	if err != nil {
+		view.Fail(err)
+		return err
+	}
+
+	syncer := sync.New(s.api, appID, cfg)
+	if err := syncer.Sync(ctx); err != nil {
+		view.Fail(err)
+
+		// TODO: set app status to failed sync
+		return err
+	}
+
+	// TODO: need to add a method to update a config status success
+	return nil
+}
+
 func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) error {
 	var (
 		cfgFiles []parse.File
@@ -175,6 +219,10 @@ func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) 
 		if err := s.sync(ctx, cfgFile.Path, appID); err != nil {
 			return err
 		}
+
+		// if err := s.syncV2(ctx, cfgFile.Path, appID); err != nil {
+		// 	return err
+		// }
 	}
 	return nil
 }
