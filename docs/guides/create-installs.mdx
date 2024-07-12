@@ -36,8 +36,11 @@ resource "nuon_install" "install" {
   app_id = nuon_app.<your-app>.id
 
   name         = "nuon-test-install"
-  region       = "us-east-1"
-  iam_role_arn = var.install_role_arn
+
+  aws {
+    region       = "us-east-1"
+    iam_role_arn = var.install_role_arn
+  }
 
   input {
     name = "aws-eks-version"

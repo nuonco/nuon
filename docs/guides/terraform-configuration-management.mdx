@@ -77,8 +77,12 @@ resource "nuon_install" "east_1" {
   app_id = nuon_app.<your-app>.id
 
   name         = "example"
-  region       = "us-east-1"
-  iam_role_arn = "iam-role"
+
+  aws {
+    region       = "us-east-1"
+    iam_role_arn = "<your-iam-role-arn>"
+  }
+
 
   depends_on = [
     nuon_app_sandbox.<your-app>,
