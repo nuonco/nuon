@@ -13,24 +13,24 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
-type AppLatestConfigSetStatusRequest struct {
+type SetAppConfigStatusRequest struct {
 	Status            app.AppConfigStatus `json:"status"`
 	StatusDescription string              `json:"status_description"`
 }
 
-func (c *AppLatestConfigSetStatusRequest) Validate(v *validator.Validate) error {
+func (c *SetAppConfigStatusRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
 	return nil
 }
 
-// @ID AppLatestConfigSetStatus
+// @ID SetAppConfigStatus
 // @Summary	updates an app config sync status
-// @Description.markdown	app_config_set_status.md
+// @Description.markdown	set_app_config_status.md
 // @Tags			apps
 // @Accept			json
-// @Param			req	body	AppLatestConfigSetStatusRequest	true	"Input"
+// @Param			req	body	SetAppConfigStatusRequest	true	"Input"
 // @Produce		json
 // @Param			app_id	path	string	true	"app ID"
 // @Param			app_config_id	path	string	true	"app config ID"
@@ -43,14 +43,14 @@ func (c *AppLatestConfigSetStatusRequest) Validate(v *validator.Validate) error 
 // @Failure		500				{object}	stderr.ErrResponse
 // @Success		200				{boolean}	true
 // @Router			/v1/apps/{app_id}/config/{app_config_id}/set-status [POST]
-func (s *service) AppLatestConfigSetStatus(ctx *gin.Context) {
+func (s *service) SetAppConfigStatus(ctx *gin.Context) {
 	org, err := middlewares.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	var req AppLatestConfigSetStatusRequest
+	var req SetAppConfigStatusRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
@@ -72,7 +72,7 @@ func (s *service) AppLatestConfigSetStatus(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, true)
 }
 
-func (s *service) updateStatus(ctx context.Context, appID string, appConfigID string, org *app.Org, req *AppLatestConfigSetStatusRequest) error {
+func (s *service) updateStatus(ctx context.Context, appID string, appConfigID string, org *app.Org, req *SetAppConfigStatusRequest) error {
 	res := s.db.WithContext(ctx).
 		Model(&app.AppConfig{}).
 		Where(&app.AppConfig{
