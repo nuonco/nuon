@@ -74,6 +74,7 @@ func (s *service) findApp(ctx context.Context, orgID, appID string) (*app.App, e
 		}).
 		Preload("AppSandboxConfigs.PublicGitVCSConfig").
 		Preload("AppSandboxConfigs.ConnectedGithubVCSConfig").
+		Preload("NotificationsConfig").
 		Where("name = ? AND org_id = ?", appID, orgID).
 		Or("id = ?", appID).
 		First(&app)
