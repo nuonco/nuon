@@ -11,7 +11,7 @@ func (s *Service) CreateInvite(ctx context.Context, email string, asJSON bool) {
 	view := ui.NewGetView()
 
 	invite, err := s.api.CreateOrgInvite(ctx, &models.ServiceCreateOrgInviteRequest{
-		Email: email,
+		Email: &email,
 	})
 	if err != nil {
 		view.Error(err)
