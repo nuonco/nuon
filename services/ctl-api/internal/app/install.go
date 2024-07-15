@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -91,10 +92,15 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	i.Status = string(i.SandboxStatus)
 
 	// create the install deploy status
-	status := InstallDeployStatusOK
+	activeCount := 0
+	statusCount := len(i.ComponentStatuses)
+	status := InstallDeployStatusPending
 	for _, statusStr := range i.ComponentStatuses {
 		status := InstallDeployStatus(*statusStr)
+		fmt.Println(statusCount)
+
 		if status == InstallDeployStatusOK {
+			activeCount++
 			continue
 		}
 
@@ -102,7 +108,12 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 			break
 		}
 	}
-	i.CompositeComponentStatus = status
+
+	if activeCount == statusCount {
+		i.CompositeComponentStatus = InstallDeployStatusOK
+	} else {
+		i.CompositeComponentStatus = status
+	}
 
 	return nil
 }
