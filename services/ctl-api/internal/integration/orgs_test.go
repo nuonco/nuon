@@ -169,7 +169,7 @@ func (s *orgsIntegrationTestSuite) TestCreateOrgInvite() {
 
 	s.T().Run("success", func(t *testing.T) {
 		resp, err := s.apiClient.CreateOrgInvite(s.ctx, &models.ServiceCreateOrgInviteRequest{
-			Email: user.Email,
+			Email: &user.Email,
 		})
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)
