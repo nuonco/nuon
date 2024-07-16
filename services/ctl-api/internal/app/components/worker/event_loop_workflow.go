@@ -61,6 +61,12 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 				status = "error"
 				l.Info("unable to provision: %w", zap.Error(err))
 			}
+		case signals.OperationCreated:
+			op = "created"
+			if err := w.created(ctx, req.ID); err != nil {
+				status = "error"
+				l.Info("unable to create component: %w", zap.Error(err))
+			}
 		case signals.OperationQueueBuild:
 			op = "queue_build"
 			if err := w.queueBuild(ctx, req.ID); err != nil {
