@@ -23,8 +23,8 @@ type InstallerConfig struct {
 	GithubURL        string `mapstructure:"github_url,omitempty" toml:"github_url"`
 	LogoURL          string `mapstructure:"logo_url,omitempty" toml:"logo_url"`
 	FaviconURL       string `mapstructure:"favicon_url,omitempty" toml:"favicon_url"`
-	OgImageURL       string `mapstructure:"og_image_url,omitempty" toml:"og_image_url"`
 
+	OgImageURL          string `mapstructure:"og_image_url" toml:"og_image_url"`
 	DemoURL             string `mapstructure:"demo_url" toml:"demo_url"`
 	PostInstallMarkdown string `mapstructure:"post_install_markdown" toml:"post_install_markdown"`
 	CopyrightMarkdown   string `mapstructure:"copyright_markdown" toml:"copyright_markdown"`
