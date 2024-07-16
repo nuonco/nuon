@@ -72,6 +72,9 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 		Type: signals.OperationCreated,
 	})
 	s.evClient.Send(ctx, component.ID, &signals.Signal{
+		Type: signals.OperationProvision,
+	})
+	s.evClient.Send(ctx, component.ID, &signals.Signal{
 		Type: signals.OperationPollDependencies,
 	})
 	ctx.JSON(http.StatusCreated, component)

@@ -7,6 +7,10 @@ import (
 )
 
 func (w *Workflows) provision(ctx workflow.Context, componentID string) error {
+	return nil
+}
+
+func (w *Workflows) created(ctx workflow.Context, componentID string) error {
 	w.updateStatus(ctx, componentID, app.ComponentStatusActive, "component is active")
 	return nil
 }

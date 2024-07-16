@@ -15,8 +15,8 @@ var (
 func (c *cli) rootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:               "nuon",
-		SilenceUsage:      true,
-		SilenceErrors:     true,
+		SilenceUsage:      false,
+		SilenceErrors:     false,
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 
