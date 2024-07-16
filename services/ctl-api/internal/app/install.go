@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -97,7 +96,6 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	status := InstallDeployStatusPending
 	for _, statusStr := range i.ComponentStatuses {
 		status := InstallDeployStatus(*statusStr)
-		fmt.Println(statusCount)
 
 		if status == InstallDeployStatusOK {
 			activeCount++
