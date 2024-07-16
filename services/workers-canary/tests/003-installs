@@ -44,7 +44,7 @@ else
 fi
 echo -e "\n"
 
-echo >&2 -e "[SANDBOX=true] nuon installs create -n cli-canary-test -r us-east-1 -o cli-canary-test --inputs=eks_version=latest\n"
+echo >&2 -e "[SANDBOX=true] nuon installs create -n cli-canary-test -r us-east-1 -o cli-canary-test --inputs=cluster_version=latest\n"
 if [[ "$SANDBOX" == "false" ]]; then
   echo >&2 "skipping installs create outside of sandbox mode"
 else
@@ -53,7 +53,7 @@ else
     -n "cli-canary-test" \
     -r "us-east-1" \
     -o "cli-canary-test" \
-    --inputs="eks_version=latest" \
+    --inputs="cluster_version=latest" \
     --inputs="api_key=default"
 fi
 echo -e "\n"

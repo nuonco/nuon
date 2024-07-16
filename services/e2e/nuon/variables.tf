@@ -106,14 +106,14 @@ variable "inputs" {
 
   default = [
     {
-      name          = "eks_version"
-      display_name  = "EKS Version"
-      description   = "Version of k8s to use with EKS."
+      name          = "cluster_version"
+      display_name  = "Cluster Version"
+      description   = "Version of k8s to use for EKS."
       default       = ""
       group         = "sandbox_inputs"
       required      = true
       value         = "v1.27.8"
-      interpolation = "{{.nuon.install.inputs.eks_version}}"
+      interpolation = "{{.nuon.install.inputs.cluster_version}}"
       sensitive     = false
     },
     {
