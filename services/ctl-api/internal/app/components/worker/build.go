@@ -23,6 +23,19 @@ func (w *Workflows) build(ctx workflow.Context, cmpID, buildID string, dryRun bo
 		return fmt.Errorf("unable to get component app: %w", err)
 	}
 
+	var comp app.Component
+	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponent, activities.GetComponentAppRequest{
+		ComponentID: cmpID,
+	}, &comp); err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component")
+		return fmt.Errorf("unable to get component: %w", err)
+	}
+
+	if comp.Status != app.ComponentStatusActive {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "component is not active")
+		return fmt.Errorf("component is not active")
+	}
+
 	var buildCfg componentsv1.Component
 	if err := w.defaultExecGetActivity(ctx, w.acts.GetComponentConfig, activities.GetRequest{
 		BuildID: buildID,
