@@ -22,6 +22,7 @@ community_url         = "https://join.slack.com/t/nuoncommunity/shared_invite/zt
 github_url            = "https://github.com/nuonco"
 demo_url              = "https://www.nuon.co/"
 logo_url              = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+og_image_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
 favicon_url           = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
 
 copyright_markdown = """
@@ -38,7 +39,7 @@ post_install_markdown = """
 Your App is being deployed.
 """
 
-apps = [
+app_ids = [
   "<your-aws-eks-app-id>",
   "<your-azure-aks-app-id>"
 ]
@@ -55,6 +56,7 @@ resource "nuon_app_installer" "<your-app>" {
   github_url            = "https://github.com/nuonco"
   demo_url              = "https://www.nuon.co/"
   logo_url              = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+  og_image_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
   favicon_url           = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
 
   post_install_markdown = <<EOT
@@ -71,7 +73,7 @@ EOT
 [Terms of Service](https://nuon.co/terms)
 EOT
 
-  apps = [
+  app_ids = [
     "<your-aws-eks-app-id>",
     "<your-azure-aks-app-id>"
   ]

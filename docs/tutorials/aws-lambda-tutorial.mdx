@@ -65,15 +65,16 @@ You will use it later in this guide to create an install yourself.
 <CodeGroup>
 ```toml TOML
 [installer]
-name              = "My AWS Lambda App"
-description       = "A demo AWS Lambda app."
-documentation_url = "https://docs.nuon.co/"
-community_url     = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
-github_url        = "https://github.com/nuonco"
-homepage_url      = "https://www.nuon.co/"
-demo_url          = "https://www.nuon.co/"
-logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
-favicon_url       = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+name               = "My AWS Lambda App"
+description        = "A demo AWS Lambda app."
+documentation_url  = "https://docs.nuon.co/"
+community_url      = "https://join.slack.com/t/nuoncommunity/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA"
+github_url         = "https://github.com/nuonco"
+homepage_url       = "https://www.nuon.co/"
+demo_url           = "https://www.nuon.co/"
+logo_url           = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+og_image_url       = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+favicon_url        = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
 copyright_markdown = """
 © 2024 Nuon.
 """
@@ -85,7 +86,7 @@ post_install_markdown = """
 
 My AWS Lambda App is being deployed.
 """
-apps = ["<your-app-id>"]
+app_ids = ["<your-app-id>"]
 ```
 
 ```hcl Terraform
@@ -99,6 +100,7 @@ resource "nuon_app_installer" "your_app" {
   homepage_url      = "https://www.nuon.co/"
   demo_url          = "https://www.nuon.co/"
   logo_url          = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
+  og_image_url      = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
   favicon_url       = "https://assets-global.website-files.com/62a2c1332b518a9eedc6de2f/651df2030c43865b9b16046b_Group%2048.png"
   copyright_markdown = <<EOT
 © 2024 Nuon.
@@ -111,7 +113,7 @@ EOT
 
 My AWS Lambda App is being deployed.
 EOT
-  apps = ["<your-app-id>"]
+  app_ids = ["<your-app-id>"]
 }
 }
 ```
