@@ -11,7 +11,7 @@ import (
 type AdminDeprovisionOrgRequest struct{}
 
 // @ID AdminDeprovisionOrg
-// @Summary deprovision an install, but keep it in the database
+// @Summary deprovision an org, but keep it in the database
 // @Description.markdown deprovision_org.md
 // @Param			org_id	path	string	true	"org ID for your current org"
 // @Tags			orgs/admin
