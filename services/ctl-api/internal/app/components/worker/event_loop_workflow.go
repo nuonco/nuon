@@ -92,6 +92,12 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 				l.Info("unable to delete component: %w", zap.Error(err))
 			}
 			finished = true
+		case signals.OperationRestart:
+			op = "restarted"
+			if err := w.restarted(ctx, req.ID); err != nil {
+				status = "error"
+				l.Info("unable to restart component: %w", zap.Error(err))
+			}
 		}
 	})
 	for !finished {
