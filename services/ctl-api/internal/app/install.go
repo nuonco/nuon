@@ -89,29 +89,38 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 
 	// NOTE(jm): this will be removed, and is only set for backwards compatibility
 	i.Status = string(i.SandboxStatus)
-
-	// create the install deploy status
-	activeCount := 0
-	statusCount := len(i.ComponentStatuses)
-	status := InstallDeployStatusPending
-	for _, statusStr := range i.ComponentStatuses {
-		status := InstallDeployStatus(*statusStr)
-
-		if status == InstallDeployStatusOK {
-			activeCount++
-			continue
-		}
-
-		if status == InstallDeployStatusError {
-			break
-		}
-	}
-
-	if activeCount == statusCount {
-		i.CompositeComponentStatus = InstallDeployStatusOK
-	} else {
-		i.CompositeComponentStatus = status
-	}
+	i.CompositeComponentStatus = compositeComponentStatus(i.ComponentStatuses)
 
 	return nil
+}
+
+// compositeComponentStatus coalesces a single status from the statuses of the app's components.
+// This is based on the components defined in the app config, not the components present in the install.
+// Components may be present in an install's history that have been removed from the app.
+func compositeComponentStatus(componentStatuses pgtype.Hstore) InstallDeployStatus {
+	// if there are no components, then there are no operations to wait for
+	if len(componentStatuses) == 0 {
+		return InstallDeployStatusNoop
+	}
+
+	// check status of each component
+	activecount := 0
+	for _, status := range componentStatuses {
+		switch InstallDeployStatus(*status) {
+		case InstallDeployStatusOK:
+			activecount++
+		case InstallDeployStatusError:
+			// if any components have failed, composite status should be "error"
+			// we can stop immediately
+			return InstallDeployStatusError
+		}
+	}
+
+	// if all components are active, composite status should be "active"
+	if activecount == len(componentStatuses) {
+		return InstallDeployStatusOK
+	}
+
+	// if any components have not yet succeeded or failed, composite status should be "pending"
+	return InstallDeployStatusPending
 }
