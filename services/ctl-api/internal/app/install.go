@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -77,21 +78,49 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// We want to report the status of the sandbox, the runner, and the components,
+// and then roll that up into a high-level status for the install overall.
 func (i *Install) AfterQuery(tx *gorm.DB) error {
+	// get the runner status
 	i.RunnerStatus = "ok"
 	if len(i.InstallInputs) > 0 {
 		i.CurrentInstallInputs = &i.InstallInputs[0]
 	}
 
+	// get the sandbox status
 	if i.SandboxStatus == SandboxRunStatusUnknown || i.SandboxStatus == SandboxRunStatusEmpty {
 		i.SandboxStatus = SandboxRunStatusQueued
 	}
 
-	// NOTE(jm): this will be removed, and is only set for backwards compatibility
-	i.Status = string(i.SandboxStatus)
+	// get the composite status of all the components
 	i.CompositeComponentStatus = compositeComponentStatus(i.ComponentStatuses)
 
+	// determine the status of the install based on all three
+	i.Status = string(installStatus(i.SandboxStatus, i.RunnerStatus, i.CompositeComponentStatus))
+
 	return nil
+}
+
+// installStatus coalesces a single status for the install, from the individual statuses of the sandbox, runner, and components
+// It doesn't look like we can determine, based on only on the statuses, whether the install is provisioning or deprovisioning.
+// We may need to update the event loop deprovision workflow to set this status.
+// For now, this is good enough for clients to know if the install is busy, and shouldn't be interacted with.
+func installStatus(sandboxStatus SandboxRunStatus, runnerStatus string, componentStatus InstallDeployStatus) string {
+	fmt.Println(sandboxStatus, runnerStatus, componentStatus)
+
+	// if any status is "error", return "error"
+	if sandboxStatus == "error" || runnerStatus == "error" || componentStatus == "error" {
+		return "error"
+	}
+
+	// if all statuses are "active" (or "ok"), return "active"
+	// if there are no components, then "noop" counts as "active"
+	if sandboxStatus == "active" && runnerStatus == "ok" && (componentStatus == "active" || componentStatus == "noop") {
+		return "active"
+	}
+
+	// otherwise, return "provisioning"
+	return "provisioning"
 }
 
 // compositeComponentStatus coalesces a single status from the statuses of the app's components.
