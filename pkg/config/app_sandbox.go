@@ -16,6 +16,8 @@ type AppSandboxConfig struct {
 
 	Vars   []TerraformVariable `mapstructure:"var,omitempty" toml:"var"`
 	VarMap map[string]string   `mapstructure:"-" toml:"vars"`
+
+	AWSDelegationIAMRoleARN string `mapstructure:"aws_delegation_iam_role_arn" toml:"aws_delegation_iam_role_arn"`
 }
 
 func (t *AppSandboxConfig) ToResourceType() string {
