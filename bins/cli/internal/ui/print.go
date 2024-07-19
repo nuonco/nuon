@@ -8,6 +8,8 @@ import (
 	"github.com/pterm/pterm"
 
 	"github.com/powertoolsdev/mono/pkg/config"
+	"github.com/powertoolsdev/mono/pkg/config/parse"
+	"github.com/powertoolsdev/mono/pkg/config/sync"
 )
 
 const (
@@ -52,6 +54,28 @@ func PrintError(err error) {
 	var cfgErr config.ErrConfig
 	if errors.As(err, &cfgErr) {
 		pterm.Error.Println(cfgErr.Description)
+		return
+	}
+
+	var syncErr sync.SyncErr
+	if errors.As(err, &syncErr) {
+		pterm.Error.Println(syncErr.Error())
+		return
+	}
+
+	var syncAPIErr sync.SyncAPIErr
+	if errors.As(err, &syncAPIErr) {
+		pterm.Error.Println(syncAPIErr.Error())
+		return
+	}
+
+	var parseErr parse.ParseErr
+	if errors.As(err, &parseErr) {
+		pterm.Error.Println(parseErr.Description)
+		if parseErr.Err != nil {
+			pterm.Error.Println(parseErr.Err.Error())
+		}
+
 		return
 	}
 
