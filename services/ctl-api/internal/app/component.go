@@ -18,6 +18,17 @@ const (
 	ComponentStatusDeprovisioning ComponentStatus = "deprovisioning"
 )
 
+type ComponentType string
+
+const (
+	ComponentTypeTerraformModule ComponentType = "terraform_module"
+	ComponentTypeHelmChart       ComponentType = "helm_chart"
+	ComponentTypeDockerBuild     ComponentType = "docker_build"
+	ComponentTypeExternalImage   ComponentType = "external_image"
+	ComponentTypeJob             ComponentType = "job"
+	ComponentTypeUnknown         ComponentType = "unknown"
+)
+
 type Component struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26;" json:"id"`
 	CreatedByID string                `json:"created_by_id" gorm:"not null;default:null"`
@@ -47,6 +58,8 @@ type Component struct {
 	DependencyIDs []string     `gorm:"-" json:"dependencies"`
 
 	// after query loaded items
+
+	Type            ComponentType              `gorm:"-" json:"type"`
 	LatestConfig    *ComponentConfigConnection `gorm:"-" json:"-"`
 	ResolvedVarName string                     `json:"resolved_var_name" gorm:"-"`
 }
@@ -61,8 +74,27 @@ func (c *Component) AfterQuery(tx *gorm.DB) error {
 
 	// set configs
 	c.ConfigVersions = len(c.ComponentConfigs)
-	if len(c.ComponentConfigs) > 0 {
-		c.LatestConfig = &c.ComponentConfigs[0]
+	c.Type = ComponentTypeUnknown
+	if len(c.ComponentConfigs) < 1 {
+		return nil
+	}
+
+	// parse the latest config
+	c.LatestConfig = &c.ComponentConfigs[0]
+	if c.LatestConfig.HelmComponentConfig != nil {
+		c.Type = ComponentTypeHelmChart
+	}
+	if c.LatestConfig.TerraformModuleComponentConfig != nil {
+		c.Type = ComponentTypeTerraformModule
+	}
+	if c.LatestConfig.DockerBuildComponentConfig != nil {
+		c.Type = ComponentTypeDockerBuild
+	}
+	if c.LatestConfig.ExternalImageComponentConfig != nil {
+		c.Type = ComponentTypeExternalImage
+	}
+	if c.LatestConfig.JobComponentConfig != nil {
+		c.Type = ComponentTypeJob
 	}
 
 	return nil

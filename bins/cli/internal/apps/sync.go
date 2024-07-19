@@ -2,20 +2,15 @@ package apps
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon-go/models"
-	"github.com/pterm/pterm"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
 	"github.com/powertoolsdev/mono/pkg/config/sync"
-	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 const (
@@ -24,157 +19,30 @@ const (
 )
 
 func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
-	view := ui.NewCreateView(fmt.Sprintf("updated configs for %s", cfgFile), false)
-	view.Start()
-
-	byts, err := os.ReadFile(cfgFile)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	loctfJSON, err := parse.ToTerraformJSON(parse.ParseConfig{
-		Context:     config.ConfigContextSource,
-		Bytes:       byts,
-		BackendType: config.BackendTypeLocal,
-		Template:    true,
-		V:           validator.New(),
-	})
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	validateOutput, err := s.execTerraformValidate(ctx, appID, loctfJSON)
-	if err != nil {
-		return err
-	}
-
-	if len(validateOutput.Diagnostics) > 0 {
-		err = fmt.Errorf("configuration is invalid, %d errors found", len(validateOutput.Diagnostics))
-		view.Fail(err)
-
-		data := [][]string{
-			{"RESOURCE", "SUMMARY", "ERROR"},
-		}
-		for _, diag := range validateOutput.Diagnostics {
-			data = append(data, []string{
-				*diag.Snippet.Context,
-				diag.Summary,
-				diag.Detail,
-			})
-		}
-
-		pterm.DefaultTable.
-			WithData(data).
-			WithHasHeader().
-			WithHeaderRowSeparator("-").
-			Render()
-
-		return err
-	}
-
-	tfJSON, err := parse.ToTerraformJSON(parse.ParseConfig{
-		Context:     config.ConfigContextSource,
-		Bytes:       byts,
-		BackendType: config.BackendTypeS3,
-		Template:    true,
-		V:           validator.New(),
-	})
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	cfg, err := s.api.CreateAppConfig(ctx, appID, &models.ServiceCreateAppConfigRequest{
-		Content:                generics.ToPtr(string(byts)),
-		GeneratedTerraformJSON: string(tfJSON),
-	})
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	pollTimeout, cancel := context.WithTimeout(ctx, defaultSyncTimeout)
-	defer cancel()
-
-	view.Update("waiting for app to be synced")
-	for {
-		select {
-		case <-pollTimeout.Done():
-			err := fmt.Errorf("timeout syncing")
-			view.Fail(err)
-			return err
-		default:
-		}
-
-		cfg, err := s.api.GetAppConfig(ctx, appID, cfg.ID)
-		if err != nil {
-			view.Fail(err)
-			return err
-		}
-
-		switch cfg.Status {
-		case models.AppAppConfigStatusActive:
-			view.Success("successfully synced " + cfgFile)
-			return nil
-		case models.AppAppConfigStatusError:
-			view.Fail(fmt.Errorf("failed to sync :%s", cfg.Status))
-			return nil
-		case models.AppAppConfigStatusOutdated:
-			view.Success("config is out dated")
-			return nil
-		default:
-			view.Update(string(cfg.Status))
-		}
-
-		time.Sleep(defaultSyncSleep)
-	}
-}
-
-func (s *Service) syncV2(ctx context.Context, cfgFile, appID string) error {
-	view := ui.NewCreateView(fmt.Sprintf("updated configs for %s", cfgFile), false)
-	view.Start()
-
-	byts, err := os.ReadFile(cfgFile)
-	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
 	cfg, err := parse.Parse(parse.ParseConfig{
 		Context:     config.ConfigContextSource,
-		Bytes:       byts,
+		Filename:    cfgFile,
 		BackendType: config.BackendTypeLocal,
 		Template:    true,
 		V:           validator.New(),
 	})
 	if err != nil {
-		view.Fail(err)
-		return err
-	}
-
-	_, err = s.api.CreateAppConfig(ctx, appID, &models.ServiceCreateAppConfigRequest{
-		Content: generics.ToPtr(string(byts)),
-	})
-	if err != nil {
-		view.Fail(err)
 		return err
 	}
 
 	syncer := sync.New(s.api, appID, cfg)
-	if err := syncer.Sync(ctx); err != nil {
-		view.Fail(err)
-
-		// TODO: set app status to failed sync
+	if err != nil {
 		return err
 	}
 
-	// TODO: need to add a method to update a config status success
+	if err := syncer.Sync(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) error {
+func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 	var (
 		cfgFiles []parse.File
 		err      error
@@ -219,10 +87,7 @@ func (s *Service) Sync(ctx context.Context, all bool, file string, asJSON bool) 
 		if err := s.sync(ctx, cfgFile.Path, appID); err != nil {
 			return err
 		}
-
-		// if err := s.syncV2(ctx, cfgFile.Path, appID); err != nil {
-		// 	return err
-		// }
 	}
+
 	return nil
 }
