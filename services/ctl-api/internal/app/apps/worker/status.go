@@ -23,19 +23,3 @@ func (w *Workflows) updateStatus(ctx workflow.Context, appID string, status app.
 		zap.String("app-id", appID),
 		zap.Error(err))
 }
-
-func (w *Workflows) updateConfigStatus(ctx workflow.Context, appConfigID string, status app.AppConfigStatus, statusDescription string) {
-	err := w.defaultExecErrorActivity(ctx, w.acts.UpdateConfigStatus, activities.UpdateConfigStatusRequest{
-		AppConfigID:       appConfigID,
-		Status:            status,
-		StatusDescription: statusDescription,
-	})
-	if err == nil {
-		return
-	}
-
-	l := workflow.GetLogger(ctx)
-	l.Error("unable to update app config status",
-		zap.String("app-config-id", appConfigID),
-		zap.Error(err))
-}

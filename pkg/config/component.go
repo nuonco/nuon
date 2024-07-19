@@ -4,7 +4,22 @@ import (
 	"fmt"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/nuonco/nuon-go/models"
+
 	"github.com/powertoolsdev/mono/pkg/config/source"
+)
+
+const (
+	// TerraformModuleComponentType is the type for a terraform module component
+	TerraformModuleComponentType = "terraform_module"
+	// HelmChartComponentType is the type for a helm chart component
+	HelmChartComponentType = "helm_chart"
+	// DockerBuildComponentType is the type for a docker build component
+	DockerBuildComponentType = "docker_build"
+	// ContainerImageComponentType is the type for an external image component
+	ContainerImageComponentType = "container_image"
+	// JobComponentType is the type for a job component
+	JobComponentType = "job"
 )
 
 // Component is a flattened configuration type that allows us to define components using a `type: type` field.
@@ -15,6 +30,23 @@ type MinComponent struct {
 	Name    string `mapstructure:"name,omitempty"`
 	VarName string `mapstructure:"var_name,omitempty"`
 	Type    string `mapstructure:"type,omitempty"`
+}
+
+func (m MinComponent) APIType() models.AppComponentType {
+	switch m.Type {
+	case TerraformModuleComponentType:
+		return models.AppComponentTypeTerraformModule
+	case HelmChartComponentType:
+		return models.AppComponentTypeHelmChart
+	case DockerBuildComponentType:
+		return models.AppComponentTypeDockerBuild
+	case ContainerImageComponentType:
+		return models.AppComponentTypeExternalImage
+	case JobComponentType:
+		return models.AppComponentTypeJob
+	}
+
+	return models.AppComponentTypeUnknown
 }
 
 func (c Component) toMinComponent() (MinComponent, error) {
@@ -57,15 +89,15 @@ func (c Component) ToResourceType() string {
 	}
 
 	switch minComponent.Type {
-	case "terraform_module":
+	case TerraformModuleComponentType:
 		return "nuon_terraform_module_component"
-	case "helm_chart":
+	case HelmChartComponentType:
 		return "nuon_helm_chart_component"
-	case "docker_build":
+	case DockerBuildComponentType:
 		return "nuon_docker_build_component"
-	case "container_image":
+	case ContainerImageComponentType:
 		return "nuon_container_image_component"
-	case "job":
+	case JobComponentType:
 		return "nuon_job_component"
 	default:
 		return ""
@@ -92,31 +124,31 @@ func (c Component) ToResource() (map[string]interface{}, error) {
 
 	// grab the actual fields from the components
 	switch minComponent.Type {
-	case "terraform_module":
+	case TerraformModuleComponentType:
 		var obj TerraformModuleComponentConfig
 		if err = mapstructure.Decode(c, &obj); err != nil {
 			return nil, fmt.Errorf("unable to parse terraform module: %w", err)
 		}
 		comp = &obj
-	case "helm_chart":
+	case HelmChartComponentType:
 		var obj HelmChartComponentConfig
 		if err := mapstructure.Decode(c, &obj); err != nil {
 			return nil, fmt.Errorf("unable to parse helm chart: %w", err)
 		}
 		comp = &obj
-	case "docker_build":
+	case DockerBuildComponentType:
 		var obj DockerBuildComponentConfig
 		if err := mapstructure.Decode(c, &obj); err != nil {
 			return nil, fmt.Errorf("unable to parse docker build: %w", err)
 		}
 		comp = &obj
-	case "container_image":
+	case ContainerImageComponentType:
 		var obj ExternalImageComponentConfig
 		if err := mapstructure.Decode(c, &obj); err != nil {
 			return nil, fmt.Errorf("unable to parse external image: %w", err)
 		}
 		comp = &obj
-	case "job":
+	case JobComponentType:
 		var obj JobComponentConfig
 		if err := mapstructure.Decode(c, &obj); err != nil {
 			return nil, fmt.Errorf("unable to parse job component: %w", err)

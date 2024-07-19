@@ -37,7 +37,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/apps/:app_id/configs", s.GetAppConfigs)
 	api.GET("/v1/apps/:app_id/config/:app_config_id", s.GetAppConfig)
 	api.GET("/v1/apps/:app_id/latest-config", s.GetAppLatestConfig)
-	api.POST("/v1/apps/:app_id/config/:app_config_id/set-status", s.SetAppConfigStatus)
+	api.PATCH("/v1/apps/:app_id/config/:app_config_id", s.UpdateAppConfig)
 
 	// app sandbox management
 	api.POST("/v1/apps/:app_id/sandbox-config", s.CreateAppSandboxConfig)

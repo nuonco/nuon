@@ -18,6 +18,8 @@ type CreateAppSandboxConfigRequest struct {
 
 	TerraformVersion string             `json:"terraform_version" validate:"required"`
 	SandboxInputs    map[string]*string `json:"sandbox_inputs" validate:"required"`
+
+	AWSDelegationIAMRoleARN string `json:"aws_delegation_iam_role_arn"`
 }
 
 func (c *CreateAppSandboxConfigRequest) Validate(v *validator.Validate) error {
@@ -98,6 +100,12 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		Variables:                pgtype.Hstore(req.SandboxInputs),
 		TerraformVersion:         req.TerraformVersion,
 	}
+	if req.AWSDelegationIAMRoleARN != "" {
+		appSandboxConfig.AWSDelegationConfig = &app.AppAWSDelegationConfig{
+			IAMRoleARN: req.AWSDelegationIAMRoleARN,
+		}
+	}
+
 	res = s.db.WithContext(ctx).
 		Create(&appSandboxConfig)
 	if res.Error != nil {
