@@ -23,7 +23,7 @@ resource "aws_route53_record" "wildcard_dev_installer_hosted" {
 
 resource "aws_route53_record" "ns_wildcard_dev_installer_hosted" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = "_acme-challenge"
+  name    = "_acme-challenge.dev.installer-hosted"
   type    = "NS"
   ttl     = 300
   records = [
