@@ -9,14 +9,10 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
-type CreateAppConfigRequest struct {
-	Content                string `json:"content" validate:"required,gte=1"`
-	GeneratedTerraformJSON string `json:"generated_terraform_json"`
-}
+type CreateAppConfigRequest struct{}
 
 func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
@@ -67,22 +63,15 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, appID, &signals.Signal{
-		Type:        signals.OperationConfigCreated,
-		AppConfigID: cfg.ID,
-	})
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
 func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req *CreateAppConfigRequest) (*app.AppConfig, error) {
 	inputs := app.AppConfig{
-		OrgID:              orgID,
-		AppID:              appID,
-		Format:             app.AppConfigFmtToml,
-		Content:            req.Content,
-		Status:             app.AppConfigStatusPending,
-		StatusDescription:  "waiting to be synced",
-		GeneratedTerraform: req.GeneratedTerraformJSON,
+		OrgID:             orgID,
+		AppID:             appID,
+		Status:            app.AppConfigStatusPending,
+		StatusDescription: "sync pending",
 	}
 
 	res := s.db.WithContext(ctx).Create(&inputs)

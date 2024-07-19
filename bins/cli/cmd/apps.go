@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
+	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 func (c *cli) appsCmd() *cobra.Command {
@@ -81,19 +82,6 @@ func (c *cli) appsCmd() *cobra.Command {
 	configs.MarkFlagRequired("app-id")
 	appsCmd.AddCommand(configs)
 
-	exportTerraform := &cobra.Command{
-		Use:   "export-terraform",
-		Short: "Export terraform config",
-		Long:  "Export terraform config",
-		Run: func(cmd *cobra.Command, _ []string) {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.ExportTerraform(cmd.Context(), appID, PrintJSON)
-		},
-	}
-	exportTerraform.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
-	exportTerraform.MarkFlagRequired("app-id")
-	appsCmd.AddCommand(exportTerraform)
-
 	latestInputConfig := &cobra.Command{
 		Use:   "input-config",
 		Short: "View app input config",
@@ -138,7 +126,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.Sync(cmd.Context(), all, file, PrintJSON)
+			if err := svc.Sync(cmd.Context(), all, file); err != nil {
+				ui.PrintError(err)
+			}
+			return nil
 		},
 	}
 	syncCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")

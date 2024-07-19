@@ -25,7 +25,6 @@ const (
 	OperationDeprovision      eventloop.SignalType = "deprovision"
 	OperationReprovision      eventloop.SignalType = "reprovision"
 	OperationUpdateSandbox    eventloop.SignalType = "update_sandbox"
-	OperationConfigCreated    eventloop.SignalType = "config_created"
 )
 
 type Signal struct {
