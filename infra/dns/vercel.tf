@@ -6,8 +6,6 @@ resource "aws_route53_record" "vercel" {
   records = [
     "vc-domain-verify=www.nuon.co,eb46ec2a8f783d42b56a",
     "vc-domain-verify=nuon.co,accce88f274d635e2146",
-    "vc-domain-verify=docs.nuon.co,d405ffa1f9db2909d3bd",
-    "vc-domain-verify=dev.installer-hosted.nuon.co,c921ec58054bc0ce1916",
-    "vc-domain-verify=*.dev.installer-hosted.nuon.co,b54927cb64a13a7dbb57"
+    "vc-domain-verify=docs.nuon.co,d405ffa1f9db2909d3bd"
   ]
 }
