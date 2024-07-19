@@ -96,5 +96,13 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "062-installers-unique-org",
 			Fn:   a.migration062InstallerUniqueOrg,
 		},
+		{
+			Name: "064-drop-installers-unique-org",
+			Fn:   a.migration064RemoveInstallerConstraint,
+		},
+		{
+			Name: "065-drop-app-config-fields",
+			Fn:   a.migration065ConfigFields,
+		},
 	}
 }

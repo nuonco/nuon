@@ -52,3 +52,4 @@ pkg/api/client/models/
 
 # MacOS files
 .DS_Store
+.vscode/

@@ -23,9 +23,9 @@ type UpdateInstallerRequest struct {
 		GithubURL        string `validate:"required" json:"github_url"`
 		HomepageURL      string `validate:"required" json:"homepage_url"`
 		CommunityURL     string `validate:"required" json:"community_url"`
-		DemoURL          string `json:"demo_url"`
-		FaviconURL       string `json:"favicon_url"`
+		FaviconURL       string `validate:"required" json:"favicon_url"`
 
+		DemoURL             string `json:"demo_url"`
 		OgImageURL          string `json:"og_image_url" `
 		PostInstallMarkdown string `json:"post_install_markdown"`
 		FooterMarkdown      string `json:"footer_markdown"`

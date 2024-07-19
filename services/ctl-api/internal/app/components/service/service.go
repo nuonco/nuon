@@ -62,6 +62,9 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/builds", s.GetComponentBuilds)
 	api.GET("/v1/components/builds/:build_id", s.GetBuild)
 
+	// get a component by app
+	api.GET("/v1/apps/:app_id/component/:component_name_or_id", s.GetAppComponent)
+
 	return nil
 }
 
