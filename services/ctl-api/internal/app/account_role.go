@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -17,8 +18,8 @@ type AccountRole struct {
 	UpdatedAt time.Time             `json:"updated_at" gorm:"notnull"`
 	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_account_role:unique"`
 
-	OrgID string `json:"org_id" gorm:"notnull" swaggerignore:"true"`
-	Org   Org    `json:"-" faker:"-"`
+	OrgID generics.NullString `json:"org_id" swaggerignore:"true"`
+	Org   *Org                `json:"-" faker:"-"`
 
 	RoleID string `gorm:"primary_key;index:idx_account_role:unique"`
 	Role   Role
@@ -30,8 +31,8 @@ type AccountRole struct {
 func (c *AccountRole) BeforeSave(tx *gorm.DB) error {
 	c.ID = domains.NewAccountID()
 
-	if c.OrgID == "" {
-		c.OrgID = orgIDFromContext(tx.Statement.Context)
+	if c.OrgID.Empty() {
+		c.OrgID = generics.NewNullString(orgIDFromContext(tx.Statement.Context))
 	}
 
 	return nil

@@ -104,5 +104,9 @@ func (a *Migrations) GetAll() []Migration {
 			Name: "065-drop-app-config-fields",
 			Fn:   a.migration065ConfigFields,
 		},
+		{
+			Name: "063-drop-org-id-requirements",
+			Fn:   a.migration063RoleDropOrgIDRequirements,
+		},
 	}
 }

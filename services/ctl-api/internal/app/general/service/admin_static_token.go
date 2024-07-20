@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"gorm.io/gorm/clause"
 
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
@@ -17,6 +16,8 @@ import (
 type StaticTokenRequest struct {
 	// defaults to one year
 	Duration string `json:"duration" validate:"required" default:"8760h"`
+
+	EmailOrSubject string `json:"email_or_subject" validate:"required"`
 }
 
 func (c *StaticTokenRequest) Validate(v *validator.Validate) error {
@@ -30,16 +31,15 @@ type StaticTokenResponse struct {
 	APIToken string `json:"api_token"`
 }
 
-// @ID AdminCreateOrgStaticToken
-// @Summary	create a static token with access to the org.
-// @Description.markdown create_org_static_token.md
+// @ID AdminCreateStaticToken
+// @Summary	create a static token for a user.
+// @Description.markdown create_static_token.md
 // @Param			req	body	StaticTokenRequest	true	"Input"
-// @Param			org_id	path	string	true	"org ID for your current org"
 // @Tags orgs/admin
 // @Accept			json
 // @Produce		json
 // @Success		201	{object} StaticTokenResponse
-// @Router			/v1/orgs/{org_id}/admin-static-token [POST]
+// @Router			/v1/general/admin-static-token [POST]
 func (s *service) AdminCreateStaticToken(ctx *gin.Context) {
 	var req StaticTokenRequest
 	if err := ctx.BindJSON(&req); err != nil {
@@ -51,17 +51,15 @@ func (s *service) AdminCreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	orgID := ctx.Param("org_id")
-
 	duration, err := time.ParseDuration(req.Duration)
 	if err != nil {
 		ctx.Error(fmt.Errorf("invalid time duration: %w", err))
 		return
 	}
 
-	token, err := s.createStaticToken(ctx, orgID, duration)
+	token, err := s.createStaticToken(ctx, req.EmailOrSubject, duration)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create integration user: %w", err))
+		ctx.Error(fmt.Errorf("unable to create static token: %w", err))
 		return
 	}
 
@@ -70,24 +68,10 @@ func (s *service) AdminCreateStaticToken(ctx *gin.Context) {
 	})
 }
 
-func (s *service) createStaticToken(ctx context.Context, orgID string, duration time.Duration) (*app.Token, error) {
-	acct := app.Account{
-		Email:       fmt.Sprintf("%s-service-account@nuon.co", orgID),
-		Subject:     fmt.Sprintf("%s-service-account", orgID),
-		AccountType: app.AccountTypeService,
-	}
-	res := s.db.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{
-				{Name: "email"},
-				{Name: "subject"},
-				{Name: "deleted_at"},
-			},
-			DoNothing: true,
-		}).
-		Create(&acct)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create service account: %w", res.Error)
+func (s *service) createStaticToken(ctx context.Context, subjectOrEmail string, duration time.Duration) (*app.Token, error) {
+	acct, err := s.authzClient.FindAccount(ctx, subjectOrEmail)
+	if err != nil {
+		return nil, fmt.Errorf("invalid account: %w", err)
 	}
 
 	token := app.Token{
@@ -96,14 +80,14 @@ func (s *service) createStaticToken(ctx context.Context, orgID string, duration 
 		TokenType:   app.TokenTypeStatic,
 		ExpiresAt:   time.Now().Add(duration),
 		IssuedAt:    time.Now(),
-		Issuer:      orgID,
+		Issuer:      acct.ID,
 		AccountID:   acct.ID,
 	}
 
-	res = s.db.WithContext(ctx).
+	res := s.db.WithContext(ctx).
 		Create(&token)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create service account user: %w", res.Error)
+		return nil, fmt.Errorf("unable to create static token: %w", res.Error)
 	}
 
 	return &token, nil

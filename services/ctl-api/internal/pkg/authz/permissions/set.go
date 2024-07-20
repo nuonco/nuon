@@ -21,6 +21,13 @@ func (p Set) Add(set map[string]*string) error {
 
 func (p Set) CanPerform(obj string, perm Permission) error {
 	val, ok := p[obj]
+
+	// if the object is not in the permission set, look up the "*" wildcard.
+	if !ok {
+		val, ok = p["*"]
+	}
+
+	// if still not found, return an error
 	if !ok {
 		return NoAccessError{
 			Permission: perm,

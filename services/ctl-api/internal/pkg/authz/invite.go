@@ -13,7 +13,7 @@ import (
 
 func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *app.Account) error {
 	// add the role to the user
-	if err := h.AddAccountRole(ctx, app.RoleTypeOrgAdmin, invite.OrgID, acct.ID); err != nil {
+	if err := h.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, invite.OrgID, acct.ID); err != nil {
 		return fmt.Errorf("unable to add account role: %w", err)
 	}
 
