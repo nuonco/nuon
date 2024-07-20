@@ -136,7 +136,7 @@ func (s *service) createOrg(ctx context.Context, acct *app.Account, req *CreateO
 		return nil, fmt.Errorf("unable to create org roles: %w", err)
 	}
 
-	if err := s.authzClient.AddAccountRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
+	if err := s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
 		return nil, fmt.Errorf("unable to add user to org: %w", err)
 	}
 

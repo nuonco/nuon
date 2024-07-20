@@ -86,5 +86,5 @@ func (s *Signal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, 
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	return &currentApp.Org, nil
+	return currentApp.Org, nil
 }

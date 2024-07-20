@@ -59,11 +59,17 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 			a.AllPermissions.Add(policy.Permissions)
 		}
 
+		if role.Org == nil {
+			continue
+		}
+
+		// TODO(jm): this is all pretty messy, a much better approach would be to get the unique org ids from
+		// the permission set. This works for now, though.
 		if _, ok := visited[role.Org.ID]; ok {
 			continue
 		}
 
-		a.Orgs = append(a.Orgs, role.Org)
+		a.Orgs = append(a.Orgs, *role.Org)
 		a.OrgIDs = append(a.OrgIDs, role.Org.ID)
 		visited[role.Org.ID] = struct{}{}
 	}
