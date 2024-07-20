@@ -32,17 +32,22 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
+	// manage canaries
 	api.POST("/v1/general/provision-canary", s.ProvisionCanary)
 	api.POST("/v1/general/deprovision-canary", s.DeprovisionCanary)
 	api.POST("/v1/general/start-canary-cron", s.StartCanaryCron)
 	api.POST("/v1/general/stop-canary-cron", s.StopCanaryCron)
+	api.POST("/v1/general/canary-user", s.CreateCanaryUser)
 
 	// create users for testing/seeding
 	api.POST("/v1/general/integration-user", s.CreateIntegrationUser)
-	api.POST("/v1/general/canary-user", s.CreateCanaryUser)
 	api.POST("/v1/general/seed-user", s.CreateSeedUser)
 
+	// migrations
 	api.GET("/v1/general/migrations", s.GetMigrations)
+
+	// create a customer token
+	api.POST("/v1/general/admin-static-token", s.AdminCreateStaticToken)
 
 	return nil
 }

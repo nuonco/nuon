@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -18,6 +19,9 @@ const (
 	PolicyNameOrgAdmin  PolicyName = "org_admin"
 	PolicyNameInstaller PolicyName = "installer"
 	PolicyNameRunner    PolicyName = "runner"
+
+	// policy names for service accounts
+	PolicyNameHostedInstaller PolicyName = "hosted_installer"
 )
 
 type Policy struct {
@@ -26,15 +30,15 @@ type Policy struct {
 	CreatedBy   Account               `json:"created_by"`
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"notnull;index:idx_org_role_policy,unique"`
+	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
 	RoleID string `json:"role_id" gorm:"notnull;default null"`
 	Role   Role   `swaggerignore:"true" json:"role"`
 
-	OrgID string `json:"org_id" gorm:"notnull;index:idx_org_role_policy,unique" swaggerignore:"true"`
-	Org   Org    `json:"-" faker:"-"`
+	OrgID generics.NullString `json:"org_id" swaggerignore:"true"`
+	Org   *Org                `json:"-" faker:"-"`
 
-	Name PolicyName `json:"name" gorm:"index:idx_org_role_policy,unique"`
+	Name PolicyName `json:"name"`
 
 	// Permissions are used to track granular permissions for each domain
 	Permissions pgtype.Hstore `json:"permissions" gorm:"type:hstore" swaggertype:"object,string"`
