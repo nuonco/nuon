@@ -45,3 +45,9 @@ func SetContext(ctx *gin.Context, acct *app.Account) {
 	ctx.Set(accountCtxKey, acct)
 	ctx.Set(accountIDCtxKey, acct.ID)
 }
+
+func SetRegContext(ctx context.Context, acct *app.Account) context.Context {
+	ctx = context.WithValue(ctx, accountCtxKey, acct)
+	ctx = context.WithValue(ctx, accountIDCtxKey, acct.ID)
+	return ctx
+}

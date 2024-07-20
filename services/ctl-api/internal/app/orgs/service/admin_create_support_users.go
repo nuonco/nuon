@@ -76,7 +76,7 @@ func (s *service) createSupportUser(ctx context.Context, email, subject, orgID s
 		}
 	}
 
-	if err := s.authzClient.AddAccountRole(ctx, app.RoleTypeOrgAdmin, orgID, acct.ID); err != nil {
+	if err := s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, orgID, acct.ID); err != nil {
 		return err
 	}
 

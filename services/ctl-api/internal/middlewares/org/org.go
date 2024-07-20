@@ -11,6 +11,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/metrics"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares/stderr"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/authz/permissions"
 )
 
 const (
@@ -43,6 +44,17 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		acct, err := middlewares.FromContext(ctx)
+		if err != nil {
+			ctx.Error(stderr.ErrAuthorization{
+				Err:         fmt.Errorf("no account identified"),
+				Description: fmt.Sprintf("no account was set in the middleware"),
+			})
+			ctx.Abort()
+			return
+		}
+
+		// make sure org exists
 		org := app.Org{}
 		res := m.db.WithContext(ctx).
 			Preload("NotificationsConfig").
@@ -56,8 +68,19 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		middlewares.SetOrgGinContext(ctx, &org)
+		// make sure account has access to org
+		perm := permissions.FromRequest(ctx)
+		err = acct.AllPermissions.CanPerform(org.ID, perm)
+		if err != nil {
+			ctx.Error(stderr.ErrAuthorization{
+				Err:         fmt.Errorf("unable to perform %s on org %s", perm, org.ID),
+				Description: fmt.Sprintf("Please make sure you have the correct permissions for %s", org.ID),
+			})
+			ctx.Abort()
+			return
+		}
 
+		middlewares.SetOrgGinContext(ctx, &org)
 		metricCtx, err := metrics.FromContext(ctx)
 		if err == nil {
 			metricCtx.OrgID = orgID
