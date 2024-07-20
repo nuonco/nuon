@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/powertoolsdev/mono/pkg/shortid/domains"
 )
 
@@ -16,8 +17,9 @@ const (
 	RoleTypeOrgAdmin RoleType = "org_admin"
 
 	// service account roles
-	RoleTypeInstaller RoleType = "installer"
-	RoleTypeRunner    RoleType = "runner"
+	RoleTypeInstaller       RoleType = "installer"
+	RoleTypeRunner          RoleType = "runner"
+	RoleTypeHostedInstaller RoleType = "hosted-installer"
 )
 
 type Role struct {
@@ -26,14 +28,15 @@ type Role struct {
 	CreatedBy   Account
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"notnull;index:idx_role,unique"`
+	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
 	AccountRoles []AccountRole `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"-"`
 
-	OrgID string `json:"org_id" gorm:"notnull;index:idx_role,unique" swaggerignore:"true"`
-	Org   Org    `json:"-" faker:"-"`
+	// NOTE: not all roles have to belong to an org, this is mainly for historical reasons.
+	OrgID generics.NullString `json:"org_id" swaggerignore:"true"`
+	Org   *Org                `json:"-" faker:"-"`
 
-	RoleType RoleType `json:"role_type" gorm:"notnull;index:idx_role,unique"`
+	RoleType RoleType `json:"role_type" gorm:"defaultnull;notnull"`
 
 	Policies []Policy `json:"policies"`
 }
