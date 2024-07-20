@@ -56,5 +56,5 @@ func (s *service) createUserByEmail(ctx context.Context, org *app.Org, email str
 		return fmt.Errorf("unable to create user: %w", err)
 	}
 
-	return s.authzClient.AddAccountRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID)
+	return s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID)
 }

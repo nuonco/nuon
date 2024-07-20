@@ -44,7 +44,7 @@ func (s *service) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.authzClient.AddAccountRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
+	if err := s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
 		ctx.Error(err)
 		return
 	}
