@@ -21,6 +21,11 @@ const (
 func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionRunnerRequest) error {
 	orgServerAddr := client.DefaultOrgServerAddress(w.cfg.OrgServerRootDomain, req.OrgId)
 
+	runnerInstallRole := req.AwsSettings.AwsRoleArn
+	if req.AwsSettings.AwsRoleDelegation.IamRoleArn != "" {
+		runnerInstallRole = req.AwsSettings.AwsRoleDelegation.IamRoleArn
+	}
+
 	// to be able to access the runner, we assume the delegation role, to assume the runner role, to assume the
 	// runner install role
 	auth := &credentials.Config{
@@ -31,9 +36,7 @@ func (w *wkflow) installECSRunner(ctx workflow.Context, req *runnerv1.ProvisionR
 			SessionDurationSeconds: 60 * 60,
 
 			TwoStepConfig: &assumerole.TwoStepConfig{
-				IAMRoleARN: req.AwsSettings.AwsRoleArn,
-
-				SrcIAMRoleARN: req.AwsSettings.AwsRoleDelegation.IamRoleArn,
+				IAMRoleARN: runnerInstallRole,
 
 				// NOTE: static creds are only used for gov-cloud installs
 				SrcStaticCredentials: assumerole.StaticCredentials{
