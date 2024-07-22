@@ -4,7 +4,7 @@ resource "aws_route53_record" "installers-caa-records" {
   type    = "CAA"
   ttl     = 300
   records = [
-    "0 issue \"letsencrypt.org\""
+    "0 issuewild \"letsencrypt.org\""
   ]
 }
 
@@ -14,7 +14,7 @@ resource "aws_route53_record" "installers-stage-caa-records" {
   type    = "CAA"
   ttl     = 300
   records = [
-    "0 issue \"letsencrypt.org\""
+    "0 issuewild \"letsencrypt.org\""
   ]
 }
 
