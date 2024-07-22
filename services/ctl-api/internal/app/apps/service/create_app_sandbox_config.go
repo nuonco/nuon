@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+	"gorm.io/gorm"
 
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/apps/signals"
@@ -77,6 +78,10 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Org.VCSConnections").
+		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_sandbox_configs.created_at DESC")
+		}).
+		Preload("AppSandboxConfigs.AWSDelegationConfig").
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app sandbox: %w", res.Error)
@@ -100,6 +105,15 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		Variables:                pgtype.Hstore(req.SandboxInputs),
 		TerraformVersion:         req.TerraformVersion,
 	}
+	// if the previous config has a delegation setup, use it to update the new one
+	if parentApp.AppSandboxConfig.AWSDelegationConfig != nil {
+		appSandboxConfig.AWSDelegationConfig = &app.AppAWSDelegationConfig{
+			IAMRoleARN:      parentApp.AppSandboxConfig.AWSDelegationConfig.IAMRoleARN,
+			SecretAccessKey: parentApp.AppSandboxConfig.AWSDelegationConfig.SecretAccessKey,
+			AccessKeyID:     parentApp.AppSandboxConfig.AWSDelegationConfig.AccessKeyID,
+		}
+	}
+	// if the delegation role is set in the config, update it
 	if req.AWSDelegationIAMRoleARN != "" {
 		appSandboxConfig.AWSDelegationConfig = &app.AppAWSDelegationConfig{
 			IAMRoleARN: req.AWSDelegationIAMRoleARN,
