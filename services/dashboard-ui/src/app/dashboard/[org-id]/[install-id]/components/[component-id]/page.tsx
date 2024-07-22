@@ -21,7 +21,13 @@ import {
   InstallProvider,
   InstallComponentProvider,
 } from '@/context'
-import { getBuild, getComponent, getInstall, getInstallComponent } from '@/lib'
+import {
+  getBuild,
+  getComponent,
+  getInstall,
+  getInstallComponent,
+  getOrg,
+} from '@/lib'
 import type { TInstallDeploy } from '@/types'
 
 export default withPageAuthRequired(
@@ -39,10 +45,11 @@ export default withPageAuthRequired(
     const buildId = installComponent?.install_deploys?.[0]?.build_id
     const componentId = installComponent?.component_id
 
-    const [component, build, install] = await Promise.all([
+    const [component, build, install, org] = await Promise.all([
       getComponent({ componentId, orgId }),
       getBuild({ orgId, buildId }),
       getInstall({ installId, orgId }),
+      getOrg({ orgId }),
     ])
 
     return (
@@ -80,17 +87,17 @@ export default withPageAuthRequired(
             links={[
               {
                 href: installComponent?.org_id,
-                text: installComponent?.org_id,
+                text: org?.name,
               },
 
               {
                 href: installComponent?.install_id,
-                text: installComponent?.install_id,
+                text: install?.name,
               },
 
               {
                 href: 'components/' + installComponent?.id,
-                text: installComponent?.id,
+                text: installComponent?.component?.name,
               },
             ]}
           >
