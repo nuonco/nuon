@@ -3,7 +3,7 @@
 import React, { type FC } from 'react'
 import { FaGitAlt, FaGithub } from 'react-icons/fa'
 import { GoInfo } from 'react-icons/go'
-import { Card, Code, Heading, Link, Status, Text } from '@/components'
+import { Card, CodeViewer, Heading, Link, Status, Text } from '@/components'
 import { useInstallContext, useSandboxRunContext } from '@/context'
 
 export const InstallSandboxDetailsCard: FC = () => {
@@ -78,7 +78,7 @@ export const InstallSandboxVariables: FC = () => {
       app_sandbox_config: { variables },
     },
   } = useInstallContext()
-  return <Code variant="preformated">{JSON.stringify(variables, null, 2)}</Code>
+  return <CodeViewer language="json" initCodeSource={JSON.stringify(variables, null, 2)} />
 }
 
 export interface IInstallSandboxRunStatus {
