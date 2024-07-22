@@ -7,7 +7,7 @@ import {
   SiHelm,
   SiTerraform,
 } from 'react-icons/si'
-import { Card, Code, Heading, Text, VCS } from '@/components'
+import { Card, CodeViewer, Heading, Text, VCS } from '@/components'
 import { getComponentConfig, type IGetComponentConfig } from '@/lib'
 import { TComponentConfig } from '@/types'
 
@@ -150,16 +150,18 @@ export const ComponentConfigDocker: FC<{
       </span>
 
       <Heading variant="subheading">Build arguments</Heading>
-      <Code variant="preformated">
-        {JSON.stringify(cfg?.build_args, null, 2)}
-      </Code>
+      <CodeViewer
+        language="json"
+        initCodeSource={JSON.stringify(cfg?.build_args, null, 2)}
+      />
 
       {cfg?.env_vars !== null && (
         <>
           <Heading variant="subheading">Enviroment variables</Heading>
-          <Code variant="preformated">
-            {JSON.stringify(cfg?.env_vars, null, 2)}
-          </Code>
+          <CodeViewer
+            language="json"
+            initCodeSource={JSON.stringify(cfg?.env_vars, null, 2)}
+          />
         </>
       )}
     </>
@@ -183,16 +185,18 @@ export const ComponentConfigTerraform: FC<{
       </span>
 
       <Heading variant="subheading">Terraform variables</Heading>
-      <Code variant="preformated">
-        {JSON.stringify(cfg?.variables, null, 2)}
-      </Code>
+      <CodeViewer
+        language="json"
+        initCodeSource={JSON.stringify(cfg?.variables, null, 2)}
+      />
 
       {cfg?.env_vars !== null && (
         <>
           <Heading variant="subheading">Enviroment variables</Heading>
-          <Code variant="preformated">
-            {JSON.stringify(cfg?.env_vars, null, 2)}
-          </Code>
+          <CodeViewer
+            language="json"
+            initCodeSource={JSON.stringify(cfg?.env_vars, null, 2)}
+          />
         </>
       )}
     </>
@@ -218,9 +222,10 @@ export const ComponentConfigHelm: FC<{
       {cfg?.values ? (
         <>
           <Heading variant="subheading">Config values</Heading>
-          <Code variant="preformated">
-            {JSON.stringify(cfg?.values, null, 4)}
-          </Code>
+          <CodeViewer
+            language="json"
+            initCodeSource={JSON.stringify(cfg?.values, null, 4)}
+          />
         </>
       ) : null}
     </>
@@ -272,18 +277,20 @@ export const ComponentConfigJob: FC<{
       {cfg?.args ? (
         <>
           <Heading variant="subheading">Arguments</Heading>
-          <Code variant="preformated">
-            {JSON.stringify(cfg?.args, null, 4)}
-          </Code>
+          <CodeViewer
+            language="json"
+            initCodeSource={JSON.stringify(cfg?.args, null, 4)}
+          />
         </>
       ) : null}
 
       {cfg?.env_vars ? (
         <>
           <Heading variant="subheading">Enviornment variables</Heading>
-          <Code variant="preformated">
-            {JSON.stringify(cfg?.env_vars, null, 4)}
-          </Code>
+          <CodeViewer
+            language="json"
+            initCodeSource={JSON.stringify(cfg?.env_vars, null, 4)}
+          />
         </>
       ) : null}
     </>
