@@ -12,6 +12,7 @@ import (
 
 type CheckIAMRoleRequest struct {
 	RoleARN string `validate:"required"`
+	Region  string `validate:"required"`
 
 	TwoStepConfig *assumerole.TwoStepConfig `validate:"required"`
 }
@@ -25,6 +26,7 @@ func (a *Activities) CheckIAMRole(ctx context.Context, req CheckIAMRoleRequest) 
 
 	var resp CheckIAMRoleResponse
 	cfg := &credentials.Config{
+		Region: req.Region,
 		AssumeRole: &credentials.AssumeRoleConfig{
 			RoleARN:       req.RoleARN,
 			SessionName:   "workers-installs-check-iam-role",
