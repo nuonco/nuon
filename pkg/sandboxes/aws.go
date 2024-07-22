@@ -26,8 +26,8 @@ type VPCOutputs struct {
 }
 
 type DomainOutputs struct {
-	Nameservers []interface{} `mapstructure:"nameservers" validate:"required" faker:"stringSliceAsInt"`
-	Name        string        `mapstructure:"name" validate:"required" faker:"domain"`
+	Nameservers []interface{} `mapstructure:"nameservers" faker:"stringSliceAsInt"`
+	Name        string        `mapstructure:"name" faker:"domain"`
 
 	ZoneID string `mapstructure:"zone_id"`
 	ID     string `mapstructure:"id"`

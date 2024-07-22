@@ -20,10 +20,18 @@ func (s *sync) createJobComponentConfig(ctx context.Context, resource, compID st
 		}
 	}
 
+	envVars := make(map[string]string, 0)
+	for _, value := range containerImage.EnvVars {
+		envVars[value.Name] = value.Value
+	}
+	for k, v := range containerImage.EnvVarMap {
+		envVars[k] = v
+	}
+
 	configRequest := &models.ServiceCreateJobComponentConfigRequest{
 		Args:     containerImage.Args,
 		Cmd:      containerImage.Cmd,
-		EnvVars:  containerImage.EnvVarMap,
+		EnvVars:  envVars,
 		ImageURL: generics.ToPtr(containerImage.ImageURL),
 		Tag:      generics.ToPtr(containerImage.Tag),
 	}

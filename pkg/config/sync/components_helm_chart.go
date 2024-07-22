@@ -43,6 +43,10 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 	for _, value := range obj.Values {
 		configRequest.Values[value.Name] = value.Value
 	}
+	for k, v := range obj.ValuesMap {
+		configRequest.Values[k] = v
+	}
+
 	for _, value := range obj.ValuesFiles {
 		configRequest.ValuesFiles = append(configRequest.ValuesFiles, value.Contents)
 	}
