@@ -15,16 +15,17 @@ import {
   Text,
 } from '@/components'
 import { InstallProvider } from '@/context'
-import { getInstall, getInstallEvents } from '@/lib'
+import { getInstall, getInstallEvents, getOrg } from '@/lib'
 
 export default withPageAuthRequired(
   async function InstallDashboard({ params }) {
     const orgId = params?.['org-id'] as string
     const installId = params?.['install-id'] as string
 
-    const [install, events] = await Promise.all([
+    const [install, events, org] = await Promise.all([
       getInstall({ installId, orgId }),
       getInstallEvents({ installId, orgId }),
+      getOrg({ orgId }),
     ])
 
     return (
@@ -43,7 +44,7 @@ export default withPageAuthRequired(
               }
             />
           }
-          links={[{ href: orgId }, { href: installId }]}
+          links={[{ href: orgId, text: org?.name }, { href: installId, text: install?.name }]}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-fit">
             <div className="flex flex-col gap-6">
