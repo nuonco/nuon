@@ -1,3 +1,12 @@
+resource "aws_route53_record" "installers-caa-records" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "installers"
+  type    = "CAA"
+  ttl     = 300
+  records = [
+    "0 issue \"letsencrypt.org\""
+  ]
+}
 resource "aws_route53_record" "installers-cname-records" {
   zone_id = aws_route53_zone.main.zone_id
   name    = "installers"
