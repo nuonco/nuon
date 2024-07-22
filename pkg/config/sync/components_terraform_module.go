@@ -30,8 +30,15 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 	for _, val := range obj.Variables {
 		configRequest.Variables[val.Name] = val.Value
 	}
+	for k, v := range obj.VarsMap {
+		configRequest.Variables[k] = v
+	}
+
 	for _, val := range obj.EnvVars {
 		configRequest.EnvVars[val.Name] = val.Value
+	}
+	for k, v := range obj.EnvVarMap {
+		configRequest.EnvVars[k] = v
 	}
 
 	if obj.PublicRepo != nil {

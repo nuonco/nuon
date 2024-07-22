@@ -25,6 +25,9 @@ func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReque
 	for _, v := range s.cfg.Sandbox.Vars {
 		sandboxInputs[v.Name] = v.Value
 	}
+	for k, v := range s.cfg.Sandbox.VarMap {
+		sandboxInputs[k] = v
+	}
 
 	req := &models.ServiceCreateAppSandboxConfigRequest{
 		SandboxInputs:    sandboxInputs,
