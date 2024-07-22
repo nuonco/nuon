@@ -84,7 +84,7 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 		return nil, fmt.Errorf("invalid github vcs config: %w", err)
 	}
 
-	publicGitVCSConfig, err := req.publicGitVCSConfig()
+	publicGitVCSConfig, err := req.publicGitVCSConfig(ctx, parentCmp, s.vcsHelpers)
 	if err != nil {
 		return nil, fmt.Errorf("invalid public vcs config: %w", err)
 	}
