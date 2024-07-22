@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -106,8 +105,6 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 // We may need to update the event loop deprovision workflow to set this status.
 // For now, this is good enough for clients to know if the install is busy, and shouldn't be interacted with.
 func installStatus(sandboxStatus SandboxRunStatus, runnerStatus string, componentStatus InstallDeployStatus) string {
-	fmt.Println(sandboxStatus, runnerStatus, componentStatus)
-
 	// if any status is "error", return "error"
 	if sandboxStatus == "error" || runnerStatus == "error" || componentStatus == "error" {
 		return "error"
