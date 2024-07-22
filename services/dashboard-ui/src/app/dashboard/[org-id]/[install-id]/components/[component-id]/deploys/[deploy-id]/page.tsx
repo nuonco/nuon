@@ -1,4 +1,3 @@
-import { DateTime } from 'luxon'
 import { GoClock, GoCloud } from 'react-icons/go'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import {
@@ -20,7 +19,14 @@ import {
   Time,
 } from '@/components'
 import { BuildProvider, InstallDeployProvider } from '@/context'
-import { getBuild, getComponent, getDeploy, getDeployLogs } from '@/lib'
+import {
+  getBuild,
+  getComponent,
+  getDeploy,
+  getDeployLogs,
+  getInstall,
+  getOrg,
+} from '@/lib'
 import type { TInstallDeployLogs } from '@/types'
 
 export default withPageAuthRequired(
@@ -34,10 +40,12 @@ export default withPageAuthRequired(
     const buildId = deploy?.build_id
     const componentId = deploy?.component_id
 
-    const [component, build, logs] = await Promise.all([
+    const [component, build, logs, install, org] = await Promise.all([
       getComponent({ componentId, orgId }),
       getBuild({ orgId, buildId }),
       getDeployLogs({ orgId, deployId, installId }).catch(console.error),
+      getInstall({ orgId, installId }),
+      getOrg({ orgId }),
     ])
 
     return (
@@ -96,11 +104,11 @@ export default withPageAuthRequired(
             />
           }
           links={[
-            { href: orgId },
-            { href: installId },
+            { href: orgId, text: org.name },
+            { href: installId, text: install.name },
             {
               href: 'components/' + installComponentId,
-              text: installComponentId,
+              text: component?.name,
             },
             { href: 'deploys/' + deployId, text: deployId },
           ]}

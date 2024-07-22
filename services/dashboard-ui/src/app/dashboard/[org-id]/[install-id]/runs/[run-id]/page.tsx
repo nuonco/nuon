@@ -16,7 +16,7 @@ import {
   Time,
 } from '@/components'
 import { InstallProvider, SandboxRunProvider } from '@/context'
-import { getSandboxRun, getSandboxRunLogs, getInstall } from '@/lib'
+import { getSandboxRun, getSandboxRunLogs, getInstall, getOrg } from '@/lib'
 import type { TSandboxRunLogs } from '@/types'
 
 export default withPageAuthRequired(
@@ -25,10 +25,11 @@ export default withPageAuthRequired(
     const installId = params?.['install-id'] as string
     const runId = params?.['run-id'] as string
 
-    const [run, logs, install] = await Promise.all([
+    const [run, logs, install, org] = await Promise.all([
       getSandboxRun({ installId, orgId, runId }),
       getSandboxRunLogs({ installId, orgId, runId }).catch(console.error),
       getInstall({ installId, orgId }),
+      getOrg({ orgId }),
     ])
 
     return (
@@ -77,8 +78,8 @@ export default withPageAuthRequired(
               />
             }
             links={[
-              { href: orgId },
-              { href: installId },
+              { href: orgId, text: org?.name },
+              { href: installId, text: install?.name },
               { href: 'runs/' + runId, text: runId },
             ]}
           >
