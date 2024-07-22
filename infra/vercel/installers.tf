@@ -4,6 +4,6 @@ resource "vercel_project" "installers" {
 
   git_repository = {
     type = "github"
-    repo = "nuonco-shared/installer-hosted"
+    repo = "nuonco/installer-hosted"
   }
 }
