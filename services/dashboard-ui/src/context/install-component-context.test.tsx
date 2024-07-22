@@ -51,7 +51,7 @@ test('install component context should render with init state', () => {
   expect(result.current.isFetching).toBeFalsy()
 })
 
-test.skip(
+test(
   'installComponent context should refetch it state from api if provider has polling enabled',
   async () => {
     const { result } = renderHook(() => useInstallComponentContext(), {
