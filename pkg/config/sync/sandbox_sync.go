@@ -30,8 +30,9 @@ func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReque
 	}
 
 	req := &models.ServiceCreateAppSandboxConfigRequest{
-		SandboxInputs:    sandboxInputs,
-		TerraformVersion: &s.cfg.Sandbox.TerraformVersion,
+		SandboxInputs:           sandboxInputs,
+		TerraformVersion:        &s.cfg.Sandbox.TerraformVersion,
+		AwsDelegationIamRoleArn: s.cfg.Sandbox.AWSDelegationIAMRoleARN,
 	}
 
 	if s.cfg.Sandbox.ConnectedRepo != nil {
