@@ -75,7 +75,7 @@ export const Code: FC<ICode> = ({
   variant = 'default',
 }) => {
   const classes = classNames(
-    'text-xs p-4 bg-gray-800 text-gray-100 font-mono break-all block rounded shadow-sm min-h-[3rem] max-h-[40rem] max-w-5xl overflow-auto',
+    'text-xs p-4 bg-gray-800 text-gray-100 font-mono break-all flex flex-col rounded shadow-sm min-h-[3rem] max-h-[40rem] max-w-5xl overflow-auto',
     {
       'p-1 leading-3 min-h-min w-full overflow-x-scroll': variant === 'inline',
       [`${className}`]: Boolean(className),
