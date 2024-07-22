@@ -1,8 +1,10 @@
 import React, { type FC } from 'react'
-import { Code, Heading } from '@/components'
+import { Code, CodeViewer, Heading } from '@/components'
 import type { TInstallDeployPlan } from '@/types'
 
-export const Plan: FC<{ plan: TInstallDeployPlan } & React.HTMLAttributes<HTMLDivElement>> = ({ plan, ...props }) => {
+export const Plan: FC<
+  { plan: TInstallDeployPlan } & React.HTMLAttributes<HTMLDivElement>
+> = ({ plan, ...props }) => {
   return (
     <div {...props}>
       <div className="flex flex-col gap-2">
@@ -12,7 +14,7 @@ export const Plan: FC<{ plan: TInstallDeployPlan } & React.HTMLAttributes<HTMLDi
             let variable = null
             if (v?.Actual?.TerraformVariable) {
               variable = (
-                <span className="flex" key={i?.toString()}>
+                <span className="flex gap-2" key={i?.toString()}>
                   <b>{v?.Actual?.TerraformVariable?.name}:</b>{' '}
                   {v?.Actual?.TerraformVariable?.value}
                 </span>
@@ -21,7 +23,7 @@ export const Plan: FC<{ plan: TInstallDeployPlan } & React.HTMLAttributes<HTMLDi
 
             if (v?.Actual?.HelmValue) {
               variable = (
-                <span className="flex" key={i?.toString()}>
+                <span className="flex gap-2" key={i?.toString()}>
                   <b>{v?.Actual?.HelmValue?.name}:</b>{' '}
                   {v?.Actual?.HelmValue?.value}
                 </span>
@@ -32,15 +34,16 @@ export const Plan: FC<{ plan: TInstallDeployPlan } & React.HTMLAttributes<HTMLDi
           })}
         </Code>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 mt-4">
         <Heading variant="subheading">Intermediate variables</Heading>
-        <Code variant="preformated">
-          {JSON.stringify(
+        <CodeViewer
+          language="json"
+          initCodeSource={JSON.stringify(
             plan.actual?.waypoint_plan?.variables?.intermediate_data,
             null,
             2
           )}
-        </Code>
+        />
       </div>
 
       {/* <div className="flex flex-col gap-2">
