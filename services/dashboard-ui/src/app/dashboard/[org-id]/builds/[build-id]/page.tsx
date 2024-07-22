@@ -20,7 +20,7 @@ import {
   Time,
 } from '@/components'
 import { BuildProvider } from '@/context'
-import { getBuild, getBuildLogs } from '@/lib'
+import { getBuild, getBuildLogs, getOrg } from '@/lib'
 import type { TComponentBuildLogs } from '@/types'
 
 export default withPageAuthRequired(
@@ -34,6 +34,7 @@ export default withPageAuthRequired(
       componentId: build.component_id,
       buildId,
     }).catch(console.error)
+    const org = await getOrg({ orgId })
 
     return (
       <BuildProvider initBuild={build} shouldPoll>
@@ -80,7 +81,10 @@ export default withPageAuthRequired(
               }
             />
           }
-          links={[{ href: orgId }, { href: buildId }]}
+          links={[
+            { href: orgId, text: org?.name },
+            { href: 'builds/' + buildId, text: buildId },
+          ]}
         >
           <Grid variant="3-cols">
             <div className="flex flex-col gap-6">
