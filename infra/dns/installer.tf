@@ -1,20 +1,40 @@
-resource "aws_route53_record" "installers-cname-records" {
+resource "aws_route53_record" "installers-caa-records" {
   zone_id = aws_route53_zone.main.zone_id
   name    = "installers"
-  type    = "CNAME"
+  type    = "CAA"
   ttl     = 300
   records = [
-    "cname.vercel-dns.com."
+    "0 issue \"letsencrypt.org\""
   ]
 }
 
-resource "aws_route53_record" "installers-stage-cname-records" {
+resource "aws_route53_record" "installers-stage-caa-records" {
   zone_id = aws_route53_zone.main.zone_id
   name    = "stage.installers"
-  type    = "CNAME"
+  type    = "CAA"
   ttl     = 300
   records = [
-    "cname.vercel-dns.com."
+    "0 issue \"letsencrypt.org\""
+  ]
+}
+
+resource "aws_route53_record" "installers-a-records" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "installers"
+  type    = "A"
+  ttl     = 300
+  records = [
+    "76.76.21.21"
+  ]
+}
+
+resource "aws_route53_record" "installers-stage-a-records" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "stage.installers"
+  type    = "A"
+  ttl     = 300
+  records = [
+    "76.76.21.21"
   ]
 }
 
