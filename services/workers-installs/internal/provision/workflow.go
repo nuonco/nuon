@@ -142,6 +142,7 @@ func (w wkflow) Provision(ctx workflow.Context, req *installsv1.ProvisionRequest
 		}
 
 		if err := execCheckIAMRole(ctx, act, CheckIAMRoleRequest{
+			Region:        req.AwsSettings.Region,
 			RoleARN:       req.AwsSettings.AwsRoleArn,
 			TwoStepConfig: twoStepCfg,
 		}); err != nil {
