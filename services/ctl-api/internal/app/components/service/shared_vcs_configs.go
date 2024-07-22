@@ -30,7 +30,8 @@ type basicVCSConfigRequest struct {
 }
 
 func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context,
-	parentCmp *app.Component, vcsHelpers *vcshelpers.Helpers) (*app.ConnectedGithubVCSConfig, error) {
+	parentCmp *app.Component, vcsHelpers *vcshelpers.Helpers,
+) (*app.ConnectedGithubVCSConfig, error) {
 	if b.ConnectedGithubVCSConfig == nil {
 		return nil, nil
 	}
@@ -55,7 +56,11 @@ func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context,
 	}, nil
 }
 
-func (b *basicVCSConfigRequest) publicGitVCSConfig() (*app.PublicGitVCSConfig, error) {
+func (b *basicVCSConfigRequest) publicGitVCSConfig(
+	ctx context.Context,
+	parentCmp *app.Component,
+	vcsHelpers *vcshelpers.Helpers,
+) (*app.PublicGitVCSConfig, error) {
 	if b.PublicGitVCSConfig == nil {
 		return nil, nil
 	}
@@ -65,6 +70,19 @@ func (b *basicVCSConfigRequest) publicGitVCSConfig() (*app.PublicGitVCSConfig, e
 		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("invalid git clone url"),
 			Description: "Please use either a <owner>/<repo> format, or a full https:// public clone url",
+		}
+	}
+
+	owner, repo, err := vcsHelpers.SplitRepoSlug(repo)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = vcsHelpers.LookupVCSConnection(ctx, owner, repo, parentCmp.App.Org.VCSConnections)
+	if err == nil {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("repo is connected using vcs connection"),
+			Description: "repo is connected using vcs connection, please use connected_repo instead",
 		}
 	}
 
