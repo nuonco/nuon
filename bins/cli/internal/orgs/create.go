@@ -3,10 +3,13 @@ package orgs
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
 const (
@@ -15,7 +18,7 @@ const (
 	statusAccessError = "access-error"
 )
 
-func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, asJSON bool) {
+func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, asJSON bool) error {
 	if asJSON {
 		org, err := s.api.CreateOrg(ctx, &models.ServiceCreateOrgRequest{
 			Name:           &name,
@@ -23,11 +26,11 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, a
 		})
 		if err != nil {
 			ui.PrintJSONError(err)
-			return
+			return err
 		}
 		ui.PrintJSON(org)
 		s.setOrgInConfig(ctx, org.ID)
-		return
+		return err
 	}
 
 	view := ui.NewCreateView("org", asJSON)
@@ -38,8 +41,14 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, a
 		UseSandboxMode: isSandboxMode,
 	})
 	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), "duplicated key"):
+			err = errs.UserFacingError(err, fmt.Sprintf("An organization already exists with the name %q", name))
+		default:
+			err = errors.Wrap(err, "error creating org")
+		}
 		view.Fail(err)
-		return
+		return err
 	}
 
 	for {
@@ -48,16 +57,17 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, a
 		switch {
 		case err != nil:
 			view.Fail(err)
+			return err
+		// TODO (sdboyer) need a separate subsystem for statuses
 		case o.Status == statusAccessError:
-			view.Fail(fmt.Errorf("failed to create org due to access error: %s", o.StatusDescription))
-			return
+			view.Fail(err)
+			return errors.Newf("failed to create org due to access error: %s", o.StatusDescription)
 		case o.Status == statusError:
-			view.Fail(fmt.Errorf("failed to create org: %s", o.StatusDescription))
-			return
+			return errors.Newf("failed to create org: %s", o.StatusDescription)
 		case o.Status == statusActive:
 			view.Success(fmt.Sprintf("successfully created org %s", o.ID))
 			s.setOrgInConfig(ctx, o.ID)
-			return
+			return nil
 		default:
 			view.Update(fmt.Sprintf("%s org", o.Status))
 		}
