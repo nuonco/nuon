@@ -158,10 +158,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:               "create",
 		Short:             "Create a new app",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Create(cmd.Context(), name, template, noTemplate, PrintJSON)
-		},
+			return svc.Create(cmd.Context(), name, template, noTemplate, PrintJSON)
+		}),
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "app name")
 	createCmd.MarkFlagRequired("name")

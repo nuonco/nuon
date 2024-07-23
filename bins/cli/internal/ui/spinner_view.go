@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/cockroachdb/errors"
 	"github.com/mattn/go-runewidth"
 	"github.com/nuonco/nuon-go"
 	"github.com/pterm/pterm"
@@ -56,6 +57,11 @@ func (v *SpinnerView) Update(text string) {
 func (v *SpinnerView) Fail(err error) {
 	if v.json {
 		PrintJSONError(err)
+		return
+	}
+
+	if hints := errors.FlattenHints(err); hints != "" {
+		v.spinner.Fail(v.formatText(hints))
 		return
 	}
 
