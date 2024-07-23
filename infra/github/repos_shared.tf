@@ -72,7 +72,8 @@ module "shared-athena" {
   enable_branch_protection = false
 
   collaborators = {
-    "bgeils" = "push"
+    "bgeils"        = "push"
+    "wilkie-athena" = "push"
   }
 
   providers = {
@@ -210,8 +211,8 @@ module "shared-weaviate-installer" {
   is_fork                  = true
 
   collaborators = {
-    aduis = "push"
-    scottalex1987 = "push"
+    aduis          = "push"
+    scottalex1987  = "push"
     hoppe-weaviate = "push"
   }
 
@@ -231,8 +232,8 @@ module "shared-weaviate" {
   enable_branch_protection = false
 
   collaborators = {
-    aduis = "push"
-    scottalex1987 = "push"
+    aduis          = "push"
+    scottalex1987  = "push"
     hoppe-weaviate = "push"
   }
 
