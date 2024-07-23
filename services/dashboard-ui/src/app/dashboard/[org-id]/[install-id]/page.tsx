@@ -44,7 +44,10 @@ export default withPageAuthRequired(
               }
             />
           }
-          links={[{ href: orgId, text: org?.name }, { href: installId, text: install?.name }]}
+          links={[
+            { href: orgId, text: org?.name },
+            { href: installId, text: install?.name },
+          ]}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full h-fit">
             <div className="flex flex-col gap-6">
