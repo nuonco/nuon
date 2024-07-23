@@ -149,12 +149,6 @@ export const ComponentConfigDocker: FC<{
         <VCS {...cfg} />
       </span>
 
-      <Heading variant="subheading">Build arguments</Heading>
-      <CodeViewer
-        language="json"
-        initCodeSource={JSON.stringify(cfg?.build_args, null, 2)}
-      />
-
       {cfg?.env_vars !== null && (
         <>
           <Heading variant="subheading">Enviroment variables</Heading>
