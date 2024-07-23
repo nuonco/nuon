@@ -31,5 +31,5 @@ func (v *DeleteView) SuccessQueued() {
 }
 
 func (v *DeleteView) Fail(err error) {
-	v.SpinnerView.Fail(fmt.Errorf("failed to create %s: %w", v.model, err))
+	v.SpinnerView.Fail(fmt.Errorf("failed to delete %s: %w", v.model, err))
 }

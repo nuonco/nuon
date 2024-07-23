@@ -5,7 +5,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -28,7 +30,12 @@ func Execute() {
 	}()
 
 	rootCmd := c.rootCmd()
-	if err := rootCmd.ExecuteContext(c.ctx); err != nil {
+	err := rootCmd.ExecuteContext(c.ctx)
+	if c.useSentry {
+		// Sentry should be flushed just the once, just prior to program exit
+		sentry.Flush(2 * time.Second)
+	}
+	if err != nil || c.err != nil {
 		os.Exit(2)
 	}
 }
