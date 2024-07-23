@@ -20,7 +20,7 @@ const config: Config = {
       pattern: /z-(10|20|30|40|50)/,
     },
     {
-      pattern: /(bottom|top)-(0)/,
+      pattern: /(bottom|top|left|right)-(0|2|4|6|8|10)/,
     },
     {
       pattern: /(m|p)-(auto)/,

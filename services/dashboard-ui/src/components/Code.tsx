@@ -30,7 +30,7 @@ export const CodeViewer: FC<ICodeViewer> = ({
         padding={16}
         readOnly={!isEditable}
         style={{
-          backgroundColor: '#1f2937',
+          //backgroundColor: '#1f2937',
           fontFamily:
             'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
           fontSize: '0.75rem',
