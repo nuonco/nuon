@@ -118,10 +118,10 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Use:   "create",
 		Short: "Create new org",
 		Long:  "Create a new org and set it as the current org",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			svc.Create(cmd.Context(), name, sandbox, PrintJSON)
-		},
+			return svc.Create(cmd.Context(), name, sandbox, PrintJSON)
+		}),
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name of your new org")
 	createCmd.MarkFlagRequired("name")
