@@ -12,7 +12,7 @@ import (
 func (s *sync) lookupAppIDs(ctx context.Context, resource string) ([]string, error) {
 	appIDs := make([]string, 0)
 
-	for _, appID := range s.cfg.Installer.AppIDs {
+	for _, appID := range s.cfg.Installer.Apps {
 		app, err := s.apiClient.GetApp(ctx, appID)
 		if err == nil {
 			appIDs = append(appIDs, app.ID)
@@ -41,6 +41,9 @@ func (s *sync) syncAppInstaller(ctx context.Context, resource string) error {
 	}
 
 	appIDs, err := s.lookupAppIDs(ctx, resource)
+	if err != nil {
+		return err
+	}
 
 	if s.prevState.InstallerID != "" {
 		req := s.updateInstallerRequest(appIDs)
@@ -64,8 +67,8 @@ func (s *sync) syncAppInstaller(ctx context.Context, resource string) error {
 			Err:      err,
 		}
 	}
-	s.state.InstallerID = installer.ID
 
+	s.state.InstallerID = installer.ID
 	return nil
 }
 
