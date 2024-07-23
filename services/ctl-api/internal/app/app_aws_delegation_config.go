@@ -27,8 +27,8 @@ type AppAWSDelegationConfig struct {
 	// static credentials for long lived cross account access.
 	// NOTE: this is not recommended for long-term usage, just to be used for short term access before gov-cloud
 	// support is fully spun up.
-	AccessKeyID     string `temporal_json:"access_key_id" json:"-"`
-	SecretAccessKey string `temporal_json:"secret_access_key" json:"-"`
+	AccessKeyID     string `temporaljson:"access_key_id" json:"-"`
+	SecretAccessKey string `temporaljson:"secret_access_key" json:"-"`
 }
 
 func (a *AppAWSDelegationConfig) BeforeCreate(tx *gorm.DB) error {
