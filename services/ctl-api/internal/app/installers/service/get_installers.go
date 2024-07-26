@@ -47,6 +47,7 @@ func (s *service) getInstallers(ctx context.Context, orgID string) ([]*app.Insta
 		Where("org_id = ?", orgID).
 		Preload("Apps").
 		Preload("Metadata").
+		Order("created_at desc").
 		Find(&apps)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get installers: %w", res.Error)
