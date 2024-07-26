@@ -49,21 +49,6 @@ func (s *sync) fetchState(ctx context.Context) error {
 		if err := json.Unmarshal([]byte(cfg.State), &prevState); err != nil {
 			return err
 		}
-	} else {
-		// this will be removed, as we only need the installers until we sync a _single_ time
-		installers, err := s.apiClient.GetInstallers(ctx)
-		if err != nil {
-			if nuon.IsNotFound(err) {
-				s.prevState = &prevState
-				return nil
-			}
-
-			return err
-		}
-
-		if len(installers) > 0 {
-			prevState.InstallerID = installers[0].ID
-		}
 	}
 
 	s.prevState = &prevState
