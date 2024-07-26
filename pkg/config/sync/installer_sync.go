@@ -56,6 +56,7 @@ func (s *sync) syncAppInstaller(ctx context.Context, resource string) error {
 			}
 		}
 
+		s.state.InstallerID = s.prevState.InstallerID
 		return nil
 	}
 
