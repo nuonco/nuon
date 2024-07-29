@@ -37,6 +37,7 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    obj.ConnectedRepo.Branch,
 			Directory: generics.ToPtr(obj.ConnectedRepo.Directory),
+			// NOTE: GitRef is not required for config sync
 			Repo:      generics.ToPtr(obj.ConnectedRepo.Repo),
 		}
 	}
