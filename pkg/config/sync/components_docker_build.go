@@ -20,7 +20,8 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 		}
 	}
 
-	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
+	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{	
+		// DEPRECATED: BuildArgs is not used and was required for Waypoint
 		BuildArgs:  []string{},
 		Dockerfile: generics.ToPtr(obj.Dockerfile),
 		Target:     "",
@@ -39,9 +40,11 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    connected.Branch,
 			Directory: generics.ToPtr(connected.Directory),
+			// NOTE: GitRef is not required for config sync
 			Repo:      generics.ToPtr(connected.Repo),
 		}
 	}
+
 	for _, envVar := range obj.EnvVars {
 		configRequest.EnvVars[envVar.Name] = envVar.Value
 	}
