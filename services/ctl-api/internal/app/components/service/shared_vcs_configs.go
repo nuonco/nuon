@@ -73,12 +73,12 @@ func (b *basicVCSConfigRequest) publicGitVCSConfig(
 		}
 	}
 
-	owner, repo, err := vcsHelpers.SplitRepoSlug(repo)
+	owner, repoName, err := vcsHelpers.SplitRepoSlug(repo)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = vcsHelpers.LookupVCSConnection(ctx, owner, repo, parentCmp.App.Org.VCSConnections)
+	_, err = vcsHelpers.LookupVCSConnection(ctx, owner, repoName, parentCmp.App.Org.VCSConnections)
 	if err == nil {
 		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("repo is connected using vcs connection"),
