@@ -26,6 +26,12 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 			return nil, err
 		}
 
+		if len(string(byts)) == 0 {
+			return nil, ParseErr{
+				Description: "config file is empty",
+			}
+		}	
+
 		parseCfg.Bytes = byts
 	}
 
