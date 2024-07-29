@@ -31,6 +31,7 @@ func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
 	for _, input := range s.cfg.Inputs.Inputs {
 		input := input
 		inputs[input.Name] = models.ServiceAppInputRequest{
+			Default:	input.Default,
 			Description: &input.Description,
 			DisplayName: &input.DisplayName,
 			Group:       &input.Group,
