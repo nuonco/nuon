@@ -8,6 +8,7 @@ import (
 
 func (s *sync) syncApp(ctx context.Context, resource string) error {
 	_, err := s.apiClient.UpdateApp(ctx, s.appID, &models.ServiceUpdateAppRequest{
+		// NOTE: we don't allow changing the ServiceUpdateAppRequest.app name from the config
 		Description:     s.cfg.Description,
 		DisplayName:     s.cfg.DisplayName,
 		SlackWebhookURL: s.cfg.SlackWebhookURL,
