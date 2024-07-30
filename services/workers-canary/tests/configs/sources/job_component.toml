@@ -1,3 +1,4 @@
+#:schema http://localhost:8081/v1/general/config-schema?source=job
 name = "toml_job"
 type = "job"
 

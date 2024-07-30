@@ -1,3 +1,4 @@
+#:schema http://localhost:8081/v1/general/config-schema?source=terraform
 name = "toml_terraform"
 type = "terraform_module"
 terraform_version = "1.5.3"
@@ -13,5 +14,3 @@ value = "{{.nuon.install.sandbox.account.region}}"
 
 [vars]
 ACCOUNT_ID = "{{.nuon.install.sandbox.account.id}}"
-
-

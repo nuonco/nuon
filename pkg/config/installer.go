@@ -31,28 +31,18 @@ type InstallerConfig struct {
 	FooterMarkdown      string `mapstructure:"footer_markdown" toml:"footer_markdown"`
 }
 
-func (a *InstallerConfig) ToResourceType() string {
-	return "nuon_installer"
-}
-
-func (a *InstallerConfig) ToResource() (map[string]interface{}, error) {
-	resource, err := toMapStructure(a)
-	if err != nil {
-		return nil, err
-	}
-	if resource == nil {
-		return nil, nil
+func (a *InstallerConfig) Validate() error {
+	if a == nil {
+		return nil
 	}
 
-	if len(a.Apps) < 1 {
-		resource["app_ids"] = []string{"${var.app_id}"}
-	} else {
-		resource["app_ids"] = a.Apps
+	if len(a.AppIDs) > 0 {
+		return ErrConfig{
+			Description: "please use `apps` instead",
+		}
 	}
 
-	delete(resource, "apps")
-	delete(resource, "source")
-	return nestWithName("installer", resource), nil
+	return nil
 }
 
 func (a *InstallerConfig) parse(ctx ConfigContext) error {

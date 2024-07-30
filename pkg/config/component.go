@@ -25,11 +25,58 @@ const (
 // Component is a flattened configuration type that allows us to define components using a `type: type` field.
 type Component map[string]interface{}
 
+func (c Component) Parse() (interface{}, string, error) {
+	minComponent, err := c.toMinComponent()
+	if err != nil {
+		return nil, "", err
+	}
+
+	switch minComponent.Type {
+	case ContainerImageComponentType:
+		var containerImage ExternalImageComponentConfig
+		if err := mapstructure.Decode(c, &containerImage); err != nil {
+			return nil, "", ErrConfig{
+				Description: fmt.Sprintf("unable to parse container image: %s", err.Error()),
+			}
+		}
+	case DockerBuildComponentType:
+		var obj DockerBuildComponentConfig
+		if err := mapstructure.Decode(c, &obj); err != nil {
+			return nil, "", ErrConfig{
+				Description: fmt.Sprintf("unable to parse docker build: %s", err.Error()),
+			}
+		}
+	case HelmChartComponentType:
+		var obj HelmChartComponentConfig
+		if err := mapstructure.Decode(c, &obj); err != nil {
+			return nil, "", ErrConfig{
+				Description: fmt.Sprintf("unable to parse helm chart: %s", err.Error()),
+			}
+		}
+	case TerraformModuleComponentType:
+		var obj TerraformModuleComponentConfig
+		if err := mapstructure.Decode(c, &obj); err != nil {
+			return nil, "", ErrConfig{
+				Description: fmt.Sprintf("unable to parse terraform module component: %s", err.Error()),
+			}
+		}
+	case JobComponentType:
+		var obj JobComponentConfig
+		if err := mapstructure.Decode(c, &obj); err != nil {
+			return nil, "", ErrConfig{
+				Description: fmt.Sprintf("unable to parse job component: %s", err.Error()),
+			}
+		}
+	}
+
+	return nil, "", ErrConfig{Description: "invalid type"}
+}
+
 type MinComponent struct {
 	Source  string `mapstructure:"source,omitempty"`
-	Name    string `mapstructure:"name,omitempty"`
+	Name    string `mapstructure:"name" jsonschema:"required"`
 	VarName string `mapstructure:"var_name,omitempty"`
-	Type    string `mapstructure:"type,omitempty"`
+	Type    string `mapstructure:"type,omitempty" jsonschema:"required"`
 }
 
 func (m MinComponent) APIType() models.AppComponentType {
@@ -82,94 +129,8 @@ func (c Component) AddDependency(val string) {
 	c["dependencies"] = append(deps, val)
 }
 
-func (c Component) ToResourceType() string {
-	minComponent, err := c.toMinComponent()
-	if err != nil {
-		return ""
-	}
-
-	switch minComponent.Type {
-	case TerraformModuleComponentType:
-		return "nuon_terraform_module_component"
-	case HelmChartComponentType:
-		return "nuon_helm_chart_component"
-	case DockerBuildComponentType:
-		return "nuon_docker_build_component"
-	case ContainerImageComponentType:
-		return "nuon_container_image_component"
-	case JobComponentType:
-		return "nuon_job_component"
-	default:
-		return ""
-	}
-
-	return ""
-}
-
 type genericComponent interface {
-	ToResource() (map[string]interface{}, error)
 	parse(ConfigContext) error
-}
-
-func (c Component) ToResource() (map[string]interface{}, error) {
-	minComponent, err := c.toMinComponent()
-	if err != nil {
-		return nil, err
-	}
-
-	var (
-		cfg  map[string]interface{}
-		comp genericComponent
-	)
-
-	// grab the actual fields from the components
-	switch minComponent.Type {
-	case TerraformModuleComponentType:
-		var obj TerraformModuleComponentConfig
-		if err = mapstructure.Decode(c, &obj); err != nil {
-			return nil, fmt.Errorf("unable to parse terraform module: %w", err)
-		}
-		comp = &obj
-	case HelmChartComponentType:
-		var obj HelmChartComponentConfig
-		if err := mapstructure.Decode(c, &obj); err != nil {
-			return nil, fmt.Errorf("unable to parse helm chart: %w", err)
-		}
-		comp = &obj
-	case DockerBuildComponentType:
-		var obj DockerBuildComponentConfig
-		if err := mapstructure.Decode(c, &obj); err != nil {
-			return nil, fmt.Errorf("unable to parse docker build: %w", err)
-		}
-		comp = &obj
-	case ContainerImageComponentType:
-		var obj ExternalImageComponentConfig
-		if err := mapstructure.Decode(c, &obj); err != nil {
-			return nil, fmt.Errorf("unable to parse external image: %w", err)
-		}
-		comp = &obj
-	case JobComponentType:
-		var obj JobComponentConfig
-		if err := mapstructure.Decode(c, &obj); err != nil {
-			return nil, fmt.Errorf("unable to parse job component: %w", err)
-		}
-		comp = &obj
-	default:
-		return nil, &ErrConfig{
-			Description: "invalid type, must be one of (job, container_image, docker_build, terraform_module, helm_chart)",
-			Err:         fmt.Errorf("invalid component type: %s", c["type"]),
-		}
-	}
-	if err := comp.parse(ConfigContextSource); err != nil {
-		return nil, fmt.Errorf("unable to parse: %w", err)
-	}
-
-	cfg, err = comp.ToResource()
-	if err != nil {
-		return nil, fmt.Errorf("unable to convert to terraform resource: %w", err)
-	}
-
-	return nestWithName(minComponent.Name, cfg), nil
 }
 
 func (c Component) parse(ctx ConfigContext) error {
@@ -182,12 +143,15 @@ func (c Component) parse(ctx ConfigContext) error {
 		return err
 	}
 	if minComponent.Source == "" {
-		return err
+		return nil
 	}
 
 	obj, err := source.LoadSource(minComponent.Source)
 	if err != nil {
-		return fmt.Errorf("unable to load source: %w", err)
+		return ErrConfig{
+			Description: "unable to load source",
+			Err:         fmt.Errorf("unable to load source: %w", err),
+		}
 	}
 	for k, v := range obj {
 		c[k] = v
