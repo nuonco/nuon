@@ -4,18 +4,20 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 	"go.uber.org/zap"
+
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/middlewares"
 )
 
 var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
-	{"GET", "/livez"}:     {},
-	{"GET", "/version"}:   {},
-	{"GET", "/readyz"}:    {},
-	{"OPTIONS", "*"}:      {},
-	{"GET", "/docs/*any"}: {},
-	{"GET", "/oapi/v2"}:   {},
-	{"GET", "/oapi/v3"}:   {},
+	{"GET", "/livez"}:                    {},
+	{"GET", "/version"}:                  {},
+	{"GET", "/readyz"}:                   {},
+	{"OPTIONS", "*"}:                     {},
+	{"GET", "/docs/*any"}:                {},
+	{"GET", "/oapi/v2"}:                  {},
+	{"GET", "/oapi/v3"}:                  {},
+	{"GET", "/v1/general/config-schema"}: {},
 
 	// cli / ui methods
 	{"GET", "/v1/general/cli-config"}:                             {},

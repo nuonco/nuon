@@ -1,8 +1,9 @@
 package config
 
 import (
+	"github.com/invopop/jsonschema"
+
 	"github.com/powertoolsdev/mono/pkg/config/source"
-	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type HelmValue struct {
@@ -17,40 +18,37 @@ type HelmValuesFile struct {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type HelmChartComponentConfig struct {
-	Name         string            `mapstructure:"name,omitempty"`
-	Dependencies []string          `mapstructure:"dependencies,omitempty"`
-	ChartName    string            `mapstructure:"chart_name,omitempty"`
-	Values       []HelmValue       `mapstructure:"value,omitempty"`
-	ValuesMap    map[string]string `mapstructure:"values,omitempty"`
+	MinComponent
 
-	ValuesFiles []HelmValuesFile `mapstructure:"values_file,omitempty"`
+	Name         string   `mapstructure:"name" jsonschema:"required"`
+	Dependencies []string `mapstructure:"dependencies"`
+	ChartName    string   `mapstructure:"chart_name,omitempty" jsonschema:"required"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"`
+	ValuesMap   map[string]string `mapstructure:"values"`
+	ValuesFiles []HelmValuesFile  `mapstructure:"values_file"`
+
+	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
+	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=connected_repo"`
+
+	// deprecated
+	Values []HelmValue `mapstructure:"value"`
 }
 
-func (h *HelmChartComponentConfig) ToResource() (map[string]interface{}, error) {
-	resource, err := toMapStructure(h)
-	if err != nil {
-		return nil, err
-	}
-	resource["app_id"] = "${var.app_id}"
-	delete(resource, "values")
-
-	generics.DeleteSliceKey(resource["values_file"], "source")
-
-	return resource, nil
+func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	addDescription(schema, "name", "release name")
+	addDescription(schema, "dependencies", "additional component dependencies")
+	addDescription(schema, "chart_name", "chart name")
+	addDescription(schema, "value", "array of helm values (not recommended)")
+	addDescription(schema, "values", "map of helm values")
+	addDescription(schema, "public_repo", "public repo with the helm chart")
+	addDescription(schema, "connected_repo", "connected repo with the helm chart")
 }
 
-func (h *HelmChartComponentConfig) parse(ctx ConfigContext) error {
-	for k, v := range h.ValuesMap {
-		h.Values = append(h.Values, HelmValue{
-			Name:  k,
-			Value: v,
-		})
-	}
-	if ctx == ConfigContextConfigOnly {
-		return nil
+func (h *HelmChartComponentConfig) Parse() error {
+	if len(h.Values) > 0 {
+		return ErrConfig{
+			Description: "the value array is deprecated, please use values instead.",
+		}
 	}
 
 	for idx, valuesFile := range h.ValuesFiles {

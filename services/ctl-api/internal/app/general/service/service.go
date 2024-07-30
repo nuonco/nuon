@@ -27,6 +27,7 @@ func (s *service) RegisterRoutes(api *gin.Engine) error {
 	api.GET("/v1/general/current-user", s.GetCurrentUser)
 	api.GET("/v1/general/cli-config", s.GetCLIConfig)
 	api.GET("/v1/general/cloud-platform/:cloud_platform/regions", s.GetCloudPlatformRegions)
+	api.GET("/v1/general/config-schema", s.GetConfigSchema)
 
 	return nil
 }
