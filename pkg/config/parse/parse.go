@@ -1,8 +1,10 @@
 package parse
 
 import (
-	"github.com/BurntSushi/toml"
+	"bytes"
+
 	"github.com/go-playground/validator/v10"
+	"github.com/pelletier/go-toml"
 
 	"github.com/powertoolsdev/mono/pkg/config"
 )
@@ -30,7 +32,7 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 			return nil, ParseErr{
 				Description: "config file is empty",
 			}
-		}	
+		}
 
 		parseCfg.Bytes = byts
 	}
@@ -43,10 +45,14 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 		}
 	}
 
-	if err := toml.Unmarshal(byts, &cfg); err != nil {
+	buf := bytes.NewReader(byts)
+	dec := toml.NewDecoder(buf)
+	dec.SetTagName("mapstructure")
+
+	err = dec.Decode(&cfg)
+	if err != nil {
 		return nil, ParseErr{
-			Description: "unable to parse toml",
-			Err:         err,
+			Description: "unable to parse configuration file",
 		}
 	}
 

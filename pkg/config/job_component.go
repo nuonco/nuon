@@ -2,33 +2,26 @@ package config
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type JobComponentConfig struct {
-	Name         string                `mapstructure:"name,omitempty"`
-	Dependencies []string              `mapstructure:"dependencies,omitempty"`
-	ImageURL     string                `mapstructure:"image_url,omitempty"`
-	Tag          string                `mapstructure:"tag,omitempty"`
-	Cmd          []string              `mapstructure:"cmd,omitempty"`
-	EnvVars      []EnvironmentVariable `mapstructure:"env_var,omitempty"`
-	EnvVarMap    map[string]string     `mapstructure:"env_vars,omitempty"`
-	Args         []string              `mapstructure:"args,omitempty"`
+	MinComponent
+
+	Name         string   `mapstructure:"name" jsonschema:"required"`
+	Dependencies []string `mapstructure:"dependencies,omitempty"`
+	ImageURL     string   `mapstructure:"image_url" jsonschema:"required"`
+	Tag          string   `mapstructure:"tag" jsonschema:"required"`
+	Cmd          []string `mapstructure:"cmd" jsonschema:"required"`
+
+	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty"`
+	Args      []string          `mapstructure:"args,omitempty"`
+
+	// deprecated
+	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty"`
 }
 
-func (t *JobComponentConfig) ToResource() (map[string]interface{}, error) {
-	resource, err := toMapStructure(t)
-	if err != nil {
-		return nil, err
-	}
-	resource["app_id"] = "${var.app_id}"
-
-	delete(resource, "env_vars")
-	return resource, nil
-}
-
-func (t *JobComponentConfig) parse(ConfigContext) error {
-	for k, v := range t.EnvVarMap {
-		t.EnvVars = append(t.EnvVars, EnvironmentVariable{
-			Name:  k,
-			Value: v,
-		})
+func (t *JobComponentConfig) Validate() error {
+	if len(t.EnvVars) > 0 {
+		return ErrConfig{
+			Description: "the env_var array is deprecated, please use env_vars instead.",
+		}
 	}
 
 	return nil

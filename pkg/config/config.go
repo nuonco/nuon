@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/invopop/jsonschema"
 )
 
 const (
@@ -11,34 +12,69 @@ const (
 )
 
 type AppConfig struct {
-	Version string `mapstructure:"version" toml:"version"`
+	// Config file version
+	Version string `mapstructure:"version" jsonschema:"required"`
 
-	// Top level fields on the app itself, which are _not_ synced by this package
-	Description     string `mapstructure:"description,omitempty" toml:"description"`
-	DisplayName     string `mapstructure:"display_name,omitempty" toml:"display_name"`
-	SlackWebhookURL string `mapstructure:"slack_webhook_url,omitempty" toml:"slack_webhook_url"`
+	// Description for your app, which is rendered in the installers
+	Description string `mapstructure:"description,omitempty" jsonschema:"required"`
+	// Display name for the app, rendered in the installer
+	DisplayName string `mapstructure:"display_name,omitempty" jsonschema:"required"`
+	// Slack webhook url to receive notifications
+	SlackWebhookURL string `mapstructure:"slack_webhook_url"`
 
-	// top level fields
-	Inputs    *AppInputConfig   `mapstructure:"inputs,omitempty"`
-	Sandbox   *AppSandboxConfig `mapstructure:"sandbox"`
-	Runner    *AppRunnerConfig  `mapstructure:"runner"`
-	Installer *InstallerConfig  `mapstructure:"installer,omitempty"`
+	// Input configuration
+	Inputs *AppInputConfig `mapstructure:"inputs"`
+	// Sandbox configuration
+	Sandbox *AppSandboxConfig `mapstructure:"sandbox" jsonschema:"required"`
+	// Runner configuration
+	Runner *AppRunnerConfig `mapstructure:"runner" jsonschema:"required"`
+	// Installer configuration
+	Installer *InstallerConfig `mapstructure:"installer"`
 
 	// NOTE: in order to prevent users having to declare multiple arrays of _different_ component types:
 	// eg: [[terraform_module_components]]
 	// eg: [[helm_chart_components]]
 	// we have one flat type, and convert the toml to a mapstructure.
 	// This requires a bit more work/indirection by us, but a bit less by our customers!
+
+	// Components are used to connect container images, automation and infrastructure as code to your Nuon App
 	Components []*Component `mapstructure:"components"`
 }
 
-func (a *AppConfig) Validate(v *validator.Validate) error {
+func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	addDescription(schema, "version", "Config file version.")
+	addDescription(schema, "display_name", "Display name which is rendered in the installer.")
+	addDescription(schema, "description", "App description which is rendered in the installer.")
+	addDescription(schema, "slack_webhook_url", "Optional notifications channel to send app notifications to.")
+
+	addDescription(schema, "inputs", "Inputs configuration object")
+	addDescription(schema, "sandbox", "Sandbox configuration object")
+	addDescription(schema, "installer", "Installer configuration object")
+	addDescription(schema, "components", "Component configurations")
+}
+
+func (a *AppConfig) validateVersion() error {
 	if a.Version != currentVersion {
-		return fmt.Errorf("version must be v1")
+		return ErrConfig{
+			Description: "version must be v1",
+		}
 	}
 
-	if err := v.Struct(a); err != nil {
-		return err
+	return nil
+}
+
+func (a *AppConfig) Validate(v *validator.Validate) error {
+	fns := []func() error{
+		func() error {
+			return v.Struct(a)
+		},
+		a.validateVersion,
+		a.Installer.Validate,
+	}
+	for _, fn := range fns {
+		if err := fn(); err != nil {
+			return err
+		}
 	}
 
 	return nil
