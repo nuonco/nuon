@@ -13,6 +13,7 @@ func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Componen
 	cmp := app.Component{}
 	res := s.db.WithContext(ctx).
 		Preload("ComponentConfigs").
+		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("component_config_connections_view_v1.created_at DESC")
 		}).
