@@ -4,43 +4,30 @@ import (
 	"fmt"
 
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/powertoolsdev/mono/pkg/config/source"
 )
 
 type AppSandboxConfig struct {
 	Source string `mapstructure:"source,omitempty"`
 
-	TerraformVersion string               `mapstructure:"terraform_version,omitempty" toml:"terraform_version"`
-	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo"`
-	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo"`
+	TerraformVersion string               `mapstructure:"terraform_version" jsonschema:"required"`
+	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
 
-	Vars   []TerraformVariable `mapstructure:"var,omitempty" toml:"var"`
-	VarMap map[string]string   `mapstructure:"vars" toml:"vars"`
+	VarMap map[string]string `mapstructure:"vars,omitempty"`
 
-	AWSDelegationIAMRoleARN string `mapstructure:"aws_delegation_iam_role_arn" toml:"aws_delegation_iam_role_arn"`
-}
+	AWSDelegationIAMRoleARN string `mapstructure:"aws_delegation_iam_role_arn,omitempty"`
 
-func (t *AppSandboxConfig) ToResourceType() string {
-	return "nuon_app_sandbox"
-}
-
-func (t *AppSandboxConfig) ToResource() (map[string]interface{}, error) {
-	resource, err := toMapStructure(t)
-	if err != nil {
-		return nil, err
-	}
-	resource["app_id"] = "${var.app_id}"
-	delete(resource, "source")
-
-	return nestWithName("sandbox", resource), nil
+	// Deprecated
+	Vars []TerraformVariable `mapstructure:"var,omitempty" toml:"var"`
 }
 
 func (a *AppSandboxConfig) parse(ctx ConfigContext) error {
-	for k, v := range a.VarMap {
-		a.Vars = append(a.Vars, TerraformVariable{
-			Name:  k,
-			Value: v,
-		})
+	if len(a.Vars) > 0 {
+		return ErrConfig{
+			Description: "the var array is deprecated, please use vars instead",
+		}
 	}
 
 	if ctx == ConfigContextConfigOnly {
