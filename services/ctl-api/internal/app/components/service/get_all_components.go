@@ -31,6 +31,7 @@ func (s *service) getAllComponents(ctx context.Context) ([]*app.Component, error
 	var components []*app.Component
 	res := s.db.WithContext(ctx).
 		Order("created_at desc").
+		Preload("Dependencies").
 		Find(&components)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get all components: %w", res.Error)
