@@ -43,6 +43,7 @@ func (s *service) getAppComponents(ctx context.Context, appID string) ([]app.Com
 	res := s.db.WithContext(ctx).
 		Preload("Components").
 		Preload("Components.ComponentConfigs").
+		Preload("Components.Dependencies").
 		First(&currentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
