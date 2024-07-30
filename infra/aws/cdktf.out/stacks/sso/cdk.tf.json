@@ -4,7 +4,7 @@
       "backend": "remote",
       "cloud": "tfc",
       "stackName": "sso",
-      "version": "0.15.5"
+      "version": "0.20.8"
     },
     "outputs": {
       "sso": {
@@ -71,7 +71,7 @@
   "output": {
     "sso-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2023-09-11T01:05:22.290Z"
+      "value": "2024-07-30T22:41:15.164Z"
     }
   },
   "provider": {
@@ -514,7 +514,7 @@
     "required_providers": {
       "aws": {
         "source": "aws",
-        "version": "4.60.0"
+        "version": "5.60.0"
       }
     }
   }

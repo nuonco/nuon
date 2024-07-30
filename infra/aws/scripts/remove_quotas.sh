@@ -1,0 +1,1 @@
+cat cdk.tf.json| jq -c '.resource.aws_servicequotas_service_quota | keys.[]' | xargs -L1 -I '{}' printf "removed {\nfrom = aws_servicequotas_service_quota.{}\nlifecycle {\ndestroy = false\n}\n}\n" > removed_quotas.tf

@@ -1,33 +1,40 @@
 {
-  "version": "0.15.5",
   "stacks": {
+    "accounts": {
+      "annotations": [
+      ],
+      "constructPath": "accounts",
+      "dependencies": [
+        "org"
+      ],
+      "name": "accounts",
+      "stackMetadataPath": "stacks/accounts/metadata.json",
+      "synthesizedStackPath": "stacks/accounts/cdk.tf.json",
+      "workingDirectory": "stacks/accounts"
+    },
     "org": {
-      "name": "org",
+      "annotations": [
+      ],
       "constructPath": "org",
-      "workingDirectory": "stacks/org",
+      "dependencies": [
+      ],
+      "name": "org",
+      "stackMetadataPath": "stacks/org/metadata.json",
       "synthesizedStackPath": "stacks/org/cdk.tf.json",
-      "annotations": [],
-      "dependencies": []
+      "workingDirectory": "stacks/org"
     },
     "sso": {
-      "name": "sso",
+      "annotations": [
+      ],
       "constructPath": "sso",
-      "workingDirectory": "stacks/sso",
+      "dependencies": [
+        "org"
+      ],
+      "name": "sso",
+      "stackMetadataPath": "stacks/sso/metadata.json",
       "synthesizedStackPath": "stacks/sso/cdk.tf.json",
-      "annotations": [],
-      "dependencies": [
-        "org"
-      ]
-    },
-    "accounts": {
-      "name": "accounts",
-      "constructPath": "accounts",
-      "workingDirectory": "stacks/accounts",
-      "synthesizedStackPath": "stacks/accounts/cdk.tf.json",
-      "annotations": [],
-      "dependencies": [
-        "org"
-      ]
+      "workingDirectory": "stacks/sso"
     }
-  }
+  },
+  "version": "0.20.8"
 }

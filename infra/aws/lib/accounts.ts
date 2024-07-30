@@ -10,15 +10,9 @@ import {
 } from "@cdktf/provider-aws/lib/provider";
 import { Route53Record } from "@cdktf/provider-aws/lib/route53-record";
 import { Route53Zone } from "@cdktf/provider-aws/lib/route53-zone";
-import { ServicequotasServiceQuota } from "@cdktf/provider-aws/lib/servicequotas-service-quota";
 import { TerraformOutput, TerraformStack } from "cdktf";
 import { Construct } from "constructs";
-import {
-  allowedRegions,
-  defaultRegion,
-  getAccountQuotas,
-  rootDomain,
-} from "./defaults";
+import { allowedRegions, defaultRegion, rootDomain } from "./defaults";
 import { TAWSAccount } from "./org";
 
 interface IAccountsConfig {
@@ -47,8 +41,6 @@ export class Accounts extends TerraformStack {
       provider: mgmtProvider,
     });
 
-    const accountQuotas = getAccountQuotas();
-
     config.accounts.forEach((acct) => {
       const defaultRegionalProvider = new AwsProvider(
         this,
@@ -65,9 +57,7 @@ export class Accounts extends TerraformStack {
         }
       );
 
-      const regionalProviders = allowedRegions.reduce<
-        Record<string, AwsProvider>
-      >((accum, region) => {
+      allowedRegions.reduce<Record<string, AwsProvider>>((accum, region) => {
         return {
           ...accum,
           ...{
@@ -174,19 +164,6 @@ export class Accounts extends TerraformStack {
         ttl: 300,
         type: "NS",
         zoneId: nuonCoZone.zoneId,
-      });
-
-      Object.entries(regionalProviders).forEach(([region, prov]) => {
-        accountQuotas[acct.name].forEach((q) => {
-          new ServicequotasServiceQuota(
-            this,
-            `${acct.name}-${region}-${q.quotaCode}`,
-            {
-              ...q,
-              provider: prov,
-            }
-          );
-        });
       });
     });
 

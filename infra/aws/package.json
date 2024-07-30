@@ -23,8 +23,9 @@
     "node": ">=14.0"
   },
   "dependencies": {
-    "@cdktf/provider-aws": "^12.0.11",
-    "cdktf": "^0.15.5",
+    "@cdktf/provider-aws": "^19.28.0",
+    "cdktf": "^0.20.8",
+    "cdktf-cli": "^0.20.8",
     "constructs": "^10.1.289"
   },
   "devDependencies": {
@@ -33,7 +34,6 @@
     "@types/node": "^18.15.7",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@typescript-eslint/parser": "^5.56.0",
-    "cdktf-cli": "^0.19.1",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-import": "^2.27.5",
