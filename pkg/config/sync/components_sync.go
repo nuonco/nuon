@@ -38,7 +38,9 @@ func (s *sync) getComponent(ctx context.Context, name string, typ models.AppComp
 }
 
 func (s *sync) syncComponentConfig(ctx context.Context, minComp config.MinComponent, cfg interface{}, resource, compID string) (string, error) {
-	// create config version
+	// TODO(jm): this method can now use the Parse method to get an actual component object, simplifying the map
+	// decoding everywhere in this package.
+
 	methods := map[models.AppComponentType]func(context.Context, string, string, interface{}) (string, error){
 		models.AppComponentTypeHelmChart:       s.createHelmChartComponentConfig,
 		models.AppComponentTypeTerraformModule: s.createTerraformModuleComponentConfig,

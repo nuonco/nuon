@@ -12,12 +12,17 @@ import (
 )
 
 func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, compID string, inp interface{}) (string, error) {
+	// NOTE(jm): this logic should be updated to be handled _before_ the config gets here.
 	var obj config.HelmChartComponentConfig
 	if err := mapstructure.Decode(inp, &obj); err != nil {
 		return "", SyncErr{
 			Resource:    resource,
 			Description: fmt.Sprintf("unable to parse config: %s", err.Error()),
 		}
+	}
+
+	if err := obj.Parse(); err != nil {
+		return "", err
 	}
 
 	configRequest := &models.ServiceCreateHelmComponentConfigRequest{
@@ -38,7 +43,7 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 			Branch:    obj.ConnectedRepo.Branch,
 			Directory: generics.ToPtr(obj.ConnectedRepo.Directory),
 			// NOTE: GitRef is not required for config sync
-			Repo:      generics.ToPtr(obj.ConnectedRepo.Repo),
+			Repo: generics.ToPtr(obj.ConnectedRepo.Repo),
 		}
 	}
 	for _, value := range obj.Values {
