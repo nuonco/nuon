@@ -11,7 +11,7 @@ func Validate(obj *config.AppConfig) ([]gojsonschema.ResultError, error) {
 		return nil, err
 	}
 
-	schma, err := AppSchema()
+	schma, err := AppSchemaFlat()
 	if err != nil {
 		return nil, err
 	}

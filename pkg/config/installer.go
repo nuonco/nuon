@@ -45,11 +45,7 @@ func (a *InstallerConfig) Validate() error {
 	return nil
 }
 
-func (a *InstallerConfig) parse(ctx ConfigContext) error {
-	if ctx != ConfigContextSource {
-		return nil
-	}
-
+func (a *InstallerConfig) parse() error {
 	if a.Source == "" {
 		return nil
 	}

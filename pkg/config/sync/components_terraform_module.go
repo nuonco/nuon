@@ -2,23 +2,15 @@ package sync
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/nuonco/nuon-go/models"
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resource, compID string, inp interface{}) (string, error) {
-	var obj config.TerraformModuleComponentConfig
-	if err := mapstructure.Decode(inp, &obj); err != nil {
-		return "", SyncErr{
-			Resource:    resource,
-			Description: fmt.Sprintf("unable to parse config: %s", err.Error()),
-		}
-	}
+func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, error) {
+	obj := comp.TerraformModule
 
 	configRequest := &models.ServiceCreateTerraformModuleComponentConfigRequest{
 		ConnectedGithubVcsConfig: nil,
@@ -52,7 +44,7 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 			Branch:    obj.ConnectedRepo.Branch,
 			Directory: generics.ToPtr(obj.ConnectedRepo.Directory),
 			// NOTE: GitRef is not required for config sync
-			Repo:      generics.ToPtr(obj.ConnectedRepo.Repo),
+			Repo: generics.ToPtr(obj.ConnectedRepo.Repo),
 		}
 	}
 

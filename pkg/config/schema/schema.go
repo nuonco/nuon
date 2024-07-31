@@ -21,7 +21,8 @@ func reflector() (*jsonschema.Reflector, error) {
 	return r, nil
 }
 
-func AppSchema() (*jsonschema.Schema, error) {
+// This is used when the entire config file is in a single file, and generally should only be used _after_ parsing.
+func AppSchemaFlat() (*jsonschema.Schema, error) {
 	r, err := reflector()
 	if err != nil {
 		return nil, err
@@ -30,6 +31,7 @@ func AppSchema() (*jsonschema.Schema, error) {
 	return r.Reflect(config.AppConfig{}), nil
 }
 
+// This is used when the schema is using sources
 func AppSchemaSources() (*jsonschema.Schema, error) {
 	r, err := reflector()
 	if err != nil {

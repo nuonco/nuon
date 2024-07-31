@@ -17,6 +17,7 @@ const (
 	defaultAPIURL           string = "https://api.nuon.co"
 	defaultConfigFileEnvVar string = "NUON_CONFIG_FILE"
 	defaultGitHubAppName    string = "nuon-connect"
+	defaultDebugEnvVar      string = "NUON_DEBUG"
 )
 
 // config holds config values, read from the `~/.nuon` config file and env vars.
@@ -27,6 +28,7 @@ type Config struct {
 	APIURL        string `mapstructure:"api_url"`
 	GitHubAppName string `mapstructure:"github_app_name"`
 	OrgID         string `mapstructure:"org_id"`
+	Debug         bool
 }
 
 // newConfig creates a new config instance.
@@ -35,6 +37,7 @@ func NewConfig(customFilepath string) (*Config, error) {
 		Viper:         viper.New(),
 		APIURL:        defaultAPIURL,
 		GitHubAppName: defaultGitHubAppName,
+		Debug:         Debug(),
 	}
 
 	// Read values from config file.

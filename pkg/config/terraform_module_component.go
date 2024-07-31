@@ -2,11 +2,7 @@ package config
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type TerraformModuleComponentConfig struct {
-	MinComponent
-
-	Name             string   `mapstructure:"name" jsonschema:"required"`
-	TerraformVersion string   `mapstructure:"terraform_version" jsonschema:"required"`
-	Dependencies     []string `mapstructure:"dependencies,omitempty"`
+	TerraformVersion string `mapstructure:"terraform_version" jsonschema:"required"`
 
 	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty"`
 	VarsMap   map[string]string `mapstructure:"vars,omitempty"`

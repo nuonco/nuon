@@ -82,10 +82,11 @@ func (a *AppConfig) Validate(v *validator.Validate) error {
 
 type parseFn struct {
 	name string
-	fn   func(ConfigContext) error
+	fn   func() error
 }
 
-func (a *AppConfig) Parse(ctx ConfigContext) error {
+// NOTE(jm): this should go away completely, with decoder hooks
+func (a *AppConfig) Parse() error {
 	parseFns := []parseFn{
 		{
 			"sandbox",
@@ -110,15 +111,8 @@ func (a *AppConfig) Parse(ctx ConfigContext) error {
 		})
 	}
 
-	for idx, comp := range a.Components {
-		parseFns = append(parseFns, parseFn{
-			name: fmt.Sprintf("component.%v", idx),
-			fn:   comp.parse,
-		})
-	}
-
 	for _, parseFn := range parseFns {
-		if err := parseFn.fn(ctx); err != nil {
+		if err := parseFn.fn(); err != nil {
 			return fmt.Errorf("error parsing %s: %w", parseFn.name, err)
 		}
 	}
