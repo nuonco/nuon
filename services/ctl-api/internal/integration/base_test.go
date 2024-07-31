@@ -95,7 +95,20 @@ func (s *baseIntegrationTestSuite) createOrg() *models.AppOrg {
 }
 
 func (s *baseIntegrationTestSuite) createAppInputConfig(appID string) *models.AppAppInputConfig {
-	appReq := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
+	group := generics.GetFakeObj[models.ServiceAppGroupRequest]()
+	groupName := generics.GetFakeObj[string]()
+	input := generics.GetFakeObj[models.ServiceAppInputRequest]()
+	input.Group = generics.ToPtr(groupName)
+
+	appReq := &models.ServiceCreateAppInputConfigRequest{
+		Groups: map[string]models.ServiceAppGroupRequest{
+			groupName: group,
+		},
+		Inputs: map[string]models.ServiceAppInputRequest{
+			generics.GetFakeObj[string](): input,
+		},
+	}
+
 	appInputConfig, err := s.apiClient.CreateAppInputConfig(s.ctx, appID, appReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), appInputConfig)
