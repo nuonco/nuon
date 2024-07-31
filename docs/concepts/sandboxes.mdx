@@ -229,9 +229,8 @@ chart_name = "e2e-helm"
 repo      = "org/repo"
 directory = "chart"
 branch    = "main"
-[[components.value]]
-name  = "account_region"
-value = "{{.nuon.install.sandbox.outputs.account.region}}"
+[components.values]
+account_region = "{{.nuon.install.sandbox.outputs.account.region}}"
 ```
 
 ```hcl Terraform
@@ -269,9 +268,8 @@ terraform_version = "v1.6.3"
 repo = "nuonco/sandboxes"
 directory = "aws-eks"
 branch = "main"
-[[sandbox.var]]
-name = "cluster_version"
-value = "1.28"
+[sandbox.vars]
+cluster_version = "1.28"
 ```
 
 ```hcl Terraform
@@ -314,9 +312,8 @@ terraform_version = "v1.6.3"
 repo = "nuonco/sandboxes"
 directory = "aws-eks"
 branch = "main"
-[[sandbox.var]]
-name = "cluster_version"
-value = "{{.nuon.install.inputs.cluster_version}}"
+[sandbox.vars]
+cluster_version = "{{.nuon.install.inputs.cluster_version}}"
 ```
 
 ```hcl Terraform

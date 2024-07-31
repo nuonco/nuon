@@ -37,9 +37,8 @@ are performing jobs such as provisioning, updating and monitoring.
 ```toml TOML
 [runner]
 runner_type = "aws-eks"
-[[runner.env_var]]
-name = "ENV_VAR_KEY"
-value = "value"
+[runner.env_vars]
+ENV_VAR_KEY = "value"
 ```
 
 ```hcl Terraform
