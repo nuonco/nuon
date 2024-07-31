@@ -166,9 +166,8 @@ To configure a runner for an `ecs` sandbox:
 [runner]
 runner_type = "aws-ecs"
 
-[[runner.env_var]]
-name = "runner-env-var"
-value = "runner-env-var"
+[runner.env_vars]
+runner-env-var = "runner-env-var"
 ```
 
 <Note>
@@ -226,9 +225,8 @@ directory = "aws-ecs-byo-vpc"
 repo = "nuonco/sandboxes"
 branch = "main"
 
-[[sandbox.var]]
-name = "vpc_id"
-value = "{{.nuon.install.inputs.vpc_id}}"
+[sandbox.vars]
+vpc_id = "{{.nuon.install.inputs.vpc_id}}"
 ```
 
 ### Component Config
@@ -256,13 +254,11 @@ directory = "infra"
 repo = "org/repo"
 branch = "main"
 
-[[components.env_var]]
-name = "AWS_REGION"
-value = "{{.nuon.install.sandbox.account.region}}"
+[components.env_vars]
+AWS_REGION = "{{.nuon.install.sandbox.account.region}}"
 
-[[components.var]]
-name = "account_id"
-value = "{{.nuon.install.sandbox.account.id}}"
+[components.vars]
+account_id = "{{.nuon.install.sandbox.account.id}}"
 
 ```
 
@@ -283,9 +279,8 @@ directory = "helm"
 repo = "org/repo"
 branch = "main"
 
-[[components.value]]
-name = "api.ingresses.public_domain"
-value = "{{.nuon.components.infra.outputs.iam_role}}"
+[components.values]
+"api.ingresses.public_domain" = "{{.nuon.components.infra.outputs.iam_role}}"
 ```
 
 ### Docker Build Component
@@ -353,9 +348,8 @@ tag   = "{{.nuon.components.e2e_docker_build.image.tag}}"
 cmd   = ["printenv"]
 args    = ["-a"]
 
-[[components.env_var]]
-name = "PUBLIC_DOMAIN"
-value = "{{.nuon.components.infra.outputs.iam_role}}"
+[components.env_vars]
+PUBLIC_DOMAIN = "{{.nuon.components.infra.outputs.iam_role}}"
 ```
 
 To configure a job using a docker image from docker hub:
@@ -370,7 +364,6 @@ tag   = "latest"
 cmd   = ["printenv"]
 args    = ["-a"]
 
-[[components.env_var]]
-name = "PUBLIC_DOMAIN"
-value = "{{.nuon.components.infra.outputs.iam_role}}"
+[components.env_vars]
+PUBLIC_DOMAIN = "{{.nuon.components.infra.outputs.iam_role}}"
 ```
