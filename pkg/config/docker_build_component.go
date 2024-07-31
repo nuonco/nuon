@@ -2,10 +2,7 @@ package config
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type DockerBuildComponentConfig struct {
-	MinComponent
-
-	Dependencies []string `mapstructure:"dependencies,omitempty"`
-	Dockerfile   string   `mapstructure:"dockerfile" jsonschema:"required"`
+	Dockerfile string `mapstructure:"dockerfile" jsonschema:"required"`
 
 	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty"`
 

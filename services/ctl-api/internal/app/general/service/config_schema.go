@@ -41,8 +41,8 @@ func (s *service) GetConfigSchema(ctx *gin.Context) {
 	mapping[[2]string{"", "helm"}] = schema.HelmComponent
 	mapping[[2]string{"", "terraform"}] = schema.TerraformComponent
 	mapping[[2]string{"", "job"}] = schema.JobComponent
-	mapping[[2]string{"", "container_image"}] = schema.ContainerImageComponent
-	mapping[[2]string{"true", ""}] = schema.AppSchema
+	mapping[[2]string{"", "container_image"}] = schema.ExternalImageComponent
+	mapping[[2]string{"true", ""}] = schema.AppSchemaFlat
 	mapping[[2]string{"", ""}] = schema.AppSchemaSources
 
 	fn, ok := mapping[[2]string{flat, src}]
