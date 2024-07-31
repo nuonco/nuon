@@ -240,12 +240,9 @@ terraform_version = "1.5.3"
 repo      = "nuonco/guides"
 directory = "aws-eks-tutorial/components/certificate"
 branch    = "main"
-[[components.var]]
-name  = "domain_name"
-value = "introspect.{{.nuon.install.sandbox.outputs.public_domain.name}}"
-[[components.var]]
-name  = "zone_id"
-value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+[components.vars]
+domain_name = "introspect.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+zone_id = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 ```
 
 ```hcl Terraform
@@ -284,30 +281,15 @@ chart_name = "introspect"
 repo      = "nuonco/guides"
 directory = "aws-eks-tutorial/components/helm-chart"
 branch    = "main"
-[[components.value]]
-name  = "image.repository"
-value = "{{.nuon.components.docker_image.image.repository.uri}}"
-[[components.value]]
-name  = "image.tag"
-value = "{{.nuon.components.docker_image.image.tag}}"
-[[components.value]]
-name  = "api.nlbs.public_domain_certificate"
-value = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
-[[components.value]]
-name  = "api.nlbs.public_domain"
-value = "introspect.{{.nuon.install.sandbox.outputs.public_domain.name}}"
-[[components.value]]
-name  = "app_id"
-value = "{{.nuon.app.id}}"
-[[components.value]]
-name  = "org_id"
-value = "{{.nuon.org.id}}"
-[[components.value]]
-name  = "install_id"
-value = "{{.nuon.install.id}}"
-[[components.value]]
-name  = "vpc_id"
-value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
+[components.values]
+"image.repository" = "{{.nuon.components.docker_image.image.repository.uri}}"
+"image.tag" = "{{.nuon.components.docker_image.image.tag}}"
+"api.nlbs.public_domain_certificate" = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
+"api.nlbs.public_domain" = "introspect.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+app_id = "{{.nuon.app.id}}"
+org_id = "{{.nuon.org.id}}"
+install_id = "{{.nuon.install.id}}"
+vpc_id = "{{.nuon.install.sandbox.outputs.vpc.id}}"
 ```
 
 ```hcl Terraform
