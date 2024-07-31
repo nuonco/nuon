@@ -31,14 +31,11 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	}
 
 	syncer := sync.New(s.api, appID, cfg)
-	if err != nil {
-		return err
-	}
-
 	if err := syncer.Sync(ctx); err != nil {
 		return err
 	}
 
+	ui.PrintSuccess("successfully synced " + cfgFile)
 	return nil
 }
 

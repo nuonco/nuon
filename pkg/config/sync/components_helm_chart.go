@@ -26,7 +26,8 @@ func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, com
 			Directory: generics.ToPtr(obj.PublicRepo.Directory),
 			Repo:      generics.ToPtr(obj.PublicRepo.Repo),
 		}
-	} else {
+	}
+	if obj.ConnectedRepo != nil {
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    obj.ConnectedRepo.Branch,
 			Directory: generics.ToPtr(obj.ConnectedRepo.Directory),
