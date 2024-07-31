@@ -25,6 +25,10 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
+
+	if err := c.basicVCSConfigRequest.Validate(); err != nil {
+		return err
+	}
 	return nil
 }
 

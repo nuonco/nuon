@@ -100,7 +100,7 @@ func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) er
 	}
 
 	if len(schmaErrs) < 1 {
-		view.Print("successfully validated config")
+		ui.PrintSuccess("successfully validated " + file.Path)
 		return nil
 	}
 
