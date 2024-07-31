@@ -16,14 +16,14 @@ type AppConfig struct {
 	Version string `mapstructure:"version" jsonschema:"required"`
 
 	// Description for your app, which is rendered in the installers
-	Description string `mapstructure:"description,omitempty" jsonschema:"required"`
+	Description string `mapstructure:"description,omitempty"`
 	// Display name for the app, rendered in the installer
-	DisplayName string `mapstructure:"display_name,omitempty" jsonschema:"required"`
+	DisplayName string `mapstructure:"display_name,omitempty"`
 	// Slack webhook url to receive notifications
 	SlackWebhookURL string `mapstructure:"slack_webhook_url"`
 
 	// Input configuration
-	Inputs *AppInputConfig `mapstructure:"inputs"`
+	Inputs *AppInputConfig `mapstructure:"inputs,omitempty"`
 	// Sandbox configuration
 	Sandbox *AppSandboxConfig `mapstructure:"sandbox" jsonschema:"required"`
 	// Runner configuration
