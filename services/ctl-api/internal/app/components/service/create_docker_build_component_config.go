@@ -26,6 +26,11 @@ func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate
 	if err := v.Struct(c); err != nil {
 		return fmt.Errorf("invalid request: %w", err)
 	}
+
+        if err := c.basicVCSConfigRequest.Validate(); err != nil {
+                return err
+        }
+
 	return nil
 }
 

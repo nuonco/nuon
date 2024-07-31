@@ -42,7 +42,6 @@ func (s *sync) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReque
 			Directory: &s.cfg.Sandbox.ConnectedRepo.Directory,
 		}
 	}
-
 	if s.cfg.Sandbox.PublicRepo != nil {
 		req.PublicGitVcsConfig = &models.ServicePublicGitVCSSandboxConfigRequest{
 			Repo:      &s.cfg.Sandbox.PublicRepo.Repo,

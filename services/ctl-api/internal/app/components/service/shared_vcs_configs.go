@@ -29,6 +29,24 @@ type basicVCSConfigRequest struct {
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config" `
 }
 
+func (b basicVCSConfigRequest) Validate() error {
+	if b.PublicGitVCSConfig != nil && b.ConnectedGithubVCSConfig != nil {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("both public and connected github config set"),
+			Description: "only one of connected github or public git configs can be set",
+		}
+	}
+
+	if b.PublicGitVCSConfig == nil && b.ConnectedGithubVCSConfig == nil {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("one of public and connected github config set"),
+			Description: "one of connected github or public git configs must be set",
+		}
+	}
+
+	return nil
+}
+
 func (b *basicVCSConfigRequest) connectedGithubVCSConfig(ctx context.Context,
 	parentCmp *app.Component, vcsHelpers *vcshelpers.Helpers,
 ) (*app.ConnectedGithubVCSConfig, error) {

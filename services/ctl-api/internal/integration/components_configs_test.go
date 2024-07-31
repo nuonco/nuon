@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	"github.com/nuonco/nuon-go/models"
-	"github.com/powertoolsdev/mono/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
 type componentConfigsSuite struct {
@@ -48,6 +49,7 @@ func (s *componentConfigsSuite) TestCreateDockerBuildComponentConfig() {
 	s.T().Run("success with public git vcs config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig = nil
+		req.PublicGitVcsConfig.Repo = generics.ToPtr("nuonco/installer")
 
 		cfg, err := s.apiClient.CreateDockerBuildComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -61,6 +63,7 @@ func (s *componentConfigsSuite) TestCreateDockerBuildComponentConfig() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
+		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
 		cfg, err := s.apiClient.CreateDockerBuildComponentConfig(s.ctx, s.compID, req)
@@ -83,6 +86,7 @@ func (s *componentConfigsSuite) TestCreateTerraformModuleComponentConfig() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateTerraformModuleComponentConfigRequest]()
+		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
 		cfg, err := s.apiClient.CreateTerraformModuleComponentConfig(s.ctx, s.compID, req)
@@ -92,6 +96,7 @@ func (s *componentConfigsSuite) TestCreateTerraformModuleComponentConfig() {
 
 	s.T().Run("success with public config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateTerraformModuleComponentConfigRequest]()
+		req.PublicGitVcsConfig.Repo = generics.ToPtr("nuonco/installer")
 		req.ConnectedGithubVcsConfig = nil
 
 		cfg, err := s.apiClient.CreateTerraformModuleComponentConfig(s.ctx, s.compID, req)
@@ -114,6 +119,7 @@ func (s *componentConfigsSuite) TestCreateHelmComponentConfig() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
+		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
@@ -128,6 +134,7 @@ func (s *componentConfigsSuite) TestCreateHelmComponentConfig() {
 	s.T().Run("success with public config", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig = nil
+		req.PublicGitVcsConfig.Repo = generics.ToPtr("nuonco/installer")
 
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -181,6 +188,7 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.PublicGitVcsConfig = nil
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
 		require.NotNil(t, cfg)
@@ -200,6 +208,7 @@ func (s *componentConfigsSuite) TestComponentConfigs() {
 
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
+		req.PublicGitVcsConfig = nil
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
 		require.NotNil(t, cfg)
@@ -220,6 +229,7 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 		}
 
 		req := generics.GetFakeObj[*models.ServiceCreateHelmComponentConfigRequest]()
+		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 		cfg, err := s.apiClient.CreateHelmComponentConfig(s.ctx, s.compID, req)
 		require.Nil(t, err)
@@ -238,6 +248,7 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 			return
 		}
 		req := generics.GetFakeObj[*models.ServiceCreateTerraformModuleComponentConfigRequest]()
+		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
 		cfg, err := s.apiClient.CreateTerraformModuleComponentConfig(s.ctx, s.compID, req)
@@ -256,6 +267,7 @@ func (s *componentConfigsSuite) TestGetLatestComponentConfig() {
 			return
 		}
 		req := generics.GetFakeObj[*models.ServiceCreateDockerBuildComponentConfigRequest]()
+		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("powertoolsdev/mono")
 
 		cfg, err := s.apiClient.CreateDockerBuildComponentConfig(s.ctx, s.compID, req)

@@ -27,7 +27,8 @@ func (s *sync) createDockerBuildComponentConfig(ctx context.Context, resource, c
 			Directory: generics.ToPtr(public.Directory),
 			Repo:      generics.ToPtr(public.Repo),
 		}
-	} else {
+	}
+	if obj.ConnectedRepo != nil {
 		connected := obj.ConnectedRepo
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    connected.Branch,
