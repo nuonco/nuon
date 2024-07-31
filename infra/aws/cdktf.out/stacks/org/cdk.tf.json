@@ -9,8 +9,11 @@
     "outputs": {
       "org": {
         "cross-stack-output-aws_organizations_account.canary.id": "cross-stack-output-aws_organizations_accountcanaryid",
+        "cross-stack-output-aws_organizations_account.demo-govcloud.id": "cross-stack-output-aws_organizations_accountdemo-govcloudid",
         "cross-stack-output-aws_organizations_account.demo.id": "cross-stack-output-aws_organizations_accountdemoid",
         "cross-stack-output-aws_organizations_account.external.id": "cross-stack-output-aws_organizations_accountexternalid",
+        "cross-stack-output-aws_organizations_account.govcloud-prod.id": "cross-stack-output-aws_organizations_accountgovcloud-prodid",
+        "cross-stack-output-aws_organizations_account.govcloud-stage.id": "cross-stack-output-aws_organizations_accountgovcloud-stageid",
         "cross-stack-output-aws_organizations_account.infra-shared-prod.id": "cross-stack-output-aws_organizations_accountinfra-shared-prodid",
         "cross-stack-output-aws_organizations_account.infra-shared-stage.id": "cross-stack-output-aws_organizations_accountinfra-shared-stageid",
         "cross-stack-output-aws_organizations_account.orgs-prod.id": "cross-stack-output-aws_organizations_accountorgs-prodid",
@@ -99,6 +102,10 @@
       "sensitive": true,
       "value": "${aws_organizations_account.canary.id}"
     },
+    "cross-stack-output-aws_organizations_accountdemo-govcloudid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.demo-govcloud.id}"
+    },
     "cross-stack-output-aws_organizations_accountdemoid": {
       "sensitive": true,
       "value": "${aws_organizations_account.demo.id}"
@@ -106,6 +113,14 @@
     "cross-stack-output-aws_organizations_accountexternalid": {
       "sensitive": true,
       "value": "${aws_organizations_account.external.id}"
+    },
+    "cross-stack-output-aws_organizations_accountgovcloud-prodid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.govcloud-prod.id}"
+    },
+    "cross-stack-output-aws_organizations_accountgovcloud-stageid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.govcloud-stage.id}"
     },
     "cross-stack-output-aws_organizations_accountinfra-shared-prodid": {
       "sensitive": true,
@@ -145,7 +160,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2024-07-30T22:41:15.134Z"
+      "value": "2024-07-31T15:36:41.772Z"
     }
   },
   "provider": {
@@ -201,6 +216,24 @@
         "name": "demo",
         "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
       },
+      "demo-govcloud": {
+        "//": {
+          "metadata": {
+            "path": "org/demo-govcloud",
+            "uniqueId": "demo-govcloud"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+demo-govcloud@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "demo-govcloud",
+        "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
+      },
       "external": {
         "//": {
           "metadata": {
@@ -218,6 +251,42 @@
         },
         "name": "external",
         "parent_id": "${aws_organizations_organizational_unit.meta.id}"
+      },
+      "govcloud-prod": {
+        "//": {
+          "metadata": {
+            "path": "org/govcloud-prod",
+            "uniqueId": "govcloud-prod"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+govcloud-prod@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "govcloud-prod",
+        "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
+      },
+      "govcloud-stage": {
+        "//": {
+          "metadata": {
+            "path": "org/govcloud-stage",
+            "uniqueId": "govcloud-stage"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+govcloud-stage@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "govcloud-stage",
+        "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
       },
       "infra-shared-prod": {
         "//": {
@@ -518,6 +587,17 @@
         "name": "demo-environment-tag-policy",
         "type": "TAG_POLICY"
       },
+      "env_tag_policy_demo-govcloud": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_demo-govcloud",
+            "uniqueId": "env_tag_policy_demo-govcloud"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"demo-govcloud\"]}}}}",
+        "name": "demo-govcloud-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
       "env_tag_policy_external": {
         "//": {
           "metadata": {
@@ -527,6 +607,28 @@
         },
         "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"external\",\"stage\",\"prod\"]}}}}",
         "name": "external-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_govcloud-prod": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_govcloud-prod",
+            "uniqueId": "env_tag_policy_govcloud-prod"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"govcloud-prod\",\"prod\"]}}}}",
+        "name": "govcloud-prod-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_govcloud-stage": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_govcloud-stage",
+            "uniqueId": "env_tag_policy_govcloud-stage"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"govcloud-stage\",\"stage\"]}}}}",
+        "name": "govcloud-stage-environment-tag-policy",
         "type": "TAG_POLICY"
       },
       "env_tag_policy_infra-shared-prod": {
@@ -660,6 +762,16 @@
         "policy_id": "${aws_organizations_policy.env_tag_policy_demo.id}",
         "target_id": "${aws_organizations_account.demo.id}"
       },
+      "env_tag_policy_attach_demo-govcloud": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_demo-govcloud",
+            "uniqueId": "env_tag_policy_attach_demo-govcloud"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_demo-govcloud.id}",
+        "target_id": "${aws_organizations_account.demo-govcloud.id}"
+      },
       "env_tag_policy_attach_external": {
         "//": {
           "metadata": {
@@ -669,6 +781,26 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_external.id}",
         "target_id": "${aws_organizations_account.external.id}"
+      },
+      "env_tag_policy_attach_govcloud-prod": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_govcloud-prod",
+            "uniqueId": "env_tag_policy_attach_govcloud-prod"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_govcloud-prod.id}",
+        "target_id": "${aws_organizations_account.govcloud-prod.id}"
+      },
+      "env_tag_policy_attach_govcloud-stage": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_govcloud-stage",
+            "uniqueId": "env_tag_policy_attach_govcloud-stage"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_govcloud-stage.id}",
+        "target_id": "${aws_organizations_account.govcloud-stage.id}"
       },
       "env_tag_policy_attach_infra-shared-prod": {
         "//": {

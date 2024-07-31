@@ -71,7 +71,7 @@
   "output": {
     "sso-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2024-07-30T22:41:15.164Z"
+      "value": "2024-07-31T15:36:41.812Z"
     }
   },
   "provider": {
@@ -119,6 +119,20 @@
         "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountdemoid}",
         "target_type": "AWS_ACCOUNT"
       },
+      "nuonadmin-demo-govcloud": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-demo-govcloud",
+            "uniqueId": "nuonadmin-demo-govcloud"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountdemo-govcloudid}",
+        "target_type": "AWS_ACCOUNT"
+      },
       "nuonadmin-external": {
         "//": {
           "metadata": {
@@ -131,6 +145,34 @@
         "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
         "principal_type": "GROUP",
         "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-govcloud-prod": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-govcloud-prod",
+            "uniqueId": "nuonadmin-govcloud-prod"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountgovcloud-prodid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonadmin-govcloud-stage": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonadmin-govcloud-stage",
+            "uniqueId": "nuonadmin-govcloud-stage"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonadmin.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonAdmin-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountgovcloud-stageid}",
         "target_type": "AWS_ACCOUNT"
       },
       "nuonadmin-infra-shared-prod": {
@@ -287,6 +329,20 @@
         "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountdemoid}",
         "target_type": "AWS_ACCOUNT"
       },
+      "nuonpoweruser-demo-govcloud": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-demo-govcloud",
+            "uniqueId": "nuonpoweruser-demo-govcloud"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountdemo-govcloudid}",
+        "target_type": "AWS_ACCOUNT"
+      },
       "nuonpoweruser-external": {
         "//": {
           "metadata": {
@@ -299,6 +355,34 @@
         "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
         "principal_type": "GROUP",
         "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountexternalid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-govcloud-prod": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-govcloud-prod",
+            "uniqueId": "nuonpoweruser-govcloud-prod"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountgovcloud-prodid}",
+        "target_type": "AWS_ACCOUNT"
+      },
+      "nuonpoweruser-govcloud-stage": {
+        "//": {
+          "metadata": {
+            "path": "sso/nuonpoweruser-govcloud-stage",
+            "uniqueId": "nuonpoweruser-govcloud-stage"
+          }
+        },
+        "instance_arn": "${element(data.aws_ssoadmin_instances.this.arns, 0)}",
+        "permission_set_arn": "${aws_ssoadmin_permission_set.nuonpoweruser.arn}",
+        "principal_id": "${data.aws_identitystore_group.NuonPowerUser-group.id}",
+        "principal_type": "GROUP",
+        "target_id": "${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountgovcloud-stageid}",
         "target_type": "AWS_ACCOUNT"
       },
       "nuonpoweruser-infra-shared-prod": {

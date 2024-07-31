@@ -50,6 +50,7 @@ export const desiredOrgStructure: orgStructure = [
   {
     accounts: [
       { name: "demo" },
+      { name: "demo-govcloud" },
       { name: "public" },
       { name: "canary" },
     ],
@@ -62,6 +63,8 @@ export const desiredOrgStructure: orgStructure = [
       { name: "stage" },
       { additionalEnvTags: ["stage"], name: "infra-shared-stage" },
       { additionalEnvTags: ["prod"], name: "infra-shared-prod" },
+      { additionalEnvTags: ["stage"], name: "govcloud-stage" },
+      { additionalEnvTags: ["prod"], name: "govcloud-prod" },
       {
         additionalEnvTags: ["stage"],
         name: "orgs-stage",
