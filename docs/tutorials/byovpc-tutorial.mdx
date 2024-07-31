@@ -178,9 +178,8 @@ terraform_version = "1.5.4"
 directory = "aws-ecs-byovpc"
 repo = "nuonco/sandboxes"
 branch = "main"
-[[sandbox.var]]
-name = "vpc_id"
-value = "{{.nuon.install.inputs.vpc_id}}"
+[sandbox.vars]
+vpc_id = "{{.nuon.install.inputs.vpc_id}}"
 ```
 
 ```hcl Terraform
@@ -300,36 +299,17 @@ terraform_version = "1.5.3"
 repo      = "nuonco/guides"
 directory = "byo-vpc-tutorial/components/ecs-service"
 branch    = "main"
-[[components.var]]
-name  = "service_name"
-value = "introspect"
-[[components.var]]
-name  = "cluster_arn"
-value = "{{.nuon.install.sandbox.outputs.ecs_cluster.arn}}"
-[[components.var]]
-name  = "image_url"
-value = "{{.nuon.components.docker_image.image.repository.uri}}"
-[[components.var]]
-name  = "image_tag"
-value = "{{.nuon.components.docker_image.image.tag}}"
-[[components.var]]
-name  = "app_id"
-value = "{{.nuon.app.id}}"
-[[components.var]]
-name  = "org_id"
-value = "{{.nuon.org.id}}"
-[[components.var]]
-name  = "install_id"
-value = "{{.nuon.install.id}}"
-[[components.var]]
-name  = "vpc_id"
-value = "{{.nuon.install.sandbox.outputs.vpc.id}}"
-[[components.var]]
-name  = "domain_name"
-value = "introspect.{{.nuon.install.sandbox.outputs.public_domain.name}}"
-[[components.var]]
-name  = "zone_id"
-value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+[components.vars]
+service_name = "introspect"
+cluster_arn = "{{.nuon.install.sandbox.outputs.ecs_cluster.arn}}"
+image_url = "{{.nuon.components.docker_image.image.repository.uri}}"
+image_tag = "{{.nuon.components.docker_image.image.tag}}"
+app_id = "{{.nuon.app.id}}"
+org_id = "{{.nuon.org.id}}"
+install_id = "{{.nuon.install.id}}"
+vpc_id = "{{.nuon.install.sandbox.outputs.vpc.id}}"
+domain_name = "introspect.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+zone_id = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 ```
 
 ```hcl Terraform
