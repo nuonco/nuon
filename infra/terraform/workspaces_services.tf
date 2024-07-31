@@ -74,42 +74,6 @@ module "dashboard-ui-prod" {
   trigger_workspaces              = [module.infra-eks-orgs-prod-main.workspace_id]
 }
 
-module "installers-ui-stage" {
-  source = "./modules/workspace"
-
-  name       = "installers-ui-stage"
-  repo       = "powertoolsdev/mono"
-  auto_apply = true
-  dir        = "services/installers-ui/infra"
-  vars = {
-    env       = "stage"
-    tfe_token = tfe_team_token.service-accounts-stage.token
-  }
-  variable_sets      = ["aws-environment-credentials", "slack-webhooks"]
-  project_id         = tfe_project.services.id
-  trigger_workspaces = [module.infra-eks-orgs-stage-main.workspace_id]
-
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-}
-
-module "installers-ui-prod" {
-  source = "./modules/workspace"
-
-  name       = "installers-ui-prod"
-  repo       = "powertoolsdev/mono"
-  auto_apply = false
-  dir        = "services/installers-ui/infra"
-  vars = {
-    env       = "prod"
-    tfe_token = tfe_team_token.service-accounts-prod.token
-  }
-  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-  variable_sets                   = ["aws-environment-credentials", "slack-webhooks"]
-  project_id                      = tfe_project.services.id
-  trigger_workspaces              = [module.infra-eks-orgs-prod-main.workspace_id]
-}
-
-
 module "wiki-stage" {
   source = "./modules/workspace"
 

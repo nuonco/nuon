@@ -1,5 +1,0 @@
----
-pool: nuon
-region: us-west-2
-subdomain: "*.installers"
-use_root_domain: false
