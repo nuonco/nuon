@@ -18,11 +18,7 @@ type HelmValuesFile struct {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type HelmChartComponentConfig struct {
-	MinComponent
-
-	Name         string   `mapstructure:"name" jsonschema:"required"`
-	Dependencies []string `mapstructure:"dependencies"`
-	ChartName    string   `mapstructure:"chart_name,omitempty" jsonschema:"required"`
+	ChartName string `mapstructure:"chart_name,omitempty" jsonschema:"required"`
 
 	ValuesMap   map[string]string `mapstructure:"values"`
 	ValuesFiles []HelmValuesFile  `mapstructure:"values_file"`
@@ -31,7 +27,7 @@ type HelmChartComponentConfig struct {
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=connected_repo"`
 
 	// deprecated
-	Values []HelmValue `mapstructure:"value"`
+	Values []HelmValue `mapstructure:"value,omitempty"`
 }
 
 func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

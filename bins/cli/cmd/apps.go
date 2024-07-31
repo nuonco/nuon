@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
+	"github.com/powertoolsdev/mono/bins/cli/internal/config"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
@@ -148,6 +149,20 @@ func (c *cli) appsCmd() *cobra.Command {
 	validateCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
 	validateCmd.Flags().BoolVarP(&all, "all", "", false, "sync all config files found")
 	appsCmd.AddCommand(validateCmd)
+
+	parseCmd := &cobra.Command{
+		Use:               "parse",
+		Short:             "parse a config file",
+		PersistentPreRunE: c.persistentPreRunE,
+		Run: func(cmd *cobra.Command, _ []string) {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc.Parse(cmd.Context(), file)
+		},
+	}
+	parseCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
+	if config.Debug() {
+		appsCmd.AddCommand(parseCmd)
+	}
 
 	var (
 		name       string

@@ -19,16 +19,13 @@ type AppRunnerConfig struct {
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var"`
 }
 
-func (a *AppRunnerConfig) parse(ctx ConfigContext) error {
+func (a *AppRunnerConfig) parse() error {
 	if len(a.EnvVars) > 0 {
 		return ErrConfig{
 			Description: "env_var arrays are deprecated, please use env_vars map instead",
 		}
 	}
 
-	if ctx == ConfigContextConfigOnly {
-		return nil
-	}
 	if a.Source == "" {
 		return nil
 	}

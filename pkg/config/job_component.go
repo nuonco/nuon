@@ -2,13 +2,9 @@ package config
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type JobComponentConfig struct {
-	MinComponent
-
-	Name         string   `mapstructure:"name" jsonschema:"required"`
-	Dependencies []string `mapstructure:"dependencies,omitempty"`
-	ImageURL     string   `mapstructure:"image_url" jsonschema:"required"`
-	Tag          string   `mapstructure:"tag" jsonschema:"required"`
-	Cmd          []string `mapstructure:"cmd" jsonschema:"required"`
+	ImageURL string   `mapstructure:"image_url" jsonschema:"required"`
+	Tag      string   `mapstructure:"tag" jsonschema:"required"`
+	Cmd      []string `mapstructure:"cmd" jsonschema:"required"`
 
 	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty"`
 	Args      []string          `mapstructure:"args,omitempty"`

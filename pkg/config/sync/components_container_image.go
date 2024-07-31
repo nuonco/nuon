@@ -2,23 +2,15 @@ package sync
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/nuonco/nuon-go/models"
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource, compID string, obj interface{}) (string, error) {
-	var containerImage config.ExternalImageComponentConfig
-	if err := mapstructure.Decode(obj, &containerImage); err != nil {
-		return "", SyncErr{
-			Resource:    resource,
-			Description: fmt.Sprintf("unable to parse config: %s", err.Error()),
-		}
-	}
+func (s *sync) createContainerImageComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, error) {
+	containerImage := comp.ExternalImage
 
 	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{}
 	if containerImage.AWSECRImageConfig != nil {
