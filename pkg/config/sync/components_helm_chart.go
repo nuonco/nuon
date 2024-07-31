@@ -2,28 +2,16 @@ package sync
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/nuonco/nuon-go/models"
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, compID string, inp interface{}) (string, error) {
+func (s *sync) createHelmChartComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, error) {
 	// NOTE(jm): this logic should be updated to be handled _before_ the config gets here.
-	var obj config.HelmChartComponentConfig
-	if err := mapstructure.Decode(inp, &obj); err != nil {
-		return "", SyncErr{
-			Resource:    resource,
-			Description: fmt.Sprintf("unable to parse config: %s", err.Error()),
-		}
-	}
-
-	if err := obj.Parse(); err != nil {
-		return "", err
-	}
+	obj := comp.HelmChart
 
 	configRequest := &models.ServiceCreateHelmComponentConfigRequest{
 		ChartName:                generics.ToPtr(obj.ChartName),

@@ -23,16 +23,13 @@ type AppSandboxConfig struct {
 	Vars []TerraformVariable `mapstructure:"var,omitempty" toml:"var"`
 }
 
-func (a *AppSandboxConfig) parse(ctx ConfigContext) error {
+func (a *AppSandboxConfig) parse() error {
 	if len(a.Vars) > 0 {
 		return ErrConfig{
 			Description: "the var array is deprecated, please use vars instead",
 		}
 	}
 
-	if ctx == ConfigContextConfigOnly {
-		return nil
-	}
 	if a.Source == "" {
 		return nil
 	}
