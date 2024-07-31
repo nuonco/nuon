@@ -13,6 +13,7 @@ ecr_repos:
   - workers-orgs
   - ctl-api
   - dashboard-ui
+  - installers-ui
 
 required_checks:
   # lints + tests + release + deploys for services and lib/infra.

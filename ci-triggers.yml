@@ -41,6 +41,8 @@ services: |
     - go.mod
     - go.sum
     - services/workers-orgs/**
+  installers-ui:
+    - services/installers-ui/**
 
 # to add a new directory that triggers a CI run for an artifact, update the list entry
 artifacts: |

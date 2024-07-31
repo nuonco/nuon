@@ -1,0 +1,14 @@
+---
+environment: stage
+
+env:
+  NEXT_PUBLIC_API_URL: "https://ctl.stage.nuon.co"
+
+ui:
+  alb:
+    public_domain: $TFO_PUBLIC_DOMAIN
+    public_domain_certificate: $TFO_CERTIFICATE_ARN
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: $TFO_EKS_ROLE_ARN
