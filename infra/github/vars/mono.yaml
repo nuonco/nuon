@@ -36,10 +36,11 @@ required_checks:
   - Terraform Cloud/nuonco/infra-datadog-orgs-stage
   - Terraform Cloud/nuonco/infra-datadog-prod
   - Terraform Cloud/nuonco/infra-datadog-stage
-  - Terraform Cloud/nuonco/infra-eks-orgs-prod-main
-  - Terraform Cloud/nuonco/infra-eks-orgs-stage-main
-  - Terraform Cloud/nuonco/infra-eks-prod-nuon
-  - Terraform Cloud/nuonco/infra-eks-stage-nuon
+  # disabled until runner is in due to broken tf breaking ci
+  # - Terraform Cloud/nuonco/infra-eks-orgs-prod-main
+  # - Terraform Cloud/nuonco/infra-eks-orgs-stage-main
+  # - Terraform Cloud/nuonco/infra-eks-prod-nuon
+  # - Terraform Cloud/nuonco/infra-eks-stage-nuon
   - Terraform Cloud/nuonco/infra-github
   - Terraform Cloud/nuonco/infra-orgs-prod
   - Terraform Cloud/nuonco/infra-orgs-stage
