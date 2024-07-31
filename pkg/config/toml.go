@@ -6,7 +6,7 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
-func (a *AppConfig) ToTOML() ([]byte, error) {
+func ToTOML(a interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := toml.NewEncoder(&buf)
 	enc.SetTagName("mapstructure")

@@ -9,6 +9,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
+// TODO(jm): this should be a global decoder hook
 func ReadSource(val string) ([]byte, error) {
 	path, err := expandSourcePath(val)
 	if err != nil {
@@ -21,7 +22,6 @@ func ReadSource(val string) ([]byte, error) {
 	}
 
 	return byts, nil
-
 }
 
 func LoadSource(val string) (map[string]interface{}, error) {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pelletier/go-toml"
 
 	"github.com/powertoolsdev/mono/pkg/config"
@@ -20,8 +21,6 @@ type ParseConfig struct {
 }
 
 func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
-	var cfg config.AppConfig
-
 	if parseCfg.Filename != "" {
 		byts, err := ReadFile(parseCfg.Filename)
 		if err != nil {
@@ -45,20 +44,40 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 		}
 	}
 
+	// go from toml -> map[string]interface{}
 	buf := bytes.NewReader(byts)
-	dec := toml.NewDecoder(buf)
-	dec.SetTagName("mapstructure")
+	tomlDec := toml.NewDecoder(buf)
+	tomlDec.SetTagName("mapstructure")
 
-	err = dec.Decode(&cfg)
+	obj := make(map[string]interface{})
+	err = tomlDec.Decode(&obj)
 	if err != nil {
 		return nil, ParseErr{
 			Description: "unable to parse configuration file",
 		}
 	}
 
-	if err := cfg.Parse(parseCfg.Context); err != nil {
+	// go from map[string]interface{} => config.AppConfig
+	var cfg config.AppConfig
+	mapDecCfg := config.DecoderConfig()
+	mapDecCfg.Result = &cfg
+	mapDec, err := mapstructure.NewDecoder(mapDecCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	err = mapDec.Decode(obj)
+	if err != nil {
 		return nil, ParseErr{
-			Description: "unable to parse config",
+			Description: "error decoding config",
+			Err:         err,
+		}
+	}
+
+	err = cfg.Parse()
+	if err != nil {
+		return nil, ParseErr{
+			Description: "error parsing config",
 			Err:         err,
 		}
 	}
