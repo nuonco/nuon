@@ -55,11 +55,7 @@ func (a AppInputConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "groups", "list of input groups")
 }
 
-func (a *AppInputConfig) parse(ctx ConfigContext) error {
-	if ctx != ConfigContextSource {
-		return nil
-	}
-
+func (a *AppInputConfig) parse() error {
 	sources := make([]string, 0)
 	if a.Source != "" {
 		sources = append(sources, a.Source)

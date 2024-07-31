@@ -4,22 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
-
-func (s *sync) parseMinComponent(cfg interface{}) (config.MinComponent, error) {
-	var minComponent config.MinComponent
-	if err := mapstructure.Decode(cfg, &minComponent); err != nil {
-		return config.MinComponent{}, err
-	}
-
-	return minComponent, nil
-}
 
 func (s *sync) getComponent(ctx context.Context, name string, typ models.AppComponentType) (*models.AppComponent, error) {
 	comp, err := s.apiClient.GetAppComponent(ctx, s.appID, name)
@@ -37,26 +27,26 @@ func (s *sync) getComponent(ctx context.Context, name string, typ models.AppComp
 	return comp, nil
 }
 
-func (s *sync) syncComponentConfig(ctx context.Context, minComp config.MinComponent, cfg interface{}, resource, compID string) (string, error) {
+func (s *sync) syncComponentConfig(ctx context.Context, comp *config.Component, resource, compID string) (string, error) {
 	// TODO(jm): this method can now use the Parse method to get an actual component object, simplifying the map
 	// decoding everywhere in this package.
 
-	methods := map[models.AppComponentType]func(context.Context, string, string, interface{}) (string, error){
+	methods := map[models.AppComponentType]func(context.Context, string, string, *config.Component) (string, error){
 		models.AppComponentTypeHelmChart:       s.createHelmChartComponentConfig,
 		models.AppComponentTypeTerraformModule: s.createTerraformModuleComponentConfig,
 		models.AppComponentTypeDockerBuild:     s.createDockerBuildComponentConfig,
 		models.AppComponentTypeExternalImage:   s.createContainerImageComponentConfig,
 		models.AppComponentTypeJob:             s.createJobComponentConfig,
 	}
-	method, ok := methods[minComp.APIType()]
+	method, ok := methods[comp.Type.APIType()]
 	if !ok {
 		return "", SyncErr{
 			Resource:    resource,
-			Description: fmt.Sprintf("invalid type %s", minComp.Type),
+			Description: fmt.Sprintf("invalid type %s", comp.Type),
 		}
 	}
 
-	cfgID, err := method(ctx, resource, compID, cfg)
+	cfgID, err := method(ctx, resource, compID, comp)
 	if err != nil {
 		return "", SyncAPIErr{
 			Resource: resource,
@@ -74,24 +64,19 @@ func (s *sync) cleanupComponent(ctx context.Context, compID string) {
 	}
 }
 
-func (s *sync) syncComponent(ctx context.Context, resource string, cfg interface{}, dependencies []string) (string, error) {
-	minComponent, err := s.parseMinComponent(cfg)
-	if err != nil {
-		return "", err
-	}
-
+func (s *sync) syncComponent(ctx context.Context, resource string, comp *config.Component) (string, error) {
 	var isNew bool
-	comp, err := s.getComponent(ctx, minComponent.Name, minComponent.APIType())
+	apiComp, err := s.getComponent(ctx, comp.Name, comp.Type.APIType())
 	if err != nil {
 		if !nuon.IsNotFound(err) {
 			return "", err
 		}
 
 		isNew = true
-		comp, err = s.apiClient.CreateComponent(ctx, s.appID, &models.ServiceCreateComponentRequest{
-			Dependencies: dependencies,
-			Name:         generics.ToPtr(minComponent.Name),
-			VarName:      minComponent.VarName,
+		apiComp, err = s.apiClient.CreateComponent(ctx, s.appID, &models.ServiceCreateComponentRequest{
+			Dependencies: comp.Dependencies,
+			Name:         generics.ToPtr(comp.Name),
+			VarName:      comp.VarName,
 		})
 		if err != nil {
 			return "", SyncAPIErr{
@@ -102,10 +87,10 @@ func (s *sync) syncComponent(ctx context.Context, resource string, cfg interface
 	}
 
 	if !isNew {
-		_, err = s.apiClient.UpdateComponent(ctx, comp.ID, &models.ServiceUpdateComponentRequest{
-			Dependencies: dependencies,
-			VarName:      minComponent.VarName,
-			Name:         generics.ToPtr(minComponent.Name),
+		_, err = s.apiClient.UpdateComponent(ctx, apiComp.ID, &models.ServiceUpdateComponentRequest{
+			Dependencies: comp.Dependencies,
+			VarName:      comp.VarName,
+			Name:         generics.ToPtr(comp.Name),
 		})
 		if err != nil {
 			return "", SyncAPIErr{
@@ -115,20 +100,20 @@ func (s *sync) syncComponent(ctx context.Context, resource string, cfg interface
 		}
 	}
 
-	cfgID, err := s.syncComponentConfig(ctx, minComponent, cfg, resource, comp.ID)
+	cfgID, err := s.syncComponentConfig(ctx, comp, resource, apiComp.ID)
 	if err != nil {
 		if isNew {
-			s.cleanupComponent(ctx, comp.ID)
+			s.cleanupComponent(ctx, apiComp.ID)
 		}
 
 		return "", err
 	}
 
 	s.state.ComponentIDs = append(s.state.ComponentIDs, componentState{
-		Name:     comp.ID,
-		Type:     minComponent.APIType(),
-		ID:       comp.ID,
+		Name:     apiComp.ID,
+		Type:     comp.Type.APIType(),
+		ID:       apiComp.ID,
 		ConfigID: cfgID,
 	})
-	return comp.ID, nil
+	return apiComp.ID, nil
 }

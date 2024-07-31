@@ -40,23 +40,16 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 	}
 
 	deps := make([]string, 0)
-	for idx, comp := range s.cfg.Components {
+	for _, comp := range s.cfg.Components {
 		// thanks russ cox
 		obj := comp
+		obj.Dependencies = deps
 
-		minComp, err := s.parseMinComponent(comp)
-		if err != nil {
-			return nil, SyncErr{
-				Resource:    fmt.Sprintf("component-%d", idx),
-				Description: fmt.Sprintf("component must have a name and type field: %s", err.Error()),
-			}
-		}
-
-		resourceName := fmt.Sprintf("component-%s", minComp.Name)
+		resourceName := fmt.Sprintf("component-%s", obj.Name)
 		steps = append(steps, syncStep{
 			Resource: resourceName,
 			Method: func(ctx context.Context) error {
-				compID, err := s.syncComponent(ctx, resourceName, obj, deps)
+				compID, err := s.syncComponent(ctx, resourceName, obj)
 				if err != nil {
 					return err
 				}
