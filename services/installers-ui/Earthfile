@@ -1,0 +1,85 @@
+VERSION --use-cache-command 0.6
+
+FROM node:alpine
+
+WORKDIR /src
+
+ARG EARTHLY_GIT_PROJECT_NAME
+ARG GHCR_IMAGE=ghcr.io/${EARTHLY_GIT_PROJECT_NAME}-installers-ui
+ARG SERVICE=installers-ui
+ARG NUON_API_URL=https://api.stage.nuon.co
+ARG NUON_ADMIN_API_URL=https://ctl.nuon.us-west-2.stage.nuon.cloud
+
+deps:
+    RUN apk add --update build-base \
+      make \
+      python3 \
+      py3-pip
+
+    COPY \
+      .eslintrc.json \
+      .prettierrc \
+      vitest.config.ts \
+      vitest.setup.ts \
+      package-lock.json \
+      next.config.mjs \
+      postcss.config.js \
+      tailwind.config.ts \
+      package.json \
+      tsconfig.json \
+     ./
+  RUN \
+    npm install
+
+  COPY --dir test test
+  COPY --dir src src
+
+test-integration:
+  RUN echo "noop..."
+
+lint:
+  FROM +deps
+
+  RUN echo "running lint..." && \
+    npm run lint && \
+    npm run tsc
+
+test:
+  FROM +deps
+
+  RUN echo "running unit test..." && \
+    npm run test
+
+k8s:
+   COPY --dir k8s/ .
+   SAVE ARTIFACT k8s k8s
+
+build:
+  FROM +deps
+  RUN npm run build
+  SAVE ARTIFACT /src /src
+
+docker:
+  FROM +build
+
+  ARG EARTHLY_GIT_ORIGIN_URL
+  ARG EARTHLY_GIT_SHORT_HASH
+  ARG EARTHLY_SOURCE_DATE_EPOCH
+  ARG EARTHLY_TARGET_PROJECT_NO_TAG
+  ARG EARTHLY_TARGET_TAG_DOCKER
+
+  # These are set to run locally. They _must_ be overridden in CI.
+  ARG repo=$EARTHLY_TARGET_PROJECT_NO_TAG
+  ARG cache_tag=$EARTHLY_TARGET_TAG_DOCKER
+  ARG image_tag=$EARTHLY_TARGET_TAG_DOCKER
+
+  EXPOSE 3030
+  ENTRYPOINT ["npm", "run", "start"]
+
+  LABEL org.opencontainers.image.created=$EARTHLY_SOURCE_DATE_EPOCH
+  LABEL org.opencontainers.image.revision=$EARTHLY_BUILD_SHA
+  LABEL org.opencontainers.image.version=$IMAGE_TAG
+  LABEL org.opencontainers.image.source=$EARTHLY_GIT_ORIGIN_URL
+  LABEL org.opencontainers.image.authors=nuon
+  LABEL org.opencontainers.image.vendor=nuon
+  SAVE IMAGE --push --cache-from=$repo:$cache_tag $repo:$image_tag
