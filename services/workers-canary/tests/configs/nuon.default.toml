@@ -20,9 +20,8 @@ copyright_markdown = "test"
 [runner]
 runner_type = "aws-ecs"
 
-[[runner.env_var]]
-name = "runner-env-var"
-value = "runner-env-var"
+[runner.env_vars]
+runner-env-var = "runner-env-var"
 
 [sandbox]
 terraform_version = "1.5.4"
@@ -31,9 +30,8 @@ directory = "aws-ecs-byo-vpc"
 repo = "nuonco/sandboxes"
 branch = "main"
 
-[[sandbox.var]]
-name = "vpc_id"
-value = "{{.nuon.install.inputs.vpc_id}}"
+[sandbox.vars]
+vpc_id = "{{.nuon.install.inputs.vpc_id}}"
 
 [inputs]
 [[inputs.group]]
