@@ -1,0 +1,6 @@
+---
+cluster_name: prod-nuon
+internal_root_domain: nuon.us-west-2.prod.nuon.cloud
+region: us-west-2
+subdomain: "*.installers.prod"
+use_root_domain: true
