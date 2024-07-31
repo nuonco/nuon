@@ -86,3 +86,7 @@ func PrintError(err error) {
 func PrintLn(msg string) {
 	pterm.Info.Println(msg)
 }
+
+func PrintSuccess(msg string) {
+	pterm.Success.Println(msg)
+}

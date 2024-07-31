@@ -39,7 +39,8 @@ func (s *sync) createTerraformModuleComponentConfig(ctx context.Context, resourc
 			Directory: generics.ToPtr(obj.PublicRepo.Directory),
 			Repo:      generics.ToPtr(obj.PublicRepo.Repo),
 		}
-	} else if obj.ConnectedRepo != nil {
+	}
+	if obj.ConnectedRepo != nil {
 		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
 			Branch:    obj.ConnectedRepo.Branch,
 			Directory: generics.ToPtr(obj.ConnectedRepo.Directory),
