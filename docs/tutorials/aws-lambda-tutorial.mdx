@@ -249,12 +249,9 @@ terraform_version = "1.5.3"
 repo      = "nuonco/guides"
 directory = "aws-lambda-tutorial/components/dynamodb-table"
 branch    = "main"
-[[components.var]]
-name  = "name"
-value = "widgets"
-[[components.var]]
-name  = "hash_key"
-value = "ID"
+[components.vars]
+name = "widgets"
+hash_key = "ID"
 ```
 
 ```hcl Terraform
@@ -301,12 +298,9 @@ terraform_version = "1.5.3"
 repo      = "nuonco/guides"
 directory = "aws-lambda-tutorial/components/lambda-function"
 branch    = "main"
-[[components.var]]
-name  = "function_name"
-value = "widgets"
-[[components.var]]
-name  = "image_uri"
-value = "{{.nuon.components.docker_image.image.repository.uri}}:{{.nuon.components.docker_image.image.tag}}"
+[[components.vars]]
+function_name = "widgets"
+image_uri = "{{.nuon.components.docker_image.image.repository.uri}}:{{.nuon.components.docker_image.image.tag}}"
 ```
 
 ```hcl Terraform
@@ -353,12 +347,9 @@ terraform_version = "1.5.3"
 repo      = "nuonco/guides"
 directory = "aws-lambda-tutorial/components/certificate"
 branch    = "main"
-[[components.var]]
-name  = "domain_name"
-value = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
-[[components.var]]
-name  = "zone_id"
-value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+[components.vars]
+domain_name = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+zone_id = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 ```
 
 ```hcl Terraform
@@ -405,21 +396,12 @@ terraform_version = "1.5.3"
 repo      = "nuonco/guides"
 directory = "aws-lambda-tutorial/components/api-gateway"
 branch    = "main"
-[[components.var]]
-name  = "name"
-value = "api"
-[[components.var]]
-name  = "domain_name"
-value = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
-[[components.var]]
-name  = "domain_name_certificate_arn"
-value = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
-[[components.var]]
-name  = "lambda_function_arn"
-value = "{{.nuon.components.lambda_function.outputs.lambda_function_arn}}"
-[[components.var]]
-name  = "zone_id"
-value = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
+[components.vars]
+name = "api"
+domain_name = "api.{{.nuon.install.sandbox.outputs.public_domain.name}}"
+domain_name_certificate_arn = "{{.nuon.components.certificate.outputs.public_domain_certificate_arn}}"
+lambda_function_arn = "{{.nuon.components.lambda_function.outputs.lambda_function_arn}}"
+zone_id = "{{.nuon.install.sandbox.outputs.public_domain.zone_id}}"
 ```
 
 ```hcl Terraform

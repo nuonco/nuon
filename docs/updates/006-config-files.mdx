@@ -40,13 +40,9 @@ directory = "infra"
 repo = "powertoolsdev/mono"
 branch = "main"
 
-[[components.var]]
-name = "AWS_REGION"
-value = "{{.nuon.install.sandbox.account.region}}"
-
-[[components.var]]
-name = "ACCOUNT_ID"
-value = "{{.nuon.install.sandbox.account.id}}"
+[components.vars]
+AWS_REGION = "{{.nuon.install.sandbox.account.region}}"
+ACCOUNT_ID = "{{.nuon.install.sandbox.account.id}}"
 ```
 </CodeGroup>
 
