@@ -1,0 +1,34 @@
+---
+env:
+  HTTP_PORT: !!string 3000
+
+image:
+  repository: ""
+  tag: ""
+
+serviceAccount:
+  name: installers-ui
+  annotations: {}
+
+ui:
+  port: 3000
+  liveness_probe: /api/ping
+  readiness_probe: /api/ping
+
+  resources:
+    limits:
+      cpu: 400m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+  alb:
+    public_domain: TFO_PUBLIC_DOMAIN
+    public_domain_certificate: TFO_CERTIFICATE_ARN
+
+  autoscaling:
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 50
