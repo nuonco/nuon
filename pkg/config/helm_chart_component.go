@@ -20,8 +20,8 @@ type HelmValuesFile struct {
 type HelmChartComponentConfig struct {
 	ChartName string `mapstructure:"chart_name,omitempty" jsonschema:"required"`
 
-	ValuesMap   map[string]string `mapstructure:"values"`
-	ValuesFiles []HelmValuesFile  `mapstructure:"values_file"`
+	ValuesMap   map[string]string `mapstructure:"values,omitempty"`
+	ValuesFiles []HelmValuesFile  `mapstructure:"values_file,omitempty"`
 
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=connected_repo"`
