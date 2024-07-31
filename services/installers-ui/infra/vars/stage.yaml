@@ -1,6 +1,0 @@
----
-cluster_name: stage-nuon
-internal_root_domain: nuon.us-west-2.stage.nuon.cloud
-region: us-west-2
-subdomain: "*.installers.stage"
-use_root_domain: true
