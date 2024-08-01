@@ -126,7 +126,9 @@ module "infra-eks-orgs-prod-main" {
   source = "./modules/workspace"
 
   name                            = "infra-eks-orgs-prod-main"
-  repo                            = "powertoolsdev/mono"
+  # repo is set to "" in order to disable VCS triggers
+  # repo                            = "powertoolsdev/mono"
+  repo                            = ""
   dir                             = "infra/eks"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
@@ -143,7 +145,9 @@ module "infra-eks-orgs-stage-main" {
   source = "./modules/workspace"
 
   name                            = "infra-eks-orgs-stage-main"
-  repo                            = "powertoolsdev/mono"
+  # repo is set to "" in order to disable VCS triggers
+  # repo                            = "powertoolsdev/mono"
+  repo                            = ""
   dir                             = "infra/eks"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
@@ -159,7 +163,9 @@ module "infra-eks-prod-nuon" {
   source = "./modules/workspace"
 
   name                            = "infra-eks-prod-nuon"
-  repo                            = "powertoolsdev/mono"
+  # repo is set to "" in order to disable VCS triggers
+  # repo                            = "powertoolsdev/mono"
+  repo                            = ""
   dir                             = "infra/eks"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
@@ -175,7 +181,9 @@ module "infra-eks-stage-nuon" {
   source = "./modules/workspace"
 
   name                            = "infra-eks-stage-nuon"
-  repo                            = "powertoolsdev/mono"
+  # repo is set to "" in order to disable VCS triggers
+  # repo                            = "powertoolsdev/mono"
+  repo                            = ""
   dir                             = "infra/eks"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
