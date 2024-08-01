@@ -34,6 +34,18 @@ locals {
       private_subnets = ["10.134.128.0/24", "10.134.129.0/24", "10.134.130.0/24"]
     }
 
+    runners-stage-main = {
+      cidr            = "10.135.0.0/16"
+      public_subnets  = ["10.135.0.0/26", "10.135.0.64/26", "10.135.0.128/26"]
+      private_subnets = ["10.135.128.0/24", "10.135.129.0/24", "10.135.130.0/24"]
+    }
+
+    runners-prod-main = {
+      cidr            = "10.136.0.0/16"
+      public_subnets  = ["10.136.0.0/26", "10.136.0.64/26", "10.136.0.128/26"]
+      private_subnets = ["10.136.128.0/24", "10.136.129.0/24", "10.136.130.0/24"]
+    }
+
     # to create a new environment with a new network add a segement exactly the same as the one above but bump the /16
     # octet up by one
   }

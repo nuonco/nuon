@@ -1,0 +1,27 @@
+---
+auth_map_additions:
+  - name: eks-ctl-api
+    account: stage
+    groups:
+      - "system:masters"
+    trust:
+      - "arn:aws:iam::766121324316:role/nuon-internal-support-stage"
+  - name: eks-workers-apps
+    account: stage
+    groups:
+      - "system:masters"
+    trust:
+      - "arn:aws:iam::766121324316:role/nuon-internal-support-stage"
+  - name: eks-workers-executors
+    account: stage
+    groups:
+      - "system:masters"
+    trust:
+      - "arn:aws:iam::766121324316:role/nuon-internal-support-stage"
+  - name: eks-workers-installs
+    account: stage
+    groups:
+      - "system:masters"
+    trust:
+      - "arn:aws:iam::766121324316:role/nuon-internal-support-stage"
+tier: beta
