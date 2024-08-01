@@ -107,6 +107,12 @@ value = "runner-env-var"
 
 [sandbox]
 terraform_version = "1.5.4"
+
+# https://docs.nuon.co/guides/install-access-delegation#setup-delegation
+# if you are using delegation, otherwise remove
+# govcloud clients must reach out for additional configuration
+aws_delegation_iam_role_arn = "arn:aws:iam::xxxxxxxxxxxx:role/nuon-aws-ecs-install-access"
+
 [sandbox.public_repo]
 directory = "aws-ecs-byo-vpc"
 repo = "nuonco/sandboxes"
