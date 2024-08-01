@@ -21,6 +21,8 @@
         "orgs-stage-gh-oidc-provider": "orgs-stage-gh-oidc-provider",
         "prod-gh-oidc-provider": "prod-gh-oidc-provider",
         "public-gh-oidc-provider": "public-gh-oidc-provider",
+        "runners-prod-gh-oidc-provider": "runners-prod-gh-oidc-provider",
+        "runners-stage-gh-oidc-provider": "runners-stage-gh-oidc-provider",
         "sandbox-ja-gh-oidc-provider": "sandbox-ja-gh-oidc-provider",
         "sandbox-jm-gh-oidc-provider": "sandbox-jm-gh-oidc-provider",
         "stage-gh-oidc-provider": "stage-gh-oidc-provider"
@@ -67,7 +69,7 @@
   "output": {
     "accounts-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2024-07-31T15:36:41.860Z"
+      "value": "2024-08-01T19:49:11.590Z"
     },
     "canary-gh-oidc-provider": {
       "description": "The Github OIDC provider for the canary account",
@@ -116,6 +118,14 @@
     "public-gh-oidc-provider": {
       "description": "The Github OIDC provider for the public account",
       "value": "${aws_iam_openid_connect_provider.public-github-oidc-provider}"
+    },
+    "runners-prod-gh-oidc-provider": {
+      "description": "The Github OIDC provider for the runners-prod account",
+      "value": "${aws_iam_openid_connect_provider.runners-prod-github-oidc-provider}"
+    },
+    "runners-stage-gh-oidc-provider": {
+      "description": "The Github OIDC provider for the runners-stage account",
+      "value": "${aws_iam_openid_connect_provider.runners-stage-github-oidc-provider}"
     },
     "sandbox-ja-gh-oidc-provider": {
       "description": "The Github OIDC provider for the sandbox-ja account",
@@ -1249,6 +1259,176 @@
         "region": "us-west-2"
       },
       {
+        "alias": "runners-stage",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-stageid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      },
+      {
+        "alias": "runners-stage-us-east-1",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-stageid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-1"
+      },
+      {
+        "alias": "runners-stage-us-east-2",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-stageid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      },
+      {
+        "alias": "runners-stage-us-west-1",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-stageid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-west-1"
+      },
+      {
+        "alias": "runners-stage-us-west-2",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-stageid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-west-2"
+      },
+      {
+        "alias": "runners-prod",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-prodid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      },
+      {
+        "alias": "runners-prod-us-east-1",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-prodid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-1"
+      },
+      {
+        "alias": "runners-prod-us-east-2",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-prodid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-east-2"
+      },
+      {
+        "alias": "runners-prod-us-west-1",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-prodid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-west-1"
+      },
+      {
+        "alias": "runners-prod-us-west-2",
+        "assume_role": [
+          {
+            "role_arn": "arn:aws:iam::${data.terraform_remote_state.cross-stack-reference-input-org.outputs.cross-stack-output-aws_organizations_accountrunners-prodid}:role/OrganizationAccountAccessRole"
+          }
+        ],
+        "default_tags": [
+          {
+            "tags": {
+              "environment": "management",
+              "terraform": "infra-aws"
+            }
+          }
+        ],
+        "region": "us-west-2"
+      },
+      {
         "alias": "sandbox-jm",
         "assume_role": [
           {
@@ -1542,6 +1722,26 @@
         "account_alias": "nuon-public",
         "provider": "aws.public"
       },
+      "runners-prod-iam-alias": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-prod-iam-alias",
+            "uniqueId": "runners-prod-iam-alias"
+          }
+        },
+        "account_alias": "nuon-runners-prod",
+        "provider": "aws.runners-prod"
+      },
+      "runners-stage-iam-alias": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-stage-iam-alias",
+            "uniqueId": "runners-stage-iam-alias"
+          }
+        },
+        "account_alias": "nuon-runners-stage",
+        "provider": "aws.runners-stage"
+      },
       "sandbox-ja-iam-alias": {
         "//": {
           "metadata": {
@@ -1772,6 +1972,40 @@
           "sts.amazonaws.com"
         ],
         "provider": "aws.public",
+        "thumbprint_list": [
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+        ],
+        "url": "https://token.actions.githubusercontent.com"
+      },
+      "runners-prod-github-oidc-provider": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-prod-github-oidc-provider",
+            "uniqueId": "runners-prod-github-oidc-provider"
+          }
+        },
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
+        "provider": "aws.runners-prod",
+        "thumbprint_list": [
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+        ],
+        "url": "https://token.actions.githubusercontent.com"
+      },
+      "runners-stage-github-oidc-provider": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-stage-github-oidc-provider",
+            "uniqueId": "runners-stage-github-oidc-provider"
+          }
+        },
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
+        "provider": "aws.runners-stage",
         "thumbprint_list": [
           "6938fd4d98bab03faadb97b34396831e3780aea1",
           "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
@@ -2022,6 +2256,38 @@
         "name": "terraform",
         "path": "/",
         "provider": "aws.public"
+      },
+      "runners-prod-terraform-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-prod-terraform-role",
+            "uniqueId": "runners-prod-terraform-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
+        "description": "Terraform role to assume",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "terraform",
+        "path": "/",
+        "provider": "aws.runners-prod"
+      },
+      "runners-stage-terraform-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-stage-terraform-role",
+            "uniqueId": "runners-stage-terraform-role"
+          }
+        },
+        "assume_role_policy": "{\"Statement\":{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::${data.aws_caller_identity.mgmt-acct-identity.id}:root\"}},\"Version\":\"2012-10-17\"}",
+        "description": "Terraform role to assume",
+        "managed_policy_arns": [
+          "arn:aws:iam::aws:policy/AdministratorAccess"
+        ],
+        "name": "terraform",
+        "path": "/",
+        "provider": "aws.runners-stage"
       },
       "sandbox-ja-terraform-role": {
         "//": {
@@ -2433,6 +2699,66 @@
         "aws_service_name": "spot.amazonaws.com",
         "provider": "aws.public"
       },
+      "runners-prod-opensearch-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-prod-opensearch-service-linked-role",
+            "uniqueId": "runners-prod-opensearch-service-linked-role"
+          }
+        },
+        "aws_service_name": "opensearchservice.amazonaws.com",
+        "provider": "aws.runners-prod"
+      },
+      "runners-prod-spot-fleet-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-prod-spot-fleet-service-linked-role",
+            "uniqueId": "runners-prod-spot-fleet-service-linked-role"
+          }
+        },
+        "aws_service_name": "spotfleet.amazonaws.com",
+        "provider": "aws.runners-prod"
+      },
+      "runners-prod-spot-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-prod-spot-service-linked-role",
+            "uniqueId": "runners-prod-spot-service-linked-role"
+          }
+        },
+        "aws_service_name": "spot.amazonaws.com",
+        "provider": "aws.runners-prod"
+      },
+      "runners-stage-opensearch-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-stage-opensearch-service-linked-role",
+            "uniqueId": "runners-stage-opensearch-service-linked-role"
+          }
+        },
+        "aws_service_name": "opensearchservice.amazonaws.com",
+        "provider": "aws.runners-stage"
+      },
+      "runners-stage-spot-fleet-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-stage-spot-fleet-service-linked-role",
+            "uniqueId": "runners-stage-spot-fleet-service-linked-role"
+          }
+        },
+        "aws_service_name": "spotfleet.amazonaws.com",
+        "provider": "aws.runners-stage"
+      },
+      "runners-stage-spot-service-linked-role": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-stage-spot-service-linked-role",
+            "uniqueId": "runners-stage-spot-service-linked-role"
+          }
+        },
+        "aws_service_name": "spot.amazonaws.com",
+        "provider": "aws.runners-stage"
+      },
       "sandbox-ja-opensearch-service-linked-role": {
         "//": {
           "metadata": {
@@ -2693,6 +3019,34 @@
         "type": "NS",
         "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
       },
+      "runners-prod-ns-delegation": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-prod-ns-delegation",
+            "uniqueId": "runners-prod-ns-delegation"
+          }
+        },
+        "name": "runners-prod.nuon.co",
+        "provider": "aws",
+        "records": "${aws_route53_zone.runners-prod-hosted-zone.name_servers}",
+        "ttl": 300,
+        "type": "NS",
+        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
+      },
+      "runners-stage-ns-delegation": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-stage-ns-delegation",
+            "uniqueId": "runners-stage-ns-delegation"
+          }
+        },
+        "name": "runners-stage.nuon.co",
+        "provider": "aws",
+        "records": "${aws_route53_zone.runners-stage-hosted-zone.name_servers}",
+        "ttl": 300,
+        "type": "NS",
+        "zone_id": "${data.aws_route53_zone.accounts-nuon-zone.zone_id}"
+      },
       "sandbox-ja-ns-delegation": {
         "//": {
           "metadata": {
@@ -2856,6 +3210,26 @@
         },
         "name": "public.nuon.co",
         "provider": "aws.public"
+      },
+      "runners-prod-hosted-zone": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-prod-hosted-zone",
+            "uniqueId": "runners-prod-hosted-zone"
+          }
+        },
+        "name": "runners-prod.nuon.co",
+        "provider": "aws.runners-prod"
+      },
+      "runners-stage-hosted-zone": {
+        "//": {
+          "metadata": {
+            "path": "accounts/runners-stage-hosted-zone",
+            "uniqueId": "runners-stage-hosted-zone"
+          }
+        },
+        "name": "runners-stage.nuon.co",
+        "provider": "aws.runners-stage"
       },
       "sandbox-ja-hosted-zone": {
         "//": {
