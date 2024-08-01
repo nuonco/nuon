@@ -20,5 +20,7 @@ env_secrets:
 watch_ignore_dirs:
   - .next/
 local_startup_cmds: []
+local_build_cmds:
+  - npm install
 local_cmds:
   - npm run dev
