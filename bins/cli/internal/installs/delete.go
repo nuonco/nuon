@@ -7,18 +7,16 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) {
+func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	if asJSON {
 		res, err := s.api.DeleteInstall(ctx, installID)
 		if err != nil {
-			ui.PrintJSONError(err)
-			return
+			return ui.PrintJSONError(err)
 		}
 		type response struct {
 			ID      string `json:"id"`
@@ -26,15 +24,15 @@ func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) {
 		}
 		r := response{ID: installID, Deleted: res}
 		ui.PrintJSON(r)
-		return
+		return nil
 	}
 
 	view := ui.NewDeleteView("install", installID)
 	view.Start()
 	_, err = s.api.DeleteInstall(ctx, installID)
 	if err != nil {
-		view.Fail(err)
-		return
+		return view.Fail(err)
 	}
 	view.SuccessQueued()
+	return nil
 }

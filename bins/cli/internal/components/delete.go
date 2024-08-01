@@ -7,18 +7,16 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Delete(ctx context.Context, appID, compID string, asJSON bool) {
+func (s *Service) Delete(ctx context.Context, appID, compID string, asJSON bool) error {
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	if asJSON {
 		res, err := s.api.DeleteComponent(ctx, compID)
 		if err != nil {
-			ui.PrintJSONError(err)
-			return
+			return ui.PrintJSONError(err)
 		}
 
 		type response struct {
@@ -27,7 +25,7 @@ func (s *Service) Delete(ctx context.Context, appID, compID string, asJSON bool)
 		}
 		r := response{ID: compID, Deleted: res}
 		ui.PrintJSON(r)
-		return
+		return nil
 	}
 
 	view := ui.NewDeleteView("component", compID)
@@ -35,8 +33,8 @@ func (s *Service) Delete(ctx context.Context, appID, compID string, asJSON bool)
 
 	_, err = s.api.DeleteComponent(ctx, compID)
 	if err != nil {
-		view.Fail(err)
-		return
+		return view.Fail(err)
 	}
 	view.Success()
+	return nil
 }

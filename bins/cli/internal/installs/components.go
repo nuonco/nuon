@@ -7,23 +7,21 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Components(ctx context.Context, installID string, asJSON bool) {
+func (s *Service) Components(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 	view := ui.NewGetView()
 
 	components, err := s.api.GetInstallComponents(ctx, installID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(components)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -57,4 +55,5 @@ func (s *Service) Components(ctx context.Context, installID string, asJSON bool)
 		data = append(data, args)
 	}
 	view.Render(data)
+	return nil
 }

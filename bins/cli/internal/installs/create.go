@@ -17,11 +17,10 @@ const (
 	statusAccessError = "access-error"
 )
 
-func (s *Service) Create(ctx context.Context, appID, name, region, arn string, inputs []string, asJSON bool) {
+func (s *Service) Create(ctx context.Context, appID, name, region, arn string, inputs []string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	inputsMap := make(map[string]string)
@@ -40,11 +39,10 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 			Inputs: inputsMap,
 		})
 		if err != nil {
-			ui.PrintJSONError(err)
-			return
+			return ui.PrintJSONError(err)
 		}
 		ui.PrintJSON(install)
-		return
+		return nil
 	}
 
 	view := ui.NewCreateView("install", asJSON)
@@ -59,8 +57,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 		Inputs: inputsMap,
 	})
 	if err != nil {
-		view.Fail(err)
-		return
+		return view.Fail(err)
 	}
 
 	for {
@@ -69,14 +66,12 @@ func (s *Service) Create(ctx context.Context, appID, name, region, arn string, i
 		case err != nil:
 			view.Fail(err)
 		case ins.Status == statusAccessError:
-			view.Fail(fmt.Errorf("failed to create install due to access error: %s", ins.StatusDescription))
-			return
+			return view.Fail(fmt.Errorf("failed to create install due to access error: %s", ins.StatusDescription))
 		case ins.Status == statusError:
-			view.Fail(fmt.Errorf("failed to create install: %s", ins.StatusDescription))
-			return
+			return view.Fail(fmt.Errorf("failed to create install: %s", ins.StatusDescription))
 		case ins.Status == statusActive:
 			view.Success(fmt.Sprintf("successfully created install %s", ins.ID))
-			return
+			return nil
 		default:
 			view.Update(fmt.Sprintf("%s install", ins.Status))
 		}

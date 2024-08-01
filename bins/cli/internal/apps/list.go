@@ -6,18 +6,17 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context, asJSON bool) {
+func (s *Service) List(ctx context.Context, asJSON bool) error {
 	view := ui.NewListView()
 
 	apps, err := s.api.GetApps(ctx)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(apps)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -39,4 +38,5 @@ func (s *Service) List(ctx context.Context, asJSON bool) {
 		})
 	}
 	view.Render(data)
+	return nil
 }

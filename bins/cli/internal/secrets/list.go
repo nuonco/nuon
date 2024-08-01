@@ -9,24 +9,22 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
+func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	view := ui.NewListView()
 
 	secrets, err := s.api.GetAppSecrets(ctx, appID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(secrets)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -41,8 +39,7 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 	for _, secret := range secrets {
 		createdAt, err := time.Parse(time.RFC3339Nano, secret.CreatedAt)
 		if err != nil {
-			view.Error(err)
-			return
+			return view.Error(err)
 		}
 
 		data = append(data, []string{
@@ -55,4 +52,5 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 	}
 
 	view.Render(data)
+	return nil
 }

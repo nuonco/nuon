@@ -8,23 +8,21 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) GetDeploy(ctx context.Context, installID, deployID string, asJSON bool) {
+func (s *Service) GetDeploy(ctx context.Context, installID, deployID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 	view := ui.NewGetView()
 
 	installDeploy, err := s.api.GetInstallDeploy(ctx, installID, deployID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(installDeploy)
-		return
+		return nil
 	}
 
 	view.Render([][]string{
@@ -35,4 +33,5 @@ func (s *Service) GetDeploy(ctx context.Context, installID, deployID string, asJ
 		{"status", installDeploy.Status},
 		{"description", wordwrap.WrapString(installDeploy.StatusDescription, 75)},
 	})
+	return nil
 }

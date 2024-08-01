@@ -9,7 +9,7 @@ import (
 	"github.com/pterm/pterm"
 )
 
-func (s *Service) Select(ctx context.Context, orgID string, asJSON bool) {
+func (s *Service) Select(ctx context.Context, orgID string, asJSON bool) error {
 	view := ui.NewGetView()
 
 	if orgID != "" {
@@ -17,13 +17,12 @@ func (s *Service) Select(ctx context.Context, orgID string, asJSON bool) {
 	} else {
 		orgs, err := s.api.GetOrgs(ctx)
 		if err != nil {
-			view.Error(err)
-			return
+			return view.Error(err)
 		}
 
 		if len(orgs) == 0 {
 			s.printNoOrgsMsg()
-			return
+			return nil
 		}
 
 		// select options
@@ -37,10 +36,10 @@ func (s *Service) Select(ctx context.Context, orgID string, asJSON bool) {
 		org := strings.Split(selectedOrg, ":")
 
 		if err := s.setOrgInConfig(ctx, strings.ReplaceAll(org[1], " ", "")); err != nil {
-			view.Error(err)
-			return
+			return view.Error(err)
 		}
 
 		s.printOrgSetMsg(org[0], org[1])
 	}
+	return nil
 }

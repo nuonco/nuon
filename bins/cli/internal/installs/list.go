@@ -9,7 +9,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
+func (s *Service) List(ctx context.Context, appID string, asJSON bool) error {
 	view := ui.NewListView()
 
 	var (
@@ -20,8 +20,7 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 	if appID != "" {
 		appID, err := lookup.AppID(ctx, s.api, appID)
 		if err != nil {
-			ui.PrintError(err)
-			return
+			return ui.PrintError(err)
 		}
 		installs, err = s.api.GetAppInstalls(ctx, appID)
 
@@ -29,13 +28,12 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 		installs, err = s.api.GetAllInstalls(ctx)
 	}
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(installs)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -59,4 +57,5 @@ func (s *Service) List(ctx context.Context, appID string, asJSON bool) {
 		})
 	}
 	view.Render(data)
+	return nil
 }
