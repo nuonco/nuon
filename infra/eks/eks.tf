@@ -1,5 +1,5 @@
 locals {
-  cluster_version = "1.27"
+  cluster_version = "1.30"
   region          = local.vars.region
 
   # rearrange SSO roles by name for easier access
@@ -127,6 +127,7 @@ module "eks" {
   }
 
   # HACK: https://github.com/terraform-aws-modules/terraform-aws-eks/issues/1986
+  # NOTE(fd): i think we still need this
   # Because of this, we do a few things:
   # 1.) we don't add tags to the cluster primary security group, so it won't have the "owned" tag
   # 2.) we only add the karpenter tag on this node group

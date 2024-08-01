@@ -24,4 +24,11 @@ auth_map_additions:
       - "system:masters"
     trust:
       - "arn:aws:iam::814326426574:role/nuon-internal-support-prod"
+managed_node_group:
+  # NOTE(fd): keeping this small until we go live
+  desired_size: 2
+  min_size: 2
+  max_size: 5
+  instance_types:
+    - m5.large
 tier: stable
