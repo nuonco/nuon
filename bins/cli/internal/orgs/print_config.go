@@ -5,18 +5,18 @@ import (
 	"github.com/pterm/pterm"
 )
 
-func (s *Service) PrintConfig(asJSON bool) {
+func (s *Service) PrintConfig(asJSON bool) error {
 	view := ui.NewGetView()
 
 	settings := s.cfg.AllSettings()
 	if len(settings) == 0 {
 		pterm.DefaultBasicText.Println("No config set")
-		return
+		return nil
 	} else {
 
 		if asJSON {
 			ui.PrintJSON(settings)
-			return
+			return nil
 		}
 
 		var data = [][]string{}
@@ -26,4 +26,5 @@ func (s *Service) PrintConfig(asJSON bool) {
 
 		view.Render(data)
 	}
+	return nil
 }

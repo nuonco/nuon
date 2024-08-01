@@ -6,18 +6,17 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) ListInvites(ctx context.Context, limit int64, asJSON bool) {
+func (s *Service) ListInvites(ctx context.Context, limit int64, asJSON bool) error {
 	view := ui.NewGetView()
 
 	invites, err := s.api.GetOrgInvites(ctx, &limit)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(invites)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -36,4 +35,5 @@ func (s *Service) ListInvites(ctx context.Context, limit int64, asJSON bool) {
 		})
 	}
 	view.Render(data)
+	return nil
 }

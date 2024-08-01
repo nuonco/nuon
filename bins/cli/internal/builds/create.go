@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
+	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
 const (
@@ -15,11 +17,10 @@ const (
 	statusActive = "active"
 )
 
-func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool) {
+func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool) error {
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	if asJSON {
@@ -32,11 +33,11 @@ func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool)
 		)
 		if err != nil {
 			ui.PrintJSONError(err)
-			return
+		} else {
+			ui.PrintJSON(newBuild)
 		}
 
-		ui.PrintJSON(newBuild)
-		return
+		return err
 	}
 
 	view := ui.NewCreateView("build", asJSON)
@@ -50,8 +51,7 @@ func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool)
 		},
 	)
 	if err != nil {
-		view.Fail(err)
-		return
+		return view.Fail(errors.Wrap(err, "error creating build"))
 	}
 
 	for {
@@ -60,11 +60,10 @@ func (s *Service) Create(ctx context.Context, appID, compID string, asJSON bool)
 		case err != nil:
 			view.Fail(err)
 		case build.Status == statusError:
-			view.Fail(fmt.Errorf("failed to create component build: %s", build.StatusDescription))
-			return
+			return view.Fail(errs.NewUserFacing("component build encountered an error: %s", build.StatusDescription))
 		case build.Status == statusActive:
 			view.Success(fmt.Sprintf("successfully created component build %s", build.ID))
-			return
+			return nil
 		default:
 			view.Update(fmt.Sprintf("%s component build", build.Status))
 		}

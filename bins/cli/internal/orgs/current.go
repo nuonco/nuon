@@ -7,18 +7,17 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Current(ctx context.Context, asJSON bool) {
+func (s *Service) Current(ctx context.Context, asJSON bool) error {
 	view := ui.NewGetView()
 
 	org, err := s.api.GetOrg(ctx)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(org)
-		return
+		return nil
 	}
 
 	view.Render([][]string{
@@ -32,4 +31,5 @@ func (s *Service) Current(ctx context.Context, asJSON bool) {
 		{"updated at", org.UpdatedAt},
 		{"created by", org.CreatedByID},
 	})
+	return nil
 }

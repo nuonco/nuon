@@ -6,18 +6,17 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Steps(ctx context.Context, releaseID string, asJSON bool) {
+func (s *Service) Steps(ctx context.Context, releaseID string, asJSON bool) error {
 	view := ui.NewListView()
 
 	steps, err := s.api.GetReleaseSteps(ctx, releaseID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(steps)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -37,4 +36,5 @@ func (s *Service) Steps(ctx context.Context, releaseID string, asJSON bool) {
 		})
 	}
 	view.Render(data)
+	return nil
 }

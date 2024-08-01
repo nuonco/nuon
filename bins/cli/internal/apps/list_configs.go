@@ -7,18 +7,17 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) ListConfigs(ctx context.Context, appID string, asJSON bool) {
+func (s *Service) ListConfigs(ctx context.Context, appID string, asJSON bool) error {
 	view := ui.NewListView()
 
 	cfgs, err := s.api.GetAppConfigs(ctx, appID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(cfgs)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -40,4 +39,5 @@ func (s *Service) ListConfigs(ctx context.Context, appID string, asJSON bool) {
 		})
 	}
 	view.Render(data)
+	return nil
 }

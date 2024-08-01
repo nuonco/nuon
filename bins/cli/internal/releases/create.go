@@ -18,18 +18,16 @@ const (
 var errMissingInput = fmt.Errorf("need either a build ID or a component ID")
 var errMissingBuildInput = fmt.Errorf("must pass in one of --build-id, --auto-build or --latest-build")
 
-func (s *Service) Create(ctx context.Context, appID, compID, buildID, delay string, autoBuild, latestBuild bool, installsPerStep int64, asJSON bool) {
+func (s *Service) Create(ctx context.Context, appID, compID, buildID, delay string, autoBuild, latestBuild bool, installsPerStep int64, asJSON bool) error {
 	var err error
 	view := ui.NewCreateView("release", asJSON)
 	view.Start()
 
 	if buildID == "" && compID == "" {
-		view.Fail(errMissingInput)
-		return
+		return view.Fail(errMissingInput)
 	}
 	if !latestBuild && !autoBuild && buildID == "" {
-		view.Fail(errMissingBuildInput)
-		return
+		return view.Fail(errMissingBuildInput)
 	}
 
 	req := &models.ServiceCreateComponentReleaseRequest{
@@ -43,8 +41,7 @@ func (s *Service) Create(ctx context.Context, appID, compID, buildID, delay stri
 	if compID != "" {
 		compID, err = lookup.ComponentID(ctx, s.api, appID, compID)
 		if err != nil {
-			ui.PrintError(err)
-			return
+			return ui.PrintError(err)
 		}
 		view.Update(fmt.Sprintf("using component %s", compID))
 	}
@@ -55,8 +52,7 @@ func (s *Service) Create(ctx context.Context, appID, compID, buildID, delay stri
 		var latestBuild *models.AppComponentBuild
 		latestBuild, err = s.api.GetComponentLatestBuild(ctx, compID)
 		if err != nil {
-			view.Fail(err)
-			return
+			return view.Fail(err)
 		}
 
 		req.BuildID = latestBuild.ID
@@ -67,16 +63,14 @@ func (s *Service) Create(ctx context.Context, appID, compID, buildID, delay stri
 	} else {
 		compBuild, err := s.api.GetBuild(ctx, buildID)
 		if err != nil {
-			view.Fail(err)
-			return
+			return view.Fail(err)
 		}
 		compID = compBuild.ComponentID
 		view.Update(fmt.Sprintf("using component %s", compID))
 	}
 
 	if compID == "" {
-		view.Fail(fmt.Errorf("no component id was able to be found"))
-		return
+		return view.Fail(fmt.Errorf("no component id was able to be found"))
 	}
 
 	view.Update("creating release")
@@ -85,16 +79,14 @@ func (s *Service) Create(ctx context.Context, appID, compID, buildID, delay stri
 	// Need to refactor to move this view logic into view.
 	if asJSON {
 		if err != nil {
-			ui.PrintJSONError(err)
-			return
+			return ui.PrintJSONError(err)
 		}
 		ui.PrintJSON(release)
-		return
+		return nil
 	}
 
 	if err != nil {
-		view.Fail(err)
-		return
+		return view.Fail(err)
 	}
 
 	for {
@@ -102,14 +94,12 @@ func (s *Service) Create(ctx context.Context, appID, compID, buildID, delay stri
 
 		switch {
 		case err != nil:
-			view.Fail(err)
-			return
+			return view.Fail(err)
 		case release.Status == statusError:
-			view.Fail(fmt.Errorf(release.StatusDescription))
-			return
+			return view.Fail(fmt.Errorf(release.StatusDescription))
 		case release.Status == statusActive:
 			view.Success(release.ID)
-			return
+			return nil
 		default:
 			view.Update(fmt.Sprintf("release %s %s", release.ID, release.Status))
 		}

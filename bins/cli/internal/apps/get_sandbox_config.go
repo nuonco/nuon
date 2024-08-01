@@ -7,25 +7,24 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) GetSandboxConfig(ctx context.Context, appID string, asJSON bool) {
+func (s *Service) GetSandboxConfig(ctx context.Context, appID string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	view := ui.NewGetView()
 
 	sandboxCfg, err := s.api.GetAppSandboxLatestConfig(ctx, appID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(sandboxCfg)
-		return
+		return nil
 	}
 
 	ui.PrintJSON(sandboxCfg)
+	return nil
 }

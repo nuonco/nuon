@@ -5,7 +5,6 @@ import (
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/apps"
 	"github.com/powertoolsdev/mono/bins/cli/internal/config"
-	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
 func (c *cli) appsCmd() *cobra.Command {
@@ -25,10 +24,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List all your apps",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.List(cmd.Context(), PrintJSON)
-		},
+			return svc.List(cmd.Context(), PrintJSON)
+		}),
 	}
 
 	appsCmd.AddCommand(listCmd)
@@ -38,10 +37,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:   "get",
 		Short: "Get an app",
 		Long:  "Get either the current app or an app by name or ID",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Get(cmd.Context(), appID, PrintJSON)
-		},
+			return svc.Get(cmd.Context(), appID, PrintJSON)
+		}),
 	}
 	getCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	getCmd.MarkFlagRequired("app-id")
@@ -50,10 +49,10 @@ func (c *cli) appsCmd() *cobra.Command {
 	currentCmd := &cobra.Command{
 		Use:   "current",
 		Short: "Get the current app",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Get(cmd.Context(), c.cfg.GetString("app_id"), PrintJSON)
-		},
+			return svc.Get(cmd.Context(), c.cfg.GetString("app_id"), PrintJSON)
+		}),
 	}
 	appsCmd.AddCommand(currentCmd)
 
@@ -61,10 +60,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:   "sandbox-config",
 		Short: "View sandbox config",
 		Long:  "View apps latest sandbox config",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.GetSandboxConfig(cmd.Context(), appID, PrintJSON)
-		},
+			return svc.GetSandboxConfig(cmd.Context(), appID, PrintJSON)
+		}),
 	}
 	latestSandboxConfigCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	latestSandboxConfigCmd.MarkFlagRequired("app-id")
@@ -74,10 +73,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:   "configs",
 		Short: "List app configs",
 		Long:  "List app configs",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.ListConfigs(cmd.Context(), appID, PrintJSON)
-		},
+			return svc.ListConfigs(cmd.Context(), appID, PrintJSON)
+		}),
 	}
 	configs.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	configs.MarkFlagRequired("app-id")
@@ -87,10 +86,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:   "input-config",
 		Short: "View app input config",
 		Long:  "View latest app input config",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.GetInputConfig(cmd.Context(), appID, PrintJSON)
-		},
+			return svc.GetInputConfig(cmd.Context(), appID, PrintJSON)
+		}),
 	}
 	latestInputConfig.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	latestInputConfig.MarkFlagRequired("app-id")
@@ -100,10 +99,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:   "runner-config",
 		Short: "View app runner config",
 		Long:  "View latest app runner config",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.GetRunnerConfig(cmd.Context(), appID, PrintJSON)
-		},
+			return svc.GetRunnerConfig(cmd.Context(), appID, PrintJSON)
+		}),
 	}
 	latestRunnerConfig.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	latestRunnerConfig.MarkFlagRequired("app-id")
@@ -113,10 +112,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:   "select",
 		Short: "Select your current app",
 		Long:  "Select your current app from a list or by app ID",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Select(cmd.Context(), appID, PrintJSON)
-		},
+			return svc.Select(cmd.Context(), appID, PrintJSON)
+		}),
 	}
 	selectAppCmd.Flags().StringVar(&appID, "app", "", "The ID of the app you want to use")
 	appsCmd.AddCommand(selectAppCmd)
@@ -125,13 +124,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:               "sync",
 		Short:             "Sync all .nuon.toml config files in the current directory.",
 		PersistentPreRunE: c.persistentPreRunE,
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			if err := svc.Sync(cmd.Context(), all, file); err != nil {
-				ui.PrintError(err)
-			}
-			return nil
-		},
+			return svc.Sync(cmd.Context(), all, file)
+		}),
 	}
 	syncCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
 	syncCmd.Flags().BoolVarP(&all, "all", "", false, "sync all config files found")
@@ -141,10 +137,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:               "validate",
 		Short:             "Validate a toml config file",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Validate(cmd.Context(), all, file, PrintJSON)
-		},
+			return svc.Validate(cmd.Context(), all, file, PrintJSON)
+		}),
 	}
 	validateCmd.Flags().StringVarP(&file, "file", "c", "", "Config file to sync")
 	validateCmd.Flags().BoolVarP(&all, "all", "", false, "sync all config files found")
@@ -189,10 +185,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:               "delete",
 		Short:             "Delete an existing app",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Delete(cmd.Context(), appID, PrintJSON)
-		},
+			return svc.Delete(cmd.Context(), appID, PrintJSON)
+		}),
 	}
 	deleteCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	deleteCmd.Flags().BoolVar(&confirmDelete, "confirm", false, "Confirm you want to delete the app")
@@ -206,10 +202,10 @@ func (c *cli) appsCmd() *cobra.Command {
 		Use:               "rename",
 		Short:             "Rename an app",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			svc.Rename(cmd.Context(), appID, name, rename, PrintJSON)
-		},
+			return svc.Rename(cmd.Context(), appID, name, rename, PrintJSON)
+		}),
 	}
 	renameCmd.Flags().StringVarP(&name, "name", "n", "", "app name")
 	renameCmd.MarkFlagRequired("name")

@@ -14,13 +14,12 @@ var (
 	AuthAudience string
 )
 
-func (a *Service) Login(ctx context.Context, cliCfg *config.Config) {
+func (a *Service) Login(ctx context.Context, cliCfg *config.Config) error {
 	view := ui.NewGetView()
 
 	cfg, err := a.api.GetCLIConfig(ctx)
 	if err != nil {
-		view.Error(fmt.Errorf("couldn't get cli config: %w", err))
-		return
+		return view.Error(fmt.Errorf("couldn't get cli config: %w", err))
 	}
 
 	AuthAudience = cfg.AuthAudience
@@ -30,12 +29,12 @@ func (a *Service) Login(ctx context.Context, cliCfg *config.Config) {
 	// get device code
 	deviceCode, err := a.getDeviceCode()
 	if err != nil {
-		view.Error(fmt.Errorf("couldn't verify device code: %w", err))
+		return view.Error(fmt.Errorf("couldn't verify device code: %w", err))
 	}
 
 	tokens, err := a.getOAuthTokens(deviceCode)
 	if err != nil {
-		view.Error(fmt.Errorf("couldn't get OAuth tokens: %w", err))
+		return view.Error(fmt.Errorf("couldn't get OAuth tokens: %w", err))
 	}
 
 	// add access token to config and write to the file
@@ -52,4 +51,5 @@ func (a *Service) Login(ctx context.Context, cliCfg *config.Config) {
 	view.Render([][]string{
 		{"Access token", tokens.AccessToken},
 	})
+	return nil
 }

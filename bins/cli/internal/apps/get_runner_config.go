@@ -8,24 +8,22 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) GetRunnerConfig(ctx context.Context, appID string, asJSON bool) {
+func (s *Service) GetRunnerConfig(ctx context.Context, appID string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	view := ui.NewGetView()
 
 	runnerCfg, err := s.api.GetAppRunnerLatestConfig(ctx, appID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(runnerCfg)
-		return
+		return nil
 	}
 
 	args := [][]string{
@@ -44,4 +42,5 @@ func (s *Service) GetRunnerConfig(ctx context.Context, appID string, asJSON bool
 		{"created by", runnerCfg.CreatedByID},
 	}...)
 	view.Render(args)
+	return nil
 }

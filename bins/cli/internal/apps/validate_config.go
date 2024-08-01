@@ -3,7 +3,7 @@ package apps
 import (
 	"context"
 	"fmt"
-	"errors"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/config"
@@ -31,7 +31,7 @@ func (s *Service) loadConfig(ctx context.Context, file string) (*config.AppConfi
 	return cfg, nil
 }
 
-func (s *Service) Validate(ctx context.Context, all bool, file string, asJSON bool) {
+func (s *Service) Validate(ctx context.Context, all bool, file string, asJSON bool) error {
 	view := ui.NewGetView()
 
 	var (
@@ -43,15 +43,13 @@ func (s *Service) Validate(ctx context.Context, all bool, file string, asJSON bo
 		view.Print("searching for config files in current directory")
 		cfgFiles, err = parse.FindConfigFiles(".")
 		if err != nil {
-			view.Error(err)
-			return
+			return view.Error(err)
 		}
 	}
 	if file != "" {
 		appName, err := parse.AppNameFromFilename(file)
 		if err != nil {
-			view.Error(err)
-			return
+			return view.Error(err)
 		}
 
 		view.Print(fmt.Sprintf("found %s", file))
@@ -64,19 +62,18 @@ func (s *Service) Validate(ctx context.Context, all bool, file string, asJSON bo
 	}
 
 	if len(cfgFiles) < 1 {
-		view.Error(&ui.CLIUserError{
-			Msg: fmt.Sprintf("must set --all or --file, and make sure at least one \"nuon.<app-name>.toml\" file exists"),
+		return view.Error(&ui.CLIUserError{
+			Msg: "must set --all or --file, and make sure at least one \"nuon.<app-name>.toml\" file exists",
 		})
-		return
 	}
 
 	for _, cfgFile := range cfgFiles {
 		view.Print(fmt.Sprintf("validating file \"%s\"", cfgFile.Path))
 		if err := s.validate(ctx, cfgFile, asJSON); err != nil {
-			view.Error(err)
-			break
+			return view.Error(err)
 		}
 	}
+	return nil
 }
 
 func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) error {
@@ -84,19 +81,16 @@ func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) er
 
 	cfg, err := s.loadConfig(ctx, file.Path)
 	if err != nil {
-		ui.PrintError(err)
-		return err
+		return ui.PrintError(err)
 	}
 
 	if err := cfg.Validate(s.v); err != nil {
-		ui.PrintError(err)
-		return err
+		return ui.PrintError(err)
 	}
 
 	schmaErrs, err := schema.Validate(cfg)
 	if err != nil {
-		ui.PrintError(err)
-		return err
+		return ui.PrintError(err)
 	}
 
 	if len(schmaErrs) < 1 {
@@ -117,14 +111,11 @@ func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) er
 	return nil
 }
 
-func (s *Service) validateDuplicateComponentNames( cfg *config.AppConfig) error {
+func (s *Service) validateDuplicateComponentNames(cfg *config.AppConfig) error {
 	componentNames := make(map[string]bool)
 	for _, v := range cfg.Components {
 		if _, ok := componentNames[v.Name]; ok {
-			return errs.UserFacingError(
-				errors.New("duplicate component name"),
-				fmt.Sprintf("Validation error: duplicate component name %q", v.Name),
-			)
+			return errs.NewUserFacing("Validation error: duplicate component name %q", v.Name)
 		}
 		componentNames[v.Name] = true
 	}

@@ -7,24 +7,22 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Get(ctx context.Context, appID string, asJSON bool) {
+func (s *Service) Get(ctx context.Context, appID string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	view := ui.NewGetView()
 
 	app, err := s.api.GetApp(ctx, appID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(app)
-		return
+		return nil
 	}
 
 	view.Render([][]string{
@@ -36,4 +34,6 @@ func (s *Service) Get(ctx context.Context, appID string, asJSON bool) {
 		{"updated at", app.UpdatedAt},
 		{"created by", app.CreatedByID},
 	})
+
+	return nil
 }
