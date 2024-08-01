@@ -7,18 +7,17 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Reprovision(ctx context.Context, installID string, asJSON bool) {
+func (s *Service) Reprovision(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	err = s.api.ReprovisionInstall(ctx, installID)
 	if err != nil {
-		ui.PrintJSONError(err)
-		return
+		return ui.PrintJSONError(err)
 	}
 
 	ui.PrintLn("successfully triggered install reprovision")
+	return nil
 }

@@ -8,23 +8,21 @@ import (
 	"github.com/pterm/pterm"
 )
 
-func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bool) {
+func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 	view := ui.NewGetView()
 
 	inputs, err := s.api.GetInstallInputs(ctx, installID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(inputs)
-		return
+		return nil
 	}
 
 	for _, inp := range inputs {
@@ -36,4 +34,5 @@ func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bo
 		pterm.DefaultBasicText.Println("inputs ID: " + pterm.LightMagenta(inp.ID))
 		view.Render(data)
 	}
+	return nil
 }

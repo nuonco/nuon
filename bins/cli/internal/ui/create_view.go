@@ -2,6 +2,9 @@ package ui
 
 import (
 	"fmt"
+
+	"github.com/cockroachdb/errors/withstack"
+	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
 type CreateView struct {
@@ -24,6 +27,10 @@ func (v *CreateView) Success(id string) {
 	v.SpinnerView.Success(fmt.Sprintf("successfully created %s %s", v.model, id))
 }
 
-func (v *CreateView) Fail(err error) {
+func (v *CreateView) Fail(err error) error {
+	if !errs.HasNuonStackTrace(err) {
+		err = withstack.WithStackDepth(err, 1)
+	}
 	v.SpinnerView.Fail(fmt.Errorf("failed to create %s: %w", v.model, err))
+	return err
 }
