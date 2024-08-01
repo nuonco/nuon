@@ -159,6 +159,39 @@ module "infra-eks-orgs-stage-main" {
   }
 }
 
+module "infra-eks-runners-prod-main" {
+  source = "./modules/workspace"
+
+  name                            = "infra-eks-runners-prod-main"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/eks"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  project_id                      = tfe_project.infra.id
+
+  vars = {
+    account = "runners-prod"
+    pool    = "main"
+  }
+}
+
+module "infra-eks-runners-stage-main" {
+  source = "./modules/workspace"
+
+  name                            = "infra-eks-runners-stage-main"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/eks"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials", "twingate-api-token"]
+  project_id                      = tfe_project.infra.id
+  vars = {
+    account = "runners-stage"
+    pool    = "main"
+  }
+}
+
 module "infra-eks-prod-nuon" {
   source = "./modules/workspace"
 
