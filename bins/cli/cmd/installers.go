@@ -19,10 +19,10 @@ func (c *cli) installersCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List installers",
 		Long:    "List all installers",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := installers.New(c.apiClient, c.cfg)
-			svc.List(cmd.Context(), PrintJSON)
-		},
+			return svc.List(cmd.Context(), PrintJSON)
+		}),
 	}
 	installsCmds.AddCommand(listCmd)
 

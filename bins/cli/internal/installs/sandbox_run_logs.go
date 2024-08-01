@@ -7,25 +7,24 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) SandboxRunLogs(ctx context.Context, installID, runID string, asJSON bool) {
+func (s *Service) SandboxRunLogs(ctx context.Context, installID, runID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	view := ui.NewGetView()
 
 	log, err := s.api.GetInstallSandboxRunLogs(ctx, installID, runID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(log)
-		return
+		return nil
 	}
 
 	ui.PrintLogsFromInterface(log)
+	return nil
 }

@@ -6,18 +6,17 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) VCSConnections(ctx context.Context, asJSON bool) {
+func (s *Service) VCSConnections(ctx context.Context, asJSON bool) error {
 	view := ui.NewGetView()
 
 	vcs, err := s.api.GetVCSConnections(ctx)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(vcs)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -33,4 +32,5 @@ func (s *Service) VCSConnections(ctx context.Context, asJSON bool) {
 	}
 
 	view.Render(data)
+	return nil
 }

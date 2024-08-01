@@ -4,30 +4,29 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/mitchellh/go-wordwrap"
 
 	"github.com/powertoolsdev/mono/bins/cli/internal/lookup"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON bool) {
+func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON bool) error {
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	view := ui.NewGetView()
 
 	build, err := s.api.GetComponentBuild(ctx, compID, buildID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(errors.Wrap(err, "failed to fetch component build"))
 	}
 
 	if asJSON {
 		ui.PrintJSON(build)
-		return
+		return nil
 	}
 
 	vcsConnectionID := ""
@@ -71,4 +70,5 @@ func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON
 	}
 
 	view.Render(buildRes)
+	return nil
 }
