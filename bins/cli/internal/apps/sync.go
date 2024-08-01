@@ -48,15 +48,13 @@ func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 	if all {
 		cfgFiles, err = parse.FindConfigFiles(".")
 		if err != nil {
-			ui.PrintError(err)
-			return err
+			return ui.PrintError(err)
 		}
 	}
 	if file != "" {
 		appName, err := parse.AppNameFromFilename(file)
 		if err != nil {
-			ui.PrintError(err)
-			return err
+			return ui.PrintError(err)
 		}
 
 		cfgFiles = []parse.File{
@@ -77,12 +75,11 @@ func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 	for _, cfgFile := range cfgFiles {
 		appID, err := lookup.AppID(ctx, s.api, cfgFile.AppName)
 		if err != nil {
-			ui.PrintError(err)
-			return err
+			return ui.PrintError(err)
 		}
 
 		if err := s.sync(ctx, cfgFile.Path, appID); err != nil {
-			return err
+			return ui.PrintError(err)
 		}
 	}
 

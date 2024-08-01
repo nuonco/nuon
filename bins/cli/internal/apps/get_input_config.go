@@ -7,25 +7,25 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) GetInputConfig(ctx context.Context, appID string, asJSON bool) {
+func (s *Service) GetInputConfig(ctx context.Context, appID string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	view := ui.NewGetView()
 
 	inputCfg, err := s.api.GetAppInputLatestConfig(ctx, appID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(inputCfg)
-		return
+		// TODO (sdboyer) this seems like a bug, should it always print JSON?
+		// } else {
+		// 	ui.PrintJSON(inputCfg)
 	}
 
-	ui.PrintJSON(inputCfg)
+	return nil
 }

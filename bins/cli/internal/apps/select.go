@@ -9,21 +9,20 @@ import (
 	"github.com/pterm/pterm"
 )
 
-func (s *Service) Select(ctx context.Context, appID string, asJSON bool) {
+func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
 	view := ui.NewGetView()
 
 	if appID != "" {
-		s.SetCurrent(ctx, appID, asJSON)
+		return s.SetCurrent(ctx, appID, asJSON)
 	} else {
 		apps, err := s.api.GetApps(ctx)
 		if err != nil {
-			view.Error(err)
-			return
+			return view.Error(err)
 		}
 
 		if len(apps) == 0 {
 			s.printNoAppsMsg()
-			return
+			return nil
 		}
 
 		// select options
@@ -37,10 +36,10 @@ func (s *Service) Select(ctx context.Context, appID string, asJSON bool) {
 		app := strings.Split(selectedApp, ":")
 
 		if err := s.setAppInConfig(ctx, strings.ReplaceAll(app[1], " ", "")); err != nil {
-			view.Error(err)
-			return
+			return view.Error(err)
 		}
 
 		s.printAppSetMsg(app[0], app[1])
 	}
+	return nil
 }

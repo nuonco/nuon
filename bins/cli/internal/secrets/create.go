@@ -9,11 +9,10 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Create(ctx context.Context, appID, name, value string, asJSON bool) {
+func (s *Service) Create(ctx context.Context, appID, name, value string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	view := ui.NewCreateView("secret", asJSON)
@@ -25,9 +24,9 @@ func (s *Service) Create(ctx context.Context, appID, name, value string, asJSON 
 		Value: &value,
 	})
 	if err != nil {
-		view.Fail(err)
-		return
+		return view.Fail(err)
 	}
 
 	view.Update(fmt.Sprintf("successfully created secret (%s)\n", secret.ID))
+	return nil
 }

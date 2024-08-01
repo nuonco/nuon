@@ -7,25 +7,19 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) ListConfigs(ctx context.Context, appID, compID string, asJSON bool) {
+func (s *Service) ListConfigs(ctx context.Context, appID, compID string, asJSON bool) error {
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	view := ui.NewGetView()
 
 	configs, err := s.api.GetComponentConfigs(ctx, compID)
 	if err != nil {
-		view.Error(err)
-		return
-	}
-
-	if asJSON {
-		ui.PrintJSON(configs)
-		return
+		return view.Error(err)
 	}
 
 	ui.PrintJSON(configs)
+	return nil
 }
