@@ -9,10 +9,10 @@ func (c *cli) versionCmd() *cobra.Command {
 	versionCmd := &cobra.Command{
 		Use:               "version",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := version.New()
-			svc.Version(cmd.Context(), PrintJSON)
-		},
+			return svc.Version(cmd.Context(), PrintJSON)
+		}),
 	}
 
 	return versionCmd

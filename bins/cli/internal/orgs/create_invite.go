@@ -7,20 +7,19 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) CreateInvite(ctx context.Context, email string, asJSON bool) {
+func (s *Service) CreateInvite(ctx context.Context, email string, asJSON bool) error {
 	view := ui.NewGetView()
 
 	invite, err := s.api.CreateOrgInvite(ctx, &models.ServiceCreateOrgInviteRequest{
 		Email: &email,
 	})
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(invite)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -36,4 +35,5 @@ func (s *Service) CreateInvite(ctx context.Context, email string, asJSON bool) {
 		},
 	}
 	view.Render(data)
+	return nil
 }

@@ -7,25 +7,24 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) DeployLogs(ctx context.Context, installID, deployID string, asJSON bool) {
+func (s *Service) DeployLogs(ctx context.Context, installID, deployID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		ui.PrintError(err)
-		return
+		return ui.PrintError(err)
 	}
 
 	view := ui.NewGetView()
 
 	log, err := s.api.GetInstallDeployLogs(ctx, installID, deployID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(log)
-		return
+		return nil
 	}
 
 	ui.PrintDeployLogs(log)
+	return nil
 }

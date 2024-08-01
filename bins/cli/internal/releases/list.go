@@ -8,7 +8,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) {
+func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) error {
 	view := ui.NewListView()
 
 	var (
@@ -19,28 +19,25 @@ func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) {
 	if compID != "" {
 		compID, err = lookup.ComponentID(ctx, s.api, appID, compID)
 		if err != nil {
-			ui.PrintError(err)
-			return
+			return ui.PrintError(err)
 		}
 
 		releases, err = s.api.GetComponentReleases(ctx, compID)
 	} else if appID != "" {
 		appID, err = lookup.AppID(ctx, s.api, appID)
 		if err != nil {
-			ui.PrintError(err)
-			return
+			return ui.PrintError(err)
 		}
 
 		releases, err = s.api.GetAppReleases(ctx, appID)
 	}
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(releases)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -60,4 +57,5 @@ func (s *Service) List(ctx context.Context, appID, compID string, asJSON bool) {
 		})
 	}
 	view.Render(data)
+	return nil
 }

@@ -9,18 +9,17 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) Get(ctx context.Context, releaseID string, asJSON bool) {
+func (s *Service) Get(ctx context.Context, releaseID string, asJSON bool) error {
 	view := ui.NewGetView()
 
 	release, err := s.api.GetRelease(ctx, releaseID)
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(release)
-		return
+		return nil
 	}
 
 	view.Render([][]string{
@@ -55,4 +54,5 @@ func (s *Service) Get(ctx context.Context, releaseID string, asJSON bool) {
 	}
 
 	view.Render(data)
+	return nil
 }

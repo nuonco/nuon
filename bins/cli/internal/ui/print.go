@@ -4,12 +4,14 @@ import (
 	"errors"
 	"os"
 
+	"github.com/cockroachdb/errors/withstack"
 	"github.com/nuonco/nuon-go"
 	"github.com/pterm/pterm"
 
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
 	"github.com/powertoolsdev/mono/pkg/config/sync"
+	"github.com/powertoolsdev/mono/pkg/errs"
 )
 
 const (
@@ -26,47 +28,49 @@ func (u *CLIUserError) Error() string {
 	return u.Msg
 }
 
-func PrintError(err error) {
+func PrintError(err error) error {
 	if os.Getenv(debugEnvVar) != "" {
 		pterm.Error.Println(err.Error())
+	}
+
+	// Construct a stack trace if this error doesn't already have one
+	if !errs.HasNuonStackTrace(err) {
+		err = withstack.WithStackDepth(err, 1)
 	}
 
 	cliUserErr := &CLIUserError{}
 	if errors.As(err, &cliUserErr) {
 		pterm.Error.Println(err.Error())
-		os.Exit(1)
-		return
+		return err
 	}
 
 	apiUserErr, ok := nuon.ToUserError(err)
 	if ok {
 		pterm.Error.Println(apiUserErr.Description)
-		os.Exit(1)
-		return
+		return err
 	}
 
 	if nuon.IsServerError(err) {
 		pterm.Error.Println(defaultServerErrorMessage)
-		os.Exit(1)
-		return
+		return err
 	}
 
 	var cfgErr config.ErrConfig
 	if errors.As(err, &cfgErr) {
 		pterm.Error.Println(cfgErr.Description)
-		return
+		return cfgErr
 	}
 
 	var syncErr sync.SyncErr
 	if errors.As(err, &syncErr) {
 		pterm.Error.Println(syncErr.Error())
-		return
+		return syncErr
 	}
 
 	var syncAPIErr sync.SyncAPIErr
 	if errors.As(err, &syncAPIErr) {
 		pterm.Error.Println(syncAPIErr.Error())
-		return
+		return syncAPIErr
 	}
 
 	var parseErr parse.ParseErr
@@ -76,11 +80,11 @@ func PrintError(err error) {
 			pterm.Error.Println(parseErr.Err.Error())
 		}
 
-		return
+		return parseErr
 	}
 
 	pterm.Error.Println(defaultUnknownErrorMessage)
-	os.Exit(1)
+	return err
 }
 
 func PrintLn(msg string) {

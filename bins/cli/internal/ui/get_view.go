@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"github.com/cockroachdb/errors/withstack"
+	"github.com/powertoolsdev/mono/pkg/errs"
 	"github.com/pterm/pterm"
 )
 
@@ -21,6 +23,10 @@ func (v *GetView) Render(data [][]string) {
 		Render()
 }
 
-func (v *GetView) Error(err error) {
+func (v *GetView) Error(err error) error {
+	if !errs.HasNuonStackTrace(err) {
+		err = withstack.WithStackDepth(err, 1)
+	}
 	PrintError(err)
+	return err
 }

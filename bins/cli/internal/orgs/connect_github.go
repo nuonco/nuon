@@ -10,7 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 )
 
-func (s *Service) ConnectGithub(ctx context.Context) {
+func (s *Service) ConnectGithub(ctx context.Context) error {
 	var v *models.AppVCSConnection
 	var connection = "started"
 	view := ui.NewGetView()
@@ -19,12 +19,11 @@ func (s *Service) ConnectGithub(ctx context.Context) {
 	if err != nil {
 		view.Error(err)
 		connection = "failed"
-		return
 	}
 
 	timeout := 1
-	connected := false
-	for connected == false {
+	var connected bool
+	for !connected {
 		fmt.Printf("connection: %s\n", connection)
 
 		if connection == "started" {
@@ -36,7 +35,6 @@ func (s *Service) ConnectGithub(ctx context.Context) {
 		if err != nil {
 			view.Error(err)
 			connection = "failed"
-			return
 		}
 
 		if len(vcs) > len(ogVcs) || connection == "failed" {
@@ -69,4 +67,5 @@ func (s *Service) ConnectGithub(ctx context.Context) {
 		fmt.Println("")
 		fmt.Println("please try again")
 	}
+	return nil
 }

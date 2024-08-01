@@ -24,10 +24,10 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List all secrets ",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := secrets.New(c.apiClient, c.cfg)
-			svc.List(cmd.Context(), appID, PrintJSON)
-		},
+			return svc.List(cmd.Context(), appID, PrintJSON)
+		}),
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to delete the secret from")
 	listCmd.MarkFlagRequired("app-id")
@@ -39,10 +39,10 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Use:   "delete",
 		Short: "Delete secret",
 		Long:  "Delete an app secret",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := secrets.New(c.apiClient, c.cfg)
-			svc.Delete(cmd.Context(), appID, secretID, PrintJSON)
-		},
+			return svc.Delete(cmd.Context(), appID, secretID, PrintJSON)
+		}),
 	}
 	deleteCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to delete the secret from")
 	deleteCmd.Flags().StringVarP(&secretID, "secret-id", "s", "", "The ID or name of the secret to delete")
@@ -62,10 +62,10 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Use:               "create",
 		Short:             "Create a new secret.",
 		PersistentPreRunE: c.persistentPreRunE,
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := secrets.New(c.apiClient, c.cfg)
-			svc.Create(cmd.Context(), appID, name, value, PrintJSON)
-		},
+			return svc.Create(cmd.Context(), appID, name, value, PrintJSON)
+		}),
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name of the secret, must be alphanumeric, lower case and can use underscores.")
 	createCmd.Flags().StringVarP(&value, "value", "v", "", "The secret value.")

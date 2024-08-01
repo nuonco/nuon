@@ -31,10 +31,10 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List releases",
 		Long:    "List releases of a component",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := releases.New(c.apiClient)
-			svc.List(cmd.Context(), appID, compID, PrintJSON)
-		},
+			return svc.List(cmd.Context(), appID, compID, PrintJSON)
+		}),
 	}
 	// TODO(ja): update cobra so we can require either app-id or component-id?
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter releases by")
@@ -46,10 +46,10 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Use:   "get",
 		Short: "Get release",
 		Long:  "Get an app release by ID",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := releases.New(c.apiClient)
-			svc.Get(cmd.Context(), releaseID, PrintJSON)
-		},
+			return svc.Get(cmd.Context(), releaseID, PrintJSON)
+		}),
 	}
 	getCmd.Flags().StringVarP(&releaseID, "release-id", "r", "", "The ID of the release you want to view")
 	getCmd.MarkFlagRequired("release-id")
@@ -59,10 +59,10 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Use:   "steps",
 		Short: "Get release steps",
 		Long:  "Get the steps for a release by release ID",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := releases.New(c.apiClient)
-			svc.Steps(cmd.Context(), releaseID, PrintJSON)
-		},
+			return svc.Steps(cmd.Context(), releaseID, PrintJSON)
+		}),
 	}
 	stepsCmd.Flags().StringVarP(&releaseID, "release-id", "r", "", "The ID of the release whose steps you want to view")
 	stepsCmd.MarkFlagRequired("release-id")
@@ -72,10 +72,10 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Use:   "create",
 		Short: "Create release",
 		Long:  "Create a release of an app component",
-		Run: func(cmd *cobra.Command, _ []string) {
+		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := releases.New(c.apiClient)
-			svc.Create(cmd.Context(), appID, compID, buildID, delay, autoBuild, latestBuild, installsPerStep, PrintJSON)
-		},
+			return svc.Create(cmd.Context(), appID, compID, buildID, delay, autoBuild, latestBuild, installsPerStep, PrintJSON)
+		}),
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of the component whose build you want to create a release for")
 	createCmd.Flags().StringVarP(&buildID, "build-id", "b", "", "The ID of the build you want to create a release for")

@@ -7,18 +7,17 @@ import (
 	"github.com/powertoolsdev/mono/pkg/generics"
 )
 
-func (s *Service) ListHealthChecks(ctx context.Context, limit int64, asJSON bool) {
+func (s *Service) ListHealthChecks(ctx context.Context, limit int64, asJSON bool) error {
 	view := ui.NewGetView()
 
 	healthChecks, err := s.api.GetOrgHealthChecks(ctx, generics.ToPtr(limit))
 	if err != nil {
-		view.Error(err)
-		return
+		return view.Error(err)
 	}
 
 	if asJSON {
 		ui.PrintJSON(healthChecks)
-		return
+		return nil
 	}
 
 	data := [][]string{
@@ -37,4 +36,5 @@ func (s *Service) ListHealthChecks(ctx context.Context, limit int64, asJSON bool
 		})
 	}
 	view.Render(data)
+	return nil
 }

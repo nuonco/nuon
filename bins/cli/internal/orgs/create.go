@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon-go/models"
 	"github.com/powertoolsdev/mono/bins/cli/internal/ui"
 	"github.com/powertoolsdev/mono/pkg/errs"
@@ -41,14 +40,11 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, a
 		UseSandboxMode: isSandboxMode,
 	})
 	if err != nil {
-		switch {
-		case strings.Contains(err.Error(), "duplicated key"):
-			err = errs.UserFacingError(err, fmt.Sprintf("An organization already exists with the name %q", name))
-		default:
-			err = errors.Wrap(err, "error creating org")
+		// TODO(sdboyer) this kind of string sniffing will be replaced when deep leaf errors are managed by the system
+		if strings.Contains(err.Error(), "duplicated key") {
+			err = errs.WithUserFacing(err, fmt.Sprintf("An organization already exists with the name %q", name))
 		}
-		view.Fail(err)
-		return err
+		return view.Fail(err)
 	}
 
 	for {
@@ -56,14 +52,12 @@ func (s *Service) Create(ctx context.Context, name string, isSandboxMode bool, a
 		o, err := s.api.GetOrg(ctx)
 		switch {
 		case err != nil:
-			view.Fail(err)
-			return err
+			return view.Fail(err)
 		// TODO (sdboyer) need a separate subsystem for statuses
 		case o.Status == statusAccessError:
-			view.Fail(err)
-			return errors.Newf("failed to create org due to access error: %s", o.StatusDescription)
+			return view.Fail(errs.NewUserFacing("failed to create org due to access error: %s", o.StatusDescription))
 		case o.Status == statusError:
-			return errors.Newf("failed to create org: %s", o.StatusDescription)
+			return view.Fail(errs.NewUserFacing("failed to create org: %s", o.StatusDescription))
 		case o.Status == statusActive:
 			view.Success(fmt.Sprintf("successfully created org %s", o.ID))
 			s.setOrgInConfig(ctx, o.ID)

@@ -11,7 +11,7 @@ import (
 	"github.com/pterm/pterm"
 )
 
-func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bool) {
+func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bool) error {
 	view := ui.NewGetView()
 
 	if installID != "" {
@@ -36,13 +36,12 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 			installs, err = s.api.GetAllInstalls(ctx)
 		}
 		if err != nil {
-			view.Error(err)
-			return
+			return view.Error(err)
 		}
 
 		if len(installs) == 0 {
 			s.printNoInstallsMsg()
-			return
+			return nil
 		}
 
 		// select options
@@ -56,10 +55,11 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 		install := strings.Split(selectedInstall, ":")
 
 		if err := s.setInstallInConfig(ctx, strings.ReplaceAll(install[1], " ", "")); err != nil {
-			view.Error(err)
-			return
+			return view.Error(err)
 		}
 
 		s.printInstallSetMsg(install[0], install[1])
 	}
+
+	return nil
 }

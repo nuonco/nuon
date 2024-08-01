@@ -9,15 +9,15 @@ import (
 
 var Version string = "development"
 
-func (s *Service) Version(ctx context.Context, asJSON bool) {
+func (s *Service) Version(ctx context.Context, asJSON bool) error {
 	if asJSON {
 		fmt.Printf("%s\n", Version)
-		return
+		return nil
 	}
 
 	view := ui.NewGetView()
 	view.Render([][]string{
 		{"version", Version},
 	})
-
+	return nil
 }
