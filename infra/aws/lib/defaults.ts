@@ -1,15 +1,29 @@
-import { quota_code, service_code } from "./enums";
+import { quota_code, service_code } from './enums';
 
-export const allowedRegions = [
-  "us-east-1",
-  "us-east-2",
-  "us-west-1",
-  "us-west-2",
+const STAGE_REDUCED_EC2_QUOTAS = [
+  {
+    quotaCode:
+      quota_code.RUNNING_ON_DEMAND_STANDARD_A_C_D_H_I_M_R_T_Z_INSTANCES,
+    serviceCode: service_code.EC2,
+    value: 512,
+  },
+  {
+    quotaCode: quota_code.ALL_STANDARD_A_C_D_H_I_M_R_T_Z_SPOT_INSTANCE_REQUESTS,
+    serviceCode: service_code.EC2,
+    value: 512,
+  },
 ];
 
-export const rootDomain = "nuon.co";
+export const allowedRegions = [
+  'us-east-1',
+  'us-east-2',
+  'us-west-1',
+  'us-west-2',
+];
 
-export const defaultRegion = "us-east-2";
+export const rootDomain = 'nuon.co';
+
+export const defaultRegion = 'us-east-2';
 
 type quota = {
   quotaCode: string;
@@ -39,52 +53,40 @@ export const desiredOrgStructure: orgStructure = [
   {
     accounts: [],
     disableScp: true,
-    name: "deleted",
+    name: 'deleted',
+  },
+  {
+    accounts: [{ additionalEnvTags: ['stage', 'prod'], name: 'external' }],
+    name: 'meta',
   },
   {
     accounts: [
-      { additionalEnvTags: ["stage", "prod"], name: "external" },
-    ],
-    name: "meta",
-  },
-  {
-    accounts: [
-      { name: "demo" },
-      { name: "demo-govcloud" },
-      { name: "public" },
-      { name: "canary" },
+      { name: 'demo' },
+      { name: 'demo-govcloud' },
+      { name: 'public' },
+      { name: 'canary' },
     ],
     disableScp: true,
-    name: "nuon-testing",
+    name: 'nuon-testing',
   },
   {
     accounts: [
-      { name: "prod" },
-      { name: "stage" },
-      { additionalEnvTags: ["stage"], name: "infra-shared-stage" },
-      { additionalEnvTags: ["prod"], name: "infra-shared-prod" },
-      { additionalEnvTags: ["stage"], name: "govcloud-stage" },
-      { additionalEnvTags: ["prod"], name: "govcloud-prod" },
+      { name: 'prod' },
+      { name: 'stage' },
+      { additionalEnvTags: ['stage'], name: 'infra-shared-stage' },
+      { additionalEnvTags: ['prod'], name: 'infra-shared-prod' },
+      { additionalEnvTags: ['stage'], name: 'govcloud-stage' },
+      { additionalEnvTags: ['prod'], name: 'govcloud-prod' },
       {
-        additionalEnvTags: ["stage"],
-        name: "orgs-stage",
+        additionalEnvTags: ['stage'],
+        name: 'orgs-stage',
         // NOTE(jdt): these somehow got set really high, have to set them here to match...
-        quotas: [
-          {
-            quotaCode:
-              quota_code.RUNNING_ON_DEMAND_STANDARD_A_C_D_H_I_M_R_T_Z_INSTANCES,
-            serviceCode: service_code.EC2,
-            value: 512,
-          },
-          {
-            quotaCode:
-              quota_code.ALL_STANDARD_A_C_D_H_I_M_R_T_Z_SPOT_INSTANCE_REQUESTS,
-            serviceCode: service_code.EC2,
-            value: 512,
-          },
-        ],
+        quotas: STAGE_REDUCED_EC2_QUOTAS,
       },
-      { additionalEnvTags: ["prod"], name: "orgs-prod" },
+      { additionalEnvTags: ['prod'], name: 'orgs-prod' },
+      // NOTE(fd): accounts for runners
+      { additionalEnvTags: ['stage'], name: 'runners-stage' },
+      { additionalEnvTags: ['prod'], name: 'runners-prod' },
     ],
     defaultQuotas: [
       {
@@ -100,15 +102,12 @@ export const desiredOrgStructure: orgStructure = [
         value: 512,
       },
     ],
-    name: "workloads",
+    name: 'workloads',
   },
   {
-    accounts: [
-      { name: "sandbox-jm" },
-      { name: "sandbox-ja" },
-    ],
+    accounts: [{ name: 'sandbox-jm' }, { name: 'sandbox-ja' }],
     disableScp: true,
-    name: "engineers",
+    name: 'engineers',
   },
 ];
 

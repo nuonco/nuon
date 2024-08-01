@@ -20,6 +20,8 @@
         "cross-stack-output-aws_organizations_account.orgs-stage.id": "cross-stack-output-aws_organizations_accountorgs-stageid",
         "cross-stack-output-aws_organizations_account.prod.id": "cross-stack-output-aws_organizations_accountprodid",
         "cross-stack-output-aws_organizations_account.public.id": "cross-stack-output-aws_organizations_accountpublicid",
+        "cross-stack-output-aws_organizations_account.runners-prod.id": "cross-stack-output-aws_organizations_accountrunners-prodid",
+        "cross-stack-output-aws_organizations_account.runners-stage.id": "cross-stack-output-aws_organizations_accountrunners-stageid",
         "cross-stack-output-aws_organizations_account.sandbox-ja.id": "cross-stack-output-aws_organizations_accountsandbox-jaid",
         "cross-stack-output-aws_organizations_account.sandbox-jm.id": "cross-stack-output-aws_organizations_accountsandbox-jmid",
         "cross-stack-output-aws_organizations_account.stage.id": "cross-stack-output-aws_organizations_accountstageid",
@@ -146,6 +148,14 @@
       "sensitive": true,
       "value": "${aws_organizations_account.public.id}"
     },
+    "cross-stack-output-aws_organizations_accountrunners-prodid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.runners-prod.id}"
+    },
+    "cross-stack-output-aws_organizations_accountrunners-stageid": {
+      "sensitive": true,
+      "value": "${aws_organizations_account.runners-stage.id}"
+    },
     "cross-stack-output-aws_organizations_accountsandbox-jaid": {
       "sensitive": true,
       "value": "${aws_organizations_account.sandbox-ja.id}"
@@ -160,7 +170,7 @@
     },
     "org-last-updated": {
       "description": "The timestamp of when the module was last applied. Useful for forcing applies on upgrade",
-      "value": "2024-07-31T15:36:41.772Z"
+      "value": "2024-08-01T19:49:11.510Z"
     }
   },
   "provider": {
@@ -395,6 +405,42 @@
         },
         "name": "public",
         "parent_id": "${aws_organizations_organizational_unit.nuon-testing.id}"
+      },
+      "runners-prod": {
+        "//": {
+          "metadata": {
+            "path": "org/runners-prod",
+            "uniqueId": "runners-prod"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+runners-prod@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "runners-prod",
+        "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
+      },
+      "runners-stage": {
+        "//": {
+          "metadata": {
+            "path": "org/runners-stage",
+            "uniqueId": "runners-stage"
+          }
+        },
+        "close_on_deletion": true,
+        "email": "aws-accounts+runners-stage@powertools.dev",
+        "iam_user_access_to_billing": "ALLOW",
+        "lifecycle": {
+          "ignore_changes": [
+            "iam_user_access_to_billing"
+          ]
+        },
+        "name": "runners-stage",
+        "parent_id": "${aws_organizations_organizational_unit.workloads.id}"
       },
       "sandbox-ja": {
         "//": {
@@ -697,6 +743,28 @@
         "name": "public-environment-tag-policy",
         "type": "TAG_POLICY"
       },
+      "env_tag_policy_runners-prod": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_runners-prod",
+            "uniqueId": "env_tag_policy_runners-prod"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"runners-prod\",\"prod\"]}}}}",
+        "name": "runners-prod-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
+      "env_tag_policy_runners-stage": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_runners-stage",
+            "uniqueId": "env_tag_policy_runners-stage"
+          }
+        },
+        "content": "{\"tags\":{\"environment\":{\"tag_value\":{\"@@append\":[\"runners-stage\",\"stage\"]}}}}",
+        "name": "runners-stage-environment-tag-policy",
+        "type": "TAG_POLICY"
+      },
       "env_tag_policy_sandbox-ja": {
         "//": {
           "metadata": {
@@ -861,6 +929,26 @@
         },
         "policy_id": "${aws_organizations_policy.env_tag_policy_public.id}",
         "target_id": "${aws_organizations_account.public.id}"
+      },
+      "env_tag_policy_attach_runners-prod": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_runners-prod",
+            "uniqueId": "env_tag_policy_attach_runners-prod"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_runners-prod.id}",
+        "target_id": "${aws_organizations_account.runners-prod.id}"
+      },
+      "env_tag_policy_attach_runners-stage": {
+        "//": {
+          "metadata": {
+            "path": "org/env_tag_policy_attach_runners-stage",
+            "uniqueId": "env_tag_policy_attach_runners-stage"
+          }
+        },
+        "policy_id": "${aws_organizations_policy.env_tag_policy_runners-stage.id}",
+        "target_id": "${aws_organizations_account.runners-stage.id}"
       },
       "env_tag_policy_attach_sandbox-ja": {
         "//": {
