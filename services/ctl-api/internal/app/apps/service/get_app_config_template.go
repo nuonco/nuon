@@ -14,10 +14,29 @@ import (
 type AppConfigTemplateType string
 
 const (
+	// not used
 	AppConfigTemplateTypeAwsECS       AppConfigTemplateType = "aws-ecs"
 	AppConfigTemplateTypeAwsECSBYOVPC AppConfigTemplateType = "aws-ecs-byovpc"
 	AppConfigTemplateTypeAwsEKS       AppConfigTemplateType = "aws-eks"
 	AppConfigTemplateTypeAwsEKSBYOVPC AppConfigTemplateType = "aws-eks-byovpc"
+	AppConfigTemplateTypeAzureAKS     AppConfigTemplateType = "azure-aks"
+
+	// flat app template
+	AppConfigTemplateTypeFlat		 AppConfigTemplateType = "flat"
+
+	// with sources app template
+	AppConfigTemplateTypeTopLevel	 AppConfigTemplateType = "top-level"
+	AppConfigTemplateTypeInstaller	 AppConfigTemplateType = "installer"
+	AppConfigTemplateTypeRunner		 AppConfigTemplateType = "runner"
+	AppConfigTemplateTypeSandbox		 AppConfigTemplateType = "sandbox"
+	AppConfigTemplateTypeInputs		 AppConfigTemplateType = "inputs"
+	AppConfigTemplateTypeTerraform	 AppConfigTemplateType = "terraform"
+	AppConfigTemplateTypeTerraformInfra	 AppConfigTemplateType = "terraformInfra"
+	AppConfigTemplateTypeHelm		 AppConfigTemplateType = "helm"
+	AppConfigTemplateTypeDockerBuild	 AppConfigTemplateType = "docker-build"
+	AppConfigTemplateTypeJob		 AppConfigTemplateType = "job"
+	AppConfigTemplateTypeContainerImage AppConfigTemplateType = "container-image"
+	AppConfigTemplateTypeECRContainerImage AppConfigTemplateType = "ecr-container-image"
 )
 
 type AppConfigTemplate struct {
@@ -58,7 +77,9 @@ func (s *service) GetAppConfigTemplate(ctx *gin.Context) {
 		return
 	}
 
-	tmpl, err := s.createAppTemplate(ctx, app, AppConfigTemplateTypeAwsECS)
+	configType := ctx.DefaultQuery("type", string(AppConfigTemplateTypeFlat))
+
+	tmpl, err := s.createAppTemplate(ctx, app, AppConfigTemplateType(configType))
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
@@ -69,173 +90,84 @@ func (s *service) GetAppConfigTemplate(ctx *gin.Context) {
 
 func (s *service) createAppTemplate(ctx context.Context, currentApp *app.App, typ AppConfigTemplateType) (*AppConfigTemplate, error) {
 	nam := fmt.Sprintf("nuon.%s.toml", currentApp.Name)
-	return &AppConfigTemplate{
-		Filename: fmt.Sprintf("nuon-template.%s.toml", currentApp.Name),
-		Format:   app.AppConfigFmtToml,
-		Content: fmt.Sprintf(`# This file contains template values for common Nuon application configuration options.
-# To use it for your app, edit as needed, then rename this file to %s and run
-#
-#   nuon apps sync -c %s
-#
-# See https://docs.nuon.co/concepts/apps for more information.
-
-version = "v1"
-
-[installer]
-name = "installer"
-description = "one click installer"
-documentation_url = "docs-url"
-community_url = "community-url"
-homepage_url = "homepage-url"
-github_url = "github-url"
-logo_url = "logo-url"
-demo_url = "demo url"
-favicon_url = "favicon url"
-
-# optional fields
-og_image_url = "og_image url"
-post_install_markdown = ""
-copyright_markdown = ""
-footer_markdown = ""
-
-[runner]
-runner_type = "aws-ecs"
-
-[[runner.env_var]]
-name = "runner-env-var"
-value = "runner-env-var"
-
-[sandbox]
-terraform_version = "1.5.4"
-
-# https://docs.nuon.co/guides/install-access-delegation#setup-delegation
-# if you are using delegation, otherwise remove
-# govcloud clients must reach out for additional configuration
-aws_delegation_iam_role_arn = "arn:aws:iam::xxxxxxxxxxxx:role/nuon-aws-ecs-install-access"
-
-[sandbox.public_repo]
-directory = "aws-ecs-byo-vpc"
-repo = "nuonco/sandboxes"
-branch = "main"
-
-[[sandbox.var]]
-name = "vpc_id"
-value = "{{.nuon.install.inputs.vpc_id}}"
-
-[inputs]
-[[inputs.group]]
-name = "sandbox"
-description = "Sandbox inputs"
-display_name = "Sandbox inputs"
-
-[[inputs.input]]
-name = "vpc_id"
-description = "vpc_id to install application into"
-default = ""
-sensitive = false
-display_name = "VPC ID"
-group = "sandbox"
-
-[[inputs.input]]
-name = "api_key"
-description = "API key"
-default = ""
-sensitive = true
-display_name = "API Key"
-group = "sandbox"
-
-[[components]]
-name = "toml_terraform"
-type = "terraform_module"
-terraform_version = "1.5.3"
-
-[components.connected_repo]
-directory = "infra"
-repo = "powertoolsdev/mono"
-branch = "main"
-
-[[components.var]]
-name = "AWS_REGION"
-value = "{{.nuon.install.sandbox.account.region}}"
-
-[[components.var]]
-name = "ACCOUNT_ID"
-value = "{{.nuon.install.sandbox.account.id}}"
-
-[[components]]
-name = "toml_infra"
-type = "terraform_module"
-terraform_version = "1.5.4"
-
-[components.connected_repo]
-directory = "deployment"
-repo = "powertoolsdev/mono"
-branch = "main"
-
-[[components.var]]
-name = "iam_role"
-value = "{{.nuon.components.infra.outputs.iam_role}}"
-
-[[components]]
-name = "toml_helm"
-type = "helm_chart"
-chart_name = "e2e-helm"
-
-[components.connected_repo]
-directory = "deployment"
-repo = "powertoolsdev/mono"
-branch = "main"
-
-[[components.values_file]]
-contents = """
-image.tag = {{.nuon.components.toml_docker_build.image.name}}
-"""
-
-[[components.value]]
-name = "api.ingresses.public_domain"
-value = "{{.nuon.components.infra.outputs.iam_role}}"
-
-[[components]]
-name = "toml_docker_build"
-type = "docker_build"
-
-dockerfile = "Dockerfile"
-
-[components.connected_repo]
-directory = "deployment"
-repo = "powertoolsdev/mono"
-branch = "main"
-
-[[components]]
-name = "toml_job"
-type = "job"
-
-image_url = "{{.nuon.components.e2e_docker_build.image.repository.uri}}"
-tag	  = "{{.nuon.components.e2e_docker_build.image.tag}}"
-cmd	  = ["printenv"]
-args	  = [""]
-
-[[components.env_var]]
-name = "PUBLIC_DOMAIN"
-value = "{{.nuon.components.infra.outputs.iam_role}}"
-
-[[components]]
-name = "toml_container_image"
-type = "container_image"
-
-[components.public]
-image_url = "kennethreitz/httpbin"
-tag = "latest"
-
-[[components]]
-name = "toml_container_image_ecr"
-type = "container_image"
-
-[components.aws_ecr]
-iam_role_arn = "iam_role_arn"
-image_url = "ecr-url"
-tag = "latest"
-region = "us-west-2"
-`, nam, nam),
-	}, nil
+	switch typ {
+	case AppConfigTemplateTypeTopLevel:
+		return &AppConfigTemplate{
+			Filename: fmt.Sprintf("nuon-template.%s.toml", currentApp.Name),
+			Format:   app.AppConfigFmtToml,
+			Content: fmt.Sprintf(topLevelConfig, nam, nam),
+		}, nil
+	case AppConfigTemplateTypeInstaller:
+		return &AppConfigTemplate{
+			Filename: "template_installer.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: installerConfig,
+		}, nil
+	case AppConfigTemplateTypeRunner:
+		return &AppConfigTemplate{
+			Filename: "template_runner.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: runnerConfig,
+		}, nil
+	case AppConfigTemplateTypeSandbox:
+		return &AppConfigTemplate{
+			Filename: "template_sandbox.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: sandboxConfig,
+		}, nil
+	case AppConfigTemplateTypeInputs:
+		return &AppConfigTemplate{
+			Filename: "template_inputs.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: inputsConfig,
+		}, nil
+	case AppConfigTemplateTypeTerraform:
+		return &AppConfigTemplate{
+			Filename: "template_terraform_component.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: terraformComponentConfig,
+		}, nil
+	case AppConfigTemplateTypeTerraformInfra:
+		return &AppConfigTemplate{
+			Filename: "template_terraform_infra_component.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: terraformInfraComponentConfig,
+		}, nil
+	case AppConfigTemplateTypeHelm:
+		return &AppConfigTemplate{
+			Filename: "template_helm_component.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: helmComponentConfig,
+		}, nil
+	case AppConfigTemplateTypeDockerBuild:
+		return &AppConfigTemplate{
+			Filename: "template_docker_build_component.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: dockerBuildComponentConfig,
+		}, nil
+	case AppConfigTemplateTypeContainerImage:
+		return &AppConfigTemplate{
+			Filename: "template_container_image_component.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: containerImageComponentConfig,
+		}, nil
+	case AppConfigTemplateTypeJob:
+		return &AppConfigTemplate{
+			Filename: "template_job_component.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: jobComponentConfig,
+		}, nil
+	case AppConfigTemplateTypeECRContainerImage:
+		return &AppConfigTemplate{
+			Filename: "template_ecr_container_image_component.toml",
+			Format:   app.AppConfigFmtToml,
+			Content: ecrContainerImageComponentConfig,
+		}, nil
+	default:
+		return &AppConfigTemplate{
+			Filename: fmt.Sprintf("nuon-template.%s.toml", currentApp.Name),
+			Format:   app.AppConfigFmtToml,
+			Content: fmt.Sprintf(flatAppConfigTemplate, nam, nam),
+		}, nil
+	}
 }
