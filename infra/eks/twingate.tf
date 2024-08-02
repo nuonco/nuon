@@ -14,14 +14,17 @@ resource "twingate_resource" "internal_dns" {
   address           = "*.${local.dns.zone}"
   remote_network_id = twingate_remote_network.vpc.id
 
-  access {
-    group_ids = [
+  access_service {
+    service_account_id = twingate_service_account.github_actions.id
+  }
+  dynamic "access_group" {
+    for_each = [
       data.twingate_groups.engineers.groups[0].id,
       data.twingate_groups.internal_access.groups[0].id,
     ]
-    service_account_ids = [
-      twingate_service_account.github_actions.id
-    ]
+    content {
+      group_id = access_group.value
+    }
   }
 }
 
@@ -31,13 +34,16 @@ resource "twingate_resource" "private_subnets" {
   address           = each.value
   remote_network_id = twingate_remote_network.vpc.id
 
-  access {
-    group_ids = [
-      data.twingate_groups.engineers.groups[0].id,
+  access_service {
+    service_account_id = twingate_service_account.github_actions.id
+  }
+  dynamic "access_group" {
+    for_each = [
+      data.twingate_groups.engineers.groups[0].id
     ]
-    service_account_ids = [
-      twingate_service_account.github_actions.id
-    ]
+    content {
+      group_id = access_group.value
+    }
   }
 }
 

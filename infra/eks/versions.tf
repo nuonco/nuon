@@ -12,11 +12,11 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 4.0"
+      version = ">= 5.61.0"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.4"
+      version = ">= 2.14"
     }
     kubectl = {
       source  = "gavinbunney/kubectl"
@@ -24,23 +24,23 @@ terraform {
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 2.13.1"
+      version = ">= 2.31.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = ">= 3.4.2"
+      version = ">= 3.6.2"
     }
     twingate = {
       source  = "Twingate/twingate"
-      version = ">= 0.3.3"
+      version = ">= 3.0.8"
     }
     tfe = {
       source  = "hashicorp/tfe"
-      version = ">= 0.36.1"
+      version = ">= 0.57.1"
     }
     utils = {
       source  = "cloudposse/utils"
-      version = ">= 0.17.23"
+      version = ">= 1.24.0"
     }
   }
 }
