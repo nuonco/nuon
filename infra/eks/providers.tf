@@ -41,6 +41,12 @@ provider "aws" {
   }
 }
 
+# this is the us-east-1 region used only for the aws_ecrpublic_authorization_token
+provider "aws" {
+  region = "us-east-1"
+  alias  = "virginia"
+}
+
 provider "twingate" {}
 
 provider "kubernetes" {
