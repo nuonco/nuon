@@ -24,8 +24,8 @@ resource "aws_route53_record" "unifygtm_mx" {
   type    = "MX"
   ttl     = 300
   records = [
-    "mxa.mailgun.org",
-    "mxb.mailgun.org"
+    "1 mxa.mailgun.org",
+    "5 mxb.mailgun.org"
   ]
 }
 
