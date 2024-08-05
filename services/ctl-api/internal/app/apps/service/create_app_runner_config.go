@@ -12,7 +12,7 @@ import (
 )
 
 type CreateAppRunnerConfigRequest struct {
-	Type    app.AppRunnerType  `json:"type"`
+	Type    app.AppRunnerType  `json:"type" validate:"required"`
 	EnvVars map[string]*string `json:"env_vars"`
 }
 
