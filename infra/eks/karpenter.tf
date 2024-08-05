@@ -35,6 +35,25 @@ resource "aws_iam_instance_profile" "karpenter" {
   role = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
 }
 
+resource "helm_release" "karpenter_crd" {
+  namespace        = "karpenter"
+  create_namespace = true
+
+  chart               = "karpenter-crd"
+  name                = "karpenter-crd"
+  repository          = "oci://public.ecr.aws/karpenter"
+  repository_username = data.aws_ecrpublic_authorization_token.token.user_name
+  repository_password = data.aws_ecrpublic_authorization_token.token.password
+  version             = "0.37.0"
+
+  values = [
+    # https://karpenter.sh/preview/upgrading/upgrade-guide/#crd-upgrades
+    yamlencode({
+      logLevel: "debug" # not necessary
+    }),
+  ]
+}
+
 resource "helm_release" "karpenter" {
   namespace        = "karpenter"
   create_namespace = true
@@ -50,6 +69,7 @@ resource "helm_release" "karpenter" {
     # https://github.com/aws/karpenter-provider-aws/blob/main/charts/karpenter/values.yaml
     yamlencode({
       replicas : local.vars.managed_node_group.desired_size
+      logLevel: "debug"
       settings : {
         clusterEndpoint        : module.eks.cluster_endpoint
         clusterName            : local.karpenter.cluster_name
