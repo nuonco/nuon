@@ -11,9 +11,9 @@ import (
 
 type AppInput struct {
 	Name        string `mapstructure:"name"`
-	DisplayName string `mapstructure:"display_name"`
-	Description string `mapstructure:"description"`
-	Group       string `mapstructure:"group"`
+	DisplayName string `mapstructure:"display_name" jsonschema:"required"`
+	Description string `mapstructure:"description" jsonschema:"required"`
+	Group       string `mapstructure:"group" jsonschema:"required"`
 	Default     string `mapstructure:"default,omitempty"`
 	Required    bool   `mapstructure:"required,omitempty"`
 	Sensitive   bool   `mapstructure:"sensitive"`
