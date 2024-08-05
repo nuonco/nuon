@@ -65,6 +65,21 @@ resource "helm_release" "karpenter" {
   repository_password = data.aws_ecrpublic_authorization_token.token.password
   version             = "0.37.0"
 
+  set {
+    name  = "app.kubernetes.io/managed-by"
+    value = "Helm"
+  }
+
+  set {
+    name  = "meta.helm.sh/release-name"
+    value = "karpenter-crd"
+  }
+
+  set {
+    name  = "meta.helm.sh/release-namespace"
+    value = "karpenter"
+  }
+
   values = [
     # https://github.com/aws/karpenter-provider-aws/blob/main/charts/karpenter/values.yaml
     yamlencode({
