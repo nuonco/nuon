@@ -26,9 +26,9 @@ auth_map_additions:
       - "arn:aws:iam::766121324316:role/nuon-internal-support-stage"
 managed_node_group:
   # NOTE(fd): keeping this small until we go live
-  desired_size: 2
-  min_size: 2
+  desired_size: 3
+  min_size: 3
   max_size: 5
   instance_types:
-    - m3.medium
+    - t3a.medium
 tier: beta
