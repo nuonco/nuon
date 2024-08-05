@@ -47,13 +47,14 @@ resource "helm_release" "karpenter" {
   version             = "0.37.0"
 
   values = [
+    # https://github.com/aws/karpenter-provider-aws/blob/main/charts/karpenter/values.yaml
     yamlencode({
-      aws = {
+      replicas : local.vars.managed_node_group.desired_size
+      settings : {
+        clusterEndpoint        : module.eks.cluster_endpoint
+        clusterName            : local.karpenter.cluster_name
         defaultInstanceProfile : aws_iam_instance_profile.karpenter.name
       }
-      clusterEndpoint : module.eks.cluster_endpoint
-      clusterName : local.karpenter.cluster_name
-      replicas : local.vars.managed_node_group.desired_size
       serviceAccount : {
         annotations : {
           "eks.amazonaws.com/role-arn" : module.karpenter_irsa.iam_role_arn
