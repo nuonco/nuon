@@ -4,14 +4,14 @@ package config
 type TerraformModuleComponentConfig struct {
 	TerraformVersion string `mapstructure:"terraform_version" jsonschema:"required"`
 
-	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty"`
-	VarsMap   map[string]string `mapstructure:"vars,omitempty"`
+	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty" jsonschema:"required"`
+	VarsMap   map[string]string `mapstructure:"vars,omitempty" jsonschema:"required"`
 
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
 
 	// deprecated
-	Variables []TerraformVariable   `mapstructure:"var,omitempty"`
+	Variables []TerraformVariable   `mapstructure:"var,omitempty" `
 	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty"`
 }
 
