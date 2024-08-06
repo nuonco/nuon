@@ -36,8 +36,8 @@ resource "aws_iam_instance_profile" "karpenter" {
 }
 
 resource "helm_release" "karpenter_crd" {
-  namespace        = "karpenter"
-  create_namespace = true
+  namespace        = "kube-system"
+  create_namespace = false
 
   chart               = "karpenter-crd"
   name                = "karpenter-crd"
