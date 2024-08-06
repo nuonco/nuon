@@ -3,13 +3,9 @@
 #
 # we jumped from version 0.16.3 to 0.37.0. this was a pretty big change. notable changes include:
 #
-# 1. `CRD` are now managed by standalone helm_release, karpenter_crd. these should be updated _with_
-#    the carpenter helm chart. the changelog will/should let us know if these need to be updated.
-# 2. The `karpenter_crd` tf setts some labels and annotations explicitly with `set`. these are required
-#    otherwise the `karpenter_crd` cannot be "brought into" the `karpenter` helm release.
-# 3. The `Provisioner` is not called a `NodePool`. Its responsibilities/configs are split up between
+# 1. The `Provisioner` is not called a `NodePool`. Its responsibilities/configs are split up between
 #    the `NodePool` CRD and the `EC2NodeClass` CRD.
-# 4. The instance_types can be set with excessive granularity but we opt for the simplest strategy that
+# 2. The instance_types can be set with excessive granularity but we opt for the simplest strategy that
 #    preserves our current yaml configs. If we wanted to offer multiple instance types, we could do it
 #    with this same strategy unless we needed to break instance types down into very granular options.
 #
@@ -49,73 +45,6 @@ module "karpenter_irsa" {
 resource "aws_iam_instance_profile" "karpenter" {
   name = "KarpenterNodeInstanceProfile-${local.workspace_trimmed}"
   role = module.eks.eks_managed_node_groups["karpenter"].iam_role_name
-}
-
-resource "helm_release" "karpenter_crd" {
-  namespace        = "karpenter" # this is a choice
-  create_namespace = true
-
-  chart               = "karpenter-crd"
-  name                = "karpenter-crd"
-  repository          = "oci://public.ecr.aws/karpenter"
-  repository_username = data.aws_ecrpublic_authorization_token.token.user_name
-  repository_password = data.aws_ecrpublic_authorization_token.token.password
-  version             = "0.37.0"
-
-  # NOTE(fd): we set these explicitly to explicitly manage the CRDs
-  #           if these are not set, the helm release will fail when the next update is applied
-  #           syntax: https://stackoverflow.com/a/70369034
-  # docs: https://karpenter.sh/preview/troubleshooting/#helm-error-when-installing-the-karpenter-crd-chart
-
-  # 1. add app.kubernetes.io/managed-by: Helm
-  set {
-    name  = "ec2nodeclasses\\.karpenter\\.k8s\\.aws.metadata.labels.app\\.kubernetes\\.io/managed-by"
-    value = "Helm"
-  }
-  set {
-    name  = "nodepools\\.karpenter\\.sh.metadata.labels.app.\\.kubernetes\\.io/managed-by"
-    value = "Helm"
-  }
-  set {
-    name  = "nodeclaims\\.karpenter\\.sh.metadata.labels.app\\.kubernetes\\.io/managed-by"
-    value = "Helm"
-  }
-  # 2. add meta.helm.sh/release-name: karpenter-crd
-  set {
-    name  = "ec2nodeclasses\\.karpenter\\.k8s\\.aws.metadata.annotations.meta\\.helm\\.sh/release-name"
-    value = "karpenter-crd"
-  }
-  set {
-    name  = "nodepools\\.karpenter\\.sh.metadata.annotations.meta\\.helm\\.sh/release-name"
-    value = "karpenter-crd"
-  }
-  set {
-    name  = "nodeclaims\\.karpenter\\.sh.metadata.annotations.meta\\.helm\\.sh/release-name"
-    value = "karpenter-crd"
-  }
-  # 3. add meta.helm.sh/release-namespace: karpenter
-  set {
-    name  = "ec2nodeclasses\\.karpenter\\.k8s\\.aws.metadata.annotations.meta\\.helm\\.sh/release-namespace"
-    value = "default"
-  }
-  set {
-    name  = "nodepools\\.karpenter\\.sh.metadata.annotations.meta\\.helm\\.sh/release-namespace"
-    value = "default"
-  }
-  set {
-    name  = "nodeclaims\\.karpenter\\.sh.metadata.annotations.meta\\.helm\\.sh/release-namespace"
-    value = "default"
-  }
-
-  values = [
-    # https://karpenter.sh/preview/upgrading/upgrade-guide/#crd-upgrades
-    yamlencode({
-      webhook: {
-        enabled          : true
-        serviceName      : "karpenter"
-      }
-    }),
-  ]
 }
 
 resource "helm_release" "karpenter" {
