@@ -12,10 +12,11 @@ data "aws_ecrpublic_authorization_token" "token" {
 
 module "karpenter_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.0"
+  version = "~> 5.43"
 
-  role_name                          = "karpenter-controller-${local.workspace_trimmed}"
-  attach_karpenter_controller_policy = true
+  role_name                                  = "karpenter-controller-${local.workspace_trimmed}"
+  attach_karpenter_controller_policy         = true
+  enable_karpenter_instance_profile_creation = true
 
   karpenter_controller_cluster_id = local.karpenter.cluster_name
   karpenter_controller_node_iam_role_arns = [
