@@ -180,6 +180,9 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
           }
         }
       ]
+      tags = {
+        app = "EC2NodeClass:default"
+      }
     }
   })
 
