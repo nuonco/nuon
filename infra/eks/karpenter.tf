@@ -54,15 +54,15 @@ resource "helm_release" "karpenter_crd" {
   # 1. add app.kubernetes.io/managed-by: karpenter
   set {
     name  = "ec2nodeclasses.karpenter.k8s.aws\\.app\\.kubernetes\\.io/managed-by"
-    value = "Helm"
+    value = "karpenter"
   }
   set {
     name  = "nodepools.karpenter.sh\\.app\\.kubernetes\\.io/managed-by"
-    value = "Helm"
+    value = "karpenter"
   }
   set {
     name  = "nodeclaims.karpenter.sh\\.app\\.kubernetes\\.io/managed-by"
-    value = "Helm"
+    value = "karpenter"
   }
   # 2. add meta.helm.sh/release-namespace: karpenter
   set {
