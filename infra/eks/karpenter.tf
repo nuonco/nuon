@@ -187,14 +187,9 @@ resource "kubectl_manifest" "karpenter_provisioner" {
               ]
             },
             {
-              "key" = "karpenter.k8s.aws/instance-category"
+              "key" = "node.kubernetes.io/instance-type"
               "operator" = "In"
-              "values" = ["ta"]
-            },
-            {
-              "key" = "karpenter.k8s.aws/instance-generation"
-              "operator" = "Eq"
-              "values" = ["3"]
+              "values" = local.vars.managed_node_group.instance_types
             },
           ]
         }
