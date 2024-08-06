@@ -46,18 +46,35 @@ resource "helm_release" "karpenter_crd" {
   repository_password = data.aws_ecrpublic_authorization_token.token.password
   version             = "0.37.0"
 
+  # NOTE(fd): we set these explicitly to explicitly manage the CRDs
+  #           if these are not set, the helm release will fail when the next update is applied
+  #           syntax: https://stackoverflow.com/a/70369034
+  # docs: https://karpenter.sh/preview/troubleshooting/#helm-error-when-installing-the-karpenter-crd-chart
+
+  # 1. add app.kubernetes.io/managed-by: karpenter
   set {
-    name  = "app.kubernetes.io/managed-by"
+    name  = "ec2nodeclasses.karpenter.k8s.aws\\.app\\.kubernetes\\.io/managed-by"
     value = "Helm"
   }
-
   set {
-    name  = "meta.helm.sh/release-name"
-    value = "karpenter-crd"
+    name  = "nodepools.karpenter.sh\\.app\\.kubernetes\\.io/managed-by"
+    value = "Helm"
   }
-
   set {
-    name  = "meta.helm.sh/release-namespace"
+    name  = "nodeclaims.karpenter.sh\\.app\\.kubernetes\\.io/managed-by"
+    value = "Helm"
+  }
+  # 2. add meta.helm.sh/release-namespace: karpenter
+  set {
+    name  = "ec2nodeclasses.karpenter.k8s.aws\\.meta\\.helm\\.sh/release-namespace"
+    value = "karpenter"
+  }
+  set {
+    name  = "nodepools.karpenter.sh\\.meta\\.helm\\.sh/release-namespace"
+    value = "karpenter"
+  }
+  set {
+    name  = "nodeclaims.karpenter.sh\\.meta\\.helm\\.sh/release-namespace"
     value = "karpenter"
   }
 
