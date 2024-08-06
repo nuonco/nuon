@@ -51,20 +51,33 @@ resource "helm_release" "karpenter_crd" {
   #           syntax: https://stackoverflow.com/a/70369034
   # docs: https://karpenter.sh/preview/troubleshooting/#helm-error-when-installing-the-karpenter-crd-chart
 
-  # 1. add app.kubernetes.io/managed-by: karpenter
+  # 1. add app.kubernetes.io/managed-by: Helm
   set {
     name  = "ec2nodeclasses.karpenter.k8s.aws\\.app\\.kubernetes\\.io/managed-by"
-    value = "karpenter"
+    value = "Helm"
   }
   set {
     name  = "nodepools.karpenter.sh\\.app\\.kubernetes\\.io/managed-by"
-    value = "karpenter"
+    value = "Helm"
   }
   set {
     name  = "nodeclaims.karpenter.sh\\.app\\.kubernetes\\.io/managed-by"
-    value = "karpenter"
+    value = "Helm"
   }
-  # 2. add meta.helm.sh/release-namespace: karpenter
+  # 2. add meta.helm.sh/release-name: karpenter-crd
+  set {
+    name  = "ec2nodeclasses.karpenter.k8s.aws\\.meta\\.helm\\.sh/release-name"
+    value = "karpenter-crd"
+  }
+  set {
+    name  = "nodepools.karpenter.sh\\.meta\\.helm\\.sh/release-name"
+    value = "karpenter-crd"
+  }
+  set {
+    name  = "nodeclaims.karpenter.sh\\.meta\\.helm\\.sh/release-name"
+    value = "karpenter-crd"
+  }
+  # 3. add meta.helm.sh/release-namespace: karpenter
   set {
     name  = "ec2nodeclasses.karpenter.k8s.aws\\.meta\\.helm\\.sh/release-namespace"
     value = "karpenter"
