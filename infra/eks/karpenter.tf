@@ -218,6 +218,7 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
       name = "default"
     }
     spec = {
+      amiFamily = "AL2"
       role = aws_iam_instance_profile.karpenter.name
       subnetSelectorTerms = [
         {
