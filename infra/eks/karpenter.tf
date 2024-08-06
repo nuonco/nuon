@@ -53,42 +53,42 @@ resource "helm_release" "karpenter_crd" {
 
   # 1. add app.kubernetes.io/managed-by: Helm
   set {
-    name  = "ec2nodeclasses.karpenter.k8s.aws.metadata.labels.app\\.kubernetes\\.io/managed-by"
+    name  = "ec2nodeclasses.karpenter\\.k8s\\.aws.metadata.labels.app\\.kubernetes\\.io/managed-by"
     value = "Helm"
   }
   set {
-    name  = "nodepools.karpenter.sh.metadata.labels.app.\\.kubernetes\\.io/managed-by"
+    name  = "nodepools.karpenter\\.sh.metadata.labels.app.\\.kubernetes\\.io/managed-by"
     value = "Helm"
   }
   set {
-    name  = "nodeclaims.karpenter.sh.metadata.labels.app\\.kubernetes\\.io/managed-by"
+    name  = "nodeclaims.karpenter\\.sh.metadata.labels.app\\.kubernetes\\.io/managed-by"
     value = "Helm"
   }
   # 2. add meta.helm.sh/release-name: karpenter-crd
   set {
-    name  = "ec2nodeclasses.karpenter.k8s.aws.metadata.annotations.meta\\.helm\\.sh/release-name"
+    name  = "ec2nodeclasses.karpenter\\.k8s\\.aws.metadata.annotations.meta\\.helm\\.sh/release-name"
     value = "karpenter-crd"
   }
   set {
-    name  = "nodepools.karpenter.sh.metadata.annotations.meta\\.helm\\.sh/release-name"
+    name  = "nodepools.karpenter\\.sh.metadata.annotations.meta\\.helm\\.sh/release-name"
     value = "karpenter-crd"
   }
   set {
-    name  = "nodeclaims.karpenter.sh.metadata.annotations.meta\\.helm\\.sh/release-name"
+    name  = "nodeclaims.karpenter\\.sh.metadata.annotations.meta\\.helm\\.sh/release-name"
     value = "karpenter-crd"
   }
   # 3. add meta.helm.sh/release-namespace: karpenter
   set {
-    name  = "ec2nodeclasses.karpenter.k8s.aws.metadata.annotations.meta\\.helm\\.sh/release-namespace"
-    value = "karpenter"
+    name  = "ec2nodeclasses.karpenter\\.k8s\\.aws.metadata.annotations.meta\\.helm\\.sh/release-namespace"
+    value = "default"
   }
   set {
-    name  = "nodepools.karpenter.sh.metadata.annotations.meta\\.helm\\.sh/release-namespace"
-    value = "karpenter"
+    name  = "nodepools.karpenter\\.sh.metadata.annotations.meta\\.helm\\.sh/release-namespace"
+    value = "default"
   }
   set {
-    name  = "nodeclaims.karpenter.sh.metadata.annotations.meta\\.helm\\.sh/release-namespace"
-    value = "karpenter"
+    name  = "nodeclaims.karpenter\\.sh.metadata.annotations.meta\\.helm\\.sh/release-namespace"
+    value = "default"
   }
 
   values = [
