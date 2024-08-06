@@ -108,7 +108,8 @@ resource "kubectl_manifest" "karpenter_provisioner" {
     }
     spec = {
       limits = {
-        cpu = 2000
+        cpu = 1000
+        memory = "1000Gi"
       }
       template = {
         spec = {
