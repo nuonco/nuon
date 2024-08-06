@@ -121,7 +121,6 @@ resource "helm_release" "karpenter" {
       settings : {
         clusterEndpoint        : module.eks.cluster_endpoint
         clusterName            : local.karpenter.cluster_name
-        defaultInstanceProfile : aws_iam_instance_profile.karpenter.name
       }
       serviceAccount : {
         annotations : {
@@ -151,12 +150,14 @@ resource "random_integer" "node_ttl" {
   }
 }
 
+# NOTE: `Provisioner` is now a `NodePool`
+# docs: https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#provisioner---nodepool
 # Workaround - https://github.com/hashicorp/terraform-provider-kubernetes/issues/1380#issuecomment-967022975
 # use `tfk8s -M` to convert yaml to tf map
 resource "kubectl_manifest" "karpenter_provisioner" {
   yaml_body = yamlencode({
     apiVersion = "karpenter.sh/v1beta1"
-    kind       = "Provisioner"
+    kind       = "NodePool"
     metadata = {
       name = "default"
     }
@@ -166,30 +167,75 @@ resource "kubectl_manifest" "karpenter_provisioner" {
           cpu = 1000
         }
       }
-      provider = {
-        securityGroupSelector = {
-          (local.karpenter.discovery_key) = local.karpenter.discovery_value
-        }
-        subnetSelector = {
-          (local.karpenter.discovery_key) = local.karpenter.discovery_value
-        }
-        tags = merge(local.tags, {
-          Name                            = local.workspace_trimmed
-          (local.karpenter.discovery_key) = local.karpenter.discovery_value
-        })
-      }
-      requirements = [
-        {
-          key      = "karpenter.sh/capacity-type"
-          operator = "In"
-          values = [
-            "spot",
-            "on-demand",
+      template = {
+        spec = {
+          # https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#provider
+          nodeClassRef = {
+            apiVersion = "karpenter.k8s.aws/v1beta1"
+            kind       = "EC2NodeClass"
+            name       = "default"
+            # https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#subnetselector-securitygroupselector-and-amiselector
+            # the securityGroupSelector, subnetSelector, tags have moved to EC2NodeClass
+          }
+          requirements = [
+            {
+              key      = "karpenter.sh/capacity-type"
+              operator = "In"
+              values   = [
+                "spot",
+                "on-demand",
+              ]
+            },
+            {
+              "key" = "karpenter.k8s.aws/instance-category"
+              "operator" = "In"
+              "values" = ["ta"]
+            },
+            {
+              "key" = "karpenter.k8s.aws/instance-generation"
+              "operator" = "Eq"
+              "values" = ["3"]
+            },
           ]
-        },
-      ]
-      ttlSecondsAfterEmpty   = 30
-      ttlSecondsUntilExpired = random_integer.node_ttl.result
+        }
+      }
+      disruption = {
+        # https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#ttlsecondsafterempty
+        consolidationPolicy = "WhenEmpty"
+        consolidateAfter    = "30s"
+        # https://karpenter.sh/v0.32/upgrading/v1beta1-migration/#ttlsecondsuntilexpired
+        expireAfter         = "${random_integer.node_ttl.result}s"
+      }
+    }
+  })
+
+  depends_on = [
+    helm_release.karpenter
+  ]
+}
+
+# docs: https://karpenter.sh/v0.37/getting-started/getting-started-with-karpenter/#5-create-nodepool
+# Workaround - https://github.com/hashicorp/terraform-provider-kubernetes/issues/1380#issuecomment-967022975
+# use `tfk8s -M` to convert yaml to tf map
+resource "kubectl_manifest" "karpenter_ec2nodeclass" {
+  yaml_body = yamlencode({
+    apiVersion = "karpenter.k8s.aws/v1beta1"
+    kind       = "EC2NodeClass"
+    metadata = {
+      name = "default"
+    }
+    spec = {
+      role = aws_iam_instance_profile.karpenter.name
+      subnetSelectorTerms = {
+        tags = {
+          "karpenter.sh/discovery" = local.karpenter.discovery_value
+        }
+      }
+      securityGroupSelectorTerms = {
+        tags = {
+          "karpenter.sh/discovery" = local.karpenter.discovery_value
+        }
+      }
     }
   })
 
