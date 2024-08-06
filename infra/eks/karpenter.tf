@@ -1,3 +1,18 @@
+#
+# Karpenter Terraform
+#
+# we jumped from version 0.16.3 to 0.37.0. this was a pretty big change. notable changes include:
+#
+# 1. `CRD` are now managed by standalone helm_release, karpenter_crd. these should be updated _with_
+#    the carpenter helm chart. the changelog will/should let us know if these need to be updated.
+# 2. The `karpenter_crd` tf setts some labels and annotations explicitly with `set`. these are required
+#    otherwise the `karpenter_crd` cannot be "brought into" the `karpenter` helm release.
+# 3. The `Provisioner` is not called a `NodePool`. Its responsibilities/configs are split up between
+#    the `NodePool` CRD and the `EC2NodeClass` CRD.
+# 4. The instance_types can be set with excessive granularity but we opt for the simplest strategy that
+#    preserves our current yaml configs. If we wanted to offer multiple instance types, we could do it
+#    with this same strategy unless we needed to break instance types down into very granular options.
+#
 locals {
   karpenter = {
     cluster_name    = local.workspace_trimmed
@@ -37,8 +52,8 @@ resource "aws_iam_instance_profile" "karpenter" {
 }
 
 resource "helm_release" "karpenter_crd" {
-  namespace        = "default"
-  create_namespace = false
+  namespace        = "karpenter" # this is a choice
+  create_namespace = true
 
   chart               = "karpenter-crd"
   name                = "karpenter-crd"
