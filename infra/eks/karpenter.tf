@@ -155,7 +155,7 @@ resource "random_integer" "node_ttl" {
 # use `tfk8s -M` to convert yaml to tf map
 resource "kubectl_manifest" "karpenter_provisioner" {
   yaml_body = yamlencode({
-    apiVersion = "karpenter.sh/v1alpha5"
+    apiVersion = "karpenter.sh/v1beta1"
     kind       = "Provisioner"
     metadata = {
       name = "default"
