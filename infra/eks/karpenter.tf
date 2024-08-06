@@ -163,9 +163,7 @@ resource "kubectl_manifest" "karpenter_provisioner" {
     }
     spec = {
       limits = {
-        resources = {
-          cpu = 1000
-        }
+        cpu = 2000
       }
       template = {
         spec = {
@@ -221,16 +219,20 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
     }
     spec = {
       role = aws_iam_instance_profile.karpenter.name
-      subnetSelectorTerms = {
-        tags = {
-          "karpenter.sh/discovery" = local.karpenter.discovery_value
+      subnetSelectorTerms = [
+        {
+          tags = {
+            "karpenter.sh/discovery" = local.karpenter.discovery_value
+          }
         }
-      }
-      securityGroupSelectorTerms = {
-        tags = {
-          "karpenter.sh/discovery" = local.karpenter.discovery_value
+      ]
+      securityGroupSelectorTerms = [
+        {
+          tags = {
+            "karpenter.sh/discovery" = local.karpenter.discovery_value
+          }
         }
-      }
+      ]
     }
   })
 
