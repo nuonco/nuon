@@ -6,7 +6,7 @@
         "light": "/logo/light.svg"
     },
     "openapi": "https://api.nuon.co/oapi/v3",
-    "favicon": "/favicon.png",
+    "favicon": "/favicon.svg",
     "colors": {
         "primary": "#4E17FF",
         "dark": "#4E17FF",
