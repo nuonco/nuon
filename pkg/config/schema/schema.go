@@ -1,14 +1,12 @@
 package schema
 
 import (
+	"fmt"
+
 	"github.com/invopop/jsonschema"
 	"github.com/stoewer/go-strcase"
 
 	"github.com/powertoolsdev/mono/pkg/config"
-)
-
-const (
-	defaultPackage = "github.com/powertoolsdev/mono/pkg/config"
 )
 
 func reflector() (*jsonschema.Reflector, error) {
@@ -38,32 +36,98 @@ func AppSchemaSources() (*jsonschema.Schema, error) {
 		return nil, err
 	}
 
+	sourceSchema := r.Reflect(config.AppSourceConfig{})
+	sourcesSchema := r.Reflect(config.AppSourcesConfig{})
 	schma := r.Reflect(config.AppConfig{})
+	schma.Definitions["AppSourceConfig"] = sourceSchema
+	schma.Definitions["AppSourcesConfig"] = sourcesSchema
 
-	runner, ok := schma.Definitions["AppRunnerConfig"]
-	if ok {
-		runner.Required = []string{"source"}
+	err = setSchemaWithAnyOfSource("runner", schma, "AppRunnerConfig")
+	if err != nil {
+		return nil, err
 	}
 
-	sandbox, ok := schma.Definitions["AppSandboxConfig"]
-	if ok {
-		sandbox.Required = []string{"source"}
+	err = setSchemaWithAnyOfSource("sandbox", schma, "AppSandboxConfig")
+	if err != nil {
+		return nil, err
 	}
 
-	inputs, ok := schma.Definitions["AppInputConfig"]
-	if ok {
-		inputs.Required = []string{}
+	err = setSchemaWithAnyOfSources("inputs", schma, "AppInputConfig")
+	if err != nil {
+		return nil, err
 	}
 
-	installer, ok := schma.Definitions["InstallerConfig"]
-	if ok {
-		installer.Required = []string{"source"}
+	err = setSchemaWithAnyOfSource("installer", schma, "InstallerConfig")
+	if err != nil {
+		return nil, err
 	}
 
-	components, ok := schma.Definitions["Components"]
-	if ok {
-		components.Required = []string{"source"}
+	err = setItemsSchemaWithAnyOfSources("components", schma, "Component")
+	if err != nil {
+		return nil, err
 	}
 
 	return schma, nil
+}
+
+func setSchemaWithAnyOfSource(propertyName string, schma *jsonschema.Schema, defName string) error {
+	schemaProperty, found := schma.Definitions["AppConfig"].Properties.Get(propertyName)
+	if !found {
+		return fmt.Errorf("unable to find %s in schema", propertyName)
+	}
+	schemaProperty.Ref = ""
+	schemaProperty.Type = "object"
+	schemaProperty.AnyOf = []*jsonschema.Schema{
+		{
+			Ref:         fmt.Sprintf("#/$defs/%s", defName),
+			Description: fmt.Sprintf("%s configuration object", defName),
+		},
+		{
+			Ref:         "#/$defs/AppSourceConfig",
+			Description: "Source configuration object",
+		},
+	}
+
+	return nil
+}
+
+func setSchemaWithAnyOfSources(propertyName string, schma *jsonschema.Schema, defName string) error {
+	schemaProperty, found := schma.Definitions["AppConfig"].Properties.Get(propertyName)
+	if !found {
+		return fmt.Errorf("unable to find %s in schema", propertyName)
+	}
+	schemaProperty.Ref = ""
+	schemaProperty.Type = "object"
+	schemaProperty.AnyOf = []*jsonschema.Schema{
+		{
+			Ref:         fmt.Sprintf("#/$defs/%s", defName),
+			Description: fmt.Sprintf("%s configuration object", defName),
+		},
+		{
+			Ref:         "#/$defs/AppSourcesConfig",
+			Description: "Sources configuration object",
+		},
+	}
+
+	return nil
+}
+
+func setItemsSchemaWithAnyOfSources(propertyName string, schma *jsonschema.Schema, defName string) error {
+	schemaProperty, found := schma.Definitions["AppConfig"].Properties.Get(propertyName)
+	if !found {
+		return fmt.Errorf("unable to find %s in schema", propertyName)
+	}
+	schemaProperty.Items.Ref = ""
+	schemaProperty.Items.AnyOf = []*jsonschema.Schema{
+		{
+			Ref:         fmt.Sprintf("#/$defs/%s", defName),
+			Description: fmt.Sprintf("%s configuration object", defName),
+		},
+		{
+			Ref:         "#/$defs/AppSourceConfig",
+			Description: "Source configuration object",
+		},
+	}
+
+	return nil
 }
