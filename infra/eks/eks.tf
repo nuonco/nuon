@@ -115,13 +115,15 @@ module "eks" {
         # Required by Karpenter
         ssm = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
       }
-
       taints = {
         no_schedule_karpenter = {
           key    = "CriticalAddonsOnly"
           value  = "true"
           effect = "NO_SCHEDULE"
         }
+      }
+      tags = {
+        "karpenter.sh/discovery" = local.karpenter.discovery_value
       }
     }
   }
@@ -144,7 +146,9 @@ module "eks" {
 
   # this can't rely on default_tags.
   # full set of tags must be specified here :sob:
-  tags = local.tags
+  tags = merge(local.tags, {
+    "karpenter.sh/discovery" = local.karpenter.discovery_value
+  })
 }
 
 resource "kubectl_manifest" "cluster_role_dashboard" {

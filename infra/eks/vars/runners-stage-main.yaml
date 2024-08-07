@@ -27,7 +27,7 @@ auth_map_additions:
 managed_node_group:
   # NOTE(fd): keeping this small until we go live
   desired_size: 3
-  min_size: 3
+  min_size: 2
   max_size: 5
   instance_types:
     - t3a.medium
