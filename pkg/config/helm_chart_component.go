@@ -27,7 +27,7 @@ type HelmChartComponentConfig struct {
 	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty"  jsonschema:"oneof_required=connected_repo"`
 
 	// deprecated
-	Values []HelmValue `mapstructure:"value,omitempty" jsonschema:"required"`
+	Values []HelmValue `mapstructure:"value,omitempty"`
 }
 
 func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
