@@ -26,7 +26,6 @@ module "karpenter_irsa" {
   version = "~> 5.43"
 
   role_name                                  = "karpenter-controller-${local.workspace_trimmed}"
-  karpenter_tag_key                          = "karpenter.sh/discovery/${local.karpenter.discovery_value}"
   attach_karpenter_controller_policy         = true
   enable_karpenter_instance_profile_creation = true
 
