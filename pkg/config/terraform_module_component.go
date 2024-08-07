@@ -4,7 +4,7 @@ package config
 type TerraformModuleComponentConfig struct {
 	TerraformVersion string `mapstructure:"terraform_version" jsonschema:"required"`
 
-	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty" jsonschema:"required"`
+	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty"`
 	VarsMap   map[string]string `mapstructure:"vars,omitempty" jsonschema:"required"`
 
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
