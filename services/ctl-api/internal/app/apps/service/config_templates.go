@@ -167,7 +167,8 @@ tag = "latest"
 region = "us-west-2"
 `
 
-const topLevelConfig = `# This file contains template values for common Nuon application configuration options.
+const topLevelConfig = `#:schema https://api.nuon.co/v1/general/config-schema
+# This file contains template values for common Nuon application configuration options.
 # To use it for your app, edit as needed, then rename this file to %s and run
 #
 #   nuon apps sync -c %s
