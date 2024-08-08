@@ -103,7 +103,7 @@ jobs:
       - services
     runs-on: ubuntu-latest
     steps:
-      - uses: martialonline/workflow-status@v3
+      - uses: martialonline/workflow-status@v4.1
         id: check
       - name: Update status
         uses: ouzi-dev/commit-status-updater@v2.0.1
