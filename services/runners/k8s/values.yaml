@@ -1,0 +1,53 @@
+---
+# set elsewhere
+# runner_group_id:
+
+env:
+  INTERNAL_SLACK_WEBHOOK_URL: |-
+    https://hooks.slack.com/services/XXXXXXXXXXX/XXXXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
+
+image:
+  repository: "traefik/whoami"
+  tag: "latest"
+
+serviceAccount:
+  name: runner
+  annotations: {}
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 50
+  targetMemoryUtilizationPercentage: 50
+
+#
+# NOTE(fd): atm, we only support t3a.medium based on the EC2NodeClass (see infra/eks/karpenter)
+#           if we wanted to, we could dynamically create `EC2NodeClass` here the same way we create
+#           the `NodePool`
+
+# limits should be based on the instance_types
+# docs: https://karpenter.sh/v0.37/reference/instance-types/#t3amedium
+resources:
+  requests:
+    cpu: 1000m
+    memory: 1024Mi
+
+node_pool:
+  # if we want the deployment to create and run on its own NodePool, we must enable this
+  # if this is false, we fall back to the default NodePool
+  enabled: true
+  capacity_types:
+    - spot
+    - on-demand
+  # docs: https://karpenter.sh/v0.37/reference/instance-types/#t3amedium
+  instance_type:
+    name: t3a.medium
+    cpu: 2
+    memory: 4096  # int so we can do math, rendered with Mi
+
+  # the max number of nodes is controlled by this
+  # these should be set like this:
+  #   cpu: (instance_type.cpu * desired_runners)  + "some percentage to smooth bursty scaling"
+  #   memory: instance_type.cpu * desired_runners +
+  #   this is too loose a coupling IMO
+  runner_count: 1

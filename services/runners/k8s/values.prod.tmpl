@@ -1,0 +1,10 @@
+---
+environment: prod
+
+env:
+  INTERNAL_SLACK_WEBHOOK_URL: |-
+    https://hooks.slack.com/services/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
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: $TFO_EKS_ROLE_ARN
