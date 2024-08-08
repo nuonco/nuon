@@ -15,7 +15,7 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, compID strin
 
 	inFlight := true
 	for inFlight {
-		comp, err := w.acts.AwaitGetComponent(ctx, activities.GetComponentRequest{
+		comp, err := activities.AwaitGetComponent(ctx, activities.GetComponentRequest{
 			ComponentID: compID,
 		})
 		if err != nil {
@@ -55,7 +55,7 @@ func (w *Workflows) delete(ctx workflow.Context, componentID string, dryRun bool
 
 	// update status
 	w.updateStatus(ctx, componentID, app.ComponentStatusDeprovisioning, "deleting component")
-	if err := w.acts.AwaitDelete(ctx, activities.DeleteRequest{
+	if err := activities.AwaitDelete(ctx, activities.DeleteRequest{
 		ComponentID: componentID,
 	}); err != nil {
 		return fmt.Errorf("unable to delete component: %w", err)
