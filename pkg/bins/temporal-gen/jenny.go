@@ -78,19 +78,27 @@ import (
 
 		wv.ReqType = astfmt.Sprint(bfn.Fn.Type.Params.List[1].Type)
 
-		var recvVar string
+		basebuf := new(strings.Builder)
 		if bfn.Fn.Recv != nil {
+			basebuf.WriteString("(")
+			expr := bfn.Fn.Recv.List[0].Type
+			if x, isPtr := expr.(*ast.StarExpr); isPtr {
+				expr = x.X
+				basebuf.WriteString("&")
+			}
+			// Injecting {} hardcodes assumption that receiver is struct-kinded
+			basebuf.WriteString(astfmt.Sprint(expr) + "{}).")
 			wv.IsMethod = true
-			recvVar = bfn.Fn.Recv.List[0].Names[0].Name
+			recvVar := bfn.Fn.Recv.List[0].Names[0].Name
 			wv.Receiver = fmt.Sprintf("%s %s", recvVar, astfmt.Sprint(bfn.Fn.Recv.List[0].Type))
-			recvVar = recvVar + "."
 
 			wv.BaseFnName = fmt.Sprintf("%s.%s", astfmt.Sprint(bfn.Fn.Recv.List[0].Type), bfname)
 		} else {
 			wv.BaseFnName = bfname
 		}
+		basebuf.WriteString(bfname)
 
-		wv.BaseFnSymbol = recvVar + bfn.Fn.Name.String()
+		wv.BaseFnSymbol = basebuf.String()
 		switch len(bfn.Fn.Type.Results.List) {
 		case 1:
 			// This template assumes without verification that the wrapped fn is has a bare error return, b/c temporal requires that
