@@ -11,6 +11,8 @@ type GetComponentRequest struct {
 	ComponentID string `validate:"required"`
 }
 
+// @await-gen
+// @execution-timeout 5s
 func (a *Activities) GetComponent(ctx context.Context, req GetComponentRequest) (*app.Component, error) {
 	cmp := app.Component{}
 	res := a.db.WithContext(ctx).
