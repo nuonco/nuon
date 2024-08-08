@@ -1,0 +1,6 @@
+---
+region: us-west-2
+pool: default
+# at some point in the future, we may want to create a pool, or set of pools,
+# specificaly for the runners. we'll use the default pool until we know what the
+# requirements are
