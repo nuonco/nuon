@@ -1,0 +1,7 @@
+workflow.ActivityOptions{
+    ScheduleToCloseTimeout: {{- if ne .Timeout 0 }}{{ DurationLit .Timeout }}{{ else }}5 * time.Second{{ end }},
+    {{- if gt .MaxRetries 0 }}
+    RetryPolicy: &temporal.RetryPolicy{
+        MaximumAttempts: {{ .MaxRetries }},
+    },{{ end }}
+}

@@ -1,0 +1,9 @@
+
+// {{ .FnName }} executes [{{ .BaseFnName }}] within a Temporal activity, waits for the future to complete, then returns the error, if any.
+func {{ if .IsMethod }}({{ .Receiver }}) {{ end -}}
+     {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) error {
+	ao := {{ template "activity_options.tmpl" .Options }}
+	ctx = workflow.WithActivityOptions(ctx, ao)
+
+	return workflow.ExecuteActivity(ctx, {{ .BaseFnSymbol }}, req).Get(ctx, nil)
+}
