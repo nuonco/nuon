@@ -1,0 +1,24 @@
+
+// {{ .FnName }} executes [{{ .BaseFnName }}] within a Temporal activity, waits for the future to complete, then returns the response or error.
+//
+// Temporal enforces that only a value XOR an error will be returned.
+func {{ if .IsMethod }}({{ .Receiver }}) {{ end -}}
+     {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) ({{ if .HasResp }}{{ .RespType }}, {{ end }}error) {
+	ao := {{ template "activity_options.tmpl" .Options }}
+	ctx = workflow.WithActivityOptions(ctx, ao)
+
+	fut := workflow.ExecuteActivity(ctx, {{ .BaseFnSymbol }}, req)
+
+	{{ if .RespIsPtr -}}
+	ret := new({{ TrimPtr .RespType }})
+	if err := fut.Get(ctx, ret); err != nil {
+		return nil, err
+	}
+	{{- else }}
+	var ret {{ .RespType }}
+	if err := fut.Get(ctx, &ret); err != nil {
+		return nil, err
+	}
+	{{- end }}
+	return ret, nil
+}
