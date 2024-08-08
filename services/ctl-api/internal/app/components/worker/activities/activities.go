@@ -8,6 +8,8 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/protos"
 )
 
+//go:generate go run ../../../../../../../pkg/bins/temporal-gen
+
 type Activities struct {
 	db       *gorm.DB
 	protos   *protos.Adapter
