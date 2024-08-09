@@ -2,7 +2,7 @@ import { UserProvider } from '@auth0/nextjs-auth0/client'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { InitDatadogLogs, InitDatadogRUM, InitPosthogAnalytics } from '@/utils'
-import './globals.css'
+import '../globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -16,9 +16,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  
   return (
     <html
-      className="bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50 bg-[url('https://nuon.co/_astro/hero-background-gradient.Bpjm9v9t_Z1mFIaD.svg')] bg-cover"
+      className="bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50"
       lang="en"
     >
       {process?.env?.NEXT_PUBLIC_DATADOG_ENV === 'prod' ||
