@@ -2,11 +2,18 @@ package sync
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon-go/models"
 )
 
 func (s *sync) syncAppSandbox(ctx context.Context, resource string) error {
+	if s.cfg.Sandbox == nil {
+		return SyncAPIErr{
+			Resource: resource,
+			Err:      fmt.Errorf("sandbox config is nil"),
+		}
+	}
 	req := s.getAppSandboxRequest()
 	cfg, err := s.apiClient.CreateAppSandboxConfig(ctx, s.appID, req)
 	if err != nil {
