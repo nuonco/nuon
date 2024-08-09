@@ -17,6 +17,7 @@ import (
 const (
 	statusError                  string      = "error"
 	statusActive                 string      = "active"
+	statusQueued                 string      = "queued"
 	defaultConfigFilePermissions fs.FileMode = 0o644
 )
 
