@@ -62,6 +62,19 @@ func (s *sync) Sync(ctx context.Context) (string, error) {
 	return msg, nil
 }
 
+func (s *sync) GetComponentStateIds() []string {
+	ids := make([]string, 0)
+	if s.state.ComponentIDs == nil {
+		return ids
+	}
+
+	for _, comp := range s.state.ComponentIDs {
+		ids = append(ids, comp.ID)
+	}
+
+	return ids
+}
+
 func New(apiClient nuon.Client, appID string, cfg *config.AppConfig) *sync {
 	return &sync{
 		cfg:       cfg,
