@@ -37,6 +37,16 @@ func (s *sync) lookupAppIDs(ctx context.Context, resource string) ([]string, err
 
 func (s *sync) syncAppInstaller(ctx context.Context, resource string) error {
 	if s.cfg.Installer == nil {
+		if s.prevState.InstallerID != "" {
+			_, err := s.apiClient.DeleteInstaller(ctx, s.prevState.InstallerID)
+			// ignore err in case already deleted (nuon.IsNotFound)
+			if err != nil && !nuon.IsNotFound(err) {
+				return SyncAPIErr{
+					Resource: resource,
+					Err:      err,
+				}
+			}
+		}
 		return nil
 	}
 
