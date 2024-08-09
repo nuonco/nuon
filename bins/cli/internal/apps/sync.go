@@ -2,7 +2,6 @@ package apps
 
 import (
 	"context"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 
@@ -11,11 +10,6 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
 	"github.com/powertoolsdev/mono/pkg/config/sync"
-)
-
-const (
-	defaultSyncTimeout time.Duration = time.Minute * 5
-	defaultSyncSleep   time.Duration = time.Second * 5
 )
 
 func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
@@ -31,8 +25,12 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	}
 
 	syncer := sync.New(s.api, appID, cfg)
-	if err := syncer.Sync(ctx); err != nil {
+	if msg, err := syncer.Sync(ctx); err != nil {
 		return err
+	} else {
+		if msg != "" {
+			ui.PrintLn(msg)
+		}	
 	}
 
 	ui.PrintSuccess("successfully synced " + cfgFile)

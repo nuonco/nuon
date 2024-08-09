@@ -23,16 +23,16 @@ type syncStep struct {
 	Method   func(context.Context) error
 }
 
-func (s *sync) Sync(ctx context.Context) error {
+func (s *sync) Sync(ctx context.Context) (string, error) {
 	if err := s.fetchState(ctx); err != nil {
-		return SyncInternalErr{
+		return "", SyncInternalErr{
 			Description: "unable to fetch state",
 			Err:         err,
 		}
 	}
 
 	if err := s.start(ctx); err != nil {
-		return SyncInternalErr{
+		return "", SyncInternalErr{
 			Description: "unable to start sync",
 			Err:         err,
 		}
@@ -40,24 +40,26 @@ func (s *sync) Sync(ctx context.Context) error {
 
 	steps, err := s.syncSteps()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// sync steps
 	for _, step := range steps {
 		if err := s.syncStep(ctx, step); err != nil {
-			return err
+			return "", err
 		}
 	}
 
 	if err := s.finish(ctx); err != nil {
-		return SyncInternalErr{
+		return "", SyncInternalErr{
 			Description: "unable to update config status after syncing",
 			Err:         err,
 		}
 	}
 
-	return nil
+	msg := s.notifyOrphanedComponents(ctx)
+
+	return msg, nil
 }
 
 func New(apiClient nuon.Client, appID string, cfg *config.AppConfig) *sync {

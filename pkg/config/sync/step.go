@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon-go/models"
 )
 
-func (s *sync) syncStep(ctx context.Context, step syncStep) error {
+func (s *sync) syncStep(ctx context.Context, step syncStep) (error) {
 	stepErr := step.Method(ctx)
 	if stepErr == nil {
 		return nil
