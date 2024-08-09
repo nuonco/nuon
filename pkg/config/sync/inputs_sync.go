@@ -7,6 +7,7 @@ import (
 )
 
 func (s sync) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest {
+	// zero out the inputs if they are nil
 	if s.cfg.Inputs == nil {
 		return &models.ServiceCreateAppInputConfigRequest{
 			Groups: make(map[string]models.ServiceAppGroupRequest, 0),
