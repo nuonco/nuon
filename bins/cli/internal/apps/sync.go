@@ -2,6 +2,8 @@ package apps
 
 import (
 	"context"
+	"slices"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 
@@ -10,6 +12,12 @@ import (
 	"github.com/powertoolsdev/mono/pkg/config"
 	"github.com/powertoolsdev/mono/pkg/config/parse"
 	"github.com/powertoolsdev/mono/pkg/config/sync"
+	"github.com/powertoolsdev/mono/pkg/errs"
+)
+
+const (
+	defaultSyncTimeout time.Duration = time.Minute * 12
+	defaultSyncSleep   time.Duration = time.Second * 20
 )
 
 func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
@@ -30,11 +38,64 @@ func (s *Service) sync(ctx context.Context, cfgFile, appID string) error {
 	} else {
 		if msg != "" {
 			ui.PrintLn(msg)
-		}	
+		}
 	}
 
 	ui.PrintSuccess("successfully synced " + cfgFile)
-	return nil
+
+	componentIds := syncer.GetComponentStateIds()
+	if len(componentIds) == 0 {
+		return nil
+	}
+
+	pollTimeout, cancel := context.WithTimeout(ctx, defaultSyncTimeout)
+	defer cancel()
+
+	ui.PrintLn("waiting for components to build")
+	for {
+		select {
+		case <-pollTimeout.Done():
+			err = errs.WithUserFacing(err, "timeout waiting for components to build")
+			ui.PrintError(err)
+			return err
+		default:
+		}
+
+		finished, err := s.componensBuildsFinished(ctx, appID, componentIds)
+		if finished {
+			ui.PrintSuccess("component builds completed")
+			return nil
+		}
+
+		if err != nil {
+			err = errs.WithUserFacing(err, "error waiting for components to build")
+			ui.PrintError(err)
+			return err
+		}
+
+		time.Sleep(defaultSyncSleep)
+	}
+}
+
+func (s *Service) componensBuildsFinished(ctx context.Context, appID string, componentIds []string) (bool, error) {
+	components, err := s.api.GetAppComponents(ctx, appID)
+	if err != nil {
+		return false, err
+	}
+
+	for _, comp := range components {
+		if !slices.Contains(componentIds, comp.ID) {
+			continue
+		}
+		if comp.Status == statusError {
+			return false, errs.NewUserFacing("component build encountered an error: %s", comp.StatusDescription)
+		}
+		if comp.Status == statusQueued {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 func (s *Service) Sync(ctx context.Context, all bool, file string) error {
