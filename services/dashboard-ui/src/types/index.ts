@@ -18,6 +18,13 @@ export type TWaypointLog = {
   }
 }
 
+// app
+export type TApp = components['schemas']['app.App']
+export type TAppConfig = components['schemas']['app.AppConfig']
+export type TAppInputConfig = components['schemas']['app.AppInputConfig']
+export type TAppRunnerConfig = components['schemas']['app.AppRunnerConfig']
+export type TAppSandboxConfig = components['schemas']['app.AppSandboxConfig']
+
 // component
 export type TComponent = components['schemas']['app.Component']
 export type TComponentConfig =
