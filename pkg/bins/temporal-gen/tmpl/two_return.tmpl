@@ -6,6 +6,9 @@ func {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) ({{ if .HasResp }}{
 	ao := {{ template "activity_options.tmpl" .Options }}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
+	// The func pointer being passed here is not used for execution. Temporal uses it as the
+	// key for a name lookup against its activity registry, so that it knows what activity function
+	// to actually call when the workflow is ready to be executed.
 	fut := workflow.ExecuteActivity(ctx, {{ .BaseFnSymbol }}, req)
 
 	{{ if .RespIsPtr -}}
