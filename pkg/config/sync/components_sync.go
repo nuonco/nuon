@@ -3,6 +3,7 @@ package sync
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/nuonco/nuon-go"
 	"github.com/nuonco/nuon-go/models"
@@ -64,6 +65,30 @@ func (s *sync) cleanupComponent(ctx context.Context, compID string) {
 	}
 }
 
+func (s *sync) notifyOrphanedComponents(ctx context.Context) string {
+	msg := ""
+	currentStateIDs := make([]string, 0)
+	for _, compState := range s.state.ComponentIDs {
+		currentStateIDs = append(currentStateIDs, compState.ID)
+	}
+	detectedOrphaned := false
+	for _, prevCompState:= range s.prevState.ComponentIDs {
+		if !slices.Contains(currentStateIDs, prevCompState.ID) {
+			if !detectedOrphaned {
+				msg += "Existing component(s) are no longer defined in the config:\n"
+				detectedOrphaned = true
+			}
+			msg += fmt.Sprintf("Component: Name=%s | ID=%s\n", prevCompState.Name, prevCompState.ID)
+		}
+	}
+
+	if detectedOrphaned {
+		msg += "To delete you can use [nuon components delete]\n"
+	}
+
+	return msg
+}
+
 func (s *sync) syncComponent(ctx context.Context, resource string, comp *config.Component) (string, error) {
 	var isNew bool
 	apiComp, err := s.getComponent(ctx, comp.Name, comp.Type.APIType())
@@ -110,7 +135,7 @@ func (s *sync) syncComponent(ctx context.Context, resource string, comp *config.
 	}
 
 	s.state.ComponentIDs = append(s.state.ComponentIDs, componentState{
-		Name:     apiComp.ID,
+		Name:     apiComp.Name,
 		Type:     comp.Type.APIType(),
 		ID:       apiComp.ID,
 		ConfigID: cfgID,
