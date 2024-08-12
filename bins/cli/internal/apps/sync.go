@@ -107,12 +107,14 @@ func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 	if all {
 		cfgFiles, err = parse.FindConfigFiles(".")
 		if err != nil {
+			err = errs.WithUserFacing(err, "error parsing toml files")
 			return ui.PrintError(err)
 		}
 	}
 	if file != "" {
 		appName, err := parse.AppNameFromFilename(file)
 		if err != nil {
+			err = errs.WithUserFacing(err, "error parsing app name from file")
 			return ui.PrintError(err)
 		}
 
@@ -134,6 +136,7 @@ func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 	for _, cfgFile := range cfgFiles {
 		appID, err := lookup.AppID(ctx, s.api, cfgFile.AppName)
 		if err != nil {
+			err = errs.WithUserFacing(err, "error looking up app id")
 			return ui.PrintError(err)
 		}
 
