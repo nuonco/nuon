@@ -128,21 +128,7 @@ module "eks" {
     }
   }
 
-  # HACK: https://github.com/terraform-aws-modules/terraform-aws-eks/issues/1986
-  # NOTE(fd): i think we still need this
-  # Because of this, we do a few things:
-  # 1.) we don't add tags to the cluster primary security group, so it won't have the "owned" tag
-  # 2.) we only add the karpenter tag on this node group
-  # 3.) we add the "owned" tag on this node group
-  node_security_group_tags = merge(local.tags, {
-    "kubernetes.io/cluster/${local.workspace_trimmed}" = null
-
-    # NOTE - if creating multiple security groups with this module, only tag the
-    # security group that Karpenter should utilize with the following tag
-    # (i.e. - at most, only one security group should have this tag in your account)
-    (local.karpenter.discovery_key) = local.karpenter.discovery_value
-  })
-  create_cluster_primary_security_group_tags = false
+  create_cluster_primary_security_group_tags = true
 
   # this can't rely on default_tags.
   # full set of tags must be specified here :sob:
