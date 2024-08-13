@@ -12,13 +12,13 @@ deps:
     echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /'| \
     tee /etc/apt/sources.list.d/kubernetes.list && \
     chmod 644 /etc/apt/sources.list.d/kubernetes.list   # helps tools such as command-not-found to work correctly
-	
+
    # configure repos for helm
-   RUN curl https://baltocdn.com/helm/signing.asc |\ 
+   RUN curl https://baltocdn.com/helm/signing.asc |\
        gpg --dearmor |\
        tee /usr/share/keyrings/helm.gpg > /dev/null && \
        apt-get install apt-transport-https --yes && \
-       echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" |\ 
+       echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" |\
        tee /etc/apt/sources.list.d/helm-stable-debian.list
 
   RUN apt-get update && \
@@ -63,9 +63,9 @@ K8S_DEPLOY:
             update-kubeconfig \
             --region "$AWS_REGION" \
             --name "$cluster_name" \
-            --role-arn="$role_arn" \
-	&& helm rollback "$chart_name-$env" \
-        && helm upgrade \
+            --role-arn="$role_arn"; \
+	helm rollback "$chart_name-$env"; \
+	helm upgrade \
             "$chart_name-$env" \
 	    . \
             --install \
@@ -103,7 +103,7 @@ deploy:
     RUN mv values.yaml values.yaml.tmpl
     RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
      && envsubst < "values.yaml.tmpl" > "values.yaml"
-     
+
     RUN while IFS='=' read -r k v; do eval export "$k='$v'"; done < "$tfenv" \
         && envsubst < "values.$env.tmpl" > "values.$env.yaml"
 
