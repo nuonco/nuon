@@ -52,7 +52,7 @@ func (s *Service) Validate(ctx context.Context, all bool, file string, asJSON bo
 			return view.Error(err)
 		}
 
-		view.Print(fmt.Sprintf("found %s", file))
+		ui.PrintLn(fmt.Sprintf("found %s", file))
 		cfgFiles = []parse.File{
 			{
 				Path:    file,
@@ -68,9 +68,9 @@ func (s *Service) Validate(ctx context.Context, all bool, file string, asJSON bo
 	}
 
 	for _, cfgFile := range cfgFiles {
-		view.Print(fmt.Sprintf("validating file \"%s\"", cfgFile.Path))
+		ui.PrintLn(fmt.Sprintf("validating file \"%s\"", cfgFile.Path))
 		if err := s.validate(ctx, cfgFile, asJSON); err != nil {
-			return view.Error(err)
+			return ui.PrintError(err)
 		}
 	}
 	return nil
@@ -81,16 +81,21 @@ func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) er
 
 	cfg, err := s.loadConfig(ctx, file.Path)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if err := cfg.Validate(s.v); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	schmaErrs, err := schema.Validate(cfg)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
+	}
+
+	err = s.validateDuplicateComponentNames(cfg)
+	if err != nil {
+		return err
 	}
 
 	if len(schmaErrs) < 1 {
@@ -101,11 +106,6 @@ func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) er
 	view.Print(fmt.Sprintf("%d total errors", len(schmaErrs)))
 	for _, schemaErr := range schmaErrs {
 		view.Print(schemaErr.String())
-	}
-
-	err = s.validateDuplicateComponentNames(cfg)
-	if err != nil {
-		ui.PrintError(err)
 	}
 
 	return nil
