@@ -2,6 +2,7 @@ package apps
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"time"
 
@@ -131,6 +132,13 @@ func (s *Service) Sync(ctx context.Context, all bool, file string) error {
 			Msg: "must set -all or -file, and make sure at least one nuon.<app-name>.toml file exists",
 		})
 		return err
+	}
+
+	for _, cfgFile := range cfgFiles {
+		ui.PrintLn(fmt.Sprintf("validating file \"%s\"", cfgFile.Path))
+		if err := s.validate(ctx, cfgFile, false); err != nil {
+			return ui.PrintError(err)
+		}
 	}
 
 	for _, cfgFile := range cfgFiles {
