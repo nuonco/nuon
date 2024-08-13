@@ -5,6 +5,7 @@ import {
   ComponentConfigCard,
   ComponentConfigType,
   ComponentDependenciesCard,
+  Code,
   Grid,
   Heading,
   InstallComponentStatus,
@@ -110,6 +111,23 @@ export default withPageAuthRequired(
               </div>
               <div className="flex flex-col gap-6 lg:col-span-2">
                 <Heading variant="subtitle">Details</Heading>
+
+                {(installComponent?.status === 'failed' ||
+                  installComponent?.status === 'error' ||
+                  installComponent?.status === 'noop') && (
+                  <Card>
+                    <Heading className="text-red-500">
+                      Deploy {installComponent?.status}
+                    </Heading>
+                    <Code>
+                      {installComponent?.status === 'noop' &&
+                        'build is not deployable'}
+                      {(installComponent?.status === 'failed' ||
+                        installComponent?.status === 'error') &&
+                        'unable to deploy component'}
+                    </Code>
+                  </Card>
+                )}
 
                 <div className="grid grid-cols-2 gap-6">
                   <BuildProvider initBuild={build}>
