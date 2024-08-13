@@ -40,10 +40,11 @@ env_secrets:
   LOOPS_API_KEY:
     name: ctl-api-loops-api-key
     key: loops_api_key
-watch_ignore_dirs:
-  - docs/
-  - admin/
-  - internal/integration/
+watch_ignore:
+  - '\/docs'
+  - '\/admin'
+  - '\/internal\/integration'
+  - "_gen"
 local_startup_cmds:
   - go generate ./...
   - go build -o /tmp/svc-ctl-api
