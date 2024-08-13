@@ -3,6 +3,7 @@ package sync
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -85,7 +86,7 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 		},
 		Components: []*config.Component{
 			{
-				Name: "terraform 1",
+				Name: "terraform1",
 				Type: config.TerraformModuleComponentType,
 				VarName: "1",
 				TerraformModule: &config.TerraformModuleComponentConfig{
@@ -104,7 +105,7 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 				},
 			},
 			{
-				Name: "helm 2",
+				Name: "helm2",
 				Type: config.HelmChartComponentType,
 				VarName: "2",
 				HelmChart: &config.HelmChartComponentConfig{
@@ -119,7 +120,7 @@ func getTestCfg(options cfgOptions) *config.AppConfig {
 				},
 			},
 			{
-				Name: "docker 3",
+				Name: "docker3",
 				Type: config.DockerBuildComponentType,
 				VarName: "3",
 				DockerBuild: &config.DockerBuildComponentConfig{
@@ -163,6 +164,7 @@ func TestSync(t *testing.T) {
 		appID string
 		cfg *config.AppConfig
 		err       error
+		existingComponentIDs []string
 		expectedLatestConfig *models.AppAppConfig
 		expectedLatestConfigErr error
 		expectSyncSandBox bool
@@ -215,6 +217,21 @@ func TestSync(t *testing.T) {
 			expectedMsg: "",
 			expectedFinish: true,
 		},
+		{
+			name: "syncs with updated component",
+			appID: "appID",
+			cfg: getTestCfg(cfgOptions{emptySandbox: false, emptyComponents: false}),
+			err: nil,
+			existingComponentIDs: []string{"idterraform1"},
+			expectedLatestConfig: getTestAppConfig(),
+			expectedLatestConfigErr: nil,
+			expectSyncInputs: true,
+			expectSyncSandBox: true,
+			expectSyncRunner: true,
+			expectSyncInstaller: true,
+			expectedMsg: "",
+			expectedFinish: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -254,18 +271,26 @@ func TestSync(t *testing.T) {
 				mockApiClient.EXPECT().CreateAppRunnerConfig(ctx, tt.appID, gomock.Any()).Return(&models.AppAppRunnerConfig{ ID: "runnerId"}, nil)
 			}
 
-			// validate we are syncing deps
+			// validate we are syncing dependencies in the correct order
 			deps := make([]string, 0)
 
 			for _, comp := range tt.cfg.Components {
-				// TODO: test for existing components
 				mockId := "id" + comp.Name
-				mockApiClient.EXPECT().GetAppComponent(ctx, tt.appID, comp.Name).Return(nil, mockNotFoundError{})
-				mockApiClient.EXPECT().CreateComponent(ctx, tt.appID,  &models.ServiceCreateComponentRequest{
-					Dependencies: deps,
-					Name:         &comp.Name,
-					VarName:      comp.VarName,
-				}).Return(&models.AppComponent{ ID: mockId}, nil)
+				if slices.Contains(tt.existingComponentIDs, mockId) {
+					mockApiClient.EXPECT().GetAppComponent(ctx, tt.appID, comp.Name).Return(&models.AppComponent{ ID: mockId, Type: models.AppComponentType(comp.Type) }, nil)
+					mockApiClient.EXPECT().UpdateComponent(ctx, mockId, &models.ServiceUpdateComponentRequest{
+						Dependencies: deps,
+						Name:         &comp.Name,
+						VarName: 	comp.VarName,
+					}).Return(nil, nil)
+				} else {
+					mockApiClient.EXPECT().GetAppComponent(ctx, tt.appID, comp.Name).Return(nil, mockNotFoundError{})
+					mockApiClient.EXPECT().CreateComponent(ctx, tt.appID,  &models.ServiceCreateComponentRequest{
+						Dependencies: deps,
+						Name:         &comp.Name,
+						VarName:      comp.VarName,
+					}).Return(&models.AppComponent{ ID: mockId}, nil)
+				}
 				switch comp.Type {
 				case config.TerraformModuleComponentType:
 					mockApiClient.EXPECT().CreateTerraformModuleComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppTerraformModuleComponentConfig{ ID: mockId }, nil)
