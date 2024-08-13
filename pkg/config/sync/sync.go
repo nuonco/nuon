@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon-go"
 
@@ -24,6 +25,12 @@ type syncStep struct {
 }
 
 func (s *sync) Sync(ctx context.Context) (string, error) {
+	if s.cfg == nil {
+		return "", SyncInternalErr{
+			Description: "nil config",
+			Err:		 fmt.Errorf("config is nil"),
+		}
+	}
 	if err := s.fetchState(ctx); err != nil {
 		return "", SyncInternalErr{
 			Description: "unable to fetch state",
@@ -57,7 +64,7 @@ func (s *sync) Sync(ctx context.Context) (string, error) {
 		}
 	}
 
-	msg := s.notifyOrphanedComponents(ctx)
+	msg := s.notifyOrphanedComponents()
 
 	return msg, nil
 }
