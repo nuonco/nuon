@@ -128,7 +128,7 @@ module "eks" {
     }
   }
 
-  create_cluster_primary_security_group_tags = true
+  create_cluster_primary_security_group_tags = false
 
   # this can't rely on default_tags.
   # full set of tags must be specified here :sob:
