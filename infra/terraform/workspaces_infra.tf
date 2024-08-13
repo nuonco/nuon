@@ -215,8 +215,8 @@ module "infra-eks-stage-nuon" {
 
   name                            = "infra-eks-stage-nuon"
   # repo is set to "" in order to disable VCS triggers
-  # repo                            = "powertoolsdev/mono"
-  repo                            = ""
+  # repo                            = ""
+  repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
