@@ -129,6 +129,12 @@ module "eks" {
   }
 
   create_cluster_primary_security_group_tags = false
+  node_security_group_tags = merge(local.tags, {
+    # NOTE - if creating multiple security groups with this module, only tag the
+    # security group that Karpenter should utilize with the following tag
+    # (i.e. - at most, only one security group should have this tag in your account)
+    "karpenter.sh/discovery" = local.karpenter.discovery_value
+  })
 
   # this can't rely on default_tags.
   # full set of tags must be specified here :sob:
