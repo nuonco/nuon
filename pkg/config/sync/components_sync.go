@@ -65,7 +65,7 @@ func (s *sync) cleanupComponent(ctx context.Context, compID string) {
 	}
 }
 
-func (s *sync) notifyOrphanedComponents(ctx context.Context) string {
+func (s *sync) notifyOrphanedComponents() string {
 	msg := ""
 	currentStateIDs := make([]string, 0)
 	for _, compState := range s.state.ComponentIDs {
