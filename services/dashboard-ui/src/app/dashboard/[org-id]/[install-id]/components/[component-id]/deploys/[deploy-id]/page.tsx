@@ -130,15 +130,16 @@ export default withPageAuthRequired(
 
             <div className="flex flex-col gap-6 lg:col-span-2">
               <Heading variant="subtitle">Deploy details</Heading>
-              {deploy?.status === 'failed' ||
-                (deploy?.status === 'error' && (
-                  <Card>
-                    <Heading className="text-red-500">
-                      Deploy {deploy?.status}
-                    </Heading>
-                    <Code>{deploy?.status_description}</Code>
-                  </Card>
-                ))}
+              {(deploy?.status === 'failed' ||
+                deploy?.status === 'error' ||
+                deploy?.status === 'noop') && (
+                <Card>
+                  <Heading className="text-red-500">
+                    Deploy {deploy?.status}
+                  </Heading>
+                  <Code>{deploy?.status_description}</Code>
+                </Card>
+              )}
 
               <DeployLogsCard
                 initLogs={logs as TInstallDeployLogs}
