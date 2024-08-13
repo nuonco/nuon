@@ -4,8 +4,8 @@ type: api
 local_only: true
 env:
 env_secrets:
-watch_ignore_dirs:
-  - .astro
+watch_ignore:
+  - '\.astro'
 local_startup_cmds: []
 local_cmds:
   - npm run dev
