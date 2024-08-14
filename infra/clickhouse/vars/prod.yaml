@@ -1,6 +1,6 @@
 ---
-root_domain: nuon.cloud
-region: us-west-2
 account: prod
-pool: nuon
 env: prod
+replicas: 3
+shards: 3
+data_volume_storage: 100Gi

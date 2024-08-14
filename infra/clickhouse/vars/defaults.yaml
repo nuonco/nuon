@@ -1,4 +1,7 @@
 ---
-root_domain: nuon.cloud
 region: us-west-2
 pool: nuon
+replicas: 1
+shards: 1
+data_volume_storage: 1Gi
+image_tag: "24.3.7"

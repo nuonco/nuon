@@ -41,3 +41,184 @@ resource "kubectl_manifest" "clickhouse_operator" {
   for_each  = local.all_manifests
   yaml_body = each.value
 }
+
+resource "kubectl_manifest" "nodepool_clickhouse" {
+  # NodePool for clickhouse. uses taints to define what can deploy to it.
+  # depends on the default EC2NodeClass in the cluster (see infra/eks)
+  # https://karpenter.sh/v0.37/concepts/nodepools/
+
+  yaml_body = yamlencode({
+    "apiVersion" = "karpenter.sh/v1beta1"
+    "kind" = "NodePool"
+    "metadata" = {
+      "name" = "clickhouse-installation"
+      "namespace" = "clickhouse"
+      "labels" = {
+        "app" = "clickhouse-installation"
+        "app.kubernetes.io/managed-by" = "terraform"
+      }
+    }
+    "spec" = {
+      "disruption" = {
+        "budgets" = [
+          {
+            "nodes" = "50%"
+          },
+        ]
+        "consolidateAfter"    = "30s"
+        "consolidationPolicy" = "WhenEmpty"
+        "expireAfter"         = "50296s"
+      }
+      "limits" = {
+        # 5 t3a.medium boxes
+        "cpu"    = 10
+        "memory" = 20480
+      }
+      "template" = {
+        "metadata" = {
+          "labels" = {
+            "clickhouse-installation" = "true"
+          }
+        }
+        "spec" = {
+          "nodeClassRef" = {
+            "apiVersion" = "karpenter.k8s.aws/v1beta1"
+            "kind" = "EC2NodeClass"
+            "name" = "default"
+          }
+          "requirements" = [
+            {
+              "key" = "karpenter.sh/capacity-type"
+              "operator" = "In"
+              "values" = [
+                "spot",
+                "on-demand",
+              ]
+            },
+            {
+              "key" = "node.kubernetes.io/instance-type"
+              "operator" = "In"
+              "values" = [
+                "t3a.medium",
+              ]
+            },
+          ]
+          "taints" = [
+            {
+              "effect" = "NoSchedule"
+              "key" = "deployment"
+              "value" = "clickhouse-installation"
+            },
+          ]
+        }
+      }
+    }
+  })
+}
+
+resource "kubectl_manifest" "clickhouse_installation" {
+  # generated with tfk8s and the source below
+  # https://github.com/Altinity/clickhouse-operator/blob/master/docs/quick_start.md
+  # NOTE: uses toleration to deploy to the NodePool defined above
+
+  yaml_body = yamlencode({
+    "apiVersion" = "clickhouse.altinity.com/v1"
+    "kind"       = "ClickHouseInstallation"
+    "metadata" = {
+      "name"      = "clickhouse-installation"
+      "namespace" = "clickhouse"
+    }
+    "spec" = {
+      "configuration" = {
+        "users" = {
+          "teamnuon/password_sha256_hex" = "98fec3de803abecfcfc446bb52649627a304e264485f7de57d541b6c9652ec52",
+          "teamnuon/networks/ip"         = ["0.0.0.0/0"]
+
+        }
+        "clusters" = [
+          {
+            "layout" = {
+              "replicasCount" = local.replicas
+              "shardsCount" = local.shards
+            }
+            "name" = "simple"
+          },
+        ]
+      }
+      "defaults" = {
+        "templates" = {
+          "dataVolumeClaimTemplate" = "data-volume-template"
+          "logVolumeClaimTemplate"  = "log-volume-template"
+        }
+      }
+      "templates" = {
+        # we define a podTemplate to ensure the attributes for node pool selection are set
+        # and so we can define the image_tag dynamically
+        "podTemplates" = [{
+          "name" = "pod-template-with-volumes"
+          "spec" = {
+            "nodeSelector" = "clickhouse-installation"
+            "tolerations" = {
+              "key"      = "deployment"
+              "operator" = "Equal"
+              "value"    = "clickhouse-installation"
+              "effect"   = "NoSchedule"
+            }
+            "containers" = [
+              {
+                "name"  = "clickhouse"
+                "image" = "clickhouse/clickhouse-server:${local.image_tag}"
+                "volumeMounts" = [
+                  {
+                    "name"      = "data-volume-template"
+                    "mountPath" = "/var/lib/clickhouse"
+                  },
+                  {
+                    "name"      = "log-volume-template"
+                    "mountPath" = "/var/log/clickhouse-server"
+                  }
+
+                ]
+              }
+            ]
+          }
+        }]
+        "volumeClaimTemplates" = [
+          {
+            "name" = "data-volume-template"
+            "spec" = {
+              "accessModes" = [
+                "ReadWriteOnce",
+              ]
+              "resources" = {
+                "requests" = {
+                  "storage" = local.data_volume_storage
+                }
+              }
+            }
+          },
+          {
+            # logs are sent out to datadog so they don't have to persist long
+            # NOTE(fd): we should drop this if we can
+            "name" = "log-volume-template"
+            "spec" = {
+              "accessModes" = [
+                "ReadWriteOnce",
+              ]
+              "resources" = {
+                "requests" = {
+                  "storage" = "4Gi"
+                }
+              }
+            }
+          },
+        ]
+      }
+    }
+  })
+
+  depends_on = [
+    kubectl_manifest.clickhouse_operator,
+    kubectl_manifest.nodepool_clickhouse
+  ]
+}

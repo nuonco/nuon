@@ -2,6 +2,12 @@ locals {
   name                   = "clickhouse"
   terraform_organization = "nuonco"
 
+  # clickhouse installation manifest values
+  replicas            = local.vars.replicas
+  shards              = local.vars.shards
+  data_volume_storage = local.vars.data_volume_storage
+  image_tag           = local.vars.image_tag
+
   tags = {
     environment = var.env
     pool        = local.vars.pool
