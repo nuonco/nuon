@@ -179,12 +179,12 @@ resource "kubectl_manifest" "clickhouse_installation" {
             "nodeSelector" = {
               "clickhouse-installation": "true"
             }
-            "tolerations" = {
+            "tolerations" = [{
               "key"      = "deployment"
               "operator" = "Equal"
               "value"    = "clickhouse-installation"
               "effect"   = "NoSchedule"
-            }
+            }]
             "containers" = [
               {
                 "name"  = "clickhouse"
