@@ -15,7 +15,6 @@ type InstallerConfig struct {
 	Description string   `mapstructure:"description,omitempty" toml:"description"`
 	Slug        string   `mapstructure:"slug,omitempty" toml:"slug"`
 	Apps        []string `mapstructure:"apps,omitempty" toml:"apps"`
-	AppIDs      []string `mapstructure:"app_ids,omitempty" toml:"-"`
 
 	DocumentationURL string `mapstructure:"documentation_url,omitempty" toml:"documentation_url"`
 	CommunityURL     string `mapstructure:"community_url,omitempty" toml:"community_url"`
@@ -34,12 +33,6 @@ type InstallerConfig struct {
 func (a *InstallerConfig) Validate() error {
 	if a == nil {
 		return nil
-	}
-
-	if len(a.AppIDs) > 0 {
-		return ErrConfig{
-			Description: "please use `apps` instead",
-		}
 	}
 
 	return nil
