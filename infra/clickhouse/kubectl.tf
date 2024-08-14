@@ -122,7 +122,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
           "taints" = [
             {
               "effect" = "NoSchedule"
-              "key" = "deployment"
+              "key" = "installation"
               "value" = "clickhouse-installation"
             },
           ]
@@ -181,10 +181,10 @@ resource "kubectl_manifest" "clickhouse_installation" {
           "name" = "clickhouse:${local.image_tag}"
           "spec" = {
             "nodeSelector" = {
-              "clickhouse-installation": "true"
+              "clickhouse-installation" = "true"
             }
             "tolerations" = [{
-              "key"      = "deployment"
+              "key"      = "installation"
               "operator" = "Equal"
               "value"    = "clickhouse-installation"
               "effect"   = "NoSchedule"
