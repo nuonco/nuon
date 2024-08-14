@@ -176,7 +176,9 @@ resource "kubectl_manifest" "clickhouse_installation" {
         "podTemplates" = [{
           "name" = "pod-template-with-volumes"
           "spec" = {
-            "nodeSelector" = "clickhouse-installation"
+            "nodeSelector" = {
+              "clickhouse-installation": true
+            }
             "tolerations" = {
               "key"      = "deployment"
               "operator" = "Equal"
