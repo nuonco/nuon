@@ -5,8 +5,6 @@ kind: NodePool
 metadata:
   name: {{ include "common.fullname" . }}
   namespace: {{ .Release.Namespace }}
-  resourceVersion: "1628066"
-  uid: 5f5f145c-1623-4167-a132-3034e34c4fad
   labels:
     {{- include "common.labels" . | nindent 4 }}
 spec:
