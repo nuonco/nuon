@@ -1,3 +1,6 @@
 ---
 account: stage
 env: stage
+replicas: 2
+shards: 2
+data_volume_storage: 2Gi

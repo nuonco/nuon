@@ -156,11 +156,14 @@ resource "kubectl_manifest" "clickhouse_installation" {
         }
         "clusters" = [
           {
+            "name" = "simple"
+            "templates" = {
+              "podTemplate" = "clickhouse:${local.image_tag}"
+            }
             "layout" = {
               "replicasCount" = local.replicas
               "shardsCount" = local.shards
             }
-            "name" = "simple"
           },
         ]
       }
@@ -174,7 +177,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
         # we define a podTemplate to ensure the attributes for node pool selection are set
         # and so we can define the image_tag dynamically
         "podTemplates" = [{
-          "name" = "pod-template-with-volumes"
+          "name" = "clickhouse:${local.image_tag}"
           "spec" = {
             "nodeSelector" = {
               "clickhouse-installation": "true"
