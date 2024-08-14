@@ -42,6 +42,12 @@ resource "kubectl_manifest" "clickhouse_operator" {
   yaml_body = each.value
 }
 
+resource "kubernetes_namespace" "clickhouse" {
+  metadata {
+    name = "clickhouse"
+  }
+}
+
 resource "kubectl_manifest" "nodepool_clickhouse" {
   # NodePool for clickhouse. uses taints to define what can deploy to it.
   # depends on the default EC2NodeClass in the cluster (see infra/eks)
@@ -114,6 +120,10 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
       }
     }
   })
+
+  depends_on = [
+    kubernetes_namespace.clickhouse
+  ]
 }
 
 resource "kubectl_manifest" "clickhouse_installation" {
