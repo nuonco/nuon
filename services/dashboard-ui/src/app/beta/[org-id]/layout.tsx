@@ -1,27 +1,24 @@
 import {
+  Dropdown,
   Logo,
   Link,
+  OrgSwitcher,
   ProfileDropdown,
 } from '@/components'
-import { getOrgs } from '@/lib'
+import { getOrg, getOrgs } from '@/lib'
 
 export default async function OrgLayout({ children, params }) {
   const orgId = params?.['org-id'] as string
-  const orgs = await getOrgs()
+  const [org, orgs] = await Promise.all([getOrg({ orgId }), getOrgs()])
 
   return (
     <div className="flex min-h-screen">
       <aside className="flex flex-col w-full md:w-72">
         <header className="flex flex-col px-4 py-6 gap-4">
           <Logo />
-          <nav className="border rounded p-4">
-            {orgs.map((org) => (
-              <Link key={org.id} href={`/beta/${org.id}/apps`}>
-                {org.name}
-              </Link>
-            ))}
-          </nav>
+          <OrgSwitcher initOrg={org} initOrgs={orgs} />
         </header>
+
         <div className="flex-auto flex flex-col justify-between px-4 pb-6 pt-8">
           <nav className="flex-auto">
             <Link href={`/beta/${orgId}/apps`}>Apps</Link>

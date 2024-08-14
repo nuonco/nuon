@@ -75,6 +75,7 @@ export type TSandboxRun = components['schemas']['app.InstallSandboxRun'] & {
 export type TSandboxRunLogs = Array<TWaypointLog>
 
 // vcs configs
+export type TVCSConnection = components['schemas']['app.VCSConnection']
 export type TVCSGitHub = components['schemas']['app.ConnectedGithubVCSConfig']
 export type TVCSGit = components['schemas']['app.PublicGitVCSConfig']
 export type TVCSCommit = components['schemas']['app.VCSConnectionCommit']
