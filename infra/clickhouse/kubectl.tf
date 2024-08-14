@@ -71,6 +71,8 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
       "labels" = {
         "app" = "clickhouse-installation"
         "app.kubernetes.io/managed-by" = "terraform"
+        "karpenter.sh/nodepool" = "clickhouse-installation"
+        "clickhouse-installation" = "true"
       }
     }
     "spec" = {
@@ -92,6 +94,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
       "template" = {
         "metadata" = {
           "labels" = {
+            "karpenter.sh/nodepool" = "clickhouse-installation"
             "clickhouse-installation" = "true"
           }
         }
