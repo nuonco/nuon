@@ -93,7 +93,6 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
       "template" = {
         "metadata" = {
           "labels" = {
-            "karpenter.sh/nodepool" = "clickhouse-installation"
             "clickhouse-installation" = "true"
           }
         }
@@ -182,7 +181,6 @@ resource "kubectl_manifest" "clickhouse_installation" {
           "name" = "clickhouse:${local.image_tag}"
           "spec" = {
             "nodeSelector" = {
-              "karpenter.sh/nodepool": "clickhouse-installation"
               "clickhouse-installation": "true"
             }
             "tolerations" = [{
