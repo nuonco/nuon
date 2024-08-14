@@ -180,6 +180,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
           "name" = "clickhouse:${local.image_tag}"
           "spec" = {
             "nodeSelector" = {
+              "karpenter.sh/nodepool": "clickhouse-installation"
               "clickhouse-installation": "true"
             }
             "tolerations" = [{
