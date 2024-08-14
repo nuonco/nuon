@@ -16,6 +16,7 @@ export type TButtonVariant =
   | 'danger'
 
 export interface IButton extends React.HTMLAttributes<HTMLButtonElement> {
+  type?: 'button' | 'reset' | 'submit'
   variant?: TButtonVariant
 }
 
@@ -28,7 +29,7 @@ export const Button: FC<IButton> = ({
   return (
     <button
       className={classNames('px-3 py-1.5 rounded-sm border', {
-        [`${defaultStyles} border-fuchsia-500`]: variant === 'default',
+        [`${defaultStyles} border-gray-800`]: variant === 'default',
         'bg-fuchsia-700 hover:bg-fuchsia-600 focus:bg-fuchsia-600 active:bg-fuchsia-800':
           variant === 'primary',
         [`${defaultStyles} border-transparent`]: variant === 'ghost',
@@ -37,7 +38,7 @@ export const Button: FC<IButton> = ({
         'bg-red-700 hover:bg-red-600': variant === 'danger',
         'text-gray-50 px-5 border-transparent':
           variant === 'primary' || variant === 'danger',
-        className: Boolean(className),
+        [`${className}`]: Boolean(className),
       })}
       {...props}
     >
