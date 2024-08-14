@@ -2,5 +2,5 @@
 root_domain: nuon.cloud
 region: us-west-2
 account: prod
-pool: clickhouse
+pool: nuon
 env: prod
