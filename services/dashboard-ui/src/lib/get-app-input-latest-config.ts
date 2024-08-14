@@ -11,8 +11,6 @@ export async function getAppInputLatestConfig({
     await getFetchOpts(orgId)
   )
 
-  console.log('data??', data.statusText)
-
   if (!data.ok) {
     throw new Error('Failed to fetch latest app input config')
   }

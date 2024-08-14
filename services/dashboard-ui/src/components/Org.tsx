@@ -2,9 +2,15 @@
 
 import React, { type FC, useCallback, useEffect, useState } from 'react'
 import { FaGithub } from 'react-icons/fa'
-import { Card, Heading, Link, Status, Text } from '@/components'
-import { useOrgContext } from '@/context'
-import { GITHUB_APP_NAME, SHORT_POLL_DURATION } from '@/utils'
+import { GoPlus } from 'react-icons/go'
+import { Card, Dropdown, Heading, Link, Status, Text } from '@/components'
+import { OrgProvider, useOrgContext } from '@/context'
+import type { TOrg } from '@/types'
+import {
+  GITHUB_APP_NAME,
+  SHORT_POLL_DURATION,
+  initialsFromString,
+} from '@/utils'
 
 export const OrgCard: FC = () => {
   const {
@@ -35,9 +41,13 @@ export const OrgVCSConnections: FC = () => {
     <>
       {vcs_connections?.length &&
         vcs_connections?.map((vcs) => (
-          <span key={vcs?.id} className="flex gap-1 items-center">
+          <Text
+            key={vcs?.id}
+            className="flex gap-1 items-center"
+            variant="caption"
+          >
             <FaGithub className="text-md" /> {vcs?.github_install_id}
-          </span>
+          </Text>
         ))}
     </>
   )
@@ -136,5 +146,102 @@ export const CreateOrgForm: FC<{ action: any }> = ({ action }) => {
         Create organization
       </button>
     </form>
+  )
+}
+
+// NOTE(nnnnat): new semiflat designed org switcher parts
+export interface IOrgSummary {}
+
+export const OrgSummary: FC<IOrgSummary> = () => {
+  const {
+    org: { name },
+  } = useOrgContext()
+
+  return (
+    <div className="flex gap-4 items-center justify-start">
+      <span className="flex items-center justify-center p-2 rounded bg-gray-600/20 w-[40px] h-[40px] font-light">
+        {initialsFromString(name)}
+      </span>
+
+      <div>
+        <Text variant="label">{name}</Text>
+        <OrgStatus isCompact />
+      </div>
+    </div>
+  )
+}
+
+export const OrgVCSConnectionsDetails: FC = () => {
+  const {
+    org: { id },
+  } = useOrgContext()
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <Text variant="label">GitHub Connections</Text>
+        <Link
+          className="flex items-center gap-1 text-sm"
+          href={`https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=${id}`}
+        >
+          <GoPlus className="text-md" />
+          Add new
+        </Link>
+      </div>
+
+      <div>
+        <OrgVCSConnections />
+      </div>
+    </div>
+  )
+}
+
+export interface IOrgsNav {
+  orgs: Array<TOrg>
+}
+
+export const OrgsNav: FC<IOrgsNav> = ({ orgs }) => {
+  return (
+    <div className="border-t border-dotted flex flex-col gap-4 pt-4">
+      <Text variant="label">Organizations</Text>
+      <nav className="flex flex-col gap-2">
+        {orgs.map((org) => (
+          <Link
+            className="flex items-center justify-start gap-2"
+            key={org.id}
+            href={`/beta/${org.id}/apps`}
+          >
+            <span className="flex items-center justify-center p-2 rounded bg-gray-600/20 w-[30px] h-[30px] font-light text-sm text-gray-950 dark:text-gray-50">
+              {initialsFromString(org.name)}
+            </span>
+            <span className="text-sm">{org.name}</span>
+          </Link>
+        ))}
+      </nav>
+    </div>
+  )
+}
+
+export interface IOrgSwitcher {
+  initOrg: TOrg
+  initOrgs: Array<TOrg>
+}
+
+export const OrgSwitcher: FC<IOrgSwitcher> = ({ initOrg, initOrgs }) => {
+  return (
+    <OrgProvider initOrg={initOrg}>
+      <Dropdown
+        className="w-full"
+        id="test"
+        text={<OrgSummary />}
+        position="beside"
+        alignment="right"
+      >
+        <div className="flex flex-col gap-4 p-4 w-72 overflow-auto max-h-[500px]">
+          <OrgSummary />
+          <OrgVCSConnectionsDetails />
+          <OrgsNav orgs={initOrgs} />
+        </div>
+      </Dropdown>
+    </OrgProvider>
   )
 }

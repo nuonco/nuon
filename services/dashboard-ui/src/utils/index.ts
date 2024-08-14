@@ -1,6 +1,8 @@
 // general utils
 export const API_URL =
-  (process?.env?.NEXT_PUBLIC_API_URL || process?.env?.NUON_API_URL) || 'https://api.nuon.co'
+  process?.env?.NEXT_PUBLIC_API_URL ||
+  process?.env?.NUON_API_URL ||
+  'https://api.nuon.co'
 export const POLL_DURATION =
   (process?.env?.NEXT_PUBLIC_POLL_DURATION as unknown as number) || 45000
 export const SHORT_POLL_DURATION =
@@ -11,6 +13,14 @@ export const GITHUB_APP_NAME =
 export const sentanceCase = (s = '') => s.charAt(0).toUpperCase() + s.slice(1)
 export const titleCase = (s = '') =>
   s.replace(/^_*(.)|_+(.)/g, (s, c, d) => (c ? c.toUpperCase() : ' ' + d))
+export const initialsFromString = (s = '') => {
+  // @ts-ignore: IterableIterator<RegExpExecArray>
+  const initials = [...s.matchAll(new RegExp(/(\p{L}{1})\p{L}+/, 'gu'))] || []
+
+  return (
+    (initials.shift()?.[1] || '') + (initials.pop()?.[1] || '')
+  ).toUpperCase()
+}
 
 export function getFlagEmoji(countryCode = 'us') {
   const codePoints = countryCode
