@@ -17,3 +17,8 @@ data "utils_deep_merge_yaml" "vars" {
     local.env_vars,
   ]
 }
+
+data "tfe_outputs" "infra-eks-nuon" {
+  organization = local.terraform_organization
+  workspace    = "infra-eks-${var.env}-nuon"
+}

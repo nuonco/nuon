@@ -1,3 +1,4 @@
+
 locals {
   clickhouse_manifests = toset([
     "https://raw.githubusercontent.com/Altinity/clickhouse-operator/master/deploy/operator/clickhouse-operator-install-bundle-v1beta1.yaml",
@@ -20,6 +21,24 @@ locals {
     src.manifests
   ]...)
 }
+
+provider "kubectl" {
+  host                   = data.tfe_outputs.infra-eks-nuon.values.cluster_endpoint
+  cluster_ca_certificate = base64decode(data.tfe_outputs.infra-eks-nuon.values.cluster_certificate_authority_data)
+  apply_retry_count      = 5
+  load_config_file       = false
+
+  dynamic "exec" {
+    for_each = local.k8s_exec
+    content {
+      api_version = exec.value.api_version
+      command     = exec.value.command
+      args        = exec.value.args
+    }
+  }
+}
+
+provider "random" {}
 
 resource "kubectl_manifest" "clickhouse_crd" {
   for_each  = local.all_manifests

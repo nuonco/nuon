@@ -32,16 +32,3 @@ provider "aws" {
     tags = local.tags
   }
 }
-
-provider "aws" {
-  region = local.vars.region
-  alias  = "infra-shared-prod"
-
-  assume_role {
-    role_arn = "arn:aws:iam::${local.accounts["infra-shared-prod"]}:role/terraform"
-  }
-
-  default_tags {
-    tags = local.tags
-  }
-}
