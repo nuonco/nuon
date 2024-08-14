@@ -88,7 +88,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
       "limits" = {
         # 5 t3a.medium boxes
         "cpu"    = 10
-        "memory" = 20480
+        "memory" = "20480Mi"
       }
       "template" = {
         "metadata" = {
