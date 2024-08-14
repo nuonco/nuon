@@ -180,15 +180,15 @@ resource "kubectl_manifest" "clickhouse_installation" {
         "podTemplates" = [{
           "name" = "clickhouse:${local.image_tag}"
           "spec" = {
-            "nodeSelector" = {
-              "clickhouse-installation" = "true"
-            }
-            "tolerations" = [{
-              "key"      = "installation"
-              "operator" = "Equal"
-              "value"    = "clickhouse-installation"
-              "effect"   = "NoSchedule"
-            }]
+            # "nodeSelector" = {
+            #   "clickhouse-installation" = "true"
+            # }
+            # "tolerations" = [{
+            #   "key"      = "installation"
+            #   "operator" = "Equal"
+            #   "value"    = "clickhouse-installation"
+            #   "effect"   = "NoSchedule"
+            # }]
             "containers" = [
               {
                 "name"  = "clickhouse"
