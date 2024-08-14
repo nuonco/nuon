@@ -42,10 +42,19 @@ resource "kubectl_manifest" "clickhouse_operator" {
   yaml_body = each.value
 }
 
-resource "kubernetes_namespace" "clickhouse" {
-  metadata {
-    name = "clickhouse"
-  }
+resource "kubectl_manifest" "namespace_clickhouse" {
+  # NOTE(fd): why like this? we already have auth setup on kubectl
+  yaml_body = yamlencode({
+    "apiVersion" = "v1"
+    "kind" = "Namespace"
+    "metadata" = {
+      "labels" = {
+        "kubernetes.io/metadata.name" = "clickhouse"
+        "name" = "clickhouse"
+      }
+      "name" = "clickhouse"
+    }
+  })
 }
 
 resource "kubectl_manifest" "nodepool_clickhouse" {
@@ -122,7 +131,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
   })
 
   depends_on = [
-    kubernetes_namespace.clickhouse
+    kubectl_manifest.namespace_clickhouse
   ]
 }
 
