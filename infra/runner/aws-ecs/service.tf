@@ -1,10 +1,3 @@
-locals {
-  # Saw these in the service.yml for the runner.
-  # Not sure if they're required.
-  git_ref                  = "local"
-  settings_refresh_timeout = "1m"
-}
-
 module "service" {
   source = "terraform-aws-modules/ecs/aws//modules/service"
 
@@ -21,7 +14,7 @@ module "service" {
       memory                   = 1024
       essential                = true
       memory_reservation       = 100
-      readonly_root_filesystem = true
+      readonly_root_filesystem = false
 
       environment = [
         {
@@ -37,12 +30,8 @@ module "service" {
           value = var.runner_id
         },
         {
-          name  = "GIT_REF"
-          value = local.git_ref
-        },
-        {
-          name  = "SETTINGS_REFRESH_TIMEOUT"
-          value = local.settings_refresh_timeout
+          name  = "RUNNER_VERSION"
+          value = var.image_tag
         },
       ]
     }

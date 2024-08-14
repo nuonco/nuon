@@ -33,13 +33,3 @@ variable "runner_iam_role_arn" {
 variable "vpc_id" {
   type = string
 }
-
-# TODO: provided by backend, but unused
-
-variable "cluster_name" {
-  type = string
-}
-
-variable "security_group_id" {
-  type = string
-}
