@@ -1,0 +1,6 @@
+---
+root_domain: stage.nuon.cloud
+region: us-west-2
+account: stage
+pool: clickhouse
+env: stage

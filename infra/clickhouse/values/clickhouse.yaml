@@ -1,0 +1,22 @@
+---
+logLevel: information
+
+serviceAccount:
+  name: "clickhouse-service-account"
+
+metrics:
+  enabled: true
+
+zookeeper:
+  enabled: true
+  replicaCount: 2
+
+# https://github.com/bitnami/charts/tree/main/bitnami/clickhouse/#network-policies
+networkPolicy:
+  enabled: false
+
+
+# printf pwd | shasum -a 256
+auth:
+  username: nuon
+  password: 98fec3de803abecfcfc446bb52649627a304e264485f7de57d541b6c9652ec52

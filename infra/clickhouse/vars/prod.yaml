@@ -1,0 +1,6 @@
+---
+root_domain: nuon.cloud
+region: us-west-2
+account: prod
+pool: clickhouse
+env: prod
