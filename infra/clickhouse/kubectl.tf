@@ -178,6 +178,41 @@ resource "kubectl_manifest" "clickhouse_installation" {
             }
           },
         ]
+        # add a storage configuration config so we can write to s3. this disk will be used for backups (/backups).
+        # https://clickhouse.com/docs/en/integrations/s3#managing-credentials
+        # https://clickhouse.com/docs/en/integrations/s3#configure-clickhouse-to-use-the-s3-bucket-as-a-disk
+        # https://clickhouse.com/docs/en/operations/backup#configuring-backuprestore-to-use-an-s3-endpoint
+        "files" = {
+          "config.d/disks.xml" = <<-EOT
+            <clickhouse>
+              <storage_configuration>
+                <disks>
+                  <s3_disk>
+                    <type>s3</type>
+                    <endpoint>${module.bucket.s3_bucket_bucket_domain_name}</endpoint>
+                    <use_environment_credentials>true</use_environment_credentials>
+                    <metadata_path>/var/lib/clickhouse/disks/s3_disk/</metadata_path>
+                  </s3_disk>
+                  <s3_cache>
+                    <type>cache</type>
+                    <disk>s3_disk</disk>
+                    <path>/var/lib/clickhouse/disks/s3_cache/</path>
+                    <max_size>10Gi</max_size>
+                  </s3_cache>
+                </disks>
+                <policies>
+                  <s3_main>
+                    <volumes>
+                      <main>
+                        <disk>s3_disk</disk>
+                      </main>
+                    </volumes>
+                  </s3_main>
+                </policies>
+              </storage_configuration>
+            </clickhouse>
+          EOT
+        }
       }
       "defaults" = {
         "templates" = {
