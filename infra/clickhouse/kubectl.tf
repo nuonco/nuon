@@ -6,7 +6,7 @@ locals {
 
 data "http" "clickhouse_crd_raw" {
   for_each = local.clickhouse_manifests
-  url = each.key
+  url      = each.key
 }
 
 data "kubectl_file_documents" "clickhouse_crd_doc" {
@@ -46,11 +46,11 @@ resource "kubectl_manifest" "namespace_clickhouse" {
   # NOTE(fd): why like this? we already have auth setup on kubectl
   yaml_body = yamlencode({
     "apiVersion" = "v1"
-    "kind" = "Namespace"
+    "kind"       = "Namespace"
     "metadata" = {
       "labels" = {
         "kubernetes.io/metadata.name" = "clickhouse"
-        "name" = "clickhouse"
+        "name"                        = "clickhouse"
       }
       "name" = "clickhouse"
     }
@@ -64,14 +64,14 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
 
   yaml_body = yamlencode({
     "apiVersion" = "karpenter.sh/v1beta1"
-    "kind" = "NodePool"
+    "kind"       = "NodePool"
     "metadata" = {
-      "name" = "clickhouse-installation"
+      "name"      = "clickhouse-installation"
       "namespace" = "clickhouse"
       "labels" = {
-        "app" = "clickhouse-installation"
+        "app"                          = "clickhouse-installation"
         "app.kubernetes.io/managed-by" = "terraform"
-        "clickhouse-installation" = "true"
+        "clickhouse-installation"      = "true"
       }
     }
     "spec" = {
@@ -99,12 +99,12 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
         "spec" = {
           "nodeClassRef" = {
             "apiVersion" = "karpenter.k8s.aws/v1beta1"
-            "kind" = "EC2NodeClass"
-            "name" = "default"
+            "kind"       = "EC2NodeClass"
+            "name"       = "default"
           }
           "requirements" = [
             {
-              "key" = "karpenter.sh/capacity-type"
+              "key"      = "karpenter.sh/capacity-type"
               "operator" = "In"
               "values" = [
                 "spot",
@@ -112,7 +112,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
               ]
             },
             {
-              "key" = "node.kubernetes.io/instance-type"
+              "key"      = "node.kubernetes.io/instance-type"
               "operator" = "In"
               "values" = [
                 "t3a.medium",
@@ -122,8 +122,8 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
           "taints" = [
             {
               "effect" = "NoSchedule"
-              "key" = "installation"
-              "value" = "clickhouse-installation"
+              "key"    = "installation"
+              "value"  = "clickhouse-installation"
             },
           ]
         }
@@ -174,7 +174,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
             }
             "layout" = {
               "replicasCount" = local.replicas
-              "shardsCount" = local.shards
+              "shardsCount"   = local.shards
             }
           },
         ]
@@ -256,5 +256,25 @@ resource "kubectl_manifest" "clickhouse_installation" {
   depends_on = [
     kubectl_manifest.clickhouse_operator,
     kubectl_manifest.nodepool_clickhouse
+  ]
+}
+
+# we grab this default ServiceAccount that is created automatically by the CRD
+# and declare it explicitly so we can add the eks role arn annotation for the role
+# assumption stuff
+resource "kubectl_manifest" "clickhouse_serviceaccount_default" {
+  yaml_body = yamlencode({
+    "apiVersion" = "v1"
+    "kind" = "ServiceAccount"
+    "metadata" = {
+      "name" = "default"
+      "namespace" = "clickhouse"
+      "annotations" = {
+        "eks.amazonaws.com/role-arn" = aws_iam_role.clickhouse_backups_role.arn
+      }
+    }
+  })
+  depends_on = [
+    kubectl_manifest.clickhouse_installation
   ]
 }

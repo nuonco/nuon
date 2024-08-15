@@ -22,3 +22,5 @@ data "tfe_outputs" "infra-eks-nuon" {
   organization = local.terraform_organization
   workspace    = "infra-eks-${var.env}-${local.vars.pool}"
 }
+
+data "aws_caller_identity" "current" {}

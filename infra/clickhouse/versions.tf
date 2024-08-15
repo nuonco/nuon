@@ -1,13 +1,13 @@
 terraform {
   required_version = ">= 1.3.7"
 
-  backend "remote" {
-    organization = "nuonco"
+  # backend "remote" {
+  #   organization = "nuonco"
 
-    workspaces {
-      prefix = "infra-clickhouse-"
-    }
-  }
+  #   workspaces {
+  #     prefix = "infra-clickhouse-"
+  #   }
+  # }
 
   required_providers {
     aws = {
