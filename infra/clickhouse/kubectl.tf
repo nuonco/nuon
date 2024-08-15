@@ -187,12 +187,12 @@ resource "kubectl_manifest" "clickhouse_installation" {
             <clickhouse>
               <storage_configuration>
                 <disks>
-                  <s3_disk>
+                  <s3>
                     <type>s3</type>
-                    <endpoint>https://${module.bucket.s3_bucket_bucket_domain_name}</endpoint>
+                    <endpoint>https://${module.bucket.s3_bucket_bucket_domain_name}/tables/</endpoint>
                     <use_environment_credentials>true</use_environment_credentials>
                     <metadata_path>/var/lib/clickhouse/disks/s3_disk/</metadata_path>
-                  </s3_disk>
+                  </s3>
                   <s3_cache>
                     <type>cache</type>
                     <disk>s3_disk</disk>
@@ -204,7 +204,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
                   <s3_main>
                     <volumes>
                       <main>
-                        <disk>s3_disk</disk>
+                        <disk>s3</disk>
                       </main>
                     </volumes>
                   </s3_main>
@@ -312,7 +312,7 @@ resource "kubectl_manifest" "clickhouse_serviceaccount_default" {
       "name" = "default"
       "namespace" = "clickhouse"
       "annotations" = {
-        "eks.amazonaws.com/role-arn" = aws_iam_role.clickhouse_backups_role.arn
+        "eks.amazonaws.com/role-arn" = aws_iam_role.clickhouse_role.arn
       }
     }
   })

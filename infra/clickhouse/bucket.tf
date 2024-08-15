@@ -2,7 +2,7 @@
 # A module to create a bucket for clickhouse backups
 #
 locals {
-  bucket_name   = "${var.env}-nuon-clickhouse-backups"
+  bucket_name   = "nuon-clickhouse-${var.env}"
   account_id    = data.aws_caller_identity.current.account_id
   oidc_provider = data.tfe_outputs.infra-eks-nuon.values.oidc_provider
 }
@@ -10,7 +10,7 @@ locals {
 #
 # KMS
 #
-data "aws_iam_policy_document" "clickhouse_backups_bucket_key_policy" {
+data "aws_iam_policy_document" "clickhouse_bucket_key_policy" {
   # enable IAM User Permissions
   statement {
     effect    = "Allow"
@@ -77,14 +77,14 @@ data "aws_iam_policy_document" "clickhouse_backups_bucket_key_policy" {
   }
 }
 
-resource "aws_kms_key" "clickhouse_backups_bucket" {
+resource "aws_kms_key" "clickhouse_bucket" {
   description = "KMS key for ${local.bucket_name}"
-  policy      = data.aws_iam_policy_document.clickhouse_backups_bucket_key_policy.json
+  policy      = data.aws_iam_policy_document.clickhouse_bucket_key_policy.json
 }
 
-resource "aws_kms_alias" "clickhouse_backups_bucket" {
+resource "aws_kms_alias" "clickhouse_bucket" {
   name          = "alias/bucket-key-${local.bucket_name}"
-  target_key_id = aws_kms_key.clickhouse_backups_bucket.key_id
+  target_key_id = aws_kms_key.clickhouse_bucket.key_id
 }
 
 #
@@ -94,7 +94,7 @@ resource "aws_kms_alias" "clickhouse_backups_bucket" {
 # policy to allow access to this bucket: will be assigned to the default ServiceAccount
 # in the clickhouse namespace
 
-data "aws_iam_policy_document" "clickhouse_backups_bucket_access_policy" {
+data "aws_iam_policy_document" "clickhouse_bucket_access_policy" {
   # allow list bucket on this bucket
   statement {
     effect    = "Allow"
@@ -111,7 +111,7 @@ data "aws_iam_policy_document" "clickhouse_backups_bucket_access_policy" {
 }
 
 # so we can attach this to a role with which we tag the ServiceAccount
-data "aws_iam_policy_document" "clickhouse_backups_trust_policy" {
+data "aws_iam_policy_document" "clickhouse_trust_policy" {
   statement {
       effect = "Allow"
       actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -133,14 +133,14 @@ data "aws_iam_policy_document" "clickhouse_backups_trust_policy" {
 }
 
 # role that can be assumed by the service account and has access to the bucket
-resource "aws_iam_role" "clickhouse_backups_role" {
-  name               = "${var.env}-nuon-clickhouse-backups-role"
-  assume_role_policy = data.aws_iam_policy_document.clickhouse_backups_trust_policy.json
+resource "aws_iam_role" "clickhouse_role" {
+  name               = "nuon-clickhouse-role-${var.env}"
+  assume_role_policy = data.aws_iam_policy_document.clickhouse_trust_policy.json
 
   # bucket access policy
   inline_policy {
-    name   = "${var.env}-nuon-clickhouse-backups-role-inline-bucket-access-policy"
-    policy = data.aws_iam_policy_document.clickhouse_backups_bucket_access_policy.json
+    name   = "nuon-clickhouse-role-inline-bucket-access-policy-${var.env}"
+    policy = data.aws_iam_policy_document.clickhouse_bucket_access_policy.json
   }
 
   tags = local.tags
@@ -176,7 +176,7 @@ module "bucket" {
     rule : [
       {
         apply_server_side_encryption_by_default : {
-          kms_master_key_id = aws_kms_key.clickhouse_backups_bucket.arn
+          kms_master_key_id = aws_kms_key.clickhouse_bucket.arn
           sse_algorithm : "aws:kms",
         },
         bucket_key_enabled : true,
