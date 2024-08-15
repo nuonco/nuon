@@ -187,12 +187,12 @@ resource "kubectl_manifest" "clickhouse_installation" {
             <clickhouse>
               <storage_configuration>
                 <disks>
-                  <s3>
+                  <s3_disk>
                     <type>s3</type>
                     <endpoint>https://${module.bucket.s3_bucket_bucket_domain_name}/tables/</endpoint>
                     <use_environment_credentials>true</use_environment_credentials>
                     <metadata_path>/var/lib/clickhouse/disks/s3_disk/</metadata_path>
-                  </s3>
+                  </s3_disk>
                   <s3_cache>
                     <type>cache</type>
                     <disk>s3_disk</disk>
@@ -204,7 +204,7 @@ resource "kubectl_manifest" "clickhouse_installation" {
                   <s3_main>
                     <volumes>
                       <main>
-                        <disk>s3</disk>
+                        <disk>s3_disk</disk>
                       </main>
                     </volumes>
                   </s3_main>
