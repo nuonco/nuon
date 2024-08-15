@@ -13,7 +13,9 @@ spec:
     - nodes: 50%
     consolidateAfter: 30s
     consolidationPolicy: WhenEmpty
-    expireAfter: 50296s
+    {{- with randNumeric 3 }}
+    expireAfter: {{ cat "50" . "s" | replace " " "" | quote }}
+    {{- end }}
   limits:
     cpu: {{ mul .Values.node_pool.instance_type.cpu .Values.node_pool.runner_count | add .Values.node_pool.instance_type.cpu }}
     {{- with mul .Values.node_pool.instance_type.memory .Values.node_pool.runner_count | add .Values.node_pool.instance_type.memory }}
