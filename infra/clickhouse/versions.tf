@@ -26,5 +26,9 @@ terraform {
       source  = "cloudposse/utils"
       version = ">= 0.17.23"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.6.2"
+    }
   }
 }

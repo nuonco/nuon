@@ -83,7 +83,7 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
         ]
         "consolidateAfter"    = "30s"
         "consolidationPolicy" = "WhenEmpty"
-        "expireAfter"         = "50296s"
+        "expireAfter"         = "${random_integer.node_ttl.result}s"
       }
       "limits" = {
         # 5 t3a.medium boxes
@@ -136,6 +136,18 @@ resource "kubectl_manifest" "nodepool_clickhouse" {
   ]
 }
 
+# "randomize" node TTLs so that all nodes across all clusters
+# aren't going down simultaneously
+resource "random_integer" "node_ttl" {
+  min = 60 * 60 * 11 # 11 hours
+  max = 60 * 60 * 17 # 17 hours
+
+  seed = "${var.env}-${local.image_tag}-${local.replicas}-${local.shards}"
+  keepers = {
+    pseudo_version = "${var.env}-${local.image_tag}-${local.replicas}-${local.shards}"
+  }
+}
+
 resource "kubectl_manifest" "clickhouse_installation" {
   # generated with tfk8s and the source below
   # https://github.com/Altinity/clickhouse-operator/blob/master/docs/quick_start.md
@@ -153,7 +165,6 @@ resource "kubectl_manifest" "clickhouse_installation" {
         "users" = {
           "teamnuon/password_sha256_hex" = "98fec3de803abecfcfc446bb52649627a304e264485f7de57d541b6c9652ec52",
           "teamnuon/networks/ip"         = ["0.0.0.0/0"]
-
         }
         "clusters" = [
           {
