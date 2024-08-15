@@ -212,6 +212,13 @@ resource "kubectl_manifest" "clickhouse_installation" {
               </storage_configuration>
             </clickhouse>
           EOT
+          "config.d/s3.xml" = <<-EOT
+            <clickhouse>
+                <s3>
+                    <use_environment_credentials>true</use_environment_credentials>
+                </s3>
+            </clickhouse>
+          EOT
         }
       }
       "defaults" = {
