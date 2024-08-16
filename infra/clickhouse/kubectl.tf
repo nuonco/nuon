@@ -357,3 +357,81 @@ resource "kubectl_manifest" "clickhouse_serviceaccount_default" {
     kubectl_manifest.clickhouse_installation
   ]
 }
+
+resource "kubectl_manifest" "clickhouse_ui_deployment" {
+  yaml_body = yamlencode({
+    "apiVersion" = "apps/v1"
+    "kind" = "Deployment"
+    "metadata" = {
+      "labels" = {
+        "app" = "clickhouse-ui"
+      }
+      "name" = "ch-ui"
+      "namespace" = "clickhouse"
+    }
+    "spec" = {
+      "replicas" = 2
+      "selector" = {
+        "matchLabels" = {
+          "app" = "clickhouse-ui"
+        }
+      }
+      "template" = {
+        "metadata" = {
+          "labels" = {
+            "app" = "clickhouse-ui"
+          }
+        }
+        "spec" = {
+          "containers" = [
+            {
+              "env" = {
+                "VITE_CLICKHOUSE_URL"      = "http://clickhouse-clickhouse-installation.clickhouse.svc.cluster.local:8123"
+                "VITE_CLICKHOUSE_PASSWORD" = "teamnuon"
+                "VITE_CLICKHOUSE_USER"     = "teamnuon"
+              }
+              "image" = "ghcr.io/caioricciuti/ch-ui:latest"
+              "name" = "ch-ui"
+              "ports" = [
+                {
+                  "containerPort" = 5521
+                },
+              ]
+            },
+          ]
+        }
+      }
+    }
+  })
+}
+
+resource "kubectl_manifest" "clickhouse_ui_service" {
+  yaml_body  = yamlencode({
+    "apiVersion" = "v1"
+    "kind" = "Service"
+    "metadata" = {
+      "annotations" = {
+        "external-dns.alpha.kubernetes.io/internal-hostname" = "ch-ui.${local.zone}"
+        "external-dns.alpha.kubernetes.io/ttl"               = "60"
+      }
+      "labels" = {
+        "app.kubernetes.io/component" = "ui"
+      }
+      "name" = "ch-ui"
+      "namespace" = "clickhouse"
+    }
+    "spec" = {
+      "ports" = [
+        {
+          "name" = "http"
+          "port" = 80
+          "protocol" = "TCP"
+          "targetPort" = "http"
+        },
+      ]
+      "selector" = {
+        "app.kubernetes.io/component" = "ui"
+      }
+    }
+  })
+}

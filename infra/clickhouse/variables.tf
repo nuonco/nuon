@@ -1,6 +1,7 @@
 locals {
   name                   = "clickhouse"
   terraform_organization = "nuonco"
+  zone                   = nonsensitive(data.tfe_outputs.infra-eks-nuon.values.private_zone)
 
   # clickhouse installation manifest values
   replicas            = local.vars.replicas
