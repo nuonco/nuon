@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "predev": "npm run generate-api-types",
-    "dev": "next dev -p 4000 --turbo",
+    "dev": "next dev -p 4000",
     "build": "next build",
     "prebuild": "npm run generate-api-types",
     "generate-api-types": "openapi-typescript ${NUON_API_URL:=https://api.nuon.co}/oapi/v3 -o ./src/types/nuon-oapi-v3.d.ts",
