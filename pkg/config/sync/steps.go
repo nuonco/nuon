@@ -39,6 +39,7 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 		},
 	}
 
+	// warn: our deps are meant to be a graph but we are treating it as a linked list
 	deps := make([]string, 0)
 	for _, comp := range s.cfg.Components {
 		// thanks russ cox
@@ -54,7 +55,7 @@ func (s *sync) syncSteps() ([]syncStep, error) {
 					return err
 				}
 
-				deps = append(deps, compID)
+				deps = []string {compID}
 				return nil
 			},
 		})
