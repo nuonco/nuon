@@ -385,11 +385,6 @@ resource "kubectl_manifest" "clickhouse_ui_deployment" {
         "spec" = {
           "containers" = [
             {
-              "env" = {
-                "VITE_CLICKHOUSE_URL"      = "http://clickhouse-clickhouse-installation.clickhouse.svc.cluster.local:8123"
-                "VITE_CLICKHOUSE_PASSWORD" = "teamnuon"
-                "VITE_CLICKHOUSE_USER"     = "teamnuon"
-              }
               "image" = "ghcr.io/caioricciuti/ch-ui:latest"
               "name" = "ch-ui"
               "ports" = [
@@ -397,6 +392,18 @@ resource "kubectl_manifest" "clickhouse_ui_deployment" {
                   "containerPort" = 5521
                 },
               ]
+              "env" = [{
+                "name"  = "VITE_CLICKHOUSE_URL"
+                "value" = "http://clickhouse-clickhouse-installation.clickhouse.svc.cluster.local:8123"
+              },
+              {
+                "name"  = "VITE_CLICKHOUSE_PASSWORD"
+                "value" = "teamnuon"
+              },
+              {
+                "name"  = "VITE_CLICKHOUSE_USER"
+                "value" = "teamnuon"
+              }]
             },
           ]
         }
