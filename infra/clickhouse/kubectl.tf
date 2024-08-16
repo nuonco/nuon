@@ -280,6 +280,10 @@ resource "kubectl_manifest" "clickhouse_installation" {
                   {
                     "name"      = "log-volume-template"
                     "mountPath" = "/var/log/clickhouse-server"
+                  },
+                  {
+                    "name"      = "bootstrap-configmap-volume"
+                    "mountPath" = "/docker-entrypoint-initdb.d"
                   }
                 ],
                 "volumes" = [
