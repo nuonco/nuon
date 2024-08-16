@@ -148,6 +148,27 @@ resource "random_integer" "node_ttl" {
   }
 }
 
+# configmap to bootstrap ctl_api database
+resource "kubectl_manifest" "clickhouse_installation_configmap_bootstrap" {
+  yaml_body = yamlencode({
+    "apiVersion" = "v1"
+    "kind"       = "ConfigMap"
+    "metadata" = {
+      "name" = "bootstrap-configmap"
+    }
+    "data" = {
+      "01_create_databases.sh" = <<-EOT
+      #!/bin/bash
+      set -e
+      clickhouse client -n <<-EOSQL
+      CREATE DATABASE IF NOT EXISTS ctl_api;
+      EOSQL
+
+      EOT
+    }
+  })
+}
+
 resource "kubectl_manifest" "clickhouse_installation" {
   # generated with tfk8s and the source below
   # https://github.com/Altinity/clickhouse-operator/blob/master/docs/quick_start.md
@@ -184,39 +205,39 @@ resource "kubectl_manifest" "clickhouse_installation" {
         # https://clickhouse.com/docs/en/operations/backup#configuring-backuprestore-to-use-an-s3-endpoint
         "files" = {
           "config.d/disks.xml" = <<-EOT
-            <clickhouse>
-              <storage_configuration>
-                <disks>
-                  <s3_disk>
-                    <type>s3</type>
-                    <endpoint>https://${module.bucket.s3_bucket_bucket_domain_name}/tables/</endpoint>
-                    <use_environment_credentials>true</use_environment_credentials>
-                    <metadata_path>/var/lib/clickhouse/disks/s3_disk/</metadata_path>
-                  </s3_disk>
-                  <s3_cache>
-                    <type>cache</type>
-                    <disk>s3_disk</disk>
-                    <path>/var/lib/clickhouse/disks/s3_cache/</path>
-                    <max_size>10Gi</max_size>
-                  </s3_cache>
-                </disks>
-                <policies>
-                  <s3_main>
-                    <volumes>
-                      <main>
-                        <disk>s3_disk</disk>
-                      </main>
-                    </volumes>
-                  </s3_main>
-                </policies>
-              </storage_configuration>
-            </clickhouse>
+          <clickhouse>
+            <storage_configuration>
+              <disks>
+                <s3_disk>
+                  <type>s3</type>
+                  <endpoint>https://${module.bucket.s3_bucket_bucket_domain_name}/tables/</endpoint>
+                  <use_environment_credentials>true</use_environment_credentials>
+                  <metadata_path>/var/lib/clickhouse/disks/s3_disk/</metadata_path>
+                </s3_disk>
+                <s3_cache>
+                  <type>cache</type>
+                  <disk>s3_disk</disk>
+                  <path>/var/lib/clickhouse/disks/s3_cache/</path>
+                  <max_size>10Gi</max_size>
+                </s3_cache>
+              </disks>
+              <policies>
+                <s3_main>
+                  <volumes>
+                    <main>
+                      <disk>s3_disk</disk>
+                    </main>
+                  </volumes>
+                </s3_main>
+              </policies>
+            </storage_configuration>
+          </clickhouse>
           EOT
-          "config.d/s3.xml" = <<-EOT
+          "config.d/s3.xml"    = <<-EOT
             <clickhouse>
-                <s3>
-                    <use_environment_credentials>true</use_environment_credentials>
-                </s3>
+              <s3>
+                <use_environment_credentials>true</use_environment_credentials>
+              </s3>
             </clickhouse>
           EOT
         }
@@ -255,7 +276,14 @@ resource "kubectl_manifest" "clickhouse_installation" {
                     "name"      = "log-volume-template"
                     "mountPath" = "/var/log/clickhouse-server"
                   }
-
+                ],
+                "volumes" = [
+                  {
+                    "name" = "bootstrap-configmap-volume"
+                    "configMap" = {
+                      "name" : "bootstrap-configmap"
+                    }
+                  }
                 ]
               }
             ]
@@ -307,9 +335,9 @@ resource "kubectl_manifest" "clickhouse_installation" {
 resource "kubectl_manifest" "clickhouse_serviceaccount_default" {
   yaml_body = yamlencode({
     "apiVersion" = "v1"
-    "kind" = "ServiceAccount"
+    "kind"       = "ServiceAccount"
     "metadata" = {
-      "name" = "default"
+      "name"      = "default"
       "namespace" = "clickhouse"
       "annotations" = {
         "eks.amazonaws.com/role-arn" = aws_iam_role.clickhouse_role.arn

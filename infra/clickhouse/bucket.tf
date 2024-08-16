@@ -113,23 +113,23 @@ data "aws_iam_policy_document" "clickhouse_bucket_access_policy" {
 # so we can attach this to a role with which we tag the ServiceAccount
 data "aws_iam_policy_document" "clickhouse_trust_policy" {
   statement {
-      effect = "Allow"
-      actions = ["sts:AssumeRoleWithWebIdentity"]
-      principals {
-        type = "Federated"
-        identifiers = ["arn:aws:iam::${local.account_id}:oidc-provider/${local.oidc_provider}"]
-      }
-      condition {
-        test = "StringEquals"
-        variable = "${local.oidc_provider}:aud"
-        values = ["sts.amazonaws.com"]
-      }
-      condition {
-        test = "StringEquals"
-        variable = "${local.oidc_provider}:sub"
-        values = ["system:serviceaccount:clickhouse:default"]
-      }
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = ["arn:aws:iam::${local.account_id}:oidc-provider/${local.oidc_provider}"]
     }
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_provider}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_provider}:sub"
+      values   = ["system:serviceaccount:clickhouse:default"]
+    }
+  }
 }
 
 # role that can be assumed by the service account and has access to the bucket
