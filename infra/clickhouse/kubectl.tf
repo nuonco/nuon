@@ -154,7 +154,8 @@ resource "kubectl_manifest" "clickhouse_installation_configmap_bootstrap" {
     "apiVersion" = "v1"
     "kind"       = "ConfigMap"
     "metadata" = {
-      "name" = "bootstrap-configmap"
+      "name"      = "bootstrap-configmap"
+      "namespace" = "clickhouse"
     }
     "data" = {
       "01_create_databases.sh" = <<-EOT
