@@ -268,6 +268,10 @@ resource "kubectl_manifest" "clickhouse_installation" {
               {
                 "name"  = "clickhouse"
                 "image" = "clickhouse/clickhouse-server:${local.image_tag}"
+                "env"   = [{
+                  "name"  = "CLICKHOUSE_ALWAYS_RUN_INITDB_SCRIPTS"
+                  "value" = "true"
+                }]
                 "volumeMounts" = [
                   {
                     "name"      = "data-volume-template"
