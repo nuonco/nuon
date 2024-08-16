@@ -303,7 +303,7 @@ func TestSync(t *testing.T) {
 				case config.ExternalImageComponentType:
 					mockApiClient.EXPECT().CreateExternalImageComponentConfig(ctx, gomock.Any(), gomock.Any()).Return(&models.AppExternalImageComponentConfig{ ID: mockId }, nil)
 				}
-				deps = append(deps, mockId)
+				deps = []string{mockId}
 			}
 			
 
