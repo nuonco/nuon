@@ -1,10 +1,4 @@
-import {
-  Dropdown,
-  Logo,
-  Link,
-  OrgSwitcher,
-  ProfileDropdown,
-} from '@/components'
+import { Logo, Link, OrgSwitcher, ProfileDropdown } from '@/components'
 import { getOrg, getOrgs } from '@/lib'
 
 export default async function OrgLayout({ children, params }) {
@@ -32,13 +26,7 @@ export default async function OrgLayout({ children, params }) {
       </aside>
       <div className="flex-auto md:border-l">
         <header className="flex justify-between items-center border-b px-6 py-4">
-          <div className="flex-auto">
-            <input
-              className="rounded bg-transparent border px-2 py-1"
-              placeholder="Search"
-              type="search"
-            />
-          </div>
+          <span>breadcrumb</span>
           <div>
             <Link href="https://docs.nuon.co" target="_blank">
               Docs
