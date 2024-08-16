@@ -431,7 +431,7 @@ resource "kubectl_manifest" "clickhouse_ui_service" {
       "ports" = [
         {
           "name" = "http"
-          "port" = 80
+          "port" = 5521
           "protocol" = "TCP"
           "targetPort" = "http"
         },
