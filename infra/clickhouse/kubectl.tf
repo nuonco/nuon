@@ -286,14 +286,14 @@ resource "kubectl_manifest" "clickhouse_installation" {
                     "mountPath" = "/docker-entrypoint-initdb.d"
                   }
                 ],
-                "volumes" = [
-                  {
-                    "name" = "bootstrap-configmap-volume"
-                    "configMap" = {
-                      "name" : "bootstrap-configmap"
-                    }
-                  }
-                ]
+              }
+            ]
+            "volumes" = [
+              {
+                "name" = "bootstrap-configmap-volume"
+                "configMap" = {
+                  "name" : "bootstrap-configmap"
+                }
               }
             ]
           }
