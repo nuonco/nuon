@@ -373,13 +373,13 @@ resource "kubectl_manifest" "clickhouse_ui_deployment" {
       "replicas" = 2
       "selector" = {
         "matchLabels" = {
-          "app" = "clickhouse-ui"
+          "app.kubernetes.io/name" = "clickhouse-ui"
         }
       }
       "template" = {
         "metadata" = {
           "labels" = {
-            "app" = "clickhouse-ui"
+            "app.kubernetes.io/name" = "clickhouse-ui"
           }
         }
         "spec" = {
@@ -421,9 +421,6 @@ resource "kubectl_manifest" "clickhouse_ui_service" {
         "external-dns.alpha.kubernetes.io/internal-hostname" = "ch-ui.${local.zone}"
         "external-dns.alpha.kubernetes.io/ttl"               = "60"
       }
-      "labels" = {
-        "app.kubernetes.io/component" = "ui"
-      }
       "name" = "ch-ui"
       "namespace" = "clickhouse"
     }
@@ -431,7 +428,7 @@ resource "kubectl_manifest" "clickhouse_ui_service" {
       "ports" = [
         {
           "name" = "http"
-          "port" = 80
+          "port" = 5521
           "protocol" = "TCP"
           "targetPort" = "http"
         },
