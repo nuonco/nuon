@@ -427,10 +427,9 @@ resource "kubectl_manifest" "clickhouse_ui_service" {
     "spec" = {
       "ports" = [
         {
-          "name" = "http"
           "port" = 5521
           "protocol" = "TCP"
-          "targetPort" = "http"
+          "targetPort" = 5521
         },
       ]
       "selector" = {
