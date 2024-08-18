@@ -397,7 +397,7 @@ resource "kubectl_manifest" "clickhouse_ui_deployment" {
                 "value" = "http://clickhouse-clickhouse-installation.clickhouse.svc.cluster.local:8123"
               },
               {
-                "name"  = "VITE_CLICKHOUSE_PASSWORD"
+                "name"  = "VITE_CLICKHOUSE_PASS"
                 "value" = "teamnuon"
               },
               {
