@@ -228,9 +228,7 @@ module "infra-eks-prod-nuon" {
   source = "./modules/workspace"
 
   name                            = "infra-eks-prod-nuon"
-  # repo is set to "" in order to disable VCS triggers
-  # repo                            = "powertoolsdev/mono"
-  repo                            = ""
+  repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = false
   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
@@ -246,8 +244,6 @@ module "infra-eks-stage-nuon" {
   source = "./modules/workspace"
 
   name                            = "infra-eks-stage-nuon"
-  # repo is set to "" in order to disable VCS triggers
-  # repo                            = ""
   repo                            = "powertoolsdev/mono"
   dir                             = "infra/eks"
   auto_apply                      = false
