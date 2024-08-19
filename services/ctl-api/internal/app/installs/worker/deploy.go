@@ -21,6 +21,34 @@ func (w *Workflows) isDeployable(install app.Install) bool {
 	return install.InstallSandboxRuns[0].Status == app.SandboxRunStatusActive
 }
 
+func (w *Workflows) anyDependencyInActive(ctx workflow.Context, install app.Install, installDeploy app.InstallDeploy) (string, error) {
+	var depComponents []app.Component
+	err := w.defaultExecGetActivity(ctx, w.acts.GetComponentDependents, activities.GetComponentDependents{
+		AppID:   install.App.ID,
+		ComponentRootID: installDeploy.ComponentID,
+	}, &depComponents)
+
+	if err != nil {
+		return "", fmt.Errorf("unable to get installComponent: %w", err)
+	}
+
+	for _, dep := range depComponents {
+		var depCmp *app.InstallComponent
+		if err := w.defaultExecGetActivity(ctx, w.acts.GetInstallComponent, activities.GetInstallComponentRequest{
+			InstallID:   installDeploy.InstallComponent.InstallID,
+			ComponentID: dep.ID,
+		}, &depCmp); err != nil {
+			return "", fmt.Errorf("unable to get installComponent: %w", err)
+		}
+
+		if app.InstallDeployStatus(depCmp.Component.Status) != app.InstallDeployStatusOK {
+			return depCmp.ComponentID, fmt.Errorf("dependent component: %s, not active", depCmp.ID)
+		}
+	}
+
+	return "", nil
+}
+
 func (w *Workflows) isTeardownable(install app.Install) bool {
 	if install.InstallSandboxRuns[0].Status == app.SandboxRunStatusError {
 		return false
@@ -72,6 +100,17 @@ func (w *Workflows) deploy(ctx workflow.Context, installID, deployID string, san
 		w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusNoop, "build is not deployable")
 		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
 		return nil
+	}
+
+	inactiveCmpID, err := w.anyDependencyInActive(ctx, install, installDeploy)
+	if err != nil {
+		if inactiveCmpID != "" {
+			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, fmt.Sprintf("dependent component: %s  not active", inactiveCmpID))
+		} else {
+			w.updateDeployStatus(ctx, deployID, app.InstallDeployStatusError, "unable to check dependencies")
+		}
+		w.writeDeployEvent(ctx, deployID, signals.OperationDeploy, app.OperationStatusFailed)
+		return fmt.Errorf("unable to check dependencies: %w", err)
 	}
 
 	var deployCfg componentsv1.Component

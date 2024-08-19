@@ -40,6 +40,46 @@ func (e *errComponentEdge) Unwrap() error {
 	return e.err
 }
 
+func (h *Helpers) GetDependencyGraph(ctx context.Context, appID string) (graph.Graph[string, *app.Component], []app.Component, error) {
+	a := app.App{}
+	res := h.db.WithContext(ctx).
+		Preload("Org").
+		Preload("Components").
+		Preload("Components.Dependencies").
+		Preload("Components.ComponentConfigs").
+		Preload("Components.ComponentConfigs.ComponentBuilds").
+		First(&a, "id = ?", appID)
+	if res.Error != nil {
+		return nil, nil, fmt.Errorf("unable to get app: %w", res.Error)
+	}
+
+	g := graph.New(componentHash,
+		graph.Directed(),
+		graph.PreventCycles(),
+		graph.Rooted(),
+		graph.Acyclic())
+
+	for _, comp := range a.Components {
+		c := &comp
+		if err := g.AddVertex(c); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	for _, comp := range a.Components {
+		for _, dep := range comp.Dependencies {
+			// edge assignment should be comp.ID -> dep.ID in order to BFS search all dependencies
+			if err := g.AddEdge(comp.ID, dep.ID); err != nil {
+				return nil, nil, err
+			}
+		}
+	}
+
+	// TODO: investigate why g.Vertex(comp.ID) is not returning the correct component
+	// for now returning all components for a lookup
+	return g, a.Components, nil
+}
+
 func (h *Helpers) GetGraph(ctx context.Context, appID string) (graph.Graph[string, *app.Component], []string, error) {
 	a := app.App{}
 	res := h.db.WithContext(ctx).
