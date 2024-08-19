@@ -192,8 +192,8 @@ resource "kubectl_manifest" "clickhouse_installation" {
           {
             "name" = "simple"
             "templates" = {
-              "podTemplate"            = "clickhouse:${local.image_tag}"
-              "clusterServiceTemplate" = "clickhouse:${local.image_tag}-cluster-svc"
+              "podTemplate"     = "clickhouse:${local.image_tag}"
+              "serviceTemplate" = "clickhouse:${local.image_tag}"
             }
             "layout" = {
               "replicasCount" = local.replicas
@@ -248,18 +248,31 @@ resource "kubectl_manifest" "clickhouse_installation" {
         "templates" = {
           "dataVolumeClaimTemplate" = "data-volume-template"
           "logVolumeClaimTemplate"  = "log-volume-template"
-          "clusterServiceTemplate" = "clickhouse:${local.image_tag}-cluster-svc"
+          "serviceTemplate" = "clickhouse:${local.image_tag}"
         }
       }
       "templates" = {
         # we define a clusterServiceTemplates so we can set an internal-hostname for access via twingate
         "serviceTemplates" = [{
-          "name"     = "clickhouse:${local.image_tag}-cluster-svc"
+          "name"     = "clickhouse:${local.image_tag}"
           "metadata" = {
             "annotations" = {
               "external-dns.alpha.kubernetes.io/internal-hostname" = "clickhouse.${local.zone}"
               "external-dns.alpha.kubernetes.io/ttl"               = "60"
             }
+          }
+          # default type is ClusterIP
+          "spec" = {
+            "ports" = [
+              {
+                "name" = "http"
+                "port" = 8123
+              },
+              {
+                "name" = "client"
+                "port" = 9000
+              }
+            ]
           }
         }]
         # we define a podTemplate to ensure the attributes for node pool selection are set
