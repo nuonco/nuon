@@ -241,3 +241,7 @@ Promote fix that will ensure sandbox artifacts are published.
 ## v0.4.1
 
 Promoting cli sync updates and bug fixes
+
+## v0.4.2
+
+Promoting component dependency improvements
