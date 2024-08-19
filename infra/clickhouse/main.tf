@@ -192,8 +192,8 @@ resource "kubectl_manifest" "clickhouse_installation" {
           {
             "name" = "simple"
             "templates" = {
-              "podTemplate"             = "clickhouse:${local.image_tag}"
-              "clusterServiceTemplates" = "clickhouse:${local.image_tag}"
+              "podTemplate"            = "clickhouse:${local.image_tag}"
+              "clusterServiceTemplate" = "clickhouse:${local.image_tag}-cluster-svc"
             }
             "layout" = {
               "replicasCount" = local.replicas
@@ -248,13 +248,13 @@ resource "kubectl_manifest" "clickhouse_installation" {
         "templates" = {
           "dataVolumeClaimTemplate" = "data-volume-template"
           "logVolumeClaimTemplate"  = "log-volume-template"
-          "clusterServiceTemplates" = "clickhouse:${local.image_tag}"
+          "clusterServiceTemplate" = "clickhouse:${local.image_tag}-cluster-svc"
         }
       }
       "templates" = {
         # we define a clusterServiceTemplates so we can set an internal-hostname for access via twingate
-        "clusterServiceTemplates" = [{
-          "name"     = "clickhouse:${local.image_tag}"
+        "serviceTemplates" = [{
+          "name"     = "clickhouse:${local.image_tag}-cluster-svc"
           "metadata" = {
             "annotations" = {
               "external-dns.alpha.kubernetes.io/internal-hostname" = "clickhouse.${local.zone}"
