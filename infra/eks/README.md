@@ -2,17 +2,6 @@
 
 Deploy all infrastructure needed to run a nuon EKS cluster
 
-
-## Lifecycle
-
-New environments are spun up by env and a new term "pool". A pool is an
-identifier for this grouping of resources, so that we can have many clusters in
-the same environment. The pool must match the workspace name you create.
-
-As an example, for a cluster in the sandbox environment in the testing pool, in
-vars/ there would be a `sandbox-test.yaml` that loads environment specific
-terraform vars.
-
 ### Setup
 
 We use Terraform Cloud as remote state store as well as remote execution agent.
@@ -30,11 +19,11 @@ The workspaces are named `infra-eks-<env>-<pool>`.
 #### Caveats
 
 1. The opentelemetry and grafana IAM roles may not fully exist before the pods
-start so may need to be restarted to pick up the roles appropriately.
+   start so may need to be restarted to pick up the roles appropriately.
 1. It may take a second apply to ensure that everything is fully created.
 1. It will take several minutes (~15?) for Twingate to be fully functional.
 1. Additionally, it may require re-connecting in order to pick up the new
-resources / endpoints.
+   resources / endpoints.
 
 ### Teardown
 
@@ -42,15 +31,19 @@ Unfortunately, a few things are created outside of Terraform that prevent being
 able to cleanly `destroy`.
 
 1. The `cert-manager` helm resource has a lifecycle policy that prevents
-deletion. This will need to be commented out beforehand.
-1. The `karpenter` managed nodes don't currently get removed and will need to
-be terminated outside of terraform before proceeding.
+   deletion. This will need to be commented out beforehand.
+1. The `karpenter` managed nodes don't currently get removed and will need to be
+   terminated outside of terraform before proceeding.
 1. There's a security group that seems to be created by `karpenter` that blocks
-the VPC from being destroyed by Terraform.
+   the VPC from being destroyed by Terraform.
 
 ## Components
 
 ### External DNS
+
+The External DNS module creates a service that monitors for annotations on
+`Service`s allowing the team to quickly and easily create DNS entries pointing
+to the a `Service`'s ClusterIP.
 
 ### cert-manager
 
@@ -59,8 +52,6 @@ the VPC from being destroyed by Terraform.
 ### Amazon Managed Prometheus
 
 ### ALB Load Balancer Controller
-
-
 
 ## Observability
 
@@ -75,13 +66,27 @@ Metrics are forwarded from the centralized collector to an Amazon managed
 Prometheus ([`amp.tf`](./amp.tf)). Grafana is currently running in cluster as
 the visualization tool ([`grafana.tf`](./grafana.tf)). It's automatically
 configured with the clusters managed prometheus instance as a datasource.
-Grafana is exposed over Twingate at `http://grafana.${pool}.${region}.${env}.${root_domain}` -
-(e.g. http://grafana.internal.jtarasovic.nuon.co).
+Grafana is exposed over Twingate at
+`http://grafana.${pool}.${region}.${env}.${root_domain}` - (e.g.
+http://grafana.internal.jtarasovic.nuon.co).
 
 ### TBD
-- **Logs**: there are many options but we should use the otel agents to scrap the
-logs from each node and the collector should forward to chosen tool
+
+- **Logs**: there are many options but we should use the otel agents to scrap
+  the logs from each node and the collector should forward to chosen tool
 - **Traces**: again, lots of options but the same pattern should hold - agents
-receive traces, forward to collector which forwards to tool
+  receive traces, forward to collector which forwards to tool
 - **Grafana dashboards**: We should be able to use the dashboard sidecar that's
-already running to be able to load dashboards from a configmap.
+  already running to be able to load dashboards from a configmap.
+
+## ~Lifecycle~ Deprecated Concept
+
+⚠️ We are no longer using this concept as originally conceived. ⚠️
+
+New environments are spun up by env and a new term "pool". A pool is an
+identifier for this grouping of resources, so that we can have many clusters in
+the same environment. The pool must match the workspace name you create.
+
+As an example, for a cluster in the sandbox environment in the testing pool, in
+vars/ there would be a `sandbox-test.yaml` that loads environment specific
+terraform vars.
