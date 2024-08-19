@@ -16,12 +16,14 @@ type GetInstallComponentRequest struct {
 func (a *Activities) GetInstallComponent(ctx context.Context, req GetInstallComponentRequest) (*app.InstallComponent, error) {
 	installComponent := app.InstallComponent{}
 	res := a.db.WithContext(ctx).
+		Preload("Component").
+		Preload("Component.Dependencies").
+		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_deploys.created_at DESC")
+		}).
 		Where(app.InstallComponent{
 			InstallID:   req.InstallID,
 			ComponentID: req.ComponentID,
-		}).
-		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_deploys.created_at DESC")
 		}).
 		First(&installComponent)
 	if res.Error != nil {
