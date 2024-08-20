@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"go/types"
 	"path/filepath"
 	"strings"
 
@@ -43,6 +44,9 @@ type tvars_awaitfn struct {
 
 	// Options contains the input-specified options that set specify ActivityOptions
 	Options GenOptions
+
+	// Zero is a string literal representing the zero value of the response type
+	Zero string
 }
 
 // AwaitJenny is a jenny that generates a function that calls another function as a Temporal activity, then awaits the response.
@@ -57,15 +61,22 @@ func (w AwaitJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 	fmt.Fprintf(&buf, `package %s
 
 import (
-	"time"
-	"go.temporal.io/sdk/temporal"
-	"go.temporal.io/sdk/workflow"
 `, bf.File.Name.Name)
 
+	imports := map[string]bool{
+		"time":                        true,
+		"go.temporal.io/sdk/temporal": true,
+		"go.temporal.io/sdk/workflow": true,
+	}
+
 	// pull in all the imports from the file containing the base func, so that at minimum we have the right import for
-	// the request and response types. unnecessary imports will be removed by a goimports pass later
+	// the request and response types. unnecessary imports will be removed by a goimports pass later. We do deduplicate,
+	// though, because it appears that goimports has a bug and doesn't reliably dedup
 	for _, im := range bf.File.Imports {
-		buf.WriteString("\n\t" + astfmt.Sprint(im))
+		imports[strings.Trim(astfmt.Sprint(im), "\"")] = true
+	}
+	for im := range imports {
+		fmt.Fprintf(&buf, "\n\t%q", im)
 	}
 	buf.WriteString("\n)")
 
@@ -109,8 +120,23 @@ import (
 		case 2:
 			// This template assumes without verification that the wrapped fn is a (custom value, error) return, b/c temporal requires that
 			wv.HasResp = true
-			wv.RespType = astfmt.Sprint(bfn.Fn.Type.Results.List[0].Type)
+			respt := bfn.Fn.Type.Results.List[0].Type
+			wv.RespType = astfmt.Sprint(respt)
 			_, wv.RespIsPtr = bfn.Fn.Type.Results.List[0].Type.(*ast.StarExpr)
+
+			if !wv.RespIsPtr {
+				rt := bf.Package.TypesInfo.Types[respt].Type
+				if rtn, ok := rt.(*types.Named); ok {
+					switch rtn.Underlying().(type) {
+					case *types.Struct:
+						wv.Zero = fmt.Sprintf("%s{}", rtn.Obj().Name())
+					default:
+						wv.Zero = zerostr(rtn.Underlying())
+					}
+				} else {
+					wv.Zero = zerostr(rt)
+				}
+			}
 			err := tmpls.Lookup("two_return.tmpl").Execute(&buf, wv)
 			if err != nil {
 				return nil, fmt.Errorf("error executing template for fn %s: %w", bfn.Fn.Name.String(), err)
@@ -123,4 +149,31 @@ import (
 	genpath := filepath.Base(bf.Path)
 	genpath = genpath[:len(genpath)-3] + "_gen.go"
 	return codejen.NewFile(genpath, buf.Bytes(), AwaitJenny{}), nil
+}
+
+func zerostr(rt types.Type) string {
+	// TODO(sdboyer) move checking over to the parser to error earlier if we have these return types
+	switch x := rt.(type) {
+	case *types.Named:
+		panic("unwrap from the named type before calling this")
+	case *types.Basic:
+		if x.Info()&types.IsNumeric != 0 {
+			return "0"
+		}
+		if x.Info()&types.IsString != 0 {
+			return "\"\""
+		}
+		if x.Info()&types.IsBoolean != 0 {
+			return "false"
+		}
+		panic(fmt.Sprintf("unhandled zero value generation for basic type: %s", x.String()))
+	case *types.Array, *types.Slice, *types.Map, *types.Chan:
+		return "nil"
+	case *types.Struct:
+		return "struct{}{}"
+	}
+	if x, ok := rt.(*types.Named); ok {
+		return x.Obj().Name()
+	}
+	panic(fmt.Errorf("unhandled zero value generation for type: %s", rt.String()))
 }
