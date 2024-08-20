@@ -255,7 +255,7 @@ branch = "main"
 vpc_id = "{{.nuon.install.inputs.vpc_id}}"
 `
 
-const inputsConfig = `#:schema https://api.nuon.co/v1/general/config-schema?source=input
+const inputsConfig = `#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
 [[group]]
 name = "sandbox"
 description = "Sandbox inputs"
