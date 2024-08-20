@@ -37,6 +37,7 @@ require (
 	github.com/briandowns/spinner v1.23.0
 	github.com/bufbuild/connect-go v1.5.2
 	github.com/cockroachdb/errors v1.11.3
+	github.com/dave/dst v0.27.3
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/dominikbraun/graph v0.23.0
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
@@ -49,12 +50,14 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.2.1
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/go-swagger/go-swagger v0.30.5
+	github.com/go-toolsmith/astfmt v1.1.0
 	github.com/gogo/status v1.1.1
 	github.com/golang/mock v1.6.0
 	github.com/google/go-github/v41 v41.0.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/google/go-github/v56 v56.0.0
 	github.com/google/uuid v1.6.0
+	github.com/grafana/codejen v0.0.3
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-tfe v1.36.0
 	github.com/hashicorp/go-version v1.7.0
@@ -126,8 +129,6 @@ require (
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.8.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
-	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/bodgit/plumbing v1.2.0 // indirect
@@ -138,7 +139,6 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/connesc/cipherio v0.2.1 // indirect
-	github.com/dave/dst v0.27.3 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
@@ -149,9 +149,7 @@ require (
 	github.com/go-openapi/strfmt v0.21.7 // indirect
 	github.com/go-openapi/swag v0.22.8 // indirect
 	github.com/go-openapi/validate v0.22.1 // indirect
-	github.com/go-toolsmith/astfmt v1.1.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
-	github.com/grafana/codejen v0.0.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/hashicorp/go-slug v0.12.2 // indirect
@@ -185,7 +183,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
-	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
+	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/Masterminds/squirrel v1.5.3 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.9.6 // indirect
@@ -402,7 +400,7 @@ require (
 	golang.org/x/term v0.21.0 // indirect
 	golang.org/x/text v0.16.0
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
+	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d
 	google.golang.org/genproto/googleapis/api v0.0.0-20240515191416-fc5f0ca64291 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apiextensions-apiserver v0.26.1 // indirect

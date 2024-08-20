@@ -19,7 +19,7 @@ func {{ .FnName }}(ctx workflow.Context, req {{ .ReqType }}) ({{ if .HasResp }}{
 	{{- else }}
 	var ret {{ .RespType }}
 	if err := fut.Get(ctx, &ret); err != nil {
-		return nil, err
+		return {{ .Zero }}, err
 	}
 	{{- end }}
 	return ret, nil
