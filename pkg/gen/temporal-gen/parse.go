@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
-	"go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/tools/go/packages"
 )
 
 const (
@@ -20,7 +22,11 @@ const (
 func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
 	fset := token.NewFileSet()
 
-	pkgs, err := parser.ParseDir(fset, dir, nil, parser.ParseComments)
+	pkgs, err := packages.Load(&packages.Config{
+		Fset:    fset,
+		Context: ctx,
+		Mode:    packages.NeedName | packages.NeedCompiledGoFiles | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedSyntax,
+	}, dir)
 	if err != nil {
 		fmt.Println("Error parsing package:", err)
 		os.Exit(1)
@@ -31,7 +37,10 @@ func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
 	// Inspect each package
 	for _, pkg := range pkgs {
 		// Inspect each file in the package
-		for fpath, file := range pkg.Files {
+		// for fpath, file := range pkg.Files {
+		for i, file := range pkg.Syntax {
+			// TODO(sdboyer): this filename may be wrong if syntax checking returned nil for any files in the pkg
+			fpath := filepath.Base(pkg.CompiledGoFiles[i])
 			var bfs []BaseFn
 			if walkerr != nil {
 				return nil, walkerr
@@ -69,9 +78,10 @@ func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
 
 			if len(bfs) > 0 {
 				ret = append(ret, &BaseFile{
-					Path: fpath,
-					File: file,
-					Fns:  bfs,
+					Path:    fpath,
+					File:    file,
+					Fns:     bfs,
+					Package: pkg,
 				})
 			}
 		}
