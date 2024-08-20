@@ -26,3 +26,7 @@ __Thoroughly describe how the solution is to be implemented. Typically this will
 ## Links
 
 - Links to docs, repos, and other stuff someone working on this might find useful.
+
+```[tasklist]
+### Stories
+```
