@@ -54,5 +54,5 @@ local_build_cmds:
   - go build -o /tmp/svc-ctl-api
 local_cmds:
   - /tmp/svc-ctl-api api
-  - /tmp/svc-ctl-api worker
+  - /tmp/svc-ctl-api worker --namespace=all
 earthly_cmd: server
