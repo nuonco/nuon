@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/grafana/codejen"
+	"golang.org/x/tools/go/packages"
 )
 
 type BaseFile struct {
@@ -19,6 +20,8 @@ type BaseFile struct {
 	File *ast.File
 	// Fns is the list of BaseFns in the file for which wrappers should be generated
 	Fns []BaseFn
+	// Package is the result of loading and typechecking the package containing the funcs to be wrapped
+	Package *packages.Package
 }
 
 // BaseFn is the IR of a Go function to be wrapped in generated code for use as a Temporal activity
