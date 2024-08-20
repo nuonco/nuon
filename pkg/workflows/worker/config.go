@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	defaultMaxConcurrentActivities int = 10
+	defaultMaxConcurrentActivities int = 100
 )
 
 //nolint:gochecknoinits
