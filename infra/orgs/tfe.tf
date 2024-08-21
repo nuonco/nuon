@@ -12,3 +12,8 @@ data "tfe_outputs" "sandboxes" {
   organization = local.terraform_organization
   workspace    = "sandboxes"
 }
+
+data "tfe_outputs" "infra-eks-runners" {
+  organization = local.terraform_organization
+  workspace    = "infra-eks-runners-${var.env}-main"
+}

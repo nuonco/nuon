@@ -59,6 +59,19 @@ provider "aws" {
 
 provider "aws" {
   region = local.region
+  alias  = "runners"
+
+  assume_role {
+    role_arn = "arn:aws:iam::${local.accounts["runners-${var.env}"].id}:role/terraform"
+  }
+
+  default_tags {
+    tags = local.tags
+  }
+}
+
+provider "aws" {
+  region = local.region
   alias  = "public"
 
   assume_role {

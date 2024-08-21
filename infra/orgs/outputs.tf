@@ -11,6 +11,22 @@ output "k8s" {
     oidc_provider_url = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider)
     oidc_provider_arn = nonsensitive(data.tfe_outputs.infra-eks-orgs.values.oidc_provider_arn)
   }
+
+}
+
+# values for accessing the runner k8s clusters
+output "runner_k8s" {
+  value = {
+    # roles for individual services that grant access to the k8s cluster
+    access_role_arns = nonsensitive(data.tfe_outputs.infra-eks-runners.values.auth_map_additional_role_arns),
+
+    # information needed to access the k8s cluster
+    cluster_id        = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_id),
+    ca_data           = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_certificate_authority_data),
+    public_endpoint   = nonsensitive(data.tfe_outputs.infra-eks-runners.values.cluster_endpoint),
+    oidc_provider_url = nonsensitive(data.tfe_outputs.infra-eks-runners.values.oidc_provider)
+    oidc_provider_arn = nonsensitive(data.tfe_outputs.infra-eks-runners.values.oidc_provider_arn)
+  }
 }
 
 output "org_iam_role_name_templates" {
