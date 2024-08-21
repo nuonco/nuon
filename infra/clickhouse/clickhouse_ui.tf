@@ -34,7 +34,7 @@ resource "kubectl_manifest" "clickhouse_ui_deployment" {
               ]
               "env" = [{
                 "name"  = "VITE_CLICKHOUSE_URL"
-                "value" = "http://clickhouse-clickhouse-installation.clickhouse.svc.cluster.local:8123"
+                "value" = "http://clickhouse.${local.zone}:8123"
               },
               {
                 "name"  = "VITE_CLICKHOUSE_PASS"
