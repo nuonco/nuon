@@ -21,6 +21,7 @@ EXPOSE 8233
 ENTRYPOINT ["/temporalite", \
   "start",\
   "--ephemeral", \
+  "-n", "general", \
   "-n", "installs", \
   "-n", "orgs", \
   "-n", "apps", \
