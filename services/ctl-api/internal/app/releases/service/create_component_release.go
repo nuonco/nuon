@@ -20,6 +20,7 @@ import (
 type CreateComponentReleaseRequest struct {
 	BuildID   string `json:"build_id" validate:"required_without=AutoBuild"`
 	AutoBuild bool   `json:"auto_build" validate:"required_without=BuildID"`
+	InstallIDs []string `json:"install_ids"`
 
 	Strategy struct {
 		InstallsPerStep int    `json:"installs_per_step"`
@@ -127,7 +128,38 @@ func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateCo
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
 
-	steps, err := s.createReleaseSteps(cmp.App.Installs, req)
+	if len(cmp.App.Installs) == 0 {
+		return nil,stderr.ErrUser{
+			Err:         fmt.Errorf("no installs found for component %s", cmpID),
+			Description: "cannot create a release steps without component installs",
+		}
+	}
+
+	installs := make([]app.Install, 0)
+	if len(req.InstallIDs) > 0 {
+		for _, install := range cmp.App.Installs {
+			if generics.SliceContains(install.ID, req.InstallIDs) {
+				installs = append(installs, install)
+			} else {
+				return nil, stderr.ErrUser{
+					Err:         fmt.Errorf("install %s not found for component %s", install.ID, cmpID),
+					Description: "please provide a valid install ID",
+				}
+			}
+		}
+
+		if len(installs) == 0 {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("no installs found for component %s", cmpID),
+				Description: "please provide a valid install ID",
+			}
+		}
+	} else {
+		// if no install IDs are provided, use all installs
+		installs = cmp.App.Installs
+	}
+
+	steps, err := s.createReleaseSteps(installs, req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create release steps: %w", err)
 	}
