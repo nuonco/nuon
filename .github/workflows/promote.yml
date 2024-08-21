@@ -3,7 +3,7 @@ name: promote
 on:
   push:
     branches:
-      - main
+      - main-waypoint-archive
 
 permissions:
   contents: write
@@ -192,16 +192,17 @@ jobs:
                 - "version:${{ needs.tag.outputs.semver }}"
 
   # this is called once the promotion has succeeded and the tag has been written
-  promote_success:
-    name: promote_success
-    needs:
-      - tag
-      - bump_tag
-      - merged_pr
-      - artifacts
-      - services
-    if: ${{ needs.merged_pr.outputs.promote == 'true' }}
-    uses: ./.github/workflows/promote_success.yml
-    with:
-      tag: ${{ needs.tag.outputs.semver }}
-    secrets: inherit
+  # TODO: enable this once the runner is in production
+  #promote_success:
+    #name: promote_success
+    #needs:
+      #- tag
+      #- bump_tag
+      #- merged_pr
+      #- artifacts
+      #- services
+    #if: ${{ needs.merged_pr.outputs.promote == 'true' }}
+    #uses: ./.github/workflows/promote_success.yml
+    #with:
+      #tag: ${{ needs.tag.outputs.semver }}
+    #secrets: inherit
