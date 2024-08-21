@@ -122,21 +122,21 @@ module "infra-datadog-stage" {
   trigger_workspaces = [module.infra-eks-stage-nuon.workspace_id]
 }
 
-# module "infra-clickhouse-prod" {
-#   source = "./modules/workspace"
+module "infra-clickhouse-prod" {
+  source = "./modules/workspace"
 
-#   name                            = "infra-clickhouse-prod"
-#   repo                            = "powertoolsdev/mono"
-#   dir                             = "infra/clickhouse"
-#   auto_apply                      = false
-#   slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
-#   variable_sets                   = ["aws-environment-credentials"]
-#   project_id                      = tfe_project.infra.id
-#   vars = {
-#     env = "prod"
-#   }
-#   trigger_workspaces = [module.infra-eks-prod-nuon.workspace_id]
-# }
+  name                            = "infra-clickhouse-prod"
+  repo                            = "powertoolsdev/mono"
+  dir                             = "infra/clickhouse"
+  auto_apply                      = false
+  slack_notifications_webhook_url = var.default_slack_notifications_webhook_url
+  variable_sets                   = ["aws-environment-credentials"]
+  project_id                      = tfe_project.infra.id
+  vars = {
+    env = "prod"
+  }
+  trigger_workspaces = [module.infra-eks-prod-nuon.workspace_id]
+}
 
 module "infra-clickhouse-stage" {
   source = "./modules/workspace"
