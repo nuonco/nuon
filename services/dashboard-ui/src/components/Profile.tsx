@@ -49,10 +49,10 @@ export const ProfileDropdown: FC = () => {
   display:block;
 }`}
         </style>
-        <div className="z-10 relative inline-block text-left dropdown min-h-[56px]">
+        <div className="z-10 relative inline-block text-left dropdown min-h-[56px]" tabIndex={0}>
           <span className="rounded shadow-sm">
             <button
-              className="inline-flex justify-center w-full px-4 py-2 text-sm transition duration-150 ease-in-out bg-slate-50 dark:bg-slate-950 rounded"
+              className="inline-flex justify-center w-full px-4 py-2 text-sm transition duration-150 ease-in-out bg-gray-500/5 rounded"
               type="button"
               aria-haspopup="true"
               aria-expanded="true"
@@ -74,7 +74,7 @@ export const ProfileDropdown: FC = () => {
           </span>
           <div className="hidden dropdown-menu">
             <div
-              className="absolute right-0 w-56 mt-2 origin-top-right bg-slate-50 dark:bg-slate-900 border divide-y rounded shadow-md outline-none"
+              className="absolute right-0 w-56 mt-2 origin-top-right bg-light dark:bg-dark border divide-y rounded shadow-md outline-none"
               aria-labelledby="headlessui-menu-button-1"
               id="headlessui-menu-items-117"
               role="menu"
