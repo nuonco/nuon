@@ -29,7 +29,7 @@ export const Button: FC<IButton> = ({
   return (
     <button
       className={classNames('px-3 py-1.5 rounded-sm border', {
-        [`${defaultStyles} border-gray-800`]: variant === 'default',
+        [`${defaultStyles} border`]: variant === 'default',
         'bg-fuchsia-700 hover:bg-fuchsia-600 focus:bg-fuchsia-600 active:bg-fuchsia-800':
           variant === 'primary',
         [`${defaultStyles} border-transparent`]: variant === 'ghost',

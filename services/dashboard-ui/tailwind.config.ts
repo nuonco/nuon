@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import colors from 'tailwindcss/colors'
 
 const config: Config = {
   content: [
@@ -12,6 +13,9 @@ const config: Config = {
     },
     {
       pattern: /(bg|text)-(slate)-(50|950)/,
+    },
+    {
+      pattern: /(bg|text)-(active|light|dark)/,
     },
     {
       pattern: /bg-opacity-(25|50|75|85|95)/,
@@ -30,6 +34,12 @@ const config: Config = {
     },
   ],
   theme: {
+    colors: {
+      'dark': '#100E16',
+      'light': "#ffffff",
+      "active": "#8040BF",
+      ...colors,
+    },
     extend: {
       gridAutoRows: {
         auto: '1fr',

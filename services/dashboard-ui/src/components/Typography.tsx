@@ -20,7 +20,7 @@ export const Heading: FC<IHeading> = ({
       aria-level={level}
       className={classNames('flex flex-wrap gap-1 items-center word-wrap', {
         'text-xl font-bold': variant === 'heading',
-        'text-sm font-semibold': variant === 'subheading',
+        'text-base font-semibold': variant === 'subheading',
         'text-5xl font-semibold': variant === 'title',
         'text-3xl font-bold': variant === 'subtitle',
         [`${className}`]: Boolean(className),
@@ -53,7 +53,7 @@ export const Text: FC<IText> = ({
           isStatus,
         ['text-xs tracking-wide leading-none text-gray-600 dark:text-gray-300']:
           isOverline,
-        ['text-sm font-semibold']: isLabel,
+        ['text-xs font-semibold']: isLabel,
         'text-xs': variant === 'caption',
         [`${className}`]: Boolean(className),
       })}
