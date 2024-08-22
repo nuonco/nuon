@@ -13,6 +13,7 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/livez"}:                    {},
 	{"GET", "/version"}:                  {},
 	{"GET", "/readyz"}:                   {},
+	{"GET", "/healthz"}:                  {},
 	{"OPTIONS", "*"}:                     {},
 	{"GET", "/docs/*any"}:                {},
 	{"GET", "/oapi/v2"}:                  {},
