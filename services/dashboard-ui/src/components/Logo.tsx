@@ -6,17 +6,17 @@ export const Logo: FC = () => {
     <a href="/">
       <span className="sr-only">Nuon</span>
       <Image
-        className="w-auto h-11 relative block dark:hidden"
+        className="w-auto h-8 relative block dark:hidden"
         src="https://mintlify.s3-us-west-1.amazonaws.com/nuoninc/logo/light.svg"
         alt="nuon logo"
-        height={46}
+        height={32}
         width={110}
       />
       <Image
-        className="w-auto h-11 relative hidden dark:block"
+        className="w-auto h-8 relative hidden dark:block"
         src="https://mintlify.s3-us-west-1.amazonaws.com/nuoninc/logo/dark.svg"
         alt="nuon logo"
-        height={46}
+        height={32}
         width={110}
       />
     </a>
