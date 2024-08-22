@@ -23,6 +23,7 @@ export const Dropdown: FC<IDropdown> = ({
       <div
         className="z-10 relative inline-block text-left h-[56px] group"
         id={id}
+        tabIndex={0}
       >
         <Button
           aria-haspopup="true"
