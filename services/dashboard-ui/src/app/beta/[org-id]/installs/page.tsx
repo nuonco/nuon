@@ -1,10 +1,12 @@
-import { DataTable, Heading, Link } from '@/components'
+import { DashboardContent, DataTable } from '@/components'
 import { getOrg, getInstalls } from '@/lib'
 
 export default async function Installs({ params }) {
   const orgId = params?.['org-id'] as string
-  const org = await getOrg({ orgId })
-  const installs = await getInstalls({ orgId })
+  const [installs, org] = await Promise.all([
+    getInstalls({ orgId }),
+    getOrg({ orgId }),
+  ])
 
   const tableData = installs.reduce((acc, install) => {
     acc.push([
@@ -20,16 +22,13 @@ export default async function Installs({ params }) {
   }, [])
 
   return (
-    <>
-      <header>
-        <Heading>{org.name} / Installs</Heading>
-      </header>
-      <section>
+    <DashboardContent breadcrumb={[org.name, 'Installs']}>
+      <section className="px-6 py-8">
         <DataTable
           headers={['ID', 'Name', 'App', 'Platform', 'Sandbox']}
           initData={tableData}
         />
       </section>
-    </>
+    </DashboardContent>
   )
 }
