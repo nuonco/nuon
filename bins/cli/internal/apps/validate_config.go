@@ -72,13 +72,12 @@ func (s *Service) Validate(ctx context.Context, all bool, file string, asJSON bo
 		if err := s.validate(ctx, cfgFile, asJSON); err != nil {
 			return ui.PrintError(err)
 		}
+		ui.PrintLn(fmt.Sprintf("file \"%s\" is valid", cfgFile.Path))
 	}
 	return nil
 }
 
 func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) error {
-	view := ui.NewListView()
-
 	cfg, err := s.loadConfig(ctx, file.Path)
 	if err != nil {
 		return err
@@ -88,7 +87,7 @@ func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) er
 		return err
 	}
 
-	schmaErrs, err := schema.Validate(cfg)
+	_, err = schema.Validate(cfg)
 	if err != nil {
 		return err
 	}
@@ -96,16 +95,6 @@ func (s *Service) validate(ctx context.Context, file parse.File, asJSON bool) er
 	err = s.validateDuplicateComponentNames(cfg)
 	if err != nil {
 		return err
-	}
-
-	if len(schmaErrs) < 1 {
-		ui.PrintSuccess("successfully validated " + file.Path)
-		return nil
-	}
-
-	view.Print(fmt.Sprintf("%d total errors", len(schmaErrs)))
-	for _, schemaErr := range schmaErrs {
-		view.Print(schemaErr.String())
 	}
 
 	return nil
