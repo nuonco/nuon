@@ -1,10 +1,9 @@
-import { Card, DataTable, Heading, Text, Link } from '@/components'
+import { DashboardContent, DataTable } from '@/components'
 import { getApps, getOrg } from '@/lib'
 
 export default async function Apps({ params }) {
   const orgId = params?.['org-id'] as string
-  const org = await getOrg({ orgId })
-  const apps = await getApps({ orgId })
+  const [apps, org] = await Promise.all([getApps({ orgId }), getOrg({ orgId })])
 
   const tableData = apps.reduce((acc, app) => {
     acc.push([
@@ -20,16 +19,13 @@ export default async function Apps({ params }) {
   }, [])
 
   return (
-    <>
-      <header>
-        <Heading>{org.name} / Apps</Heading>
-      </header>
-      <section>
+    <DashboardContent breadcrumb={[org.name, 'Apps']}>
+      <section className="px-6 py-8">
         <DataTable
           headers={['ID', 'Name', 'Platform', 'Sandbox', 'Runner']}
           initData={tableData}
         />
       </section>
-    </>
+    </DashboardContent>
   )
 }
