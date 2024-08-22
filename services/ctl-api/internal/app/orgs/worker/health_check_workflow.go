@@ -21,8 +21,8 @@ type HealthCheckRequest struct {
 }
 
 const (
-	// the health check runs each minute
-	healthCheckWorkflowCronTab string = "* * * * *"
+	// the health check runs every 2 minutes
+	healthCheckWorkflowCronTab string = "*/2 * * * *"
 
 	// default ping waypoint timeout
 	defaultPingWaypointTimeout time.Duration = time.Second * 10
