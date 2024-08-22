@@ -22,7 +22,7 @@ synthetics:
     ]
     request_definition:
       method: "GET"
-      url: "https://ctl.${aws_account}.nuon.co/livez"
+      url: "https://ctl.${aws_account}.nuon.co/healthz"
     request_headers: {}
     assertion:
       type: "statusCode"
