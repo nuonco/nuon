@@ -1,27 +1,45 @@
-import { Card, Heading, Text, Link } from '@/components'
-import { getOrg, getInstall } from '@/lib'
+import {
+  DashboardContent,
+  Heading,
+  Text,
+  SubNav,
+  type TLink,
+} from '@/components'
+import { getInstall, getOrg } from '@/lib'
 
 export default async function InstallLayout({ children, params }) {
   const orgId = params?.['org-id'] as string
   const installId = params?.['install-id'] as string
-  const org = await getOrg({ orgId })
-  const install = await getInstall({ orgId, installId })
+  const subNavLinks: Array<TLink> = [
+    { href: `/beta/${orgId}/installs/${installId}`, text: 'Status' },
+    {
+      href: `/beta/${orgId}/installs/${installId}/components`,
+      text: 'Components',
+    },
+  ]
+  const [install, org] = await Promise.all([
+    getInstall({ orgId, installId }),
+    getOrg({ orgId }),
+  ])
 
   return (
-    <>
-      <header className="flex items-center justify-between">
-        <Heading>
-          {org.name} / Installs / {install.name}
-        </Heading>
+    <DashboardContent breadcrumb={[org.name, 'Installs', install.name]}>
+      <>
+        <header className="px-6 pt-8 flex flex-col pt-6 gap-6 border-b">
+          <div className="flex items-center justify-between">
+            <hgroup className="flex flex-col gap-2">
+              <Heading>{install.name}</Heading>
+              <Text className="font-mono" variant="overline">
+                {install.id}
+              </Text>
+            </hgroup>
+          </div>
 
-        <nav className="flex items-center gap-6">
-          <Link href={`/beta/${orgId}/installs/${installId}`}>Status</Link>
-          <Link href={`/beta/${orgId}/installs/${installId}/components`}>
-            Components
-          </Link>
-        </nav>
-      </header>
-      <section>{children}</section>
-    </>
+          <SubNav links={subNavLinks} />
+        </header>
+
+        {children}
+      </>
+    </DashboardContent>
   )
 }

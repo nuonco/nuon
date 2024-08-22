@@ -1,4 +1,5 @@
 import React, { type FC } from 'react'
+import { GoChevronRight } from "react-icons/go";
 import { Logo, Link, ProfileDropdown } from '@/components'
 
 export const DashboardHeader: FC = () => {
@@ -27,5 +28,33 @@ export const Dashboard: FC<{ children: React.ReactElement }> = ({
       <DashboardHeader />
       {children}
     </div>
+  )
+}
+
+export const DashboardContent: FC<{
+  breadcrumb: Array<string>
+  children: React.ReactElement
+}> = ({ breadcrumb, children }) => {
+  return (
+    <>
+      <header className="flex justify-between items-center border-b px-6 py-4">
+        <div className="flex items-center gap-2">
+          {breadcrumb.map((crumb, i) => (
+            <span key={`breadcrumb-${i}`} className="flex items-center gap-2">
+              {i !== 0 ? <GoChevronRight /> : null}
+              <span>{crumb}</span>
+            </span>
+          ))}
+        </div>
+        <div>
+          <Link href="https://docs.nuon.co" target="_blank" className="text-sm">
+            Docs
+          </Link>
+        </div>
+      </header>
+      <main className="overflow-x-auto h-full flex flex-col">
+        {children}
+      </main>
+    </>
   )
 }
