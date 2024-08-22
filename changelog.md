@@ -245,3 +245,7 @@ Promoting cli sync updates and bug fixes
 ## v0.4.2
 
 Promoting component dependency improvements
+
+## v0.4.3
+
+Promoting bug cli fixes
