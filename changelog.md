@@ -248,4 +248,4 @@ Promoting component dependency improvements
 
 ## v0.4.3
 
-Promoting bug cli fixes
+Promoting bug cli validation bug fix
