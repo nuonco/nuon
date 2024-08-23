@@ -160,7 +160,7 @@ func (s *baseIntegrationTestSuite) createAppSandboxConfig(appID string) {
 func (s *baseIntegrationTestSuite) createAppRunnerConfig(appID string) {
 	// create app runner config
 	runnerCfgReq := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-	runnerCfgReq.Type = models.AppAppRunnerTypeAwsDashEcs
+	runnerCfgReq.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
 
 	runnerCfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, appID, runnerCfgReq)
 	require.NoError(s.T(), err)
