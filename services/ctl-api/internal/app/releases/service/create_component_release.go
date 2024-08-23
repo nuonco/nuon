@@ -18,8 +18,8 @@ import (
 )
 
 type CreateComponentReleaseRequest struct {
-	BuildID   string `json:"build_id" validate:"required_without=AutoBuild"`
-	AutoBuild bool   `json:"auto_build" validate:"required_without=BuildID"`
+	BuildID    string   `json:"build_id" validate:"required_without=AutoBuild"`
+	AutoBuild  bool     `json:"auto_build" validate:"required_without=BuildID"`
 	InstallIDs []string `json:"install_ids"`
 
 	Strategy struct {
@@ -129,16 +129,23 @@ func (s *service) createRelease(ctx context.Context, cmpID string, req *CreateCo
 	}
 
 	if len(cmp.App.Installs) == 0 {
-		return nil,stderr.ErrUser{
+		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("no installs found for component %s", cmpID),
 			Description: "cannot create a release steps without component installs",
 		}
 	}
 
 	installs := make([]app.Install, 0)
+
 	if len(req.InstallIDs) > 0 {
+		installsByID := make(map[string]app.Install)
 		for _, install := range cmp.App.Installs {
-			if generics.SliceContains(install.ID, req.InstallIDs) {
+			installsByID[install.ID] = install
+		}
+
+		for _, reqInstallID := range req.InstallIDs {
+			install, ok := installsByID[reqInstallID]
+			if ok {
 				installs = append(installs, install)
 			} else {
 				return nil, stderr.ErrUser{
