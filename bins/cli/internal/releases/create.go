@@ -15,10 +15,12 @@ const (
 	statusActive = "active"
 )
 
-var errMissingInput = fmt.Errorf("need either a build ID or a component ID")
-var errMissingBuildInput = fmt.Errorf("must pass in one of --build-id, --auto-build or --latest-build")
+var (
+	errMissingInput      = fmt.Errorf("need either a build ID or a component ID")
+	errMissingBuildInput = fmt.Errorf("must pass in one of --build-id, --auto-build or --latest-build")
+)
 
-func (s *Service) Create(ctx context.Context, appID, compID, buildID, delay string, autoBuild, latestBuild bool, installsPerStep int64, asJSON bool) error {
+func (s *Service) Create(ctx context.Context, appID, compID, buildID, installID, delay string, autoBuild, latestBuild bool, installsPerStep int64, asJSON bool) error {
 	var err error
 	view := ui.NewCreateView("release", asJSON)
 	view.Start()
@@ -44,6 +46,16 @@ func (s *Service) Create(ctx context.Context, appID, compID, buildID, delay stri
 			return ui.PrintError(err)
 		}
 		view.Update(fmt.Sprintf("using component %s", compID))
+	}
+
+	if installID != "" {
+		installID, err = lookup.InstallID(ctx, s.api, installID)
+		if err != nil {
+			return ui.PrintError(err)
+		}
+		view.Update(fmt.Sprintf("using installID %s", installID))
+		req.Strategy.InstallsPerStep = 1
+		req.InstallIds = []string{installID}
 	}
 
 	// if we weren't given a build ID, we get the latest build for the component
