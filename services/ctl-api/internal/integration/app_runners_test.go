@@ -56,7 +56,7 @@ func (s *appRunnersSuite) createApp() *models.AppApp {
 func (s *appRunnersSuite) TestCreateAppRunnerConfig() {
 	s.T().Run("successfully created", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.AppAppRunnerTypeAwsDashEcs
+		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
 
 		cfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -74,7 +74,7 @@ func (s *appRunnersSuite) TestCreateAppRunnerConfig() {
 		install := s.createInstall(s.appID)
 
 		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.AppAppRunnerTypeAwsDashEcs
+		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
 
 		appRunnerCfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -88,7 +88,7 @@ func (s *appRunnersSuite) TestCreateAppRunnerConfig() {
 
 	s.T().Run("errors on invalid app id", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.AppAppRunnerTypeAwsDashEcs
+		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
 
 		appRunnerCfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, generics.GetFakeObj[string](), req)
 		require.Error(t, err)
@@ -106,7 +106,7 @@ func (s *appRunnersSuite) TestGetAppRunnerLatestConfig() {
 
 	s.T().Run("success", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.AppAppRunnerTypeAwsDashEcs
+		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
 
 		cfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -122,7 +122,7 @@ func (s *appRunnersSuite) TestGetAppRunnerLatestConfig() {
 
 	s.T().Run("returns correct one when multiple", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.AppAppRunnerTypeAwsDashEcs
+		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
 
 		cfg1, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -151,7 +151,7 @@ func (s *appRunnersSuite) TestGetAppRunnerLatestConfig() {
 func (s *appRunnersSuite) TestGetAppRunnerConfigs() {
 	s.T().Run("success", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.AppAppRunnerTypeAwsDashEcs
+		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
 
 		cfg1, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -164,7 +164,7 @@ func (s *appRunnersSuite) TestGetAppRunnerConfigs() {
 
 	s.T().Run("returns in correct order", func(t *testing.T) {
 		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.AppAppRunnerTypeAwsDashEcs
+		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
 
 		cfg1, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
