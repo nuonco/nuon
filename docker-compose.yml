@@ -10,7 +10,7 @@ services:
     ports:
       - 5432:5432
     environment:
-      POSTGRES_DB: ctl_api
+      POSTGRES_MULTIPLE_DATABASES: ctl_api, temporal, temporal_visibility
       POSTGRES_USER: ctl_api
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       PGDATA: /data/postgres
@@ -21,10 +21,10 @@ services:
     networks:
       - default
 
-  # temporal for all workers + api
+  # temporal cli for dev server:
   temporal:
     build:
-      context: ./images/temporalite
+      context: ./images/temporalcli
       dockerfile: Dockerfile
     ports:
       - 7233:7233
