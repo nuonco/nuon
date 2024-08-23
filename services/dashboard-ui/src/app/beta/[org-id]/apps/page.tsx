@@ -10,7 +10,6 @@ export default async function Apps({ params }) {
       app.id,
       app.name,
       app.cloud_platform,
-      app.sandbox_config?.aws_region_type,
       app?.runner_config?.app_runner_type,
       `/beta/${orgId}/apps/${app.id}`,
     ])
@@ -22,7 +21,7 @@ export default async function Apps({ params }) {
     <DashboardContent breadcrumb={[org.name, 'Apps']}>
       <section className="px-6 py-8">
         <DataTable
-          headers={['ID', 'Name', 'Platform', 'Sandbox', 'Runner']}
+          headers={['ID', 'Name', 'Platform', 'Runner']}
           initData={tableData}
         />
       </section>

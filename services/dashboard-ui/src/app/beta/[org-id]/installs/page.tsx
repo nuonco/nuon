@@ -12,6 +12,7 @@ export default async function Installs({ params }) {
     acc.push([
       install.id,
       install.name,
+      install?.app?.name,
       install.app_sandbox_config?.cloud_platform,
       install.sandbox_status,
       install.runner_status,
