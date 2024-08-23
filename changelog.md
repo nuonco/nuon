@@ -248,4 +248,8 @@ Promoting component dependency improvements
 
 ## v0.4.3
 
-Promoting bug cli validation bug fix
+Promoting cli validation bug fix
+
+## v0.4.4
+
+Promoting support for component release by install id & dashboard updates
