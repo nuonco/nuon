@@ -1,4 +1,4 @@
-import { Card, Heading, Text, Link } from '@/components'
+import { Heading, Link } from '@/components'
 import { getComponentBuilds } from '@/lib'
 
 export default async function AppComponent({ params }) {
@@ -8,8 +8,8 @@ export default async function AppComponent({ params }) {
   const builds = await getComponentBuilds({ componentId, orgId })
 
   return (
-    <>
-      <Card>
+    <section className="px-6 py-8">
+      <div>
         <Heading>Build history</Heading>
         <div>
           {builds.map((build) => (
@@ -21,7 +21,7 @@ export default async function AppComponent({ params }) {
             </Link>
           ))}
         </div>
-      </Card>
-    </>
+      </div>
+    </section>
   )
 }
