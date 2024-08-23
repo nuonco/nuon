@@ -12,6 +12,7 @@ func (c *cli) releasesCmd() *cobra.Command {
 		compID,
 		buildID,
 		releaseID,
+		installID,
 		delay string
 		installsPerStep int64
 		autoBuild       bool
@@ -74,12 +75,23 @@ func (c *cli) releasesCmd() *cobra.Command {
 		Long:  "Create a release of an app component",
 		Run: c.run(func(cmd *cobra.Command, _ []string) error {
 			svc := releases.New(c.apiClient)
-			return svc.Create(cmd.Context(), appID, compID, buildID, delay, autoBuild, latestBuild, installsPerStep, PrintJSON)
+			return svc.Create(cmd.Context(),
+				appID,
+				compID,
+				buildID,
+				installID,
+				delay,
+				autoBuild,
+				latestBuild,
+				installsPerStep,
+				PrintJSON,
+			)
 		}),
 	}
 	createCmd.Flags().StringVarP(&compID, "component-id", "c", "", "The ID or name of the component whose build you want to create a release for")
 	createCmd.Flags().StringVarP(&buildID, "build-id", "b", "", "The ID of the build you want to create a release for")
 	createCmd.MarkFlagsOneRequired("build-id", "component-id")
+	createCmd.Flags().StringVarP(&installID, "install-id", "i", "", "The ID of the install you want to create a release for")
 	createCmd.Flags().StringVarP(&delay, "delay", "d", "10s", "The delay you want between each step")
 	createCmd.Flags().Int64VarP(&installsPerStep, "installs-per-step", "s", 10, "The number of deploys you want to execute each step. Set to 0 to deploy to all installs in parrallel")
 	createCmd.Flags().BoolVarP(&autoBuild, "auto-build", "", false, "automatically trigger a build for the provided component")
