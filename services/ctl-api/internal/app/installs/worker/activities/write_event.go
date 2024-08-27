@@ -16,6 +16,7 @@ type WriteEventRequest struct {
 	OperationStatus app.OperationStatus
 }
 
+// @await-gen
 func (a *Activities) WriteEvent(ctx context.Context, req WriteEventRequest) error {
 	if req.DeployID != "" {
 		return a.helpers.WriteDeployEvent(ctx, req.DeployID, req.Operation, req.OperationStatus)

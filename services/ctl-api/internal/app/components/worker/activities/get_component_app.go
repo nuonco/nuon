@@ -12,7 +12,7 @@ type GetComponentAppRequest struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @by-id ComponentID
 func (a *Activities) GetComponentApp(ctx context.Context, req *GetComponentAppRequest) (*app.App, error) {
 	cmp := app.Component{}
 	res := a.db.WithContext(ctx).

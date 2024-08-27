@@ -14,6 +14,7 @@ type GetComponentDependents struct {
 	ComponentRootID string `json:"inverted"`
 }
 
+// @await-gen
 func (a *Activities) GetComponentDependents(ctx context.Context, req GetComponentDependents) ([]app.Component, error) {
 	g, cmps, err := a.appsHelpers.GetDependencyGraph(ctx, req.AppID)
 	if err != nil {
