@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/releases/worker/activities"
 	"go.temporal.io/sdk/workflow"
 )
@@ -26,10 +25,8 @@ func (w *Workflows) pollReleaseStepInstallDeploys(ctx workflow.Context, releaseS
 	for {
 		workflow.Sleep(ctx, defaultPollTimeout)
 
-		var step app.ComponentReleaseStep
-		if err := w.defaultExecGetActivity(ctx, w.acts.GetReleaseStep, activities.GetReleaseStepRequest{
-			ReleaseStepID: releaseStepID,
-		}, &step); err != nil {
+		step, err := activities.AwaitGetReleaseStepByReleaseStepID(ctx, releaseStepID)
+		if err != nil {
 			return fmt.Errorf("unable to get release step: %w", err)
 		}
 
@@ -54,10 +51,8 @@ func (w *Workflows) pollReleaseStepInstallDeploys(ctx workflow.Context, releaseS
 
 // release steps are their own workflow, as they encompass an unbounded amount of provisioning and orchestration.
 func (w *Workflows) ProvisionReleaseStep(ctx workflow.Context, req ProvisionReleaseStepRequest) error {
-	var step app.ComponentReleaseStep
-	if err := w.defaultExecGetActivity(ctx, w.acts.GetReleaseStep, activities.GetReleaseStepRequest{
-		ReleaseStepID: req.ReleaseStepID,
-	}, &step); err != nil {
+	step, err := activities.AwaitGetReleaseStepByReleaseStepID(ctx, req.ReleaseStepID)
+	if err != nil {
 		return fmt.Errorf("unable to get release step: %w", err)
 	}
 
@@ -68,7 +63,7 @@ func (w *Workflows) ProvisionReleaseStep(ctx workflow.Context, req ProvisionRele
 			return fmt.Errorf("unable to parse delay: %w", err)
 		}
 
-		if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateReleaseStepStatus, activities.UpdateReleaseStepStatusRequest{
+		if err := activities.AwaitUpdateReleaseStepStatus(ctx, activities.UpdateReleaseStepStatusRequest{
 			ReleaseStepID:     req.ReleaseStepID,
 			Status:            "waiting_for_delay",
 			StatusDescription: fmt.Sprintf("waiting %s before starting step", delayDuration),
@@ -81,7 +76,7 @@ func (w *Workflows) ProvisionReleaseStep(ctx workflow.Context, req ProvisionRele
 		}
 	}
 
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateReleaseStepStatus, activities.UpdateReleaseStepStatusRequest{
+	if err := activities.AwaitUpdateReleaseStepStatus(ctx, activities.UpdateReleaseStepStatusRequest{
 		ReleaseStepID:     req.ReleaseStepID,
 		Status:            "creating_install_deploys",
 		StatusDescription: fmt.Sprintf("creating deploys for %d installs", len(step.RequestedInstallIDs)),
@@ -95,12 +90,12 @@ func (w *Workflows) ProvisionReleaseStep(ctx workflow.Context, req ProvisionRele
 			InstallID:     installID,
 			ReleaseStepID: req.ReleaseStepID,
 		}
-		if err := w.defaultExecErrorActivity(ctx, w.acts.CreateInstallDeploy, installReq); err != nil {
+		if err := activities.AwaitCreateInstallDeploy(ctx, installReq); err != nil {
 			return fmt.Errorf("unable to create install deploy: %w", err)
 		}
 	}
 
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateReleaseStepStatus, activities.UpdateReleaseStepStatusRequest{
+	if err := activities.AwaitUpdateReleaseStepStatus(ctx, activities.UpdateReleaseStepStatusRequest{
 		ReleaseStepID:     req.ReleaseStepID,
 		Status:            "polling_install_deploys",
 		StatusDescription: fmt.Sprintf("polling deploys for %d installs", len(step.RequestedInstallIDs)),
@@ -109,7 +104,7 @@ func (w *Workflows) ProvisionReleaseStep(ctx workflow.Context, req ProvisionRele
 	}
 
 	if err := w.pollReleaseStepInstallDeploys(ctx, req.ReleaseStepID); err != nil {
-		if updateErr := w.defaultExecErrorActivity(ctx, w.acts.UpdateReleaseStepStatus, activities.UpdateReleaseStepStatusRequest{
+		if updateErr := activities.AwaitUpdateReleaseStepStatus(ctx, activities.UpdateReleaseStepStatusRequest{
 			ReleaseStepID:     req.ReleaseStepID,
 			Status:            "error",
 			StatusDescription: "error",
@@ -120,7 +115,7 @@ func (w *Workflows) ProvisionReleaseStep(ctx workflow.Context, req ProvisionRele
 		return fmt.Errorf("release step failed: %w", err)
 	}
 
-	if err := w.defaultExecErrorActivity(ctx, w.acts.UpdateReleaseStepStatus, activities.UpdateReleaseStepStatusRequest{
+	if err := activities.AwaitUpdateReleaseStepStatus(ctx, activities.UpdateReleaseStepStatusRequest{
 		ReleaseStepID:     req.ReleaseStepID,
 		Status:            "active",
 		StatusDescription: "release step finished and all install deploys are active",

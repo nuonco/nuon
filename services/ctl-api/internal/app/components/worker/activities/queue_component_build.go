@@ -15,6 +15,7 @@ type QueueComponentBuildRequest struct {
 	CreatedByID string `validate:"required"`
 }
 
+// @await-gen
 func (a *Activities) QueueComponentBuild(ctx context.Context, req QueueComponentBuildRequest) (*app.ComponentBuild, error) {
 	// set the orgID on the context, for all writes
 	ctx = middlewares.SetOrgIDContext(ctx, req.OrgID)

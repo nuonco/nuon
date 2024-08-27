@@ -42,11 +42,25 @@ type tvars_awaitfn struct {
 	// RespIsPtr indicates whether the type of the return value is a pointer
 	RespIsPtr bool
 
-	// Options contains the input-specified options that set specify ActivityOptions
+	// ReqIsPtr indicates whether the type of the request value is a pointer
+	ReqIsPtr bool
+
+	// Options contains the input-specified options that set specify ActivityOptions and govern
+	// various other generator behaviors
 	Options GenOptions
 
 	// Zero is a string literal representing the zero value of the response type
 	Zero string
+}
+
+type tvars_awaitfn_byid struct {
+	ByIdFnName  string
+	AwaitFnName string
+	RespType    string
+	ReqType     string
+	ReqIsPtr    bool
+	IdFieldName string
+	IdType      string
 }
 
 // AwaitJenny is a jenny that generates a function that calls another function as a Temporal activity, then awaits the response.
@@ -63,20 +77,22 @@ func (w AwaitJenny) Generate(bf *BaseFile) (*codejen.File, error) {
 import (
 `, bf.File.Name.Name)
 
+	q := func(s string) string { return "\"" + s + "\"" }
 	imports := map[string]bool{
-		"time":                        true,
-		"go.temporal.io/sdk/temporal": true,
-		"go.temporal.io/sdk/workflow": true,
+		q("time"):                        true,
+		q("go.temporal.io/sdk/temporal"): true,
+		q("go.temporal.io/sdk/workflow"): true,
 	}
 
 	// pull in all the imports from the file containing the base func, so that at minimum we have the right import for
 	// the request and response types. unnecessary imports will be removed by a goimports pass later. We do deduplicate,
 	// though, because it appears that goimports has a bug and doesn't reliably dedup
 	for _, im := range bf.File.Imports {
-		imports[strings.Trim(astfmt.Sprint(im), "\"")] = true
+		// NOTE(sdboyer) this will generate invalid stuff if there's a named import that is in the static list above
+		imports[astfmt.Sprint(im)] = true
 	}
 	for im := range imports {
-		fmt.Fprintf(&buf, "\n\t%q", im)
+		fmt.Fprintf(&buf, "\n\t%s", im)
 	}
 	buf.WriteString("\n)")
 
@@ -88,6 +104,7 @@ import (
 		wv.FnName = fmt.Sprintf("Await%s", strings.Title(bfname))
 
 		wv.ReqType = astfmt.Sprint(bfn.Fn.Type.Params.List[1].Type)
+		_, wv.ReqIsPtr = bfn.Fn.Type.Params.List[1].Type.(*ast.StarExpr)
 
 		basebuf := new(strings.Builder)
 		if bfn.Fn.Recv != nil {
@@ -125,6 +142,8 @@ import (
 			_, wv.RespIsPtr = bfn.Fn.Type.Results.List[0].Type.(*ast.StarExpr)
 
 			if !wv.RespIsPtr {
+				// Non-pointer return types need to be zero-initialized, the syntax for which
+				// varies by type
 				rt := bf.Package.TypesInfo.Types[respt].Type
 				if rtn, ok := rt.(*types.Named); ok {
 					switch rtn.Underlying().(type) {
@@ -143,6 +162,22 @@ import (
 			}
 		default:
 			return nil, fmt.Errorf("base activity func %s must have either one or two return values", bfn.Fn.Name.String())
+		}
+
+		if bfn.Opts.ById != nil {
+			idopts := tvars_awaitfn_byid{
+				ByIdFnName:  fmt.Sprintf("%sBy%s", wv.FnName, bfn.Opts.ById.Name()),
+				AwaitFnName: wv.FnName,
+				RespType:    wv.RespType,
+				ReqType:     wv.ReqType,
+				ReqIsPtr:    wv.ReqIsPtr,
+				IdFieldName: bfn.Opts.ById.Name(),
+				IdType:      bfn.Opts.ById.Type().Underlying().String(),
+			}
+			err := tmpls.Lookup("by_id.tmpl").Execute(&buf, idopts)
+			if err != nil {
+				return nil, fmt.Errorf("error executing by_id template for fn %s: %w", bfn.Fn.Name.String(), err)
+			}
 		}
 	}
 

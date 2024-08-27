@@ -12,6 +12,8 @@ type DeleteRequest struct {
 	OrgID string `validate:"required"`
 }
 
+// @await-gen
+// @by-id OrgID
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 	// delete apps
 	res := a.db.WithContext(ctx).Unscoped().

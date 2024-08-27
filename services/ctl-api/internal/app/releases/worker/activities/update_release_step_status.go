@@ -14,6 +14,7 @@ type UpdateReleaseStepStatusRequest struct {
 	StatusDescription string `validate:"required"`
 }
 
+// @await-gen
 func (a *Activities) UpdateReleaseStepStatus(ctx context.Context, req UpdateReleaseStepStatusRequest) error {
 	release := app.ComponentReleaseStep{
 		ID: req.ReleaseStepID,

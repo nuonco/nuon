@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/go-toolsmith/astfmt"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -37,7 +39,6 @@ func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
 	// Inspect each package
 	for _, pkg := range pkgs {
 		// Inspect each file in the package
-		// for fpath, file := range pkg.Files {
 		for i, file := range pkg.Syntax {
 			// TODO(sdboyer): this filename may be wrong if syntax checking returned nil for any files in the pkg
 			fpath := filepath.Base(pkg.CompiledGoFiles[i])
@@ -56,7 +57,7 @@ func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
 						return true
 					}
 
-					opts, err := extractGenOptions(fset, x.Doc)
+					opts, err := extractGenOptions(fset, x, pkg)
 					if err != nil {
 						walkerr = err
 						return false
@@ -105,7 +106,8 @@ func loadBase(ctx context.Context, dir string) ([]*BaseFile, error) {
 	return ret, nil
 }
 
-func extractGenOptions(fset *token.FileSet, cg *ast.CommentGroup) (*GenOptions, error) {
+func extractGenOptions(fset *token.FileSet, fn *ast.FuncDecl, pkg *packages.Package) (*GenOptions, error) {
+	cg := fn.Doc
 	if cg == nil {
 		return nil, nil
 	}
@@ -139,6 +141,32 @@ func extractGenOptions(fset *token.FileSet, cg *ast.CommentGroup) (*GenOptions, 
 				if err != nil {
 					return nil, withPos(fset, com.Pos(), fmt.Errorf("@max-retries must be a valid Go duration string, got %q", parts[2]))
 				}
+			case "@by-id":
+				var reqt *types.Struct
+				var ok bool
+				reqtype := fn.Type.Params.List[1].Type
+				if reqti, has := pkg.TypesInfo.Types[fn.Type.Params.List[1].Type]; !has {
+					return nil, withPos(fset, com.Pos(), fmt.Errorf("internal error - no type info could be found for %s", astfmt.Sprint(reqtype)))
+				} else {
+					rtyp := reqti.Type
+					if ptr, is := rtyp.(*types.Pointer); is {
+						rtyp = ptr.Elem()
+					}
+					if reqt, ok = rtyp.Underlying().(*types.Struct); !ok {
+						return nil, withPos(fset, com.Pos(), fmt.Errorf("@by-id can only be used when the function's second parameter is struct-kinded, but %s is not", astfmt.Sprint(reqtype)))
+					}
+				}
+
+				var match *types.Var
+				for i := 0; i < reqt.NumFields(); i++ {
+					if reqt.Field(i).Name() == parts[2] {
+						match = reqt.Field(i)
+					}
+				}
+				if match == nil {
+					return nil, withPos(fset, com.Pos(), fmt.Errorf("@by-id must be provided the name of a field on %s; got %q", astfmt.Sprint(reqtype), parts[2]))
+				}
+				ret.ById = match
 			}
 		}
 	}

@@ -17,11 +17,9 @@ const (
 
 func (w *Workflows) pollAppsDeprovisioned(ctx workflow.Context, orgID string) error {
 	for {
-		var org app.Org
-		if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-			OrgID: orgID,
-		}, &org); err != nil {
-			w.updateStatus(ctx, orgID, "error", "unable to get org from database")
+		org, err := activities.AwaitGetByOrgID(ctx, orgID)
+		if err != nil {
+			w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to get org from database")
 			return fmt.Errorf("unable to get org: %w", err)
 		}
 

@@ -1,0 +1,7 @@
+
+// {{ .ByIdFnName }} is a convenience wrapper for [{{ .AwaitFnName }}],
+// allowing the caller to provide a simple {{ .IdType }} for [{{ .ReqType }}].{{ .IdFieldName }}
+// rather than having to write out the struct for just one field.
+func {{ .ByIdFnName }}(ctx workflow.Context, {{ untitle .IdFieldName }} {{ .IdType }}) ({{ if ne .RespType "" }}{{ .RespType }}, {{ end }}error) {
+    return {{ .AwaitFnName }}(ctx, {{if .ReqIsPtr }}&{{end}}{{ TrimPtr .ReqType }}{ {{ .IdFieldName }}: {{ untitle .IdFieldName }} })
+}

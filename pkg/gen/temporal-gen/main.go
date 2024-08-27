@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
 	"time"
@@ -32,13 +33,15 @@ type BaseFn struct {
 	Opts *GenOptions
 }
 
-// GenOptions are specified as @-comments in the input Go source code, and determine which temporal.ActivityOptions will
-// be used in generated await functions.
+// GenOptions are specified as @-comments in the input Go source code, providing the user with
+// control over various aspects of the generated output. This includes which temporal.ActivityOptions will
+// be used in generated await functions
 //
 // TODO(sdboyer) expand this to mirror all the options Temporal actually exposes
 type GenOptions struct {
 	Timeout    time.Duration
 	MaxRetries int
+	ById       *types.Var
 }
 
 func main() {
@@ -72,7 +75,7 @@ func main() {
 	)
 
 	// Postprocessors are run on each output produced by the pipeline
-	pipe.AddPostprocessors(GoImportsMapper, SlashHeaderMapper("mono/bins/temporal-gen"))
+	pipe.AddPostprocessors(GoImportsMapper, SlashHeaderMapper("mono/pkg/bins/temporal-gen"))
 
 	// Run the pipeline with our inputs, and get a virtual FS back with all the outputs
 	jfs, err := pipe.GenerateFS(bfs...)
@@ -101,5 +104,5 @@ func die(err error) {
 
 func withPos(fset *token.FileSet, tok token.Pos, err error) error {
 	pos := fset.Position(tok)
-	return fmt.Errorf("%s:%d:%d: %w\n", pos.Filename, pos.Line, pos.Column, err)
+	return fmt.Errorf("%s:%d:%d: %w", pos.Filename, pos.Line, pos.Column, err)
 }

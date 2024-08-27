@@ -14,15 +14,13 @@ import (
 func (w *Workflows) reprovision(ctx workflow.Context, orgID string, sandboxMode bool) error {
 	w.updateStatus(ctx, orgID, app.OrgStatusProvisioning, "reprovisioning organization resources")
 
-	var org app.Org
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		OrgID: orgID,
-	}, &org); err != nil {
+	org, err := activities.AwaitGetByOrgID(ctx, orgID)
+	if err != nil {
 		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to get org from database")
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
-	_, err := w.execDeprovisionIAMWorkflow(ctx, sandboxMode, &iamv1.DeprovisionIAMRequest{
+	_, err = w.execDeprovisionIAMWorkflow(ctx, sandboxMode, &iamv1.DeprovisionIAMRequest{
 		OrgId: orgID,
 	})
 	// NOTE(jm): we ignore errors deprovisioning, and make a best effort to reprovision regardless
@@ -39,19 +37,19 @@ func (w *Workflows) reprovision(ctx workflow.Context, orgID string, sandboxMode 
 	}
 
 	for _, orgApp := range org.Apps {
-		if err := w.defaultExecGetActivity(ctx, w.acts.UpsertProject, activities.UpsertProjectRequest{
+		if err = activities.AwaitUpsertProject(ctx, activities.UpsertProjectRequest{
 			OrgID:     orgID,
 			ProjectID: orgApp.ID,
-		}, &org); err != nil {
+		}); err != nil {
 			w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to upsert app project")
 			return fmt.Errorf("unable to reprovision org: %w", err)
 		}
 
 		for _, install := range orgApp.Installs {
-			if err := w.defaultExecGetActivity(ctx, w.acts.UpsertProject, activities.UpsertProjectRequest{
+			if err = activities.AwaitUpsertProject(ctx, activities.UpsertProjectRequest{
 				OrgID:     orgID,
 				ProjectID: install.ID,
-			}, &org); err != nil {
+			}); err != nil {
 				w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to upsert install project")
 				return fmt.Errorf("unable to reprovision org: %w", err)
 			}
