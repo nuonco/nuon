@@ -10,7 +10,7 @@ import (
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func (w *Workflows) isDeprovisionable(install app.Install) bool {
+func (w *Workflows) isDeprovisionable(install *app.Install) bool {
 	if len(install.InstallSandboxRuns) < 1 {
 		return false
 	}
@@ -22,18 +22,16 @@ func (w *Workflows) isDeprovisionable(install app.Install) bool {
 }
 
 func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun bool) error {
-	var install app.Install
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		InstallID: installID,
-	}, &install); err != nil {
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	var installRun app.InstallSandboxRun
-	if err := w.defaultExecGetActivity(ctx, w.acts.CreateSandboxRun, activities.CreateSandboxRunRequest{
+	installRun, err := activities.AwaitCreateSandboxRun(ctx, activities.CreateSandboxRunRequest{
 		InstallID: installID,
 		RunType:   app.SandboxRunTypeDeprovision,
-	}, &installRun); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("unable to create install: %w", err)
 	}
 
@@ -46,7 +44,7 @@ func (w *Workflows) deprovision(ctx workflow.Context, installID string, dryRun b
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioning, "deprovisioning")
 	w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusStarted)
 
-	req, err := w.protos.ToInstallDeprovisionRequest(&install, installRun.ID)
+	req, err := w.protos.ToInstallDeprovisionRequest(install, installRun.ID)
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install deprovision request")
 		w.writeRunEvent(ctx, installRun.ID, signals.OperationDeprovision, app.OperationStatusFailed)
@@ -71,16 +69,12 @@ func (w *Workflows) delete(ctx workflow.Context, installID string, dryRun bool) 
 	}
 
 	// fail all queued deploys
-	if err := w.defaultExecErrorActivity(ctx, w.acts.FailQueuedDeploys, activities.FailQueuedDeploysRequest{
-		InstallID: installID,
-	}); err != nil {
+	if err := activities.AwaitFailQueuedDeploysByInstallID(ctx, installID); err != nil {
 		return fmt.Errorf("unable to fail queued install: %w", err)
 	}
 
 	// update status with response
-	if err := w.defaultExecErrorActivity(ctx, w.acts.Delete, activities.DeleteRequest{
-		InstallID: installID,
-	}); err != nil {
+	if err := activities.AwaitDeleteByInstallID(ctx, installID); err != nil {
 		return fmt.Errorf("unable to delete install: %w", err)
 	}
 

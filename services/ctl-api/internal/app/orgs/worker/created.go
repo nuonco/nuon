@@ -11,12 +11,10 @@ import (
 )
 
 func (w *Workflows) created(ctx workflow.Context, orgID string, _ bool) error {
-	var org app.Org
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		OrgID: orgID,
-	}, &org); err != nil {
+	org, err := activities.AwaitGetByOrgID(ctx, orgID)
+	if err != nil {
 		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to get org from database")
-		return fmt.Errorf("unable to get install: %w", err)
+		return fmt.Errorf("unable to get org: %w", err)
 	}
 
 	w.sendNotification(ctx, notifications.NotificationsTypeOrgCreated, orgID, map[string]string{

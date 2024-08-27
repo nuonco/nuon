@@ -13,6 +13,8 @@ type GetRequest struct {
 	AppID string `validate:"required"`
 }
 
+// @await-gen
+// @by-id AppID
 func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.App, error) {
 	currentApp := app.App{}
 	res := a.db.WithContext(ctx).

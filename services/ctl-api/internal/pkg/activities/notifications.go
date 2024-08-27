@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
 type SendNotificationRequest struct {
@@ -16,6 +16,7 @@ type SendNotificationRequest struct {
 	Vars map[string]string
 }
 
+// @await-gen
 func (a *Activities) SendNotification(ctx context.Context, req SendNotificationRequest) error {
 	cfg, err := a.getNotificationsConfig(ctx, req.OrgID, req.AppID)
 	if err != nil {

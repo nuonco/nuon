@@ -19,10 +19,8 @@ func (w *Workflows) pollDependencies(ctx workflow.Context, installID string) err
 	w.writeInstallEvent(ctx, installID, signals.OperationPollDependencies, app.OperationStatusStarted)
 
 	for {
-		var install app.Install
-		if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-			InstallID: installID,
-		}, &install); err != nil {
+		install, err := activities.AwaitGetByInstallID(ctx, installID)
+		if err != nil {
 			w.writeInstallEvent(ctx, installID, signals.OperationPollDependencies, app.OperationStatusFailed)
 			return fmt.Errorf("unable to get install and poll: %w", err)
 		}

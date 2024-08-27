@@ -13,6 +13,7 @@ type GetInstallComponentRequest struct {
 	ComponentID string `validate:"required"`
 }
 
+// @await-gen
 func (a *Activities) GetInstallComponent(ctx context.Context, req GetInstallComponentRequest) (*app.InstallComponent, error) {
 	installComponent := app.InstallComponent{}
 	res := a.db.WithContext(ctx).

@@ -5,24 +5,21 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app"
 	"github.com/powertoolsdev/mono/services/ctl-api/internal/app/orgs/worker/activities"
+	"github.com/powertoolsdev/mono/services/ctl-api/internal/pkg/notifications"
 )
 
 // inviteCreated: is called when a new org invite is created_by
 func (w *Workflows) inviteUser(ctx workflow.Context, orgID, inviteID string) error {
-	var org app.Org
-	if err := w.defaultExecGetActivity(ctx, w.acts.Get, activities.GetRequest{
-		OrgID: orgID,
-	}, &org); err != nil {
+	org, err := activities.AwaitGetByOrgID(ctx, orgID)
+	if err != nil {
+		w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to get org from database")
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
-	var orgInvite app.OrgInvite
-	if err := w.defaultExecGetActivity(ctx, w.acts.GetInvite, activities.GetInviteRequest{
-		InviteID: inviteID,
-	}, &orgInvite); err != nil {
+	orgInvite, err := activities.AwaitGetInviteByInviteID(ctx, inviteID)
+	if err != nil {
 		return fmt.Errorf("unable to get org invite: %w", err)
 	}
 

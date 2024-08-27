@@ -14,7 +14,7 @@ type DeleteRequest struct {
 }
 
 // @await-gen
-// @execution-timeout 5s
+// @by-id ComponentID
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 	res := a.db.WithContext(ctx).Unscoped().Delete(&app.Component{
 		ID: req.ComponentID,

@@ -19,6 +19,7 @@ type CreateInstallDeployRequest struct {
 	ReleaseStepID string
 }
 
+// @await-gen
 func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallDeployRequest) error {
 	step := app.ComponentReleaseStep{}
 	res := a.db.WithContext(ctx).
